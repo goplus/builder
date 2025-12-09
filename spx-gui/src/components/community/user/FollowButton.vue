@@ -32,7 +32,7 @@ const handleClick = useMessageHandle(async () => {
     v-if="followable && following != null"
     v-radar="{ name: 'Follow button', desc: 'Click to follow or unfollow user' }"
     class="follow-button"
-    :type="following ? 'boring' : 'primary'"
+    :color="following ? 'boring' : 'primary'"
     :loading="handleClick.isLoading.value"
     @click="handleClick.fn"
   >

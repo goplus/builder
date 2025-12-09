@@ -98,7 +98,7 @@ const { fn: handleStartNextCourse } = useMessageHandle(
         <div>{{ courseCompleteMessage }}</div>
 
         <div class="actions">
-          <UIButton type="boring" size="large" @click="handleBrowseTutorials">
+          <UIButton color="boring" size="large" @click="handleBrowseTutorials">
             {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
           </UIButton>
 

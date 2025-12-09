@@ -11,7 +11,7 @@
     <footer class="footer">
       <UIButton
         v-radar="{ name: 'Cancel button', desc: 'Click to cancel current action' }"
-        type="boring"
+        color="boring"
         @click="emit('cancelled')"
       >
         {{ cancelText ?? config?.cancelText ?? 'Cancel' }}
@@ -19,7 +19,7 @@
       <UIButton
         ref="confirmBtnRef"
         v-radar="{ name: 'Confirm button', desc: 'Click to confirm current action' }"
-        type="primary"
+        color="primary"
         :loading="isConfirmLoading"
         @click="handleConfirm"
       >

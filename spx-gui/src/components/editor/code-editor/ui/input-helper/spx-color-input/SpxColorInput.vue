@@ -30,7 +30,7 @@ function spxColor2HSBA(value: ColorValue): BuilderHSBA {
 import { debounce } from 'lodash'
 import { onMounted, ref, watch } from 'vue'
 import { type ColorValue } from '@/utils/spx'
-import { UINumberInput, UIDivider, UIFlatButton, UIIcon } from '@/components/ui'
+import { UINumberInput, UIDivider, UIIcon, UIButton } from '@/components/ui'
 import {
   builderHSB2CSSColorString,
   type BuilderHSB,
@@ -130,9 +130,11 @@ function handleSubmit() {
     </section>
     <UIDivider />
     <section class="inputs">
-      <UIFlatButton v-if="isEyeDropperSupported" @click="handleOpenEyeDropper">
-        <UIIcon type="eyedrop" />
-      </UIFlatButton>
+      <UIButton v-if="isEyeDropperSupported" variant="stroke" color="boring" @click="handleOpenEyeDropper">
+        <template #icon>
+          <UIIcon type="eyedrop" />
+        </template>
+      </UIButton>
       <UINumberInput v-model:value="hue" class="input" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
         <template #prefix>H</template>
       </UINumberInput>

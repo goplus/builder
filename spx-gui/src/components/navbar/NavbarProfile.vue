@@ -4,7 +4,7 @@
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       class="sign-in-button"
-      type="secondary"
+      color="secondary"
       :disabled="!isOnline"
       @click="initiateSignIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton

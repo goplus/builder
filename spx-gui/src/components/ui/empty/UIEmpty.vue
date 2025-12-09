@@ -98,7 +98,7 @@ const slots = useSlots()
   flex-direction: column;
 
   .text {
-    margin-top: 4px;
+    margin-top: 12px;
     color: var(--ui-color-grey-700);
     font-size: 16px;
     line-height: 26px;
@@ -112,8 +112,8 @@ const slots = useSlots()
     // TODO: more reliable approach?
     :deep(.ui-button svg),
     :deep(.ui-button img) {
-      width: 24px;
-      height: 24px;
+      width: 18px;
+      height: 18px;
     }
   }
 }

@@ -4,7 +4,7 @@
     <template #op>
       <UIButton
         v-radar="{ name: 'Group costumes button', desc: 'Click to group costumes as animation' }"
-        type="boring"
+        color="boring"
         size="large"
         @click="handleGroupCostumes"
       >

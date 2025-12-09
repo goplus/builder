@@ -32,7 +32,7 @@ import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/uti
 import { useMessageHandle } from '@/utils/exception'
 import { getSignedInUsername, isSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UITooltip } from '@/components/ui'
+import { providePopupContainer, UIButton, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
@@ -494,8 +494,9 @@ onMounted(() => {
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
                 <template #trigger>
-                  <!-- TODO: temporary, will be handled uniformly after the button design specification is complete -->
-                  <button class="flat-button quick-input" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</button>
+                  <UIButton variant="flat" color="boring" @click="handleQuickInputClick(qi)">{{
+                    $t(qi.text)
+                  }}</UIButton>
                 </template>
               </UITooltip>
             </div>
@@ -750,12 +751,6 @@ $toColor: #c390ff;
       flex-direction: row;
       gap: 8px;
       background: var(--ui-color-grey-100);
-
-      .quick-input {
-        width: fit-content;
-        height: 32px;
-        padding: 0 16px;
-      }
     }
 
     .flat-button {

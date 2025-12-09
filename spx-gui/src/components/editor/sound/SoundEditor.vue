@@ -39,7 +39,6 @@
     <div class="opeartions">
       <DumbSoundPlayer
         color="sound"
-        class="play-button"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
         :play-handler="handlePlayClick"
@@ -51,13 +50,13 @@
       <div v-if="editing" class="editing-buttons">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
-          type="boring"
+          color="boring"
           @click="handleResetEdit"
           >{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton
         >
         <UIButton
           v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
-          type="success"
+          color="success"
           icon="check"
           :loading="handleSave.isLoading.value"
           @click="handleSave.fn"
@@ -220,13 +219,6 @@ const handleSave = useMessageHandle(
 }
 
 .opeartions {
-  .play-button {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    min-height: 42px;
-  }
-
   display: flex;
 
   .volume-slider {

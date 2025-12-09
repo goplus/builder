@@ -9,7 +9,7 @@ import SpritePositionSize from '@/components/editor/common/config/sprite/SpriteP
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
 import SpritePhysics from '@/components/editor/common/config/sprite/SpritePhysics.vue'
-import { UIIcon, UITooltip, useModal } from '@/components/ui'
+import { UIButton, UIIcon, UITooltip, useModal } from '@/components/ui'
 import SpriteCollisionEditorModal from '../sprite/SpriteCollisionEditorModal.vue'
 import { useRenameSprite } from '@/components/asset'
 import AssetName from '@/components/asset/AssetName.vue'
@@ -89,9 +89,7 @@ const handleEditCollision = useMessageHandle(
     </div>
     <div v-if="isCollisionSettingsEnabled" class="config-item">
       <div class="label">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
-      <button class="edit-collision-button" @click="handleEditCollision">
-        <UIIcon type="setting" />
-      </button>
+      <UIButton icon="setting" color="secondary" variant="flat" @click="handleEditCollision"></UIButton>
     </div>
   </div>
 </template>
@@ -132,25 +130,6 @@ const handleEditCollision = useMessageHandle(
       white-space: nowrap;
       margin-right: 16px;
     }
-  }
-}
-
-.edit-collision-button {
-  border: none;
-  outline: none;
-  border-radius: 12px;
-  padding: 8px;
-  color: var(--ui-color-grey-1000);
-  background-color: var(--ui-color-grey-300);
-  cursor: pointer;
-
-  &:hover {
-    color: var(--ui-color-primary-400);
-    background-color: var(--ui-color-primary-200);
-  }
-  &:active {
-    color: var(--ui-color-primary-500);
-    background-color: var(--ui-color-primary-300);
   }
 }
 </style>

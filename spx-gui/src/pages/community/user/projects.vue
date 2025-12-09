@@ -114,7 +114,7 @@ const handleNewProject = useMessageHandle(
       <UIButton
         v-if="isSignedInUser"
         v-radar="{ name: 'New project button', desc: 'Click to create a new project' }"
-        type="secondary"
+        color="secondary"
         icon="plus"
         @click="handleNewProject"
       >
