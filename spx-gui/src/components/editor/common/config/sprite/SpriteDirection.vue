@@ -106,14 +106,7 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
           @update:value="handleHeadingUpdate"
           @focus="rotateDropdownVisible = true"
         >
-          <template #prefix>
-            {{
-              $t({
-                en: 'Heading',
-                zh: '朝向'
-              })
-            }}:
-          </template>
+          <template #prefix>{{ $t({ en: 'Heading', zh: '朝向' }) }}</template>
         </UINumberInput>
       </template>
       <div class="rotation-heading-container">
