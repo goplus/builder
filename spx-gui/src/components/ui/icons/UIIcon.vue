@@ -64,6 +64,10 @@ import undo from './undo.svg?raw'
 import redo from './redo.svg?raw'
 import localFile from './local-file.svg?raw'
 import assetLibrary from './asset-library.svg?raw'
+import layer from './layer.svg?raw'
+import notRotate from './not-rotate.svg?raw'
+import leftRight from './left-right.svg?raw'
+import rotateAround from './rotate-around.svg?raw'
 
 const typeIconMap = {
   file,
@@ -89,6 +93,7 @@ const typeIconMap = {
   close,
   closeCircle,
   rotate,
+  rotateAround,
   share,
   arrowAlt,
   doubleArrowDown,
@@ -124,7 +129,10 @@ const typeIconMap = {
   undo,
   redo,
   localFile,
-  assetLibrary
+  assetLibrary,
+  layer,
+  notRotate,
+  leftRight
 }
 
 export type Type = keyof typeof typeIconMap

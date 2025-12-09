@@ -67,7 +67,11 @@
         />
       </v-layer>
     </v-stage>
-    <SpriteQuickConfig ref="spriteQuickConfigRef" :selected-sprite="editorCtx.state.selectedSprite" />
+    <SpriteQuickConfig
+      ref="spriteQuickConfigRef"
+      :sprite="editorCtx.state.selectedSprite"
+      :project="editorCtx.project"
+    />
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
       <UIMenu>
         <UIMenuItem
