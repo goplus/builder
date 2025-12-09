@@ -118,11 +118,13 @@ const handleSubmit = useMessageHandle(
 
     let saved: AssetData
     if (existedAsset.value != null && form.value.action === Action.Update) {
-      const { id, visibility } = existedAsset.value
+      const { id, visibility, description, extraSettings } = existedAsset.value
       saved = await updateAsset(id, {
         displayName: form.value.name,
         type: params.type,
         category: form.value.category,
+        description,
+        extraSettings,
         files: params.files,
         filesHash: params.filesHash,
         visibility
@@ -178,6 +180,9 @@ async function addAssetWithParams(params: PartialAssetData) {
     ...params,
     displayName: form.value.name,
     category: form.value.category,
+    // TODO: Save with proper description and extra settings
+    description: '',
+    extraSettings: {},
     visibility: Visibility.Private
   })
 }

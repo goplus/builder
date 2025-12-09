@@ -404,6 +404,8 @@ paths:
                   $ref: "#/components/schemas/Project/properties/description"
                 instructions:
                   $ref: "#/components/schemas/Project/properties/instructions"
+                extraSettings:
+                  $ref: "#/components/schemas/Project/properties/extraSettings"
                 thumbnail:
                   $ref: "#/components/schemas/Project/properties/thumbnail"
       responses:
@@ -657,6 +659,8 @@ paths:
                 - displayName
                 - type
                 - category
+                - description
+                - extraSettings
                 - files
                 - filesHash
                 - visibility
@@ -667,6 +671,10 @@ paths:
                   $ref: "#/components/schemas/Asset/properties/type"
                 category:
                   $ref: "#/components/schemas/Asset/properties/category"
+                description:
+                  $ref: "#/components/schemas/Asset/properties/description"
+                extraSettings:
+                  $ref: "#/components/schemas/Asset/properties/extraSettings"
                 files:
                   $ref: "#/components/schemas/Asset/properties/files"
                 filesHash:
@@ -827,6 +835,8 @@ paths:
                 - displayName
                 - type
                 - category
+                - description
+                - extraSettings
                 - files
                 - filesHash
                 - visibility
@@ -837,6 +847,10 @@ paths:
                   $ref: "#/components/schemas/Asset/properties/type"
                 category:
                   $ref: "#/components/schemas/Asset/properties/category"
+                description:
+                  $ref: "#/components/schemas/Asset/properties/description"
+                extraSettings:
+                  $ref: "#/components/schemas/Asset/properties/extraSettings"
                 files:
                   $ref: "#/components/schemas/Asset/properties/files"
                 filesHash:
@@ -1895,6 +1909,13 @@ components:
           examples:
             - Just run it.
           description: Instructions on how to interact with the project.
+        extraSettings:
+          type: object
+          examples:
+            - source: auto
+              artStyle: pixel-art
+              perspective: side-scrolling
+          description: Extra settings of the project.
         thumbnail:
           type: string
           format: uri
@@ -2003,9 +2024,21 @@ components:
           description: Type of the asset.
         category:
           type: string
+          deprecated: true
           examples:
             - People
           description: Category to which the asset belongs.
+        description:
+          type: string
+          examples:
+            - A cute character sprite.
+          description: Brief description of the asset.
+        extraSettings:
+          type: object
+          examples:
+            - artStyle: pixel-art
+              perspective: side-scrolling
+          description: Extra settings specific to the asset.
         files:
           type: object
           examples:
