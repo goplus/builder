@@ -167,7 +167,7 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: 'ui-design',
-        component: () => import('@/pages/ui-design/index.vue')
+        component: () => import('@/pages/docs/ui-design.vue')
       }
     ]
   },
