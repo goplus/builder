@@ -53,7 +53,7 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
       :value="sizePercent"
       @update:value="handleSizePercentUpdate"
     >
-      <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}</template>
+      <template #prefix>{{ $t({ en: 'Size', zh: '大小' }) }}</template>
       <template #suffix>%</template>
     </UINumberInput>
   </div>

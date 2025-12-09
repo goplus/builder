@@ -3,10 +3,10 @@
     <template #header>
       {{ $t({ en: 'Split sprite sheet', zh: '切分精灵表' }) }}
       <UINumberInput v-model:value="rowNum" class="num-input" :min="1" :max="maxGridSize">
-        <template #prefix> {{ $t({ en: 'Rows', zh: '行数' }) }}</template>
+        <template #prefix>{{ $t({ en: 'Rows', zh: '行数' }) }}</template>
       </UINumberInput>
       <UINumberInput v-model:value="colNum" class="num-input" :min="1" :max="maxGridSize">
-        <template #prefix> {{ $t({ en: 'Columns', zh: '列数' }) }}</template>
+        <template #prefix>{{ $t({ en: 'Columns', zh: '列数' }) }}</template>
       </UINumberInput>
     </template>
     <ImgPreview ref="imgPreviewRef" :file="file" :multiple="false" />

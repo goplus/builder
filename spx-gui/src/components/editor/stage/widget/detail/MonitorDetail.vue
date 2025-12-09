@@ -11,7 +11,7 @@
             :value="monitor.label"
             @update:value="handleLabelUpdate"
           >
-            <template #prefix>{{ $t({ en: 'Label', zh: '标签' }) }}:</template>
+            <template #prefix>{{ $t({ en: 'Label', zh: '标签' }) }}</template>
           </UITextInput>
           <UITextInput
             v-radar="{ name: 'Value input', desc: 'Input field for monitor value' }"
@@ -19,7 +19,7 @@
             :value="monitor.variableName"
             @update:value="handleValueUpdate"
           >
-            <template #prefix>{{ $t({ en: 'Value', zh: '值' }) }}:</template>
+            <template #prefix>{{ $t({ en: 'Value', zh: '值' }) }}</template>
           </UITextInput>
         </div>
         <div class="divider"></div>
@@ -49,7 +49,7 @@
             :value="sizePercent"
             @update:value="handleSizePercentUpdate"
           >
-            <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}</template>
+            <template #prefix>{{ $t({ en: 'Size', zh: '大小' }) }}</template>
             <template #suffix>%</template>
           </UINumberInput>
         </div>
