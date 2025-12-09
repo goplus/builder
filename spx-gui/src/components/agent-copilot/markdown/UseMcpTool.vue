@@ -151,7 +151,7 @@ onMounted(() => {
         <span class="tool-status" :class="statusClass">{{ statusText }}</span>
         <UIButton
           v-if="taskInfo.status === 'error'"
-          type="primary"
+          color="primary"
           size="small"
           :loading="statusRunning()"
           @click.stop="executeTool"

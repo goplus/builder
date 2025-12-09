@@ -7,10 +7,11 @@
         <h3>UIButton</h3>
         <div class="setting-wrapper">
           <div>
-            mode:
-            <UISelect v-model:value="mode">
+            variant:
+            <UISelect v-model:value="variant">
               <UISelectOption value="shadow">shadow</UISelectOption>
               <UISelectOption value="flat">flat</UISelectOption>
+              <UISelectOption value="stroke">stroke</UISelectOption>
             </UISelect>
           </div>
           <div>
@@ -28,105 +29,82 @@
               <UISelectOption value="large">large</UISelectOption>
             </UISelect>
           </div>
-          <div>stroke: <UISwitch v-model:value="stroke">stroke</UISwitch></div>
         </div>
         <div class="content-wrapper">
           <div class="item">
-            <UIButton :mode="mode" :shape="shape" :size="size" type="primary" :stroke="stroke">primary</UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="secondary" :stroke="stroke">secondary</UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="boring" :stroke="stroke">boring</UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="white" :stroke="stroke">white</UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="danger" :stroke="stroke">danger</UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="success" :stroke="stroke">success</UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="blue" :stroke="stroke">blue</UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="purple" :stroke="stroke">purple</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="primary">primary</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="secondary">secondary</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="boring">boring</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="white">white</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="danger">danger</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="success">success</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="blue">blue</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="purple">purple</UIButton>
           </div>
           <div class="item">
-            <UIButton :mode="mode" :shape="shape" :size="size" type="primary" icon="play" :stroke="stroke"
-              >primary</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="secondary" icon="play" :stroke="stroke"
-              >secondary</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="boring" icon="play" :stroke="stroke"
-              >boring</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="white" icon="play" :stroke="stroke"
-              >white</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="danger" icon="play" :stroke="stroke"
-              >danger</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="success" icon="play" :stroke="stroke"
-              >success</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="blue" icon="play" :stroke="stroke">blue</UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="purple" icon="play" :stroke="stroke"
-              >purple</UIButton
-            >
+            <UIButton :variant="variant" :shape="shape" :size="size" color="primary" icon="play">primary</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="secondary" icon="play">secondary</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="boring" icon="play">boring</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="white" icon="play">white</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="danger" icon="play">danger</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="success" icon="play">success</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="blue" icon="play">blue</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="purple" icon="play">purple</UIButton>
           </div>
 
           <div class="item">
-            <UIButton :mode="mode" :shape="shape" :size="size" type="primary" icon="play" :stroke="stroke" disabled
+            <UIButton :variant="variant" :shape="shape" :size="size" color="primary" icon="play" disabled
               >primary</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="secondary" icon="play" :stroke="stroke" disabled
+            <UIButton :variant="variant" :shape="shape" :size="size" color="secondary" icon="play" disabled
               >secondary</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="boring" icon="play" :stroke="stroke" disabled
+            <UIButton :variant="variant" :shape="shape" :size="size" color="boring" icon="play" disabled
               >boring</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="white" icon="play" :stroke="stroke" disabled
-              >white</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="danger" icon="play" :stroke="stroke" disabled
+            <UIButton :variant="variant" :shape="shape" :size="size" color="white" icon="play" disabled>white</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="danger" icon="play" disabled
               >danger</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="success" icon="play" :stroke="stroke" disabled
+            <UIButton :variant="variant" :shape="shape" :size="size" color="success" icon="play" disabled
               >success</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="blue" icon="play" :stroke="stroke" disabled
-              >blue</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="purple" icon="play" :stroke="stroke" disabled
+            <UIButton :variant="variant" :shape="shape" :size="size" color="blue" icon="play" disabled>blue</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="purple" icon="play" disabled
               >purple</UIButton
             >
           </div>
           <div class="item">
-            <UIButton :mode="mode" :shape="shape" :size="size" type="primary" icon="play" :stroke="stroke" loading
+            <UIButton :variant="variant" :shape="shape" :size="size" color="primary" icon="play" loading
               >primary</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="secondary" icon="play" :stroke="stroke" loading
+            <UIButton :variant="variant" :shape="shape" :size="size" color="secondary" icon="play" loading
               >secondary</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="boring" icon="play" :stroke="stroke" loading
+            <UIButton :variant="variant" :shape="shape" :size="size" color="boring" icon="play" loading
               >boring</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="white" icon="play" :stroke="stroke" loading
-              >white</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="danger" icon="play" :stroke="stroke" loading
+            <UIButton :variant="variant" :shape="shape" :size="size" color="white" icon="play" loading>white</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="danger" icon="play" loading
               >danger</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="success" icon="play" :stroke="stroke" loading
+            <UIButton :variant="variant" :shape="shape" :size="size" color="success" icon="play" loading
               >success</UIButton
             >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="blue" icon="play" :stroke="stroke" loading
-              >blue</UIButton
-            >
-            <UIButton :mode="mode" :shape="shape" :size="size" type="purple" icon="play" :stroke="stroke" loading
+            <UIButton :variant="variant" :shape="shape" :size="size" color="blue" icon="play" loading>blue</UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="purple" icon="play" loading
               >purple</UIButton
             >
           </div>
           <div class="item">
-            <UIButton :mode="mode" :shape="shape" :size="size" type="primary" :stroke="stroke" icon="play"></UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="secondary" :stroke="stroke" icon="play"></UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="boring" :stroke="stroke" icon="play"></UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="white" :stroke="stroke" icon="play"></UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="danger" :stroke="stroke" icon="play"></UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="success" :stroke="stroke" icon="play"></UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="blue" :stroke="stroke" icon="play"></UIButton>
-            <UIButton :mode="mode" :shape="shape" :size="size" type="purple" :stroke="stroke" icon="play"></UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="primary" icon="play"></UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="secondary" icon="play"></UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="boring" icon="play"></UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="white" icon="play"></UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="danger" icon="play"></UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="success" icon="play"></UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="blue" icon="play"></UIButton>
+            <UIButton :variant="variant" :shape="shape" :size="size" color="purple" icon="play"></UIButton>
           </div>
         </div>
       </div>
@@ -138,7 +116,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { UIButton, UISelect, UISelectOption, UISwitch } from '@/components/ui'
+import { UIButton, UISelect, UISelectOption } from '@/components/ui'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
@@ -149,10 +127,9 @@ usePageTitle({
   zh: 'UI设计'
 })
 
-const mode = ref<'shadow' | 'flat'>('shadow')
+const variant = ref<'shadow' | 'flat' | 'stroke'>('shadow')
 const shape = ref<'square' | 'circle'>('square')
 const size = ref<'small' | 'medium' | 'large'>('medium')
-const stroke = ref(false)
 </script>
 
 <style lang="scss" scoped>

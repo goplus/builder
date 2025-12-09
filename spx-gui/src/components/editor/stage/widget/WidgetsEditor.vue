@@ -4,7 +4,7 @@
     <template #op>
       <UIButton
         v-radar="{ name: 'Add monitor button', desc: 'Click to add a monitor widget' }"
-        type="boring"
+        color="boring"
         size="large"
         @click="handleAddMonitor"
       >

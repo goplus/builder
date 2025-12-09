@@ -3,12 +3,11 @@
     ref="btnRef"
     class="ui-button"
     :class="[
-      `mode-${mode}`,
+      `variant-${variant}`,
       `shape-${shape}`,
-      `type-${type}`,
+      `color-${color}`,
       `size-${size}`,
       loading && 'loading',
-      stroke && 'stroke',
       iconOnly && 'icon-only'
     ]"
     :disabled="disabled"
@@ -25,33 +24,31 @@
 <script setup lang="ts">
 import { computed, ref, useSlots } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
-export type ButtonType = 'primary' | 'secondary' | 'boring' | 'white' | 'danger' | 'success' | 'blue' | 'purple'
+export type ButtonColor = 'primary' | 'secondary' | 'boring' | 'white' | 'danger' | 'success' | 'blue' | 'purple'
 export type ButtonSize = 'small' | 'medium' | 'large'
 export type ButtonHtmlType = 'button' | 'submit' | 'reset'
-export type ButtonMode = 'shadow' | 'flat'
+export type ButtonVariant = 'shadow' | 'flat' | 'stroke'
 export type ButtonShape = 'square' | 'circle'
 
 const props = withDefaults(
   defineProps<{
-    mode?: ButtonMode
+    variant?: ButtonVariant
     shape?: ButtonShape
-    type?: ButtonType
+    color?: ButtonColor
     size?: ButtonSize
     icon?: IconType
     disabled?: boolean
     loading?: boolean
     htmlType?: ButtonHtmlType
-    stroke?: boolean
   }>(),
   {
-    mode: 'shadow',
+    variant: 'shadow',
     shape: 'square',
-    type: 'primary',
+    color: 'primary',
     size: 'medium',
     icon: undefined,
     disabled: false,
     loading: false,
-    stroke: false,
     htmlType: 'button'
   }
 )
@@ -101,10 +98,6 @@ defineExpose({
     background-color: var(--ui-button-bg-color);
   }
 
-  &.stroke .content {
-    border: 1px solid var(--ui-button-stroke-color);
-  }
-
   .icon {
     width: var(--ui-button-icon-size);
     height: var(--ui-button-icon-size);
@@ -128,8 +121,8 @@ defineExpose({
   }
 }
 
-// mode
-.mode-shadow {
+// variant
+.variant-shadow {
   padding: 0 0 4px 0;
 
   .content {
@@ -145,10 +138,17 @@ defineExpose({
   }
 }
 
-.mode-flat {
+.variant-flat {
   padding: 0;
 }
 
+.variant-stroke {
+  padding: 0;
+
+  .content {
+    border: 1px solid var(--ui-button-stroke-color);
+  }
+}
 // shape
 .shape-square {
   --ui-button-radius: var(--ui-border-radius-2);
@@ -158,8 +158,8 @@ defineExpose({
   --ui-button-radius: 100%;
 }
 
-// type
-.type-primary {
+// color
+.color-primary {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-primary-main);
   --ui-button-shadow-color: var(--ui-color-primary-700);
@@ -169,7 +169,7 @@ defineExpose({
   }
 }
 
-.type-secondary {
+.color-secondary {
   --ui-button-color: var(--ui-color-primary-main);
   --ui-button-bg-color: var(--ui-color-primary-200);
   --ui-button-shadow-color: var(--ui-color-primary-300);
@@ -179,7 +179,7 @@ defineExpose({
   }
 }
 
-.type-boring {
+.color-boring {
   --ui-button-color: var(--ui-color-text);
   --ui-button-bg-color: var(--ui-color-grey-300);
   --ui-button-shadow-color: var(--ui-color-grey-600);
@@ -189,7 +189,7 @@ defineExpose({
   }
 }
 
-.type-white {
+.color-white {
   --ui-button-color: var(--ui-color-text);
   --ui-button-bg-color: var(--ui-color-grey-100);
   --ui-button-shadow-color: var(--ui-color-grey-400);
@@ -199,7 +199,7 @@ defineExpose({
   }
 }
 
-.type-danger {
+.color-danger {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-danger-main);
   --ui-button-shadow-color: var(--ui-color-danger-600);
@@ -209,7 +209,7 @@ defineExpose({
   }
 }
 
-.type-success {
+.color-success {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-success-main);
   --ui-button-shadow-color: var(--ui-color-success-600);
@@ -219,7 +219,7 @@ defineExpose({
   }
 }
 
-.type-blue {
+.color-blue {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-blue-main);
   --ui-button-shadow-color: var(--ui-color-blue-700);
@@ -229,7 +229,7 @@ defineExpose({
   }
 }
 
-.type-purple {
+.color-purple {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-purple-main);
   --ui-button-shadow-color: var(--ui-color-purple-700);
@@ -248,8 +248,8 @@ defineExpose({
   --ui-button-gap: 8px;
   --ui-button-line-height: 1.6;
 
-  &.mode-flat,
-  &.stroke {
+  &.variant-flat,
+  &.variant-stroke {
     --ui-button-icon-size: 20px;
   }
 }
@@ -262,8 +262,8 @@ defineExpose({
   --ui-button-gap: 4px;
   --ui-button-line-height: 1.5;
 
-  &.mode-flat,
-  &.stroke {
+  &.variant-flat,
+  &.variant-stroke {
     --ui-button-icon-size: 16px;
   }
 }

@@ -20,7 +20,7 @@ function handleJoin() {
       <UIButton
         v-radar="{ name: 'Join now button', desc: 'Click to sign in/up' }"
         class="join-btn"
-        type="primary"
+        color="primary"
         size="large"
         @click="handleJoin"
       >

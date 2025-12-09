@@ -24,7 +24,7 @@
     </div>
     <div class="button-container">
       <div v-if="recordingState === 'yetStarted'" class="icon-button">
-        <UIButton shape="circle" size="large" icon="microphone" type="danger" @click="recordingState = 'recording'" />
+        <UIButton shape="circle" size="large" icon="microphone" color="danger" @click="recordingState = 'recording'" />
         <span>
           {{
             $t({
@@ -35,7 +35,7 @@
         </span>
       </div>
       <div v-else-if="recordingState === 'recording'" class="icon-button">
-        <UIButton shape="circle" size="large" icon="stop" type="danger" @click="stopRecording" />
+        <UIButton shape="circle" size="large" icon="stop" color="danger" @click="stopRecording" />
         <span>
           {{
             $t({
@@ -48,7 +48,7 @@
       <template v-else>
         <div class="icon-button">
           <div class="icon-button-wrapper">
-            <UIButton shape="circle" size="large" icon="reload" type="blue" @click="resetRecording" />
+            <UIButton shape="circle" size="large" icon="reload" color="blue" @click="resetRecording" />
           </div>
 
           <span>
@@ -65,7 +65,7 @@
             style="width: 56px; height: 56px"
             shape="circle"
             size="large"
-            type="purple"
+            color="purple"
             @click="waveformRecorderRef?.startPlayback()"
           >
             <template #icon>
@@ -83,7 +83,7 @@
         </div>
         <div class="icon-button">
           <div class="icon-button-wrapper">
-            <UIButton shape="circle" size="large" icon="check" type="success" @click="saveRecording" />
+            <UIButton shape="circle" size="large" icon="check" color="success" @click="saveRecording" />
           </div>
           <span>
             {{

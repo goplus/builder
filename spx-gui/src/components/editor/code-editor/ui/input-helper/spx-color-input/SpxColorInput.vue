@@ -130,7 +130,7 @@ function handleSubmit() {
     </section>
     <UIDivider />
     <section class="inputs">
-      <UIButton v-if="isEyeDropperSupported" mode="flat" type="boring" stroke @click="handleOpenEyeDropper">
+      <UIButton v-if="isEyeDropperSupported" variant="stroke" color="boring" @click="handleOpenEyeDropper">
         <template #icon>
           <UIIcon type="eyedrop" />
         </template>

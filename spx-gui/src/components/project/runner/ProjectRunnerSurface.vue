@@ -423,7 +423,7 @@ defineExpose({
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Run button', desc: 'Click to run the project in overlay' }"
             class="button"
-            type="primary"
+            color="primary"
             icon="playHollow"
             :loading="runButtonLoading"
             @click="handleRunClick"
@@ -445,7 +445,7 @@ defineExpose({
             v-if="runnerState !== 'initial'"
             v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
             class="button"
-            type="boring"
+            color="boring"
             icon="end"
             :loading="stopButtonLoading"
             @click="handleStopClick"
@@ -460,7 +460,7 @@ defineExpose({
                   desc: 'Click to exit full screen for the running project'
                 }"
                 class="button"
-                type="boring"
+                color="boring"
                 icon="exitFullScreen"
                 @click="closeFullscreen"
               ></UIButton>

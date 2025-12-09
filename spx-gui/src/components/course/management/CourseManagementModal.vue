@@ -102,7 +102,7 @@ const handleRemove = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <template #input>
-      <UIButton mode="flat" type="boring" stroke @click="handleCreate">
+      <UIButton variant="stroke" color="boring" @click="handleCreate">
         <template #icon>
           <UIIcon type="plus" />
         </template>

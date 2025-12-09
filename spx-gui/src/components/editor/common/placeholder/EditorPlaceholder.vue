@@ -8,7 +8,7 @@
     <template #op>
       <UIButton
         v-radar="{ name: 'Add sprite from local file', desc: 'Click to add sprite from local file' }"
-        type="boring"
+        color="boring"
         size="large"
         icon="localFile"
         :loading="handleAddFromLocalFile.isLoading.value"
@@ -18,7 +18,7 @@
       </UIButton>
       <UIButton
         v-radar="{ name: 'Add sprite from asset library', desc: 'Click to add sprite from asset library' }"
-        type="boring"
+        color="boring"
         size="large"
         icon="assetLibrary"
         :loading="handleAddFromAssetLibrary.isLoading.value"

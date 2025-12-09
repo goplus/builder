@@ -7,14 +7,14 @@
       <UIButton
         v-show="applyFn && !applied"
         icon="check"
-        type="success"
+        color="success"
         :loading="handleApply.isLoading.value"
         @click="handleApply.fn"
         >{{ $t({ en: 'Apply', zh: '应用' }) }}</UIButton
       >
       <UIButton
         v-show="cancelFn && applied"
-        type="boring"
+        color="boring"
         :loading="handleCancel.isLoading.value"
         @click="handleCancel.fn"
         >{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton

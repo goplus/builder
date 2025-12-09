@@ -494,7 +494,9 @@ onMounted(() => {
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
                 <template #trigger>
-                  <UIButton mode="flat" type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UIButton>
+                  <UIButton variant="flat" color="boring" @click="handleQuickInputClick(qi)">{{
+                    $t(qi.text)
+                  }}</UIButton>
                 </template>
               </UITooltip>
             </div>

@@ -14,14 +14,14 @@
       <footer class="footer">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel token sign-in' }"
-          type="boring"
+          color="boring"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Sign-in button', desc: 'Click to sign in with token' }"
-          type="primary"
+          color="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >

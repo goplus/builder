@@ -355,7 +355,7 @@ const remixesRet = useQuery(
                             v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
                             class="sign-in-button"
                             size="large"
-                            type="primary"
+                            color="primary"
                             @click="handleSignIn"
                           >
                             {{ $t({ en: 'Sign in', zh: '立即登录' }) }}
@@ -365,7 +365,7 @@ const remixesRet = useQuery(
                       <UIButton
                         v-else
                         v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
-                        type="primary"
+                        color="primary"
                         size="large"
                         icon="playHollow"
                         :disabled="projectRunnerRef == null"
@@ -384,7 +384,7 @@ const remixesRet = useQuery(
           <UIButton
             v-if="runnerState !== 'initial'"
             v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
-            type="primary"
+            color="primary"
             icon="rotate"
             :disabled="runnerState !== 'running' || projectRunnerRef == null || handleStop.isLoading.value"
             :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
@@ -395,7 +395,7 @@ const remixesRet = useQuery(
           <UIButton
             v-if="runnerState === 'loading' || runnerState === 'running'"
             v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
-            type="boring"
+            color="boring"
             icon="end"
             :loading="handleStop.isLoading.value"
             @click="handleStop.fn"
@@ -409,7 +409,7 @@ const remixesRet = useQuery(
                   name: 'Enter full screen button',
                   desc: 'Click to enter full screen for the running project'
                 }"
-                type="boring"
+                color="boring"
                 icon="enterFullScreen"
                 :disabled="handleStop.isLoading.value"
                 @click="isFullScreenRunning = true"
@@ -421,7 +421,7 @@ const remixesRet = useQuery(
             <template #trigger>
               <UIButton
                 v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
-                type="boring"
+                color="boring"
                 icon="share"
                 @click="handleShare.fn"
               ></UIButton>
@@ -459,7 +459,7 @@ const remixesRet = useQuery(
             <template v-if="isOwner">
               <UIButton
                 v-radar="{ name: 'Edit button', desc: 'Click to edit the project' }"
-                type="primary"
+                color="primary"
                 size="large"
                 icon="edit"
                 :loading="handleEdit.isLoading.value"
@@ -469,7 +469,7 @@ const remixesRet = useQuery(
               <UIButton
                 v-if="project.visibility === Visibility.Public"
                 v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
-                type="boring"
+                color="boring"
                 size="large"
                 icon="share"
                 @click="handleShare.fn"
@@ -478,7 +478,7 @@ const remixesRet = useQuery(
               <UIButton
                 v-else
                 v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-                type="boring"
+                color="boring"
                 size="large"
                 icon="share"
                 :loading="handlePublish.isLoading.value"
@@ -490,7 +490,7 @@ const remixesRet = useQuery(
                   <UIButton
                     v-radar="{ name: 'More options button', desc: 'Click to see more project options' }"
                     class="more"
-                    type="boring"
+                    color="boring"
                     size="large"
                     icon="more"
                   ></UIButton>
@@ -514,7 +514,7 @@ const remixesRet = useQuery(
               <UIButton
                 v-if="hasRelease"
                 v-radar="{ name: 'Remix button', desc: 'Click to remix this project' }"
-                type="primary"
+                color="primary"
                 size="large"
                 icon="remix"
                 :loading="handleRemix.isLoading.value"
@@ -524,7 +524,7 @@ const remixesRet = useQuery(
               <UIButton
                 v-radar="{ name: 'Like button', desc: 'Click to like or unlike the project' }"
                 :class="{ liking }"
-                type="boring"
+                color="boring"
                 size="large"
                 :title="$t(likeCount!.title)"
                 :icon="liking ? 'heart' : 'heartHollow'"
@@ -535,7 +535,7 @@ const remixesRet = useQuery(
               </UIButton>
               <UIButton
                 v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
-                type="boring"
+                color="boring"
                 size="large"
                 icon="share"
                 @click="handleShare.fn"

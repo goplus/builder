@@ -19,7 +19,7 @@ onMounted(() => {
 <template>
   <div class="sign-in-container">
     <div class="message">{{ $t({ en: 'Please sign in to continue.', zh: '请先登录并继续' }) }}</div>
-    <UIButton mode="flat" class="sign-in-btn" @click="initiateSignIn()">
+    <UIButton variant="flat" class="sign-in-btn" @click="initiateSignIn()">
       {{ $t({ en: 'Sign in', zh: '登录' }) }}
     </UIButton>
   </div>

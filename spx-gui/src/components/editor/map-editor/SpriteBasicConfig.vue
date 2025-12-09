@@ -89,7 +89,7 @@ const handleEditCollision = useMessageHandle(
     </div>
     <div v-if="isCollisionSettingsEnabled" class="config-item">
       <div class="label">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
-      <UIButton icon="setting" type="secondary" mode="flat" @click="handleEditCollision"></UIButton>
+      <UIButton icon="setting" color="secondary" variant="flat" @click="handleEditCollision"></UIButton>
     </div>
   </div>
 </template>

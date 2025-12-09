@@ -159,12 +159,17 @@ const routes: Array<RouteRecordRaw> = [
     redirect: (to) => getProjectPageRoute(to.params.owner as string, to.params.name as string)
   },
   {
-    path: '/docs/api/:pathMatch(.*)?',
-    component: () => import('@/pages/docs/api.vue')
-  },
-  {
-    path: '/ui-design',
-    component: () => import('@/pages/ui-design/index.vue')
+    path: '/docs',
+    children: [
+      {
+        path: 'api/:pathMatch(.*)?',
+        component: () => import('@/pages/docs/api.vue')
+      },
+      {
+        path: 'ui-design',
+        component: () => import('@/pages/ui-design/index.vue')
+      }
+    ]
   },
   {
     path: '/:pathMatch(.*)*',
