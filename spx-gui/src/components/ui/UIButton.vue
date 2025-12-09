@@ -78,6 +78,7 @@ defineExpose({
   background: none;
   border: none;
   border-radius: var(--ui-button-radius);
+  height: var(--ui-button-height);
   cursor: pointer;
 
   --ui-button-color: var(--ui-color-grey-100);
@@ -91,8 +92,11 @@ defineExpose({
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: var(--ui-button-content-padding);
     border-radius: var(--ui-button-radius);
-
+    font-size: var(--ui-button-font-size);
+    line-height: var(--ui-button-line-height);
+    gap: var(--ui-button-gap);
     color: var(--ui-button-color);
     background-color: var(--ui-button-bg-color);
   }
@@ -101,7 +105,13 @@ defineExpose({
     border: 1px solid var(--ui-button-stroke-color);
   }
 
+  .icon {
+    width: var(--ui-button-icon-size);
+    height: var(--ui-button-icon-size);
+  }
+
   &.icon-only {
+    aspect-ratio: 1 / 1;
     .content {
       padding: 0;
     }
@@ -231,87 +241,39 @@ defineExpose({
 
 // size
 .size-large {
-  height: var(--ui-line-height-3);
-
-  .content {
-    font-size: 15px;
-    line-height: 1.6;
-    padding: 0 24px;
-    gap: 8px;
-  }
-
-  .icon {
-    width: 18px;
-    height: 18px;
-  }
+  --ui-button-height: var(--ui-line-height-3);
+  --ui-button-icon-size: 18px;
+  --ui-button-content-padding: 0 24px;
+  --ui-button-font-size: 15px;
+  --ui-button-gap: 8px;
+  --ui-button-line-height: 1.6;
 
   &.mode-flat,
   &.stroke {
-    .icon {
-      width: 20px;
-      height: 20px;
-    }
-  }
-
-  &.icon-only {
-    width: var(--ui-line-height-3);
-    .content {
-      padding: 0;
-    }
+    --ui-button-icon-size: 20px;
   }
 }
 
 .size-medium {
-  height: var(--ui-line-height-2);
-
-  .content {
-    font-size: 14px;
-    line-height: 1.5;
-    padding: 0 16px;
-    gap: 4px;
-  }
-
-  .icon {
-    width: 14px;
-    height: 14px;
-  }
+  --ui-button-height: var(--ui-line-height-2);
+  --ui-button-icon-size: 14px;
+  --ui-button-content-padding: 0 16px;
+  --ui-button-font-size: 14px;
+  --ui-button-gap: 4px;
+  --ui-button-line-height: 1.5;
 
   &.mode-flat,
   &.stroke {
-    .icon {
-      width: 16px;
-      height: 16px;
-    }
-  }
-
-  &.icon-only {
-    width: var(--ui-line-height-2);
-    .content {
-      padding: 0;
-    }
+    --ui-button-icon-size: 16px;
   }
 }
 
 .size-small {
-  height: var(--ui-line-height-1);
-
-  .content {
-    font-size: 13px;
-    line-height: 1.5;
-    padding: 0 12px;
-    gap: 4px;
-  }
-
-  .icon {
-    width: 13px;
-    height: 13px;
-  }
-
-  &.icon-only {
-    width: var(--ui-line-height-1);
-    .content {
-      padding: 0;
-    }
-  }
+  --ui-button-height: var(--ui-line-height-1);
+  --ui-button-icon-size: 13px;
+  --ui-button-content-padding: 0 12px;
+  --ui-button-font-size: 13px;
+  --ui-button-gap: 4px;
+  --ui-button-line-height: 1.5;
 }
 </style>
