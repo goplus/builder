@@ -8,6 +8,7 @@ import type { Size } from '@/models/common'
 import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
+import { throttle } from 'lodash'
 
 const props = defineProps<{
   sprite: Sprite
@@ -26,6 +27,10 @@ const emit = defineEmits<{
   selected: []
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
+  updatePos: []
+  updateHeading: []
+  updateSize: []
+  openConfigor: []
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -54,8 +59,30 @@ onMounted(() => {
   }
 })
 
+const notifyUpdateSprite = throttle((e: KonvaEventObject<unknown>) => {
+  if (!props.selected) return
+  const { sprite } = props
+  const size = toSize(e)
+  if (size != sprite.size) {
+    emit('updateSize')
+    return
+  }
+
+  const heading = toHeading(e)
+  if (sprite.heading !== heading) {
+    emit('updateHeading')
+    return
+  }
+
+  const { x, y } = toPosition(e)
+  if (sprite.x !== x || sprite.y !== y) {
+    emit('updatePos')
+  }
+}, 200)
+
 function handleDragMove(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
+  notifyUpdateSprite(e)
   emit('dragMove', (delta) => {
     // Adjust position if camera scrolled during dragging to keep the sprite visually unmoved
     e.target.x(e.target.x() - delta.x)
@@ -151,7 +178,9 @@ function handleClick() {
     :config="config"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
+    @transform="notifyUpdateSprite"
     @transformend="handleTransformed"
+    @open-configor="emit('openConfigor')"
     @click="handleClick"
   />
 </template>
