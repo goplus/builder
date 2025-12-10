@@ -1,5 +1,13 @@
 <template>
-  <v-group :config="groupConfig" @dragend="handleDragEnd" @transformend="handleTransformed" @click="handleClick">
+  <v-group
+    :config="groupConfig"
+    @dragmove="notifyUpdateMonitor"
+    @dragend="handleDragEnd"
+    @transform="notifyUpdateMonitor"
+    @transformend="handleTransformed"
+    @open-configor="emit('openConfigor')"
+    @click="handleClick"
+  >
     <v-rect :config="rectConfig" />
     <v-text ref="labelTextRef" :config="labelTextConfig" />
     <v-shape :config="labelValueSepConfig" />
@@ -21,11 +29,18 @@ import type { Monitor } from '@/models/widget/monitor'
 import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
+import { throttle } from 'lodash'
 
 const props = defineProps<{
   monitor: Monitor
   viewportSize: Size
   nodeReadyMap: Map<string, boolean>
+}>()
+
+const emit = defineEmits<{
+  updatePos: []
+  updateSize: []
+  openConfigor: []
 }>()
 
 const uiVariables = useUIVariables()
@@ -72,6 +87,21 @@ onMounted(() => {
     labelTextRef.value!.getNode().zIndex(zIndex)
   }
 })
+
+const notifyUpdateMonitor = throttle((e: KonvaEventObject<unknown>) => {
+  const { monitor } = props
+
+  const size = toSize(e)
+  if (size != monitor.size) {
+    emit('updateSize')
+    return
+  }
+
+  const { x, y } = toPosition(e)
+  if (monitor.x !== x || monitor.y !== y) {
+    emit('updatePos')
+  }
+}, 200)
 
 function handleDragEnd(e: KonvaEventObject<unknown>) {
   const sname = props.monitor.name
@@ -180,12 +210,21 @@ const valueTextConfig = computed<TextConfig>(() => {
 
 watch(valueTextConfig, () => nextTick().then(updateValueTextWidth))
 
+function toPosition(e: KonvaEventObject<unknown>) {
+  const x = round(e.target.x() - props.viewportSize.width / 2)
+  const y = round(props.viewportSize.height / 2 - e.target.y())
+  return { x, y }
+}
+
+function toSize(e: KonvaEventObject<unknown>) {
+  const size = round(e.target.scaleX(), 2)
+  return size
+}
 /** Handler for position-change (drag) or transform */
 function handleChange(e: KonvaEventObject<unknown>, action: Action) {
-  const { monitor, viewportSize: mapSize } = props
-  const x = round(e.target.x() - mapSize.width / 2)
-  const y = round(mapSize.height / 2 - e.target.y())
-  const size = round(e.target.scaleX(), 2)
+  const { monitor } = props
+  const { x, y } = toPosition(e)
+  const size = toSize(e)
   editorCtx.project.history.doAction(action, () => {
     monitor.setX(x)
     monitor.setY(y)

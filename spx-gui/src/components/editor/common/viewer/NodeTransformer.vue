@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { computed, effect, nextTick, ref } from 'vue'
-import type { Node, NodeConfig } from 'konva/lib/Node'
+import type { Node } from 'konva/lib/Node'
 import { Sprite } from '@/models/sprite'
 import type { Widget } from '@/models/widget'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
@@ -16,7 +16,6 @@ const props = defineProps<{
 }>()
 
 const transformer = ref<KonvaNodeInstance<CustomTransformer>>()
-const selectedNodeRef = ref<Node<NodeConfig> | null>()
 
 const config = computed<CustomTransformerConfig>(() => {
   if (props.target instanceof Sprite) {
@@ -35,10 +34,7 @@ effect(async () => {
   if (transformer.value == null) return
   const transformerNode = transformer.value.getNode()
   transformerNode.nodes([])
-  if (props.target == null) {
-    selectedNodeRef.value = null
-    return
-  }
+  if (props.target == null) return
   const nodeId = getNodeId(props.target)
   // Wait for node ready, so that Konva can get correct node size
   if (!props.nodeReadyMap.get(nodeId)) return
@@ -48,12 +44,11 @@ effect(async () => {
   if (selectedNode == null || selectedNode === (transformerNode as any).node()) return
   await nextTick() // Wait to ensure the selected node updated by Konva
   transformerNode.nodes([selectedNode])
-  selectedNodeRef.value = selectedNode
 })
 
 defineExpose({
   getNode() {
-    return selectedNodeRef.value
+    return transformer.value?.getNode()
   },
   withHidden<T>(callback: () => T): T {
     transformer.value?.getNode().hide()

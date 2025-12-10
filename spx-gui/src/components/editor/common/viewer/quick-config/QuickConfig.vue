@@ -1,55 +1,63 @@
 <script lang="ts">
-export const openInjectionKey: InjectionKey<(key: string | null, cb?: () => void) => void> = Symbol('open')
-export const closeInjectionKey: InjectionKey<() => void> = Symbol('close')
+export type ConfigType = 'default' | 'size' | 'rotate' | 'pos'
+
+export const configTypeInjectionKey: InjectionKey<WatchSource<ConfigType | null>> = Symbol('configType')
+export const updateConfigTypeInjectionKey: InjectionKey<(configTypes: ConfigType[]) => void> = Symbol('updateConfig')
 </script>
 
 <script lang="ts" setup>
-import { provide, ref, type InjectionKey } from 'vue'
+import { provide, ref, watch, type InjectionKey, type WatchSource } from 'vue'
 
 import { providePopupContainer } from '@/components/ui'
+
+const props = defineProps<{
+  configTypes: ConfigType[]
+}>()
+
+const emits = defineEmits<{
+  updateConfigTypes: [ConfigType[]]
+}>()
+
+const configKeyRef = ref<ConfigType | null>(null)
+
 const quickConfigPopupContainerRef = ref<HTMLElement | undefined>()
-const typeRef = ref<string | null>(null)
 let timer: NodeJS.Timeout
 
-let startTimer: (() => void) | null = null
-//
-function open(type: string | null, cb?: () => void) {
-  activeInteractions = 0
-  typeRef.value = type
-  clearTimeout(timer)
-  startTimer = null
-  if (cb != null) {
-    startTimer = () => {
-      timer = setTimeout(cb, 2000)
-    }
-    startTimer()
+watch(
+  () => props.configTypes,
+  (configTypes) => {
+    const configType = configTypes.at(-1) ?? null
+    activeInteractions = 0
+    clearTimeout(timer)
+    configKeyRef.value = configType
+    flush()
   }
-}
+)
 
-function close() {
-  typeRef.value = null
+function flush() {
   clearTimeout(timer)
-  startTimer = null
+  if (props.configTypes.length <= 1) {
+    return
+  }
+  timer = setTimeout(() => {
+    emits('updateConfigTypes', props.configTypes.slice(0, -1))
+  }, 2000)
 }
 
 let activeInteractions = 0
 function handleInteractionStart() {
-  if (startTimer == null) return
-
   clearTimeout(timer)
   activeInteractions++
 }
 function handleInteractionEnd() {
-  if (startTimer == null) return
-
   activeInteractions--
   if (activeInteractions <= 0) {
-    startTimer()
+    flush()
   }
 }
 
-provide(openInjectionKey, open)
-provide(closeInjectionKey, close)
+provide(configTypeInjectionKey, configKeyRef)
+provide(updateConfigTypeInjectionKey, (configTypes: ConfigType[]) => emits('updateConfigTypes', configTypes))
 
 providePopupContainer(quickConfigPopupContainerRef)
 </script>
@@ -63,7 +71,7 @@ providePopupContainer(quickConfigPopupContainerRef)
     @mouseleave="handleInteractionEnd"
   >
     <Transition name="slide-up">
-      <slot :type="typeRef"></slot>
+      <slot></slot>
     </Transition>
     <!-- Mount the pop-up layer's container here, treating it as part of the component, to facilitate responding to mouseenter/mouseleave events. -->
     <div ref="quickConfigPopupContainerRef"></div>

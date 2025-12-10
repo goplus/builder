@@ -39,6 +39,10 @@
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
+            @open-configor="handleOpenConfigor"
+            @update-heading="handleUpdateConfigType('rotate')"
+            @update-pos="handleUpdateConfigType('pos')"
+            @update-size="handleUpdateConfigType('size')"
           />
         </v-group>
       </v-layer>
@@ -49,6 +53,9 @@
           :widget="widget"
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
+          @open-configor="handleOpenConfigor"
+          @update-pos="handleUpdateConfigType('pos')"
+          @update-size="handleUpdateConfigType('size')"
         />
       </v-layer>
       <v-layer>
@@ -59,25 +66,17 @@
         />
       </v-layer>
     </v-stage>
-    <QuickConfig>
-      <template #default="{ type }">
-        <SpriteConfigor
-          v-if="editorCtx.state.selectedSprite"
-          :type="type"
-          :map-size="mapSize"
-          :sprite="editorCtx.state.selectedSprite"
-          :project="editorCtx.project"
-          :node="nodeTransformerNode"
-        />
-        <WidgetConfigor
-          v-else-if="editorCtx.state.selectedWidget"
-          :type="type"
-          :map-size="mapSize"
-          :widget="editorCtx.state.selectedWidget"
-          :project="editorCtx.project"
-          :node="nodeTransformerNode"
-        />
-      </template>
+    <QuickConfig :config-types="configTypesRef" @update-config-types="configTypesRef = $event">
+      <SpriteConfigor
+        v-if="editorCtx.state.selectedSprite"
+        :sprite="editorCtx.state.selectedSprite"
+        :project="editorCtx.project"
+      />
+      <WidgetConfigor
+        v-else-if="editorCtx.state.selectedWidget"
+        :widget="editorCtx.state.selectedWidget"
+        :project="editorCtx.project"
+      />
     </QuickConfig>
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
@@ -109,7 +108,7 @@ import WidgetConfigor from '@/components/editor/common/viewer/quick-config/Widge
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
-import QuickConfig from '../../common/viewer/quick-config/QuickConfig.vue'
+import QuickConfig, { type ConfigType } from '@/components/editor/common/viewer/quick-config/QuickConfig.vue'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
@@ -149,8 +148,6 @@ const updateMousePos = throttle(() => {
     y: Math.round(mapSize.value.height / 2 - pointerPos.y)
   }
 }, 50)
-
-const nodeTransformerNode = computed(() => nodeTransformerRef.value?.getNode())
 
 /** containerSize / viewportSize */
 const stageScale = computed(() => {
@@ -414,6 +411,16 @@ const handleSpriteDragMove = throttle(
     trailing: false // Ensure cameraEdgeScrollCheckTimer properly cleared in handleSpriteDragEnd
   }
 )
+
+// quick configor
+const configTypesRef = ref<ConfigType[]>([])
+function handleOpenConfigor() {
+  const configType = configTypesRef.value
+  configTypesRef.value = configType.length === 1 && configType[0] === 'default' ? [] : ['default']
+}
+function handleUpdateConfigType(configType: ConfigType) {
+  configTypesRef.value = ['default', configType]
+}
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
