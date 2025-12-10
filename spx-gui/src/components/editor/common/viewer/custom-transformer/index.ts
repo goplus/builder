@@ -5,7 +5,7 @@ import transformerFlipArrowDisabledPng from './transformer-flip-arrow-disabled.p
 import rotatorCirclePng from './rotate-circle.png'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
-import { nomalizeDegree, round } from '@/utils/utils'
+import { normalizeDegree, round } from '@/utils/utils'
 
 // There seems to be an issue rendering svg Image.
 // We are using 2x png here.
@@ -54,7 +54,7 @@ class RotatorTag extends Konva.Group {
   }
 
   updateRotationNumber(rotationNumber: number) {
-    this.text.text(`${nomalizeDegree(round(rotationNumber + 90))}°`)
+    this.text.text(`${normalizeDegree(round(rotationNumber + 90))}°`)
   }
 }
 
@@ -271,7 +271,7 @@ export class CustomTransformer extends Konva.Transformer {
     this.add(this.configorButton)
     this.configorButton.on('click', () => {
       const node = this.getNode()
-      node.fire('openconfigor', { bubbles: true })
+      node.fire('openconfigor')
     })
 
     const rotator = this.children.find((n) => n.name().match(/rotater/))

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel from './ConfigPanel.vue'
+import ConfigPanel from '../ConfigPanel.vue'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { computed } from 'vue'
@@ -33,9 +33,7 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
       :value="sizePercent"
       @update:value="handleSizePercentUpdate"
     >
-      <template #prefix
-        ><span class="label">{{ $t({ en: 'Size', zh: '大小' }) }}</span></template
-      >
+      <template #prefix>{{ $t({ en: 'Size', zh: '大小' }) }}</template>
       <template #suffix>%</template>
     </UINumberInput>
   </ConfigPanel>
@@ -44,9 +42,5 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
 <style lang="scss" scoped>
 .size-input {
   width: 102px;
-
-  .label {
-    margin-right: 8px;
-  }
 }
 </style>

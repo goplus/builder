@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { UIDropdown, UINumberInput } from '@/components/ui'
-import ConfigPanel from './ConfigPanel.vue'
+import ConfigPanel from '../ConfigPanel.vue'
 import { RotationStyle, type Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
@@ -24,7 +24,6 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
 <template>
   <ConfigPanel>
     <UIDropdown
-      v-if="sprite.rotationStyle !== RotationStyle.LeftRight"
       trigger="manual"
       placement="top"
       :visible="rotateDropdownVisible"
@@ -42,9 +41,7 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
           @update:value="handleHeadingUpdate"
           @focus="rotateDropdownVisible = true"
         >
-          <template #prefix
-            ><span class="label">{{ $t({ en: 'Heading', zh: '朝向' }) }}</span>
-          </template>
+          <template #prefix>{{ $t({ en: 'Heading', zh: '朝向' }) }}</template>
         </UINumberInput>
       </template>
       <div class="rotation-heading-container">
@@ -57,10 +54,6 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
 <style lang="scss" scoped>
 .heading-input {
   width: 130px;
-
-  .label {
-    margin-right: 8px;
-  }
 }
 
 .rotation-heading-container {

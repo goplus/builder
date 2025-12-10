@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIEditorWidgetItem } from '@/components/ui'
+import { UIEditorWidgetItem, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import type { Widget } from '@/models/widget'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
@@ -30,6 +30,12 @@ const radarNodeMeta = computed(() => {
   const desc = props.selectable ? 'Click to select the widget and view more options' : ''
   return { name, desc }
 })
+
+function toggleWidgetVisible() {
+  const name = props.widget.name
+  const action = { name: { en: `Toggle visibility for widget ${name}`, zh: `切换控件 ${name} 的可见性` } }
+  editorCtx.project.history.doAction(action, () => props.widget.setVisible(!props.widget.visible))
+}
 
 const { fn: handleDuplicate } = useMessageHandle(
   async () => {
@@ -71,12 +77,24 @@ const { fn: handleRename } = useMessageHandle(() => renameWidget(props.widget), 
 </script>
 
 <template>
-  <UIEditorWidgetItem v-radar="radarNodeMeta" :name="widget.name" :selectable="selectable" :color="color">
+  <UIEditorWidgetItem
+    v-radar="radarNodeMeta"
+    :name="widget.name"
+    :selectable="selectable"
+    :color="color"
+    :visible="widget.visible"
+  >
     <template #icon>
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-html="getIcon(widget)"></div>
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <UIMenuItem
+        v-radar="{ name: 'Visibility control', desc: 'Control to toggle widget visibility' }"
+        @click="toggleWidgetVisible"
+      >
+        {{ $t({ en: `${widget.visible ? 'Hide' : 'Show'} Widget`, zh: `${widget.visible ? '隐藏' : '显示'}控件` }) }}
+      </UIMenuItem>
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the widget' }"
         @click="handleDuplicate"
