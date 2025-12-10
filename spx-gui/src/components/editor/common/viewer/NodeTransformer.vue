@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, effect, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watchEffect } from 'vue'
 import type { Node } from 'konva/lib/Node'
 import { Sprite } from '@/models/sprite'
 import type { Widget } from '@/models/widget'
@@ -30,7 +30,7 @@ const config = computed<CustomTransformerConfig>(() => {
   }
 })
 
-effect(async () => {
+watchEffect(async (onCleanup) => {
   if (transformer.value == null) return
   const transformerNode = transformer.value.getNode()
   transformerNode.nodes([])
@@ -44,6 +44,24 @@ effect(async () => {
   if (selectedNode == null || selectedNode === (transformerNode as any).node()) return
   await nextTick() // Wait to ensure the selected node updated by Konva
   transformerNode.nodes([selectedNode])
+
+  // keyboard
+  stage.container().tabIndex = 1
+  stage.container().focus()
+  const handler = (e: KeyboardEvent) => {
+    if (e.code === 'ArrowUp') {
+      selectedNode.fire('keyboardmovement', { code: 'ArrowUp' })
+    } else if (e.code === 'ArrowRight') {
+      selectedNode.fire('keyboardmovement', { code: 'ArrowRight' })
+    } else if (e.code === 'ArrowDown') {
+      selectedNode.fire('keyboardmovement', { code: 'ArrowDown' })
+    } else if (e.code === 'ArrowLeft') {
+      selectedNode.fire('keyboardmovement', { code: 'ArrowLeft' })
+    }
+    e.preventDefault()
+  }
+  stage.container().addEventListener('keydown', handler)
+  onCleanup(() => stage.container().removeEventListener('keydown', handler))
 })
 
 defineExpose({
