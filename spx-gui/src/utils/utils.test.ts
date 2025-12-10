@@ -3,7 +3,7 @@ import { describe, it, expect, vitest } from 'vitest'
 import {
   isImage,
   isSound,
-  nomalizeDegree,
+  normalizeDegree,
   memoizeAsync,
   localStorageRef,
   humanizeListWithLimit,
@@ -73,21 +73,21 @@ describe('isSound', () => {
   })
 })
 
-describe('nomalizeDegree', () => {
+describe('normalizeDegree', () => {
   it('should work well', () => {
-    expect(nomalizeDegree(0)).toBe(0)
-    expect(nomalizeDegree(90)).toBe(90)
-    expect(nomalizeDegree(180)).toBe(180)
-    expect(nomalizeDegree(270)).toBe(-90)
-    expect(nomalizeDegree(360)).toBe(0)
-    expect(nomalizeDegree(450)).toBe(90)
-    expect(nomalizeDegree(720)).toBe(0)
-    expect(nomalizeDegree(-90)).toBe(-90)
-    expect(nomalizeDegree(-180)).toBe(180)
-    expect(nomalizeDegree(-270)).toBe(90)
-    expect(nomalizeDegree(-360)).toBe(0)
-    expect(nomalizeDegree(-450)).toBe(-90)
-    expect(nomalizeDegree(-720)).toBe(0)
+    expect(normalizeDegree(0)).toBe(0)
+    expect(normalizeDegree(90)).toBe(90)
+    expect(normalizeDegree(180)).toBe(180)
+    expect(normalizeDegree(270)).toBe(-90)
+    expect(normalizeDegree(360)).toBe(0)
+    expect(normalizeDegree(450)).toBe(90)
+    expect(normalizeDegree(720)).toBe(0)
+    expect(normalizeDegree(-90)).toBe(-90)
+    expect(normalizeDegree(-180)).toBe(180)
+    expect(normalizeDegree(-270)).toBe(90)
+    expect(normalizeDegree(-360)).toBe(0)
+    expect(normalizeDegree(-450)).toBe(-90)
+    expect(normalizeDegree(-720)).toBe(0)
   })
 })
 

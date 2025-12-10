@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { Size } from '@/models/common'
 import type { Decorator } from '@/models/tilemap'
-import { nomalizeDegree } from '@/utils/utils'
+import { normalizeDegree } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 
 const props = defineProps<{
@@ -24,7 +24,7 @@ const config = computed<ImageConfig>(() => {
     offsetY: pivot.y,
     x: props.mapSize.width / 2 + position.x,
     y: props.mapSize.height / 2 - position.y,
-    rotation: nomalizeDegree(rotation - 90),
+    rotation: normalizeDegree(rotation - 90),
     scaleX: scale.x,
     scaleY: scale.y
   } satisfies ImageConfig

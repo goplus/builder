@@ -5,11 +5,9 @@ import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { Action, Project } from '@/models/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
-import { nomalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
+import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
-import type { ConfigType } from './quick-config/SpriteQuickConfig.vue'
-import { throttle } from 'lodash'
 
 const props = defineProps<{
   sprite: Sprite
@@ -28,7 +26,6 @@ const emit = defineEmits<{
   selected: []
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
-  openConfigor: [type: ConfigType]
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -59,7 +56,6 @@ onMounted(() => {
 
 function handleDragMove(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
-  notifyConfigorOnSpriteChange(e)
   emit('dragMove', (delta) => {
     // Adjust position if camera scrolled during dragging to keep the sprite visually unmoved
     e.target.x(e.target.x() - delta.x)
@@ -76,30 +72,8 @@ function handleDragEnd(e: KonvaEventObject<unknown>) {
   emit('dragEnd')
 }
 
-const notifyConfigorOnSpriteChange = throttle((e: KonvaEventObject<unknown>) => {
-  if (!props.selected) return
-
-  const { sprite } = props
-
-  const size = toSize(e)
-  if (size != sprite.size) {
-    emit('openConfigor', 'size')
-  }
-
-  const { x, y } = toPosition(e)
-  if (sprite.x !== x || sprite.y !== y) {
-    emit('openConfigor', 'pos')
-  }
-
-  const heading = toHeading(e)
-  if (sprite.heading !== heading) {
-    emit('openConfigor', 'heading')
-  }
-}, 200)
-
 function handleTransformed(e: KonvaEventObject<unknown>) {
   const sname = props.sprite.name
-  notifyConfigorOnSpriteChange(e)
   handleChange(e, {
     name: { en: `Transform sprite ${sname}`, zh: `调整精灵 ${sname}` }
   })
@@ -120,7 +94,7 @@ const config = computed<ImageConfig>(() => {
     visible: visible,
     x: props.mapSize.width / 2 + x,
     y: props.mapSize.height / 2 - y,
-    rotation: nomalizeDegree(heading - 90),
+    rotation: normalizeDegree(heading - 90),
     scaleX: scale,
     scaleY: scale
   } satisfies ImageConfig
@@ -144,7 +118,7 @@ function toHeading(e: KonvaEventObject<unknown>) {
   const { sprite } = props
   let heading = sprite.heading
   if (sprite.rotationStyle === RotationStyle.Normal || sprite.rotationStyle === RotationStyle.LeftRight) {
-    heading = nomalizeDegree(round(e.target.rotation() + 90))
+    heading = normalizeDegree(round(e.target.rotation() + 90))
   }
   return heading
 }
@@ -177,9 +151,7 @@ function handleClick() {
     :config="config"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
-    @transform="notifyConfigorOnSpriteChange"
     @transformend="handleTransformed"
     @click="handleClick"
-    @open-configor="emit('openConfigor', 'default')"
   />
 </template>

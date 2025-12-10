@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel from './ConfigPanel.vue'
+import ConfigPanel from '../ConfigPanel.vue'
 import { type Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
