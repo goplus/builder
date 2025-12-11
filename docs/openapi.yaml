@@ -21,16 +21,17 @@ paths:
       security: []
       parameters:
         - name: follower
-          in: query
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
           description: Filter users who are being followed by the specified user.
-        - name: followee
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
+        - name: followee
           description: Filter users who are following the specified user.
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
         - name: orderBy
+          description: Field by which to order the results.
           in: query
           schema:
             type: string
@@ -41,7 +42,6 @@ paths:
             default: createdAt
             examples:
               - createdAt
-          description: Field by which to order the results.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
         - $ref: "#/components/parameters/PageSize"
@@ -56,10 +56,10 @@ paths:
                   total:
                     $ref: "#/components/schemas/ByPage/properties/total"
                   data:
+                    description: Array of user objects.
                     type: array
                     items:
                       $ref: "#/components/schemas/User"
-                    description: Array of user objects.
 
   /user/{username}:
     get:
@@ -70,11 +70,11 @@ paths:
       security: []
       parameters:
         - name: username
+          description: Username of the user to get.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
-          description: Username of the user to get.
       responses:
         "200":
           description: Successful response.
@@ -128,11 +128,11 @@ paths:
       description: Follow the specified user as the authenticated user.
       parameters:
         - name: username
+          description: Username of the user to follow.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
-          description: Username of the user to follow.
       responses:
         "204":
           description: Successfully followed the user.
@@ -143,11 +143,11 @@ paths:
       description: Determine if the authenticated user is following the specified user.
       parameters:
         - name: username
+          description: Username of the user to check.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
-          description: Username of the user to check.
       responses:
         "204":
           description: The user is followed by the authenticated user.
@@ -160,11 +160,11 @@ paths:
       description: Unfollow the specified user as the authenticated user.
       parameters:
         - name: username
+          description: Username of the user to unfollow.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
-          description: Username of the user to unfollow.
       responses:
         "204":
           description: Successfully unfollowed the user.
@@ -189,21 +189,21 @@ paths:
                 - visibility
               properties:
                 remixSource:
-                  oneOf:
-                    - $ref: "#/components/schemas/ProjectFullName"
-                    - $ref: "#/components/schemas/ProjectReleaseFullName"
                   description: |
                     Full name of the project or project release to remix from.
 
                     **Using the project's full name means remixing the latest release sourced from that project.**
+                  oneOf:
+                    - $ref: "#/components/schemas/ProjectFullName"
+                    - $ref: "#/components/schemas/ProjectReleaseFullName"
                 name:
                   $ref: "#/components/schemas/Project/properties/name"
                 files:
-                  $ref: "#/components/schemas/Project/properties/files"
                   description: |
                     File paths and their corresponding universal URLs associated with the project.
 
                     **Required if `remixSource` is not provided.**
+                  $ref: "#/components/schemas/Project/properties/files"
                 visibility:
                   $ref: "#/components/schemas/Project/properties/visibility"
                 description:
@@ -231,7 +231,7 @@ paths:
         #### Visibility rules
 
         | Authenticated (as alice) | Owner | Visibility | Access |
-        |-------------|-------------|------------------|-----------|
+        |--------------------------|-------|------------|--------|
         | false | * | | All users' public projects (force `visibility=public`) |
         | false | * | public | All users' public projects |
         | false | * | private | `401 Unauthorized` |
@@ -252,60 +252,61 @@ paths:
         - bearerAuth: []
       parameters:
         - name: owner
-          in: query
-          schema:
-            $ref: "#/components/schemas/Project/properties/owner"
           description: |
             Filter projects by the owner's username.
 
             Defaults to the authenticated user if not specified. Use `*` to include projects from all users.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
         - name: remixedFrom
+          description: Filter remixed projects by the full name of the source project or project release.
           in: query
           schema:
             oneOf:
               - $ref: "#/components/schemas/ProjectFullName"
               - $ref: "#/components/schemas/ProjectReleaseFullName"
-          description: Filter remixed projects by the full name of the source project or project release.
         - name: keyword
+          description: Filter projects by name pattern.
           in: query
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Filter projects by name pattern.
         - name: visibility
+          description: Filter projects by visibility.
           in: query
           schema:
             $ref: "#/components/schemas/Project/properties/visibility"
-          description: Filter projects by visibility.
         - name: liker
+          description: Filter projects liked by the specified user.
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
-          description: Filter projects liked by the specified user.
         - name: createdAfter
-          in: query
-          schema:
-            type: string
-            format: date-time
           description: Filter projects created after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
         - name: likesReceivedAfter
-          in: query
-          schema:
-            type: string
-            format: date-time
           description: Filter projects that gained new likes after this timestamp.
-        - name: remixesReceivedAfter
           in: query
           schema:
             type: string
             format: date-time
+        - name: remixesReceivedAfter
           description: Filter projects that were remixed after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
         - name: fromFollowees
+          description: When true, include projects created by the authenticated user's followees.
           in: query
           schema:
             type: boolean
             default: false
-          description: When true, include projects created by the authenticated user's followees.
         - name: orderBy
+          description: Field by which to order the results.
           in: query
           schema:
             type: string
@@ -320,7 +321,6 @@ paths:
             default: createdAt
             examples:
               - createdAt
-          description: Field by which to order the results.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
         - $ref: "#/components/parameters/PageSize"
@@ -350,17 +350,17 @@ paths:
         - bearerAuth: []
       parameters:
         - name: owner
+          description: Username of the project's owner.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Username of the project's owner.
         - name: name
+          description: Name of the project to get.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Name of the project to get.
       responses:
         "200":
           description: Successful response.
@@ -375,17 +375,17 @@ paths:
       description: Update the details of a specific project.
       parameters:
         - name: owner
+          description: Username of the project's owner.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Username of the project's owner.
         - name: name
+          description: Name of the project to update.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Name of the project to update.
       requestBody:
         required: true
         content:
@@ -422,17 +422,17 @@ paths:
       description: Permanently delete a specific project by its owner and name.
       parameters:
         - name: owner
+          description: Username of the project's owner.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Username of the project's owner.
         - name: name
+          description: Name of the project to delete.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Name of the project to delete.
       responses:
         "204":
           description: Successfully deleted the project.
@@ -445,17 +445,17 @@ paths:
       description: Record a view for the specified project as the authenticated user.
       parameters:
         - name: owner
+          description: Username of the project's owner.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Username of the project's owner.
         - name: name
+          description: Name of the project to record a view for.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Name of the project to record a view for.
       responses:
         "204":
           description: Successfully recorded the project view.
@@ -468,17 +468,17 @@ paths:
       description: Like the specified project as the authenticated user.
       parameters:
         - name: owner
+          description: Username of the project's owner.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Username of the project's owner.
         - name: name
+          description: Name of the project to like.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Name of the project to like.
       responses:
         "204":
           description: Successfully liked the project.
@@ -489,17 +489,17 @@ paths:
       description: Determine if the authenticated user has liked the specified project.
       parameters:
         - name: owner
+          description: Username of the project's owner.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Username of the project's owner.
         - name: name
+          description: Name of the project to check.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Name of the project to check.
       responses:
         "204":
           description: The project is liked by the authenticated user.
@@ -512,17 +512,17 @@ paths:
       description: Unlike the specified project as the authenticated user.
       parameters:
         - name: owner
+          description: Username of the project's owner.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Username of the project's owner.
         - name: name
+          description: Name of the project to unlike.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Name of the project to unlike.
       responses:
         "204":
           description: Successfully unliked the project.
@@ -568,11 +568,12 @@ paths:
       security: []
       parameters:
         - name: projectFullName
+          description: Filter releases by the full name of the associated project.
           in: query
           schema:
             $ref: "#/components/schemas/ProjectRelease/properties/projectFullName"
-          description: Filter releases by the full name of the associated project.
         - name: orderBy
+          description: Field by which to order the results.
           in: query
           schema:
             type: string
@@ -583,7 +584,6 @@ paths:
             default: createdAt
             examples:
               - createdAt
-          description: Field by which to order the results.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
         - $ref: "#/components/parameters/PageSize"
@@ -598,10 +598,10 @@ paths:
                   total:
                     $ref: "#/components/schemas/ByPage/properties/total"
                   data:
+                    description: Array of project release objects.
                     type: array
                     items:
                       $ref: "#/components/schemas/ProjectRelease"
-                    description: Array of project release objects.
 
   /project-release/{owner}/{project}/{release}:
     get:
@@ -612,23 +612,23 @@ paths:
       security: []
       parameters:
         - name: owner
+          description: Username of the project's owner.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Username of the project's owner.
         - name: project
+          description: Name of the project.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Project/properties/name"
-          description: Name of the project.
         - name: release
+          description: Name of the project release to get.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/ProjectRelease/properties/name"
-          description: Name of the project release to get.
       responses:
         "200":
           description: Successful response.
@@ -702,7 +702,7 @@ paths:
         #### Visibility rules
 
         | Authenticated (as alice) | Owner | Visibility | Access |
-        |-------------|-------------|------------------|-----------|
+        |--------------------------|-------|------------|--------|
         | false | * | | All users' public assets (force `visibility=public`) |
         | false | * | public | All users' public assets |
         | false | * | private | `401 Unauthorized` |
@@ -723,39 +723,40 @@ paths:
         - bearerAuth: []
       parameters:
         - name: keyword
+          description: Filter assets by display name pattern.
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/displayName"
-          description: Filter assets by display name pattern.
         - name: owner
-          in: query
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
           description: |
             Filter assets by owner's username.
 
             Defaults to the authenticated user if not specified. Use `*` to include assets from all users.
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
         - name: type
+          description: Filter assets by type.
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/type"
-          description: Filter assets by type.
         - name: category
+          description: Filter assets by category.
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/category"
-          description: Filter assets by category.
         - name: filesHash
+          description: Filter assets by files hash.
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/filesHash"
-          description: Filter assets by files hash.
         - name: visibility
+          description: Filter assets by visibility.
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/visibility"
-          description: Filter assets by visibility.
         - name: orderBy
+          description: Field by which to order the results.
           in: query
           schema:
             type: string
@@ -764,7 +765,6 @@ paths:
               - updatedAt
             examples:
               - createdAt
-          description: Field by which to order the results.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
         - $ref: "#/components/parameters/PageSize"
@@ -779,10 +779,10 @@ paths:
                   total:
                     $ref: "#/components/schemas/ByPage/properties/total"
                   data:
+                    description: Array of asset objects.
                     type: array
                     items:
                       $ref: "#/components/schemas/Asset"
-                    description: Array of asset objects.
 
   /asset/{id}:
     get:
@@ -795,11 +795,11 @@ paths:
         - bearerAuth: []
       parameters:
         - name: id
+          description: ID of the asset to get.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the asset to get.
       responses:
         "200":
           description: Successful response.
@@ -820,11 +820,11 @@ paths:
         - Asset owners can update their private assets.
       parameters:
         - name: id
+          description: ID of the asset to update.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the asset to update.
       requestBody:
         required: true
         content:
@@ -873,21 +873,26 @@ paths:
       description: Permanently delete a specific asset by its ID.
       parameters:
         - name: id
+          description: ID of the asset to delete.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the asset to delete.
       responses:
         "204":
           description: Successfully deleted the asset.
 
-  /aigc/matting:
+  /course:
     post:
       tags:
-        - AIGC
-      summary: Remove image background
-      description: Process the provided image URL to remove its background, resulting in a transparent background.
+        - Courses
+      summary: Create a course
+      description: |
+        Create a new course with the necessary details.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can create courses.
       requestBody:
         required: true
         content:
@@ -895,24 +900,364 @@ paths:
             schema:
               type: object
               required:
-                - imageUrl
+                - title
+                - thumbnail
+                - entrypoint
+                - references
+                - prompt
               properties:
-                imageUrl:
-                  type: string
-                  format: uri
-                  description: URL of the image to process for background removal.
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                entrypoint:
+                  $ref: "#/components/schemas/Course/properties/entrypoint"
+                references:
+                  $ref: "#/components/schemas/Course/properties/references"
+                prompt:
+                  $ref: "#/components/schemas/Course/properties/prompt"
+      responses:
+        "201":
+          description: Successfully created the course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "403":
+          description: Insufficient permissions to perform this operation.
+
+  /courses/list:
+    get:
+      tags:
+        - Courses
+      summary: List courses
+      description: Retrieve a paginated list of courses with optional filtering and ordering.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: courseSeriesID
+          description: Filter courses by the course series ID.
+          in: query
+          schema:
+            type: string
+        - name: owner
+          description: |
+            Filter courses by the owner's username.
+
+            Defaults to the authenticated user if not specified. Use `*` to include courses from all users.
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - sequenceInCourseSeries
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
       responses:
         "200":
-          description: Successfully processed the image for background removal.
+          description: Successful response.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  resultUrl:
-                    type: string
-                    format: uri
-                    description: URL of the processed image with background removed.
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    description: Array of course objects.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Course"
+
+  /course/{id}:
+    get:
+      tags:
+        - Courses
+      summary: Get a course
+      description: Retrieve details of a specific course.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: id
+          description: ID of the course to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    put:
+      tags:
+        - Courses
+      summary: Update a course
+      description: |
+        Update the details of a specific course.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can update courses.
+      parameters:
+        - name: id
+          description: ID of the course to update.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - thumbnail
+                - entrypoint
+                - references
+                - prompt
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                entrypoint:
+                  $ref: "#/components/schemas/Course/properties/entrypoint"
+                references:
+                  $ref: "#/components/schemas/Course/properties/references"
+                prompt:
+                  $ref: "#/components/schemas/Course/properties/prompt"
+      responses:
+        "200":
+          description: Successfully updated the course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "403":
+          description: Insufficient permissions to perform this operation.
+    delete:
+      tags:
+        - Courses
+      summary: Delete a course
+      description: |
+        Permanently delete a specific course by its ID.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can delete courses.
+      parameters:
+        - name: id
+          description: ID of the course to delete.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Successfully deleted the course.
+        "403":
+          description: Insufficient permissions to perform this operation.
+
+  /course-series:
+    post:
+      tags:
+        - Course Series
+      summary: Create a course series
+      description: |
+        Create a new course series with the necessary details.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can create course series.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - courseIDs
+                - order
+              properties:
+                title:
+                  $ref: "#/components/schemas/CourseSeries/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
+                description:
+                  $ref: "#/components/schemas/CourseSeries/properties/description"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
+      responses:
+        "201":
+          description: Successfully created the course series.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+        "403":
+          description: Insufficient permissions to perform this operation.
+
+  /course-serieses/list:
+    get:
+      tags:
+        - Course Series
+      summary: List course series
+      description: Retrieve a paginated list of course series with optional filtering and ordering.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - order
+            default: order
+            examples:
+              - order
+        - name: owner
+          description: |
+            Filter course serieses by the owner's username.
+
+            Defaults to the authenticated user if not specified. Use `*` to include course series from all users.
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    description: Array of course series objects.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseSeries"
+
+  /course-series/{id}:
+    get:
+      tags:
+        - Course Series
+      summary: Get a course series
+      description: Retrieve details of a specific course series.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: id
+          description: ID of the course series to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+    put:
+      tags:
+        - Course Series
+      summary: Update a course series
+      description: |
+        Update the details of a specific course series.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can update course series.
+      parameters:
+        - name: id
+          description: ID of the course series to update.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - courseIDs
+                - order
+              properties:
+                title:
+                  $ref: "#/components/schemas/CourseSeries/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
+                description:
+                  $ref: "#/components/schemas/CourseSeries/properties/description"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
+      responses:
+        "200":
+          description: Successfully updated the course series.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+        "403":
+          description: Insufficient permissions to perform this operation.
+    delete:
+      tags:
+        - Course Series
+      summary: Delete a course series
+      description: |
+        Permanently delete a specific course series by its ID.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can delete course series.
+      parameters:
+        - name: id
+          description: ID of the course series to delete.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Successfully deleted the course series.
+        "403":
+          description: Insufficient permissions to perform this operation.
 
   /copilot/message:
     post:
@@ -939,8 +1284,8 @@ paths:
                 - messages
               properties:
                 messages:
-                  type: array
                   description: Input messages.
+                  type: array
                   items:
                     $ref: "#/components/schemas/CopilotMessage"
                   examples:
@@ -949,8 +1294,8 @@ paths:
                           type: text
                           text: Hello, world!
                 tools:
-                  type: array
                   description: Use Mcp tools.
+                  type: array
                   items:
                     $ref: "#/components/schemas/CopilotTool"
                   examples:
@@ -1012,8 +1357,8 @@ paths:
                 - messages
               properties:
                 messages:
-                  type: array
                   description: Input messages.
+                  type: array
                   items:
                     $ref: "#/components/schemas/CopilotMessage"
                   examples:
@@ -1022,8 +1367,8 @@ paths:
                           type: text
                           text: Hello, world!
                 tools:
-                  type: array
                   description: Use Mcp tools.
+                  type: array
                   items:
                     $ref: "#/components/schemas/CopilotTool"
                   examples:
@@ -1077,8 +1422,8 @@ paths:
                 - messages
               properties:
                 messages:
-                  type: array
                   description: Input messages.
+                  type: array
                   items:
                     $ref: "#/components/schemas/CopilotMessage"
                   examples:
@@ -1087,8 +1432,8 @@ paths:
                           type: text
                           text: Hello, world!
                 tools:
-                  type: array
                   description: Use Mcp tools.
+                  type: array
                   items:
                     $ref: "#/components/schemas/CopilotTool"
                   examples:
@@ -1098,8 +1443,8 @@ paths:
                           description: Create a new project.
                           parameters: { "name": "My Project" }
                 workflow:
+                  description: Environment variables of the workflow.
                   $ref: "#/components/schemas/Workflow"
-                  description: env of the workflow.
       responses:
         "201":
           description: Stream Message successfully generated.
@@ -1141,14 +1486,46 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AIDescriptionRequest"
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  description: The game content to generate a description for (e.g., spx source code, project structure).
+                  type: string
+                  examples:
+                    - |
+                      Game: TicTacToe
+                      Description: A classic Tic-Tac-Toe game.
+
+                      === File: main.spx ===
+                      var (
+                          // board is the main Tic-Tac-Toe board, where 1 represents "X" and 2 represents "O".
+                          board [3][3]int
+                      )
+
+                      // onStart handles the game start event.
+                      onStart => {
+                        // ...
+                      }
       responses:
         "200":
           description: Successfully generated AI description.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AIDescriptionResponse"
+                type: object
+                properties:
+                  description:
+                    description: AI-generated descriptive summary of the game world from the player's perspective.
+                    type: string
+                    examples:
+                      - |
+                        This is a Tic-Tac-Toe game played on a 3x3 grid. The player uses `X` marks while the AI opponent
+                        uses `O` marks. Players take turns placing their marks in empty squares, with the goal of getting
+                        three marks in a row horizontally, vertically, or diagonally. The game supports mouse click
+                        interaction. Click on an empty square to place your mark. The game ends when either player
+                        achieves three in a row or the board is completely filled.
         "403":
           description: Insufficient permissions or quota to perform this operation.
           headers:
@@ -1184,14 +1561,125 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AIInteractionRequest"
+              type: object
+              properties:
+                content:
+                  description: The core user input message.
+                  type: string
+                  examples:
+                    - What should I do next?
+                context:
+                  description: Specific context for the current user input.
+                  type: object
+                  additionalProperties: true
+                  examples:
+                    - position: [10, 20]
+                      health: 80
+                role:
+                  description: Persona the AI should adopt.
+                  type: string
+                  examples:
+                    - Guide
+                roleContext:
+                  description: Additional context specific to the role.
+                  type: object
+                  additionalProperties: true
+                  examples:
+                    - style: friendly
+                      knowledgeScope: game rules
+                knowledgeBase:
+                  description: Background knowledge provided to the AI.
+                  type: object
+                  additionalProperties: true
+                  examples:
+                    - worldName: TestWorld
+                      gravity: 9.8
+                commandSpecs:
+                  description: Commands the AI is allowed to call.
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        description: Unique identifier for the command.
+                        type: string
+                        examples:
+                          - Move
+                      description:
+                        description: Explanation of what the command does.
+                        type: string
+                        examples:
+                          - Move the character
+                      parameters:
+                        description: Parameters the command accepts.
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              description: Parameter name.
+                              type: string
+                              examples:
+                                - Direction
+                            type:
+                              description: Go type name of the parameter.
+                              type: string
+                              examples:
+                                - string
+                            description:
+                              description: Purpose of the parameter.
+                              type: string
+                              examples:
+                                - "Direction to move: up, down, left, right"
+                history:
+                  description: Record of previous interactions in this session.
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/AIInteractionTurn"
+                archivedHistory:
+                  description: Content of archived historical interactions.
+                  type: string
+                  examples:
+                    - "Previous conversation summary..."
+                continuationTurn:
+                  description: |
+                    Current turn number in a multi-turn interaction sequence.
+
+                    A value of 0 means this is the initial turn from user input. Values > 0 indicate continuation turns
+                    where the AI continues the current interaction sequence based on the outcomes of commands executed
+                    within this sequence.
+                  type: integer
+                  format: int32
+                  minimum: 0
+                  default: 0
+                  examples:
+                    - 0
       responses:
         "200":
           description: Successful AI interaction.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AIInteractionResponse"
+                type: object
+                properties:
+                  text:
+                    description: Textual part of the AI's response.
+                    type: string
+                    examples:
+                      - Okay, I suggest moving to (1, 1).
+                  commandName:
+                    description: Name of the command the AI wants to execute.
+                    type: string
+                    examples:
+                      - MakeMove
+                  commandArgs:
+                    description: Arguments for the command to be executed.
+                    type: object
+                    additionalProperties: true
+                    examples:
+                      - Row: 1
+                        Col: 1
+                        Result: ""
         "403":
           description: Insufficient permissions or quota to perform this operation.
           headers:
@@ -1227,14 +1715,34 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AIInteractionArchiveRequest"
+              type: object
+              required:
+                - turns
+              properties:
+                turns:
+                  description: Interaction turns to be archived.
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/AIInteractionTurn"
+                existingArchive:
+                  description: Existing archived content to be merged with new turns.
+                  nullable: true
+                  type: string
+                  examples:
+                    - "Previous conversation summary..."
       responses:
         "200":
           description: Successfully archived interaction history.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AIInteractionArchiveResponse"
+                type: object
+                properties:
+                  content:
+                    description: The consolidated archive content.
+                    type: string
+                    examples:
+                      - "Complete conversation summary including new turns..."
         "403":
           description: Insufficient permissions or quota to perform this operation.
           headers:
@@ -1250,17 +1758,12 @@ paths:
               schema:
                 type: integer
 
-  /course:
+  /aigc/matting:
     post:
       tags:
-        - Courses
-      summary: Create a course
-      description: |
-        Create a new course with the necessary details.
-
-        #### Permission requirements
-
-        - Only users with the `courseAdmin` role can create courses.
+        - AIGC
+      summary: Remove image background
+      description: Process the provided image URL to remove its background, resulting in a transparent background.
       requestBody:
         required: true
         content:
@@ -1268,364 +1771,24 @@ paths:
             schema:
               type: object
               required:
-                - title
-                - thumbnail
-                - entrypoint
-                - references
-                - prompt
+                - imageUrl
               properties:
-                title:
-                  $ref: "#/components/schemas/Course/properties/title"
-                thumbnail:
-                  $ref: "#/components/schemas/Course/properties/thumbnail"
-                entrypoint:
-                  $ref: "#/components/schemas/Course/properties/entrypoint"
-                references:
-                  $ref: "#/components/schemas/Course/properties/references"
-                prompt:
-                  $ref: "#/components/schemas/Course/properties/prompt"
-      responses:
-        "201":
-          description: Successfully created the course.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Course"
-        "403":
-          description: Insufficient permissions to perform this operation.
-
-  /courses/list:
-    get:
-      tags:
-        - Courses
-      summary: List courses
-      description: Retrieve a paginated list of courses with optional filtering and ordering.
-      security:
-        - {}
-        - bearerAuth: []
-      parameters:
-        - name: courseSeriesID
-          in: query
-          schema:
-            type: string
-          description: Filter courses by the course series ID.
-        - name: owner
-          in: query
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-          description: |
-            Filter courses by the owner's username.
-
-            Defaults to the authenticated user if not specified. Use `*` to include courses from all users.
-        - name: orderBy
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - sequenceInCourseSeries
-            default: createdAt
-            examples:
-              - createdAt
-          description: Field by which to order the results.
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
+                imageUrl:
+                  description: URL of the image to process for background removal.
+                  type: string
+                  format: uri
       responses:
         "200":
-          description: Successful response.
+          description: Successfully processed the image for background removal.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Course"
-                    description: Array of course objects.
-
-  /course/{id}:
-    get:
-      tags:
-        - Courses
-      summary: Get a course
-      description: Retrieve details of a specific course.
-      security:
-        - {}
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the course to get.
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Course"
-    put:
-      tags:
-        - Courses
-      summary: Update a course
-      description: |
-        Update the details of a specific course.
-
-        #### Permission requirements
-
-        - Only users with the `courseAdmin` role can update courses.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the course to update.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-                - thumbnail
-                - entrypoint
-                - references
-                - prompt
-              properties:
-                title:
-                  $ref: "#/components/schemas/Course/properties/title"
-                thumbnail:
-                  $ref: "#/components/schemas/Course/properties/thumbnail"
-                entrypoint:
-                  $ref: "#/components/schemas/Course/properties/entrypoint"
-                references:
-                  $ref: "#/components/schemas/Course/properties/references"
-                prompt:
-                  $ref: "#/components/schemas/Course/properties/prompt"
-      responses:
-        "200":
-          description: Successfully updated the course.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Course"
-        "403":
-          description: Insufficient permissions to perform this operation.
-    delete:
-      tags:
-        - Courses
-      summary: Delete a course
-      description: |
-        Permanently delete a specific course by its ID.
-
-        #### Permission requirements
-
-        - Only users with the `courseAdmin` role can delete courses.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the course to delete.
-      responses:
-        "204":
-          description: Successfully deleted the course.
-        "403":
-          description: Insufficient permissions to perform this operation.
-
-  /course-series:
-    post:
-      tags:
-        - Course Series
-      summary: Create a course series
-      description: |
-        Create a new course series with the necessary details.
-
-        #### Permission requirements
-
-        - Only users with the `courseAdmin` role can create course series.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-                - courseIDs
-                - order
-              properties:
-                title:
-                  $ref: "#/components/schemas/CourseSeries/properties/title"
-                thumbnail:
-                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
-                description:
-                  $ref: "#/components/schemas/CourseSeries/properties/description"
-                courseIDs:
-                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
-                order:
-                  $ref: "#/components/schemas/CourseSeries/properties/order"
-      responses:
-        "201":
-          description: Successfully created the course series.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CourseSeries"
-        "403":
-          description: Insufficient permissions to perform this operation.
-
-  /course-serieses/list:
-    get:
-      tags:
-        - Course Series
-      summary: List course series
-      description: Retrieve a paginated list of course series with optional filtering and ordering.
-      security:
-        - {}
-        - bearerAuth: []
-      parameters:
-        - name: orderBy
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - order
-            default: order
-            examples:
-              - order
-          description: Field by which to order the results.
-        - name: owner
-          in: query
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-          description: |
-            Filter course serieses by the owner's username.
-
-            Defaults to the authenticated user if not specified. Use `*` to include course series from all users.
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/CourseSeries"
-                    description: Array of course series objects.
-
-  /course-series/{id}:
-    get:
-      tags:
-        - Course Series
-      summary: Get a course series
-      description: Retrieve details of a specific course series.
-      security:
-        - {}
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the course series to get.
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CourseSeries"
-    put:
-      tags:
-        - Course Series
-      summary: Update a course series
-      description: |
-        Update the details of a specific course series.
-
-        #### Permission requirements
-
-        - Only users with the `courseAdmin` role can update course series.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the course series to update.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-                - courseIDs
-                - order
-              properties:
-                title:
-                  $ref: "#/components/schemas/CourseSeries/properties/title"
-                thumbnail:
-                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
-                description:
-                  $ref: "#/components/schemas/CourseSeries/properties/description"
-                courseIDs:
-                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
-                order:
-                  $ref: "#/components/schemas/CourseSeries/properties/order"
-      responses:
-        "200":
-          description: Successfully updated the course series.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CourseSeries"
-        "403":
-          description: Insufficient permissions to perform this operation.
-    delete:
-      tags:
-        - Course Series
-      summary: Delete a course series
-      description: |
-        Permanently delete a specific course series by its ID.
-
-        #### Permission requirements
-
-        - Only users with the `courseAdmin` role can delete course series.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the course series to delete.
-      responses:
-        "204":
-          description: Successfully deleted the course series.
-        "403":
-          description: Insufficient permissions to perform this operation.
+                  resultUrl:
+                    description: URL of the processed image with background removed.
+                    type: string
+                    format: uri
 
   /util/upinfo:
     get:
@@ -1656,12 +1819,12 @@ paths:
               type: object
               properties:
                 objects:
+                  description: List of universal URLs of the objects.
                   type: array
                   items:
                     type: string
                   examples:
                     - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195
-                  description: List of universal URLs of the objects.
       responses:
         "201":
           description: Successfully generated signed URLs for the files.
@@ -1671,12 +1834,12 @@ paths:
                 type: object
                 properties:
                   objectUrls:
+                    description: Map from universal URLs to signed web URLs for the objects.
                     type: array
                     items:
                       type: object
                     examples:
                       - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://builder-usercontent.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
-                    description: Map from universal URLs to signed web URLs for the objects.
 
   /util/sb2xbp:
     post:
@@ -1701,9 +1864,11 @@ paths:
                 - file
               properties:
                 file:
+                  description: |
+                    Scratch project file (e.g. .sb2, .sb3 or project zip). Form field name must be `file`, Maximum size
+                    32 MiB.
                   type: string
                   format: binary
-                  description: Scratch project file (e.g. .sb2, .sb3 or project zip). Form field name must be `file`, Maximum size 32 MiB.
                   maxLength: 33554432
       responses:
         "201":
@@ -1728,36 +1893,38 @@ components:
   schemas:
     Model:
       type: object
+      description: Base model with common fields for all entities.
       properties:
         id:
+          description: Unique identifier.
           type: string
           format: int64
           examples:
             - 1
-          description: Unique identifier.
         createdAt:
-          type: string
-          format: date-time
-          examples:
-            - 2006-01-02T15:04:05Z07:00
           description: Creation timestamp.
-        updatedAt:
           type: string
           format: date-time
           examples:
             - 2006-01-02T15:04:05Z07:00
+        updatedAt:
           description: Last update timestamp.
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05Z07:00
 
     Visibility:
+      description: Visibility setting for resources.
       type: string
       enum:
         - private
         - public
       examples:
         - private
-      description: Visibility of the object.
 
     User:
+      description: User account information.
       type: object
       properties:
         id:
@@ -1767,98 +1934,100 @@ components:
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
         username:
+          description: Unique username of the user.
           type: string
           examples:
             - john
-          description: Unique username of the user.
         displayName:
+          description: Display name of the user.
           type: string
           examples:
             - John Doe
-          description: Display name of the user.
         avatar:
+          description: URL of the user's avatar image.
           type: string
           format: uri
           examples:
             - https://avatars.githubusercontent.com/u/10137?v=4
-          description: URL of the user's avatar image.
         description:
+          description: Brief bio or description of the user.
           type: string
           examples:
             - Two giants live in Britain's land...
-          description: Brief bio or description of the user.
         plan:
+          description: Subscription plan of the user.
           type: string
           enum:
             - free
             - plus
           examples:
             - free
-          description: Subscription plan of the user.
         followerCount:
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
           description: Number of followers the user has.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
         followingCount:
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
           description: Number of users the user is following.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
         projectCount:
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
           description: Total number of projects created by the user.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
         publicProjectCount:
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
           description: Number of public projects created by the user.
-        likedProjectCount:
           type: integer
           format: int64
           minimum: 0
           examples:
             - 1
+        likedProjectCount:
           description: Number of projects liked by the user.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
         capabilities:
-          $ref: "#/components/schemas/UserCapabilities"
-          nullable: true
           description: |
             Capabilities of the user.
 
             **This field is only present for the authenticated user's own profile.**
+          nullable: true
+          $ref: "#/components/schemas/UserCapabilities"
 
     UserCapabilities:
       type: object
+      description: User permission capabilities.
       properties:
         canManageAssets:
+          description: Whether the user can manage asset library.
           type: boolean
-          description: Whether user can manage asset library.
           examples:
             - true
         canManageCourses:
+          description: Whether the user can manage courses and course series.
           type: boolean
-          description: Whether user can manage courses and course series.
           examples:
             - true
         canUsePremiumLLM:
+          description: Whether the user can access premium LLM models.
           type: boolean
-          description: Whether user can access premium LLM models.
           examples:
             - true
 
     Project:
       type: object
+      description: Project information including files, metadata, and statistics.
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -1869,25 +2038,26 @@ components:
         owner:
           $ref: "#/components/schemas/User/properties/username"
         remixedFrom:
-          $ref: "#/components/schemas/ProjectReleaseFullName"
-          nullable: true
           description: Full name of the project release from which the project is remixed.
-        latestRelease:
-          $ref: "#/components/schemas/ProjectRelease"
           nullable: true
+          $ref: "#/components/schemas/ProjectReleaseFullName"
+        latestRelease:
           description: Latest release of the project.
+          nullable: true
+          $ref: "#/components/schemas/ProjectRelease"
         name:
+          description: Unique name of the project.
           type: string
           examples:
             - NiuXiaoQi
-          description: Unique name of the project.
         version:
+          description: Version number of the project.
           type: integer
           format: int32
           examples:
             - 1
-          description: Version number of the project.
         files:
+          description: File paths and their corresponding universal URLs associated with the project.
           type: object
           examples:
             - NiuXiaoQi.spx: data:;,
@@ -1896,68 +2066,68 @@ components:
               assets/sprites/NiuXiaoQi/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
               assets/sprites/NiuXiaoQi/index.json: data:application/json,%7B%22heading%22%3A90%2C%22x%22%3A0%2C%22y%22%3A0%2C%22size%22%3A1%2C%22rotationStyle%22%3A%22normal%22%2C%22costumeIndex%22%3A0%2C%22visible%22%3Atrue%2C%22isDraggable%22%3Afalse%2C%22pivot%22%3A%7B%22x%22%3A71%2C%22y%22%3A-75%7D%2C%22costumes%22%3A%5B%7B%22x%22%3A0%2C%22y%22%3A0%2C%22faceRight%22%3A0%2C%22bitmapResolution%22%3A2%2C%22name%22%3A%22costume%22%2C%22path%22%3A%22costume.png%22%2C%22builder_id%22%3A%22VCxSMAnlb3WI1IyikqjCV%22%7D%5D%2C%22fAnimations%22%3A%7B%7D%2C%22animBindings%22%3A%7B%7D%2C%22builder_id%22%3A%22fZFB5R_Mwwq95FB6xIVYu%22%7D
               main.spx: data:;,
-          description: File paths and their corresponding universal URLs associated with the project.
         visibility:
           $ref: "#/components/schemas/Visibility"
         description:
+          description: Brief description of the project.
           type: string
           examples:
             - NiuXiaoQi in your area.
-          description: Brief description of the project.
         instructions:
+          description: Instructions on how to interact with the project.
           type: string
           examples:
             - Just run it.
-          description: Instructions on how to interact with the project.
         extraSettings:
+          description: Extra settings of the project.
           type: object
           examples:
             - source: auto
               artStyle: pixel-art
               perspective: side-scrolling
-          description: Extra settings of the project.
         thumbnail:
+          description: URL of the project's thumbnail image.
           type: string
           format: uri
           examples:
             - https://example.com/project-thumbnail.png
-          description: URL of the project's thumbnail image.
         viewCount:
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
           description: Number of times the project has been viewed.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
         likeCount:
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
           description: Number of likes the project has received.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
         releaseCount:
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
           description: Number of releases associated with the project.
-        remixCount:
           type: integer
           format: int64
           minimum: 0
           examples:
             - 1
+        remixCount:
           description: Number of times the project has been remixed.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
 
     ProjectFullName:
+      description: Full name of a project in the format `owner/project`.
       type: string
       examples:
         - john/NiuXiaoQi
-      description: Full name of the project, in the format `owner/project`.
 
     ProjectRelease:
+      description: A versioned release of a project.
       type: object
       properties:
         id:
@@ -1967,36 +2137,37 @@ components:
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
         projectFullName:
-          $ref: "#/components/schemas/ProjectFullName"
           description: Full name of the project that the release is associated with, in the format `owner/project`.
+          $ref: "#/components/schemas/ProjectFullName"
         name:
+          description: Unique name of the project release, adhering to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
           type: string
           pattern: '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
           examples:
             - v1.2.3
-          description: Unique name of the project release, adhering to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
         description:
+          description: Brief description of the release.
           type: string
           examples:
             - First release.
-          description: Brief description of the release.
         files:
-          $ref: "#/components/schemas/Project/properties/files"
           description: File paths and their corresponding universal URLs associated with the release.
+          $ref: "#/components/schemas/Project/properties/files"
         thumbnail:
-          $ref: "#/components/schemas/Project/properties/thumbnail"
           description: URL of the release's thumbnail image.
+          $ref: "#/components/schemas/Project/properties/thumbnail"
         remixCount:
-          $ref: "#/components/schemas/Project/properties/remixCount"
           description: Number of times the release has been remixed.
+          $ref: "#/components/schemas/Project/properties/remixCount"
 
     ProjectReleaseFullName:
+      description: Full name of a project release in the format `owner/project/release`.
       type: string
       examples:
         - john/NiuXiaoQi/v1.2.3
-      description: Full name of the project release, in the format `owner/project/release`.
 
     Asset:
+      description: Reusable asset such as sprite, backdrop, or sound.
       type: object
       properties:
         id:
@@ -2006,14 +2177,15 @@ components:
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
         owner:
-          $ref: "#/components/schemas/User/properties/username"
           description: Username of the asset's owner.
+          $ref: "#/components/schemas/User/properties/username"
         displayName:
+          description: Display name of the asset.
           type: string
           examples:
             - NiuXiaoQi
-          description: Display name of the asset.
         type:
+          description: Type of the asset.
           type: string
           enum:
             - sprite
@@ -2021,39 +2193,39 @@ components:
             - sound
           examples:
             - sprite
-          description: Type of the asset.
         category:
-          type: string
           deprecated: true
+          description: Category to which the asset belongs.
+          type: string
           examples:
             - People
-          description: Category to which the asset belongs.
         description:
+          description: Brief description of the asset.
           type: string
           examples:
             - A cute character sprite.
-          description: Brief description of the asset.
         extraSettings:
+          description: Extra settings specific to the asset.
           type: object
           examples:
             - artStyle: pixel-art
               perspective: side-scrolling
-          description: Extra settings specific to the asset.
         files:
+          description: File paths and their corresponding universal URLs associated with the asset.
           type: object
           examples:
             - assets/sprites/NiuXiaoQi/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
               assets/sprites/NiuXiaoQi/index.json: data:application/json,%7B%22heading%22%3A90%2C%22x%22%3A0%2C%22y%22%3A0%2C%22size%22%3A1%2C%22rotationStyle%22%3A%22normal%22%2C%22costumeIndex%22%3A0%2C%22visible%22%3Atrue%2C%22isDraggable%22%3Afalse%2C%22pivot%22%3A%7B%22x%22%3A71%2C%22y%22%3A-75%7D%2C%22costumes%22%3A%5B%7B%22x%22%3A0%2C%22y%22%3A0%2C%22faceRight%22%3A0%2C%22bitmapResolution%22%3A2%2C%22name%22%3A%22costume%22%2C%22path%22%3A%22costume.png%22%2C%22builder_id%22%3A%22VCxSMAnlb3WI1IyikqjCV%22%7D%5D%2C%22fAnimations%22%3A%7B%7D%2C%22animBindings%22%3A%7B%7D%2C%22builder_id%22%3A%22fZFB5R_Mwwq95FB6xIVYu%22%7D
-          description: File paths and their corresponding universal URLs associated with the asset.
         filesHash:
+          description: Hash of the asset files.
           type: string
           examples:
             - h1:qUqP5cyxm6YcTAhz05Hph5gvu9M=
-          description: Hash of the asset files.
         visibility:
           $ref: "#/components/schemas/Visibility"
 
     Course:
+      description: Educational course with learning content.
       type: object
       properties:
         id:
@@ -2063,53 +2235,55 @@ components:
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
         owner:
-          $ref: "#/components/schemas/User/properties/username"
           description: Username of the course's owner.
+          $ref: "#/components/schemas/User/properties/username"
         title:
+          description: Title of the course.
           type: string
           examples:
             - Introduction to XGo
-          description: Title of the course.
         thumbnail:
+          description: URL of the course's thumbnail image.
           type: string
           format: uri
           examples:
             - https://example.com/course-thumbnail.png
-          description: URL of the course's thumbnail image.
         entrypoint:
+          description: Starting URL of the course.
           type: string
           format: uri
           examples:
             - https://example.com/course/intro
-          description: Starting URL of the course.
         references:
+          description: References associated with the course.
           type: array
           items:
             $ref: "#/components/schemas/CourseReference"
-          description: References associated with the course.
         prompt:
+          description: Prompt text for the course (used for copilot assistance).
           type: string
           examples:
             - Learn the basics of XGo programming language
-          description: Prompt text for the course (used for copilot assistance).
 
     CourseReference:
+      description: Reference to a resource associated with a course.
       type: object
       properties:
         type:
+          description: Type of the reference.
           type: string
           enum:
             - project
           examples:
             - project
-          description: Type of the reference.
         fullName:
+          description: Full name of the reference, in the format `owner/project`.
           type: string
           examples:
             - john/NiuXiaoQi
-          description: Full name of the reference, in the format `owner/project`.
 
     CourseSeries:
+      description: Collection of related courses.
       type: object
       properties:
         id:
@@ -2119,338 +2293,45 @@ components:
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
         owner:
+          description: Username of the course series' owner.
           $ref: "#/components/schemas/User/properties/username"
-          description: Username of the course's owner.
         title:
+          description: Title of the course series.
           type: string
           examples:
             - XGo Programming Series
-          description: Title of the course series.
         thumbnail:
+          description: URL of the course series' thumbnail image.
           type: string
           format: uri
           examples:
             - https://example.com/course-thumbnail.png
-          description: URL of the course series's thumbnail image.
         description:
+          description: Description of the course series.
           type: string
           examples:
             - A series of courses on XBuilder programming.
-          description: Description of the course series.
         courseIDs:
+          description: Array of course IDs included in this series.
           type: array
           items:
             type: string
           examples:
             - ["1", "2", "3"]
-          description: Array of course IDs included in this series.
         order:
+          description: Order/priority of the course series for sorting.
           type: integer
           format: int32
           examples:
             - 1
-          description: Order/priority of the course series for sorting.
-
-    AIDescriptionRequest:
-      type: object
-      required:
-        - content
-      properties:
-        content:
-          type: string
-          description: The game content to generate a description for (e.g., spx source code, project structure).
-          examples:
-            - |
-              Game: TicTacToe
-              Description: A classic Tic-Tac-Toe game.
-
-              === File: main.spx ===
-              var (
-                  // board is the main Tic-Tac-Toe board, where 1 represents "X" and 2 represents "O".
-                  board [3][3]int
-              )
-
-              // onStart handles the game start event.
-              onStart => {
-                // ...
-              }
-
-    AIDescriptionResponse:
-      type: object
-      properties:
-        description:
-          type: string
-          description: AI-generated descriptive summary of the game world from the player's perspective.
-          examples:
-            - |
-              This is a Tic-Tac-Toe game played on a 3x3 grid. The player uses `X` marks while the AI opponent uses `O`
-              marks. Players take turns placing their marks in empty squares, with the goal of getting three marks in a
-              row horizontally, vertically, or diagonally. The game supports mouse click interaction. Click on an empty
-              square to place your mark. The game ends when either player achieves three in a row or the board is
-              completely filled.
-
-    AIInteractionRequest:
-      type: object
-      properties:
-        content:
-          type: string
-          description: The core user input message.
-          examples:
-            - What should I do next?
-        context:
-          type: object
-          additionalProperties: true
-          description: Specific context for the current user input.
-          examples:
-            - position: [10, 20]
-              health: 80
-        role:
-          type: string
-          description: Persona the AI should adopt.
-          examples:
-            - Guide
-        roleContext:
-          type: object
-          additionalProperties: true
-          description: Additional context specific to the role.
-          examples:
-            - style: friendly
-              knowledgeScope: game rules
-        knowledgeBase:
-          type: object
-          additionalProperties: true
-          description: Background knowledge provided to the AI.
-          examples:
-            - worldName: TestWorld
-              gravity: 9.8
-        commandSpecs:
-          type: array
-          items:
-            $ref: "#/components/schemas/AIInteractionCommandSpec"
-          description: Commands the AI is allowed to call.
-        history:
-          type: array
-          items:
-            $ref: "#/components/schemas/AIInteractionTurn"
-          description: Record of previous interactions in this session.
-        archivedHistory:
-          type: string
-          description: Content of archived historical interactions.
-          examples:
-            - "Previous conversation summary..."
-        continuationTurn:
-          type: integer
-          format: int32
-          minimum: 0
-          default: 0
-          description: |
-            Current turn number in a multi-turn interaction sequence.
-
-            A value of 0 means this is the initial turn from user input. Values > 0 indicate continuation turns where
-            the AI continues the current interaction sequence based on the outcomes of commands executed within this
-            sequence.
-          examples:
-            - 0
-
-    AIInteractionResponse:
-      type: object
-      properties:
-        text:
-          type: string
-          description: Textual part of the AI's response.
-          examples:
-            - Okay, I suggest moving to (1, 1).
-        commandName:
-          type: string
-          description: Name of the command the AI wants to execute.
-          examples:
-            - MakeMove
-        commandArgs:
-          type: object
-          additionalProperties: true
-          description: Arguments for the command to be executed.
-          examples:
-            - Row: 1
-              Col: 1
-              Result: ""
-
-    AIInteractionTurn:
-      type: object
-      properties:
-        requestContent:
-          type: string
-          description: User's input text for the turn.
-          examples:
-            - It's your turn.
-        requestContext:
-          type: object
-          additionalProperties: true
-          description: Context for the user's input text for the turn.
-          examples:
-            - position: [10, 20]
-              health: 80
-        responseText:
-          type: string
-          description: AI's text output for the turn.
-          examples:
-            - Okay, let me see...
-        responseCommandName:
-          type: string
-          description: Command requested by the AI in the response.
-          examples:
-            - MakeMove
-        responseCommandArgs:
-          type: object
-          additionalProperties: true
-          description: Arguments for the command requested by the AI.
-          examples:
-            - Row: 1
-              Col: 1
-              Result: ""
-        executedCommandResult:
-          $ref: "#/components/schemas/AIInteractionCommandResult"
-          nullable: true
-          description: Result of executing the command requested in the response.
-        isInitial:
-          type: boolean
-          description: Indicates whether this turn is the initial turn of an interaction sequence.
-          examples:
-            - true
-
-    AIInteractionCommandSpec:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Unique identifier for the command.
-          examples:
-            - Move
-        description:
-          type: string
-          description: Explanation of what the command does.
-          examples:
-            - Move the character
-        parameters:
-          type: array
-          items:
-            $ref: "#/components/schemas/AIInteractionCommandParamSpec"
-          description: Parameters the command accepts.
-
-    AIInteractionCommandParamSpec:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Parameter name.
-          examples:
-            - Direction
-        type:
-          type: string
-          description: Go type name of the parameter.
-          examples:
-            - string
-        description:
-          type: string
-          description: Purpose of the parameter.
-          examples:
-            - "Direction to move: up, down, left, right"
-
-    AIInteractionCommandResult:
-      type: object
-      properties:
-        success:
-          type: boolean
-          description: Indicates if the command execution was successful.
-          examples:
-            - true
-        errorMessage:
-          type: string
-          description: Error details if execution failed.
-          examples:
-            - Invalid move parameters
-        isBreak:
-          type: boolean
-          description: Indicates if the interaction should be terminated.
-          examples:
-            - false
-
-    AIInteractionArchiveRequest:
-      type: object
-      required:
-        - turns
-      properties:
-        turns:
-          type: array
-          items:
-            $ref: "#/components/schemas/AIInteractionTurn"
-          description: Interaction turns to be archived.
-        existingArchive:
-          type: string
-          nullable: true
-          description: Existing archived content to be merged with new turns.
-          examples:
-            - "Previous conversation summary..."
-
-    AIInteractionArchiveResponse:
-      type: object
-      properties:
-        content:
-          type: string
-          description: The consolidated archive content.
-          examples:
-            - "Complete conversation summary including new turns..."
-
-    UpInfo:
-      type: object
-      properties:
-        token:
-          type: string
-          examples:
-            - MY_ACCESS_KEY:wQ4ofysef1R7IKnrziqtomqyDvI=:eyJzY29wZSI6Im15LWJ1Y2tldDpzdW5mbG93ZXIuanBnIiwiZGVhZGxpbmUiOjE0NTE0OTEyMDAsInJldHVybkJvZHkiOiJ7XCJuYW1lXCI6JChmbmFtZSksXCJzaXplXCI6JChmc2l6ZSksXCJ3XCI6JChpbWFnZUluZm8ud2lkdGgpLFwiaFwiOiQoaW1hZ2VJbmZvLmhlaWdodCksXCJoYXNoXCI6JChldGFnKX0ifQ==
-          description: Upload token used for authenticating upload requests.
-        expires:
-          type: integer
-          format: int64
-          examples:
-            - 1800
-          description: Expiration time of the upload token in seconds.
-        maxSize:
-          type: integer
-          format: int64
-          examples:
-            - 26214400
-          description: Maximum allowed file size in bytes.
-        bucket:
-          type: string
-          examples:
-            - goplus-builder-usercontent-test
-          description: Name of the Qiniu Kodo bucket where files will be uploaded.
-        region:
-          type: string
-          examples:
-            - na0
-          description: Region of the Qiniu Kodo bucket.
-
-    ByPage:
-      type: object
-      properties:
-        total:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Total number of result items in the result set.
-        data:
-          type: array
-          items:
-            type: object
-          description: Array of result items.
 
     CopilotMessage:
+      description: Message in a copilot conversation.
       type: object
       properties:
         role:
-          type: string
           description: Role of the message.
+          type: string
           enum:
             - user
             - copilot
@@ -2460,24 +2341,25 @@ components:
           type: object
           properties:
             type:
+              description: Type of the message. For now, only `"text"` is supported.
               type: string
-              description: Type of the message. Fow now, only `"text"` is supported.
               enum:
                 - text
               examples:
                 - text
             text:
-              type: string
               description: Text content of the message.
+              type: string
               examples:
                 - Hello!
 
     CopilotTool:
+      description: Tool available for copilot to use.
       type: object
       properties:
         type:
+          description: Type of the tool.
           type: string
-          description: type of the tool.
           enum:
             - function
           examples:
@@ -2486,34 +2368,144 @@ components:
           type: object
           properties:
             name:
+              description: Name of the function.
               type: string
-              description: name of the function.
               enum:
                 - create_project
               examples:
                 - create_project
             description:
+              description: Description of the function.
               type: string
-              description: description of the function.
               examples:
                 - create project
             parameters:
+              description: Parameters of the function with JSON raw.
               type: object
-              description: parameters of the function with json raw.
               examples:
                 - { "name": "NiuXiaoQi" }
+
     Workflow:
+      description: Workflow configuration for copilot execution.
       type: object
       properties:
         env:
+          description: Environment variables of the workflow.
           type: object
-          description: env of the workflow.
           examples:
             - { "reference_id": "275" }
+
+    AIInteractionTurn:
+      description: Single turn in an AI interaction session.
+      type: object
+      properties:
+        requestContent:
+          description: User's input text for the turn.
+          type: string
+          examples:
+            - It's your turn.
+        requestContext:
+          description: Context for the user's input text for the turn.
+          type: object
+          additionalProperties: true
+          examples:
+            - position: [10, 20]
+              health: 80
+        responseText:
+          description: AI's text output for the turn.
+          type: string
+          examples:
+            - Okay, let me see...
+        responseCommandName:
+          description: Command requested by the AI in the response.
+          type: string
+          examples:
+            - MakeMove
+        responseCommandArgs:
+          description: Arguments for the command requested by the AI.
+          type: object
+          additionalProperties: true
+          examples:
+            - Row: 1
+              Col: 1
+              Result: ""
+        executedCommandResult:
+          description: Result of executing the command requested in the response.
+          nullable: true
+          type: object
+          properties:
+            success:
+              description: Indicates if the command execution was successful.
+              type: boolean
+              examples:
+                - true
+            errorMessage:
+              description: Error details if execution failed.
+              type: string
+              examples:
+                - Invalid move parameters
+            isBreak:
+              description: Indicates if the interaction should be terminated.
+              type: boolean
+              examples:
+                - false
+        isInitial:
+          description: Indicates whether this turn is the initial turn of an interaction sequence.
+          type: boolean
+          examples:
+            - true
+
+    UpInfo:
+      description: Upload credentials and configuration.
+      type: object
+      properties:
+        token:
+          description: Upload token used for authenticating upload requests.
+          type: string
+          examples:
+            - MY_ACCESS_KEY:wQ4ofysef1R7IKnrziqtomqyDvI=:eyJzY29wZSI6Im15LWJ1Y2tldDpzdW5mbG93ZXIuanBnIiwiZGVhZGxpbmUiOjE0NTE0OTEyMDAsInJldHVybkJvZHkiOiJ7XCJuYW1lXCI6JChmbmFtZSksXCJzaXplXCI6JChmc2l6ZSksXCJ3XCI6JChpbWFnZUluZm8ud2lkdGgpLFwiaFwiOiQoaW1hZ2VJbmZvLmhlaWdodCksXCJoYXNoXCI6JChldGFnKX0ifQ==
+        expires:
+          description: Expiration time of the upload token in seconds.
+          type: integer
+          format: int64
+          examples:
+            - 1800
+        maxSize:
+          description: Maximum allowed file size in bytes.
+          type: integer
+          format: int64
+          examples:
+            - 26214400
+        bucket:
+          description: Name of the Qiniu Kodo bucket where files will be uploaded.
+          type: string
+          examples:
+            - goplus-builder-usercontent-test
+        region:
+          description: Region of the Qiniu Kodo bucket.
+          type: string
+          examples:
+            - na0
+
+    ByPage:
+      description: Paginated response wrapper.
+      type: object
+      properties:
+        total:
+          description: Total number of result items in the result set.
+          type: integer
+          format: int64
+          minimum: 0
+        data:
+          description: Array of result items.
+          type: array
+          items:
+            type: object
 
   parameters:
     SortOrder:
       name: sortOrder
+      description: Order in which to sort the results.
       in: query
       schema:
         type: string
@@ -2523,10 +2515,10 @@ components:
         default: asc
         examples:
           - asc
-      description: Order in which to sort the results.
 
     PageIndex:
       name: pageIndex
+      description: Index of the page to retrieve.
       in: query
       schema:
         type: integer
@@ -2535,10 +2527,10 @@ components:
         default: 1
         examples:
           - 1
-      description: Index of the page to retrieve.
 
     PageSize:
       name: pageSize
+      description: Number of items per page.
       in: query
       schema:
         type: integer
@@ -2548,4 +2540,3 @@ components:
         default: 20
         examples:
           - 20
-      description: Number of items per page.

@@ -28,7 +28,8 @@ const configuration = reactive<AnyApiReferenceConfiguration>({
       url: apiBaseUrl
     }
   ],
-  hideClientButton: true
+  hideClientButton: true,
+  orderSchemaPropertiesBy: 'preserve'
 })
 </script>
 
