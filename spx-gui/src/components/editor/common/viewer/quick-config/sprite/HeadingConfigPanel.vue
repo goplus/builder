@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { UIDropdown, UINumberInput } from '@/components/ui'
-import ConfigPanel from '../ConfigPanel.vue'
+import ConfigPanel from '../common/ConfigPanel.vue'
 import { RotationStyle, type Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { wrapUpdateHandler } from '@/components/editor/common/config/utils'

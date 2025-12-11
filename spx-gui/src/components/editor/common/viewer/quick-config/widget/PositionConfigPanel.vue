@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel from '../ConfigPanel.vue'
+import ConfigPanel from '../common/ConfigPanel.vue'
 import type { Widget } from '@/models/widget'
 import type { Project } from '@/models/project'
 import { debounce } from 'lodash'

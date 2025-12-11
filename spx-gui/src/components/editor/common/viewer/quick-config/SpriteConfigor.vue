@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import { inject, toValue, watch } from 'vue'
 
-import DefaultConfig from './sprite/DefaultConfig.vue'
+import DefaultConfigPanel from './sprite/DefaultConfigPanel.vue'
 import { RotationStyle, type Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
-import SizeConfig from './sprite/SizeConfig.vue'
-import HeadingConfig from './sprite/HeadingConfig.vue'
-import PositionConfig from './sprite/PositionConfig.vue'
+import SizeConfigPanel from './sprite/SizeConfigPanel.vue'
+import HeadingConfigPanel from './sprite/HeadingConfigPanel.vue'
+import PositionConfigPanel from './sprite/PositionConfigPanel.vue'
 import { configTypeInjectionKey, updateConfigTypeInjectionKey } from './QuickConfig.vue'
 
 const props = defineProps<{
@@ -28,10 +28,10 @@ watch(
 </script>
 
 <template>
-  <SizeConfig v-if="configType === 'size'" :sprite="sprite" :project="project" />
-  <HeadingConfig v-else-if="configType === 'rotate'" :sprite="sprite" :project="project" />
-  <PositionConfig v-else-if="configType === 'pos'" :sprite="sprite" :project="project" />
-  <DefaultConfig v-else-if="configType === 'default'" :sprite="sprite" :project="project" />
+  <SizeConfigPanel v-if="configType === 'size'" :sprite="sprite" :project="project" />
+  <HeadingConfigPanel v-else-if="configType === 'rotate'" :sprite="sprite" :project="project" />
+  <PositionConfigPanel v-else-if="configType === 'pos'" :sprite="sprite" :project="project" />
+  <DefaultConfigPanel v-else-if="configType === 'default'" :sprite="sprite" :project="project" />
 </template>
 
 <style lang="scss" scoped></style>

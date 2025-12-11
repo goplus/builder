@@ -70,7 +70,7 @@ providePopupContainer(quickConfigPopupContainerRef)
     @mouseenter="handleInteractionStart"
     @mouseleave="handleInteractionEnd"
   >
-    <Transition name="slide-up">
+    <Transition name="panel-swaper">
       <slot></slot>
     </Transition>
     <!-- Mount the pop-up layer's container here, treating it as part of the component, to facilitate responding to mouseenter/mouseleave events. -->
@@ -87,20 +87,18 @@ providePopupContainer(quickConfigPopupContainerRef)
   left: 50%;
 }
 
-.slide-up-enter-active,
-.slide-up-leave-active {
+.panel-swaper-enter-active,
+.panel-swaper-leave-active {
   transition: all 0.25s ease-out;
 }
 
-.slide-up-enter-from {
+.panel-swaper-enter-from {
   pointer-events: none;
   opacity: 0;
-  transform: translate(-50%, 30px);
 }
 
-.slide-up-leave-to {
+.panel-swaper-leave-to {
   pointer-events: none;
   opacity: 0;
-  transform: translate(-50%, -30px);
 }
 </style>
