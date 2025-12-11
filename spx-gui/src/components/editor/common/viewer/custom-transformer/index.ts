@@ -3,6 +3,7 @@ import type { TransformerConfig } from 'konva/lib/shapes/Transformer'
 import transformerFlipArrowPng from './transformer-flip-arrow.png'
 import transformerFlipArrowDisabledPng from './transformer-flip-arrow-disabled.png'
 import rotatorCirclePng from './rotate-circle.png'
+import configorPng from './configor.png'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import { normalizeDegree, round } from '@/utils/utils'
@@ -19,8 +20,8 @@ transformerFlipArrowDisabledImg.src = transformerFlipArrowDisabledPng
 const rotatorCircleImg = new Image()
 rotatorCircleImg.src = rotatorCirclePng
 
-const configorTagImg = new Image()
-configorTagImg.src = rotatorCirclePng
+const configorImg = new Image()
+configorImg.src = configorPng
 
 export type CustomTransformerConfig = {
   rotationStyle?: 'none' | 'normal' | 'left-right'
@@ -94,11 +95,13 @@ class ConfigorButton extends Konva.Group {
     })
 
     this.image = new Konva.Image({
-      width: 20,
-      height: 20,
+      width: 16,
+      height: 16,
+      x: 2,
+      y: 2,
       cornerRadius: 10,
 
-      image: configorTagImg
+      image: configorImg
     })
 
     this.add(this.rect, this.image)
@@ -138,7 +141,7 @@ class FlipButton extends Konva.Group {
       strokeWidth: 0.5
     }
     const imageStyle: Partial<ImageConfig> = {
-      width: 4,
+      width: 6,
       height: 8
     }
     this.rect = new Konva.Rect({
@@ -163,7 +166,7 @@ class FlipButton extends Konva.Group {
       ...imageStyle,
       image: enabled ? transformerFlipArrowImg : transformerFlipArrowDisabledImg,
       rotation: enabled ? 180 : 0,
-      x: enabled ? 11 : 9,
+      x: enabled ? 12 : 9,
       y: enabled ? 14 : 6
     })
     this.image.on('mouseenter', () => {
