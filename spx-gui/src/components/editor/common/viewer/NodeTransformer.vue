@@ -9,6 +9,7 @@ import { Sprite } from '@/models/sprite'
 import type { Widget } from '@/models/widget'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
 import { getNodeId } from './common'
+import { debounce } from 'lodash'
 
 const props = defineProps<{
   target: Sprite | Widget | null
@@ -30,6 +31,14 @@ const config = computed<CustomTransformerConfig>(() => {
   }
 })
 
+const keyboardMovementCodes = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft']
+const keyboardMovementOffset = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0]
+]
+
 watchEffect(async (onCleanup) => {
   if (transformer.value == null) return
   const transformerNode = transformer.value.getNode()
@@ -48,17 +57,15 @@ watchEffect(async (onCleanup) => {
   // keyboard
   stage.container().tabIndex = 1
   stage.container().focus()
+  const keyboardMovementEnd = debounce(() => selectedNode.fire('transformend'), 500)
   const handler = (e: KeyboardEvent) => {
-    if (e.code === 'ArrowUp') {
-      selectedNode.fire('keyboardmovement', { code: 'ArrowUp' })
-    } else if (e.code === 'ArrowRight') {
-      selectedNode.fire('keyboardmovement', { code: 'ArrowRight' })
-    } else if (e.code === 'ArrowDown') {
-      selectedNode.fire('keyboardmovement', { code: 'ArrowDown' })
-    } else if (e.code === 'ArrowLeft') {
-      selectedNode.fire('keyboardmovement', { code: 'ArrowLeft' })
-    }
+    const idx = keyboardMovementCodes.indexOf(e.code)
+    if (idx === -1) return
+    selectedNode.x(selectedNode.x() + keyboardMovementOffset[idx][0])
+    selectedNode.y(selectedNode.y() + keyboardMovementOffset[idx][1])
+    selectedNode.fire('transform')
     e.preventDefault()
+    keyboardMovementEnd()
   }
   stage.container().addEventListener('keydown', handler)
   onCleanup(() => stage.container().removeEventListener('keydown', handler))

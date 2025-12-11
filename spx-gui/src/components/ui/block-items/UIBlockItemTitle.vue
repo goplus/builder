@@ -3,7 +3,7 @@
     <span>
       <slot></slot>
     </span>
-    <div v-if="slots.suffix != null" class="suffix">
+    <div v-if="slots.suffix != null">
       <slot name="suffix"></slot>
     </div>
   </div>

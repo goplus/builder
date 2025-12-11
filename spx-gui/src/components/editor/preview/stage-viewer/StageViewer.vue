@@ -475,5 +475,9 @@ watchEffect((onCleanup) => {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
+
+  &:focus {
+    outline: none;
+  }
 }
 </style>

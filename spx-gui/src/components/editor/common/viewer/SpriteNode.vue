@@ -106,30 +106,6 @@ function handleTransformed(e: KonvaEventObject<unknown>) {
   })
 }
 
-function handleKeyboardMovement(e: KonvaEventObject<unknown>) {
-  if ('code' in e) {
-    switch (e.code) {
-      case 'ArrowUp':
-        e.target.y(e.target.y() - 1)
-        break
-      case 'ArrowRight':
-        e.target.x(e.target.x() + 1)
-        break
-      case 'ArrowDown':
-        e.target.y(e.target.y() + 1)
-        break
-      case 'ArrowLeft':
-        e.target.x(e.target.x() - 1)
-        break
-    }
-    notifyUpdateSprite(e)
-    const sname = props.sprite.name
-    handleChange(e, {
-      name: { en: `Move sprite ${sname}`, zh: `移动精灵 ${sname}` }
-    })
-  }
-}
-
 const config = computed<ImageConfig>(() => {
   const { visible, x, y, rotationStyle, heading, size } = props.sprite
   const scale = size / bitmapResolution.value
@@ -205,7 +181,6 @@ function handleClick() {
     @transform="notifyUpdateSprite"
     @transformend="handleTransformed"
     @open-configor="emit('openConfigor')"
-    @keyboard-movement="handleKeyboardMovement"
     @click="handleClick"
   />
 </template>
