@@ -508,5 +508,9 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
+
+  & > div {
+    outline: none;
+  }
 }
 </style>

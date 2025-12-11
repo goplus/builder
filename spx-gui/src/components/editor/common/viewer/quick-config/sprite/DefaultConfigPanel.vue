@@ -1,10 +1,12 @@
 <script lang="ts" setup>
-import { UIDropdown, UIIcon, UIMenu, UIMenuItem, UITooltip, type IconType } from '@/components/ui'
-import ConfigPanel from '../ConfigPanel.vue'
+import { UITooltip, type IconType } from '@/components/ui'
+import ConfigPanel from '../common/ConfigPanel.vue'
 import { headingToLeftRight, leftRightToHeading, RotationStyle, type Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
 import type { LocaleMessage } from '@/utils/i18n'
+import ConfigItem from '../common/ConfigItem.vue'
+import ZOrderConfigItem, { moveActionNames } from '../common/ZOrderConfigItem.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -54,14 +56,7 @@ const handleRotationStyleUpdate = wrapUpdateHandler(
   false
 )
 
-const moveActionNames = {
-  up: { en: 'Bring forward', zh: '向前移动' },
-  top: { en: 'Bring to front', zh: '移到最前' },
-  down: { en: 'Send backward', zh: '向后移动' },
-  bottom: { en: 'Send to back', zh: '移到最后' }
-}
-
-async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
+async function moveZorder(direction: keyof typeof moveActionNames) {
   await props.project.history.doAction({ name: moveActionNames[direction] }, () => {
     const { sprite, project } = props
     if (direction === 'up') {
@@ -84,44 +79,14 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
       <UITooltip v-for="(value, key) in rotationStyleTips" :key="key">
         {{ $t(value.tips) }}
         <template #trigger>
-          <div
-            class="config-item"
+          <ConfigItem
             :class="{ active: props.sprite.rotationStyle === key }"
+            :icon="value.icon"
             @click="handleRotationStyleUpdate(key)"
-          >
-            <UIIcon class="icon" :type="value.icon" />
-          </div>
+          />
         </template>
       </UITooltip>
-      <UIDropdown trigger="click" placement="top">
-        <template #trigger>
-          <div class="config-item">
-            <UIIcon class="icon" type="layer" />
-          </div>
-        </template>
-        <UIMenu>
-          <UIMenuItem
-            v-radar="{ name: 'Move up', desc: 'Click to move sprite up in z-order' }"
-            @click="moveZorder('up')"
-            >{{ $t(moveActionNames.up) }}</UIMenuItem
-          >
-          <UIMenuItem
-            v-radar="{ name: 'Move to top', desc: 'Click to move sprite to top in z-order' }"
-            @click="moveZorder('top')"
-            >{{ $t(moveActionNames.top) }}</UIMenuItem
-          >
-          <UIMenuItem
-            v-radar="{ name: 'Move down', desc: 'Click to move sprite down in z-order' }"
-            @click="moveZorder('down')"
-            >{{ $t(moveActionNames.down) }}</UIMenuItem
-          >
-          <UIMenuItem
-            v-radar="{ name: 'Move to bottom', desc: 'Click to move sprite to bottom in z-order' }"
-            @click="moveZorder('bottom')"
-            >{{ $t(moveActionNames.bottom) }}</UIMenuItem
-          >
-        </UIMenu>
-      </UIDropdown>
+      <ZOrderConfigItem type="sprite" @move-zorder="moveZorder"></ZOrderConfigItem>
     </div>
   </ConfigPanel>
 </template>
@@ -130,25 +95,5 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
 .default-config-wrapper {
   display: flex;
   gap: 4px;
-
-  .config-item {
-    width: 32px;
-    height: 32px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    cursor: pointer;
-
-    &:hover,
-    &.active {
-      background: var(--ui-color-turquoise-200);
-
-      .icon {
-        color: var(--ui-color-turquoise-500);
-      }
-    }
-  }
 }
 </style>
