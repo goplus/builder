@@ -4,6 +4,7 @@ import { useDraggableAngleForElement } from '@/utils/dom'
 import { makeArcPathString } from '@/utils/svg'
 import { nomalizeDegree, useDebouncedModel } from '@/utils/utils'
 import { specialDirections } from '@/utils/spx'
+import { UITag } from '@/components/ui'
 
 const props = defineProps<{
   modelValue: number
@@ -31,13 +32,14 @@ watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
 <template>
   <div class="angle-picker">
     <!-- TODO: temporary, will be handled uniformly after the tag design specification is complete -->
-    <span
+    <UITag
       v-for="direction in specialDirections"
       :key="direction.name"
-      class="text"
-      :class="[direction.name.toLowerCase(), { active: modelValue === direction.value }]"
+      :color="modelValue === direction.value ? 'primary' : 'default'"
+      :class="['text', direction.name.toLowerCase()]"
+      variant="none"
       @click="modelValue = direction.value"
-      >{{ direction.name }}</span
+      >{{ direction.name }}</UITag
     >
     <svg
       ref="svgEl"
@@ -132,13 +134,8 @@ watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
 }
 
 .text {
-  font-size: 12px;
-  color: var(--ui-color-grey-900);
-  width: fit-content;
-  cursor: pointer;
-
-  &.active,
   &:hover {
+    cursor: pointer;
     color: var(--ui-color-turquoise-500);
   }
 }

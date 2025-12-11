@@ -8,7 +8,7 @@ import { listAsset, AssetType, type AssetData, Visibility, updateAsset, deleteAs
 import {
   UITextInput,
   UIIcon,
-  UITag,
+  UIChip,
   UIPagination,
   UISearchableModal,
   useModal,
@@ -196,14 +196,14 @@ const handleRemove = useMessageHandle(
     </template>
     <section class="body">
       <div class="sider">
-        <UITag
+        <UIChip
           v-for="c in categories"
           :key="c.value"
           :type="c.value === category.value ? 'primary' : 'boring'"
           @click="handleSelectCategory(c)"
         >
           {{ $t(c.message) }}
-        </UITag>
+        </UIChip>
       </div>
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>

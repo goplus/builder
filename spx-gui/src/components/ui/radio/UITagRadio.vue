@@ -1,12 +1,12 @@
 <template>
-  <UITag :type="isActive ? 'primary' : 'boring'" @click="handleClick">
+  <UIChip :type="isActive ? 'primary' : 'boring'" @click="handleClick">
     <slot></slot>
-  </UITag>
+  </UIChip>
 </template>
 
 <script setup lang="ts">
 import { inject, computed } from 'vue'
-import UITag from '../UITag.vue'
+import UIChip from '../UIChip.vue'
 import { radioGroupValueKey, updateRadioValueKey } from './UITagRadioGroup.vue'
 
 const props = defineProps<{
