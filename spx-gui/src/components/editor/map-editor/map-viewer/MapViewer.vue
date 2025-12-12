@@ -449,7 +449,8 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
 }
 
 .quick-config {
-  bottom: 88px;
+  bottom: 52px;
   left: 50%;
+  transform: translateX(-50%);
 }
 </style>
