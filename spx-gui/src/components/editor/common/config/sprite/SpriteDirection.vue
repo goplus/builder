@@ -52,7 +52,11 @@ const handleRotationStyleUpdate = wrapUpdateHandler(
   spriteContext,
   false
 )
-const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite.setHeading(h ?? 0), spriteContext)
+const handleHeadingUpdate = wrapUpdateHandler(
+  (h: number | null) => props.sprite.setHeading(h ?? 0),
+  spriteContext,
+  false
+)
 </script>
 
 <!-- eslint-disable vue/no-v-html -->
