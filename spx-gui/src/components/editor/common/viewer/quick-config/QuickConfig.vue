@@ -81,8 +81,6 @@ providePopupContainer(quickConfigPopupContainerRef)
 <style lang="scss" scoped>
 .quick-config {
   position: absolute;
-  width: 100%;
-  height: 0;
 }
 
 .panel-swaper-enter-active,

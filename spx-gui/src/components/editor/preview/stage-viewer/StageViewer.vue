@@ -482,7 +482,8 @@ watchEffect((onCleanup) => {
 }
 
 .quick-config {
-  bottom: 48px;
+  bottom: 12px;
   left: 50%;
+  transform: translateX(-50%);
 }
 </style>
