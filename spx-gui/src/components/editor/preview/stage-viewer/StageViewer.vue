@@ -66,7 +66,7 @@
         />
       </v-layer>
     </v-stage>
-    <QuickConfig :config-types="configTypesRef" @update-config-types="configTypesRef = $event">
+    <QuickConfig class="quick-config" :config-types="configTypesRef" @update-config-types="configTypesRef = $event">
       <SpriteConfigor
         v-if="editorCtx.state.selectedSprite"
         :sprite="editorCtx.state.selectedSprite"
@@ -479,5 +479,10 @@ watchEffect((onCleanup) => {
   &:focus {
     outline: none;
   }
+}
+
+.quick-config {
+  bottom: 48px;
+  left: 50%;
 }
 </style>
