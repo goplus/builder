@@ -31,12 +31,13 @@ watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
 
 <template>
   <div class="angle-picker">
-    <!-- TODO: temporary, will be handled uniformly after the tag design specification is complete -->
     <UITag
       v-for="direction in specialDirections"
       :key="direction.name"
-      :color="modelValue === direction.value ? 'primary' : 'default'"
-      :class="['text', direction.name.toLowerCase()]"
+      :checked="modelValue === direction.value"
+      :class="[direction.name.toLowerCase()]"
+      checkable
+      color="default"
       variant="none"
       @click="modelValue = direction.value"
       >{{ direction.name }}</UITag
@@ -131,13 +132,6 @@ watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
   justify-content: center;
   align-content: center;
   text-align: center;
-}
-
-.text {
-  &:hover {
-    cursor: pointer;
-    color: var(--ui-color-turquoise-500);
-  }
 }
 
 .picker {

@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue'
 import UIChip from '../UIChip.vue'
-import { radioGroupValueKey, updateRadioValueKey } from './UITagRadioGroup.vue'
+import { radioGroupValueKey, updateRadioValueKey } from './UIChipRadioGroup.vue'
 
 const props = defineProps<{
   value: string

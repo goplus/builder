@@ -16,13 +16,17 @@ withDefaults(
     size?: TagSize
     disabled?: boolean
     closable?: boolean
+    checkable?: boolean
+    checked?: boolean
   }>(),
   {
     variant: 'stroke',
     color: 'default',
     size: 'small',
     disabled: false,
-    closable: false
+    closable: false,
+    checkable: false,
+    checked: false
   }
 )
 
@@ -34,7 +38,11 @@ const slots = useSlots()
 </script>
 
 <template>
-  <button class="ui-tag" :class="[`variant-${variant}`, `color-${color}`, `size-${size}`]" :disabled="disabled">
+  <button
+    class="ui-tag"
+    :class="[`variant-${variant}`, `color-${color}`, `size-${size}`, { checkable, checked: checkable && checked }]"
+    :disabled="disabled"
+  >
     <slot></slot>
     <UIIcon
       v-if="slots.suffix == null && closable && !disabled"
@@ -83,6 +91,25 @@ const slots = useSlots()
     &:hover {
       border-radius: 100%;
     }
+  }
+
+  &.checkable:not(:disabled):hover,
+  &.checked:not(:disabled) {
+    cursor: pointer;
+    --ui-tag-color: var(--ui-color-primary-main);
+    --ui-tag-border-color: var(--ui-color-primary-300);
+
+    .close-icon:hover {
+      background: var(--ui-color-primary-300);
+    }
+  }
+
+  &.checkable:not(:disabled):hover {
+    --ui-tag-bg-color: var(--ui-color-primary-100);
+  }
+
+  &.checked:not(:disabled) {
+    --ui-tag-bg-color: var(--ui-color-primary-200);
   }
 }
 

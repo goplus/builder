@@ -289,6 +289,32 @@
             <UITag :variant="tagVariant" color="error" closable @close="message.error('error')">error</UITag>
           </div>
           <div class="item">
+            <UITag
+              v-for="value in ['up', 'right', 'down', 'left']"
+              :key="value"
+              :variant="tagVariant"
+              color="default"
+              checkable
+              :checked="tagValue === value"
+              @click="tagValue = value"
+              >{{ value }}</UITag
+            >
+          </div>
+          <div class="item">
+            <UITag
+              v-for="value in ['up', 'right', 'down', 'left']"
+              :key="value"
+              :variant="tagVariant"
+              color="default"
+              checkable
+              closable
+              :checked="tagsValue.has(value)"
+              @click="tagsValue.add(value)"
+              @close="tagsValue.delete(value)"
+              >{{ value }}</UITag
+            >
+          </div>
+          <div class="item">
             <UITag :variant="tagVariant" color="default" disabled>default</UITag>
             <UITag :variant="tagVariant" color="primary" disabled>primary</UITag>
             <UITag :variant="tagVariant" color="warning" disabled>warning</UITag>
@@ -321,6 +347,8 @@ const buttonSize = ref<'small' | 'medium' | 'large'>('medium')
 
 const tagVariant = ref<'stroke' | 'none'>('stroke')
 const message = useMessage()
+const tagValue = ref('up')
+const tagsValue = ref(new Set())
 </script>
 
 <style lang="scss" scoped>
