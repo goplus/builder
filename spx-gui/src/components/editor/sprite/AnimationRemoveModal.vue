@@ -27,14 +27,14 @@
     <div class="action">
       <UIButton
         v-radar="{ name: 'Cancel button', desc: 'Click to cancel removing animation' }"
-        type="boring"
+        color="boring"
         @click="emit('cancelled')"
       >
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton
         v-radar="{ name: 'Confirm button', desc: 'Click to confirm removing animation' }"
-        type="primary"
+        color="primary"
         @click="handleConfirm"
       >
         {{ $t({ en: 'Confirm', zh: '确认' }) }}

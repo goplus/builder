@@ -19,7 +19,6 @@ import stop from './stop.svg?raw'
 import plus from './plus.svg?raw'
 import trash from './trash.svg?raw'
 import edit from './edit.svg?raw'
-import edit2 from './edit-2.svg?raw'
 import eye from './eye.svg?raw'
 import eyeSlash from './eye-slash.svg?raw'
 import more from './more.svg?raw'
@@ -62,6 +61,8 @@ import question from './question.svg?raw'
 import setting from './setting.svg?raw'
 import undo from './undo.svg?raw'
 import redo from './redo.svg?raw'
+import localFile from './local-file.svg?raw'
+import assetLibrary from './asset-library.svg?raw'
 
 const typeIconMap = {
   file,
@@ -78,7 +79,6 @@ const typeIconMap = {
   plus,
   trash,
   edit,
-  edit2, // TODO: can we merge edit & edit2?
   eye,
   eyeSlash,
   more,
@@ -120,7 +120,9 @@ const typeIconMap = {
   question,
   setting,
   undo,
-  redo
+  redo,
+  localFile,
+  assetLibrary
 }
 
 export type Type = keyof typeof typeIconMap

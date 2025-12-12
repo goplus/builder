@@ -76,7 +76,7 @@ const handleSubmit = useMessageHandle(
       <footer class="footer">
         <UIButton
           v-radar="{ name: 'Save button', desc: 'Click to save asset changes' }"
-          type="primary"
+          color="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >

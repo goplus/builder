@@ -24,7 +24,7 @@
     </div>
     <div class="button-container">
       <div v-if="recordingState === 'yetStarted'" class="icon-button">
-        <UIIconButton icon="microphone" type="danger" @click="recordingState = 'recording'" />
+        <UIButton shape="circle" size="large" icon="microphone" color="danger" @click="recordingState = 'recording'" />
         <span>
           {{
             $t({
@@ -35,7 +35,7 @@
         </span>
       </div>
       <div v-else-if="recordingState === 'recording'" class="icon-button">
-        <UIIconButton icon="stop" type="danger" @click="stopRecording" />
+        <UIButton shape="circle" size="large" icon="stop" color="danger" @click="stopRecording" />
         <span>
           {{
             $t({
@@ -48,7 +48,7 @@
       <template v-else>
         <div class="icon-button">
           <div class="icon-button-wrapper">
-            <UIIconButton icon="reload" type="secondary" @click="resetRecording" />
+            <UIButton shape="circle" size="large" icon="reload" color="blue" @click="resetRecording" />
           </div>
 
           <span>
@@ -61,7 +61,17 @@
           </span>
         </div>
         <div class="icon-button">
-          <UIIconButton icon="play" type="info" size="large" @click="waveformRecorderRef?.startPlayback()" />
+          <UIButton
+            style="width: 56px; height: 56px"
+            shape="circle"
+            size="large"
+            color="purple"
+            @click="waveformRecorderRef?.startPlayback()"
+          >
+            <template #icon>
+              <UIIcon type="play" style="width: 28px; height: 28px" />
+            </template>
+          </UIButton>
           <span>
             {{
               $t({
@@ -73,7 +83,7 @@
         </div>
         <div class="icon-button">
           <div class="icon-button-wrapper">
-            <UIIconButton icon="check" type="success" @click="saveRecording" />
+            <UIButton shape="circle" size="large" icon="check" color="success" @click="saveRecording" />
           </div>
           <span>
             {{
@@ -95,7 +105,7 @@ import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
 import type { Project } from '@/models/project'
-import { UIIconButton } from '@/components/ui'
+import { UIButton, UIIcon } from '@/components/ui'
 import VolumeSlider from './VolumeSlider.vue'
 import { WaveformRecorder } from './waveform'
 

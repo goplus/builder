@@ -6,12 +6,12 @@ import { useQuery } from '@/utils/query'
 import { listCourseSeries, deleteCourseSeries, type CourseSeries } from '@/apis/course-series'
 import {
   UIIcon,
-  UIFlatButton,
   UIPagination,
   UISearchableModal,
   useModal,
   useConfirmDialog,
-  useMessage
+  useMessage,
+  UIButton
 } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CourseSeriesItem from './CourseSeriesItem.vue'
@@ -105,10 +105,12 @@ const handleRemove = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <template #input>
-      <UIFlatButton class="create-button" @click="handleCreate">
-        <UIIcon type="plus" />
+      <UIButton variant="stroke" color="boring" @click="handleCreate">
+        <template #icon>
+          <UIIcon type="plus" />
+        </template>
         <span>{{ $t({ en: 'Create course series', zh: '创建课程系列' }) }}</span>
-      </UIFlatButton>
+      </UIButton>
     </template>
     <section class="body">
       <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="352">

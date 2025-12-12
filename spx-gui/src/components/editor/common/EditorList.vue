@@ -13,7 +13,7 @@
         </template>
         <template #trigger>
           <button v-radar="addButtonRadarInfo" class="add">
-            <UIIcon class="icon" type="plus" />
+            <UIIcon type="plus" />
           </button>
         </template>
       </UIDropdownWithTooltip>
@@ -138,11 +138,6 @@ useDragSortable(sortableList, itemsWrapper, {
   }
   &:active {
     background: var(--editor-list-color-600);
-  }
-
-  .icon {
-    width: 16px;
-    height: 16px;
   }
 }
 </style>

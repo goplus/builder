@@ -11,7 +11,7 @@
         <UIButton
           v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
           class="button"
-          type="primary"
+          color="primary"
           icon="playHollow"
           :loading="handleRun.isLoading.value"
           @click="handleRun.fn"
@@ -22,7 +22,7 @@
         <UIButton
           v-show="canManageProject"
           v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-          type="secondary"
+          color="secondary"
           :disabled="!isOnline"
           @click="handlePublishProject"
         >
@@ -34,7 +34,7 @@
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
           class="button"
-          type="primary"
+          color="primary"
           icon="rotate"
           :disabled="runnerState !== 'running' || handleStop.isLoading.value"
           :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
@@ -45,7 +45,7 @@
         <UIButton
           v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
           class="button"
-          type="boring"
+          color="boring"
           icon="end"
           :loading="handleStop.isLoading.value"
           @click="handleStop.fn"
@@ -57,7 +57,7 @@
             <UIButton
               v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
               class="button"
-              type="boring"
+              color="boring"
               icon="enterFullScreen"
               :disabled="handleStop.isLoading.value"
               @click="handleEnterFullscreen"

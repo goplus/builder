@@ -8,26 +8,22 @@
     <template #op>
       <UIButton
         v-radar="{ name: 'Add sprite from local file', desc: 'Click to add sprite from local file' }"
-        type="boring"
+        color="boring"
         size="large"
+        icon="localFile"
         :loading="handleAddFromLocalFile.isLoading.value"
         @click="handleAddFromLocalFile.fn"
       >
-        <template #icon>
-          <img :src="localFileImg" />
-        </template>
         {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
       </UIButton>
       <UIButton
         v-radar="{ name: 'Add sprite from asset library', desc: 'Click to add sprite from asset library' }"
-        type="boring"
+        color="boring"
         size="large"
+        icon="assetLibrary"
         :loading="handleAddFromAssetLibrary.isLoading.value"
         @click="handleAddFromAssetLibrary.fn"
       >
-        <template #icon>
-          <img :src="assetLibraryImg" />
-        </template>
         {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
       </UIButton>
     </template>
@@ -40,8 +36,6 @@ import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import localFileImg from './local-file.svg'
-import assetLibraryImg from './asset-library.svg'
 
 const editorCtx = useEditorCtx()
 

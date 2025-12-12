@@ -88,7 +88,7 @@ function handleRemove(index: number) {
       @keypress.enter="handleAdd.fn"
     >
       <template #suffix>
-        <UIButton size="small" type="primary" :disabled="handleAdd.isLoading.value" @click="handleAdd.fn">
+        <UIButton size="small" color="primary" :disabled="handleAdd.isLoading.value" @click="handleAdd.fn">
           <UILoading v-if="handleAdd.isLoading.value" />
           <span v-else>{{ $t({ en: 'Add', zh: '添加' }) }}</span>
         </UIButton>

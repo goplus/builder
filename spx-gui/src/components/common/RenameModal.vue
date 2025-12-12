@@ -77,14 +77,14 @@ function validateName(name: string) {
       <footer class="footer">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel renaming' }"
-          type="boring"
+          color="boring"
           @click="emit('cancelled')"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Confirm button', desc: 'Click to confirm renaming' }"
-          type="primary"
+          color="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >
