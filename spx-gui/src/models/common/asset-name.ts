@@ -53,17 +53,11 @@ export const spriteNameTip = getXGoIdentifierAssetNameTip({ en: 'sprite', zh: '�
 
 export function validateSpriteName(name: string, project: Project | null) {
   // Name of a sprite should obey the naming rule of identifiers, because:
-  // 1. It will be used to name the sprite struct in compiled code
-  // 2. It will be used to name the identifier in auto-binding
+  // It will be used to name the sprite struct in compiled code
   const err = validateXGoIdentifierAssetName(name)
   if (err != null) return err
-  if (project != null) {
-    // Naming conflict between a sprite & a sound will make it impossible to do auto-binding for both of them.
-    if (project.sprites.find((s) => s.name === name))
-      return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
-    if (project.sounds.find((s) => s.name === name))
-      return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
-  }
+  if (project != null && project.sprites.find((s) => s.name === name))
+    return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
 }
 
 export const costumeNameTip = getAssetNameTip({ en: 'costume', zh: '造型' })
@@ -84,20 +78,13 @@ export function validateAnimationName(name: string, sprite: Sprite | null) {
     return { en: `Animation with name ${name} already exists`, zh: '存在同名的动画' }
 }
 
-export const soundNameTip = getXGoIdentifierAssetNameTip({ en: 'sound', zh: '声音' })
+export const soundNameTip = getAssetNameTip({ en: 'sound', zh: '声音' })
 
 export function validateSoundName(name: string, project: Project | null) {
-  // Name of a sound should obey the naming rule of identifiers, because:
-  // It will be used to name the identifier in auto-binding
-  const err = validateXGoIdentifierAssetName(name)
+  const err = validateAssetName(name)
   if (err != null) return err
-  if (project != null) {
-    // Naming conflict between a sprite & a sound will make it impossible to do auto-binding for both of them.
-    if (project.sprites.find((s) => s.name === name))
-      return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
-    if (project.sounds.find((s) => s.name === name))
-      return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
-  }
+  if (project != null && project.sounds.find((s) => s.name === name))
+    return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
 }
 
 export const backdropNameTip = getAssetNameTip({ en: 'backdrop', zh: '背景' })
@@ -165,7 +152,7 @@ export function ensureValidAnimationName(name: string, sprite: Sprite | null) {
 }
 
 export function getSoundName(project: Project | null, base = '') {
-  base = normalizeXGoIdentifierAssetName(base, 'camel') || 'sound'
+  base = normalizeAssetName(base, 'camel') || 'sound'
   return getValidName(base, (n) => validateSoundName(n, project) == null)
 }
 
