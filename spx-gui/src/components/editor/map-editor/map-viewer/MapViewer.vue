@@ -1,13 +1,53 @@
+<script lang="ts">
+function getVisibleChildrenUnionRect(root: Element) {
+  let newRect: DOMRect | null = null
+
+  function isVisible(node: Element) {
+    const style = window.getComputedStyle(node)
+    return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'
+  }
+
+  const stack = [root]
+  while (stack.length > 0) {
+    const node = stack.pop()
+    if (!node || !isVisible(node)) continue
+
+    const rect = node.getBoundingClientRect()
+
+    if (rect.width > 0 && rect.height > 0) {
+      if (newRect == null) {
+        newRect = rect
+      } else {
+        const left = Math.min(newRect.left, rect.left)
+        const top = Math.min(newRect.top, rect.top)
+        const right = Math.max(newRect.right, rect.right)
+        const bottom = Math.max(newRect.bottom, rect.bottom)
+        newRect = new DOMRect(left, top, right - left, bottom - top)
+      }
+    } else {
+      if (node.children && node.children.length > 0) {
+        for (let i = node.children.length - 1; i >= 0; i--) {
+          stack.push(node.children[i])
+        }
+      }
+    }
+  }
+
+  return newRect
+}
+</script>
+
 <script setup lang="ts">
-import { throttle } from 'lodash'
-import { computed, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
+import { debounce, throttle } from 'lodash'
+import { computed, nextTick, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
+
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { untilTaskScheduled } from '@/utils/utils'
+import { timeout, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
@@ -209,6 +249,7 @@ function handleMapDragMove(e: KonvaEventObject<MouseEvent>) {
   const { x, y } = getValidMapPos({ x: map.x(), y: map.y() })
   map.x(x)
   map.y(y)
+  updateQuickConfigPosThrottled()
 }
 
 function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
@@ -346,14 +387,120 @@ const configTypesRef = ref<ConfigType[]>([])
 function handleOpenConfigor() {
   const configType = configTypesRef.value
   configTypesRef.value = configType.length === 1 && configType[0] === 'default' ? [] : ['default']
+  nextTick(updateQuickConfigPosThrottled)
 }
 function handleUpdateConfigType(configType: ConfigType) {
   configTypesRef.value = ['default', configType]
+  nextTick(updateQuickConfigPosThrottled)
 }
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
+  updateQuickConfigPosThrottled()
 }
+
+const quickConfigRef = ref<InstanceType<typeof QuickConfig> | null>(null)
+const quickConfigElRef = computed(() => quickConfigRef.value?.quickConfigDom())
+const quickConfigPopupContainerElRef = computed(() => quickConfigRef.value?.quickConfigPopupContainerDom())
+watch(
+  quickConfigPopupContainerElRef,
+  (container, _, onCleanup) => {
+    if (!container) return
+    const observer = new MutationObserver(debounce(updateQuickConfigPos, 100))
+    observer.observe(container, { childList: true, subtree: true, attributes: true })
+    onCleanup(() => observer.disconnect())
+  },
+  { immediate: true }
+)
+
+function updateQuickConfigPos() {
+  if (
+    props.selectedSprite == null ||
+    stageRef.value == null ||
+    // quick configor is not open
+    configTypesRef.value.length === 0 ||
+    containerSize.value == null ||
+    quickConfigElRef.value == null ||
+    quickConfigPopupContainerElRef.value == null
+  ) {
+    return
+  }
+
+  const node = nodeTransformerRef.value?.getNode()
+  if (node == null) return
+
+  const rect = node.getClientRect()
+  const quickConfigEl = quickConfigElRef.value
+  const quickConfigRect = quickConfigEl.getBoundingClientRect()
+  const popupContainerRect = getVisibleChildrenUnionRect(quickConfigPopupContainerElRef.value)
+
+  let leftExtension = 20
+  let rightExtension = 20
+  let topExtension = 20
+  let bottomExtension = 20
+
+  if (popupContainerRect && popupContainerRect.width > 0 && popupContainerRect.height > 0) {
+    const { left: configLeft, right: configRight, top: configTop, bottom: configBottom } = quickConfigRect
+    const {
+      left: popupContainerLeft,
+      right: popupContainerRight,
+      top: popupContainerTop,
+      bottom: popupContainerBottom
+    } = popupContainerRect
+    if (popupContainerLeft < configLeft) {
+      leftExtension += configLeft - popupContainerLeft
+    }
+    if (popupContainerRight > configRight) {
+      rightExtension += popupContainerRight - configRight
+    }
+    if (popupContainerTop < configTop) {
+      topExtension += configTop - popupContainerTop
+    }
+    if (popupContainerBottom > configBottom) {
+      bottomExtension += popupContainerBottom - configBottom
+    }
+  }
+
+  const { width: configWidth, height: configHeight } = quickConfigRect
+  const containerW = containerSize.value.width
+  const containerH = containerSize.value.height
+
+  const GAP = 12
+  let top = rect.y + rect.height + GAP
+  let left = rect.x + rect.width / 2 - configWidth / 2
+
+  if (left - leftExtension < 0) {
+    left = leftExtension
+  } else if (left + configWidth + rightExtension > containerW) {
+    left = containerW - configWidth - rightExtension
+  }
+
+  if (top + configHeight + bottomExtension > containerH) {
+    top = containerH - configHeight - bottomExtension
+  }
+  if (top - topExtension < 0) {
+    top = topExtension
+  }
+
+  quickConfigEl.style.cssText = `transform: translate(${left}px, ${top}px)`
+}
+const updateQuickConfigPosThrottled = throttle(updateQuickConfigPos, 50, { trailing: true })
+watch(
+  // Respond to changes in rotationStyle to avoid quick config position issues
+  () => [props.selectedSprite, props.selectedSprite?.rotationStyle],
+  async ([sprite]) => {
+    if (sprite == null) return
+    await timeout()
+    updateQuickConfigPosThrottled()
+  },
+  { immediate: true }
+)
+
+// Also update when map transforms (pan/zoom)
+watch(mapConfig, updateQuickConfigPosThrottled)
+
+// Update when container resizes
+watch(containerSize, updateQuickConfigPosThrottled)
 
 const scaleBy = 1.02
 
@@ -373,6 +520,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     x: pointer.x - mousePointTo.x * newScale,
     y: pointer.y - mousePointTo.y * newScale
   })
+  updateQuickConfigPosThrottled()
 }
 </script>
 
@@ -419,10 +567,17 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />
       </v-layer>
     </v-stage>
-    <QuickConfig class="quick-config" :config-types="configTypesRef" @update-config-types="configTypesRef = $event">
+    <QuickConfig
+      ref="quickConfigRef"
+      class="quick-config"
+      :config-types="configTypesRef"
+      @update-config-types="configTypesRef = $event"
+    >
       <SpriteConfigor v-if="selectedSprite" :sprite="selectedSprite" :project="project" />
     </QuickConfig>
+
     <PositionIndicator :position="mousePos" />
+
     <UILoading :visible="loading" cover />
   </div>
 </template>
@@ -449,8 +604,8 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
 }
 
 .quick-config {
-  bottom: 52px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 </style>
