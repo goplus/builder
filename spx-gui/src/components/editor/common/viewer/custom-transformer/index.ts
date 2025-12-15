@@ -95,10 +95,10 @@ class ConfigorButton extends Konva.Group {
     })
 
     this.image = new Konva.Image({
-      width: 16,
-      height: 16,
-      x: 2,
-      y: 2,
+      width: 12,
+      height: 12,
+      x: 4,
+      y: 4,
       cornerRadius: 10,
 
       image: configorImg
