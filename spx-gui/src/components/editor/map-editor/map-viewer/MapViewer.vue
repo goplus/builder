@@ -467,12 +467,13 @@ function updateQuickConfigPos() {
 
   const GAP = 12
   let top = rect.y + rect.height + GAP
-  let left = rect.x + rect.width / 2 - configWidth / 2
+  let left = rect.x + rect.width / 2
 
-  if (left - leftExtension < 0) {
-    left = leftExtension
-  } else if (left + configWidth + rightExtension > containerW) {
-    left = containerW - configWidth - rightExtension
+  const halfConfigWidth = configWidth / 2
+  if (left - leftExtension - halfConfigWidth < 0) {
+    left = leftExtension + halfConfigWidth
+  } else if (left + halfConfigWidth + rightExtension > containerW) {
+    left = containerW - halfConfigWidth - rightExtension
   }
 
   if (top + configHeight + bottomExtension > containerH) {
@@ -482,7 +483,7 @@ function updateQuickConfigPos() {
     top = topExtension
   }
 
-  quickConfigEl.style.cssText = `transform: translate(${left}px, ${top}px)`
+  quickConfigEl.style.cssText = `transform: translate(${Math.floor(left)}px, ${Math.floor(top)}px) translateX(-50%)`
 }
 const updateQuickConfigPosThrottled = throttle(updateQuickConfigPos, 50, { trailing: true })
 watch(
@@ -520,7 +521,6 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     x: pointer.x - mousePointTo.x * newScale,
     y: pointer.y - mousePointTo.y * newScale
   })
-  updateQuickConfigPosThrottled()
 }
 </script>
 
