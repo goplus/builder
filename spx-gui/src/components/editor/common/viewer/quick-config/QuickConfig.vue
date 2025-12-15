@@ -21,6 +21,7 @@ const emits = defineEmits<{
 const configKeyRef = ref<ConfigType | null>(null)
 
 const quickConfigPopupContainerRef = ref<HTMLElement | undefined>()
+const quickConfigRef = ref<HTMLElement | undefined>()
 let timer: NodeJS.Timeout
 
 watch(
@@ -56,6 +57,11 @@ function handleInteractionEnd() {
   }
 }
 
+defineExpose({
+  quickConfigDom: () => quickConfigRef.value,
+  quickConfigPopupContainerDom: () => quickConfigPopupContainerRef.value
+})
+
 provide(configTypeInjectionKey, configKeyRef)
 provide(updateConfigTypeInjectionKey, (configTypes: ConfigType[]) => emits('updateConfigTypes', configTypes))
 
@@ -64,6 +70,7 @@ providePopupContainer(quickConfigPopupContainerRef)
 
 <template>
   <div
+    ref="quickConfigRef"
     class="quick-config"
     @focusin="handleInteractionStart"
     @focusout="handleInteractionEnd"

@@ -1,9 +1,9 @@
 <template>
   <v-group
     :config="groupConfig"
-    @dragmove="notifyUpdateMonitor"
+    @dragmove="notifyUpdateMonitor($event.target)"
     @dragend="handleDragEnd"
-    @transform="notifyUpdateMonitor"
+    @transform="notifyUpdateMonitor($event.target)"
     @transformend="handleTransformed"
     @open-configor="emit('openConfigor')"
     @click="handleClick"
@@ -17,11 +17,13 @@
 </template>
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { throttle } from 'lodash'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { TextConfig, Text } from 'konva/lib/shapes/Text'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
+import type { Stage } from 'konva/lib/Stage'
 import type { GroupConfig } from 'konva/lib/Group'
-import type { ShapeConfig } from 'konva/lib/Shape'
+import type { Shape, ShapeConfig } from 'konva/lib/Shape'
 import type { Action } from '@/models/project'
 import type { Size } from '@/models/common'
 import { round } from '@/utils/utils'
@@ -29,7 +31,6 @@ import type { Monitor } from '@/models/widget/monitor'
 import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
-import { throttle } from 'lodash'
 
 const props = defineProps<{
   monitor: Monitor
@@ -88,7 +89,7 @@ onMounted(() => {
   }
 })
 
-const notifyUpdateMonitor = throttle((e: KonvaEventObject<unknown>) => {
+const notifyUpdateMonitor = throttle((e: Shape | Stage) => {
   const { monitor } = props
 
   const size = toSize(e)
@@ -210,21 +211,21 @@ const valueTextConfig = computed<TextConfig>(() => {
 
 watch(valueTextConfig, () => nextTick().then(updateValueTextWidth))
 
-function toPosition(e: KonvaEventObject<unknown>) {
-  const x = round(e.target.x() - props.viewportSize.width / 2)
-  const y = round(props.viewportSize.height / 2 - e.target.y())
+function toPosition(node: Shape | Stage) {
+  const x = round(node.x() - props.viewportSize.width / 2)
+  const y = round(props.viewportSize.height / 2 - node.y())
   return { x, y }
 }
 
-function toSize(e: KonvaEventObject<unknown>) {
-  const size = round(e.target.scaleX(), 2)
+function toSize(node: Shape | Stage) {
+  const size = round(node.scaleX(), 2)
   return size
 }
 /** Handler for position-change (drag) or transform */
 function handleChange(e: KonvaEventObject<unknown>, action: Action) {
   const { monitor } = props
-  const { x, y } = toPosition(e)
-  const size = toSize(e)
+  const { x, y } = toPosition(e.target)
+  const size = toSize(e.target)
   editorCtx.project.history.doAction(action, () => {
     monitor.setX(x)
     monitor.setY(y)
