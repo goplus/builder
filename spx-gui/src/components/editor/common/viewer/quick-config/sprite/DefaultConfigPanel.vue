@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { UITooltip, type IconType } from '@/components/ui'
+import { UIDivider, UITooltip, type IconType } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
 import { headingToLeftRight, leftRightToHeading, RotationStyle, type Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
@@ -86,6 +86,7 @@ async function moveZorder(direction: keyof typeof moveActionNames) {
           />
         </template>
       </UITooltip>
+      <UIDivider vertical />
       <ZOrderConfigItem type="sprite" @move-zorder="moveZorder"></ZOrderConfigItem>
     </div>
   </ConfigPanel>
@@ -94,6 +95,7 @@ async function moveZorder(direction: keyof typeof moveActionNames) {
 <style lang="scss" scoped>
 .default-config-wrapper {
   display: flex;
+  align-items: center;
   gap: 4px;
 }
 </style>

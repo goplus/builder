@@ -18,7 +18,11 @@ const spriteContext = () => ({
 })
 
 const rotateDropdownVisible = ref(false)
-const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite.setHeading(h ?? 0), spriteContext)
+const handleHeadingUpdate = wrapUpdateHandler(
+  (h: number | null) => props.sprite.setHeading(h ?? 0),
+  spriteContext,
+  false
+)
 </script>
 
 <template>
@@ -58,5 +62,6 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
 
 .rotation-heading-container {
   padding: 12px;
+  width: max-content;
 }
 </style>
