@@ -37,7 +37,6 @@ watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
       :checked="modelValue === direction.value"
       :class="[direction.name.toLowerCase()]"
       checkable
-      color="default"
       variant="none"
       @click="modelValue = direction.value"
       >{{ direction.name }}</UITag
