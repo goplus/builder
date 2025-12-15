@@ -54,7 +54,7 @@ export const spriteNameTip = getXGoIdentifierAssetNameTip({ en: 'sprite', zh: 'ç
 export function validateSpriteName(name: string, project: Project | null) {
   // Name of a sprite should obey the naming rule of identifiers, because:
   // 1. It will be used to name the sprite struct in compiled code
-  // 2. It will be used to name the identifier for sprite instance variables
+  // 2. It will be used to name the embeded field for sprite instances
   const err = validateXGoIdentifierAssetName(name)
   if (err != null) return err
   if (project != null && project.sprites.find((s) => s.name === name))
