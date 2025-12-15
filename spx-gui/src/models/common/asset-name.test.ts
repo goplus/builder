@@ -57,12 +57,12 @@ describe('getSoundName', () => {
 
   it('should work well with base', () => {
     const project = new Project()
-    expect(getSoundName(project, 'foo_bar')).toBe('fooBar')
-    project.addSound(new Sound('fooBar', mockFile()))
-    project.addSound(new Sound('fooBar2', mockFile()))
-    expect(getSoundName(project, 'foo_bar')).toBe('fooBar3')
-    expect(getSoundName(project, 'fooBar')).toBe('fooBar3')
-    expect(getSoundName(project, 'Foo  bar')).toBe('fooBar3')
+    expect(getSoundName(project, 'foo_bar')).toBe('foo_bar')
+    project.addSound(new Sound('foo_bar', mockFile()))
+    project.addSound(new Sound('foo_bar2', mockFile()))
+    expect(getSoundName(project, 'foo_bar')).toBe('foo_bar3')
+    expect(getSoundName(project, 'fooBar')).toBe('fooBar')
+    expect(getSoundName(project, 'Foo  bar')).toBe('foo  bar')
   })
 })
 
