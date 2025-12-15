@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { inject, toValue, watch } from 'vue'
+import { inject, watch } from 'vue'
 
 import DefaultConfigPanel from './sprite/DefaultConfigPanel.vue'
 import { RotationStyle, type Sprite } from '@/models/sprite'
@@ -18,9 +18,9 @@ const configType = inject(configTypeInjectionKey)
 const update = inject(updateConfigTypeInjectionKey)
 
 watch(
-  () => props.sprite,
+  () => props.sprite.rotationStyle,
   () => {
-    if (toValue(configType) === 'rotate' && props.sprite.rotationStyle === RotationStyle.LeftRight) {
+    if (props.sprite.rotationStyle === RotationStyle.LeftRight) {
       update?.(['default'])
     }
   }

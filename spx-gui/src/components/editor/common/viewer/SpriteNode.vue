@@ -71,7 +71,7 @@ const notifyUpdateSprite = throttle((node: Shape | Stage) => {
   }
 
   const heading = toHeading(node)
-  if (sprite.heading !== heading) {
+  if (sprite.heading !== heading && sprite.rotationStyle === RotationStyle.Normal) {
     emit('updateHeading')
     return
   }
