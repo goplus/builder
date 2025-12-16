@@ -1726,8 +1726,9 @@ paths:
                     $ref: "#/components/schemas/AIInteractionTurn"
                 existingArchive:
                   description: Existing archived content to be merged with new turns.
-                  nullable: true
-                  type: string
+                  type:
+                    - string
+                    - "null"
                   examples:
                     - "Previous conversation summary..."
       responses:
@@ -1776,13 +1777,9 @@ paths:
         |------|-------------|
         | `removeBackground` | Remove image background |
         | `generateCostume` | Generate costume image |
-        | `modifyCostume` | Modify costume image |
-        | `generateAnimationFrames` | Generate animation reference frames |
         | `generateAnimationVideo` | Generate animation video |
         | `extractVideoFrames` | Extract frames from video |
         | `generateBackdrop` | Generate backdrop image |
-        | `modifyBackdrop` | Modify backdrop image |
-        | `generateSound` | Generate sound audio |
 
         #### Quota & rate limits
 
@@ -1821,59 +1818,13 @@ paths:
                       properties:
                         settings:
                           $ref: "#/components/schemas/AIGCCostumeSettings"
-                        referenceImageUrl:
-                          description: Optional reference image URL for style consistency.
-                          type: string
-                          format: uri
-                          examples:
-                            - https://example.com/sprite-reference.png
-                    - title: modifyCostume
-                      type: object
-                      required:
-                        - imageUrl
-                        - instruction
-                        - settings
-                      properties:
-                        imageUrl:
-                          description: URL of the existing costume image to modify.
-                          type: string
-                          format: uri
-                          examples:
-                            - https://example.com/costume.png
-                        instruction:
-                          description: Modification instructions describing what changes to make.
-                          type: string
-                          examples:
-                            - Change the sword to an axe
-                        settings:
-                          $ref: "#/components/schemas/AIGCCostumeSettings"
-                    - title: generateAnimationFrames
-                      type: object
-                      required:
-                        - settings
-                      properties:
-                        settings:
-                          $ref: "#/components/schemas/AIGCAnimationSettings"
-                        referenceImageUrl:
-                          description: Optional reference costume image URL to base the animation on.
-                          type: string
-                          format: uri
-                          examples:
-                            - https://example.com/costume.png
                     - title: generateAnimationVideo
                       type: object
                       required:
                         - settings
-                        - referenceFrameUrl
                       properties:
                         settings:
                           $ref: "#/components/schemas/AIGCAnimationSettings"
-                        referenceFrameUrl:
-                          description: URL of the reference frame image to animate.
-                          type: string
-                          format: uri
-                          examples:
-                            - https://example.com/start-frame.png
                     - title: extractVideoFrames
                       type: object
                       required:
@@ -1900,45 +1851,6 @@ paths:
                       properties:
                         settings:
                           $ref: "#/components/schemas/AIGCBackdropSettings"
-                        referenceImageUrl:
-                          description: Optional reference image URL for style consistency.
-                          type: string
-                          format: uri
-                          examples:
-                            - https://example.com/project-reference.png
-                    - title: modifyBackdrop
-                      type: object
-                      required:
-                        - imageUrl
-                        - instruction
-                        - settings
-                      properties:
-                        imageUrl:
-                          description: URL of the existing backdrop image to modify.
-                          type: string
-                          format: uri
-                          examples:
-                            - https://example.com/backdrop.png
-                        instruction:
-                          description: Modification instructions describing what changes to make.
-                          type: string
-                          examples:
-                            - Add a moon in the sky
-                        settings:
-                          $ref: "#/components/schemas/AIGCBackdropSettings"
-                    - title: generateSound
-                      type: object
-                      required:
-                        - settings
-                      properties:
-                        settings:
-                          $ref: "#/components/schemas/AIGCSoundSettings"
-                        referenceAudioUrl:
-                          description: Optional reference audio URL for style consistency.
-                          type: string
-                          format: uri
-                          examples:
-                            - https://example.com/project-sound-reference.mp3
       responses:
         "202":
           description: Task accepted and queued for processing.
@@ -2104,7 +2016,6 @@ paths:
                     - costume
                     - animation
                     - backdrop
-                    - sound
                 input:
                   description: User's text description of the asset.
                   type: string
@@ -2117,7 +2028,13 @@ paths:
                     - $ref: "#/components/schemas/AIGCCostumeSettings"
                     - $ref: "#/components/schemas/AIGCAnimationSettings"
                     - $ref: "#/components/schemas/AIGCBackdropSettings"
-                    - $ref: "#/components/schemas/AIGCSoundSettings"
+                spriteSettings:
+                  description: Optional existing sprite settings to provide context for enrichment. Only used when
+                    `assetType` is `costume` or `animation`.
+                  $ref: "#/components/schemas/AIGCSpriteSettings"
+                projectSettings:
+                  description: Optional project settings to provide context for enrichment.
+                  $ref: "#/components/schemas/AIGCProjectSettings"
       responses:
         "200":
           description: Successfully enriched settings.
@@ -2129,7 +2046,6 @@ paths:
                   - $ref: "#/components/schemas/AIGCCostumeSettings"
                   - $ref: "#/components/schemas/AIGCAnimationSettings"
                   - $ref: "#/components/schemas/AIGCBackdropSettings"
-                  - $ref: "#/components/schemas/AIGCSoundSettings"
         "403":
           description: Insufficient permissions or quota.
           headers:
@@ -2145,13 +2061,13 @@ paths:
               schema:
                 type: integer
 
-  /aigc/sprite/content-descriptions:
+  /aigc/sprite/content-settings:
     post:
       tags:
         - AIGC
-      summary: Generate sprite content descriptions
+      summary: Generate sprite content settings
       description: |
-        Generate costume and animation descriptions for a sprite based on its settings.
+        Generate costume and animation settings for a sprite based on its settings.
 
         #### Quota & rate limits
 
@@ -2170,22 +2086,22 @@ paths:
                   $ref: "#/components/schemas/AIGCSpriteSettings"
       responses:
         "200":
-          description: Successfully generated content descriptions.
+          description: Successfully generated content settings.
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   costumes:
-                    description: Descriptions for costumes to generate.
+                    description: Settings for costumes to generate.
                     type: array
                     items:
-                      $ref: "#/components/schemas/AIGCContentDescription"
+                      $ref: "#/components/schemas/AIGCCostumeSettings"
                   animations:
-                    description: Descriptions for animations to generate.
+                    description: Settings for animations to generate.
                     type: array
                     items:
-                      $ref: "#/components/schemas/AIGCContentDescription"
+                      $ref: "#/components/schemas/AIGCAnimationSettings"
         "403":
           description: Insufficient permissions or quota.
           headers:
@@ -2451,8 +2367,9 @@ components:
             Capabilities of the user.
 
             **This field is only present for the authenticated user's own profile.**
-          nullable: true
-          $ref: "#/components/schemas/UserCapabilities"
+          oneOf:
+            - $ref: "#/components/schemas/UserCapabilities"
+            - type: "null"
 
     UserCapabilities:
       type: object
@@ -2488,12 +2405,14 @@ components:
           $ref: "#/components/schemas/User/properties/username"
         remixedFrom:
           description: Full name of the project release from which the project is remixed.
-          nullable: true
-          $ref: "#/components/schemas/ProjectReleaseFullName"
+          oneOf:
+            - $ref: "#/components/schemas/ProjectReleaseFullName"
+            - type: "null"
         latestRelease:
           description: Latest release of the project.
-          nullable: true
-          $ref: "#/components/schemas/ProjectRelease"
+          oneOf:
+            - $ref: "#/components/schemas/ProjectRelease"
+            - type: "null"
         name:
           description: Unique name of the project.
           type: string
@@ -2880,8 +2799,9 @@ components:
               Result: ""
         executedCommandResult:
           description: Result of executing the command requested in the response.
-          nullable: true
-          type: object
+          type:
+            - object
+            - "null"
           properties:
             success:
               description: Indicates if the command execution was successful.
@@ -2920,13 +2840,9 @@ components:
           enum:
             - removeBackground
             - generateCostume
-            - modifyCostume
-            - generateAnimationFrames
             - generateAnimationVideo
             - extractVideoFrames
             - generateBackdrop
-            - modifyBackdrop
-            - generateSound
           examples:
             - generateCostume
         status:
@@ -2968,24 +2884,6 @@ components:
                   description: URL of the generated costume image.
                   type: string
                   format: uri
-            - title: modifyCostume
-              type: object
-              properties:
-                imageUrl:
-                  description: URL of the modified costume image.
-                  type: string
-                  format: uri
-            - title: generateAnimationFrames
-              type: object
-              properties:
-                startFrameUrl:
-                  description: URL of the animation start frame image.
-                  type: string
-                  format: uri
-                endFrameUrl:
-                  description: URL of the animation end frame image.
-                  type: string
-                  format: uri
             - title: generateAnimationVideo
               type: object
               properties:
@@ -3007,20 +2905,6 @@ components:
               properties:
                 imageUrl:
                   description: URL of the generated backdrop image.
-                  type: string
-                  format: uri
-            - title: modifyBackdrop
-              type: object
-              properties:
-                imageUrl:
-                  description: URL of the modified backdrop image.
-                  type: string
-                  format: uri
-            - title: generateSound
-              type: object
-              properties:
-                audioUrl:
-                  description: URL of the generated audio file.
                   type: string
                   format: uri
         error:
@@ -3045,6 +2929,48 @@ components:
               examples:
                 - Generation failed due to content policy violation
 
+    AIGCArtStyle:
+      description: Art style of projects or assets.
+      type: string
+      enum:
+        - pixel-art
+        - flat-design
+        - hand-drawn
+        - low-poly
+        - unspecified
+      examples:
+        - pixel-art
+
+    AIGCPerspective:
+      description: Viewing perspectives for projects or assets.
+      type: string
+      enum:
+        - true-top-down
+        - angled-top-down
+        - side-scrolling
+        - unspecified
+      examples:
+        - side-scrolling
+
+    AIGCProjectSettings:
+      description: Settings of project for assets generation.
+      type: object
+      properties:
+        name:
+          description: Name of the project.
+          type: string
+          examples:
+            - My First Project
+        description:
+          description: Description of the project.
+          type: string
+          examples:
+            - A simple project.
+        artStyle:
+          $ref: "#/components/schemas/AIGCArtStyle"
+        perspective:
+          $ref: "#/components/schemas/AIGCPerspective"
+
     AIGCAssetBaseSettings:
       description: Base settings shared by all asset types.
       type: object
@@ -3059,9 +2985,6 @@ components:
           type: string
           examples:
             - A fire demon character with glowing ember cracks
-        projectDescription:
-          description: Description of the project context.
-          type: string
 
     AIGCGraphicAssetSettings:
       description: Settings for graphic assets, extending base settings with graphic properties.
@@ -3070,26 +2993,9 @@ components:
         - type: object
           properties:
             artStyle:
-              description: Art style for the asset.
-              type: string
-              enum:
-                - pixel-art
-                - flat-design
-                - hand-drawn
-                - low-poly
-                - other
-              examples:
-                - pixel-art
+              $ref: "#/components/schemas/AIGCArtStyle"
             perspective:
-              description: Viewing perspective for the asset.
-              type: string
-              enum:
-                - true-top-down
-                - angled-top-down
-                - side-scrolling
-                - other
-              examples:
-                - side-scrolling
+              $ref: "#/components/schemas/AIGCPerspective"
 
     AIGCSpriteSettings:
       description: Settings for generating a sprite asset.
@@ -3106,7 +3012,7 @@ components:
                 - prop
                 - effect
                 - ui
-                - other
+                - unspecified
 
     AIGCCostumeSettings:
       description: Settings for generating a costume asset.
@@ -3114,9 +3020,12 @@ components:
         - $ref: "#/components/schemas/AIGCGraphicAssetSettings"
         - type: object
           properties:
-            spriteName:
-              description: Name of the parent sprite.
-              type: string
+            referenceImageUrl:
+              description: URL of the reference image to guide the costume generation.
+              type:
+                - string
+                - "null"
+              format: uri
             facing:
               description: Direction the costume is facing.
               type: string
@@ -3125,6 +3034,7 @@ components:
                 - back
                 - left
                 - right
+                - unspecified
 
     AIGCAnimationSettings:
       description: Settings for generating an animation asset.
@@ -3132,9 +3042,12 @@ components:
         - $ref: "#/components/schemas/AIGCGraphicAssetSettings"
         - type: object
           properties:
-            spriteName:
-              description: Name of the parent sprite.
-              type: string
+            referenceFrameUrl:
+              description: URL of the reference frame image to guide the animation generation.
+              type:
+                - string
+                - "null"
+              format: uri
             loopMode:
               description: Whether the animation is loopable or non-loopable.
               type: string
@@ -3153,44 +3066,7 @@ components:
               type: string
               enum:
                 - ui
-                - other
-
-    AIGCSoundSettings:
-      description: Settings for sound assets.
-      allOf:
-        - $ref: "#/components/schemas/AIGCAssetBaseSettings"
-        - type: object
-          properties:
-            category:
-              description: Sound category.
-              type: string
-              enum:
-                - effect
-                - music
-                - ambience
-                - other
-            duration:
-              description: Desired duration in seconds.
-              type: number
-              minimum: 0.5
-              maximum: 60
-              examples:
-                - 3
-
-    AIGCContentDescription:
-      description: Description of a content item to be generated.
-      type: object
-      properties:
-        name:
-          description: Name of the content item.
-          type: string
-          examples:
-            - idle
-        description:
-          description: Detailed description of the content item.
-          type: string
-          examples:
-            - Character standing still with subtle breathing animation
+                - unspecified
 
     UpInfo:
       description: Upload credentials and configuration.
