@@ -60,7 +60,7 @@ const {
   async () => {
     if (!advancedLibraryEnabled.value) return null
     const metadata = props.model.assetMetadata
-    if (metadata == null || metadata.owner !== user.value.username) return null
+    if (metadata == null || metadata.id == null || metadata.owner !== user.value.username) return null
     return getAsset(metadata.id).catch((e) => {
       console.warn('failed to get existed asset', e)
       return null

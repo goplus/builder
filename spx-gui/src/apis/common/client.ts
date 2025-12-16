@@ -34,6 +34,18 @@ export type RequestOptions = {
   signal?: AbortSignal
 }
 
+/** Event received from Server-Sent Events API */
+export type SSEEvent = {
+  type: string
+  data: string
+}
+
+/** Event received from Server-Sent Events API, with `data` parsed as JSON */
+export type JSONSSEEvent = {
+  type: string
+  data: unknown
+}
+
 export class Client {
   private tokenProvider: TokenProvider = async () => null
   setTokenProvider(provider: TokenProvider) {
@@ -43,7 +55,8 @@ export class Client {
   private baseUrl = apiBaseUrl
   private defaultTimeout = 10 * 1000 // 10 seconds
 
-  private async prepareRequest(path: string, payload: unknown, options?: RequestOptions): Promise<Request> {
+  /** Prepare request object, stringifying payload as JSON */
+  private async prepareJSONRequest(path: string, payload: unknown, options?: RequestOptions): Promise<Request> {
     const traceData = Sentry.getTraceData()
     const sentryTraceHeader = traceData['sentry-trace']
     const sentryBaggageHeader = traceData['baggage']
@@ -60,6 +73,7 @@ export class Client {
     return new Request(url, { method, headers, body })
   }
 
+  /** Perform request object and handle errors */
   private async doRequest(req: Request, options?: RequestOptions): Promise<Response> {
     const timeout = options?.timeout ?? this.defaultTimeout
     const timeoutCtrl = new AbortController()
@@ -80,8 +94,9 @@ export class Client {
     return resp
   }
 
-  private async requestJSON(path: string, payload: unknown, options?: RequestOptions) {
-    const req = await this.prepareRequest(path, payload, options)
+  /** Do a JSON request, parsing response body as JSON */
+  private async requestJSON(path: string, payload: unknown, options?: RequestOptions): Promise<unknown> {
+    const req = await this.prepareJSONRequest(path, payload, options)
     const resp = await this.doRequest(req, options)
     if (resp.status === 204) return null
     return resp.json()
@@ -105,12 +120,8 @@ export class Client {
     return resp.blob()
   }
 
-  private async *requestTextStream(
-    path: string,
-    payload: unknown,
-    options?: RequestOptions
-  ): AsyncIterableIterator<string> {
-    const req = await this.prepareRequest(path, payload, options)
+  private async *requestTextStream(path: string, payload: unknown, options?: RequestOptions): AsyncGenerator<string> {
+    const req = await this.prepareJSONRequest(path, payload, options)
     const resp = await this.doRequest(req, options)
     const reader = resp.body?.getReader()
     if (!reader) throw new Error('Response body is null')
@@ -127,8 +138,49 @@ export class Client {
     }
   }
 
-  async postTextStream(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
-    return this.requestTextStream(path, payload, { ...options, method: 'POST' })
+  /** Request HTTP API with Server-Sent Events as response */
+  private async *requestSSE(path: string, payload: unknown, options?: RequestOptions): AsyncGenerator<SSEEvent> {
+    const stream = this.requestTextStream(path, payload, options)
+
+    let buffer = ''
+    let currentEventName = 'message'
+
+    for await (const chunk of stream) {
+      buffer += chunk
+
+      // Split into lines, keeping last line (may be incomplete) in buffer
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      for (const line of lines) {
+        const colonIdx = line.indexOf(':')
+        if (colonIdx === -1) continue // Skip lines without field separator
+        const field = line.slice(0, colonIdx)
+        const value = line.slice(colonIdx + 1).trim()
+
+        if (field === 'event') {
+          currentEventName = value
+          continue
+        }
+
+        if (field === 'data') {
+          yield { type: currentEventName, data: value }
+          currentEventName = 'message'
+        }
+      }
+    }
+  }
+
+  /** Request HTTP API with Server-Sent Events as response, parsing event data as JSON */
+  private async *requestJSONSSE(
+    path: string,
+    payload: unknown,
+    options?: RequestOptions
+  ): AsyncGenerator<JSONSSEEvent> {
+    for await (const event of this.requestSSE(path, payload, options)) {
+      const data = JSON.parse(event.data)
+      yield { type: event.type, data }
+    }
   }
 
   get(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
@@ -151,6 +203,15 @@ export class Client {
   delete(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     if (params != null) path = withQueryParams(path, params)
     return this.requestJSON(path, null, { ...options, method: 'DELETE' })
+  }
+
+  postTextStream(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestTextStream(path, payload, { ...options, method: 'POST' })
+  }
+
+  getJSONSSE(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
+    if (params != null) path = withQueryParams(path, params)
+    return this.requestJSONSSE(path, null, { ...options, method: 'GET' })
   }
 }
 
