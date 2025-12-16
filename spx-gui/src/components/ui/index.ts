@@ -17,7 +17,11 @@ export { default as UISwitch } from './UISwitch.vue'
 export { default as UILoading } from './loading/UILoading.vue'
 export { default as UIDetailedLoading } from './loading/UIDetailedLoading.vue'
 export * from './message'
+// UIChip is suitable for interaction-focused scenarios, such as click-to-filter, single selection
+// etc. Its behavior is similar to a button.
+// Note: This is not a stable component yet, and there is no official UI specification support for it.
 export { default as UIChip } from './UIChip.vue'
+// UITag is suitable for display-focused scenarios, such as displaying tags, categories, etc.
 export { default as UITag } from './UITag.vue'
 export { getCssVars } from './tokens/utils'
 export type { Color } from './tokens/colors'
