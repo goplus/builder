@@ -271,7 +271,7 @@ export class CustomTransformer extends Konva.Transformer {
     this.add(this.rotatorTag)
 
     this.configorButton = new ConfigorButton()
-    this.add(this.configorButton)
+    // this.add(this.configorButton)
     this.configorButton.on('click', () => {
       const node = this.getNode()
       node.fire('openconfigor')

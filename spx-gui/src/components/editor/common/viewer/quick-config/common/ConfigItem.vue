@@ -25,6 +25,10 @@ const slots = useSlots()
   border-radius: 10px;
   cursor: pointer;
 
+  .icon {
+    color: var(--ui-color-grey-1000);
+  }
+
   &:hover,
   &.active {
     background: var(--ui-color-turquoise-200);
