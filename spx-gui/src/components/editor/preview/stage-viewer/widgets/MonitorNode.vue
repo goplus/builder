@@ -39,8 +39,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  updatePos: []
-  updateSize: []
+  updatePos: [{ x: number; y: number }]
+  updateSize: [{ size: number }]
   openConfigor: []
 }>()
 
@@ -89,19 +89,41 @@ onMounted(() => {
   }
 })
 
-const notifyUpdateMonitor = throttle((e: Shape | Stage) => {
-  const { monitor } = props
-
-  const size = toSize(e)
-  if (size != monitor.size) {
-    emit('updateSize')
+function updateMonitor({
+  oldSize,
+  size,
+  oldX,
+  x,
+  oldY,
+  y
+}: {
+  oldSize: number
+  size: number
+  oldX: number
+  x: number
+  oldY: number
+  y: number
+}) {
+  if (oldSize !== size) {
+    emit('updateSize', { size })
     return
   }
-
-  const { x, y } = toPosition(e)
-  if (monitor.x !== x || monitor.y !== y) {
-    emit('updatePos')
+  if (oldX !== x || oldY !== y) {
+    emit('updatePos', { x, y })
   }
+}
+
+const notifyUpdateMonitor = throttle((e: Shape | Stage) => {
+  const { monitor } = props
+  const { x, y } = toPosition(e)
+  updateMonitor({
+    oldSize: monitor.size,
+    size: toSize(e),
+    oldX: monitor.x,
+    x,
+    oldY: monitor.y,
+    y
+  })
 }, 200)
 
 function handleDragEnd(e: KonvaEventObject<unknown>) {

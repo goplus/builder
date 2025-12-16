@@ -1,4 +1,22 @@
-<script lang="ts" setup></script>
+<script lang="ts">
+// TODO: Simple synchronization between fast-changing data and slow-changing data.
+// This implementation cannot eliminate race conditions and may result in data overwriting.
+// Improve when a better solution is available.
+export function useSyncFastSlowValue<T>(fast: WatchSource<T>, slow: WatchSource<T>, cast: (value: T) => T = (v) => v) {
+  const syncValue = ref<T>(cast(toValue<T>(fast)))
+  function sync(value: T) {
+    syncValue.value = cast(value)
+  }
+  watch(fast, sync)
+  watch(slow, sync)
+
+  return syncValue
+}
+</script>
+
+<script lang="ts" setup>
+import { ref, toValue, watch, type WatchSource } from 'vue'
+</script>
 
 <template>
   <div class="config-panel">

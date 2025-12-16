@@ -20,18 +20,30 @@ const update = inject(updateConfigTypeInjectionKey)
 watch(
   () => props.sprite.rotationStyle,
   () => {
+    // If the selected sprite's rotationStyle is LeftRight, it needs to be restored to default immediately
     if (props.sprite.rotationStyle === RotationStyle.LeftRight) {
-      update?.(['default'])
+      update?.([{ type: 'default' }])
     }
   }
 )
 </script>
 
 <template>
-  <SizeConfigPanel v-if="configType === 'size'" :sprite="sprite" :project="project" />
-  <HeadingConfigPanel v-else-if="configType === 'rotate'" :sprite="sprite" :project="project" />
-  <PositionConfigPanel v-else-if="configType === 'pos'" :sprite="sprite" :project="project" />
-  <DefaultConfigPanel v-else-if="configType === 'default'" :sprite="sprite" :project="project" />
+  <SizeConfigPanel v-if="configType?.type === 'size'" :sprite="sprite" :project="project" :size="configType?.size" />
+  <HeadingConfigPanel
+    v-else-if="configType?.type === 'rotate'"
+    :sprite="sprite"
+    :project="project"
+    :heading="configType?.rotate"
+  />
+  <PositionConfigPanel
+    v-else-if="configType?.type === 'pos'"
+    :sprite="sprite"
+    :project="project"
+    :x="configType?.x"
+    :y="configType?.y"
+  />
+  <DefaultConfigPanel v-else-if="configType?.type === 'default'" :sprite="sprite" :project="project" />
 </template>
 
 <style lang="scss" scoped></style>

@@ -25,7 +25,6 @@ async function moveZorder(direction: keyof typeof moveActionNames) {
 }
 </script>
 
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <ConfigPanel>
     <ZOrderConfigItem type="widget" @move-zorder="moveZorder" />

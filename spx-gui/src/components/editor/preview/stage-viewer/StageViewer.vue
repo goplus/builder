@@ -40,9 +40,9 @@
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
             @open-configor="handleOpenConfigor"
-            @update-heading="handleUpdateConfigType('rotate')"
-            @update-pos="handleUpdateConfigType('pos')"
-            @update-size="handleUpdateConfigType('size')"
+            @update-heading="handleUpdateRotateConfigType"
+            @update-pos="handleUpdatePosConfigType"
+            @update-size="handleUpdateSizeConfigType"
           />
         </v-group>
       </v-layer>
@@ -54,8 +54,8 @@
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
           @open-configor="handleOpenConfigor"
-          @update-pos="handleUpdateConfigType('pos')"
-          @update-size="handleUpdateConfigType('size')"
+          @update-pos="handleUpdatePosConfigType"
+          @update-size="handleUpdateSizeConfigType"
         />
       </v-layer>
       <v-layer>
@@ -414,12 +414,21 @@ const handleSpriteDragMove = throttle(
 
 // quick configor
 const configTypesRef = ref<ConfigType[]>([])
+function createConfigType(configType: ConfigType): ConfigType[] {
+  return [{ type: 'default' }, configType]
+}
 function handleOpenConfigor() {
   const configType = configTypesRef.value
-  configTypesRef.value = configType.length === 1 && configType[0] === 'default' ? [] : ['default']
+  configTypesRef.value = configType.length === 1 && configType[0].type === 'default' ? [] : [{ type: 'default' }]
 }
-function handleUpdateConfigType(configType: ConfigType) {
-  configTypesRef.value = ['default', configType]
+function handleUpdatePosConfigType({ x, y }: { x: number; y: number }) {
+  configTypesRef.value = createConfigType({ type: 'pos', x, y })
+}
+function handleUpdateSizeConfigType({ size }: { size: number }) {
+  configTypesRef.value = createConfigType({ type: 'size', size })
+}
+function handleUpdateRotateConfigType({ heading }: { heading: number }) {
+  configTypesRef.value = createConfigType({ type: 'rotate', rotate: heading })
 }
 
 function handleSpriteDragEnd() {
@@ -476,7 +485,7 @@ watchEffect((onCleanup) => {
   background-size: contain;
   position: relative;
 
-  &:focus {
+  & > div:focus {
     outline: none;
   }
 }

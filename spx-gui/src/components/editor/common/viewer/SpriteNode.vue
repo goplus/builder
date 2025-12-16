@@ -29,9 +29,9 @@ const emit = defineEmits<{
   selected: []
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
-  updatePos: []
-  updateHeading: []
-  updateSize: []
+  updatePos: [{ x: number; y: number }]
+  updateHeading: [{ heading: number }]
+  updateSize: [{ size: number }]
   openConfigor: []
 }>()
 
@@ -61,25 +61,52 @@ onMounted(() => {
   }
 })
 
+function updateSprite({
+  oldSize,
+  size,
+  oldHeading,
+  heading,
+  oldX,
+  x,
+  oldY,
+  y
+}: {
+  oldSize: number
+  size: number
+  oldHeading: number
+  heading: number
+  oldX: number
+  x: number
+  oldY: number
+  y: number
+}) {
+  if (oldSize !== size) {
+    emit('updateSize', { size })
+    return
+  }
+  // Heading change caused by non-RotationStyle.Normal is not considered as updateHeading
+  if (oldHeading !== heading && props.sprite.rotationStyle === RotationStyle.Normal) {
+    emit('updateHeading', { heading })
+    return
+  }
+  if (oldX !== x || oldY !== y) {
+    emit('updatePos', { x, y })
+  }
+}
+
 const notifyUpdateSprite = throttle((node: Shape | Stage) => {
   if (!props.selected) return
-  const { sprite } = props
-  const size = toSize(node)
-  if (size != sprite.size) {
-    emit('updateSize')
-    return
-  }
-
-  const heading = toHeading(node)
-  if (sprite.heading !== heading && sprite.rotationStyle === RotationStyle.Normal) {
-    emit('updateHeading')
-    return
-  }
-
   const { x, y } = toPosition(node)
-  if (sprite.x !== x || sprite.y !== y) {
-    emit('updatePos')
-  }
+  updateSprite({
+    oldSize: props.sprite.size,
+    size: toSize(node),
+    oldHeading: props.sprite.heading,
+    heading: toHeading(node),
+    oldX: props.sprite.x,
+    x,
+    oldY: props.sprite.y,
+    y
+  })
 }, 200)
 
 function handleDragMove(e: KonvaEventObject<unknown>) {
@@ -134,8 +161,22 @@ const config = computed<ImageConfig>(() => {
     // Note that you can get the same result with `ratation: 0, scaleX: -scaleX` here, but there will be problem
     // if the user then do transform with transformer. Konva transformer prefers to make `scaleX` positive.
   }
-  if (nodeRef.value != null) {
-    notifyUpdateSprite(nodeRef.value.getNode())
+  // After Sprite changes, updateXXX events also need to be triggered
+  const node = nodeRef.value?.getNode()
+  if (node != null) {
+    const { x: oldX, y: oldY } = toPosition(node)
+    const oldHeading = toHeading(node)
+    const oldSize = toSize(node)
+    updateSprite({
+      oldSize,
+      size,
+      oldHeading,
+      heading,
+      oldX,
+      x,
+      oldY,
+      y
+    })
   }
   return config
 })

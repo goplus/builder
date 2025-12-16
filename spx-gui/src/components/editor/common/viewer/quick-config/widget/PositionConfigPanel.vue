@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel from '../common/ConfigPanel.vue'
+import ConfigPanel, { useSyncFastSlowValue } from '../common/ConfigPanel.vue'
 import type { Widget } from '@/models/widget'
 import type { Project } from '@/models/project'
 import { debounce } from 'lodash'
@@ -8,7 +8,15 @@ import { debounce } from 'lodash'
 const props = defineProps<{
   widget: Widget
   project: Project
+  x: number
+  y: number
 }>()
+
+const pos = useSyncFastSlowValue(
+  () => [props.widget.x, props.widget.y],
+  () => [props.x, props.y],
+  ([x, y]) => [x, y]
+)
 
 // copy form spx-gui/src/components/editor/stage/widget/detail/MonitorDetail.vue
 function wrapUpdateHandler<Args extends any[]>(
@@ -29,14 +37,14 @@ const handleYUpdate = wrapUpdateHandler((y: number | null) => props.widget.setY(
     <div class="position-config-wrapper">
       <UINumberInput
         v-radar="{ name: 'X position input', desc: 'Input field for monitor X position' }"
-        :value="widget.x"
+        :value="pos[0]"
         @update:value="handleXUpdate"
       >
         <template #prefix>X</template>
       </UINumberInput>
       <UINumberInput
         v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
-        :value="widget.y"
+        :value="pos[1]"
         @update:value="handleYUpdate"
       >
         <template #prefix>Y</template>

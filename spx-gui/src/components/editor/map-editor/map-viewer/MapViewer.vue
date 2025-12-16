@@ -384,13 +384,22 @@ const handleSpriteDragMove = throttle(
 
 // quick configor
 const configTypesRef = ref<ConfigType[]>([])
+function createConfigType(configType: ConfigType): ConfigType[] {
+  return [{ type: 'default' }, configType]
+}
 function handleOpenConfigor() {
   const configType = configTypesRef.value
-  configTypesRef.value = configType.length === 1 && configType[0] === 'default' ? [] : ['default']
+  configTypesRef.value = configType.length === 1 && configType[0].type === 'default' ? [] : [{ type: 'default' }]
+}
+function handleUpdatePosConfigType({ x, y }: { x: number; y: number }) {
+  configTypesRef.value = createConfigType({ type: 'pos', x, y })
+}
+function handleUpdateSizeConfigType({ size }: { size: number }) {
+  configTypesRef.value = createConfigType({ type: 'size', size })
   nextTick(updateQuickConfigPosThrottled)
 }
-function handleUpdateConfigType(configType: ConfigType) {
-  configTypesRef.value = ['default', configType]
+function handleUpdateRotateConfigType({ heading }: { heading: number }) {
+  configTypesRef.value = createConfigType({ type: 'rotate', rotate: heading })
   nextTick(updateQuickConfigPosThrottled)
 }
 
@@ -499,7 +508,6 @@ watch(
 
 // Also update when map transforms (pan/zoom)
 watch(mapConfig, updateQuickConfigPosThrottled)
-
 // Update when container resizes
 watch(containerSize, updateQuickConfigPosThrottled)
 
@@ -557,9 +565,9 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
             @open-configor="handleOpenConfigor"
-            @update-heading="handleUpdateConfigType('rotate')"
-            @update-pos="handleUpdateConfigType('pos')"
-            @update-size="handleUpdateConfigType('size')"
+            @update-heading="handleUpdateRotateConfigType"
+            @update-pos="handleUpdatePosConfigType"
+            @update-size="handleUpdateSizeConfigType"
           />
         </v-group>
       </v-layer>

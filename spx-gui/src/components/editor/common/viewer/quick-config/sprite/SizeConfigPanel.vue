@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel from '../common/ConfigPanel.vue'
+import ConfigPanel, { useSyncFastSlowValue } from '../common/ConfigPanel.vue'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
-import { computed } from 'vue'
 import { round } from '@/utils/utils'
 import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
 
 const props = defineProps<{
   sprite: Sprite
   project: Project
+  size: number
 }>()
 
 const spriteContext = () => ({
@@ -17,7 +17,12 @@ const spriteContext = () => ({
   project: props.project
 })
 
-const sizePercent = computed(() => round(props.sprite.size * 100))
+const sizePercent = useSyncFastSlowValue(
+  () => props.sprite.size,
+  () => props.size,
+  (size) => round(size * 100)
+)
+
 const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null) => {
   if (sizeInPercent == null) return
   props.sprite.setSize(round(sizeInPercent / 100, 2))

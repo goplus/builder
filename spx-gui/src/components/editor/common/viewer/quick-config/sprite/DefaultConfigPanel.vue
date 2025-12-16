@@ -72,7 +72,6 @@ async function moveZorder(direction: keyof typeof moveActionNames) {
 }
 </script>
 
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <ConfigPanel v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }">
     <div class="default-config-wrapper">
