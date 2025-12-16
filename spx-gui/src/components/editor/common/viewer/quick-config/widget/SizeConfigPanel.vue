@@ -1,18 +1,22 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel from '../common/ConfigPanel.vue'
+import ConfigPanel, { useSyncFastSlowValue } from '../common/ConfigPanel.vue'
 import type { Project } from '@/models/project'
 import { round } from '@/utils/utils'
 import type { Widget } from '@/models/widget'
 import { debounce } from 'lodash'
-import { computed } from 'vue'
 
 const props = defineProps<{
   widget: Widget
   project: Project
+  size: number
 }>()
 
-const sizePercent = computed(() => round(props.widget.size * 100))
+const sizePercent = useSyncFastSlowValue(
+  () => props.widget.size,
+  () => props.size,
+  (size) => round(size * 100)
+)
 const handleSizePercentUpdate = debounce((sizeInPercent: number | null) => {
   const name = props.widget.name
   const action = { name: { en: `Configure widget ${name}`, zh: `修改控件 ${name} 配置` } }

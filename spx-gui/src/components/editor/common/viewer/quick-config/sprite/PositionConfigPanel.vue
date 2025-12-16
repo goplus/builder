@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel from '../common/ConfigPanel.vue'
+import ConfigPanel, { useSyncFastSlowValue } from '../common/ConfigPanel.vue'
 import { type Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
@@ -8,7 +8,15 @@ import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
 const props = defineProps<{
   sprite: Sprite
   project: Project
+  x: number
+  y: number
 }>()
+
+const pos = useSyncFastSlowValue(
+  () => [props.sprite.x, props.sprite.y],
+  () => [props.x, props.y],
+  ([x, y]) => [x, y]
+)
 
 const spriteContext = () => ({
   sprite: props.sprite,
@@ -24,14 +32,14 @@ const handleYUpdate = wrapUpdateHandler((y: number | null) => props.sprite.setY(
     <div class="position-config-wrapper">
       <UINumberInput
         v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
-        :value="sprite.x"
+        :value="pos[0]"
         @update:value="handleXUpdate"
       >
         <template #prefix>X</template>
       </UINumberInput>
       <UINumberInput
         v-radar="{ name: 'Y position input', desc: 'Input to set sprite Y position' }"
-        :value="sprite.y"
+        :value="pos[1]"
         @update:value="handleYUpdate"
       >
         <template #prefix>Y</template>

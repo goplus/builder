@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { UIDropdown, UINumberInput } from '@/components/ui'
-import ConfigPanel from '../common/ConfigPanel.vue'
+import ConfigPanel, { useSyncFastSlowValue } from '../common/ConfigPanel.vue'
 import { RotationStyle, type Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
@@ -10,7 +10,13 @@ import AnglePicker from '@/components/editor/common/AnglePicker.vue'
 const props = defineProps<{
   sprite: Sprite
   project: Project
+  heading: number
 }>()
+
+const headingValue = useSyncFastSlowValue(
+  () => props.sprite.heading,
+  () => props.heading
+)
 
 const spriteContext = () => ({
   sprite: props.sprite,
@@ -41,7 +47,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
           :disabled="sprite.rotationStyle === RotationStyle.None"
           :min="-180"
           :max="180"
-          :value="sprite.heading"
+          :value="headingValue"
           @update:value="handleHeadingUpdate"
           @focus="rotateDropdownVisible = true"
         >
@@ -49,7 +55,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
         </UINumberInput>
       </template>
       <div class="rotation-heading-container">
-        <AnglePicker :model-value="sprite.heading" @update:model-value="handleHeadingUpdate" />
+        <AnglePicker :model-value="headingValue" @update:model-value="handleHeadingUpdate" />
       </div>
     </UIDropdown>
   </ConfigPanel>

@@ -17,9 +17,15 @@ const configType = inject(configTypeInjectionKey)
 </script>
 
 <template>
-  <SizeConfigPanel v-if="configType === 'size'" :widget="widget" :project="project" />
-  <PositionConfigPanel v-else-if="configType === 'pos'" :widget="widget" :project="project" />
-  <DefaultConfigPanel v-else-if="configType === 'default'" :widget="widget" :project="project" />
+  <SizeConfigPanel v-if="configType?.type === 'size'" :widget="widget" :project="project" :size="configType?.size" />
+  <PositionConfigPanel
+    v-else-if="configType?.type === 'pos'"
+    :widget="widget"
+    :project="project"
+    :x="configType?.x"
+    :y="configType?.y"
+  />
+  <DefaultConfigPanel v-else-if="configType?.type === 'default'" :widget="widget" :project="project" />
 </template>
 
 <style lang="scss" scoped></style>

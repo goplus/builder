@@ -1,17 +1,37 @@
 <script lang="ts">
-export type ConfigType = 'default' | 'size' | 'rotate' | 'pos'
+export type DefaultConfigType = {
+  type: 'default'
+}
 
-export const configTypeInjectionKey: InjectionKey<WatchSource<ConfigType | null>> = Symbol('configType')
+export type SizeConfigType = {
+  type: 'size'
+  size: number
+}
+
+export type RotateConfigType = {
+  type: 'rotate'
+  rotate: number
+}
+
+export type PosConfigType = {
+  type: 'pos'
+  x: number
+  y: number
+}
+
+export type ConfigType = DefaultConfigType | SizeConfigType | RotateConfigType | PosConfigType
+
+export const configTypeInjectionKey: InjectionKey<Ref<ConfigType | null>> = Symbol('configType')
 export const updateConfigTypeInjectionKey: InjectionKey<(configTypes: ConfigType[]) => void> = Symbol('updateConfig')
 </script>
 
 <script lang="ts" setup>
-import { provide, ref, watch, type InjectionKey, type WatchSource } from 'vue'
+import { provide, ref, watch, type InjectionKey, type Ref } from 'vue'
 
 import { providePopupContainer } from '@/components/ui'
 
 const props = defineProps<{
-  configTypes: ConfigType[]
+  configTypes: Array<DefaultConfigType | SizeConfigType | RotateConfigType | PosConfigType>
 }>()
 
 const emits = defineEmits<{
@@ -28,10 +48,14 @@ watch(
   () => props.configTypes,
   (configTypes) => {
     const configType = configTypes.at(-1) ?? null
-    activeInteractions = 0
     clearTimeout(timer)
+    if (configType?.type !== configKeyRef.value?.type) {
+      activeInteractions = 0
+    }
     configKeyRef.value = configType
-    flush()
+    if (activeInteractions === 0) {
+      flush()
+    }
   }
 )
 
@@ -40,9 +64,7 @@ function flush() {
   if (props.configTypes.length <= 1) {
     return
   }
-  timer = setTimeout(() => {
-    emits('updateConfigTypes', props.configTypes.slice(0, -1))
-  }, 2000)
+  timer = setTimeout(() => emits('updateConfigTypes', props.configTypes.slice(0, -1)), 2000)
 }
 
 let activeInteractions = 0
