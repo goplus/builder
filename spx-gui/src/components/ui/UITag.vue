@@ -16,8 +16,7 @@ withDefaults(
     size?: TagSize
     disabled?: boolean
     closable?: boolean
-    checkable?: boolean
-    checked?: boolean
+    checkable?: false | { checked: boolean }
   }>(),
   {
     variant: 'stroke',
@@ -25,8 +24,7 @@ withDefaults(
     size: 'small',
     disabled: false,
     closable: false,
-    checkable: false,
-    checked: false
+    checkable: false
   }
 )
 
@@ -40,7 +38,12 @@ const slots = useSlots()
 <template>
   <button
     class="ui-tag"
-    :class="[`variant-${variant}`, `color-${color}`, `size-${size}`, { checkable, checked: checkable && checked }]"
+    :class="[
+      `variant-${variant}`,
+      `color-${color}`,
+      `size-${size}`,
+      { checkable: !!checkable, checked: checkable ? checkable.checked : false }
+    ]"
     :disabled="disabled"
   >
     <slot></slot>

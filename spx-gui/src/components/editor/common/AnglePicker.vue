@@ -34,9 +34,8 @@ watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
     <UITag
       v-for="direction in specialDirections"
       :key="direction.name"
-      :checked="modelValue === direction.value"
       :class="[direction.name.toLowerCase()]"
-      checkable
+      :checkable="{ checked: modelValue === direction.value }"
       variant="none"
       @click="modelValue = direction.value"
       >{{ direction.name }}</UITag

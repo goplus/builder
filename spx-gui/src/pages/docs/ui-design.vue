@@ -294,8 +294,7 @@
               :key="value"
               :variant="tagVariant"
               color="default"
-              checkable
-              :checked="tagValue === value"
+              :checkable="{ checked: tagValue === value }"
               @click="tagValue = value"
               >{{ value }}</UITag
             >
@@ -306,9 +305,8 @@
               :key="value"
               :variant="tagVariant"
               color="default"
-              checkable
+              :checkable="{ checked: tagsValue.has(value) }"
               closable
-              :checked="tagsValue.has(value)"
               @click="tagsValue.add(value)"
               @close="tagsValue.delete(value)"
               >{{ value }}</UITag
