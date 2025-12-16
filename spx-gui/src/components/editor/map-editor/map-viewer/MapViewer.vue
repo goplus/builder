@@ -438,15 +438,14 @@ function updateQuickConfigPos() {
   const node = nodeTransformerRef.value?.getNode()
   if (node == null) return
 
-  const rect = node.getClientRect()
   const quickConfigEl = quickConfigElRef.value
   const quickConfigRect = quickConfigEl.getBoundingClientRect()
   const popupContainerRect = getVisibleChildrenUnionRect(quickConfigPopupContainerElRef.value)
 
-  let leftExtension = 20
-  let rightExtension = 20
-  let topExtension = 20
-  let bottomExtension = 20
+  let leftExtension = 30
+  let rightExtension = 30
+  let topExtension = 30
+  let bottomExtension = 30
 
   if (popupContainerRect && popupContainerRect.width > 0 && popupContainerRect.height > 0) {
     const { left: configLeft, right: configRight, top: configTop, bottom: configBottom } = quickConfigRect
@@ -474,9 +473,32 @@ function updateQuickConfigPos() {
   const containerW = containerSize.value.width
   const containerH = containerSize.value.height
 
-  const GAP = 12
-  let top = rect.y + rect.height + GAP
-  let left = rect.x + rect.width / 2
+  const nodeWidth = node.width()
+  const nodeHeight = node.height()
+  const nodeOffsetX = node.offsetX()
+  const nodeOffsetY = node.offsetY()
+  const transform = node.getAbsoluteTransform()
+  const center = transform.point({
+    x: nodeWidth / 2 - nodeOffsetX,
+    y: nodeHeight / 2 - nodeOffsetY
+  })
+  const corners = [
+    { x: -nodeOffsetX, y: -nodeOffsetY },
+    { x: nodeWidth - nodeOffsetX, y: -nodeOffsetY },
+    { x: nodeWidth - nodeOffsetX, y: nodeHeight - nodeOffsetY },
+    { x: -nodeOffsetX, y: nodeHeight - nodeOffsetY }
+  ]
+  let top = center.y
+  corners.forEach((point) => {
+    const globalPoint = transform.point(point)
+    if (globalPoint.y > top) {
+      top = globalPoint.y
+    }
+  })
+
+  const GAP = 48
+  top += GAP
+  let left = center.x
 
   const halfConfigWidth = configWidth / 2
   if (left - leftExtension - halfConfigWidth < 0) {
