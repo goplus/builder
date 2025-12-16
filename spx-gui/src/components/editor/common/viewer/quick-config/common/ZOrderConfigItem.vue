@@ -30,21 +30,25 @@ function moveZorder(direction: keyof typeof moveActionNames) {
     <UIMenu>
       <UIMenuItem
         v-radar="{ name: 'Move up', desc: `Click to move ${type} up in z-order` }"
+        class="item"
         @click="moveZorder('up')"
         >{{ $t(moveActionNames.up) }}</UIMenuItem
       >
       <UIMenuItem
         v-radar="{ name: 'Move to top', desc: `Click to move ${type} to top in z-order` }"
+        class="item"
         @click="moveZorder('top')"
         >{{ $t(moveActionNames.top) }}</UIMenuItem
       >
       <UIMenuItem
         v-radar="{ name: 'Move down', desc: `Click to move ${type} down in z-order` }"
+        class="item"
         @click="moveZorder('down')"
         >{{ $t(moveActionNames.down) }}</UIMenuItem
       >
       <UIMenuItem
         v-radar="{ name: 'Move to bottom', desc: `Click to move ${type} to bottom in z-order` }"
+        class="item"
         @click="moveZorder('bottom')"
         >{{ $t(moveActionNames.bottom) }}</UIMenuItem
       >
@@ -52,4 +56,9 @@ function moveZorder(direction: keyof typeof moveActionNames) {
   </UIDropdown>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.item {
+  width: max-content;
+  white-space: nowrap;
+}
+</style>

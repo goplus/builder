@@ -30,7 +30,7 @@ import { ref, toValue, watch, type WatchSource } from 'vue'
   height: 36px;
   border: 2px solid var(--ui-color-grey-100);
   border-radius: var(--ui-border-radius-2);
-  background: var(--ui-color-grey-300);
+  background: var(--ui-color-grey-100);
   box-shadow: var(--ui-box-shadow-big);
 }
 </style>

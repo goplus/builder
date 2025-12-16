@@ -43,6 +43,7 @@ const configKeyRef = ref<ConfigType | null>(null)
 const quickConfigPopupContainerRef = ref<HTMLElement | undefined>()
 const quickConfigRef = ref<HTMLElement | undefined>()
 let timer: NodeJS.Timeout
+let activeInteractions = 0
 
 watch(
   () => props.configTypes,
@@ -56,6 +57,9 @@ watch(
     if (activeInteractions === 0) {
       flush()
     }
+  },
+  {
+    immediate: true
   }
 )
 
@@ -67,7 +71,6 @@ function flush() {
   timer = setTimeout(() => emits('updateConfigTypes', props.configTypes.slice(0, -1)), 2000)
 }
 
-let activeInteractions = 0
 function handleInteractionStart() {
   clearTimeout(timer)
   activeInteractions++
@@ -99,31 +102,14 @@ providePopupContainer(quickConfigPopupContainerRef)
     @mouseenter="handleInteractionStart"
     @mouseleave="handleInteractionEnd"
   >
-    <Transition name="panel-swaper">
-      <slot></slot>
-    </Transition>
+    <slot></slot>
     <!-- Mount the pop-up layer's container here, treating it as part of the component, to facilitate responding to mouseenter/mouseleave events. -->
     <div ref="quickConfigPopupContainerRef"></div>
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .quick-config {
   position: absolute;
-}
-
-.panel-swaper-enter-active,
-.panel-swaper-leave-active {
-  transition: all 0.25s ease-out;
-}
-
-.panel-swaper-enter-from {
-  pointer-events: none;
-  opacity: 0;
-}
-
-.panel-swaper-leave-to {
-  pointer-events: none;
-  opacity: 0;
 }
 </style>

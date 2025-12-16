@@ -6,7 +6,7 @@
     <UIBlockItemTitle size="medium">
       {{ name }}
       <template v-if="visible === false" #suffix>
-        <UIIcon type="eyeOff" />
+        <UIIcon class="eye-off" type="eyeOff" />
       </template>
     </UIBlockItemTitle>
     <slot></slot>
@@ -41,5 +41,10 @@ withDefaults(
     width: 100%;
     height: 100%;
   }
+}
+
+.eye-off {
+  color: var(--ui-color-grey-700);
+  cursor: auto;
 }
 </style>

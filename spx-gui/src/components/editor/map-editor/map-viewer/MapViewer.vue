@@ -39,7 +39,7 @@ function getVisibleChildrenUnionRect(root: Element) {
 
 <script setup lang="ts">
 import { debounce, throttle } from 'lodash'
-import { computed, nextTick, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
@@ -47,7 +47,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { timeout, untilTaskScheduled } from '@/utils/utils'
+import { timeout, until, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
@@ -383,13 +383,9 @@ const handleSpriteDragMove = throttle(
 )
 
 // quick configor
-const configTypesRef = ref<ConfigType[]>([])
+const configTypesRef = ref<ConfigType[]>([{ type: 'default' }])
 function createConfigType(configType: ConfigType): ConfigType[] {
   return [{ type: 'default' }, configType]
-}
-function handleOpenConfigor() {
-  const configType = configTypesRef.value
-  configTypesRef.value = configType.length === 1 && configType[0].type === 'default' ? [] : [{ type: 'default' }]
 }
 function handleUpdatePosConfigType({ x, y }: { x: number; y: number }) {
   configTypesRef.value = createConfigType({ type: 'pos', x, y })
@@ -402,6 +398,10 @@ function handleUpdateRotateConfigType({ heading }: { heading: number }) {
   configTypesRef.value = createConfigType({ type: 'rotate', rotate: heading })
   nextTick(updateQuickConfigPosThrottled)
 }
+onMounted(async () => {
+  await until(() => !loading.value)
+  updateQuickConfigPos()
+})
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
@@ -514,7 +514,7 @@ function updateQuickConfigPos() {
     top = topExtension
   }
 
-  quickConfigEl.style.cssText = `transform: translate(${Math.floor(left)}px, ${Math.floor(top)}px) translateX(-50%)`
+  quickConfigEl.style.cssText = `transform: translate(${left}px, ${top}px) translateX(-50%)`
 }
 const updateQuickConfigPosThrottled = throttle(updateQuickConfigPos, 50, { trailing: true })
 watch(
@@ -522,7 +522,7 @@ watch(
   () => [props.selectedSprite, props.selectedSprite?.rotationStyle],
   async ([sprite]) => {
     if (sprite == null) return
-    await timeout()
+    await timeout(0)
     updateQuickConfigPosThrottled()
   },
   { immediate: true }
@@ -586,7 +586,6 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
-            @open-configor="handleOpenConfigor"
             @update-heading="handleUpdateRotateConfigType"
             @update-pos="handleUpdatePosConfigType"
             @update-size="handleUpdateSizeConfigType"
