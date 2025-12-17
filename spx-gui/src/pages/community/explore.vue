@@ -2,17 +2,17 @@
   <CommunityHeader>
     {{ $t({ en: 'Explore', zh: '发现' }) }}
     <template #options>
-      <UITagRadioGroup v-model:value="order">
-        <UITagRadio :value="Order.MostLikes">
+      <UIChipRadioGroup v-model:value="order">
+        <UIChipRadio :value="Order.MostLikes">
           {{ $t(titles[Order.MostLikes]) }}
-        </UITagRadio>
-        <UITagRadio :value="Order.MostRemixes">
+        </UIChipRadio>
+        <UIChipRadio :value="Order.MostRemixes">
           {{ $t(titles[Order.MostRemixes]) }}
-        </UITagRadio>
-        <UITagRadio :value="Order.FollowingCreated">
+        </UIChipRadio>
+        <UIChipRadio :value="Order.FollowingCreated">
           {{ $t(titles[Order.FollowingCreated]) }}
-        </UITagRadio>
-      </UITagRadioGroup>
+        </UIChipRadio>
+      </UIChipRadioGroup>
     </template>
   </CommunityHeader>
   <CenteredWrapper class="main">
@@ -29,7 +29,7 @@ import { useQuery } from '@/utils/query'
 import { useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { exploreProjects, ExploreOrder as Order } from '@/apis/project'
-import { UITagRadioGroup, UITagRadio } from '@/components/ui'
+import { UIChipRadioGroup, UIChipRadio } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityHeader from '@/components/community/CommunityHeader.vue'
