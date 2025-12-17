@@ -39,9 +39,11 @@
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
-            @update-heading="handleUpdateRotateConfigType"
-            @update-pos="handleUpdatePosConfigType"
-            @update-size="handleUpdateSizeConfigType"
+            @update-heading="
+              handleUpdateConfigType($event.leftRight == null ? { type: 'rotate', rotate: $event.heading } : [])
+            "
+            @update-pos="handleUpdateConfigType({ type: 'pos', x: $event.x, y: $event.y })"
+            @update-size="handleUpdateConfigType({ type: 'size', size: $event.size })"
           />
         </v-group>
       </v-layer>
@@ -52,8 +54,8 @@
           :widget="widget"
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
-          @update-pos="handleUpdatePosConfigType"
-          @update-size="handleUpdateSizeConfigType"
+          @update-pos="handleUpdateConfigType({ type: 'pos', x: $event.x, y: $event.y })"
+          @update-size="handleUpdateConfigType({ type: 'size', size: $event.size })"
         />
       </v-layer>
       <v-layer>
@@ -65,12 +67,12 @@
       </v-layer>
     </v-stage>
     <QuickConfig class="quick-config" :config-types="configTypesRef" @update-config-types="configTypesRef = $event">
-      <SpriteConfigor
+      <SpriteQuickConfig
         v-if="editorCtx.state.selectedSprite"
         :sprite="editorCtx.state.selectedSprite"
         :project="editorCtx.project"
       />
-      <WidgetConfigor
+      <WidgetQuickConfig
         v-else-if="editorCtx.state.selectedWidget"
         :widget="editorCtx.state.selectedWidget"
         :project="editorCtx.project"
@@ -101,8 +103,8 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
-import SpriteConfigor from '@/components/editor/common/viewer/quick-config/SpriteConfigor.vue'
-import WidgetConfigor from '@/components/editor/common/viewer/quick-config/WidgetConfigor.vue'
+import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
+import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/WidgetQuickConfig.vue'
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
@@ -410,19 +412,10 @@ const handleSpriteDragMove = throttle(
   }
 )
 
-// quick configor
+// quick config
 const configTypesRef = ref<ConfigType[]>([{ type: 'default' }])
-function createConfigType(configType: ConfigType): ConfigType[] {
-  return [{ type: 'default' }, configType]
-}
-function handleUpdatePosConfigType({ x, y }: { x: number; y: number }) {
-  configTypesRef.value = createConfigType({ type: 'pos', x, y })
-}
-function handleUpdateSizeConfigType({ size }: { size: number }) {
-  configTypesRef.value = createConfigType({ type: 'size', size })
-}
-function handleUpdateRotateConfigType({ heading }: { heading: number }) {
-  configTypesRef.value = createConfigType({ type: 'rotate', rotate: heading })
+function handleUpdateConfigType(configType: ConfigType | ConfigType[] = []) {
+  configTypesRef.value = [{ type: 'default' } as ConfigType].concat(configType)
 }
 
 function handleSpriteDragEnd() {

@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, watchEffect } from 'vue'
-import { throttle } from 'lodash'
 import type { Stage } from 'konva/lib/Stage'
 import type { Shape } from 'konva/lib/Shape'
 import type { KonvaEventObject } from 'konva/lib/Node'
@@ -30,9 +29,8 @@ const emit = defineEmits<{
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
   updatePos: [{ x: number; y: number }]
-  updateHeading: [{ heading: number }]
+  updateHeading: [{ heading: number; leftRight?: LeftRight }]
   updateSize: [{ size: number }]
-  openConfigor: []
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -84,9 +82,12 @@ function updateSprite({
     emit('updateSize', { size })
     return
   }
-  // Heading change caused by non-RotationStyle.Normal is not considered as updateHeading
-  if (oldHeading !== heading && props.sprite.rotationStyle === RotationStyle.Normal) {
-    emit('updateHeading', { heading })
+  if (oldHeading !== heading && props.sprite.rotationStyle !== RotationStyle.None) {
+    let leftRight: LeftRight | undefined = undefined
+    if (props.sprite.rotationStyle === RotationStyle.LeftRight) {
+      leftRight = headingToLeftRight(heading)
+    }
+    emit('updateHeading', { heading, leftRight })
     return
   }
   if (oldX !== x || oldY !== y) {
@@ -94,7 +95,7 @@ function updateSprite({
   }
 }
 
-const notifyUpdateSprite = throttle((node: Shape | Stage) => {
+const notifyUpdateSprite = (node: Shape | Stage) => {
   if (!props.selected) return
   const { x, y } = toPosition(node)
   updateSprite({
@@ -107,7 +108,7 @@ const notifyUpdateSprite = throttle((node: Shape | Stage) => {
     oldY: props.sprite.y,
     y
   })
-}, 200)
+}
 
 function handleDragMove(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
@@ -125,6 +126,7 @@ function handleDragEnd(e: KonvaEventObject<unknown>) {
   handleChange(e, {
     name: { en: `Move sprite ${sname}`, zh: `移动精灵 ${sname}` }
   })
+  notifyUpdateSprite(e.target)
   emit('dragEnd')
 }
 
@@ -133,6 +135,7 @@ function handleTransformed(e: KonvaEventObject<unknown>) {
   handleChange(e, {
     name: { en: `Transform sprite ${sname}`, zh: `调整精灵 ${sname}` }
   })
+  notifyUpdateSprite(e.target)
 }
 
 const config = computed<ImageConfig>(() => {
@@ -226,7 +229,6 @@ function handleClick() {
     @dragend="handleDragEnd"
     @transform="notifyUpdateSprite($event.target)"
     @transformend="handleTransformed"
-    @open-configor="emit('openConfigor')"
     @click="handleClick"
   />
 </template>

@@ -3,7 +3,6 @@ import type { TransformerConfig } from 'konva/lib/shapes/Transformer'
 import transformerFlipArrowPng from './transformer-flip-arrow.png'
 import transformerFlipArrowDisabledPng from './transformer-flip-arrow-disabled.png'
 import rotatorCirclePng from './rotate-circle.png'
-import configorPng from './configor.png'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import { normalizeDegree, round } from '@/utils/utils'
@@ -19,9 +18,6 @@ transformerFlipArrowDisabledImg.src = transformerFlipArrowDisabledPng
 
 const rotatorCircleImg = new Image()
 rotatorCircleImg.src = rotatorCirclePng
-
-const configorImg = new Image()
-configorImg.src = configorPng
 
 export type CustomTransformerConfig = {
   rotationStyle?: 'none' | 'normal' | 'left-right'
@@ -56,55 +52,6 @@ class RotatorTag extends Konva.Group {
 
   updateRotationNumber(rotationNumber: number) {
     this.text.text(`${normalizeDegree(round(rotationNumber + 90))}°`)
-  }
-}
-
-class ConfigorButton extends Konva.Group {
-  rect: Konva.Rect
-  image: Konva.Image
-
-  constructor() {
-    super()
-
-    this.rect = new Konva.Rect({
-      width: 20,
-      height: 20,
-      cornerRadius: 10,
-
-      shadowEnabled: true,
-      shadowColor: 'rgba(51, 51, 51, 0.2)',
-      shadowBlur: 4,
-      shadowOffsetY: 2,
-
-      stroke: 'rgba(217, 223, 229, 1)',
-      strokeWidth: 0.5,
-      fill: '#fff'
-    })
-
-    const setCursor = (cursor: string) => {
-      const content = this.getStage()?.content
-      if (content) {
-        content.style.cursor = cursor
-      }
-    }
-    this.on('mouseenter', () => {
-      setCursor('pointer')
-    })
-    this.on('mouseout', () => {
-      setCursor('')
-    })
-
-    this.image = new Konva.Image({
-      width: 12,
-      height: 12,
-      x: 4,
-      y: 4,
-      cornerRadius: 10,
-
-      image: configorImg
-    })
-
-    this.add(this.rect, this.image)
   }
 }
 
@@ -189,7 +136,6 @@ export class CustomTransformer extends Konva.Transformer {
     right: FlipButton
   }
   rotatorTag: RotatorTag
-  configorButton: ConfigorButton
 
   rotationStyle(attr?: CustomTransformerConfig['rotationStyle']): CustomTransformerConfig['rotationStyle'] {
     if (!attr) return this.getAttr('rotationStyle')
@@ -270,13 +216,6 @@ export class CustomTransformer extends Konva.Transformer {
     this.rotatorTag.visible(false)
     this.add(this.rotatorTag)
 
-    this.configorButton = new ConfigorButton()
-    // this.add(this.configorButton)
-    this.configorButton.on('click', () => {
-      const node = this.getNode()
-      node.fire('openconfigor')
-    })
-
     const rotator = this.children.find((n) => n.name().match(/rotater/))
     if (!(rotator instanceof Konva.Rect)) {
       throw new Error('rotator rect not found')
@@ -325,10 +264,6 @@ export class CustomTransformer extends Konva.Transformer {
         right.visible(false)
       }
     }
-
-    this.configorButton.x(this.width() / 2 - 10)
-    this.configorButton.y(this.height() + 4)
-    this.configorButton.visible(true)
 
     if (this.rotationStyle() === 'normal') {
       this.rotateEnabled(true)
