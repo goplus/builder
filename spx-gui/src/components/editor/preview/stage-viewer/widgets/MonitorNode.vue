@@ -5,7 +5,6 @@
     @dragend="handleDragEnd"
     @transform="notifyUpdateMonitor($event.target)"
     @transformend="handleTransformed"
-    @open-configor="emit('openConfigor')"
     @click="handleClick"
   >
     <v-rect :config="rectConfig" />
@@ -17,7 +16,6 @@
 </template>
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { throttle } from 'lodash'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { TextConfig, Text } from 'konva/lib/shapes/Text'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
@@ -41,7 +39,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   updatePos: [{ x: number; y: number }]
   updateSize: [{ size: number }]
-  openConfigor: []
 }>()
 
 const uiVariables = useUIVariables()
@@ -113,7 +110,7 @@ function updateMonitor({
   }
 }
 
-const notifyUpdateMonitor = throttle((e: Shape | Stage) => {
+const notifyUpdateMonitor = (e: Shape | Stage) => {
   const { monitor } = props
   const { x, y } = toPosition(e)
   updateMonitor({
@@ -124,7 +121,7 @@ const notifyUpdateMonitor = throttle((e: Shape | Stage) => {
     oldY: monitor.y,
     y
   })
-}, 200)
+}
 
 function handleDragEnd(e: KonvaEventObject<unknown>) {
   const sname = props.monitor.name

@@ -58,7 +58,7 @@ import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/commo
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import QuickConfig, { type ConfigType } from '@/components/editor/common/viewer/quick-config/QuickConfig.vue'
-import SpriteConfigor from '@/components/editor/common/viewer/quick-config/SpriteConfigor.vue'
+import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
 
 const props = defineProps<{
   project: Project
@@ -382,20 +382,10 @@ const handleSpriteDragMove = throttle(
   }
 )
 
-// quick configor
+// quick config
 const configTypesRef = ref<ConfigType[]>([{ type: 'default' }])
-function createConfigType(configType: ConfigType): ConfigType[] {
-  return [{ type: 'default' }, configType]
-}
-function handleUpdatePosConfigType({ x, y }: { x: number; y: number }) {
-  configTypesRef.value = createConfigType({ type: 'pos', x, y })
-}
-function handleUpdateSizeConfigType({ size }: { size: number }) {
-  configTypesRef.value = createConfigType({ type: 'size', size })
-  nextTick(updateQuickConfigPosThrottled)
-}
-function handleUpdateRotateConfigType({ heading }: { heading: number }) {
-  configTypesRef.value = createConfigType({ type: 'rotate', rotate: heading })
+function handleUpdateConfigType(configType: ConfigType | ConfigType[] = []) {
+  configTypesRef.value = [{ type: 'default' } as ConfigType].concat(configType)
   nextTick(updateQuickConfigPosThrottled)
 }
 onMounted(async () => {
@@ -426,7 +416,7 @@ function updateQuickConfigPos() {
   if (
     props.selectedSprite == null ||
     stageRef.value == null ||
-    // quick configor is not open
+    // quick config is not open
     configTypesRef.value.length === 0 ||
     containerSize.value == null ||
     quickConfigElRef.value == null ||
@@ -527,9 +517,6 @@ watch(
   },
   { immediate: true }
 )
-
-// Also update when map transforms (pan/zoom)
-watch(mapConfig, updateQuickConfigPosThrottled)
 // Update when container resizes
 watch(containerSize, updateQuickConfigPosThrottled)
 
@@ -551,6 +538,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     x: pointer.x - mousePointTo.x * newScale,
     y: pointer.y - mousePointTo.y * newScale
   })
+  updateQuickConfigPosThrottled()
 }
 </script>
 
@@ -586,9 +574,12 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
-            @update-heading="handleUpdateRotateConfigType"
-            @update-pos="handleUpdatePosConfigType"
-            @update-size="handleUpdateSizeConfigType"
+            @update-left-right="handleUpdateConfigType()"
+            @update-heading="
+              handleUpdateConfigType($event.leftRight == null ? { type: 'rotate', rotate: $event.heading } : [])
+            "
+            @update-pos="handleUpdateConfigType({ type: 'pos', x: $event.x, y: $event.y })"
+            @update-size="handleUpdateConfigType({ type: 'size', size: $event.size })"
           />
         </v-group>
       </v-layer>
@@ -602,7 +593,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       :config-types="configTypesRef"
       @update-config-types="configTypesRef = $event"
     >
-      <SpriteConfigor v-if="selectedSprite" :sprite="selectedSprite" :project="project" />
+      <SpriteQuickConfig v-if="selectedSprite" :sprite="selectedSprite" :project="project" />
     </QuickConfig>
 
     <PositionIndicator :position="mousePos" />
