@@ -14,11 +14,10 @@ const props = defineProps<{
 
 const pos = useSyncFastSlowValue(
   () => [props.widget.x, props.widget.y],
-  () => [props.x, props.y],
-  ([x, y]) => [x, y]
+  () => [props.x, props.y]
 )
 
-// copy form spx-gui/src/components/editor/stage/widget/detail/MonitorDetail.vue
+// copied from spx-gui/src/components/editor/stage/widget/detail/MonitorDetail.vue
 function wrapUpdateHandler<Args extends any[]>(
   handler: (...args: Args) => unknown,
   withDebounce = true

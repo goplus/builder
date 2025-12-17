@@ -26,7 +26,7 @@ export const updateConfigTypeInjectionKey: InjectionKey<(configTypes: ConfigType
 </script>
 
 <script lang="ts" setup>
-import { provide, ref, watch, type InjectionKey, type Ref } from 'vue'
+import { onBeforeUnmount, provide, ref, watch, type InjectionKey, type Ref } from 'vue'
 
 import { providePopupContainer } from '@/components/ui'
 
@@ -91,6 +91,8 @@ provide(configTypeInjectionKey, configKeyRef)
 provide(updateConfigTypeInjectionKey, (configTypes: ConfigType[]) => emits('updateConfigTypes', configTypes))
 
 providePopupContainer(quickConfigPopupContainerRef)
+
+onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
 <template>

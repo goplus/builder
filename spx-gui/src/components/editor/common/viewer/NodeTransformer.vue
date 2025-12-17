@@ -68,7 +68,10 @@ watchEffect(async (onCleanup) => {
     keyboardMovementEnd()
   }
   stage.container().addEventListener('keydown', handler)
-  onCleanup(() => stage.container().removeEventListener('keydown', handler))
+  onCleanup(() => {
+    keyboardMovementEnd.cancel()
+    stage.container().removeEventListener('keydown', handler)
+  })
 })
 
 defineExpose({
