@@ -14,8 +14,7 @@ const props = defineProps<{
 
 const pos = useSyncFastSlowValue(
   () => [props.sprite.x, props.sprite.y],
-  () => [props.x, props.y],
-  ([x, y]) => [x, y]
+  () => [props.x, props.y]
 )
 
 const spriteContext = () => ({

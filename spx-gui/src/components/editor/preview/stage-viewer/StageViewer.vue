@@ -414,9 +414,11 @@ const handleSpriteDragMove = throttle(
 
 // quick config
 const configTypesRef = ref<ConfigType[]>([{ type: 'default' }])
-function handleUpdateConfigType(configType: ConfigType | ConfigType[] = []) {
-  configTypesRef.value = [{ type: 'default' } as ConfigType].concat(configType)
-}
+const handleUpdateConfigType = throttle(
+  (configType: ConfigType | ConfigType[] = []) =>
+    (configTypesRef.value = [{ type: 'default' } as ConfigType].concat(configType)),
+  150
+)
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()

@@ -29,21 +29,23 @@ watch(
 </script>
 
 <template>
-  <SizeConfigPanel v-if="configType?.type === 'size'" :sprite="sprite" :project="project" :size="configType?.size" />
-  <HeadingConfigPanel
-    v-else-if="configType?.type === 'rotate'"
-    :sprite="sprite"
-    :project="project"
-    :heading="configType?.rotate"
-  />
-  <PositionConfigPanel
-    v-else-if="configType?.type === 'pos'"
-    :sprite="sprite"
-    :project="project"
-    :x="configType?.x"
-    :y="configType?.y"
-  />
-  <DefaultConfigPanel v-else-if="configType?.type === 'default'" :sprite="sprite" :project="project" />
+  <template v-if="configType != null">
+    <SizeConfigPanel v-if="configType.type === 'size'" :sprite="sprite" :project="project" :size="configType.size" />
+    <HeadingConfigPanel
+      v-else-if="configType.type === 'rotate'"
+      :sprite="sprite"
+      :project="project"
+      :heading="configType.rotate"
+    />
+    <PositionConfigPanel
+      v-else-if="configType?.type === 'pos'"
+      :sprite="sprite"
+      :project="project"
+      :x="configType.x"
+      :y="configType.y"
+    />
+    <DefaultConfigPanel v-else-if="configType.type === 'default'" :sprite="sprite" :project="project" />
+  </template>
 </template>
 
 <style lang="scss" scoped></style>
