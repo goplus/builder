@@ -3,7 +3,7 @@
 // This implementation cannot eliminate race conditions and may result in data overwriting.
 // Improve when a better solution is available.
 export function useSyncFastSlowValue<T>(fast: WatchSource<T>, slow: WatchSource<T>, cast: (value: T) => T = (v) => v) {
-  const syncValue = ref<T>(cast(toValue<T>(fast)))
+  const syncValue = ref<T>(cast(toValue<T>(slow)))
   function sync(value: T) {
     syncValue.value = cast(value)
   }

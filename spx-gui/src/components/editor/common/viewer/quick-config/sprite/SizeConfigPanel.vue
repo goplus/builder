@@ -18,8 +18,8 @@ const spriteContext = () => ({
 })
 
 const sizePercent = useSyncFastSlowValue(
-  () => props.sprite.size,
   () => props.size,
+  () => props.sprite.size,
   (size) => round(size * 100)
 )
 

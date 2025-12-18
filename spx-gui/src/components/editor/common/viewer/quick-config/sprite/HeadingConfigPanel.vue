@@ -14,8 +14,8 @@ const props = defineProps<{
 }>()
 
 const headingValue = useSyncFastSlowValue(
-  () => props.sprite.heading,
-  () => props.heading
+  () => props.heading,
+  () => props.sprite.heading
 )
 
 const spriteContext = () => ({

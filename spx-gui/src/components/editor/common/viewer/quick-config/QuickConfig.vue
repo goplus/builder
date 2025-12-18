@@ -22,7 +22,8 @@ export type PosConfigType = {
 export type ConfigType = DefaultConfigType | SizeConfigType | RotateConfigType | PosConfigType
 
 export const configTypeInjectionKey: InjectionKey<Ref<ConfigType | null>> = Symbol('configType')
-export const updateConfigTypeInjectionKey: InjectionKey<(configTypes: ConfigType[]) => void> = Symbol('updateConfig')
+export const updateConfigTypesInjectionKey: InjectionKey<(configTypes: ConfigType[]) => void> =
+  Symbol('updateConfigTypes')
 </script>
 
 <script lang="ts" setup>
@@ -38,7 +39,7 @@ const emits = defineEmits<{
   updateConfigTypes: [ConfigType[]]
 }>()
 
-const configKeyRef = ref<ConfigType | null>(null)
+const configTypeRef = ref<ConfigType | null>(null)
 
 const quickConfigPopupContainerRef = ref<HTMLElement | undefined>()
 const quickConfigRef = ref<HTMLElement | undefined>()
@@ -50,10 +51,7 @@ watch(
   (configTypes) => {
     const configType = configTypes.at(-1) ?? null
     clearTimeout(timer)
-    if (configType?.type !== configKeyRef.value?.type) {
-      activeInteractions = 0
-    }
-    configKeyRef.value = configType
+    configTypeRef.value = configType
     if (activeInteractions === 0) {
       flush()
     }
@@ -65,6 +63,7 @@ watch(
 
 function flush() {
   clearTimeout(timer)
+  // Keep the last one by default, unless configTypes is explicitly []
   if (props.configTypes.length <= 1) {
     return
   }
@@ -76,8 +75,8 @@ function handleInteractionStart() {
   activeInteractions++
 }
 function handleInteractionEnd() {
-  activeInteractions--
-  if (activeInteractions <= 0) {
+  activeInteractions = Math.max(0, activeInteractions - 1)
+  if (activeInteractions === 0) {
     flush()
   }
 }
@@ -87,8 +86,8 @@ defineExpose({
   quickConfigPopupContainerDom: () => quickConfigPopupContainerRef.value
 })
 
-provide(configTypeInjectionKey, configKeyRef)
-provide(updateConfigTypeInjectionKey, (configTypes: ConfigType[]) => emits('updateConfigTypes', configTypes))
+provide(configTypeInjectionKey, configTypeRef)
+provide(updateConfigTypesInjectionKey, (configTypes: ConfigType[]) => emits('updateConfigTypes', configTypes))
 
 providePopupContainer(quickConfigPopupContainerRef)
 

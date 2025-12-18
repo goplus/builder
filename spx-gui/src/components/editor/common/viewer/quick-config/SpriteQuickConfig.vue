@@ -7,7 +7,7 @@ import type { Project } from '@/models/project'
 import SizeConfigPanel from './sprite/SizeConfigPanel.vue'
 import HeadingConfigPanel from './sprite/HeadingConfigPanel.vue'
 import PositionConfigPanel from './sprite/PositionConfigPanel.vue'
-import { configTypeInjectionKey, updateConfigTypeInjectionKey } from './QuickConfig.vue'
+import { configTypeInjectionKey, updateConfigTypesInjectionKey } from './QuickConfig.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -15,7 +15,7 @@ const props = defineProps<{
 }>()
 
 const configType = inject(configTypeInjectionKey)
-const update = inject(updateConfigTypeInjectionKey)
+const update = inject(updateConfigTypesInjectionKey)
 
 watch(
   () => props.sprite.rotationStyle,
