@@ -227,7 +227,7 @@ watch(
         x: viewportSize.value.width / 2 - (mapSize.value.width / 2 + selectedSprite.x) * mapScale.value,
         y: viewportSize.value.height / 2 - (mapSize.value.height / 2 - selectedSprite.y) * mapScale.value
       }
-      setMapPosWithTransition(mapPosForSprite, 300)
+      setMapPosWithTransition(mapPosForSprite, 300).then(updateQuickConfigPosThrottled)
     }
   },
   { immediate: true }
@@ -384,10 +384,16 @@ const handleSpriteDragMove = throttle(
 
 // quick config
 const configTypesRef = ref<ConfigType[]>([{ type: 'default' }])
-function handleUpdateConfigType(configType: ConfigType | ConfigType[] = []) {
-  configTypesRef.value = [{ type: 'default' } as ConfigType].concat(configType)
-  nextTick(updateQuickConfigPosThrottled)
-}
+const handleUpdateConfigType = throttle(
+  (configType: ConfigType | ConfigType[] = []) => {
+    configTypesRef.value = [{ type: 'default' } as ConfigType].concat(configType)
+    nextTick(updateQuickConfigPos)
+  },
+  50,
+  {
+    trailing: true
+  }
+)
 onMounted(async () => {
   await until(() => !loading.value)
   updateQuickConfigPos()
@@ -416,8 +422,6 @@ function updateQuickConfigPos() {
   if (
     props.selectedSprite == null ||
     stageRef.value == null ||
-    // quick config is not open
-    configTypesRef.value.length === 0 ||
     containerSize.value == null ||
     quickConfigElRef.value == null ||
     quickConfigPopupContainerElRef.value == null
@@ -437,7 +441,7 @@ function updateQuickConfigPos() {
   let topExtension = 30
   let bottomExtension = 30
 
-  if (popupContainerRect && popupContainerRect.width > 0 && popupContainerRect.height > 0) {
+  if (popupContainerRect != null && popupContainerRect.width > 0 && popupContainerRect.height > 0) {
     const { left: configLeft, right: configRight, top: configTop, bottom: configBottom } = quickConfigRect
     const {
       left: popupContainerLeft,

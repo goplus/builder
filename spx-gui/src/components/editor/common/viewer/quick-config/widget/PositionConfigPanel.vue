@@ -13,8 +13,8 @@ const props = defineProps<{
 }>()
 
 const pos = useSyncFastSlowValue(
-  () => [props.widget.x, props.widget.y],
-  () => [props.x, props.y]
+  () => [props.x, props.y],
+  () => [props.widget.x, props.widget.y]
 )
 
 // copied from spx-gui/src/components/editor/stage/widget/detail/MonitorDetail.vue

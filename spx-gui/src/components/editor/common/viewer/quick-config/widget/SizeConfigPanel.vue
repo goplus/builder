@@ -13,8 +13,8 @@ const props = defineProps<{
 }>()
 
 const sizePercent = useSyncFastSlowValue(
-  () => props.widget.size,
   () => props.size,
+  () => props.widget.size,
   (size) => round(size * 100)
 )
 const handleSizePercentUpdate = debounce((sizeInPercent: number | null) => {
