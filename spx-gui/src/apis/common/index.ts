@@ -50,7 +50,7 @@ export const enum ArtStyle {
   HandDrawn = 'hand-drawn',
   /** Low-Poly art style uses a minimal number of polygons to create 3D models, resulting in a stylized, geometric appearance often seen in early 3D video games. */
   LowPoly = 'low-poly',
-  Other = 'other'
+  Unspecified = 'unspecified'
 }
 
 /** Perspective indicates the viewpoint from which the "game world" is viewed */
@@ -72,7 +72,7 @@ export const enum Perspective {
    * The camera is positioned to the side of the scene, looking horizontally across it.
    */
   SideScrolling = 'side-scrolling',
-  Other = 'other'
+  Unspecified = 'unspecified'
 }
 
 export const enum SpriteCategory {
@@ -86,15 +86,13 @@ export const enum SpriteCategory {
   Effect = 'effect',
   /** UI sprites are graphical elements used in the user interface, such as buttons, icons, and menus, to facilitate player interaction with the game. */
   UI = 'ui',
-  /** Other sprites represent any other types of sprites that do not fit into the predefined categories. */
-  Other = 'other'
+  Unspecified = 'unspecified'
 }
 
 export const enum BackdropCategory {
   /** UI backdrops are designed specifically for user interface elements, providing a visually appealing background for menus, dialogs, and other interactive components. */
   UI = 'ui',
-  /** Other backdrops represent any other types of backdrops that do not fit into the predefined categories. */
-  Other = 'other'
+  Unspecified = 'unspecified'
 }
 
 export const enum SoundCategory {

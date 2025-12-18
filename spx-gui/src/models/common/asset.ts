@@ -9,7 +9,7 @@ import { Costume } from '@/models/costume'
 
 export type PartialAssetData = Pick<AssetData, 'type' | 'files' | 'filesHash'>
 
-export type AssetMetadata = Omit<AssetData, 'files'>
+export type AssetMetadata = Partial<Omit<AssetData, 'files'>>
 
 export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
   ? Sound
