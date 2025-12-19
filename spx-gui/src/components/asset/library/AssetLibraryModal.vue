@@ -20,21 +20,21 @@
     </template>
     <section class="body">
       <div class="sider">
-        <UITag
+        <UIChip
           :type="category.value === categoryPersonal.value ? 'primary' : 'boring'"
           @click="handleSelectCategory(categoryPersonal)"
         >
           {{ $t(categoryPersonal.message) }}
-        </UITag>
+        </UIChip>
         <UIDivider />
-        <UITag
+        <UIChip
           v-for="c in categories"
           :key="c.value"
           :type="c.value === category.value ? 'primary' : 'boring'"
           @click="handleSelectCategory(c)"
         >
           {{ $t(c.message) }}
-        </UITag>
+        </UIChip>
       </div>
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>
@@ -85,7 +85,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
-import { UITextInput, UIIcon, UITag, UIPagination, UIButton, UISearchableModal, UIDivider } from '@/components/ui'
+import { UITextInput, UIIcon, UIChip, UIPagination, UIButton, UISearchableModal, UIDivider } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'

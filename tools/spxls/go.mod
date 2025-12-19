@@ -6,11 +6,11 @@ tool github.com/goplus/xgolsw/cmd/pkgdatagen
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/xgolsw v0.15.0
+	github.com/goplus/xgolsw v0.15.1
 )
 
 require (
-	github.com/goplus/gogen v1.19.6 // indirect
+	github.com/goplus/gogen v1.19.7 // indirect
 	github.com/goplus/mod v0.17.2 // indirect
 	github.com/goplus/spbase v0.1.0 // indirect
 	github.com/goplus/spx/v2 v2.0.0-pre.38 // indirect
@@ -21,10 +21,10 @@ require (
 	github.com/qiniu/x v1.15.2 // indirect
 	golang.org/x/image v0.23.0 // indirect
 	golang.org/x/mobile v0.0.0-20220518205345-8578da9835fd // indirect
-	golang.org/x/mod v0.30.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
-	golang.org/x/tools v0.39.0 // indirect
+	golang.org/x/mod v0.31.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/tools v0.40.0 // indirect
 )
 
 replace github.com/goplus/builder/tools/ai => ../ai
