@@ -2,21 +2,14 @@
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import { computed } from 'vue'
 import PromptInput from '../common/PromptInput.vue'
-import ArtStyleSelector from '../common/settings/ArtStyleSelector.vue'
-import type { SpriteSettings } from '@/apis/aigc'
-import PerspectiveSelector from '../common/settings/PerspectiveSelector.vue'
-import SpriteCategorySelector from '../common/settings/SpriteCategorySelector.vue'
+import ParamsSettings from '../common/param-settings/ParamsSettings.vue'
+import { spriteParamSettings } from '../common/param-settings/data'
 
 const props = defineProps<{
   spriteGen: SpriteGen
 }>()
 
-// const spriteSettings = computed(() => props.spriteGen.settings)
 const defaultCostume = computed(() => props.spriteGen.genDefaultCostume())
-
-function updateSpriteSettings(updates: Partial<SpriteSettings>) {
-  props.spriteGen.setSettings(updates)
-}
 </script>
 
 <template>
@@ -28,18 +21,15 @@ function updateSpriteSettings(updates: Partial<SpriteSettings>) {
     @enrich="spriteGen.enrich()"
     @generate="defaultCostume.generate()"
   >
-    <template #settings>
-      <SpriteCategorySelector
-        :value="spriteGen.settings.category"
-        @update:value="updateSpriteSettings({ category: $event })"
-      />
-      <ArtStyleSelector
-        :value="spriteGen.settings.artStyle"
-        @update:value="updateSpriteSettings({ artStyle: $event })"
-      />
-      <PerspectiveSelector
-        :value="spriteGen.settings.perspective"
-        @update:value="updateSpriteSettings({ perspective: $event })"
+    <template #param-settings>
+      <ParamsSettings
+        v-for="(paramSetting, key) in spriteParamSettings"
+        :key="key"
+        type="selector"
+        :value="spriteGen.settings[key]"
+        :options="paramSetting.options"
+        :tips="paramSetting.tips"
+        @update:value="spriteGen.setSettings({ [key]: $event })"
       />
     </template>
   </PromptInput>

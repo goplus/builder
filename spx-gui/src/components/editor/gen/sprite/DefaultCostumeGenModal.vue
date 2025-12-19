@@ -17,6 +17,8 @@ const emit = defineEmits<{
   resolved: [void]
   cancelled: []
 }>()
+
+function nextGenerate() {}
 </script>
 
 <template>
@@ -37,7 +39,7 @@ const emit = defineEmits<{
     <!-- gen results -->
 
     <template #footer>
-      <UIButton>{{ $t({ zh: '下一步', en: 'Next' }) }}</UIButton>
+      <UIButton @click="nextGenerate">{{ $t({ zh: '下一步', en: 'Next' }) }}</UIButton>
     </template>
   </GenModal>
 </template>

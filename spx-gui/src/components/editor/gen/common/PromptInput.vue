@@ -48,7 +48,7 @@ const enrichShow = ref(false)
     </div>
     <div class="footer">
       <div class="settings">
-        <slot name="settings"></slot>
+        <slot name="param-settings"></slot>
       </div>
       <UIButton :loading="generateLoading" @click="emit('generate')">{{ $t({ zh: '生成', en: 'Generate' }) }}</UIButton>
     </div>

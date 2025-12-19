@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import { UIButton, UIImg, UITooltip } from '@/components/ui'
+import type { ParamSettingProps } from './ParamsSettings.vue'
 
-defineProps<{
-  reference: string
-}>()
+defineProps<ParamSettingProps<string>>()
 </script>
 
 <template>
@@ -11,11 +10,11 @@ defineProps<{
     <template #trigger>
       <UIButton variant="stroke" color="boring">
         <template #icon>
-          <UIImg :src="reference" />
+          <UIImg :src="value" />
         </template>
       </UIButton>
     </template>
-    <div></div>
+    {{ $t(tips) }}
   </UITooltip>
 </template>
 
