@@ -208,7 +208,7 @@ async function addAssetToProject(asset: AssetData) {
       return sound
     }
     default:
-      throw new Error('unknow asset type')
+      throw new Error('unknown asset type')
   }
 }
 

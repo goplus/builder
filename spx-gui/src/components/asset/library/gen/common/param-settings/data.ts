@@ -17,7 +17,7 @@ export const perspectiveOptions = [
 ]
 
 export const facingOptions = [
-  { value: Facing.Front, label: { en: 'Frong', zh: '正面' } },
+  { value: Facing.Front, label: { en: 'Front', zh: '正面' } },
   { value: Facing.Back, label: { en: 'Back', zh: '背面' } },
   { value: Facing.Left, label: { en: 'Left', zh: '左边' } },
   { value: Facing.Right, label: { en: 'Right', zh: '右边' } },

@@ -66,8 +66,8 @@ function addAnimationItem() {}
           <ListItemWrapper @add="addCostumeItem">
             <template #title>{{ $t({ zh: '造型', en: 'Costume' }) }}</template>
             <CostumeGenItem
-              v-for="(costumeItem, index) in spriteGen.costumes"
-              :key="index"
+              v-for="costumeItem in spriteGen.costumes"
+              :key="costumeItem.settings.name"
               :active="selectedCostumeName === costumeItem.settings.name"
               :costume-item="costumeItem"
               @click="handleCostumeClick(costumeItem)"
@@ -77,8 +77,8 @@ function addAnimationItem() {}
           <ListItemWrapper @add="addAnimationItem">
             <template #title>{{ $t({ zh: '动画', en: 'Animation' }) }}</template>
             <AnimationGenItem
-              v-for="(animationItem, index) in spriteGen.animations"
-              :key="index"
+              v-for="animationItem in spriteGen.animations"
+              :key="animationItem.settings.name"
               :active="selectedAnimationName === animationItem.settings.name"
               :animation-item="animationItem"
               @click="handleAnimationClick(animationItem)"

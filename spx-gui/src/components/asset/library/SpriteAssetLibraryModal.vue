@@ -32,10 +32,10 @@ watch(
   searchInput,
   debounce(() => {
     keyword.value = searchInput.value
+    spriteGen.value?.setInput(keyword.value)
   }, 500)
 )
-
-const spriteGen = computed(() => new SpriteGen(props.project, keyword.value))
+const spriteGen = shallowRef<SpriteGen>(new SpriteGen(props.project, keyword.value))
 
 const category = ref(categoryAll)
 const categoryPersonal = computed<Category>(() => ({
@@ -86,7 +86,7 @@ async function addAssetToProject(asset: AssetData) {
       return sprite
     }
     default:
-      throw new Error('unknow asset type')
+      throw new Error('unknown asset type')
   }
 }
 const handleConfirm = useMessageHandle(
