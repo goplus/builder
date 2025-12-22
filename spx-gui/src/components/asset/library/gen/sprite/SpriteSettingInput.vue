@@ -1,25 +1,26 @@
 <script lang="ts" setup>
 import type { SpriteGen } from '@/models/gen/sprite-gen'
-import { computed } from 'vue'
+import { computed, useSlots } from 'vue'
 import PromptInput from '../common/PromptInput.vue'
 import ParamsSettings from '../common/param-settings/ParamsSettings.vue'
 import { spriteParamSettings } from '../common/param-settings/data'
+import { UIButton } from '@/components/ui'
 
 const props = defineProps<{
   spriteGen: SpriteGen
 }>()
 
 const defaultCostume = computed(() => props.spriteGen.genDefaultCostume())
+
+const slots = useSlots()
 </script>
 
 <template>
   <PromptInput
     :value="spriteGen.input"
-    :enrich-loading="spriteGen.enrichState.state === 'running'"
-    :generate-loading="defaultCostume.generateState.state === 'running'"
+    :loading="spriteGen.enrichState.state === 'running'"
     @update:value="spriteGen.setInput($event)"
     @enrich="spriteGen.enrich()"
-    @generate="defaultCostume.generate()"
   >
     <template #param-settings>
       <ParamsSettings
@@ -31,6 +32,12 @@ const defaultCostume = computed(() => props.spriteGen.genDefaultCostume())
         :tips="paramSetting.tips"
         @update:value="spriteGen.setSettings({ [key]: $event })"
       />
+    </template>
+    <template #buttons>
+      <slot v-if="slots.buttons != null" name="buttons"></slot>
+      <UIButton v-else :loading="defaultCostume.generateState.state === 'running'" @click="defaultCostume.generate()">{{
+        $t({ zh: '生成', en: 'Generate' })
+      }}</UIButton>
     </template>
   </PromptInput>
 </template>

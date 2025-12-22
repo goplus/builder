@@ -18,13 +18,13 @@ import { getProjectSettings, Phase } from './common'
 import { CostumeGen } from './costume-gen'
 import { AnimationGen } from './animation-gen'
 
-type CostumeItem = {
+export type CostumeItem = {
   settings: CostumeSettings
   gen: CostumeGen | null
   result: Costume | null
 }
 
-type AnimationItem = {
+export type AnimationItem = {
   settings: AnimationSettings
   gen: AnimationGen | null
   result: Animation | null

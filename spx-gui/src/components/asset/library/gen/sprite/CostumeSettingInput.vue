@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { UIButton } from '@/components/ui'
 import { costumeParamSettings } from '../common/param-settings/data'
 import ParamsSettings from '../common/param-settings/ParamsSettings.vue'
 import PromptInput from '../common/PromptInput.vue'
@@ -12,11 +13,9 @@ defineProps<{
 <template>
   <PromptInput
     :value="costumeGen.input"
-    :enrich-loading="costumeGen.enrichState.state === 'running'"
-    :generate-loading="costumeGen.generateState.state === 'running'"
+    :loading="costumeGen.enrichState.state === 'running'"
     @update:value="costumeGen.setInput($event)"
     @enrich="costumeGen.enrich()"
-    @generate="costumeGen.generate()"
   >
     <template #param-settings>
       <ParamsSettings
@@ -28,6 +27,11 @@ defineProps<{
         :tips="paramSetting.tips"
         @update:value="costumeGen.setSettings({ [key]: $event })"
       />
+    </template>
+    <template #buttons>
+      <UIButton :loading="costumeGen.generateState.state === 'running'" @click="costumeGen.generate()">{{
+        $t({ zh: '生成', en: 'Generate' })
+      }}</UIButton>
     </template>
   </PromptInput>
 </template>

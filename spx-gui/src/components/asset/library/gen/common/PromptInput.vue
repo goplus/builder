@@ -7,12 +7,10 @@ import { ref } from 'vue'
 withDefaults(
   defineProps<{
     value: string
-    enrichLoading?: boolean
-    generateLoading?: boolean
+    loading?: boolean
   }>(),
   {
-    enrichLoading: false,
-    generateLoading: false
+    loading: false
   }
 )
 
@@ -38,7 +36,7 @@ const enrichShow = ref(false)
       />
       <UIButton
         v-if="enrichShow && value"
-        :loading="enrichLoading"
+        :loading="loading"
         color="white"
         variant="stroke"
         size="small"
@@ -50,7 +48,7 @@ const enrichShow = ref(false)
       <div class="settings">
         <slot name="param-settings"></slot>
       </div>
-      <UIButton :loading="generateLoading" @click="emit('generate')">{{ $t({ zh: '生成', en: 'Generate' }) }}</UIButton>
+      <slot name="buttons"></slot>
     </div>
   </div>
 </template>

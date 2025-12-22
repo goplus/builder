@@ -3,22 +3,32 @@ import { UIButton } from '@/components/ui'
 import GenModal from '../common/GenModal.vue'
 import { SpriteGen } from '@/models/gen/sprite-gen'
 import SpriteSettingInput from './SpriteSettingInput.vue'
-import { Project } from '@/models/project'
+import { useSpriteGenModal, useSpriteAssetLibraryModal } from '@/components/asset/index'
+import type { Project } from '@/models/project'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
-  // spriteGen: SpriteGen
+  spriteGen: SpriteGen
+  project: Project
 }>()
-
-// mock
-const spriteGen = new SpriteGen(new Project(), '')
 
 const emit = defineEmits<{
   resolved: [void]
   cancelled: []
 }>()
 
-function nextGenerate() {}
+const spriteGenModal = useSpriteGenModal()
+async function nextGenerate() {
+  await props.spriteGen.generateContent()
+  emit('resolved')
+  spriteGenModal(props.spriteGen)
+}
+
+const spriteAssetLibraryModal = useSpriteAssetLibraryModal()
+function backToAssets() {
+  emit('cancelled')
+  spriteAssetLibraryModal(props.project)
+}
 </script>
 
 <template>
@@ -28,7 +38,7 @@ function nextGenerate() {}
     @update:visible="emit('cancelled')"
   >
     <template #left>
-      <UIButton color="white" variant="stroke" type="link">{{
+      <UIButton color="white" variant="stroke" @click="backToAssets">{{
         $t({ zh: '返回素材库', en: 'Back to Assets' })
       }}</UIButton>
     </template>
@@ -39,7 +49,9 @@ function nextGenerate() {}
     <!-- gen results -->
 
     <template #footer>
-      <UIButton @click="nextGenerate">{{ $t({ zh: '下一步', en: 'Next' }) }}</UIButton>
+      <UIButton :loading="spriteGen.generateContentState.state === 'running'" @click="nextGenerate">{{
+        $t({ zh: '下一步', en: 'Next' })
+      }}</UIButton>
     </template>
   </GenModal>
 </template>

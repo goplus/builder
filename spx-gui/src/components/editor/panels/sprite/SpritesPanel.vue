@@ -75,8 +75,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
-import { AssetType } from '@/apis/asset'
+import { useAddSpriteFromLocalFile, useSpriteAssetLibraryModal } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
@@ -127,11 +126,10 @@ const handleAddFromLocalFile = useMessageHandle(
   }
 ).fn
 
-const addAssetFromLibrary = useAddAssetFromLibrary()
-
+const spriteAssetLibraryModal = useSpriteAssetLibraryModal()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
-    const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
+    const sprites = await spriteAssetLibraryModal(editorCtx.project)
     editorCtx.state.selectSprite(sprites[0].id)
   },
   {

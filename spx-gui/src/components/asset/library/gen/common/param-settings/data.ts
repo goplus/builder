@@ -1,5 +1,5 @@
 import { Facing } from '@/apis/aigc'
-import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
+import { AnimationLoopMode, ArtStyle, BackdropCategory, Perspective, SpriteCategory } from '@/apis/common'
 
 export const artStyleOptions = [
   { value: ArtStyle.PixelArt, label: { en: 'Pixel Art', zh: '像素艺术' } },
@@ -33,6 +33,31 @@ export const spriteCategoryOptions = [
   { value: SpriteCategory.Unspecified, label: { en: 'Unspecified', zh: '未指定' } }
 ]
 
+export const backdropCategoryOptions = [
+  { value: BackdropCategory.UI, label: { en: 'UI', zh: 'UI' } },
+  { value: BackdropCategory.Unspecified, label: { en: 'Unspecified', zh: '未指定' } }
+]
+
+export const loopModeOptions = [
+  { value: AnimationLoopMode.Loopable, label: { en: 'Loopable', zh: '可循环' } },
+  { value: AnimationLoopMode.NonLoopable, label: { en: 'Non Loopable', zh: '不可循环' } }
+]
+
+export const backdropParamSettings = {
+  category: {
+    options: backdropCategoryOptions,
+    tips: { en: 'Please select the backdrop category you want to generate', zh: '请选择您想要生成的背景类别' }
+  },
+  artStyle: {
+    options: artStyleOptions,
+    tips: { en: 'Please select the art style you want to generate', zh: '请选择您想要生成的艺术风格' }
+  },
+  perspective: {
+    options: perspectiveOptions,
+    tips: { en: 'Please select the perspective you want to generate', zh: '请选择您想要生成的视角' }
+  }
+}
+
 export const spriteParamSettings = {
   category: {
     options: spriteCategoryOptions,
@@ -60,5 +85,20 @@ export const costumeParamSettings = {
   perspective: {
     options: perspectiveOptions,
     tips: { en: 'Please select the perspective you want to generate', zh: '请选择您想要生成的视角' }
+  }
+}
+
+export const animationParamSettings = {
+  artStyle: {
+    options: artStyleOptions,
+    tips: { en: 'Please select the art style you want to generate', zh: '请选择您想要生成的艺术风格' }
+  },
+  perspective: {
+    options: perspectiveOptions,
+    tips: { en: 'Please select the perspective you want to generate', zh: '请选择您想要生成的视角' }
+  },
+  loopMode: {
+    options: loopModeOptions,
+    tips: { en: 'Please select the loop mode you want to generate', zh: '请选择您想要生成的循环模式' }
   }
 }
