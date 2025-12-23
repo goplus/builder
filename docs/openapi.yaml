@@ -1887,7 +1887,7 @@ paths:
         `GET /aigc/task/{taskID}/events` instead.
       parameters:
         - name: taskID
-          description: The task ID returned from task creation.
+          description: The task ID to get.
           in: path
           required: true
           schema:
@@ -1914,8 +1914,9 @@ paths:
         `GET /aigc/task/{taskID}` separately and avoids race conditions between fetching current state and subscribing
         to updates.
 
-        The connection remains open until the task completes or fails. If the task is already completed or failed when
-        connecting, the `snapshot` event will contain the final state and the connection will close immediately.
+        The connection remains open until the task completes, is cancelled, or fails. If the task is already in a
+        terminal state (`completed`, `cancelled`, or `failed`) when connecting, the `snapshot` event will contain the
+        final state and the connection will close immediately.
 
         #### Event types
 
@@ -1923,7 +1924,9 @@ paths:
         |-------|------|-------------|
         | `snapshot` | Full `AIGCTask` object | Initial state, always sent first |
         | `progress` | `{"progress": 45, "message": "..."}` | Task progress update |
+        | `cancelling` | `{}` | Task cancellation in progress |
         | `completed` | `{"result": {...}}` | Task completed successfully |
+        | `cancelled` | `{}` | Task was cancelled |
         | `failed` | `{"error": {"reason": "...", "message": "..."}}` | Task failed |
 
         #### Example: task in progress
@@ -1968,9 +1971,26 @@ paths:
 
         ...
         ```
+
+        #### Example: task cancelled
+
+        ```
+        GET /aigc/task/task-abc/events
+
+        event: snapshot
+        data: {"id": "task-abc", "status": "processing", "progress": 30, "message": "Generating..."}
+
+        event: cancelling
+        data: {}
+
+        event: cancelled
+        data: {}
+
+        (connection closed)
+        ```
       parameters:
         - name: taskID
-          description: The task ID returned from task creation.
+          description: The task ID to subscribe to.
           in: path
           required: true
           schema:
@@ -1985,6 +2005,51 @@ paths:
                 description: Server-Sent Events stream.
         "404":
           description: Task not found.
+
+  /aigc/task/{taskID}/cancellation:
+    post:
+      tags:
+        - AIGC
+      summary: Cancel an AIGC task
+      description: |
+        Cancel a pending or processing AIGC task.
+
+        If subscribed via `GET /aigc/task/{taskID}/events`, a `cancelling` event will be emitted when cancellation
+        begins, followed by a `cancelled` event when complete.
+
+        #### Cancellation rules
+
+        | Current Status | Result |
+        |----------------|--------|
+        | `pending` | Immediately `cancelled`, quota refunded |
+        | `processing` | Transitions to `cancelling`, then `cancelled` |
+        | `cancelling` | No-op, returns current state |
+        | `completed` | `409 Conflict` |
+        | `cancelled` | No-op (idempotent), returns current state |
+        | `failed` | `409 Conflict` |
+
+        #### Quota refund
+
+        - Tasks cancelled from `pending` status receive a full quota refund.
+        - Tasks cancelled from `processing` status do not receive a refund (resources already consumed).
+      parameters:
+        - name: taskID
+          description: The task ID to cancel.
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cancellation accepted or task already cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIGCTask"
+        "404":
+          description: Task not found.
+        "409":
+          description: Task cannot be cancelled because it has already completed or failed.
 
   /aigc/asset-settings/enrichment:
     post:
@@ -2851,7 +2916,9 @@ components:
           enum:
             - pending
             - processing
+            - cancelling
             - completed
+            - cancelled
             - failed
           examples:
             - processing
