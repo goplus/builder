@@ -1923,7 +1923,6 @@ paths:
         | Event | Data | Description |
         |-------|------|-------------|
         | `snapshot` | Full `AIGCTask` object | Initial state, always sent first |
-        | `progress` | `{"progress": 45, "message": "..."}` | Task progress update |
         | `cancelling` | `{}` | Task cancellation in progress |
         | `completed` | `{"result": {...}}` | Task completed successfully |
         | `cancelled` | `{}` | Task was cancelled |
@@ -1935,13 +1934,7 @@ paths:
         GET /aigc/task/task-123/events
 
         event: snapshot
-        data: {"id": "task-123", "status": "processing", "progress": 10, "message": "Starting..."}
-
-        event: progress
-        data: {"progress": 50, "message": "Generating image..."}
-
-        event: progress
-        data: {"progress": 90, "message": "Post-processing..."}
+        data: {"id": "task-123", "status": "processing"}
 
         event: completed
         data: {"result": {"imageUrl": "https://..."}}
@@ -1964,12 +1957,10 @@ paths:
         GET /aigc/task/task-789/events
 
         event: snapshot
-        data: {"id": "task-789", "status": "pending", "progress": null, "message": null}
+        data: {"id": "task-789", "status": "pending"}
 
-        event: progress
-        data: {"progress": 0, "message": "Task started"}
-
-        ...
+        event: completed
+        data: {"result": {"imageUrl": "https://..."}}
         ```
 
         #### Example: task cancelled
@@ -1978,7 +1969,7 @@ paths:
         GET /aigc/task/task-abc/events
 
         event: snapshot
-        data: {"id": "task-abc", "status": "processing", "progress": 30, "message": "Generating..."}
+        data: {"id": "task-abc", "status": "processing"}
 
         event: cancelling
         data: {}
@@ -2192,8 +2183,7 @@ paths:
         Process the provided image URL to remove its background, resulting in a transparent background.
 
         **Deprecated**: This endpoint is deprecated and will be removed in a future version. Use `POST /aigc/task` with
-        `type: "removeBackground"` instead, which provides progress tracking and better reliability for long-running
-        operations.
+        `type: "removeBackground"` instead, which provides better reliability for long-running operations.
       requestBody:
         required: true
         content:
@@ -2922,18 +2912,6 @@ components:
             - failed
           examples:
             - processing
-        progress:
-          description: Progress percentage (0-100). Available when status is processing.
-          type: integer
-          minimum: 0
-          maximum: 100
-          examples:
-            - 45
-        message:
-          description: Human-readable status message.
-          type: string
-          examples:
-            - Generating image...
         result:
           description: Task result. Only available when status is completed.
           oneOf:
