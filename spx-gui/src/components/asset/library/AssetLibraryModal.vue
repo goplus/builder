@@ -1,91 +1,6 @@
-<template>
-  <UISearchableModal
-    :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
-    style="width: 1096px"
-    :visible="props.visible"
-    :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
-    @update:visible="emit('cancelled')"
-  >
-    <template #input>
-      <UITextInput
-        v-model:value="searchInput"
-        v-radar="{ name: 'Search input', desc: 'Input to search assets' }"
-        class="search-input"
-        clearable
-        :placeholder="$t({ en: 'Search', zh: '搜索' })"
-        @keypress.enter="handleSearch"
-      >
-        <template #prefix><UIIcon class="search-icon" type="search" /></template>
-      </UITextInput>
-    </template>
-    <section class="body">
-      <div class="sider">
-        <UITag
-          :type="category.value === categoryPersonal.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(categoryPersonal)"
-        >
-          {{ $t(categoryPersonal.message) }}
-        </UITag>
-        <UIDivider />
-        <UITag
-          v-for="c in categories"
-          :key="c.value"
-          :type="c.value === category.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(c)"
-        >
-          {{ $t(c.message) }}
-        </UITag>
-      </div>
-      <main class="main">
-        <h3 class="title">{{ $t(category.message) }}</h3>
-        <div
-          v-radar="{
-            name: 'Asset list',
-            desc: `List of ${entityMessage.en}s in the selected category`
-          }"
-          class="content"
-        >
-          <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
-            <!-- fixed asset-list height to keep the layout stable -->
-            <ul class="asset-list" style="height: 436px">
-              <ItemComponent
-                v-for="asset in slotProps.data.data"
-                :key="asset.id"
-                :asset="asset"
-                :selected="isSelected(asset)"
-                @click="handleAssetClick(asset)"
-              />
-            </ul>
-          </ListResultWrapper>
-          <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
-        </div>
-        <footer class="footer">
-          <span v-show="selected.length > 0">
-            {{
-              $t({
-                en: `${selected.length} ${entityMessage.en}${selected.length > 1 ? 's' : ''} selected`,
-                zh: `已选中 ${selected.length} 个${entityMessage.zh}`
-              })
-            }}
-          </span>
-          <UIButton
-            v-radar="{ name: 'Confirm button', desc: 'Click to confirm asset selection' }"
-            size="large"
-            :disabled="selected.length === 0"
-            :loading="handleConfirm.isLoading.value"
-            @click="handleConfirm.fn"
-          >
-            {{ $t({ en: 'Confirm', zh: '确认' }) }}
-          </UIButton>
-        </footer>
-      </main>
-    </section>
-  </UISearchableModal>
-</template>
-
 <script lang="ts" setup>
 import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
-import { UITextInput, UIIcon, UITag, UIPagination, UIButton, UISearchableModal, UIDivider } from '@/components/ui'
+import { UITextInput, UIPagination, UIButton } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'
@@ -93,10 +8,15 @@ import { useQuery } from '@/utils/query'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
-import { type Category, getAssetCategories, categoryAll } from './category'
+import { type Category, categoryAll } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
+import GenModal from '@/components/asset/gen/common/GenModal.vue'
+import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
+import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
+import { SpriteGen } from '@/models/gen/sprite-gen'
+import { BackdropGen } from '@/models/gen/backdrop-gen'
 
 const props = defineProps<{
   type: AssetType
@@ -109,17 +29,29 @@ const emit = defineEmits<{
   resolved: [AssetModel[]]
 }>()
 
-const categories = computed(() => {
-  const categoriesWithoutAll = getAssetCategories(props.type)
-  return [categoryAll, ...categoriesWithoutAll]
-})
-
 const ItemComponent = computed(
   () =>
     ({
       [AssetType.Sound]: SoundItem,
       [AssetType.Sprite]: SpriteItem,
       [AssetType.Backdrop]: BackdropItem
+    })[props.type]
+)
+
+const EmptyComponent = computed(
+  () =>
+    ({
+      [AssetType.Sound]: null,
+      [AssetType.Sprite]: SpriteSettingsInput,
+      [AssetType.Backdrop]: BackdropSettingsInput
+    })[props.type]
+)
+const genProps = computed(
+  () =>
+    ({
+      [AssetType.Sound]: null,
+      [AssetType.Sprite]: { gen: new SpriteGen(props.project, keyword.value) },
+      [AssetType.Backdrop]: { gen: new BackdropGen(props.project, keyword.value) }
     })[props.type]
 )
 
@@ -134,7 +66,6 @@ const entityMessage = computed(() => entityMessages[props.type])
 const searchInput = ref('')
 const keyword = ref('')
 
-// do search (with a delay) when search-input changed
 watch(
   searchInput,
   debounce(() => {
@@ -178,15 +109,6 @@ const queryRet = useQuery(
     zh: '获取列表失败'
   }
 )
-
-function handleSearch() {
-  keyword.value = searchInput.value
-}
-
-function handleSelectCategory(c: Category) {
-  category.value = c
-}
-
 const selected = shallowReactive<AssetData[]>([])
 
 async function addAssetToProject(asset: AssetData) {
@@ -208,7 +130,7 @@ async function addAssetToProject(asset: AssetData) {
       return sound
     }
     default:
-      throw new Error('unknow asset type')
+      throw new Error('unknown asset type')
   }
 }
 
@@ -234,26 +156,73 @@ async function handleAssetClick(asset: AssetData) {
 }
 </script>
 
-<style lang="scss" scoped>
-.search-input {
-  width: 320px;
-}
-.search-icon {
-  color: var(--ui-color-grey-700);
-}
-.body {
-  display: flex;
-  justify-content: stretch;
-}
-.sider {
-  flex: 0 0 168px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding: var(--ui-gap-middle);
-  gap: 12px;
+<template>
+  <GenModal
+    :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
+    style="width: 1096px"
+    :visible="props.visible"
+    :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
+    @update:visible="emit('cancelled')"
+  >
+    <header class="header">
+      <UITextInput v-model:value="searchInput" :placeholder="$t({ zh: '搜索', en: 'Search' })"></UITextInput>
+    </header>
+    <main class="main">
+      <div
+        v-radar="{
+          name: 'Asset list',
+          desc: `List of ${entityMessage.en}s in the selected category`
+        }"
+        class="content"
+      >
+        <ListResultWrapper :query-ret="queryRet" :height="436">
+          <template v-if="EmptyComponent != null && genProps != null" #empty>
+            <div class="empty">
+              <div>
+                {{
+                  $t({
+                    zh: `没有找到 ${keyword} 的结果, 可以尝试用 AI 生成吧`,
+                    en: `No results for ${keyword}, try to generate with AI`
+                  })
+                }}
+                <EmptyComponent v-bind="genProps" />
+              </div>
+            </div>
+          </template>
+          <!-- fixed asset-list height to keep the layout stable -->
+          <template #default="slotProps">
+            <ul class="asset-list" style="height: 436px">
+              <ItemComponent
+                v-for="asset in slotProps.data.data"
+                :key="asset.id"
+                :asset="asset"
+                :selected="isSelected(asset)"
+                @click="handleAssetClick(asset)"
+              />
+            </ul>
+          </template>
+        </ListResultWrapper>
+        <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+      </div>
+      <footer class="footer">
+        <UIButton
+          v-radar="{ name: 'Confirm button', desc: 'Click to confirm asset selection' }"
+          size="large"
+          :disabled="selected.length === 0"
+          :loading="handleConfirm.isLoading.value"
+          @click="handleConfirm.fn"
+        >
+          {{ $t({ en: 'Confirm', zh: '确认' }) }}
+        </UIButton>
+      </footer>
+    </main>
+  </GenModal>
+</template>
 
-  border-right: 1px solid var(--ui-color-grey-400);
+<style lang="scss" scoped>
+.header {
+  display: flex;
+  margin-bottom: 26px;
 }
 .main {
   flex: 1 1 0;
@@ -261,12 +230,17 @@ async function handleAssetClick(asset: AssetData) {
   flex-direction: column;
   justify-content: stretch;
 }
-.title {
-  padding: 20px 24px 0;
-  color: var(--ui-color-grey-900);
-}
 .content {
-  padding: 8px 24px 0;
+  padding-top: 8px;
+}
+.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin: 100px 250px 200px 250px;
+  gap: 24px;
+  height: 100%;
 }
 .asset-list {
   display: flex;

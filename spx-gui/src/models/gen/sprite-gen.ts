@@ -18,13 +18,13 @@ import { getProjectSettings, Phase } from './common'
 import { CostumeGen } from './costume-gen'
 import { AnimationGen } from './animation-gen'
 
-type CostumeItem = {
+export type CostumeItem = {
   settings: CostumeSettings
   gen: CostumeGen | null
   result: Costume | null
 }
 
-type AnimationItem = {
+export type AnimationItem = {
   settings: AnimationSettings
   gen: AnimationGen | null
   result: Animation | null
@@ -74,7 +74,7 @@ export class SpriteGen extends Disposable {
     Object.assign(this.settings, updates)
   }
 
-  private defaultCostume: CostumeItem | null = null
+  defaultCostume: CostumeItem | null = null
   genDefaultCostume() {
     const settings = {
       // TODO: better default settings, or get from content-settings generation API

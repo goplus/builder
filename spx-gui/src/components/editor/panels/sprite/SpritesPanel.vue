@@ -76,7 +76,6 @@
 import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
-import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
@@ -87,6 +86,7 @@ import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
 import { useMessageHandle } from '@/utils/exception'
+import { AssetType } from '@/apis/asset'
 
 defineProps<{
   expanded: boolean
@@ -128,7 +128,6 @@ const handleAddFromLocalFile = useMessageHandle(
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
-
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
