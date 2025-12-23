@@ -33,7 +33,6 @@ import SpriteGenModal from './library/gen/sprite/SpriteGenModal.vue'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import BackdropGenModal from './library/gen/backdrop/BackdropGenModal.vue'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
-import SpriteAssetLibraryModal from './library/SpriteAssetLibraryModal.vue'
 
 export function useAddAssetFromLibrary() {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
@@ -340,13 +339,6 @@ export function useRenameWidget() {
         warning: await getRenameWarning()
       }
     })
-  }
-}
-
-export function useSpriteAssetLibraryModal() {
-  const invokeModal = useModal(SpriteAssetLibraryModal)
-  return async function spriteAssetLibraryModal(project: Project) {
-    return (await invokeModal({ project })) as Sprite[]
   }
 }
 

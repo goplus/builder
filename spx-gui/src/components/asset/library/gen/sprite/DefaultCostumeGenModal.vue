@@ -3,7 +3,7 @@ import { UIButton } from '@/components/ui'
 import GenModal from '../common/GenModal.vue'
 import { SpriteGen } from '@/models/gen/sprite-gen'
 import SpriteSettingInput from './SpriteSettingInput.vue'
-import { useSpriteGenModal, useSpriteAssetLibraryModal } from '@/components/asset/index'
+import { useSpriteGenModal } from '@/components/asset/index'
 import type { Project } from '@/models/project'
 
 const props = defineProps<{
@@ -24,11 +24,7 @@ async function nextGenerate() {
   spriteGenModal(props.spriteGen)
 }
 
-const spriteAssetLibraryModal = useSpriteAssetLibraryModal()
-function backToAssets() {
-  emit('cancelled')
-  spriteAssetLibraryModal(props.project)
-}
+function backToAssets() {}
 </script>
 
 <template>
