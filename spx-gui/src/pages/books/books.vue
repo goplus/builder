@@ -16,7 +16,7 @@ const bookPath = computed(() => {
 // Full HTML path
 const htmlPath = computed(() => {
   const isHtmlFile = bookPath.value.endsWith('.html')
-  
+
   if (isHtmlFile) {
     return `/books/${bookPath.value}`
   } else {
@@ -39,7 +39,7 @@ const loadBook = async () => {
     if (!response.ok) {
       throw new Error(`Book not found: ${bookPath.value}`)
     }
-    
+
     // Load success
     if (iframeRef.value) {
       iframeRef.value.src = htmlPath.value
@@ -66,9 +66,12 @@ onMounted(() => {
 })
 
 // Watch for route changes
-watch(() => route.params.pathMatch, () => {
-  loadBook()
-})
+watch(
+  () => route.params.pathMatch,
+  () => {
+    loadBook()
+  }
+)
 </script>
 
 <template>
@@ -77,13 +80,13 @@ watch(() => route.params.pathMatch, () => {
       <div class="loading-spinner"></div>
       <p>Loading...</p>
     </div>
-    
+
     <div v-else-if="error" class="error-container">
       <h2>😕 Load Failed</h2>
       <p>{{ error }}</p>
       <router-link to="/" class="back-link">Back to Home</router-link>
     </div>
-    
+
     <iframe
       v-else
       ref="iframeRef"
@@ -130,8 +133,12 @@ watch(() => route.params.pathMatch, () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-container {
