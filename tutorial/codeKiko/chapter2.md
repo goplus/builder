@@ -23,7 +23,7 @@
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-8/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     turnTo 萝卜
     step 200
@@ -48,7 +48,7 @@ onStart => {
 
 **代码执行流程**
 
-```xgo
+```go
 onStart => {
     turnTo 萝卜   // 第1步：自动转向萝卜
     step 200      // 第2步：向前走200步
@@ -64,7 +64,7 @@ onStart => {
 **对比：传统方式 vs turnTo**
 
 **传统方式（麻烦）：**
-```xgo
+```go
 onStart => {
     turn -37      // 需要自己计算角度
     step 200
@@ -76,7 +76,7 @@ onStart => {
 - 容易出错
 
 **使用 turnTo（简单）：**
-```xgo
+```go
 onStart => {
     turnTo 萝卜   // 自动转向，无需计算
     step 200
@@ -168,7 +168,7 @@ onStart => {
 
 看看这次的场景，我们要让 Kiko 走到萝卜那里。如果用之前学的方法：
 
-```xgo
+```go
 onStart => {
     turnTo 萝卜    // 转向萝卜
     step 200       // 走 200 步...够吗？不够？太多？
@@ -183,14 +183,14 @@ onStart => {
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-10/sprites/Kiko/code
 
 **初始代码：**
-```xgo
+```go
 onStart => {
     stepTo 萝卜
 }
 ```
 
 **修改后的代码：**
-```xgo
+```go
 onStart => {
     turnTo 萝卜
     stepTo 萝卜
@@ -210,7 +210,7 @@ onStart => {
 
 这是一个重要的细节！让我们理解 `stepTo` 的工作方式：
 
-```xgo
+```go
 stepTo 萝卜   // 只会沿着当前朝向前进，直到到达萝卜的距离
 ```
 
@@ -223,7 +223,7 @@ stepTo 萝卜   // 只会沿着当前朝向前进，直到到达萝卜的距离
 
 **正确的组合**
 
-```xgo
+```go
 onStart => {
     turnTo 萝卜   // 第1步：先转向萝卜
     stepTo 萝卜   // 第2步：再走向萝卜
@@ -241,7 +241,7 @@ onStart => {
 让我们回顾一下我们学过的三种移动方式：
 
 **第一代：完全手动**
-```xgo
+```go
 turn 45       // 手动计算角度
 step 200      // 手动计算距离
 ```
@@ -250,7 +250,7 @@ step 200      // 手动计算距离
 - 最麻烦，但最灵活
 
 **第二代：自动转向**
-```xgo
+```go
 turnTo 萝卜   // 自动计算角度
 step 200      // 手动计算距离
 ```
@@ -259,7 +259,7 @@ step 200      // 手动计算距离
 - 比较方便
 
 **第三代：全自动**
-```xgo
+```go
 turnTo 萝卜   // 自动计算角度
 stepTo 萝卜   // 自动计算距离
 ```
@@ -340,7 +340,7 @@ stepTo 萝卜   // 自动计算距离
 
 如果只收集第一个萝卜：
 
-```xgo
+```go
 onStart => {
     turnTo 萝卜1
     stepTo 萝卜1
@@ -355,7 +355,7 @@ onStart => {
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-11/sprites/Kiko/code
 
 **初始代码：**
-```xgo
+```go
 onStart => {
     turnTo 萝卜1
     stepTo 萝卜1
@@ -363,7 +363,7 @@ onStart => {
 ```
 
 **修改后的代码：**
-```xgo
+```go
 onStart => {
     turnTo 萝卜1
     stepTo 萝卜1
@@ -382,7 +382,7 @@ onStart => {
 
 仔细观察代码，你会发现一个重复的模式：
 
-```xgo
+```go
 turnTo 目标
 stepTo 目标
 ```
@@ -396,7 +396,7 @@ stepTo 目标
 
 让我们逐步分析代码的执行过程：
 
-```xgo
+```go
 onStart => {
     // 阶段1：收集萝卜1
     turnTo 萝卜1   // 转向萝卜1
@@ -474,7 +474,7 @@ onStart => {
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-12/sprites/Kiko/code
 
 **初始代码：**
-```xgo
+```go
 onStart => {
     Boat.step 80
     stepTo Radish
@@ -482,7 +482,7 @@ onStart => {
 ```
 
 **期望的完整代码：**
-```xgo
+```go
 onStart => {
     Boat.turn Right
     Boat.turn Right
@@ -497,7 +497,7 @@ onStart => {
 
 这是一个全新的语法！让我们仔细理解：
 
-```xgo
+```go
 Boat.turn Right
 ```
 
@@ -512,7 +512,7 @@ Boat.turn Right
 
 对比这两种写法：
 
-```xgo
+```go
 // 控制 Kiko 自己
 turn Right      // Kiko 向右转
 step 100        // Kiko 前进 100 步
@@ -530,7 +530,7 @@ Boat.step 100   // 让船前进 100 步
 
 让我们分析船的转向：
 
-```xgo
+```go
 Boat.turn Right   // 第一次右转：船转 90 度
 Boat.turn Right   // 第二次右转：船再转 90 度
 ```
@@ -545,7 +545,7 @@ Boat.turn Right   // 第二次右转：船再转 90 度
 
 让我们分析初始代码为什么不能完成任务：
 
-```xgo
+```go
 onStart => {
     Boat.step 80      // 问题1：船没有先转向
     stepTo Radish     // 问题2：距离不够，Kiko 到不了

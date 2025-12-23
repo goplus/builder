@@ -5,7 +5,7 @@
 
 想象一下，如果你要让 Kiko 画一个五边形，你需要写多少代码？
 
-```xgo
+```go
 turn -60
 step 100
 turn -60
@@ -34,7 +34,7 @@ step 100
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-15/sprites/Kiko/code
 
 **使用循环的代码：**
-```xgo
+```go
 onStart => {
     repeat 5, => {
         turn -60
@@ -49,7 +49,7 @@ onStart => {
 
 `repeat` 是"重复"的意思，它的完整语法是：
 
-```xgo
+```go
 repeat 次数, => {
     要重复的代码
 }
@@ -71,7 +71,7 @@ repeat 次数, => {
 - 完整意思：定义一段要执行的代码
 
 我们在 `onStart` 中已经见过它：
-```xgo
+```go
 onStart => {  // 这也是 Lambda 表达式
     // 代码
 }
@@ -81,7 +81,7 @@ onStart => {  // 这也是 Lambda 表达式
 
 大括号内的代码叫做**循环体**（Loop Body）：
 
-```xgo
+```go
 repeat 5, => {
     turn -60    // 循环体的第1行
     step 100    // 循环体的第2行
@@ -94,7 +94,7 @@ repeat 5, => {
 
 让我们看看这段代码是如何执行的：
 
-```xgo
+```go
 repeat 5, => {
     turn -60
     step 100
@@ -131,7 +131,7 @@ repeat 5, => {
 **对比：不用循环 vs 用循环**
 
 **不用循环：**
-```xgo
+```go
 onStart => {
     turn -60
     step 100
@@ -151,7 +151,7 @@ onStart => {
 - 难以修改
 
 **使用循环：**
-```xgo
+```go
 onStart => {
     repeat 5, => {
         turn -60
@@ -171,7 +171,7 @@ onStart => {
 - 几乎不可能手写
 
 **使用循环**：
-```xgo
+```go
 repeat 100, => {
     turn -3.6  // 360÷100 = 3.6
     step 50
@@ -199,7 +199,7 @@ repeat 100, => {
 **为什么叫"循环体"？**
 
 循环体就像一个模板：
-```xgo
+```go
 repeat 5, => {
     turn -60    // 模板第1步
     step 100    // 模板第2步
@@ -227,7 +227,7 @@ repeat 5, => {
 
 **循环体可以包含任何代码**
 
-```xgo
+```go
 // 简单：只有一个命令
 repeat 5, => {
     step 50
@@ -261,7 +261,7 @@ repeat 2, => {
 
 为了代码清晰，循环体内的代码要**缩进**（向右移动）：
 
-```xgo
+```go
 // 好的缩进
 repeat 5, => {
     turn -60
@@ -343,7 +343,7 @@ step 100
 看看这次的场景，我们要让 Kiko 一直向右走，直到它的 X 坐标超过 80。问题是：我们不知道需要走多少步！
 
 如果用 `repeat`：
-```xgo
+```go
 repeat 10, => {  // 10次够吗？不够？太多？
     step 10
 }
@@ -351,7 +351,7 @@ repeat 10, => {  // 10次够吗？不够？太多？
 
 我们无法确定循环次数。但用 `repeatUntil`，就很简单：
 
-```xgo
+```go
 repeatUntil xpos > 80, => {  // 一直走，直到 x 坐标 > 80
     step 10
 }
@@ -361,7 +361,7 @@ repeatUntil xpos > 80, => {  // 一直走，直到 x 坐标 > 80
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-28/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     repeatUntil xpos > 80, => {
         step 10
@@ -375,7 +375,7 @@ onStart => {
 
 `repeatUntil` 是"重复直到"的意思，完整语法是：
 
-```xgo
+```go
 repeatUntil 条件, => {
     要重复的代码
 }
@@ -413,7 +413,7 @@ repeatUntil 条件, => {
 
 条件是一个**判断语句**，结果是"真"或"假"：
 
-```xgo
+```go
 xpos > 80   // 判断：x 坐标是否大于 80
 ```
 
@@ -422,7 +422,7 @@ xpos > 80   // 判断：x 坐标是否大于 80
 
 **repeatUntil 的工作原理**
 
-```xgo
+```go
 repeatUntil xpos > 80, => {
     step 10
 }
@@ -445,7 +445,7 @@ repeatUntil xpos > 80, => {
 **对比两种循环**
 
 **repeat（固定次数）：**
-```xgo
+```go
 repeat 5, => {
     step 10
 }
@@ -455,7 +455,7 @@ repeat 5, => {
 - 适合：知道要重复多少次
 
 **repeatUntil（条件控制）：**
-```xgo
+```go
 repeatUntil xpos > 80, => {
     step 10
 }
@@ -497,7 +497,7 @@ repeatUntil xpos > 80, => {
 **注意**：判断相等用 `==`（两个等号），不是 `=`（一个等号）！
 
 **示例**：
-```xgo
+```go
 // 走到 x 坐标大于 100
 repeatUntil xpos > 100, => {
     step 10
@@ -538,7 +538,7 @@ repeatUntil ypos >= 80, => {
 
 **Kiko 的坐标属性**
 
-```xgo
+```go
 xpos  // Kiko 的 x 坐标
 ypos  // Kiko 的 y 坐标
 ```
@@ -553,7 +553,7 @@ ypos  // Kiko 的 y 坐标
 
 如果条件永远不满足，循环会永远执行下去！
 
-```xgo
+```go
 // 危险：可能无限循环
 repeatUntil xpos > 80, => {
     step -10  // 向后退！永远到不了 80
@@ -569,7 +569,7 @@ repeatUntil xpos > 80, => {
 **如何避免无限循环**
 
 1. **确保循环体会改变条件**
-   ```xgo
+   ```go
    // 好：step 10 会增加 xpos
    repeatUntil xpos > 80, => {
        step 10
@@ -577,7 +577,7 @@ repeatUntil xpos > 80, => {
    ```
 
 2. **检查方向是否正确**
-   ```xgo
+   ```go
    // 好：向右走，xpos 增加
    repeatUntil xpos > 80, => {
        step 10
@@ -590,7 +590,7 @@ repeatUntil xpos > 80, => {
    ```
 
 3. **确保条件可以达到**
-   ```xgo
+   ```go
    // 好：xpos 可以达到 80
    repeatUntil xpos > 80, => {
        step 10
@@ -637,7 +637,7 @@ repeatUntil xpos > 80, => {
 
 这种"纯等待"的情况，用 `repeatUntil` 就显得有点笨拙：
 
-```xgo
+```go
 repeatUntil 萝卜.mature, => {
     // 什么都不做，只是等待
 }
@@ -657,7 +657,7 @@ XGo 提供了一个更简洁的命令：`waitUntil`（等待直到）。
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-29/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     waitUntil 萝卜.mature
     turnTo 萝卜
@@ -671,7 +671,7 @@ onStart => {
 
 `waitUntil` 是"等待直到"的意思，语法非常简洁：
 
-```xgo
+```go
 waitUntil 条件
 ```
 
@@ -682,7 +682,7 @@ waitUntil 条件
 **对比 repeatUntil 和 waitUntil**
 
 **repeatUntil（有循环体）：**
-```xgo
+```go
 repeatUntil 条件, => {
     // 在等待期间重复执行这些代码
     做某事
@@ -690,7 +690,7 @@ repeatUntil 条件, => {
 ```
 
 **waitUntil（无循环体）：**
-```xgo
+```go
 waitUntil 条件
 // 什么都不做，只是等待
 ```
@@ -704,7 +704,7 @@ waitUntil 条件
 
 **示例对比**：
 
-```xgo
+```go
 // 场景1：走到某个位置（等待时要移动）
 repeatUntil xpos > 80, => {
     step 10  // 需要持续移动
@@ -718,7 +718,7 @@ waitUntil 萝卜.mature  // 只是等待
 
 在这个例子中，我们看到了新的语法：
 
-```xgo
+```go
 萝卜.mature
 ```
 
@@ -735,7 +735,7 @@ waitUntil 萝卜.mature  // 只是等待
 
 这些是 XBuilder 自动为每个对象提供的属性：
 
-```xgo
+```go
 // Kiko 的内置属性
 Kiko.xpos     // Kiko 的 x 坐标（系统自带）
 Kiko.ypos     // Kiko 的 y 坐标（系统自带）
@@ -752,7 +752,7 @@ Kiko.size     // Kiko 的大小（系统自带）
 
 这些是开发者为特定对象自定义的属性：
 
-```xgo
+```go
 // 萝卜的自定义属性
 萝卜.mature   // 是否成熟（自定义属性）
 ```
@@ -766,7 +766,7 @@ Kiko.size     // Kiko 的大小（系统自带）
 
 在这个例子中，`mature` 是**萝卜对象的自定义属性**：
 
-```xgo
+```go
 // 在萝卜对象的代码中（我们看不到，但它存在）
 var (
     mature bool  // 自定义属性：是否成熟
@@ -781,7 +781,7 @@ var (
 - 当萝卜还在生长时：`萝卜.mature` 为 `false`（假）
 - 当萝卜成熟时：`萝卜.mature` 变为 `true`（真）
 
-```xgo
+```go
 waitUntil 萝卜.mature
 ```
 
@@ -803,7 +803,7 @@ waitUntil 萝卜.mature
 - 不同对象可能有完全不同的自定义属性
 
 例如：
-```xgo
+```go
 // 系统属性：所有对象都有
 Kiko.xpos      // ✓ 有
 萝卜.xpos      // ✓ 有
@@ -822,7 +822,7 @@ Kiko.mature    // ✗ Kiko 没有这个属性
 
 让我们详细看看代码是如何执行的：
 
-```xgo
+```go
 onStart => {
     waitUntil 萝卜.mature  // 第1步：等待
     turnTo 萝卜            // 第2步：转向
@@ -890,7 +890,7 @@ onStart => {
 - 等待条件满足
 - 然后才执行下一行
 
-```xgo
+```go
 waitUntil 萝卜.mature  // 停在这里等待
 turnTo 萝卜            // 萝卜成熟后才执行这行
 stepTo 萝卜            // 然后执行这行
@@ -902,7 +902,7 @@ stepTo 萝卜            // 然后执行这行
 
 对象的属性会**动态变化**：
 
-```xgo
+```go
 // 游戏开始时
 萝卜.mature == false  // 未成熟（由萝卜对象设置）
 
@@ -921,7 +921,7 @@ stepTo 萝卜            // 然后执行这行
 
 **模式 3：等待后循环**
 
-```xgo
+```go
 onStart => {
     // 等待门打开（自定义属性）
     waitUntil 门.open
@@ -935,7 +935,7 @@ onStart => {
 
 **模式 4：循环中等待**
 
-```xgo
+```go
 onStart => {
     repeat 3, => {
         // 等待萝卜成熟（自定义属性）
@@ -952,7 +952,7 @@ onStart => {
 
 **模式 5：混合使用系统属性和自定义属性**
 
-```xgo
+```go
 onStart => {
     // 先等待到达某个位置（系统属性）
     waitUntil xpos > 50

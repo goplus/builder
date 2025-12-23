@@ -27,6 +27,7 @@ WORKDIR /app/spx-gui
 COPY spx-gui/package.json spx-gui/package-lock.json .
 COPY spx-gui/public ./public
 COPY spx-gui/install-spx.sh .
+COPY spx-gui/build-books.sh .
 ARG NPM_CONFIG_REGISTRY
 RUN npm install
 

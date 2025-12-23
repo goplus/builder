@@ -41,7 +41,7 @@
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-31/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     if 萝卜1.IsMature() {
         turnTo 萝卜1
@@ -54,7 +54,7 @@ onStart => {
 
 **认识 if 语句**
 
-```xgo
+```go
 if 条件 {
     代码块
 }
@@ -67,7 +67,7 @@ if 条件 {
 
 **完整语句分析**
 
-```xgo
+```go
 if 萝卜1.IsMature() {
     turnTo 萝卜1
     stepTo 萝卜1
@@ -84,7 +84,7 @@ if 萝卜1.IsMature() {
 
 **IsMature 函数**
 
-```xgo
+```go
 萝卜1.IsMature()
 ```
 
@@ -101,7 +101,7 @@ if 萝卜1.IsMature() {
 
 **执行流程**
 
-```xgo
+```go
 if 萝卜1.IsMature() {
     turnTo 萝卜1
     stepTo 萝卜1
@@ -148,7 +148,7 @@ if 萝卜1.IsMature() {
 
 条件表达式的结果必须是 `true` 或 `false`：
 
-```xgo
+```go
 // ✓ 正确：返回布尔值
 if 萝卜1.IsMature() { }          // 函数返回 true/false
 if xpos > 100 { }                 // 比较返回 true/false
@@ -163,7 +163,7 @@ if 100 { }                        // 数字不是布尔值
 
 这是 `if` 和之前学的循环的重要区别：
 
-```xgo
+```go
 // repeat：总是执行
 repeat 3, => {
     step 10  // 一定会执行3次
@@ -179,7 +179,7 @@ if 萝卜1.IsMature() {
 
 代码块内可以有任意多行代码：
 
-```xgo
+```go
 if 萝卜1.IsMature() {
     turnTo 萝卜1       // 第1行
     stepTo 萝卜1       // 第2行
@@ -195,7 +195,7 @@ if 萝卜1.IsMature() {
 
 **1. 函数调用（返回布尔值）**
 
-```xgo
+```go
 if 萝卜1.IsMature() {  // 调用函数
     turnTo 萝卜1
 }
@@ -203,7 +203,7 @@ if 萝卜1.IsMature() {  // 调用函数
 
 **2. 比较运算**
 
-```xgo
+```go
 if xpos > 100 {        // 比较运算
     step 50
 }
@@ -215,7 +215,7 @@ if ypos < 50 {
 
 **3. 布尔属性**
 
-```xgo
+```go
 if 萝卜1.mature {      // 直接使用布尔属性（如果有）
     turnTo 萝卜1
 }
@@ -223,7 +223,7 @@ if 萝卜1.mature {      // 直接使用布尔属性（如果有）
 
 **4. 布尔变量**
 
-```xgo
+```go
 var isReady = true
 
 if isReady {           // 直接使用布尔变量
@@ -290,7 +290,7 @@ if isReady {           // 直接使用布尔变量
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-32/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
     for v in radishs {
@@ -306,7 +306,7 @@ onStart => {
 
 **数组类型声明**
 
-```xgo
+```go
 var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
 ```
 
@@ -321,7 +321,7 @@ var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
 
 **为什么要指定类型？**
 
-```xgo
+```go
 // 之前：字符串数组（对象名）
 var radishs = ["萝卜1", "萝卜2", "萝卜3"]
 
@@ -340,7 +340,7 @@ var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
 
 **循环与条件的嵌套**
 
-```xgo
+```go
 for v in radishs {           // 外层：循环
     if v.IsMature() {        // 内层：条件
         turnTo v
@@ -486,7 +486,7 @@ for v in radishs {           // 外层：循环
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-35/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
     
@@ -516,7 +516,7 @@ onStart => {
 
 **认识 if...else 语句**
 
-```xgo
+```go
 if 条件 {
     代码块1
 } else {
@@ -537,7 +537,7 @@ if 条件 {
 
 **第一阶段：检查和照顾**
 
-```xgo
+```go
 for v in radishs {
     if v.IsMature() {
         // 分支1：萝卜成熟了
@@ -554,7 +554,7 @@ for v in radishs {
 ```
 
 **if 分支（萝卜成熟）**：
-```xgo
+```go
 turnTo v     // 转向萝卜
 stepTo v     // 走到萝卜（采摘）
 ```
@@ -562,7 +562,7 @@ stepTo v     // 走到萝卜（采摘）
 - 采摘成熟的萝卜
 
 **else 分支（萝卜未成熟）**：
-```xgo
+```go
 turnTo v                      // 转向萝卜
 step distanceTo(v)-20         // 走到萝卜附近（距离20步）
 v.Water()                     // 给萝卜浇水
@@ -573,7 +573,7 @@ animateAndWait "浇花"         // 播放浇花动画
 
 **为什么要减 20？**
 
-```xgo
+```go
 step distanceTo(v)-20
 ```
 
@@ -589,7 +589,7 @@ step distanceTo(v)-20
 
 **Water 方法**
 
-```xgo
+```go
 v.Water()
 ```
 
@@ -602,7 +602,7 @@ v.Water()
 
 **animateAndWait 命令**
 
-```xgo
+```go
 animateAndWait "浇花"
 ```
 
@@ -615,7 +615,7 @@ animateAndWait "浇花"
 
 **第二阶段：等待和收获**
 
-```xgo
+```go
 for v in radishs {
     waitUntil v.IsMature()  // 等待萝卜成熟
     turnTo v
@@ -641,7 +641,7 @@ for v in radishs {
 
 两个分支**只会执行一个**：
 
-```xgo
+```go
 if 条件 {
     // 分支A
 } else {
@@ -659,7 +659,7 @@ if 条件 {
 
 **3. else 是可选的**
 
-```xgo
+```go
 // 只有 if（可以）
 if 条件 {
     // 代码
@@ -714,7 +714,7 @@ if 条件 {
 
 对比：
 
-```xgo
+```go
 // 只有 if：可能什么都不做
 if 条件 {
     做某事
