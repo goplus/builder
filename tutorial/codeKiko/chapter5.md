@@ -16,7 +16,7 @@
 
 我们之前学过的都是命令：
 
-```xgo
+```go
 step 100        // 命令：参数通常不用括号
 turn Right      // 命令：参数通常不用括号
 turnTo 萝卜     // 命令：参数通常不用括号
@@ -31,7 +31,7 @@ turnTo 萝卜     // 命令：参数通常不用括号
 
 函数是一种特殊的功能：
 
-```xgo
+```go
 var distance = distanceTo(萝卜)    // 函数：参数必须用括号
 var n = rand(1, 10)         // 函数：参数必须用括号
 ```
@@ -45,7 +45,7 @@ var n = rand(1, 10)         // 函数：参数必须用括号
 
 这是因为函数有返回值：
 
-```xgo
+```go
 // 函数有返回值，必须用括号
 var distance = distanceTo(萝卜)  // ✓ 正确
 
@@ -89,7 +89,7 @@ var distance = distanceTo 萝卜   // ✗ 错误，编译器不知道这是函�
 > 课程地址：https://x.qiniu.com/project/curator/Coding-Course-30-1
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     var n = distanceTo(萝卜)
     step n
@@ -100,7 +100,7 @@ onStart => {
 
 **认识 distanceTo 函数**
 
-```xgo
+```go
 distanceTo(萝卜)
 ```
 
@@ -116,7 +116,7 @@ distanceTo(萝卜)
 
 **完整语句分析**
 
-```xgo
+```go
 var n = distanceTo(萝卜)
 ```
 
@@ -137,7 +137,7 @@ var n = distanceTo(萝卜)
 
 **使用距离**
 
-```xgo
+```go
 step n
 ```
 
@@ -151,7 +151,7 @@ step n
 **对比：不用函数 vs 用函数**
 
 **不用函数（猜测距离）：**
-```xgo
+```go
 onStart => {
     step 150  // 猜测距离是 150
 }
@@ -163,7 +163,7 @@ onStart => {
 - 每次萝卜位置变化，都要重新猜测和修改代码
 
 **使用函数（精确计算）：**
-```xgo
+```go
 onStart => {
     var n = distanceTo(萝卜)  // 精确计算距离
     step n
@@ -182,7 +182,7 @@ onStart => {
 
 函数执行后会**返回一个值**（Return Value）：
 
-```xgo
+```go
 var distance = distanceTo(萝卜)
 //    ↑           ↑
 //    │           └─ 函数返回一个数值（比如 150）
@@ -197,13 +197,13 @@ var distance = distanceTo(萝卜)
 **返回值的使用方式**
 
 **方式 1：存入变量（推荐，清晰）**
-```xgo
+```go
 var n = distanceTo(萝卜)  // 先存入变量
 step n                     // 再使用变量
 ```
 
 **方式 2：直接使用（简洁）**
-```xgo
+```go
 step distanceTo(萝卜)  // 直接使用返回值
 ```
 
@@ -213,7 +213,7 @@ step distanceTo(萝卜)  // 直接使用返回值
 
 返回值是一个普通的数值，可以参与各种计算：
 
-```xgo
+```go
 // 走一半的距离
 var halfDistance = distanceTo(萝卜) / 2
 step halfDistance
@@ -290,28 +290,28 @@ Kiko ─┐
 
 **基本语法**
 
-```xgo
+```go
 函数名(参数1, 参数2, ...)
 ```
 
 **单个参数**：
-```xgo
+```go
 distanceTo(萝卜)
 ```
 
 **多个参数**（下一节会学）：
-```xgo
+```go
 rand(1, 10)  // 两个参数：最小值1，最大值10
 ```
 
 **无参数**（可能的情况）：
-```xgo
+```go
 timer()  // 无参数，但括号仍然必须有
 ```
 
 **正确的写法**
 
-```xgo
+```go
 // ✓ 正确：有括号
 var n = distanceTo(萝卜)
 
@@ -327,7 +327,7 @@ println distanceTo(萝卜)
 
 **错误的写法**
 
-```xgo
+```go
 // ✗ 错误：缺少括号
 var n = distanceTo 萝卜
 
@@ -398,7 +398,7 @@ var n = distanceTo(胡萝卜)  // 如果没有"胡萝卜"对象
 > 课程地址：https://x.qiniu.com/project/curator/Coding-Course-30-2
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     var x = rand(10, 20)
     step x
@@ -411,7 +411,7 @@ onStart => {
 
 **认识 rand 函数**
 
-```xgo
+```go
 rand(10, 20)
 ```
 
@@ -424,7 +424,7 @@ rand(10, 20)
 
 **完整语句分析**
 
-```xgo
+```go
 var x = rand(10, 20)
 ```
 
@@ -439,7 +439,7 @@ var x = rand(10, 20)
 
 这是随机函数的关键特性：
 
-```xgo
+```go
 // 第1次运行
 var x = rand(10, 20)  // x 可能是 12
 
@@ -457,7 +457,7 @@ var x = rand(10, 20)  // x 可能是 20
 
 **代码执行流程**
 
-```xgo
+```go
 onStart => {
     var x = rand(10, 20)      // 第1步：生成随机数（比如15）
     step x                     // 第2步：随机前进（走15步）
@@ -475,7 +475,7 @@ onStart => {
 
 **参数说明**
 
-```xgo
+```go
 rand(最小值, 最大值)
 ```
 
@@ -485,7 +485,7 @@ rand(最小值, 最大值)
 
 **范围示例**
 
-```xgo
+```go
 rand(1, 10)    // 可能返回：1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 rand(0, 5)     // 可能返回：0, 1, 2, 3, 4, 5
 rand(50, 100)  // 可能返回：50, 51, 52, ..., 99, 100
@@ -495,17 +495,17 @@ rand(-5, 5)    // 可能返回：-5, -4, -3, ..., 4, 5
 **重要特性**
 
 1. **包含边界**：最小值和最大值都可能被选中
-   ```xgo
+   ```go
    rand(1, 10)  // 1 和 10 都可能出现
    ```
 
 2. **均匀分布**：每个数字被选中的概率相同
-   ```xgo
+   ```go
    rand(1, 10)  // 1 到 10 每个数字概率都是 10%
    ```
 
 3. **返回整数**：返回的是整数，不是小数
-   ```xgo
+   ```go
    rand(1, 10)  // 返回 5，不会返回 5.5
    ```
 

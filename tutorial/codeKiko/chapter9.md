@@ -69,7 +69,7 @@
 **当前代码状态**：
 
 **Kiko 精灵（已完成）**：
-```xgo
+```go
 onKey KeyD, => {
     if followRole == name {
         if heading != Right {
@@ -112,12 +112,12 @@ onClick => {
 ```
 
 **Jenny 精灵（需要补充）**：
-```xgo
+```go
 // 需要补充 Jenny 的代码
 ```
 
 **舞台（已完成）**：
-```xgo
+```go
 var (
     followRole string
 )
@@ -139,7 +139,7 @@ onStart => {
 Jenny 的代码和 Kiko 完全相同：
 
 **Jenny 精灵（完整代码）**：
-```xgo
+```go
 onKey KeyD, => {
     if followRole == name {
         if heading != Right {
@@ -195,7 +195,7 @@ onClick => {
 
 **舞台代码**
 
-```xgo
+```go
 var (
     followRole string
 )
@@ -206,7 +206,7 @@ onStart => {
 ```
 
 **全局变量定义**：
-```xgo
+```go
 var (
     followRole string
 )
@@ -224,7 +224,7 @@ var (
 - 所有精灵都可以读取和修改全局变量
 
 **初始化**：
-```xgo
+```go
 onStart => {
     followRole = Kiko.name
 }
@@ -238,7 +238,7 @@ onStart => {
 
 **方向控制**：
 
-```xgo
+```go
 onKey KeyD, => {
     if followRole == name {
         if heading != Right {
@@ -250,7 +250,7 @@ onKey KeyD, => {
 ```
 
 **核心逻辑**：
-```xgo
+```go
 if followRole == name {
     // 只有当前被选中时才移动
 }
@@ -259,7 +259,7 @@ if followRole == name {
 **工作原理**：
 
 1. **检查是否被选中**：
-   ```xgo
+   ```go
    if followRole == name {
    ```
    - `followRole`：全局变量，当前选中的角色名
@@ -267,7 +267,7 @@ if followRole == name {
    - 比较：当前精灵是否是被选中的角色
 
 2. **如果被选中**：
-   ```xgo
+   ```go
    if heading != Right {
        setHeading Right
    }
@@ -282,7 +282,7 @@ if followRole == name {
 
 **点击事件**：
 
-```xgo
+```go
 onClick => {
     followRole = name
 }
@@ -319,7 +319,7 @@ onClick => {
 
 **什么是 name？**
 
-```xgo
+```go
 name
 ```
 
@@ -329,7 +329,7 @@ name
 - 由系统自动设置
 
 **示例**：
-```xgo
+```go
 // 在 Kiko 的代码中
 name  // 值是 "Kiko"
 
@@ -338,7 +338,7 @@ name  // 值是 "Jenny"
 ```
 
 **访问其他精灵的 name**：
-```xgo
+```go
 Kiko.name   // "Kiko"
 Jenny.name  // "Jenny"
 ```
@@ -423,14 +423,14 @@ Jenny.name  // "Jenny"
 #### 完整代码
 
 **舞台代码：**
-```xgo
+```go
 var (
     followRole string
 )
 ```
 
 **Kiko 精灵代码：**
-```xgo
+```go
 onStart => {
     say "你好 Jenny"
     broadcast "hello"
@@ -438,7 +438,7 @@ onStart => {
 ```
 
 **Jenny 精灵代码：**
-```xgo
+```go
 onMsg "hello", => {
     wait 1
     say "你好 Kiko"
@@ -449,7 +449,7 @@ onMsg "hello", => {
 
 **Kiko 的代码 - 发送消息**
 
-```xgo
+```go
 onStart => {
     say "你好 Jenny"
     broadcast "hello"
@@ -457,7 +457,7 @@ onStart => {
 ```
 
 **第 1 步：显示文字**
-```xgo
+```go
 say "你好 Jenny"
 ```
 - `say`：让精灵说话（显示文字气泡）
@@ -465,20 +465,20 @@ say "你好 Jenny"
 - Kiko 会显示一个文字气泡："你好 Jenny"
 
 **say 命令的特点**：
-```xgo
+```go
 say "文字内容"          // 一直显示，直到下一次 say
 say "文字内容", 秒数    // 显示指定秒数后消失
 ```
 
 **示例**：
-```xgo
+```go
 say "你好"           // 一直显示"你好"
 say "你好", 2        // 显示"你好"2秒后消失
 say "再见", 1        // 显示"再见"1秒后消失
 ```
 
 **第 2 步：广播消息**
-```xgo
+```go
 broadcast "hello"
 ```
 - `broadcast`：广播命令，发送消息
@@ -499,7 +499,7 @@ Kiko 执行 broadcast "hello"
 
 **Jenny 的代码 - 接收消息**
 
-```xgo
+```go
 onMsg "hello", => {
     wait 1
     say "你好 Kiko"
@@ -507,7 +507,7 @@ onMsg "hello", => {
 ```
 
 **消息监听器**
-```xgo
+```go
 onMsg "hello", => {
 ```
 - `onMsg`：监听消息的事件处理器
@@ -515,14 +515,14 @@ onMsg "hello", => {
 - 当收到名为 "hello" 的消息时，执行花括号内的代码
 
 **onMsg 的语法**：
-```xgo
+```go
 onMsg "消息名称", => {
     // 收到消息后要做的事
 }
 ```
 
 **等待命令**
-```xgo
+```go
 wait 1
 ```
 - `wait`：等待命令
@@ -535,7 +535,7 @@ wait 1
 - 避免两句话同时出现
 
 **回应**
-```xgo
+```go
 say "你好 Kiko"
 ```
 - Jenny 显示回应的文字
@@ -559,7 +559,7 @@ say "你好 Kiko"
 **消息的特点**：
 
 1. **广播性**：
-   ```xgo
+   ```go
    broadcast "hello"
    ```
    - 消息发送给**所有对象**
@@ -567,14 +567,14 @@ say "你好 Kiko"
    - 所有监听这个消息的对象都会收到
 
 2. **异步性**：
-   ```xgo
+   ```go
    broadcast "hello"
    // 这行代码立即执行完
    // 不等待接收者处理完消息
    ```
 
 3. **事件驱动**：
-   ```xgo
+   ```go
    onMsg "hello", => {
        // 只有收到消息才执行
    }
@@ -585,12 +585,12 @@ say "你好 Kiko"
 **broadcast 命令**
 
 **语法**：
-```xgo
+```go
 broadcast "消息名称"
 ```
 
 **示例**：
-```xgo
+```go
 broadcast "start"      // 广播"开始"消息
 broadcast "gameOver"   // 广播"游戏结束"消息
 broadcast "collect"    // 广播"收集"消息
@@ -605,14 +605,14 @@ broadcast "hello"      // 广播"问候"消息
 **onMsg 事件处理器**
 
 **语法**：
-```xgo
+```go
 onMsg "消息名称", => {
     // 处理代码
 }
 ```
 
 **示例**：
-```xgo
+```go
 // 监听"开始"消息
 onMsg "start", => {
     step 100
@@ -638,17 +638,17 @@ onMsg "jump", => {
 
 **基本用法**：
 
-```xgo
+```go
 say "要说的话"
 ```
 
 **带时间的用法**：
-```xgo
+```go
 say "要说的话", 秒数
 ```
 
 **示例**：
-```xgo
+```go
 say "你好"              // 一直显示
 say "你好", 2           // 显示2秒
 say "再见", 1           // 显示1秒
@@ -662,25 +662,25 @@ say ""                  // 清除文字（显示空文字）
    - 自动跟随精灵移动
 
 2. **覆盖规则**：
-   ```xgo
+   ```go
    say "第一句"
    say "第二句"  // 覆盖第一句
    ```
 
 3. **清除文字**：
-   ```xgo
+   ```go
    say ""  // 显示空文字，相当于清除
    ```
 
 #### wait 命令
 
 **语法**：
-```xgo
+```go
 wait 秒数
 ```
 
 **示例**：
-```xgo
+```go
 wait 1     // 等待1秒
 wait 2     // 等待2秒
 wait 0.5   // 等待0.5秒（半秒）
@@ -690,7 +690,7 @@ wait 3.5   // 等待3.5秒
 **wait 的作用**：
 
 1. **创造节奏**：
-   ```xgo
+   ```go
    say "第一句"
    wait 2
    say "第二句"
@@ -699,21 +699,21 @@ wait 3.5   // 等待3.5秒
    ```
 
 2. **延迟执行**：
-   ```xgo
+   ```go
    broadcast "start"
    wait 1
    broadcast "go"  // 1秒后再广播
    ```
 
 3. **同步时间**：
-   ```xgo
+   ```go
    step 100
    wait 1
    turn Right
    ```
 
 **wait 会阻塞**：
-```xgo
+```go
 say "开始等待"
 wait 3           // 程序暂停3秒
 say "等待结束"   // 3秒后才执行这行

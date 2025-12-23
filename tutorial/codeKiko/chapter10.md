@@ -54,7 +54,7 @@
 
 在第 8.4 节，我们的代码是这样的：
 
-```xgo
+```go
 onKey KeyQ, => {
     // 找一个 离Kiko 最近的可以种萝卜的地方
     rad, ok := Farmland.planting(xpos, ypos)
@@ -90,7 +90,7 @@ onKey KeyW, => {
 **完整代码：**
 
 **函数定义部分**：
-```xgo
+```go
 func plant() {
     // 是否站在农田上
     if f, ok := findFarm(xpos, ypos); ok {
@@ -131,7 +131,7 @@ func harvest() {
 ```
 
 **函数调用部分**：
-```xgo
+```go
 onKey KeyQ, => {
     plant()
 }
@@ -161,7 +161,7 @@ onKey KeyE, => {
 
 **基本语法**：
 
-```xgo
+```go
 func 函数名() {
     函数体
 }
@@ -169,7 +169,7 @@ func 函数名() {
 
 **示例 - plant 函数**：
 
-```xgo
+```go
 func plant() {
     // 是否站在农田上
     if f, ok := findFarm(xpos, ypos); ok {
@@ -187,14 +187,14 @@ func plant() {
 **组成部分**：
 
 1. **func 关键字**：
-   ```xgo
+   ```go
    func
    ```
    - 表示这是一个函数定义
    - 必须有
 
 2. **函数名**：
-   ```xgo
+   ```go
    plant
    ```
    - 函数的名字
@@ -202,7 +202,7 @@ func plant() {
    - 命名规则和变量相同
 
 3. **参数列表**：
-   ```xgo
+   ```go
    ()
    ```
    - 括号是必须的
@@ -210,7 +210,7 @@ func plant() {
    - 后面会学习带参数的函数
 
 4. **函数体**：
-   ```xgo
+   ```go
    {
        // 函数的代码
    }
@@ -220,7 +220,7 @@ func plant() {
 
 **plant 函数的逻辑**：
 
-```xgo
+```go
 func plant() {
     // 第1步：检查是否在农田上
     if f, ok := findFarm(xpos, ypos); ok {
@@ -245,7 +245,7 @@ func plant() {
 
 **water 函数的逻辑**：
 
-```xgo
+```go
 func water() {
     // 第1步：检查是否在农田上
     if f, ok := findFarm(xpos, ypos); ok {
@@ -272,7 +272,7 @@ func water() {
 
 **harvest 函数的逻辑**：
 
-```xgo
+```go
 func harvest() {
     // 第1步：检查是否在农田上
     if f, ok := findFarm(xpos, ypos); ok {
@@ -298,13 +298,13 @@ func harvest() {
 
 **基本语法**：
 
-```xgo
+```go
 函数名()
 ```
 
 **示例**：
 
-```xgo
+```go
 onKey KeyQ, => {
     plant()    // 调用 plant 函数
 }
@@ -322,7 +322,7 @@ onKey KeyE, => {
 
 函数可以被多次调用：
 
-```xgo
+```go
 onKey KeyQ, => {
     plant()    // 第1次调用
 }
@@ -343,7 +343,7 @@ onClick => {
 **优势 1：代码重用**
 
 **不用函数（重复代码）**：
-```xgo
+```go
 onKey KeyQ, => {
     if f, ok := findFarm(xpos, ypos); ok {
         rad, ok := f.findPlot(xpos, ypos)
@@ -369,7 +369,7 @@ onClick => {
 ```
 
 **使用函数（代码重用）**：
-```xgo
+```go
 func plant() {
     if f, ok := findFarm(xpos, ypos); ok {
         rad, ok := f.findPlot(xpos, ypos)
@@ -393,7 +393,7 @@ onClick => {
 **优势 2：易于维护**
 
 **不用函数**：
-```xgo
+```go
 // 如果要修改种植逻辑，要改多个地方
 
 onKey KeyQ, => {
@@ -413,7 +413,7 @@ onMsg "plant", => {
 ```
 
 **使用函数**：
-```xgo
+```go
 func plant() {
     // 种植代码
     step distanceTo(rad)-30  // 只需改一个地方
@@ -435,7 +435,7 @@ onMsg "plant", => {
 **优势 3：提高可读性**
 
 **不用函数（代码冗长）**：
-```xgo
+```go
 onKey KeyQ, => {
     if f, ok := findFarm(xpos, ypos); ok {
         rad, ok := f.findPlot(xpos, ypos)
@@ -464,7 +464,7 @@ onKey KeyW, => {
 - 不容易看出做什么
 
 **使用函数（清晰简洁）**：
-```xgo
+```go
 onKey KeyQ, => {
     plant()      // 一看就知道：种植
 }
@@ -500,7 +500,7 @@ onKey KeyE, => {
 **函数定义应该放在哪里？**
 
 **推荐位置**：
-```xgo
+```go
 // 1. 变量定义
 var score int
 
@@ -596,7 +596,7 @@ onKey KeyQ, => {
 
 **舞台代码（公用函数定义）**：
 
-```xgo
+```go
 var (
     followRole string
 )
@@ -665,7 +665,7 @@ onStart => {
 
 **Kiko 精灵代码（调用公用函数）**：
 
-```xgo
+```go
 // 方向控制
 onKey KeyUp, => {
     moveDir this, Up, 20
@@ -704,7 +704,7 @@ onClick => {
 
 **Jenny 精灵代码（完全相同）**：
 
-```xgo
+```go
 // 方向控制
 onKey KeyUp, => {
     moveDir this, Up, 20
@@ -764,7 +764,7 @@ onClick => {
 
 **函数定义**：
 
-```xgo
+```go
 func moveDir(s Sprite, dir Direction, n float64) {
     if s.name != followRole {
         return
@@ -787,7 +787,7 @@ func moveDir(s Sprite, dir Direction, n float64) {
 **函数逻辑**：
 
 1. **检查是否被选中**：
-   ```xgo
+   ```go
    if s.name != followRole {
        return
    }
@@ -797,7 +797,7 @@ func moveDir(s Sprite, dir Direction, n float64) {
    - 这确保只有选中的角色能移动
 
 2. **设置朝向**：
-   ```xgo
+   ```go
    if s.heading != dir {
        s.setHeading dir
    }
@@ -807,14 +807,14 @@ func moveDir(s Sprite, dir Direction, n float64) {
    - 避免重复设置
 
 3. **执行移动**：
-   ```xgo
+   ```go
    s.step n
    ```
    - 让精灵前进 n 步
 
 **调用示例**：
 
-```xgo
+```go
 // Kiko 调用
 onKey KeyRight, => {
     moveDir this, Right, 20
@@ -861,7 +861,7 @@ Jenny 不移动
 
 **函数定义**：
 
-```xgo
+```go
 func plant(s Sprite) {
     if s.name != followRole {
         return
@@ -886,7 +886,7 @@ func plant(s Sprite) {
 **函数逻辑**：
 
 1. **权限检查**：
-   ```xgo
+   ```go
    if s.name != followRole {
        return
    }
@@ -894,20 +894,20 @@ func plant(s Sprite) {
    - 只有选中的精灵才能种植
 
 2. **查找农田**：
-   ```xgo
+   ```go
    if f, ok := findFarm(s.xpos, s.ypos); ok {
    ```
    - 根据精灵的位置查找农田
    - `s.xpos, s.ypos`：精灵的坐标
 
 3. **查找空地**：
-   ```xgo
+   ```go
    rad, ok := f.findPlot(s.xpos, s.ypos)
    ```
    - 在农田中查找可种植的地块
 
 4. **执行种植**：
-   ```xgo
+   ```go
    s.turnTo rad
    s.step s.distanceTo(rad)-20
    rad.show
@@ -918,7 +918,7 @@ func plant(s Sprite) {
 
 **调用示例**：
 
-```xgo
+```go
 // Kiko 调用
 onKey KeyQ, => {
     plant this
@@ -945,7 +945,7 @@ onKey KeyQ, => {
 
 当调用舞台中的函数时，函数需要知道是哪个精灵在调用：
 
-```xgo
+```go
 // Kiko 的代码
 onKey KeyQ, => {
     plant this  // this = Kiko，告诉 plant 函数操作 Kiko
@@ -959,7 +959,7 @@ onKey KeyQ, => {
 
 **this 的用法**：
 
-```xgo
+```go
 // 作为参数传递
 plant this
 water this
@@ -975,7 +975,7 @@ this.heading   // 当前精灵的朝向
 
 **参数传递过程**：
 
-```xgo
+```go
 // Kiko 调用
 moveDir this, Right, 20
     ↓
@@ -999,7 +999,7 @@ func moveDir(s Sprite, dir Direction, n float64) {
 
 参数的顺序必须匹配：
 
-```xgo
+```go
 // 函数定义
 func moveDir(s Sprite, dir Direction, n float64) { }
 
@@ -1019,7 +1019,7 @@ moveDir 20, Right, this  // ✗ 顺序错误
 
 `return` 语句用于**提前退出函数**：
 
-```xgo
+```go
 func plant(s Sprite) {
     if s.name != followRole {
         return  // 提前退出，不执行后面的代码
@@ -1031,7 +1031,7 @@ func plant(s Sprite) {
 **return 的作用**：
 
 **没有 return**：
-```xgo
+```go
 func plant(s Sprite) {
     if s.name != followRole {
         // 即使不是选中的角色
@@ -1043,7 +1043,7 @@ func plant(s Sprite) {
 ```
 
 **使用 return**：
-```xgo
+```go
 func plant(s Sprite) {
     if s.name != followRole {
         return  // 直接退出函数
@@ -1072,7 +1072,7 @@ func plant(s Sprite) {
 **优势 1：避免代码重复**
 
 **不用公用函数**：
-```xgo
+```go
 // Kiko 的代码
 func plant() {
     if f, ok := findFarm(xpos, ypos); ok {
@@ -1091,7 +1091,7 @@ func plant() {
 ```
 
 **使用公用函数**：
-```xgo
+```go
 // 舞台代码（只写一次）
 func plant(s Sprite) {
     if f, ok := findFarm(s.xpos, s.ypos); ok {
@@ -1121,7 +1121,7 @@ onKey KeyQ, => {
 
 通过参数，同一个函数可以作用于不同对象：
 
-```xgo
+```go
 // 同一个 plant 函数
 plant(Kiko)   // 让 Kiko 种植
 plant(Jenny)  // 让 Jenny 种植
@@ -1135,7 +1135,7 @@ plant(Bob)    // 让 Bob 种植
 - **舞台**：定义共享的逻辑（做什么）
 - **精灵**：处理特定的事件（什么时候做）
 
-```xgo
+```go
 // 舞台：定义"如何种植"
 func plant(s Sprite) {
     // 种植逻辑

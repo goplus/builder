@@ -2,7 +2,7 @@
 
 在前面的学习中，我们使用变量来存储单个数据：
 
-```xgo
+```go
 var score = 100        // 存储一个分数
 var distance = 50      // 存储一个距离
 var name = "Kiko"      // 存储一个名字
@@ -15,7 +15,7 @@ var name = "Kiko"      // 存储一个名字
 
 如果用普通变量，需要这样写：
 
-```xgo
+```go
 var radish1 = "萝卜"
 var radish2 = "萝卜2"
 var radish3 = "萝卜3"
@@ -55,7 +55,7 @@ var radish3 = "萝卜3"
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-30-3/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     var radishs = ["萝卜", "萝卜2", "萝卜3"]
     
@@ -71,7 +71,7 @@ onStart => {
 
 **创建数组**
 
-```xgo
+```go
 var radishs = ["萝卜", "萝卜2", "萝卜3"]
 ```
 
@@ -82,7 +82,7 @@ var radishs = ["萝卜", "萝卜2", "萝卜3"]
 
 **数组字面量的语法**：
 
-```xgo
+```go
 [元素1, 元素2, 元素3, ...]
 ```
 
@@ -117,7 +117,7 @@ var radishs = ["萝卜", "萝卜2", "萝卜3"]
 
 **访问数组元素**
 
-```xgo
+```go
 radishs[0]  // 访问第 1 个元素："萝卜"
 ```
 
@@ -129,7 +129,7 @@ radishs[0]  // 访问第 1 个元素："萝卜"
 
 **完整访问示例**：
 
-```xgo
+```go
 var radishs = ["萝卜", "萝卜2", "萝卜3"]
 
 radishs[0]  // 返回 "萝卜"（第1个）
@@ -141,7 +141,7 @@ radishs[2]  // 返回 "萝卜3"（第3个）
 
 数组元素可以像普通变量一样使用：
 
-```xgo
+```go
 // 访问第1个元素（索引0）
 turnTo radishs[0]  // 转向"萝卜"
 stepTo radishs[0]  // 走向"萝卜"
@@ -153,7 +153,7 @@ stepTo radishs[2]  // 走向"萝卜3"
 
 **为什么跳过索引 1？**
 
-```xgo
+```go
 radishs[1]  // 这是"萝卜2"，未成熟，不能采摘
 ```
 
@@ -163,7 +163,7 @@ radishs[1]  // 这是"萝卜2"，未成熟，不能采摘
 
 **1. 创建数组**
 
-```xgo
+```go
 // 字符串数组
 var names = ["Kiko", "Bob", "Alice"]
 
@@ -179,7 +179,7 @@ var empty = []
 
 **2. 访问元素**
 
-```xgo
+```go
 var fruits = ["苹果", "香蕉", "橙子"]
 
 var first = fruits[0]   // "苹果"
@@ -189,7 +189,7 @@ var third = fruits[2]   // "橙子"
 
 **3. 使用元素**
 
-```xgo
+```go
 var targets = ["目标1", "目标2", "目标3"]
 
 // 直接使用
@@ -204,7 +204,7 @@ turnTo firstTarget
 
 虽然我们还没详细学习，但可以预览：
 
-```xgo
+```go
 var radishs = ["萝卜", "萝卜2", "萝卜3"]
 // radishs 的长度是 3（有3个元素）
 ```
@@ -215,7 +215,7 @@ var radishs = ["萝卜", "萝卜2", "萝卜3"]
 
 对于长度为 n 的数组，有效索引是 **0 到 n-1**：
 
-```xgo
+```go
 var items = ["A", "B", "C", "D", "E"]
 // 长度：5
 // 有效索引：0, 1, 2, 3, 4
@@ -281,7 +281,7 @@ items[5]  // ✗ 错误：超出范围！
 
 在上一节中，我们学会了通过索引访问数组元素：
 
-```xgo
+```go
 radishs[0]  // 访问第1个
 radishs[1]  // 访问第2个
 radishs[2]  // 访问第3个
@@ -289,7 +289,7 @@ radishs[2]  // 访问第3个
 
 但是，如果数组有 10 个元素，甚至 100 个元素，难道要写 100 行代码吗？
 
-```xgo
+```go
 radishs[0]
 radishs[1]
 radishs[2]
@@ -307,7 +307,7 @@ radishs[99]
 
 如果用索引访问：
 
-```xgo
+```go
 turnTo radishs[0]
 stepTo radishs[0]
 turnTo radishs[1]
@@ -324,7 +324,7 @@ stepTo radishs[2]
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-18/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     for v in ["萝卜1", "萝卜2", "萝卜3"] {
         turnTo v
@@ -337,7 +337,7 @@ onStart => {
 
 **认识 for...in 循环**
 
-```xgo
+```go
 for v in ["萝卜1", "萝卜2", "萝卜3"] {
     turnTo v
     stepTo v
@@ -347,7 +347,7 @@ for v in ["萝卜1", "萝卜2", "萝卜3"] {
 这是一个**遍历循环**，让我们拆解它的语法：
 
 **完整语法**：
-```xgo
+```go
 for 变量名 in 数组 {
     循环体
 }
@@ -378,7 +378,7 @@ for 变量名 in 数组 {
 
 让我们看看这段代码是如何一步步执行的：
 
-```xgo
+```go
 for v in ["萝卜1", "萝卜2", "萝卜3"] {
     turnTo v
     stepTo v
@@ -425,7 +425,7 @@ v = "萝卜3" → 执行循环体 → Kiko走到萝卜3
 
 **常见命名**：
 
-```xgo
+```go
 // 使用 v（value 的缩写）
 for v in radishs {
     turnTo v
@@ -468,7 +468,7 @@ for r in radishs {
 
 **正确的写法**
 
-```xgo
+```go
 // ✓ 正确：标准语法
 for v in ["A", "B", "C"] {
     turnTo v
@@ -488,7 +488,7 @@ for item in items {
 
 **错误的写法**
 
-```xgo
+```go
 // ✗ 错误：使用了 => {}
 for v in ["A", "B", "C"], => {
     turnTo v
@@ -521,7 +521,7 @@ for v in ["A", "B", "C"]
 **for...in vs 手动索引**
 
 **手动索引方式**：
-```xgo
+```go
 var arr = ["A", "B", "C"]
 var i = 0
 
@@ -532,7 +532,7 @@ repeat 3, => {
 ```
 
 **for...in 方式**：
-```xgo
+```go
 for v in ["A", "B", "C"] {
     turnTo v  // 自动处理索引
 }

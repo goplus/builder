@@ -1,0 +1,12 @@
+{
+  "title": "CodeKiko - XBuilder 游戏编程教材",
+  "description": "XBuilder 游戏编程教材",
+  "language": "zh-hans",
+  "root": ".",
+  "structure": {
+    "readme": "README.md",
+    "summary": "summary.md"
+  },
+  "plugins": [],
+  "pluginsConfig": {}
+}

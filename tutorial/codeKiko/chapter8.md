@@ -2,7 +2,7 @@
 
 到目前为止，我们的程序都是在游戏开始时（`onStart`）自动执行的：
 
-```xgo
+```go
 onStart => {
     step 100
     turn Right
@@ -55,7 +55,7 @@ onStart => {
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-41/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onKey KeyRight, => {
     step 10
 }
@@ -65,7 +65,7 @@ onKey KeyRight, => {
 
 **认识 onKey 事件处理器**
 
-```xgo
+```go
 onKey KeyRight, => {
     step 10
 }
@@ -78,7 +78,7 @@ onKey KeyRight, => {
 - `{}`：事件发生时执行的代码
 
 **完整语法**：
-```xgo
+```go
 onKey 按键名称, => {
     响应代码
 }
@@ -168,7 +168,7 @@ onKey 按键名称, => {
 让我们对比这两种事件处理器：
 
 **onStart（自动执行）：**
-```xgo
+```go
 onStart => {
     step 100
 }
@@ -179,7 +179,7 @@ onStart => {
 - 用于初始化
 
 **onKey（响应按键）：**
-```xgo
+```go
 onKey KeyRight, => {
     step 10
 }
@@ -194,7 +194,7 @@ onKey KeyRight, => {
 你可能注意到，我们用 `step 10` 而不是 `step 100`。为什么？
 
 **如果用 step 100**：
-```xgo
+```go
 onKey KeyRight, => {
     step 100  // 每次按键走很远
 }
@@ -204,7 +204,7 @@ onKey KeyRight, => {
 - 可能走过头
 
 **使用 step 10**：
-```xgo
+```go
 onKey KeyRight, => {
     step 10  // 每次按键走一小段
 }
@@ -227,7 +227,7 @@ onKey KeyRight, => {
 
 可以同时监听多个按键：
 
-```xgo
+```go
 // 监听右箭头
 onKey KeyRight, => {
     step 10
@@ -312,7 +312,7 @@ onKey KeyDown, => {
 首先，我们来实现向右移动的功能：
 
 **当前代码：**
-```xgo
+```go
 onKey KeyRight, => {
     setHeading Right
     step 20
@@ -332,7 +332,7 @@ onKey KeyRight, => {
 确认右键功能正常后，添加左键控制：
 
 **完整代码：**
-```xgo
+```go
 onKey KeyRight, => {
     setHeading Right
     step 20
@@ -354,7 +354,7 @@ onKey KeyLeft, => {
 
 **右键事件处理器**
 
-```xgo
+```go
 onKey KeyRight, => {
     setHeading Right  // 第1步：设置朝向为右
     step 20           // 第2步：向右走20步
@@ -370,7 +370,7 @@ onKey KeyRight, => {
 
 **左键事件处理器**
 
-```xgo
+```go
 onKey KeyLeft, => {
     setHeading Left   // 第1步：设置朝向为左
     step 20           // 第2步：向左走20步
@@ -394,7 +394,7 @@ onKey KeyLeft, => {
 - 作用：直接把角色的朝向设置为指定方向
 
 **语法**：
-```xgo
+```go
 setHeading 方向常量
 ```
 
@@ -405,7 +405,7 @@ setHeading 方向常量
 - `Right`：向右
 
 **示例**：
-```xgo
+```go
 setHeading Up      // 设置朝向为上
 setHeading Right   // 设置朝向为右
 setHeading Down    // 设置朝向为下
@@ -417,7 +417,7 @@ setHeading Left    // 设置朝向为左
 这是一个重要的区别，让我们详细对比：
 
 **turn（相对转向）：**
-```xgo
+```go
 turn Right  // 在当前朝向基础上，向右转90度
 ```
 
@@ -436,7 +436,7 @@ turn Right  // 在当前朝向基础上，向右转90度
 - 结果不确定（取决于当前朝向）
 
 **setHeading（绝对朝向）：**
-```xgo
+```go
 setHeading Right  // 直接设置朝向为右
 ```
 
@@ -546,7 +546,7 @@ setHeading Right  // 直接设置朝向为右
 我们已经有了左右控制：
 
 **当前代码：**
-```xgo
+```go
 onKey KeyRight, => {
     // 如果当前方向已经是朝右，就不需要再修改了
     if heading != Right {
@@ -573,7 +573,7 @@ onKey KeyLeft, => {
 
 现在添加向上移动的功能：
 
-```xgo
+```go
 onKey KeyUp, => {
     if heading != Up {
         setHeading Up
@@ -592,7 +592,7 @@ onKey KeyUp, => {
 最后添加向下移动的功能：
 
 **完整代码：**
-```xgo
+```go
 onKey KeyRight, => {
     if heading != Right {
         setHeading Right
@@ -631,7 +631,7 @@ onKey KeyDown, => {
 
 **新增的上键处理器**
 
-```xgo
+```go
 onKey KeyUp, => {
     if heading != Up {
         setHeading Up
@@ -648,7 +648,7 @@ onKey KeyUp, => {
 
 **新增的下键处理器**
 
-```xgo
+```go
 onKey KeyDown, => {
     if heading != Down {
         setHeading Down
@@ -667,7 +667,7 @@ onKey KeyDown, => {
 
 **什么是 heading 属性？**
 
-```xgo
+```go
 heading
 ```
 
@@ -680,7 +680,7 @@ heading
 
 注意每个事件处理器中都有这段代码：
 
-```xgo
+```go
 if heading != Right {
     setHeading Right
 }
@@ -694,7 +694,7 @@ if heading != Right {
 **为什么要这样做？**
 
 **没有优化的版本**：
-```xgo
+```go
 onKey KeyRight, => {
     setHeading Right  // 每次都设置
     step 20
@@ -707,7 +707,7 @@ onKey KeyRight, => {
 - 虽然结果相同，但做了不必要的操作
 
 **优化后的版本**：
-```xgo
+```go
 onKey KeyRight, => {
     if heading != Right {  // 先检查
         setHeading Right   // 只在需要时设置
@@ -752,7 +752,7 @@ onKey KeyRight, => {
 
 **示例**：
 
-```xgo
+```go
 heading != Right  // 当前朝向不是向右？
 
 // 如果 heading 是 Up：
@@ -779,7 +779,7 @@ heading != Right  // 当前朝向不是向右？
 
 四个事件处理器的结构完全相同，只是方向不同：
 
-```xgo
+```go
 // 模式：
 onKey Key方向, => {
     if heading != 方向 {
@@ -869,7 +869,7 @@ onKey Key方向, => {
 首先确认四方向控制已经完成：
 
 **当前代码：**
-```xgo
+```go
 onKey KeyRight, => {
     if heading != Right {
         setHeading Right
@@ -923,7 +923,7 @@ onKey KeyW, => {
 
 完成 Q 键的种植功能：
 
-```xgo
+```go
 onKey KeyQ, => {
     // 找一个 离Kiko 最近的可以种萝卜的地方
     rad, ok := Farmland.planting(xpos, ypos)
@@ -945,7 +945,7 @@ onKey KeyQ, => {
 完成 W 键的浇水功能：
 
 **完整代码：**
-```xgo
+```go
 onKey KeyRight, => {
     if heading != Right {
         setHeading Right
@@ -1005,7 +1005,7 @@ onKey KeyW, => {
 
 **种植功能（Q 键）**
 
-```xgo
+```go
 onKey KeyQ, => {
     // 第1步：查找最近的可种植位置
     rad, ok := Farmland.planting(xpos, ypos)
@@ -1022,7 +1022,7 @@ onKey KeyQ, => {
 **工作流程**：
 
 1. **查找种植位置**：
-   ```xgo
+   ```go
    rad, ok := Farmland.planting(xpos, ypos)
    ```
    - `Farmland.planting`：农田对象的种植方法
@@ -1032,21 +1032,21 @@ onKey KeyQ, => {
      - `ok`：是否找到（true/false）
 
 2. **检查是否找到**：
-   ```xgo
+   ```go
    if ok {
    ```
    - 只有找到空地才执行后续操作
    - 如果没找到，什么都不做
 
 3. **转向目标**：
-   ```xgo
+   ```go
    turnTo rad
    ```
    - `turnTo`：转向指定对象
    - Kiko 会转向萝卜的位置
 
 4. **走到目标**：
-   ```xgo
+   ```go
    step distanceTo(rad)-20
    ```
    - `distanceTo(rad)`：计算到萝卜的距离
@@ -1054,7 +1054,7 @@ onKey KeyQ, => {
    - Kiko 会走到萝卜附近
 
 5. **显示萝卜**：
-   ```xgo
+   ```go
    rad.show
    ```
    - 让萝卜可见
@@ -1062,7 +1062,7 @@ onKey KeyQ, => {
 
 **浇水功能（W 键）**
 
-```xgo
+```go
 onKey KeyW, => {
     // 第1步：查找最近的已种植萝卜
     rad, ok := Farmland.findPlant(xpos, ypos)
@@ -1080,14 +1080,14 @@ onKey KeyW, => {
 **工作流程**：
 
 1. **查找萝卜**：
-   ```xgo
+   ```go
    rad, ok := Farmland.findPlant(xpos, ypos)
    ```
    - `Farmland.findPlant`：查找已种植的萝卜
    - 返回最近的萝卜对象
 
 2. **检查条件**：
-   ```xgo
+   ```go
    if ok && !rad.IsMature() {
    ```
    - `ok`：是否找到萝卜
@@ -1096,21 +1096,21 @@ onKey KeyW, => {
    - 只有找到未成熟的萝卜才浇水
 
 3. **走到萝卜旁**：
-   ```xgo
+   ```go
    turnTo rad
    step distanceTo(rad)-20
    ```
    - 和种植时一样，走到萝卜附近
 
 4. **执行浇水**：
-   ```xgo
+   ```go
    rad.Water()
    ```
    - 调用萝卜的浇水方法
    - 萝卜的成熟时间会减少
 
 5. **播放动画**：
-   ```xgo
+   ```go
    animateAndWait "浇水"
    animate "默认", true
    ```
@@ -1122,7 +1122,7 @@ onKey KeyW, => {
 **什么是多值返回？**
 
 注意这行代码：
-```xgo
+```go
 rad, ok := Farmland.planting(xpos, ypos)
 ```
 
@@ -1133,7 +1133,7 @@ rad, ok := Farmland.planting(xpos, ypos)
 **为什么需要两个返回值？**
 
 **只返回一个值的问题**：
-```xgo
+```go
 // 假设只返回萝卜对象
 rad := Farmland.planting(xpos, ypos)
 
@@ -1142,7 +1142,7 @@ rad := Farmland.planting(xpos, ypos)
 ```
 
 **返回两个值的好处**：
-```xgo
+```go
 rad, ok := Farmland.planting(xpos, ypos)
 
 if ok {
@@ -1156,7 +1156,7 @@ if ok {
 
 **常见的多值返回模式**：
 
-```xgo
+```go
 // 模式 1：对象 + 是否成功
 rad, ok := Farmland.planting(xpos, ypos)
 if ok {
@@ -1174,7 +1174,7 @@ if err == nil {
 
 **&& - 逻辑与（AND）**
 
-```xgo
+```go
 if ok && !rad.IsMature() {
 ```
 
@@ -1192,7 +1192,7 @@ if ok && !rad.IsMature() {
 | false | false | false |
 
 **示例**：
-```xgo
+```go
 // 找到萝卜 且 萝卜未成熟
 if ok && !rad.IsMature() {
     // 两个条件都满足才执行
@@ -1206,7 +1206,7 @@ ok = false, rad.IsMature() = false → !rad.IsMature() = true → false && true 
 
 **! - 逻辑非（NOT）**
 
-```xgo
+```go
 !rad.IsMature()
 ```
 
@@ -1215,7 +1215,7 @@ ok = false, rad.IsMature() = false → !rad.IsMature() = true → false && true 
 - "不是成熟的"
 
 **示例**：
-```xgo
+```go
 rad.IsMature()     // 是否成熟？
 !rad.IsMature()    // 是否不成熟？
 
@@ -1235,7 +1235,7 @@ rad.IsMature()     // 是否成熟？
 | `!` | 非（NOT） | `!a` | 取反 |
 
 **组合使用**：
-```xgo
+```go
 // 找到萝卜 且 (未成熟 或 需要浇水)
 if ok && (!rad.IsMature() || rad.NeedsWater()) {
     // 复杂的条件判断
