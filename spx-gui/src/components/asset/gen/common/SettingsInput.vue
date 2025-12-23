@@ -6,7 +6,7 @@ import { ref } from 'vue'
 
 withDefaults(
   defineProps<{
-    value: string
+    description: string
     loading?: boolean
   }>(),
   {
@@ -15,7 +15,7 @@ withDefaults(
 )
 
 const emit = defineEmits<{
-  'update:value': [value: string]
+  'update:description': [string]
   enrich: []
   generate: []
 }>()
@@ -29,13 +29,13 @@ const enrichShow = ref(false)
       <input
         class="prompt"
         :placeholder="$t({ zh: '请输入提示词', en: 'Enter Prompt' })"
-        :value="value"
-        @input="emit('update:value', ($event.target as HTMLInputElement)?.value)"
+        :value="description"
+        @input="emit('update:description', ($event.target as HTMLInputElement)?.value)"
         @focus="enrichShow = true"
         @blur="enrichShow = false"
       />
       <UIButton
-        v-if="enrichShow && value"
+        v-if="enrichShow && description"
         :loading="loading"
         color="white"
         variant="stroke"
@@ -45,10 +45,10 @@ const enrichShow = ref(false)
       >
     </div>
     <div class="footer">
-      <div class="settings">
-        <slot name="param-settings"></slot>
+      <div class="extra">
+        <slot name="extra"></slot>
       </div>
-      <slot name="buttons"></slot>
+      <slot name="submit"></slot>
     </div>
   </div>
 </template>
@@ -85,7 +85,7 @@ const enrichShow = ref(false)
   align-items: center;
   justify-content: space-between;
 
-  .settings {
+  .extra {
     display: flex;
     gap: 8px;
   }

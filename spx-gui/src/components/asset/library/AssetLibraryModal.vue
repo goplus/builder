@@ -12,11 +12,11 @@ import { type Category, categoryAll } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
-import SpriteSettingInput from './gen/sprite/SpriteSettingInput.vue'
-import BackdropSettingInput from './gen/backdrop/BackdropSettingInput.vue'
+import GenModal from '@/components/asset/gen/common/GenModal.vue'
+import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
+import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
 import { SpriteGen } from '@/models/gen/sprite-gen'
 import { BackdropGen } from '@/models/gen/backdrop-gen'
-import GenModal from './gen/common/GenModal.vue'
 
 const props = defineProps<{
   type: AssetType
@@ -42,16 +42,16 @@ const EmptyComponent = computed(
   () =>
     ({
       [AssetType.Sound]: null,
-      [AssetType.Sprite]: SpriteSettingInput,
-      [AssetType.Backdrop]: BackdropSettingInput
+      [AssetType.Sprite]: SpriteSettingsInput,
+      [AssetType.Backdrop]: BackdropSettingsInput
     })[props.type]
 )
 const genProps = computed(
   () =>
     ({
       [AssetType.Sound]: null,
-      [AssetType.Sprite]: { spriteGen: new SpriteGen(props.project, keyword.value) },
-      [AssetType.Backdrop]: { backdropGen: new BackdropGen(props.project, keyword.value) }
+      [AssetType.Sprite]: { gen: new SpriteGen(props.project, keyword.value) },
+      [AssetType.Backdrop]: { gen: new BackdropGen(props.project, keyword.value) }
     })[props.type]
 )
 

@@ -1,9 +1,11 @@
+<!-- The item (in animation list) standing for an animation-generation -->
+
 <script lang="ts" setup>
 import { UIBlockItem, UIBlockItemTitle } from '@/components/ui'
-import type { AnimationItem } from '@/models/gen/sprite-gen'
+import type { AnimationGen } from '@/models/gen/animation-gen'
 
 defineEmits<{
-  animationItem: AnimationItem
+  gen: AnimationGen
 }>()
 </script>
 

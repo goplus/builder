@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import type { CostumeItem, SpriteGen } from '@/models/gen/sprite-gen'
+import type { CostumeGen } from '@/models/gen/costume-gen'
 
 defineProps<{
-  spriteGen: SpriteGen
-  costumeItem: CostumeItem
+  gen: CostumeGen
 }>()
 </script>
 

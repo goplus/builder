@@ -28,10 +28,9 @@ import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
-import DefaultCostumeGenModal from './library/gen/sprite/DefaultCostumeGenModal.vue'
-import SpriteGenModal from './library/gen/sprite/SpriteGenModal.vue'
+import SpriteGenModal from './gen/sprite/SpriteGenCostumesAnimations.vue'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
-import BackdropGenModal from './library/gen/backdrop/BackdropGenModal.vue'
+import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
 
 export function useAddAssetFromLibrary() {
@@ -342,23 +341,16 @@ export function useRenameWidget() {
   }
 }
 
-export function useDefaultCostumeGenModal() {
-  const invokeModal = useModal(DefaultCostumeGenModal)
-  return function defaultCostumeGenModal(project: Project, spriteGen: SpriteGen) {
-    return invokeModal({ project, spriteGen })
-  }
-}
-
 export function useSpriteGenModal() {
   const invokeModal = useModal(SpriteGenModal)
   return function spriteGenModal(spriteGen: SpriteGen) {
-    return invokeModal({ spriteGen })
+    return invokeModal({ gen: spriteGen })
   }
 }
 
 export function useBackdropGenModal() {
   const invokeModal = useModal(BackdropGenModal)
   return function backdropGenModal(backdropGen: BackdropGen) {
-    return invokeModal({ backdropGen })
+    return invokeModal({ gen: backdropGen })
   }
 }

@@ -74,7 +74,7 @@ export class SpriteGen extends Disposable {
     Object.assign(this.settings, updates)
   }
 
-  private defaultCostume: CostumeItem | null = null
+  defaultCostume: CostumeItem | null = null
   genDefaultCostume() {
     const settings = {
       // TODO: better default settings, or get from content-settings generation API

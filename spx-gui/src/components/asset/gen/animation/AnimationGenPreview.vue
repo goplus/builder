@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import type { AnimationItem, SpriteGen } from '@/models/gen/sprite-gen'
+import type { AnimationGen } from '@/models/gen/animation-gen'
 
 defineProps<{
-  spriteGen: SpriteGen
-  animationItem: AnimationItem
+  gen: AnimationGen
 }>()
 </script>
 

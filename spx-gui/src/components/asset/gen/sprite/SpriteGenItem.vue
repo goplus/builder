@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import { UIBlockItem, UIBlockItemTitle } from '@/components/ui'
-import type { CostumeItem } from '@/models/gen/sprite-gen'
+import type { SpriteGen } from '@/models/gen/sprite-gen'
 
 defineEmits<{
-  costumeItem: CostumeItem
+  gen: SpriteGen
 }>()
 </script>
 
 <template>
   <UIBlockItem>
-    <UIBlockItemTitle size="large">costume</UIBlockItemTitle>
+    <UIBlockItemTitle size="large">sprite</UIBlockItemTitle>
   </UIBlockItem>
 </template>
 
