@@ -26,8 +26,7 @@
               <span class="item-text">
                 {{ $t({ en: 'Import Scratch project file...', zh: '导入 Scratch 项目文件...' }) }}
               </span>
-              <!-- TODO: temporary, will be handled uniformly after the tag design specification is complete -->
-              <div class="beta">Beta</div>
+              <UITag>Beta</UITag>
             </UIMenuItem>
             <UIMenuItem @click="handleImportAssetsFromScratch">
               <template #icon><img :src="importAssetsScratchSvg" /></template>
@@ -144,7 +143,8 @@ import {
   useConfirmDialog,
   useMessage,
   UIButtonGroup,
-  UIButtonGroupItem
+  UIButtonGroupItem,
+  UITag
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -396,18 +396,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   .item-text {
     flex: 1;
     margin-right: 8px;
-  }
-
-  .beta {
-    margin-left: 24px;
-    height: 20px;
-    border-radius: 4px;
-    border: 1px solid var(--ui-color-grey-400);
-    background: var(--ui-color-grey-300);
-    padding: 0 8px;
-    font-size: 12px;
-    line-height: 20px;
-    color: var(--ui-color-grey-900);
   }
 }
 
