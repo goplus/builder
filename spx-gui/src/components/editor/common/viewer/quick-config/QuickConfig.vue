@@ -1,25 +1,5 @@
 <script lang="ts">
-export type DefaultConfigType = {
-  type: 'default'
-}
-
-export type SizeConfigType = {
-  type: 'size'
-  size: number
-}
-
-export type RotateConfigType = {
-  type: 'rotate'
-  rotate: number
-}
-
-export type PosConfigType = {
-  type: 'pos'
-  x: number
-  y: number
-}
-
-export type ConfigType = DefaultConfigType | SizeConfigType | RotateConfigType | PosConfigType
+export type ConfigType = 'default' | 'size' | 'rotate' | 'pos'
 
 export const configTypeInjectionKey: InjectionKey<Ref<ConfigType | null>> = Symbol('configType')
 export const updateConfigTypesInjectionKey: InjectionKey<(configTypes: ConfigType[]) => void> =
@@ -32,7 +12,7 @@ import { onBeforeUnmount, provide, ref, watch, type InjectionKey, type Ref } fro
 import { providePopupContainer } from '@/components/ui'
 
 const props = defineProps<{
-  configTypes: Array<DefaultConfigType | SizeConfigType | RotateConfigType | PosConfigType>
+  configTypes: Array<ConfigType>
 }>()
 
 const emits = defineEmits<{

@@ -1,29 +1,17 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel, { useSyncFastSlowValue } from '../common/ConfigPanel.vue'
+import ConfigPanel from '../common/ConfigPanel.vue'
 import { type Sprite } from '@/models/sprite'
-import type { Project } from '@/models/project'
-import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
 
-const props = defineProps<{
+defineProps<{
   sprite: Sprite
-  project: Project
   x: number
   y: number
 }>()
 
-const pos = useSyncFastSlowValue(
-  () => [props.x, props.y],
-  () => [props.sprite.x, props.sprite.y]
-)
-
-const spriteContext = () => ({
-  sprite: props.sprite,
-  project: props.project
-})
-
-const handleXUpdate = wrapUpdateHandler((x: number | null) => props.sprite.setX(x ?? 0), spriteContext)
-const handleYUpdate = wrapUpdateHandler((y: number | null) => props.sprite.setY(y ?? 0), spriteContext)
+defineEmits<{
+  'update:pos': [{ x: number; y: number }]
+}>()
 </script>
 
 <template>
@@ -31,15 +19,15 @@ const handleYUpdate = wrapUpdateHandler((y: number | null) => props.sprite.setY(
     <div class="position-config-wrapper">
       <UINumberInput
         v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
-        :value="pos[0]"
-        @update:value="handleXUpdate"
+        :value="x"
+        @update:value="$emit('update:pos', { x: $event ?? 0, y })"
       >
         <template #prefix>X</template>
       </UINumberInput>
       <UINumberInput
         v-radar="{ name: 'Y position input', desc: 'Input to set sprite Y position' }"
-        :value="pos[1]"
-        @update:value="handleYUpdate"
+        :value="y"
+        @update:value="$emit('update:pos', { x, y: $event ?? 0 })"
       >
         <template #prefix>Y</template>
       </UINumberInput>
