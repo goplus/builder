@@ -71,6 +71,10 @@ onMounted(() => {
       border: 1px solid var(--ui-color-success-main);
     }
   }
+
+  :deep(.n-input__prefix) {
+    margin-right: 8px;
+  }
 }
 
 .clear {

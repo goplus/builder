@@ -55,5 +55,9 @@ onMounted(() => {
       background-color: var(--ui-color-grey-400);
     }
   }
+
+  .n-input__prefix {
+    margin-right: 8px;
+  }
 }
 </style>
