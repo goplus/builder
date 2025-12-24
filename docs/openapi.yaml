@@ -2031,8 +2031,8 @@ paths:
           schema:
             type: string
       responses:
-        "200":
-          description: Cancellation accepted or task already cancelled.
+        "202":
+          description: Cancellation request accepted.
           content:
             application/json:
               schema:
