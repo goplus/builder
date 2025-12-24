@@ -1,32 +1,22 @@
 <script lang="ts" setup>
 import { UINumberInput } from '@/components/ui'
-import ConfigPanel, { useSyncFastSlowValue } from '../common/ConfigPanel.vue'
+import ConfigPanel from '../common/ConfigPanel.vue'
 import type { Sprite } from '@/models/sprite'
-import type { Project } from '@/models/project'
 import { round } from '@/utils/utils'
-import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
 
-const props = defineProps<{
+defineProps<{
   sprite: Sprite
-  project: Project
   size: number
 }>()
 
-const spriteContext = () => ({
-  sprite: props.sprite,
-  project: props.project
-})
+const emit = defineEmits<{
+  'update:size': [number]
+}>()
 
-const sizePercent = useSyncFastSlowValue(
-  () => props.size,
-  () => props.sprite.size,
-  (size) => round(size * 100)
-)
-
-const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null) => {
+function handleSizePercentUpdate(sizeInPercent: number | null) {
   if (sizeInPercent == null) return
-  props.sprite.setSize(round(sizeInPercent / 100, 2))
-}, spriteContext)
+  emit('update:size', round(sizeInPercent / 100, 2))
+}
 </script>
 
 <template>
@@ -35,7 +25,7 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
       v-radar="{ name: 'Size input', desc: 'Input to set sprite size percentage' }"
       class="size-input"
       :min="0"
-      :value="sizePercent"
+      :value="round(size * 100)"
       @update:value="handleSizePercentUpdate"
     >
       <template #prefix>{{ $t({ en: 'Size', zh: '大小' }) }}</template>

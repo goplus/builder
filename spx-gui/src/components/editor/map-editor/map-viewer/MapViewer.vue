@@ -47,7 +47,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { timeout, until, untilTaskScheduled } from '@/utils/utils'
+import { timeout, until, untilTaskScheduled, useDebouncedModel } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
@@ -383,10 +383,40 @@ const handleSpriteDragMove = throttle(
 )
 
 // quick config
-const configTypesRef = ref<ConfigType[]>([{ type: 'default' }])
+function wrapSpriteUpdateHandler<Args extends any[]>(handler: (sprite: Sprite, ...args: Args) => unknown) {
+  return (...args: Args) => {
+    const sprite = props.selectedSprite
+    if (sprite == null) return
+    const name = sprite.name
+    props.project.history.doAction({ name: { en: `Configure sprite ${name}`, zh: `修改精灵 ${name} 配置` } }, () =>
+      handler(sprite, ...args)
+    )
+  }
+}
+const [spriteSize] = useDebouncedModel(
+  () => props.selectedSprite?.size,
+  wrapSpriteUpdateHandler((sprite, v) => {
+    if (v == null) return
+    sprite.setSize(v)
+  })
+)
+const [spriteHeading] = useDebouncedModel(
+  () => props.selectedSprite?.heading,
+  wrapSpriteUpdateHandler((sprite, v) => sprite.setHeading(v ?? 0))
+)
+const [spritePosX] = useDebouncedModel(
+  () => props.selectedSprite?.x,
+  wrapSpriteUpdateHandler((sprite, x) => sprite.setX(x ?? 0))
+)
+const [spritePosY] = useDebouncedModel(
+  () => props.selectedSprite?.y,
+  wrapSpriteUpdateHandler((sprite, y) => sprite.setY(y ?? 0))
+)
+const configTypesRef = ref<ConfigType[]>(['default'])
 const handleUpdateConfigType = throttle(
-  (configType: ConfigType | ConfigType[] = []) => {
-    configTypesRef.value = [{ type: 'default' } as ConfigType].concat(configType)
+  (configType: ConfigType | ConfigType[] = [], updator = () => {}) => {
+    configTypesRef.value = ['default' as ConfigType].concat(configType)
+    updator()
     nextTick(updateQuickConfigPos)
   },
   50,
@@ -394,6 +424,7 @@ const handleUpdateConfigType = throttle(
     trailing: true
   }
 )
+
 onMounted(async () => {
   await until(() => !loading.value)
   updateQuickConfigPos()
@@ -578,12 +609,11 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
-            @update-left-right="handleUpdateConfigType()"
             @update-heading="
-              handleUpdateConfigType($event.leftRight == null ? { type: 'rotate', rotate: $event.heading } : [])
+              handleUpdateConfigType($event.leftRight == null ? 'rotate' : [], () => (spriteHeading = $event.heading))
             "
-            @update-pos="handleUpdateConfigType({ type: 'pos', x: $event.x, y: $event.y })"
-            @update-size="handleUpdateConfigType({ type: 'size', size: $event.size })"
+            @update-pos="handleUpdateConfigType('pos', () => ((spritePosX = $event.x), (spritePosY = $event.y)))"
+            @update-size="handleUpdateConfigType('size', () => (spriteSize = $event.size))"
           />
         </v-group>
       </v-layer>
@@ -597,7 +627,18 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       :config-types="configTypesRef"
       @update-config-types="configTypesRef = $event"
     >
-      <SpriteQuickConfig v-if="selectedSprite" :sprite="selectedSprite" :project="project" />
+      <SpriteQuickConfig
+        v-if="selectedSprite"
+        :sprite="selectedSprite"
+        :project="project"
+        :size="spriteSize"
+        :heading="spriteHeading"
+        :x="spritePosX"
+        :y="spritePosY"
+        @update:size="spriteSize = $event"
+        @update:heading="spriteHeading = $event"
+        @update:pos="(spritePosX = $event.x), (spritePosY = $event.y)"
+      />
     </QuickConfig>
 
     <PositionIndicator :position="mousePos" />

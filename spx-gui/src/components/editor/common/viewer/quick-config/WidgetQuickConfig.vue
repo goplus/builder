@@ -11,6 +11,14 @@ import PositionConfigPanel from './widget/PositionConfigPanel.vue'
 defineProps<{
   widget: Widget
   project: Project
+  size?: number
+  x?: number
+  y?: number
+}>()
+
+defineEmits<{
+  'update:size': [number]
+  'update:pos': [{ x: number; y: number }]
 }>()
 
 const configType = inject(configTypeInjectionKey)
@@ -18,15 +26,20 @@ const configType = inject(configTypeInjectionKey)
 
 <template>
   <template v-if="configType != null">
-    <SizeConfigPanel v-if="configType.type === 'size'" :widget="widget" :project="project" :size="configType.size" />
-    <PositionConfigPanel
-      v-else-if="configType.type === 'pos'"
+    <SizeConfigPanel
+      v-if="configType === 'size' && size != null"
       :widget="widget"
-      :project="project"
-      :x="configType.x"
-      :y="configType.y"
+      :size="size"
+      @update:size="$emit('update:size', $event)"
     />
-    <DefaultConfigPanel v-else-if="configType.type === 'default'" :widget="widget" :project="project" />
+    <PositionConfigPanel
+      v-else-if="configType === 'pos' && x != null && y != null"
+      :widget="widget"
+      :x="x"
+      :y="y"
+      @update:pos="$emit('update:pos', $event)"
+    />
+    <DefaultConfigPanel v-else-if="configType === 'default'" :widget="widget" :project="project" />
   </template>
 </template>
 

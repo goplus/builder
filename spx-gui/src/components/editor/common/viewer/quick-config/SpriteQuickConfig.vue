@@ -12,6 +12,16 @@ import { configTypeInjectionKey, updateConfigTypesInjectionKey } from './QuickCo
 const props = defineProps<{
   sprite: Sprite
   project: Project
+  size?: number
+  heading?: number
+  x?: number
+  y?: number
+}>()
+
+defineEmits<{
+  'update:size': [number]
+  'update:heading': [number]
+  'update:pos': [{ x: number; y: number }]
 }>()
 
 const configType = inject(configTypeInjectionKey)
@@ -22,7 +32,7 @@ watch(
   () => {
     // If the selected sprite's rotationStyle is LeftRight, it needs to be restored to default immediately
     if (props.sprite.rotationStyle === RotationStyle.LeftRight) {
-      update?.([{ type: 'default' }])
+      update?.(['default'])
     }
   }
 )
@@ -30,21 +40,26 @@ watch(
 
 <template>
   <template v-if="configType != null">
-    <SizeConfigPanel v-if="configType.type === 'size'" :sprite="sprite" :project="project" :size="configType.size" />
-    <HeadingConfigPanel
-      v-else-if="configType.type === 'rotate'"
+    <SizeConfigPanel
+      v-if="configType === 'size' && size != null"
       :sprite="sprite"
-      :project="project"
-      :heading="configType.rotate"
+      :size="size"
+      @update:size="$emit('update:size', $event)"
+    />
+    <HeadingConfigPanel
+      v-else-if="configType === 'rotate' && heading != null"
+      :sprite="sprite"
+      :heading="heading"
+      @update:heading="$emit('update:heading', $event)"
     />
     <PositionConfigPanel
-      v-else-if="configType?.type === 'pos'"
+      v-else-if="configType === 'pos' && x != null && y != null"
       :sprite="sprite"
-      :project="project"
-      :x="configType.x"
-      :y="configType.y"
+      :x="x"
+      :y="y"
+      @update:pos="$emit('update:pos', $event)"
     />
-    <DefaultConfigPanel v-else-if="configType.type === 'default'" :sprite="sprite" :project="project" />
+    <DefaultConfigPanel v-else-if="configType === 'default'" :sprite="sprite" :project="project" />
   </template>
 </template>
 

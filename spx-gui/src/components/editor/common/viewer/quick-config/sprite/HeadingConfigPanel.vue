@@ -1,34 +1,20 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { UIDropdown, UINumberInput } from '@/components/ui'
-import ConfigPanel, { useSyncFastSlowValue } from '../common/ConfigPanel.vue'
+import ConfigPanel from '../common/ConfigPanel.vue'
 import { RotationStyle, type Sprite } from '@/models/sprite'
-import type { Project } from '@/models/project'
-import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
 
-const props = defineProps<{
+defineProps<{
   sprite: Sprite
-  project: Project
   heading: number
 }>()
 
-const headingValue = useSyncFastSlowValue(
-  () => props.heading,
-  () => props.sprite.heading
-)
-
-const spriteContext = () => ({
-  sprite: props.sprite,
-  project: props.project
-})
+defineEmits<{
+  'update:heading': [number]
+}>()
 
 const rotateDropdownVisible = ref(false)
-const handleHeadingUpdate = wrapUpdateHandler(
-  (h: number | null) => props.sprite.setHeading(h ?? 0),
-  spriteContext,
-  false
-)
 </script>
 
 <template>
@@ -47,15 +33,15 @@ const handleHeadingUpdate = wrapUpdateHandler(
           :disabled="sprite.rotationStyle === RotationStyle.None"
           :min="-180"
           :max="180"
-          :value="headingValue"
-          @update:value="handleHeadingUpdate"
+          :value="heading"
+          @update:value="$emit('update:heading', $event ?? 0)"
           @focus="rotateDropdownVisible = true"
         >
           <template #prefix>{{ $t({ en: 'Heading', zh: '朝向' }) }}</template>
         </UINumberInput>
       </template>
       <div class="rotation-heading-container">
-        <AnglePicker :model-value="headingValue" @update:model-value="handleHeadingUpdate" />
+        <AnglePicker :model-value="heading" @update:model-value="$emit('update:heading', $event ?? 0)" />
       </div>
     </UIDropdown>
   </ConfigPanel>
