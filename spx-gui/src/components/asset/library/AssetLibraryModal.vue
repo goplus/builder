@@ -38,7 +38,7 @@ const ItemComponent = computed(
     })[props.type]
 )
 
-const EmptyComponent = computed(
+const SettingsInput = computed(
   () =>
     ({
       [AssetType.Sound]: null,
@@ -176,17 +176,15 @@ async function handleAssetClick(asset: AssetData) {
         class="content"
       >
         <ListResultWrapper :query-ret="queryRet" :height="436">
-          <template v-if="EmptyComponent != null && genProps != null" #empty>
+          <template v-if="SettingsInput != null && genProps != null" #empty>
             <div class="empty">
-              <div>
-                {{
-                  $t({
-                    zh: `没有找到 ${keyword} 的结果, 可以尝试用 AI 生成吧`,
-                    en: `No results for ${keyword}, try to generate with AI`
-                  })
-                }}
-                <EmptyComponent v-bind="genProps" />
-              </div>
+              {{
+                $t({
+                  zh: `没有找到 ${keyword} 的结果, 可以尝试用 AI 生成吧`,
+                  en: `No results for ${keyword}, try to generate with AI`
+                })
+              }}
+              <SettingsInput class="settings-input" v-bind="genProps" />
             </div>
           </template>
           <!-- fixed asset-list height to keep the layout stable -->
@@ -241,6 +239,10 @@ async function handleAssetClick(asset: AssetData) {
   margin: 100px 250px 200px 250px;
   gap: 24px;
   height: 100%;
+
+  .settings-input {
+    height: 172px;
+  }
 }
 .asset-list {
   display: flex;
