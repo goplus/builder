@@ -5,15 +5,18 @@
 import { timeout } from '@/utils/utils'
 import { AnimationLoopMode, ArtStyle, BackdropCategory, client, Perspective, SpriteCategory } from './common'
 
+/**
+ * @deprecated Use createTask() with TaskType.RemoveBackground instead
+ */
 export async function matting(imageUrl: string) {
   if (process.env.NODE_ENV === 'development') {
     await timeout(2000)
     return 'https://placekitten.com/400/400'
   }
   const result = (await client.post('/aigc/matting', { imageUrl }, { timeout: 20 * 1000 })) as {
-    imageUrl: string
+    resultUrl: string
   }
-  return result.imageUrl
+  return result.resultUrl
 }
 
 export type ProjectSettings = {
@@ -76,7 +79,9 @@ export const enum TaskType {
 export const enum TaskStatus {
   Pending = 'pending',
   Processing = 'processing',
+  Cancelling = 'cancelling',
   Completed = 'completed',
+  Cancelled = 'cancelled',
   Failed = 'failed'
 }
 
@@ -128,8 +133,6 @@ export type Task<T extends TaskType = TaskType> = {
   updatedAt: string
   type: T
   status: TaskStatus
-  progress?: number
-  message?: string
   result?: TaskResult<T>
   error?: TaskError
 }
@@ -176,9 +179,7 @@ export async function createTask<T extends TaskType>(
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       type,
-      status: TaskStatus.Pending,
-      progress: 0,
-      message: 'Task created'
+      status: TaskStatus.Pending
     }
   }
   return client.post('/aigc/task', { type, parameters: params }, { signal }) as Promise<Task<T>>
@@ -194,8 +195,6 @@ export async function getTask(taskID: string, signal?: AbortSignal): Promise<Tas
       updatedAt: new Date().toISOString(),
       type: TaskType.GenerateCostume,
       status: TaskStatus.Completed,
-      progress: 100,
-      message: 'Task completed',
       result: {
         imageUrl: 'https://placekitten.com/400/400'
       }
@@ -204,10 +203,26 @@ export async function getTask(taskID: string, signal?: AbortSignal): Promise<Tas
   return client.get(`/aigc/task/${encodeURIComponent(taskID)}`, undefined, { signal }) as Promise<Task>
 }
 
+export async function cancelTask(taskID: string, signal?: AbortSignal): Promise<Task> {
+  if (process.env.NODE_ENV === 'development') {
+    await timeout(500)
+    signal?.throwIfAborted()
+    return {
+      id: taskID,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      type: TaskType.GenerateCostume,
+      status: TaskStatus.Cancelled
+    }
+  }
+  return client.post(`/aigc/task/${encodeURIComponent(taskID)}/cancellation`, undefined, { signal }) as Promise<Task>
+}
+
 export const enum TaskEventType {
   Snapshot = 'snapshot',
-  Progress = 'progress',
+  Cancelling = 'cancelling',
   Completed = 'completed',
+  Cancelled = 'cancelled',
   Failed = 'failed'
 }
 
@@ -216,12 +231,9 @@ export type TaskEventSnapshot<T extends TaskType = TaskType> = {
   data: Task<T>
 }
 
-export type TaskEventProgress = {
-  type: TaskEventType.Progress
-  data: {
-    progress: number
-    message?: string
-  }
+export type TaskEventCancelling = {
+  type: TaskEventType.Cancelling
+  data: Record<string, never>
 }
 
 export type TaskEventCompleted<T extends TaskType = TaskType> = {
@@ -229,6 +241,11 @@ export type TaskEventCompleted<T extends TaskType = TaskType> = {
   data: {
     result: TaskResult<T>
   }
+}
+
+export type TaskEventCancelled = {
+  type: TaskEventType.Cancelled
+  data: Record<string, never>
 }
 
 export type TaskEventFailed = {
@@ -240,8 +257,9 @@ export type TaskEventFailed = {
 
 export type TaskEvent<T extends TaskType = TaskType> =
   | TaskEventSnapshot<T>
-  | TaskEventProgress
+  | TaskEventCancelling
   | TaskEventCompleted<T>
+  | TaskEventCancelled
   | TaskEventFailed
 
 export async function* subscribeTaskEvents(taskID: string, signal?: AbortSignal): AsyncGenerator<TaskEvent> {
@@ -255,35 +273,11 @@ export async function* subscribeTaskEvents(taskID: string, signal?: AbortSignal)
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         type: TaskType.GenerateCostume,
-        status: TaskStatus.Processing,
-        progress: 10,
-        message: 'Starting...'
+        status: TaskStatus.Processing
       }
     }
 
-    await timeout(1000)
-    signal?.throwIfAborted()
-
-    yield {
-      type: TaskEventType.Progress,
-      data: {
-        progress: 50,
-        message: 'Generating image...'
-      }
-    }
-
-    await timeout(1000)
-    signal?.throwIfAborted()
-
-    yield {
-      type: TaskEventType.Progress,
-      data: {
-        progress: 90,
-        message: 'Post-processing...'
-      }
-    }
-
-    await timeout(1000)
+    await timeout(2000)
     signal?.throwIfAborted()
 
     yield {
