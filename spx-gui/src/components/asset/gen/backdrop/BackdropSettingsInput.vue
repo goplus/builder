@@ -14,8 +14,8 @@ defineProps<{
 <template>
   <SettingsInput
     :description="gen.input"
-    :loading="gen.enrichState.state === 'running'"
-    @update:value="gen.setInput($event)"
+    :enriching="gen.enrichState.state === 'running'"
+    @update:description="gen.setInput($event)"
     @enrich="gen.enrich()"
   >
     <template #param-settings>

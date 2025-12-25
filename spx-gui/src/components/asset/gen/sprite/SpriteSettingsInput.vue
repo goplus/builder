@@ -11,7 +11,7 @@ const props = defineProps<{
   gen: SpriteGen
 }>()
 
-const defaultCostumeGen = computed(() => props.gen.defaultCostume!.gen!)
+const defaultCostumeGen = computed(() => props.gen.defaultCostume?.gen)
 
 const slots = useSlots()
 </script>
@@ -19,8 +19,8 @@ const slots = useSlots()
 <template>
   <SettingsInput
     :description="gen.input"
-    :loading="gen.enrichState.state === 'running'"
-    @update:value="gen.setInput($event)"
+    :enriching="gen.enrichState.state === 'running'"
+    @update:description="gen.setInput($event)"
     @enrich="gen.enrich()"
   >
     <template #param-settings>
@@ -32,8 +32,8 @@ const slots = useSlots()
       <slot v-if="slots.buttons != null" name="buttons"></slot>
       <UIButton
         v-else
-        :loading="defaultCostumeGen.generateState.state === 'running'"
-        @click="defaultCostumeGen.generate()"
+        :loading="defaultCostumeGen?.generateState.state === 'running'"
+        @click="defaultCostumeGen?.generate()"
         >{{ $t({ zh: '生成', en: 'Generate' }) }}</UIButton
       >
     </template>
