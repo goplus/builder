@@ -24,7 +24,8 @@ defineProps<{
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton :loading="gen.generateState.state === 'running'" @click="gen.generate()">{{
+      <slot v-if="$slots.submit != null" name="submit"></slot>
+      <UIButton v-else :loading="gen.generateState.state === 'running'" @click="gen.generate()">{{
         $t({ zh: '生成', en: 'Generate' })
       }}</UIButton>
     </template>

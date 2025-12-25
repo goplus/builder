@@ -29,7 +29,7 @@ const slots = useSlots()
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <slot v-if="slots.buttons != null" name="buttons"></slot>
+      <slot v-if="slots.submit != null" name="submit"></slot>
       <UIButton
         v-else
         :loading="defaultCostumeGen?.generateState.state === 'running'"
