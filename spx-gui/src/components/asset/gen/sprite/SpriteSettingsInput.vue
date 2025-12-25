@@ -19,7 +19,7 @@ const slots = useSlots()
 <template>
   <SettingsInput
     :description="gen.input"
-    :loading="gen.enrichState.state === 'running'"
+    :enriching="gen.enrichState.state === 'running'"
     @update:description="gen.setInput($event)"
     @enrich="gen.enrich()"
   >

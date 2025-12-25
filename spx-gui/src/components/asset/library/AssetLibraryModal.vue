@@ -184,7 +184,7 @@ async function handleAssetClick(asset: AssetData) {
                   en: `No results for ${keyword}, try to generate with AI`
                 })
               }}
-              <SettingsInput class="settings-input" v-bind="genProps" />
+              <SettingsInput v-bind="genProps" />
             </div>
           </template>
           <!-- fixed asset-list height to keep the layout stable -->
@@ -239,10 +239,6 @@ async function handleAssetClick(asset: AssetData) {
   margin: 100px 250px 200px 250px;
   gap: 24px;
   height: 100%;
-
-  .settings-input {
-    height: 172px;
-  }
 }
 .asset-list {
   display: flex;
