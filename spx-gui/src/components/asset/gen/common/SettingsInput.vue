@@ -53,7 +53,7 @@ const onInput = (e: InputEvent) => {
         </div>
         <textarea
           class="description"
-          :placeholder="$t({ zh: '请输入描述细节', en: 'Enter description details' })"
+          :placeholder="$t({ zh: '请输入描述', en: 'Please enter description' })"
           :value="description"
           @input="onInput"
           @focus="focus = true"
