@@ -2,6 +2,7 @@
   <NInput
     ref="nInput"
     class="ui-text-input"
+    :class="[`color-${color}`, `size-${size}`]"
     :placeholder="placeholder || ''"
     :value="value"
     :type="type"
@@ -32,16 +33,28 @@ import { onMounted, ref, useSlots } from 'vue'
 import { NInput } from 'naive-ui'
 
 type Type = 'textarea' | 'text' | 'password'
+type Color = 'default' | 'white'
+type Size = 'medium' | 'large'
 
-const props = defineProps<{
-  value: string
-  type?: Type
-  clearable?: boolean
-  disabled?: boolean
-  readonly?: boolean
-  placeholder?: string
-  autofocus?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    value: string
+    type?: Type
+    color?: Color
+    size?: Size
+    clearable?: boolean
+    disabled?: boolean
+    readonly?: boolean
+    placeholder?: string
+    autofocus?: boolean
+  }>(),
+  {
+    color: 'default',
+    size: 'medium',
+    type: undefined,
+    placeholder: undefined
+  }
+)
 
 const emit = defineEmits<{
   'update:value': [string]
@@ -49,7 +62,7 @@ const emit = defineEmits<{
 
 const slots = useSlots()
 
-// It's wierd that the prop `autofocus` of `NInput` does not work as expected, so we handle it manually.
+// It's weird that the prop `autofocus` of `NInput` does not work as expected, so we handle it manually.
 const nInput = ref<InstanceType<typeof NInput> | null>(null)
 onMounted(() => {
   if (props.autofocus && nInput.value != null) nInput.value.focus()
@@ -61,10 +74,13 @@ onMounted(() => {
   // it's not possible to control input's hovered-bg-color with themeOverrides,
   // so we do background color control here
   &:not(.n-input--focus, .n-input--error-status, .n-input--success-status) {
-    background-color: var(--ui-color-grey-300);
+    background: var(--ui-text-input-bg-color);
   }
   &:not(.n-input--focus, .n-input--disabled):hover {
-    background-color: var(--ui-color-grey-400);
+    background: var(--ui-text-input-bg-color-hover);
+  }
+  :deep(.n-input__input-el) {
+    height: var(--ui-text-input-height);
   }
   &.n-input--success-status {
     :deep(.n-input__state-border) {
@@ -75,6 +91,25 @@ onMounted(() => {
   :deep(.n-input__prefix) {
     margin-right: 8px;
   }
+}
+
+// color
+.color-default {
+  --ui-text-input-bg-color: var(--ui-color-grey-300);
+  --ui-text-input-bg-color-hover: var(--ui-color-grey-400);
+}
+
+.color-white {
+  --ui-text-input-bg-color: var(--ui-color-grey-100);
+  --ui-text-input-bg-color-hover: var(--ui-color-grey-100);
+}
+
+// size
+.size-medium {
+  --ui-text-input-height: 32px;
+}
+.size-large {
+  --ui-text-input-height: 40px;
 }
 
 .clear {
