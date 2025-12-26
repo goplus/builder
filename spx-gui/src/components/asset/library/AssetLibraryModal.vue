@@ -29,7 +29,6 @@ import { BackdropGen } from '@/models/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
 import SpriteGenView from '../gen/sprite/SpriteGen.vue'
 import BackdropGenView from '../gen/backdrop/BackdropGen.vue'
-import EnrichableWrapper from '../gen/common/EnrichableWrapper.vue'
 
 const props = defineProps<{
   type: AssetType
@@ -67,19 +66,19 @@ const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | nul
       [AssetType.Backdrop]: BackdropSettingsInput
     })[props.type]
 )
-const assetGenProps = shallowRef<SpriteGen | BackdropGen | null>(null)
+const assetGen = shallowRef<SpriteGen | BackdropGen | null>(null)
 watch(
   () => props.type,
   (type, _, onCleanup) => {
-    assetGenProps.value = {
+    assetGen.value = {
       [AssetType.Sound]: null,
       [AssetType.Sprite]: new SpriteGen(props.project, keyword.value),
       [AssetType.Backdrop]: new BackdropGen(props.project, keyword.value)
     }[type]
-    const stopKeywordWatch = watch(keyword, (v) => assetGenProps.value?.setSettings({ description: v }))
+    const stopKeywordWatch = watch(keyword, (v) => assetGen.value?.setSettings({ description: v }))
     onCleanup(() => {
       stopKeywordWatch()
-      assetGenProps.value?.dispose()
+      assetGen.value?.dispose()
     })
   },
   { immediate: true }
@@ -189,21 +188,11 @@ async function handleAssetClick(asset: AssetData) {
 }
 
 const generatePhase = ref(false)
-/**
- * Handles the generate button click in the asset library empty state.
- *
- * Behavior depends on enrichment state:
- * - If enrichment not finished: triggers prompt enrichment via AI
- * - If enrichment finished: transitions to generation phase UI
- */
 function handleGenerate() {
-  const gen = assetGenProps.value
-  if (gen == null) return
-  if (gen.enrichState.status !== 'finished') {
-    gen.enrich()
-    return
+  const gen = assetGen.value
+  if (gen != null && gen.enrichState.status === 'finished') {
+    generatePhase.value = true
   }
-  generatePhase.value = true
 }
 </script>
 
@@ -224,8 +213,8 @@ function handleGenerate() {
         @click="generatePhase = false"
       ></UIButton>
     </template>
-    <template v-if="generatePhase && AssetGenView != null && assetGenProps != null">
-      <AssetGenView :gen="assetGenProps" />
+    <template v-if="generatePhase && AssetGenView != null && assetGen != null">
+      <AssetGenView class="asset-gen" :gen="assetGen" />
     </template>
     <template v-else>
       <header class="header">
@@ -256,7 +245,7 @@ function handleGenerate() {
         <div
           v-radar="{
             name: 'Asset list',
-            desc: `List of ${entityMessage.en}s in the selected category`
+            desc: `List of ${entityMessage.en}s containing keyword ${keyword}`
           }"
           class="content"
         >
@@ -296,7 +285,7 @@ function handleGenerate() {
             </label>
           </div>
           <ListResultWrapper :query-ret="queryRet" :height="436">
-            <template v-if="SettingsInput != null && assetGenProps != null" #empty>
+            <template v-if="SettingsInput != null && assetGen != null" #empty>
               <div class="empty">
                 {{
                   $t({
@@ -304,15 +293,7 @@ function handleGenerate() {
                     en: `No assets found for "${keyword}". Why not let AI generate one for you?`
                   })
                 }}
-                <SettingsInput :gen="assetGenProps">
-                  <template #submit>
-                    <EnrichableWrapper :enriched="assetGenProps.enrichState.status === 'finished'">
-                      <UIButton :loading="assetGenProps.enrichState.status === 'running'" @click="handleGenerate">{{
-                        $t({ en: 'Generate', zh: '生成' })
-                      }}</UIButton>
-                    </EnrichableWrapper>
-                  </template>
-                </SettingsInput>
+                <SettingsInput :gen="assetGen" @submit="handleGenerate" />
               </div>
             </template>
             <!-- fixed asset-list height to keep the layout stable -->
@@ -349,6 +330,10 @@ function handleGenerate() {
 </template>
 
 <style lang="scss" scoped>
+.asset-gen {
+  height: 680px; // temporary
+}
+
 .header {
   display: flex;
   flex-direction: column;

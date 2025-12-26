@@ -12,8 +12,8 @@ defineProps<{ enriched: boolean }>()
     </template>
     {{
       $t({
-        zh: '当前提示词信息较少。为了帮助你生成更理想的效果，系统正在自动丰富描述内容，请稍候...',
-        en: 'The prompt information is too little. To help you generate a better effect, the system is automatically enriching the description content, please wait...'
+        zh: '当前描述信息较少，点击下面的按钮，我们将自动帮您丰富细节',
+        en: 'The description is too little. Please click the button below to enrich the details automatically'
       })
     }}
   </UITooltip>
