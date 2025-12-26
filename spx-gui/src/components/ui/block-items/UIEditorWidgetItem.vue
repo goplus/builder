@@ -5,11 +5,15 @@
     </div>
     <UIBlockItemTitle size="medium">
       {{ name }}
+      <template v-if="visible === false" #suffix>
+        <UIIcon class="eye-off" type="eyeOff" />
+      </template>
     </UIBlockItemTitle>
     <slot></slot>
   </UIBlockItem>
 </template>
 <script setup lang="ts">
+import UIIcon from '../icons/UIIcon.vue'
 import UIBlockItem from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
@@ -18,10 +22,12 @@ withDefaults(
     name: string
     color?: 'stage' | 'primary'
     selectable?: false | { selected: boolean }
+    visible?: boolean
   }>(),
   {
     color: 'stage',
-    selectable: false
+    selectable: false,
+    visible: true
   }
 )
 </script>
@@ -35,5 +41,10 @@ withDefaults(
     width: 100%;
     height: 100%;
   }
+}
+
+.eye-off {
+  color: var(--ui-color-grey-700);
+  cursor: auto;
 }
 </style>

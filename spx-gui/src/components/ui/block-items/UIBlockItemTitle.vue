@@ -3,12 +3,19 @@
     <span>
       <slot></slot>
     </span>
+    <div v-if="slots.suffix != null">
+      <slot name="suffix"></slot>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
+import { useSlots } from 'vue'
+
 defineProps<{
   size: 'medium' | 'large'
 }>()
+
+const slots = useSlots()
 </script>
 <style scoped lang="scss">
 .ui-title-container {
@@ -16,8 +23,9 @@ defineProps<{
   align-items: center;
   color: var(--ui-color-title);
   width: 100%;
-
   text-align: center;
+  gap: 8px;
+  padding: 0 6px;
 
   &.medium {
     font-size: 10px;
@@ -31,12 +39,10 @@ defineProps<{
   }
 
   & > span {
-    width: 100%;
-
     overflow: hidden;
+    flex: 1;
     white-space: nowrap;
     text-overflow: ellipsis;
-    padding: 0 6px;
   }
 }
 </style>

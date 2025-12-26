@@ -21,6 +21,7 @@ import trash from './trash.svg?raw'
 import edit from './edit.svg?raw'
 import eye from './eye.svg?raw'
 import eyeSlash from './eye-slash.svg?raw'
+import eyeOff from './eye-off.svg?raw'
 import more from './more.svg?raw'
 import exchange from './exchange.svg?raw'
 import search from './search.svg?raw'
@@ -63,6 +64,10 @@ import undo from './undo.svg?raw'
 import redo from './redo.svg?raw'
 import localFile from './local-file.svg?raw'
 import assetLibrary from './asset-library.svg?raw'
+import layer from './layer.svg?raw'
+import notRotate from './not-rotate.svg?raw'
+import leftRight from './left-right.svg?raw'
+import rotateAround from './rotate-around.svg?raw'
 
 const typeIconMap = {
   file,
@@ -81,12 +86,14 @@ const typeIconMap = {
   edit,
   eye,
   eyeSlash,
+  eyeOff,
   more,
   exchange,
   search,
   close,
   closeCircle,
   rotate,
+  rotateAround,
   share,
   arrowAlt,
   doubleArrowDown,
@@ -122,7 +129,10 @@ const typeIconMap = {
   undo,
   redo,
   localFile,
-  assetLibrary
+  assetLibrary,
+  layer,
+  notRotate,
+  leftRight
 }
 
 export type Type = keyof typeof typeIconMap

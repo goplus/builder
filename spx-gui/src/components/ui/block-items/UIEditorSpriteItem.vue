@@ -3,6 +3,9 @@
     <slot name="img" :style="imgStyle"></slot>
     <UIBlockItemTitle size="medium">
       {{ name }}
+      <template v-if="visible === false" #suffix>
+        <UIIcon class="eye-off" type="eyeOff" />
+      </template>
     </UIBlockItemTitle>
     <slot></slot>
   </UIBlockItem>
@@ -11,6 +14,7 @@
 import { computed, type CSSProperties } from 'vue'
 import UIBlockItem, { type DroppableState } from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
+import UIIcon from '../icons/UIIcon.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -18,11 +22,13 @@ const props = withDefaults(
     selectable?: false | { selected: boolean }
     color?: 'sprite' | 'primary'
     droppable?: DroppableState | false
+    visible?: boolean | null
   }>(),
   {
     selectable: false,
     color: 'sprite',
-    droppable: false
+    droppable: false,
+    visible: null
   }
 )
 
@@ -34,4 +40,9 @@ const imgStyle: CSSProperties = {
   width: '60px'
 }
 </script>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.eye-off {
+  color: var(--ui-color-grey-700);
+  cursor: auto;
+}
+</style>

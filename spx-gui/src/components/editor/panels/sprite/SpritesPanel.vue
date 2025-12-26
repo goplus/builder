@@ -36,30 +36,6 @@
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
-      <PanelFooter
-        v-if="footerExpanded && selectedSprite != null"
-        v-radar="{
-          name: `Basic configuration for selected sprite`,
-          desc: 'Panel for configuring sprite basic settings'
-        }"
-      >
-        <SpriteBasicConfig :sprite="selectedSprite" :project="editorCtx.project" @collapse="footerExpanded = false" />
-      </PanelFooter>
-      <UITooltip v-if="!footerExpanded && selectedSprite != null">
-        <template #trigger>
-          <div
-            v-radar="{
-              name: 'Expand button',
-              desc: 'Button to expand the basic configuration panel for selected sprite'
-            }"
-            class="footer-expand-button"
-            @click="footerExpanded = true"
-          >
-            <UIIcon class="footer-expand-icon" type="doubleArrowDown" />
-          </div>
-        </template>
-        {{ $t({ en: 'Expand', zh: '展开' }) }}
-      </UITooltip>
     </template>
     <template #summary>
       <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
@@ -78,14 +54,12 @@ import { Sprite } from '@/models/sprite'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
-import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
-import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
 import { useMessageHandle } from '@/utils/exception'
 
 defineProps<{
@@ -97,8 +71,6 @@ const emit = defineEmits<{
 }>()
 
 const editorCtx = useEditorCtx()
-
-const footerExpanded = ref(false)
 
 const sprites = computed(() => editorCtx.project.sprites)
 const summaryList = ref<InstanceType<typeof PanelSummaryList>>()

@@ -1,5 +1,12 @@
 <template>
-  <v-group :config="groupConfig" @dragend="handleDragEnd" @transformend="handleTransformed" @click="handleClick">
+  <v-group
+    :config="groupConfig"
+    @dragmove="notifyUpdateMonitor($event.target)"
+    @dragend="handleDragEnd"
+    @transform="notifyUpdateMonitor($event.target)"
+    @transformend="handleTransformed"
+    @click="handleClick"
+  >
     <v-rect :config="rectConfig" />
     <v-text ref="labelTextRef" :config="labelTextConfig" />
     <v-shape :config="labelValueSepConfig" />
@@ -12,8 +19,9 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { TextConfig, Text } from 'konva/lib/shapes/Text'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
+import type { Stage } from 'konva/lib/Stage'
 import type { GroupConfig } from 'konva/lib/Group'
-import type { ShapeConfig } from 'konva/lib/Shape'
+import type { Shape, ShapeConfig } from 'konva/lib/Shape'
 import type { Action } from '@/models/project'
 import type { Size } from '@/models/common'
 import { round } from '@/utils/utils'
@@ -26,6 +34,11 @@ const props = defineProps<{
   monitor: Monitor
   viewportSize: Size
   nodeReadyMap: Map<string, boolean>
+}>()
+
+const emit = defineEmits<{
+  updatePos: [{ x: number; y: number }]
+  updateSize: [{ size: number }]
 }>()
 
 const uiVariables = useUIVariables()
@@ -72,6 +85,43 @@ onMounted(() => {
     labelTextRef.value!.getNode().zIndex(zIndex)
   }
 })
+
+function updateMonitor({
+  oldSize,
+  size,
+  oldX,
+  x,
+  oldY,
+  y
+}: {
+  oldSize: number
+  size: number
+  oldX: number
+  x: number
+  oldY: number
+  y: number
+}) {
+  if (oldSize !== size) {
+    emit('updateSize', { size })
+    return
+  }
+  if (oldX !== x || oldY !== y) {
+    emit('updatePos', { x, y })
+  }
+}
+
+const notifyUpdateMonitor = (e: Shape | Stage) => {
+  const { monitor } = props
+  const { x, y } = toPosition(e)
+  updateMonitor({
+    oldSize: monitor.size,
+    size: toSize(e),
+    oldX: monitor.x,
+    x,
+    oldY: monitor.y,
+    y
+  })
+}
 
 function handleDragEnd(e: KonvaEventObject<unknown>) {
   const sname = props.monitor.name
@@ -180,12 +230,21 @@ const valueTextConfig = computed<TextConfig>(() => {
 
 watch(valueTextConfig, () => nextTick().then(updateValueTextWidth))
 
+function toPosition(node: Shape | Stage) {
+  const x = round(node.x() - props.viewportSize.width / 2)
+  const y = round(props.viewportSize.height / 2 - node.y())
+  return { x, y }
+}
+
+function toSize(node: Shape | Stage) {
+  const size = round(node.scaleX(), 2)
+  return size
+}
 /** Handler for position-change (drag) or transform */
 function handleChange(e: KonvaEventObject<unknown>, action: Action) {
-  const { monitor, viewportSize: mapSize } = props
-  const x = round(e.target.x() - mapSize.width / 2)
-  const y = round(mapSize.height / 2 - e.target.y())
-  const size = round(e.target.scaleX(), 2)
+  const { monitor } = props
+  const { x, y } = toPosition(e.target)
+  const size = toSize(e.target)
   editorCtx.project.history.doAction(action, () => {
     monitor.setX(x)
     monitor.setY(y)
