@@ -8,6 +8,7 @@ import AnimationLoopModeInput from './AnimationLoopModeInput.vue'
 
 defineProps<{
   gen: AnimationGen
+  onlyIcon?: boolean
 }>()
 </script>
 
@@ -19,9 +20,21 @@ defineProps<{
     @enrich="gen.enrich()"
   >
     <template #extra>
-      <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
-      <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
-      <AnimationLoopModeInput :value="gen.settings.loopMode" @update:value="gen.setSettings({ loopMode: $event })" />
+      <ArtStyleInput
+        :value="gen.settings.artStyle"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ artStyle: $event })"
+      />
+      <PerspectiveInput
+        :value="gen.settings.perspective"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ perspective: $event })"
+      />
+      <AnimationLoopModeInput
+        :value="gen.settings.loopMode"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ loopMode: $event })"
+      />
     </template>
     <template #submit>
       <UIButton :loading="gen.generateVideoState.status === 'running'" @click="gen.generateVideo()">{{

@@ -8,6 +8,7 @@ import BackdropCategoryInput from './BackdropCategoryInput.vue'
 
 defineProps<{
   gen: BackdropGen
+  onlyIcon?: boolean
 }>()
 </script>
 
@@ -19,9 +20,21 @@ defineProps<{
     @enrich="gen.enrich()"
   >
     <template #param-settings>
-      <BackdropCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
-      <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
-      <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
+      <BackdropCategoryInput
+        :value="gen.settings.category"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ category: $event })"
+      />
+      <ArtStyleInput
+        :value="gen.settings.artStyle"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ artStyle: $event })"
+      />
+      <PerspectiveInput
+        :value="gen.settings.perspective"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ perspective: $event })"
+      />
     </template>
     <template #submit>
       <UIButton :loading="gen.generateState.status === 'running'" @click="gen.generate()">{{

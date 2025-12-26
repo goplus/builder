@@ -2101,7 +2101,8 @@ paths:
                     - $ref: "#/components/schemas/AIGCAnimationSettings"
                     - $ref: "#/components/schemas/AIGCBackdropSettings"
                 spriteSettings:
-                  description: Optional existing sprite settings to provide context for enrichment. Only used when
+                  description:
+                    Optional existing sprite settings to provide context for enrichment. Only used when
                     `assetType` is `costume` or `animation`.
                   $ref: "#/components/schemas/AIGCSpriteSettings"
                 projectSettings:
@@ -3006,6 +3007,7 @@ components:
         - flat-design
         - hand-drawn
         - low-poly
+        - true-top-down
         - unspecified
       examples:
         - pixel-art
@@ -3014,7 +3016,6 @@ components:
       description: Viewing perspectives for projects or assets.
       type: string
       enum:
-        - true-top-down
         - angled-top-down
         - side-scrolling
         - unspecified
@@ -3078,7 +3079,6 @@ components:
               enum:
                 - character
                 - item
-                - prop
                 - effect
                 - ui
                 - unspecified
