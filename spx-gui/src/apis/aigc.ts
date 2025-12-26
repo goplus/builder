@@ -200,9 +200,9 @@ export async function getTask(taskID: string, signal?: AbortSignal): Promise<Tas
       type: TaskType.GenerateCostume,
       status: TaskStatus.Completed,
       result: {
-        imageUrl: 'https://picsum.photos/400/400'
+        imageUrls: ['https://picsum.photos/400/400']
       }
-    }
+    } satisfies Task<TaskType.GenerateCostume>
   }
   return client.get(`/aigc/task/${encodeURIComponent(taskID)}`, undefined, { signal }) as Promise<Task>
 }
@@ -288,7 +288,6 @@ export async function* subscribeTaskEvents(taskID: string, signal?: AbortSignal)
       type: TaskEventType.Completed,
       data: {
         result: {
-          imageUrl: 'https://picsum.photos/400/400',
           imageUrls: [
             'https://picsum.photos/400/400',
             'https://picsum.photos/400/400',

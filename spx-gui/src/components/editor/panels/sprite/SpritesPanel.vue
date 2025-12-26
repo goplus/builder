@@ -182,8 +182,9 @@ const handleSpriteGenClick = useMessageHandle(
     if (result instanceof Sprite) {
       // TODO: should this be implemented in `useSpriteGenModal`?
       editorCtx.state.removeSpriteGen(gen.id)
-      await editorCtx.project.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () => {
+      await editorCtx.project.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
         editorCtx.project.addSprite(result)
+        await result.autoFit()
       })
       editorCtx.state.selectSprite(result.id)
       return

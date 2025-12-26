@@ -73,7 +73,7 @@ export class SpriteGen extends Disposable {
     let facing = Facing.Unspecified
     if (settings.perspective === Perspective.SideScrolling) {
       facing = Facing.Right
-    } else {
+    } else if (settings.perspective === Perspective.AngledTopDown || settings.perspective === Perspective.TrueTopDown) {
       facing = Facing.Front
     }
     return {
@@ -135,7 +135,8 @@ export class SpriteGen extends Disposable {
   removeCostume(id: string) {
     const index = this.costumes.findIndex((c) => c.id === id)
     if (index === -1) throw new Error(`Costume with id ${id} not found`)
-    this.costumes.splice(index, 1)
+    const [c] = this.costumes.splice(index, 1)
+    c.dispose()
   }
   finishCostume(id: string, costume: Costume) {
     const item = this.costumes.find((c) => c.id === id)
@@ -154,7 +155,8 @@ export class SpriteGen extends Disposable {
   removeAnimation(id: string) {
     const index = this.animations.findIndex((a) => a.id === id)
     if (index === -1) throw new Error(`Animation with id ${id} not found`)
-    this.animations.splice(index, 1)
+    const [a] = this.animations.splice(index, 1)
+    a.dispose()
   }
   finishAnimation(id: string, animation: Animation) {
     const item = this.animations.find((a) => a.id === id)

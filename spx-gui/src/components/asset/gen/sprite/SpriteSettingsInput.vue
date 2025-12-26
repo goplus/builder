@@ -18,7 +18,7 @@ const emit = defineEmits<{
 const submitting = computed(() => props.gen.imagesGenState.status === 'running')
 
 function handleSubmit() {
-  emit('submit') // For asset-lirabry-modal, listen to event `submit` and do jump (from asset-library to sprite-gen)
+  emit('submit') // For asset-library-modal, listen to event `submit` and do jump (from asset-library to sprite-gen)
   props.gen.genImages()
 }
 
@@ -31,7 +31,7 @@ const submitText = computed(() => {
 <template>
   <SettingsInput
     :description="gen.settings.description"
-    :loading="gen.enrichState.status === 'running'"
+    :enriching="gen.enrichState.status === 'running'"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
