@@ -112,8 +112,8 @@ const handleSubmit = useMessageHandle(
         </div>
 
         <div class="gen-settings">
-          <CostumeSettingInput v-if="selectedCostume != null" :gen="selectedCostume" />
-          <AnimationSettingInput v-if="selectedAnimation != null" :gen="selectedAnimation" />
+          <CostumeSettingInput v-if="selectedCostume != null" :gen="selectedCostume" only-icon />
+          <AnimationSettingInput v-if="selectedAnimation != null" :gen="selectedAnimation" only-icon />
         </div>
       </template>
       <template #right>

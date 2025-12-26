@@ -8,6 +8,7 @@ import FacingInput from './FacingInput.vue'
 
 defineProps<{
   gen: CostumeGen
+  onlyIcon?: boolean
 }>()
 </script>
 
@@ -18,10 +19,22 @@ defineProps<{
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
-    <template #param-settings>
-      <FacingInput :value="gen.settings.facing" @update:value="gen.setSettings({ facing: $event })" />
-      <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
-      <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
+    <template #extra>
+      <FacingInput
+        :value="gen.settings.facing"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ facing: $event })"
+      />
+      <ArtStyleInput
+        :value="gen.settings.artStyle"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ artStyle: $event })"
+      />
+      <PerspectiveInput
+        :value="gen.settings.perspective"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ perspective: $event })"
+      />
     </template>
     <template #submit>
       <UIButton :loading="gen.generateState.status === 'running'" @click="gen.generate()">{{

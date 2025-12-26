@@ -167,9 +167,9 @@ onMounted(() => {
   const gen = new SpriteGen(editorCtx.project, '负剑忍者')
   gen.setSettings({
     name: 'ninja',
-    category: SpriteCategory.Character,
-    artStyle: ArtStyle.PixelArt,
-    perspective: Perspective.SideScrolling
+    category: SpriteCategory.Unspecified,
+    artStyle: ArtStyle.Unspecified,
+    perspective: Perspective.Unspecified
   })
   es.addSpriteGen(gen)
 })
