@@ -4,14 +4,15 @@
 import { UIBlockItem, UIBlockItemTitle } from '@/components/ui'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 
-defineEmits<{
+defineProps<{
   gen: AnimationGen
+  active: boolean
 }>()
 </script>
 
 <template>
-  <UIBlockItem>
-    <UIBlockItemTitle size="large">animation</UIBlockItemTitle>
+  <UIBlockItem :active="active">
+    <UIBlockItemTitle size="large">{{ gen.name }}</UIBlockItemTitle>
   </UIBlockItem>
 </template>
 

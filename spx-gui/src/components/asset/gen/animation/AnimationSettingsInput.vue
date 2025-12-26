@@ -13,9 +13,9 @@ defineProps<{
 
 <template>
   <SettingsInput
-    :description="gen.input"
-    :enriching="gen.enrichState.state === 'running'"
-    @update:description="gen.setInput($event)"
+    :description="gen.settings.description"
+    :enriching="gen.enrichState.status === 'running'"
+    @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
     <template #extra>
@@ -24,7 +24,7 @@ defineProps<{
       <AnimationLoopModeInput :value="gen.settings.loopMode" @update:value="gen.setSettings({ loopMode: $event })" />
     </template>
     <template #submit>
-      <UIButton :loading="gen.generateVideoState.state === 'running'" @click="gen.generateVideo()">{{
+      <UIButton :loading="gen.generateVideoState.status === 'running'" @click="gen.generateVideo()">{{
         $t({ zh: '生成', en: 'Generate' })
       }}</UIButton>
     </template>

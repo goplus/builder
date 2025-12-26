@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
@@ -9,29 +10,25 @@ import { getProjectSettings, Phase } from './common'
 
 // TODO: task cancelation support
 export class BackdropGen extends Disposable {
+  id: string
   private project: Project
   private enrichPhase: Phase<BackdropSettings>
   private generatePhase: Phase<string>
 
-  constructor(project: Project, input = '') {
+  constructor(project: Project, initialDescription = '') {
     super()
+    this.id = nanoid()
     this.project = project
-    this.input = input
     this.enrichPhase = new Phase<BackdropSettings>()
     this.generatePhase = new Phase<string>()
     this.settings = {
       name: '',
       category: BackdropCategory.Unspecified,
-      description: '',
+      description: initialDescription,
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified
     }
     return reactive(this) as this
-  }
-
-  input: string
-  setInput(input: string) {
-    this.input = input
   }
 
   get enrichState() {
@@ -39,7 +36,7 @@ export class BackdropGen extends Disposable {
   }
   async enrich() {
     const draft = await this.enrichPhase.run(
-      enrichBackdropSettings(this.input, undefined, getProjectSettings(this.project))
+      enrichBackdropSettings(this.settings.description, this.settings, getProjectSettings(this.project))
     )
     this.setSettings(draft)
   }

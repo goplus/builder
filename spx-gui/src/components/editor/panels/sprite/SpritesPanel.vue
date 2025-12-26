@@ -35,6 +35,12 @@
           droppable
           @click="handleSpriteClick(sprite)"
         />
+        <SpriteGenItem
+          v-for="gen in editorCtx.state.spriteGens"
+          :key="gen.id"
+          :gen="gen"
+          @click="handleSpriteGenClick(gen)"
+        />
       </PanelList>
       <PanelFooter
         v-if="footerExpanded && selectedSprite != null"
@@ -73,12 +79,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
+import { AssetType } from '@/apis/asset'
+import { SpriteGen } from '@/models/gen/sprite-gen'
 import { Sprite } from '@/models/sprite'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
+import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
@@ -86,7 +96,6 @@ import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
 import { useMessageHandle } from '@/utils/exception'
-import { AssetType } from '@/apis/asset'
 
 defineProps<{
   expanded: boolean
@@ -147,6 +156,46 @@ const handleSorted = useMessageHandle(
   {
     en: 'Failed to update sprite order',
     zh: '更新精灵顺序失败'
+  }
+).fn
+
+onMounted(() => {
+  const es = editorCtx.state
+  if (es.spriteGens.length > 0) return
+  // Add a sprite gen for debugging
+  // TODO: remove me
+  const gen = new SpriteGen(editorCtx.project, '负剑忍者')
+  gen.setSettings({
+    name: 'ninja',
+    category: SpriteCategory.Character,
+    artStyle: ArtStyle.PixelArt,
+    perspective: Perspective.SideScrolling
+  })
+  es.addSpriteGen(gen)
+})
+
+const invokeSpriteGenModal = useSpriteGenModal()
+
+const handleSpriteGenClick = useMessageHandle(
+  async (gen: SpriteGen) => {
+    const result = await invokeSpriteGenModal(gen)
+    if (result instanceof Sprite) {
+      // TODO: should this be implemented in `useSpriteGenModal`?
+      editorCtx.state.removeSpriteGen(gen.id)
+      await editorCtx.project.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () => {
+        editorCtx.project.addSprite(result)
+      })
+      editorCtx.state.selectSprite(result.id)
+      return
+    }
+    if (result !== gen) {
+      // If a `SpriteGen` instance is returned, it should be the same as the input one
+      throw new Error('Unexpected result from sprite gen modal')
+    }
+  },
+  {
+    en: 'Failed to add generated sprite',
+    zh: '添加生成的精灵失败'
   }
 ).fn
 </script>
