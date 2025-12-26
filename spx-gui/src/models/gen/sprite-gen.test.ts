@@ -107,151 +107,127 @@ describe('SpriteGen', () => {
       .mocked(aigcApis.genSpriteContentSettings)
       .mockImplementation(generateSpriteContent)
 
-    // 1. Create SpriteGen with initial input
+    // Create SpriteGen with initial input
     const gen = new SpriteGen(project, 'A brave knight')
-    expect(gen.input).toBe('A brave knight')
-    expect(gen.enrichState.state).toBe('initial')
-    expect(gen.generateContentState.state).toBe('initial')
+    expect(gen.settings.description).toBe('A brave knight')
+    expect(gen.enrichState.status).toBe('initial')
+    expect(gen.contentPreparingState.status).toBe('initial')
 
-    // 2. User updates input
-    gen.setInput('A futuristic robot')
-    expect(gen.input).toBe('A futuristic robot')
-
-    // 3. Enrich settings based on input
+    // Enrich settings based on input
     const enriched = gen.enrich()
-    expect(gen.enrichState.state).toBe('running')
+    expect(gen.enrichState.status).toBe('running')
+    expect(enrichSettingsFn).toHaveBeenCalledOnce()
     await enriched
-    expect(gen.enrichState.state).toBe('finished')
-    expect(enrichSettingsFn).toHaveBeenCalledExactlyOnceWith('A futuristic robot', undefined, {
-      name: project.name ?? 'TODO',
-      description: project.description ?? 'TODO',
-      artStyle: project.extraSettings?.artStyle ?? ArtStyle.Unspecified,
-      perspective: project.extraSettings?.perspective ?? Perspective.Unspecified
-    })
+    expect(gen.enrichState.status).toBe('finished')
     expect(gen.enrichState.result).toEqual({
       name: 'Enriched Sprite',
       category: SpriteCategory.Unspecified,
-      description: 'Enriched description for A futuristic robot',
+      description: 'Enriched description for A brave knight',
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified
     })
     expect(gen.settings).toEqual({
       name: 'Enriched Sprite',
       category: SpriteCategory.Unspecified,
-      description: 'Enriched description for A futuristic robot',
+      description: 'Enriched description for A brave knight',
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified
     })
 
-    // 4. User updates some settings
+    // User updates some settings
     gen.setSettings({
       name: 'Updated Sprite',
       artStyle: ArtStyle.FlatDesign,
       perspective: Perspective.AngledTopDown,
-      description: 'Updated description for A futuristic robot'
+      description: 'Updated description for A brave knight'
     })
     expect(gen.settings).toEqual({
       name: 'Updated Sprite',
       category: SpriteCategory.Unspecified,
-      description: 'Updated description for A futuristic robot',
+      description: 'Updated description for A brave knight',
       artStyle: ArtStyle.FlatDesign,
       perspective: Perspective.AngledTopDown
     })
 
-    // 5. Generate sprite's default costume
-    const defaultCostumeGen = gen.genDefaultCostume()
-    const defaultCostume = await finishCostumeGen('default', defaultCostumeGen)
-    gen.finishDefaultCostume(defaultCostume)
+    // Generate sprite's images & select
+    vi.mocked(aigcApis.genCostumeImages).mockImplementationOnce(() => {
+      return Promise.resolve([1, 2, 3, 4].map((i) => `http://example.com/generated-sprite-image-${i}.png`))
+    })
+    const images = await gen.genImages()
+    expect(gen.imagesGenState.status).toBe('finished')
+    expect(images.length).toBe(4)
+    gen.setImage(images[0])
+    expect(gen.image).toBe(images[0])
 
-    // 6. Generate sprite content (other costumes and animations) structure
-    const generated = gen.generateContent()
-    expect(gen.generateContentState.state).toBe('running')
+    // Prepare sprite content
+    const prepared = gen.prepareContent()
+    expect(gen.contentPreparingState.status).toBe('running')
+    await prepared
+    expect(gen.contentPreparingState.status).toBe('finished')
     expect(generateSpriteContentFn).toHaveBeenCalledOnce()
     expect(generateSpriteContentFn.mock.calls[0][0]).toEqual({
       name: 'Updated Sprite',
       category: SpriteCategory.Unspecified,
-      description: 'Updated description for A futuristic robot',
+      description: 'Updated description for A brave knight',
       artStyle: ArtStyle.FlatDesign,
       perspective: Perspective.AngledTopDown
     })
-    await generated
-    expect(gen.generateContentState.state).toBe('finished')
     expect(gen.costumes.length).toBe(2)
-    expect(gen.costumes[0]).toEqual({
-      settings: {
-        name: 'Costume 1',
-        description: 'A costume for Updated Sprite',
-        facing: aigcApis.Facing.Front,
-        artStyle: ArtStyle.Unspecified,
-        perspective: Perspective.Unspecified,
-        referenceImageUrl: null
-      },
-      gen: null,
-      result: null
+    expect(gen.costumes[0].settings).toEqual({
+      name: 'Costume 1',
+      description: 'A costume for Updated Sprite',
+      facing: aigcApis.Facing.Front,
+      artStyle: ArtStyle.Unspecified,
+      perspective: Perspective.Unspecified,
+      referenceImageUrl: null
     })
-    expect(gen.costumes[1]).toEqual({
-      settings: {
-        name: 'Costume 2',
-        description: 'Another costume for Updated Sprite',
-        facing: aigcApis.Facing.Front,
-        artStyle: ArtStyle.Unspecified,
-        perspective: Perspective.Unspecified,
-        referenceImageUrl: null
-      },
-      gen: null,
-      result: null
+    expect(gen.costumes[1].settings).toEqual({
+      name: 'Costume 2',
+      description: 'Another costume for Updated Sprite',
+      facing: aigcApis.Facing.Front,
+      artStyle: ArtStyle.Unspecified,
+      perspective: Perspective.Unspecified,
+      referenceImageUrl: null
     })
     expect(gen.animations.length).toBe(2)
-    expect(gen.animations[0]).toEqual({
-      settings: {
-        name: 'walk',
-        description: 'A walking animation for Updated Sprite',
-        artStyle: ArtStyle.Unspecified,
-        perspective: Perspective.Unspecified,
-        loopMode: AnimationLoopMode.Loopable,
-        referenceFrameUrl: null
-      },
-      gen: null,
-      result: null
+    expect(gen.animations[0].settings).toEqual({
+      name: 'walk',
+      description: 'A walking animation for Updated Sprite',
+      artStyle: ArtStyle.Unspecified,
+      perspective: Perspective.Unspecified,
+      loopMode: AnimationLoopMode.Loopable,
+      referenceFrameUrl: null
     })
-    expect(gen.animations[1]).toEqual({
-      settings: {
-        name: 'jump',
-        description: 'A jumping animation for Updated Sprite',
-        artStyle: ArtStyle.Unspecified,
-        perspective: Perspective.Unspecified,
-        loopMode: AnimationLoopMode.Loopable,
-        referenceFrameUrl: null
-      },
-      gen: null,
-      result: null
+    expect(gen.animations[1].settings).toEqual({
+      name: 'jump',
+      description: 'A jumping animation for Updated Sprite',
+      artStyle: ArtStyle.Unspecified,
+      perspective: Perspective.Unspecified,
+      loopMode: AnimationLoopMode.Loopable,
+      referenceFrameUrl: null
     })
 
-    // 7. Generate and finish other costumes and animations
-    const costume1Gen = gen.genCostume('Costume 1')
-    expect(gen.getCostume('Costume 1')?.gen).toBe(costume1Gen)
+    // Generate and finish other costumes and animations
+    const costume1Gen = gen.costumes[0]
     const costume1 = await finishCostumeGen('Costume 1', costume1Gen)
-    gen.finishCostume('Costume 1', costume1)
+    gen.finishCostume(costume1Gen.id, costume1)
 
-    const costume2Gen = gen.genCostume('Costume 2')
-    expect(gen.getCostume('Costume 2')?.gen).toBe(costume2Gen)
+    const costume2Gen = gen.costumes[1]
     const costume2 = await finishCostumeGen('Costume 2', costume2Gen)
-    gen.finishCostume('Costume 2', costume2)
+    gen.finishCostume(costume2Gen.id, costume2)
 
-    const animationWalkGen = gen.genAnimation('walk')
-    expect(gen.getAnimation('walk')?.gen).toBe(animationWalkGen)
+    const animationWalkGen = gen.animations[0]
     const animationWalk = await finishAnimationGen('walk', animationWalkGen)
-    gen.finishAnimation('walk', animationWalk)
+    gen.finishAnimation(animationWalkGen.id, animationWalk)
 
-    const animationJumpGen = gen.genAnimation('jump')
-    expect(gen.getAnimation('jump')?.gen).toBe(animationJumpGen)
+    const animationJumpGen = gen.animations[1]
     const animationJump = await finishAnimationGen('jump', animationJumpGen)
-    gen.finishAnimation('jump', animationJump)
+    gen.finishAnimation(animationJumpGen.id, animationJump)
 
-    // 8. Finish the whole sprite generation
+    // Finish the whole sprite generation
     const sprite = gen.finish()
     expect(sprite.name).toBe('UpdatedSprite')
-    expect(sprite.assetMetadata?.description).toBe('Updated description for A futuristic robot')
+    expect(sprite.assetMetadata?.description).toBe('Updated description for A brave knight')
     expect(sprite.assetMetadata?.extraSettings).toEqual({
       category: SpriteCategory.Unspecified,
       artStyle: ArtStyle.FlatDesign,

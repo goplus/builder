@@ -11,6 +11,8 @@ import { Backdrop } from '@/models/backdrop'
 import { isWidget } from '@/models/widget'
 import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
+import type { SpriteGen } from '@/models/gen/sprite-gen'
+import type { BackdropGen } from '@/models/gen/backdrop-gen'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
@@ -80,6 +82,27 @@ export class EditorState extends Disposable {
   editing: editing.Editing
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
+
+  spriteGens: SpriteGen[] = []
+  addSpriteGen(gen: SpriteGen) {
+    this.spriteGens.push(gen)
+  }
+  removeSpriteGen(id: string) {
+    const index = this.spriteGens.findIndex((gen) => gen.id === id)
+    if (index < 0) throw new Error('SpriteGen not found in editor state')
+    this.spriteGens.splice(index, 1)
+  }
+
+  backdropGens: BackdropGen[] = []
+  addBackdropGen(gen: BackdropGen) {
+    this.backdropGens.push(gen)
+  }
+  removeBackdropGen(id: string) {
+    const index = this.backdropGens.findIndex((gen) => gen.id === id)
+    if (index < 0) throw new Error('BackdropGen not found in editor state')
+    this.backdropGens.splice(index, 1)
+  }
+
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)
   private selectedTypeRef = ref<SelectedType>('sprite')
   private selectedSpriteIdRef = ref<string | null>(null)

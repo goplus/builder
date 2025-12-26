@@ -2,14 +2,15 @@
 import { UIBlockItem, UIBlockItemTitle } from '@/components/ui'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 
-defineEmits<{
+defineProps<{
   gen: CostumeGen
+  active: boolean
 }>()
 </script>
 
 <template>
-  <UIBlockItem>
-    <UIBlockItemTitle size="large">costume</UIBlockItemTitle>
+  <UIBlockItem :active="active">
+    <UIBlockItemTitle size="large">{{ gen.name }}</UIBlockItemTitle>
   </UIBlockItem>
 </template>
 

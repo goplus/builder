@@ -10,7 +10,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  resolved: [void]
+  resolved: []
   cancelled: []
 }>()
 </script>

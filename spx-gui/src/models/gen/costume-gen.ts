@@ -1,28 +1,28 @@
+import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
-import type { Prettify } from '@/utils/types'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
 import { enrichCostumeSettings, Facing, genCostumeImage, type CostumeSettings } from '@/apis/aigc'
 import type { Project } from '../project'
 import type { Sprite } from '../sprite'
-import { createFileWithWebUrl } from '../common/cloud'
+import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import { Costume } from '../costume'
 import { getProjectSettings, getSpriteSettings, Phase } from './common'
 
-type SettingsInput = Prettify<Omit<CostumeSettings, 'sprite'>>
-
 // TODO: task cancelation support
+/** `CostumeGen` tracks the generation process of a **non-default** costume for a sprite. */
 export class CostumeGen extends Disposable {
+  id: string
   private sprite: Sprite
   private project: Project
   private enrichPhase: Phase<CostumeSettings>
   private generatePhase: Phase<string>
 
-  constructor(sprite: Sprite, project: Project, input = '') {
+  constructor(sprite: Sprite, project: Project, settings: Partial<CostumeSettings>) {
     super()
+    this.id = nanoid()
     this.sprite = sprite
     this.project = project
-    this.input = input
     this.enrichPhase = new Phase<CostumeSettings>()
     this.generatePhase = new Phase<string>()
     this.settings = {
@@ -31,14 +31,19 @@ export class CostumeGen extends Disposable {
       facing: Facing.Front,
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
-      referenceImageUrl: null
+      referenceImageUrl: null,
+      ...settings
     }
+    this.result = null
     return reactive(this) as this
   }
 
-  input: string
-  setInput(input: string) {
-    this.input = input
+  get name() {
+    return this.settings.name
+  }
+  setName(name: string) {
+    // TODO: check name validity
+    this.settings.name = name
   }
 
   get enrichState() {
@@ -46,16 +51,18 @@ export class CostumeGen extends Disposable {
   }
   async enrich() {
     const draft = await this.enrichPhase.run(
-      enrichCostumeSettings(this.input, undefined, getSpriteSettings(this.sprite), getProjectSettings(this.project))
+      enrichCostumeSettings(
+        this.settings.description,
+        this.settings,
+        getSpriteSettings(this.sprite),
+        getProjectSettings(this.project)
+      )
     )
-    this.setSettings({
-      ...draft,
-      referenceImageUrl: null // TODO: use default costume (if exists) as reference image
-    })
+    this.setSettings(draft)
   }
 
-  settings: SettingsInput
-  setSettings(updates: Partial<SettingsInput>) {
+  settings: CostumeSettings
+  setSettings(updates: Partial<CostumeSettings>) {
     Object.assign(this.settings, updates)
   }
 
@@ -63,8 +70,18 @@ export class CostumeGen extends Disposable {
     return this.generatePhase.state
   }
   async generate() {
-    await this.generatePhase.run(genCostumeImage(this.settings))
+    const defaultCostume = this.sprite.defaultCostume
+    if (defaultCostume == null) throw new Error('Sprite has no default costume')
+    const referenceImageUrl = await saveFileForWebUrl(defaultCostume.img)
+    await this.generatePhase.run(
+      genCostumeImage({
+        ...this.settings,
+        referenceImageUrl
+      })
+    )
   }
+
+  result: Costume | null
 
   async finish() {
     const generated = this.generateState.result
@@ -72,7 +89,7 @@ export class CostumeGen extends Disposable {
     const file = createFileWithWebUrl(generated, 'TODO')
     const costume = await Costume.create(this.settings.name, file)
     await costume.autoFit()
-    this.dispose() // TODO: Is it right to dispose here?
+    this.result = costume
     return costume
   }
 }

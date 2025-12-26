@@ -23,21 +23,21 @@ describe('BackdropGen', () => {
   it('should work well', async () => {
     const project = makeProject()
 
-    // 1. Create BackdropGen with initial input
+    // 1. Create BackdropGen with initial description
     const gen = new BackdropGen(project, 'A sunny beach with palm trees and clear blue water')
-    expect(gen.input).toBe('A sunny beach with palm trees and clear blue water')
-    expect(gen.enrichState.state).toBe('initial')
-    expect(gen.generateState.state).toBe('initial')
+    expect(gen.settings.description).toBe('A sunny beach with palm trees and clear blue water')
+    expect(gen.enrichState.status).toBe('initial')
+    expect(gen.generateState.status).toBe('initial')
 
-    // 2. User updates input
-    gen.setInput('A majestic mountain range under a clear blue sky')
-    expect(gen.input).toBe('A majestic mountain range under a clear blue sky')
+    // 2. User updates description
+    gen.setSettings({ description: 'A majestic mountain range under a clear blue sky' })
+    expect(gen.settings.description).toBe('A majestic mountain range under a clear blue sky')
 
     // 3. Enrich settings based on input
     const enriched = gen.enrich()
-    expect(gen.enrichState.state).toBe('running')
+    expect(gen.enrichState.status).toBe('running')
     await enriched
-    expect(gen.enrichState.state).toBe('finished')
+    expect(gen.enrichState.status).toBe('finished')
     expect(gen.enrichState.result).toEqual({
       name: 'Enriched Backdrop',
       category: BackdropCategory.Unspecified,
@@ -55,9 +55,9 @@ describe('BackdropGen', () => {
 
     // 5. Generate backdrop image
     const generated = gen.generate()
-    expect(gen.generateState.state).toBe('running')
+    expect(gen.generateState.status).toBe('running')
     await generated
-    expect(gen.generateState.state).toBe('finished')
+    expect(gen.generateState.status).toBe('finished')
     expect(gen.generateState.result).toBe(
       'http://example.com/generated-backdrop-based-on-A%20fantastic%20backdrop%20of%20a%20river%20flowing%20through%20a%20lush%20forest.png'
     )

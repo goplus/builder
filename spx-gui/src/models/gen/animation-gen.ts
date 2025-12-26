@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
@@ -17,6 +18,7 @@ import { getProjectSettings, getSpriteSettings, Phase } from './common'
 
 // TODO: task cancelation support
 export class AnimationGen extends Disposable {
+  id: string
   private sprite: Sprite
   private project: Project
 
@@ -24,30 +26,34 @@ export class AnimationGen extends Disposable {
   private generateVideoPhase: Phase<string>
   private extractFramesPhase: Phase<string[]>
 
-  constructor(sprite: Sprite, project: Project, input = '') {
+  constructor(sprite: Sprite, project: Project, settings: Partial<AnimationSettings>) {
     super()
+    this.id = nanoid()
     this.sprite = sprite
     this.project = project
-    this.input = input
     this.settings = {
       name: '',
       description: '',
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
       loopMode: AnimationLoopMode.NonLoopable,
-      referenceFrameUrl: null
+      referenceFrameUrl: null,
+      ...settings
     }
     this.enrichPhase = new Phase<AnimationSettings>()
     this.generateVideoPhase = new Phase<string>()
     this.video = null
     this.extractFramesPhase = new Phase<string[]>()
-
+    this.result = null
     return reactive(this) as this
   }
 
-  input: string
-  setInput(input: string) {
-    this.input = input
+  get name() {
+    return this.settings.name
+  }
+  setName(name: string) {
+    // TODO: check name validity
+    this.settings.name = name
   }
 
   get enrichState() {
@@ -55,7 +61,12 @@ export class AnimationGen extends Disposable {
   }
   async enrich() {
     const draft = await this.enrichPhase.run(
-      enrichAnimationSettings(this.input, undefined, getSpriteSettings(this.sprite), getProjectSettings(this.project))
+      enrichAnimationSettings(
+        this.settings.description,
+        this.settings,
+        getSpriteSettings(this.sprite),
+        getProjectSettings(this.project)
+      )
     )
     this.setSettings({
       ...draft,
@@ -81,6 +92,7 @@ export class AnimationGen extends Disposable {
     return this.generateVideoPhase.state
   }
   async generateVideo() {
+    // TODO: use reference costume image as reference frame if available
     const videoUrl = await this.generateVideoPhase.run(genAnimationVideo(this.settings))
     this.setVideo(createFileWithWebUrl(videoUrl, 'TODO'))
   }
@@ -100,6 +112,8 @@ export class AnimationGen extends Disposable {
     return await this.extractFramesPhase.run(extractAnimationVideoFrames(videoUrl))
   }
 
+  result: Animation | null
+
   async finish() {
     const frameImages = this.extractFramesPhase.state.result
     if (frameImages == null) throw new Error('Frame images expected')
@@ -111,7 +125,7 @@ export class AnimationGen extends Disposable {
       })
     )
     const animation = Animation.create(this.settings.name, costumes)
-    this.dispose() // TODO: Is it right to dispose here?
+    this.result = animation
     return animation
   }
 }

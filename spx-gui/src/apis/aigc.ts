@@ -11,7 +11,7 @@ import { AnimationLoopMode, ArtStyle, BackdropCategory, client, Perspective, Spr
 export async function matting(imageUrl: string) {
   if (process.env.NODE_ENV === 'development') {
     await timeout(2000)
-    return 'https://placekitten.com/400/400'
+    return 'https://picsum.photos/400/400'
   }
   const result = (await client.post('/aigc/matting', { imageUrl }, { timeout: 20 * 1000 })) as {
     resultUrl: string
@@ -104,7 +104,7 @@ export type TaskResultRemoveBackground = {
 }
 
 export type TaskResultGenerateCostume = {
-  imageUrl: string
+  imageUrls: string[]
 }
 
 export type TaskResultGenerateAnimationVideo = {
@@ -116,7 +116,7 @@ export type TaskResultExtractVideoFrames = {
 }
 
 export type TaskResultGenerateBackdrop = {
-  imageUrl: string
+  imageUrls: string[]
 }
 
 export type TaskResult<T extends TaskType = TaskType> = {
@@ -143,6 +143,8 @@ export type TaskParamsRemoveBackground = {
 
 export type TaskParamsGenerateCostume = {
   settings: CostumeSettings
+  /** Number of costume images to generate. Defaults to 1. */
+  n: number
 }
 
 export type TaskParamsGenerateAnimationVideo = {
@@ -156,6 +158,8 @@ export type TaskParamsExtractVideoFrames = {
 
 export type TaskParamsGenerateBackdrop = {
   settings: BackdropSettings
+  /** Number of backdrop images to generate. Defaults to 1. */
+  n: number
 }
 
 export type TaskParams<T extends TaskType = TaskType> = {
@@ -196,9 +200,9 @@ export async function getTask(taskID: string, signal?: AbortSignal): Promise<Tas
       type: TaskType.GenerateCostume,
       status: TaskStatus.Completed,
       result: {
-        imageUrl: 'https://placekitten.com/400/400'
+        imageUrls: ['https://picsum.photos/400/400']
       }
-    }
+    } satisfies Task<TaskType.GenerateCostume>
   }
   return client.get(`/aigc/task/${encodeURIComponent(taskID)}`, undefined, { signal }) as Promise<Task>
 }
@@ -284,7 +288,12 @@ export async function* subscribeTaskEvents(taskID: string, signal?: AbortSignal)
       type: TaskEventType.Completed,
       data: {
         result: {
-          imageUrl: 'https://placekitten.com/400/400'
+          imageUrls: [
+            'https://picsum.photos/400/400',
+            'https://picsum.photos/400/400',
+            'https://picsum.photos/400/400',
+            'https://picsum.photos/400/400'
+          ]
         }
       }
     }
@@ -446,9 +455,10 @@ async function untilTaskCompleted(taskID: string, signal?: AbortSignal): Promise
 }
 
 export async function genBackdropImage(settings: BackdropSettings, signal?: AbortSignal): Promise<string> {
-  const task = await createTask(TaskType.GenerateBackdrop, { settings }, signal)
-  const result = await untilTaskCompleted(task.id, signal)
-  return (result as TaskResult<TaskType.GenerateBackdrop>).imageUrl
+  const task = await createTask(TaskType.GenerateBackdrop, { settings, n: 1 }, signal)
+  const result = (await untilTaskCompleted(task.id, signal)) as TaskResult<TaskType.GenerateBackdrop>
+  if (result.imageUrls.length < 1) throw new Error('No backdrop image generated')
+  return result.imageUrls[0]
 }
 
 export async function enrichCostumeSettings(
@@ -472,9 +482,16 @@ export async function enrichCostumeSettings(
 }
 
 export async function genCostumeImage(settings: CostumeSettings, signal?: AbortSignal): Promise<string> {
-  const task = await createTask(TaskType.GenerateCostume, { settings }, signal)
-  const result = await untilTaskCompleted(task.id, signal)
-  return (result as TaskResult<TaskType.GenerateCostume>).imageUrl
+  const task = await createTask(TaskType.GenerateCostume, { settings, n: 1 }, signal)
+  const result = (await untilTaskCompleted(task.id, signal)) as TaskResult<TaskType.GenerateCostume>
+  if (result.imageUrls.length < 1) throw new Error('No costume image generated')
+  return result.imageUrls[0]
+}
+
+export async function genCostumeImages(settings: CostumeSettings, n: number, signal?: AbortSignal): Promise<string[]> {
+  const task = await createTask(TaskType.GenerateCostume, { settings, n }, signal)
+  const result = (await untilTaskCompleted(task.id, signal)) as TaskResult<TaskType.GenerateCostume>
+  return result.imageUrls
 }
 
 export async function enrichAnimationSettings(

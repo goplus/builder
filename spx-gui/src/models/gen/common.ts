@@ -1,4 +1,4 @@
-import { Cancelled, capture } from '@/utils/exception'
+import { ActionException, Cancelled, capture } from '@/utils/exception'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import type { ProjectSettings, SpriteSettings } from '@/apis/aigc'
 import type { Project } from '../project'
@@ -26,42 +26,46 @@ export function getSpriteSettings(sprite: Sprite): SpriteSettings {
 
 export type PhaseState<R> =
   | {
-      state: 'initial'
+      status: 'initial'
       result?: null
       error?: null
     }
   | {
-      state: 'running'
+      status: 'running'
       result?: null
       error?: null
     }
   | {
-      state: 'finished'
+      status: 'finished'
       result: R
       error?: null
     }
   | {
-      state: 'failed'
+      status: 'failed'
       result?: null
-      error: unknown
+      error: ActionException
     }
 
 export class Phase<R> {
   state: PhaseState<R>
   constructor() {
-    this.state = { state: 'initial' }
+    this.state = { status: 'initial' }
   }
   async run(promise: Promise<R>): Promise<R> {
-    this.state = { state: 'running' }
+    this.state = { status: 'running' }
     try {
       const result = await promise
-      this.state = { state: 'finished', result }
+      this.state = { status: 'finished', result }
       return result
     } catch (err) {
       if (err instanceof Cancelled) {
-        this.state = { state: 'initial' }
+        this.state = { status: 'initial' }
       } else {
-        this.state = { state: 'failed', error: err }
+        const ae = new ActionException(err, {
+          en: 'TODO: phase failed',
+          zh: 'TODO: 阶段失败'
+        })
+        this.state = { status: 'failed', error: ae }
         capture(err)
       }
       throw err

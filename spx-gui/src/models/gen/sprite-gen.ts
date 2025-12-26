@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
@@ -8,55 +9,45 @@ import {
   type SpriteContentSettings,
   type CostumeSettings,
   Facing,
-  type AnimationSettings
+  genCostumeImages
 } from '@/apis/aigc'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
-import type { Costume } from '../costume'
+import { Costume } from '../costume'
 import type { Animation } from '../animation'
 import { getProjectSettings, Phase } from './common'
 import { CostumeGen } from './costume-gen'
 import { AnimationGen } from './animation-gen'
-
-export type CostumeItem = {
-  settings: CostumeSettings
-  gen: CostumeGen | null
-  result: Costume | null
-}
-
-export type AnimationItem = {
-  settings: AnimationSettings
-  gen: AnimationGen | null
-  result: Animation | null
-}
+import { createFileWithWebUrl } from '../common/cloud'
+import type { File } from '../common/file'
+import { getAnimationName, getCostumeName } from '../common/asset-name'
 
 // TODO: task cancelation support
 export class SpriteGen extends Disposable {
+  id: string
   private project: Project
   private enrichPhase: Phase<SpriteSettings>
-  private generateContentPhase: Phase<SpriteContentSettings>
+  private genImagesPhase: Phase<File[]>
+  private prepareContentPhase: Phase<SpriteContentSettings>
 
-  constructor(project: Project, input = '') {
+  constructor(project: Project, initialDescription = '') {
     super()
+    this.id = nanoid()
     this.project = project
-    this.input = input
     this.enrichPhase = new Phase()
-    this.generateContentPhase = new Phase()
+    this.genImagesPhase = new Phase()
+    this.prepareContentPhase = new Phase()
     this.costumes = []
     this.animations = []
     this.settings = {
       name: '',
       category: SpriteCategory.Unspecified,
-      description: '',
+      description: initialDescription,
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified
     }
+    this.result = null
     return reactive(this) as this
-  }
-
-  input: string
-  setInput(input: string) {
-    this.input = input
   }
 
   get enrichState() {
@@ -64,7 +55,7 @@ export class SpriteGen extends Disposable {
   }
   async enrich() {
     const draft = await this.enrichPhase.run(
-      enrichSpriteSettings(this.input, undefined, getProjectSettings(this.project))
+      enrichSpriteSettings(this.settings.description, this.settings, getProjectSettings(this.project))
     )
     this.setSettings(draft)
   }
@@ -74,47 +65,37 @@ export class SpriteGen extends Disposable {
     Object.assign(this.settings, updates)
   }
 
-  defaultCostume: CostumeItem | null = null
-  genDefaultCostume() {
-    const settings = {
-      // TODO: better default settings, or get from content-settings generation API
+  get imagesGenState() {
+    return this.genImagesPhase.state
+  }
+  private getDefaultCostumeSettings(): CostumeSettings {
+    const settings = this.settings
+    let facing = Facing.Unspecified
+    if (settings.perspective === Perspective.SideScrolling) {
+      facing = Facing.Right
+    } else if (settings.perspective === Perspective.AngledTopDown || settings.perspective === Perspective.TrueTopDown) {
+      facing = Facing.Front
+    }
+    return {
       name: 'default',
-      description: 'The default costume for the sprite',
-      facing: Facing.Front,
-      artStyle: ArtStyle.Unspecified,
-      perspective: Perspective.Unspecified,
+      description: `The default costume for sprite "${this.settings.name}". The sprite: ${this.settings.description}`,
+      facing,
+      artStyle: settings.artStyle,
+      perspective: settings.perspective,
       referenceImageUrl: null
     }
-    const costumeGen = new CostumeGen(this.ensureSprite(), this.project, this.input)
-    costumeGen.setSettings(settings)
-    this.defaultCostume = {
-      settings,
-      gen: costumeGen,
-      result: null
-    }
-    return costumeGen
   }
-  finishDefaultCostume(costume: Costume) {
-    if (this.defaultCostume == null) throw new Error('Default costume not generated')
-    this.defaultCostume.result = costume
-    this.ensureSprite().addCostume(costume)
+  async genImages() {
+    return this.genImagesPhase.run(
+      genCostumeImages(this.getDefaultCostumeSettings(), 4).then((imgUrls) =>
+        imgUrls.map((url) => createFileWithWebUrl(url))
+      )
+    )
   }
 
-  get generateContentState() {
-    return this.generateContentPhase.state
-  }
-  async generateContent() {
-    const descriptions = await this.generateContentPhase.run(genSpriteContentSettings(this.settings))
-    this.costumes = descriptions.costumes.map((settings) => ({
-      settings,
-      gen: null,
-      result: null
-    }))
-    this.animations = descriptions.animations.map((settings) => ({
-      settings,
-      gen: null,
-      result: null
-    }))
+  image: File | null = null
+  setImage(file: File) {
+    this.image = file
   }
 
   private sprite: Sprite | null = null
@@ -123,53 +104,67 @@ export class SpriteGen extends Disposable {
     return this.sprite
   }
 
-  costumes: CostumeItem[]
-  // TODO: add costume, rename costume
-  getCostume(name: string) {
-    const item = this.costumes.find((c) => c.settings.name === name)
-    return item ?? null
+  get contentPreparingState() {
+    return this.prepareContentPhase.state
   }
-  removeCostume(name: string) {
-    this.costumes = this.costumes.filter((c) => c.settings.name !== name)
+  async prepareContent() {
+    if (this.image == null) throw new Error('image expected')
+    const image = this.image
+    const sprite = this.ensureSprite()
+    const project = this.project
+    const settings = await this.prepareContentPhase.run(
+      (async () => {
+        const defaultCostume = await Costume.create('default', image)
+        await defaultCostume.autoFit()
+        sprite.addCostume(defaultCostume)
+        return genSpriteContentSettings(this.settings)
+      })()
+    )
+    this.costumes = settings.costumes.map((s) => new CostumeGen(sprite, project, s))
+    this.animations = settings.animations.map((s) => new AnimationGen(sprite, project, s))
   }
-  genCostume(name: string) {
-    const item = this.costumes.find((c) => c.settings.name === name)
-    if (item == null) throw new Error(`Costume ${name} not found`)
-    const gen = new CostumeGen(this.ensureSprite(), this.project)
-    gen.setSettings(item.settings)
-    item.gen = gen
-    return gen
+
+  /** Costumes gen other than the default costume */
+  costumes: CostumeGen[]
+  addCostume() {
+    const name = getCostumeName(this)
+    const costumeGen = new CostumeGen(this.ensureSprite(), this.project, { name })
+    this.costumes.push(costumeGen)
+    return costumeGen
   }
-  finishCostume(name: string, costume: Costume) {
-    const item = this.costumes.find((c) => c.settings.name === name)
-    if (item == null) throw new Error(`Costume ${name} not found`)
-    item.result = costume
+  removeCostume(id: string) {
+    const index = this.costumes.findIndex((c) => c.id === id)
+    if (index === -1) throw new Error(`Costume with id ${id} not found`)
+    const [c] = this.costumes.splice(index, 1)
+    c.dispose()
+  }
+  finishCostume(id: string, costume: Costume) {
+    const item = this.costumes.find((c) => c.id === id)
+    if (item == null) throw new Error(`Costume ${id} not found`)
     this.ensureSprite().addCostume(costume)
   }
 
-  animations: AnimationItem[]
-  // TODO: add animation, rename animation
-  getAnimation(name: string) {
-    const item = this.animations.find((a) => a.settings.name === name)
-    return item ?? null
+  /** Animations gen */
+  animations: AnimationGen[]
+  addAnimation() {
+    const name = getAnimationName(this)
+    const animationGen = new AnimationGen(this.ensureSprite(), this.project, { name })
+    this.animations.push(animationGen)
+    return animationGen
   }
-  removeAnimation(name: string) {
-    this.animations = this.animations.filter((a) => a.settings.name !== name)
+  removeAnimation(id: string) {
+    const index = this.animations.findIndex((a) => a.id === id)
+    if (index === -1) throw new Error(`Animation with id ${id} not found`)
+    const [a] = this.animations.splice(index, 1)
+    a.dispose()
   }
-  genAnimation(name: string) {
-    const item = this.animations.find((a) => a.settings.name === name)
-    if (item == null) throw new Error(`Animation ${name} not found`)
-    const gen = new AnimationGen(this.ensureSprite(), this.project)
-    gen.setSettings(item.settings)
-    item.gen = gen
-    return gen
-  }
-  finishAnimation(name: string, animation: Animation) {
-    const item = this.animations.find((a) => a.settings.name === name)
-    if (item == null) throw new Error(`Animation ${name} not found`)
-    item.result = animation
+  finishAnimation(id: string, animation: Animation) {
+    const item = this.animations.find((a) => a.id === id)
+    if (item == null) throw new Error(`Animation ${id} not found`)
     this.ensureSprite().addAnimation(animation)
   }
+
+  result: Sprite | null
 
   finish() {
     const sprite = this.ensureSprite()
@@ -181,7 +176,7 @@ export class SpriteGen extends Disposable {
         perspective: this.settings.perspective
       }
     })
-    this.dispose() // TODO: Is it right to dispose here?
+    this.result = sprite
     return sprite
   }
 }
