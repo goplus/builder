@@ -1818,6 +1818,14 @@ paths:
                       properties:
                         settings:
                           $ref: "#/components/schemas/AIGCCostumeSettings"
+                        n:
+                          description: Number of costume images to generate.
+                          type: integer
+                          minimum: 1
+                          maximum: 4
+                          default: 1
+                          examples:
+                            - 4
                     - title: generateAnimationVideo
                       type: object
                       required:
@@ -1851,6 +1859,14 @@ paths:
                       properties:
                         settings:
                           $ref: "#/components/schemas/AIGCBackdropSettings"
+                        n:
+                          description: Number of backdrop images to generate.
+                          type: integer
+                          minimum: 1
+                          maximum: 4
+                          default: 1
+                          examples:
+                            - 4
       responses:
         "202":
           description: Task accepted and queued for processing.
@@ -1937,7 +1953,7 @@ paths:
         data: {"id": "task-123", "status": "processing"}
 
         event: completed
-        data: {"result": {"imageUrl": "https://..."}}
+        data: {"result": {"imageUrls": ["https://..."]}}
         ```
 
         #### Example: task already completed
@@ -1946,7 +1962,7 @@ paths:
         GET /aigc/task/task-456/events
 
         event: snapshot
-        data: {"id": "task-456", "status": "completed", "result": {"imageUrl": "https://..."}}
+        data: {"id": "task-456", "status": "completed", "result": {"imageUrls": ["https://..."]}}
 
         (connection closed)
         ```
@@ -1960,7 +1976,7 @@ paths:
         data: {"id": "task-789", "status": "pending"}
 
         event: completed
-        data: {"result": {"imageUrl": "https://..."}}
+        data: {"result": {"imageUrls": ["https://..."]}}
         ```
 
         #### Example: task cancelled
@@ -2899,7 +2915,7 @@ components:
             - extractVideoFrames
             - generateBackdrop
           examples:
-            - generateCostume
+            - removeBackground
         status:
           description: Current status of the AIGC task.
           type: string
@@ -2924,11 +2940,15 @@ components:
                   format: uri
             - title: generateCostume
               type: object
+              required:
+                - imageUrls
               properties:
-                imageUrl:
-                  description: URL of the generated costume image.
-                  type: string
-                  format: uri
+                imageUrls:
+                  description: URLs of the generated costume images.
+                  type: array
+                  items:
+                    type: string
+                    format: uri
             - title: generateAnimationVideo
               type: object
               properties:
@@ -2947,11 +2967,15 @@ components:
                     format: uri
             - title: generateBackdrop
               type: object
+              required:
+                - imageUrls
               properties:
-                imageUrl:
-                  description: URL of the generated backdrop image.
-                  type: string
-                  format: uri
+                imageUrls:
+                  description: URLs of the generated backdrop images.
+                  type: array
+                  items:
+                    type: string
+                    format: uri
         error:
           description: Error details. Only available when status is failed.
           type: object
