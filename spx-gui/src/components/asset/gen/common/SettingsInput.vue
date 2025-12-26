@@ -82,6 +82,11 @@ const onInput = (e: InputEvent) => {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  transition: border-color 0.2s ease;
+
+  &:has(.description:focus) {
+    border-color: var(--ui-color-turquoise-500);
+  }
 }
 
 .main {

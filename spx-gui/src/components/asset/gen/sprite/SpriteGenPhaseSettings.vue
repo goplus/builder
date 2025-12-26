@@ -59,7 +59,6 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 }
 .body {
   flex: 1 1 0;
-  overflow-y: auto;
   width: 584px;
   display: flex;
   flex-direction: column;
