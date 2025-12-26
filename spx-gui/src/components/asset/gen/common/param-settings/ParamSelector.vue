@@ -1,41 +1,54 @@
-<script lang="ts">
-export type Selector<T> = {
-  onlyIcon?: boolean
-  options: Array<{ value: T; label: LocaleMessage; image?: string }>
-}
-</script>
-
 <script lang="ts" setup generic="T">
 import { UIBlockItem, UIBlockItemTitle, UIButton, UIDropdownWithTooltip, UIImg } from '@/components/ui'
 import type { LocaleMessage } from '@/utils/i18n'
 import { computed } from 'vue'
-import type { ParamSettingProps } from './ParamsSettings.vue'
 
-const props = withDefaults(defineProps<ParamSettingProps<T> & Selector<T>>(), {
-  onlyIcon: false
-})
+type Option = { value: T; label: LocaleMessage; image?: string; tips?: LocaleMessage }
+
+const props = withDefaults(
+  defineProps<{
+    value: T
+    tips: LocaleMessage
+    onlyIcon?: boolean
+    options: Array<Option>
+    placeholder?: false | Omit<Option, 'value'>
+  }>(),
+  {
+    onlyIcon: false,
+    placeholder: false
+  }
+)
 
 defineEmits<{
   'update:value': [value: T]
 }>()
 
-const selectedItem = computed(() => props.options.find((item) => item.value === props.value))
+const selectedItem = computed(() => {
+  if (props.placeholder) return props.placeholder
+  return props.options.find((item) => item.value === props.value)
+})
 </script>
 
 <template>
   <UIDropdownWithTooltip placement="top">
-    <template #trigger>
-      <UIButton v-if="selectedItem != null" variant="stroke" color="boring">
+    <template v-if="selectedItem != null" #trigger>
+      <!-- The button margin is a bit large, need to consider how to be compatible with the specifications -->
+      <UIButton variant="stroke" color="boring">
         <template v-if="selectedItem.image != null" #icon>
-          <UIImg :src="selectedItem.image" />
+          <UIImg
+            class="image"
+            :style="{ backgroundSize: onlyIcon ? '130%' : '110%' }"
+            :class="placeholder ? 'placeholder-image' : 'button-image'"
+            :src="selectedItem.image"
+          />
         </template>
-        <template v-if="selectedItem.image == null || !onlyIcon">
+        <template v-if="!onlyIcon" #default>
           {{ $t(selectedItem.label) }}
         </template>
       </UIButton>
     </template>
     <template v-if="selectedItem != null" #tooltip-content>
-      {{ $t(selectedItem.label) }}
+      {{ $t(selectedItem.tips != null ? selectedItem.tips : selectedItem.label) }}
     </template>
     <template #dropdown-content>
       <div class="dropdown-content">
@@ -47,7 +60,7 @@ const selectedItem = computed(() => props.options.find((item) => item.value === 
             :active="value === item.value"
             @click="$emit('update:value', item.value)"
           >
-            <UIImg v-if="item.image != null" :src="item.image" />
+            <UIImg v-if="item.image != null" class="image block-image" :src="item.image" />
             <UIBlockItemTitle size="medium">
               {{ $t(item.label) }}
             </UIBlockItemTitle>
@@ -59,6 +72,25 @@ const selectedItem = computed(() => props.options.find((item) => item.value === 
 </template>
 
 <style lang="scss" scoped>
+.image {
+  border-radius: 10px;
+}
+
+.placeholder-image {
+  width: 16px;
+  height: 16px;
+}
+
+.button-image {
+  width: 26px;
+  height: 26px;
+}
+
+.block-image {
+  width: 80px;
+  height: 60px;
+}
+
 .dropdown-content {
   display: flex;
   flex-direction: column;

@@ -50,17 +50,13 @@ export const enum ArtStyle {
   HandDrawn = 'hand-drawn',
   /** Low-Poly art style uses a minimal number of polygons to create 3D models, resulting in a stylized, geometric appearance often seen in early 3D video games. */
   LowPoly = 'low-poly',
+  /** Ghibli art style is a Japanese animation style that emphasizes movement, energy, and a sense of wonder. */
+  Ghibli = 'ghibli',
   Unspecified = 'unspecified'
 }
 
 /** Perspective indicates the viewpoint from which the "game world" is viewed */
 export const enum Perspective {
-  /**
-   * True Top-Down (also known as a bird's-eye view, overhead view, or 90-degree orthographic projection):
-   * The camera is positioned directly above the scene, looking straight down (a 90° angle).
-   * Objects like characters and buildings show only their top surfaces, which can make it difficult to convey character features or depth.
-   */
-  TrueTopDown = 'true-top-down',
   /**
    * Angled Top-Down (also known as 3/4 view or dimetric projection):
    * The camera is still looking down from above, but at an angle (commonly between 45° and 60°).
@@ -80,8 +76,6 @@ export const enum SpriteCategory {
   Character = 'character',
   /** Item sprites represent functional objects that players can collect, consume, equip, or otherwise use to affect gameplay mechanics. */
   Item = 'item',
-  /** Prop sprites are decorative or environmental objects that enrich the visual scene but typically lack direct gameplay functionality. */
-  Prop = 'prop',
   /** Effect sprites represent visual effects such as explosions, magic spells, or weather effects that add atmosphere or feedback to the game. */
   Effect = 'effect',
   /** UI sprites are graphical elements used in the user interface, such as buttons, icons, and menus, to facilitate player interaction with the game. */

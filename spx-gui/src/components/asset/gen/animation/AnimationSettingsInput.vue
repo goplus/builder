@@ -9,6 +9,7 @@ import AnimationLoopModeInput from './AnimationLoopModeInput.vue'
 
 const props = defineProps<{
   gen: AnimationGen
+  onlyIcon?: boolean
 }>()
 
 // TODO: implement readonly mode
@@ -23,9 +24,21 @@ const readonly = computed(() => props.gen.result != null)
     @enrich="gen.enrich()"
   >
     <template #extra>
-      <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
-      <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
-      <AnimationLoopModeInput :value="gen.settings.loopMode" @update:value="gen.setSettings({ loopMode: $event })" />
+      <ArtStyleInput
+        :value="gen.settings.artStyle"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ artStyle: $event })"
+      />
+      <PerspectiveInput
+        :value="gen.settings.perspective"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ perspective: $event })"
+      />
+      <AnimationLoopModeInput
+        :value="gen.settings.loopMode"
+        :only-icon="onlyIcon"
+        @update:value="gen.setSettings({ loopMode: $event })"
+      />
     </template>
     <template v-if="!readonly" #submit>
       <UIButton :loading="gen.generateVideoState.status === 'running'" @click="gen.generateVideo()">{{
