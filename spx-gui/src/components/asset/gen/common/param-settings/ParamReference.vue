@@ -1,8 +1,11 @@
 <script lang="ts" setup>
 import { UIButton, UIImg, UITooltip } from '@/components/ui'
-import type { ParamSettingProps } from './ParamsSettings.vue'
+import type { LocaleMessage } from '@/utils/i18n'
 
-defineProps<ParamSettingProps<string>>()
+defineProps<{
+  value: string
+  tips: LocaleMessage
+}>()
 </script>
 
 <template>
