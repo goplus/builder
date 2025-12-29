@@ -21,7 +21,7 @@ const emit = defineEmits<{
     @collapse="emit('collapse')"
     @finished="emit('finished', $event)"
   />
-  <SpriteGenPhaseSettings v-else :gen="gen" @collapse="emit('collapse')" />
+  <SpriteGenPhaseSettings v-else :gen="gen" />
 </template>
 
 <style lang="scss" scoped></style>

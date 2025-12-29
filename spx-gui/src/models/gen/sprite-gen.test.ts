@@ -172,8 +172,17 @@ describe('SpriteGen', () => {
       artStyle: ArtStyle.FlatDesign,
       perspective: Perspective.AngledTopDown
     })
-    expect(gen.costumes.length).toBe(2)
+    expect(gen.costumes.length).toBe(3)
     expect(gen.costumes[0].settings).toEqual({
+      name: 'default',
+      description:
+        'The default costume for sprite "Updated Sprite". The sprite: Updated description for A brave knight',
+      facing: aigcApis.Facing.Front,
+      artStyle: ArtStyle.FlatDesign,
+      perspective: Perspective.AngledTopDown,
+      referenceImageUrl: null
+    })
+    expect(gen.costumes[1].settings).toEqual({
       name: 'Costume 1',
       description: 'A costume for Updated Sprite',
       facing: aigcApis.Facing.Front,
@@ -181,7 +190,7 @@ describe('SpriteGen', () => {
       perspective: Perspective.Unspecified,
       referenceImageUrl: null
     })
-    expect(gen.costumes[1].settings).toEqual({
+    expect(gen.costumes[2].settings).toEqual({
       name: 'Costume 2',
       description: 'Another costume for Updated Sprite',
       facing: aigcApis.Facing.Front,
@@ -208,11 +217,11 @@ describe('SpriteGen', () => {
     })
 
     // Generate and finish other costumes and animations
-    const costume1Gen = gen.costumes[0]
+    const costume1Gen = gen.costumes[1]
     const costume1 = await finishCostumeGen('Costume 1', costume1Gen)
     gen.finishCostume(costume1Gen.id, costume1)
 
-    const costume2Gen = gen.costumes[1]
+    const costume2Gen = gen.costumes[2]
     const costume2 = await finishCostumeGen('Costume 2', costume2Gen)
     gen.finishCostume(costume2Gen.id, costume2)
 

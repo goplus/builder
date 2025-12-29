@@ -23,7 +23,7 @@ const emit = defineEmits<{
   >
     <BackdropGenComp :gen="gen" />
     <template #footer>
-      <UIButton color="secondary">{{ $t({ zh: '收起', en: 'Collapse' }) }}</UIButton>
+      <UIButton color="secondary">{{ $t({ zh: '收起', en: 'Minimize' }) }}</UIButton>
       <UIButton>{{ $t({ zh: '采用', en: 'Use' }) }}</UIButton>
     </template>
   </GenModal>

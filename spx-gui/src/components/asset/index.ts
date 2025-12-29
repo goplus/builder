@@ -32,6 +32,8 @@ import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
+import type { CostumeGen } from '@/models/gen/costume-gen'
+import type { AnimationGen } from '@/models/gen/animation-gen'
 
 export function useAddAssetFromLibrary() {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
@@ -352,5 +354,43 @@ export function useBackdropGenModal() {
   const invokeModal = useModal(BackdropGenModal)
   return function backdropGenModal(backdropGen: BackdropGen) {
     return invokeModal({ gen: backdropGen })
+  }
+}
+
+export function useRenameCostumeGen() {
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameCostumeGen(gen: CostumeGen) {
+    return invokeRenameModal({
+      target: {
+        name: gen.settings.name,
+        validateName(name) {
+          return assetName.validateCostumeName(name, gen.parent)
+        },
+        async applyName(newName) {
+          gen.setName(newName)
+        },
+        inputTip: assetName.costumeNameTip,
+        warning: null
+      }
+    })
+  }
+}
+
+export function useRenameAnimationGen() {
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameAnimationGen(gen: AnimationGen) {
+    return invokeRenameModal({
+      target: {
+        name: gen.settings.name,
+        validateName(name) {
+          return assetName.validateAnimationName(name, gen.parent)
+        },
+        async applyName(newName) {
+          gen.setName(newName)
+        },
+        inputTip: assetName.animationNameTip,
+        warning: null
+      }
+    })
   }
 }

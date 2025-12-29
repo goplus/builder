@@ -1,4 +1,4 @@
-import { ref, watch, type Ref, type WatchSource } from 'vue'
+import { ref, shallowReactive, watch, type Ref, type WatchSource } from 'vue'
 import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } from 'vue-router'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
@@ -83,24 +83,26 @@ export class EditorState extends Disposable {
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
 
-  spriteGens: SpriteGen[] = []
+  spriteGens = shallowReactive<SpriteGen[]>([])
   addSpriteGen(gen: SpriteGen) {
     this.spriteGens.push(gen)
   }
   removeSpriteGen(id: string) {
     const index = this.spriteGens.findIndex((gen) => gen.id === id)
     if (index < 0) throw new Error('SpriteGen not found in editor state')
-    this.spriteGens.splice(index, 1)
+    const [gen] = this.spriteGens.splice(index, 1)
+    gen.dispose()
   }
 
-  backdropGens: BackdropGen[] = []
+  backdropGens = shallowReactive<BackdropGen[]>([])
   addBackdropGen(gen: BackdropGen) {
     this.backdropGens.push(gen)
   }
   removeBackdropGen(id: string) {
     const index = this.backdropGens.findIndex((gen) => gen.id === id)
     if (index < 0) throw new Error('BackdropGen not found in editor state')
-    this.backdropGens.splice(index, 1)
+    const [gen] = this.backdropGens.splice(index, 1)
+    gen.dispose()
   }
 
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)
