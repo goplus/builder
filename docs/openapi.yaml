@@ -1837,6 +1837,7 @@ paths:
                       type: object
                       required:
                         - videoUrl
+                        - duration
                       properties:
                         videoUrl:
                           description: URL of the video to extract frames from.
@@ -1844,10 +1845,29 @@ paths:
                           format: uri
                           examples:
                             - https://example.com/animation.mp4
-                        interval:
-                          description: Interval between frames in milliseconds.
+                        startTime:
+                          description: Start time (in milliseconds) from which to extract frames. Precision is 100ms.
                           type: integer
-                          minimum: 50
+                          minimum: 0
+                          multipleOf: 100
+                          default: 0
+                          examples:
+                            - 0
+                            - 1500
+                        duration:
+                          description: Duration (in milliseconds) of the segment to extract frames from. Precision is 100ms.
+                          type: integer
+                          minimum: 0
+                          multipleOf: 100
+                          maximum: 60000
+                          examples:
+                            - 3000
+                            - 10000
+                        interval:
+                          description: Interval between frames in milliseconds. Precision is 100ms.
+                          type: integer
+                          minimum: 100
+                          multipleOf: 100
                           maximum: 1000
                           default: 100
                           examples:
