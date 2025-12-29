@@ -1,11 +1,18 @@
 <script lang="ts" setup>
 import { UIButton, UIImg, UITooltip } from '@/components/ui'
+import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import type { LocaleMessage } from '@/utils/i18n'
+import { useAsyncComputed } from '@/utils/utils'
 
-defineProps<{
+const props = defineProps<{
   value: string
   tips: LocaleMessage
 }>()
+
+const file = useAsyncComputed(async (onCleanup) => {
+  const file = await createFileWithUniversalUrl(props.value)
+  return file.url(onCleanup)
+})
 </script>
 
 <template>
@@ -13,7 +20,7 @@ defineProps<{
     <template #trigger>
       <UIButton variant="stroke" color="boring">
         <template #icon>
-          <UIImg :src="value" />
+          <UIImg class="reference-image" :src="file" />
         </template>
       </UIButton>
     </template>
@@ -21,4 +28,9 @@ defineProps<{
   </UITooltip>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.reference-image {
+  width: 22px;
+  height: 22px;
+}
+</style>
