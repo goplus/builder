@@ -27,10 +27,7 @@ const handleUpdateShow = (visible: boolean) => {
     @update:visible="handleUpdateShow"
   >
     <header class="header">
-      <div class="left">
-        <slot name="left"></slot>
-        <h2 class="title">{{ title }}</h2>
-      </div>
+      <h2 class="title">{{ title }}</h2>
 
       <UIModalClose class="close" @click="handleUpdateShow(false)" />
     </header>
@@ -59,15 +56,9 @@ const handleUpdateShow = (visible: boolean) => {
   padding: var(--ui-gap-middle) 24px;
   height: 64px;
 
-  .left {
-    display: flex;
-    align-items: center;
-    gap: var(--ui-gap-middle);
-
-    .title {
-      font-size: 16px;
-      color: var(--ui-color-title);
-    }
+  .title {
+    font-size: 16px;
+    color: var(--ui-color-title);
   }
 }
 

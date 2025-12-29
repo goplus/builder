@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
-import { UIButton } from '@/components/ui'
+import { UIButton, UITooltip } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
 import SpriteCategoryInput from './SpriteCategoryInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
@@ -15,10 +15,16 @@ const emit = defineEmits<{
   submit: []
 }>()
 
-const submitting = computed(() => props.gen.imagesGenState.status === 'running')
+const submitting = computed(
+  () => props.gen.imagesGenState.status === 'running' || props.gen.enrichState.status === 'running'
+)
 
 function handleSubmit() {
   emit('submit') // For asset-library-modal, listen to event `submit` and do jump (from asset-library to sprite-gen)
+  if (props.gen.enrichState.status !== 'finished') {
+    props.gen.enrich()
+    return
+  }
   props.gen.genImages()
 }
 
@@ -41,7 +47,17 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton :loading="submitting" @click="handleSubmit">{{ $t(submitText) }}</UIButton>
+      <UITooltip :visible="gen.enrichState.status === 'running'">
+        <template #trigger>
+          <UIButton :loading="submitting" @click="handleSubmit">{{ $t(submitText) }}</UIButton>
+        </template>
+        {{
+          $t({
+            zh: '当前描述信息较少，我们正在自动帮您丰富细节中，请稍等',
+            en: 'The description is too little. Please wait while we enrich the details automatically'
+          })
+        }}
+      </UITooltip>
     </template>
   </SettingsInput>
 </template>
