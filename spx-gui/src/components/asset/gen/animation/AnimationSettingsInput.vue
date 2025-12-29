@@ -6,6 +6,7 @@ import SettingsInput from '../common/SettingsInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import AnimationLoopModeInput from './AnimationLoopModeInput.vue'
+import ParamReference from '../common/param-settings/ParamReference.vue'
 
 const props = defineProps<{
   gen: AnimationGen
@@ -24,6 +25,11 @@ const readonly = computed(() => props.gen.result != null)
     @enrich="gen.enrich()"
   >
     <template #extra>
+      <ParamReference
+        v-if="gen.settings.referenceFrameUrl != null"
+        :value="gen.settings.referenceFrameUrl"
+        :tips="{ zh: '参考帧', en: 'Reference Frame' }"
+      />
       <ArtStyleInput
         :value="gen.settings.artStyle"
         :only-icon="onlyIcon"

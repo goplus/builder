@@ -37,7 +37,7 @@ const selectedItem = computed(() => {
         <template v-if="selectedItem.image != null" #icon>
           <UIImg
             class="image"
-            :style="{ backgroundSize: onlyIcon ? '130%' : '110%' }"
+            :style="{ backgroundSize: onlyIcon && !placeholder ? '130%' : '110%' }"
             :class="placeholder ? 'placeholder-image' : 'button-image'"
             :src="selectedItem.image"
           />
@@ -60,7 +60,7 @@ const selectedItem = computed(() => {
             :active="value === item.value"
             @click="$emit('update:value', item.value)"
           >
-            <UIImg v-if="item.image != null" class="image block-image" :src="item.image" />
+            <UIImg v-if="item.image != null" class="block-image" :src="item.image" />
             <UIBlockItemTitle size="medium">
               {{ $t(item.label) }}
             </UIBlockItemTitle>
@@ -72,10 +72,6 @@ const selectedItem = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-.image {
-  border-radius: 10px;
-}
-
 .placeholder-image {
   width: 16px;
   height: 16px;
@@ -84,11 +80,13 @@ const selectedItem = computed(() => {
 .button-image {
   width: 26px;
   height: 26px;
+  border-radius: 10px;
 }
 
 .block-image {
   width: 80px;
   height: 60px;
+  margin-bottom: 5px;
 }
 
 .dropdown-content {
