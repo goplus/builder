@@ -7,9 +7,16 @@ import SpriteCategoryInput from './SpriteCategoryInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 
-const props = defineProps<{
-  gen: SpriteGen
-}>()
+const props = withDefaults(
+  defineProps<{
+    gen: SpriteGen
+    // TODO: implement disabled
+    disabled?: boolean
+  }>(),
+  {
+    disabled: false
+  }
+)
 
 const emit = defineEmits<{
   submit: []
@@ -41,7 +48,7 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton :loading="submitting" @click="handleSubmit">{{ $t(submitText) }}</UIButton>
+      <UIButton :disabled="disabled" :loading="submitting" @click="handleSubmit">{{ $t(submitText) }}</UIButton>
     </template>
   </SettingsInput>
 </template>

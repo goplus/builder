@@ -6,7 +6,6 @@ import {
   enrichSpriteSettings,
   type SpriteSettings,
   genSpriteContentSettings,
-  type SpriteContentSettings,
   type CostumeSettings,
   Facing,
   genCostumeImages
@@ -28,7 +27,7 @@ export class SpriteGen extends Disposable {
   private project: Project
   private enrichPhase: Phase<SpriteSettings>
   private genImagesPhase: Phase<File[]>
-  private prepareContentPhase: Phase<SpriteContentSettings>
+  private prepareContentPhase: Phase<void>
 
   constructor(project: Project, initialDescription = '') {
     super()
@@ -47,6 +46,10 @@ export class SpriteGen extends Disposable {
       perspective: Perspective.Unspecified
     }
     this.result = null
+    this.addDisposer(() => {
+      this.costumes.forEach((c) => c.dispose())
+      this.animations.forEach((a) => a.dispose())
+    })
     return reactive(this) as this
   }
 
@@ -103,6 +106,11 @@ export class SpriteGen extends Disposable {
     if (this.sprite == null) this.sprite = Sprite.create(this.settings.name)
     return this.sprite
   }
+  /** The sprite instance for preview within generation */
+  get previewSprite() {
+    if (this.sprite == null) throw new Error('sprite expected')
+    return this.sprite
+  }
 
   get contentPreparingState() {
     return this.prepareContentPhase.state
@@ -112,20 +120,25 @@ export class SpriteGen extends Disposable {
     const image = this.image
     const sprite = this.ensureSprite()
     const project = this.project
-    const settings = await this.prepareContentPhase.run(
+    const defaultCostumeGen = new CostumeGen(sprite, project, this.getDefaultCostumeSettings())
+    defaultCostumeGen.setImage(image)
+    await this.prepareContentPhase.run(
       (async () => {
-        const defaultCostume = await Costume.create('default', image)
-        await defaultCostume.autoFit()
+        const defaultCostume = await defaultCostumeGen.finish()
         sprite.addCostume(defaultCostume)
-        return genSpriteContentSettings(this.settings)
+        const settings = await genSpriteContentSettings(this.settings)
+        this.costumes = [defaultCostumeGen, ...settings.costumes.map((s) => new CostumeGen(sprite, project, s))]
+        this.animations = settings.animations.map((s) => new AnimationGen(sprite, project, s))
       })()
     )
-    this.costumes = settings.costumes.map((s) => new CostumeGen(sprite, project, s))
-    this.animations = settings.animations.map((s) => new AnimationGen(sprite, project, s))
   }
 
-  /** Costumes gen other than the default costume */
+  /** Costumes gen */
   costumes: CostumeGen[]
+  get defaultCostume() {
+    if (this.costumes.length === 0) return null
+    return this.costumes[0]
+  }
   addCostume() {
     const name = getCostumeName(this)
     const costumeGen = new CostumeGen(this.ensureSprite(), this.project, { name })
@@ -135,6 +148,7 @@ export class SpriteGen extends Disposable {
   removeCostume(id: string) {
     const index = this.costumes.findIndex((c) => c.id === id)
     if (index === -1) throw new Error(`Costume with id ${id} not found`)
+    if (id === this.defaultCostume?.id) throw new Error('Cannot remove default costume')
     const [c] = this.costumes.splice(index, 1)
     c.dispose()
   }

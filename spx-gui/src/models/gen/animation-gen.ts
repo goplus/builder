@@ -9,27 +9,32 @@ import {
   extractAnimationVideoFrames
 } from '@/apis/aigc'
 import type { Project } from '../project'
-import type { Sprite } from '../sprite'
+import { Sprite } from '../sprite'
 import type { File } from '../common/file'
 import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import { Animation } from '../animation'
 import { Costume } from '../costume'
 import { getProjectSettings, getSpriteSettings, Phase } from './common'
+import type { SpriteGen } from './sprite-gen'
 
 // TODO: task cancelation support
 export class AnimationGen extends Disposable {
   id: string
-  private sprite: Sprite
+  parent: Sprite | SpriteGen
+  private get sprite(): Sprite {
+    if (this.parent instanceof Sprite) return this.parent
+    return this.parent.previewSprite
+  }
   private project: Project
 
   private enrichPhase: Phase<AnimationSettings>
   private generateVideoPhase: Phase<string>
   private extractFramesPhase: Phase<string[]>
 
-  constructor(sprite: Sprite, project: Project, settings: Partial<AnimationSettings>) {
+  constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<AnimationSettings>) {
     super()
     this.id = nanoid()
-    this.sprite = sprite
+    this.parent = parent
     this.project = project
     this.settings = {
       name: '',

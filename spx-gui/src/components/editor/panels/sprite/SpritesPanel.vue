@@ -80,8 +80,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
+import { AnimationLoopMode, ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import { AssetType } from '@/apis/asset'
+import { useMessageHandle } from '@/utils/exception'
+import { Facing, type CostumeSettings, type SpriteSettings } from '@/apis/aigc'
+import { createFileWithWebUrl } from '@/models/common/cloud'
+import { CostumeGen } from '@/models/gen/costume-gen'
+import { AnimationGen } from '@/models/gen/animation-gen'
 import { SpriteGen } from '@/models/gen/sprite-gen'
 import { Sprite } from '@/models/sprite'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
@@ -95,7 +100,6 @@ import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
-import { useMessageHandle } from '@/utils/exception'
 
 defineProps<{
   expanded: boolean
@@ -159,19 +163,99 @@ const handleSorted = useMessageHandle(
   }
 ).fn
 
-onMounted(() => {
-  const es = editorCtx.state
-  if (es.spriteGens.length > 0) return
-  // Add a sprite gen for debugging
-  // TODO: remove me
+function makeSpriteGenPhaseSettings() {
   const gen = new SpriteGen(editorCtx.project, '负剑忍者')
   gen.setSettings({
-    name: 'ninja',
+    name: 'Ninja',
     category: SpriteCategory.Character,
     artStyle: ArtStyle.PixelArt,
     perspective: Perspective.SideScrolling
   })
-  es.addSpriteGen(gen)
+  return gen
+}
+
+async function makeSpriteGenPhaseContent() {
+  const settings: SpriteSettings = {
+    name: 'CuteAnimal',
+    description: "A cute animal character, suitable for children's games.",
+    category: SpriteCategory.Character,
+    artStyle: ArtStyle.HandDrawn,
+    perspective: Perspective.AngledTopDown
+  }
+  const gen = new SpriteGen(editorCtx.project, '可爱小动物')
+  gen['enrichPhase'].state = {
+    status: 'finished',
+    result: settings,
+    error: null
+  }
+  gen.setSettings(settings)
+  const images = Array.from({ length: 4 })
+    .map(() => 'https://builder-usercontent-test.gopluscdn.com/files/Fqb6lL1U54w_UwdBCw7lBg56xnSw-17773')
+    .map((url) => createFileWithWebUrl(url, 'todo.svg'))
+  gen['genImagesPhase'].state = {
+    status: 'finished',
+    result: images,
+    error: null
+  }
+  gen.setImage(images[0])
+  const costumeSettings: CostumeSettings[] = [
+    {
+      name: 'costume1',
+      description: `Costume 1 for ${settings.name}`,
+      facing: Facing.Front,
+      artStyle: settings.artStyle,
+      perspective: settings.perspective,
+      referenceImageUrl: null
+    },
+    {
+      name: 'costume2',
+      description: `Another costume for ${settings.name}`,
+      facing: Facing.Front,
+      artStyle: settings.artStyle,
+      perspective: settings.perspective,
+      referenceImageUrl: null
+    }
+  ]
+  const animationSettings = [
+    {
+      name: 'walk',
+      description: `A walking animation for ${settings.name}`,
+      artStyle: settings.artStyle,
+      perspective: settings.perspective,
+      loopMode: AnimationLoopMode.Loopable,
+      referenceFrameUrl: null
+    },
+    {
+      name: 'jump',
+      description: `A jumping animation for ${settings.name}`,
+      artStyle: settings.artStyle,
+      perspective: settings.perspective,
+      loopMode: AnimationLoopMode.NonLoopable,
+      referenceFrameUrl: null
+    }
+  ]
+  gen['prepareContentPhase'].state = {
+    status: 'finished',
+    result: undefined,
+    error: null
+  }
+  const sprite = gen['ensureSprite']()
+  const defaultCostumeGen = new CostumeGen(sprite, editorCtx.project, gen['getDefaultCostumeSettings']())
+  defaultCostumeGen.setImage(images[0])
+  const defaultCostume = await defaultCostumeGen.finish()
+  sprite.addCostume(defaultCostume)
+  gen.costumes = [defaultCostumeGen, ...costumeSettings.map((cs) => new CostumeGen(sprite, editorCtx.project, cs))]
+  gen.animations = animationSettings.map((as) => new AnimationGen(sprite, editorCtx.project, as))
+  return gen
+}
+
+onMounted(async () => {
+  const es = editorCtx.state
+  if (es.spriteGens.length > 0) return
+  // Add sprite gens for debugging
+  // TODO: remove me
+  es.addSpriteGen(makeSpriteGenPhaseSettings())
+  es.addSpriteGen(await makeSpriteGenPhaseContent())
 })
 
 const invokeSpriteGenModal = useSpriteGenModal()

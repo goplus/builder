@@ -16,10 +16,6 @@ const props = defineProps<{
   gen: SpriteGen
 }>()
 
-const emit = defineEmits<{
-  collapse: []
-}>()
-
 const allowSubmit = computed(() => props.gen.image != null)
 
 const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
@@ -31,13 +27,10 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 <template>
   <main class="phase-settings">
     <div class="body">
-      <SpriteSettingsInput :gen="gen" />
+      <SpriteSettingsInput :gen="gen" :disabled="handleSubmit.isLoading.value" />
       <SpriteImages :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)" />
     </div>
     <footer class="footer">
-      <UIButton color="secondary" size="large" @click="emit('collapse')">{{
-        $t({ en: 'Collapse', zh: '收起' })
-      }}</UIButton>
       <UIButton
         color="primary"
         size="large"

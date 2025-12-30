@@ -26,18 +26,22 @@ defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
 }
 
 .header {
   font-size: 16px;
+  line-height: 26px;
+  font-weight: 600;
   color: var(--ui-color-grey-1000);
 }
 
 .list {
   display: flex;
   flex-direction: row;
-  gap: 10px;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 376px;
 }
 
 .add-item {

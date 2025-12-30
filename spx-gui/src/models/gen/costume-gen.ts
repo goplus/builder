@@ -4,27 +4,33 @@ import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
 import { enrichCostumeSettings, Facing, genCostumeImage, type CostumeSettings } from '@/apis/aigc'
 import type { Project } from '../project'
-import type { Sprite } from '../sprite'
+import { Sprite } from '../sprite'
 import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import { Costume } from '../costume'
 import { getProjectSettings, getSpriteSettings, Phase } from './common'
+import type { File } from '../common/file'
+import type { SpriteGen } from './sprite-gen'
 
 // TODO: task cancelation support
 /** `CostumeGen` tracks the generation process of a **non-default** costume for a sprite. */
 export class CostumeGen extends Disposable {
   id: string
-  private sprite: Sprite
+  parent: Sprite | SpriteGen
+  private get sprite(): Sprite {
+    if (this.parent instanceof Sprite) return this.parent
+    return this.parent.previewSprite
+  }
   private project: Project
   private enrichPhase: Phase<CostumeSettings>
   private generatePhase: Phase<string>
 
-  constructor(sprite: Sprite, project: Project, settings: Partial<CostumeSettings>) {
+  constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<CostumeSettings>) {
     super()
     this.id = nanoid()
-    this.sprite = sprite
+    this.parent = parent
     this.project = project
-    this.enrichPhase = new Phase<CostumeSettings>()
-    this.generatePhase = new Phase<string>()
+    this.enrichPhase = new Phase()
+    this.generatePhase = new Phase()
     this.settings = {
       name: '',
       description: '',
@@ -66,6 +72,11 @@ export class CostumeGen extends Disposable {
     Object.assign(this.settings, updates)
   }
 
+  image: File | null = null
+  setImage(file: File) {
+    this.image = file
+  }
+
   get generateState() {
     return this.generatePhase.state
   }
@@ -73,21 +84,21 @@ export class CostumeGen extends Disposable {
     const defaultCostume = this.sprite.defaultCostume
     if (defaultCostume == null) throw new Error('Sprite has no default costume')
     const referenceImageUrl = await saveFileForWebUrl(defaultCostume.img)
-    await this.generatePhase.run(
+    const imageUrl = await this.generatePhase.run(
       genCostumeImage({
         ...this.settings,
         referenceImageUrl
       })
     )
+    this.setImage(createFileWithWebUrl(imageUrl))
   }
 
   result: Costume | null
 
   async finish() {
-    const generated = this.generateState.result
-    if (generated == null) throw new Error('Costume not generated yet')
-    const file = createFileWithWebUrl(generated, 'TODO')
-    const costume = await Costume.create(this.settings.name, file)
+    const image = this.image
+    if (image == null) throw new Error('Costume not generated yet')
+    const costume = await Costume.create(this.settings.name, image)
     await costume.autoFit()
     this.result = costume
     return costume
