@@ -239,13 +239,12 @@ async function makeSpriteGenPhaseContent() {
     result: undefined,
     error: null
   }
-  const sprite = gen['ensureSprite']()
-  const defaultCostumeGen = new CostumeGen(sprite, editorCtx.project, gen['getDefaultCostumeSettings']())
+  gen['makeSprite']()
+  const defaultCostumeGen = new CostumeGen(gen, editorCtx.project, gen['getDefaultCostumeSettings']())
   defaultCostumeGen.setImage(images[0])
-  const defaultCostume = await defaultCostumeGen.finish()
-  sprite.addCostume(defaultCostume)
-  gen.costumes = [defaultCostumeGen, ...costumeSettings.map((cs) => new CostumeGen(sprite, editorCtx.project, cs))]
-  gen.animations = animationSettings.map((as) => new AnimationGen(sprite, editorCtx.project, as))
+  await defaultCostumeGen.finish()
+  gen.costumes = [defaultCostumeGen, ...costumeSettings.map((cs) => new CostumeGen(gen, editorCtx.project, cs))]
+  gen.animations = animationSettings.map((as) => new AnimationGen(gen, editorCtx.project, as))
   return gen
 }
 

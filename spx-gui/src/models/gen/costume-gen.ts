@@ -3,16 +3,16 @@ import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
 import { enrichCostumeSettings, Facing, genCostumeImage, type CostumeSettings } from '@/apis/aigc'
+import type { File } from '../common/file'
+import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
-import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import { Costume } from '../costume'
 import { getProjectSettings, getSpriteSettings, Phase } from './common'
-import type { File } from '../common/file'
-import type { SpriteGen } from './sprite-gen'
+import { SpriteGen } from './sprite-gen'
 
 // TODO: task cancelation support
-/** `CostumeGen` tracks the generation process of a **non-default** costume for a sprite. */
+/** `CostumeGen` tracks the generation process of a costume. */
 export class CostumeGen extends Disposable {
   id: string
   parent: Sprite | SpriteGen
@@ -22,7 +22,7 @@ export class CostumeGen extends Disposable {
   }
   private project: Project
   private enrichPhase: Phase<CostumeSettings>
-  private generatePhase: Phase<string>
+  private generatePhase: Phase<File>
 
   constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<CostumeSettings>) {
     super()
@@ -84,13 +84,13 @@ export class CostumeGen extends Disposable {
     const defaultCostume = this.sprite.defaultCostume
     if (defaultCostume == null) throw new Error('Sprite has no default costume')
     const referenceImageUrl = await saveFileForWebUrl(defaultCostume.img)
-    const imageUrl = await this.generatePhase.run(
+    const image = await this.generatePhase.run(
       genCostumeImage({
         ...this.settings,
         referenceImageUrl
-      })
+      }).then((url) => createFileWithWebUrl(url))
     )
-    this.setImage(createFileWithWebUrl(imageUrl))
+    this.setImage(image)
   }
 
   result: Costume | null

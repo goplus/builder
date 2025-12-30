@@ -278,7 +278,6 @@ const handleSubmit = useMessageHandle(
   flex: 1 1 0;
   display: flex;
   position: relative;
-  border-radius: var(--ui-border-radius-1);
   overflow: hidden;
 
   .costume-detail,

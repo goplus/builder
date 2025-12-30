@@ -218,20 +218,16 @@ describe('SpriteGen', () => {
 
     // Generate and finish other costumes and animations
     const costume1Gen = gen.costumes[1]
-    const costume1 = await finishCostumeGen('Costume 1', costume1Gen)
-    gen.finishCostume(costume1Gen.id, costume1)
+    await finishCostumeGen('Costume 1', costume1Gen)
 
     const costume2Gen = gen.costumes[2]
-    const costume2 = await finishCostumeGen('Costume 2', costume2Gen)
-    gen.finishCostume(costume2Gen.id, costume2)
+    await finishCostumeGen('Costume 2', costume2Gen)
 
     const animationWalkGen = gen.animations[0]
-    const animationWalk = await finishAnimationGen('walk', animationWalkGen)
-    gen.finishAnimation(animationWalkGen.id, animationWalk)
+    await finishAnimationGen('walk', animationWalkGen)
 
     const animationJumpGen = gen.animations[1]
-    const animationJump = await finishAnimationGen('jump', animationJumpGen)
-    gen.finishAnimation(animationJumpGen.id, animationJump)
+    await finishAnimationGen('jump', animationJumpGen)
 
     // Finish the whole sprite generation
     const sprite = gen.finish()
