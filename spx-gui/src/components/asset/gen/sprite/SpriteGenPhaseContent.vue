@@ -5,7 +5,7 @@
 -->
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import type { Sprite } from '@/models/sprite'
@@ -38,38 +38,41 @@ type Selected = {
   id: string
 }
 
-function getAutoSelected(preferedType: 'costume' | 'animation' = 'costume'): Selected | null {
-  if (preferedType === 'costume') {
-    if (props.gen.costumes.length > 0) return { type: 'costume', id: props.gen.costumes[0].id }
-    if (props.gen.animations.length > 0) return { type: 'animation', id: props.gen.animations[0].id }
-  } else {
-    if (props.gen.animations.length > 0) return { type: 'animation', id: props.gen.animations[0].id }
-    if (props.gen.costumes.length > 0) return { type: 'costume', id: props.gen.costumes[0].id }
+const selectedRef = shallowRef<Selected | null>(null)
+
+const selected = computed(() => {
+  if (selectedRef.value == null) return null
+  const { type, id } = selectedRef.value
+  switch (type) {
+    case 'costume':
+      return { type: 'costume', costume: props.gen.costumes.find((c) => c.id === id) ?? null }
+    case 'animation':
+      return { type: 'animation', animation: props.gen.animations.find((a) => a.id === id) ?? null }
+    default:
+      return null
   }
-  return null
-}
-
-const selectedRef = shallowRef<Selected | null>(getAutoSelected())
-
-const selectedCostume = computed(() => {
-  const selected = selectedRef.value
-  if (selected == null || selected.type !== 'costume') return null
-  return props.gen.costumes.find((c) => c.id === selected.id) ?? null
 })
 
-const selectedAnimation = computed(() => {
-  const selected = selectedRef.value
-  if (selected == null || selected.type !== 'animation') return null
-  return props.gen.animations.find((c) => c.id === selected.id) ?? null
-})
-
-function selectCostume(id: string) {
-  selectedRef.value = { type: 'costume', id }
+function select(type: 'costume' | 'animation', id: string) {
+  selectedRef.value = { type, id }
 }
 
-function selectAnimation(id: string) {
-  selectedRef.value = { type: 'animation', id }
-}
+watch(
+  selected,
+  (selected) => {
+    // Select the first item of current type if no item is selected
+    if (selected?.animation != null || selected?.costume != null) return
+    if (selected?.type === 'animation' && props.gen.animations.length > 0) {
+      select('animation', props.gen.animations[0].id)
+    } else if (props.gen.costumes.length > 0) {
+      select('costume', props.gen.costumes[0].id)
+    }
+  },
+  { immediate: true }
+)
+
+const selectedCostume = computed(() => selected.value?.costume ?? null)
+const selectedAnimation = computed(() => selected.value?.animation ?? null)
 
 const renameCostume = useRenameCostumeGen()
 const handleRenameCostume = useMessageHandle(renameCostume, {
@@ -77,20 +80,14 @@ const handleRenameCostume = useMessageHandle(renameCostume, {
   zh: '重命名造型失败'
 }).fn
 
-const handleRemoveCostume = useMessageHandle(
-  (costumeGen: CostumeGen) => {
-    props.gen.removeCostume(costumeGen.id)
-    selectedRef.value = getAutoSelected('costume')
-  },
-  {
-    en: 'Failed to remove costume',
-    zh: '删除造型失败'
-  }
-).fn
+const handleRemoveCostume = useMessageHandle((costumeGen: CostumeGen) => props.gen.removeCostume(costumeGen.id), {
+  en: 'Failed to remove costume',
+  zh: '删除造型失败'
+}).fn
 
 function handleAddCostume() {
   const costumeGen = props.gen.addCostume()
-  selectCostume(costumeGen.id)
+  select('costume', costumeGen.id)
 }
 
 const renameAnimation = useRenameAnimationGen()
@@ -100,10 +97,7 @@ const handleRenameAnimation = useMessageHandle(renameAnimation, {
 }).fn
 
 const handleRemoveAnimation = useMessageHandle(
-  (animationGen: AnimationGen) => {
-    props.gen.removeAnimation(animationGen.id)
-    selectedRef.value = getAutoSelected('animation')
-  },
+  (animationGen: AnimationGen) => props.gen.removeAnimation(animationGen.id),
   {
     en: 'Failed to remove animation',
     zh: '删除动画失败'
@@ -112,7 +106,7 @@ const handleRemoveAnimation = useMessageHandle(
 
 function handleAddAnimation() {
   const animationGen = props.gen.addAnimation()
-  selectAnimation(animationGen.id)
+  select('animation', animationGen.id)
 }
 
 const i18n = useI18n()
@@ -182,7 +176,7 @@ const handleSubmit = useMessageHandle(
               :gen="c"
               :is-default="c.id === gen.defaultCostume?.id"
               :operable="{ removable: c.id !== gen.defaultCostume?.id }"
-              @click="selectCostume(c.id)"
+              @click="select('costume', c.id)"
               @rename="handleRenameCostume(c)"
               @remove="handleRemoveCostume(c)"
             />
@@ -195,7 +189,7 @@ const handleSubmit = useMessageHandle(
               :key="a.id"
               :active="selectedAnimation?.id === a.id"
               :gen="a"
-              @click="selectAnimation(a.id)"
+              @click="select('animation', a.id)"
               @rename="handleRenameAnimation(a)"
               @remove="handleRemoveAnimation(a)"
             />
