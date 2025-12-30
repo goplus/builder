@@ -8,8 +8,7 @@ import {
   UIChipRadio,
   UIIcon,
   UIModal,
-  UIModalClose,
-  useConfirmDialog
+  UIModalClose
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
@@ -29,7 +28,6 @@ import { BackdropGen } from '@/models/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
 import SpriteGenView from '../gen/sprite/SpriteGen.vue'
 import BackdropGenView from '../gen/backdrop/BackdropGen.vue'
-import { useI18n } from '@/utils/i18n'
 
 const props = defineProps<{
   type: AssetType
@@ -187,26 +185,6 @@ function handleGenerate() {
     generatePhase.value = true
   }
 }
-
-const confirm = useConfirmDialog()
-const { t } = useI18n()
-async function handleCloseLibrary() {
-  const gen = assetGen.value
-  if (generatePhase.value && gen != null) {
-    await confirm({
-      type: 'warning',
-      title: t({
-        zh: `重复确认`,
-        en: `Duplicate confirmation`
-      }),
-      content: t({
-        zh: `正在生成 ${entityMessage.value.zh}，关闭后任务可能会丢失，是否确认关闭？`,
-        en: `Generating ${entityMessage.value.en}, closing will cause the task to be lost, are you sure to close?`
-      })
-    })
-  }
-  emit('cancelled')
-}
 </script>
 
 <template>
@@ -215,7 +193,7 @@ async function handleCloseLibrary() {
     style="width: 1096px"
     :visible="visible"
     mask-closable
-    @update:visible="handleCloseLibrary"
+    @update:visible="emit('cancelled')"
   >
     <header class="header">
       <div class="header-left">
@@ -230,7 +208,7 @@ async function handleCloseLibrary() {
         <h2 class="title">{{ $t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` }) }}</h2>
       </div>
 
-      <UIModalClose class="close" @click="handleCloseLibrary" />
+      <UIModalClose class="close" @click="emit('cancelled')" />
     </header>
 
     <template v-if="generatePhase && AssetGenView != null && assetGen != null">
@@ -281,14 +259,13 @@ async function handleCloseLibrary() {
                 <div class="empty">
                   {{
                     $t({
-                      zh: `没找到 “${keyword}” 相关的素材，不如让 AI 帮你生成一个？`,
+                      zh: `没找到“${keyword}”相关的素材，不如让 AI 帮你生成一个？`,
                       en: `No assets found for "${keyword}". Why not let AI generate one for you?`
                     })
                   }}
                   <SettingsInput :gen="assetGen" @submit="handleGenerate" />
                 </div>
               </template>
-              <!-- fixed asset-list height to keep the layout stable -->
               <template #default="slotProps">
                 <div class="asset-list-container">
                   <ul class="asset-list">
