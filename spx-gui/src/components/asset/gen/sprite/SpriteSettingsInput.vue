@@ -9,7 +9,6 @@ import PerspectiveInput from '../common/PerspectiveInput.vue'
 
 const props = defineProps<{
   gen: SpriteGen
-  onlyIcon?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -37,21 +36,9 @@ const submitText = computed(() => {
     @enrich="gen.enrich()"
   >
     <template #extra>
-      <SpriteCategoryInput
-        :value="gen.settings.category"
-        :only-icon="onlyIcon"
-        @update:value="gen.setSettings({ category: $event })"
-      />
-      <ArtStyleInput
-        :value="gen.settings.artStyle"
-        :only-icon="onlyIcon"
-        @update:value="gen.setSettings({ artStyle: $event })"
-      />
-      <PerspectiveInput
-        :value="gen.settings.perspective"
-        :only-icon="onlyIcon"
-        @update:value="gen.setSettings({ perspective: $event })"
-      />
+      <SpriteCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
+      <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
+      <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
       <UIButton :loading="submitting" @click="handleSubmit">{{ $t(submitText) }}</UIButton>

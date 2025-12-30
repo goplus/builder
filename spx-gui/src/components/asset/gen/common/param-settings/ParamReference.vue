@@ -4,10 +4,16 @@ import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import type { LocaleMessage } from '@/utils/i18n'
 import { useAsyncComputed } from '@/utils/utils'
 
-const props = defineProps<{
-  value: string
-  tips: LocaleMessage
-}>()
+const props = withDefaults(
+  defineProps<{
+    value: string
+    tips: LocaleMessage
+    disabled?: boolean
+  }>(),
+  {
+    disabled: false
+  }
+)
 
 const file = useAsyncComputed(async (onCleanup) => {
   const file = await createFileWithUniversalUrl(props.value)
@@ -18,9 +24,9 @@ const file = useAsyncComputed(async (onCleanup) => {
 <template>
   <UITooltip>
     <template #trigger>
-      <UIButton variant="stroke" color="boring">
+      <UIButton variant="stroke" color="boring" :disabled="disabled">
         <template #icon>
-          <UIImg class="reference-image" :src="file" />
+          <UIImg :class="{ disabled }" class="reference-image" :src="file" />
         </template>
       </UIButton>
     </template>
@@ -32,5 +38,9 @@ const file = useAsyncComputed(async (onCleanup) => {
 .reference-image {
   width: 22px;
   height: 22px;
+
+  &.disabled {
+    opacity: 0.5;
+  }
 }
 </style>

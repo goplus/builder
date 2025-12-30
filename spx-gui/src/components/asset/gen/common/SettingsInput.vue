@@ -1,5 +1,11 @@
+<script lang="ts">
+export const iconOnlyKey: InjectionKey<Ref<boolean>> = Symbol('iconOnlyKey')
+</script>
+
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, watch, ref, provide, type InjectionKey, type Ref } from 'vue'
+import { debounce } from 'lodash'
+
 import { UIButton, UIIcon } from '@/components/ui'
 
 const props = withDefaults(
@@ -26,6 +32,34 @@ const onInput = (e: InputEvent) => {
     emit('update:description', target.value)
   }
 }
+
+const extraRef = ref<HTMLElement | null>(null)
+const iconOnly = ref(false)
+provide(iconOnlyKey, iconOnly)
+const updateIconOnly = debounce(() => {
+  const el = extraRef.value
+  if (!el) return
+
+  if (!iconOnly.value) {
+    if (el.scrollWidth > el.clientWidth) {
+      iconOnly.value = true
+    }
+  }
+}, 30)
+
+watch(
+  extraRef,
+  (extraEl, _, onCleanup) => {
+    if (!extraEl) return
+
+    const resizeObserver = new ResizeObserver(updateIconOnly)
+    resizeObserver.observe(extraEl)
+    updateIconOnly()
+
+    onCleanup(() => resizeObserver.disconnect())
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -62,7 +96,7 @@ const onInput = (e: InputEvent) => {
       </template>
     </div>
     <div class="footer">
-      <div class="extra">
+      <div ref="extraRef" class="extra">
         <slot name="extra"></slot>
       </div>
       <slot name="submit"></slot>
@@ -163,10 +197,21 @@ const onInput = (e: InputEvent) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 
   .extra {
     display: flex;
     gap: 8px;
+    padding: 4px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    & > * {
+      flex-shrink: 0;
+    }
   }
 }
 </style>
