@@ -127,6 +127,21 @@ async function beforeModalClose() {
   })
 }
 
+function isCostumeGenProcessing(costumeGen: CostumeGen) {
+  return costumeGen.generateState.status !== 'initial' && costumeGen.result == null
+}
+
+function isAnimationGenProcessing(animationGen: AnimationGen) {
+  return animationGen.generateVideoState.status !== 'initial' && animationGen.result == null
+}
+
+const submittable = computed(() => {
+  const { costumes, animations } = props.gen
+  if (costumes.some(isCostumeGenProcessing)) return false
+  if (animations.some(isAnimationGenProcessing)) return false
+  return true
+})
+
 async function beforeSubmit() {
   const { costumes, animations } = props.gen
   const finishedCostumes = costumes.filter((c) => c.result != null)
@@ -221,9 +236,14 @@ const handleSubmit = useMessageHandle(
       <UIButton color="secondary" size="large" @click="emit('collapse')">{{
         $t({ en: 'Minimize', zh: '收起' })
       }}</UIButton>
-      <UIButton color="primary" size="large" :loading="handleSubmit.isLoading.value" @click="handleSubmit.fn">{{
-        $t({ en: 'Use', zh: '采用' })
-      }}</UIButton>
+      <UIButton
+        color="primary"
+        size="large"
+        :disabled="!submittable"
+        :loading="handleSubmit.isLoading.value"
+        @click="handleSubmit.fn"
+        >{{ $t({ en: 'Use', zh: '采用' }) }}</UIButton
+      >
     </footer>
   </main>
 </template>
