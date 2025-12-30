@@ -6,7 +6,6 @@ import { getOptionImage, spriteCategoryOptions } from '../common/param-settings/
 
 const props = defineProps<{
   value: SpriteCategory
-  onlyIcon?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -32,7 +31,6 @@ function handleUpdateValue(value: SpriteCategory) {
   <ParamSelector
     :tips="{ en: 'Please select the sprite category you want to generate', zh: '请选择您想要生成的精灵类别' }"
     :options="spriteCategoryOptions"
-    :only-icon="onlyIcon"
     :placeholder="placeholder"
     :value="value"
     @update:value="handleUpdateValue"

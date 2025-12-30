@@ -6,7 +6,6 @@ import { getOptionImage, perspectiveOptions } from './param-settings/data'
 
 const props = defineProps<{
   value: Perspective
-  onlyIcon?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -32,7 +31,6 @@ function handleUpdateValue(value: Perspective) {
   <ParamSelector
     :tips="{ en: 'Please select the perspective you want to generate', zh: '请选择您想要生成的视角' }"
     :options="perspectiveOptions"
-    :only-icon="onlyIcon"
     :placeholder="placeholder"
     :value="value"
     @update:value="handleUpdateValue"

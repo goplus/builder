@@ -166,7 +166,7 @@ const handleSorted = useMessageHandle(
 function makeSpriteGenPhaseSettings() {
   const gen = new SpriteGen(editorCtx.project, '负剑忍者')
   gen.setSettings({
-    name: 'Ninja',
+    name: 'ninja',
     category: SpriteCategory.Character,
     artStyle: ArtStyle.PixelArt,
     perspective: Perspective.SideScrolling

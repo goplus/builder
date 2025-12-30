@@ -6,7 +6,6 @@ import { artStyleOptions, getOptionImage } from './param-settings/data'
 
 const props = defineProps<{
   value: ArtStyle
-  onlyIcon?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -32,7 +31,6 @@ function handleUpdateValue(value: ArtStyle) {
   <ParamSelector
     :tips="{ en: 'Please select the art style you want to generate', zh: '请选择您想要生成的艺术风格' }"
     :options="artStyleOptions"
-    :only-icon="onlyIcon"
     :placeholder="placeholder"
     :value="value"
     @update:value="handleUpdateValue"
