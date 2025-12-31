@@ -76,7 +76,7 @@ export class SpriteGen extends Disposable {
     let facing = Facing.Unspecified
     if (settings.perspective === Perspective.SideScrolling) {
       facing = Facing.Right
-    } else if (settings.perspective === Perspective.AngledTopDown || settings.perspective === Perspective.TrueTopDown) {
+    } else if (settings.perspective === Perspective.AngledTopDown) {
       facing = Facing.Front
     }
     return {

@@ -14,6 +14,7 @@ const emit = defineEmits<{
 
 <template>
   <ParamSelector
+    :name="{ en: 'Category', zh: '类型' }"
     :tips="{ en: 'Please select the backdrop category you want to generate', zh: '请选择您想要生成的背景类别' }"
     :options="backdropCategoryOptions"
     :value="value"
