@@ -94,6 +94,11 @@ async function finishAnimationGen(name: string, gen: AnimationGen) {
   })
   expect(gen.settings.description).toBe(`Updated description for ${name}`)
   await gen.generateVideo()
+  gen.setFramesConfig({
+    startTime: 0,
+    duration: 1000,
+    interval: 300
+  })
   await gen.extractFrames()
   return gen.finish()
 }

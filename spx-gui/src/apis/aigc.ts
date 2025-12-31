@@ -153,6 +153,11 @@ export type TaskParamsGenerateAnimationVideo = {
 
 export type TaskParamsExtractVideoFrames = {
   videoUrl: string
+  /** Duration (in milliseconds) of the segment to extract frames from. Precision is 100ms. */
+  duration: number
+  /** Start time (in milliseconds) from which to extract frames. Precision is 100ms. */
+  startTime?: number
+  /** Interval between frames in milliseconds. Precision is 100ms. */
   interval?: number
 }
 
@@ -293,7 +298,13 @@ export async function* subscribeTaskEvents(taskID: string, signal?: AbortSignal)
             'https://picsum.photos/400/400',
             'https://picsum.photos/400/400',
             'https://picsum.photos/400/400'
-          ]
+          ],
+          frameUrls: [
+            'https://picsum.photos/400/400',
+            'https://picsum.photos/400/400',
+            'https://picsum.photos/400/400'
+          ],
+          videoUrl: 'https://builder-usercontent-test.gopluscdn.com/videos/test-aigc/generated_video.mp4'
         }
       }
     }
@@ -520,8 +531,11 @@ export async function genAnimationVideo(settings: AnimationSettings, signal?: Ab
   return (result as TaskResult<TaskType.GenerateAnimationVideo>).videoUrl
 }
 
-export async function extractAnimationVideoFrames(videoUrl: string, signal?: AbortSignal): Promise<string[]> {
-  const task = await createTask(TaskType.ExtractVideoFrames, { videoUrl }, signal)
+export async function extractAnimationVideoFrames(
+  params: TaskParamsExtractVideoFrames,
+  signal?: AbortSignal
+): Promise<string[]> {
+  const task = await createTask(TaskType.ExtractVideoFrames, params, signal)
   const result = await untilTaskCompleted(task.id, signal)
   return (result as TaskResult<TaskType.ExtractVideoFrames>).frameUrls
 }
