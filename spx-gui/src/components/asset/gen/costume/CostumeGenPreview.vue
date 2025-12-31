@@ -36,7 +36,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
     <GenLoading v-if="gen.generateState.status === 'running'">
       {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
     </GenLoading>
-    <div v-else class="img-wrapper">
+    <div v-else class="preview">
       <CheckerboardBackground class="background" />
       <UIImg v-if="gen.image != null" class="img" :src="imgSrc" :loading="imgLoading" />
       <div v-else class="placeholder">{{ $t({ en: 'Preview area', zh: '预览区域' }) }}</div>
@@ -50,7 +50,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
   inset: 0;
 }
 
-.img-wrapper {
+.preview {
   width: 100%;
   flex: 1 1 0;
   border-radius: 8px;

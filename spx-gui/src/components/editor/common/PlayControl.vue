@@ -1,7 +1,7 @@
-<!-- Sound player (only UI) -->
+<!-- Sound / video play control (only UI) -->
 
 <template>
-  <div class="sound-play" :class="[`size-${props.size}`]" :style="colorCssVars">
+  <div class="play-control" :class="[`size-${props.size}`]" :style="colorCssVars">
     <div v-show="!playing" class="play" @click.stop="handlePlay.fn">
       <UIIcon class="icon" type="play" />
     </div>
@@ -12,7 +12,7 @@
       </svg>
       <UIIcon class="icon" type="stop" />
     </div>
-    <!-- TODO: style optimization for sound player -->
+    <!-- TODO: style optimization for play control -->
     <UILoading :visible="loading" cover class="loading" />
   </div>
 </template>
@@ -23,19 +23,28 @@ import { useMessageHandle } from '@/utils/exception'
 import { UIIcon, UILoading, useUIVariables } from '@/components/ui'
 import type { Color } from '@/components/ui/tokens/colors'
 
-export type SoundPlayerSize = 'medium' | 'large'
+export type Size = 'medium' | 'large'
 
 const props = withDefaults(
   defineProps<{
     playing: boolean
+    /** Progress percentage, number in range `[0, 1]` */
     progress: number
+    /**
+     * Optional interval for rendering progress, in seconds.
+     * Defaults to `0.3` seconds for smooth animation when progress jumps.
+     * Set to `0` to disable transition, which is useful when progress is updated continuously.
+     * TODO: consider removing this prop (& transition) and ensure smooth progress update in parent component.
+     */
+    progressInterval?: number
     color: Color
     playHandler: () => Promise<void>
     loading?: boolean
-    size?: SoundPlayerSize
+    size?: Size
   }>(),
   {
-    size: 'medium'
+    size: 'medium',
+    progressInterval: 0.3
   }
 )
 
@@ -44,12 +53,13 @@ const emit = defineEmits<{
 }>()
 
 const handlePlay = useMessageHandle(() => props.playHandler(), {
-  en: 'Failed to play audio',
-  zh: '无法播放音频'
+  en: 'Failed to play',
+  zh: '播放失败'
 })
 
 const playCssVars = computed(() => ({
-  '--progress': props.progress ?? 0
+  '--progress': props.progress ?? 0,
+  '--progress-interval': `${props.progressInterval}s`
 }))
 
 const uiVariables = useUIVariables()
@@ -66,7 +76,7 @@ const colorCssVars = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-.sound-play {
+.play-control {
   position: relative;
 
   &.size-medium {
@@ -126,7 +136,7 @@ const colorCssVars = computed(() => {
   --stroke-width: 2px;
   --radius: calc((var(--size) - var(--stroke-width)) / 2);
   --circumference: calc(var(--radius) * pi * 2);
-  --dash: calc((var(--progress) * var(--circumference)) / 100);
+  --dash: calc((var(--progress) * var(--circumference)));
 
   circle {
     cx: var(--half-size);
@@ -144,7 +154,7 @@ const colorCssVars = computed(() => {
       transform: rotate(-90deg);
       transform-origin: var(--half-size) var(--half-size);
       stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
-      transition: stroke-dasharray 0.3s linear 0s;
+      transition: stroke-dasharray var(--progress-interval) linear 0s;
       stroke: var(--color);
     }
   }
