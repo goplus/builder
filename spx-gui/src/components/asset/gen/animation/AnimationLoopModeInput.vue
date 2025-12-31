@@ -14,6 +14,7 @@ const emit = defineEmits<{
 
 <template>
   <ParamSelector
+    :name="{ en: 'Loop Mode', zh: '循环模式' }"
     :tips="{ en: 'Please select the loop mode you want to generate', zh: '请选择您想要生成的循环模式' }"
     :options="loopModeOptions"
     :value="value"

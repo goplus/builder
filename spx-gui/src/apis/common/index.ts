@@ -74,7 +74,7 @@ export const enum Perspective {
 export const enum SpriteCategory {
   /** Character sprites represent the main figures or entities that players control or interact with in a game. */
   Character = 'character',
-  /** Item sprites represent functional objects that players can collect, consume, equip, or otherwise use to affect gameplay mechanics. */
+  /** Item sprites represent functional or decorative objects that can affect gameplay or enrich the visual scene. */
   Item = 'item',
   /** Effect sprites represent visual effects such as explosions, magic spells, or weather effects that add atmosphere or feedback to the game. */
   Effect = 'effect',

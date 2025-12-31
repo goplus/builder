@@ -2,21 +2,21 @@
 import { UIBlockItem, UIBlockItemTitle, UIButton, UIDropdownWithTooltip, UIImg } from '@/components/ui'
 import type { LocaleMessage } from '@/utils/i18n'
 import { computed, inject } from 'vue'
-import { iconOnlyKey } from '../SettingsInput.vue'
+import { settingInputCtxKey } from '../SettingsInput.vue'
 
-type Option = { value: T; label: LocaleMessage; image?: string; tips?: LocaleMessage }
+type Option = { value: T; label: LocaleMessage; image?: string }
 
 const props = withDefaults(
   defineProps<{
+    name?: LocaleMessage | null
     value: T
     tips: LocaleMessage
     options: Array<Option>
-    disabled?: boolean
-    placeholder?: false | Omit<Option, 'value'>
+    placeholder?: null | Omit<Option, 'value'>
   }>(),
   {
-    placeholder: false,
-    disabled: true
+    name: null,
+    placeholder: null
   }
 )
 
@@ -25,15 +25,26 @@ defineEmits<{
 }>()
 
 const selectedItem = computed(() => {
-  if (props.placeholder) return props.placeholder
+  if (props.placeholder != null) return props.placeholder
   return props.options.find((item) => item.value === props.value)
 })
 
-const iconOnly = inject(iconOnlyKey)
+const tooltipText = computed(() => {
+  if (props.placeholder != null) return props.placeholder.label
+  if (props.name != null && selectedItem.value != null)
+    return {
+      en: `${props.name.en}: ${selectedItem.value.label.en}`,
+      zh: `${props.name.zh}： ${selectedItem.value.label.zh}`
+    }
+  return selectedItem.value?.label
+})
+
+const settingInputCtx = inject(settingInputCtxKey)
+if (settingInputCtx == null) throw new Error('settingInputCtxKey should be provided')
 </script>
 
 <template>
-  <UIDropdownWithTooltip :disabled="disabled" placement="top">
+  <UIDropdownWithTooltip :disabled="settingInputCtx.disabled" placement="top">
     <template v-if="selectedItem != null" #trigger>
       <!-- The button margin is a bit large, need to consider how to be compatible with the specifications -->
       <!-- 
@@ -41,22 +52,30 @@ const iconOnly = inject(iconOnlyKey)
         which prevents 'slots.default' from being null. 
         The :key forces UIButton to re-mount and correctly recalculate its icon-only state.
       -->
-      <UIButton :key="String(iconOnly)" :disabled="disabled" variant="stroke" color="boring">
+      <UIButton
+        :key="String(settingInputCtx.iconOnly)"
+        :disabled="settingInputCtx.disabled"
+        variant="stroke"
+        color="boring"
+      >
         <template v-if="selectedItem.image != null" #icon>
           <UIImg
             class="image"
-            :style="{ backgroundSize: iconOnly && !placeholder ? '130%' : '110%' }"
-            :class="[placeholder ? 'placeholder-image' : 'button-image', { disabled }]"
+            :style="{ backgroundSize: settingInputCtx.iconOnly && placeholder != null ? '130%' : '110%' }"
+            :class="[
+              placeholder != null ? 'placeholder-image' : 'button-image',
+              { disabled: settingInputCtx.disabled }
+            ]"
             :src="selectedItem.image"
           />
         </template>
-        <template v-if="!iconOnly" #default>
+        <template v-if="!settingInputCtx.iconOnly" #default>
           {{ $t(selectedItem.label) }}
         </template>
       </UIButton>
     </template>
-    <template v-if="selectedItem != null" #tooltip-content>
-      {{ $t(selectedItem.tips != null ? selectedItem.tips : selectedItem.label) }}
+    <template v-if="tooltipText != null" #tooltip-content>
+      {{ $t(tooltipText) }}
     </template>
     <template #dropdown-content>
       <div class="dropdown-content">
