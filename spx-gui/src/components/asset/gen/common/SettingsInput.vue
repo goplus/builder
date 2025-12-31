@@ -1,12 +1,19 @@
 <script lang="ts">
-export const iconOnlyKey: InjectionKey<Ref<boolean>> = Symbol('iconOnlyKey')
+type SettingInputCtx = {
+  iconOnly: boolean
+  readonly: boolean
+  disabled: boolean
+}
+
+export const settingInputCtxKey: InjectionKey<ShallowReactive<SettingInputCtx>> = Symbol('settingInputCtxKey')
 </script>
 
 <script lang="ts" setup>
-import { computed, watch, ref, provide, type InjectionKey, type Ref } from 'vue'
+import { computed, watch, ref, provide, type InjectionKey, type ShallowReactive, shallowReactive } from 'vue'
 import { debounce } from 'lodash'
 
 import { UIButton, UIIcon } from '@/components/ui'
+import { useContentSize } from '@/utils/dom'
 
 const props = withDefaults(
   defineProps<{
@@ -33,33 +40,40 @@ const onInput = (e: InputEvent) => {
   }
 }
 
+const ctx = shallowReactive({
+  iconOnly: false,
+  readonly: false,
+  disabled: false
+})
+
+const wrapperRef = ref<HTMLElement | null>(null)
 const extraRef = ref<HTMLElement | null>(null)
-const iconOnly = ref(false)
-provide(iconOnlyKey, iconOnly)
-const updateIconOnly = debounce(() => {
-  const el = extraRef.value
-  if (!el) return
+const wrapperSize = useContentSize(wrapperRef)
+const extraSize = useContentSize(extraRef)
 
-  if (!iconOnly.value) {
-    if (el.scrollWidth > el.clientWidth) {
-      iconOnly.value = true
-    }
-  }
-}, 30)
-
+let threshold = 0
 watch(
-  extraRef,
-  (extraEl, _, onCleanup) => {
-    if (!extraEl) return
-
-    const resizeObserver = new ResizeObserver(updateIconOnly)
-    resizeObserver.observe(extraEl)
-    updateIconOnly()
-
-    onCleanup(() => resizeObserver.disconnect())
-  },
+  [wrapperSize, extraSize],
+  debounce(([wrapperSize, extraSize]) => {
+    if (wrapperSize == null || extraSize == null) return
+    const [wrapperWidth, extraWidth] = [wrapperSize.width, extraSize.width]
+    if (!ctx.iconOnly) {
+      // Required width exceeds available space, record this width and switch to iconOnly
+      if (extraWidth > wrapperWidth) {
+        threshold = extraWidth
+        ctx.iconOnly = true
+      }
+    } else {
+      // Switch back to expanded only when the available space is enough to accommodate the previously recorded width
+      if (wrapperWidth > threshold) {
+        ctx.iconOnly = false
+      }
+    }
+  }, 30),
   { immediate: true }
 )
+
+provide(settingInputCtxKey, ctx)
 </script>
 
 <template>
@@ -96,8 +110,10 @@ watch(
       </template>
     </div>
     <div class="footer">
-      <div ref="extraRef" class="extra">
-        <slot name="extra"></slot>
+      <div ref="wrapperRef" class="wrapper">
+        <div ref="extraRef" class="extra">
+          <slot name="extra"></slot>
+        </div>
       </div>
       <slot name="submit"></slot>
     </div>
@@ -199,16 +215,18 @@ watch(
   justify-content: space-between;
   gap: 8px;
 
+  .wrapper {
+    padding: 4px;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
   .extra {
     display: flex;
     gap: 8px;
-    padding: 4px;
-    min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    width: max-content;
+
     & > * {
       flex-shrink: 0;
     }

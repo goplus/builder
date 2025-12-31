@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { SpriteCategory } from '@/apis/common'
 import ParamSelector from '../common/param-settings/ParamSelector.vue'
-import { getOptionImage, spriteCategoryOptions } from '../common/param-settings/data'
+import { spriteCategoryOptions } from '../common/param-settings/data'
+import imgCategory from '../common/param-settings/assets/category.png'
 
 const props = defineProps<{
   value: SpriteCategory
@@ -12,27 +13,22 @@ const emit = defineEmits<{
   'update:value': [SpriteCategory]
 }>()
 
-const selected = ref(false)
 const placeholder = computed(() => {
-  if (selected.value || props.value !== SpriteCategory.Unspecified) return false
+  if (props.value !== SpriteCategory.Unspecified) return null
   return {
     label: { en: 'Category', zh: '类型' },
-    image: getOptionImage('category')
+    image: imgCategory
   }
 })
-
-function handleUpdateValue(value: SpriteCategory) {
-  selected.value = true
-  emit('update:value', value)
-}
 </script>
 
 <template>
   <ParamSelector
+    :name="{ en: 'Category', zh: '类型' }"
     :tips="{ en: 'Please select the sprite category you want to generate', zh: '请选择您想要生成的精灵类别' }"
     :options="spriteCategoryOptions"
     :placeholder="placeholder"
     :value="value"
-    @update:value="handleUpdateValue"
+    @update:value="emit('update:value', $event)"
   />
 </template>
