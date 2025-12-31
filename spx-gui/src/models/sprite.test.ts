@@ -241,4 +241,30 @@ describe('Sprite', () => {
 
     expect(sprite.animations.map((a) => a.name)).toEqual(['animation1', 'animation2', 'animation4', 'animation3'])
   })
+
+  it('should be ok to add a costume that already belongs to another sprite', () => {
+    const sprite1 = new Sprite('sprite1')
+    const sprite2 = new Sprite('sprite2')
+    const costume = makeCostume('costume1')
+    sprite1.addCostume(costume)
+    expect(costume.parent).toBe(sprite1)
+    sprite1.removeCostume(costume.id)
+    sprite2.addCostume(costume)
+    expect(costume.parent).toBe(sprite2)
+    expect(sprite1.costumes.length).toBe(0)
+    expect(sprite2.costumes.length).toBe(1)
+  })
+
+  it('should be ok to add an animation that already belongs to another sprite', () => {
+    const sprite1 = new Sprite('sprite1')
+    const sprite2 = new Sprite('sprite2')
+    const animation = new Animation('animation1')
+    sprite1.addAnimation(animation)
+    expect(animation.sprite).toBe(sprite1)
+    sprite1.removeAnimation(animation.id)
+    sprite2.addAnimation(animation)
+    expect(animation.sprite).toBe(sprite2)
+    expect(sprite1.animations.length).toBe(0)
+    expect(sprite2.animations.length).toBe(1)
+  })
 })

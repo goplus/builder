@@ -58,10 +58,4 @@ const emit = defineEmits<{
     color: var(--ui-color-grey-1000);
   }
 }
-
-.img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  border-radius: 8px;
-}
 </style>

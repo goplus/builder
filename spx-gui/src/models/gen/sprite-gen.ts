@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import {
@@ -102,14 +102,47 @@ export class SpriteGen extends Disposable {
   }
 
   private sprite: Sprite | null = null
-  private ensureSprite() {
-    if (this.sprite == null) this.sprite = Sprite.create(this.settings.name)
-    return this.sprite
-  }
   /** The sprite instance for preview within generation */
   get previewSprite() {
     if (this.sprite == null) throw new Error('sprite expected')
     return this.sprite
+  }
+  private makeSprite() {
+    const sprite = Sprite.create(this.settings.name)
+
+    // Sync results of generations to sprite
+    // NOTE: the order of costumes & animations on the sprite may be different
+    // from the order of generations, which is acceptable for now.
+    this.addDisposer(
+      watch(
+        () => this.costumes.map((c) => c.result).filter((c): c is Costume => c != null),
+        (generatedCostumes) => {
+          generatedCostumes.forEach((c) => {
+            if (!sprite.costumes.includes(c)) sprite.addCostume(c)
+          })
+          sprite.costumes.slice().forEach((c) => {
+            if (!generatedCostumes.includes(c)) sprite.removeCostume(c.id)
+          })
+        },
+        { immediate: true }
+      )
+    )
+    this.addDisposer(
+      watch(
+        () => this.animations.map((a) => a.result).filter((a): a is Animation => a != null),
+        (generatedAnimations) => {
+          generatedAnimations.forEach((a) => {
+            if (!sprite.animations.includes(a)) sprite.addAnimation(a)
+          })
+          sprite.animations.slice().forEach((a) => {
+            if (!generatedAnimations.includes(a)) sprite.removeAnimation(a.id)
+          })
+        },
+        { immediate: true }
+      )
+    )
+    this.addDisposable(sprite)
+    this.sprite = sprite
   }
 
   get contentPreparingState() {
@@ -117,18 +150,18 @@ export class SpriteGen extends Disposable {
   }
   async prepareContent() {
     if (this.image == null) throw new Error('image expected')
+    this.makeSprite()
     const image = this.image
-    const sprite = this.ensureSprite()
     const project = this.project
-    const defaultCostumeGen = new CostumeGen(sprite, project, this.getDefaultCostumeSettings())
+    const defaultCostumeGen = new CostumeGen(this, project, this.getDefaultCostumeSettings())
     defaultCostumeGen.setImage(image)
+    this.costumes = [defaultCostumeGen]
     await this.prepareContentPhase.run(
       (async () => {
-        const defaultCostume = await defaultCostumeGen.finish()
-        sprite.addCostume(defaultCostume)
+        await defaultCostumeGen.finish()
         const settings = await genSpriteContentSettings(this.settings)
-        this.costumes = [defaultCostumeGen, ...settings.costumes.map((s) => new CostumeGen(sprite, project, s))]
-        this.animations = settings.animations.map((s) => new AnimationGen(sprite, project, s))
+        this.costumes.push(...settings.costumes.map((s) => new CostumeGen(this, project, s)))
+        this.animations = settings.animations.map((s) => new AnimationGen(this, project, s))
       })()
     )
   }
@@ -141,7 +174,7 @@ export class SpriteGen extends Disposable {
   }
   addCostume() {
     const name = getCostumeName(this)
-    const costumeGen = new CostumeGen(this.ensureSprite(), this.project, { name })
+    const costumeGen = new CostumeGen(this, this.project, { name })
     this.costumes.push(costumeGen)
     return costumeGen
   }
@@ -152,17 +185,12 @@ export class SpriteGen extends Disposable {
     const [c] = this.costumes.splice(index, 1)
     c.dispose()
   }
-  finishCostume(id: string, costume: Costume) {
-    const item = this.costumes.find((c) => c.id === id)
-    if (item == null) throw new Error(`Costume ${id} not found`)
-    this.ensureSprite().addCostume(costume)
-  }
 
   /** Animations gen */
   animations: AnimationGen[]
   addAnimation() {
     const name = getAnimationName(this)
-    const animationGen = new AnimationGen(this.ensureSprite(), this.project, { name })
+    const animationGen = new AnimationGen(this, this.project, { name })
     this.animations.push(animationGen)
     return animationGen
   }
@@ -172,16 +200,23 @@ export class SpriteGen extends Disposable {
     const [a] = this.animations.splice(index, 1)
     a.dispose()
   }
-  finishAnimation(id: string, animation: Animation) {
-    const item = this.animations.find((a) => a.id === id)
-    if (item == null) throw new Error(`Animation ${id} not found`)
-    this.ensureSprite().addAnimation(animation)
-  }
 
   result: Sprite | null
 
   finish() {
-    const sprite = this.ensureSprite()
+    const previewSprite = this.sprite
+    if (previewSprite == null) throw new Error('sprite expected')
+    const sprite = Sprite.create(this.settings.name)
+    for (const gen of this.costumes) {
+      if (gen.result == null) continue
+      previewSprite.removeCostume(gen.result.id)
+      sprite.addCostume(gen.result)
+    }
+    for (const gen of this.animations) {
+      if (gen.result == null) continue
+      previewSprite.removeAnimation(gen.result.id)
+      sprite.addAnimation(gen.result)
+    }
     sprite.setAssetMetadata({
       description: this.settings.description,
       extraSettings: {
