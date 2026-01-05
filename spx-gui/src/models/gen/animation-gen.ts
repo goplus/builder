@@ -6,7 +6,8 @@ import {
   type AnimationSettings,
   enrichAnimationSettings,
   genAnimationVideo,
-  extractAnimationVideoFrames
+  extractAnimationVideoFrames,
+  type TaskParamsExtractVideoFrames
 } from '@/apis/aigc'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
@@ -16,6 +17,8 @@ import { Animation } from '../animation'
 import { Costume } from '../costume'
 import { getProjectSettings, getSpriteSettings, Phase } from './common'
 import type { SpriteGen } from './sprite-gen'
+
+export type FramesConfig = Omit<TaskParamsExtractVideoFrames, 'videoUrl'>
 
 // TODO: task cancelation support
 export class AnimationGen extends Disposable {
@@ -28,8 +31,8 @@ export class AnimationGen extends Disposable {
   private project: Project
 
   private enrichPhase: Phase<AnimationSettings>
-  private generateVideoPhase: Phase<string>
-  private extractFramesPhase: Phase<string[]>
+  private generateVideoPhase: Phase<File>
+  private extractFramesPhase: Phase<File[]>
 
   constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<AnimationSettings>) {
     super()
@@ -45,10 +48,12 @@ export class AnimationGen extends Disposable {
       referenceFrameUrl: null,
       ...settings
     }
-    this.enrichPhase = new Phase<AnimationSettings>()
-    this.generateVideoPhase = new Phase<string>()
+    this.referenceCostumeId = this.sprite.defaultCostume?.id ?? null
+    this.enrichPhase = new Phase()
+    this.generateVideoPhase = new Phase()
     this.video = null
-    this.extractFramesPhase = new Phase<string[]>()
+    this.framesConfig = null
+    this.extractFramesPhase = new Phase()
     this.result = null
     return reactive(this) as this
   }
@@ -84,7 +89,7 @@ export class AnimationGen extends Disposable {
     Object.assign(this.settings, updates)
   }
 
-  private referenceCostumeId: string | null = null
+  private referenceCostumeId: string | null
   get referenceCostume() {
     if (this.referenceCostumeId == null) return null
     return this.sprite.costumes.find((c) => c.id === this.referenceCostumeId) ?? null
@@ -97,9 +102,20 @@ export class AnimationGen extends Disposable {
     return this.generateVideoPhase.state
   }
   async generateVideo() {
-    // TODO: use reference costume image as reference frame if available
-    const videoUrl = await this.generateVideoPhase.run(genAnimationVideo(this.settings))
-    this.setVideo(createFileWithWebUrl(videoUrl, 'TODO'))
+    const video = await this.generateVideoPhase.run(
+      (async () => {
+        const costume = this.referenceCostume
+        if (costume == null) throw new Error('reference costume expected')
+        const referenceFrameUrl = await saveFileForWebUrl(costume.img)
+        const videoUrl = await genAnimationVideo({
+          ...this.settings,
+          referenceFrameUrl
+        })
+        const video = createFileWithWebUrl(videoUrl)
+        return video
+      })()
+    )
+    this.setVideo(video)
   }
 
   video: File | null
@@ -107,26 +123,42 @@ export class AnimationGen extends Disposable {
     this.video = video
   }
 
+  framesConfig: FramesConfig | null
+  setFramesConfig(config: FramesConfig) {
+    this.framesConfig = config
+  }
+
   get extractFramesState() {
     return this.extractFramesPhase.state
   }
   async extractFrames() {
-    const video = this.video
-    if (video == null) throw new Error('Video not ready yet')
-    const videoUrl = await saveFileForWebUrl(video)
-    return await this.extractFramesPhase.run(extractAnimationVideoFrames(videoUrl))
+    const { video, framesConfig } = this
+    if (video == null) throw new Error('video not ready yet')
+    if (framesConfig == null) throw new Error('frames config not set')
+    return await this.extractFramesPhase.run(
+      (async () => {
+        const videoUrl = await saveFileForWebUrl(video)
+        const frameUrls = await extractAnimationVideoFrames({
+          ...framesConfig,
+          videoUrl
+        })
+        // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
+        // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
+        const frames = frameUrls.map((url, i) => createFileWithWebUrl(url, `frame_${i}.png`))
+        return frames
+      })()
+    )
   }
 
   result: Animation | null
 
   async finish() {
-    const frameImages = this.extractFramesPhase.state.result
-    if (frameImages == null) throw new Error('Frame images expected')
+    const frameImgs = this.extractFramesPhase.state.result
+    if (frameImgs == null) throw new Error('frame images expected')
     const costumes = await Promise.all(
-      frameImages.map((imgUrl, i) => {
+      frameImgs.map((img, i) => {
         const costumeName = `${this.settings.name}_frame_${i + 1}`
-        const imgFile = createFileWithWebUrl(imgUrl, 'TODO')
-        return Costume.create(costumeName, imgFile)
+        return Costume.create(costumeName, img)
       })
     )
     const animation = Animation.create(this.settings.name, costumes)

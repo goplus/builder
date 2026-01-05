@@ -37,7 +37,7 @@
       @play="handlePlay"
     />
     <div class="opeartions">
-      <DumbSoundPlayer
+      <PlayControl
         color="sound"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
@@ -77,7 +77,7 @@ import { stripExt } from '@/utils/path'
 import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorHeader from '../common/EditorHeader.vue'
-import DumbSoundPlayer from './DumbSoundPlayer.vue'
+import PlayControl from '../common/PlayControl.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
@@ -105,7 +105,8 @@ const audioRange = ref({ left: 0, right: 1 })
 const editing = computed(() => audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1)
 
 type Playing = {
-  progress: number // percent
+  /** Progress percentage, number in range `[0, 1]` */
+  progress: number
 }
 
 const playing = ref<Playing | null>(null)
@@ -148,7 +149,7 @@ function handleStop() {
 
 function handleProgress(value: number) {
   if (playing.value == null) return
-  playing.value.progress = Math.max(playing.value.progress, value * 100)
+  playing.value.progress = Math.max(playing.value.progress, value)
 }
 
 const handleGainUpdate = (v: number) => {

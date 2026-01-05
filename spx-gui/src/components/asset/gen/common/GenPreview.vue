@@ -33,7 +33,9 @@ const emit = defineEmits<{
           @click="emit('rename')"
         />
       </div>
-      <slot name="ops"></slot>
+      <div class="ops">
+        <slot name="ops"></slot>
+      </div>
     </header>
     <main class="body">
       <slot></slot>
@@ -51,18 +53,12 @@ const emit = defineEmits<{
 }
 
 .header {
+  position: relative;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   line-height: var(--ui-line-height-2);
-}
-
-.body {
-  flex: 1 1 0;
-  display: flex;
-  position: relative;
-  overflow: hidden;
 }
 
 .name {
@@ -81,5 +77,18 @@ const emit = defineEmits<{
   &:active {
     color: var(--ui-color-grey-1000);
   }
+}
+
+.ops {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.body {
+  flex: 1 1 0;
+  display: flex;
+  position: relative;
+  overflow: hidden;
 }
 </style>

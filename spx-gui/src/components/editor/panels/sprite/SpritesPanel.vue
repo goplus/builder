@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { AnimationLoopMode, ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
@@ -244,6 +244,7 @@ async function makeSpriteGenPhaseContent() {
   defaultCostumeGen.setImage(images[0])
   await defaultCostumeGen.finish()
   gen.costumes = [defaultCostumeGen, ...costumeSettings.map((cs) => new CostumeGen(gen, editorCtx.project, cs))]
+  await nextTick()
   gen.animations = animationSettings.map((as) => new AnimationGen(gen, editorCtx.project, as))
   return gen
 }
