@@ -1,11 +1,12 @@
 import { AssetType, type AssetData } from '@/apis/asset'
-import { fromConfig, toConfig } from './file'
 import { Sound } from '../sound'
 import { Sprite } from '../sprite'
+import { Costume } from '../costume'
 import { Backdrop, type BackdropInits } from '../backdrop'
+import type { SpriteGen } from '../gen/sprite-gen'
+import type { BackdropGen } from '../gen/backdrop-gen'
+import { fromBlob, fromConfig, toConfig } from './file'
 import { getFiles, saveFiles } from './cloud'
-import { fromBlob } from '@/models/common/file'
-import { Costume } from '@/models/costume'
 
 export type PartialAssetData = Pick<AssetData, 'type' | 'files' | 'filesHash'>
 
@@ -18,6 +19,12 @@ export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.So
     : T extends AssetType.Backdrop
       ? Backdrop
       : never
+
+export type AssetGenModel<T extends AssetType = AssetType> = T extends AssetType.Sprite
+  ? SpriteGen
+  : T extends AssetType.Backdrop
+    ? BackdropGen
+    : never
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
   const { fileCollection, fileCollectionHash } = await saveFiles(

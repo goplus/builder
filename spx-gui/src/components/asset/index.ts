@@ -1,5 +1,6 @@
 import { useMessage, useModal } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
+import { Cancelled } from '@/utils/exception'
 import { getSupportedAudioExts, imgExts, selectFile } from '@/utils/file'
 import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
@@ -29,16 +30,26 @@ import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
+import { SpriteGen } from '@/models/gen/sprite-gen'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
-import type { BackdropGen } from '@/models/gen/backdrop-gen'
+import { BackdropGen } from '@/models/gen/backdrop-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 
 export function useAddAssetFromLibrary() {
+  const editorCtx = useEditorCtx()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    return (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
+    const resolved = await invokeAssetLibraryModal({ project, type })
+    if (resolved.type === 'assets') return resolved.assets as Array<AssetModel<T>>
+    // If AssetLibraryModal resolved with `type: gen`, which stands for an ongoing asset generation,
+    // we directly add the generation to the editor state and throw a Cancelled error
+    // to inform the caller that no asset is selected.
+    const gen = resolved.gen
+    if (gen instanceof SpriteGen) editorCtx.state.addSpriteGen(gen)
+    else if (gen instanceof BackdropGen) editorCtx.state.addBackdropGen(gen)
+    else throw new Error('unknown asset gen type')
+    throw new Cancelled('gen asset while not finished')
   }
 }
 
