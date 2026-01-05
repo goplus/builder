@@ -103,7 +103,7 @@ import { untilNotNull } from '@/utils/utils'
 import type { File } from '@/models/common/file'
 import type { FramesConfig } from '@/models/gen/animation-gen'
 import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackground.vue'
-import DumbSoundPlayer from '@/components/editor/common/PlayControl.vue'
+import PlayControl from '@/components/editor/common/PlayControl.vue'
 
 const props = defineProps<{
   video: File
@@ -265,7 +265,7 @@ function formatTime(timeInMs: number) {
       <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" loop />
     </div>
     <div class="controls">
-      <DumbSoundPlayer
+      <PlayControl
         v-radar="{ name: 'Play button', desc: 'Toggle playback of animation video preview' }"
         :playing="isPlaying"
         :progress="progress"

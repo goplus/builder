@@ -37,7 +37,7 @@
       @play="handlePlay"
     />
     <div class="opeartions">
-      <DumbSoundPlayer
+      <PlayControl
         color="sound"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
@@ -77,7 +77,7 @@ import { stripExt } from '@/utils/path'
 import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorHeader from '../common/EditorHeader.vue'
-import DumbSoundPlayer from '../common/PlayControl.vue'
+import PlayControl from '../common/PlayControl.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'

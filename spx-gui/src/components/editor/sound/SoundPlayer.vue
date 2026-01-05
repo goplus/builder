@@ -1,7 +1,7 @@
-<!-- Sound player for given audio src, based on `DumbSoundPlayer` -->
+<!-- Sound player for given audio src, based on `PlayControl` -->
 
 <template>
-  <DumbSoundPlayer
+  <PlayControl
     :playing="playing != null"
     :progress="playing?.progress ?? 0"
     :color="color"
@@ -16,7 +16,7 @@
 import { computed, onUnmounted, reactive, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
 import type { Color } from '@/components/ui'
-import DumbSoundPlayer, { type Size } from '../common/PlayControl.vue'
+import PlayControl, { type Size } from '../common/PlayControl.vue'
 
 const props = defineProps<{
   src: string | null
