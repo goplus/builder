@@ -97,7 +97,7 @@ function useTick(fn: () => void) {
 </script>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onScopeDispose, ref, toValue, watch, type Ref, type WatchSource } from 'vue'
+import { computed, onScopeDispose, ref, toValue, watch, type Ref, type WatchSource } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import { untilNotNull } from '@/utils/utils'
 import type { File } from '@/models/common/file'
@@ -204,7 +204,7 @@ function stopDragging() {
   window.removeEventListener('pointercancel', handleDragEnd)
 }
 
-onBeforeMount(stopDragging)
+onScopeDispose(stopDragging)
 
 function handleDragStart(target: DragTarget, e: PointerEvent) {
   const track = trackRef.value
