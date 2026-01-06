@@ -5,9 +5,8 @@ import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
 import {
   type AnimationSettings,
   enrichAnimationSettings,
-  genAnimationVideo,
-  extractAnimationVideoFrames,
-  type TaskParamsExtractVideoFrames
+  type TaskParamsExtractVideoFrames,
+  TaskType
 } from '@/apis/aigc'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
@@ -15,12 +14,11 @@ import type { File } from '../common/file'
 import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import { Animation } from '../animation'
 import { Costume } from '../costume'
-import { getProjectSettings, getSpriteSettings, Phase } from './common'
+import { getProjectSettings, getSpriteSettings, Phase, Task } from './common'
 import type { SpriteGen } from './sprite-gen'
 
 export type FramesConfig = Omit<TaskParamsExtractVideoFrames, 'videoUrl'>
 
-// TODO: task cancelation support
 export class AnimationGen extends Disposable {
   id: string
   parent: Sprite | SpriteGen
@@ -31,7 +29,9 @@ export class AnimationGen extends Disposable {
   private project: Project
 
   private enrichPhase: Phase<AnimationSettings>
+  private generateVideoTask: Task<TaskType.GenerateAnimationVideo>
   private generateVideoPhase: Phase<File>
+  private extractFramesTask: Task<TaskType.ExtractVideoFrames>
   private extractFramesPhase: Phase<File[]>
 
   constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<AnimationSettings>) {
@@ -50,9 +50,11 @@ export class AnimationGen extends Disposable {
     }
     this.referenceCostumeId = this.sprite.defaultCostume?.id ?? null
     this.enrichPhase = new Phase()
+    this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
     this.generateVideoPhase = new Phase()
     this.video = null
     this.framesConfig = null
+    this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
     this.extractFramesPhase = new Phase()
     this.result = null
     return reactive(this) as this
@@ -70,7 +72,7 @@ export class AnimationGen extends Disposable {
     return this.enrichPhase.state
   }
   async enrich() {
-    const draft = await this.enrichPhase.run(
+    const draft = await this.enrichPhase.track(
       enrichAnimationSettings(
         this.settings.description,
         this.settings,
@@ -102,19 +104,15 @@ export class AnimationGen extends Disposable {
     return this.generateVideoPhase.state
   }
   async generateVideo() {
-    const video = await this.generateVideoPhase.run(
-      (async () => {
-        const costume = this.referenceCostume
-        if (costume == null) throw new Error('reference costume expected')
-        const referenceFrameUrl = await saveFileForWebUrl(costume.img)
-        const videoUrl = await genAnimationVideo({
-          ...this.settings,
-          referenceFrameUrl
-        })
-        const video = createFileWithWebUrl(videoUrl)
-        return video
-      })()
-    )
+    const video = await this.generateVideoPhase.run(async () => {
+      const costume = this.referenceCostume
+      if (costume == null) throw new Error('reference costume expected')
+      const referenceFrameUrl = await saveFileForWebUrl(costume.img)
+      const settings = { ...this.settings, referenceFrameUrl }
+      await this.generateVideoTask.start({ settings })
+      const { videoUrl } = await this.generateVideoTask.untilCompleted()
+      return createFileWithWebUrl(videoUrl)
+    })
     this.setVideo(video)
   }
 
@@ -135,19 +133,15 @@ export class AnimationGen extends Disposable {
     const { video, framesConfig } = this
     if (video == null) throw new Error('video not ready yet')
     if (framesConfig == null) throw new Error('frames config not set')
-    return await this.extractFramesPhase.run(
-      (async () => {
-        const videoUrl = await saveFileForWebUrl(video)
-        const frameUrls = await extractAnimationVideoFrames({
-          ...framesConfig,
-          videoUrl
-        })
-        // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
-        // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
-        const frames = frameUrls.map((url, i) => createFileWithWebUrl(url, `frame_${i}.png`))
-        return frames
-      })()
-    )
+    return this.extractFramesPhase.run(async () => {
+      const videoUrl = await saveFileForWebUrl(video)
+      await this.extractFramesTask.start({ videoUrl, ...framesConfig })
+      const { frameUrls } = await this.extractFramesTask.untilCompleted()
+      // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
+      // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
+      const frames = frameUrls.map((url, i) => createFileWithWebUrl(url, `frame_${i}.png`))
+      return frames
+    })
   }
 
   result: Animation | null
@@ -164,5 +158,9 @@ export class AnimationGen extends Disposable {
     const animation = Animation.create(this.settings.name, costumes)
     this.result = animation
     return animation
+  }
+
+  cancel() {
+    return Promise.all([this.generateVideoTask.tryCancel(), this.extractFramesTask.tryCancel()])
   }
 }

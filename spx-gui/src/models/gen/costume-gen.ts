@@ -2,16 +2,15 @@ import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
-import { enrichCostumeSettings, Facing, genCostumeImage, type CostumeSettings } from '@/apis/aigc'
+import { enrichCostumeSettings, Facing, TaskType, type CostumeSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
 import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Costume } from '../costume'
-import { getProjectSettings, getSpriteSettings, Phase } from './common'
+import { getProjectSettings, getSpriteSettings, Phase, Task } from './common'
 import { SpriteGen } from './sprite-gen'
 
-// TODO: task cancelation support
 /** `CostumeGen` tracks the generation process of a costume. */
 export class CostumeGen extends Disposable {
   id: string
@@ -22,6 +21,7 @@ export class CostumeGen extends Disposable {
   }
   private project: Project
   private enrichPhase: Phase<CostumeSettings>
+  private generateTask: Task<TaskType.GenerateCostume>
   private generatePhase: Phase<File>
 
   constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<CostumeSettings>) {
@@ -30,6 +30,7 @@ export class CostumeGen extends Disposable {
     this.parent = parent
     this.project = project
     this.enrichPhase = new Phase()
+    this.generateTask = new Task(TaskType.GenerateCostume)
     this.generatePhase = new Phase()
     this.settings = {
       name: '',
@@ -56,7 +57,7 @@ export class CostumeGen extends Disposable {
     return this.enrichPhase.state
   }
   async enrich() {
-    const draft = await this.enrichPhase.run(
+    const draft = await this.enrichPhase.track(
       enrichCostumeSettings(
         this.settings.description,
         this.settings,
@@ -83,13 +84,14 @@ export class CostumeGen extends Disposable {
   async generate() {
     const defaultCostume = this.sprite.defaultCostume
     if (defaultCostume == null) throw new Error('Sprite has no default costume')
-    const referenceImageUrl = await saveFileForWebUrl(defaultCostume.img)
-    const image = await this.generatePhase.run(
-      genCostumeImage({
-        ...this.settings,
-        referenceImageUrl
-      }).then((url) => createFileWithWebUrl(url))
-    )
+    const image = await this.generatePhase.run(async () => {
+      const referenceImageUrl = await saveFileForWebUrl(defaultCostume.img)
+      const settings = { ...this.settings, referenceImageUrl }
+      await this.generateTask.start({ settings, n: 1 })
+      const { imageUrls } = await this.generateTask.untilCompleted()
+      if (imageUrls.length < 1) throw new Error('no costume image generated')
+      return createFileWithWebUrl(imageUrls[0])
+    })
     this.setImage(image)
   }
 
@@ -102,5 +104,9 @@ export class CostumeGen extends Disposable {
     await costume.autoFit()
     this.result = costume
     return costume
+  }
+
+  cancel() {
+    return this.generateTask.tryCancel()
   }
 }

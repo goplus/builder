@@ -67,8 +67,24 @@ function generateSpriteContent(settings: aigcApis.SpriteSettings) {
 }
 
 async function finishCostumeGen(name: string, gen: CostumeGen) {
-  vi.mocked(aigcApis.genCostumeImage).mockImplementationOnce(() => {
-    return Promise.resolve(`http://example.com/generated-costume-${encodeURIComponent(name)}.png`)
+  vi.mocked(aigcApis.createTask).mockImplementationOnce(() => {
+    return Promise.resolve({
+      id: 'mock-1',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      type: aigcApis.TaskType.GenerateCostume,
+      status: aigcApis.TaskStatus.Pending
+    } satisfies aigcApis.Task<aigcApis.TaskType.GenerateCostume>)
+  })
+  vi.mocked(aigcApis.subscribeTaskEvents).mockImplementationOnce(async function* () {
+    yield {
+      type: aigcApis.TaskEventType.Completed,
+      data: {
+        result: {
+          imageUrls: [`http://example.com/generated-costume-${encodeURIComponent(name)}.png`]
+        }
+      }
+    } satisfies aigcApis.TaskEventCompleted<aigcApis.TaskType.GenerateCostume>
   })
   gen.setSettings({
     description: `Updated description for ${name}`
@@ -79,21 +95,53 @@ async function finishCostumeGen(name: string, gen: CostumeGen) {
 }
 
 async function finishAnimationGen(name: string, gen: AnimationGen) {
-  vi.mocked(aigcApis.genAnimationVideo).mockImplementationOnce(() => {
-    return Promise.resolve(`http://example.com/generated-animation-${encodeURIComponent(name)}.mp4`)
+  vi.mocked(aigcApis.createTask).mockImplementationOnce(() => {
+    return Promise.resolve({
+      id: 'mock-1',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      type: aigcApis.TaskType.GenerateAnimationVideo,
+      status: aigcApis.TaskStatus.Pending
+    } satisfies aigcApis.Task<aigcApis.TaskType.GenerateAnimationVideo>)
   })
-  vi.mocked(aigcApis.extractAnimationVideoFrames).mockImplementationOnce(() => {
-    return Promise.resolve([
-      `http://example.com/animation-${encodeURIComponent(name)}-frame-1.png`,
-      `http://example.com/animation-${encodeURIComponent(name)}-frame-2.png`,
-      `http://example.com/animation-${encodeURIComponent(name)}-frame-3.png`
-    ])
+  vi.mocked(aigcApis.subscribeTaskEvents).mockImplementationOnce(async function* () {
+    yield {
+      type: aigcApis.TaskEventType.Completed,
+      data: {
+        result: {
+          videoUrl: `http://example.com/generated-animation-${encodeURIComponent(name)}.mp4`
+        }
+      }
+    } satisfies aigcApis.TaskEventCompleted<aigcApis.TaskType.GenerateAnimationVideo>
   })
   gen.setSettings({
     description: `Updated description for ${name}`
   })
   expect(gen.settings.description).toBe(`Updated description for ${name}`)
   await gen.generateVideo()
+  vi.mocked(aigcApis.createTask).mockImplementationOnce(() => {
+    return Promise.resolve({
+      id: 'mock-2',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      type: aigcApis.TaskType.ExtractVideoFrames,
+      status: aigcApis.TaskStatus.Pending
+    } satisfies aigcApis.Task<aigcApis.TaskType.ExtractVideoFrames>)
+  })
+  vi.mocked(aigcApis.subscribeTaskEvents).mockImplementationOnce(async function* () {
+    yield {
+      type: aigcApis.TaskEventType.Completed,
+      data: {
+        result: {
+          frameUrls: [
+            `http://example.com/animation-${encodeURIComponent(name)}-frame-1.png`,
+            `http://example.com/animation-${encodeURIComponent(name)}-frame-2.png`,
+            `http://example.com/animation-${encodeURIComponent(name)}-frame-3.png`
+          ]
+        }
+      }
+    } satisfies aigcApis.TaskEventCompleted<aigcApis.TaskType.ExtractVideoFrames>
+  })
   gen.setFramesConfig({
     startTime: 0,
     duration: 1000,
@@ -154,9 +202,24 @@ describe('SpriteGen', () => {
       perspective: Perspective.AngledTopDown
     })
 
-    // Generate sprite's images & select
-    vi.mocked(aigcApis.genCostumeImages).mockImplementationOnce(() => {
-      return Promise.resolve([1, 2, 3, 4].map((i) => `http://example.com/generated-sprite-image-${i}.png`))
+    vi.mocked(aigcApis.createTask).mockImplementation(() => {
+      return Promise.resolve({
+        id: 'mock-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        type: aigcApis.TaskType.GenerateCostume,
+        status: aigcApis.TaskStatus.Pending
+      } satisfies aigcApis.Task<aigcApis.TaskType.GenerateCostume>)
+    })
+    vi.mocked(aigcApis.subscribeTaskEvents).mockImplementationOnce(async function* () {
+      yield {
+        type: aigcApis.TaskEventType.Completed,
+        data: {
+          result: {
+            imageUrls: [1, 2, 3, 4].map((i) => `http://example.com/generated-sprite-image-${i}.png`)
+          }
+        }
+      } satisfies aigcApis.TaskEventCompleted<aigcApis.TaskType.GenerateCostume>
     })
     const images = await gen.genImages()
     expect(gen.imagesGenState.status).toBe('finished')

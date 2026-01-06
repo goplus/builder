@@ -43,7 +43,7 @@
     "eslint-plugin-compat": "^6.0.2",
     "eslint-plugin-vue": "^10.6.2",
     "file-saver": "^2.0.5",
-    "happy-dom": "^14.3.6",
+    "happy-dom": "^20.0.11",
     "hast": "^1.0.0",
     "hast-util-raw": "^9.1.0",
     "hast-util-sanitize": "^5.0.2",

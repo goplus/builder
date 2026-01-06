@@ -8,7 +8,6 @@ import { Backdrop } from '../backdrop'
 import { createFileWithWebUrl } from '../common/cloud'
 import { getProjectSettings, Phase } from './common'
 
-// TODO: task cancelation support
 export class BackdropGen extends Disposable {
   id: string
   private project: Project
@@ -35,7 +34,7 @@ export class BackdropGen extends Disposable {
     return this.enrichPhase.state
   }
   async enrich() {
-    const draft = await this.enrichPhase.run(
+    const draft = await this.enrichPhase.track(
       enrichBackdropSettings(this.settings.description, this.settings, getProjectSettings(this.project))
     )
     this.setSettings(draft)
@@ -50,7 +49,7 @@ export class BackdropGen extends Disposable {
     return this.generatePhase.state
   }
   async generate() {
-    await this.generatePhase.run(genBackdropImage(this.settings))
+    await this.generatePhase.track(genBackdropImage(this.settings))
   }
 
   async finish() {
@@ -68,5 +67,9 @@ export class BackdropGen extends Disposable {
     })
     this.dispose() // TODO: Is it right to dispose here?
     return backdrop
+  }
+
+  async cancel() {
+    // TODO: implement cancellation logic
   }
 }
