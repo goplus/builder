@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
@@ -22,6 +22,7 @@ const emit = defineEmits<{
   submit: []
 }>()
 
+const unapplied = ref(props.gen.settings.description.length > 0)
 const submitting = computed(() => props.gen.imagesGenState.status === 'running')
 
 function handleSubmit() {
@@ -39,8 +40,10 @@ const submitText = computed(() => {
   <SettingsInput
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
+    :unapplied="unapplied"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
+    @applied="unapplied = false"
   >
     <template #extra>
       <SpriteCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
@@ -48,7 +51,9 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton :disabled="disabled" :loading="submitting" @click="handleSubmit">{{ $t(submitText) }}</UIButton>
+      <UIButton :disabled="unapplied || disabled" :loading="submitting" @click="handleSubmit">{{
+        $t(submitText)
+      }}</UIButton>
     </template>
   </SettingsInput>
 </template>
