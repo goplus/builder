@@ -1,16 +1,32 @@
 <script lang="ts" setup>
 import { UIButton, UIImg, UITooltip } from '@/components/ui'
-import type { ParamSettingProps } from './ParamsSettings.vue'
+import { createFileWithUniversalUrl } from '@/models/common/cloud'
+import type { LocaleMessage } from '@/utils/i18n'
+import { useAsyncComputed } from '@/utils/utils'
 
-defineProps<ParamSettingProps<string>>()
+const props = withDefaults(
+  defineProps<{
+    value: string
+    tips: LocaleMessage
+    disabled?: boolean
+  }>(),
+  {
+    disabled: false
+  }
+)
+
+const file = useAsyncComputed(async (onCleanup) => {
+  const file = await createFileWithUniversalUrl(props.value)
+  return file.url(onCleanup)
+})
 </script>
 
 <template>
   <UITooltip>
     <template #trigger>
-      <UIButton variant="stroke" color="boring">
+      <UIButton variant="stroke" color="boring" :disabled="disabled">
         <template #icon>
-          <UIImg :src="value" />
+          <UIImg :class="{ disabled }" class="reference-image" :src="file" />
         </template>
       </UIButton>
     </template>
@@ -18,4 +34,13 @@ defineProps<ParamSettingProps<string>>()
   </UITooltip>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.reference-image {
+  width: 22px;
+  height: 22px;
+
+  &.disabled {
+    opacity: 0.5;
+  }
+}
+</style>

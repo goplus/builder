@@ -1,6 +1,18 @@
+<script lang="ts">
+type SettingsInputCtx = {
+  iconOnly: boolean
+  readonly: boolean
+  disabled: boolean
+}
+
+export const settingsInputCtxKey: InjectionKey<ShallowReactive<SettingsInputCtx>> = Symbol('settingsInputCtxKey')
+</script>
+
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, watch, ref, provide, type InjectionKey, type ShallowReactive, shallowReactive } from 'vue'
+
 import { UIButton, UIIcon } from '@/components/ui'
+import { useContentSize } from '@/utils/dom'
 
 const props = withDefaults(
   defineProps<{
@@ -26,10 +38,31 @@ const onInput = (e: InputEvent) => {
     emit('update:description', target.value)
   }
 }
+
+const ctx = shallowReactive({
+  iconOnly: false,
+  readonly: false,
+  disabled: false
+})
+
+const wrapperRef = ref<HTMLElement | null>(null)
+const wrapperSize = useContentSize(wrapperRef)
+
+const iconOnlyThreshold = 550
+watch(
+  wrapperSize,
+  (wrapperSize) => {
+    if (wrapperSize == null) return
+    ctx.iconOnly = wrapperSize.width < iconOnlyThreshold
+  },
+  { immediate: true }
+)
+
+provide(settingsInputCtxKey, ctx)
 </script>
 
 <template>
-  <div class="description-input">
+  <div ref="wrapperRef" class="description-input">
     <div class="main">
       <span v-if="enriching" class="enriching">
         <UIIcon type="edit" />
@@ -62,7 +95,7 @@ const onInput = (e: InputEvent) => {
       </template>
     </div>
     <div class="footer">
-      <div class="extra">
+      <div ref="extraRef" class="extra">
         <slot name="extra"></slot>
       </div>
       <slot name="submit"></slot>
@@ -163,10 +196,19 @@ const onInput = (e: InputEvent) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 
   .extra {
     display: flex;
+    padding: 4px;
     gap: 8px;
+    flex: 1 1 0;
+    width: max-content;
+    overflow: hidden;
+
+    & > * {
+      flex-shrink: 0;
+    }
   }
 }
 </style>
