@@ -63,6 +63,7 @@ import undo from './undo.svg?raw'
 import redo from './redo.svg?raw'
 import localFile from './local-file.svg?raw'
 import assetLibrary from './asset-library.svg?raw'
+import minus from './minus.svg?raw'
 
 const typeIconMap = {
   file,
@@ -122,7 +123,8 @@ const typeIconMap = {
   undo,
   redo,
   localFile,
-  assetLibrary
+  assetLibrary,
+  minus
 }
 
 export type Type = keyof typeof typeIconMap

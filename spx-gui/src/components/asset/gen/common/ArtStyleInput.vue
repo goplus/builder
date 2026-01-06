@@ -1,3 +1,13 @@
+<script lang="ts">
+export function toNullable(value: ArtStyle) {
+  return value === ArtStyle.Unspecified ? null : value
+}
+
+export function fromNullable(value: ArtStyle | null) {
+  return value ?? ArtStyle.Unspecified
+}
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ArtStyle } from '@/apis/common'
@@ -5,7 +15,7 @@ import ParamSelector from './param-settings/ParamSelector.vue'
 import { artStyleOptions } from './param-settings/data'
 import imgArtStyle from './param-settings/assets/art-style.png'
 
-const props = defineProps<{
+defineProps<{
   value: ArtStyle
 }>()
 
@@ -13,13 +23,10 @@ const emit = defineEmits<{
   'update:value': [ArtStyle]
 }>()
 
-const placeholder = computed(() => {
-  if (props.value !== ArtStyle.Unspecified) return null
-  return {
-    label: { en: 'Art Style', zh: '艺术风格' },
-    image: imgArtStyle
-  }
-})
+const placeholder = computed(() => ({
+  label: { en: 'Art style', zh: '艺术风格' },
+  image: imgArtStyle
+}))
 </script>
 
 <template>
@@ -28,7 +35,7 @@ const placeholder = computed(() => {
     :tips="{ en: 'Please select the art style you want to generate', zh: '请选择您想要生成的艺术风格' }"
     :options="artStyleOptions"
     :placeholder="placeholder"
-    :value="value"
-    @update:value="emit('update:value', $event)"
+    :value="toNullable(value)"
+    @update:value="emit('update:value', fromNullable($event))"
   />
 </template>

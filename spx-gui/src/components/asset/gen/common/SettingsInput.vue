@@ -1,16 +1,15 @@
 <script lang="ts">
-type SettingInputCtx = {
+type SettingsInputCtx = {
   iconOnly: boolean
   readonly: boolean
   disabled: boolean
 }
 
-export const settingInputCtxKey: InjectionKey<ShallowReactive<SettingInputCtx>> = Symbol('settingInputCtxKey')
+export const settingsInputCtxKey: InjectionKey<ShallowReactive<SettingsInputCtx>> = Symbol('settingsInputCtxKey')
 </script>
 
 <script lang="ts" setup>
 import { computed, watch, ref, provide, type InjectionKey, type ShallowReactive, shallowReactive } from 'vue'
-import { debounce } from 'lodash'
 
 import { UIButton, UIIcon } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
@@ -47,37 +46,23 @@ const ctx = shallowReactive({
 })
 
 const wrapperRef = ref<HTMLElement | null>(null)
-const extraRef = ref<HTMLElement | null>(null)
 const wrapperSize = useContentSize(wrapperRef)
-const extraSize = useContentSize(extraRef)
 
-let threshold = 0
+const iconOnlyThreshold = 550
 watch(
-  [wrapperSize, extraSize],
-  debounce(([wrapperSize, extraSize]) => {
-    if (wrapperSize == null || extraSize == null) return
-    const [wrapperWidth, extraWidth] = [wrapperSize.width, extraSize.width]
-    if (!ctx.iconOnly) {
-      // Required width exceeds available space, record this width and switch to iconOnly
-      if (extraWidth > wrapperWidth) {
-        threshold = extraWidth
-        ctx.iconOnly = true
-      }
-    } else {
-      // Switch back to expanded only when the available space is enough to accommodate the previously recorded width
-      if (wrapperWidth > threshold) {
-        ctx.iconOnly = false
-      }
-    }
-  }, 30),
+  wrapperSize,
+  (wrapperSize) => {
+    if (wrapperSize == null) return
+    ctx.iconOnly = wrapperSize.width < iconOnlyThreshold
+  },
   { immediate: true }
 )
 
-provide(settingInputCtxKey, ctx)
+provide(settingsInputCtxKey, ctx)
 </script>
 
 <template>
-  <div class="description-input">
+  <div ref="wrapperRef" class="description-input">
     <div class="main">
       <span v-if="enriching" class="enriching">
         <UIIcon type="edit" />
@@ -110,10 +95,8 @@ provide(settingInputCtxKey, ctx)
       </template>
     </div>
     <div class="footer">
-      <div ref="wrapperRef" class="wrapper">
-        <div ref="extraRef" class="extra">
-          <slot name="extra"></slot>
-        </div>
+      <div ref="extraRef" class="extra">
+        <slot name="extra"></slot>
       </div>
       <slot name="submit"></slot>
     </div>
@@ -215,17 +198,13 @@ provide(settingInputCtxKey, ctx)
   justify-content: space-between;
   gap: 8px;
 
-  .wrapper {
-    padding: 4px;
-    flex: 1 1 0;
-    min-width: 0;
-    overflow: hidden;
-  }
-
   .extra {
     display: flex;
+    padding: 4px;
     gap: 8px;
+    flex: 1 1 0;
     width: max-content;
+    overflow: hidden;
 
     & > * {
       flex-shrink: 0;
