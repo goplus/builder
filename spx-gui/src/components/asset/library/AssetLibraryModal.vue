@@ -99,14 +99,10 @@ watch(
   (type, _, onCleanup) => {
     assetGen.value = {
       [AssetType.Sound]: null,
-      [AssetType.Sprite]: new SpriteGen(props.project, keyword.value),
-      [AssetType.Backdrop]: new BackdropGen(props.project, keyword.value)
+      [AssetType.Sprite]: new SpriteGen(props.project),
+      [AssetType.Backdrop]: new BackdropGen(props.project)
     }[type]
-    const stopKeywordWatch = watch(keyword, (v) => assetGen.value?.setSettings({ description: v }))
-    onCleanup(() => {
-      stopKeywordWatch()
-      assetGen.value?.dispose()
-    })
+    onCleanup(() => assetGen.value?.dispose())
   },
   { immediate: true }
 )
@@ -384,7 +380,7 @@ const title = computed(() => {
                       en: `No assets found for "${keyword}". Why not let AI generate one for you?`
                     })
                   }}
-                  <SettingsInput :gen="assetGen" @submit="handleGenStart" />
+                  <SettingsInput :gen="assetGen" :description-placeholder="keyword" @submit="handleGenStart" />
                 </div>
               </template>
               <template #default="slotProps">

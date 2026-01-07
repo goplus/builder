@@ -8,6 +8,7 @@ import BackdropCategoryInput from './BackdropCategoryInput.vue'
 
 defineProps<{
   gen: BackdropGen
+  descriptionPlaceholder?: string
 }>()
 </script>
 
@@ -15,7 +16,7 @@ defineProps<{
   <SettingsInput
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
-    :description-placeholder="gen.settings.description"
+    :description-placeholder="descriptionPlaceholder"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
@@ -24,10 +25,13 @@ defineProps<{
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
-    <template #submit="{ unadopted }">
-      <UIButton :disabled="unadopted" :loading="gen.generateState.status === 'running'" @click="gen.generate()">{{
-        $t({ zh: '生成', en: 'Generate' })
-      }}</UIButton>
+    <template #submit>
+      <UIButton
+        :disabled="gen.settings.description === ''"
+        :loading="gen.generateState.status === 'running'"
+        @click="gen.generate()"
+        >{{ $t({ zh: '生成', en: 'Generate' }) }}</UIButton
+      >
     </template>
   </SettingsInput>
 </template>

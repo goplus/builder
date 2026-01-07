@@ -10,11 +10,13 @@ import PerspectiveInput from '../common/PerspectiveInput.vue'
 const props = withDefaults(
   defineProps<{
     gen: SpriteGen
+    descriptionPlaceholder?: string
     // TODO: implement disabled
     disabled?: boolean
   }>(),
   {
-    disabled: false
+    disabled: false,
+    descriptionPlaceholder: undefined
   }
 )
 
@@ -39,7 +41,7 @@ const submitText = computed(() => {
   <SettingsInput
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
-    :description-placeholder="gen.settings.description"
+    :description-placeholder="descriptionPlaceholder"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
@@ -48,8 +50,8 @@ const submitText = computed(() => {
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
-    <template #submit="{ unadopted }">
-      <UIButton :disabled="disabled || unadopted" :loading="submitting" @click="handleSubmit">{{
+    <template #submit>
+      <UIButton :disabled="disabled || gen.settings.description === ''" :loading="submitting" @click="handleSubmit">{{
         $t(submitText)
       }}</UIButton>
     </template>

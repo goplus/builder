@@ -16,11 +16,14 @@ import { useContentSize } from '@/utils/dom'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 
 import enrichingFileUrl from './enriching.lottie?url'
-import { isString } from 'lodash'
 
 const props = withDefaults(
   defineProps<{
     description: string
+    /**
+     * If `descriptionPlaceholder` is provided and `description` is empty,
+     * `description` will be synchronized with the placeholder value on the first focus.
+     */
     descriptionPlaceholder?: string
     enriching?: boolean
   }>(),
@@ -38,9 +41,6 @@ const emit = defineEmits<{
 const focus = ref(false)
 const enrichShow = computed(() => focus.value && props.description.length > 0)
 
-const unadopted = ref(isString(props.descriptionPlaceholder))
-const value = computed(() => (unadopted.value ? '' : props.description))
-
 const onInput = (e: InputEvent) => {
   const target = e.target
   if (target instanceof HTMLTextAreaElement) {
@@ -48,9 +48,13 @@ const onInput = (e: InputEvent) => {
   }
 }
 
+const adopted = ref(false)
 function onFocus() {
   focus.value = true
-  unadopted.value = false
+  if (!adopted.value && props.description === '') {
+    emit('update:description', props.descriptionPlaceholder ?? '')
+    adopted.value = true
+  }
 }
 
 const ctx = shallowReactive({
@@ -101,8 +105,12 @@ provide(settingsInputCtxKey, ctx)
       </div>
       <textarea
         class="description"
-        :placeholder="unadopted ? descriptionPlaceholder : $t({ zh: '请输入描述', en: 'Please enter description' })"
-        :value="value"
+        :placeholder="
+          !adopted && descriptionPlaceholder != null && descriptionPlaceholder.length > 0
+            ? descriptionPlaceholder
+            : $t({ zh: '请输入描述', en: 'Please enter description' })
+        "
+        :value="description"
         @input="onInput"
         @focus="onFocus"
         @blur="focus = false"
@@ -112,7 +120,7 @@ provide(settingsInputCtxKey, ctx)
       <div ref="extraRef" class="extra">
         <slot name="extra"></slot>
       </div>
-      <slot name="submit" :unadopted="unadopted"></slot>
+      <slot name="submit"></slot>
     </div>
   </div>
 </template>
