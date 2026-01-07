@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
@@ -22,7 +22,6 @@ const emit = defineEmits<{
   submit: []
 }>()
 
-const unadopted = ref(props.gen.settings.description.length > 0)
 const submitting = computed(() => props.gen.imagesGenState.status === 'running')
 
 function handleSubmit() {
@@ -40,18 +39,17 @@ const submitText = computed(() => {
   <SettingsInput
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
-    :unadopted="unadopted"
+    :description-placeholder="gen.settings.description"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
-    @adopted="unadopted = false"
   >
     <template #extra>
       <SpriteCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
-    <template #submit>
-      <UIButton :disabled="unadopted || disabled" :loading="submitting" @click="handleSubmit">{{
+    <template #submit="{ unadopted }">
+      <UIButton :disabled="disabled || unadopted" :loading="submitting" @click="handleSubmit">{{
         $t(submitText)
       }}</UIButton>
     </template>

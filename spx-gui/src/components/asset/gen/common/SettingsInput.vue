@@ -16,27 +16,30 @@ import { useContentSize } from '@/utils/dom'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 
 import enrichingFileUrl from './enriching.lottie?url'
+import { isString } from 'lodash'
 
 const props = withDefaults(
   defineProps<{
     description: string
+    descriptionPlaceholder?: string
     enriching?: boolean
-    unadopted?: boolean
   }>(),
   {
     enriching: false,
-    unadopted: false
+    descriptionPlaceholder: undefined
   }
 )
 
 const emit = defineEmits<{
   'update:description': [string]
   enrich: []
-  adopted: []
 }>()
 
 const focus = ref(false)
 const enrichShow = computed(() => focus.value && props.description.length > 0)
+
+const unadopted = ref(isString(props.descriptionPlaceholder))
+const value = computed(() => (unadopted.value ? '' : props.description))
 
 const onInput = (e: InputEvent) => {
   const target = e.target
@@ -47,7 +50,7 @@ const onInput = (e: InputEvent) => {
 
 function onFocus() {
   focus.value = true
-  emit('adopted')
+  unadopted.value = false
 }
 
 const ctx = shallowReactive({
@@ -98,9 +101,8 @@ provide(settingsInputCtxKey, ctx)
       </div>
       <textarea
         class="description"
-        :class="[{ unadopted }]"
-        :placeholder="$t({ zh: '请输入描述', en: 'Please enter description' })"
-        :value="description"
+        :placeholder="unadopted ? descriptionPlaceholder : $t({ zh: '请输入描述', en: 'Please enter description' })"
+        :value="value"
         @input="onInput"
         @focus="onFocus"
         @blur="focus = false"
@@ -110,7 +112,7 @@ provide(settingsInputCtxKey, ctx)
       <div ref="extraRef" class="extra">
         <slot name="extra"></slot>
       </div>
-      <slot name="submit"></slot>
+      <slot name="submit" :unadopted="unadopted"></slot>
     </div>
   </div>
 </template>
@@ -162,10 +164,6 @@ provide(settingsInputCtxKey, ctx)
     background: transparent;
     color: var(--ui-color-grey-900);
     caret-color: var(--ui-color-turquoise-500);
-
-    &.unadopted {
-      color: var(--ui-color-grey-700);
-    }
 
     &:focus {
       outline: none;
