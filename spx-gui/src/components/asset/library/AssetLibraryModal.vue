@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref, shallowReactive, shallowRef, watch, type Component } from 'vue'
+import { computed, h, ref, shallowReactive, shallowRef, watch, type Component, type CSSProperties } from 'vue'
 import {
   UITextInput,
   UIPagination,
@@ -8,14 +8,16 @@ import {
   UIChipRadio,
   UIIcon,
   UIModal,
-  UIModalClose
+  UIModalClose,
+  useConfirmDialog
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
+import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type Project } from '@/models/project'
-import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
+import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetGenModel, type AssetModel } from '@/models/common/asset'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import { getAssetCategories } from './category'
 import SoundItem from './SoundItem.vue'
@@ -26,8 +28,8 @@ import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSetti
 import { SpriteGen } from '@/models/gen/sprite-gen'
 import { BackdropGen } from '@/models/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
-import SpriteGenView from '../gen/sprite/SpriteGen.vue'
-import BackdropGenView from '../gen/backdrop/BackdropGen.vue'
+import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
+import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 
 const props = defineProps<{
   type: AssetType
@@ -35,9 +37,34 @@ const props = defineProps<{
   project: Project
 }>()
 
+/**
+ * AssetLibraryModal may resolve with two types of result:
+ * 1. Assets
+ * 2. Asset generation process
+ */
+type Resolved =
+  | {
+      /**
+       * The user selected some existing assets,
+       * or finished generating new ones and chose to use them.
+       */
+      type: 'assets'
+      /** The selected or generated assets */
+      assets: AssetModel[]
+    }
+  | {
+      /**
+       * The user chose to generate new asset(s),
+       * and the generation process is not finished yet.
+       */
+      type: 'gen'
+      /** The ongoing generation process */
+      gen: AssetGenModel
+    }
+
 const emit = defineEmits<{
   cancelled: []
-  resolved: [AssetModel[]]
+  resolved: [Resolved]
 }>()
 
 const searchInput = ref('')
@@ -65,7 +92,8 @@ const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | nul
       [AssetType.Backdrop]: BackdropSettingsInput
     })[props.type]
 )
-const assetGen = shallowRef<SpriteGen | BackdropGen | null>(null)
+
+const assetGen = shallowRef<AssetGenModel | null>(null)
 watch(
   () => props.type,
   (type, _, onCleanup) => {
@@ -82,14 +110,32 @@ watch(
   },
   { immediate: true }
 )
-const AssetGenView = computed<Component<{ gen: SpriteGen | BackdropGen }> | null>(
-  () =>
-    ({
-      [AssetType.Sound]: null,
-      [AssetType.Sprite]: SpriteGenView,
-      [AssetType.Backdrop]: BackdropGenView
-    })[props.type]
-)
+/**
+ * Prevent assetGen from being disposed automatically.
+ * This is useful when the user chooses to collapse the generation process
+ * and we need to keep the assetGen instance alive.
+ */
+function preventAssetGenDisposal(gen: AssetGenModel) {
+  if (assetGen.value !== gen) return
+  assetGen.value = null
+}
+
+const AssetGenComp = computed(() => {
+  const gen = assetGen.value
+  if (gen == null) return null
+  if (gen instanceof SpriteGen) {
+    return (props: CSSProperties) =>
+      h(SpriteGenComp, {
+        ...props,
+        gen,
+        onCollapse: handleGenCollapse,
+        onFinished: handleGenFinished
+      })
+  } else if (gen instanceof BackdropGen) {
+    return (props: CSSProperties) => h(BackdropGenComp, { ...props, gen })
+  }
+  return null
+})
 
 const entityMessages = {
   [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
@@ -163,7 +209,10 @@ const handleConfirm = useMessageHandle(
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
     const assetModels = await props.project.history.doAction(action, () => Promise.all(selected.map(addAssetToProject)))
-    emit('resolved', assetModels)
+    emit('resolved', {
+      type: 'assets',
+      assets: assetModels
+    })
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }
 )
@@ -178,13 +227,85 @@ async function handleAssetClick(asset: AssetData) {
   else selected.splice(index, 1)
 }
 
-const generatePhase = ref(false)
-function handleGenerate() {
-  const gen = assetGen.value
-  if (gen != null && gen.enrichState.status === 'finished') {
-    generatePhase.value = true
-  }
+/** If in generation phase */
+const isGenPhase = ref(false)
+
+function handleGenStart() {
+  isGenPhase.value = true
 }
+
+function handleGenCollapse() {
+  const gen = assetGen.value
+  if (gen == null) throw new Error('asset gen expected')
+  preventAssetGenDisposal(gen)
+  emit('resolved', {
+    type: 'gen',
+    gen
+  })
+}
+
+const handleGenFinished = useMessageHandle(
+  async () => {
+    const gen = assetGen.value
+    if (gen == null) throw new Error('asset gen expected')
+    // Consider moving asset addition outside AssetLibraryModal for better separation of concerns.
+    // However, this would introduce a delay between the modal close and assets addition, potentially degrading UX.
+    // TODO: Review this trade-off
+    const added = await props.project.history.doAction(
+      {
+        name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
+      },
+      async () => {
+        if (gen instanceof SpriteGen) {
+          const sprite = gen.result
+          if (sprite == null) throw new Error('sprite generation not finished')
+          props.project.addSprite(sprite)
+          await sprite.autoFit()
+          return sprite
+        }
+        // TODO: Backdrop handling
+        throw new Error('unknown asset type')
+      }
+    )
+    emit('resolved', {
+      type: 'assets',
+      assets: [added]
+    })
+  },
+  {
+    en: 'Failed to generate asset',
+    zh: '素材生成失败'
+  }
+).fn
+
+const i18n = useI18n()
+const confirm = useConfirmDialog()
+
+const handleModalClose = useMessageHandle(
+  async () => {
+    if (isGenPhase.value) {
+      // It may be more user-friendly to do collapse automatically, or notify user about collapsing
+      // TODO: Review strategy here later
+      const em = entityMessage.value
+      await confirm({
+        title: i18n.t({ zh: `退出${em.zh}生成？`, en: `Exit ${em.en} generation?` }),
+        content: i18n.t({
+          zh: '当前内容不会被保存，确定要退出吗？',
+          en: 'Current progress will not be saved. Are you sure to exit?'
+        }),
+        confirmText: i18n.t({ en: 'Exit', zh: '退出' })
+      })
+    }
+    emit('cancelled')
+  },
+  { en: 'Failed to exit modal', zh: '退出失败' }
+).fn
+
+const title = computed(() => {
+  const em = entityMessage.value
+  if (isGenPhase.value) return { en: `Generate ${em.en}`, zh: `生成${em.zh}` }
+  return { en: `Choose a ${em.en}`, zh: `选择${em.zh}` }
+})
 </script>
 
 <template>
@@ -193,26 +314,26 @@ function handleGenerate() {
     style="width: 1096px"
     :visible="visible"
     mask-closable
-    @update:visible="emit('cancelled')"
+    @update:visible="handleModalClose"
   >
     <header class="header">
       <div class="header-left">
         <UIButton
-          v-if="generatePhase"
+          v-if="isGenPhase"
           class="back-asset"
           color="white"
           icon="arrowAlt"
           variant="stroke"
-          @click="generatePhase = false"
+          @click="isGenPhase = false"
         ></UIButton>
-        <h2 class="title">{{ $t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` }) }}</h2>
+        <h2 class="title">{{ $t(title) }}</h2>
       </div>
 
-      <UIModalClose class="close" @click="emit('cancelled')" />
+      <UIModalClose class="close" @click="handleModalClose" />
     </header>
 
-    <template v-if="generatePhase && AssetGenView != null && assetGen != null">
-      <AssetGenView class="asset-gen" :gen="assetGen" />
+    <template v-if="isGenPhase && AssetGenComp != null">
+      <AssetGenComp class="asset-gen" />
     </template>
     <template v-else>
       <div class="asset-library">
@@ -263,7 +384,7 @@ function handleGenerate() {
                       en: `No assets found for "${keyword}". Why not let AI generate one for you?`
                     })
                   }}
-                  <SettingsInput :gen="assetGen" @submit="handleGenerate" />
+                  <SettingsInput :gen="assetGen" @submit="handleGenStart" />
                 </div>
               </template>
               <template #default="slotProps">

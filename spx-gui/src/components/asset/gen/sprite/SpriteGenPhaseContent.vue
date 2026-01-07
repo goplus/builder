@@ -12,7 +12,7 @@ import type { Sprite } from '@/models/sprite'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
-import { UIButton, useConfirmDialog } from '@/components/ui'
+import { UIButton, UITooltip, useConfirmDialog } from '@/components/ui'
 import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
 import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
 import { useRenameAnimationGen, useRenameCostumeGen } from '../..'
@@ -111,21 +111,6 @@ function handleAddAnimation() {
 
 const i18n = useI18n()
 const confirm = useConfirmDialog()
-
-// TODO: register modal hook to prevent close if needed
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function beforeModalClose() {
-  confirm({
-    type: 'warning',
-    title: i18n.t({ zh: '确认关闭', en: 'Confirm close' }),
-    content: i18n.t({
-      zh: '关闭窗口将会丢失所有未保存的生成内容，确定要关闭吗？',
-      en: 'Closing this modal will lose all unsaved generated content. Continue?'
-    }),
-    confirmText: i18n.t({ zh: '关闭', en: 'Close' }),
-    cancelText: i18n.t({ zh: '取消', en: 'Cancel' })
-  })
-}
 
 function isCostumeGenProcessing(costumeGen: CostumeGen) {
   return costumeGen.generateState.status !== 'initial' && costumeGen.result == null
@@ -233,9 +218,19 @@ const handleSubmit = useMessageHandle(
       </div>
     </div>
     <footer class="footer">
-      <UIButton color="secondary" size="large" @click="emit('collapse')">{{
-        $t({ en: 'Minimize', zh: '收起' })
-      }}</UIButton>
+      <UITooltip>
+        {{
+          $t({
+            zh: '收起弹窗，任务将在后台继续进行，可随时查看',
+            en: 'Minimize the popup, the task will continue in the background and can be viewed at any time'
+          })
+        }}
+        <template #trigger>
+          <UIButton color="secondary" size="large" @click="emit('collapse')">{{
+            $t({ en: 'Minimize', zh: '收起' })
+          }}</UIButton>
+        </template>
+      </UITooltip>
       <UIButton
         color="primary"
         size="large"

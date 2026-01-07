@@ -263,20 +263,16 @@ const invokeSpriteGenModal = useSpriteGenModal()
 const handleSpriteGenClick = useMessageHandle(
   async (gen: SpriteGen) => {
     const result = await invokeSpriteGenModal(gen)
-    if (result instanceof Sprite) {
-      // TODO: should this be implemented in `useSpriteGenModal`?
-      editorCtx.state.removeSpriteGen(gen.id)
-      await editorCtx.project.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-        editorCtx.project.addSprite(result)
-        await result.autoFit()
-      })
-      editorCtx.state.selectSprite(result.id)
-      return
-    }
-    if (result !== gen) {
-      // If a `SpriteGen` instance is returned, it should be the same as the input one
-      throw new Error('Unexpected result from sprite gen modal')
-    }
+
+    // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
+    gen.dispose()
+    editorCtx.state.removeSpriteGen(gen.id)
+
+    await editorCtx.project.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
+      editorCtx.project.addSprite(result)
+      await result.autoFit()
+    })
+    editorCtx.state.selectSprite(result.id)
   },
   {
     en: 'Failed to add generated sprite',

@@ -10,7 +10,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  resolved: [SpriteGen | Sprite]
+  resolved: [Sprite]
   cancelled: []
 }>()
 </script>
@@ -22,7 +22,7 @@ const emit = defineEmits<{
     :style="{ width: '1076px', height: '800px' }"
     @update:visible="emit('cancelled')"
   >
-    <SpriteGenComp :gen="gen" @collapse="emit('resolved', gen)" @finished="emit('resolved', $event)" />
+    <SpriteGenComp :gen="gen" @collapse="emit('cancelled')" @finished="emit('resolved', $event)" />
   </GenModal>
 </template>
 
