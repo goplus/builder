@@ -54,6 +54,14 @@ export class SpriteGen extends Disposable {
     return reactive(this) as this
   }
 
+  get name() {
+    return this.settings.name
+  }
+  setName(name: string) {
+    // TODO: check name validity
+    this.settings.name = name
+  }
+
   get enrichState() {
     return this.enrichPhase.state
   }
@@ -94,7 +102,9 @@ export class SpriteGen extends Disposable {
       const settings = this.getDefaultCostumeSettings()
       await this.genImagesTask.start({ settings, n: 4 })
       const { imageUrls } = await this.genImagesTask.untilCompleted()
-      return imageUrls.map((url) => createFileWithWebUrl(url))
+      // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
+      // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
+      return imageUrls.map((url) => createFileWithWebUrl(url, `${this.name}.png`))
     })
   }
 

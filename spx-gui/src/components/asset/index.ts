@@ -31,7 +31,6 @@ import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
 import { SpriteGen } from '@/models/gen/sprite-gen'
-import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
 import { BackdropGen } from '@/models/gen/backdrop-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
@@ -358,13 +357,6 @@ export function useSpriteGenModal() {
   const invokeModal = useModal(SpriteGenModal)
   return function spriteGenModal(spriteGen: SpriteGen) {
     return invokeModal({ gen: spriteGen })
-  }
-}
-
-export function useBackdropGenModal() {
-  const invokeModal = useModal(BackdropGenModal)
-  return function backdropGenModal(backdropGen: BackdropGen) {
-    return invokeModal({ gen: backdropGen })
   }
 }
 
