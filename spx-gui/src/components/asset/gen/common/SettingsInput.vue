@@ -13,14 +13,23 @@ import { computed, watch, ref, provide, type InjectionKey, type ShallowReactive,
 
 import { UIButton, UIIcon } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
+import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
+
+import enrichingFileUrl from './enriching.lottie?url'
 
 const props = withDefaults(
   defineProps<{
     description: string
+    /**
+     * If `descriptionPlaceholder` is provided and `description` is empty,
+     * `description` will be synchronized with the placeholder value on the first focus.
+     */
+    descriptionPlaceholder?: string
     enriching?: boolean
   }>(),
   {
-    enriching: false
+    enriching: false,
+    descriptionPlaceholder: undefined
   }
 )
 
@@ -36,6 +45,15 @@ const onInput = (e: InputEvent) => {
   const target = e.target
   if (target instanceof HTMLTextAreaElement) {
     emit('update:description', target.value)
+  }
+}
+
+const adopted = ref(false)
+function onFocus() {
+  focus.value = true
+  if (!adopted.value && props.description === '') {
+    emit('update:description', props.descriptionPlaceholder ?? '')
+    adopted.value = true
   }
 }
 
@@ -64,15 +82,15 @@ provide(settingsInputCtxKey, ctx)
 <template>
   <div ref="wrapperRef" class="description-input">
     <div class="main">
-      <span v-if="enriching" class="enriching">
-        <UIIcon type="edit" />
-        {{ $t({ zh: '正在丰富细节', en: 'Enriching details' }) }}<span class="dot">...</span>
-      </span>
-      <template v-else>
-        <div class="mirror" aria-hidden="true">
-          <span class="mirror-text">{{ description }}</span>
+      <div class="mirror" aria-hidden="true">
+        <span class="mirror-text">{{ description }}</span>
+        <div class="mirror-actions">
+          <span v-if="enriching" class="enriching">
+            <DotLottieVue class="animation" autoplay loop :src="enrichingFileUrl" />
+            {{ $t({ zh: '正在丰富细节', en: 'Enriching details' }) }}
+          </span>
           <UIButton
-            v-if="enrichShow && description.length > 0"
+            v-else-if="enrichShow"
             class="enrich-btn"
             color="secondary"
             size="small"
@@ -84,15 +102,19 @@ provide(settingsInputCtxKey, ctx)
             {{ $t({ zh: '丰富细节', en: 'Enrich details' }) }}
           </UIButton>
         </div>
-        <textarea
-          class="description"
-          :placeholder="$t({ zh: '请输入描述', en: 'Please enter description' })"
-          :value="description"
-          @input="onInput"
-          @focus="focus = true"
-          @blur="focus = false"
-        />
-      </template>
+      </div>
+      <textarea
+        class="description"
+        :placeholder="
+          !adopted && descriptionPlaceholder != null && descriptionPlaceholder.length > 0
+            ? descriptionPlaceholder
+            : $t({ zh: '请输入描述', en: 'Please enter description' })
+        "
+        :value="description"
+        @input="onInput"
+        @focus="onFocus"
+        @blur="focus = false"
+      />
     </div>
     <div class="footer">
       <div ref="extraRef" class="extra">
@@ -129,25 +151,6 @@ provide(settingsInputCtxKey, ctx)
   display: grid;
   overflow-y: auto;
 
-  .enriching {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: fit-content;
-    color: var(--ui-color-turquoise-500);
-
-    .dot {
-      clip-path: inset(0 100% 0 0);
-      animation: dot-flow 1.5s steps(4) infinite;
-    }
-
-    @keyframes dot-flow {
-      to {
-        clip-path: inset(0 -0.5em 0 0);
-      }
-    }
-  }
-
   .description,
   .mirror {
     grid-area: 1 / 1 / 2 / 2;
@@ -181,12 +184,28 @@ provide(settingsInputCtxKey, ctx)
     display: inline;
   }
 
-  .enrich-btn {
+  .mirror-actions {
     display: inline-flex;
-    cursor: pointer;
-    pointer-events: auto;
-    vertical-align: middle;
     margin-left: 12px;
+    pointer-events: auto;
+  }
+
+  .enriching {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: fit-content;
+    color: var(--ui-color-turquoise-500);
+
+    .animation {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .enrich-btn {
+    cursor: pointer;
+    vertical-align: middle;
     position: relative;
     top: -2px;
   }
