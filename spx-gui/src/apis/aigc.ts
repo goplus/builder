@@ -5,11 +5,13 @@
 import { timeout } from '@/utils/utils'
 import { AnimationLoopMode, ArtStyle, BackdropCategory, client, Perspective, SpriteCategory } from './common'
 
+const useMock = process.env.NODE_ENV === 'development'
+
 /**
  * @deprecated Use createTask() with TaskType.RemoveBackground instead
  */
 export async function matting(imageUrl: string) {
-  if (process.env.NODE_ENV === 'development') {
+  if (useMock) {
     await timeout(2000)
     return 'https://picsum.photos/400/400'
   }
@@ -180,7 +182,7 @@ export async function createTask<T extends TaskType>(
   params: TaskParams<T>,
   signal?: AbortSignal
 ): Promise<Task<T>> {
-  if (process.env.NODE_ENV === 'development') {
+  if (useMock) {
     await timeout(1000)
     signal?.throwIfAborted()
     return {
@@ -195,7 +197,7 @@ export async function createTask<T extends TaskType>(
 }
 
 export async function getTask(taskID: string, signal?: AbortSignal): Promise<Task> {
-  if (process.env.NODE_ENV === 'development') {
+  if (useMock) {
     await timeout(500)
     signal?.throwIfAborted()
     return {
@@ -213,7 +215,7 @@ export async function getTask(taskID: string, signal?: AbortSignal): Promise<Tas
 }
 
 export async function cancelTask(taskID: string, signal?: AbortSignal): Promise<Task> {
-  if (process.env.NODE_ENV === 'development') {
+  if (useMock) {
     await timeout(500)
     signal?.throwIfAborted()
     return {
@@ -271,48 +273,48 @@ export type TaskEvent<T extends TaskType = TaskType> =
   | TaskEventCancelled
   | TaskEventFailed
 
-export async function* subscribeTaskEvents(taskID: string, signal?: AbortSignal): AsyncGenerator<TaskEvent> {
-  if (process.env.NODE_ENV === 'development') {
-    signal?.throwIfAborted()
+async function* mockSubscribeTaskEvents(taskID: string, signal?: AbortSignal): AsyncGenerator<TaskEvent> {
+  signal?.throwIfAborted()
 
-    yield {
-      type: TaskEventType.Snapshot,
-      data: {
-        id: taskID,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        type: TaskType.GenerateCostume,
-        status: TaskStatus.Processing
-      }
+  yield {
+    type: TaskEventType.Snapshot,
+    data: {
+      id: taskID,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      type: TaskType.GenerateCostume,
+      status: TaskStatus.Processing
     }
-
-    await timeout(2000)
-    signal?.throwIfAborted()
-
-    yield {
-      type: TaskEventType.Completed,
-      data: {
-        result: {
-          imageUrls: [
-            'https://picsum.photos/400/400',
-            'https://picsum.photos/400/400',
-            'https://picsum.photos/400/400',
-            'https://picsum.photos/400/400'
-          ],
-          frameUrls: [
-            'https://picsum.photos/400/400',
-            'https://picsum.photos/400/400',
-            'https://picsum.photos/400/400'
-          ],
-          videoUrl: 'https://builder-usercontent-test.gopluscdn.com/videos/test-aigc/generated_video.mp4'
-        }
-      }
-    }
-
-    return
   }
 
-  return client.getJSONSSE(`/aigc/task/${encodeURIComponent(taskID)}/events`, undefined, { signal })
+  await timeout(2000)
+  signal?.throwIfAborted()
+
+  yield {
+    type: TaskEventType.Completed,
+    data: {
+      result: {
+        imageUrls: [
+          'https://picsum.photos/400/400',
+          'https://picsum.photos/400/400',
+          'https://picsum.photos/400/400',
+          'https://picsum.photos/400/400'
+        ],
+        frameUrls: ['https://picsum.photos/400/400', 'https://picsum.photos/400/400', 'https://picsum.photos/400/400'],
+        videoUrl: 'https://builder-usercontent-test.gopluscdn.com/videos/test-aigc/generated_video.mp4'
+      }
+    }
+  }
+
+  return
+}
+
+export function subscribeTaskEvents(taskID: string, signal?: AbortSignal): AsyncGenerator<TaskEvent> {
+  if (useMock) return mockSubscribeTaskEvents(taskID, signal)
+
+  return client.getJSONSSE(`/aigc/task/${encodeURIComponent(taskID)}/events`, undefined, {
+    signal
+  }) as AsyncGenerator<TaskEvent>
 }
 
 // TODO: merge with `AssetType`
@@ -337,7 +339,7 @@ export async function enrichAssetSettings(
   params: EnrichAssetSettingsParams,
   signal?: AbortSignal
 ): Promise<EnrichAssetSettingsResult> {
-  if (process.env.NODE_ENV === 'development') {
+  if (useMock) {
     await timeout(2000)
     signal?.throwIfAborted()
 
@@ -378,7 +380,10 @@ export async function enrichAssetSettings(
         } satisfies BackdropSettings
     }
   }
-  return client.post('/aigc/asset-settings/enrichment', params, { signal }) as Promise<EnrichAssetSettingsResult>
+  return client.post('/aigc/asset-settings/enrichment', params, {
+    signal,
+    timeout: 60 * 1000
+  }) as Promise<EnrichAssetSettingsResult>
 }
 
 export type SpriteContentSettings = {
@@ -390,7 +395,7 @@ export async function genSpriteContentSettings(
   settings: SpriteSettings,
   signal?: AbortSignal
 ): Promise<SpriteContentSettings> {
-  if (process.env.NODE_ENV === 'development') {
+  if (useMock) {
     await timeout(3000)
     signal?.throwIfAborted()
     return {
@@ -432,7 +437,11 @@ export async function genSpriteContentSettings(
       ]
     }
   }
-  return client.post('/aigc/sprite/content-settings', { settings }, { signal }) as Promise<SpriteContentSettings>
+  return client.post(
+    '/aigc/sprite/content-settings',
+    { settings },
+    { signal, timeout: 60 * 1000 }
+  ) as Promise<SpriteContentSettings>
 }
 
 export async function enrichBackdropSettings(
