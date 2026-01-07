@@ -9,7 +9,16 @@ export const settingsInputCtxKey: InjectionKey<ShallowReactive<SettingsInputCtx>
 </script>
 
 <script lang="ts" setup>
-import { computed, watch, ref, provide, type InjectionKey, type ShallowReactive, shallowReactive } from 'vue'
+import {
+  computed,
+  watch,
+  ref,
+  provide,
+  type InjectionKey,
+  type ShallowReactive,
+  shallowReactive,
+  watchEffect
+} from 'vue'
 
 import { UIButton, UIIcon } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
@@ -26,10 +35,14 @@ const props = withDefaults(
      */
     descriptionPlaceholder?: string
     enriching?: boolean
+    disabled?: boolean
+    readonly?: boolean
   }>(),
   {
     enriching: false,
-    descriptionPlaceholder: undefined
+    descriptionPlaceholder: undefined,
+    disabled: false,
+    readonly: false
   }
 )
 
@@ -63,6 +76,12 @@ const ctx = shallowReactive({
   disabled: false
 })
 
+watchEffect(() => {
+  ctx.disabled = props.disabled
+  ctx.readonly = props.readonly
+})
+const descriptionDisabled = computed(() => props.enriching || ctx.readonly || ctx.disabled)
+
 const wrapperRef = ref<HTMLElement | null>(null)
 const wrapperSize = useContentSize(wrapperRef)
 
@@ -80,7 +99,11 @@ provide(settingsInputCtxKey, ctx)
 </script>
 
 <template>
-  <div ref="wrapperRef" class="description-input">
+  <div
+    ref="wrapperRef"
+    class="description-input"
+    :class="[{ disabled: ctx.disabled, readonly: ctx.readonly, enriching }]"
+  >
     <div class="main">
       <div class="mirror" aria-hidden="true">
         <span class="mirror-text">{{ description }}</span>
@@ -111,6 +134,7 @@ provide(settingsInputCtxKey, ctx)
             : $t({ zh: '请输入描述', en: 'Please enter description' })
         "
         :value="description"
+        :disabled="descriptionDisabled"
         @input="onInput"
         @focus="onFocus"
         @blur="focus = false"
@@ -139,8 +163,26 @@ provide(settingsInputCtxKey, ctx)
   gap: 24px;
   transition: border-color 0.2s ease;
 
-  &:has(.description:focus) {
+  &:has(.description:focus),
+  &.enriching {
     border-color: var(--ui-color-turquoise-500);
+  }
+
+  &.disabled,
+  &.readonly {
+    &:has(.description:focus) {
+      border-color: var(--ui-color-grey-400);
+    }
+  }
+
+  &.disabled {
+    .main {
+      overflow: hidden;
+
+      .description {
+        color: var(--ui-color-grey-600);
+      }
+    }
   }
 }
 

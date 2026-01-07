@@ -11,14 +11,21 @@ const props = defineProps<{
   gen: AnimationGen
 }>()
 
-// TODO: implement readonly mode
 const readonly = computed(() => props.gen.result != null)
+const isGenerating = computed(() => props.gen.generateVideoState.status === 'running')
+const isExtractingFrames = computed(() => props.gen.extractFramesState.status === 'running')
+const disabled = computed(() => isGenerating.value || isExtractingFrames.value)
+const buttonDisabled = computed(
+  () => props.gen.enrichState.status === 'running' || isExtractingFrames.value || props.gen.settings.description === ''
+)
 </script>
 
 <template>
   <SettingsInput
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
+    :readonly="readonly"
+    :disabled="disabled"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
@@ -28,7 +35,7 @@ const readonly = computed(() => props.gen.result != null)
       <AnimationLoopModeInput :value="gen.settings.loopMode" @update:value="gen.setSettings({ loopMode: $event })" />
     </template>
     <template v-if="!readonly" #submit>
-      <UIButton :loading="gen.generateVideoState.status === 'running'" @click="gen.generateVideo()">{{
+      <UIButton :disabled="buttonDisabled" :loading="isGenerating" @click="gen.generateVideo()">{{
         $t({ zh: '生成', en: 'Generate' })
       }}</UIButton>
     </template>

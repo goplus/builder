@@ -11,14 +11,19 @@ const props = defineProps<{
   gen: CostumeGen
 }>()
 
-// TODO: implement readonly mode
 const readonly = computed(() => props.gen.result != null)
+const buttonDisabled = computed(
+  () => props.gen.enrichState.status === 'running' || props.gen.settings.description === ''
+)
+const submitting = computed(() => props.gen.generateState.status === 'running')
 </script>
 
 <template>
   <SettingsInput
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
+    :readonly="readonly"
+    :disabled="submitting"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
@@ -28,7 +33,7 @@ const readonly = computed(() => props.gen.result != null)
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template v-if="!readonly" #submit>
-      <UIButton :loading="gen.generateState.status === 'running'" @click="gen.generate()">{{
+      <UIButton :disabled="buttonDisabled" :loading="submitting" @click="gen.generate()">{{
         $t({ zh: '生成', en: 'Generate' })
       }}</UIButton>
     </template>
