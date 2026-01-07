@@ -34,7 +34,7 @@ const buttonDisabled = computed(
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
       <AnimationLoopModeInput :value="gen.settings.loopMode" @update:value="gen.setSettings({ loopMode: $event })" />
     </template>
-    <template v-if="!readonly" #submit>
+    <template #submit>
       <UIButton :disabled="buttonDisabled" :loading="isGenerating" @click="gen.generateVideo()">{{
         $t({ zh: '生成', en: 'Generate' })
       }}</UIButton>

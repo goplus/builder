@@ -32,7 +32,7 @@ const submitting = computed(() => props.gen.generateState.status === 'running')
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
-    <template v-if="!readonly" #submit>
+    <template #submit>
       <UIButton :disabled="buttonDisabled" :loading="submitting" @click="gen.generate()">{{
         $t({ zh: '生成', en: 'Generate' })
       }}</UIButton>

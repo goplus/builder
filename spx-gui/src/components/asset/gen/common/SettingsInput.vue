@@ -52,7 +52,7 @@ const emit = defineEmits<{
 }>()
 
 const focus = ref(false)
-const enrichShow = computed(() => focus.value && props.description.length > 0)
+const enrichShow = computed(() => !ctx.readonly && focus.value && props.description.length > 0)
 
 const onInput = (e: InputEvent) => {
   const target = e.target
@@ -80,7 +80,7 @@ watchEffect(() => {
   ctx.disabled = props.disabled
   ctx.readonly = props.readonly
 })
-const descriptionDisabled = computed(() => props.enriching || ctx.readonly || ctx.disabled)
+const descriptionReadonly = computed(() => props.enriching || ctx.readonly)
 
 const wrapperRef = ref<HTMLElement | null>(null)
 const wrapperSize = useContentSize(wrapperRef)
@@ -134,7 +134,8 @@ provide(settingsInputCtxKey, ctx)
             : $t({ zh: '请输入描述', en: 'Please enter description' })
         "
         :value="description"
-        :disabled="descriptionDisabled"
+        :disabled="ctx.disabled"
+        :readonly="descriptionReadonly"
         @input="onInput"
         @focus="onFocus"
         @blur="focus = false"
@@ -144,7 +145,7 @@ provide(settingsInputCtxKey, ctx)
       <div ref="extraRef" class="extra">
         <slot name="extra"></slot>
       </div>
-      <slot name="submit"></slot>
+      <slot v-if="!ctx.readonly" name="submit"></slot>
     </div>
   </div>
 </template>
@@ -180,6 +181,7 @@ provide(settingsInputCtxKey, ctx)
       overflow: hidden;
 
       .description {
+        cursor: not-allowed;
         color: var(--ui-color-grey-600);
       }
     }

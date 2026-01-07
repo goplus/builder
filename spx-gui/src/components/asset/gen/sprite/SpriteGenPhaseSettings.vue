@@ -27,7 +27,7 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 <template>
   <main class="phase-settings">
     <div class="body">
-      <SpriteSettingsInput :gen="gen" :disabled="handleSubmit.isLoading.value" />
+      <SpriteSettingsInput :gen="gen" />
       <SpriteImages :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)" />
     </div>
     <footer class="footer">
