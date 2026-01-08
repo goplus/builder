@@ -77,10 +77,9 @@ const ctx = shallowReactive({
 })
 
 watchEffect(() => {
-  ctx.disabled = props.disabled
+  ctx.disabled = props.disabled || props.enriching
   ctx.readonly = props.readonly
 })
-const descriptionReadonly = computed(() => props.enriching || ctx.readonly)
 
 const wrapperRef = ref<HTMLElement | null>(null)
 const wrapperSize = useContentSize(wrapperRef)
@@ -135,7 +134,7 @@ provide(settingsInputCtxKey, ctx)
         "
         :value="description"
         :disabled="ctx.disabled"
-        :readonly="descriptionReadonly"
+        :readonly="ctx.readonly"
         @input="onInput"
         @focus="onFocus"
         @blur="focus = false"
