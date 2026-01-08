@@ -111,7 +111,13 @@
       >
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Default">
+            <UIButtonGroupItem
+              v-radar="{
+                name: 'Default Mode',
+                desc: 'Edit sprites, sounds, and backdrops using the default editor interface'
+              }"
+              :value="EditMode.Default"
+            >
               <div class="icon" v-html="defaultModeSvg"></div>
             </UIButtonGroupItem>
           </template>
@@ -119,7 +125,10 @@
         </UITooltip>
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Map">
+            <UIButtonGroupItem
+              v-radar="{ name: 'Map Edit Mode', desc: 'Edit global config, sprite config, etc.' }"
+              :value="EditMode.Map"
+            >
               <div class="icon" v-html="mapEditModeSvg"></div>
             </UIButtonGroupItem>
           </template>
