@@ -11,11 +11,8 @@ const props = withDefaults(
   defineProps<{
     gen: SpriteGen
     descriptionPlaceholder?: string
-    // TODO: implement disabled
-    disabled?: boolean
   }>(),
   {
-    disabled: false,
     descriptionPlaceholder: undefined
   }
 )
@@ -24,7 +21,12 @@ const emit = defineEmits<{
   submit: []
 }>()
 
-const submitting = computed(() => props.gen.imagesGenState.status === 'running')
+const readonly = computed(() => props.gen.result != null)
+const enriching = computed(() => props.gen.enrichState.status === 'running')
+const imageGenerating = computed(() => props.gen.imagesGenState.status === 'running')
+const contentPreparing = computed(() => props.gen.contentPreparingState.status === 'running')
+const disabled = computed(() => imageGenerating.value || contentPreparing.value)
+const buttonDisabled = computed(() => disabled.value || enriching.value || props.gen.settings.description === '')
 
 function handleSubmit() {
   emit('submit') // For asset-library-modal, listen to event `submit` and do jump (from asset-library to sprite-gen)
@@ -40,8 +42,10 @@ const submitText = computed(() => {
 <template>
   <SettingsInput
     :description="gen.settings.description"
-    :enriching="gen.enrichState.status === 'running'"
+    :enriching="enriching"
     :description-placeholder="descriptionPlaceholder"
+    :disabled="disabled"
+    :readonly="readonly"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
@@ -51,7 +55,7 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton :disabled="disabled || gen.settings.description === ''" :loading="submitting" @click="handleSubmit">{{
+      <UIButton :disabled="buttonDisabled" :loading="imageGenerating" @click="handleSubmit">{{
         $t(submitText)
       }}</UIButton>
     </template>

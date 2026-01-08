@@ -9,7 +9,16 @@ export const settingsInputCtxKey: InjectionKey<ShallowReactive<SettingsInputCtx>
 </script>
 
 <script lang="ts" setup>
-import { computed, watch, ref, provide, type InjectionKey, type ShallowReactive, shallowReactive } from 'vue'
+import {
+  computed,
+  watch,
+  ref,
+  provide,
+  type InjectionKey,
+  type ShallowReactive,
+  shallowReactive,
+  watchEffect
+} from 'vue'
 
 import { UIButton, UIIcon } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
@@ -26,10 +35,14 @@ const props = withDefaults(
      */
     descriptionPlaceholder?: string
     enriching?: boolean
+    disabled?: boolean
+    readonly?: boolean
   }>(),
   {
     enriching: false,
-    descriptionPlaceholder: undefined
+    descriptionPlaceholder: undefined,
+    disabled: false,
+    readonly: false
   }
 )
 
@@ -39,7 +52,7 @@ const emit = defineEmits<{
 }>()
 
 const focus = ref(false)
-const enrichShow = computed(() => focus.value && props.description.length > 0)
+const enrichShow = computed(() => !ctx.readonly && focus.value && props.description.length > 0)
 
 const onInput = (e: InputEvent) => {
   const target = e.target
@@ -63,6 +76,11 @@ const ctx = shallowReactive({
   disabled: false
 })
 
+watchEffect(() => {
+  ctx.disabled = props.disabled || props.enriching
+  ctx.readonly = props.readonly
+})
+
 const wrapperRef = ref<HTMLElement | null>(null)
 const wrapperSize = useContentSize(wrapperRef)
 
@@ -80,7 +98,11 @@ provide(settingsInputCtxKey, ctx)
 </script>
 
 <template>
-  <div ref="wrapperRef" class="description-input">
+  <div
+    ref="wrapperRef"
+    class="description-input"
+    :class="[{ disabled: ctx.disabled, readonly: ctx.readonly, enriching }]"
+  >
     <div class="main">
       <div class="mirror" aria-hidden="true">
         <span class="mirror-text">{{ description }}</span>
@@ -111,6 +133,8 @@ provide(settingsInputCtxKey, ctx)
             : $t({ zh: '请输入描述', en: 'Please enter description' })
         "
         :value="description"
+        :disabled="ctx.disabled"
+        :readonly="ctx.readonly"
         @input="onInput"
         @focus="onFocus"
         @blur="focus = false"
@@ -120,7 +144,7 @@ provide(settingsInputCtxKey, ctx)
       <div ref="extraRef" class="extra">
         <slot name="extra"></slot>
       </div>
-      <slot name="submit"></slot>
+      <slot v-if="!ctx.readonly" name="submit"></slot>
     </div>
   </div>
 </template>
@@ -139,8 +163,27 @@ provide(settingsInputCtxKey, ctx)
   gap: 24px;
   transition: border-color 0.2s ease;
 
-  &:has(.description:focus) {
+  &:has(.description:focus),
+  &.enriching {
     border-color: var(--ui-color-turquoise-500);
+  }
+
+  &.disabled,
+  &.readonly {
+    &:has(.description:focus) {
+      border-color: var(--ui-color-grey-400);
+    }
+  }
+
+  &.disabled {
+    .main {
+      overflow: hidden;
+
+      .description {
+        cursor: not-allowed;
+        color: var(--ui-color-grey-600);
+      }
+    }
   }
 }
 

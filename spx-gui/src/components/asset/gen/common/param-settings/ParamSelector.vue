@@ -45,7 +45,7 @@ const tooltipText = computed(() => {
 const settingsInputCtx = inject(settingsInputCtxKey)
 if (settingsInputCtx == null) throw new Error('settingsInputCtxKey should be provided')
 
-const disabled = computed(() => settingsInputCtx.disabled)
+const disabled = computed(() => settingsInputCtx.disabled || settingsInputCtx.readonly)
 const iconOnly = computed(() => settingsInputCtx.iconOnly)
 </script>
 

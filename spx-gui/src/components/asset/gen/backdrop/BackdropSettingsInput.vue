@@ -5,11 +5,17 @@ import SettingsInput from '../common/SettingsInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import BackdropCategoryInput from './BackdropCategoryInput.vue'
+import { computed } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   gen: BackdropGen
   descriptionPlaceholder?: string
 }>()
+
+const buttonDisabled = computed(
+  () => props.gen.enrichState.status === 'running' || props.gen.settings.description === ''
+)
+const submitting = computed(() => props.gen.generateState.status === 'running')
 </script>
 
 <template>
@@ -17,6 +23,7 @@ defineProps<{
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
     :description-placeholder="descriptionPlaceholder"
+    :disabled="submitting"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="gen.enrich()"
   >
@@ -26,12 +33,9 @@ defineProps<{
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton
-        :disabled="gen.settings.description === ''"
-        :loading="gen.generateState.status === 'running'"
-        @click="gen.generate()"
-        >{{ $t({ zh: '生成', en: 'Generate' }) }}</UIButton
-      >
+      <UIButton :disabled="buttonDisabled" :loading="submitting" @click="gen.generate()">{{
+        $t({ zh: '生成', en: 'Generate' })
+      }}</UIButton>
     </template>
   </SettingsInput>
 </template>
