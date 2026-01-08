@@ -14,7 +14,7 @@ import {
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useI18n } from '@/utils/i18n'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetGenModel, type AssetModel } from '@/models/common/asset'
@@ -292,6 +292,7 @@ const handleModalClose = useMessageHandle(
         confirmText: i18n.t({ en: 'Exit', zh: '退出' })
       })
     }
+    assetGen.value?.cancel().catch((e) => capture(e, 'asset generation cancellation failed'))
     emit('cancelled')
   },
   { en: 'Failed to exit modal', zh: '退出失败' }

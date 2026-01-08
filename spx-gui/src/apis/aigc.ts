@@ -87,6 +87,10 @@ export const enum TaskStatus {
   Failed = 'failed'
 }
 
+export function isTerminalTaskStatus(status: TaskStatus): boolean {
+  return status === TaskStatus.Completed || status === TaskStatus.Cancelled || status === TaskStatus.Failed
+}
+
 export const enum TaskErrorReason {
   InvalidInput = 'invalidInput',
   ContentPolicyViolation = 'contentPolicyViolation',
@@ -501,19 +505,6 @@ export async function enrichCostumeSettings(
   return result
 }
 
-export async function genCostumeImage(settings: CostumeSettings, signal?: AbortSignal): Promise<string> {
-  const task = await createTask(TaskType.GenerateCostume, { settings, n: 1 }, signal)
-  const result = (await untilTaskCompleted(task.id, signal)) as TaskResult<TaskType.GenerateCostume>
-  if (result.imageUrls.length < 1) throw new Error('No costume image generated')
-  return result.imageUrls[0]
-}
-
-export async function genCostumeImages(settings: CostumeSettings, n: number, signal?: AbortSignal): Promise<string[]> {
-  const task = await createTask(TaskType.GenerateCostume, { settings, n }, signal)
-  const result = (await untilTaskCompleted(task.id, signal)) as TaskResult<TaskType.GenerateCostume>
-  return result.imageUrls
-}
-
 export async function enrichAnimationSettings(
   input: string,
   settings?: AnimationSettings,
@@ -532,21 +523,6 @@ export async function enrichAnimationSettings(
     signal
   )) as AnimationSettings
   return result
-}
-
-export async function genAnimationVideo(settings: AnimationSettings, signal?: AbortSignal): Promise<string> {
-  const task = await createTask(TaskType.GenerateAnimationVideo, { settings }, signal)
-  const result = await untilTaskCompleted(task.id, signal)
-  return (result as TaskResult<TaskType.GenerateAnimationVideo>).videoUrl
-}
-
-export async function extractAnimationVideoFrames(
-  params: TaskParamsExtractVideoFrames,
-  signal?: AbortSignal
-): Promise<string[]> {
-  const task = await createTask(TaskType.ExtractVideoFrames, params, signal)
-  const result = await untilTaskCompleted(task.id, signal)
-  return (result as TaskResult<TaskType.ExtractVideoFrames>).frameUrls
 }
 
 export async function enrichSpriteSettings(

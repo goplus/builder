@@ -231,6 +231,7 @@ const handleSubmit = useMessageHandle(
           }}</UIButton>
         </template>
       </UITooltip>
+      <!-- TODO: Consider adding a "cancel" button here to cancel the generation process -->
       <UIButton
         color="primary"
         size="large"

@@ -8,24 +8,24 @@ import {
   genSpriteContentSettings,
   type CostumeSettings,
   Facing,
-  genCostumeImages
+  TaskType
 } from '@/apis/aigc'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Costume } from '../costume'
 import type { Animation } from '../animation'
-import { getProjectSettings, Phase } from './common'
+import { getProjectSettings, Phase, Task } from './common'
 import { CostumeGen } from './costume-gen'
 import { AnimationGen } from './animation-gen'
 import { createFileWithWebUrl } from '../common/cloud'
 import type { File } from '../common/file'
 import { getAnimationName, getCostumeName } from '../common/asset-name'
 
-// TODO: task cancelation support
 export class SpriteGen extends Disposable {
   id: string
   private project: Project
   private enrichPhase: Phase<SpriteSettings>
+  private genImagesTask: Task<TaskType.GenerateCostume>
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
 
@@ -34,6 +34,7 @@ export class SpriteGen extends Disposable {
     this.id = nanoid()
     this.project = project
     this.enrichPhase = new Phase()
+    this.genImagesTask = new Task(TaskType.GenerateCostume)
     this.genImagesPhase = new Phase()
     this.prepareContentPhase = new Phase()
     this.costumes = []
@@ -57,7 +58,7 @@ export class SpriteGen extends Disposable {
     return this.enrichPhase.state
   }
   async enrich() {
-    const draft = await this.enrichPhase.run(
+    const draft = await this.enrichPhase.track(
       enrichSpriteSettings(this.settings.description, this.settings, getProjectSettings(this.project))
     )
     this.setSettings(draft)
@@ -89,11 +90,12 @@ export class SpriteGen extends Disposable {
     }
   }
   async genImages() {
-    return this.genImagesPhase.run(
-      genCostumeImages(this.getDefaultCostumeSettings(), 4).then((imgUrls) =>
-        imgUrls.map((url) => createFileWithWebUrl(url))
-      )
-    )
+    return this.genImagesPhase.run(async () => {
+      const settings = this.getDefaultCostumeSettings()
+      await this.genImagesTask.start({ settings, n: 4 })
+      const { imageUrls } = await this.genImagesTask.untilCompleted()
+      return imageUrls.map((url) => createFileWithWebUrl(url))
+    })
   }
 
   image: File | null = null
@@ -149,21 +151,19 @@ export class SpriteGen extends Disposable {
     return this.prepareContentPhase.state
   }
   async prepareContent() {
-    if (this.image == null) throw new Error('image expected')
-    this.makeSprite()
     const image = this.image
-    const project = this.project
-    const defaultCostumeGen = new CostumeGen(this, project, this.getDefaultCostumeSettings())
-    defaultCostumeGen.setImage(image)
-    this.costumes = [defaultCostumeGen]
-    await this.prepareContentPhase.run(
-      (async () => {
-        await defaultCostumeGen.finish()
-        const settings = await genSpriteContentSettings(this.settings)
-        this.costumes.push(...settings.costumes.map((s) => new CostumeGen(this, project, s)))
-        this.animations = settings.animations.map((s) => new AnimationGen(this, project, s))
-      })()
-    )
+    if (image == null) throw new Error('image expected')
+    await this.prepareContentPhase.run(async () => {
+      const project = this.project
+      this.makeSprite()
+      const defaultCostumeGen = new CostumeGen(this, project, this.getDefaultCostumeSettings())
+      defaultCostumeGen.setImage(image)
+      await defaultCostumeGen.finish()
+      this.costumes = [defaultCostumeGen]
+      const settings = await genSpriteContentSettings(this.settings)
+      this.costumes.push(...settings.costumes.map((s) => new CostumeGen(this, project, s)))
+      this.animations = settings.animations.map((s) => new AnimationGen(this, project, s))
+    })
   }
 
   /** Costumes gen */
@@ -227,5 +227,13 @@ export class SpriteGen extends Disposable {
     })
     this.result = sprite
     return sprite
+  }
+
+  cancel() {
+    return Promise.all([
+      this.genImagesTask.tryCancel(),
+      ...this.costumes.map((c) => c.cancel()),
+      ...this.animations.map((a) => a.cancel())
+    ])
   }
 }
