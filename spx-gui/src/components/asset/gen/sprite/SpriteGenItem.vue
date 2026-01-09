@@ -21,14 +21,12 @@ const isLoading = computed(() => {
     )
   )
 })
-const pending = computed(() => props.gen.contentPreparingState.status === 'finished')
 </script>
 
 <template>
   <GenItem
     :loading="isLoading"
     :placeholder="littleGuySVG"
-    :pending="pending"
     :gen-color="{
       color: 'sprite',
       loading: {

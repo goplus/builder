@@ -21,12 +21,10 @@ const props = withDefaults(
   defineProps<{
     genColor: GenColor
     loading?: boolean
-    pending?: boolean
     placeholder: string
   }>(),
   {
-    loading: false,
-    pending: false
+    loading: false
   }
 )
 
@@ -43,7 +41,13 @@ const style = computed(() => {
 </script>
 
 <template>
-  <UIBlockItem class="gen-item" :class="{ loading, pending }" :style="style" :color="genColor.color" size="medium">
+  <UIBlockItem
+    class="gen-item"
+    :class="{ loading, pending: !loading }"
+    :style="style"
+    :color="genColor.color"
+    size="medium"
+  >
     <div class="preview-wrapper">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>

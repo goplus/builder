@@ -10,7 +10,6 @@ const props = defineProps<{
 }>()
 
 const isLoading = computed(() => [props.gen.enrichState.status, props.gen.imagesGenState.status].includes('running'))
-const pending = computed(() => props.gen.imagesGenState.status === 'finished')
 </script>
 
 <template>
@@ -28,7 +27,6 @@ const pending = computed(() => props.gen.imagesGenState.status === 'finished')
       }
     }"
     :loading="isLoading"
-    :pending="pending"
     :placeholder="backdropSVG"
   >
     <UIBlockItemTitle size="large">{{ gen.settings.name }}</UIBlockItemTitle>

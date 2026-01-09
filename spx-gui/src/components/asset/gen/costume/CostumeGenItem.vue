@@ -40,7 +40,6 @@ const emit = defineEmits<{
 const [url, imageLoading] = useFileUrl(() => props.gen.image)
 
 const isLoading = computed(() => isCostumeLoading(props.gen) || imageLoading.value)
-const pending = computed(() => props.gen.generateState.status === 'finished')
 </script>
 
 <template>
@@ -60,7 +59,6 @@ const pending = computed(() => props.gen.generateState.status === 'finished')
     :placeholder="littleGuySVG"
     :active="active"
     :loading="isLoading"
-    :pending="pending"
     @click="emit('click')"
   >
     <template v-if="gen.result != null" #preview>

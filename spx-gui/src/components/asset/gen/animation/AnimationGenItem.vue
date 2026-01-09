@@ -39,7 +39,6 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.result?.costumes[0].img)
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 
 const isLoading = computed(() => isAnimationLoading(props.gen) || imgLoading.value)
-const pending = computed(() => props.gen.generateVideoState.status === 'finished')
 </script>
 
 <template>
@@ -59,7 +58,6 @@ const pending = computed(() => props.gen.generateVideoState.status === 'finished
     }"
     :placeholder="animationSVG"
     :loading="isLoading"
-    :pending="pending"
     :active="active"
     @click="emit('click')"
   >
