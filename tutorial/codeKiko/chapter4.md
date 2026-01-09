@@ -42,7 +42,7 @@
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-19/sprites/Kiko/code
 
 **初始代码：**
-```xgo
+```go
 onStart => {
     var x float64 = 100
     step x
@@ -50,7 +50,7 @@ onStart => {
 ```
 
 **修改后的代码：**
-```xgo
+```go
 onStart => {
     var x float64 = 160
     step x
@@ -63,7 +63,7 @@ onStart => {
 
 让我们仔细分析变量定义的语法：
 
-```xgo
+```go
 var x float64 = 160
 ```
 
@@ -111,7 +111,7 @@ var x float64 = 160
 
 定义变量后，就可以使用它了：
 
-```xgo
+```go
 step x
 ```
 
@@ -122,7 +122,7 @@ step x
 
 **完整执行流程**
 
-```xgo
+```go
 onStart => {
     var x float64 = 160  // 第1步：创建变量x，存入160
     step x               // 第2步：读取x的值（160），前进160步
@@ -140,7 +140,7 @@ onStart => {
 **对比：不用变量 vs 用变量**
 
 **不用变量：**
-```xgo
+```go
 onStart => {
     step 160
     turn Right
@@ -156,7 +156,7 @@ onStart => {
 - 容易漏掉或改错
 
 **使用变量：**
-```xgo
+```go
 onStart => {
     var distance float64 = 160
     step distance
@@ -187,12 +187,12 @@ onStart => {
 **两种定义方式**
 
 **方式 1：显式指定类型**
-```xgo
+```go
 var x float64 = 160  // 明确告诉编译器 x 是 float64 类型
 ```
 
 **方式 2：类型自动推断**
-```xgo
+```go
 var x = 160  // 编译器自动推断 x 是 int 类型
 var y = 160.5  // 编译器自动推断 y 是 float64 类型
 var name = "Kiko"  // 编译器自动推断 name 是 string 类型
@@ -222,7 +222,7 @@ var name = "Kiko"  // 编译器自动推断 name 是 string 类型
 
 在这个例子中，我们**显式指定** `float64`：
 
-```xgo
+```go
 var x float64 = 160
 ```
 
@@ -233,7 +233,7 @@ var x float64 = 160
 
 **对比两种方式**
 
-```xgo
+```go
 // 自动推断：x 是 int 类型
 var x = 160
 step x  // 可以，但 x 只能是整数
@@ -258,7 +258,7 @@ step x  // 可以，x 可以是整数或小数
 
 **类型示例**
 
-```xgo
+```go
 // 自动推断类型
 var count = 5           // int
 var distance = 160.5    // float64
@@ -276,7 +276,7 @@ var isReady bool = true
 
 一旦变量的类型确定（无论是显式指定还是自动推断），就不能改变：
 
-```xgo
+```go
 var x = 100        // x 是 int 类型
 x = 200            // ✓ 可以，都是整数
 x = 3.14           // ✗ 错误！不能把 float64 赋给 int
@@ -325,7 +325,7 @@ y = 3.14             // ✓ 可以，都是 float64
 
 XGo 推荐使用**驼峰命名法**（Camel Case）：
 
-```xgo
+```go
 // 单个单词：小写
 var speed float64 = 10
 
@@ -341,7 +341,7 @@ var isGameOver bool = false
 
 定义变量后，可以在任何地方使用它：
 
-```xgo
+```go
 onStart => {
     var distance float64 = 160
     
@@ -357,7 +357,7 @@ onStart => {
 
 变量可以被多次使用：
 
-```xgo
+```go
 onStart => {
     var distance float64 = 100
     
@@ -373,7 +373,7 @@ onStart => {
 
 **变量与常量的对比**
 
-```xgo
+```go
 // 直接使用数字（常量）
 step 100
 step 100
@@ -394,7 +394,7 @@ step distance
 
 在 `onStart` 中定义的变量是**局部变量**：
 
-```xgo
+```go
 onStart => {
     var x float64 = 160  // 局部变量
     step x
@@ -426,7 +426,7 @@ x = 5
 - 通过计算得出 x 的值
 
 **编程中的变量**：
-```xgo
+```go
 var x float64 = 5
 x = x + 1  // x 现在是 6
 ```
@@ -514,7 +514,7 @@ x = x + 1  // x 现在是 6
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-20/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```go
 onStart => {
     var n int = 3
     repeat n, => {
@@ -528,7 +528,7 @@ onStart => {
 
 **变量定义**
 
-```xgo
+```go
 var n int = 3
 ```
 
@@ -547,7 +547,7 @@ var n int = 3
 
 **在 repeat 中使用变量**
 
-```xgo
+```go
 repeat n, => {
     turn -60
     step 100
@@ -555,7 +555,7 @@ repeat n, => {
 ```
 
 以前我们这样写：
-```xgo
+```go
 repeat 3, => {  // 直接写数字
     turn -60
     step 100
@@ -563,7 +563,7 @@ repeat 3, => {  // 直接写数字
 ```
 
 现在我们这样写：
-```xgo
+```go
 var n = 3
 repeat n, => {  // 使用变量
     turn -60
@@ -575,7 +575,7 @@ repeat n, => {  // 使用变量
 
 让我们看看代码是如何执行的：
 
-```xgo
+```go
 onStart => {
     var n int = 3        // 第1步：创建变量n，值为3
     repeat n, => {       // 第2步：读取n的值（3），循环3次
@@ -593,7 +593,7 @@ onStart => {
 **等价代码**
 
 使用变量的代码：
-```xgo
+```go
 var n = 3
 repeat n, => {
     turn -60
@@ -602,7 +602,7 @@ repeat n, => {
 ```
 
 等价于：
-```xgo
+```go
 repeat 3, => {
     turn -60
     step 100
@@ -618,7 +618,7 @@ repeat 3, => {
 如果要改变循环次数，只需要修改变量的值：
 
 **画三角形（3次循环）：**
-```xgo
+```go
 var n = 3  // 只改这里
 repeat n, => {
     turn -120
@@ -627,7 +627,7 @@ repeat n, => {
 ```
 
 **画正方形（4次循环）：**
-```xgo
+```go
 var n = 4  // 只改这里
 repeat n, => {
     turn -90
@@ -636,7 +636,7 @@ repeat n, => {
 ```
 
 **画五边形（5次循环）：**
-```xgo
+```go
 var n = 5  // 只改这里
 repeat n, => {
     turn -72
@@ -645,7 +645,7 @@ repeat n, => {
 ```
 
 **画六边形（6次循环）：**
-```xgo
+```go
 var n = 6  // 只改这里
 repeat n, => {
     turn -60
@@ -668,7 +668,7 @@ repeat n, => {
 
 **技巧 1：选择有意义的变量名**
 
-```xgo
+```go
 // 不好
 var n = 5
 repeat n, => {}
@@ -680,7 +680,7 @@ repeat sides, => {}
 
 **技巧 2：在变量定义处添加注释**
 
-```xgo
+```go
 // 定义图形的边数
 var sides = 5
 
@@ -692,7 +692,7 @@ repeat sides, => {
 
 **技巧 3：用类型自动推断简化代码**
 
-```xgo
+```go
 // 显式指定类型
 var n int = 5
 
@@ -702,7 +702,7 @@ var n = 5  // 编译器自动推断为 int
 
 **技巧 4：把相关的变量放在一起**
 
-```xgo
+```go
 onStart => {
     // 图形参数
     var sides = 5
@@ -724,7 +724,7 @@ onStart => {
 这一节展示了编程思维的重要转变：
 
 **固定循环次数**：
-```xgo
+```go
 repeat 5, => {
     turn -72
     step 100
@@ -735,7 +735,7 @@ repeat 5, => {
 - 不灵活
 
 **可配置循环次数**：
-```xgo
+```go
 var sides = 5
 repeat sides, => {
     turn -72
@@ -755,7 +755,7 @@ repeat sides, => {
 
 **配置与逻辑分离**
 
-```xgo
+```go
 // 配置部分（数据）
 var sides = 5
 var sideLength = 100
@@ -791,7 +791,7 @@ repeat sides, => {
 ![Course-21](./assets/变量-3.png)
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-21/sprites/Kiko/code
 
-```xgo
+```go
 onStart => {
     var stepN float64 = 100
     repeat 3, => {
@@ -839,7 +839,7 @@ onStart => {
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-25/sprites/Kiko/code
 
 **初始代码：**
-```xgo
+```go
 onStart => {
     var x float64 = 145
 
@@ -855,7 +855,7 @@ onStart => {
 ```
 
 **修改后的代码：**
-```xgo
+```go
 onStart => {
     var x float64 = 145
 
@@ -874,7 +874,7 @@ onStart => {
 
 **变量的初始值**
 
-```xgo
+```go
 var x float64 = 145
 ```
 
@@ -886,7 +886,7 @@ var x float64 = 145
 
 让我们逐行分析循环体：
 
-```xgo
+```go
 repeat 3, => {
     turn Right      // 1. 向右转
     step x          // 2. 向前走 x 步
@@ -899,7 +899,7 @@ repeat 3, => {
 
 **关键：修改变量**
 
-```xgo
+```go
 x = x + 70
 ```
 
@@ -924,7 +924,7 @@ x = x + 70
 
 **步骤拆解**：
 
-```xgo
+```go
 // 假设 x 当前值是 145
 x = x + 70
 
@@ -938,27 +938,27 @@ x = x + 70
 #### 修改变量的不同方式
 
 **加法：增加值**
-```xgo
+```go
 x = x + 70   // x 增加 70
 x = x + 10   // x 增加 10
 x = x + 1    // x 增加 1（计数）
 ```
 
 **减法：减少值**
-```xgo
+```go
 x = x - 10   // x 减少 10
 x = x - 5    // x 减少 5
 x = x - 1    // x 减少 1（倒计时）
 ```
 
 **乘法：成倍增长**
-```xgo
+```go
 x = x * 2    // x 翻倍
 x = x * 1.5  // x 增加 50%
 ```
 
 **除法：成倍减少**
-```xgo
+```go
 x = x / 2    // x 减半
 x = x / 10   // x 变为原来的 1/10
 ```
@@ -967,7 +967,7 @@ x = x / 10   // x 变为原来的 1/10
 
 注意代码中的这一行：
 
-```xgo
+```go
 step -x
 ```
 
@@ -977,7 +977,7 @@ step -x
 
 **为什么要后退？**
 
-```xgo
+```go
 step x      // 向前走 x 步
 step -x     // 向后退 x 步（回到原位）
 ```
@@ -1003,7 +1003,7 @@ step -x     // 向后退 x 步（回到原位）
 
 虽然 XGo 支持简写，但现在我们用标准写法：
 
-```xgo
+```go
 // 标准写法
 x = x + 1    // x 增加 1
 x = x - 1    // x 减少 1

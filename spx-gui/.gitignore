@@ -15,6 +15,9 @@ dist-ssr
 .eslintcache
 report.html
 
+# GitBook generated files
+public/books
+
 npm-debug.log*
 .pnpm-error.log*
 .pnpm-debug.log
