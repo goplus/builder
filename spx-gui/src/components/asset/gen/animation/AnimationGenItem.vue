@@ -1,4 +1,12 @@
-<!-- The item (in animation list) standing for an animation-generation -->
+<script lang="ts">
+export function isAnimationLoading(gen: AnimationGen) {
+  return [gen.enrichState.status, gen.generateVideoState.status, gen.extractFramesState.status].includes('running')
+}
+
+export function isAnimationsLoading(gens: AnimationGen[]) {
+  return gens.some((gen) => isAnimationLoading(gen))
+}
+</script>
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
@@ -12,6 +20,7 @@ import GenItem from '../common/GenItem.vue'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useHovered } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
+import animationSVG from '../common/animation.svg?raw'
 
 const props = defineProps<{
   gen: AnimationGen
@@ -29,21 +38,28 @@ const wrapperRef = ref<InstanceType<typeof GenItem>>()
 const [imgSrc, imgLoading] = useFileUrl(() => props.gen.result?.costumes[0].img)
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 
-const isLoading = computed(
-  () =>
-    [props.gen.enrichState.status, props.gen.generateVideoState.status, props.gen.extractFramesState.status].includes(
-      'running'
-    ) || imgLoading.value
+const isLoading = computed(() =>
+  isAnimationLoading(props.gen) || imgLoading.value
+    ? {
+        colorStop1: 'var(--ui-color-primary-main)',
+        colorStop2: '#DCF7FA',
+        colorStop3: '#F3FCFD1A',
+        genLoadingBgColor: 'var(--ui-color-primary-main)'
+      }
+    : false
 )
-const ready = computed(() => props.gen.generateVideoState.status === 'finished')
+const pending = computed(() =>
+  props.gen.generateVideoState.status === 'finished' ? 'var(--ui-color-primary-main)' : false
+)
 </script>
 
 <template>
   <GenItem
     ref="wrapperRef"
-    type="animation"
+    color="primary"
+    :placeholder="animationSVG"
     :loading="isLoading"
-    :ready="ready"
+    :pending="pending"
     :active="active"
     @click="emit('click')"
   >

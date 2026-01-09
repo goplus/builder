@@ -1,3 +1,13 @@
+<script lang="ts">
+export function isCostumeLoading(gen: CostumeGen) {
+  return [gen.enrichState.status, gen.generateState.status].includes('running')
+}
+
+export function isCostumesLoading(gens: CostumeGen[]) {
+  return gens.some((gen) => isCostumeLoading(gen))
+}
+</script>
+
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { UIBlockItemTitle, UIImg } from '@/components/ui'
@@ -7,6 +17,7 @@ import RenameMenuItem from '@/components/editor/common/corner-menu-item/RenameMe
 import RemoveMenuItem from '@/components/editor/common/corner-menu-item/RemoveMenuItem.vue'
 import GenItem from '../common/GenItem.vue'
 import { useFileUrl } from '@/utils/file'
+import littleGuySVG from '../common/little-guy.svg?raw'
 
 export type Operable = {
   removable: boolean
@@ -28,14 +39,28 @@ const emit = defineEmits<{
 
 const [url, imageLoading] = useFileUrl(() => props.gen.image)
 
-const isLoading = computed(
-  () => [props.gen.enrichState.status, props.gen.generateState.status].includes('running') || imageLoading.value
+const isLoading = computed(() =>
+  isCostumeLoading(props.gen) || imageLoading.value
+    ? {
+        colorStop1: 'var(--ui-color-primary-main)',
+        colorStop2: '#DCF7FA',
+        colorStop3: '#F3FCFD1A',
+        genLoadingBgColor: 'var(--ui-color-primary-main)'
+      }
+    : false
 )
-const ready = computed(() => props.gen.generateState.status === 'finished')
+const pending = computed(() => (props.gen.generateState.status === 'finished' ? 'var(--ui-color-primary-main)' : false))
 </script>
 
 <template>
-  <GenItem type="costume" :active="active" :loading="isLoading" :ready="ready" @click="emit('click')">
+  <GenItem
+    color="primary"
+    :placeholder="littleGuySVG"
+    :active="active"
+    :loading="isLoading"
+    :pending="pending"
+    @click="emit('click')"
+  >
     <template v-if="gen.result != null" #preview>
       <UIImg class="preview" :src="url" :loading="imageLoading" />
     </template>

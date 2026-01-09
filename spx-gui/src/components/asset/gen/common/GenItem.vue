@@ -1,103 +1,58 @@
 <script lang="ts">
-type GenItemType = 'sound' | 'backdrop' | 'sprite' | 'animation' | 'costume'
+type LoadingStyle = {
+  colorStop1: string
+  colorStop2: string
+  colorStop3: string
+  genLoadingBgColor: string
+}
 </script>
 
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { UIBlockItem, type Color } from '@/components/ui'
 
-import littleGuySVG from './little-guy.svg?raw'
-import animationSVG from './animation.svg?raw'
-import backdropSVG from './backdrop.svg?raw'
-import soundSVG from './sound.svg?raw'
-
 const props = withDefaults(
   defineProps<{
-    type: GenItemType
-    loading?: boolean
-    ready?: boolean
+    color: Color
+    loading?: false | LoadingStyle
+    pending?: false | string
+    placeholder: string
   }>(),
   {
     loading: false,
-    ready: false
+    pending: false,
+    loadingStyle: undefined
   }
 )
 
-const color = computed<Color>(() => {
-  switch (props.type) {
-    case 'costume':
-    case 'animation':
-      return 'primary'
-    case 'sound':
-      return 'sound'
-    case 'backdrop':
-      return 'stage'
-    case 'sprite':
-      return 'sprite'
-    default:
-      return 'primary'
-  }
-})
+const loadingStyle = computed(() =>
+  props.loading
+    ? {
+        '--color-stop-1': props.loading.colorStop1,
+        '--color-stop-2': props.loading.colorStop2,
+        '--color-stop-3': props.loading.colorStop3,
+        '--gen-loading-bg-color': props.loading.genLoadingBgColor
+      }
+    : {}
+)
 
-const placeholder = computed(() => {
-  switch (props.type) {
-    case 'costume':
-    case 'sprite':
-      return littleGuySVG
-    case 'animation':
-      return animationSVG
-    case 'sound':
-      return soundSVG
-    case 'backdrop':
-      return backdropSVG
-    default:
-      return littleGuySVG
-  }
-})
-
-const loadingStyle = computed(() => {
-  switch (props.type) {
-    case 'costume':
-    case 'animation':
-      return {
-        '--color-stop-1': 'var(--ui-color-turquoise-main)',
-        '--color-stop-2': '#DCF7FA',
-        '--color-stop-3': '#F3FCFD1A',
-        '--gen-loading-bg-color': 'var(--ui-color-turquoise-main)',
-        '--ready-color': 'var(--ui-color-turquoise-main)'
+const pendingColor = computed(() =>
+  props.pending
+    ? {
+        '--pending-color': props.pending
       }
-    case 'sprite':
-      return {
-        '--color-stop-1': 'var(--ui-color-sprite-main)',
-        '--color-stop-2': '#FFF0DC',
-        '--color-stop-3': '#FFFAF51A',
-        '--gen-loading-bg-color': 'var(--ui-color-sprite-main)',
-        '--ready-color': 'var(--ui-color-sprite-main)'
-      }
-    case 'sound':
-      return {
-        '--color-stop-1': 'var(--ui-color-sound-main)',
-        '--color-stop-2': '#EADFFF',
-        '--color-stop-3': '#FAF8FF1A',
-        '--gen-loading-bg-color': 'var(--ui-color-sound-main)',
-        '--ready-color': 'var(--ui-color-sound-main)'
-      }
-    case 'backdrop':
-      return {
-        '--color-stop-1': 'var(--ui-color-stage-main)',
-        '--color-stop-2': '#D6EDFF',
-        '--color-stop-3': '#F3FCFD1A',
-        '--gen-loading-bg-color': 'var(--ui-color-stage-main)',
-        '--ready-color': 'var(--ui-color-stage-main)'
-      }
-    default:
-      return {}
-  }
-})
+    : {}
+)
 </script>
 
 <template>
-  <UIBlockItem class="gen-item" :class="{ loading, ready }" :style="loadingStyle" :color="color" size="medium">
+  <UIBlockItem
+    class="gen-item"
+    :class="{ loading, pending }"
+    :style="[loadingStyle, pendingColor]"
+    :color="color"
+    size="medium"
+  >
     <div class="preview-wrapper">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>
@@ -146,9 +101,9 @@ const loadingStyle = computed(() => {
     }
   }
 
-  &.ready {
+  &.pending {
     .placeholder {
-      color: var(--ready-color);
+      color: var(--pending-color);
     }
   }
 
