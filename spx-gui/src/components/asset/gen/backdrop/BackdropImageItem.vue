@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import { UIImg } from '@/components/ui'
@@ -12,27 +11,25 @@ const props = defineProps<{
 
 const compact = useImageSelectorCompact()
 
-const imgSize = computed(() => (compact.value ? 60 : 100))
-
 const [url, loading] = useFileUrl(() => props.file)
 </script>
 
 <template>
-  <div class="sprite-image-item" :class="{ active, compact }">
-    <UIImg class="img" :src="url" :loading="loading" :alt="file.name" :width="imgSize" :height="imgSize" />
+  <div class="backdrop-image-item" :class="{ active, compact }">
+    <UIImg class="img" :src="url" :loading="loading" size="cover" />
   </div>
 </template>
 
 <style lang="scss" scoped>
-.sprite-image-item {
+.backdrop-image-item {
   display: flex;
   width: 140px;
-  height: 140px;
+  height: 108px;
   padding: 4px;
   align-items: center;
   justify-content: center;
-  border: 2px solid transparent;
   border-radius: 12px;
+  border: 2px solid transparent;
   background-color: var(--ui-color-grey-300);
   cursor: pointer;
   overflow: hidden;
@@ -43,28 +40,31 @@ const [url, loading] = useFileUrl(() => props.file)
     border-radius 0.2s ease;
 
   &.active {
-    border: 2px solid var(--ui-color-turquoise-500);
-    background: var(--ui-color-turquoise-200);
+    background-color: var(--ui-color-turquoise-200);
+    border-color: var(--ui-color-turquoise-500);
     cursor: default;
   }
 
   &.compact {
     width: 88px;
-    height: 88px;
+    height: 68px;
     border-radius: 8px;
   }
 }
 
 .img {
-  width: 100px;
+  width: 132px;
   height: 100px;
+  border-radius: 8px;
   transition:
     width 0.2s ease,
-    height 0.2s ease;
+    height 0.2s ease,
+    border-radius 0.2s ease;
 }
 
-.sprite-image-item.compact .img {
-  width: 60px;
+.backdrop-image-item.compact .img {
+  width: 80px;
   height: 60px;
+  border-radius: 4px;
 }
 </style>

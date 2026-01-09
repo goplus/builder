@@ -124,10 +124,12 @@ const taskErrorMessages: Record<TaskErrorReason, LocaleMessage> = {
 export class TaskException extends Exception {
   name = 'TaskException'
   userMessage: LocaleMessage | null
+  taskId: string
   reason: TaskErrorReason
 
-  constructor({ message, reason }: TaskError) {
-    super(`[${reason}] ${message}`)
+  constructor(taskId: string, { message, reason }: TaskError) {
+    super(`[ID=${taskId}][${reason}] ${message}`)
+    this.taskId = taskId
     this.reason = reason
     this.userMessage = taskErrorMessages[reason] ?? null
   }
@@ -180,7 +182,7 @@ export class Task<T extends TaskType> extends Disposable {
       }
     }
     if (data.status === TaskStatus.Completed) return data.result!
-    else if (data.status === TaskStatus.Failed) throw new TaskException(data.error!)
+    else if (data.status === TaskStatus.Failed) throw new TaskException(data.id, data.error!)
     else if (data.status === TaskStatus.Cancelled) throw new Cancelled('task cancelled')
     else throw new Error('unexpected task status: ' + data.status)
   }

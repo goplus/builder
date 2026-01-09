@@ -6,16 +6,16 @@ const compact = useImageSelectorCompact()
 </script>
 
 <template>
-  <li class="sprite-loading-image-item" :class="{ compact }">
+  <li class="backdrop-loading-image-item" :class="{ compact }">
     <GenLoading animation-style="width: 60px; height: 60px;" />
   </li>
 </template>
 
 <style lang="scss" scoped>
-.sprite-loading-image-item {
+.backdrop-loading-image-item {
   display: flex;
   width: 140px;
-  height: 140px;
+  height: 108px;
   padding: 4px;
   border-radius: 12px;
   background-color: var(--ui-color-grey-300);
@@ -29,7 +29,7 @@ const compact = useImageSelectorCompact()
 
   &.compact {
     width: 88px;
-    height: 88px;
+    height: 68px;
     border-radius: 8px;
   }
 }

@@ -17,7 +17,7 @@ import type { Animation } from '../animation'
 import { getProjectSettings, Phase, Task } from './common'
 import { CostumeGen } from './costume-gen'
 import { AnimationGen } from './animation-gen'
-import { createFileWithWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl } from '../common/cloud'
 import type { File } from '../common/file'
 import { getAnimationName, getCostumeName } from '../common/asset-name'
 
@@ -52,6 +52,14 @@ export class SpriteGen extends Disposable {
       this.animations.forEach((a) => a.dispose())
     })
     return reactive(this) as this
+  }
+
+  get name() {
+    return this.settings.name
+  }
+  setName(name: string) {
+    // TODO: check name validity
+    this.settings.name = name
   }
 
   get enrichState() {
@@ -94,7 +102,9 @@ export class SpriteGen extends Disposable {
       const settings = this.getDefaultCostumeSettings()
       await this.genImagesTask.start({ settings, n: 4 })
       const { imageUrls } = await this.genImagesTask.untilCompleted()
-      return imageUrls.map((url) => createFileWithWebUrl(url))
+      // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
+      // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
+      return imageUrls.map((url) => createFileWithUniversalUrl(url, `${this.name}.png`)) // TODO: it is actually web url only
     })
   }
 

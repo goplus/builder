@@ -4,7 +4,7 @@ import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
 import { enrichCostumeSettings, Facing, TaskType, type CostumeSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
-import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl, saveFileForWebUrl } from '../common/cloud'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Costume } from '../costume'
@@ -90,7 +90,7 @@ export class CostumeGen extends Disposable {
       await this.generateTask.start({ settings, n: 1 })
       const { imageUrls } = await this.generateTask.untilCompleted()
       if (imageUrls.length < 1) throw new Error('no costume image generated')
-      return createFileWithWebUrl(imageUrls[0])
+      return createFileWithUniversalUrl(imageUrls[0]) // TODO: it is actually web url only
     })
     this.setImage(image)
   }

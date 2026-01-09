@@ -128,7 +128,12 @@ const AssetGenComp = computed(() => {
         onFinished: handleGenFinished
       })
   } else if (gen instanceof BackdropGen) {
-    return (props: CSSProperties) => h(BackdropGenComp, { ...props, gen })
+    return (props: CSSProperties) =>
+      h(BackdropGenComp, {
+        ...props,
+        gen: gen as BackdropGen,
+        onFinished: handleGenFinished
+      })
   }
   return null
 })
@@ -258,8 +263,12 @@ const handleGenFinished = useMessageHandle(
           props.project.addSprite(sprite)
           await sprite.autoFit()
           return sprite
+        } else if (gen instanceof BackdropGen) {
+          const backdrop = gen.result
+          if (backdrop == null) throw new Error('backdrop generation not finished')
+          props.project.stage.addBackdrop(backdrop)
+          return backdrop
         }
-        // TODO: Backdrop handling
         throw new Error('unknown asset type')
       }
     )
@@ -308,7 +317,7 @@ const title = computed(() => {
 <template>
   <UIModal
     :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
-    style="width: 1096px"
+    style="width: 1076px; height: 800px"
     :visible="visible"
     mask-closable
     @update:visible="handleModalClose"
@@ -430,8 +439,9 @@ const title = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--ui-gap-middle) 24px;
-  height: 64px;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--ui-color-grey-400);
 
   .header-left {
     display: flex;
@@ -449,11 +459,14 @@ const title = computed(() => {
   }
 }
 
-.asset-gen {
-  height: 680px; // temporary
+.asset-gen,
+.asset-library {
+  flex: 1 1 0;
 }
 
 .asset-library {
+  display: flex;
+  flex-direction: column;
   .header {
     display: flex;
     flex-direction: column;
@@ -477,15 +490,18 @@ const title = computed(() => {
     }
   }
   .main {
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
     justify-content: stretch;
   }
   .content {
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 20px 24px 0 20px;
+    padding: 20px 24px 0;
+    // TODO(@UI): Recheck scroll behavior (scroll container selection) here.
     overflow-y: auto;
   }
   .filter {
@@ -506,7 +522,7 @@ const title = computed(() => {
   }
   .asset-list {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     flex-wrap: wrap;
     align-content: flex-start;
   }

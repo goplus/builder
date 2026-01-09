@@ -11,11 +11,12 @@ import {
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import type { File } from '../common/file'
-import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl, saveFileForWebUrl } from '../common/cloud'
 import { Animation } from '../animation'
 import { Costume } from '../costume'
 import { getProjectSettings, getSpriteSettings, Phase, Task } from './common'
 import type { SpriteGen } from './sprite-gen'
+import { extname, filename } from '@/utils/path'
 
 export type FramesConfig = Omit<TaskParamsExtractVideoFrames, 'videoUrl'>
 
@@ -111,7 +112,7 @@ export class AnimationGen extends Disposable {
       const settings = { ...this.settings, referenceFrameUrl }
       await this.generateVideoTask.start({ settings })
       const { videoUrl } = await this.generateVideoTask.untilCompleted()
-      return createFileWithWebUrl(videoUrl)
+      return createFileWithUniversalUrl(videoUrl) // TODO: it is actually web url only
     })
     this.setVideo(video)
   }
@@ -137,9 +138,12 @@ export class AnimationGen extends Disposable {
       const videoUrl = await saveFileForWebUrl(video)
       await this.extractFramesTask.start({ videoUrl, ...framesConfig })
       const { frameUrls } = await this.extractFramesTask.untilCompleted()
-      // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
-      // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
-      const frames = frameUrls.map((url, i) => createFileWithWebUrl(url, `frame_${i}.png`))
+      const frames = frameUrls.map((url, i) => {
+        // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
+        // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
+        const ext = extname(filename(url)) || '.png'
+        return createFileWithUniversalUrl(url, `frame_${i}${ext}`) // TODO: it is actually web url only
+      })
       return frames
     })
   }
