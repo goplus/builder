@@ -9,8 +9,12 @@ import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import SpriteSettingsInput from './SpriteSettingsInput.vue'
-import SpriteImages from './SpriteImages.vue'
 import { useMessageHandle } from '@/utils/exception'
+import LayoutWithPreview from '../common/LayoutWithPreview.vue'
+import ImagePreview from '../common/ImagePreview.vue'
+import ImageSelector from '../common/ImageSelector.vue'
+import SpriteImageItem from './SpriteImageItem.vue'
+import SpriteLoadingImageItem from './SpriteLoadingImageItem.vue'
 
 const props = defineProps<{
   gen: SpriteGen
@@ -26,10 +30,29 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 
 <template>
   <main class="phase-settings">
-    <div class="body">
+    <LayoutWithPreview :has-preview="gen.image != null">
       <SpriteSettingsInput :gen="gen" />
-      <SpriteImages :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)" />
-    </div>
+      <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
+        <template #loading-item>
+          <SpriteLoadingImageItem />
+        </template>
+        <template #item="{ file, active, select }">
+          <SpriteImageItem :file="file" :active="active" @click="select(file)" />
+        </template>
+        <template #tip>
+          {{
+            $t({
+              en: 'Select the sprite you like the most, or generate new ones.',
+              zh: '选择你最喜欢的一个精灵，或者重新生成。'
+            })
+          }}
+        </template>
+      </ImageSelector>
+
+      <template #preview>
+        <ImagePreview :file="gen.image" />
+      </template>
+    </LayoutWithPreview>
     <footer class="footer">
       <UIButton
         color="primary"
@@ -47,16 +70,8 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 .phase-settings {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   height: 100%;
-}
-.body {
-  flex: 1 1 0;
-  width: 584px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 24px;
 }
 .footer {
   width: 100%;

@@ -14,9 +14,30 @@ vi.spyOn(aigcApis, 'enrichBackdropSettings').mockImplementation((input) =>
     perspective: Perspective.Unspecified
   })
 )
-vi.spyOn(aigcApis, 'genBackdropImage').mockImplementation((settings) =>
-  Promise.resolve(`http://example.com/generated-backdrop-based-on-${encodeURIComponent(settings.description)}.png`)
-)
+vi.spyOn(aigcApis, 'createTask').mockImplementation(() => {
+  return Promise.resolve<aigcApis.Task<aigcApis.TaskType.GenerateBackdrop>>({
+    id: 'mock-task-id',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    type: aigcApis.TaskType.GenerateBackdrop,
+    status: aigcApis.TaskStatus.Pending
+  })
+})
+vi.spyOn(aigcApis, 'subscribeTaskEvents').mockImplementation(async function* () {
+  yield {
+    type: aigcApis.TaskEventType.Completed,
+    data: {
+      result: {
+        imageUrls: [
+          `http://example.com/generated-backdrop-1.png`,
+          `http://example.com/generated-backdrop-2.png`,
+          `http://example.com/generated-backdrop-3.png`,
+          `http://example.com/generated-backdrop-4.png`
+        ]
+      }
+    }
+  } satisfies aigcApis.TaskEventCompleted<aigcApis.TaskType.GenerateBackdrop>
+})
 vi.spyOn(spxUtils, 'adaptImg').mockImplementation((file) => Promise.resolve(file))
 
 describe('BackdropGen', () => {
@@ -27,7 +48,7 @@ describe('BackdropGen', () => {
     const gen = new BackdropGen(project, 'A sunny beach with palm trees and clear blue water')
     expect(gen.settings.description).toBe('A sunny beach with palm trees and clear blue water')
     expect(gen.enrichState.status).toBe('initial')
-    expect(gen.generateState.status).toBe('initial')
+    expect(gen.imagesGenState.status).toBe('initial')
 
     // 2. User updates description
     gen.setSettings({ description: 'A majestic mountain range under a clear blue sky' })
@@ -53,16 +74,18 @@ describe('BackdropGen', () => {
       description: 'A fantastic backdrop of a river flowing through a lush forest'
     })
 
-    // 5. Generate backdrop image
-    const generated = gen.generate()
-    expect(gen.generateState.status).toBe('running')
+    // 5. Generate backdrop images
+    const generated = gen.genImages()
+    expect(gen.imagesGenState.status).toBe('running')
     await generated
-    expect(gen.generateState.status).toBe('finished')
-    expect(gen.generateState.result).toBe(
-      'http://example.com/generated-backdrop-based-on-A%20fantastic%20backdrop%20of%20a%20river%20flowing%20through%20a%20lush%20forest.png'
-    )
+    expect(gen.imagesGenState.status).toBe('finished')
+    expect(gen.imagesGenState.result?.length).toBe(4)
 
-    // 6. Finish the backdrop generation
+    // 6. Select one generated image
+    gen.setImage(gen.imagesGenState.result![2])
+    expect(gen.image).toBe(gen.imagesGenState.result![2])
+
+    // 7. Finish the backdrop generation
     const backdrop = await gen.finish()
     expect(backdrop.name).toBe('enriched Backdrop')
     expect(backdrop.assetMetadata).toEqual({

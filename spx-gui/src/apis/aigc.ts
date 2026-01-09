@@ -466,25 +466,6 @@ export async function enrichBackdropSettings(
   return result
 }
 
-// TODO: Move task tracking to models for better control over cancellation, progress, etc.
-async function untilTaskCompleted(taskID: string, signal?: AbortSignal): Promise<TaskResult> {
-  for await (const event of subscribeTaskEvents(taskID, signal)) {
-    if (event.type === TaskEventType.Completed) {
-      return event.data.result
-    } else if (event.type === TaskEventType.Failed) {
-      throw new Error(event.data.error.message)
-    }
-  }
-  throw new Error('No completion event received')
-}
-
-export async function genBackdropImage(settings: BackdropSettings, signal?: AbortSignal): Promise<string> {
-  const task = await createTask(TaskType.GenerateBackdrop, { settings, n: 1 }, signal)
-  const result = (await untilTaskCompleted(task.id, signal)) as TaskResult<TaskType.GenerateBackdrop>
-  if (result.imageUrls.length < 1) throw new Error('No backdrop image generated')
-  return result.imageUrls[0]
-}
-
 export async function enrichCostumeSettings(
   input: string,
   settings?: CostumeSettings,
