@@ -154,6 +154,7 @@ export function validateWidgetName(name: string, parent: WidgetLikeParent | null
 export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   if (src === '') return ''
   const result = cas === 'pascal' ? upFirst(src) : lowFirst(src)
+  // TODO: 20 makes animation costumes same name
   return unicodeSafeSlice(result, 0, 20) // 20 should be enough, it will be hard to read with too long name
 }
 

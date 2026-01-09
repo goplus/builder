@@ -268,6 +268,7 @@ const handleSubmit = useMessageHandle(
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 20px;
 }
 
 .preview {
@@ -292,6 +293,8 @@ const handleSubmit = useMessageHandle(
 }
 
 .gen-list {
+  flex: 1 1 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 24px;

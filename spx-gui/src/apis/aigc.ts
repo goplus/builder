@@ -5,7 +5,7 @@
 import { timeout } from '@/utils/utils'
 import { AnimationLoopMode, ArtStyle, BackdropCategory, client, Perspective, SpriteCategory } from './common'
 
-const useMock = process.env.NODE_ENV === 'development'
+const useMock = process.env.NODE_ENV === 'development' && false
 
 /**
  * @deprecated Use createTask() with TaskType.RemoveBackground instead

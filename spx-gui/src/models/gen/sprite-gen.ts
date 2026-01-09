@@ -17,7 +17,7 @@ import type { Animation } from '../animation'
 import { getProjectSettings, Phase, Task } from './common'
 import { CostumeGen } from './costume-gen'
 import { AnimationGen } from './animation-gen'
-import { createFileWithWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl } from '../common/cloud'
 import type { File } from '../common/file'
 import { getAnimationName, getCostumeName } from '../common/asset-name'
 
@@ -104,7 +104,7 @@ export class SpriteGen extends Disposable {
       const { imageUrls } = await this.genImagesTask.untilCompleted()
       // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
       // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
-      return imageUrls.map((url) => createFileWithWebUrl(url, `${this.name}.png`))
+      return imageUrls.map((url) => createFileWithUniversalUrl(url, `${this.name}.png`)) // TODO: it is actually web url only
     })
   }
 

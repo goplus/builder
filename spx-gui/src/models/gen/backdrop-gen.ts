@@ -4,7 +4,7 @@ import { Disposable } from '@/utils/disposable'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
 import { enrichBackdropSettings, TaskType, type BackdropSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
-import { createFileWithWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl } from '../common/cloud'
 import type { Project } from '../project'
 import { Backdrop } from '../backdrop'
 import { getProjectSettings, Phase, Task } from './common'
@@ -70,7 +70,7 @@ export class BackdropGen extends Disposable {
       const { imageUrls } = await this.generateTask.untilCompleted()
       // Hardcode .png extension to avoid the cost of `adaptImg` in `Backdrop.create`.
       // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
-      return imageUrls.map((url) => createFileWithWebUrl(url, `${this.name}.png`))
+      return imageUrls.map((url) => createFileWithUniversalUrl(url, `${this.name}.png`)) // TODO: it is actually web url only
     })
   }
 
