@@ -1,11 +1,13 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, watchEffect } from 'vue'
+import type { Stage } from 'konva/lib/Stage'
+import type { Shape } from 'konva/lib/Shape'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { Action, Project } from '@/models/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
-import { nomalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
+import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
 
@@ -26,6 +28,9 @@ const emit = defineEmits<{
   selected: []
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
+  updatePos: [{ x: number; y: number }]
+  updateHeading: [{ heading: number; leftRight?: LeftRight }]
+  updateSize: [{ size: number }]
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -54,8 +59,60 @@ onMounted(() => {
   }
 })
 
+function updateSprite({
+  oldSize,
+  size,
+  oldHeading,
+  heading,
+  oldX,
+  x,
+  oldY,
+  y
+}: {
+  oldSize: number
+  size: number
+  oldHeading: number
+  heading: number
+  oldX: number
+  x: number
+  oldY: number
+  y: number
+}) {
+  if (oldSize !== size) {
+    emit('updateSize', { size })
+    return
+  }
+  if (oldHeading !== heading && props.sprite.rotationStyle !== RotationStyle.None) {
+    let leftRight: LeftRight | undefined = undefined
+    if (props.sprite.rotationStyle === RotationStyle.LeftRight) {
+      leftRight = headingToLeftRight(heading)
+    }
+    emit('updateHeading', { heading, leftRight })
+    return
+  }
+  if (oldX !== x || oldY !== y) {
+    emit('updatePos', { x, y })
+  }
+}
+
+const notifyUpdateSprite = (node: Shape | Stage) => {
+  if (!props.selected) return
+  const { x, y } = toPosition(node)
+  updateSprite({
+    oldSize: props.sprite.size,
+    size: toSize(node),
+    oldHeading: props.sprite.heading,
+    heading: toHeading(node),
+    oldX: props.sprite.x,
+    x,
+    oldY: props.sprite.y,
+    y
+  })
+}
+
 function handleDragMove(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
+  notifyUpdateSprite(e.target)
   emit('dragMove', (delta) => {
     // Adjust position if camera scrolled during dragging to keep the sprite visually unmoved
     e.target.x(e.target.x() - delta.x)
@@ -69,6 +126,7 @@ function handleDragEnd(e: KonvaEventObject<unknown>) {
   handleChange(e, {
     name: { en: `Move sprite ${sname}`, zh: `移动精灵 ${sname}` }
   })
+  notifyUpdateSprite(e.target)
   emit('dragEnd')
 }
 
@@ -77,6 +135,7 @@ function handleTransformed(e: KonvaEventObject<unknown>) {
   handleChange(e, {
     name: { en: `Transform sprite ${sname}`, zh: `调整精灵 ${sname}` }
   })
+  notifyUpdateSprite(e.target)
 }
 
 const config = computed<ImageConfig>(() => {
@@ -94,7 +153,7 @@ const config = computed<ImageConfig>(() => {
     visible: visible,
     x: props.mapSize.width / 2 + x,
     y: props.mapSize.height / 2 - y,
-    rotation: nomalizeDegree(heading - 90),
+    rotation: normalizeDegree(heading - 90),
     scaleX: scale,
     scaleY: scale
   } satisfies ImageConfig
@@ -105,19 +164,50 @@ const config = computed<ImageConfig>(() => {
     // Note that you can get the same result with `ratation: 0, scaleX: -scaleX` here, but there will be problem
     // if the user then do transform with transformer. Konva transformer prefers to make `scaleX` positive.
   }
+  // After Sprite changes, updateXXX events also need to be triggered
+  const node = nodeRef.value?.getNode()
+  if (node != null) {
+    const { x: oldX, y: oldY } = toPosition(node)
+    const oldHeading = toHeading(node)
+    const oldSize = toSize(node)
+    updateSprite({
+      oldSize,
+      size,
+      oldHeading,
+      heading,
+      oldX,
+      x,
+      oldY,
+      y
+    })
+  }
   return config
 })
 
-/** Handler for position-change (drag) or transform */
-function handleChange(e: KonvaEventObject<unknown>, action: Action) {
-  const { sprite, mapSize } = props
-  const x = round(e.target.x() - mapSize.width / 2)
-  const y = round(mapSize.height / 2 - e.target.y())
+function toPosition(node: Shape | Stage) {
+  const { mapSize } = props
+  const x = round(node.x() - mapSize.width / 2)
+  const y = round(mapSize.height / 2 - node.y())
+  return { x, y }
+}
+function toHeading(node: Shape | Stage) {
+  const { sprite } = props
   let heading = sprite.heading
   if (sprite.rotationStyle === RotationStyle.Normal || sprite.rotationStyle === RotationStyle.LeftRight) {
-    heading = nomalizeDegree(round(e.target.rotation() + 90))
+    heading = normalizeDegree(round(node.rotation() + 90))
   }
-  const size = round(Math.abs(e.target.scaleX()) * bitmapResolution.value, 2)
+  return heading
+}
+function toSize(node: Shape | Stage) {
+  const size = round(Math.abs(node.scaleX()) * bitmapResolution.value, 2)
+  return size
+}
+/** Handler for position-change (drag) or transform */
+function handleChange(e: KonvaEventObject<unknown>, action: Action) {
+  const { sprite } = props
+  const { x, y } = toPosition(e.target)
+  const heading = toHeading(e.target)
+  const size = toSize(e.target)
   props.project.history.doAction(action, () => {
     sprite.setX(x)
     sprite.setY(y)
@@ -137,6 +227,7 @@ function handleClick() {
     :config="config"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
+    @transform="notifyUpdateSprite($event.target)"
     @transformend="handleTransformed"
     @click="handleClick"
   />

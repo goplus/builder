@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useDraggableAngleForElement } from '@/utils/dom'
 import { makeArcPathString } from '@/utils/svg'
-import { nomalizeDegree, useDebouncedModel } from '@/utils/utils'
+import { normalizeDegree, useDebouncedModel } from '@/utils/utils'
 import { specialDirections } from '@/utils/spx'
 import { UITag } from '@/components/ui'
 
@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 const [modelValue] = useDebouncedModel<number>(
   () => props.modelValue,
-  (v) => emit('update:modelValue', nomalizeDegree(Math.floor(v)))
+  (v) => emit('update:modelValue', normalizeDegree(Math.floor(v)))
 )
 
 const svgEl = ref<HTMLElement | null>(null)
@@ -26,7 +26,7 @@ const arcPath = computed(() => {
   return makeArcPathString({ x: 70, y: 70, r: 63, start, end })
 })
 const angle = useDraggableAngleForElement(svgEl, { initialValue: props.modelValue, snap: 15 })
-watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
+watch(angle, (v) => (modelValue.value = normalizeDegree(v)))
 </script>
 
 <template>

@@ -5,7 +5,7 @@ import transformerFlipArrowDisabledPng from './transformer-flip-arrow-disabled.p
 import rotatorCirclePng from './rotate-circle.png'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
-import { nomalizeDegree, round } from '@/utils/utils'
+import { normalizeDegree, round } from '@/utils/utils'
 
 // There seems to be an issue rendering svg Image.
 // We are using 2x png here.
@@ -51,7 +51,7 @@ class RotatorTag extends Konva.Group {
   }
 
   updateRotationNumber(rotationNumber: number) {
-    this.text.text(`${nomalizeDegree(round(rotationNumber + 90))}°`)
+    this.text.text(`${normalizeDegree(round(rotationNumber + 90))}°`)
   }
 }
 
@@ -88,7 +88,7 @@ class FlipButton extends Konva.Group {
       strokeWidth: 0.5
     }
     const imageStyle: Partial<ImageConfig> = {
-      width: 4,
+      width: 6,
       height: 8
     }
     this.rect = new Konva.Rect({
@@ -113,7 +113,7 @@ class FlipButton extends Konva.Group {
       ...imageStyle,
       image: enabled ? transformerFlipArrowImg : transformerFlipArrowDisabledImg,
       rotation: enabled ? 180 : 0,
-      x: enabled ? 11 : 9,
+      x: enabled ? 12 : 9,
       y: enabled ? 14 : 6
     })
     this.image.on('mouseenter', () => {

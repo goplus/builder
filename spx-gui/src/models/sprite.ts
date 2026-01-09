@@ -4,7 +4,7 @@
  */
 
 import { reactive } from 'vue'
-import { nomalizeDegree } from '@/utils/utils'
+import { normalizeDegree } from '@/utils/utils'
 import { join } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
@@ -728,7 +728,7 @@ export enum LeftRight {
 }
 
 export function headingToLeftRight(heading: number): LeftRight {
-  heading = nomalizeDegree(heading)
+  heading = normalizeDegree(heading)
   if (heading >= 0) return LeftRight.right
   return LeftRight.left
 }

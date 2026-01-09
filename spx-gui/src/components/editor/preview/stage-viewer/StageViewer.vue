@@ -8,14 +8,7 @@
     class="stage-viewer"
     @mousemove="updateMousePos"
   >
-    <v-stage
-      v-if="stageConfig != null"
-      ref="stageRef"
-      :config="stageConfig"
-      @mousedown="handleStageMousedown"
-      @contextmenu="handleContextMenu"
-      @wheel="handleWheel"
-    >
+    <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
         <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
         <DecoratorNode
@@ -46,6 +39,11 @@
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
+            @update-heading="
+              handleUpdateConfigType($event.leftRight == null ? 'rotate' : [], () => (spriteHeading = $event.heading))
+            "
+            @update-pos="handleUpdateConfigType('pos', () => ((spritePosX = $event.x), (spritePosY = $event.y)))"
+            @update-size="handleUpdateConfigType('size', () => (spriteSize = $event.size))"
           />
         </v-group>
       </v-layer>
@@ -56,6 +54,8 @@
           :widget="widget"
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
+          @update-pos="handleUpdateConfigType('pos', () => ((widgetPosX = $event.x), (widgetPosY = $event.y)))"
+          @update-size="handleUpdateConfigType('size', () => (widgetSize = $event.size))"
         />
       </v-layer>
       <v-layer>
@@ -66,30 +66,30 @@
         />
       </v-layer>
     </v-stage>
-    <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
-      <UIMenu>
-        <UIMenuItem
-          v-radar="{ name: 'Move up', desc: 'Click to move sprite up in z-order' }"
-          @click="moveZorder('up')"
-          >{{ $t(moveActionNames.up) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move to top', desc: 'Click to move sprite to top in z-order' }"
-          @click="moveZorder('top')"
-          >{{ $t(moveActionNames.top) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move down', desc: 'Click to move sprite down in z-order' }"
-          @click="moveZorder('down')"
-          >{{ $t(moveActionNames.down) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move to bottom', desc: 'Click to move sprite to bottom in z-order' }"
-          @click="moveZorder('bottom')"
-          >{{ $t(moveActionNames.bottom) }}</UIMenuItem
-        >
-      </UIMenu>
-    </UIDropdown>
+    <QuickConfig class="quick-config" :config-types="configTypesRef" @update-config-types="configTypesRef = $event">
+      <SpriteQuickConfig
+        v-if="editorCtx.state.selectedSprite"
+        :sprite="editorCtx.state.selectedSprite"
+        :project="editorCtx.project"
+        :size="spriteSize"
+        :heading="spriteHeading"
+        :x="spritePosX"
+        :y="spritePosY"
+        @update:size="spriteSize = $event"
+        @update:heading="spriteHeading = $event"
+        @update:pos="(spritePosX = $event.x), (spritePosY = $event.y)"
+      />
+      <WidgetQuickConfig
+        v-else-if="editorCtx.state.selectedWidget"
+        :widget="editorCtx.state.selectedWidget"
+        :project="editorCtx.project"
+        :size="widgetSize"
+        :x="widgetPosX"
+        :y="widgetPosY"
+        @update:size="widgetSize = $event"
+        @update:pos="(widgetPosX = $event.x), (widgetPosY = $event.y)"
+      />
+    </QuickConfig>
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
@@ -100,12 +100,12 @@ import { throttle } from 'lodash'
 import { computed, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import type { Stage, StageConfig } from 'konva/lib/Stage'
+import type { StageConfig } from 'konva/lib/Stage'
 import type { LayerConfig } from 'konva/lib/Layer'
-import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
+import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
+import { untilTaskScheduled, until, untilNotNull, useDebouncedModel } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import type { Sprite } from '@/models/sprite'
@@ -115,9 +115,12 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
+import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
+import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/WidgetQuickConfig.vue'
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
+import QuickConfig, { type ConfigType } from '@/components/editor/common/viewer/quick-config/QuickConfig.vue'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
@@ -421,76 +424,74 @@ const handleSpriteDragMove = throttle(
   }
 )
 
+// quick config
+function wrapSpriteUpdateHandler<Args extends any[]>(handler: (sprite: Sprite, ...args: Args) => unknown) {
+  return (...args: Args) => {
+    const sprite = editorCtx.state.selectedSprite
+    if (sprite == null) return
+    const name = sprite.name
+    editorCtx.project.history.doAction({ name: { en: `Configure sprite ${name}`, zh: `修改精灵 ${name} 配置` } }, () =>
+      handler(sprite, ...args)
+    )
+  }
+}
+const [spriteSize] = useDebouncedModel(
+  () => editorCtx.state.selectedSprite?.size,
+  wrapSpriteUpdateHandler((sprite, v) => {
+    if (v == null) return
+    sprite.setSize(v)
+  })
+)
+const [spriteHeading] = useDebouncedModel(
+  () => editorCtx.state.selectedSprite?.heading,
+  wrapSpriteUpdateHandler((sprite, v) => sprite.setHeading(v ?? 0))
+)
+const [spritePosX] = useDebouncedModel(
+  () => editorCtx.state.selectedSprite?.x,
+  wrapSpriteUpdateHandler((sprite, x) => sprite.setX(x ?? 0))
+)
+const [spritePosY] = useDebouncedModel(
+  () => editorCtx.state.selectedSprite?.y,
+  wrapSpriteUpdateHandler((sprite, y) => sprite.setY(y ?? 0))
+)
+
+function wrapWidgetUpdateHandler<Args extends any[]>(handler: (widget: Widget, ...args: Args) => unknown) {
+  return (...args: Args) => {
+    const widget = editorCtx.state.selectedWidget
+    if (widget == null) return
+    const name = widget.name
+    editorCtx.project.history.doAction({ name: { en: `Configure sprite ${name}`, zh: `修改控件 ${name} 配置` } }, () =>
+      handler(widget, ...args)
+    )
+  }
+}
+const [widgetSize] = useDebouncedModel(
+  () => editorCtx.state.selectedWidget?.size,
+  wrapWidgetUpdateHandler((widget, v) => {
+    if (v == null) return
+    widget.setSize(v)
+  })
+)
+const [widgetPosX] = useDebouncedModel(
+  () => editorCtx.state.selectedWidget?.x,
+  wrapWidgetUpdateHandler((widget, x) => widget.setX(x ?? 0))
+)
+const [widgetPosY] = useDebouncedModel(
+  () => editorCtx.state.selectedWidget?.y,
+  wrapWidgetUpdateHandler((widget, y) => widget.setY(y ?? 0))
+)
+const configTypesRef = ref<ConfigType[]>(['default'])
+const handleUpdateConfigType = throttle((configType: ConfigType | ConfigType[] = [], updator: () => void) => {
+  configTypesRef.value = ['default' as ConfigType].concat(configType)
+  updator()
+}, 150)
+
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
 }
 
 function handleSpriteSelected(sprite: Sprite) {
   editorCtx.state.selectSprite(sprite.id)
-}
-
-const menuVisible = ref(false)
-const menuPos = ref({ x: 0, y: 0 })
-
-function handleContextMenu(e: KonvaEventObject<MouseEvent>) {
-  e.evt.preventDefault()
-
-  // Ignore right click on backdrop.
-  // Konva.Rect is a subclass of Konva.Shape.
-  // Currently we have all sprites as Konva.Shape and backdrop as Konva.Rect.
-  if (e.target instanceof Konva.Rect) return
-
-  if (stageRef.value == null || e.target.parent == null) return
-  const stage: Stage = stageRef.value.getStage()
-  const pointerPos = stage.getPointerPosition()
-  if (pointerPos == null) return
-  const stagePos = stage.getContent().getBoundingClientRect()
-  const offsetY = -8 // offset for dropdown menu
-  menuPos.value = {
-    x: stagePos.x + pointerPos.x,
-    y: stagePos.y + pointerPos.y + offsetY
-  }
-  menuVisible.value = true
-}
-
-function handleStageMousedown() {
-  if (menuVisible.value) menuVisible.value = false
-}
-
-const moveActionNames = {
-  up: { en: 'Bring forward', zh: '向前移动' },
-  top: { en: 'Bring to front', zh: '移到最前' },
-  down: { en: 'Send backward', zh: '向后移动' },
-  bottom: { en: 'Send to back', zh: '移到最后' }
-}
-
-async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
-  const { state, project } = editorCtx
-  const { selectedSprite, selectedWidget } = state
-  await project.history.doAction({ name: moveActionNames[direction] }, () => {
-    if (selectedSprite != null) {
-      if (direction === 'up') {
-        project.upSpriteZorder(selectedSprite.id)
-      } else if (direction === 'down') {
-        project.downSpriteZorder(selectedSprite.id)
-      } else if (direction === 'top') {
-        project.topSpriteZorder(selectedSprite.id)
-      } else if (direction === 'bottom') {
-        project.bottomSpriteZorder(selectedSprite.id)
-      }
-    } else if (selectedWidget != null) {
-      if (direction === 'up') {
-        project.stage.upWidgetZorder(selectedWidget.id)
-      } else if (direction === 'down') {
-        project.stage.downWidgetZorder(selectedWidget.id)
-      } else if (direction === 'top') {
-        project.stage.topWidgetZorder(selectedWidget.id)
-      } else if (direction === 'bottom') {
-        project.stage.bottomWidgetZorder(selectedWidget.id)
-      }
-    }
-  })
-  menuVisible.value = false
 }
 
 function handleWheel(e: KonvaEventObject<WheelEvent>) {
@@ -538,5 +539,15 @@ watchEffect((onCleanup) => {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
+
+  & > div:focus {
+    outline: none;
+  }
+}
+
+.quick-config {
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 </style>
