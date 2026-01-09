@@ -1,9 +1,15 @@
 <script lang="ts">
-type LoadingStyle = {
-  colorStop1: string
-  colorStop2: string
-  colorStop3: string
-  genLoadingBgColor: string
+type GenColor = {
+  color: Color
+  loading: {
+    headColor: string
+    tailColor: string
+    traceColor: string
+    backgroundColor: string
+  }
+  pending: {
+    highlightColor: string
+  }
 }
 </script>
 
@@ -13,46 +19,31 @@ import { UIBlockItem, type Color } from '@/components/ui'
 
 const props = withDefaults(
   defineProps<{
-    color: Color
-    loading?: false | LoadingStyle
-    pending?: false | string
+    genColor: GenColor
+    loading?: boolean
+    pending?: boolean
     placeholder: string
   }>(),
   {
     loading: false,
-    pending: false,
-    loadingStyle: undefined
+    pending: false
   }
 )
 
-const loadingStyle = computed(() =>
-  props.loading
-    ? {
-        '--color-stop-1': props.loading.colorStop1,
-        '--color-stop-2': props.loading.colorStop2,
-        '--color-stop-3': props.loading.colorStop3,
-        '--gen-loading-bg-color': props.loading.genLoadingBgColor
-      }
-    : {}
-)
-
-const pendingColor = computed(() =>
-  props.pending
-    ? {
-        '--pending-color': props.pending
-      }
-    : {}
-)
+const style = computed(() => {
+  const { genColor } = props
+  return {
+    '--loading-head-color': genColor.loading.headColor,
+    '--loading-tail-color': genColor.loading.tailColor,
+    '--loading-trace-color': genColor.loading.traceColor,
+    '--loading-bg-color': genColor.loading.backgroundColor,
+    '--pending-highlight-color': genColor.pending.highlightColor
+  }
+})
 </script>
 
 <template>
-  <UIBlockItem
-    class="gen-item"
-    :class="{ loading, pending }"
-    :style="[loadingStyle, pendingColor]"
-    :color="color"
-    size="medium"
-  >
+  <UIBlockItem class="gen-item" :class="{ loading, pending }" :style="style" :color="genColor.color" size="medium">
     <div class="preview-wrapper">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>
@@ -86,11 +77,11 @@ const pendingColor = computed(() =>
       pointer-events: none;
       background: conic-gradient(
         from var(--angle) at 50% 50%,
-        var(--color-stop-1) 108deg,
-        var(--color-stop-2) 125deg,
-        var(--color-stop-3) 288deg
+        var(--loading-head-color) 108deg,
+        var(--loading-tail-color) 125deg,
+        var(--loading-trace-color) 288deg
       );
-      background-color: var(--gen-loading-bg-color);
+      background-color: var(--loading-bg-color);
       animation: rotate-gradient 2s linear infinite;
     }
 
@@ -103,7 +94,7 @@ const pendingColor = computed(() =>
 
   &.pending {
     .placeholder {
-      color: var(--pending-color);
+      color: var(--pending-highlight-color);
     }
   }
 

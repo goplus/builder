@@ -9,21 +9,28 @@ const props = defineProps<{
   gen: BackdropGen
 }>()
 
-const isLoading = computed(() =>
-  [props.gen.enrichState.status, props.gen.imagesGenState.status].includes('running')
-    ? {
-        colorStop1: 'var(--ui-color-stage-main)',
-        colorStop2: '#D6EDFF',
-        colorStop3: '#F3FCFD1A',
-        genLoadingBgColor: 'var(--ui-color-stage-main)'
-      }
-    : false
-)
-const pending = computed(() => (props.gen.imagesGenState.status === 'finished' ? 'var(--ui-color-stage-main)' : false))
+const isLoading = computed(() => [props.gen.enrichState.status, props.gen.imagesGenState.status].includes('running'))
+const pending = computed(() => props.gen.imagesGenState.status === 'finished')
 </script>
 
 <template>
-  <GenItem color="stage" :loading="isLoading" :pending="pending" :placeholder="backdropSVG">
+  <GenItem
+    :gen-color="{
+      color: 'stage',
+      loading: {
+        headColor: 'var(--ui-color-stage-main)',
+        tailColor: '#D6EDFF',
+        traceColor: '#F3FCFD1A',
+        backgroundColor: 'var(--ui-color-stage-main)'
+      },
+      pending: {
+        highlightColor: 'var(--ui-color-stage-main)'
+      }
+    }"
+    :loading="isLoading"
+    :pending="pending"
+    :placeholder="backdropSVG"
+  >
     <UIBlockItemTitle size="large">{{ gen.settings.name }}</UIBlockItemTitle>
   </GenItem>
 </template>

@@ -13,26 +13,35 @@ const props = defineProps<{
 
 const isLoading = computed(() => {
   const { costumes, animations } = props.gen
-  return isCostumesLoading(costumes) ||
+  return (
+    isCostumesLoading(costumes) ||
     isAnimationsLoading(animations) ||
     [props.gen.contentPreparingState.status, props.gen.imagesGenState.status, props.gen.enrichState.status].includes(
       'running'
     )
-    ? {
-        colorStop1: 'var(--ui-color-sprite-main)',
-        colorStop2: '#FFF0DC',
-        colorStop3: '#FFFAF51A',
-        genLoadingBgColor: 'var(--ui-color-sprite-main)'
-      }
-    : false
+  )
 })
-const pending = computed(() =>
-  props.gen.contentPreparingState.status === 'finished' ? 'var(--ui-color-sprite-main)' : false
-)
+const pending = computed(() => props.gen.contentPreparingState.status === 'finished')
 </script>
 
 <template>
-  <GenItem :loading="isLoading" :placeholder="littleGuySVG" :pending="pending" color="sprite">
+  <GenItem
+    :loading="isLoading"
+    :placeholder="littleGuySVG"
+    :pending="pending"
+    :gen-color="{
+      color: 'sprite',
+      loading: {
+        headColor: 'var(--ui-color-sprite-main)',
+        tailColor: '#FFF0DC',
+        traceColor: '#FFFAF51A',
+        backgroundColor: 'var(--ui-color-sprite-main)'
+      },
+      pending: {
+        highlightColor: 'var(--ui-color-sprite-main)'
+      }
+    }"
+  >
     <UIBlockItemTitle size="medium">{{ gen.settings.name }}</UIBlockItemTitle>
   </GenItem>
 </template>
