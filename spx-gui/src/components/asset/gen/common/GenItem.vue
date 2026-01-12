@@ -5,7 +5,7 @@ type GenColor = {
     headColor: string
     tailColor: string
     traceColor: string
-    backgroundColor: string
+    activeTraceColor: string
   }
   highlightColor: string
 }
@@ -18,6 +18,7 @@ import { UIBlockItem, type Color } from '@/components/ui'
 const props = withDefaults(
   defineProps<{
     color: GenColor
+    active?: boolean
     /** If loading is true, it means a task is in progress; if loading is false, it means it is waiting for user action. */
     loading?: boolean
     /** highlight will highlight the placeholder. */
@@ -25,6 +26,7 @@ const props = withDefaults(
     placeholder: string
   }>(),
   {
+    active: false,
     loading: false,
     highlight: false
   }
@@ -36,14 +38,21 @@ const style = computed(() => {
     '--loading-head-color': color.loading.headColor,
     '--loading-tail-color': color.loading.tailColor,
     '--loading-trace-color': color.loading.traceColor,
-    '--loading-bg-color': color.loading.backgroundColor,
+    '--loading-active-trace-color': color.loading.activeTraceColor,
     '--highlight-color': color.highlightColor
   }
 })
 </script>
 
 <template>
-  <UIBlockItem class="gen-item" :class="{ loading, highlight }" :style="style" :color="color.main" size="medium">
+  <UIBlockItem
+    class="gen-item"
+    :class="{ loading, highlight, active }"
+    :active="active"
+    :style="style"
+    :color="color.main"
+    size="medium"
+  >
     <div class="preview-wrapper">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>
@@ -62,7 +71,20 @@ const style = computed(() => {
 
 .gen-item {
   &.loading {
-    border-color: transparent;
+    // Force override UIBlockItem's border-color when active
+    border-color: transparent !important;
+
+    &.active {
+      &::before {
+        background: conic-gradient(
+          from var(--angle) at 50% 50%,
+          var(--loading-active-trace-color) 0deg,
+          var(--loading-head-color) 40deg,
+          var(--loading-tail-color) 110deg,
+          var(--loading-active-trace-color)
+        );
+      }
+    }
 
     &::before {
       content: '';
@@ -77,12 +99,12 @@ const style = computed(() => {
       pointer-events: none;
       background: conic-gradient(
         from var(--angle) at 50% 50%,
-        var(--loading-head-color) 108deg,
-        var(--loading-tail-color) 125deg,
-        var(--loading-trace-color) 288deg
+        var(--loading-trace-color) 0deg,
+        var(--loading-head-color) 40deg,
+        var(--loading-tail-color) 110deg,
+        var(--loading-trace-color) 160deg
       );
-      background-color: var(--loading-bg-color);
-      animation: rotate-gradient 2s linear infinite;
+      animation: rotate-gradient 3s linear infinite;
     }
 
     @keyframes rotate-gradient {

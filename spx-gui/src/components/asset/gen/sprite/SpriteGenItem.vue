@@ -35,7 +35,7 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
         headColor: 'var(--ui-color-sprite-main)',
         tailColor: '#FFF0DC',
         traceColor: '#FFFAF51A',
-        backgroundColor: 'var(--ui-color-sprite-main)'
+        activeTraceColor: '#FDCC8E'
       },
       highlightColor: 'var(--ui-color-sprite-main)'
     }"

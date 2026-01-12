@@ -51,7 +51,7 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
         headColor: 'var(--ui-color-primary-main)',
         tailColor: '#DCF7FA',
         traceColor: '#F3FCFD1A',
-        backgroundColor: 'var(--ui-color-primary-main)'
+        activeTraceColor: '#77DCE5'
       },
       highlightColor: 'var(--ui-color-primary-main)'
     }"
@@ -64,7 +64,7 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
     <template v-if="gen.result != null" #preview>
       <UIImg class="preview" :src="url" :loading="imageLoading" />
     </template>
-    <UIBlockItemTitle size="large">{{ gen.name }}</UIBlockItemTitle>
+    <UIBlockItemTitle size="medium">{{ gen.name }}</UIBlockItemTitle>
     <CornerMenu v-if="operable && active" color="primary">
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="emit('rename')" />
       <RemoveMenuItem

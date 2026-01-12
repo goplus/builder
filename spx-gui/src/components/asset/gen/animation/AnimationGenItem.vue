@@ -51,7 +51,7 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
         headColor: 'var(--ui-color-primary-main)',
         tailColor: '#DCF7FA',
         traceColor: '#F3FCFD1A',
-        backgroundColor: 'var(--ui-color-primary-main)'
+        activeTraceColor: '#77DCE5'
       },
       highlightColor: 'var(--ui-color-primary-main)'
     }"
@@ -71,7 +71,7 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
       />
       <UIImg v-else class="preview" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <UIBlockItemTitle size="large">{{ gen.name }}</UIBlockItemTitle>
+    <UIBlockItemTitle size="medium">{{ gen.name }}</UIBlockItemTitle>
     <CornerMenu v-if="active" color="primary">
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="emit('rename')" />
       <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="emit('remove')" />

@@ -21,7 +21,7 @@ const highlight = computed(() => props.gen.imagesGenState.status === 'finished')
         headColor: 'var(--ui-color-stage-main)',
         tailColor: '#D6EDFF',
         traceColor: '#F3FCFD1A',
-        backgroundColor: 'var(--ui-color-stage-main)'
+        activeTraceColor: '#82C9FE'
       },
       highlightColor: 'var(--ui-color-stage-main)'
     }"
@@ -29,7 +29,7 @@ const highlight = computed(() => props.gen.imagesGenState.status === 'finished')
     :highlight="highlight"
     :placeholder="backdropSVG"
   >
-    <UIBlockItemTitle size="large">{{ gen.settings.name }}</UIBlockItemTitle>
+    <UIBlockItemTitle size="medium">{{ gen.settings.name }}</UIBlockItemTitle>
   </GenItem>
 </template>
 
