@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 import { UIButton } from '@/components/ui'
@@ -18,22 +19,35 @@ const handleRenameAnimation = useMessageHandle(renameAnimation, {
   zh: '重命名动画失败'
 }).fn
 
+const savingAnimation = computed(() => {
+  const gen = props.gen
+  return gen.extractFramesState.status === 'running' || gen.finishState.status === 'running'
+})
+
 const handleSaveAnimation = useMessageHandle(
   async () => {
-    await props.gen.extractFrames()
-    await props.gen.finish()
+    const gen = props.gen
+    await gen.extractFrames()
+    await gen.finish()
   },
   {
     en: 'Failed to save animation',
     zh: '保存动画失败'
   }
-)
+).fn
+
+// Use a computed key to force re-mount AnimationVideoPreview when video file changes
+// TODO: improve AnimationVideoPreview to handle video file changes without re-mounting
+const videoPreviewKey = computed(() => {
+  const gen = props.gen
+  return gen.name + ':' + (gen.video != null ? gen.video.name : '')
+})
 </script>
 
 <template>
   <GenPreview class="animation-gen-preview" :name="gen.name" @rename="handleRenameAnimation(gen)">
     <template v-if="gen.video != null && gen.result == null" #ops>
-      <UIButton color="success" :loading="handleSaveAnimation.isLoading.value" @click="handleSaveAnimation.fn">{{
+      <UIButton color="success" :loading="savingAnimation" @click="handleSaveAnimation">{{
         $t({ en: 'Save animation', zh: '保存动画' })
       }}</UIButton>
     </template>
@@ -48,6 +62,7 @@ const handleSaveAnimation = useMessageHandle(
       <CheckerboardBackground class="background" />
       <AnimationVideoPreview
         v-if="gen.video != null"
+        :key="videoPreviewKey"
         :video="gen.video"
         :frames-config="gen.framesConfig"
         @update:frames-config="gen.setFramesConfig($event)"

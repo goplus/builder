@@ -2,7 +2,7 @@
  * @desc util-related APIs of spx-backend
  */
 
-import { usercontentBaseUrl } from '@/utils/env'
+import { usercontentBaseUrl, usercontentBucket } from '@/utils/env'
 import { client, type UniversalUrl, type UniversalToWebUrlMap } from './common'
 import { UniversalUrlScheme, parseUniversalUrl } from '@/utils/universal-url'
 
@@ -34,7 +34,13 @@ export async function makeObjectUrls(objects: UniversalUrl[]): Promise<Universal
 function workAroundIssue1598(objects: UniversalUrl[]): UniversalToWebUrlMap {
   return objects.reduce((map, universalUrl) => {
     const parsed = parseUniversalUrl(universalUrl)
-    map[universalUrl] = parsed.scheme === UniversalUrlScheme.Kodo ? `${usercontentBaseUrl}/${parsed.key}` : universalUrl
+    if (parsed.scheme === UniversalUrlScheme.Kodo) {
+      if (parsed.bucket !== usercontentBucket)
+        console.warn(`unexpected bucket ${parsed.bucket}, expected ${usercontentBucket}`)
+      map[universalUrl] = `${usercontentBaseUrl}/${parsed.key}`
+    } else {
+      map[universalUrl] = universalUrl
+    }
     return map
   }, {} as UniversalToWebUrlMap)
 }

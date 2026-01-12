@@ -23,6 +23,7 @@ export class CostumeGen extends Disposable {
   private enrichPhase: Phase<CostumeSettings>
   private generateTask: Task<TaskType.GenerateCostume>
   private generatePhase: Phase<File>
+  private finishPhase: Phase<Costume>
 
   constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<CostumeSettings>) {
     super()
@@ -32,6 +33,7 @@ export class CostumeGen extends Disposable {
     this.enrichPhase = new Phase()
     this.generateTask = new Task(TaskType.GenerateCostume)
     this.generatePhase = new Phase()
+    this.finishPhase = new Phase()
     this.settings = {
       name: '',
       description: '',
@@ -41,7 +43,6 @@ export class CostumeGen extends Disposable {
       referenceImageUrl: null,
       ...settings
     }
-    this.result = null
     return reactive(this) as this
   }
 
@@ -95,15 +96,21 @@ export class CostumeGen extends Disposable {
     this.setImage(image)
   }
 
-  result: Costume | null
+  get finishState() {
+    return this.finishPhase.state
+  }
+  get result() {
+    return this.finishPhase.state.result
+  }
 
   async finish() {
     const image = this.image
     if (image == null) throw new Error('Costume not generated yet')
-    const costume = await Costume.create(this.settings.name, image)
-    await costume.autoFit()
-    this.result = costume
-    return costume
+    return this.finishPhase.run(async () => {
+      const costume = await Costume.create(this.settings.name, image)
+      await costume.autoFit()
+      return costume
+    })
   }
 
   cancel() {
