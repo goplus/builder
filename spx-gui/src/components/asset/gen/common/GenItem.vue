@@ -1,5 +1,5 @@
 <script lang="ts">
-type GenColor = {
+type Main = {
   color: Color
   loading: {
     headColor: string
@@ -7,9 +7,7 @@ type GenColor = {
     traceColor: string
     backgroundColor: string
   }
-  pending: {
-    highlightColor: string
-  }
+  highlightColor: string
 }
 </script>
 
@@ -19,35 +17,31 @@ import { UIBlockItem, type Color } from '@/components/ui'
 
 const props = withDefaults(
   defineProps<{
-    genColor: GenColor
+    main: Main
     loading?: boolean
+    highlight?: boolean
     placeholder: string
   }>(),
   {
-    loading: false
+    loading: false,
+    highlight: false
   }
 )
 
 const style = computed(() => {
-  const { genColor } = props
+  const { main: genColor } = props
   return {
     '--loading-head-color': genColor.loading.headColor,
     '--loading-tail-color': genColor.loading.tailColor,
     '--loading-trace-color': genColor.loading.traceColor,
     '--loading-bg-color': genColor.loading.backgroundColor,
-    '--pending-highlight-color': genColor.pending.highlightColor
+    '--highlight-color': genColor.highlightColor
   }
 })
 </script>
 
 <template>
-  <UIBlockItem
-    class="gen-item"
-    :class="{ loading, pending: !loading }"
-    :style="style"
-    :color="genColor.color"
-    size="medium"
-  >
+  <UIBlockItem class="gen-item" :class="{ loading, highlight }" :style="style" :color="main.color" size="medium">
     <div class="preview-wrapper">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>
@@ -96,9 +90,9 @@ const style = computed(() => {
     }
   }
 
-  &.pending {
+  &.highlight {
     .placeholder {
-      color: var(--pending-highlight-color);
+      color: var(--highlight-color);
     }
   }
 

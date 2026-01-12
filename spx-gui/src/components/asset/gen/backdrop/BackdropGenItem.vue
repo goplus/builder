@@ -10,11 +10,12 @@ const props = defineProps<{
 }>()
 
 const isLoading = computed(() => [props.gen.enrichState.status, props.gen.imagesGenState.status].includes('running'))
+const highlight = computed(() => props.gen.imagesGenState.status === 'finished')
 </script>
 
 <template>
   <GenItem
-    :gen-color="{
+    :main="{
       color: 'stage',
       loading: {
         headColor: 'var(--ui-color-stage-main)',
@@ -22,11 +23,10 @@ const isLoading = computed(() => [props.gen.enrichState.status, props.gen.images
         traceColor: '#F3FCFD1A',
         backgroundColor: 'var(--ui-color-stage-main)'
       },
-      pending: {
-        highlightColor: 'var(--ui-color-stage-main)'
-      }
+      highlightColor: 'var(--ui-color-stage-main)'
     }"
     :loading="isLoading"
+    :highlight="highlight"
     :placeholder="backdropSVG"
   >
     <UIBlockItemTitle size="large">{{ gen.settings.name }}</UIBlockItemTitle>

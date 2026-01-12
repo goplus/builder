@@ -39,12 +39,13 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.result?.costumes[0].img)
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 
 const isLoading = computed(() => isAnimationLoading(props.gen) || imgLoading.value)
+const highlight = computed(() => props.gen.generateVideoState.status === 'finished')
 </script>
 
 <template>
   <GenItem
     ref="wrapperRef"
-    :gen-color="{
+    :main="{
       color: 'primary',
       loading: {
         headColor: 'var(--ui-color-primary-main)',
@@ -52,12 +53,11 @@ const isLoading = computed(() => isAnimationLoading(props.gen) || imgLoading.val
         traceColor: '#F3FCFD1A',
         backgroundColor: 'var(--ui-color-primary-main)'
       },
-      pending: {
-        highlightColor: 'var(--ui-color-primary-main)'
-      }
+      highlightColor: 'var(--ui-color-primary-main)'
     }"
     :placeholder="animationSVG"
     :loading="isLoading"
+    :highlight="highlight"
     :active="active"
     @click="emit('click')"
   >

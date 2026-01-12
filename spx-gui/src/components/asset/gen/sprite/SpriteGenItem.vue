@@ -21,13 +21,15 @@ const isLoading = computed(() => {
     )
   )
 })
+const highlight = computed(() => props.gen.contentPreparingState.status === 'finished')
 </script>
 
 <template>
   <GenItem
     :loading="isLoading"
+    :highlight="highlight"
     :placeholder="littleGuySVG"
-    :gen-color="{
+    :main="{
       color: 'sprite',
       loading: {
         headColor: 'var(--ui-color-sprite-main)',
@@ -35,9 +37,7 @@ const isLoading = computed(() => {
         traceColor: '#FFFAF51A',
         backgroundColor: 'var(--ui-color-sprite-main)'
       },
-      pending: {
-        highlightColor: 'var(--ui-color-sprite-main)'
-      }
+      highlightColor: 'var(--ui-color-sprite-main)'
     }"
   >
     <UIBlockItemTitle size="medium">{{ gen.settings.name }}</UIBlockItemTitle>

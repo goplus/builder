@@ -40,11 +40,12 @@ const emit = defineEmits<{
 const [url, imageLoading] = useFileUrl(() => props.gen.image)
 
 const isLoading = computed(() => isCostumeLoading(props.gen) || imageLoading.value)
+const highlight = computed(() => props.gen.generateState.status === 'finished')
 </script>
 
 <template>
   <GenItem
-    :gen-color="{
+    :main="{
       color: 'primary',
       loading: {
         headColor: 'var(--ui-color-primary-main)',
@@ -52,13 +53,12 @@ const isLoading = computed(() => isCostumeLoading(props.gen) || imageLoading.val
         traceColor: '#F3FCFD1A',
         backgroundColor: 'var(--ui-color-primary-main)'
       },
-      pending: {
-        highlightColor: 'var(--ui-color-primary-main)'
-      }
+      highlightColor: 'var(--ui-color-primary-main)'
     }"
     :placeholder="littleGuySVG"
     :active="active"
     :loading="isLoading"
+    :highlight="highlight"
     @click="emit('click')"
   >
     <template v-if="gen.result != null" #preview>
