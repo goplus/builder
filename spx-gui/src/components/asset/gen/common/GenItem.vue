@@ -1,6 +1,6 @@
 <script lang="ts">
-type Main = {
-  color: Color
+type GenColor = {
+  main: Color
   loading: {
     headColor: string
     tailColor: string
@@ -17,8 +17,10 @@ import { UIBlockItem, type Color } from '@/components/ui'
 
 const props = withDefaults(
   defineProps<{
-    main: Main
+    color: GenColor
+    /** If loading is true, it means a task is in progress; if loading is false, it means it is waiting for user action. */
     loading?: boolean
+    /** highlight will highlight the placeholder. */
     highlight?: boolean
     placeholder: string
   }>(),
@@ -29,19 +31,19 @@ const props = withDefaults(
 )
 
 const style = computed(() => {
-  const { main: genColor } = props
+  const { color } = props
   return {
-    '--loading-head-color': genColor.loading.headColor,
-    '--loading-tail-color': genColor.loading.tailColor,
-    '--loading-trace-color': genColor.loading.traceColor,
-    '--loading-bg-color': genColor.loading.backgroundColor,
-    '--highlight-color': genColor.highlightColor
+    '--loading-head-color': color.loading.headColor,
+    '--loading-tail-color': color.loading.tailColor,
+    '--loading-trace-color': color.loading.traceColor,
+    '--loading-bg-color': color.loading.backgroundColor,
+    '--highlight-color': color.highlightColor
   }
 })
 </script>
 
 <template>
-  <UIBlockItem class="gen-item" :class="{ loading, highlight }" :style="style" :color="main.color" size="medium">
+  <UIBlockItem class="gen-item" :class="{ loading, highlight }" :style="style" :color="color.main" size="medium">
     <div class="preview-wrapper">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>

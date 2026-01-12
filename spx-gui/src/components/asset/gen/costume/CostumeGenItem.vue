@@ -45,8 +45,8 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
 
 <template>
   <GenItem
-    :main="{
-      color: 'primary',
+    :color="{
+      main: 'primary',
       loading: {
         headColor: 'var(--ui-color-primary-main)',
         tailColor: '#DCF7FA',

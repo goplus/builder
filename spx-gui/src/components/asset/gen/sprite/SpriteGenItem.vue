@@ -29,8 +29,8 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
     :loading="isLoading"
     :highlight="highlight"
     :placeholder="littleGuySVG"
-    :main="{
-      color: 'sprite',
+    :color="{
+      main: 'sprite',
       loading: {
         headColor: 'var(--ui-color-sprite-main)',
         tailColor: '#FFF0DC',

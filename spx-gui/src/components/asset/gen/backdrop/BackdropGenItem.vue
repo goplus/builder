@@ -15,8 +15,8 @@ const highlight = computed(() => props.gen.imagesGenState.status === 'finished')
 
 <template>
   <GenItem
-    :main="{
-      color: 'stage',
+    :color="{
+      main: 'stage',
       loading: {
         headColor: 'var(--ui-color-stage-main)',
         tailColor: '#D6EDFF',
