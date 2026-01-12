@@ -4,22 +4,30 @@ import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import { UIImg } from '@/components/ui'
 import { useImageSelectorCompact } from '../common/ImageSelector.vue'
+import GenLoading from '../common/GenLoading.vue'
 
-const props = defineProps<{
-  file: File
-  active: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    file?: File | null
+    active?: boolean
+    loading?: boolean
+  }>(),
+  {
+    file: null,
+    active: false,
+    loading: false
+  }
+)
 
 const compact = useImageSelectorCompact()
-
-const imgSize = computed(() => (compact.value ? 60 : 100))
-
-const [url, loading] = useFileUrl(() => props.file)
+const [url, fileLoading] = useFileUrl(() => props.file)
+const loading = computed(() => props.loading || fileLoading.value)
 </script>
 
 <template>
-  <div class="sprite-image-item" :class="{ active, compact }">
-    <UIImg class="img" :src="url" :loading="loading" :alt="file.name" :width="imgSize" :height="imgSize" />
+  <div class="sprite-image-item" :class="{ active, compact, loading }">
+    <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" />
+    <UIImg v-else class="img" :src="url" :alt="file?.name" />
   </div>
 </template>
 
@@ -46,6 +54,11 @@ const [url, loading] = useFileUrl(() => props.file)
     border: 2px solid var(--ui-color-turquoise-500);
     background: var(--ui-color-turquoise-200);
     cursor: default;
+  }
+
+  &.loading {
+    cursor: default;
+    pointer-events: none;
   }
 
   &.compact {

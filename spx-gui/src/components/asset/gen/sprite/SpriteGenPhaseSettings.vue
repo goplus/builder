@@ -14,7 +14,6 @@ import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
 import SpriteImageItem from './SpriteImageItem.vue'
-import SpriteLoadingImageItem from './SpriteLoadingImageItem.vue'
 
 const props = defineProps<{
   gen: SpriteGen
@@ -34,7 +33,7 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
       <SpriteSettingsInput :gen="gen" />
       <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
         <template #loading-item>
-          <SpriteLoadingImageItem />
+          <SpriteImageItem loading />
         </template>
         <template #item="{ file, active, select }">
           <SpriteImageItem :file="file" :active="active" @click="select(file)" />
