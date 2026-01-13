@@ -185,91 +185,91 @@ provide(settingsInputCtxKey, ctx)
       }
     }
   }
-}
 
-.main {
-  position: relative;
-  flex: 1;
-  padding: 4px 0;
-  display: grid;
-  overflow-y: auto;
+  .main {
+    position: relative;
+    flex: 1;
+    padding: 4px 0;
+    display: grid;
+    overflow-y: auto;
 
-  .description,
-  .mirror {
-    grid-area: 1 / 1 / 2 / 2;
-    padding: 0;
-    margin: 0;
-    font: inherit;
-    font-size: 14px;
-    line-height: 1.6;
-    width: 100%;
-    box-sizing: border-box;
-    white-space: pre-wrap;
-    word-break: break-all;
-    overflow-wrap: anywhere;
-  }
+    .description,
+    .mirror {
+      grid-area: 1 / 1 / 2 / 2;
+      padding: 0;
+      margin: 0;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      width: 100%;
+      box-sizing: border-box;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
 
-  .description {
-    border: none;
-    resize: none;
-    background: transparent;
-    color: var(--ui-color-grey-900);
-    caret-color: var(--ui-color-turquoise-500);
+    .description {
+      border: none;
+      resize: none;
+      background: transparent;
+      color: var(--ui-color-grey-900);
+      caret-color: var(--ui-color-turquoise-500);
 
-    &:focus {
-      outline: none;
+      &:focus {
+        outline: none;
+      }
+    }
+
+    .mirror-text {
+      visibility: hidden;
+      pointer-events: none;
+      display: inline;
+    }
+
+    .mirror-actions {
+      display: inline-flex;
+      margin-left: 12px;
+      pointer-events: auto;
+    }
+
+    .enriching {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: fit-content;
+      color: var(--ui-color-turquoise-500);
+
+      .animation {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .enrich-btn {
+      cursor: pointer;
+      vertical-align: middle;
+      position: relative;
+      top: -2px;
     }
   }
 
-  .mirror-text {
-    visibility: hidden;
-    pointer-events: none;
-    display: inline;
-  }
-
-  .mirror-actions {
-    display: inline-flex;
-    margin-left: 12px;
-    pointer-events: auto;
-  }
-
-  .enriching {
+  .footer {
     display: flex;
     align-items: center;
-    gap: 2px;
-    height: fit-content;
-    color: var(--ui-color-turquoise-500);
-
-    .animation {
-      width: 16px;
-      height: 16px;
-    }
-  }
-
-  .enrich-btn {
-    cursor: pointer;
-    vertical-align: middle;
-    position: relative;
-    top: -2px;
-  }
-}
-
-.footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-
-  .extra {
-    display: flex;
-    padding: 4px;
+    justify-content: space-between;
     gap: 8px;
-    flex: 1 1 0;
-    width: max-content;
-    overflow: hidden;
 
-    & > * {
-      flex-shrink: 0;
+    .extra {
+      display: flex;
+      padding: 4px;
+      gap: 8px;
+      flex: 1 1 0;
+      width: max-content;
+      overflow: hidden;
+
+      & > * {
+        flex-shrink: 0;
+      }
     }
   }
 }
