@@ -61,7 +61,7 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
     :active="active"
     @click="emit('click')"
   >
-    <template v-if="gen.result !== null" #preview>
+    <template v-if="gen.result != null" #preview>
       <CostumesAutoPlayer
         v-if="hovered"
         class="preview"

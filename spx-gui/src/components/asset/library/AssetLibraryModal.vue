@@ -99,7 +99,7 @@ watch(
   (type, _, onCleanup) => {
     assetGen.value = {
       [AssetType.Sound]: null,
-      [AssetType.Sprite]: new SpriteGen(props.project),
+      [AssetType.Sprite]: new SpriteGen(i18n, props.project),
       [AssetType.Backdrop]: new BackdropGen(props.project)
     }[type]
     onCleanup(() => assetGen.value?.dispose())

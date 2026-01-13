@@ -3,6 +3,7 @@
     <CheckerboardBackground class="background" />
     <CostumesPlayer ref="costumesPlayerRef" class="costumes-player" />
     <MuteSwitch v-if="sound != null" class="mute-switch" :muted="mutedRef" @click="setMuted(!mutedRef)" />
+    <UILoading :visible="loading" cover />
   </div>
 </template>
 <script setup lang="ts">
@@ -12,6 +13,7 @@ import { useActivated } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
 import type { Costume } from '@/models/costume'
 import type { Sound } from '@/models/sound'
+import { UILoading } from '@/components/ui'
 import CostumesPlayer from '@/components/common/CostumesPlayer.vue'
 import CheckerboardBackground from '../CheckerboardBackground.vue'
 import MuteSwitch from './MuteSwitch.vue'
@@ -78,8 +80,11 @@ function getPlayCtrl() {
   return ctrl
 }
 
+const loading = ref(false)
+
 watchEffect(async () => {
   const ctrl = getPlayCtrl()
+  loading.value = true
   if (!activatedRef.value) return
   const costumesPlayer = costumesPlayerRef.value
   if (costumesPlayer == null) return
@@ -97,6 +102,8 @@ watchEffect(async () => {
   } catch (e) {
     ctrl.abort(e)
     capture(e, 'load and play animation failed')
+  } finally {
+    loading.value = false
   }
 })
 </script>

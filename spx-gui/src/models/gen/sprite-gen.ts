@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import { reactive, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
+import type { I18n } from '@/utils/i18n'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import {
   enrichSpriteSettings,
@@ -23,15 +24,17 @@ import { getAnimationName, getCostumeName } from '../common/asset-name'
 
 export class SpriteGen extends Disposable {
   id: string
+  private i18n: I18n
   private project: Project
   private enrichPhase: Phase<SpriteSettings>
   private genImagesTask: Task<TaskType.GenerateCostume>
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
 
-  constructor(project: Project, initialDescription = '') {
+  constructor(i18n: I18n, project: Project, initialDescription = '') {
     super()
     this.id = nanoid()
+    this.i18n = i18n
     this.project = project
     this.enrichPhase = new Phase()
     this.genImagesTask = new Task(TaskType.GenerateCostume)
@@ -89,8 +92,11 @@ export class SpriteGen extends Disposable {
       facing = Facing.Front
     }
     return {
-      name: 'default',
-      description: `The default costume for sprite "${this.settings.name}". The sprite: ${this.settings.description}`,
+      name: this.i18n.t({
+        en: 'default',
+        zh: '默认'
+      }),
+      description: this.settings.description,
       facing,
       artStyle: settings.artStyle,
       perspective: settings.perspective,

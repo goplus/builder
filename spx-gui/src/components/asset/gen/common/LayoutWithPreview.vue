@@ -1,3 +1,8 @@
+<!--
+  Layout with a main panel and an optional preview panel.
+  Typically used in sprite / backdrop gen UI.
+-->
+
 <script setup lang="ts">
 defineProps<{
   hasPreview: boolean

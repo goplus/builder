@@ -75,7 +75,7 @@ export class CostumeGen extends Disposable {
   }
 
   image: File | null = null
-  setImage(file: File) {
+  setImage(file: File | null) {
     this.image = file
   }
 
@@ -85,6 +85,7 @@ export class CostumeGen extends Disposable {
   async generate() {
     const defaultCostume = this.sprite.defaultCostume
     if (defaultCostume == null) throw new Error('Sprite has no default costume')
+    this.setImage(null)
     const image = await this.generatePhase.run(async () => {
       const referenceImageUrl = await saveFileForWebUrl(defaultCostume.img)
       const settings = { ...this.settings, referenceImageUrl }
