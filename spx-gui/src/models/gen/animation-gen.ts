@@ -33,6 +33,7 @@ export class AnimationGen extends Disposable {
   private generateVideoPhase: Phase<File>
   private extractFramesTask: Task<TaskType.ExtractVideoFrames>
   private extractFramesPhase: Phase<File[]>
+  private finishPhase: Phase<Animation>
 
   constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<AnimationSettings>) {
     super()
@@ -56,7 +57,7 @@ export class AnimationGen extends Disposable {
     this.framesConfig = null
     this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
     this.extractFramesPhase = new Phase()
-    this.result = null
+    this.finishPhase = new Phase()
     return reactive(this) as this
   }
 
@@ -137,27 +138,29 @@ export class AnimationGen extends Disposable {
       const videoUrl = await saveFileForWebUrl(video)
       await this.extractFramesTask.start({ videoUrl, ...framesConfig })
       const { frameUrls } = await this.extractFramesTask.untilCompleted()
-      // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
-      // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
-      const frames = frameUrls.map((url, i) => createFileWithWebUrl(url, `frame_${i}.png`))
+      const frames = frameUrls.map((url) => createFileWithWebUrl(url))
       return frames
     })
   }
 
-  result: Animation | null
-
+  get finishState() {
+    return this.finishPhase.state
+  }
+  get result() {
+    return this.finishPhase.state.result
+  }
   async finish() {
     const frameImgs = this.extractFramesPhase.state.result
     if (frameImgs == null) throw new Error('frame images expected')
-    const costumes = await Promise.all(
-      frameImgs.map((img, i) => {
-        const costumeName = `${this.settings.name}_frame_${i + 1}`
-        return Costume.create(costumeName, img)
-      })
-    )
-    const animation = Animation.create(this.settings.name, costumes)
-    this.result = animation
-    return animation
+    return this.finishPhase.run(async () => {
+      const costumes = await Promise.all(
+        frameImgs.map((img, i) => {
+          const costumeName = `${this.settings.name}_frame_${i + 1}`
+          return Costume.create(costumeName, img)
+        })
+      )
+      return Animation.create(this.settings.name, costumes)
+    })
   }
 
   cancel() {

@@ -102,9 +102,7 @@ export class SpriteGen extends Disposable {
       const settings = this.getDefaultCostumeSettings()
       await this.genImagesTask.start({ settings, n: 4 })
       const { imageUrls } = await this.genImagesTask.untilCompleted()
-      // Hardcode .png extension to avoid the cost of `adaptImg` in `Costume.create`.
-      // TODO: Improve the file type detection in `adaptImg` to avoid this hack.
-      return imageUrls.map((url) => createFileWithWebUrl(url, `${this.name}.png`))
+      return imageUrls.map((url) => createFileWithWebUrl(url))
     })
   }
 

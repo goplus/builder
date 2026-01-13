@@ -2,19 +2,12 @@
  * @desc AIGC-related APIs of spx-backend
  */
 
-import { timeout } from '@/utils/utils'
 import { AnimationLoopMode, ArtStyle, BackdropCategory, client, Perspective, SpriteCategory } from './common'
-
-const useMock = process.env.NODE_ENV === 'development'
 
 /**
  * @deprecated Use createTask() with TaskType.RemoveBackground instead
  */
 export async function matting(imageUrl: string) {
-  if (useMock) {
-    await timeout(2000)
-    return 'https://picsum.photos/400/400'
-  }
   const result = (await client.post('/aigc/matting', { imageUrl }, { timeout: 20 * 1000 })) as {
     resultUrl: string
   }
@@ -186,50 +179,14 @@ export async function createTask<T extends TaskType>(
   params: TaskParams<T>,
   signal?: AbortSignal
 ): Promise<Task<T>> {
-  if (useMock) {
-    await timeout(1000)
-    signal?.throwIfAborted()
-    return {
-      id: `mock-task-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      type,
-      status: TaskStatus.Pending
-    }
-  }
   return client.post('/aigc/task', { type, parameters: params }, { signal }) as Promise<Task<T>>
 }
 
 export async function getTask(taskID: string, signal?: AbortSignal): Promise<Task> {
-  if (useMock) {
-    await timeout(500)
-    signal?.throwIfAborted()
-    return {
-      id: taskID,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      type: TaskType.GenerateCostume,
-      status: TaskStatus.Completed,
-      result: {
-        imageUrls: ['https://picsum.photos/400/400']
-      }
-    } satisfies Task<TaskType.GenerateCostume>
-  }
   return client.get(`/aigc/task/${encodeURIComponent(taskID)}`, undefined, { signal }) as Promise<Task>
 }
 
 export async function cancelTask(taskID: string, signal?: AbortSignal): Promise<Task> {
-  if (useMock) {
-    await timeout(500)
-    signal?.throwIfAborted()
-    return {
-      id: taskID,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      type: TaskType.GenerateCostume,
-      status: TaskStatus.Cancelled
-    }
-  }
   return client.post(`/aigc/task/${encodeURIComponent(taskID)}/cancellation`, undefined, { signal }) as Promise<Task>
 }
 
@@ -277,45 +234,7 @@ export type TaskEvent<T extends TaskType = TaskType> =
   | TaskEventCancelled
   | TaskEventFailed
 
-async function* mockSubscribeTaskEvents(taskID: string, signal?: AbortSignal): AsyncGenerator<TaskEvent> {
-  signal?.throwIfAborted()
-
-  yield {
-    type: TaskEventType.Snapshot,
-    data: {
-      id: taskID,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      type: TaskType.GenerateCostume,
-      status: TaskStatus.Processing
-    }
-  }
-
-  await timeout(2000)
-  signal?.throwIfAborted()
-
-  yield {
-    type: TaskEventType.Completed,
-    data: {
-      result: {
-        imageUrls: [
-          'https://picsum.photos/400/400',
-          'https://picsum.photos/400/400',
-          'https://picsum.photos/400/400',
-          'https://picsum.photos/400/400'
-        ],
-        frameUrls: ['https://picsum.photos/400/400', 'https://picsum.photos/400/400', 'https://picsum.photos/400/400'],
-        videoUrl: 'https://builder-usercontent-test.gopluscdn.com/videos/test-aigc/generated_video.mp4'
-      }
-    }
-  }
-
-  return
-}
-
 export function subscribeTaskEvents(taskID: string, signal?: AbortSignal): AsyncGenerator<TaskEvent> {
-  if (useMock) return mockSubscribeTaskEvents(taskID, signal)
-
   return client.getJSONSSE(`/aigc/task/${encodeURIComponent(taskID)}/events`, undefined, {
     signal
   }) as AsyncGenerator<TaskEvent>
@@ -343,47 +262,6 @@ export async function enrichAssetSettings(
   params: EnrichAssetSettingsParams,
   signal?: AbortSignal
 ): Promise<EnrichAssetSettingsResult> {
-  if (useMock) {
-    await timeout(2000)
-    signal?.throwIfAborted()
-
-    switch (params.assetType) {
-      case AIGCAssetType.Sprite:
-        return {
-          name: 'Enriched Sprite',
-          category: SpriteCategory.Character,
-          description: `An enriched sprite based on: ${params.input}`,
-          artStyle: ArtStyle.FlatDesign,
-          perspective: Perspective.SideScrolling
-        } satisfies SpriteSettings
-      case AIGCAssetType.Costume:
-        return {
-          name: 'Enriched Costume',
-          description: `An enriched costume based on: ${params.input}`,
-          facing: Facing.Front,
-          artStyle: ArtStyle.FlatDesign,
-          perspective: Perspective.SideScrolling,
-          referenceImageUrl: null
-        } satisfies CostumeSettings
-      case AIGCAssetType.Animation:
-        return {
-          name: 'Enriched Animation',
-          description: `An enriched animation based on: ${params.input}`,
-          artStyle: ArtStyle.FlatDesign,
-          perspective: Perspective.SideScrolling,
-          loopMode: AnimationLoopMode.Loopable,
-          referenceFrameUrl: null
-        } satisfies AnimationSettings
-      case AIGCAssetType.Backdrop:
-        return {
-          name: 'Enriched Backdrop',
-          category: BackdropCategory.Unspecified,
-          description: `An enriched backdrop based on: ${params.input}`,
-          artStyle: ArtStyle.FlatDesign,
-          perspective: Perspective.AngledTopDown
-        } satisfies BackdropSettings
-    }
-  }
   return client.post('/aigc/asset-settings/enrichment', params, {
     signal,
     timeout: 60 * 1000
@@ -399,48 +277,6 @@ export async function genSpriteContentSettings(
   settings: SpriteSettings,
   signal?: AbortSignal
 ): Promise<SpriteContentSettings> {
-  if (useMock) {
-    await timeout(3000)
-    signal?.throwIfAborted()
-    return {
-      costumes: [
-        {
-          name: 'Costume 1',
-          description: `Costume 1 for ${settings.name}`,
-          facing: Facing.Front,
-          artStyle: settings.artStyle,
-          perspective: settings.perspective,
-          referenceImageUrl: null
-        },
-        {
-          name: 'Costume 2',
-          description: `Another costume for ${settings.name}`,
-          facing: Facing.Front,
-          artStyle: settings.artStyle,
-          perspective: settings.perspective,
-          referenceImageUrl: null
-        }
-      ],
-      animations: [
-        {
-          name: 'walk',
-          description: `A walking animation for ${settings.name}`,
-          artStyle: settings.artStyle,
-          perspective: settings.perspective,
-          loopMode: AnimationLoopMode.Loopable,
-          referenceFrameUrl: null
-        },
-        {
-          name: 'jump',
-          description: `A jumping animation for ${settings.name}`,
-          artStyle: settings.artStyle,
-          perspective: settings.perspective,
-          loopMode: AnimationLoopMode.NonLoopable,
-          referenceFrameUrl: null
-        }
-      ]
-    }
-  }
   return client.post(
     '/aigc/sprite/content-settings',
     { settings },

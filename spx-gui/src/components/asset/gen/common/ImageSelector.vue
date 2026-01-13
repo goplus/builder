@@ -47,6 +47,9 @@ function handleSelect(file: File) {
 const imagesLoaded = useAsyncComputed(async () => {
   const files = props.state.result
   if (files == null) return false
+  // The loading style within (Sprite|Backdrop)ImageItem is different from the (Sprite|Backdrop)LoadingImageItem,
+  // Here we preload all images so that the UI can switch smoothly.
+  // TODO: optimize this to display loaded images first.
   await Promise.all(files.map((file) => file.arrayBuffer()))
   return true
 })

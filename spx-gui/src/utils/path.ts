@@ -9,13 +9,21 @@ export function resolve(base: string, ...paths: string[]) {
   return resolveUri([base, ...paths].join('/'), undefined)
 }
 
+export function stripSearch(urlOrPath: string) {
+  const searchIdx = urlOrPath.lastIndexOf('?')
+  if (searchIdx >= 0) return urlOrPath.slice(0, searchIdx)
+  return urlOrPath
+}
+
 export function filename(urlOrPath: string) {
+  urlOrPath = stripSearch(urlOrPath)
   const slashPos = urlOrPath.lastIndexOf('/')
   if (slashPos >= 0) urlOrPath = urlOrPath.slice(slashPos + 1)
   return urlOrPath
 }
 
 export function stripExt(urlOrPath: string) {
+  urlOrPath = stripSearch(urlOrPath)
   const slashPos = urlOrPath.lastIndexOf('/')
   const dotPos = urlOrPath.lastIndexOf('.')
   if (dotPos > slashPos + 1) return urlOrPath.slice(0, dotPos)
@@ -24,5 +32,6 @@ export function stripExt(urlOrPath: string) {
 
 /** get extname, with dot. e.g. `.txt` */
 export function extname(urlOrPath: string) {
+  urlOrPath = stripSearch(urlOrPath)
   return urlOrPath.slice(stripExt(urlOrPath).length)
 }

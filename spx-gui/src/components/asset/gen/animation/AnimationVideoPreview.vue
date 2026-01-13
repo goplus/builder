@@ -125,7 +125,7 @@ const cutEndRef = ref(0)
 function notifyFramesConfigChanged() {
   const duration = cutEndRef.value - cutStartRef.value
   // TODO: We may improve the interval calculation logic later
-  const interval = duration >= 1200 ? 300 : 100
+  const interval = duration >= 2000 ? 300 : 100
   emit('update:framesConfig', {
     startTime: cutStartRef.value,
     duration: cutEndRef.value - cutStartRef.value,

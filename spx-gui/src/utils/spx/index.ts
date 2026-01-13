@@ -106,6 +106,10 @@ const supportedImgExts = ['jpg', 'jpeg', 'png', 'svg']
 
 /** Adapt image file to fit spx. Unsupported image files will be converted to jpeg. */
 export async function adaptImg(file: File): Promise<File> {
+  if (file.type === '') {
+    console.warn(`skipping image adaptation for "${file.name}" due to empty MIME type`)
+    return file
+  }
   for (const ext of supportedImgExts) {
     if (file.type === getMimeFromExt(ext)) return file
   }
