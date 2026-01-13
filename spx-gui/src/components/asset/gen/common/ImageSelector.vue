@@ -1,7 +1,6 @@
 <script lang="ts">
 import { inject } from 'vue'
 import type { ComputedRef, InjectionKey } from 'vue'
-import { useAsyncComputed } from '@/utils/utils'
 
 const imageSelectorCompactKey: InjectionKey<ComputedRef<boolean>> = Symbol('image-selector-compact')
 
@@ -19,7 +18,7 @@ import { useContentSize } from '@/utils/dom'
 import type { File } from '@/models/common/file'
 import type { PhaseState } from '@/models/gen/common'
 
-const props = defineProps<{
+defineProps<{
   state: PhaseState<File[]>
   selected: File | null
 }>()
@@ -43,23 +42,12 @@ provide(imageSelectorCompactKey, compact)
 function handleSelect(file: File) {
   emit('select', file)
 }
-
-const imagesLoaded = useAsyncComputed(async () => {
-  const files = props.state.result
-  if (files == null) return false
-  // The loading style within (Sprite|Backdrop)ImageItem is different from the (Sprite|Backdrop)LoadingImageItem,
-  // Here we preload all images so that the UI can switch smoothly.
-  // TODO: optimize this to display loaded images first.
-  await Promise.all(files.map((file) => file.arrayBuffer()))
-  return true
-})
-const imagesLoading = computed(() => !imagesLoaded.value)
 </script>
 
 <template>
   <div v-if="state.status !== 'initial'" ref="wrapperRef" class="image-selector">
     <ul class="list">
-      <template v-if="state.status === 'running' || imagesLoading">
+      <template v-if="state.status === 'running'">
         <template v-for="idx in 4" :key="idx">
           <slot name="loading-item" :index="idx"></slot>
         </template>

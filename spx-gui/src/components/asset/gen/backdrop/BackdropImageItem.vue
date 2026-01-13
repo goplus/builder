@@ -1,22 +1,33 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import { UIImg } from '@/components/ui'
 import { useImageSelectorCompact } from '../common/ImageSelector.vue'
+import GenLoading from '../common/GenLoading.vue'
 
-const props = defineProps<{
-  file: File
-  active: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    file?: File | null
+    active?: boolean
+    loading?: boolean
+  }>(),
+  {
+    file: null,
+    active: false,
+    loading: false
+  }
+)
 
 const compact = useImageSelectorCompact()
-
-const [url, loading] = useFileUrl(() => props.file)
+const [url, fileLoading] = useFileUrl(() => props.file)
+const loading = computed(() => props.loading || fileLoading.value)
 </script>
 
 <template>
-  <div class="backdrop-image-item" :class="{ active, compact }">
-    <UIImg class="img" :src="url" :loading="loading" size="cover" />
+  <div class="backdrop-image-item" :class="{ active, compact, loading }">
+    <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" />
+    <UIImg v-else class="img" :src="url" size="cover" />
   </div>
 </template>
 
@@ -43,6 +54,11 @@ const [url, loading] = useFileUrl(() => props.file)
     background-color: var(--ui-color-turquoise-200);
     border-color: var(--ui-color-turquoise-500);
     cursor: default;
+  }
+
+  &.loading {
+    cursor: default;
+    pointer-events: none;
   }
 
   &.compact {

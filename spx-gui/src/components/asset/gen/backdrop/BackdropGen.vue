@@ -9,7 +9,6 @@ import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
 import BackdropImageItem from './BackdropImageItem.vue'
-import BackdropLoadingImageItem from './BackdropLoadingImageItem.vue'
 
 const props = defineProps<{
   gen: BackdropGen
@@ -38,7 +37,7 @@ const handleSubmit = useMessageHandle(
       <BackdropSettingInput :gen="gen" :disabled="handleSubmit.isLoading.value" />
       <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
         <template #loading-item>
-          <BackdropLoadingImageItem />
+          <BackdropImageItem loading />
         </template>
         <template #item="{ file, active, select }">
           <BackdropImageItem :file="file" :active="active" @click="select(file)" />
