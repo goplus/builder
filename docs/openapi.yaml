@@ -2281,7 +2281,7 @@ paths:
                   items:
                     type: string
                   examples:
-                    - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195
+                    - - kodo://xbuilder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195
       responses:
         "201":
           description: Successfully generated signed URLs for the files.
@@ -2296,7 +2296,7 @@ paths:
                     items:
                       type: object
                     examples:
-                      - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://builder-usercontent.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
+                      - - kodo://xbuilder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://xbuilder-usercontent-test.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
 
   /util/sb2xbp:
     post:
@@ -2521,9 +2521,9 @@ components:
           type: object
           examples:
             - NiuXiaoQi.spx: data:;,
-              assets/backdrop.jpeg: kodo://goplus-builder-usercontent-test/files/FnPtX9heX2eXE8vRIiITmFXQVAOz-5352
+              assets/backdrop.jpeg: kodo://xbuilder-usercontent-test/files/FnPtX9heX2eXE8vRIiITmFXQVAOz-5352
               assets/index.json: data:application/json,%7B%22backdrops%22%3A%5B%7B%22x%22%3A0%2C%22y%22%3A0%2C%22faceRight%22%3A0%2C%22bitmapResolution%22%3A2%2C%22name%22%3A%22backdrop%22%2C%22path%22%3A%22backdrop.png%22%2C%22builder_id%22%3A%22LGH5r3l8lDocud3zzlq3D%22%7D%5D%2C%22backdropIndex%22%3A0%2C%22map%22%3A%7B%22width%22%3A480%2C%22height%22%3A360%2C%22mode%22%3A%22fillRatio%22%7D%2C%22run%22%3A%7B%22width%22%3A480%2C%22height%22%3A360%7D%2C%22zorder%22%3A%5B%22NiuXiaoQi%22%5D%2C%22builder_spriteOrder%22%3A%5B%22fZFB5R_Mwwq95FB6xIVYu%22%5D%2C%22builder_soundOrder%22%3A%5B%5D%7D
-              assets/sprites/NiuXiaoQi/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
+              assets/sprites/NiuXiaoQi/costume.png: kodo://xbuilder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
               assets/sprites/NiuXiaoQi/index.json: data:application/json,%7B%22heading%22%3A90%2C%22x%22%3A0%2C%22y%22%3A0%2C%22size%22%3A1%2C%22rotationStyle%22%3A%22normal%22%2C%22costumeIndex%22%3A0%2C%22visible%22%3Atrue%2C%22isDraggable%22%3Afalse%2C%22pivot%22%3A%7B%22x%22%3A71%2C%22y%22%3A-75%7D%2C%22costumes%22%3A%5B%7B%22x%22%3A0%2C%22y%22%3A0%2C%22faceRight%22%3A0%2C%22bitmapResolution%22%3A2%2C%22name%22%3A%22costume%22%2C%22path%22%3A%22costume.png%22%2C%22builder_id%22%3A%22VCxSMAnlb3WI1IyikqjCV%22%7D%5D%2C%22fAnimations%22%3A%7B%7D%2C%22animBindings%22%3A%7B%7D%2C%22builder_id%22%3A%22fZFB5R_Mwwq95FB6xIVYu%22%7D
               main.spx: data:;,
         visibility:
@@ -2674,7 +2674,7 @@ components:
           description: File paths and their corresponding universal URLs associated with the asset.
           type: object
           examples:
-            - assets/sprites/NiuXiaoQi/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
+            - assets/sprites/NiuXiaoQi/costume.png: kodo://xbuilder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
               assets/sprites/NiuXiaoQi/index.json: data:application/json,%7B%22heading%22%3A90%2C%22x%22%3A0%2C%22y%22%3A0%2C%22size%22%3A1%2C%22rotationStyle%22%3A%22normal%22%2C%22costumeIndex%22%3A0%2C%22visible%22%3Atrue%2C%22isDraggable%22%3Afalse%2C%22pivot%22%3A%7B%22x%22%3A71%2C%22y%22%3A-75%7D%2C%22costumes%22%3A%5B%7B%22x%22%3A0%2C%22y%22%3A0%2C%22faceRight%22%3A0%2C%22bitmapResolution%22%3A2%2C%22name%22%3A%22costume%22%2C%22path%22%3A%22costume.png%22%2C%22builder_id%22%3A%22VCxSMAnlb3WI1IyikqjCV%22%7D%5D%2C%22fAnimations%22%3A%7B%7D%2C%22animBindings%22%3A%7B%7D%2C%22builder_id%22%3A%22fZFB5R_Mwwq95FB6xIVYu%22%7D
         filesHash:
           description: Hash of the asset files.
@@ -3182,12 +3182,12 @@ components:
           description: Name of the Qiniu Kodo bucket where files will be uploaded.
           type: string
           examples:
-            - goplus-builder-usercontent-test
+            - xbuilder-usercontent-test
         region:
           description: Region of the Qiniu Kodo bucket.
           type: string
           examples:
-            - na0
+            - z0
 
     ByPage:
       description: Paginated response wrapper.
