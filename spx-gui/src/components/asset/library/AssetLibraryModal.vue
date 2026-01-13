@@ -31,10 +31,13 @@ import { ownerAll } from '@/apis/common'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 
+type TransformOriginType = InstanceType<typeof UIModal>['transformOrigin']
+
 const props = defineProps<{
   type: AssetType
   visible: boolean
   project: Project
+  beforeResolvedGen?: (gen: AssetGenModel) => Promise<TransformOriginType>
 }>()
 
 /**
@@ -236,10 +239,12 @@ function handleGenStart() {
   isGenPhase.value = true
 }
 
-function handleGenCollapse() {
+const transformOrigin = ref<TransformOriginType>(null)
+async function handleGenCollapse() {
   const gen = assetGen.value
   if (gen == null) throw new Error('asset gen expected')
   preventAssetGenDisposal(gen)
+  transformOrigin.value = props.beforeResolvedGen != null ? await props.beforeResolvedGen(gen) : null
   emit('resolved', {
     type: 'gen',
     gen
@@ -319,6 +324,7 @@ const title = computed(() => {
     :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
     style="width: 1076px; height: 800px"
     :visible="visible"
+    :transform-origin="transformOrigin"
     mask-closable
     @update:visible="handleModalClose"
   >

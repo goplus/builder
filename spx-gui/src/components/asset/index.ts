@@ -6,7 +6,7 @@ import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import type { AssetModel } from '@/models/common/asset'
+import { type AssetModel } from '@/models/common/asset'
 import { fromNativeFile } from '@/models/common/file'
 import { type Project } from '@/models/project'
 import { Backdrop } from '@/models/backdrop'
@@ -35,19 +35,29 @@ import { BackdropGen } from '@/models/gen/backdrop-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 
-export function useAddAssetFromLibrary() {
+export function useAddAssetFromLibrary(
+  provideResolvedGenTransformOrigin?: (id: string) => Promise<{ x: number; y: number } | null>
+) {
   const editorCtx = useEditorCtx()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
+
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    const resolved = await invokeAssetLibraryModal({ project, type })
+    const resolved = await invokeAssetLibraryModal({
+      project,
+      type,
+      beforeResolvedGen: async (gen) => {
+        // If AssetLibraryModal resolved with `type: gen`, which stands for an ongoing asset generation,
+        // we directly add the generation to the editor state
+        if (gen instanceof SpriteGen) {
+          editorCtx.state.addSpriteGen(gen)
+        } else if (gen instanceof BackdropGen) {
+          editorCtx.state.addBackdropGen(gen)
+        }
+        return provideResolvedGenTransformOrigin?.(gen.id)
+      }
+    })
     if (resolved.type === 'assets') return resolved.assets as Array<AssetModel<T>>
-    // If AssetLibraryModal resolved with `type: gen`, which stands for an ongoing asset generation,
-    // we directly add the generation to the editor state and throw a Cancelled error
-    // to inform the caller that no asset is selected.
-    const gen = resolved.gen
-    if (gen instanceof SpriteGen) editorCtx.state.addSpriteGen(gen)
-    else if (gen instanceof BackdropGen) editorCtx.state.addBackdropGen(gen)
-    else throw new Error('unknown asset gen type')
+    // throw a Cancelled error to inform the caller that no asset is selected.
     throw new Cancelled('gen asset while not finished')
   }
 }

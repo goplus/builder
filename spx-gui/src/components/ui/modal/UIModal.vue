@@ -21,13 +21,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect, watch } from 'vue'
 import { isString } from 'lodash'
 import { NModal } from 'naive-ui'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { useModalContainer } from '../utils'
+import { useLastClickEvent, useModalContainer } from '../utils'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
+
+type Pos = { x: number; y: number }
 
 const props = defineProps<{
   size?: ModalSize
@@ -40,7 +42,7 @@ const props = defineProps<{
    * TODO: Update implementation of `UIModal` to support using `v-radar` directly.
    */
   radar?: RadarNodeMeta
-  transformOrigin?: InstanceType<typeof NModal>['transformOrigin'] | { x: number; y: number }
+  transformOrigin?: InstanceType<typeof NModal>['transformOrigin'] | Pos | null
 }>()
 
 const emit = defineEmits<{
@@ -53,10 +55,29 @@ const handleUpdateShow = (visible: boolean) => {
 
 const attachTo = useModalContainer()
 
+const lastClickEvent = useLastClickEvent()
+const mousePosRef = ref<Pos | null>(null)
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && lastClickEvent.value != null)
+      mousePosRef.value = { x: lastClickEvent.value.x, y: lastClickEvent.value.y }
+  },
+  {
+    immediate: true
+  }
+)
 const containerRef = ref<HTMLElement | null>(null)
+const resolvedTransformOrigin = computed(() => {
+  if (containerRef.value == null || props.transformOrigin == null) return null
+  if (props.transformOrigin === 'center') return null
+  if (props.transformOrigin === 'mouse')
+    return mousePosRef.value != null ? { x: mousePosRef.value.x, y: mousePosRef.value.y } : null
+  return props.transformOrigin
+})
 const customTransformOrigin = computed(() => {
-  if (containerRef.value == null || props.transformOrigin == null || isString(props.transformOrigin)) return null
-  const { x, y } = props.transformOrigin
+  if (containerRef.value == null || resolvedTransformOrigin.value == null) return null
+  const { x, y } = resolvedTransformOrigin.value
   return `${x - containerRef.value.offsetLeft}px ${y - containerRef.value.offsetTop}px`
 })
 

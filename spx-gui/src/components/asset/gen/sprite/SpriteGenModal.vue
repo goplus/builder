@@ -22,6 +22,7 @@ const emit = defineEmits<{
     :visible="visible"
     :style="{ width: '1076px', height: '800px' }"
     :body-style="{ flex: '1 1 0', padding: '0' }"
+    transform-origin="mouse"
     @update:visible="emit('cancelled')"
   >
     <SpriteGenComp :gen="gen" @collapse="emit('cancelled')" @finished="emit('resolved', $event)" />
