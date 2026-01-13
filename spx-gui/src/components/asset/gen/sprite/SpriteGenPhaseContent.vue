@@ -262,13 +262,12 @@ const handleSubmit = useMessageHandle(
 .left {
   flex: 0 0 auto;
   width: 408px;
-  padding: 16px 16px 20px;
+  padding-top: 16px;
   background: var(--ui-color-grey-100);
   border-right: 1px solid var(--ui-color-grey-400);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 20px;
 }
 
 .preview {
@@ -294,6 +293,7 @@ const handleSubmit = useMessageHandle(
 
 .gen-list {
   flex: 1 1 0;
+  padding: 0 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -301,6 +301,7 @@ const handleSubmit = useMessageHandle(
 }
 
 .gen-settings {
+  padding: 20px 16px;
   margin-top: 0;
 }
 </style>

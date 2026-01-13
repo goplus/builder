@@ -178,13 +178,13 @@ function makeSpriteGenPhaseSettings() {
 
 async function makeSpriteGenPhaseContent() {
   const settings: SpriteSettings = {
-    name: 'CuteAnimal',
-    description: "A cute animal character, suitable for children's games.",
+    name: '孙悟空',
+    description: '孙悟空',
     category: SpriteCategory.Character,
     artStyle: ArtStyle.FlatDesign,
     perspective: Perspective.AngledTopDown
   }
-  const gen = new SpriteGen(i18n, editorCtx.project, '可爱小动物')
+  const gen = new SpriteGen(i18n, editorCtx.project, '孙悟空')
   gen['enrichPhase'].state = {
     status: 'finished',
     result: settings,
@@ -192,8 +192,8 @@ async function makeSpriteGenPhaseContent() {
   }
   gen.setSettings(settings)
   const images = Array.from({ length: 4 })
-    .map(() => 'https://builder-usercontent-test.gopluscdn.com/files/Fqb6lL1U54w_UwdBCw7lBg56xnSw-17773')
-    .map((url) => createFileWithWebUrl(url, 'todo.svg'))
+    .map(() => 'https://builder-usercontent-test.gopluscdn.com/aigc/FoImv3cDxskQ2VmS0twT9xHJ6vLV-1410679')
+    .map((url) => createFileWithWebUrl(url))
   gen['genImagesPhase'].state = {
     status: 'finished',
     result: images,
@@ -202,8 +202,8 @@ async function makeSpriteGenPhaseContent() {
   gen.setImage(images[0])
   const costumeSettings: CostumeSettings[] = [
     {
-      name: 'costume1',
-      description: `Costume 1 for ${settings.name}`,
+      name: '二郎神',
+      description: `二郎神`,
       facing: Facing.Front,
       artStyle: settings.artStyle,
       perspective: settings.perspective,
@@ -245,7 +245,22 @@ async function makeSpriteGenPhaseContent() {
   const defaultCostumeGen = new CostumeGen(gen, editorCtx.project, gen['getDefaultCostumeSettings']())
   defaultCostumeGen.setImage(images[0])
   await defaultCostumeGen.finish()
-  gen.costumes = [defaultCostumeGen, ...costumeSettings.map((cs) => new CostumeGen(gen, editorCtx.project, cs))]
+  gen.costumes = [defaultCostumeGen]
+  await nextTick()
+  for (const cs of costumeSettings) {
+    const g = gen.addCostume()
+    g.setSettings(cs)
+  }
+  const erlangshenImage = createFileWithWebUrl(
+    'https://builder-usercontent-test.gopluscdn.com/aigc/FrIp1lbz34H00vrbciOWQsF5o7cV-367958'
+  )
+  gen.costumes[1]['generatePhase'].state = {
+    status: 'finished',
+    result: erlangshenImage,
+    error: null
+  }
+  gen.costumes[1].setImage(erlangshenImage)
+  await gen.costumes[1].finish()
   await nextTick()
   gen.animations = animationSettings.map((as) => new AnimationGen(gen, editorCtx.project, as))
   return gen

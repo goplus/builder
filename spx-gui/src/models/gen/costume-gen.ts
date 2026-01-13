@@ -15,7 +15,7 @@ import { SpriteGen } from './sprite-gen'
 export class CostumeGen extends Disposable {
   id: string
   parent: Sprite | SpriteGen
-  private get sprite(): Sprite {
+  get sprite(): Sprite {
     if (this.parent instanceof Sprite) return this.parent
     return this.parent.previewSprite
   }
@@ -43,6 +43,7 @@ export class CostumeGen extends Disposable {
       referenceImageUrl: null,
       ...settings
     }
+    this.referenceCostumeId = this.sprite.defaultCostume?.id ?? null
     return reactive(this) as this
   }
 
@@ -74,6 +75,16 @@ export class CostumeGen extends Disposable {
     Object.assign(this.settings, updates)
   }
 
+  private referenceCostumeId: string | null
+  get referenceCostume() {
+    const id = this.referenceCostumeId
+    if (id == null) return null
+    return this.sprite.costumes.find((c) => c.id === id) ?? null
+  }
+  setReferenceCostume(costumeId: string | null) {
+    this.referenceCostumeId = costumeId
+  }
+
   image: File | null = null
   setImage(file: File | null) {
     this.image = file
@@ -83,11 +94,10 @@ export class CostumeGen extends Disposable {
     return this.generatePhase.state
   }
   async generate() {
-    const defaultCostume = this.sprite.defaultCostume
-    if (defaultCostume == null) throw new Error('Sprite has no default costume')
     this.setImage(null)
     const image = await this.generatePhase.run(async () => {
-      const referenceImageUrl = await saveFileForWebUrl(defaultCostume.img)
+      const referenceCostume = this.referenceCostume
+      const referenceImageUrl = referenceCostume != null ? await saveFileForWebUrl(referenceCostume.img) : null
       const settings = { ...this.settings, referenceImageUrl }
       await this.generateTask.start({ settings, n: 1 })
       const { imageUrls } = await this.generateTask.untilCompleted()
