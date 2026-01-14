@@ -6,7 +6,6 @@
     :auto-focus="autoFocus"
     :trap-focus="false"
     :mask-closable="maskClosable"
-    :transform-origin="isString(transformOrigin) ? transformOrigin : undefined"
     :class="{ 'has-custom-origin': !!customTransformOrigin }"
     @update:show="handleUpdateShow"
   >
@@ -21,15 +20,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect, watch } from 'vue'
-import { isString } from 'lodash'
+import { ref, watchEffect, watch } from 'vue'
 import { NModal } from 'naive-ui'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { useLastClickEvent, useModalContainer } from '../utils'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
-
-type Pos = { x: number; y: number }
+export type TransformOrigin = { x: number; y: number }
 
 const props = defineProps<{
   size?: ModalSize
@@ -42,7 +39,6 @@ const props = defineProps<{
    * TODO: Update implementation of `UIModal` to support using `v-radar` directly.
    */
   radar?: RadarNodeMeta
-  transformOrigin?: InstanceType<typeof NModal>['transformOrigin'] | Pos | null
 }>()
 
 const emit = defineEmits<{
@@ -56,30 +52,21 @@ const handleUpdateShow = (visible: boolean) => {
 const attachTo = useModalContainer()
 
 const lastClickEvent = useLastClickEvent()
-const mousePosRef = ref<Pos | null>(null)
 watch(
   () => props.visible,
   (visible) => {
     if (visible && lastClickEvent.value != null)
-      mousePosRef.value = { x: lastClickEvent.value.x, y: lastClickEvent.value.y }
+      setTransformOrigin({ x: lastClickEvent.value.x, y: lastClickEvent.value.y })
   },
   {
     immediate: true
   }
 )
 const containerRef = ref<HTMLElement | null>(null)
-const resolvedTransformOrigin = computed(() => {
-  if (containerRef.value == null || props.transformOrigin == null) return null
-  if (props.transformOrigin === 'center') return null
-  if (props.transformOrigin === 'mouse')
-    return mousePosRef.value != null ? { x: mousePosRef.value.x, y: mousePosRef.value.y } : null
-  return props.transformOrigin
-})
-const customTransformOrigin = computed(() => {
-  if (containerRef.value == null || resolvedTransformOrigin.value == null) return null
-  const { x, y } = resolvedTransformOrigin.value
-  return `${x - containerRef.value.offsetLeft}px ${y - containerRef.value.offsetTop}px`
-})
+const customTransformOrigin = ref<TransformOrigin>({ x: 0, y: 0 })
+function setTransformOrigin(transformOrigin: TransformOrigin) {
+  customTransformOrigin.value = transformOrigin
+}
 
 const modalElRef = ref<HTMLElement | null>(null)
 watchEffect(() => {
@@ -90,9 +77,17 @@ watchEffect(() => {
     modalEl = modalElRef.value = containerRef.value.closest('.ui-modal')
   }
 
-  if (customTransformOrigin.value != null && modalEl != null) {
-    modalEl.style.setProperty('--ui-modal-custom-origin', customTransformOrigin.value)
+  if (modalEl != null) {
+    const { offsetLeft, offsetTop } = containerRef.value
+    const { x, y } = customTransformOrigin.value
+    // Internal handling of NModal in naive-ui prevents us from passing customTransformOrigin via style props.
+    // Since a better solution is currently unavailable, we manually set the property on the .ui-modal element.
+    modalEl.style.setProperty('--ui-modal-custom-origin', `${x - offsetLeft}px ${y - offsetTop}px`)
   }
+})
+
+defineExpose({
+  setTransformOrigin
 })
 </script>
 

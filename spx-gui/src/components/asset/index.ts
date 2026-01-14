@@ -1,6 +1,5 @@
 import { useMessage, useModal } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
-import { Cancelled } from '@/utils/exception'
 import { getSupportedAudioExts, imgExts, selectFile } from '@/utils/file'
 import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
@@ -34,15 +33,13 @@ import { SpriteGen } from '@/models/gen/sprite-gen'
 import { BackdropGen } from '@/models/gen/backdrop-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
+import { until } from '@/utils/utils'
 
-export function useAddAssetFromLibrary(
-  provideResolvedGenTransformOrigin?: (id: string) => Promise<{ x: number; y: number } | null>
-) {
+export function useAddAssetFromLibrary() {
   const editorCtx = useEditorCtx()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
-
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    const resolved = await invokeAssetLibraryModal({
+    return invokeAssetLibraryModal({
       project,
       type,
       beforeResolvedGen: async (gen) => {
@@ -53,12 +50,11 @@ export function useAddAssetFromLibrary(
         } else if (gen instanceof BackdropGen) {
           editorCtx.state.addBackdropGen(gen)
         }
-        return provideResolvedGenTransformOrigin?.(gen.id)
+
+        await until(() => editorCtx.state.getGenTransformOrigin(gen.id) != null)
+        return editorCtx.state.getGenTransformOrigin(gen.id)!
       }
     })
-    if (resolved.type === 'assets') return resolved.assets as Array<AssetModel<T>>
-    // throw a Cancelled error to inform the caller that no asset is selected.
-    throw new Cancelled('gen asset while not finished')
   }
 }
 

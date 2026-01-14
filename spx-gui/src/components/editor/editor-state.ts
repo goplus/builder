@@ -13,6 +13,7 @@ import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
+import { type TransformOrigin } from '@/components/ui'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
@@ -103,6 +104,15 @@ export class EditorState extends Disposable {
     if (index < 0) throw new Error('BackdropGen not found in editor state')
     const [gen] = this.backdropGens.splice(index, 1)
     gen.dispose()
+  }
+
+  genTransformOrigins = shallowReactive(new Map<string, TransformOrigin>())
+  addGenTransformOrigin(gen: SpriteGen | BackdropGen, transformOrigin: TransformOrigin) {
+    this.genTransformOrigins.set(gen.id, transformOrigin)
+    gen.addDisposer(() => this.genTransformOrigins.delete(gen.id))
+  }
+  getGenTransformOrigin(id: string) {
+    return this.genTransformOrigins.get(id)
   }
 
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)

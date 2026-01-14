@@ -9,7 +9,8 @@ import {
   UIIcon,
   UIModal,
   UIModalClose,
-  useConfirmDialog
+  useConfirmDialog,
+  type TransformOrigin
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
@@ -31,43 +32,16 @@ import { ownerAll } from '@/apis/common'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 
-type TransformOriginType = InstanceType<typeof UIModal>['transformOrigin']
-
 const props = defineProps<{
   type: AssetType
   visible: boolean
   project: Project
-  beforeResolvedGen?: (gen: AssetGenModel) => Promise<TransformOriginType>
+  beforeResolvedGen?: (gen: AssetGenModel) => Promise<TransformOrigin>
 }>()
-
-/**
- * AssetLibraryModal may resolve with two types of result:
- * 1. Assets
- * 2. Asset generation process
- */
-type Resolved =
-  | {
-      /**
-       * The user selected some existing assets,
-       * or finished generating new ones and chose to use them.
-       */
-      type: 'assets'
-      /** The selected or generated assets */
-      assets: AssetModel[]
-    }
-  | {
-      /**
-       * The user chose to generate new asset(s),
-       * and the generation process is not finished yet.
-       */
-      type: 'gen'
-      /** The ongoing generation process */
-      gen: AssetGenModel
-    }
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [Resolved]
+  resolved: [AssetModel[]]
 }>()
 
 const i18n = useI18n()
@@ -214,10 +188,7 @@ const handleConfirm = useMessageHandle(
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
     const assetModels = await props.project.history.doAction(action, () => Promise.all(selected.map(addAssetToProject)))
-    emit('resolved', {
-      type: 'assets',
-      assets: assetModels
-    })
+    emit('resolved', assetModels)
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }
 )
@@ -239,16 +210,15 @@ function handleGenStart() {
   isGenPhase.value = true
 }
 
-const transformOrigin = ref<TransformOriginType>(null)
+const modalRef = ref<InstanceType<typeof UIModal> | null>()
 async function handleGenCollapse() {
   const gen = assetGen.value
   if (gen == null) throw new Error('asset gen expected')
   preventAssetGenDisposal(gen)
-  transformOrigin.value = props.beforeResolvedGen != null ? await props.beforeResolvedGen(gen) : null
-  emit('resolved', {
-    type: 'gen',
-    gen
-  })
+  if (props.beforeResolvedGen != null && modalRef.value != null) {
+    modalRef.value.setTransformOrigin(await props.beforeResolvedGen(gen))
+  }
+  emit('cancelled')
 }
 
 const handleGenFinished = useMessageHandle(
@@ -278,10 +248,7 @@ const handleGenFinished = useMessageHandle(
         throw new Error('unknown asset type')
       }
     )
-    emit('resolved', {
-      type: 'assets',
-      assets: [added]
-    })
+    emit('resolved', [added])
   },
   {
     en: 'Failed to generate asset',
@@ -321,10 +288,10 @@ const title = computed(() => {
 
 <template>
   <UIModal
+    ref="modalRef"
     :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
     style="width: 1076px; height: 800px"
     :visible="visible"
-    :transform-origin="transformOrigin"
     mask-closable
     @update:visible="handleModalClose"
   >

@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { SpriteGen } from '@/models/gen/sprite-gen'
@@ -139,29 +139,31 @@ const handleAddFromLocalFile = useMessageHandle(
 const spriteGenItemRefs = new Map<string, HTMLElement>()
 function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, id: string) {
   if (ref != null && '$el' in ref && ref.$el instanceof HTMLElement) spriteGenItemRefs.set(id, ref.$el)
-
-  // Remove refs that are not in state.spriteGens to avoid potential memory leaks
-  const idsToRemove: string[] = []
-  spriteGenItemRefs.forEach((_, key) => {
-    if (!editorCtx.state.spriteGens.find((gen) => gen.id === key)) {
-      idsToRemove.push(key)
-    }
-  })
-  idsToRemove.forEach((id) => spriteGenItemRefs.delete(id))
+  else spriteGenItemRefs.delete(id)
 }
-async function provideResolvedGenTransformOrigin(id: string) {
-  await nextTick()
-  const el = spriteGenItemRefs.get(id)
-  if (el == null) return null
-  el.scrollIntoView({ block: 'center' })
-  const rect = el.getBoundingClientRect()
-  return {
-    x: rect.left + rect.width / 2,
-    y: rect.top + rect.height / 2
+
+watch(
+  () => editorCtx.state.spriteGens.length,
+  (newLength, oldLength) => {
+    if (newLength < oldLength) return
+    const spriteGen = editorCtx.state.spriteGens.at(-1)
+    if (spriteGen == null) return
+
+    const { id } = spriteGen
+    const el = spriteGenItemRefs.get(id)
+    if (el == null) return
+    el.scrollIntoView({ block: 'center' })
+    const rect = el.getBoundingClientRect()
+    editorCtx.state.addGenTransformOrigin(spriteGen, {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    })
+  },
+  {
+    flush: 'post'
   }
-}
-
-const addAssetFromLibrary = useAddAssetFromLibrary(provideResolvedGenTransformOrigin)
+)
+const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
