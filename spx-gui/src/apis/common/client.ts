@@ -186,7 +186,7 @@ export class Client {
     }
     // Dispatch any remaining buffered event data at the end of the stream
     if (dataBuffer !== '') {
-      yield { type: eventName, data: dataBuffer.slice(0, -1) }
+      yield { type: eventName, data: dataBuffer.slice(0, -1) } // remove trailing newline
     }
   }
 
