@@ -59,7 +59,6 @@ export function useQuery<T>(
   const progress = shallowRef<Progress>({ percentage: 0, desc: null })
 
   let lastCtrl: AbortController | null = null
-  let queryVersion = 0
   onUnmounted(() => lastCtrl?.abort(new Cancelled('unmounted')))
   const getSignal = () => {
     if (lastCtrl != null) lastCtrl.abort(new Cancelled('new query'))
@@ -70,19 +69,18 @@ export function useQuery<T>(
 
   function fetch(source: QuerySource) {
     const signal = getSignal()
-    const currentVersion = ++queryVersion
     const reporter = new ProgressReporter((p) => (progress.value = p))
     isLoading.value = true
     queryFn({ signal, source, reporter }).then(
       (d) => {
-        if (currentVersion !== queryVersion) return
+        if (signal.aborted) return
         data.value = d
         error.value = null
         isLoading.value = false
       },
       (e) => {
         if (e instanceof Cancelled) return
-        if (currentVersion !== queryVersion) return
+        if (signal.aborted) return
         capture(e, 'useQuery error')
         error.value = e
         isLoading.value = false
