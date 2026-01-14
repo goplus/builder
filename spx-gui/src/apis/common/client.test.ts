@@ -46,6 +46,15 @@ describe('requestSSE', () => {
       const events = await collectEvents(client, '/test')
       expect(events).toEqual([{ type: 'message', data: 'line1\nline2' }])
     })
+
+    it('should handle standalone \\r line endings', async () => {
+      const client = createMockClient(['data: hello\r\rdata: world\r\r'])
+      const events = await collectEvents(client, '/test')
+      expect(events).toEqual([
+        { type: 'message', data: 'hello' },
+        { type: 'message', data: 'world' }
+      ])
+    })
   })
 
   describe('multiple data lines', () => {
