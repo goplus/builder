@@ -148,11 +148,30 @@ export class Client {
 
     for await (const chunk of stream) {
       buffer += chunk
-      let eolIndex: number
-      // The spec allows \r\n, \r, or \n. For simplicity, we handle \n and strip \r.
-      while ((eolIndex = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, eolIndex).replace(/\r$/, '')
-        buffer = buffer.slice(eolIndex + 1)
+      // Handle all SSE-allowed line endings: \r\n, \r, and \n.
+      while (true) {
+        const crIndex = buffer.indexOf('\r')
+        const lfIndex = buffer.indexOf('\n')
+        if (crIndex === -1 && lfIndex === -1) {
+          break
+        }
+
+        let eolIndex: number
+        let eolLength = 1
+        if (crIndex === -1) {
+          eolIndex = lfIndex
+        } else if (lfIndex === -1) {
+          eolIndex = crIndex
+        } else {
+          eolIndex = Math.min(crIndex, lfIndex)
+        }
+
+        if (buffer[eolIndex] === '\r' && buffer[eolIndex + 1] === '\n') {
+          eolLength = 2
+        }
+
+        const line = buffer.slice(0, eolIndex)
+        buffer = buffer.slice(eolIndex + eolLength)
 
         if (line === '') {
           // Empty line: dispatch event
