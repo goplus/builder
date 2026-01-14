@@ -64,7 +64,13 @@ export type PhaseState<R> =
 /** `Phase` tracks the state of an asynchronous process. */
 export class Phase<R> {
   state: PhaseState<R>
-  constructor() {
+  constructor(
+    /**
+     * The name of the action being tracked, used for error messages.
+     * For example, "generate video" or "extract frames".
+     */
+    private actionName: LocaleMessage
+  ) {
     this.state = { status: 'initial' }
   }
   /** Tracks the state of the given promise. */
@@ -79,8 +85,8 @@ export class Phase<R> {
         this.state = { status: 'failed', error: err }
       } else {
         const ae = new ActionException(err, {
-          zh: '执行失败',
-          en: 'Execution failed'
+          zh: `${this.actionName.zh}失败`,
+          en: `Failed to ${this.actionName.en}`
         })
         this.state = { status: 'failed', error: ae }
         capture(err)

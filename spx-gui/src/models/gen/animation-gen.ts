@@ -50,14 +50,14 @@ export class AnimationGen extends Disposable {
       ...settings
     }
     this.referenceCostumeId = this.sprite.defaultCostume?.id ?? null
-    this.enrichPhase = new Phase()
+    this.enrichPhase = new Phase({ en: 'enrich animation settings', zh: '丰富动画设置' })
     this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
-    this.generateVideoPhase = new Phase()
+    this.generateVideoPhase = new Phase({ en: 'generate animation video', zh: '生成动画视频' })
     this.video = null
     this.framesConfig = null
     this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
-    this.extractFramesPhase = new Phase()
-    this.finishPhase = new Phase()
+    this.extractFramesPhase = new Phase({ en: 'extract video frames', zh: '提取视频帧' })
+    this.finishPhase = new Phase({ en: 'save animation', zh: '保存动画' })
     return reactive(this) as this
   }
 

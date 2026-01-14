@@ -38,6 +38,7 @@ const submitText = computed(() => {
       <ReferenceCostumeInput
         :costumes="gen.sprite.costumes"
         :selected-id="gen.referenceCostume?.id ?? null"
+        :clearable="false"
         @update:selected-id="gen.setReferenceCostume($event)"
       />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import type { AnimationGen } from '@/models/gen/animation-gen'
-import { UIButton } from '@/components/ui'
+import { UIButton, UIError } from '@/components/ui'
 import { useRenameAnimationGen } from '../..'
 import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
@@ -59,9 +59,16 @@ const videoPreviewKey = computed(() => {
     <GenLoading v-if="gen.generateVideoState.status === 'running'">
       {{ $t({ en: 'Generating animation...', zh: '正在生成动画...' }) }}
     </GenLoading>
+    <UIError v-else-if="gen.generateVideoState.status === 'failed'">
+      {{ $t(gen.generateVideoState.error.userMessage) }}
+    </UIError>
     <GenLoading v-else-if="gen.extractFramesState.status === 'running'">
       {{ $t({ en: 'Extracting frames...', zh: '正在提取帧...' }) }}
     </GenLoading>
+    <UIError v-else-if="gen.extractFramesState.status === 'failed'">
+      <!-- TODO(@UI): We need to optimize error UI here. Error for extracting frames should not cause the preview invisible. -->
+      {{ $t(gen.extractFramesState.error.userMessage) }}
+    </UIError>
     <PreviewWithCheckerboardBg v-else>
       <AnimationVideoPreview
         v-if="gen.video != null"

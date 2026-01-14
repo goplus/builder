@@ -36,10 +36,10 @@ export class SpriteGen extends Disposable {
     this.id = nanoid()
     this.i18n = i18n
     this.project = project
-    this.enrichPhase = new Phase()
+    this.enrichPhase = new Phase({ en: 'enrich sprite settings', zh: '丰富角色设置' })
     this.genImagesTask = new Task(TaskType.GenerateCostume)
-    this.genImagesPhase = new Phase()
-    this.prepareContentPhase = new Phase()
+    this.genImagesPhase = new Phase({ en: 'generate sprite images', zh: '生成角色图片' })
+    this.prepareContentPhase = new Phase({ en: 'prepare sprite content', zh: '准备角色内容' })
     this.costumes = []
     this.animations = []
     this.settings = {
