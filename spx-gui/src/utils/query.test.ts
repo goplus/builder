@@ -12,7 +12,7 @@ describe('useQuery', () => {
     let resolveFirst: (value: string) => void
     let resolveSecond: (value: string) => void
 
-    const queryFn = vi.fn(async (ctx: QueryContext) => {
+    const queryFn = vi.fn(async () => {
       // Intentionally ignore the abort signal to simulate the issue
       return new Promise<string>((resolve) => {
         if (queryFn.mock.calls.length === 1) {
@@ -56,7 +56,7 @@ describe('useQuery', () => {
     let rejectFirst: (error: Error) => void
     let resolveSecond: (value: string) => void
 
-    const queryFn = vi.fn(async (ctx: QueryContext) => {
+    const queryFn = vi.fn(async () => {
       return new Promise<string>((resolve, reject) => {
         if (queryFn.mock.calls.length === 1) {
           rejectFirst = reject
@@ -100,7 +100,7 @@ describe('useQuery', () => {
     const results = ['first', 'second', 'third']
     const resolvers: Array<(value: string) => void> = []
 
-    const queryFn = vi.fn(async (ctx: QueryContext) => {
+    const queryFn = vi.fn(async () => {
       return new Promise<string>((resolve) => {
         resolvers.push(resolve)
       })
