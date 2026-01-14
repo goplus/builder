@@ -267,7 +267,7 @@ function formatTime(timeInMs: number) {
 <template>
   <div class="animation-video-preview">
     <div class="preview-area">
-      <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" loop />
+      <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" muted loop />
     </div>
     <GenLoading :visible="videoDurationRef == null" cover>
       {{ $t({ en: 'Loading video...', zh: '正在加载视频...' }) }}

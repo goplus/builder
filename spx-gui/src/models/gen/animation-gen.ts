@@ -22,7 +22,7 @@ export type FramesConfig = Omit<TaskParamsExtractVideoFrames, 'videoUrl'>
 export class AnimationGen extends Disposable {
   id: string
   parent: Sprite | SpriteGen
-  private get sprite(): Sprite {
+  get sprite(): Sprite {
     if (this.parent instanceof Sprite) return this.parent
     return this.parent.previewSprite
   }
