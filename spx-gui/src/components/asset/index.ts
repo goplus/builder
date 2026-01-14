@@ -39,7 +39,7 @@ export function useAddAssetFromLibrary() {
   const editorCtx = useEditorCtx()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    return invokeAssetLibraryModal({
+    return (await invokeAssetLibraryModal({
       project,
       type,
       beforeResolvedGen: async (gen) => {
@@ -54,7 +54,7 @@ export function useAddAssetFromLibrary() {
         await until(() => editorCtx.state.getGenTransformOrigin(gen.id) != null)
         return editorCtx.state.getGenTransformOrigin(gen.id)!
       }
-    })
+    })) as Array<AssetModel<T>>
   }
 }
 
