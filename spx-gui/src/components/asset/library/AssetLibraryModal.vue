@@ -67,6 +67,7 @@ const emit = defineEmits<{
   resolved: [Resolved]
 }>()
 
+const i18n = useI18n()
 const searchInput = ref('')
 const keyword = ref('')
 watch(
@@ -283,7 +284,6 @@ const handleGenFinished = useMessageHandle(
   }
 ).fn
 
-const i18n = useI18n()
 const confirm = useConfirmDialog()
 
 const handleModalClose = useMessageHandle(
