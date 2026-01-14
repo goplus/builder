@@ -32,7 +32,10 @@ const handleSubmit = useMessageHandle(
 </script>
 
 <template>
-  <main class="backdrop-gen">
+  <main
+    v-radar="{ name: 'Backdrop generation', desc: 'Interface for generating and selecting backdrops' }"
+    class="backdrop-gen"
+  >
     <LayoutWithPreview :has-preview="gen.image != null">
       <BackdropSettingInput :gen="gen" :disabled="handleSubmit.isLoading.value" />
       <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
@@ -58,13 +61,18 @@ const handleSubmit = useMessageHandle(
     </LayoutWithPreview>
     <footer class="footer">
       <UIButton
+        v-radar="{
+          name: 'Use backdrop button',
+          desc: 'Finish and use the generated backdrop in the project'
+        }"
         color="primary"
         size="large"
         :disabled="!canSubmit"
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"
-        >{{ $t({ en: 'Use', zh: '采用' }) }}</UIButton
       >
+        {{ $t({ en: 'Use', zh: '采用' }) }}
+      </UIButton>
     </footer>
   </main>
 </template>

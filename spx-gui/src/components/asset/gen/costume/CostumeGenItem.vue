@@ -45,6 +45,10 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
 
 <template>
   <GenItem
+    v-radar="{
+      name: 'Costume generation item ' + gen.name,
+      desc: `Click to view generation settings and preview for costume '${gen.name}'`
+    }"
     :color="{
       main: 'primary',
       loading: {

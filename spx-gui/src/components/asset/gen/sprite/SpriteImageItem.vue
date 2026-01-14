@@ -25,7 +25,14 @@ const loading = computed(() => props.loading || fileLoading.value)
 </script>
 
 <template>
-  <div class="sprite-image-item" :class="{ active, compact, loading }">
+  <div
+    v-radar="{
+      name: 'Sprite image item',
+      desc: 'Select this image as the default costume for the sprite'
+    }"
+    class="sprite-image-item"
+    :class="{ active, compact, loading }"
+  >
     <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" />
     <UIImg v-else class="img" :src="url" :alt="file?.name" />
   </div>

@@ -1,7 +1,7 @@
 <script lang="ts" setup generic="T">
 import { computed, inject } from 'vue'
 import { UIBlockItem, UIBlockItemTitle, UIButton, UICornerIcon, UIDropdownWithTooltip, UIImg } from '@/components/ui'
-import type { LocaleMessage } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { settingsInputCtxKey } from '../SettingsInput.vue'
 
 type Option = { value: T; label: LocaleMessage; image?: string }
@@ -27,6 +27,8 @@ defineEmits<{
   'update:value': [value: T | null]
 }>()
 
+const { t } = useI18n()
+
 const showPlaceholder = computed(() => props.value == null && props.placeholder != null)
 const selectedItem = computed(() => {
   if (showPlaceholder.value) return props.placeholder
@@ -44,6 +46,8 @@ const tooltipText = computed(() => {
   return selectedItem.value?.label
 })
 
+const optionsText = computed(() => props.options.map((item) => t(item.label)).join(', '))
+
 const settingsInputCtx = inject(settingsInputCtxKey)
 if (settingsInputCtx == null) throw new Error('settingsInputCtxKey should be provided')
 
@@ -60,7 +64,16 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
         which prevents 'slots.default' from being null. 
         The :key forces UIButton to re-mount and correctly recalculate its icon-only state.
       -->
-      <UIButton :key="String(iconOnly)" :disabled="disabled" variant="stroke" color="boring">
+      <UIButton
+        :key="String(iconOnly)"
+        v-radar="{
+          name: name !== null ? $t(name) : 'Param selector',
+          desc: `Click to select ${name !== null ? $t(name) : 'parameter'} (e.g., ${optionsText})`
+        }"
+        :disabled="disabled"
+        variant="stroke"
+        color="boring"
+      >
         <template v-if="selectedItem.image != null" #icon>
           <UIImg
             class="image"
@@ -84,6 +97,10 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
           <UIBlockItem
             v-for="(item, index) in options"
             :key="index"
+            v-radar="{
+              name: `Option '${$t(item.label)}'`,
+              desc: `Select '${$t(item.label)}' as the ${name !== null ? $t(name) : 'parameter'}`
+            }"
             class="option"
             :active="value === item.value"
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"

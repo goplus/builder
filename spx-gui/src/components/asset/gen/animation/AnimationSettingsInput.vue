@@ -27,6 +27,10 @@ const submitText = computed(() => {
 
 <template>
   <SettingsInput
+    v-radar="{
+      name: 'Animation generation settings',
+      desc: 'Enter an animation description, or enrich details to generate an animation'
+    }"
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
     :readonly="readonly"
@@ -46,9 +50,14 @@ const submitText = computed(() => {
       <AnimationLoopModeInput :value="gen.settings.loopMode" @update:value="gen.setSettings({ loopMode: $event })" />
     </template>
     <template #submit>
-      <UIButton :disabled="submitDisabled" :loading="isGenerating" @click="gen.generateVideo()">{{
-        $t(submitText)
-      }}</UIButton>
+      <UIButton
+        v-radar="{ name: 'Animation generation submit button', desc: 'Click to generate an animation' }"
+        :disabled="submitDisabled"
+        :loading="isGenerating"
+        @click="gen.generateVideo()"
+      >
+        {{ $t(submitText) }}
+      </UIButton>
     </template>
   </SettingsInput>
 </template>

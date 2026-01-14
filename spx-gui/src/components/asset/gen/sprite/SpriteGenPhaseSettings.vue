@@ -28,7 +28,13 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 </script>
 
 <template>
-  <main class="phase-settings">
+  <main
+    v-radar="{
+      name: 'Sprite generation settings phase',
+      desc: 'Generate default costume for the sprite based on settings'
+    }"
+    class="phase-settings"
+  >
     <LayoutWithPreview :has-preview="gen.image != null">
       <SpriteSettingsInput :gen="gen" />
       <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
@@ -54,6 +60,10 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
     </LayoutWithPreview>
     <footer class="footer">
       <UIButton
+        v-radar="{
+          name: 'Next button',
+          desc: 'Proceed to the next phase of sprite generation (costume & animation generation)'
+        }"
         color="primary"
         size="large"
         :disabled="!allowSubmit"

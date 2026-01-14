@@ -15,6 +15,10 @@ const highlight = computed(() => props.gen.imagesGenState.status === 'finished')
 
 <template>
   <GenItem
+    v-radar="{
+      name: 'Backdrop generation item ' + gen.settings.name,
+      desc: `Click to view generation settings and preview for backdrop '${gen.settings.name}'`
+    }"
     :color="{
       main: 'stage',
       loading: {

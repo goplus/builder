@@ -12,7 +12,7 @@ const [fileUrl, fileUrlLoading] = useFileUrl(() => props.file)
 </script>
 
 <template>
-  <div class="preview">
+  <div v-radar="{ name: 'Image preview', desc: 'Preview of the selected generated image' }" class="preview">
     <CheckerboardBackground class="background" />
     <UIImg class="image" :src="fileUrl" :loading="fileUrlLoading" size="contain" />
   </div>

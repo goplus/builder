@@ -25,6 +25,10 @@ const submitText = computed(() => {
 
 <template>
   <SettingsInput
+    v-radar="{
+      name: 'Costume generation settings',
+      desc: 'Enter a costume description, or enrich details to generate a costume'
+    }"
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
     :readonly="readonly"
@@ -43,7 +47,17 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton :disabled="buttonDisabled" :loading="submitting" @click="gen.generate()">{{ $t(submitText) }}</UIButton>
+      <UIButton
+        v-radar="{
+          name: 'Costume generation submit button',
+          desc: 'Click to generate a costume'
+        }"
+        :disabled="buttonDisabled"
+        :loading="submitting"
+        @click="gen.generate()"
+      >
+        {{ $t(submitText) }}
+      </UIButton>
     </template>
   </SettingsInput>
 </template>

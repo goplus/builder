@@ -17,7 +17,7 @@ const emit = defineEmits<{
   <div
     v-radar="{
       name: `Preview for \u0022${name}\u0022`,
-      desc: `Preview for the selected generation item \u0022${name}\u0022`
+      desc: `Preview for the generation item \u0022${name}\u0022`
     }"
     class="gen-preview"
   >
@@ -26,7 +26,7 @@ const emit = defineEmits<{
         <!-- TODO: confirm style details with @qingqing-ux here -->
         <AssetName>{{ name }}</AssetName>
         <UIIcon
-          v-radar="{ name: 'Rename button', desc: 'Click to rename the selected item' }"
+          v-radar="{ name: 'Rename button', desc: 'Click to rename the generation item' }"
           class="edit-icon"
           :title="$t({ en: 'Rename', zh: '重命名' })"
           type="edit"

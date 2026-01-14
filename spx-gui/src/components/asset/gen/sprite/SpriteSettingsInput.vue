@@ -41,6 +41,10 @@ const submitText = computed(() => {
 
 <template>
   <SettingsInput
+    v-radar="{
+      name: 'Sprite generation settings',
+      desc: 'Enter a sprite description, or enrich details to generate a sprite'
+    }"
     :description="gen.settings.description"
     :enriching="enriching"
     :description-placeholder="descriptionPlaceholder"
@@ -55,9 +59,14 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton :disabled="buttonDisabled" :loading="imageGenerating" @click="handleSubmit">{{
-        $t(submitText)
-      }}</UIButton>
+      <UIButton
+        v-radar="{ name: 'Sprite generation submit button', desc: 'Click to generate sprite images' }"
+        :disabled="buttonDisabled"
+        :loading="imageGenerating"
+        @click="handleSubmit"
+      >
+        {{ $t(submitText) }}
+      </UIButton>
     </template>
   </SettingsInput>
 </template>

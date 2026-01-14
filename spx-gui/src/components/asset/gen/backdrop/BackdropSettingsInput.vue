@@ -43,6 +43,10 @@ const submitText = computed(() => {
 
 <template>
   <SettingsInput
+    v-radar="{
+      name: 'Backdrop generation settings',
+      desc: 'Enter a backdrop description, or enrich details to generate a backdrop'
+    }"
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
     :description-placeholder="descriptionPlaceholder"
@@ -56,7 +60,14 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton :disabled="submitDisabled" :loading="submitting" @click="handleSubmit">{{ $t(submitText) }}</UIButton>
+      <UIButton
+        v-radar="{ name: 'Backdrop generation submit button', desc: 'Click to generate backdrop images' }"
+        :disabled="submitDisabled"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
+        {{ $t(submitText) }}
+      </UIButton>
     </template>
   </SettingsInput>
 </template>

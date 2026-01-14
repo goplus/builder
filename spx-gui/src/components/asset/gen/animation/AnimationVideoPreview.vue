@@ -265,7 +265,10 @@ function formatTime(timeInMs: number) {
 </script>
 
 <template>
-  <div class="animation-video-preview">
+  <div
+    v-radar="{ name: 'Animation video preview', desc: 'Preview of the animation video' }"
+    class="animation-video-preview"
+  >
     <div class="preview-area">
       <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" muted loop />
     </div>

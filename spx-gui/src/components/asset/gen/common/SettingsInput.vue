@@ -113,6 +113,7 @@ provide(settingsInputCtxKey, ctx)
           </span>
           <UIButton
             v-else-if="enrichShow"
+            v-radar="{ name: 'Enrich details button', desc: 'Click to enrich the description' }"
             class="enrich-btn"
             color="secondary"
             size="small"
@@ -126,6 +127,7 @@ provide(settingsInputCtxKey, ctx)
         </div>
       </div>
       <textarea
+        v-radar="{ name: 'Description input', desc: 'Description input field for generation' }"
         class="description"
         :placeholder="
           !adopted && descriptionPlaceholder != null && descriptionPlaceholder.length > 0
