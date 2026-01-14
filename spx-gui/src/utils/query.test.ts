@@ -6,6 +6,138 @@ import { useQuery, composeQuery, type QueryContext } from './query'
 import { withSetup } from './test'
 import { timeout } from './utils'
 
+describe('useQuery', () => {
+  it('should discard stale results when queryFn ignores abort signal', async () => {
+    // This test simulates the race condition where queryFn ignores the abort signal
+    let resolveFirst: (value: string) => void
+    let resolveSecond: (value: string) => void
+
+    const queryFn = vi.fn(async () => {
+      // Intentionally ignore the abort signal to simulate the issue
+      return new Promise<string>((resolve) => {
+        if (queryFn.mock.calls.length === 1) {
+          resolveFirst = resolve
+        } else {
+          resolveSecond = resolve
+        }
+      })
+    })
+
+    const [ret] = withSetup(() => {
+      const ret = useQuery(queryFn)
+      return [ret] as const
+    })
+
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledTimes(1)
+    expect(ret.isLoading.value).toBe(true)
+
+    // Trigger a second query before the first one completes
+    ret.refetch()
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledTimes(2)
+    expect(ret.isLoading.value).toBe(true)
+
+    // Resolve the second query first (newer query)
+    resolveSecond!('second')
+    await flushPromises()
+    expect(ret.data.value).toBe('second')
+    expect(ret.isLoading.value).toBe(false)
+
+    // Now resolve the first query (stale query) - it should be discarded
+    resolveFirst!('first')
+    await flushPromises()
+    // The data should still be 'second', not 'first'
+    expect(ret.data.value).toBe('second')
+    expect(ret.isLoading.value).toBe(false)
+  })
+
+  it('should discard stale errors when queryFn ignores abort signal', async () => {
+    let rejectFirst: (error: Error) => void
+    let resolveSecond: (value: string) => void
+
+    const queryFn = vi.fn(async () => {
+      return new Promise<string>((resolve, reject) => {
+        if (queryFn.mock.calls.length === 1) {
+          rejectFirst = reject
+        } else {
+          resolveSecond = resolve
+        }
+      })
+    })
+
+    const [ret] = withSetup(() => {
+      const ret = useQuery(queryFn)
+      return [ret] as const
+    })
+
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledTimes(1)
+
+    // Trigger a second query
+    ret.refetch()
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledTimes(2)
+
+    // Resolve the second query with success
+    resolveSecond!('success')
+    await flushPromises()
+    expect(ret.data.value).toBe('success')
+    expect(ret.error.value).toBe(null)
+    expect(ret.isLoading.value).toBe(false)
+
+    // Reject the first query with an error - it should be discarded
+    const staleError = new Error('stale error')
+    rejectFirst!(staleError)
+    await flushPromises()
+    // The error should not be set, data should still be 'success'
+    expect(ret.data.value).toBe('success')
+    expect(ret.error.value).toBe(null)
+    expect(ret.isLoading.value).toBe(false)
+  })
+
+  it('should handle multiple rapid refetches correctly', async () => {
+    const results = ['first', 'second', 'third']
+    const resolvers: Array<(value: string) => void> = []
+
+    const queryFn = vi.fn(async () => {
+      return new Promise<string>((resolve) => {
+        resolvers.push(resolve)
+      })
+    })
+
+    const [ret] = withSetup(() => {
+      const ret = useQuery(queryFn)
+      return [ret] as const
+    })
+
+    await flushPromises()
+
+    // Trigger two more queries rapidly
+    ret.refetch()
+    await flushPromises()
+    ret.refetch()
+    await flushPromises()
+
+    expect(queryFn).toHaveBeenCalledTimes(3)
+    expect(ret.isLoading.value).toBe(true)
+
+    // Resolve in reverse order: third, first, second
+    resolvers[2]!(results[2])
+    await flushPromises()
+    expect(ret.data.value).toBe('third')
+    expect(ret.isLoading.value).toBe(false)
+
+    resolvers[0]!(results[0])
+    await flushPromises()
+    expect(ret.data.value).toBe('third') // Should still be 'third'
+
+    resolvers[1]!(results[1])
+    await flushPromises()
+    expect(ret.data.value).toBe('third') // Should still be 'third'
+  })
+})
+
 describe('composeQuery', () => {
   it('should work well', async () => {
     const valueRef = ref(0)

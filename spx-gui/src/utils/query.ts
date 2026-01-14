@@ -73,12 +73,14 @@ export function useQuery<T>(
     isLoading.value = true
     queryFn({ signal, source, reporter }).then(
       (d) => {
+        if (signal.aborted) return
         data.value = d
         error.value = null
         isLoading.value = false
       },
       (e) => {
         if (e instanceof Cancelled) return
+        if (signal.aborted) return
         capture(e, 'useQuery error')
         error.value = e
         isLoading.value = false
