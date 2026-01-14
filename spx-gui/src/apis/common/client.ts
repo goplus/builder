@@ -148,7 +148,7 @@ export class Client {
 
     for await (const chunk of stream) {
       buffer += chunk
-      let eolIndex
+      let eolIndex: number
       // The spec allows \r\n, \r, or \n. For simplicity, we handle \n and strip \r.
       while ((eolIndex = buffer.indexOf('\n')) !== -1) {
         const line = buffer.slice(0, eolIndex).replace(/\r$/, '')
@@ -156,7 +156,7 @@ export class Client {
 
         if (line === '') {
           // Empty line: dispatch event
-          if (dataBuffer) {
+          if (dataBuffer !== '') {
             yield { type: eventName, data: dataBuffer.slice(0, -1) } // remove trailing newline
             dataBuffer = ''
             eventName = 'message'
@@ -185,7 +185,7 @@ export class Client {
       }
     }
     // Dispatch any remaining buffered event data at the end of the stream
-    if (dataBuffer) {
+    if (dataBuffer !== '') {
       yield { type: eventName, data: dataBuffer.slice(0, -1) }
     }
   }
