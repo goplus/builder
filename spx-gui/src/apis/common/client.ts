@@ -143,31 +143,50 @@ export class Client {
     const stream = this.requestTextStream(path, payload, options)
 
     let buffer = ''
-    let currentEventName = 'message'
+    let eventName = 'message'
+    let dataBuffer = ''
 
     for await (const chunk of stream) {
       buffer += chunk
+      let eolIndex
+      // The spec allows \r\n, \r, or \n. For simplicity, we handle \n and strip \r.
+      while ((eolIndex = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, eolIndex).replace(/\r$/, '')
+        buffer = buffer.slice(eolIndex + 1)
 
-      // Split into lines, keeping last line (may be incomplete) in buffer
-      const lines = buffer.split('\n')
-      buffer = lines.pop() ?? ''
-
-      for (const line of lines) {
-        const colonIdx = line.indexOf(':')
-        if (colonIdx === -1) continue // Skip lines without field separator
-        const field = line.slice(0, colonIdx)
-        const value = line.slice(colonIdx + 1).trim()
-
-        if (field === 'event') {
-          currentEventName = value
+        if (line === '') {
+          // Empty line: dispatch event
+          if (dataBuffer) {
+            yield { type: eventName, data: dataBuffer.slice(0, -1) } // remove trailing newline
+            dataBuffer = ''
+            eventName = 'message'
+          }
           continue
         }
 
-        if (field === 'data') {
-          yield { type: currentEventName, data: value }
-          currentEventName = 'message'
+        const colonIndex = line.indexOf(':')
+        if (colonIndex === -1) {
+          // Ignore lines without a colon
+          continue
         }
+
+        const field = line.slice(0, colonIndex)
+        let value = line.slice(colonIndex + 1)
+        if (value.startsWith(' ')) {
+          value = value.slice(1)
+        }
+
+        if (field === 'event') {
+          eventName = value
+        } else if (field === 'data') {
+          dataBuffer += value + '\n'
+        }
+        // Other fields like 'id', 'retry' are ignored.
       }
+    }
+    // Dispatch any remaining buffered event data at the end of the stream
+    if (dataBuffer) {
+      yield { type: eventName, data: dataBuffer.slice(0, -1) }
     }
   }
 
