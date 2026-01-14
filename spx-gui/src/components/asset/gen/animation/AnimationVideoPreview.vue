@@ -9,30 +9,35 @@ type PlayRange = {
 function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchSource<PlayRange | null>) {
   const isPlaying = ref(false)
   /** Duration of the video in ms */
-  const duration = ref(0)
+  const duration = ref<number | null>(null)
   /** Current playback time in ms */
   const currentTime = ref(0)
 
   const [startTick, stopTick] = useTick(() => {
     const video = videoRef.value
     if (video == null) return
-    enforceRange()
+    // Enforce range
+    const range = toValue(rangeRef)
+    if (range != null) {
+      const rangeStartInSecond = range.start / 1000
+      const rangeEndInSecond = range.end / 1000
+      if (video.currentTime < rangeStartInSecond || video.currentTime >= rangeEndInSecond) {
+        video.currentTime = rangeStartInSecond
+      }
+    }
+    // Sync current time
     currentTime.value = video.currentTime * 1000
   })
 
-  function enforceRange() {
-    const video = videoRef.value
-    if (video == null) return
-    const range = toValue(rangeRef)
-    if (range == null) return
-    const rangeStartInSecond = range.start / 1000
-    const rangeEndInSecond = range.end / 1000
-    if (video.currentTime < rangeStartInSecond || video.currentTime >= rangeEndInSecond) {
-      video.currentTime = rangeStartInSecond
-    }
-  }
-
-  watch(rangeRef, enforceRange, { immediate: true })
+  // If range changes, replay from range start
+  watch(
+    rangeRef,
+    (newRange) => {
+      if (newRange == null || videoRef.value == null) return
+      videoRef.value.currentTime = newRange.start / 1000
+    },
+    { immediate: true }
+  )
 
   function handleLoadedMetadata() {
     const video = videoRef.value
@@ -102,8 +107,8 @@ import { useFileUrl } from '@/utils/file'
 import { untilNotNull } from '@/utils/utils'
 import type { File } from '@/models/common/file'
 import type { FramesConfig } from '@/models/gen/animation-gen'
-import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackground.vue'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
+import GenLoading from '../common/GenLoading.vue'
 
 const props = defineProps<{
   video: File
@@ -157,6 +162,7 @@ const progress = computed(() => {
 watch(
   videoDurationRef,
   (newDuration) => {
+    if (newDuration == null) return
     // Initialize cut range when video duration is known
     if (newDuration > 0 && cutEndRef.value === 0) {
       cutStartRef.value = 0
@@ -171,7 +177,7 @@ const trackRef = ref<HTMLDivElement | null>(null)
 
 const segmentStyle = computed(() => {
   const duration = videoDurationRef.value
-  if (duration <= 0) return null
+  if (duration == null) return null
   const [start, end] = [cutStartRef.value, cutEndRef.value].map((ms) => Math.min(1, Math.max(0, ms / duration)))
   return {
     left: start * 100 + '%',
@@ -181,7 +187,7 @@ const segmentStyle = computed(() => {
 
 const currentTimeStyle = computed(() => {
   const duration = videoDurationRef.value
-  if (duration <= 0) return null
+  if (duration == null) return null
   const left = Math.min(1, Math.max(0, currentTime.value / duration)) * 100 + '%'
   return { left }
 })
@@ -224,7 +230,7 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
 function handleDragMove(e: PointerEvent) {
   if (dragging == null || e.pointerId !== dragging.pointerId) return
   const videoDuration = videoDurationRef.value
-  if (videoDuration <= 0) return
+  if (videoDuration == null) return
   const ratio = (e.clientX - dragging.rect.left) / dragging.rect.width
   const time = snap(ratio * videoDuration)
   const minDuration = precision
@@ -260,11 +266,13 @@ function formatTime(timeInMs: number) {
 
 <template>
   <div class="animation-video-preview">
-    <CheckerboardBackground class="background" />
     <div class="preview-area">
       <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" loop />
     </div>
-    <div class="controls">
+    <GenLoading :visible="videoDurationRef == null" cover>
+      {{ $t({ en: 'Loading video...', zh: '正在加载视频...' }) }}
+    </GenLoading>
+    <div v-if="videoDurationRef != null" class="controls">
       <PlayControl
         v-radar="{ name: 'Play button', desc: 'Toggle playback of animation video preview' }"
         :playing="isPlaying"
@@ -283,13 +291,13 @@ function formatTime(timeInMs: number) {
                 class="segment-marker"
                 type="button"
                 @pointerdown="handleDragStart('start', $event)"
-              />
+              ></button>
               <button
                 v-radar="{ name: 'End marker', desc: 'Drag to adjust end time of extracted segment' }"
                 class="segment-marker"
                 type="button"
                 @pointerdown="handleDragStart('end', $event)"
-              />
+              ></button>
             </div>
             <i class="current-time" :style="currentTimeStyle"></i>
           </div>
@@ -315,16 +323,10 @@ function formatTime(timeInMs: number) {
   justify-content: center;
 }
 
-.background {
-  position: absolute;
-  inset: 0;
-}
-
 .preview-area {
   position: relative;
   width: 100%;
   height: 100%;
-  background: #fff;
 }
 
 .video {
@@ -382,6 +384,9 @@ function formatTime(timeInMs: number) {
   align-items: center;
   justify-content: space-between;
   padding: 0;
+  transition:
+    left 0.1s,
+    right 0.1s;
 }
 
 .segment-marker {

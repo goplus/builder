@@ -5,7 +5,7 @@ import { useSlots, type CSSProperties } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import animationFileUrl from './gen-loading.lottie?url'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     cover?: boolean
     visible?: boolean
@@ -22,7 +22,7 @@ const slots = useSlots()
 </script>
 
 <template>
-  <div class="gen-loading" :class="{ cover: props.cover, visible: props.visible }">
+  <div class="gen-loading" :class="{ cover, visible }">
     <div class="content">
       <DotLottieVue class="animation" :style="animationStyle" autoplay loop :src="animationFileUrl" />
       <div v-if="!!slots.default" class="text">

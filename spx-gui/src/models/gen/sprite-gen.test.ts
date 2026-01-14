@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { AnimationLoopMode, ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import * as aigcApis from '@/apis/aigc'
 import * as spxUtils from '@/utils/spx'
+import { createI18n } from '@/utils/i18n'
 import * as fileHelpers from '@/models/common/file'
 import * as cloudHelpers from '@/models/common/cloud'
 import { makeProject } from '../common/test'
@@ -161,7 +162,7 @@ describe('SpriteGen', () => {
       .mockImplementation(generateSpriteContent)
 
     // Create SpriteGen with initial input
-    const gen = new SpriteGen(project, 'A brave knight')
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
     expect(gen.settings.description).toBe('A brave knight')
     expect(gen.enrichState.status).toBe('initial')
     expect(gen.contentPreparingState.status).toBe('initial')
@@ -243,8 +244,7 @@ describe('SpriteGen', () => {
     expect(gen.costumes.length).toBe(3)
     expect(gen.costumes[0].settings).toEqual({
       name: 'default',
-      description:
-        'The default costume for sprite "Updated Sprite". The sprite: Updated description for A brave knight',
+      description: 'Updated description for A brave knight',
       facing: aigcApis.Facing.Front,
       artStyle: ArtStyle.FlatDesign,
       perspective: Perspective.AngledTopDown,

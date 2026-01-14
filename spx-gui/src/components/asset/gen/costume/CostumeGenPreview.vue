@@ -4,10 +4,10 @@ import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import { UIImg, UIButton } from '@/components/ui'
-import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackground.vue'
 import { useRenameCostumeGen } from '../..'
 import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
+import PreviewWithCheckerboardBg from '../common/PreviewWithCheckerboardBg.vue'
 
 const props = defineProps<{
   gen: CostumeGen
@@ -18,6 +18,13 @@ const handleRenameCostume = useMessageHandle(renameCostume, {
   en: 'Failed to rename costume',
   zh: '重命名造型失败'
 }).fn
+
+const canSaveCostume = computed(() => {
+  const { image, result } = props.gen
+  if (image == null || result != null) return false
+  if (imgLoading.value) return false
+  return true
+})
 
 const savingCostume = computed(() => props.gen.finishState.status === 'running')
 
@@ -31,7 +38,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
 
 <template>
   <GenPreview class="costume-gen-preview" :name="gen.name" @rename="handleRenameCostume(gen)">
-    <template v-if="gen.image != null && gen.result == null" #ops>
+    <template v-if="canSaveCostume" #ops>
       <UIButton color="success" :loading="savingCostume" @click="handleSaveCostume">{{
         $t({ en: 'Save costume', zh: '保存造型' })
       }}</UIButton>
@@ -39,11 +46,12 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
     <GenLoading v-if="gen.generateState.status === 'running'">
       {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
     </GenLoading>
-    <div v-else class="preview">
-      <CheckerboardBackground class="background" />
+    <GenLoading v-else-if="imgLoading">
+      {{ $t({ en: 'Loading image...', zh: '正在加载图片...' }) }}
+    </GenLoading>
+    <PreviewWithCheckerboardBg v-else>
       <UIImg v-if="gen.image != null" class="img" :src="imgSrc" :loading="imgLoading" />
-      <div v-else class="placeholder">{{ $t({ en: 'Preview area', zh: '预览区域' }) }}</div>
-    </div>
+    </PreviewWithCheckerboardBg>
   </GenPreview>
 </template>
 
@@ -53,34 +61,8 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
   inset: 0;
 }
 
-.preview {
-  width: 100%;
-  flex: 1 1 0;
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
-
 .img {
   width: 100%;
   height: 100%;
-}
-
-.placeholder {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ui-color-hint-2);
 }
 </style>

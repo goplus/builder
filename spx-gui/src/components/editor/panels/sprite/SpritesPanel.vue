@@ -83,6 +83,7 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { AnimationLoopMode, ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
+import { useI18n } from '@/utils/i18n'
 import { Facing, type CostumeSettings, type SpriteSettings } from '@/apis/aigc'
 import { createFileWithWebUrl } from '@/models/common/cloud'
 import { CostumeGen } from '@/models/gen/costume-gen'
@@ -109,6 +110,7 @@ const emit = defineEmits<{
   expand: []
 }>()
 
+const i18n = useI18n()
 const editorCtx = useEditorCtx()
 
 const footerExpanded = ref(false)
@@ -164,7 +166,7 @@ const handleSorted = useMessageHandle(
 ).fn
 
 function makeSpriteGenPhaseSettings() {
-  const gen = new SpriteGen(editorCtx.project, '负剑忍者')
+  const gen = new SpriteGen(i18n, editorCtx.project, '负剑忍者')
   gen.setSettings({
     name: 'ninja',
     category: SpriteCategory.Character,
@@ -179,10 +181,10 @@ async function makeSpriteGenPhaseContent() {
     name: 'CuteAnimal',
     description: "A cute animal character, suitable for children's games.",
     category: SpriteCategory.Character,
-    artStyle: ArtStyle.HandDrawn,
+    artStyle: ArtStyle.FlatDesign,
     perspective: Perspective.AngledTopDown
   }
-  const gen = new SpriteGen(editorCtx.project, '可爱小动物')
+  const gen = new SpriteGen(i18n, editorCtx.project, '可爱小动物')
   gen['enrichPhase'].state = {
     status: 'finished',
     result: settings,

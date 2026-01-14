@@ -105,6 +105,8 @@ export class AnimationGen extends Disposable {
     return this.generateVideoPhase.state
   }
   async generateVideo() {
+    this.setVideo(null)
+    this.setFramesConfig(null)
     const video = await this.generateVideoPhase.run(async () => {
       const costume = this.referenceCostume
       if (costume == null) throw new Error('reference costume expected')
@@ -123,7 +125,7 @@ export class AnimationGen extends Disposable {
   }
 
   framesConfig: FramesConfig | null
-  setFramesConfig(config: FramesConfig) {
+  setFramesConfig(config: FramesConfig | null) {
     this.framesConfig = config
   }
 
