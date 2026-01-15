@@ -156,9 +156,11 @@ export class AnimationGen extends Disposable {
     if (frameImgs == null) throw new Error('frame images expected')
     return this.finishPhase.run(async () => {
       const costumes = await Promise.all(
-        frameImgs.map((img, i) => {
+        frameImgs.map(async (img, i) => {
           const costumeName = `${this.settings.name}_frame_${i + 1}`
-          return Costume.create(costumeName, img)
+          const costume = await Costume.create(costumeName, img)
+          await costume.autoFit()
+          return costume
         })
       )
       return Animation.create(this.settings.name, costumes)
