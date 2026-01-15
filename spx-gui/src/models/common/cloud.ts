@@ -1,6 +1,6 @@
 import { createDirectUploadTask } from 'qiniu-js'
 import { usercontentBaseUrl, usercontentBucket } from '@/utils/env'
-import { filename, stripSearch } from '@/utils/path'
+import { filename } from '@/utils/path'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
 import { mergeSignals } from '@/utils/disposable'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
@@ -135,7 +135,8 @@ export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
   // If possible, convert web URL to Kodo universal URL.
   // TODO: consider always using (kodo) universal URL for asset files, then this conversion can be removed.
   if (url.startsWith(usercontentUrlPrefix)) {
-    const key = stripSearch(url.slice(usercontentUrlPrefix.length))
+    const key = url.slice(usercontentUrlPrefix.length)
+    // TODO: if there's authentication info in URL (for future version), it should be stripped here
     const kodoUrl = stringifyKodoUrl(usercontentBucket, key)
     return createFileWithUniversalUrl(kodoUrl, name)
   }
