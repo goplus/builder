@@ -60,7 +60,7 @@ const {
   async () => {
     if (!advancedLibraryEnabled.value) return null
     const metadata = props.model.assetMetadata
-    if (metadata == null || metadata.owner !== user.value.username) return null
+    if (metadata == null || metadata.id == null || metadata.owner !== user.value.username) return null
     return getAsset(metadata.id).catch((e) => {
       console.warn('failed to get existed asset', e)
       return null
@@ -118,11 +118,13 @@ const handleSubmit = useMessageHandle(
 
     let saved: AssetData
     if (existedAsset.value != null && form.value.action === Action.Update) {
-      const { id, visibility } = existedAsset.value
+      const { id, visibility, description, extraSettings } = existedAsset.value
       saved = await updateAsset(id, {
         displayName: form.value.name,
         type: params.type,
         category: form.value.category,
+        description,
+        extraSettings,
         files: params.files,
         filesHash: params.filesHash,
         visibility
@@ -178,6 +180,9 @@ async function addAssetWithParams(params: PartialAssetData) {
     ...params,
     displayName: form.value.name,
     category: form.value.category,
+    // TODO: Save with proper description and extra settings
+    description: '',
+    extraSettings: {},
     visibility: Visibility.Private
   })
 }

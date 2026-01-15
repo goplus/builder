@@ -38,6 +38,7 @@ withDefaults(
     centerTitle?: boolean
     // maybe it is better to let caller specify the body class instead of body style,
     // but it is now not possible with scoped style & naive-ui `Modal`, which is similar to the issue we encountered in `UIDropdown.vue`
+    // Or maybe we need a modal which has header while no body padding by default?
     bodyStyle?: CSSProperties
     radar?: RadarNodeMeta
   }>(),
@@ -64,6 +65,7 @@ const handleCloseButton = () => {
 
 <style scoped lang="scss">
 .container {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
 }

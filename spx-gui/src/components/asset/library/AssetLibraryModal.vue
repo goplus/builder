@@ -1,102 +1,35 @@
-<template>
-  <UISearchableModal
-    :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
-    style="width: 1096px"
-    :visible="props.visible"
-    :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
-    @update:visible="emit('cancelled')"
-  >
-    <template #input>
-      <UITextInput
-        v-model:value="searchInput"
-        v-radar="{ name: 'Search input', desc: 'Input to search assets' }"
-        class="search-input"
-        clearable
-        :placeholder="$t({ en: 'Search', zh: '搜索' })"
-        @keypress.enter="handleSearch"
-      >
-        <template #prefix><UIIcon class="search-icon" type="search" /></template>
-      </UITextInput>
-    </template>
-    <section class="body">
-      <div class="sider">
-        <UIChip
-          :type="category.value === categoryPersonal.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(categoryPersonal)"
-        >
-          {{ $t(categoryPersonal.message) }}
-        </UIChip>
-        <UIDivider />
-        <UIChip
-          v-for="c in categories"
-          :key="c.value"
-          :type="c.value === category.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(c)"
-        >
-          {{ $t(c.message) }}
-        </UIChip>
-      </div>
-      <main class="main">
-        <h3 class="title">{{ $t(category.message) }}</h3>
-        <div
-          v-radar="{
-            name: 'Asset list',
-            desc: `List of ${entityMessage.en}s in the selected category`
-          }"
-          class="content"
-        >
-          <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
-            <!-- fixed asset-list height to keep the layout stable -->
-            <ul class="asset-list" style="height: 436px">
-              <ItemComponent
-                v-for="asset in slotProps.data.data"
-                :key="asset.id"
-                :asset="asset"
-                :selected="isSelected(asset)"
-                @click="handleAssetClick(asset)"
-              />
-            </ul>
-          </ListResultWrapper>
-          <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
-        </div>
-        <footer class="footer">
-          <span v-show="selected.length > 0">
-            {{
-              $t({
-                en: `${selected.length} ${entityMessage.en}${selected.length > 1 ? 's' : ''} selected`,
-                zh: `已选中 ${selected.length} 个${entityMessage.zh}`
-              })
-            }}
-          </span>
-          <UIButton
-            v-radar="{ name: 'Confirm button', desc: 'Click to confirm asset selection' }"
-            size="large"
-            :disabled="selected.length === 0"
-            :loading="handleConfirm.isLoading.value"
-            @click="handleConfirm.fn"
-          >
-            {{ $t({ en: 'Confirm', zh: '确认' }) }}
-          </UIButton>
-        </footer>
-      </main>
-    </section>
-  </UISearchableModal>
-</template>
-
 <script lang="ts" setup>
-import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
-import { UITextInput, UIIcon, UIChip, UIPagination, UIButton, UISearchableModal, UIDivider } from '@/components/ui'
+import { computed, h, ref, shallowReactive, shallowRef, watch, type Component, type CSSProperties } from 'vue'
+import {
+  UITextInput,
+  UIPagination,
+  UIButton,
+  UIChipRadioGroup,
+  UIChipRadio,
+  UIIcon,
+  UIModal,
+  UIModalClose,
+  useConfirmDialog
+} from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
-import { useMessageHandle } from '@/utils/exception'
+import { useI18n } from '@/utils/i18n'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type Project } from '@/models/project'
-import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
+import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetGenModel, type AssetModel } from '@/models/common/asset'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
-import { type Category, getAssetCategories, categoryAll } from './category'
+import { getAssetCategories } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
+import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
+import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
+import { SpriteGen } from '@/models/gen/sprite-gen'
+import { BackdropGen } from '@/models/gen/backdrop-gen'
+import { ownerAll } from '@/apis/common'
+import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
+import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 
 const props = defineProps<{
   type: AssetType
@@ -104,15 +37,45 @@ const props = defineProps<{
   project: Project
 }>()
 
+/**
+ * AssetLibraryModal may resolve with two types of result:
+ * 1. Assets
+ * 2. Asset generation process
+ */
+type Resolved =
+  | {
+      /**
+       * The user selected some existing assets,
+       * or finished generating new ones and chose to use them.
+       */
+      type: 'assets'
+      /** The selected or generated assets */
+      assets: AssetModel[]
+    }
+  | {
+      /**
+       * The user chose to generate new asset(s),
+       * and the generation process is not finished yet.
+       */
+      type: 'gen'
+      /** The ongoing generation process */
+      gen: AssetGenModel
+    }
+
 const emit = defineEmits<{
   cancelled: []
-  resolved: [AssetModel[]]
+  resolved: [Resolved]
 }>()
 
-const categories = computed(() => {
-  const categoriesWithoutAll = getAssetCategories(props.type)
-  return [categoryAll, ...categoriesWithoutAll]
-})
+const i18n = useI18n()
+const searchInput = ref('')
+const keyword = ref('')
+watch(
+  searchInput,
+  debounce(() => {
+    keyword.value = searchInput.value
+  }, 500)
+)
 
 const ItemComponent = computed(
   () =>
@@ -122,55 +85,93 @@ const ItemComponent = computed(
       [AssetType.Backdrop]: BackdropItem
     })[props.type]
 )
+const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | null>(
+  () =>
+    ({
+      [AssetType.Sound]: null,
+      [AssetType.Sprite]: SpriteSettingsInput,
+      [AssetType.Backdrop]: BackdropSettingsInput
+    })[props.type]
+)
+
+const assetGen = shallowRef<AssetGenModel | null>(null)
+watch(
+  () => props.type,
+  (type, _, onCleanup) => {
+    assetGen.value = {
+      [AssetType.Sound]: null,
+      [AssetType.Sprite]: new SpriteGen(i18n, props.project),
+      [AssetType.Backdrop]: new BackdropGen(props.project)
+    }[type]
+    onCleanup(() => assetGen.value?.dispose())
+  },
+  { immediate: true }
+)
+/**
+ * Prevent assetGen from being disposed automatically.
+ * This is useful when the user chooses to collapse the generation process
+ * and we need to keep the assetGen instance alive.
+ */
+function preventAssetGenDisposal(gen: AssetGenModel) {
+  if (assetGen.value !== gen) return
+  assetGen.value = null
+}
+
+const AssetGenComp = computed(() => {
+  const gen = assetGen.value
+  if (gen == null) return null
+  if (gen instanceof SpriteGen) {
+    return (props: CSSProperties) =>
+      h(SpriteGenComp, {
+        ...props,
+        gen,
+        onCollapse: handleGenCollapse,
+        onFinished: handleGenFinished
+      })
+  } else if (gen instanceof BackdropGen) {
+    return (props: CSSProperties) =>
+      h(BackdropGenComp, {
+        ...props,
+        gen: gen as BackdropGen,
+        onFinished: handleGenFinished
+      })
+  }
+  return null
+})
 
 const entityMessages = {
   [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
   [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
   [AssetType.Sound]: { en: 'sound', zh: '声音' }
 }
-
 const entityMessage = computed(() => entityMessages[props.type])
 
-const searchInput = ref('')
-const keyword = ref('')
-
-// do search (with a delay) when search-input changed
-watch(
-  searchInput,
-  debounce(() => {
-    keyword.value = searchInput.value
-  }, 500)
-)
-
-// "personal" is not actually a category. Define it as a category for convenience
-const categoryPersonal = computed<Category>(() => ({
-  value: 'personal',
-  message: { en: `Your ${entityMessage.value.en}s`, zh: `你的${entityMessage.value.zh}` }
-}))
-const category = ref(categoryAll)
+// temporary
+const recommended = computed(() => getAssetCategories(props.type))
+const ownerOptions = {
+  all: ownerAll,
+  personal: undefined
+}
+const owner = ref<keyof typeof ownerOptions>('all')
 
 const page = shallowRef(1)
-const pageSize = 18 // 6 * 3
+const pageSize = 42 // 7 * 6
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
 watch(
-  () => [keyword.value, category.value],
+  () => [keyword.value, owner.value],
   () => (page.value = 1)
 )
 
 const queryRet = useQuery(
   () => {
-    const c = category.value.value
-    const cPersonal = categoryPersonal.value.value
     return listAsset({
       pageSize,
       pageIndex: page.value,
       type: props.type,
       keyword: keyword.value,
-      orderBy: 'displayName',
-      category: c === categoryAll.value || c === cPersonal ? undefined : c,
-      owner: c === cPersonal ? undefined : '*',
-      visibility: c === cPersonal ? undefined : Visibility.Public
+      owner: ownerOptions[owner.value],
+      visibility: owner.value === 'personal' ? undefined : Visibility.Public
     })
   },
   {
@@ -178,14 +179,6 @@ const queryRet = useQuery(
     zh: '获取列表失败'
   }
 )
-
-function handleSearch() {
-  keyword.value = searchInput.value
-}
-
-function handleSelectCategory(c: Category) {
-  category.value = c
-}
 
 const selected = shallowReactive<AssetData[]>([])
 
@@ -208,7 +201,7 @@ async function addAssetToProject(asset: AssetData) {
       return sound
     }
     default:
-      throw new Error('unknow asset type')
+      throw new Error('unknown asset type')
   }
 }
 
@@ -218,7 +211,10 @@ const handleConfirm = useMessageHandle(
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
     const assetModels = await props.project.history.doAction(action, () => Promise.all(selected.map(addAssetToProject)))
-    emit('resolved', assetModels)
+    emit('resolved', {
+      type: 'assets',
+      assets: assetModels
+    })
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }
 )
@@ -232,57 +228,314 @@ async function handleAssetClick(asset: AssetData) {
   if (index < 0) selected.push(asset)
   else selected.splice(index, 1)
 }
+
+/** If in generation phase */
+const isGenPhase = ref(false)
+
+function handleGenStart() {
+  isGenPhase.value = true
+}
+
+function handleGenCollapse() {
+  const gen = assetGen.value
+  if (gen == null) throw new Error('asset gen expected')
+  preventAssetGenDisposal(gen)
+  emit('resolved', {
+    type: 'gen',
+    gen
+  })
+}
+
+const handleGenFinished = useMessageHandle(
+  async () => {
+    const gen = assetGen.value
+    if (gen == null) throw new Error('asset gen expected')
+    // Consider moving asset addition outside AssetLibraryModal for better separation of concerns.
+    // However, this would introduce a delay between the modal close and assets addition, potentially degrading UX.
+    // TODO: Review this trade-off
+    const added = await props.project.history.doAction(
+      {
+        name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
+      },
+      async () => {
+        if (gen instanceof SpriteGen) {
+          const sprite = gen.result
+          if (sprite == null) throw new Error('sprite generation not finished')
+          props.project.addSprite(sprite)
+          await sprite.autoFit()
+          return sprite
+        } else if (gen instanceof BackdropGen) {
+          const backdrop = gen.result
+          if (backdrop == null) throw new Error('backdrop generation not finished')
+          props.project.stage.addBackdrop(backdrop)
+          return backdrop
+        }
+        throw new Error('unknown asset type')
+      }
+    )
+    emit('resolved', {
+      type: 'assets',
+      assets: [added]
+    })
+  },
+  {
+    en: 'Failed to generate asset',
+    zh: '素材生成失败'
+  }
+).fn
+
+const confirm = useConfirmDialog()
+
+const handleModalClose = useMessageHandle(
+  async () => {
+    if (isGenPhase.value) {
+      // It may be more user-friendly to do collapse automatically, or notify user about collapsing
+      // TODO: Review strategy here later
+      const em = entityMessage.value
+      await confirm({
+        title: i18n.t({ zh: `退出${em.zh}生成？`, en: `Exit ${em.en} generation?` }),
+        content: i18n.t({
+          zh: '当前内容不会被保存，确定要退出吗？',
+          en: 'Current progress will not be saved. Are you sure to exit?'
+        }),
+        confirmText: i18n.t({ en: 'Exit', zh: '退出' })
+      })
+    }
+    assetGen.value?.cancel().catch((e) => capture(e, 'asset generation cancellation failed'))
+    emit('cancelled')
+  },
+  { en: 'Failed to exit modal', zh: '退出失败' }
+).fn
+
+const title = computed(() => {
+  const em = entityMessage.value
+  if (isGenPhase.value) return { en: `Generate ${em.en}`, zh: `生成${em.zh}` }
+  return { en: `Choose a ${em.en}`, zh: `选择${em.zh}` }
+})
 </script>
 
-<style lang="scss" scoped>
-.search-input {
-  width: 320px;
-}
-.search-icon {
-  color: var(--ui-color-grey-700);
-}
-.body {
-  display: flex;
-  justify-content: stretch;
-}
-.sider {
-  flex: 0 0 168px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding: var(--ui-gap-middle);
-  gap: 12px;
+<template>
+  <UIModal
+    :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
+    style="width: 1076px; height: 800px"
+    :visible="visible"
+    mask-closable
+    @update:visible="handleModalClose"
+  >
+    <header class="header">
+      <div class="header-left">
+        <UIButton
+          v-if="isGenPhase"
+          class="back-asset"
+          color="white"
+          icon="arrowAlt"
+          variant="stroke"
+          @click="isGenPhase = false"
+        ></UIButton>
+        <h2 class="title">{{ $t(title) }}</h2>
+      </div>
 
-  border-right: 1px solid var(--ui-color-grey-400);
+      <UIModalClose class="close" @click="handleModalClose" />
+    </header>
+
+    <template v-if="isGenPhase && AssetGenComp != null">
+      <AssetGenComp class="asset-gen" />
+    </template>
+    <template v-else>
+      <div class="asset-library">
+        <header class="header">
+          <UITextInput
+            v-model:value="searchInput"
+            class="search-input"
+            color="white"
+            size="large"
+            clearable
+            :placeholder="$t({ zh: '搜索', en: 'Search' })"
+            ><template #prefix><UIIcon type="search" /></template
+          ></UITextInput>
+
+          <div class="recommended-buttons">
+            <UIButton
+              v-for="r in recommended"
+              :key="r.value"
+              variant="stroke"
+              color="white"
+              size="small"
+              @click="searchInput = [searchInput, $t(r.message)].filter(Boolean).join(' ')"
+              >{{ $t(r.message) }}</UIButton
+            >
+          </div>
+        </header>
+
+        <main class="main">
+          <div
+            v-radar="{
+              name: 'Asset list',
+              desc: `List of ${entityMessage.en}s containing keyword ${keyword}`
+            }"
+            class="content"
+          >
+            <div class="filter">
+              <UIChipRadioGroup v-model:value="owner">
+                <UIChipRadio value="all">{{ $t({ zh: '公开素材库', en: 'Public library' }) }}</UIChipRadio>
+                <UIChipRadio value="personal">{{ $t({ zh: '我的素材库', en: 'My library' }) }}</UIChipRadio>
+              </UIChipRadioGroup>
+            </div>
+            <ListResultWrapper :query-ret="queryRet" :height="436">
+              <template v-if="SettingsInput != null && assetGen != null && owner === 'all'" #empty>
+                <div class="empty">
+                  {{
+                    $t({
+                      zh: `没找到“${keyword}”相关的素材，不如让 AI 帮你生成一个？`,
+                      en: `No assets found for "${keyword}". Why not let AI generate one for you?`
+                    })
+                  }}
+                  <SettingsInput :gen="assetGen" :description-placeholder="keyword" @submit="handleGenStart" />
+                </div>
+              </template>
+              <template #default="slotProps">
+                <div class="asset-list-container">
+                  <ul class="asset-list">
+                    <ItemComponent
+                      v-for="asset in slotProps.data.data"
+                      :key="asset.id"
+                      :asset="asset"
+                      :selected="isSelected(asset)"
+                      @click="handleAssetClick(asset)"
+                    />
+                  </ul>
+                  <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+                </div>
+              </template>
+            </ListResultWrapper>
+          </div>
+          <footer class="footer">
+            <span v-show="selected.length > 0">
+              {{
+                $t({
+                  en: `${selected.length} ${entityMessage.en}${selected.length > 1 ? 's' : ''} selected`,
+                  zh: `已选中 ${selected.length} 个${entityMessage.zh}`
+                })
+              }}
+            </span>
+            <UIButton
+              v-radar="{ name: 'Confirm button', desc: 'Click to confirm asset selection' }"
+              size="large"
+              :disabled="selected.length === 0"
+              :loading="handleConfirm.isLoading.value"
+              @click="handleConfirm.fn"
+            >
+              {{ $t({ en: 'Confirm', zh: '确认' }) }}
+            </UIButton>
+          </footer>
+        </main>
+      </div>
+    </template>
+  </UIModal>
+</template>
+
+<style lang="scss" scoped>
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--ui-color-grey-400);
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--ui-gap-middle);
+
+    .back-asset {
+      transform: rotate(-90deg);
+    }
+
+    .title {
+      font-size: 16px;
+      color: var(--ui-color-title);
+    }
+  }
 }
-.main {
+
+.asset-gen,
+.asset-library {
   flex: 1 1 0;
+}
+
+.asset-library {
   display: flex;
   flex-direction: column;
-  justify-content: stretch;
-}
-.title {
-  padding: 20px 24px 0;
-  color: var(--ui-color-grey-900);
-}
-.content {
-  padding: 8px 24px 0;
-}
-.asset-list {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-content: flex-start;
-}
-.pagination {
-  justify-content: center;
-  margin: 36px 0 12px;
-}
-.footer {
-  padding: 20px 24px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--ui-gap-middle);
+  .header {
+    display: flex;
+    flex-direction: column;
+    height: 180px;
+    width: 100%;
+    padding: 0 250px;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: url('@/components/asset/library/asset-library-banner.png') no-repeat center center;
+    background-size: cover;
+
+    .search-input {
+      width: 100%;
+      box-shadow: 0 4px 12px 0 rgba(from var(--ui-color-turquoise-300) r g b / 65%);
+    }
+
+    .recommended-buttons {
+      display: flex;
+      gap: 16px;
+    }
+  }
+  .main {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+  }
+  .content {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 24px 0;
+    // TODO(@UI): Recheck scroll behavior (scroll container selection) here.
+    overflow-y: auto;
+  }
+  .filter {
+    display: flex;
+    justify-content: space-between;
+  }
+  .empty {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    padding-top: 40px;
+    margin: 0 250px;
+    gap: 24px;
+  }
+  .empty,
+  .asset-list-container {
+    height: 436px;
+  }
+  .asset-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+  .pagination {
+    justify-content: center;
+    margin: 36px 0 12px;
+  }
+  .footer {
+    padding: 20px 24px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--ui-gap-middle);
+  }
 }
 </style>

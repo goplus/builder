@@ -35,6 +35,12 @@
           droppable
           @click="handleSpriteClick(sprite)"
         />
+        <SpriteGenItem
+          v-for="gen in editorCtx.state.spriteGens"
+          :key="gen.id"
+          :gen="gen"
+          @click="handleSpriteGenClick(gen)"
+        />
       </PanelList>
       <PanelFooter
         v-if="footerExpanded && selectedSprite != null"
@@ -74,19 +80,21 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Sprite } from '@/models/sprite'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
+import { useMessageHandle } from '@/utils/exception'
+import { SpriteGen } from '@/models/gen/sprite-gen'
+import { Sprite } from '@/models/sprite'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
+import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
-import { useMessageHandle } from '@/utils/exception'
 
 defineProps<{
   expanded: boolean
@@ -128,7 +136,6 @@ const handleAddFromLocalFile = useMessageHandle(
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
-
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
@@ -148,6 +155,28 @@ const handleSorted = useMessageHandle(
   {
     en: 'Failed to update sprite order',
     zh: '更新精灵顺序失败'
+  }
+).fn
+
+const invokeSpriteGenModal = useSpriteGenModal()
+
+const handleSpriteGenClick = useMessageHandle(
+  async (gen: SpriteGen) => {
+    const result = await invokeSpriteGenModal(gen)
+
+    // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
+    gen.dispose()
+    editorCtx.state.removeSpriteGen(gen.id)
+
+    await editorCtx.project.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
+      editorCtx.project.addSprite(result)
+      await result.autoFit()
+    })
+    editorCtx.state.selectSprite(result.id)
+  },
+  {
+    en: 'Failed to add generated sprite',
+    zh: '添加生成的精灵失败'
   }
 ).fn
 </script>

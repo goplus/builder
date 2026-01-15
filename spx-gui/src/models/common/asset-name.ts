@@ -1,10 +1,6 @@
 import { lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/spx'
-import type { Project } from '../project'
-import type { Stage } from '../stage'
-import type { Sprite } from '../sprite'
-import type { Animation } from '../animation'
 
 function validateAssetName(name: string) {
   if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
@@ -51,19 +47,35 @@ function getXGoIdentifierAssetNameTip(asset: LocaleMessage) {
 
 export const spriteNameTip = getXGoIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })
 
-export function validateSpriteName(name: string, project: Project | null) {
+export interface SpriteLike {
+  name: string
+}
+
+export interface SpriteLikeParent {
+  sprites: SpriteLike[]
+}
+
+export function validateSpriteName(name: string, parent: SpriteLikeParent | null) {
   // Name of a sprite should obey the naming rule of identifiers, because:
   // 1. It will be used to name the sprite struct in compiled code
   // 2. It will be used to name the embeded field for sprite instances
   const err = validateXGoIdentifierAssetName(name)
   if (err != null) return err
-  if (project != null && project.sprites.find((s) => s.name === name))
+  if (parent != null && parent.sprites.find((s) => s.name === name))
     return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
 }
 
 export const costumeNameTip = getAssetNameTip({ en: 'costume', zh: '造型' })
 
-export function validateCostumeName(name: string, parent: Sprite | Animation | null) {
+export interface CostumeLike {
+  name: string
+}
+
+export interface CostumeLikeParent {
+  costumes: CostumeLike[]
+}
+
+export function validateCostumeName(name: string, parent: CostumeLikeParent | null) {
   const err = validateAssetName(name)
   if (err != null) return err
   if (parent != null && parent.costumes.find((c) => c.name === name))
@@ -72,37 +84,69 @@ export function validateCostumeName(name: string, parent: Sprite | Animation | n
 
 export const animationNameTip = getAssetNameTip({ en: 'animation', zh: '动画' })
 
-export function validateAnimationName(name: string, sprite: Sprite | null) {
+export interface AnimationLike {
+  name: string
+}
+
+export interface AnimationLikeParent {
+  animations: AnimationLike[]
+}
+
+export function validateAnimationName(name: string, parent: AnimationLikeParent | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (sprite != null && sprite.animations.find((a) => a.name === name))
+  if (parent != null && parent.animations.find((a) => a.name === name))
     return { en: `Animation with name ${name} already exists`, zh: '存在同名的动画' }
 }
 
 export const soundNameTip = getAssetNameTip({ en: 'sound', zh: '声音' })
 
-export function validateSoundName(name: string, project: Project | null) {
+export interface SoundLike {
+  name: string
+}
+
+export interface SoundLikeParent {
+  sounds: SoundLike[]
+}
+
+export function validateSoundName(name: string, parent: SoundLikeParent | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (project != null && project.sounds.find((s) => s.name === name))
+  if (parent != null && parent.sounds.find((s) => s.name === name))
     return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
 }
 
 export const backdropNameTip = getAssetNameTip({ en: 'backdrop', zh: '背景' })
 
-export function validateBackdropName(name: string, stage: Stage | null) {
+export interface BackdropLike {
+  name: string
+}
+
+export interface BackdropLikeParent {
+  backdrops: BackdropLike[]
+}
+
+export function validateBackdropName(name: string, parent: BackdropLikeParent | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (stage != null && stage.backdrops.find((b) => b.name === name))
+  if (parent != null && parent.backdrops.find((b) => b.name === name))
     return { en: `Backdrop with name ${name} already exists`, zh: '存在同名的背景' }
 }
 
 export const widgetNameTip = getAssetNameTip({ en: 'widget', zh: '控件' })
 
-export function validateWidgetName(name: string, stage: Stage | null) {
+export interface WidgetLike {
+  name: string
+}
+
+export interface WidgetLikeParent {
+  widgets: WidgetLike[]
+}
+
+export function validateWidgetName(name: string, parent: WidgetLikeParent | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (stage != null && stage.widgets.find((b) => b.name === name))
+  if (parent != null && parent.widgets.find((b) => b.name === name))
     return { en: `Widget with name ${name} already exists`, zh: '存在同名的控件' }
 }
 
@@ -122,62 +166,62 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
   }
 }
 
-export function getSpriteName(project: Project | null, base = '') {
+export function getSpriteName(parent: SpriteLikeParent | null, base = '') {
   base = normalizeXGoIdentifierAssetName(base, 'pascal') || 'MySprite'
-  return getValidName(base, (n) => validateSpriteName(n, project) == null)
+  return getValidName(base, (n) => validateSpriteName(n, parent) == null)
 }
 
-export function ensureValidSpriteName(name: string, project: Project | null) {
-  if (validateSpriteName(name, project) == null) return name
-  return getSpriteName(project, name)
+export function ensureValidSpriteName(name: string, parent: SpriteLikeParent | null) {
+  if (validateSpriteName(name, parent) == null) return name
+  return getSpriteName(parent, name)
 }
 
-export function getCostumeName(parent: Sprite | Animation | null, base = '') {
+export function getCostumeName(parent: CostumeLikeParent | null, base = '') {
   base = normalizeAssetName(base, 'camel') || 'costume'
   return getValidName(base, (n) => validateCostumeName(n, parent) == null)
 }
 
-export function ensureValidCostumeName(name: string, parent: Sprite | Animation | null) {
+export function ensureValidCostumeName(name: string, parent: CostumeLikeParent | null) {
   if (validateCostumeName(name, parent) == null) return name
   return getCostumeName(parent, name)
 }
 
-export function getAnimationName(sprite: Sprite | null, base = '') {
+export function getAnimationName(parent: AnimationLikeParent | null, base = '') {
   base = normalizeAssetName(base, 'camel') || 'animation'
-  return getValidName(base, (n) => validateAnimationName(n, sprite) == null)
+  return getValidName(base, (n) => validateAnimationName(n, parent) == null)
 }
 
-export function ensureValidAnimationName(name: string, sprite: Sprite | null) {
-  if (validateAnimationName(name, sprite) == null) return name
-  return getAnimationName(sprite, name)
+export function ensureValidAnimationName(name: string, parent: AnimationLikeParent | null) {
+  if (validateAnimationName(name, parent) == null) return name
+  return getAnimationName(parent, name)
 }
 
-export function getSoundName(project: Project | null, base = '') {
+export function getSoundName(parent: SoundLikeParent | null, base = '') {
   base = normalizeAssetName(base, 'camel') || 'sound'
-  return getValidName(base, (n) => validateSoundName(n, project) == null)
+  return getValidName(base, (n) => validateSoundName(n, parent) == null)
 }
 
-export function ensureValidSoundName(name: string, project: Project | null) {
-  if (validateSoundName(name, project) == null) return name
-  return getSoundName(project, name)
+export function ensureValidSoundName(name: string, parent: SoundLikeParent | null) {
+  if (validateSoundName(name, parent) == null) return name
+  return getSoundName(parent, name)
 }
 
-export function getBackdropName(stage: Stage | null, base = '') {
+export function getBackdropName(parent: BackdropLikeParent | null, base = '') {
   base = normalizeAssetName(base, 'camel') || 'backdrop'
-  return getValidName(base, (n) => validateBackdropName(n, stage) == null)
+  return getValidName(base, (n) => validateBackdropName(n, parent) == null)
 }
 
-export function ensureValidBackdropName(name: string, stage: Stage | null) {
-  if (validateBackdropName(name, stage) == null) return name
-  return getBackdropName(stage, name)
+export function ensureValidBackdropName(name: string, parent: BackdropLikeParent | null) {
+  if (validateBackdropName(name, parent) == null) return name
+  return getBackdropName(parent, name)
 }
 
-export function getWidgetName(stage: Stage | null, base = '') {
+export function getWidgetName(parent: WidgetLikeParent | null, base = '') {
   base = normalizeAssetName(base, 'camel') || 'widget'
-  return getValidName(base, (n) => validateWidgetName(n, stage) == null)
+  return getValidName(base, (n) => validateWidgetName(n, parent) == null)
 }
 
-export function ensureValidWidgetName(name: string, stage: Stage | null) {
-  if (validateWidgetName(name, stage) == null) return name
-  return getWidgetName(stage, name)
+export function ensureValidWidgetName(name: string, parent: WidgetLikeParent | null) {
+  if (validateWidgetName(name, parent) == null) return name
+  return getWidgetName(parent, name)
 }
