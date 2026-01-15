@@ -2,14 +2,21 @@
 import { useAsyncComputed } from '@/utils/utils'
 import type { Costume } from '@/models/costume'
 import ParamSelector from './param-settings/ParamSelector.vue'
-import imgPerspective from './param-settings/assets/perspective.png' // TODO(@UI): use proper image
+import imgCostume from './param-settings/assets/costume.png'
 
-const props = defineProps<{
-  /** The selected costume ID */
-  selectedId: string | null
-  /** Available costumes to select from */
-  costumes: Costume[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    /** The selected costume ID */
+    selectedId: string | null
+    /** Available costumes to select from */
+    costumes: Costume[]
+    /** Whether to allow clearing the selection */
+    clearable?: boolean
+  }>(),
+  {
+    clearable: true
+  }
+)
 
 const emit = defineEmits<{
   'update:selectedId': [id: string | null]
@@ -30,7 +37,7 @@ const options = useAsyncComputed((onCleanup) => {
 
 const placeholder = {
   label: { en: 'Reference costume', zh: '参考造型' },
-  image: imgPerspective
+  image: imgCostume
 }
 </script>
 
@@ -41,6 +48,7 @@ const placeholder = {
     :tips="{ en: 'Please select the reference costume image', zh: '请选择参考造型图片' }"
     :options="options"
     :placeholder="placeholder"
+    :clearable="clearable"
     :value="selectedId"
     @update:value="emit('update:selectedId', $event)"
   />

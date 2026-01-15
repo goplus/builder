@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
 import type { CostumeGen } from '@/models/gen/costume-gen'
-import { UIImg, UIButton } from '@/components/ui'
+import { UIImg, UIButton, UIError } from '@/components/ui'
 import { useRenameCostumeGen } from '../..'
 import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
@@ -46,6 +46,9 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
     <GenLoading v-if="gen.generateState.status === 'running'">
       {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
     </GenLoading>
+    <UIError v-else-if="gen.generateState.status === 'failed'">
+      {{ $t(gen.generateState.error.userMessage) }}
+    </UIError>
     <GenLoading v-else-if="imgLoading">
       {{ $t({ en: 'Loading image...', zh: '正在加载图片...' }) }}
     </GenLoading>

@@ -20,9 +20,9 @@ export class BackdropGen extends Disposable {
     super()
     this.id = nanoid()
     this.project = project
-    this.enrichPhase = new Phase()
+    this.enrichPhase = new Phase({ en: 'enrich backdrop settings', zh: '丰富背景设置' })
     this.generateTask = new Task(TaskType.GenerateBackdrop)
-    this.generatePhase = new Phase()
+    this.generatePhase = new Phase({ en: 'generate backdrop images', zh: '生成背景图片' })
     this.settings = {
       name: '',
       category: BackdropCategory.Unspecified,

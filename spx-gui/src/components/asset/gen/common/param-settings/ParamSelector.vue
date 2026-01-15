@@ -13,11 +13,13 @@ const props = withDefaults(
     tips: LocaleMessage
     options: Array<Option>
     placeholder?: null | Omit<Option, 'value'>
+    clearable?: boolean
   }>(),
   {
     name: null,
     value: null,
-    placeholder: null
+    placeholder: null,
+    clearable: true
   }
 )
 
@@ -84,14 +86,14 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             :key="index"
             class="option"
             :active="value === item.value"
-            @click="$emit('update:value', value === item.value ? null : item.value)"
+            @click="$emit('update:value', clearable && value === item.value ? null : item.value)"
           >
             <UIImg v-if="item.image != null" class="block-image" :src="item.image" />
             <UIBlockItemTitle size="medium">
               {{ $t(item.label) }}
             </UIBlockItemTitle>
             <UICornerIcon
-              v-show="value === item.value"
+              v-show="clearable && value === item.value"
               type="minus"
               @click.stop.prevent="$emit('update:value', null)"
             />
