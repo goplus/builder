@@ -28,7 +28,7 @@ const loading = computed(() => props.loading || fileLoading.value)
   <div
     v-radar="{
       name: 'Backdrop image item',
-      desc: 'Select this image as the backdrop'
+      desc: 'Click to select this image as the backdrop'
     }"
     class="backdrop-image-item"
     :class="{ active, compact, loading }"

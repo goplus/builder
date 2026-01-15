@@ -62,7 +62,7 @@ const handleSubmit = useMessageHandle(
     <footer class="footer">
       <UIButton
         v-radar="{
-          name: 'Use backdrop button',
+          name: 'Use',
           desc: 'Finish and use the generated backdrop in the project'
         }"
         color="primary"

@@ -231,8 +231,8 @@ const handleSubmit = useMessageHandle(
         <template #trigger>
           <UIButton
             v-radar="{
-              name: 'Minimize button',
-              desc: 'Minimize the sprite generation modal'
+              name: 'Minimize',
+              desc: 'Click to minimize the sprite generation modal'
             }"
             color="secondary"
             size="large"
@@ -244,7 +244,7 @@ const handleSubmit = useMessageHandle(
       </UITooltip>
       <!-- TODO: Consider adding a "cancel" button here to cancel the generation process -->
       <UIButton
-        v-radar="{ name: 'Use sprite button', desc: 'Finish and use the generated sprite in the project' }"
+        v-radar="{ name: 'Use', desc: 'Click to finish and use the generated sprite in the project' }"
         color="primary"
         size="large"
         :disabled="!submittable"

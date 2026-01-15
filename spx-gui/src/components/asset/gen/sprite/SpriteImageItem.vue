@@ -28,7 +28,7 @@ const loading = computed(() => props.loading || fileLoading.value)
   <div
     v-radar="{
       name: 'Sprite image item',
-      desc: 'Select this image as the default costume for the sprite'
+      desc: 'Click to select this image as the default costume for the sprite'
     }"
     class="sprite-image-item"
     :class="{ active, compact, loading }"

@@ -61,8 +61,8 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
     <footer class="footer">
       <UIButton
         v-radar="{
-          name: 'Next button',
-          desc: 'Proceed to the next phase of sprite generation (costume & animation generation)'
+          name: 'Next',
+          desc: 'Click to proceed to the next phase of sprite generation (costume & animation generation)'
         }"
         color="primary"
         size="large"

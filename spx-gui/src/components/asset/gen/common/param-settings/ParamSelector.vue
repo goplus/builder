@@ -8,7 +8,7 @@ type Option = { value: T; label: LocaleMessage; image?: string }
 
 const props = withDefaults(
   defineProps<{
-    name?: LocaleMessage | null
+    name: LocaleMessage
     value?: T | null
     tips: LocaleMessage
     options: Array<Option>
@@ -16,7 +16,6 @@ const props = withDefaults(
     clearable?: boolean
   }>(),
   {
-    name: null,
     value: null,
     placeholder: null,
     clearable: true
@@ -36,14 +35,14 @@ const selectedItem = computed(() => {
 })
 
 const tooltipText = computed(() => {
-  if (props.name != null && selectedItem.value != null)
+  if (selectedItem.value != null)
     return showPlaceholder.value
       ? selectedItem.value.label
       : {
           en: `${props.name.en}: ${selectedItem.value.label.en}`,
           zh: `${props.name.zh}： ${selectedItem.value.label.zh}`
         }
-  return selectedItem.value?.label
+  return props.name
 })
 
 const optionsText = computed(() => props.options.map((item) => t(item.label)).join(', '))
@@ -67,8 +66,8 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
       <UIButton
         :key="String(iconOnly)"
         v-radar="{
-          name: name !== null ? $t(name) : 'Param selector',
-          desc: `Click to select ${name !== null ? $t(name) : 'parameter'} (e.g., ${optionsText})`
+          name: $t(name),
+          desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
         }"
         :disabled="disabled"
         variant="stroke"
@@ -99,7 +98,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             :key="index"
             v-radar="{
               name: `Option '${$t(item.label)}'`,
-              desc: `Select '${$t(item.label)}' as the ${name !== null ? $t(name) : 'parameter'}`
+              desc: `Select '${$t(item.label)}' as the '${$t(name)}'`
             }"
             class="option"
             :active="value === item.value"

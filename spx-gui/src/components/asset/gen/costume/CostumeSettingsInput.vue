@@ -49,7 +49,7 @@ const submitText = computed(() => {
     <template #submit>
       <UIButton
         v-radar="{
-          name: 'Costume generation submit button',
+          name: 'Submit',
           desc: 'Click to generate a costume'
         }"
         :disabled="buttonDisabled"

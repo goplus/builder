@@ -51,7 +51,7 @@ const submitText = computed(() => {
     </template>
     <template #submit>
       <UIButton
-        v-radar="{ name: 'Animation generation submit button', desc: 'Click to generate an animation' }"
+        v-radar="{ name: 'Submit', desc: 'Click to generate an animation' }"
         :disabled="submitDisabled"
         :loading="isGenerating"
         @click="gen.generateVideo()"

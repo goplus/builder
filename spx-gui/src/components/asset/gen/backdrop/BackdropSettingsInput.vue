@@ -61,7 +61,7 @@ const submitText = computed(() => {
     </template>
     <template #submit>
       <UIButton
-        v-radar="{ name: 'Backdrop generation submit button', desc: 'Click to generate backdrop images' }"
+        v-radar="{ name: 'Submit', desc: 'Click to generate backdrop images' }"
         :disabled="submitDisabled"
         :loading="submitting"
         @click="handleSubmit"

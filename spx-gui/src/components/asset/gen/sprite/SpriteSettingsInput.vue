@@ -60,7 +60,7 @@ const submitText = computed(() => {
     </template>
     <template #submit>
       <UIButton
-        v-radar="{ name: 'Sprite generation submit button', desc: 'Click to generate sprite images' }"
+        v-radar="{ name: 'Submit', desc: 'Click to generate sprite images' }"
         :disabled="buttonDisabled"
         :loading="imageGenerating"
         @click="handleSubmit"

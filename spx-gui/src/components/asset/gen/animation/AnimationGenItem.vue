@@ -46,7 +46,7 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
   <GenItem
     ref="wrapperRef"
     v-radar="{
-      name: 'Animation generation item ' + gen.name,
+      name: `Animation generation item '${gen.name}'`,
       desc: `Click to view generation settings and preview for animation '${gen.name}'`
     }"
     :color="{
