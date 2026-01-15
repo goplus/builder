@@ -38,7 +38,7 @@
         <SpriteGenItem
           v-for="gen in editorCtx.state.spriteGens"
           :key="gen.id"
-          :ref="(el) => setSpriteGenItemRef(el, gen.id)"
+          :ref="(el) => setSpriteGenItemRef(el, gen)"
           :gen="gen"
           @click="handleSpriteGenClick(gen)"
         />
@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
+import { computed, ref, type ComponentPublicInstance } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { SpriteGen } from '@/models/gen/sprite-gen'
@@ -137,32 +137,20 @@ const handleAddFromLocalFile = useMessageHandle(
 ).fn
 
 const spriteGenItemRefs = new Map<string, HTMLElement>()
-function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, id: string) {
-  if (ref != null && '$el' in ref && ref.$el instanceof HTMLElement) spriteGenItemRefs.set(id, ref.$el)
-  else spriteGenItemRefs.delete(id)
-}
-
-watch(
-  () => editorCtx.state.spriteGens.length,
-  (newLength, oldLength) => {
-    if (newLength < oldLength) return
-    const spriteGen = editorCtx.state.spriteGens.at(-1)
-    if (spriteGen == null) return
-
-    const { id } = spriteGen
-    const el = spriteGenItemRefs.get(id)
-    if (el == null) return
+function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, gen: SpriteGen) {
+  if (ref != null && '$el' in ref && ref.$el instanceof HTMLElement) {
+    const el = ref.$el
+    if (spriteGenItemRefs.get(gen.id) === el) return
+    spriteGenItemRefs.set(gen.id, el)
     el.scrollIntoView({ block: 'center' })
     const rect = el.getBoundingClientRect()
-    editorCtx.state.addGenTransformOrigin(spriteGen, {
+    editorCtx.state.addGenCollapsePos(gen, {
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2
     })
-  },
-  {
-    flush: 'post'
-  }
-)
+  } else spriteGenItemRefs.delete(gen.id)
+}
+
 const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {

@@ -13,11 +13,12 @@ import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
-import { type TransformOrigin } from '@/components/ui'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
 import * as editing from './editing'
+
+type GenCollapsePos = { x: number; y: number }
 
 export type SelectedType = 'stage' | 'sprite' | 'sound'
 
@@ -106,13 +107,13 @@ export class EditorState extends Disposable {
     gen.dispose()
   }
 
-  genTransformOrigins = shallowReactive(new Map<string, TransformOrigin>())
-  addGenTransformOrigin(gen: SpriteGen | BackdropGen, transformOrigin: TransformOrigin) {
-    this.genTransformOrigins.set(gen.id, transformOrigin)
-    gen.addDisposer(() => this.genTransformOrigins.delete(gen.id))
+  private genCollapsePos = shallowReactive(new Map<string, GenCollapsePos>())
+  addGenCollapsePos(gen: SpriteGen | BackdropGen, collapsePos: GenCollapsePos) {
+    this.genCollapsePos.set(gen.id, collapsePos)
+    gen.addDisposer(() => this.genCollapsePos.delete(gen.id))
   }
-  getGenTransformOrigin(id: string) {
-    return this.genTransformOrigins.get(id)
+  getGenCollapsePos(id: string) {
+    return this.genCollapsePos.get(id)
   }
 
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)

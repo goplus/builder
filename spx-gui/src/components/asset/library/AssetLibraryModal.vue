@@ -10,7 +10,7 @@ import {
   UIModal,
   UIModalClose,
   useConfirmDialog,
-  type TransformOrigin
+  type ModalTransformOrigin
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
@@ -36,7 +36,7 @@ const props = defineProps<{
   type: AssetType
   visible: boolean
   project: Project
-  beforeResolvedGen?: (gen: AssetGenModel) => Promise<TransformOrigin>
+  beforeGenCollapse: (gen: AssetGenModel) => Promise<ModalTransformOrigin | undefined>
 }>()
 
 const emit = defineEmits<{
@@ -215,8 +215,9 @@ async function handleGenCollapse() {
   const gen = assetGen.value
   if (gen == null) throw new Error('asset gen expected')
   preventAssetGenDisposal(gen)
-  if (props.beforeResolvedGen != null && modalRef.value != null) {
-    modalRef.value.setTransformOrigin(await props.beforeResolvedGen(gen))
+  const transformOrigin = await props.beforeGenCollapse(gen)
+  if (modalRef.value != null && transformOrigin != null) {
+    modalRef.value.setTransformOrigin(transformOrigin)
   }
   emit('cancelled')
 }
