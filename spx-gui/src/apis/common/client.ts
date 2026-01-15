@@ -7,6 +7,7 @@ import { apiBaseUrl } from '@/utils/env'
 import { TimeoutException } from '@/utils/exception/base'
 import { mergeSignals } from '@/utils/disposable'
 import { ApiException } from './exception'
+import { parseSSE, type SSEEvent } from './sse'
 
 /** Response body when exception encountered for API calling */
 export type ApiExceptionPayload = {
@@ -32,12 +33,6 @@ export type RequestOptions = {
    */
   timeout?: number
   signal?: AbortSignal
-}
-
-/** Event received from Server-Sent Events API */
-export type SSEEvent = {
-  type: string
-  data: string
 }
 
 /** Event received from Server-Sent Events API, with `data` parsed as JSON */
@@ -139,36 +134,9 @@ export class Client {
   }
 
   /** Request HTTP API with Server-Sent Events as response */
-  private async *requestSSE(path: string, payload: unknown, options?: RequestOptions): AsyncGenerator<SSEEvent> {
+  private requestSSE(path: string, payload: unknown, options?: RequestOptions): AsyncGenerator<SSEEvent> {
     const stream = this.requestTextStream(path, payload, options)
-
-    let buffer = ''
-    let currentEventName = 'message'
-
-    for await (const chunk of stream) {
-      buffer += chunk
-
-      // Split into lines, keeping last line (may be incomplete) in buffer
-      const lines = buffer.split('\n')
-      buffer = lines.pop() ?? ''
-
-      for (const line of lines) {
-        const colonIdx = line.indexOf(':')
-        if (colonIdx === -1) continue // Skip lines without field separator
-        const field = line.slice(0, colonIdx)
-        const value = line.slice(colonIdx + 1).trim()
-
-        if (field === 'event') {
-          currentEventName = value
-          continue
-        }
-
-        if (field === 'data') {
-          yield { type: currentEventName, data: value }
-          currentEventName = 'message'
-        }
-      }
-    }
+    return parseSSE(stream)
   }
 
   /** Request HTTP API with Server-Sent Events as response, parsing event data as JSON */
