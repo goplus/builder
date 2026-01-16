@@ -25,7 +25,14 @@ const loading = computed(() => props.loading || fileLoading.value)
 </script>
 
 <template>
-  <div class="backdrop-image-item" :class="{ active, compact, loading }">
+  <div
+    v-radar="{
+      name: 'Backdrop image item',
+      desc: 'Click to select this image as the backdrop'
+    }"
+    class="backdrop-image-item"
+    :class="{ active, compact, loading }"
+  >
     <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" />
     <UIImg v-else class="img" :src="url" size="cover" />
   </div>

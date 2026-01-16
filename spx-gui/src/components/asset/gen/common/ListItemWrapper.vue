@@ -14,7 +14,7 @@ defineEmits<{
 
     <div class="list">
       <slot></slot>
-      <UIBlockItem class="add-item" @click="$emit('add')">
+      <UIBlockItem v-radar="{ name: 'Add', desc: 'Click to add a new item' }" class="add-item" @click="$emit('add')">
         <UIIcon class="icon" type="plus" />
       </UIBlockItem>
     </div>

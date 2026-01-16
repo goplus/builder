@@ -163,11 +163,14 @@ const handleSubmit = useMessageHandle(
 </script>
 
 <template>
-  <main class="phase-content">
+  <main
+    v-radar="{ name: 'Sprite generation content phase', desc: 'Sprite costume and animation generation' }"
+    class="phase-content"
+  >
     <div class="body">
       <aside class="left">
         <div class="gen-list">
-          <ListItemWrapper @add="handleAddCostume">
+          <ListItemWrapper v-radar="{ name: 'Costume list', desc: 'List of costumes' }" @add="handleAddCostume">
             <template #title>{{ $t({ zh: '造型', en: 'Costume' }) }}</template>
             <CostumeGenItem
               v-for="c in gen.costumes"
@@ -182,7 +185,7 @@ const handleSubmit = useMessageHandle(
             />
           </ListItemWrapper>
 
-          <ListItemWrapper @add="handleAddAnimation">
+          <ListItemWrapper v-radar="{ name: 'Animation list', desc: 'List of animations' }" @add="handleAddAnimation">
             <template #title>{{ $t({ zh: '动画', en: 'Animation' }) }}</template>
             <AnimationGenItem
               v-for="a in gen.animations"
@@ -226,20 +229,30 @@ const handleSubmit = useMessageHandle(
           })
         }}
         <template #trigger>
-          <UIButton color="secondary" size="large" @click="emit('collapse')">{{
-            $t({ en: 'Minimize', zh: '收起' })
-          }}</UIButton>
+          <UIButton
+            v-radar="{
+              name: 'Minimize',
+              desc: 'Click to minimize the sprite generation modal'
+            }"
+            color="secondary"
+            size="large"
+            @click="emit('collapse')"
+          >
+            {{ $t({ en: 'Minimize', zh: '收起' }) }}
+          </UIButton>
         </template>
       </UITooltip>
       <!-- TODO: Consider adding a "cancel" button here to cancel the generation process -->
       <UIButton
+        v-radar="{ name: 'Use', desc: 'Click to finish and use the generated sprite in the project' }"
         color="primary"
         size="large"
         :disabled="!submittable"
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"
-        >{{ $t({ en: 'Use', zh: '采用' }) }}</UIButton
       >
+        {{ $t({ en: 'Use', zh: '采用' }) }}
+      </UIButton>
     </footer>
   </main>
 </template>

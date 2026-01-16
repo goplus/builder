@@ -45,7 +45,12 @@ function handleSelect(file: File) {
 </script>
 
 <template>
-  <div v-if="state.status !== 'initial'" ref="wrapperRef" class="image-selector">
+  <div
+    v-if="state.status !== 'initial'"
+    ref="wrapperRef"
+    v-radar="{ name: 'Image selector', desc: 'Selector for choosing from generated images' }"
+    class="image-selector"
+  >
     <ul class="list">
       <template v-if="state.status === 'running'">
         <template v-for="idx in 4" :key="idx">

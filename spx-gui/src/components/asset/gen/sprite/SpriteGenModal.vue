@@ -17,6 +17,7 @@ const emit = defineEmits<{
 
 <template>
   <UIFormModal
+    :radar="{ name: 'Sprite generation modal', desc: 'Modal for sprite generation' }"
     :title="$t({ zh: '生成精灵', en: 'Sprite Generator' })"
     :visible="visible"
     :style="{ width: '1076px', height: '800px' }"

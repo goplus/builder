@@ -1,14 +1,14 @@
 <script lang="ts" setup generic="T">
 import { computed, inject } from 'vue'
 import { UIBlockItem, UIBlockItemTitle, UIButton, UICornerIcon, UIDropdownWithTooltip, UIImg } from '@/components/ui'
-import type { LocaleMessage } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { settingsInputCtxKey } from '../SettingsInput.vue'
 
 type Option = { value: T; label: LocaleMessage; image?: string }
 
 const props = withDefaults(
   defineProps<{
-    name?: LocaleMessage | null
+    name: LocaleMessage
     value?: T | null
     tips: LocaleMessage
     options: Array<Option>
@@ -16,7 +16,6 @@ const props = withDefaults(
     clearable?: boolean
   }>(),
   {
-    name: null,
     value: null,
     placeholder: null,
     clearable: true
@@ -27,6 +26,8 @@ defineEmits<{
   'update:value': [value: T | null]
 }>()
 
+const { t } = useI18n()
+
 const showPlaceholder = computed(() => props.value == null && props.placeholder != null)
 const selectedItem = computed(() => {
   if (showPlaceholder.value) return props.placeholder
@@ -34,15 +35,17 @@ const selectedItem = computed(() => {
 })
 
 const tooltipText = computed(() => {
-  if (props.name != null && selectedItem.value != null)
+  if (selectedItem.value != null)
     return showPlaceholder.value
       ? selectedItem.value.label
       : {
           en: `${props.name.en}: ${selectedItem.value.label.en}`,
           zh: `${props.name.zh}： ${selectedItem.value.label.zh}`
         }
-  return selectedItem.value?.label
+  return props.name
 })
+
+const optionsText = computed(() => props.options.map((item) => t(item.label)).join(', '))
 
 const settingsInputCtx = inject(settingsInputCtxKey)
 if (settingsInputCtx == null) throw new Error('settingsInputCtxKey should be provided')
@@ -60,7 +63,16 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
         which prevents 'slots.default' from being null. 
         The :key forces UIButton to re-mount and correctly recalculate its icon-only state.
       -->
-      <UIButton :key="String(iconOnly)" :disabled="disabled" variant="stroke" color="boring">
+      <UIButton
+        :key="String(iconOnly)"
+        v-radar="{
+          name: $t(name),
+          desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
+        }"
+        :disabled="disabled"
+        variant="stroke"
+        color="boring"
+      >
         <template v-if="selectedItem.image != null" #icon>
           <UIImg
             class="image"
@@ -84,6 +96,10 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
           <UIBlockItem
             v-for="(item, index) in options"
             :key="index"
+            v-radar="{
+              name: `Option '${$t(item.label)}'`,
+              desc: `Select '${$t(item.label)}' as the '${$t(name)}'`
+            }"
             class="option"
             :active="value === item.value"
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"
