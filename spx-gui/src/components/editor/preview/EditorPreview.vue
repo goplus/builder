@@ -99,7 +99,7 @@
 </template>
 
 <script lang="ts">
-// Check https://github.com/goplus/spx/blob/dev/cmd/igox/main.go for log source
+// Check tools/ispx/log.go for log source
 // TODO: Move these types & functions to ProjectRunner, and emit `log` instead of `console` event
 type SpxLog = {
   level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
