@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type ComponentPublicInstance } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowReactive, type ComponentPublicInstance } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { SpriteGen } from '@/models/gen/sprite-gen'
@@ -96,6 +96,7 @@ import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
+import { until } from '@/utils/utils'
 
 defineProps<{
   expanded: boolean
@@ -136,20 +137,24 @@ const handleAddFromLocalFile = useMessageHandle(
   }
 ).fn
 
-const spriteGenItemRefs = new Map<string, HTMLElement>()
+const spriteGenItemRefs = shallowReactive(new Map<string, HTMLElement>())
 function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, gen: SpriteGen) {
-  if (ref != null && '$el' in ref && ref.$el instanceof HTMLElement) {
-    const el = ref.$el
-    if (spriteGenItemRefs.get(gen.id) === el) return
-    spriteGenItemRefs.set(gen.id, el)
+  if (ref != null && '$el' in ref && ref.$el instanceof HTMLElement) spriteGenItemRefs.set(gen.id, ref.$el)
+  else spriteGenItemRefs.delete(gen.id)
+}
+
+onBeforeUnmount(
+  editorCtx.state.addGenCollapsePosProvider(async (gen) => {
+    await until(() => spriteGenItemRefs.get(gen.id) != null)
+    const el = spriteGenItemRefs.get(gen.id)!
     el.scrollIntoView({ block: 'center' })
     const rect = el.getBoundingClientRect()
-    editorCtx.state.addGenCollapsePos(gen, {
+    return {
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2
-    })
-  } else spriteGenItemRefs.delete(gen.id)
-}
+    }
+  })
+)
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(

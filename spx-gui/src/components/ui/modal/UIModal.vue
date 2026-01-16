@@ -55,6 +55,8 @@ const lastClickEvent = useLastClickEvent()
 watch(
   () => props.visible,
   (visible) => {
+    // For unknown reasons, naive-ui's `transform-origin: mouse` is not working.
+    // We implement this feature internally, which aligns with our goal to reduce dependency on naive-ui.
     if (visible && lastClickEvent.value != null)
       setTransformOrigin({ x: lastClickEvent.value.x, y: lastClickEvent.value.y })
   },
@@ -121,6 +123,7 @@ defineExpose({
 
 <style lang="scss">
 .ui-modal.has-custom-origin {
+  // Override NaiveUI's transform-origin to support custom animation origins
   transform-origin: var(--ui-modal-custom-origin, center) !important;
 
   &.fade-in-scale-up-transition-enter-active,

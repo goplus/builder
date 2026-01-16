@@ -33,7 +33,6 @@ import { SpriteGen } from '@/models/gen/sprite-gen'
 import { BackdropGen } from '@/models/gen/backdrop-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
-import { timeout } from '@/utils/utils'
 
 export function useAddAssetFromLibrary() {
   const editorCtx = useEditorCtx()
@@ -42,7 +41,7 @@ export function useAddAssetFromLibrary() {
     return (await invokeAssetLibraryModal({
       project,
       type,
-      beforeGenCollapse: async (gen) => {
+      genCollapseHandler: async (gen) => {
         // If AssetLibraryModal resolved with `type: gen`, which stands for an ongoing asset generation,
         // we directly add the generation to the editor state
         if (gen instanceof SpriteGen) {
@@ -50,9 +49,8 @@ export function useAddAssetFromLibrary() {
         } else if (gen instanceof BackdropGen) {
           editorCtx.state.addBackdropGen(gen)
         }
-        // Wait for DOM to be rendered so that genCollapsePos can be retrieved
-        await timeout()
-        return editorCtx.state.getGenCollapsePos(gen.id)
+        const providers = editorCtx.state.genCollapsePosProvider.map((provider) => provider(gen))
+        return providers.length !== 0 ? Promise.any(providers) : undefined
       }
     })) as Array<AssetModel<T>>
   }

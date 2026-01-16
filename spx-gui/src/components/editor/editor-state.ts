@@ -19,6 +19,7 @@ import { Runtime } from './runtime'
 import * as editing from './editing'
 
 type GenCollapsePos = { x: number; y: number }
+type CollapsePosProvider = (gen: SpriteGen | BackdropGen) => Promise<GenCollapsePos | undefined>
 
 export type SelectedType = 'stage' | 'sprite' | 'sound'
 
@@ -107,13 +108,10 @@ export class EditorState extends Disposable {
     gen.dispose()
   }
 
-  private genCollapsePos = shallowReactive(new Map<string, GenCollapsePos>())
-  addGenCollapsePos(gen: SpriteGen | BackdropGen, collapsePos: GenCollapsePos) {
-    this.genCollapsePos.set(gen.id, collapsePos)
-    gen.addDisposer(() => this.genCollapsePos.delete(gen.id))
-  }
-  getGenCollapsePos(id: string) {
-    return this.genCollapsePos.get(id)
+  genCollapsePosProvider = shallowReactive<CollapsePosProvider[]>([])
+  addGenCollapsePosProvider(provider: CollapsePosProvider) {
+    this.genCollapsePosProvider.push(provider)
+    return () => this.genCollapsePosProvider.splice(this.genCollapsePosProvider.indexOf(provider), 1)
   }
 
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)

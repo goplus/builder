@@ -36,7 +36,8 @@ const props = defineProps<{
   type: AssetType
   visible: boolean
   project: Project
-  beforeGenCollapse: (gen: AssetGenModel) => Promise<ModalTransformOrigin | undefined>
+  /** Returns the transform origin after collapsing the AssetGenModel, informing AssetLibraryModal where to collapse to */
+  genCollapseHandler: (gen: AssetGenModel) => Promise<ModalTransformOrigin | undefined>
 }>()
 
 const emit = defineEmits<{
@@ -215,7 +216,7 @@ async function handleGenCollapse() {
   const gen = assetGen.value
   if (gen == null) throw new Error('asset gen expected')
   preventAssetGenDisposal(gen)
-  const transformOrigin = await props.beforeGenCollapse(gen)
+  const transformOrigin = await props.genCollapseHandler(gen)
   if (modalRef.value != null && transformOrigin != null) {
     modalRef.value.setTransformOrigin(transformOrigin)
   }
