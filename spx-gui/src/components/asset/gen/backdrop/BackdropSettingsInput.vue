@@ -5,7 +5,7 @@ import SettingsInput from '../common/SettingsInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import BackdropCategoryInput from './BackdropCategoryInput.vue'
-import EnrichGateButton from '../common/EnrichGateButton.vue'
+import EnrichableSubmitButton from '../common/EnrichableSubmitButton.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -61,7 +61,7 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <EnrichGateButton
+      <EnrichableSubmitButton
         v-radar="{ name: 'Submit', desc: 'Click to generate backdrop images' }"
         :enriched="gen.enrichState.status === 'finished'"
         :enriching="enriching"
@@ -69,7 +69,7 @@ const submitText = computed(() => {
         :loading="submitting"
         @enrich="gen.enrich()"
         @submit="handleSubmit"
-        >{{ $t(submitText) }}</EnrichGateButton
+        >{{ $t(submitText) }}</EnrichableSubmitButton
       >
     </template>
   </SettingsInput>

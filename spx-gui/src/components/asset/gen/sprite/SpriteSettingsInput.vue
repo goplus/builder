@@ -5,7 +5,7 @@ import SettingsInput from '../common/SettingsInput.vue'
 import SpriteCategoryInput from './SpriteCategoryInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
-import EnrichGateButton from '../common/EnrichGateButton.vue'
+import EnrichableSubmitButton from '../common/EnrichableSubmitButton.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -59,7 +59,7 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <EnrichGateButton
+      <EnrichableSubmitButton
         v-radar="{ name: 'Submit', desc: 'Click to generate sprite images' }"
         :enriched="gen.enrichState.status === 'finished'"
         :enriching="enriching"
@@ -67,7 +67,7 @@ const submitText = computed(() => {
         :loading="imageGenerating"
         @enrich="gen.enrich()"
         @submit="handleSubmit"
-        >{{ $t(submitText) }}</EnrichGateButton
+        >{{ $t(submitText) }}</EnrichableSubmitButton
       >
     </template>
   </SettingsInput>
