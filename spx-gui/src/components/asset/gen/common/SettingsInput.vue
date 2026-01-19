@@ -20,11 +20,11 @@ import {
   watchEffect
 } from 'vue'
 
-import { UIButton, UIIcon } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 
 import enrichingFileUrl from './enriching.lottie?url'
+import enrichIcon from './enrich.svg?raw'
 
 const props = withDefaults(
   defineProps<{
@@ -111,19 +111,18 @@ provide(settingsInputCtxKey, ctx)
             <DotLottieVue class="animation" autoplay loop :src="enrichingFileUrl" />
             {{ $t({ zh: '正在丰富细节', en: 'Enriching details' }) }}
           </span>
-          <UIButton
+          <!-- TODO: This is a variant of UIButton that hasn't been standardized yet. It will be replaced once the specification is finalized. -->
+          <button
             v-else-if="enrichShow"
             v-radar="{ name: 'Enrich details', desc: 'Click to enrich the description' }"
             class="enrich-btn"
-            color="secondary"
-            size="small"
-            variant="stroke"
             @mousedown.prevent
             @click="emit('enrich')"
           >
-            <UIIcon type="edit" />
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="icon" v-html="enrichIcon"></div>
             {{ $t({ zh: '丰富细节', en: 'Enrich details' }) }}
-          </UIButton>
+          </button>
         </div>
       </div>
       <textarea
@@ -248,10 +247,27 @@ provide(settingsInputCtxKey, ctx)
     }
 
     .enrich-btn {
-      cursor: pointer;
+      border: 1px solid var(--ui-color-turquoise-300);
+      border-radius: 4px;
+      background-color: var(--ui-color-turquoise-200);
+      color: var(--ui-color-turquoise-500);
+      padding: 0 8px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
       vertical-align: middle;
+      height: 22px;
+      cursor: pointer;
       position: relative;
-      top: -2px;
+
+      .icon {
+        width: 14px;
+        height: 14px;
+      }
+
+      &:hover {
+        background-color: var(--ui-color-turquoise-100);
+      }
     }
   }
 

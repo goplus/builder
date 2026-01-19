@@ -1,13 +1,15 @@
 <script lang="ts" setup generic="T">
 import { computed, inject } from 'vue'
-import { UIBlockItem, UIBlockItemTitle, UIButton, UICornerIcon, UIDropdownWithTooltip, UIImg } from '@/components/ui'
+import { UIBlockItem, UIBlockItemTitle, UICornerIcon, UIDropdownWithTooltip, UIImg } from '@/components/ui'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { settingsInputCtxKey } from '../SettingsInput.vue'
 
 type Option = { value: T; label: LocaleMessage; image?: string }
+type Variant = 'selector' | 'reference'
 
 const props = withDefaults(
   defineProps<{
+    variant?: Variant
     name: LocaleMessage
     value?: T | null
     tips: LocaleMessage
@@ -16,6 +18,7 @@ const props = withDefaults(
     clearable?: boolean
   }>(),
   {
+    variant: 'selector',
     value: null,
     placeholder: null,
     clearable: true
@@ -57,34 +60,26 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
 <template>
   <UIDropdownWithTooltip :disabled="disabled" placement="top">
     <template v-if="selectedItem != null" #trigger>
-      <!-- The button margin is a bit large, need to consider how to be compatible with the specifications -->
-      <!-- 
-        Temporary: Vue includes comment nodes in slots when using v-if, 
-        which prevents 'slots.default' from being null. 
-        The :key forces UIButton to re-mount and correctly recalculate its icon-only state.
-      -->
-      <UIButton
-        :key="String(iconOnly)"
+      <!-- TODO: This is a variant of UIButton that hasn't been standardized yet. It will be replaced once the specification is finalized. -->
+      <button
         v-radar="{
           name: $t(name),
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
         }"
+        class="param-button"
+        :class="[`variant-${variant}`, { 'icon-only': iconOnly, 'show-placeholder': showPlaceholder }]"
         :disabled="disabled"
-        variant="stroke"
-        color="boring"
       >
-        <template v-if="selectedItem.image != null" #icon>
-          <UIImg
-            class="image"
-            :style="{ backgroundSize: iconOnly && showPlaceholder ? '130%' : '110%' }"
-            :class="[showPlaceholder ? 'placeholder-image' : 'button-image', { disabled }]"
-            :src="selectedItem.image"
-          />
-        </template>
-        <template v-if="!iconOnly" #default>
+        <UIImg
+          v-if="selectedItem.image != null"
+          :style="{ backgroundSize: iconOnly && showPlaceholder ? '130%' : '110%' }"
+          :class="[showPlaceholder ? 'placeholder-image' : 'button-image', { disabled }]"
+          :src="selectedItem.image"
+        />
+        <template v-if="!iconOnly">
           {{ $t(selectedItem.label) }}
         </template>
-      </UIButton>
+      </button>
     </template>
     <template v-if="tooltipText != null" #tooltip-content>
       {{ $t(tooltipText) }}
@@ -124,6 +119,51 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
 .placeholder-image {
   width: 16px;
   height: 16px;
+}
+
+.param-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 32px;
+  font-size: 13px;
+  padding: 0 8px;
+
+  border-radius: var(--ui-border-radius-2);
+  border: 1px solid var(--ui-param-selector-border-color);
+  background: var(--ui-param-selector-bg-color);
+  --ui-param-selector-bg-color: var(--ui-color-grey-100);
+
+  &.variant-selector,
+  &.show-placeholder {
+    --ui-param-selector-border-color: var(--ui-color-grey-400);
+
+    &:hover:not(:active, :disabled) {
+      --ui-param-selector-bg-color: var(--ui-color-grey-300);
+    }
+  }
+  &.variant-reference:not(.show-placeholder) {
+    --ui-param-selector-border-color: var(--ui-color-turquoise-300);
+
+    &:hover:not(:active, :disabled) {
+      --ui-param-selector-border-color: var(--ui-color-turquoise-400);
+    }
+  }
+
+  &.icon-only {
+    aspect-ratio: 1;
+    padding: 0;
+  }
+
+  &:hover:not(:active, :disabled) {
+    cursor: pointer;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    --ui-param-selector-border-color: var(--ui-color-grey-400);
+  }
 }
 
 .button-image {

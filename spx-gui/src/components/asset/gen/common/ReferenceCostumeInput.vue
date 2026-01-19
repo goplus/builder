@@ -50,6 +50,7 @@ const placeholder = {
     :placeholder="placeholder"
     :clearable="clearable"
     :value="selectedId"
+    variant="reference"
     @update:value="emit('update:selectedId', $event)"
   />
 </template>
