@@ -1,39 +1,40 @@
 <template>
-  <EditorItemDetail :name="animation.name" @rename="handleRename">
+  <EditorItemDetail :name="animation.name" @rename="emit('rename')">
     <AnimationPlayer
       :costumes="animation.costumes"
       :sound="sound"
       :duration="animation.duration"
       class="animation-player"
     />
-    <AnimationSettings :animation="animation" :sprite="sprite" :sounds="editorCtx.project.sounds" />
+    <AnimationSettings :animation="animation" :sound-editable="soundEditable" />
   </EditorItemDetail>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useMessageHandle } from '@/utils/exception'
 import type { Animation } from '@/models/animation'
-import type { Sprite } from '@/models/sprite'
-import { useRenameAnimation } from '@/components/asset'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
-import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationPlayer from './animation/AnimationPlayer.vue'
 import AnimationSettings from './animation/AnimationSettings.vue'
 
-const props = defineProps<{
-  animation: Animation
-  sprite: Sprite
+const props = withDefaults(
+  defineProps<{
+    animation: Animation
+    /** If it is supported to edit sound of the animation */
+    soundEditable?: boolean
+  }>(),
+  {
+    soundEditable: true
+  }
+)
+
+const emit = defineEmits<{
+  rename: []
 }>()
 
 const editorCtx = useEditorCtx()
-const renameCostume = useRenameAnimation()
 const sound = computed(() => editorCtx.project.sounds.find((sound) => sound.id === props.animation.sound) ?? null)
-
-const handleRename = useMessageHandle(() => renameCostume(props.animation), {
-  en: 'Rename animation failed',
-  zh: '重命名动画失败'
-}).fn
 </script>
 
 <style lang="scss" scoped>

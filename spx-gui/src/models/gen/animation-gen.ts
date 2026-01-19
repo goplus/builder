@@ -11,6 +11,7 @@ import {
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import type { File } from '../common/file'
+import { validateAnimationName } from '../common/asset-name'
 import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import { Animation } from '../animation'
 import { Costume } from '../costume'
@@ -65,8 +66,10 @@ export class AnimationGen extends Disposable {
     return this.settings.name
   }
   setName(name: string) {
-    // TODO: check name validity
+    const err = validateAnimationName(name, this.sprite)
+    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
+    this.result?.setName(name)
   }
 
   get enrichState() {

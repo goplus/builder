@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Animation } from '@/models/animation'
-import { type Sprite, State } from '@/models/sprite'
+import { State } from '@/models/sprite'
 import { UIDropdownModal, UICornerIcon, UIBlockItem } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import iconStateDefault from './default.svg?raw'
@@ -55,7 +55,6 @@ import iconStateDie from './die.svg?raw'
 
 const props = defineProps<{
   animation: Animation
-  sprite: Sprite
 }>()
 
 const emit = defineEmits<{
@@ -64,7 +63,7 @@ const emit = defineEmits<{
 
 const editorCtx = useEditorCtx()
 const actionName = { en: 'Bind state', zh: '绑定状态' }
-const boundStates = ref(props.sprite.getAnimationBoundStates(props.animation.id))
+const boundStates = ref(props.animation.sprite?.getAnimationBoundStates(props.animation.id) ?? [])
 
 function isBound(state: State) {
   return boundStates.value.includes(state)
@@ -78,7 +77,9 @@ function handleStateItemClick(state: State) {
 
 async function handleConfirm() {
   await editorCtx.project.history.doAction({ name: actionName }, () => {
-    props.sprite.setAnimationBoundStates(props.animation.id, boundStates.value)
+    const sprite = props.animation.sprite
+    if (sprite == null) throw new Error('Animation has no associated sprite')
+    sprite.setAnimationBoundStates(props.animation.id, boundStates.value)
   })
   emit('close')
 }

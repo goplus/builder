@@ -11,7 +11,7 @@ import {
   Facing,
   TaskType
 } from '@/apis/aigc'
-import type { Project } from '../project'
+import { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Costume } from '../costume'
 import type { Animation } from '../animation'
@@ -49,8 +49,12 @@ export class SpriteGen extends Disposable {
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified
     }
+    this.previewProject = new Project()
+    this.previewSprite = Sprite.create('')
+    this.previewProject.addSprite(this.previewSprite)
     this.result = null
     this.addDisposer(() => {
+      this.previewProject.dispose()
       this.costumes.forEach((c) => c.dispose())
       this.animations.forEach((a) => a.dispose())
     })
@@ -117,15 +121,13 @@ export class SpriteGen extends Disposable {
     this.image = file
   }
 
-  private sprite: Sprite | null = null
+  /** The project instance for preview within generation */
+  previewProject: Project
   /** The sprite instance for preview within generation */
-  get previewSprite() {
-    if (this.sprite == null) throw new Error('sprite expected')
-    return this.sprite
-  }
-  private makeSprite() {
-    const sprite = Sprite.create(this.settings.name)
-
+  previewSprite: Sprite
+  private preparePreviewSprite() {
+    const sprite = this.previewSprite
+    sprite.setName(this.settings.name)
     // Sync results of generations to sprite
     // NOTE: the order of costumes & animations on the sprite may be different
     // from the order of generations, which is acceptable for now.
@@ -157,8 +159,6 @@ export class SpriteGen extends Disposable {
         { immediate: true }
       )
     )
-    this.addDisposable(sprite)
-    this.sprite = sprite
   }
 
   get contentPreparingState() {
@@ -169,7 +169,7 @@ export class SpriteGen extends Disposable {
     if (image == null) throw new Error('image expected')
     await this.prepareContentPhase.run(async () => {
       const project = this.project
-      this.makeSprite()
+      this.preparePreviewSprite()
       const defaultCostumeGen = new CostumeGen(this, project, this.getDefaultCostumeSettings())
       defaultCostumeGen.setImage(image)
       await defaultCostumeGen.finish()
@@ -218,8 +218,7 @@ export class SpriteGen extends Disposable {
   result: Sprite | null
 
   finish() {
-    const previewSprite = this.sprite
-    if (previewSprite == null) throw new Error('sprite expected')
+    const previewSprite = this.previewSprite
     const sprite = Sprite.create(this.settings.name)
     for (const gen of this.costumes) {
       if (gen.result == null) continue
@@ -227,9 +226,12 @@ export class SpriteGen extends Disposable {
       sprite.addCostume(gen.result)
     }
     for (const gen of this.animations) {
-      if (gen.result == null) continue
-      previewSprite.removeAnimation(gen.result.id)
-      sprite.addAnimation(gen.result)
+      const animation = gen.result
+      if (animation == null) continue
+      const boundStates = previewSprite.getAnimationBoundStates(animation.id)
+      previewSprite.removeAnimation(animation.id)
+      sprite.addAnimation(animation)
+      sprite.setAnimationBoundStates(animation.id, boundStates)
     }
     sprite.setAssetMetadata({
       description: this.settings.description,

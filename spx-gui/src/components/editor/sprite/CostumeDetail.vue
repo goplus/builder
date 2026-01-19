@@ -1,5 +1,5 @@
 <template>
-  <EditorItemDetail :name="costume.name" @rename="handleRename">
+  <EditorItemDetail :name="costume.name" @rename="emit('rename')">
     <div class="img-wrapper">
       <CheckerboardBackground class="background" />
       <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
@@ -9,24 +9,18 @@
 
 <script setup lang="ts">
 import { UIImg } from '@/components/ui'
-import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
-import type { Sprite } from '@/models/sprite'
-import { useRenameCostume } from '@/components/asset'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 
 const props = defineProps<{
   costume: Costume
-  sprite: Sprite
 }>()
 
-const renameCostume = useRenameCostume()
-const handleRename = useMessageHandle(() => renameCostume(props.costume), {
-  en: 'Failed to rename costume',
-  zh: '重命名造型失败'
-}).fn
+const emit = defineEmits<{
+  rename: []
+}>()
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 </script>
