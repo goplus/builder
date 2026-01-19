@@ -171,7 +171,9 @@ const ownerOptions = {
 const owner = ref<keyof typeof ownerOptions>('all')
 
 const page = shallowRef(1)
-const pageSize = 42 // 7 * 6
+const numInRow = 7
+const numInColumn = 6
+const pageSize = numInRow * numInColumn
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
 watch(
@@ -199,13 +201,13 @@ const queryRet = useQuery(
 const resultTooFew = computed(() => {
   const ret = queryRet.data.value
   if (ret == null) return false
-  return ret.data.length <= 7 // When the result can be displayed in one row (7 items per row), show generation suggestions
+  return ret.total <= numInRow // When the result can be displayed in one row (numInRow items per row), show generation suggestions
 })
-const lastPage = computed(() => {
+const isLastPage = computed(() => {
   return page.value === pageTotal.value
 })
 const shouldShowGenSuggestion = computed(() => {
-  return (resultTooFew.value || lastPage.value) && assetGen.value != null && owner.value === 'all'
+  return (resultTooFew.value || isLastPage.value) && assetGen.value != null && owner.value === 'all'
 })
 const genSuggestionMessage = computed(() => {
   if (resultTooFew.value) {
