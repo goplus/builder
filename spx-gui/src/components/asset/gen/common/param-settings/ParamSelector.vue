@@ -60,7 +60,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
 <template>
   <UIDropdownWithTooltip :disabled="disabled" placement="top">
     <template v-if="selectedItem != null" #trigger>
-      <!-- TODO: This is a variant of UIButton that hasn't been standardized yet. It will be replaced once the specification is finalized. -->
+      <!-- TODO: Standardize this button variant once the design system specification is finalized. -->
       <button
         v-radar="{
           name: $t(name),

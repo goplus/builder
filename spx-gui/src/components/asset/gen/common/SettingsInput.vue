@@ -111,7 +111,7 @@ provide(settingsInputCtxKey, ctx)
             <DotLottieVue class="animation" autoplay loop :src="enrichingFileUrl" />
             {{ $t({ zh: '正在丰富细节', en: 'Enriching details' }) }}
           </span>
-          <!-- TODO: This is a variant of UIButton that hasn't been standardized yet. It will be replaced once the specification is finalized. -->
+          <!-- TODO: Standardize this button variant once the design system specification is finalized. -->
           <button
             v-else-if="enrichShow"
             v-radar="{ name: 'Enrich details', desc: 'Click to enrich the description' }"

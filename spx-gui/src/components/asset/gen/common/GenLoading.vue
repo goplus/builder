@@ -58,7 +58,8 @@ const slots = useSlots()
       height: 150%;
       top: -25%;
       left: -25%;
-      backdrop-filter: blur(350px);
+      backdrop-filter: blur(50px);
+      will-change: transform;
       background-image: radial-gradient(circle at 50% -20%, var(--ui-color-turquoise-200) 20%, transparent 70%),
         radial-gradient(circle at 50% 120%, var(--ui-color-blue-200) 20%, transparent 70%),
         radial-gradient(circle at -20% 50%, var(--ui-color-blue-100) 20%, transparent 70%),
