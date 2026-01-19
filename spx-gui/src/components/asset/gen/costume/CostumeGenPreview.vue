@@ -43,13 +43,13 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
         $t({ en: 'Save costume', zh: '保存造型' })
       }}</UIButton>
     </template>
-    <GenLoading v-if="gen.generateState.status === 'running'">
+    <GenLoading v-if="gen.generateState.status === 'running'" cover>
       {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
     </GenLoading>
     <UIError v-else-if="gen.generateState.status === 'failed'">
       {{ $t(gen.generateState.error.userMessage) }}
     </UIError>
-    <GenLoading v-else-if="imgLoading">
+    <GenLoading v-else-if="imgLoading" cover>
       {{ $t({ en: 'Loading image...', zh: '正在加载图片...' }) }}
     </GenLoading>
     <PreviewWithCheckerboardBg v-else>

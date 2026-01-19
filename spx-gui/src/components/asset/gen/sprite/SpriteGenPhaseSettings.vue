@@ -81,6 +81,15 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
   flex-direction: column;
   align-items: stretch;
   height: 100%;
+
+  background-image: url('./phase-settings-left-bottom-bg.png'), url('./phase-settings-right-top-bg.png');
+  background-position:
+    left bottom,
+    right -50px;
+  background-repeat: no-repeat, no-repeat;
+  background-size:
+    520px auto,
+    180px auto;
 }
 .footer {
   width: 100%;

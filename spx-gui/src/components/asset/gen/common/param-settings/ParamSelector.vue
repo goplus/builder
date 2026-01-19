@@ -149,6 +149,9 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
     &:hover:not(:active, :disabled) {
       --ui-param-selector-border-color: var(--ui-color-turquoise-400);
     }
+    &:disabled {
+      --ui-param-selector-border-color: var(--ui-color-grey-400);
+    }
   }
 
   &.icon-only {

@@ -17,7 +17,7 @@ import RenameMenuItem from '@/components/editor/common/corner-menu-item/RenameMe
 import RemoveMenuItem from '@/components/editor/common/corner-menu-item/RemoveMenuItem.vue'
 import GenItem from '../common/GenItem.vue'
 import { useFileUrl } from '@/utils/file'
-import littleGuySVG from '../common/little-guy.svg?raw'
+import costumeSVG from '../common/costume.svg?raw'
 
 export type Operable = {
   removable: boolean
@@ -59,7 +59,7 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
       },
       highlightColor: 'var(--ui-color-primary-main)'
     }"
-    :placeholder="littleGuySVG"
+    :placeholder="costumeSVG"
     :active="active"
     :loading="isLoading"
     :highlight="highlight"
@@ -68,7 +68,7 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
     <template v-if="gen.result != null" #preview>
       <UIImg class="preview" :src="url" :loading="imageLoading" />
     </template>
-    <UIBlockItemTitle size="medium">{{ gen.name }}</UIBlockItemTitle>
+    <UIBlockItemTitle size="medium" :class="{ 'is-default': isDefault }">{{ gen.name }}</UIBlockItemTitle>
     <CornerMenu v-if="operable && active" color="primary">
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="emit('rename')" />
       <RemoveMenuItem
@@ -84,5 +84,9 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
 .preview {
   width: 100%;
   height: 100%;
+}
+
+.is-default {
+  color: var(--ui-color-turquoise-500);
 }
 </style>

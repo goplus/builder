@@ -50,7 +50,32 @@ const slots = useSlots()
     inset: 0;
     border-radius: inherit;
     overflow: hidden;
-    background: radial-gradient(circle at 30% 20%, var(--ui-color-grey-200), var(--ui-color-grey-100) 60%);
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 150%;
+      height: 150%;
+      top: -25%;
+      left: -25%;
+      backdrop-filter: blur(350px);
+      background-image: radial-gradient(circle at 50% -20%, var(--ui-color-turquoise-200) 20%, transparent 70%),
+        radial-gradient(circle at 50% 120%, var(--ui-color-blue-200) 20%, transparent 70%),
+        radial-gradient(circle at -20% 50%, var(--ui-color-blue-100) 20%, transparent 70%),
+        radial-gradient(circle at 120% 50%, var(--ui-color-grey-100) 20%, transparent 70%);
+
+      animation: rotate-gradient 2.5s linear infinite;
+      @keyframes rotate-gradient {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    }
+
+    // background: radial-gradient(circle at 30% 20%, var(--ui-color-grey-200), var(--ui-color-grey-100) 60%);
   }
 
   &.visible {
@@ -63,6 +88,7 @@ const slots = useSlots()
   display: flex;
   flex-direction: column;
   align-items: center;
+  z-index: 1;
 }
 
 .animation {
