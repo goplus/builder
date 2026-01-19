@@ -144,10 +144,10 @@ function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, gen:
 }
 
 onBeforeUnmount(
-  editorCtx.state.addGenCollapsePosProvider(async (gen) => {
+  editorCtx.state.addSpriteGenCollapsePosProvider(async (gen) => {
     await until(() => spriteGenItemRefs.get(gen.id) != null)
     const el = spriteGenItemRefs.get(gen.id)!
-    el.scrollIntoView({ block: 'center' })
+    el.scrollIntoView({ block: 'nearest' })
     const rect = el.getBoundingClientRect()
     return {
       x: rect.left + rect.width / 2,

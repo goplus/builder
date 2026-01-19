@@ -42,15 +42,13 @@ export function useAddAssetFromLibrary() {
       project,
       type,
       genCollapseHandler: async (gen) => {
-        // If AssetLibraryModal resolved with `type: gen`, which stands for an ongoing asset generation,
-        // we directly add the generation to the editor state
+        // Add the ongoing asset generation to the editor state
         if (gen instanceof SpriteGen) {
           editorCtx.state.addSpriteGen(gen)
         } else if (gen instanceof BackdropGen) {
           editorCtx.state.addBackdropGen(gen)
         }
-        const providers = editorCtx.state.genCollapsePosProvider.map((provider) => provider(gen))
-        return providers.length !== 0 ? Promise.any(providers) : undefined
+        return editorCtx.state.getGenCollapsePos(gen)
       }
     })) as Array<AssetModel<T>>
   }

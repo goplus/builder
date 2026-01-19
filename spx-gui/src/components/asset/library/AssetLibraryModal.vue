@@ -36,7 +36,7 @@ const props = defineProps<{
   type: AssetType
   visible: boolean
   project: Project
-  /** Returns the transform origin after collapsing the AssetGenModel, informing AssetLibraryModal where to collapse to */
+  /** Handler to determine the target position (transform origin) for the modal when an asset generation is collapsed */
   genCollapseHandler: (gen: AssetGenModel) => Promise<ModalTransformOrigin | undefined>
 }>()
 
