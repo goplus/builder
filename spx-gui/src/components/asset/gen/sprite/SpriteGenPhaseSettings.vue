@@ -25,6 +25,8 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
   en: 'Failed to generate sprite content',
   zh: '生成精灵内容失败'
 })
+
+const hasPreview = computed(() => props.gen.image != null)
 </script>
 
 <template>
@@ -35,8 +37,8 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
     }"
     class="phase-settings"
   >
-    <LayoutWithPreview :has-preview="gen.image != null">
-      <SpriteSettingsInput :gen="gen" />
+    <LayoutWithPreview :has-preview="hasPreview">
+      <SpriteSettingsInput :class="{ 'has-preview': hasPreview }" :gen="gen" />
       <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
         <template #loading-item>
           <SpriteImageItem loading />
@@ -82,7 +84,7 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
   align-items: stretch;
   height: 100%;
 
-  background-image: url('./phase-settings-left-bottom-bg.png'), url('./phase-settings-right-top-bg.png');
+  background-image: url('../common/phase-settings-left-bottom-bg.png'), url('../common/phase-settings-right-top-bg.png');
   background-position:
     left bottom,
     right -50px;
@@ -90,6 +92,10 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
   background-size:
     520px auto,
     180px auto;
+
+  .has-preview {
+    height: 300px;
+  }
 }
 .footer {
   width: 100%;

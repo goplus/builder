@@ -29,6 +29,8 @@ const handleSubmit = useMessageHandle(
     zh: '创建背景失败'
   }
 )
+
+const hasPreview = computed(() => props.gen.image != null)
 </script>
 
 <template>
@@ -36,8 +38,12 @@ const handleSubmit = useMessageHandle(
     v-radar="{ name: 'Backdrop generation', desc: 'Interface for generating and selecting backdrops' }"
     class="backdrop-gen"
   >
-    <LayoutWithPreview :has-preview="gen.image != null">
-      <BackdropSettingInput :gen="gen" :disabled="handleSubmit.isLoading.value" />
+    <LayoutWithPreview :has-preview="hasPreview">
+      <BackdropSettingInput
+        :class="{ 'has-preview': hasPreview }"
+        :gen="gen"
+        :disabled="handleSubmit.isLoading.value"
+      />
       <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
         <template #loading-item>
           <BackdropImageItem loading />
@@ -83,6 +89,19 @@ const handleSubmit = useMessageHandle(
   flex-direction: column;
   align-items: stretch;
   height: 100%;
+
+  background-image: url('../common/phase-settings-left-bottom-bg.png'), url('../common/phase-settings-right-top-bg.png');
+  background-position:
+    left bottom,
+    right -50px;
+  background-repeat: no-repeat, no-repeat;
+  background-size:
+    520px auto,
+    180px auto;
+
+  .has-preview {
+    height: 300px;
+  }
 }
 
 .footer {
