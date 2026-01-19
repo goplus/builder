@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
-import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import BackdropCategoryInput from './BackdropCategoryInput.vue'
+import EnrichableSubmitButton from '../common/EnrichableSubmitButton.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -29,6 +29,7 @@ const submitDisabled = computed(
 )
 
 const submitting = computed(() => props.gen.imagesGenState.status === 'running')
+const enriching = computed(() => props.gen.enrichState.status === 'running')
 
 function handleSubmit() {
   emit('submit') // For asset-library-modal, listen to event `submit` and do jump (from asset-library to backdrop-gen)
@@ -48,7 +49,7 @@ const submitText = computed(() => {
       desc: 'Enter a backdrop description, or enrich details to generate a backdrop'
     }"
     :description="gen.settings.description"
-    :enriching="gen.enrichState.status === 'running'"
+    :enriching="enriching"
     :description-placeholder="descriptionPlaceholder"
     :disabled="disabled || submitting"
     @update:description="gen.setSettings({ description: $event })"
@@ -60,14 +61,16 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton
+      <EnrichableSubmitButton
         v-radar="{ name: 'Submit', desc: 'Click to generate backdrop images' }"
+        :enriched="gen.enrichState.status === 'finished'"
+        :enriching="enriching"
         :disabled="submitDisabled"
         :loading="submitting"
-        @click="handleSubmit"
+        @enrich="gen.enrich()"
+        @submit="handleSubmit"
+        >{{ $t(submitText) }}</EnrichableSubmitButton
       >
-        {{ $t(submitText) }}
-      </UIButton>
     </template>
   </SettingsInput>
 </template>

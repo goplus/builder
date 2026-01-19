@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
-import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
 import SpriteCategoryInput from './SpriteCategoryInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
+import EnrichableSubmitButton from '../common/EnrichableSubmitButton.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -59,14 +59,16 @@ const submitText = computed(() => {
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
     </template>
     <template #submit>
-      <UIButton
+      <EnrichableSubmitButton
         v-radar="{ name: 'Submit', desc: 'Click to generate sprite images' }"
+        :enriched="gen.enrichState.status === 'finished'"
+        :enriching="enriching"
         :disabled="buttonDisabled"
         :loading="imageGenerating"
-        @click="handleSubmit"
+        @enrich="gen.enrich()"
+        @submit="handleSubmit"
+        >{{ $t(submitText) }}</EnrichableSubmitButton
       >
-        {{ $t(submitText) }}
-      </UIButton>
     </template>
   </SettingsInput>
 </template>
