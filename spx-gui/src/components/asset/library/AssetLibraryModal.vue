@@ -31,6 +31,10 @@ import { ownerAll } from '@/apis/common'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 
+import genAssetIcon from './gen-asset.svg?raw'
+import spriteBanner from './asset-library-sprite-banner.png'
+import backdropBanner from './asset-library-backdrop-banner.png'
+
 const props = defineProps<{
   type: AssetType
   visible: boolean
@@ -107,6 +111,18 @@ watch(
   },
   { immediate: true }
 )
+
+const headerStyle = computed(() => {
+  const banner = {
+    [AssetType.Sprite]: spriteBanner,
+    [AssetType.Backdrop]: backdropBanner,
+    [AssetType.Sound]: spriteBanner // TODO(@ui): replace after sound banner is completed
+  }[props.type]
+  return {
+    backgroundImage: `url(${banner})`
+  }
+})
+
 /**
  * Prevent assetGen from being disposed automatically.
  * This is useful when the user chooses to collapse the generation process
@@ -155,7 +171,9 @@ const ownerOptions = {
 const owner = ref<keyof typeof ownerOptions>('all')
 
 const page = shallowRef(1)
-const pageSize = 42 // 7 * 6
+const numInRow = 7
+const numInColumn = 6
+const pageSize = numInRow * numInColumn
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
 watch(
@@ -179,6 +197,30 @@ const queryRet = useQuery(
     zh: '获取列表失败'
   }
 )
+
+const resultTooFew = computed(() => {
+  const ret = queryRet.data.value
+  if (ret == null) return false
+  return ret.total <= numInRow // When the result can be displayed in one row (numInRow items per row), show generation suggestions
+})
+const isLastPage = computed(() => {
+  return page.value === pageTotal.value
+})
+const shouldShowGenSuggestion = computed(() => {
+  return (resultTooFew.value || isLastPage.value) && assetGen.value != null && owner.value === 'all'
+})
+const genSuggestionMessage = computed(() => {
+  if (resultTooFew.value) {
+    return {
+      en: 'Too few related assets. Why not let AI generate one for you?',
+      zh: '相关的素材太少，不如让 AI 帮你生成一个？'
+    }
+  }
+  return {
+    en: "Reached the end. Still haven't found the right asset? Why not let AI generate one for you?",
+    zh: '已经到底了，还没找到合适的素材？不如让 AI 帮你生成一个？'
+  }
+})
 
 const selected = shallowReactive<AssetData[]>([])
 
@@ -343,92 +385,111 @@ const title = computed(() => {
     </template>
     <template v-else>
       <div class="asset-library">
-        <header class="header">
-          <UITextInput
-            v-model:value="searchInput"
-            class="search-input"
-            color="white"
-            size="large"
-            clearable
-            :placeholder="$t({ zh: '搜索', en: 'Search' })"
-            ><template #prefix><UIIcon type="search" /></template
-          ></UITextInput>
-
-          <div class="recommended-buttons">
-            <UIButton
-              v-for="r in recommended"
-              :key="r.value"
-              variant="stroke"
+        <div class="scroller-wrapper">
+          <header class="header" :style="headerStyle">
+            <UITextInput
+              v-model:value="searchInput"
+              class="search-input"
               color="white"
-              size="small"
-              @click="searchInput = [searchInput, $t(r.message)].filter(Boolean).join(' ')"
-              >{{ $t(r.message) }}</UIButton
-            >
-          </div>
-        </header>
-
-        <main class="main">
-          <div
-            v-radar="{
-              name: 'Asset list',
-              desc: `List of ${entityMessage.en}s containing keyword ${keyword}`
-            }"
-            class="content"
-          >
-            <div class="filter">
-              <UIChipRadioGroup v-model:value="owner">
-                <UIChipRadio value="all">{{ $t({ zh: '公开素材库', en: 'Public library' }) }}</UIChipRadio>
-                <UIChipRadio value="personal">{{ $t({ zh: '我的素材库', en: 'My library' }) }}</UIChipRadio>
-              </UIChipRadioGroup>
-            </div>
-            <ListResultWrapper :query-ret="queryRet" :height="436">
-              <template v-if="SettingsInput != null && assetGen != null && owner === 'all'" #empty>
-                <div class="empty">
-                  {{
-                    $t({
-                      zh: `没找到“${keyword}”相关的素材，不如让 AI 帮你生成一个？`,
-                      en: `No assets found for "${keyword}". Why not let AI generate one for you?`
-                    })
-                  }}
-                  <SettingsInput :gen="assetGen" :description-placeholder="keyword" @submit="handleGenStart" />
-                </div>
-              </template>
-              <template #default="slotProps">
-                <div class="asset-list-container">
-                  <ul class="asset-list">
-                    <ItemComponent
-                      v-for="asset in slotProps.data.data"
-                      :key="asset.id"
-                      :asset="asset"
-                      :selected="isSelected(asset)"
-                      @click="handleAssetClick(asset)"
-                    />
-                  </ul>
-                  <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
-                </div>
-              </template>
-            </ListResultWrapper>
-          </div>
-          <footer class="footer">
-            <span v-show="selected.length > 0">
-              {{
-                $t({
-                  en: `${selected.length} ${entityMessage.en}${selected.length > 1 ? 's' : ''} selected`,
-                  zh: `已选中 ${selected.length} 个${entityMessage.zh}`
-                })
-              }}
-            </span>
-            <UIButton
-              v-radar="{ name: 'Confirm button', desc: 'Click to confirm asset selection' }"
               size="large"
-              :disabled="selected.length === 0"
-              :loading="handleConfirm.isLoading.value"
-              @click="handleConfirm.fn"
+              clearable
+              :placeholder="$t({ zh: '搜索', en: 'Search' })"
+              ><template #prefix><UIIcon type="search" /></template
+            ></UITextInput>
+
+            <div class="recommended-buttons">
+              <UIButton
+                v-for="r in recommended"
+                :key="r.value"
+                variant="stroke"
+                color="white"
+                size="small"
+                @click="searchInput = [searchInput, $t(r.message)].filter(Boolean).join(' ')"
+                >{{ $t(r.message) }}</UIButton
+              >
+            </div>
+          </header>
+
+          <main class="main">
+            <div
+              v-radar="{
+                name: 'Asset list',
+                desc: `List of ${entityMessage.en}s containing keyword ${keyword}`
+              }"
+              class="content"
             >
-              {{ $t({ en: 'Confirm', zh: '确认' }) }}
-            </UIButton>
-          </footer>
-        </main>
+              <div class="filter">
+                <UIChipRadioGroup v-model:value="owner">
+                  <UIChipRadio value="all">{{ $t({ zh: '公开素材库', en: 'Public library' }) }}</UIChipRadio>
+                  <UIChipRadio value="personal">{{ $t({ zh: '我的素材库', en: 'My library' }) }}</UIChipRadio>
+                </UIChipRadioGroup>
+              </div>
+              <ListResultWrapper :query-ret="queryRet" :height="436">
+                <template v-if="SettingsInput != null && assetGen != null && owner === 'all'" #empty>
+                  <div class="empty">
+                    {{
+                      $t({
+                        zh: `没找到“${keyword}”相关的素材，不如让 AI 帮你生成一个？`,
+                        en: `No assets found for "${keyword}". Why not let AI generate one for you?`
+                      })
+                    }}
+                    <SettingsInput
+                      class="settings-input"
+                      :gen="assetGen"
+                      :description-placeholder="keyword"
+                      @submit="handleGenStart"
+                    />
+                  </div>
+                </template>
+                <template #default="slotProps">
+                  <div class="asset-list-container">
+                    <ul class="asset-list">
+                      <ItemComponent
+                        v-for="asset in slotProps.data.data"
+                        :key="asset.id"
+                        :asset="asset"
+                        :selected="isSelected(asset)"
+                        @click="handleAssetClick(asset)"
+                      />
+                    </ul>
+                    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+                    <div v-if="shouldShowGenSuggestion" class="gen-suggestion">
+                      <div class="message">
+                        {{ $t(genSuggestionMessage) }}
+                      </div>
+                      <UIButton size="large" @click="handleGenStart">
+                        <template #icon>
+                          <!-- eslint-disable-next-line vue/no-v-html -->
+                          <div class="icon" v-html="genAssetIcon"></div>
+                        </template>
+                        {{ $t({ en: 'Generate asset', zh: '生成素材' }) }}
+                      </UIButton>
+                    </div>
+                  </div>
+                </template>
+              </ListResultWrapper>
+            </div>
+          </main>
+        </div>
+        <footer class="footer">
+          <span v-show="selected.length > 0">
+            {{
+              $t({
+                en: `${selected.length} ${entityMessage.en}${selected.length > 1 ? 's' : ''} selected`,
+                zh: `已选中 ${selected.length} 个${entityMessage.zh}`
+              })
+            }}
+          </span>
+          <UIButton
+            v-radar="{ name: 'Confirm button', desc: 'Click to confirm asset selection' }"
+            size="large"
+            :disabled="selected.length === 0"
+            :loading="handleConfirm.isLoading.value"
+            @click="handleConfirm.fn"
+          >
+            {{ $t({ en: 'Confirm', zh: '确认' }) }}
+          </UIButton>
+        </footer>
       </div>
     </template>
   </UIModal>
@@ -467,6 +528,11 @@ const title = computed(() => {
 .asset-library {
   display: flex;
   flex-direction: column;
+  .scroller-wrapper {
+    flex: 1;
+    overflow-y: auto;
+  }
+
   .header {
     display: flex;
     flex-direction: column;
@@ -476,7 +542,8 @@ const title = computed(() => {
     align-items: center;
     justify-content: center;
     gap: 20px;
-    background: url('@/components/asset/library/asset-library-banner.png') no-repeat center center;
+    background-repeat: no-repeat;
+    background-position: center center;
     background-size: cover;
 
     .search-input {
@@ -501,8 +568,6 @@ const title = computed(() => {
     flex-direction: column;
     gap: 20px;
     padding: 20px 24px 0;
-    // TODO(@UI): Recheck scroll behavior (scroll container selection) here.
-    overflow-y: auto;
   }
   .filter {
     display: flex;
@@ -513,8 +578,12 @@ const title = computed(() => {
     align-items: center;
     flex-direction: column;
     padding-top: 40px;
-    margin: 0 250px;
+    margin: 0 auto;
     gap: 24px;
+
+    .settings-input {
+      width: 584px;
+    }
   }
   .empty,
   .asset-list-container {
@@ -530,6 +599,24 @@ const title = computed(() => {
     justify-content: center;
     margin: 36px 0 12px;
   }
+  .gen-suggestion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 44px 0;
+
+    .message {
+      font-size: 16px;
+      color: var(--ui-color-grey-700);
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
   .footer {
     padding: 20px 24px;
     display: flex;
