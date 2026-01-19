@@ -2078,6 +2078,66 @@ paths:
         "409":
           description: Task cannot be cancelled because it has already completed or failed.
 
+  /aigc/asset-adoption:
+    post:
+      tags:
+        - AIGC
+      summary: Adopt an AIGC-generated asset
+      description: |
+        Record that an AIGC-generated asset has been adopted.
+        The backend verifies task ownership and file provenance and may publish the adopted asset to the public library.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - taskIds
+                - asset
+              properties:
+                taskIds:
+                  description: IDs of relevant AIGC tasks that produced the asset.
+                  type: array
+                  items:
+                    description: AIGCTask ID.
+                    type: string
+                    format: int64
+                  examples:
+                    - - "1"
+                      - "2"
+                  minItems: 1
+                  maxItems: 100
+                asset:
+                  description: Asset data.
+                  type: object
+                  required:
+                    - displayName
+                    - type
+                    - description
+                    - extraSettings
+                    - files
+                  properties:
+                    displayName:
+                      $ref: "#/components/schemas/Asset/properties/displayName"
+                    type:
+                      $ref: "#/components/schemas/Asset/properties/type"
+                    description:
+                      $ref: "#/components/schemas/Asset/properties/description"
+                    extraSettings:
+                      $ref: "#/components/schemas/Asset/properties/extraSettings"
+                    filesHash:
+                      $ref: "#/components/schemas/Asset/properties/filesHash"
+                    files:
+                      $ref: "#/components/schemas/Asset/properties/files"
+      responses:
+        "204":
+          description: Asset adoption recorded.
+        "400":
+          description: Invalid parameters.
+        "403":
+          description: Insufficient permissions for given tasks.
+
   /aigc/asset-settings/enrichment:
     post:
       tags:
@@ -2357,7 +2417,7 @@ components:
           type: string
           format: int64
           examples:
-            - 1
+            - "1"
         createdAt:
           description: Creation timestamp.
           type: string
