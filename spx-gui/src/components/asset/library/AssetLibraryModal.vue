@@ -82,14 +82,17 @@ const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | nul
 )
 
 const assetGen = shallowRef<AssetGenModel | null>(null)
+function createAssetGen(type: AssetType) {
+  return {
+    [AssetType.Sound]: null,
+    [AssetType.Sprite]: new SpriteGen(i18n, props.project),
+    [AssetType.Backdrop]: new BackdropGen(props.project)
+  }[type]
+}
 watch(
   () => props.type,
   (type, _, onCleanup) => {
-    assetGen.value = {
-      [AssetType.Sound]: null,
-      [AssetType.Sprite]: new SpriteGen(i18n, props.project),
-      [AssetType.Backdrop]: new BackdropGen(props.project)
-    }[type]
+    assetGen.value = createAssetGen(type)
     onCleanup(() => assetGen.value?.dispose())
   },
   { immediate: true }
@@ -257,6 +260,20 @@ const isGenPhase = ref(false)
 function handleGenStart() {
   isGenPhase.value = true
 }
+// Handle returning to the asset library: reset search criteria and recreate assetGen to prevent unexpected intermediate states.
+const handleBackToAssetLibrary = useMessageHandle(
+  () => {
+    searchInput.value = ''
+    keyword.value = ''
+    isGenPhase.value = false
+    assetGen.value?.dispose()
+    assetGen.value = createAssetGen(props.type)
+  },
+  {
+    en: 'Failed to return to asset library',
+    zh: '返回素材库失败'
+  }
+).fn
 
 const modalRef = ref<InstanceType<typeof UIModal> | null>()
 async function handleGenCollapse() {
@@ -352,7 +369,7 @@ const title = computed(() => {
           color="white"
           icon="arrowAlt"
           variant="stroke"
-          @click="isGenPhase = false"
+          @click="handleBackToAssetLibrary"
         ></UIButton>
         <h2 class="title">{{ $t(title) }}</h2>
       </div>
