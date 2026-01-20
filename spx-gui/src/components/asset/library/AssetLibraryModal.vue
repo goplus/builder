@@ -9,7 +9,8 @@ import {
   UIIcon,
   UIModal,
   UIModalClose,
-  useConfirmDialog
+  useConfirmDialog,
+  type ModalTransformOrigin
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
@@ -39,36 +40,18 @@ const props = defineProps<{
   type: AssetType
   visible: boolean
   project: Project
+  /**
+   * When collapse is triggered, we first need to use genCollapseHandler to implement
+   * the logic for collapsing generation (e.g., adding it to the editor-state context),
+   * then return the target position for UIModal's closing animation.
+   * Finally, the UIModal's cancelled event will be triggered.
+   */
+  genCollapseHandler: (gen: AssetGenModel) => Promise<ModalTransformOrigin | null>
 }>()
-
-/**
- * AssetLibraryModal may resolve with two types of result:
- * 1. Assets
- * 2. Asset generation process
- */
-type Resolved =
-  | {
-      /**
-       * The user selected some existing assets,
-       * or finished generating new ones and chose to use them.
-       */
-      type: 'assets'
-      /** The selected or generated assets */
-      assets: AssetModel[]
-    }
-  | {
-      /**
-       * The user chose to generate new asset(s),
-       * and the generation process is not finished yet.
-       */
-      type: 'gen'
-      /** The ongoing generation process */
-      gen: AssetGenModel
-    }
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [Resolved]
+  resolved: [AssetModel[]]
 }>()
 
 const i18n = useI18n()
@@ -253,10 +236,7 @@ const handleConfirm = useMessageHandle(
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
     const assetModels = await props.project.history.doAction(action, () => Promise.all(selected.map(addAssetToProject)))
-    emit('resolved', {
-      type: 'assets',
-      assets: assetModels
-    })
+    emit('resolved', assetModels)
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }
 )
@@ -278,14 +258,16 @@ function handleGenStart() {
   isGenPhase.value = true
 }
 
-function handleGenCollapse() {
+const modalRef = ref<InstanceType<typeof UIModal> | null>()
+async function handleGenCollapse() {
   const gen = assetGen.value
   if (gen == null) throw new Error('asset gen expected')
   preventAssetGenDisposal(gen)
-  emit('resolved', {
-    type: 'gen',
-    gen
-  })
+  const transformOrigin = await props.genCollapseHandler(gen)
+  if (modalRef.value != null && transformOrigin != null) {
+    modalRef.value.setTransformOrigin(transformOrigin)
+  }
+  emit('cancelled')
 }
 
 const handleGenFinished = useMessageHandle(
@@ -315,10 +297,7 @@ const handleGenFinished = useMessageHandle(
         throw new Error('unknown asset type')
       }
     )
-    emit('resolved', {
-      type: 'assets',
-      assets: [added]
-    })
+    emit('resolved', [added])
   },
   {
     en: 'Failed to generate asset',
@@ -358,6 +337,7 @@ const title = computed(() => {
 
 <template>
   <UIModal
+    ref="modalRef"
     :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
     style="width: 1076px; height: 800px"
     :visible="visible"

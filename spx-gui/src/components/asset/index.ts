@@ -1,12 +1,11 @@
 import { useMessage, useModal } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
-import { Cancelled } from '@/utils/exception'
 import { getSupportedAudioExts, imgExts, selectFile } from '@/utils/file'
 import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import type { AssetModel } from '@/models/common/asset'
+import { type AssetModel } from '@/models/common/asset'
 import { fromNativeFile } from '@/models/common/file'
 import { type Project } from '@/models/project'
 import { Backdrop } from '@/models/backdrop'
@@ -39,16 +38,21 @@ export function useAddAssetFromLibrary() {
   const editorCtx = useEditorCtx()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    const resolved = await invokeAssetLibraryModal({ project, type })
-    if (resolved.type === 'assets') return resolved.assets as Array<AssetModel<T>>
-    // If AssetLibraryModal resolved with `type: gen`, which stands for an ongoing asset generation,
-    // we directly add the generation to the editor state and throw a Cancelled error
-    // to inform the caller that no asset is selected.
-    const gen = resolved.gen
-    if (gen instanceof SpriteGen) editorCtx.state.addSpriteGen(gen)
-    else if (gen instanceof BackdropGen) editorCtx.state.addBackdropGen(gen)
-    else throw new Error('unknown asset gen type')
-    throw new Cancelled('gen asset while not finished')
+    return (await invokeAssetLibraryModal({
+      project,
+      type,
+      genCollapseHandler: async (gen) => {
+        // Add the ongoing asset generation to the editor state
+        if (gen instanceof SpriteGen) {
+          editorCtx.state.addSpriteGen(gen)
+          return editorCtx.state.getSpriteGenCollapsePos(gen)
+        } else if (gen instanceof BackdropGen) {
+          editorCtx.state.addBackdropGen(gen)
+          return editorCtx.state.getBackdropGenCollapsePos(gen)
+        }
+        return null
+      }
+    })) as Array<AssetModel<T>>
   }
 }
 

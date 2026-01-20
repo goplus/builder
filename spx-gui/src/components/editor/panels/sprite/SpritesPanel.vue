@@ -38,6 +38,7 @@
         <SpriteGenItem
           v-for="gen in editorCtx.state.spriteGens"
           :key="gen.id"
+          :ref="(el) => setSpriteGenItemRef(el, gen)"
           :gen="gen"
           @click="handleSpriteGenClick(gen)"
         />
@@ -79,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowReactive, type ComponentPublicInstance } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { SpriteGen } from '@/models/gen/sprite-gen'
@@ -95,6 +96,7 @@ import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
+import { untilNotNull } from '@/utils/utils'
 
 defineProps<{
   expanded: boolean
@@ -134,6 +136,24 @@ const handleAddFromLocalFile = useMessageHandle(
     zh: '从本地文件添加失败'
   }
 ).fn
+
+const spriteGenItemRefs = shallowReactive(new Map<string, HTMLElement>())
+function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, gen: SpriteGen) {
+  if (ref != null && '$el' in ref && ref.$el instanceof HTMLElement) spriteGenItemRefs.set(gen.id, ref.$el)
+  else spriteGenItemRefs.delete(gen.id)
+}
+
+onBeforeUnmount(
+  editorCtx.state.addSpriteGenCollapsePosProvider(async (gen) => {
+    const el = await untilNotNull(() => spriteGenItemRefs.get(gen.id))
+    el.scrollIntoView({ block: 'nearest' })
+    const rect = el.getBoundingClientRect()
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    }
+  })
+)
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
