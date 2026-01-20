@@ -38,7 +38,7 @@ const hasPreview = computed(() => props.gen.image != null)
     class="phase-settings"
   >
     <LayoutWithPreview :has-preview="hasPreview">
-      <SpriteSettingsInput :class="{ 'has-preview': hasPreview }" :gen="gen" />
+      <SpriteSettingsInput class="settings-input" :class="{ 'has-preview': hasPreview }" :gen="gen" />
       <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
         <template #loading-item>
           <SpriteImageItem loading />
@@ -93,8 +93,10 @@ const hasPreview = computed(() => props.gen.image != null)
     520px auto,
     180px auto;
 
-  .has-preview {
-    height: 300px;
+  .settings-input {
+    &.has-preview {
+      height: 300px;
+    }
   }
 }
 .footer {

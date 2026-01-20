@@ -5,13 +5,22 @@ import { useSlots, type CSSProperties } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import animationFileUrl from './gen-loading.lottie?url'
 
+type Variant =
+  | 'default'
+  /**
+   * Animated background rotation during loading
+   */
+  | 'bg-spin'
+
 withDefaults(
   defineProps<{
+    variant?: Variant
     cover?: boolean
     visible?: boolean
     animationStyle?: CSSProperties | string
   }>(),
   {
+    variant: 'default',
     cover: false,
     visible: true,
     animationStyle: ''
@@ -22,7 +31,7 @@ const slots = useSlots()
 </script>
 
 <template>
-  <div class="gen-loading" :class="{ cover, visible }">
+  <div class="gen-loading" :class="[{ cover, visible }, `variant-${variant}`]">
     <div class="content">
       <DotLottieVue class="animation" :style="animationStyle" autoplay loop :src="animationFileUrl" />
       <div v-if="!!slots.default" class="text">
@@ -50,7 +59,9 @@ const slots = useSlots()
     inset: 0;
     border-radius: inherit;
     overflow: hidden;
+  }
 
+  &.variant-bg-spin {
     &::before {
       content: '';
       position: absolute;
@@ -76,7 +87,9 @@ const slots = useSlots()
       }
     }
 
-    // background: radial-gradient(circle at 30% 20%, var(--ui-color-grey-200), var(--ui-color-grey-100) 60%);
+    .content {
+      z-index: 1;
+    }
   }
 
   &.visible {
@@ -89,7 +102,6 @@ const slots = useSlots()
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 1;
 }
 
 .animation {

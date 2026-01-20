@@ -5,11 +5,9 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { settingsInputCtxKey } from '../SettingsInput.vue'
 
 type Option = { value: T; label: LocaleMessage; image?: string }
-type Variant = 'selector' | 'reference'
 
 const props = withDefaults(
   defineProps<{
-    variant?: Variant
     name: LocaleMessage
     value?: T | null
     tips: LocaleMessage
@@ -18,7 +16,6 @@ const props = withDefaults(
     clearable?: boolean
   }>(),
   {
-    variant: 'selector',
     value: null,
     placeholder: null,
     clearable: true
@@ -67,7 +64,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
         }"
         class="param-button"
-        :class="[`variant-${variant}`, { 'icon-only': iconOnly, 'show-placeholder': showPlaceholder }]"
+        :class="[{ 'icon-only': iconOnly }]"
         :disabled="disabled"
       >
         <UIImg
@@ -131,28 +128,8 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
   padding: 0 8px;
 
   border-radius: var(--ui-border-radius-2);
-  border: 1px solid var(--ui-param-selector-border-color);
-  background: var(--ui-param-selector-bg-color);
-  --ui-param-selector-bg-color: var(--ui-color-grey-100);
-
-  &.variant-selector,
-  &.show-placeholder {
-    --ui-param-selector-border-color: var(--ui-color-grey-400);
-
-    &:hover:not(:active, :disabled) {
-      --ui-param-selector-bg-color: var(--ui-color-grey-300);
-    }
-  }
-  &.variant-reference:not(.show-placeholder) {
-    --ui-param-selector-border-color: var(--ui-color-turquoise-300);
-
-    &:hover:not(:active, :disabled) {
-      --ui-param-selector-border-color: var(--ui-color-turquoise-400);
-    }
-    &:disabled {
-      --ui-param-selector-border-color: var(--ui-color-grey-400);
-    }
-  }
+  border: 1px solid var(--ui-color-grey-400);
+  background: var(--ui-color-grey-100);
 
   &.icon-only {
     aspect-ratio: 1;
@@ -161,11 +138,12 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
 
   &:hover:not(:active, :disabled) {
     cursor: pointer;
+    background: var(--ui-color-grey-300);
   }
 
   &:disabled {
     cursor: not-allowed;
-    --ui-param-selector-border-color: var(--ui-color-grey-400);
+    opacity: 0.5;
   }
 }
 

@@ -56,13 +56,13 @@ const videoPreviewKey = computed(() => {
         $t({ en: 'Save animation', zh: '保存动画' })
       }}</UIButton>
     </template>
-    <GenLoading v-if="gen.generateVideoState.status === 'running'" cover>
+    <GenLoading v-if="gen.generateVideoState.status === 'running'" variant="bg-spin">
       {{ $t({ en: 'Generating animation...', zh: '正在生成动画...' }) }}
     </GenLoading>
     <UIError v-else-if="gen.generateVideoState.status === 'failed'">
       {{ $t(gen.generateVideoState.error.userMessage) }}
     </UIError>
-    <GenLoading v-else-if="gen.extractFramesState.status === 'running'" cover>
+    <GenLoading v-else-if="gen.extractFramesState.status === 'running'" variant="bg-spin">
       {{ $t({ en: 'Extracting frames...', zh: '正在提取帧...' }) }}
     </GenLoading>
     <UIError v-else-if="gen.extractFramesState.status === 'failed'">

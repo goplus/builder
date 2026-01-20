@@ -40,6 +40,7 @@ const hasPreview = computed(() => props.gen.image != null)
   >
     <LayoutWithPreview :has-preview="hasPreview">
       <BackdropSettingInput
+        class="settings-input"
         :class="{ 'has-preview': hasPreview }"
         :gen="gen"
         :disabled="handleSubmit.isLoading.value"
@@ -99,8 +100,10 @@ const hasPreview = computed(() => props.gen.image != null)
     520px auto,
     180px auto;
 
-  .has-preview {
-    height: 300px;
+  .settings-input {
+    &.has-preview {
+      height: 300px;
+    }
   }
 }
 
