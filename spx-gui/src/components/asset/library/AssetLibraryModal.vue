@@ -36,8 +36,13 @@ const props = defineProps<{
   type: AssetType
   visible: boolean
   project: Project
-  /** Handler to determine the target position (transform origin) for the modal when an asset generation is collapsed */
-  genCollapseHandler: (gen: AssetGenModel) => Promise<ModalTransformOrigin | undefined>
+  /**
+   * When collapse is triggered, we first need to use genCollapseHandler to implement
+   * the logic for collapsing generation (e.g., adding it to the editor-state context),
+   * then return the target position for UIModal's closing animation.
+   * Finally, the UIModal's cancelled event will be triggered.
+   */
+  genCollapseHandler: (gen: AssetGenModel) => Promise<ModalTransformOrigin | null>
 }>()
 
 const emit = defineEmits<{

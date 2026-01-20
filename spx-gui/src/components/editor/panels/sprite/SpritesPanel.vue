@@ -96,7 +96,7 @@ import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
-import { until } from '@/utils/utils'
+import { untilNotNull } from '@/utils/utils'
 
 defineProps<{
   expanded: boolean
@@ -145,7 +145,7 @@ function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, gen:
 
 onBeforeUnmount(
   editorCtx.state.addSpriteGenCollapsePosProvider(async (gen) => {
-    await until(() => spriteGenItemRefs.get(gen.id) != null)
+    await untilNotNull(() => spriteGenItemRefs.has(gen.id))
     const el = spriteGenItemRefs.get(gen.id)!
     el.scrollIntoView({ block: 'nearest' })
     const rect = el.getBoundingClientRect()

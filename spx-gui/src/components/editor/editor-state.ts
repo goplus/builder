@@ -18,9 +18,10 @@ import { SpriteEditorState, type Selected as SpriteEditorSelected } from './spri
 import { Runtime } from './runtime'
 import * as editing from './editing'
 import { AssetType } from '@/apis/asset'
+import type { AssetGenModel } from '@/models/common/asset'
 
 type GenCollapsePos = { x: number; y: number }
-type CollapsePosProvider = (gen: SpriteGen | BackdropGen) => Promise<GenCollapsePos | undefined>
+type CollapsePosProvider<T extends AssetType> = (gen: AssetGenModel<T>) => Promise<GenCollapsePos | null>
 
 export type SelectedType = 'stage' | 'sprite' | 'sound'
 
@@ -109,8 +110,8 @@ export class EditorState extends Disposable {
     gen.dispose()
   }
 
-  private genCollapsePosProviderMap = shallowReactive(new Map<AssetType, CollapsePosProvider[]>())
-  private addGenCollapsePosProvider(type: AssetType, provider: CollapsePosProvider) {
+  private genCollapsePosProviderMap = shallowReactive(new Map<AssetType, CollapsePosProvider<AssetType>[]>())
+  private addGenCollapsePosProvider<T extends AssetType>(type: T, provider: CollapsePosProvider<T>) {
     const providers = this.genCollapsePosProviderMap.get(type) ?? []
     this.genCollapsePosProviderMap.set(type, [...providers, provider])
     return () => {
@@ -120,26 +121,27 @@ export class EditorState extends Disposable {
       )
     }
   }
-  addSpriteGenCollapsePosProvider(provider: CollapsePosProvider) {
+  addSpriteGenCollapsePosProvider(provider: CollapsePosProvider<AssetType.Sprite>) {
     return this.addGenCollapsePosProvider(AssetType.Sprite, provider)
   }
-  addBackdropGenCollapsePosProvider(provider: CollapsePosProvider) {
+  addBackdropGenCollapsePosProvider(provider: CollapsePosProvider<AssetType.Backdrop>) {
     return this.addGenCollapsePosProvider(AssetType.Backdrop, provider)
   }
   /**
    * Retrieves the collapse position for the given generator.
    * Acts as a consumer of collapse positions, returning the result from a registered provider
-   * for the generator's asset type, or undefined if no providers are available.
+   * for the generator's asset type, or null if no providers are available.
    */
-  async getGenCollapsePos(gen: SpriteGen | BackdropGen) {
-    let assetType = AssetType.Sprite
-    if (gen instanceof SpriteGen) {
-      assetType = AssetType.Sprite
-    } else if (gen instanceof BackdropGen) {
-      assetType = AssetType.Backdrop
-    }
+  private async getGenCollapsePos<T extends AssetType>(assetType: T, gen: AssetGenModel<T>) {
     const providers = this.genCollapsePosProviderMap.get(assetType) ?? []
-    return providers.length === 0 ? undefined : Promise.any(providers.map((p) => p(gen)))
+    const provider = providers.at(-1)
+    return provider != null ? provider(gen) : null
+  }
+  getSpriteGenCollapsePos(gen: SpriteGen) {
+    return this.getGenCollapsePos(AssetType.Sprite, gen)
+  }
+  getBackdropGenCollapsePos(gen: BackdropGen) {
+    return this.getGenCollapsePos(AssetType.Backdrop, gen)
   }
 
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)

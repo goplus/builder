@@ -45,10 +45,12 @@ export function useAddAssetFromLibrary() {
         // Add the ongoing asset generation to the editor state
         if (gen instanceof SpriteGen) {
           editorCtx.state.addSpriteGen(gen)
+          return editorCtx.state.getSpriteGenCollapsePos(gen)
         } else if (gen instanceof BackdropGen) {
           editorCtx.state.addBackdropGen(gen)
+          return editorCtx.state.getBackdropGenCollapsePos(gen)
         }
-        return editorCtx.state.getGenCollapsePos(gen)
+        return null
       }
     })) as Array<AssetModel<T>>
   }
