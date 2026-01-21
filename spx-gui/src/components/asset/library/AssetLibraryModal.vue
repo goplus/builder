@@ -35,6 +35,7 @@ import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 import genAssetIcon from './gen-asset.svg?raw'
 import spriteBanner from './asset-library-sprite-banner.png'
 import backdropBanner from './asset-library-backdrop-banner.png'
+import soundBanner from './asset-library-sound-banner.png'
 
 const props = defineProps<{
   type: AssetType
@@ -102,7 +103,7 @@ const headerStyle = computed(() => {
   const banner = {
     [AssetType.Sprite]: spriteBanner,
     [AssetType.Backdrop]: backdropBanner,
-    [AssetType.Sound]: spriteBanner // TODO(@ui): replace after sound banner is completed
+    [AssetType.Sound]: soundBanner
   }[props.type]
   return {
     backgroundImage: `url(${banner})`
