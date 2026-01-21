@@ -17,7 +17,7 @@
 import { ref } from 'vue'
 import type { Animation } from '@/models/animation'
 import { UIDropdownModal, UINumberInput } from '@/components/ui'
-import { useEditorCtx } from '../../EditorContextProvider.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const props = defineProps<{
   animation: Animation

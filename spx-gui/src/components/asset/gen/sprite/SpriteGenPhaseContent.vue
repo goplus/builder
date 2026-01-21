@@ -13,8 +13,6 @@ import type { SpriteGen } from '@/models/gen/sprite-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 import { UIButton, UITooltip, useConfirmDialog } from '@/components/ui'
-import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
-import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
 import { useRenameAnimationGen, useRenameCostumeGen } from '../..'
 import CostumeSettingInput from '../costume/CostumeSettingsInput.vue'
 import AnimationSettingInput from '../animation/AnimationSettingsInput.vue'
@@ -205,19 +203,8 @@ const handleSubmit = useMessageHandle(
         </div>
       </aside>
       <div class="preview">
-        <template v-if="selectedCostume != null">
-          <CostumeGenPreview v-if="selectedCostume.result == null" :gen="selectedCostume" />
-          <CostumeDetail v-else class="costume-detail" :sprite="gen.previewSprite" :costume="selectedCostume.result" />
-        </template>
-        <template v-else-if="selectedAnimation != null">
-          <AnimationGenPreview v-if="selectedAnimation.result == null" :gen="selectedAnimation" />
-          <AnimationDetail
-            v-else
-            class="animation-detail"
-            :sprite="gen.previewSprite"
-            :animation="selectedAnimation.result"
-          />
-        </template>
+        <CostumeGenPreview v-if="selectedCostume != null" :gen="selectedCostume" />
+        <AnimationGenPreview v-else-if="selectedAnimation != null" :gen="selectedAnimation" />
       </div>
     </div>
     <footer class="footer">
@@ -288,11 +275,6 @@ const handleSubmit = useMessageHandle(
   display: flex;
   position: relative;
   overflow: hidden;
-
-  .costume-detail,
-  .animation-detail {
-    background-color: transparent;
-  }
 }
 
 .footer {

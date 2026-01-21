@@ -42,7 +42,11 @@
       </UIMenu>
     </template>
     <template #detail>
-      <AnimationDetail v-if="state.selected != null" :animation="state.selected" :sprite="sprite" />
+      <AnimationDetail
+        v-if="state.selected != null"
+        :animation="state.selected"
+        @rename="handleRename(state.selected)"
+      />
     </template>
   </EditorList>
 </template>
@@ -107,7 +111,7 @@ import type { Sprite } from '@/models/sprite'
 import EditorList from '../common/EditorList.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { useAddAnimationByGroupingCostumes } from '@/components/asset'
+import { useAddAnimationByGroupingCostumes, useRenameAnimation } from '@/components/asset'
 import AnimationDetail from './AnimationDetail.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationItem from './AnimationItem.vue'
@@ -143,6 +147,12 @@ const handleSorted = useMessageHandle(
     zh: '更新动画顺序失败'
   }
 ).fn
+
+const renameAnimation = useRenameAnimation()
+const handleRename = useMessageHandle(renameAnimation, {
+  en: 'Rename animation failed',
+  zh: '重命名动画失败'
+}).fn
 </script>
 <style scoped lang="scss">
 .background {

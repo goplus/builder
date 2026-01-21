@@ -4,6 +4,7 @@ import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
 import { enrichCostumeSettings, Facing, TaskType, type CostumeSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
+import { validateCostumeName } from '../common/asset-name'
 import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
@@ -51,8 +52,10 @@ export class CostumeGen extends Disposable {
     return this.settings.name
   }
   setName(name: string) {
-    // TODO: check name validity
+    const err = validateCostumeName(name, this.sprite)
+    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
+    this.result?.setName(name)
   }
 
   get enrichState() {

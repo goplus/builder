@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 import { UIButton, UIError } from '@/components/ui'
+import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
 import { useRenameAnimationGen } from '../..'
 import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
@@ -14,7 +15,7 @@ const props = defineProps<{
 }>()
 
 const renameAnimation = useRenameAnimationGen()
-const handleRenameAnimation = useMessageHandle(renameAnimation, {
+const handleRenameAnimation = useMessageHandle(() => renameAnimation(props.gen), {
   en: 'Failed to rename animation',
   zh: '重命名动画失败'
 }).fn
@@ -50,7 +51,7 @@ const videoPreviewKey = computed(() => {
 </script>
 
 <template>
-  <GenPreview class="animation-gen-preview" :name="gen.name" @rename="handleRenameAnimation(gen)">
+  <GenPreview v-if="gen.result == null" class="animation-gen-preview" :name="gen.name" @rename="handleRenameAnimation">
     <template v-if="canSaveAnimation" #ops>
       <UIButton color="success" :loading="savingAnimation" @click="handleSaveAnimation">{{
         $t({ en: 'Save animation', zh: '保存动画' })
@@ -79,11 +80,21 @@ const videoPreviewKey = computed(() => {
       />
     </PreviewWithCheckerboardBg>
   </GenPreview>
+  <AnimationDetail
+    v-else
+    class="animation-detail"
+    :animation="gen.result"
+    :sound-editable="false"
+    @rename="handleRenameAnimation"
+  />
 </template>
 
 <style lang="scss" scoped>
 .animation-gen-preview {
   position: absolute;
   inset: 0;
+}
+.animation-detail {
+  background: transparent;
 }
 </style>

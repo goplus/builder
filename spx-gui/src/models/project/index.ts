@@ -323,8 +323,13 @@ export class Project extends Disposable {
     this.instructions = instructions
   }
 
+  /** History instance which tracks project editing history */
   history: History // TODO: move to state `Editing`
-  historyMutex = new Mutex() // TODO: rename to some "atomic mutex", used to ensure atomicity of project operations
+  /**
+   * Mutex for transaction operations on the project.
+   * Use this to ensure transactional operations atomicity.
+   */
+  transactionMutex = new Mutex()
 
   // In project editor, we use `bindScreenshotTaker` to register a screenshot taker and
   // update thumbnail automatically. That way, the thumbnail will always reflect the latest changes
@@ -515,7 +520,12 @@ export class Project extends Disposable {
 
   /**
    * Export game files.
+   * The result is memoized, and will only be re-computed when the game content changed.
    * By watching result of this method, you can get notified when game content changed.
+   *
+   * NOTE: this method may return intermediate result during transactional edits.
+   *
+   * TODO: we may need to migrate most callers of this method to use some alternative methods that ensure atomicity.
    */
   exportGameFiles() {
     return toValue(this.exportGameFilesComputed)
@@ -529,7 +539,7 @@ export class Project extends Disposable {
 
   /** Export metadata & game files */
   async export(signal?: AbortSignal): Promise<[Metadata, Files]> {
-    return this.historyMutex.runExclusive(async () => {
+    return this.transactionMutex.runExclusive(async () => {
       // Do flush pending thumbnail updates to ensure the exported thumbnail up-to-date.
       // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
       // For more details, see https://github.com/goplus/builder/issues/1807 .

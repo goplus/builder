@@ -4,6 +4,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import { UIImg, UIButton, UIError } from '@/components/ui'
+import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
 import { useRenameCostumeGen } from '../..'
 import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
@@ -14,7 +15,7 @@ const props = defineProps<{
 }>()
 
 const renameCostume = useRenameCostumeGen()
-const handleRenameCostume = useMessageHandle(renameCostume, {
+const handleRenameCostume = useMessageHandle(() => renameCostume(props.gen), {
   en: 'Failed to rename costume',
   zh: '重命名造型失败'
 }).fn
@@ -37,7 +38,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
 </script>
 
 <template>
-  <GenPreview class="costume-gen-preview" :name="gen.name" @rename="handleRenameCostume(gen)">
+  <GenPreview v-if="gen.result == null" class="costume-gen-preview" :name="gen.name" @rename="handleRenameCostume">
     <template v-if="canSaveCostume" #ops>
       <UIButton color="success" :loading="savingCostume" @click="handleSaveCostume">{{
         $t({ en: 'Save costume', zh: '保存造型' })
@@ -56,6 +57,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
       <UIImg v-if="gen.image != null" class="img" :src="imgSrc" :loading="imgLoading" />
     </PreviewWithCheckerboardBg>
   </GenPreview>
+  <CostumeDetail v-else class="costume-detail" :costume="gen.result" @rename="handleRenameCostume" />
 </template>
 
 <style lang="scss" scoped>
@@ -67,5 +69,9 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
 .img {
   width: 100%;
   height: 100%;
+}
+
+.costume-detail {
+  background: transparent;
 }
 </style>

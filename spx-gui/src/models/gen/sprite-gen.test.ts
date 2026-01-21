@@ -18,7 +18,7 @@ vi.spyOn(cloudHelpers, 'saveFileForWebUrl').mockImplementation(() => Promise.res
 
 function enrichSettings(input: string) {
   return Promise.resolve({
-    name: 'Enriched Sprite',
+    name: 'EnrichedSprite',
     category: SpriteCategory.Unspecified,
     description: `Enriched description for ${input}`,
     artStyle: ArtStyle.Unspecified,
@@ -174,14 +174,14 @@ describe('SpriteGen', () => {
     await enriched
     expect(gen.enrichState.status).toBe('finished')
     expect(gen.enrichState.result).toEqual({
-      name: 'Enriched Sprite',
+      name: 'EnrichedSprite',
       category: SpriteCategory.Unspecified,
       description: 'Enriched description for A brave knight',
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified
     })
     expect(gen.settings).toEqual({
-      name: 'Enriched Sprite',
+      name: 'EnrichedSprite',
       category: SpriteCategory.Unspecified,
       description: 'Enriched description for A brave knight',
       artStyle: ArtStyle.Unspecified,
@@ -190,13 +190,13 @@ describe('SpriteGen', () => {
 
     // User updates some settings
     gen.setSettings({
-      name: 'Updated Sprite',
+      name: 'UpdatedSprite',
       artStyle: ArtStyle.FlatDesign,
       perspective: Perspective.AngledTopDown,
       description: 'Updated description for A brave knight'
     })
     expect(gen.settings).toEqual({
-      name: 'Updated Sprite',
+      name: 'UpdatedSprite',
       category: SpriteCategory.Unspecified,
       description: 'Updated description for A brave knight',
       artStyle: ArtStyle.FlatDesign,
@@ -235,7 +235,7 @@ describe('SpriteGen', () => {
     expect(gen.contentPreparingState.status).toBe('finished')
     expect(generateSpriteContentFn).toHaveBeenCalledOnce()
     expect(generateSpriteContentFn.mock.calls[0][0]).toEqual({
-      name: 'Updated Sprite',
+      name: 'UpdatedSprite',
       category: SpriteCategory.Unspecified,
       description: 'Updated description for A brave knight',
       artStyle: ArtStyle.FlatDesign,
@@ -252,7 +252,7 @@ describe('SpriteGen', () => {
     })
     expect(gen.costumes[1].settings).toEqual({
       name: 'Costume 1',
-      description: 'A costume for Updated Sprite',
+      description: 'A costume for UpdatedSprite',
       facing: aigcApis.Facing.Front,
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
@@ -260,7 +260,7 @@ describe('SpriteGen', () => {
     })
     expect(gen.costumes[2].settings).toEqual({
       name: 'Costume 2',
-      description: 'Another costume for Updated Sprite',
+      description: 'Another costume for UpdatedSprite',
       facing: aigcApis.Facing.Front,
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
@@ -269,7 +269,7 @@ describe('SpriteGen', () => {
     expect(gen.animations.length).toBe(2)
     expect(gen.animations[0].settings).toEqual({
       name: 'walk',
-      description: 'A walking animation for Updated Sprite',
+      description: 'A walking animation for UpdatedSprite',
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
       loopMode: AnimationLoopMode.Loopable,
@@ -277,7 +277,7 @@ describe('SpriteGen', () => {
     })
     expect(gen.animations[1].settings).toEqual({
       name: 'jump',
-      description: 'A jumping animation for Updated Sprite',
+      description: 'A jumping animation for UpdatedSprite',
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
       loopMode: AnimationLoopMode.Loopable,
