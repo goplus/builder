@@ -14,6 +14,13 @@ import (
 )
 
 func init() {
+	js.Global().Set("xbuilder_set_ai_description", js.FuncOf(setAIDescription))
+	js.Global().Set("xbuilder_set_ai_interaction_api_endpoint", js.FuncOf(setAIInteractionAPIEndpoint))
+	js.Global().Set("xbuilder_set_ai_interaction_api_token_provider", js.FuncOf(setAIInteractionAPITokenProvider))
+
+	// Deprecated: Use the "xbuilder_" prefixed versions instead.
+	//
+	// FIXME: Remove these aliases in future releases.
 	js.Global().Set("setAIDescription", js.FuncOf(setAIDescription))
 	js.Global().Set("setAIInteractionAPIEndpoint", js.FuncOf(setAIInteractionAPIEndpoint))
 	js.Global().Set("setAIInteractionAPITokenProvider", js.FuncOf(setAIInteractionAPITokenProvider))
@@ -37,25 +44,16 @@ func Gopt_Player_Gopx_OnCmd[T any](p *Player, handler func(cmd T) error) {
 		return fmt.Errorf("failed to register ai patch: %w", err)
 	}
 
-	// Set up default AI Interaction transport and knowledge base.
-	ai.SetDefaultTransport(wasmtrans.New(
-		wasmtrans.WithEndpoint(aiInteractionAPIEndpoint),
-		wasmtrans.WithTokenProvider(aiInteractionAPITokenProvider),
-	))
-	ai.SetDefaultKnowledgeBase(map[string]any{
-		"AI-generated descriptive summary of the game world": aiDescription,
-	})
-
 	return nil
 }
-
-// aiDescription holds the AI-generated descriptive summary of the game world.
-var aiDescription string
 
 // setAIDescription sets [aiDescription] from JavaScript.
 func setAIDescription(this js.Value, args []js.Value) any {
 	if len(args) > 0 {
-		aiDescription = args[0].String()
+		aiDescription := args[0].String()
+		ai.SetDefaultKnowledgeBase(map[string]any{
+			"AI-generated descriptive summary of the game world": aiDescription,
+		})
 	}
 	return nil
 }
@@ -67,6 +65,7 @@ var aiInteractionAPIEndpoint string
 func setAIInteractionAPIEndpoint(this js.Value, args []js.Value) any {
 	if len(args) > 0 {
 		aiInteractionAPIEndpoint = args[0].String()
+		resetAIDefaultTransport()
 	}
 	return nil
 }
@@ -125,6 +124,20 @@ func setAIInteractionAPITokenProvider(this js.Value, args []js.Value) any {
 				return ""
 			}
 		}
+		resetAIDefaultTransport()
 	}
 	return nil
+}
+
+// resetAIDefaultTransport resets the default AI Interaction transport with
+// current endpoint and token provider settings. It only resets when both
+// endpoint and token provider are configured.
+func resetAIDefaultTransport() {
+	if aiInteractionAPIEndpoint == "" || aiInteractionAPITokenProvider == nil {
+		return
+	}
+	ai.SetDefaultTransport(wasmtrans.New(
+		wasmtrans.WithEndpoint(aiInteractionAPIEndpoint),
+		wasmtrans.WithTokenProvider(aiInteractionAPITokenProvider),
+	))
 }

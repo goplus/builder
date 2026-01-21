@@ -20,7 +20,7 @@ type wasmTransport struct {
 	endpoint string
 
 	// tokenProvider is a function that returns the auth token (without "Bearer ").
-	// It's called before each request. If it returns "", no auth header is sent.
+	// It is called before each request. If it returns "", no auth header is sent.
 	tokenProvider func() string
 }
 
@@ -45,8 +45,8 @@ func WithTokenProvider(provider func() string) Option {
 }
 
 // New creates a new [ai.Transport] suitable for Wasm environments. It uses
-// JavaScript interop (syscall/js) to make network requests. By default, it
-// uses "/api/ai/interaction" endpoint and sends no Authorization token.
+// JavaScript interop (syscall/js) to make network requests. By default, it uses
+// "/api/ai/interaction" endpoint and sends no Authorization token.
 func New(opts ...Option) ai.Transport {
 	t := &wasmTransport{
 		endpoint:      "/api/ai/interaction",
