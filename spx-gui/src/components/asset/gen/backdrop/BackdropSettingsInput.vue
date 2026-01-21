@@ -62,7 +62,7 @@ const submitText = computed(() => {
     </template>
     <template #submit>
       <EnrichableSubmitButton
-        v-radar="{ name: 'Submit', desc: 'Click to generate backdrop images' }"
+        :radar="{ name: 'Submit', desc: 'Click to generate backdrop images' }"
         :enriched="gen.enrichState.status === 'finished'"
         :enriching="enriching"
         :disabled="submitDisabled"

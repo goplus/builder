@@ -128,14 +128,16 @@ const AssetGenComp = computed(() => {
         ...props,
         gen,
         onCollapse: handleGenCollapse,
-        onFinished: handleGenFinished
+        onFinished: handleGenFinished,
+        onUpdateBackButtonVisible: handleUpdateBackButtonVisible
       })
   } else if (gen instanceof BackdropGen) {
     return (props: CSSProperties) =>
       h(BackdropGenComp, {
         ...props,
         gen: gen as BackdropGen,
-        onFinished: handleGenFinished
+        onFinished: handleGenFinished,
+        onUpdateBackButtonVisible: handleUpdateBackButtonVisible
       })
   }
   return null
@@ -260,6 +262,12 @@ const isGenPhase = ref(false)
 function handleGenStart() {
   isGenPhase.value = true
 }
+
+const backButtonVisible = ref(false)
+function handleUpdateBackButtonVisible(visible: boolean) {
+  backButtonVisible.value = visible
+}
+
 // Handle returning to the asset library: reset search criteria and recreate assetGen to prevent unexpected intermediate states.
 const handleBackToAssetLibrary = useMessageHandle(
   () => {
@@ -364,7 +372,7 @@ const title = computed(() => {
     <header class="header">
       <div class="header-left">
         <UIButton
-          v-if="isGenPhase"
+          v-if="isGenPhase && backButtonVisible"
           class="back-asset"
           color="white"
           icon="arrowAlt"
