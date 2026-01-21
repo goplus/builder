@@ -503,6 +503,7 @@ const title = computed(() => {
 .asset-gen,
 .asset-library {
   flex: 1 1 0;
+  min-height: 0;
 }
 
 .asset-library {
