@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
 import type { Backdrop } from '@/models/backdrop'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import BackdropSettingInput from './BackdropSettingsInput.vue'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
@@ -22,6 +22,9 @@ const canSubmit = computed(() => props.gen.image != null)
 const handleSubmit = useMessageHandle(
   async () => {
     const backdrop = await props.gen.finish()
+    props.gen.recordAdoption().catch((err) => {
+      capture(err, 'failed to record backdrop asset adoption')
+    })
     emit('finished', backdrop)
   },
   {

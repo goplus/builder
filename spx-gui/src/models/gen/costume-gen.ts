@@ -5,7 +5,7 @@ import { ArtStyle, Perspective } from '@/apis/common'
 import { enrichCostumeSettings, Facing, TaskType, type CostumeSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
 import { validateCostumeName } from '../common/asset-name'
-import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl, saveFile } from '../common/cloud'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Costume } from '../costume'
@@ -46,6 +46,11 @@ export class CostumeGen extends Disposable {
     }
     this.referenceCostumeId = this.sprite.defaultCostume?.id ?? null
     return reactive(this) as this
+  }
+
+  getTaskIds() {
+    if (this.generateTask.data == null) return []
+    return [this.generateTask.data.id]
   }
 
   get name() {
@@ -100,12 +105,12 @@ export class CostumeGen extends Disposable {
     this.setImage(null)
     const image = await this.generatePhase.run(async () => {
       const referenceCostume = this.referenceCostume
-      const referenceImageUrl = referenceCostume != null ? await saveFileForWebUrl(referenceCostume.img) : null
+      const referenceImageUrl = referenceCostume != null ? await saveFile(referenceCostume.img) : null
       const settings = { ...this.settings, referenceImageUrl }
       await this.generateTask.start({ settings, n: 1 })
       const { imageUrls } = await this.generateTask.untilCompleted()
       if (imageUrls.length < 1) throw new Error('no costume image generated')
-      return createFileWithWebUrl(imageUrls[0])
+      return createFileWithUniversalUrl(imageUrls[0])
     })
     this.setImage(image)
   }
