@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
 import type { Backdrop } from '@/models/backdrop'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
@@ -16,14 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   finished: [Backdrop]
-  updateBackButtonVisible: [visible: boolean]
 }>()
-
-watch(
-  () => props.gen.result,
-  (result) => emit('updateBackButtonVisible', result == null),
-  { immediate: true }
-)
 
 const canSubmit = computed(() => props.gen.image != null)
 const handleSubmit = useMessageHandle(

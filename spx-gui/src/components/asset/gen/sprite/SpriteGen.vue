@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { watch } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import type { Sprite } from '@/models/sprite'
@@ -14,16 +13,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   collapse: []
   finished: [Sprite]
-  updateBackButtonVisible: [visible: boolean]
 }>()
-
-watch(
-  () => props.gen.contentPreparingState.status,
-  (status) => emit('updateBackButtonVisible', status !== 'finished'),
-  {
-    immediate: true
-  }
-)
 
 const editorCtx = useEditorCtx()
 const localEditorCtx = computedShallowReactive(() => ({
