@@ -39,7 +39,12 @@ const hasPreview = computed(() => props.gen.image != null)
   >
     <LayoutWithPreview :has-preview="hasPreview">
       <SpriteSettingsInput class="settings-input" :class="{ 'has-preview': hasPreview }" :gen="gen" />
-      <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
+      <ImageSelector
+        :state="gen.imagesGenState"
+        :selected="gen.image"
+        :disabled="handleSubmit.isLoading.value"
+        @select="gen.setImage($event)"
+      >
         <template #loading-item>
           <SpriteImageItem loading />
         </template>

@@ -46,10 +46,10 @@ const emit = defineEmits<{
 <style lang="scss" scoped>
 .gen-preview {
   flex: 1 1 0;
-  padding: 20px 24px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
 }
 
 .header {
@@ -58,7 +58,6 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: var(--ui-line-height-2);
 }
 
 .name {

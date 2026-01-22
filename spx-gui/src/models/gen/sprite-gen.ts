@@ -161,6 +161,10 @@ export class SpriteGen extends Disposable {
     )
   }
 
+  get isPreparePhase() {
+    return this.contentPreparingState.status !== 'finished'
+  }
+
   get contentPreparingState() {
     return this.prepareContentPhase.state
   }

@@ -36,6 +36,7 @@ const placeholder = computed(() => ({
     :options="loopModeOptions"
     :placeholder="placeholder"
     :value="toNullable(value)"
+    :clearable="false"
     @update:value="emit('update:value', fromNullable($event))"
   />
 </template>

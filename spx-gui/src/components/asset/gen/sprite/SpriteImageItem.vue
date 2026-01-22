@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import { UIImg } from '@/components/ui'
-import { useImageSelectorCompact } from '../common/ImageSelector.vue'
+import { useImageSelectorCompact, useImageSelectorDisabled } from '../common/ImageSelector.vue'
 import GenLoading from '../common/GenLoading.vue'
 
 const props = withDefaults(
@@ -19,6 +19,7 @@ const props = withDefaults(
   }
 )
 
+const disabled = useImageSelectorDisabled()
 const compact = useImageSelectorCompact()
 const [url, fileLoading] = useFileUrl(() => props.file)
 const loading = computed(() => props.loading || fileLoading.value)
@@ -31,7 +32,7 @@ const loading = computed(() => props.loading || fileLoading.value)
       desc: 'Click to select this image as the default costume for the sprite'
     }"
     class="sprite-image-item"
-    :class="{ active, compact, loading }"
+    :class="{ active, compact, loading, disabled }"
   >
     <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" />
     <UIImg v-else class="img" :src="url" :alt="file?.name" />
@@ -61,6 +62,11 @@ const loading = computed(() => props.loading || fileLoading.value)
     border: 2px solid var(--ui-color-turquoise-500);
     background: var(--ui-color-turquoise-200);
     cursor: default;
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   &.loading {

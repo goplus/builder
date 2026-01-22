@@ -3,11 +3,18 @@ import { inject } from 'vue'
 import type { ComputedRef, InjectionKey } from 'vue'
 
 const imageSelectorCompactKey: InjectionKey<ComputedRef<boolean>> = Symbol('image-selector-compact')
+const imageSelectorDisabledKey: InjectionKey<ComputedRef<boolean>> = Symbol('image-selector-disabled')
 
 export function useImageSelectorCompact(): ComputedRef<boolean> {
   const compact = inject(imageSelectorCompactKey, null)
   if (compact == null) throw new Error('imageSelectorCompactKey should be provided')
   return compact
+}
+
+export function useImageSelectorDisabled(): ComputedRef<boolean> {
+  const disabled = inject(imageSelectorDisabledKey, null)
+  if (disabled == null) throw new Error('imageSelectorDisabledKey should be provided')
+  return disabled
 }
 </script>
 
@@ -18,10 +25,16 @@ import { useContentSize } from '@/utils/dom'
 import type { File } from '@/models/common/file'
 import type { PhaseState } from '@/models/gen/common'
 
-defineProps<{
-  state: PhaseState<File[]>
-  selected: File | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    state: PhaseState<File[]>
+    selected: File | null
+    disabled?: boolean
+  }>(),
+  {
+    disabled: false
+  }
+)
 
 const emit = defineEmits<{
   select: [File]
@@ -38,8 +51,13 @@ const compact = computed(() => {
 })
 
 provide(imageSelectorCompactKey, compact)
+provide(
+  imageSelectorDisabledKey,
+  computed(() => props.disabled)
+)
 
 function handleSelect(file: File) {
+  if (props.disabled) return
   emit('select', file)
 }
 </script>

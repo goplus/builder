@@ -45,7 +45,12 @@ const hasPreview = computed(() => props.gen.image != null)
         :gen="gen"
         :disabled="handleSubmit.isLoading.value"
       />
-      <ImageSelector :state="gen.imagesGenState" :selected="gen.image" @select="gen.setImage($event)">
+      <ImageSelector
+        :state="gen.imagesGenState"
+        :selected="gen.image"
+        :disabled="handleSubmit.isLoading.value"
+        @select="gen.setImage($event)"
+      >
         <template #loading-item>
           <BackdropImageItem loading />
         </template>
