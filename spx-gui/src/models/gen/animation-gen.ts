@@ -12,7 +12,7 @@ import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import type { File } from '../common/file'
 import { validateAnimationName } from '../common/asset-name'
-import { createFileWithWebUrl, saveFileForWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl, saveFile } from '../common/cloud'
 import { Animation } from '../animation'
 import { Costume } from '../costume'
 import { getProjectSettings, getSpriteSettings, Phase, Task } from './common'
@@ -60,6 +60,10 @@ export class AnimationGen extends Disposable {
     this.extractFramesPhase = new Phase({ en: 'extract video frames', zh: '提取视频帧' })
     this.finishPhase = new Phase({ en: 'save animation', zh: '保存动画' })
     return reactive(this) as this
+  }
+
+  getTaskIds() {
+    return [this.generateVideoTask, this.extractFramesTask].map((t) => t.data?.id).filter((id) => id != null)
   }
 
   get name() {
@@ -113,11 +117,11 @@ export class AnimationGen extends Disposable {
     const video = await this.generateVideoPhase.run(async () => {
       const costume = this.referenceCostume
       if (costume == null) throw new Error('reference costume expected')
-      const referenceFrameUrl = await saveFileForWebUrl(costume.img)
+      const referenceFrameUrl = await saveFile(costume.img)
       const settings = { ...this.settings, referenceFrameUrl }
       await this.generateVideoTask.start({ settings })
       const { videoUrl } = await this.generateVideoTask.untilCompleted()
-      return createFileWithWebUrl(videoUrl)
+      return createFileWithUniversalUrl(videoUrl)
     })
     this.setVideo(video)
   }
@@ -140,10 +144,10 @@ export class AnimationGen extends Disposable {
     if (video == null) throw new Error('video not ready yet')
     if (framesConfig == null) throw new Error('frames config not set')
     return this.extractFramesPhase.run(async () => {
-      const videoUrl = await saveFileForWebUrl(video)
+      const videoUrl = await saveFile(video)
       await this.extractFramesTask.start({ videoUrl, ...framesConfig })
       const { frameUrls } = await this.extractFramesTask.untilCompleted()
-      const frames = frameUrls.map((url) => createFileWithWebUrl(url))
+      const frames = frameUrls.map((url) => createFileWithUniversalUrl(url))
       return frames
     })
   }

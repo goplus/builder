@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import type { Sprite } from '@/models/sprite'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
@@ -151,6 +151,9 @@ const handleSubmit = useMessageHandle(
   async () => {
     await beforeSubmit()
     const sprite = props.gen.finish()
+    props.gen.recordAdoption().catch((err) => {
+      capture(err, 'failed to record sprite asset adoption')
+    })
     emit('finished', sprite)
   },
   {

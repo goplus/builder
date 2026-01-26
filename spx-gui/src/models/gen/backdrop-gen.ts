@@ -2,9 +2,10 @@ import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
-import { enrichBackdropSettings, TaskType, type BackdropSettings } from '@/apis/aigc'
+import { adoptAsset, enrichBackdropSettings, TaskType, type BackdropSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
-import { createFileWithWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl } from '../common/cloud'
+import { backdrop2Asset } from '../common/asset'
 import type { Project } from '../project'
 import { Backdrop } from '../backdrop'
 import { getProjectSettings, Phase, Task } from './common'
@@ -68,7 +69,7 @@ export class BackdropGen extends Disposable {
         n: 4
       })
       const { imageUrls } = await this.generateTask.untilCompleted()
-      return imageUrls.map((url) => createFileWithWebUrl(url))
+      return imageUrls.map((url) => createFileWithUniversalUrl(url))
     })
   }
 
@@ -96,6 +97,23 @@ export class BackdropGen extends Disposable {
     })
     this.result = backdrop
     return backdrop
+  }
+
+  async recordAdoption() {
+    const backdrop = this.result
+    if (backdrop == null) throw new Error('result backdrop expected')
+    const taskIds = this.generateTask.data != null ? [this.generateTask.data.id] : []
+    const assetData = await backdrop2Asset(backdrop)
+    const { name: displayName, description, ...extraSettings } = this.settings
+    return adoptAsset({
+      taskIds,
+      asset: {
+        ...assetData,
+        displayName,
+        description,
+        extraSettings
+      }
+    })
   }
 
   cancel() {

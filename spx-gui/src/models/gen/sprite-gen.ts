@@ -9,7 +9,8 @@ import {
   genSpriteContentSettings,
   type CostumeSettings,
   Facing,
-  TaskType
+  TaskType,
+  adoptAsset
 } from '@/apis/aigc'
 import { Project } from '../project'
 import { Sprite } from '../sprite'
@@ -18,9 +19,10 @@ import type { Animation } from '../animation'
 import { getProjectSettings, Phase, Task } from './common'
 import { CostumeGen } from './costume-gen'
 import { AnimationGen } from './animation-gen'
-import { createFileWithWebUrl } from '../common/cloud'
+import { createFileWithUniversalUrl } from '../common/cloud'
 import type { File } from '../common/file'
 import { getAnimationName, getCostumeName } from '../common/asset-name'
+import { sprite2Asset } from '../common/asset'
 
 export class SpriteGen extends Disposable {
   id: string
@@ -112,7 +114,7 @@ export class SpriteGen extends Disposable {
       const settings = this.getDefaultCostumeSettings()
       await this.genImagesTask.start({ settings, n: 4 })
       const { imageUrls } = await this.genImagesTask.untilCompleted()
-      return imageUrls.map((url) => createFileWithWebUrl(url))
+      return imageUrls.map((url) => createFileWithUniversalUrl(url))
     })
   }
 
@@ -247,6 +249,27 @@ export class SpriteGen extends Disposable {
     })
     this.result = sprite
     return sprite
+  }
+
+  async recordAdoption() {
+    const sprite = this.result
+    if (sprite == null) throw new Error('result sprite expected')
+    const taskIds = [
+      this.genImagesTask.data?.id,
+      ...this.costumes.flatMap((c) => c.getTaskIds()),
+      ...this.animations.flatMap((a) => a.getTaskIds())
+    ].filter((id) => id != null)
+    const assetData = await sprite2Asset(sprite)
+    const { name: displayName, description, ...extraSettings } = this.settings
+    return adoptAsset({
+      taskIds,
+      asset: {
+        ...assetData,
+        displayName,
+        description,
+        extraSettings
+      }
+    })
   }
 
   cancel() {

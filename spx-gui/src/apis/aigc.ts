@@ -2,7 +2,17 @@
  * @desc AIGC-related APIs of spx-backend
  */
 
-import { AnimationLoopMode, ArtStyle, BackdropCategory, client, Perspective, SpriteCategory } from './common'
+import {
+  AnimationLoopMode,
+  ArtStyle,
+  BackdropCategory,
+  client,
+  type FileCollection,
+  Perspective,
+  SpriteCategory,
+  type UniversalUrl
+} from './common'
+import type { AssetExtraSettings, AssetType } from './asset'
 
 /**
  * @deprecated Use createTask() with TaskType.RemoveBackground instead
@@ -43,7 +53,7 @@ export type CostumeSettings = {
   facing: Facing
   artStyle: ArtStyle
   perspective: Perspective
-  referenceImageUrl: string | null
+  referenceImageUrl: UniversalUrl | null
 }
 
 export type AnimationSettings = {
@@ -52,7 +62,7 @@ export type AnimationSettings = {
   artStyle: ArtStyle
   perspective: Perspective
   loopMode: AnimationLoopMode
-  referenceFrameUrl: string | null
+  referenceFrameUrl: UniversalUrl | null
 }
 
 export type BackdropSettings = {
@@ -99,23 +109,23 @@ export type TaskError = {
 }
 
 export type TaskResultRemoveBackground = {
-  imageUrl: string
+  imageUrl: UniversalUrl
 }
 
 export type TaskResultGenerateCostume = {
-  imageUrls: string[]
+  imageUrls: UniversalUrl[]
 }
 
 export type TaskResultGenerateAnimationVideo = {
-  videoUrl: string
+  videoUrl: UniversalUrl
 }
 
 export type TaskResultExtractVideoFrames = {
-  frameUrls: string[]
+  frameUrls: UniversalUrl[]
 }
 
 export type TaskResultGenerateBackdrop = {
-  imageUrls: string[]
+  imageUrls: UniversalUrl[]
 }
 
 export type TaskResult<T extends TaskType = TaskType> = {
@@ -137,7 +147,7 @@ export type Task<T extends TaskType = TaskType> = {
 }
 
 export type TaskParamsRemoveBackground = {
-  imageUrl: string
+  imageUrl: UniversalUrl
 }
 
 export type TaskParamsGenerateCostume = {
@@ -151,7 +161,7 @@ export type TaskParamsGenerateAnimationVideo = {
 }
 
 export type TaskParamsExtractVideoFrames = {
-  videoUrl: string
+  videoUrl: UniversalUrl
   /** Duration (in milliseconds) of the segment to extract frames from. Precision is 100ms. */
   duration: number
   /** Start time (in milliseconds) from which to extract frames. Precision is 100ms. */
@@ -358,4 +368,20 @@ export async function enrichSpriteSettings(
     signal
   )) as SpriteSettings
   return result
+}
+
+export type AssetAdoptionParams = {
+  taskIds: string[]
+  asset: {
+    displayName: string
+    type: AssetType
+    description: string
+    extraSettings: AssetExtraSettings
+    filesHash?: string
+    files: FileCollection
+  }
+}
+
+export function adoptAsset(params: AssetAdoptionParams, signal?: AbortSignal) {
+  return client.post('/aigc/asset-adoption', params, { signal }) as Promise<void>
 }

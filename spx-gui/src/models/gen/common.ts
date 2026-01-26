@@ -145,7 +145,7 @@ export type TaskApis = Pick<typeof aigcApis, 'createTask' | 'cancelTask' | 'subs
 
 /** `Task` manages the lifecycle and state of an AIGC task. */
 export class Task<T extends TaskType> extends Disposable {
-  private data: TaskData<T> | null
+  data: TaskData<T> | null
 
   constructor(
     private type: T,

@@ -1806,11 +1806,11 @@ paths:
                         - imageUrl
                       properties:
                         imageUrl:
-                          description: URL of the image to remove background from.
+                          description: Universal URL of the image to remove background from (e.g. kodo://bucket/key).
                           type: string
                           format: uri
                           examples:
-                            - https://example.com/character.png
+                            - kodo://bucket/character.png
                     - title: generateCostume
                       type: object
                       required:
@@ -1840,11 +1840,11 @@ paths:
                         - duration
                       properties:
                         videoUrl:
-                          description: URL of the video to extract frames from.
+                          description: Universal URL of the video to extract frames from (e.g. kodo://bucket/key).
                           type: string
                           format: uri
                           examples:
-                            - https://example.com/animation.mp4
+                            - kodo://bucket/animation.mp4
                         startTime:
                           description: Start time (in milliseconds) from which to extract frames. Precision is 100ms.
                           type: integer
@@ -1973,7 +1973,7 @@ paths:
         data: {"id": "task-123", "status": "processing"}
 
         event: completed
-        data: {"result": {"imageUrls": ["https://..."]}}
+        data: {"result": {"imageUrls": ["kodo://bucket/path/to/file.png"]}}
         ```
 
         #### Example: task already completed
@@ -1982,7 +1982,7 @@ paths:
         GET /aigc/task/task-456/events
 
         event: snapshot
-        data: {"id": "task-456", "status": "completed", "result": {"imageUrls": ["https://..."]}}
+        data: {"id": "task-456", "status": "completed", "result": {"imageUrls": ["kodo://bucket/path/to/file.png"]}}
 
         (connection closed)
         ```
@@ -1996,7 +1996,7 @@ paths:
         data: {"id": "task-789", "status": "pending"}
 
         event: completed
-        data: {"result": {"imageUrls": ["https://..."]}}
+        data: {"result": {"imageUrls": ["kodo://bucket/path/to/file.png"]}}
         ```
 
         #### Example: task cancelled
@@ -3016,7 +3016,7 @@ components:
               type: object
               properties:
                 imageUrl:
-                  description: URL of the image with background removed.
+                  description: Universal URL of the image with background removed (e.g. kodo://bucket/key).
                   type: string
                   format: uri
             - title: generateCostume
@@ -3025,7 +3025,7 @@ components:
                 - imageUrls
               properties:
                 imageUrls:
-                  description: URLs of the generated costume images.
+                  description: Universal URLs of the generated costume images (e.g. kodo://bucket/key).
                   type: array
                   items:
                     type: string
@@ -3034,14 +3034,14 @@ components:
               type: object
               properties:
                 videoUrl:
-                  description: URL of the generated animation video.
+                  description: Universal URL of the generated animation video (e.g. kodo://bucket/key).
                   type: string
                   format: uri
             - title: extractVideoFrames
               type: object
               properties:
                 frameUrls:
-                  description: URLs of the extracted frame images.
+                  description: Universal URLs of the extracted frame images (e.g. kodo://bucket/key).
                   type: array
                   items:
                     type: string
@@ -3052,7 +3052,7 @@ components:
                 - imageUrls
               properties:
                 imageUrls:
-                  description: URLs of the generated backdrop images.
+                  description: Universal URLs of the generated backdrop images (e.g. kodo://bucket/key).
                   type: array
                   items:
                     type: string
@@ -3170,7 +3170,7 @@ components:
         - type: object
           properties:
             referenceImageUrl:
-              description: URL of the reference image to guide the costume generation.
+              description: Universal URL of the reference image to guide the costume generation (e.g. kodo://bucket/key).
               type:
                 - string
                 - "null"
@@ -3192,7 +3192,7 @@ components:
         - type: object
           properties:
             referenceFrameUrl:
-              description: URL of the reference frame image to guide the animation generation.
+              description: Universal URL of the reference frame image to guide the animation generation (e.g. kodo://bucket/key).
               type:
                 - string
                 - "null"
