@@ -121,6 +121,9 @@ export class CostumeGen extends Disposable {
   get result() {
     return this.finishPhase.state.result
   }
+  resetFinishState() {
+    this.finishPhase.reset()
+  }
 
   async finish() {
     const image = this.image

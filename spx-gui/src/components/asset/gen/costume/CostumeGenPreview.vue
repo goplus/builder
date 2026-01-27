@@ -29,10 +29,13 @@ const canSaveCostume = computed(() => {
 
 const savingCostume = computed(() => props.gen.finishState.status === 'running')
 
-const handleSaveCostume = useMessageHandle(() => props.gen.finish(), {
-  en: 'Failed to save costume',
-  zh: '保存造型失败'
-}).fn
+async function handleSaveCostume() {
+  await props.gen.finish()
+}
+
+function handleSaveErrorBack() {
+  props.gen.resetFinishState()
+}
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
 </script>
@@ -55,6 +58,17 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
     </GenLoading>
     <PreviewWithCheckerboardBg v-else>
       <UIImg v-if="gen.image != null" class="img" :src="imgSrc" :loading="imgLoading" />
+      <GenLoading v-if="gen.finishState.status === 'running'" variant="bg-spin" cover>
+        {{ $t({ en: 'Saving costume...', zh: '正在保存造型...' }) }}
+      </GenLoading>
+      <UIError
+        v-else-if="gen.finishState.status === 'failed'"
+        cover
+        :retry="handleSaveCostume"
+        :back="handleSaveErrorBack"
+      >
+        {{ $t(gen.finishState.error.userMessage) }}
+      </UIError>
     </PreviewWithCheckerboardBg>
   </GenPreview>
   <CostumeDetail v-else class="costume-detail" :costume="gen.result" @rename="handleRenameCostume" />

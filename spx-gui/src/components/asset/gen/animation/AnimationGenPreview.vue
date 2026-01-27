@@ -30,17 +30,17 @@ const savingAnimation = computed(() => {
   return gen.extractFramesState.status === 'running' || gen.finishState.status === 'running'
 })
 
-const handleSaveAnimation = useMessageHandle(
-  async () => {
-    const gen = props.gen
-    await gen.extractFrames()
-    await gen.finish()
-  },
-  {
-    en: 'Failed to save animation',
-    zh: '保存动画失败'
-  }
-).fn
+async function handleSaveAnimation() {
+  const gen = props.gen
+  await gen.extractFrames()
+  await gen.finish()
+}
+
+function handleSaveErrorBack() {
+  const gen = props.gen
+  gen.resetFinishState()
+  gen.resetExtractFramesState()
+}
 
 // Use a computed key to force re-mount AnimationVideoPreview when video file changes
 // TODO: improve AnimationVideoPreview to handle video file changes without re-mounting
@@ -63,13 +63,6 @@ const videoPreviewKey = computed(() => {
     <UIError v-else-if="gen.generateVideoState.status === 'failed'">
       {{ $t(gen.generateVideoState.error.userMessage) }}
     </UIError>
-    <GenLoading v-else-if="gen.extractFramesState.status === 'running'" variant="bg-spin">
-      {{ $t({ en: 'Extracting frames...', zh: '正在提取帧...' }) }}
-    </GenLoading>
-    <UIError v-else-if="gen.extractFramesState.status === 'failed'">
-      <!-- TODO(@UI): We need to optimize error UI here. Error for extracting frames should not cause the preview invisible. -->
-      {{ $t(gen.extractFramesState.error.userMessage) }}
-    </UIError>
     <PreviewWithCheckerboardBg v-else>
       <AnimationVideoPreview
         v-if="gen.video != null"
@@ -78,6 +71,28 @@ const videoPreviewKey = computed(() => {
         :frames-config="gen.framesConfig"
         @update:frames-config="gen.setFramesConfig($event)"
       />
+      <GenLoading v-if="gen.extractFramesState.status === 'running'" variant="bg-spin" cover>
+        {{ $t({ en: 'Extracting frames...', zh: '正在提取帧...' }) }}
+      </GenLoading>
+      <UIError
+        v-else-if="gen.extractFramesState.status === 'failed'"
+        cover
+        :retry="handleSaveAnimation"
+        :back="handleSaveErrorBack"
+      >
+        {{ $t(gen.extractFramesState.error.userMessage) }}
+      </UIError>
+      <GenLoading v-else-if="gen.finishState.status === 'running'" variant="bg-spin" cover>
+        {{ $t({ en: 'Saving animation...', zh: '正在保存动画...' }) }}
+      </GenLoading>
+      <UIError
+        v-else-if="gen.finishState.status === 'failed'"
+        cover
+        :retry="handleSaveAnimation"
+        :back="handleSaveErrorBack"
+      >
+        {{ $t(gen.finishState.error.userMessage) }}
+      </UIError>
     </PreviewWithCheckerboardBg>
   </GenPreview>
   <AnimationDetail

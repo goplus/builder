@@ -139,6 +139,9 @@ export class AnimationGen extends Disposable {
   get extractFramesState() {
     return this.extractFramesPhase.state
   }
+  resetExtractFramesState() {
+    this.extractFramesPhase.reset()
+  }
   async extractFrames() {
     const { video, framesConfig } = this
     if (video == null) throw new Error('video not ready yet')
@@ -157,6 +160,9 @@ export class AnimationGen extends Disposable {
   }
   get result() {
     return this.finishPhase.state.result
+  }
+  resetFinishState() {
+    this.finishPhase.reset()
   }
   async finish() {
     const frameImgs = this.extractFramesPhase.state.result
