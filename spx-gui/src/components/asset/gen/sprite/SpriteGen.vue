@@ -8,8 +8,7 @@ import SpriteGenPhaseContent from './SpriteGenPhaseContent.vue'
 
 const props = defineProps<{
   gen: SpriteGen
-  /** Keyword entered by user when searching for assets. Show as placeholder in description input. */
-  keyword?: string
+  descriptionPlaceholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -33,7 +32,7 @@ provideLocalEditorCtx(localEditorCtx)
     @collapse="emit('collapse')"
     @finished="emit('finished', $event)"
   />
-  <SpriteGenPhaseSettings v-else :gen="gen" :keyword="keyword" />
+  <SpriteGenPhaseSettings v-else :gen="gen" :description-placeholder="descriptionPlaceholder" />
 </template>
 
 <style lang="scss" scoped></style>

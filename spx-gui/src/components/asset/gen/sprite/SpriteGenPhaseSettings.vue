@@ -17,7 +17,7 @@ import SpriteImageItem from './SpriteImageItem.vue'
 
 const props = defineProps<{
   gen: SpriteGen
-  keyword?: string
+  descriptionPlaceholder?: string
 }>()
 
 const allowSubmit = computed(() => props.gen.image != null)
@@ -43,7 +43,7 @@ const hasPreview = computed(() => props.gen.image != null)
         class="settings-input"
         :class="{ 'has-preview': hasPreview }"
         :gen="gen"
-        :description-placeholder="keyword"
+        :description-placeholder="descriptionPlaceholder"
       />
       <ImageSelector
         :state="gen.imagesGenState"

@@ -136,7 +136,7 @@ const AssetGenComp = computed(() => {
       h(SpriteGenComp, {
         ...props,
         gen,
-        keyword: keyword.value.trim(),
+        descriptionPlaceholder: keyword.value.trim(),
         onCollapse: handleGenCollapse,
         onFinished: handleGenFinished
       })
@@ -145,7 +145,7 @@ const AssetGenComp = computed(() => {
       h(BackdropGenComp, {
         ...props,
         gen: gen as BackdropGen,
-        keyword: keyword.value.trim(),
+        descriptionPlaceholder: keyword.value.trim(),
         onFinished: handleGenFinished
       })
   }
