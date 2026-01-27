@@ -2,7 +2,6 @@
 import { computed, inject } from 'vue'
 import { UIBlockItem, UIBlockItemTitle, UICornerIcon, UIDropdownWithTooltip, UIImg } from '@/components/ui'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
-import { isSvgString } from '@/utils/img.ts'
 import { settingsInputCtxKey } from '../SettingsInput.vue'
 
 type Option = { value: T; label: LocaleMessage; image?: string }
@@ -33,16 +32,6 @@ const showPlaceholder = computed(() => props.value == null && props.placeholder 
 const selectedItem = computed(() => {
   if (showPlaceholder.value) return props.placeholder
   return props.options.find((item) => item.value === props.value)
-})
-
-const selectedItemIcon = computed(() => {
-  if (!selectedItem.value?.image) {
-    return null
-  }
-  if (isSvgString(selectedItem.value.image)) {
-    return { isSvg: true, image: selectedItem.value.image }
-  }
-  return { isSvg: false, image: selectedItem.value.image }
 })
 
 const tooltipText = computed(() => {
@@ -78,13 +67,12 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
         :class="[{ 'icon-only': iconOnly }]"
         :disabled="disabled"
       >
-        <template v-if="selectedItemIcon != null">
-          <template v-if="selectedItemIcon.isSvg">
-            <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
-            <div class="svg-container" v-html="selectedItemIcon.image"></div>
-          </template>
-          <UIImg v-else :class="['button-image', { disabled }]" :src="selectedItemIcon.image" size="cover" />
-        </template>
+        <UIImg
+          v-if="selectedItem.image != null"
+          :class="['button-image', { disabled }]"
+          :src="selectedItem.image"
+          size="cover"
+        />
         <template v-if="!iconOnly">
           {{ $t(selectedItem.label) }}
         </template>
@@ -157,19 +145,9 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
   }
 }
 
-.svg-container,
 .button-image {
   width: 24px;
   height: 24px;
-}
-
-.svg-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.button-image {
   border-radius: 10px;
 
   &.disabled {

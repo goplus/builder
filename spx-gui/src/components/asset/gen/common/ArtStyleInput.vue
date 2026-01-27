@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import { ArtStyle } from '@/apis/common'
 import ParamSelector from './param-settings/ParamSelector.vue'
 import { artStyleOptions } from './param-settings/data'
-import imgArtStyle from './param-settings/assets/art-style.svg?raw'
+import imgArtStyle from './param-settings/assets/art-style.svg'
 
 defineProps<{
   value: ArtStyle

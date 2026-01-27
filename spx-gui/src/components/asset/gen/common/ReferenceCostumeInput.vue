@@ -2,7 +2,7 @@
 import { useAsyncComputed } from '@/utils/utils'
 import type { Costume } from '@/models/costume'
 import ParamSelector from './param-settings/ParamSelector.vue'
-import imgCostume from './param-settings/assets/costume.svg?raw'
+import imgCostume from './param-settings/assets/costume.svg'
 
 const props = withDefaults(
   defineProps<{

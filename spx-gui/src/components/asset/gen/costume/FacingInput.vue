@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import { Facing } from '@/apis/aigc'
 import ParamSelector from '../common/param-settings/ParamSelector.vue'
 import { facingOptions } from '../common/param-settings/data'
-import imgFacing from '../common/param-settings/assets/facing.svg?raw'
+import imgFacing from '../common/param-settings/assets/facing.svg'
 
 defineProps<{
   value: Facing
