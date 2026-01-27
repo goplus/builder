@@ -83,7 +83,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
             <div class="svg-container" v-html="selectedItemIcon.image"></div>
           </template>
-          <UIImg v-else :class="['button-image', { disabled }]" :src="selectedItemIcon.image" />
+          <UIImg v-else :class="['button-image', { disabled }]" :src="selectedItemIcon.image" size="cover" />
         </template>
         <template v-if="!iconOnly">
           {{ $t(selectedItem.label) }}
