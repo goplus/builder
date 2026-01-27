@@ -99,11 +99,14 @@ watch(
   { immediate: true }
 )
 
-// Clear description when keyword changes
+// Recreate assetGen when keyword changes and description has been set
 watch(
   () => keyword.value,
   () => {
-    assetGen.value?.setSettings({ description: '' })
+    if (assetGen.value != null && assetGen.value.settings.description !== '') {
+      assetGen.value.dispose()
+      assetGen.value = createAssetGen(props.type)
+    }
   }
 )
 
