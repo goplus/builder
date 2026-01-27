@@ -99,11 +99,13 @@ watch(
   { immediate: true }
 )
 
-// Recreate assetGen when keyword changes and description has been set
+// Recreate assetGen when keyword changes and assetGen is already in use
 watch(
   () => keyword.value,
   () => {
-    if (assetGen.value != null && assetGen.value.settings.description !== '') {
+    if (assetGen.value == null) return
+    // TODO: refine the condition for recreation
+    if (assetGen.value.settings.description !== '' || assetGen.value.enrichState.status !== 'initial') {
       assetGen.value.dispose()
       assetGen.value = createAssetGen(props.type)
     }
