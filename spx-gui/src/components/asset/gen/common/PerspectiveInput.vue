@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import { Perspective } from '@/apis/common'
 import ParamSelector from './param-settings/ParamSelector.vue'
 import { perspectiveOptions } from './param-settings/data'
-import imgPerspective from './param-settings/assets/perspective.png'
+import imgPerspective from './param-settings/assets/perspective.svg?raw'
 
 defineProps<{
   value: Perspective

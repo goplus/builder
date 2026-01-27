@@ -41,6 +41,17 @@ export async function toPng(blob: Blob) {
   return convertImg(blob, 'image/png')
 }
 
+/** Check whether the given string is an SVG string. */
+export function isSvgString(str: string) {
+  const parser = new DOMParser()
+  try {
+    const el = parser.parseFromString(str, 'image/svg+xml').documentElement
+    return el instanceof SVGSVGElement
+  } catch {
+    return false
+  }
+}
+
 // Chrome and Firefox behave differently when reading `viewBox.baseVal` of SVG without the `viewBox` attribute.
 // Chrome returns `{ x: 0, y: 0, width: 0, height: 0 }` by default, while Firefox returns null.
 // This method retrieves the `viewBox` attribute, ensuring consistent behavior when it exists, and returns `{ x: 0, y: 0, width: 0, height: 0 }` when it doesn't exist.

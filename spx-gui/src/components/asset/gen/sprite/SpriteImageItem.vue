@@ -58,6 +58,10 @@ const loading = computed(() => props.loading || fileLoading.value)
     height 0.2s ease,
     border-radius 0.2s ease;
 
+  &:hover:not(.disabled, .active) {
+    background: var(--ui-color-grey-400);
+  }
+
   &.active {
     border: 2px solid var(--ui-color-turquoise-500);
     background: var(--ui-color-turquoise-200);

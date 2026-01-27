@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import { AnimationLoopMode } from '@/apis/common'
 import ParamSelector from '../common/param-settings/ParamSelector.vue'
 import { loopModeOptions } from '../common/param-settings/data'
-import imgLoopMode from '../common/param-settings/assets/loop-mode.png'
+import imgLoopMode from '../common/param-settings/assets/loop-mode.svg?raw'
 
 defineProps<{
   value: AnimationLoopMode
