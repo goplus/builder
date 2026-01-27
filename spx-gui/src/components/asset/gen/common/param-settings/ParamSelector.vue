@@ -35,6 +35,16 @@ const selectedItem = computed(() => {
   return props.options.find((item) => item.value === props.value)
 })
 
+const selectedItemIcon = computed(() => {
+  if (!selectedItem.value?.image) {
+    return null
+  }
+  if (isSvgString(selectedItem.value.image)) {
+    return { isSvg: true, image: selectedItem.value.image }
+  }
+  return { isSvg: false, image: selectedItem.value.image }
+})
+
 const tooltipText = computed(() => {
   if (selectedItem.value != null)
     return showPlaceholder.value
@@ -68,12 +78,12 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
         :class="[{ 'icon-only': iconOnly }]"
         :disabled="disabled"
       >
-        <template v-if="selectedItem.image != null">
-          <template v-if="isSvgString(selectedItem.image)">
+        <template v-if="selectedItemIcon != null">
+          <template v-if="selectedItemIcon.isSvg">
             <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
-            <div class="svg-container" v-html="selectedItem.image"></div>
+            <div class="svg-container" v-html="selectedItemIcon.image"></div>
           </template>
-          <UIImg v-else :class="['button-image', { disabled }]" :src="selectedItem.image" />
+          <UIImg v-else :class="['button-image', { disabled }]" :src="selectedItemIcon.image" />
         </template>
         <template v-if="!iconOnly">
           {{ $t(selectedItem.label) }}

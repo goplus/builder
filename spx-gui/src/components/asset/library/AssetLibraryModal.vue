@@ -440,8 +440,10 @@ const title = computed(() => {
                   <div class="empty">
                     <div class="empty-tip">
                       <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>
-                      <span class="highlight">{{$t({ zh: `“${keyword}”`, en: `"${keyword}"` })}}</span>
-                      <span>{{$t({ zh: '相关的素材，不如让 AI 帮你生成一个？', en: '. Why not let AI generate one for you?' })}}</span>
+                      <span class="highlight">{{ $t({ zh: `“${keyword}”`, en: `"${keyword}"` }) }}</span>
+                      <span>{{
+                        $t({ zh: '相关的素材，不如让 AI 帮你生成一个？', en: '. Why not let AI generate one for you?' })
+                      }}</span>
                     </div>
                     <SettingsInput
                       class="settings-input"
