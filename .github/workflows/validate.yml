@@ -52,6 +52,7 @@ jobs:
           cache: true
           cache-dependency-path: |
             tools/spxls/go.sum
+            tools/ispx/go.sum
             tools/ai/go.sum
 
       - name: Build WASM
