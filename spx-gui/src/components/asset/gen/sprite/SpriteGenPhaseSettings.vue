@@ -17,6 +17,7 @@ import SpriteImageItem from './SpriteImageItem.vue'
 
 const props = defineProps<{
   gen: SpriteGen
+  keyword?: string
 }>()
 
 const allowSubmit = computed(() => props.gen.image != null)
@@ -38,7 +39,12 @@ const hasPreview = computed(() => props.gen.image != null)
     class="phase-settings"
   >
     <LayoutWithPreview :has-preview="hasPreview">
-      <SpriteSettingsInput class="settings-input" :class="{ 'has-preview': hasPreview }" :gen="gen" />
+      <SpriteSettingsInput
+        class="settings-input"
+        :class="{ 'has-preview': hasPreview }"
+        :gen="gen"
+        :description-placeholder="keyword"
+      />
       <ImageSelector
         :state="gen.imagesGenState"
         :selected="gen.image"

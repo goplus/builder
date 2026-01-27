@@ -12,6 +12,8 @@ import BackdropImageItem from './BackdropImageItem.vue'
 
 const props = defineProps<{
   gen: BackdropGen
+  /** Keyword entered by user when searching for assets. Show as placeholder in description input. */
+  keyword?: string
 }>()
 
 const emit = defineEmits<{
@@ -47,6 +49,7 @@ const hasPreview = computed(() => props.gen.image != null)
         :class="{ 'has-preview': hasPreview }"
         :gen="gen"
         :disabled="handleSubmit.isLoading.value"
+        :description-placeholder="keyword"
       />
       <ImageSelector
         :state="gen.imagesGenState"
