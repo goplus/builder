@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { reactive, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
-import type { I18n } from '@/utils/i18n'
+import type { I18n, LocaleMessage } from '@/utils/i18n'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import {
   enrichSpriteSettings,
@@ -91,18 +91,20 @@ export class SpriteGen extends Disposable {
   }
   private getDefaultCostumeSettings(): CostumeSettings {
     const settings = this.settings
-    let facing = Facing.Unspecified
-    if (settings.perspective === Perspective.SideScrolling) {
+    const name = this.i18n.t({ en: 'default', zh: '默认' })
+    // Append extra description for default costume
+    const extraDescription = this.i18n.t(defaultCostumeExtraDescriptions[settings.category])
+    const description = [settings.description, extraDescription].filter((s) => s.trim() !== '').join('\n')
+    // Determine facing based on sprite category
+    let facing = Facing.Front
+    if (settings.category === SpriteCategory.Character) {
       facing = Facing.Right
-    } else if (settings.perspective === Perspective.AngledTopDown) {
-      facing = Facing.Front
+    } else if (settings.category === SpriteCategory.UI) {
+      facing = Facing.Unspecified
     }
     return {
-      name: this.i18n.t({
-        en: 'default',
-        zh: '默认'
-      }),
-      description: this.settings.description,
+      name,
+      description,
       facing,
       artStyle: settings.artStyle,
       perspective: settings.perspective,
@@ -278,5 +280,29 @@ export class SpriteGen extends Disposable {
       ...this.costumes.map((c) => c.cancel()),
       ...this.animations.map((a) => a.cancel())
     ])
+  }
+}
+
+// TODO: consider moving such logic to AIGC backend to colocate all AIGC generation prompts
+const defaultCostumeExtraDescriptions: Record<SpriteCategory, LocaleMessage> = {
+  [SpriteCategory.Character]: {
+    en: 'The character is in an idle state, neutral pose.',
+    zh: '角色处于静止状态，采用中立姿势。'
+  },
+  [SpriteCategory.Item]: {
+    en: 'It is used as item or prop in a game.',
+    zh: '它被用作游戏中的物品或道具。'
+  },
+  [SpriteCategory.Effect]: {
+    en: 'It is a visual effect element used in a game.',
+    zh: '它是游戏中使用的视觉效果元素。'
+  },
+  [SpriteCategory.UI]: {
+    en: 'It is a user interface (UI) element used in a game.',
+    zh: '它是游戏中使用的用户界面（UI）元素。'
+  },
+  [SpriteCategory.Unspecified]: {
+    en: '',
+    zh: ''
   }
 }
