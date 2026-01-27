@@ -19,7 +19,7 @@ const emit = defineEmits<{
   finished: [Backdrop]
 }>()
 
-const canSubmit = computed(() => props.gen.image != null)
+const canSubmit = computed(() => props.gen.image != null && props.gen.imagesGenState.status !== 'running')
 const handleSubmit = useMessageHandle(
   async () => {
     const backdrop = await props.gen.finish()
