@@ -6,22 +6,22 @@ tool github.com/goplus/ixgo/cmd/qexp
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/ixgo v0.57.0
-	github.com/goplus/mod v0.17.1
-	github.com/goplus/spx/ispx v0.0.0-20260120094340-d64974b50c11
+	github.com/goplus/ixgo v0.61.0
+	github.com/goplus/mod v0.19.0
+	github.com/goplus/spx/ispx v0.0.0-20260128040951-0c2611107b6d
 )
 
 require (
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
-	github.com/goplus/gogen v1.19.5 // indirect
+	github.com/goplus/gogen v1.20.6 // indirect
 	github.com/goplus/reflectx v1.5.0 // indirect
 	github.com/goplus/spbase v0.1.0 // indirect
 	github.com/goplus/spx/v2 v2.0.0-pre.43 // indirect
-	github.com/goplus/xgo v1.5.2 // indirect
+	github.com/goplus/xgo v1.6.1 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/qiniu/x v1.15.1 // indirect
+	github.com/qiniu/x v1.16.0 // indirect
 	github.com/timandy/routine v1.1.5 // indirect
 	github.com/visualfc/funcval v0.1.4 // indirect
 	github.com/visualfc/gid v0.3.0 // indirect
