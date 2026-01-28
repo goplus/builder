@@ -22,7 +22,7 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList :sortable="{ list: sprites }" @sorted="handleSorted">
+      <PanelList :sortable="{ list: sortableList }" @sorted="handleSorted">
         <UIEmpty v-if="sprites.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
         </UIEmpty>
@@ -83,6 +83,7 @@
 import { computed, onBeforeUnmount, ref, shallowReactive, type ComponentPublicInstance } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
+import { type SortableList } from '@/utils/drag-and-drop'
 import { SpriteGen } from '@/models/gen/sprite-gen'
 import { Sprite } from '@/models/sprite'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
@@ -167,7 +168,13 @@ const handleAddFromAssetLibrary = useMessageHandle(
   }
 ).fn
 
+const sortableList = computed<SortableList>(() => ({
+  items: [...editorCtx.project.sprites, ...editorCtx.state.spriteGens],
+  sortableRange: [0, editorCtx.project.sprites.length] as [number, number]
+}))
+
 const handleSorted = useMessageHandle(
+  // sprites are always before spriteGens, so the index is correct theoretically
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update sprite order', zh: '更新精灵顺序' } }
     await editorCtx.project.history.doAction(action, () => editorCtx.project.moveSprite(oldIdx, newIdx))

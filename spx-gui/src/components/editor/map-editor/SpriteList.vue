@@ -103,7 +103,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
       </template>
     </PanelHeader>
 
-    <PanelList class="list-wrapper" :sortable="{ list: sprites }" @sorted="handleSorted">
+    <PanelList class="list-wrapper" :sortable="{ list: { items: sprites } }" @sorted="handleSorted">
       <SpriteItem
         v-for="sprite in sprites"
         :key="sprite.id"

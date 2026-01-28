@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useDragSortable } from '@/utils/drag-and-drop'
+import { type SortableList, useDragSortable } from '@/utils/drag-and-drop'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { humanizeResourceType, type ResourceModelType } from '@/models/common/resource-model'
 import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
@@ -68,7 +68,7 @@ const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.color[props.color]))
 
 const itemsWrapper = ref<HTMLElement | null>(null)
-const sortableList = computed(() => (props.sortable ? props.sortable.list : null))
+const sortableList = computed<SortableList | null>(() => (props.sortable ? { items: props.sortable.list } : null))
 
 useDragSortable(sortableList, itemsWrapper, {
   ghostClass: 'sortable-ghost-item',

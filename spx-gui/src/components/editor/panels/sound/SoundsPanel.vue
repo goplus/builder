@@ -25,7 +25,7 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList :sortable="{ list: sounds }" @sorted="handleSorted">
+      <PanelList :sortable="{ list: { items: sounds } }" @sorted="handleSorted">
         <UIEmpty v-if="sounds.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sound', zh: '点击 + 号添加声音' }) }}
         </UIEmpty>

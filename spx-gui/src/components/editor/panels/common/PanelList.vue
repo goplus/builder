@@ -8,11 +8,11 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useDragSortable } from '@/utils/drag-and-drop'
+import { type SortableList, useDragSortable } from '@/utils/drag-and-drop'
 
 const props = withDefaults(
   defineProps<{
-    sortable?: { list: unknown[] } | false
+    sortable?: { list: SortableList } | false
   }>(),
   {
     sortable: false

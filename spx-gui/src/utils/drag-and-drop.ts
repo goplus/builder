@@ -19,28 +19,58 @@ const draggingItemRef = ref<unknown | null>(null)
 // As a workaround, we add a class to all children, then disable `:hover` effect in children (`UIBlockItem`, etc.) style.
 const disableHoverClass = 'drag-and-drop-disable-hover'
 
+export type SortableList = {
+  /**
+   * All items in the list.
+   * The order must be consistent with the children of Wrapper Element.
+   */
+  items: unknown[]
+  /**
+   * Optional range [start, end) to limit sortable items.
+   * Items out of range are not allowed to drag or be dropped into.
+   */
+  sortableRange?: [number, number]
+}
+
 export function useDragSortable(
-  listSource: WatchSource<unknown[] | null>,
+  listSource: WatchSource<SortableList | null>,
   wrapperSource: WatchSource<HTMLElement | undefined | null>,
   options: DragSortableOptions
 ) {
   watchEffect(async (onCleanup) => {
-    const list = toValue<unknown[] | null>(listSource)
-    if (list == null || list.length === 0) return
+    const list = toValue<SortableList | null>(listSource)
+    if (list == null || list.items.length === 0) return
     await nextTick() // Ensure DOM updated for list change
 
     const wrapper = toValue<HTMLElement | undefined | null>(wrapperSource)
     if (wrapper == null) return
+
+    const rangeStartIdx = list.sortableRange?.[0] ?? 0
+    const rangeEndIdx = list.sortableRange?.[1] ?? list.items.length
 
     const sortable = Sortable.create(wrapper, {
       scroll: true,
       revertOnSpill: true,
       animation: 200,
       ghostClass: options.ghostClass,
+      onMove(e) {
+        const fromIdx = Array.from(wrapper.children).indexOf(e.dragged)
+        if (fromIdx < rangeStartIdx || fromIdx >= rangeEndIdx) {
+          // eslint-disable-next-line no-console
+          console.debug(`Move prevented: fromIdx ${fromIdx} out of range [${rangeStartIdx}, ${rangeEndIdx})`)
+          return false
+        }
+        const toIdx = Array.from(wrapper.children).indexOf(e.related)
+        if (toIdx < rangeStartIdx || toIdx >= rangeEndIdx) {
+          // eslint-disable-next-line no-console
+          console.debug(`Move prevented: toIdx ${toIdx} out of range [${rangeStartIdx}, ${rangeEndIdx})`)
+          return false
+        }
+      },
       onStart(e) {
         const idx = Array.from(wrapper.children).indexOf(e.item)
         if (idx === -1) return
-        draggingItemRef.value = list[idx]
+        draggingItemRef.value = list.items[idx]
         for (const child of wrapper.children) child.classList.add(disableHoverClass)
       },
       onEnd(e) {
