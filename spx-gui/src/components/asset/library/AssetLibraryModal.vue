@@ -381,7 +381,7 @@ const title = computed(() => {
   <UIModal
     ref="modalRef"
     :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
-    style="width: 1076px; height: 800px"
+    style="min-width: 1076px; height: 800px"
     :visible="visible"
     mask-closable
     @update:visible="handleModalClose"
@@ -591,7 +591,7 @@ const title = computed(() => {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 20px 24px 0;
+    padding: 20px 0 0 24px; // no right padding to allow optional scrollbar
   }
   .filter {
     display: flex;
