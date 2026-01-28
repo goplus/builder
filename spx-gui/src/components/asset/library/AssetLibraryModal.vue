@@ -99,7 +99,8 @@ watch(
   { immediate: true }
 )
 
-// Recreate assetGen when keyword changes
+// Recreate assetGen when keyword changes in case of reuse.
+// TODO: Recreating assetGen on every keyword change might be too frequent. Consider constructing it only when needed.
 watch(
   () => keyword.value,
   () => {
