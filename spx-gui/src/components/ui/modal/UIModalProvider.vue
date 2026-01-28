@@ -15,7 +15,17 @@
 </template>
 
 <script lang="ts">
-import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component, watch, ref } from 'vue'
+import {
+  type InjectionKey,
+  inject,
+  provide,
+  shallowReactive,
+  nextTick,
+  type Component,
+  watch,
+  ref,
+  type WatchSource
+} from 'vue'
 import type { ComponentDefinition, PruneProps } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
 import Emitter from '@/utils/emitter'
@@ -83,18 +93,18 @@ export function useModalEvents(): ModalEvents {
   return ctx.events
 }
 
-export function useModalEscClose(activeGetter: () => boolean, handler: () => void) {
+export function useModalEsc(source: WatchSource<boolean>, handler: () => void) {
   const modalContainerRef = useModalContainer()
 
   watch(
-    modalContainerRef,
-    (value, _, onCleanUp) => {
-      if (value == null) return
+    [modalContainerRef, source],
+    ([modalContainer, active], _, onCleanUp) => {
+      if (modalContainer == null || !active) return
 
       // naive-ui does not adequately support simultaneously having "focus outside the modal" and allowing the modal to be "closed by the ESC key."
       // Refer to: https://github.com/goplus/builder/pull/1874#discussion_r2220769290
       const handleKeydown = (e: KeyboardEvent) => {
-        if (e.key !== 'Escape' || !activeGetter()) return
+        if (e.key !== 'Escape') return
 
         const target = e.target
         if (
@@ -103,7 +113,7 @@ export function useModalEscClose(activeGetter: () => boolean, handler: () => voi
           target != document.body &&
           target instanceof HTMLElement &&
           // ignore events if the focused element is outside the modal container subtree.
-          !value.contains(target)
+          !modalContainer.contains(target)
         ) {
           return
         }

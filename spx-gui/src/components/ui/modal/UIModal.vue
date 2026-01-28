@@ -24,7 +24,7 @@ import { ref, watchEffect, watch } from 'vue'
 import { NModal } from 'naive-ui'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { useLastClickEvent, useModalContainer } from '../utils'
-import { useModalEscClose } from './UIModalProvider.vue'
+import { useModalEsc } from './UIModalProvider.vue'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 export type TransformOrigin = { x: number; y: number }
@@ -98,7 +98,7 @@ defineExpose({
   setTransformOrigin
 })
 
-useModalEscClose(
+useModalEsc(
   () => props.active ?? true,
   () => emit('update:visible', false)
 )
