@@ -58,14 +58,10 @@ export function useDragSortable(
         const children = Array.from(wrapper.children)
         const fromIdx = children.indexOf(e.dragged)
         if (fromIdx < rangeStartIdx || fromIdx >= rangeEndIdx) {
-          // TODO: Remove debug log
-          console.debug(`Move prevented: fromIdx ${fromIdx} out of range [${rangeStartIdx}, ${rangeEndIdx})`)
           return false
         }
         const toIdx = children.indexOf(e.related)
         if (toIdx < rangeStartIdx || toIdx >= rangeEndIdx) {
-          // TODO: Remove debug log
-          console.debug(`Move prevented: toIdx ${toIdx} out of range [${rangeStartIdx}, ${rangeEndIdx})`)
           return false
         }
       },
