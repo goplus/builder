@@ -8,6 +8,7 @@ import SpriteGenPhaseContent from './SpriteGenPhaseContent.vue'
 
 const props = defineProps<{
   gen: SpriteGen
+  descriptionPlaceholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -31,7 +32,7 @@ provideLocalEditorCtx(localEditorCtx)
     @collapse="emit('collapse')"
     @finished="emit('finished', $event)"
   />
-  <SpriteGenPhaseSettings v-else :gen="gen" />
+  <SpriteGenPhaseSettings v-else :gen="gen" :description-placeholder="descriptionPlaceholder" />
 </template>
 
 <style lang="scss" scoped></style>

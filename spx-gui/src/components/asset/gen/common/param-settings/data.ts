@@ -81,7 +81,7 @@ export const spriteCategoryOptions = [
   {
     value: SpriteCategory.Effect,
     image: imgEffect,
-    label: { en: 'Effect', zh: '效果' }
+    label: { en: 'Effect', zh: '特效' }
   },
   {
     value: SpriteCategory.UI,

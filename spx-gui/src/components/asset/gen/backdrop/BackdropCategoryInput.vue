@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import { BackdropCategory } from '@/apis/common'
 import ParamSelector from '../common/param-settings/ParamSelector.vue'
 import { backdropCategoryOptions } from '../common/param-settings/data'
-import imgCategory from '../common/param-settings/assets/category.png'
+import imgCategory from '../common/param-settings/assets/category.svg'
 
 defineProps<{
   value: BackdropCategory

@@ -99,6 +99,15 @@ watch(
   { immediate: true }
 )
 
+// Recreate assetGen when keyword changes
+watch(
+  () => keyword.value,
+  () => {
+    assetGen.value?.dispose()
+    assetGen.value = createAssetGen(props.type)
+  }
+)
+
 const headerStyle = computed(() => {
   const banner = {
     [AssetType.Sprite]: spriteBanner,
@@ -128,6 +137,7 @@ const AssetGenComp = computed(() => {
       h(SpriteGenComp, {
         ...props,
         gen,
+        descriptionPlaceholder: keyword.value.trim(),
         onCollapse: handleGenCollapse,
         onFinished: handleGenFinished
       })
@@ -136,6 +146,7 @@ const AssetGenComp = computed(() => {
       h(BackdropGenComp, {
         ...props,
         gen: gen as BackdropGen,
+        descriptionPlaceholder: keyword.value.trim(),
         onFinished: handleGenFinished
       })
   }
@@ -428,12 +439,13 @@ const title = computed(() => {
               <ListResultWrapper :query-ret="queryRet" :height="436">
                 <template v-if="SettingsInput != null && assetGen != null && owner === 'all'" #empty>
                   <div class="empty">
-                    {{
-                      $t({
-                        zh: `没找到“${keyword}”相关的素材，不如让 AI 帮你生成一个？`,
-                        en: `No assets found for "${keyword}". Why not let AI generate one for you?`
-                      })
-                    }}
+                    <div class="empty-tip">
+                      <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>
+                      <span class="highlight">{{ $t({ zh: `“${keyword}”`, en: `"${keyword}"` }) }}</span>
+                      <span>{{
+                        $t({ zh: '相关的素材，不如让 AI 帮你生成一个？', en: '. Why not let AI generate one for you?' })
+                      }}</span>
+                    </div>
                     <SettingsInput
                       class="settings-input"
                       :gen="assetGen"
@@ -582,6 +594,14 @@ const title = computed(() => {
     padding-top: 40px;
     margin: 0 auto;
     gap: 24px;
+
+    .empty-tip {
+      color: var(--ui-color-grey-700);
+
+      .highlight {
+        color: var(--ui-color-grey-1000);
+      }
+    }
 
     .settings-input {
       width: 584px;

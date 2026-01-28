@@ -12,6 +12,7 @@ import BackdropImageItem from './BackdropImageItem.vue'
 
 const props = defineProps<{
   gen: BackdropGen
+  descriptionPlaceholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -47,6 +48,7 @@ const hasPreview = computed(() => props.gen.image != null)
         :class="{ 'has-preview': hasPreview }"
         :gen="gen"
         :disabled="handleSubmit.isLoading.value"
+        :description-placeholder="descriptionPlaceholder"
       />
       <ImageSelector
         :state="gen.imagesGenState"

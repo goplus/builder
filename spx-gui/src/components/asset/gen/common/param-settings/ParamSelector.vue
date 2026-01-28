@@ -69,9 +69,9 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
       >
         <UIImg
           v-if="selectedItem.image != null"
-          :style="{ backgroundSize: iconOnly && showPlaceholder ? '130%' : '110%' }"
-          :class="[showPlaceholder ? 'placeholder-image' : 'button-image', { disabled }]"
+          :class="['button-image', { disabled }]"
           :src="selectedItem.image"
+          size="cover"
         />
         <template v-if="!iconOnly">
           {{ $t(selectedItem.label) }}
@@ -113,20 +113,17 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
 </template>
 
 <style lang="scss" scoped>
-.placeholder-image {
-  width: 16px;
-  height: 16px;
-}
-
 .param-button {
+  height: 32px;
+  padding: 0 8px 0 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 32px;
+  gap: 4px;
   font-size: 13px;
-  padding: 0 8px;
+  line-height: 20px;
 
+  color: var(--ui-color-grey-900);
   border-radius: var(--ui-border-radius-2);
   border: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-100);
@@ -143,17 +140,18 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
 
   &:disabled {
     cursor: not-allowed;
-    opacity: 0.5;
+    background: var(--ui-color-grey-300);
+    color: var(--ui-color-grey-600);
   }
 }
 
 .button-image {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 10px;
 
   &.disabled {
-    opacity: 0.5;
+    opacity: 0.4;
   }
 }
 
@@ -161,7 +159,8 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
   width: 80px;
   height: 60px;
   border-radius: 10px;
-  margin-bottom: 5px;
+  margin-top: 4px;
+  margin-bottom: 2px;
 }
 
 .dropdown-content {

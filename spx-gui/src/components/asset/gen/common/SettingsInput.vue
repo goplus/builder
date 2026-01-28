@@ -158,7 +158,7 @@ provide(settingsInputCtxKey, ctx)
   border: 1px solid var(--ui-color-grey-400);
   border-radius: var(--ui-border-radius-2);
   background: var(--ui-color-grey-100);
-  padding: 12px 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -215,6 +215,14 @@ provide(settingsInputCtxKey, ctx)
       background: transparent;
       color: var(--ui-color-grey-900);
       caret-color: var(--ui-color-turquoise-500);
+
+      &:read-only {
+        color: var(--ui-color-grey-1000);
+      }
+
+      &::placeholder {
+        color: var(--ui-color-grey-700);
+      }
 
       &:focus {
         outline: none;
