@@ -28,7 +28,7 @@ func init() {
 
 // initAI initializes AI integration for the ispx interpreter.
 func initAI(ixgoCtx *ixgo.Context) error {
-	// Register patch for ai to support functions with generic type like [ai.Gopt_Player_Gopx_OnCmd].
+	// Register patch for ai to support functions with generic type like [ai.XGot_Player_XGox_OnCmd].
 	//
 	// See https://github.com/goplus/builder/issues/765#issuecomment-2313915805.
 	if err := ixgoCtx.RegisterPatch("github.com/goplus/builder/tools/ai", `
@@ -36,7 +36,7 @@ package ai
 
 import . "github.com/goplus/builder/tools/ai"
 
-func Gopt_Player_Gopx_OnCmd[T any](p *Player, handler func(cmd T) error) {
+func XGot_Player_XGox_OnCmd[T any](p *Player, handler func(cmd T) error) {
 	var cmd T
 	PlayerOnCmd_(p, cmd, handler)
 }
