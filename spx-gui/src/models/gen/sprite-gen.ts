@@ -129,13 +129,21 @@ export class SpriteGen extends Disposable {
   previewProject: Project
   /** The sprite instance for preview within generation */
   previewSprite: Sprite
+
   private preparePreviewSprite() {
-    const sprite = this.previewSprite
-    sprite.setName(this.settings.name)
+    // Clear existing preview sprite
+    if (this.previewSprite != null) {
+      // removeSprite will dispose the target sprite, so we don't need to dispose it manually here
+      this.previewProject.removeSprite(this.previewSprite.id)
+    }
+
+    const sprite = Sprite.create(this.settings.name)
+    this.previewSprite = sprite
+    this.previewProject.addSprite(sprite)
     // Sync results of generations to sprite
     // NOTE: the order of costumes & animations on the sprite may be different
     // from the order of generations, which is acceptable for now.
-    this.addDisposer(
+    sprite.addDisposer(
       watch(
         () => this.costumes.map((c) => c.result).filter((c): c is Costume => c != null),
         (generatedCostumes) => {
@@ -145,11 +153,10 @@ export class SpriteGen extends Disposable {
           sprite.costumes.slice().forEach((c) => {
             if (!generatedCostumes.includes(c)) sprite.removeCostume(c.id)
           })
-        },
-        { immediate: true }
+        }
       )
     )
-    this.addDisposer(
+    sprite.addDisposer(
       watch(
         () => this.animations.map((a) => a.result).filter((a): a is Animation => a != null),
         (generatedAnimations) => {
@@ -159,8 +166,7 @@ export class SpriteGen extends Disposable {
           sprite.animations.slice().forEach((a) => {
             if (!generatedAnimations.includes(a)) sprite.removeAnimation(a.id)
           })
-        },
-        { immediate: true }
+        }
       )
     )
   }
@@ -177,11 +183,21 @@ export class SpriteGen extends Disposable {
     if (image == null) throw new Error('image expected')
     await this.prepareContentPhase.run(async () => {
       const project = this.project
+
+      // Clear existing costumes & animations
+      this.costumes.splice(0).forEach((c) => c.dispose())
+      this.animations.splice(0).forEach((a) => a.dispose())
+
+      // Prepare preview sprite
       this.preparePreviewSprite()
+
+      // Generate default costume
       const defaultCostumeGen = new CostumeGen(this, project, this.getDefaultCostumeSettings())
       defaultCostumeGen.setImage(image)
       await defaultCostumeGen.finish()
-      this.costumes = [defaultCostumeGen]
+      this.costumes.push(defaultCostumeGen)
+
+      // Generate additional costumes & animations
       const settings = await genSpriteContentSettings(this.settings)
       this.costumes.push(...settings.costumes.map((s) => new CostumeGen(this, project, s)))
       this.animations = settings.animations.map((s) => new AnimationGen(this, project, s))

@@ -59,6 +59,7 @@ const slots = useSlots()
     inset: 0;
     border-radius: inherit;
     overflow: hidden;
+    background-color: var(--ui-color-grey-100);
   }
 
   &.variant-bg-spin {
@@ -95,6 +96,9 @@ const slots = useSlots()
   &.visible {
     visibility: visible;
     opacity: 1;
+    &.cover {
+      opacity: 0.97;
+    }
   }
 }
 

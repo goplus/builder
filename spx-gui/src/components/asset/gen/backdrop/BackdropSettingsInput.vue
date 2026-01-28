@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
 import type { BackdropGen } from '@/models/gen/backdrop-gen'
 import SettingsInput from '../common/SettingsInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
@@ -31,6 +32,11 @@ const submitDisabled = computed(
 const submitting = computed(() => props.gen.imagesGenState.status === 'running')
 const enriching = computed(() => props.gen.enrichState.status === 'running')
 
+const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
+  en: 'Failed to enrich backdrop details',
+  zh: '丰富背景细节失败'
+}).fn
+
 function handleSubmit() {
   emit('submit') // For asset-library-modal, listen to event `submit` and do jump (from asset-library to backdrop-gen)
   props.gen.genImages()
@@ -53,7 +59,7 @@ const submitText = computed(() => {
     :description-placeholder="descriptionPlaceholder"
     :disabled="disabled || submitting"
     @update:description="gen.setSettings({ description: $event })"
-    @enrich="gen.enrich()"
+    @enrich="handleEnrich"
   >
     <template #extra>
       <BackdropCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
@@ -67,7 +73,7 @@ const submitText = computed(() => {
         :enriching="enriching"
         :disabled="submitDisabled"
         :loading="submitting"
-        @enrich="gen.enrich()"
+        @enrich="handleEnrich"
         @submit="handleSubmit"
         >{{ $t(submitText) }}</EnrichableSubmitButton
       >

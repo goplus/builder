@@ -37,6 +37,7 @@ export type Config = {
   }
   error?: {
     retryText?: string
+    backText?: string
   }
 }
 

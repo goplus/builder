@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import SettingsInput from '../common/SettingsInput.vue'
 import SpriteCategoryInput from './SpriteCategoryInput.vue'
@@ -28,6 +29,11 @@ const contentPreparing = computed(() => props.gen.contentPreparingState.status =
 const disabled = computed(() => imageGenerating.value || contentPreparing.value)
 const buttonDisabled = computed(() => disabled.value || enriching.value || props.gen.settings.description === '')
 
+const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
+  en: 'Failed to enrich sprite details',
+  zh: '丰富精灵细节失败'
+}).fn
+
 function handleSubmit() {
   emit('submit') // For asset-library-modal, listen to event `submit` and do jump (from asset-library to sprite-gen)
   props.gen.genImages()
@@ -51,7 +57,7 @@ const submitText = computed(() => {
     :disabled="disabled"
     :readonly="readonly"
     @update:description="gen.setSettings({ description: $event })"
-    @enrich="gen.enrich()"
+    @enrich="handleEnrich"
   >
     <template #extra>
       <SpriteCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
@@ -65,7 +71,7 @@ const submitText = computed(() => {
         :enriching="enriching"
         :disabled="buttonDisabled"
         :loading="imageGenerating"
-        @enrich="gen.enrich()"
+        @enrich="handleEnrich"
         @submit="handleSubmit"
         >{{ $t(submitText) }}</EnrichableSubmitButton
       >

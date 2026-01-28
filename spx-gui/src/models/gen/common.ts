@@ -73,6 +73,9 @@ export class Phase<R> {
   ) {
     this.state = { status: 'initial' }
   }
+  reset() {
+    this.state = { status: 'initial' }
+  }
   /** Tracks the state of the given promise. */
   async track(promise: Promise<R>): Promise<R> {
     this.state = { status: 'running' }

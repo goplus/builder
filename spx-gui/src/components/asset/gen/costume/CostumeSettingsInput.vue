@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { UIButton } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import type { CostumeGen } from '@/models/gen/costume-gen'
+import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
 import ReferenceCostumeInput from '../common/ReferenceCostumeInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
@@ -13,6 +14,10 @@ const props = defineProps<{
 }>()
 
 const readonly = computed(() => props.gen.result != null)
+const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
+  en: 'Failed to enrich costume details',
+  zh: '丰富造型细节失败'
+}).fn
 const buttonDisabled = computed(
   () => props.gen.enrichState.status === 'running' || props.gen.settings.description === ''
 )
@@ -34,7 +39,7 @@ const submitText = computed(() => {
     :readonly="readonly"
     :disabled="submitting"
     @update:description="gen.setSettings({ description: $event })"
-    @enrich="gen.enrich()"
+    @enrich="handleEnrich"
   >
     <template #extra>
       <ReferenceCostumeInput

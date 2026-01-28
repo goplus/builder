@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { UIButton } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import type { AnimationGen } from '@/models/gen/animation-gen'
+import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
 import ReferenceCostumeInput from '../common/ReferenceCostumeInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
@@ -16,6 +17,10 @@ const readonly = computed(() => props.gen.result != null)
 const isGenerating = computed(() => props.gen.generateVideoState.status === 'running')
 const isExtractingFrames = computed(() => props.gen.extractFramesState.status === 'running')
 const disabled = computed(() => isGenerating.value || isExtractingFrames.value)
+const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
+  en: 'Failed to enrich animation details',
+  zh: '丰富动画细节失败'
+}).fn
 const submitDisabled = computed(
   () => props.gen.enrichState.status === 'running' || isExtractingFrames.value || props.gen.settings.description === ''
 )
@@ -36,7 +41,7 @@ const submitText = computed(() => {
     :readonly="readonly"
     :disabled="disabled"
     @update:description="gen.setSettings({ description: $event })"
-    @enrich="gen.enrich()"
+    @enrich="handleEnrich"
   >
     <template #extra>
       <ReferenceCostumeInput
