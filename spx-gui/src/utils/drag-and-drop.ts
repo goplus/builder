@@ -27,7 +27,8 @@ export type SortableList = {
   items: unknown[]
   /**
    * Optional range [start, end) to limit sortable items.
-   * Items out of range are not allowed to drag or be dropped into.
+   * Items outside this range cannot be dragged or serve as drop targets.
+   * When omitted, all items in the list are sortable.
    */
   sortableRange?: [number, number]
 }
@@ -54,15 +55,16 @@ export function useDragSortable(
       animation: 200,
       ghostClass: options.ghostClass,
       onMove(e) {
-        const fromIdx = Array.from(wrapper.children).indexOf(e.dragged)
+        const children = Array.from(wrapper.children)
+        const fromIdx = children.indexOf(e.dragged)
         if (fromIdx < rangeStartIdx || fromIdx >= rangeEndIdx) {
-          // eslint-disable-next-line no-console
+          // TODO: Remove debug log
           console.debug(`Move prevented: fromIdx ${fromIdx} out of range [${rangeStartIdx}, ${rangeEndIdx})`)
           return false
         }
-        const toIdx = Array.from(wrapper.children).indexOf(e.related)
+        const toIdx = children.indexOf(e.related)
         if (toIdx < rangeStartIdx || toIdx >= rangeEndIdx) {
-          // eslint-disable-next-line no-console
+          // TODO: Remove debug log
           console.debug(`Move prevented: toIdx ${toIdx} out of range [${rangeStartIdx}, ${rangeEndIdx})`)
           return false
         }
@@ -79,6 +81,9 @@ export function useDragSortable(
         const { oldDraggableIndex, newDraggableIndex } = e
         if (oldDraggableIndex == null || newDraggableIndex == null) return
         if (oldDraggableIndex === newDraggableIndex) return
+        // Defensive range check
+        if (oldDraggableIndex < rangeStartIdx || oldDraggableIndex >= rangeEndIdx) return
+        if (newDraggableIndex < rangeStartIdx || newDraggableIndex >= rangeEndIdx) return
         options.onSorted(oldDraggableIndex, newDraggableIndex)
       }
     })
