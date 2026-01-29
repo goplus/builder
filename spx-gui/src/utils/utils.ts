@@ -205,7 +205,11 @@ export function nomalizeDegree(num: number) {
   return num
 }
 
-/** Memoize for async function. Rejected result will not be memoized. */
+/**
+ * Memoize for async function. Rejected result will not be memoized.
+ * NOTE: When `resolver` is omitted, lodash `memoize` uses the first argument as the cache key.
+ * For objects, this means reference equality (no stringify or deep comparison).
+ */
 export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(
   fn: T,
   resolver?: (...args: Parameters<T>) => unknown

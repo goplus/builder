@@ -14,16 +14,6 @@ import {
 } from './common'
 import type { AssetExtraSettings, AssetType } from './asset'
 
-/**
- * @deprecated Use createTask() with TaskType.RemoveBackground instead
- */
-export async function matting(imageUrl: string) {
-  const result = (await client.post('/aigc/matting', { imageUrl }, { timeout: 20 * 1000 })) as {
-    resultUrl: string
-  }
-  return result.resultUrl
-}
-
 export type ProjectSettings = {
   name: string
   description: string
@@ -147,8 +137,14 @@ export type Task<T extends TaskType = TaskType> = {
 }
 
 export type TaskParamsRemoveBackground = {
+  /**
+   * URL of the image to remove background from.
+   * Now supports images in format: JPEG, JPG, PNG, BMP, WEBP.
+   */
   imageUrl: UniversalUrl
 }
+
+export const taskRemoveBackgroundSupportedImgExts = ['jpeg', 'jpg', 'png', 'bmp', 'webp']
 
 export type TaskParamsGenerateCostume = {
   settings: CostumeSettings
