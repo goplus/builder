@@ -1,3 +1,4 @@
+import { Cancelled } from '@/utils/exception'
 import { useModal } from '../modal'
 import UIConfirmDialog, { type Props as UIConfirmDialogProps } from './UIConfirmDialog.vue'
 
@@ -11,7 +12,24 @@ export type ConfirmOptions = Omit<UIConfirmDialogProps, 'visible'>
  */
 export function useConfirmDialog() {
   const openConfirmDialog = useModal(UIConfirmDialog)
-  return async function withConfirm(options: ConfirmOptions) {
+  return async function confirm(options: ConfirmOptions) {
     await openConfirmDialog(options)
+  }
+}
+
+/**
+ * Show a confirm dialog with the given options.
+ * The returned promise resolves with `true` if confirmed, `false` if cancelled.
+ */
+export function useConfirmDialogWithResult() {
+  const openConfirmDialog = useModal(UIConfirmDialog)
+  return function confirmWithResult(options: ConfirmOptions): Promise<boolean> {
+    return openConfirmDialog(options).then(
+      () => true,
+      (e) => {
+        if (e instanceof Cancelled) return false
+        throw e
+      }
+    )
   }
 }

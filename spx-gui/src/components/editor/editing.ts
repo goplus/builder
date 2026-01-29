@@ -53,7 +53,7 @@ export class Saving {
     }
   }
 
-  private async saveToCloud() {
+  private async saveToCloud(): Promise<void> {
     const signal = this.signal
     try {
       this.stateRef.value = SavingState.InProgress
@@ -66,11 +66,12 @@ export class Saving {
       capture(err, 'Failed to save project to cloud')
       this.stateRef.value = SavingState.Failed
       await timeout(5000, signal)
-      this.saveToCloud()
+      return this.saveToCloud()
     }
   }
 
   flush() {
+    // TODO: if `saveToCloud` already in progress, wait for it
     return this.saveToCloud()
   }
 }
