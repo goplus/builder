@@ -6,8 +6,7 @@ import type { Sprite } from '@/models/sprite'
 import { useMessageHandle } from '@/utils/exception'
 
 import { getCssVars, UICard, UIIcon, UIMenu, UIMenuItem, UITooltip, useUIVariables } from '@/components/ui'
-import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
-import PanelList from '../panels/common/PanelList.vue'
+import SpriteList from '@/components/editor/sprite/SpriteList.vue'
 import PanelHeader from '../panels/common/PanelHeader.vue'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
@@ -23,8 +22,6 @@ const emit = defineEmits<{
   'update:selectedSprite': [sprite: Sprite]
 }>()
 
-const sprites = computed(() => props.project.sprites)
-
 const footerExpanded = ref(props.selectedSprite != null)
 watch(
   () => props.selectedSprite,
@@ -35,24 +32,9 @@ watch(
 const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--panel-color-', uiVariables.color.sprite))
 
-function isSelected(sprite: Sprite) {
-  return sprite.id === props.selectedSprite?.id
-}
-
 function handleSpriteClick(sprite: Sprite) {
   emit('update:selectedSprite', sprite)
 }
-
-const handleSorted = useMessageHandle(
-  async (oldIdx: number, newIdx: number) => {
-    const action = { name: { en: 'Update sprite order', zh: '更新精灵顺序' } }
-    await props.project.history.doAction(action, () => props.project.moveSprite(oldIdx, newIdx))
-  },
-  {
-    en: 'Failed to update sprite order',
-    zh: '更新精灵顺序失败'
-  }
-).fn
 
 const addFromLocalFile = useAddSpriteFromLocalFile()
 const handleAddFromLocalFile = useMessageHandle(
@@ -103,17 +85,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
       </template>
     </PanelHeader>
 
-    <PanelList class="list-wrapper" :sortable="{ list: { items: sprites } }" @sorted="handleSorted">
-      <SpriteItem
-        v-for="sprite in sprites"
-        :key="sprite.id"
-        :sprite="sprite"
-        :selectable="{ selected: isSelected(sprite) }"
-        operable
-        droppable
-        @click.stop="handleSpriteClick(sprite)"
-      />
-    </PanelList>
+    <SpriteList class="list-wrapper" />
 
     <PanelFooter
       v-if="footerExpanded && selectedSprite != null"
