@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { shallowRef, watch, type CSSProperties } from 'vue'
 import { useLastClickEvent, useModalContainer } from '../utils'
+import { useModalEsc } from './UIModalProvider.vue'
 
 // Note:
 // We are not using NaiveUI's modal because it causes issue when components inside the modal mount/unmount dynamically.
@@ -8,9 +9,14 @@ import { useLastClickEvent, useModalContainer } from '../utils'
 
 const props = defineProps<{
   visible?: boolean
+  /**
+   * This prop should not be passed manually. It is reserved for `UIModalProvider`
+   * to indicate whether the current `UIFullScreenModal` is at the top layer.
+   */
+  active?: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:visible': [visible: boolean]
 }>()
 
@@ -31,6 +37,11 @@ watch(
 )
 
 const attachTo = useModalContainer()
+
+useModalEsc(
+  () => props.active ?? true,
+  () => emit('update:visible', false)
+)
 </script>
 
 <template>

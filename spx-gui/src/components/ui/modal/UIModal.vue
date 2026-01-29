@@ -24,6 +24,7 @@ import { ref, watchEffect, watch } from 'vue'
 import { NModal } from 'naive-ui'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { useLastClickEvent, useModalContainer } from '../utils'
+import { useModalEsc } from './UIModalProvider.vue'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 export type TransformOrigin = { x: number; y: number }
@@ -39,6 +40,11 @@ const props = defineProps<{
    * TODO: Update implementation of `UIModal` to support using `v-radar` directly.
    */
   radar?: RadarNodeMeta
+  /**
+   * This prop should not be passed manually. It is reserved for `UIModalProvider`
+   * to indicate whether the current `UIModal` is at the top layer.
+   */
+  active?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -91,6 +97,11 @@ watchEffect(() => {
 defineExpose({
   setTransformOrigin
 })
+
+useModalEsc(
+  () => props.active ?? true,
+  () => emit('update:visible', false)
+)
 </script>
 
 <style lang="scss" scoped>
