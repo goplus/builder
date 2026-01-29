@@ -11,7 +11,8 @@ import imgSideScrolling from './assets/side-scrolling.png'
 import imgCharacter from './assets/character.png'
 import imgItem from './assets/item.png'
 import imgEffect from './assets/effect.png'
-import imgUI from './assets/ui.png'
+import imgBackdropUI from './assets/backdrop-ui.png'
+import imgSpriteUI from './assets/sprite-ui.png'
 import imgFront from './assets/front.png'
 import imgBack from './assets/back.png'
 import imgLeft from './assets/left.png'
@@ -85,7 +86,7 @@ export const spriteCategoryOptions = [
   },
   {
     value: SpriteCategory.UI,
-    image: imgUI,
+    image: imgSpriteUI,
     label: { en: 'UI', zh: 'UI' }
   }
 ]
@@ -93,7 +94,7 @@ export const spriteCategoryOptions = [
 export const backdropCategoryOptions = [
   {
     value: BackdropCategory.UI,
-    image: imgUI,
+    image: imgBackdropUI,
     label: { en: 'UI', zh: 'UI' }
   }
 ]

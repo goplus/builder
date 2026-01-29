@@ -278,7 +278,16 @@ const backButtonVisible = computed(() => (assetGen.value != null ? assetGen.valu
 
 // Handle returning to the asset library: reset search criteria and recreate assetGen to prevent unexpected intermediate states.
 const handleBackToAssetLibrary = useMessageHandle(
-  () => {
+  async () => {
+    await confirm({
+      title: i18n.t({ zh: '返回素材库', en: 'Return to asset library' }),
+      content: i18n.t({
+        zh: '当前内容不会被保存，确定要返回吗？',
+        en: 'Current progress will not be saved. Are you sure to return?'
+      }),
+      confirmText: i18n.t({ en: 'Return', zh: '返回' })
+    })
+
     searchInput.value = ''
     keyword.value = ''
     isGenPhase.value = false
@@ -582,7 +591,7 @@ const title = computed(() => {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 20px 24px 0;
+    padding: 20px 0 0 24px; // no right padding to allow optional scrollbar
   }
   .filter {
     display: flex;

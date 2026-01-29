@@ -79,7 +79,7 @@ export class BackdropGen extends Disposable {
   }
 
   get isPreparePhase() {
-    return this.result === null
+    return this.result == null
   }
 
   result: Backdrop | null

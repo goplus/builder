@@ -20,7 +20,7 @@ const props = defineProps<{
   descriptionPlaceholder?: string
 }>()
 
-const allowSubmit = computed(() => props.gen.image != null)
+const canSubmit = computed(() => props.gen.image != null && props.gen.imagesGenState.status !== 'running')
 
 const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
   en: 'Failed to generate sprite content',
@@ -79,7 +79,7 @@ const hasPreview = computed(() => props.gen.image != null)
         }"
         color="primary"
         size="large"
-        :disabled="!allowSubmit"
+        :disabled="!canSubmit"
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"
         >{{ $t({ en: 'Next', zh: '下一步' }) }}</UIButton

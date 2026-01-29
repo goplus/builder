@@ -63,13 +63,20 @@ const slots = useSlots()
   }
 
   &.variant-bg-spin {
+    border-radius: 8px;
+    overflow: hidden;
+    // Force the creation of a stacking context to ensure the element and its children
+    // are rendered in a separate plane. This prevents issues where mix-blend-mode
+    // causes border-radius to be ignored in some browser engines.
+    filter: opacity(1);
+
     &::before {
       content: '';
       position: absolute;
-      width: 150%;
-      height: 150%;
-      top: -25%;
-      left: -25%;
+      width: 200%; // Temporarily adjusted to 200%, see if there is a better implementation later
+      height: 200%;
+      top: -50%;
+      left: -50%;
       backdrop-filter: blur(50px);
       will-change: transform;
       background-image: radial-gradient(circle at 50% -20%, var(--ui-color-turquoise-200) 20%, transparent 70%),
