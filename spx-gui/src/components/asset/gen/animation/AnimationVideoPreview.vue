@@ -174,6 +174,8 @@ watch(
 )
 
 const trackRef = ref<HTMLDivElement | null>(null)
+// Shows nudge animation on mount, hides after first user hover
+const shouldNudge = ref(true)
 
 const segmentStyle = computed(() => {
   const duration = videoDurationRef.value
@@ -287,22 +289,25 @@ function formatTime(timeInMs: number) {
       />
       <div class="timeline">
         <div ref="trackRef" class="track">
-          <div class="track-inner">
+          <div class="track-inner" :class="{ nudge: shouldNudge }" @mouseenter.once="shouldNudge = false">
             <div class="segment" :style="segmentStyle">
               <button
                 v-radar="{ name: 'Start marker', desc: 'Drag to adjust start time of extracted segment' }"
-                class="segment-marker"
+                class="segment-marker left"
                 type="button"
                 @pointerdown="handleDragStart('start', $event)"
               ></button>
               <button
                 v-radar="{ name: 'End marker', desc: 'Drag to adjust end time of extracted segment' }"
-                class="segment-marker"
+                class="segment-marker right"
                 type="button"
                 @pointerdown="handleDragStart('end', $event)"
               ></button>
             </div>
             <i class="current-time" :style="currentTimeStyle"></i>
+            <div class="track-tips">
+              {{ $t({ zh: '拖动滑块截取动画片段', en: 'Drag markers to crop animation segment' }) }}
+            </div>
           </div>
         </div>
         <div class="time-row">
@@ -315,6 +320,34 @@ function formatTime(timeInMs: number) {
 </template>
 
 <style lang="scss" scoped>
+@keyframes leftMarker {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(15px);
+  }
+}
+@keyframes rightMarker {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-15px);
+  }
+}
+@keyframes markerArrow {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .animation-video-preview {
   position: relative;
   width: 100%;
@@ -374,6 +407,48 @@ function formatTime(timeInMs: number) {
   position: relative;
   width: 100%;
   height: 100%;
+
+  &.nudge {
+    .segment-marker {
+      &::after {
+        content: '';
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        position: absolute;
+        background-color: var(--ui-color-turquoise-300);
+        mask-image: url('@/components/asset/gen/animation/marker-arrow.svg');
+        mask-size: contain;
+        mask-repeat: no-repeat;
+      }
+
+      &.left {
+        animation: leftMarker 1.8s infinite ease-in-out;
+
+        &::after {
+          right: -24px;
+          animation: markerArrow 1.8s infinite ease-in-out;
+        }
+      }
+
+      &.right {
+        animation: rightMarker 1.8s infinite ease-in-out;
+        &::after {
+          left: -24px;
+          transform: rotateY(180deg);
+          animation: markerArrow 1.8s infinite ease-in-out;
+        }
+      }
+    }
+
+    .track-tips {
+      display: block;
+    }
+
+    .current-time {
+      display: none;
+    }
+  }
 }
 
 .segment {
@@ -401,6 +476,26 @@ function formatTime(timeInMs: number) {
   padding: 0;
   cursor: ew-resize;
   touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::before {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 12px;
+    background: var(--ui-color-grey-100);
+  }
+}
+
+.track-tips {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--ui-color-grey-700);
+  display: none;
 }
 
 .current-time {
