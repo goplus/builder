@@ -272,7 +272,7 @@ function formatTime(timeInMs: number) {
     <div class="preview-area">
       <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" muted loop />
     </div>
-    <GenLoading :visible="videoDurationRef == null" cover>
+    <GenLoading :visible="videoDurationRef == null" cover variant="bg-spin">
       {{ $t({ en: 'Loading video...', zh: '正在加载视频...' }) }}
     </GenLoading>
     <div v-if="videoDurationRef != null" class="controls">
