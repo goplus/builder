@@ -9,7 +9,7 @@ import {
   type TaskResult
 } from '@/apis/aigc'
 import { Cancelled } from '@/utils/exception'
-import { Task, TaskException } from './common'
+import { majorityOf, Task, TaskException } from './common'
 
 function makeTaskData<T extends TaskType>(type: T, status: TaskStatus, id = 'task-1'): TaskData<T> {
   return {
@@ -248,5 +248,24 @@ describe('Task', () => {
     await expect(task.untilCompleted()).resolves.toEqual({ imageUrls: ['http://example.com/2.png'] })
 
     expect(apis.subscribeTaskEvents).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('majorityOf', () => {
+  it('returns majority value when count exceeds half', () => {
+    expect(majorityOf([1])).toBe(1)
+    expect(majorityOf([1, 2, 2])).toBe(2)
+    expect(majorityOf([1, 2, 2, 2, 3])).toBe(2)
+    expect(majorityOf(['a', 'b', 'a', 'a'])).toBe('a')
+  })
+
+  it('returns null when no majority exists', () => {
+    expect(majorityOf([1, 2])).toBeNull()
+    expect(majorityOf([1, 1, 2, 2])).toBeNull()
+    expect(majorityOf(['a', 'b', 'c'])).toBeNull()
+  })
+
+  it('returns null for empty array', () => {
+    expect(majorityOf([])).toBeNull()
   })
 })

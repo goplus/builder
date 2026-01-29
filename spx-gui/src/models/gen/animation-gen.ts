@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
+import type { Prettify } from '@/utils/types'
 import { Disposable } from '@/utils/disposable'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
 import {
@@ -11,7 +12,7 @@ import {
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import type { File } from '../common/file'
-import { validateAnimationName } from '../common/asset-name'
+import { ensureValidAnimationName, validateAnimationName } from '../common/asset-name'
 import { createFileWithUniversalUrl, saveFile } from '../common/cloud'
 import { Animation } from '../animation'
 import { Costume } from '../costume'
@@ -19,6 +20,14 @@ import { getProjectSettings, getSpriteSettings, Phase, Task } from './common'
 import type { SpriteGen } from './sprite-gen'
 
 export type FramesConfig = Omit<TaskParamsExtractVideoFrames, 'videoUrl'>
+
+export type AnimationGenInits = Prettify<
+  Partial<
+    Omit<AnimationSettings, 'referenceFrameUrl'> & {
+      referenceCostumeId: string | null
+    }
+  >
+>
 
 export class AnimationGen extends Disposable {
   id: string
@@ -36,7 +45,11 @@ export class AnimationGen extends Disposable {
   private extractFramesPhase: Phase<File[]>
   private finishPhase: Phase<Animation>
 
-  constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<AnimationSettings>) {
+  constructor(
+    parent: Sprite | SpriteGen,
+    project: Project,
+    { referenceCostumeId = null, ...settings }: AnimationGenInits
+  ) {
     super()
     this.id = nanoid()
     this.parent = parent
@@ -50,7 +63,7 @@ export class AnimationGen extends Disposable {
       referenceFrameUrl: null,
       ...settings
     }
-    this.referenceCostumeId = this.sprite.defaultCostume?.id ?? null
+    this.referenceCostumeId = referenceCostumeId
     this.enrichPhase = new Phase({ en: 'enrich animation settings', zh: '丰富动画设置' })
     this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
     this.generateVideoPhase = new Phase({ en: 'generate animation video', zh: '生成动画视频' })
@@ -70,7 +83,7 @@ export class AnimationGen extends Disposable {
     return this.settings.name
   }
   setName(name: string) {
-    const err = validateAnimationName(name, this.sprite)
+    const err = validateAnimationName(name, this.parent)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
     this.result?.setName(name)
@@ -80,7 +93,7 @@ export class AnimationGen extends Disposable {
     return this.enrichPhase.state
   }
   async enrich() {
-    const draft = await this.enrichPhase.track(
+    const enriched = await this.enrichPhase.track(
       enrichAnimationSettings(
         this.settings.description,
         this.settings,
@@ -88,14 +101,19 @@ export class AnimationGen extends Disposable {
         getProjectSettings(this.project)
       )
     )
-    this.setSettings({
-      ...draft,
-      referenceFrameUrl: null // TODO: use default costume as reference frame
-    })
+    this.setSettings(enriched)
   }
 
   settings: AnimationSettings
+  /**
+   * Update multiple settings at once.
+   * NOTE: the name in updates may be altered to avoid conflict
+   */
   setSettings(updates: Partial<AnimationSettings>) {
+    if (updates.name != null && updates.name !== this.settings.name) {
+      const newName = ensureValidAnimationName(updates.name, this.parent)
+      updates = { ...updates, name: newName }
+    }
     Object.assign(this.settings, updates)
   }
 
