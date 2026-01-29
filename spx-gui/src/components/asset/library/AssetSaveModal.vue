@@ -123,14 +123,14 @@ const handleSubmit = useMessageHandle(
         displayName: form.value.name,
         type: params.type,
         category: form.value.category,
-        description,
-        extraSettings,
+        description: params.description ?? description,
+        extraSettings: params.extraSettings ?? extraSettings,
         files: params.files,
         filesHash: params.filesHash,
         visibility
       })
     } else {
-      saved = await addAssetWithParams(params)
+      saved = await addAssetWithPartialData(params)
     }
     const { files, ...metadata } = saved
     props.model.setAssetMetadata(metadata)
@@ -141,18 +141,24 @@ const handleSubmit = useMessageHandle(
   (asset) => ({ en: `Asset ${asset.displayName} saved`, zh: `素材 ${asset.displayName} 保存成功` })
 )
 
-async function addAssetWithParams(params: PartialAssetData) {
+async function addAssetWithPartialData({
+  type,
+  description = '',
+  extraSettings = {},
+  files,
+  filesHash
+}: PartialAssetData) {
   const { data: assets } = await listAsset({
     pageSize: 1, // we only need to know if the asset with the same filesHash exists
     pageIndex: 1,
-    type: params.type,
-    filesHash: params.filesHash,
+    type,
+    filesHash,
     orderBy: 'createdAt',
     sortOrder: 'desc'
   })
   if (assets.length) {
     let assetTypeName = t({ en: 'asset', zh: '素材' })
-    switch (params.type) {
+    switch (type) {
       case AssetType.Sprite:
         assetTypeName = t({ en: 'sprite', zh: '精灵' })
         break
@@ -177,12 +183,13 @@ async function addAssetWithParams(params: PartialAssetData) {
   }
 
   return addAsset({
-    ...params,
     displayName: form.value.name,
+    type,
     category: form.value.category,
-    // TODO: Save with proper description and extra settings
-    description: '',
-    extraSettings: {},
+    description,
+    extraSettings,
+    files,
+    filesHash,
     visibility: Visibility.Private
   })
 }
