@@ -407,6 +407,7 @@ function formatTime(timeInMs: number) {
   position: relative;
   width: 100%;
   height: 100%;
+  isolation: isolate;
 
   &.nudge {
     .segment-marker {
@@ -479,6 +480,7 @@ function formatTime(timeInMs: number) {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1; // Ensure it stays above .current-time to prioritize .segment-marker as it is interactive
 
   &::before {
     content: '';
