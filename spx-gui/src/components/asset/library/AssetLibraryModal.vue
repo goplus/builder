@@ -280,7 +280,7 @@ const backButtonVisible = computed(() => (assetGen.value != null ? assetGen.valu
 const handleBackToAssetLibrary = useMessageHandle(
   async () => {
     await confirm({
-      title: i18n.t({ zh: '返回提示', en: 'Return' }),
+      title: i18n.t({ zh: '返回素材库', en: 'Return to asset library' }),
       content: i18n.t({
         zh: '当前内容不会被保存，确定要返回吗？',
         en: 'Current progress will not be saved. Are you sure to return?'
@@ -381,7 +381,7 @@ const title = computed(() => {
   <UIModal
     ref="modalRef"
     :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
-    style="min-width: 1076px; height: 800px"
+    style="width: 1076px; height: 800px"
     :visible="visible"
     mask-closable
     @update:visible="handleModalClose"

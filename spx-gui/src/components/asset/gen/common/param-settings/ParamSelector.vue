@@ -69,7 +69,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
       >
         <UIImg
           v-if="selectedItem.image != null"
-          :class="['button-image', { disabled }]"
+          :class="['button-image', { disabled, placeholder: showPlaceholder }]"
           :src="selectedItem.image"
           size="cover"
         />
@@ -153,14 +153,19 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
   &.disabled {
     opacity: 0.4;
   }
+  &.placeholder.disabled {
+    // TODO: Temporarily simulate the color value of --ui-color-grey-600 via filter,
+    // because the placeholder's background-image is an SVG and its color cannot be set directly.
+    filter: invert(96%) sepia(11%) saturate(163%) hue-rotate(169deg) brightness(91%) contrast(88%);
+  }
 }
 
 .block-image {
   width: 80px;
   height: 60px;
-  border-radius: 10px;
-  margin-top: 4px;
-  margin-bottom: 2px;
+  border-radius: 8px;
+  margin-top: 2px;
+  margin-bottom: 4px;
 }
 
 .dropdown-content {
