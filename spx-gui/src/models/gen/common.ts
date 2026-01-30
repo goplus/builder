@@ -49,6 +49,7 @@ export type PhaseState<R> =
       status: 'running'
       result?: null
       error?: null
+      startAt: number // timestamp in milliseconds
     }
   | {
       status: 'finished'
@@ -78,7 +79,7 @@ export class Phase<R> {
   }
   /** Tracks the state of the given promise. */
   async track(promise: Promise<R>): Promise<R> {
-    this.state = { status: 'running' }
+    this.state = { status: 'running', startAt: Date.now() }
     try {
       const result = await promise
       this.state = { status: 'finished', result }

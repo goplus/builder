@@ -50,17 +50,24 @@ const videoPreviewKey = computed(() => {
   return gen.name + ':' + (gen.video != null ? gen.video.name : '')
 })
 
-const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime({
-  estimatedTotal: 120,
-  updateInterval: 5,
-  minRemaining: 5
-})
+const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime()
+// Estimated time in seconds to generate an animation video
+const genVideoTimeConsuming = 150
+// Minimum remaining time to show in seconds
+const minRemaining = 3
+// Update interval of remaining in seconds
+const updateInterval = 3
 
 watch(
-  () => props.gen.generateVideoState.status,
-  (status) => {
-    if (status === 'running') startTimer()
-    else stopTimer()
+  () => props.gen.generateVideoState,
+  (state) => {
+    if (state.status === 'running') {
+      const elapsed = (Date.now() - state.startAt) / 1000
+      const estimatedTotal = Math.round(Math.max(minRemaining, genVideoTimeConsuming - elapsed))
+      startTimer({ estimatedTotal, updateInterval, minRemaining })
+    } else {
+      stopTimer()
+    }
   },
   { immediate: true }
 )

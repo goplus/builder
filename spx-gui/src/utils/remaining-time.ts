@@ -10,12 +10,12 @@ export type EstimateOptions = {
 }
 
 /** `useEstimateRemainingTime` estimates the remaining time of a process. */
-export function useEstimateRemainingTime(options: EstimateOptions) {
-  const { estimatedTotal, updateInterval, minRemaining } = options
+export function useEstimateRemainingTime() {
   const remaining = ref<number | null>(null)
   let _timer: ReturnType<typeof setInterval> | null = null
 
-  const start = () => {
+  const start = (options: EstimateOptions) => {
+    const { estimatedTotal, updateInterval, minRemaining } = options
     remaining.value = estimatedTotal
     const startedAt = Date.now()
 

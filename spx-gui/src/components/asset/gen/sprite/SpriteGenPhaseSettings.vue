@@ -30,17 +30,24 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 
 const hasPreview = computed(() => props.gen.image != null)
 
-const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime({
-  estimatedTotal: 20,
-  updateInterval: 2,
-  minRemaining: 2
-})
+const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime()
+// Estimated time in seconds to generate a costume image
+const genCostumeTimeConsuming = 15
+// Minimum remaining time to show in seconds
+const minRemaining = 2
+// Update interval of remaining in seconds
+const updateInterval = 1
 
 watch(
-  () => props.gen.imagesGenState.status,
-  (status) => {
-    if (status === 'running') startTimer()
-    else stopTimer()
+  () => props.gen.imagesGenState,
+  (state) => {
+    if (state.status === 'running') {
+      const elapsed = (Date.now() - state.startAt) / 1000
+      const estimatedTotal = Math.round(Math.max(minRemaining, genCostumeTimeConsuming - elapsed))
+      startTimer({ estimatedTotal, updateInterval, minRemaining })
+    } else {
+      stopTimer()
+    }
   },
   { immediate: true }
 )
