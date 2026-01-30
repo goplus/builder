@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const imageInResult = computed(() => {
-  if (props.gen.image === null) return false
+  if (props.gen.image == null) return false
   return props.gen.imagesGenState.result?.includes(props.gen.image)
 })
 const canSubmit = computed(

@@ -24,7 +24,7 @@ const props = defineProps<{
 // If the image is not in the results, it might be inconsistent with the current settings
 // (e.g., after modifying the description and regenerating), so we prevent submission in this case.
 const imageInResult = computed(() => {
-  if (props.gen.image === null) return false
+  if (props.gen.image == null) return false
   return props.gen.imagesGenState.result?.includes(props.gen.image)
 })
 const canSubmit = computed(

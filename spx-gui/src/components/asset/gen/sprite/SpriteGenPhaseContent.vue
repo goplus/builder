@@ -132,35 +132,30 @@ async function beforeSubmit() {
   const finishedAnimations = animations.filter((a) => a.result != null)
   let options: Omit<ConfirmOptions, 'title'> | null = null
   if (!submittable.value) {
-    const mapName = (gen: CostumeGen | AnimationGen) => ({ en: gen.name, zh: gen.name })
-    const runningCostumes = costumes.filter((c) => c.generateState.status === 'running').map(mapName)
-    const runningAnimations = animations.filter((a) => a.generateVideoState.status === 'running').map(mapName)
-    const failedCostumes = costumes.filter((c) => c.generateState.status === 'failed').map(mapName)
-    const failedAnimations = animations.filter((a) => a.generateVideoState.status === 'failed').map(mapName)
+    const toLocaleMessage = (gen: CostumeGen | AnimationGen) => ({ en: gen.name, zh: gen.name })
+    const unfinishedStatus = ['running', 'pending']
+    const unfinishedCostumes = costumes.filter((c) => unfinishedStatus.includes(c.generateState.status))
+    const unfinishedAnimations = animations.filter((a) => unfinishedStatus.includes(a.generateVideoState.status))
     const content: LocaleMessage[] = []
-    if (runningCostumes.length > 0 || runningAnimations.length > 0) {
-      const runningNames = humanizeListWithLimit(runningCostumes.concat(runningAnimations), 3)
+    if (unfinishedCostumes.length > 0) {
+      const unfinishedNames = humanizeListWithLimit(unfinishedCostumes.map(toLocaleMessage), 3)
       content.push({
-        zh: `进行中任务： ${runningNames.zh}`,
-        en: `Running tasks: ${runningNames.en}`
+        zh: `造型（${unfinishedNames.zh}）`,
+        en: `Costume (${unfinishedNames.en})`
       })
     }
-    if (failedCostumes.length > 0 || failedAnimations.length > 0) {
-      const failedNames = humanizeListWithLimit(failedCostumes.concat(failedAnimations), 3)
+    if (unfinishedAnimations.length > 0) {
+      const unfinishedNames = humanizeListWithLimit(unfinishedAnimations.map(toLocaleMessage), 3)
       content.push({
-        zh: `报错任务： ${failedNames.zh}`,
-        en: `Failed tasks: ${failedNames.en}`
+        zh: `动画（${unfinishedNames.zh}）`,
+        en: `Animation (${unfinishedNames.en})`
       })
     }
-    // There will be at least one task that is running or failed
-    content.push({
-      zh: '确定不处理直接采用吗？',
-      en: 'Are you sure to use it directly without processing?'
-    })
     options = {
+      // There will be at least one task that is running or failed
       content: i18n.t({
-        zh: `${content.map((c) => c.zh).join('，')}`,
-        en: `${content.map((c) => c.en).join(',')}`
+        zh: `未完成的${content.map((c) => c.zh).join('和')}不会被保存，确定继续吗？`,
+        en: `Unfinished ${content.map((c) => c.en).join(' and ')} will not be saved, are you sure to continue?`
       }),
       cancelText: i18n.t({ zh: '继续处理', en: 'Continue processing' })
     }
