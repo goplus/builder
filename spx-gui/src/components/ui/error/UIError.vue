@@ -1,13 +1,22 @@
 <template>
-  <div class="ui-error">
+  <div class="ui-error" :class="{ cover }">
     <img :src="defaultErrorImg" />
     <h5 class="message">
       <slot></slot>
     </h5>
-    <button v-if="retry != null" class="retry" @click="retry">
-      <UIIcon v-show="loading" type="loading" />
-      {{ retryText }}
-    </button>
+    <p v-if="$slots['sub-message'] != null" class="sub-message">
+      <slot name="sub-message"></slot>
+    </p>
+    <div class="ops">
+      <!-- TODO: consider using slot to support more custom operations -->
+      <button v-if="retry != null" class="op-btn" @click="retry">
+        <UIIcon v-show="loading" type="loading" />
+        {{ retryText }}
+      </button>
+      <button v-if="back != null" class="op-btn" @click="back">
+        {{ backText }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -18,12 +27,22 @@ import UIIcon from '../icons/UIIcon.vue'
 import defaultErrorImg from './default-error.svg'
 
 // TODO: support more error types
-const props = defineProps<{
-  retry?: () => unknown
-}>()
+const props = withDefaults(
+  defineProps<{
+    retry?: () => unknown
+    back?: () => unknown
+    cover?: boolean
+  }>(),
+  {
+    retry: undefined,
+    back: undefined,
+    cover: false
+  }
+)
 
 const config = useConfig()
 const retryText = computed(() => config.error?.retryText ?? 'Retry')
+const backText = computed(() => config.error?.backText ?? 'Back')
 
 const loading = ref(false)
 
@@ -49,6 +68,15 @@ const retry = computed(() =>
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
+  &.cover {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    overflow: hidden;
+    opacity: 0.97;
+    background-color: var(--ui-color-grey-100);
+  }
 }
 
 .message {
@@ -58,8 +86,22 @@ const retry = computed(() =>
   color: var(--ui-color-grey-1000);
 }
 
-.retry {
+.sub-message {
+  font-size: 13px;
   margin-top: 4px;
+  color: var(--ui-color-grey-900);
+}
+
+.ops {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // TODO(@UI): update style here when design finished
+  gap: 12px;
+}
+
+.op-btn {
   // TODO: should this be one type of UIButton?
   padding: 0 12px;
   display: flex;

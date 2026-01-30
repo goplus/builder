@@ -34,7 +34,7 @@ export enum ApiExceptionCode {
   errorUnknown = 50000
 }
 
-type QuotaExceededMeta = {
+export type QuotaExceededMeta = {
   // milliseconds or null
   retryAfter: number | null
 }

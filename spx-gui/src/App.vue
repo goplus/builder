@@ -38,7 +38,8 @@ const config = computed<Config>(() => ({
     text: t({ en: 'No data', zh: '没有结果' })
   },
   error: {
-    retryText: t({ en: 'Retry', zh: '重试' })
+    retryText: t({ en: 'Retry', zh: '重试' }),
+    backText: t({ en: 'Back', zh: '返回' })
   }
 }))
 

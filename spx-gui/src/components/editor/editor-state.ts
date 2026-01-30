@@ -1,4 +1,4 @@
-import { ref, watch, type Ref, type WatchSource } from 'vue'
+import { ref, shallowReactive, watch, type Ref, type WatchSource } from 'vue'
 import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } from 'vue-router'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
@@ -11,10 +11,17 @@ import { Backdrop } from '@/models/backdrop'
 import { isWidget } from '@/models/widget'
 import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
+import { SpriteGen } from '@/models/gen/sprite-gen'
+import { BackdropGen } from '@/models/gen/backdrop-gen'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
 import * as editing from './editing'
+import { AssetType } from '@/apis/asset'
+import type { AssetGenModel } from '@/models/common/asset'
+
+type GenCollapsePos = { x: number; y: number }
+type CollapsePosProvider<T extends AssetType> = (gen: AssetGenModel<T>) => Promise<GenCollapsePos | null>
 
 export type SelectedType = 'stage' | 'sprite' | 'sound'
 
@@ -80,6 +87,63 @@ export class EditorState extends Disposable {
   editing: editing.Editing
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
+
+  spriteGens = shallowReactive<SpriteGen[]>([])
+  addSpriteGen(gen: SpriteGen) {
+    this.spriteGens.push(gen)
+  }
+  removeSpriteGen(id: string) {
+    const index = this.spriteGens.findIndex((gen) => gen.id === id)
+    if (index < 0) throw new Error('SpriteGen not found in editor state')
+    const [gen] = this.spriteGens.splice(index, 1)
+    gen.dispose()
+  }
+
+  backdropGens = shallowReactive<BackdropGen[]>([])
+  addBackdropGen(gen: BackdropGen) {
+    this.backdropGens.push(gen)
+  }
+  removeBackdropGen(id: string) {
+    const index = this.backdropGens.findIndex((gen) => gen.id === id)
+    if (index < 0) throw new Error('BackdropGen not found in editor state')
+    const [gen] = this.backdropGens.splice(index, 1)
+    gen.dispose()
+  }
+
+  private genCollapsePosProviderMap = shallowReactive(new Map<AssetType, CollapsePosProvider<AssetType>[]>())
+  private addGenCollapsePosProvider<T extends AssetType>(type: T, provider: CollapsePosProvider<T>) {
+    const providers = this.genCollapsePosProviderMap.get(type) ?? []
+    this.genCollapsePosProviderMap.set(type, [...providers, provider])
+    return () => {
+      this.genCollapsePosProviderMap.set(
+        type,
+        (this.genCollapsePosProviderMap.get(type) ?? []).filter((p) => p !== provider)
+      )
+    }
+  }
+  addSpriteGenCollapsePosProvider(provider: CollapsePosProvider<AssetType.Sprite>) {
+    return this.addGenCollapsePosProvider(AssetType.Sprite, provider)
+  }
+  addBackdropGenCollapsePosProvider(provider: CollapsePosProvider<AssetType.Backdrop>) {
+    return this.addGenCollapsePosProvider(AssetType.Backdrop, provider)
+  }
+  /**
+   * Retrieves the collapse position for the given generator.
+   * Acts as a consumer of collapse positions, returning the result from a registered provider
+   * for the generator's asset type, or null if no providers are available.
+   */
+  private async getGenCollapsePos<T extends AssetType>(assetType: T, gen: AssetGenModel<T>) {
+    const providers = this.genCollapsePosProviderMap.get(assetType) ?? []
+    const provider = providers.at(-1)
+    return provider != null ? provider(gen) : null
+  }
+  getSpriteGenCollapsePos(gen: SpriteGen) {
+    return this.getGenCollapsePos(AssetType.Sprite, gen)
+  }
+  getBackdropGenCollapsePos(gen: BackdropGen) {
+    return this.getGenCollapsePos(AssetType.Backdrop, gen)
+  }
+
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)
   private selectedTypeRef = ref<SelectedType>('sprite')
   private selectedSpriteIdRef = ref<string | null>(null)

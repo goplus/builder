@@ -22,20 +22,7 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList :sortable="{ list: sprites }" @sorted="handleSorted">
-        <UIEmpty v-if="sprites.length === 0" size="medium">
-          {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
-        </UIEmpty>
-        <SpriteItem
-          v-for="sprite in sprites"
-          :key="sprite.id"
-          :sprite="sprite"
-          :selectable="{ selected: isSelected(sprite) }"
-          operable
-          droppable
-          @click="handleSpriteClick(sprite)"
-        />
-      </PanelList>
+      <SpriteList />
       <PanelFooter
         v-if="footerExpanded && selectedSprite != null"
         v-radar="{
@@ -74,19 +61,17 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Sprite } from '@/models/sprite'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
+import { useMessageHandle } from '@/utils/exception'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
-import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
+import SpriteList from '@/components/editor/sprite/SpriteList.vue'
 import CommonPanel from '../common/CommonPanel.vue'
-import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
-import { useMessageHandle } from '@/utils/exception'
 
 defineProps<{
   expanded: boolean
@@ -106,14 +91,6 @@ const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWra
 
 const selectedSprite = computed(() => editorCtx.state.selectedSprite)
 
-function isSelected(sprite: Sprite) {
-  return sprite.id === selectedSprite.value?.id
-}
-
-function handleSpriteClick(sprite: Sprite) {
-  editorCtx.state.selectSprite(sprite.id)
-}
-
 const addFromLocalFile = useAddSpriteFromLocalFile()
 
 const handleAddFromLocalFile = useMessageHandle(
@@ -128,7 +105,6 @@ const handleAddFromLocalFile = useMessageHandle(
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
-
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
@@ -137,17 +113,6 @@ const handleAddFromAssetLibrary = useMessageHandle(
   {
     en: 'Failed to add sprite from asset library',
     zh: '从素材库添加失败'
-  }
-).fn
-
-const handleSorted = useMessageHandle(
-  async (oldIdx: number, newIdx: number) => {
-    const action = { name: { en: 'Update sprite order', zh: '更新精灵顺序' } }
-    await editorCtx.project.history.doAction(action, () => editorCtx.project.moveSprite(oldIdx, newIdx))
-  },
-  {
-    en: 'Failed to update sprite order',
-    zh: '更新精灵顺序失败'
   }
 ).fn
 </script>

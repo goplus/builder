@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolve, filename, stripExt } from './path'
+import { resolve, filename, stripExt, extname } from './path'
 
 describe('resolve', () => {
   it('should work well with path', () => {
@@ -55,6 +55,10 @@ describe('filename', () => {
   it('should work well with special characters', () => {
     expect(filename('foo/Artificial Axolotl 😡.svg')).toBe('Artificial Axolotl 😡.svg')
   })
+  it('should work well with url containing search', () => {
+    expect(filename('https://test.com/abc.txt?version=1.2.3')).toBe('abc.txt')
+    expect(filename('https://test.com/foo?bar')).toBe('foo')
+  })
 })
 
 describe('stripExt', () => {
@@ -79,5 +83,38 @@ describe('stripExt', () => {
   })
   it('should work well with special characters', () => {
     expect(stripExt('foo/Artificial Axolotl 😡.svg')).toBe('foo/Artificial Axolotl 😡')
+  })
+  it('should work well with url containing search', () => {
+    expect(stripExt('https://test.com/abc.txt?version=1.2.3')).toBe('https://test.com/abc')
+    expect(stripExt('https://test.com/foo?bar')).toBe('https://test.com/foo')
+  })
+})
+
+describe('extname', () => {
+  it('should work well with path', () => {
+    expect(extname('abc.txt')).toBe('.txt')
+    expect(extname('中文.png')).toBe('.png')
+    expect(extname('src/你好/世界.png')).toBe('.png')
+  })
+  it('should work well with url', () => {
+    expect(extname('https://test.com/abc.txt')).toBe('.txt')
+    expect(extname('https://test.com/foo/%E4%B8%AD%E6%96%87.png')).toBe('.png')
+  })
+  it('should work well with no ext', () => {
+    expect(extname('abc')).toBe('')
+    expect(extname('/foo/.git/a')).toBe('')
+    expect(extname('https://test.com/project/foo')).toBe('')
+  })
+  it('should work well with complex ext', () => {
+    expect(extname('abc.d.ts')).toBe('.ts')
+    expect(extname('foo/.cache/abc.d.ts')).toBe('.ts')
+    expect(extname('/foo/bar/.gitignore')).toBe('')
+  })
+  it('should work well with special characters', () => {
+    expect(extname('foo/Artificial Axolotl 😡.svg')).toBe('.svg')
+  })
+  it('should work well with url containing search', () => {
+    expect(extname('https://test.com/abc.txt?version=1.2.3')).toBe('.txt')
+    expect(extname('https://test.com/foo?bar')).toBe('')
   })
 })

@@ -67,13 +67,13 @@ func (p *Player) SetRole__1(role string) {
 // OnCmd registers a command that can be called by the AI during interaction.
 // The command must be defined as a struct type T with exported fields as
 // parameters. The handler is called when the AI decides to use this command.
-func Gopt_Player_Gopx_OnCmd[T any](p *Player, handler func(cmd T) error) {
+func XGot_Player_XGox_OnCmd[T any](p *Player, handler func(cmd T) error) {
 	var cmd T
 	PlayerOnCmd_(p, cmd, handler)
 }
 
 // PlayerOnCmd_ is a helper func that is meant to be called by
-// [Gopt_Player_Gopx_OnCmd] only.
+// [XGot_Player_XGox_OnCmd] only.
 func PlayerOnCmd_(p *Player, cmd any, handler any) {
 	typ := reflect.TypeOf(cmd)
 	if typ.Kind() != reflect.Struct {

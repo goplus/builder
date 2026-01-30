@@ -1,11 +1,13 @@
 <script lang="ts">
+import ispxWasmUrl from '@/assets/wasm/ispx.wasm?url'
+
 const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
 
 const assetURLs = {
   // TODO: include these assets as "static asset" to generate immutable URLs
   'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
-  'gdspx.wasm': `${runnerBaseUrl}/gdspx.wasm`,
+  'gdspx.wasm': ispxWasmUrl,
   'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
   'engine.zip': `${runnerBaseUrl}/engine.zip`
 }
