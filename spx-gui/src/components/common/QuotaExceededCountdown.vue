@@ -25,40 +25,28 @@ function getLargestUnitType(start: dayjs.Dayjs, end: dayjs.Dayjs) {
 import { onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 
-import type { Round } from '@/components/copilot/copilot'
 import type { LocaleMessage } from '@/utils/i18n'
 import { spacingLocaleZhMessage, useInterval } from '@/utils/utils'
-import RetryableWrapper from '../RetryableWrapper.vue'
-import { isQuotaExceededMeta } from '@/apis/common/exception'
-import { UIIcon } from '@/components/ui'
+import { type QuotaExceededMeta } from '@/apis/common/exception'
 
-// TODO: Consider using the `QuotaExceededCountdown` component directly in the future
 const props = defineProps<{
-  round: Round
-  isLastRound: boolean
+  // TODO: This could be optimized by passing in a target time to make it more generic
+  quotaExceededMeta: QuotaExceededMeta
 }>()
 
 const retryAfterTime = ref<LocaleMessage | null>(null)
 const interval = ref<number | null>(null)
 
 const updateRetryAfterTime = () => {
-  const apiExceptionCode = props.round.apiExceptionCode
-  const apiExceptionMeta = props.round.apiExceptionMeta
-  if (
-    apiExceptionCode == null ||
-    !isQuotaExceededMeta(apiExceptionCode, apiExceptionMeta) ||
-    apiExceptionMeta.retryAfter == null
-  ) {
+  const retryAfterMs = props.quotaExceededMeta.retryAfter
+  const retryAfter = retryAfterMs != null ? dayjs(retryAfterMs) : null
+
+  if (retryAfter == null || retryAfter.isBefore()) {
     interval.value = null
     retryAfterTime.value = null
     return
   }
-  const retryAfter = dayjs(apiExceptionMeta.retryAfter)
-  if (retryAfter.isBefore()) {
-    interval.value = null
-    retryAfterTime.value = null
-    return
-  }
+
   const unitType = getLargestUnitType(dayjs(), retryAfter)
   interval.value = unitInterval[unitType]
   retryAfterTime.value = {
@@ -72,24 +60,9 @@ onMounted(updateRetryAfterTime)
 </script>
 
 <template>
-  <RetryableWrapper class="quota-exceeded" :round="round" :is-last-round="isLastRound">
-    <UIIcon type="warning" />
-    {{
-      $t({
-        en: 'Quota exceeded.',
-        zh: '配额已超限。'
-      })
-    }}
-    <template v-if="retryAfterTime != null">
-      {{
-        $t(spacingLocaleZhMessage({ en: `Please try again ${retryAfterTime.en}`, zh: `请${retryAfterTime.zh}尝试` }))
-      }}
-    </template>
-  </RetryableWrapper>
+  {{
+    retryAfterTime != null
+      ? $t(spacingLocaleZhMessage({ en: `Please try again ${retryAfterTime.en}`, zh: `请${retryAfterTime.zh}尝试` }))
+      : ''
+  }}
 </template>
-
-<style lang="scss" scoped>
-.quota-exceeded {
-  color: var(--ui-color-yellow-main);
-}
-</style>

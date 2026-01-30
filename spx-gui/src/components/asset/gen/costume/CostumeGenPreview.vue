@@ -9,6 +9,7 @@ import { useRenameCostumeGen } from '../..'
 import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
 import PreviewWithCheckerboardBg from '../common/PreviewWithCheckerboardBg.vue'
+import GenStateFailed from '../common/GenStateFailed.vue'
 
 const props = defineProps<{
   gen: CostumeGen
@@ -50,9 +51,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
     <GenLoading v-if="gen.generateState.status === 'running'" variant="bg-spin">
       {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
     </GenLoading>
-    <UIError v-else-if="gen.generateState.status === 'failed'">
-      {{ $t(gen.generateState.error.userMessage) }}
-    </UIError>
+    <GenStateFailed v-else-if="gen.generateState.status === 'failed'" :state-failed="gen.generateState" />
     <GenLoading v-else-if="imgLoading" variant="bg-spin">
       {{ $t({ en: 'Loading image...', zh: '正在加载图片...' }) }}
     </GenLoading>

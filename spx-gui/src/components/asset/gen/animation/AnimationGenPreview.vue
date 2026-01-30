@@ -9,6 +9,7 @@ import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
 import PreviewWithCheckerboardBg from '../common/PreviewWithCheckerboardBg.vue'
 import AnimationVideoPreview from './AnimationVideoPreview.vue'
+import GenStateFailed from '../common/GenStateFailed.vue'
 
 const props = defineProps<{
   gen: AnimationGen
@@ -60,9 +61,7 @@ const videoPreviewKey = computed(() => {
     <GenLoading v-if="gen.generateVideoState.status === 'running'" variant="bg-spin">
       {{ $t({ en: 'Generating animation...', zh: '正在生成动画...' }) }}
     </GenLoading>
-    <UIError v-else-if="gen.generateVideoState.status === 'failed'">
-      {{ $t(gen.generateVideoState.error.userMessage) }}
-    </UIError>
+    <GenStateFailed v-else-if="gen.generateVideoState.status === 'failed'" :state-failed="gen.generateVideoState" />
     <PreviewWithCheckerboardBg v-else>
       <AnimationVideoPreview
         v-if="gen.video != null"
