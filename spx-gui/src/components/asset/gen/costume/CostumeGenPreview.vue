@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
-import { humanizeRemaining, useRemainingTimeForPhase } from '@/utils/remaining-time'
+import { humanizeRemaining } from '../common/remaining-time'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import { UIImg, UIButton, UIError } from '@/components/ui'
 import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
@@ -40,17 +40,10 @@ function handleSaveErrorBack() {
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
 
-// Estimated time in seconds to generate a costume image
-const genCostumeTimeConsuming = 15
-// Minimum remaining time to show in seconds
-const minRemaining = 2
-// Update interval of remaining in seconds
-const updateInterval = 1
-
-const { remaining } = useRemainingTimeForPhase(() => props.gen.generateState, {
-  estimatedTotal: genCostumeTimeConsuming,
-  updateInterval,
-  minRemaining
+const remaining = computed(() => {
+  const gen = props.gen
+  if (gen.generateState.status !== 'running') return null
+  return gen.generateState.remaining
 })
 </script>
 

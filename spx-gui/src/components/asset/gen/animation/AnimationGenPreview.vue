@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { humanizeRemaining, useRemainingTimeForPhase } from '@/utils/remaining-time'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 import { UIButton, UIError } from '@/components/ui'
 import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
 import { useRenameAnimationGen } from '../..'
+import { humanizeRemaining } from '../common/remaining-time'
 import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
 import PreviewWithCheckerboardBg from '../common/PreviewWithCheckerboardBg.vue'
@@ -50,17 +50,10 @@ const videoPreviewKey = computed(() => {
   return gen.name + ':' + (gen.video != null ? gen.video.name : '')
 })
 
-// Estimated time in seconds to generate an animation video
-const genVideoTimeConsuming = 150
-// Minimum remaining time to show in seconds
-const minRemaining = 3
-// Update interval of remaining in seconds
-const updateInterval = 3
-
-const { remaining } = useRemainingTimeForPhase(() => props.gen.generateVideoState, {
-  estimatedTotal: genVideoTimeConsuming,
-  updateInterval,
-  minRemaining
+const remaining = computed(() => {
+  const gen = props.gen
+  if (gen.generateVideoState.status !== 'running') return null
+  return gen.generateVideoState.remaining
 })
 </script>
 

@@ -9,7 +9,7 @@ import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
-import { humanizeRemaining, useRemainingTimeForPhase } from '@/utils/remaining-time'
+import { humanizeRemaining } from '../common/remaining-time'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
@@ -30,17 +30,10 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 
 const hasPreview = computed(() => props.gen.image != null)
 
-// Estimated time in seconds to generate a costume image
-const genCostumeTimeConsuming = 15
-// Minimum remaining time to show in seconds
-const minRemaining = 2
-// Update interval of remaining in seconds
-const updateInterval = 1
-
-const { remaining } = useRemainingTimeForPhase(() => props.gen.imagesGenState, {
-  estimatedTotal: genCostumeTimeConsuming,
-  updateInterval,
-  minRemaining
+const remaining = computed(() => {
+  const gen = props.gen
+  if (gen.imagesGenState.status !== 'running') return null
+  return gen.imagesGenState.remaining
 })
 </script>
 

@@ -49,7 +49,7 @@ export type PhaseState<R> =
       status: 'running'
       result?: null
       error?: null
-      startAt: number // timestamp in milliseconds
+      remaining: number | null // (estimated) remaining time in seconds
     }
   | {
       status: 'finished'
@@ -65,12 +65,15 @@ export type PhaseState<R> =
 /** `Phase` tracks the state of an asynchronous process. */
 export class Phase<R> {
   state: PhaseState<R>
+  private _timer: ReturnType<typeof setInterval> | null = null
   constructor(
     /**
      * The name of the action being tracked, used for error messages.
      * For example, "generate video" or "extract frames".
      */
-    private actionName: LocaleMessage
+    private actionName: LocaleMessage,
+    /** Optional run duration (estimated) in seconds, used for providing remaining time. */
+    private readonly runDuration: number | null = null
   ) {
     this.state = { status: 'initial' }
   }
@@ -79,7 +82,8 @@ export class Phase<R> {
   }
   /** Tracks the state of the given promise. */
   async track(promise: Promise<R>): Promise<R> {
-    this.state = { status: 'running', startAt: Date.now() }
+    this.state = { status: 'running', remaining: this.runDuration }
+    this.startTimer()
     try {
       const result = await promise
       this.state = { status: 'finished', result }
@@ -96,8 +100,35 @@ export class Phase<R> {
         capture(err)
       }
       throw err
+    } finally {
+      this.stopTimer()
     }
   }
+
+  private startTimer() {
+    if (this.runDuration == null || this.runDuration === 0) return
+    const duration = this.runDuration
+    // infer interval & minRemaining from runDuration
+    const updateInterval = Math.round(Math.max(1, duration / 50))
+    const minRemaining = updateInterval
+    const startedAt = Date.now()
+
+    if (this._timer != null) clearInterval(this._timer)
+    this._timer = setInterval(() => {
+      if (this.state.status !== 'running') return
+      const elapsed = (Date.now() - startedAt) / 1000
+      const remaining = Math.round(Math.max(minRemaining, duration - elapsed))
+      this.state = { ...this.state, remaining }
+    }, updateInterval * 1000)
+  }
+
+  private stopTimer() {
+    if (this._timer) {
+      clearInterval(this._timer)
+      this._timer = null
+    }
+  }
+
   /** Runs given function and tracks its state. */
   async run(fn: () => Promise<R>): Promise<R> {
     return this.track(fn())
