@@ -114,50 +114,45 @@ const confirm = useConfirmDialog()
 function isCostumeGenProcessing(costumeGen: CostumeGen) {
   return costumeGen.generateState.status !== 'initial' && costumeGen.result == null
 }
-
 function isAnimationGenProcessing(animationGen: AnimationGen) {
   return animationGen.generateVideoState.status !== 'initial' && animationGen.result == null
 }
-
-const submittable = computed(() => {
-  const { costumes, animations } = props.gen
-  if (costumes.some(isCostumeGenProcessing)) return false
-  if (animations.some(isAnimationGenProcessing)) return false
-  return true
-})
-
+function toCapitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
 async function beforeSubmit() {
   const { costumes, animations } = props.gen
   const finishedCostumes = costumes.filter((c) => c.result != null)
   const finishedAnimations = animations.filter((a) => a.result != null)
+  const unfinishedCostumes = costumes.filter(isCostumeGenProcessing)
+  const unfinishedAnimations = animations.filter(isAnimationGenProcessing)
+
   let options: Omit<ConfirmOptions, 'title'> | null = null
-  if (!submittable.value) {
+  if (unfinishedCostumes.length > 0 || unfinishedAnimations.length > 0) {
     const toLocaleMessage = (gen: CostumeGen | AnimationGen) => ({ en: gen.name, zh: gen.name })
-    const unfinishedStatus = ['running', 'pending']
-    const unfinishedCostumes = costumes.filter((c) => unfinishedStatus.includes(c.generateState.status))
-    const unfinishedAnimations = animations.filter((a) => unfinishedStatus.includes(a.generateVideoState.status))
     const content: LocaleMessage[] = []
     if (unfinishedCostumes.length > 0) {
       const unfinishedNames = humanizeListWithLimit(unfinishedCostumes.map(toLocaleMessage), 3)
       content.push({
         zh: `造型（${unfinishedNames.zh}）`,
-        en: `Costume (${unfinishedNames.en})`
+        en: `costume (${unfinishedNames.en})`
       })
     }
     if (unfinishedAnimations.length > 0) {
       const unfinishedNames = humanizeListWithLimit(unfinishedAnimations.map(toLocaleMessage), 3)
       content.push({
         zh: `动画（${unfinishedNames.zh}）`,
-        en: `Animation (${unfinishedNames.en})`
+        en: `animation (${unfinishedNames.en})`
       })
     }
     options = {
       // There will be at least one task that is running or failed
       content: i18n.t({
-        zh: `未完成的${content.map((c) => c.zh).join('和')}不会被保存，确定继续吗？`,
-        en: `Unfinished ${content.map((c) => c.en).join(' and ')} will not be saved, are you sure to continue?`
+        zh: `${content.map((c) => c.zh).join('和')}还没有完成，确定要放弃它们并采用当前已经完成的内容吗？`,
+        en: `${toCapitalize(content.map((c) => c.en).join(' and '))} have not been completed, are you sure to abandon them and use the currently completed content?`
       }),
-      cancelText: i18n.t({ zh: '继续处理', en: 'Continue processing' })
+      cancelText: i18n.t({ zh: '返回', en: 'Back' }),
+      confirmText: i18n.t({ zh: '仍要采用', en: 'Use anyway' })
     }
   } else if (
     finishedCostumes.length === 1 &&
