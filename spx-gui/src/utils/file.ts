@@ -11,6 +11,7 @@ const ext2mime: Record<string, string | undefined> = {
   jpeg: 'image/jpeg',
   gif: 'image/gif',
   svg: 'image/svg+xml',
+  bmp: 'image/bmp',
   webp: 'image/webp',
   avif: 'image/avif',
   mp3: 'audio/mpeg',
@@ -44,7 +45,7 @@ export function getExtFromMime(mime: string) {
   return mime2Ext[mime]
 }
 
-export const imgExts = ['png', 'jpg', 'jpeg', 'svg', 'webp']
+export const imgExts = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'bmp']
 export const audioExts = ['wav', 'mp3', 'ogg', 'webm']
 
 export type FileSelectOptions = {
