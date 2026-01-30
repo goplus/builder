@@ -15,7 +15,7 @@ import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackg
         {{
           $t({
             en: 'Enter details in the lower-left box and click "Generate".',
-            zh: '请在左下方的对话框中描述细节后点击“生成”'
+            zh: '请在左下方描述细节，然后点击“生成”。'
           })
         }}
       </div>
