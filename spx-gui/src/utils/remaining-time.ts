@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 
 export type EstimateOptions = {
   /** Estimated total time in seconds */
@@ -34,6 +34,11 @@ export function useEstimateRemainingTime() {
     }
     remaining.value = null
   }
+
+  // Auto-cleanup on unmount
+  onBeforeUnmount(() => {
+    stop()
+  })
 
   return { remaining, start, stop }
 }
