@@ -164,6 +164,8 @@ watch(
   (newDuration) => {
     if (newDuration == null) return
     // Initialize cut range when video duration is known
+    // This causes cut range to reset when selected animation / costume changes, it'll be better
+    // to persist the cut range across animation / costume selections. TODO: Improve this later
     if (newDuration > 0 && cutEndRef.value === 0) {
       cutStartRef.value = 0
       cutEndRef.value = newDuration

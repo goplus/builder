@@ -43,14 +43,14 @@ onBeforeUnmount(
   })
 )
 
-const sortableList = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.spriteGens])
+const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.spriteGens])
 
 const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
   filterItem: (item: unknown) => {
     return item instanceof SpriteGen
   },
   filterMove: (oldIndex: number, newIndex: number) => {
-    const totalList = sortableList.value
+    const totalList = list.value
     // spriteGens cannot be moved
     const fromItem = totalList[oldIndex]
     if (fromItem instanceof SpriteGen) return true
@@ -97,8 +97,8 @@ const handleSpriteGenClick = useMessageHandle(
 </script>
 
 <template>
-  <PanelList :sortable="{ list: sortableList, options: sortableOptions }" @sorted="handleSorted">
-    <UIEmpty v-if="sprites.length === 0" size="medium">
+  <PanelList :sortable="{ list, options: sortableOptions }" @sorted="handleSorted">
+    <UIEmpty v-if="list.length === 0" size="medium">
       {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
     </UIEmpty>
     <SpriteItem
