@@ -6,13 +6,13 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
-import { useI18n } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { capture, useMessageHandle } from '@/utils/exception'
 import type { Sprite } from '@/models/sprite'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
-import { UIButton, UITooltip, useConfirmDialog } from '@/components/ui'
+import { UIButton, UITooltip, useConfirmDialog, type ConfirmOptions } from '@/components/ui'
 import { useRenameAnimationGen, useRenameCostumeGen } from '../..'
 import CostumeSettingInput from '../costume/CostumeSettingsInput.vue'
 import AnimationSettingInput from '../animation/AnimationSettingsInput.vue'
@@ -21,6 +21,7 @@ import CostumeGenItem from '../costume/CostumeGenItem.vue'
 import AnimationGenItem from '../animation/AnimationGenItem.vue'
 import CostumeGenPreview from '../costume/CostumeGenPreview.vue'
 import AnimationGenPreview from '../animation/AnimationGenPreview.vue'
+import { humanizeListWithLimit } from '@/utils/utils'
 
 const props = defineProps<{
   gen: SpriteGen
@@ -113,36 +114,66 @@ const confirm = useConfirmDialog()
 function isCostumeGenProcessing(costumeGen: CostumeGen) {
   return costumeGen.generateState.status !== 'initial' && costumeGen.result == null
 }
-
 function isAnimationGenProcessing(animationGen: AnimationGen) {
   return animationGen.generateVideoState.status !== 'initial' && animationGen.result == null
 }
-
-const submittable = computed(() => {
-  const { costumes, animations } = props.gen
-  if (costumes.some(isCostumeGenProcessing)) return false
-  if (animations.some(isAnimationGenProcessing)) return false
-  return true
-})
-
+function toCapitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
 async function beforeSubmit() {
   const { costumes, animations } = props.gen
   const finishedCostumes = costumes.filter((c) => c.result != null)
   const finishedAnimations = animations.filter((a) => a.result != null)
-  if (
+  const unfinishedCostumes = costumes.filter(isCostumeGenProcessing)
+  const unfinishedAnimations = animations.filter(isAnimationGenProcessing)
+
+  let options: Omit<ConfirmOptions, 'title'> | null = null
+  if (unfinishedCostumes.length > 0 || unfinishedAnimations.length > 0) {
+    const toLocaleMessage = (gen: CostumeGen | AnimationGen) => ({ en: gen.name, zh: gen.name })
+    const content: LocaleMessage[] = []
+    if (unfinishedCostumes.length > 0) {
+      const unfinishedNames = humanizeListWithLimit(unfinishedCostumes.map(toLocaleMessage), 3)
+      content.push({
+        zh: `造型（${unfinishedNames.zh}）`,
+        en: `costume (${unfinishedNames.en})`
+      })
+    }
+    if (unfinishedAnimations.length > 0) {
+      const unfinishedNames = humanizeListWithLimit(unfinishedAnimations.map(toLocaleMessage), 3)
+      content.push({
+        zh: `动画（${unfinishedNames.zh}）`,
+        en: `animation (${unfinishedNames.en})`
+      })
+    }
+    options = {
+      // There will be at least one task that is running or failed
+      content: i18n.t({
+        zh: `${content.map((c) => c.zh).join('和')}还没有完成，确定要放弃它们并采用当前已经完成的内容吗？`,
+        en: `${toCapitalize(content.map((c) => c.en).join(' and '))} have not been completed, are you sure to abandon them and use the currently completed content?`
+      }),
+      cancelText: i18n.t({ zh: '返回', en: 'Back' }),
+      confirmText: i18n.t({ zh: '仍要采用', en: 'Use anyway' })
+    }
+  } else if (
     finishedCostumes.length === 1 &&
     finishedAnimations.length === 0 && // only default costume generated
     costumes.length + animations.length > 1 // while there are other unfinished items
   ) {
-    return confirm({
-      type: 'info',
-      title: i18n.t({ zh: '采用精灵', en: 'Use sprite' }),
+    options = {
       content: i18n.t({
         zh: '添加更多造型或动画可以让你的精灵更加生动。确定不添加，直接采用吗？',
         en: 'Adding more costumes or animations can make your sprite more lively. Are you sure to use it directly without adding more?'
       }),
-      cancelText: i18n.t({ zh: '继续添加', en: 'Continue adding' }),
-      confirmText: i18n.t({ zh: '直接采用', en: 'Use directly' })
+      cancelText: i18n.t({ zh: '继续添加', en: 'Continue adding' })
+    }
+  }
+
+  if (options != null) {
+    return confirm({
+      type: 'info',
+      title: i18n.t({ zh: '采用精灵', en: 'Use sprite' }),
+      confirmText: i18n.t({ zh: '直接采用', en: 'Use directly' }),
+      ...options
     })
   }
 }
@@ -237,7 +268,6 @@ const handleSubmit = useMessageHandle(
         v-radar="{ name: 'Use', desc: 'Click to finish and use the generated sprite in the project' }"
         color="primary"
         size="large"
-        :disabled="!submittable"
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"
       >

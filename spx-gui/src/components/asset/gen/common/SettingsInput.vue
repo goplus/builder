@@ -246,6 +246,7 @@ provide(settingsInputCtxKey, ctx)
       align-items: center;
       gap: 2px;
       height: fit-content;
+      font-size: 12px;
       color: var(--ui-color-turquoise-500);
 
       .animation {
