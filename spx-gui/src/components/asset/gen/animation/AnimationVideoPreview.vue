@@ -306,7 +306,7 @@ function formatTime(timeInMs: number) {
             </div>
             <i class="current-time" :style="currentTimeStyle"></i>
             <div class="track-tips">
-              {{ $t({ zh: '拖动滑块截取动画片段', en: 'Drag markers to crop animation segment' }) }}
+              {{ $t({ zh: '拖动滑块截取动画片段', en: 'Drag markers to cut animation segment' }) }}
             </div>
           </div>
         </div>
