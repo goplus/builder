@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { useEstimateRemainingTime } from '@/utils/remaining-time'
+import { useRemainingTimeForPhase } from '@/utils/remaining-time'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 import { UIButton, UIError } from '@/components/ui'
 import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
@@ -50,7 +50,6 @@ const videoPreviewKey = computed(() => {
   return gen.name + ':' + (gen.video != null ? gen.video.name : '')
 })
 
-const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime()
 // Estimated time in seconds to generate an animation video
 const genVideoTimeConsuming = 150
 // Minimum remaining time to show in seconds
@@ -58,20 +57,11 @@ const minRemaining = 3
 // Update interval of remaining in seconds
 const updateInterval = 3
 
-watch(
-  () => props.gen.generateVideoState.status,
-  () => {
-    const state = props.gen.generateVideoState
-    if (state.status === 'running') {
-      const elapsed = (Date.now() - state.startAt) / 1000
-      const estimatedTotal = Math.round(Math.max(minRemaining, genVideoTimeConsuming - elapsed))
-      startTimer({ estimatedTotal, updateInterval, minRemaining })
-    } else {
-      stopTimer()
-    }
-  },
-  { immediate: true }
-)
+const { remaining } = useRemainingTimeForPhase(() => props.gen.generateVideoState, {
+  estimatedTotal: genVideoTimeConsuming,
+  updateInterval,
+  minRemaining
+})
 </script>
 
 <template>

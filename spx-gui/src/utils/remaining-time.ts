@@ -1,4 +1,5 @@
-import { onBeforeUnmount, ref } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
+import type { PhaseState } from '@/models/gen/common.ts'
 
 export type EstimateOptions = {
   /** Estimated total time in seconds */
@@ -41,4 +42,25 @@ export function useEstimateRemainingTime() {
   })
 
   return { remaining, start, stop }
+}
+
+export function useRemainingTimeForPhase(stateGetter: () => PhaseState<unknown>, config: EstimateOptions) {
+  const { remaining, start, stop } = useEstimateRemainingTime()
+
+  watch(
+    () => stateGetter().status,
+    () => {
+      const state = stateGetter()
+      if (state.status === 'running') {
+        const elapsed = (Date.now() - state.startAt) / 1000
+        const estimatedTotal = Math.round(Math.max(config.minRemaining, config.estimatedTotal - elapsed))
+        start({ estimatedTotal, updateInterval: config.updateInterval, minRemaining: config.minRemaining })
+      } else {
+        stop()
+      }
+    },
+    { immediate: true }
+  )
+
+  return { remaining }
 }

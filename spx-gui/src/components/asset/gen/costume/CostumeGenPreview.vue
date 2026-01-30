@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
-import { useEstimateRemainingTime } from '@/utils/remaining-time'
+import { useRemainingTimeForPhase } from '@/utils/remaining-time'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import { UIImg, UIButton, UIError } from '@/components/ui'
 import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
@@ -40,7 +40,6 @@ function handleSaveErrorBack() {
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
 
-const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime()
 // Estimated time in seconds to generate a costume image
 const genCostumeTimeConsuming = 15
 // Minimum remaining time to show in seconds
@@ -48,20 +47,11 @@ const minRemaining = 2
 // Update interval of remaining in seconds
 const updateInterval = 1
 
-watch(
-  () => props.gen.generateState.status,
-  () => {
-    const state = props.gen.generateState
-    if (state.status === 'running') {
-      const elapsed = (Date.now() - state.startAt) / 1000
-      const estimatedTotal = Math.round(Math.max(minRemaining, genCostumeTimeConsuming - elapsed))
-      startTimer({ estimatedTotal, updateInterval, minRemaining })
-    } else {
-      stopTimer()
-    }
-  },
-  { immediate: true }
-)
+const { remaining } = useRemainingTimeForPhase(() => props.gen.generateState, {
+  estimatedTotal: genCostumeTimeConsuming,
+  updateInterval,
+  minRemaining
+})
 </script>
 
 <template>

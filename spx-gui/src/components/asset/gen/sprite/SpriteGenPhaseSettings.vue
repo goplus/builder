@@ -5,11 +5,11 @@
 -->
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
-import { useEstimateRemainingTime } from '@/utils/remaining-time'
+import { useRemainingTimeForPhase } from '@/utils/remaining-time'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
@@ -30,7 +30,6 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 
 const hasPreview = computed(() => props.gen.image != null)
 
-const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime()
 // Estimated time in seconds to generate a costume image
 const genCostumeTimeConsuming = 15
 // Minimum remaining time to show in seconds
@@ -38,20 +37,11 @@ const minRemaining = 2
 // Update interval of remaining in seconds
 const updateInterval = 1
 
-watch(
-  () => props.gen.imagesGenState.status,
-  () => {
-    const state = props.gen.imagesGenState
-    if (state.status === 'running') {
-      const elapsed = (Date.now() - state.startAt) / 1000
-      const estimatedTotal = Math.round(Math.max(minRemaining, genCostumeTimeConsuming - elapsed))
-      startTimer({ estimatedTotal, updateInterval, minRemaining })
-    } else {
-      stopTimer()
-    }
-  },
-  { immediate: true }
-)
+const { remaining } = useRemainingTimeForPhase(() => props.gen.imagesGenState, {
+  estimatedTotal: genCostumeTimeConsuming,
+  updateInterval,
+  minRemaining
+})
 </script>
 
 <template>
