@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
-import { useRemainingTimeForPhase } from '@/utils/remaining-time'
+import { humanizeRemaining, useRemainingTimeForPhase } from '@/utils/remaining-time'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import { UIImg, UIButton, UIError } from '@/components/ui'
 import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
@@ -62,14 +62,8 @@ const { remaining } = useRemainingTimeForPhase(() => props.gen.generateState, {
       }}</UIButton>
     </template>
     <GenLoading v-if="gen.generateState.status === 'running'" variant="bg-spin">
-      {{
-        remaining != null
-          ? $t({
-              en: `Generating costume... (about ${remaining} seconds remaining)`,
-              zh: `正在生成造型...（大约还剩 ${remaining} 秒）`
-            })
-          : $t({ en: 'Generating costume...', zh: '正在生成造型...' })
-      }}
+      {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
+      {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
     </GenLoading>
     <UIError v-else-if="gen.generateState.status === 'failed'">
       {{ $t(gen.generateState.error.userMessage) }}

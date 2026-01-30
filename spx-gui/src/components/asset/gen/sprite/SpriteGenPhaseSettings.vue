@@ -9,7 +9,7 @@ import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
-import { useRemainingTimeForPhase } from '@/utils/remaining-time'
+import { humanizeRemaining, useRemainingTimeForPhase } from '@/utils/remaining-time'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
@@ -73,12 +73,8 @@ const { remaining } = useRemainingTimeForPhase(() => props.gen.imagesGenState, {
         </template>
         <template #tip>
           <template v-if="gen.imagesGenState.status === 'running' && remaining != null">
-            {{
-              $t({
-                en: `Generating sprites... (about ${remaining} seconds remaining)`,
-                zh: `正在生成精灵...（大约还剩 ${remaining} 秒）`
-              })
-            }}
+            {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
+            {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
           </template>
           <template v-else-if="gen.imagesGenState.status === 'finished'">
             {{

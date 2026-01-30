@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { useRemainingTimeForPhase } from '@/utils/remaining-time'
+import { humanizeRemaining, useRemainingTimeForPhase } from '@/utils/remaining-time'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 import { UIButton, UIError } from '@/components/ui'
 import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
@@ -72,14 +72,8 @@ const { remaining } = useRemainingTimeForPhase(() => props.gen.generateVideoStat
       }}</UIButton>
     </template>
     <GenLoading v-if="gen.generateVideoState.status === 'running'" variant="bg-spin">
-      {{
-        remaining != null
-          ? $t({
-              en: `Generating animation... (about ${remaining} seconds remaining)`,
-              zh: `正在生成动画...（大约还剩 ${remaining} 秒）`
-            })
-          : $t({ en: 'Generating animation...', zh: '正在生成动画...' })
-      }}
+      {{ $t({ en: 'Generating animation...', zh: '正在生成动画...' }) }}
+      {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
     </GenLoading>
     <UIError v-else-if="gen.generateVideoState.status === 'failed'">
       {{ $t(gen.generateVideoState.error.userMessage) }}

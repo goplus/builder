@@ -1,5 +1,7 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 import type { PhaseState } from '@/models/gen/common.ts'
+import type { LocaleMessage } from '@/utils/i18n'
+import dayjs from 'dayjs'
 
 export type EstimateOptions = {
   /** Estimated total time in seconds */
@@ -63,4 +65,13 @@ export function useRemainingTimeForPhase(stateGetter: () => PhaseState<unknown>,
   )
 
   return { remaining }
+}
+
+export function humanizeRemaining(seconds: number): LocaleMessage {
+  const t = dayjs().add(seconds, 'second')
+  // TODO: the parentheses should not be hardcoded here
+  return {
+    en: `(ETA: ${t.locale('en').fromNow()})`,
+    zh: `（预计完成时间：${t.locale('zh').fromNow()}）`
+  }
 }
