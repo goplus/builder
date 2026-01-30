@@ -5,6 +5,7 @@ import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
 import { adoptAsset, enrichBackdropSettings, TaskType, type BackdropSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
 import { createFileWithUniversalUrl } from '../common/cloud'
+import { validateBackdropName } from '../common/asset-name'
 import { backdrop2Asset } from '../common/asset'
 import type { Project } from '../project'
 import { Backdrop } from '../backdrop'
@@ -40,7 +41,8 @@ export class BackdropGen extends Disposable {
     return this.settings.name
   }
   setName(name: string) {
-    // TODO: check name validity
+    const err = validateBackdropName(name, this.project.stage)
+    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
   }
 

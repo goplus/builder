@@ -21,7 +21,7 @@ import { CostumeGen } from './costume-gen'
 import { AnimationGen } from './animation-gen'
 import { createFileWithUniversalUrl } from '../common/cloud'
 import type { File } from '../common/file'
-import { getAnimationName, getCostumeName } from '../common/asset-name'
+import { getAnimationName, getCostumeName, validateSpriteName } from '../common/asset-name'
 import { sprite2Asset } from '../common/asset'
 
 export class SpriteGen extends Disposable {
@@ -67,7 +67,8 @@ export class SpriteGen extends Disposable {
     return this.settings.name
   }
   setName(name: string) {
-    // TODO: check name validity
+    const err = validateSpriteName(name, this.project)
+    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
   }
 
@@ -194,13 +195,17 @@ export class SpriteGen extends Disposable {
       // Generate default costume
       const defaultCostumeGen = new CostumeGen(this, project, this.getDefaultCostumeSettings())
       defaultCostumeGen.setImage(image)
-      await defaultCostumeGen.finish()
+      const defaultCostume = await defaultCostumeGen.finish()
       this.costumes.push(defaultCostumeGen)
 
       // Generate additional costumes & animations
       const settings = await genSpriteContentSettings(this.settings)
-      this.costumes.push(...settings.costumes.map((s) => new CostumeGen(this, project, s)))
-      this.animations = settings.animations.map((s) => new AnimationGen(this, project, s))
+      this.costumes.push(
+        ...settings.costumes.map((s) => new CostumeGen(this, project, { ...s, referenceCostumeId: defaultCostume.id }))
+      )
+      this.animations = settings.animations.map(
+        (s) => new AnimationGen(this, project, { ...s, referenceCostumeId: defaultCostume.id })
+      )
     })
   }
 
@@ -212,7 +217,15 @@ export class SpriteGen extends Disposable {
   }
   addCostume() {
     const name = getCostumeName(this)
-    const costumeGen = new CostumeGen(this, this.project, { name })
+    const defaultCostumeGen = this.defaultCostume
+    if (defaultCostumeGen == null) throw new Error('default costume expected')
+    const costumeGen = new CostumeGen(this, this.project, {
+      name,
+      artStyle: this.settings.artStyle,
+      perspective: this.settings.perspective,
+      facing: defaultCostumeGen.settings.facing,
+      referenceCostumeId: defaultCostumeGen.result?.id
+    })
     this.costumes.push(costumeGen)
     return costumeGen
   }
@@ -228,7 +241,14 @@ export class SpriteGen extends Disposable {
   animations: AnimationGen[]
   addAnimation() {
     const name = getAnimationName(this)
-    const animationGen = new AnimationGen(this, this.project, { name })
+    const defaultCostumeGen = this.defaultCostume
+    if (defaultCostumeGen == null) throw new Error('default costume expected')
+    const animationGen = new AnimationGen(this, this.project, {
+      name,
+      artStyle: this.settings.artStyle,
+      perspective: this.settings.perspective,
+      referenceCostumeId: defaultCostumeGen.result?.id
+    })
     this.animations.push(animationGen)
     return animationGen
   }

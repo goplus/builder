@@ -4,7 +4,6 @@ import * as aigcApis from '@/apis/aigc'
 import * as spxUtils from '@/utils/spx'
 import { createI18n } from '@/utils/i18n'
 import * as fileHelpers from '@/models/common/file'
-import * as cloudHelpers from '@/models/common/cloud'
 import { makeProject } from '../common/test'
 import { SpriteGen } from './sprite-gen'
 import type { CostumeGen } from './costume-gen'
@@ -14,7 +13,6 @@ import type { AnimationGen } from './animation-gen'
 vi.mock('@/apis/aigc', { spy: true })
 vi.spyOn(spxUtils, 'adaptImg').mockImplementation((file) => Promise.resolve(file))
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
-vi.spyOn(cloudHelpers, 'saveFileForWebUrl').mockImplementation(() => Promise.resolve('TODO'))
 
 function enrichSettings(input: string) {
   return Promise.resolve({

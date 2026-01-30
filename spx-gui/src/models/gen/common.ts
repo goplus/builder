@@ -21,19 +21,36 @@ import type { Sprite } from '../sprite'
 
 export function getProjectSettings(project: Project): ProjectSettings {
   return {
-    name: project.name ?? 'TODO',
-    description: project.description ?? 'TODO',
-    artStyle: project.extraSettings?.artStyle ?? ArtStyle.Unspecified,
-    perspective: project.extraSettings?.perspective ?? Perspective.Unspecified
+    name: project.name ?? '',
+    description: project.description ?? '',
+    // TODO: consider saving inferred settings to project extraSettings?
+    artStyle: project.extraSettings?.artStyle ?? inferProjectArtStyle(project),
+    perspective: project.extraSettings?.perspective ?? inferProjectPerspective(project)
   }
+}
+
+/** Infers the project's art style by finding the majority art style among all sprites and backdrops. */
+function inferProjectArtStyle(project: Project): ArtStyle {
+  const assetArtStyles = [...project.sprites, ...project.stage.backdrops]
+    .map((a) => a.assetMetadata?.extraSettings?.artStyle)
+    .filter((as) => as != null)
+  return majorityOf(assetArtStyles) ?? ArtStyle.Unspecified
+}
+
+/** Infers the project's perspective by finding the majority perspective among all sprites and backdrops. */
+function inferProjectPerspective(project: Project): Perspective {
+  const assetPerspectives = [...project.sprites, ...project.stage.backdrops]
+    .map((a) => a.assetMetadata?.extraSettings?.perspective)
+    .filter((p) => p != null)
+  return majorityOf(assetPerspectives) ?? Perspective.Unspecified
 }
 
 export function getSpriteSettings(sprite: Sprite): SpriteSettings {
   const extraSettings = sprite.assetMetadata?.extraSettings ?? null
   return {
-    name: sprite.name ?? 'TODO',
+    name: sprite.name ?? '',
     category: (extraSettings?.category as SpriteCategory | undefined) ?? SpriteCategory.Unspecified,
-    description: sprite.assetMetadata?.description ?? 'TODO',
+    description: sprite.assetMetadata?.description ?? '',
     artStyle: extraSettings?.artStyle ?? ArtStyle.Unspecified,
     perspective: extraSettings?.perspective ?? Perspective.Unspecified
   }
@@ -208,4 +225,19 @@ export class Task<T extends TaskType> extends Disposable {
     if (this.data == null || isTerminalTaskStatus(this.data.status)) return
     return this.apis.cancelTask(this.data.id, this.getSignal())
   }
+}
+
+/** Returns the majority value (appears more than half) in the array, or null if none exists. */
+export function majorityOf<T>(values: T[]): T | null {
+  const counts = new Map<T, number>()
+  for (const v of values) {
+    counts.set(v, (counts.get(v) ?? 0) + 1)
+  }
+  const majorityCount = Math.floor(values.length / 2) + 1
+  for (const [v, count] of counts) {
+    if (count >= majorityCount) {
+      return v
+    }
+  }
+  return null
 }

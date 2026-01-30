@@ -1,16 +1,25 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
+import type { Prettify } from '@/utils/types'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
 import { enrichCostumeSettings, Facing, TaskType, type CostumeSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
-import { validateCostumeName } from '../common/asset-name'
+import { ensureValidCostumeName, validateCostumeName } from '../common/asset-name'
 import { createFileWithUniversalUrl, saveFile } from '../common/cloud'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Costume } from '../costume'
 import { getProjectSettings, getSpriteSettings, Phase, Task } from './common'
 import { SpriteGen } from './sprite-gen'
+
+export type CostumeGenInits = Prettify<
+  Partial<
+    Omit<CostumeSettings, 'referenceImageUrl'> & {
+      referenceCostumeId: string | null
+    }
+  >
+>
 
 /** `CostumeGen` tracks the generation process of a costume. */
 export class CostumeGen extends Disposable {
@@ -26,7 +35,11 @@ export class CostumeGen extends Disposable {
   private generatePhase: Phase<File>
   private finishPhase: Phase<Costume>
 
-  constructor(parent: Sprite | SpriteGen, project: Project, settings: Partial<CostumeSettings>) {
+  constructor(
+    parent: Sprite | SpriteGen,
+    project: Project,
+    { referenceCostumeId = null, ...settings }: CostumeGenInits
+  ) {
     super()
     this.id = nanoid()
     this.parent = parent
@@ -38,13 +51,13 @@ export class CostumeGen extends Disposable {
     this.settings = {
       name: '',
       description: '',
-      facing: Facing.Front,
+      facing: Facing.Unspecified,
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
       referenceImageUrl: null,
       ...settings
     }
-    this.referenceCostumeId = this.sprite.defaultCostume?.id ?? null
+    this.referenceCostumeId = referenceCostumeId
     return reactive(this) as this
   }
 
@@ -57,7 +70,7 @@ export class CostumeGen extends Disposable {
     return this.settings.name
   }
   setName(name: string) {
-    const err = validateCostumeName(name, this.sprite)
+    const err = validateCostumeName(name, this.parent)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
     this.result?.setName(name)
@@ -67,7 +80,7 @@ export class CostumeGen extends Disposable {
     return this.enrichPhase.state
   }
   async enrich() {
-    const draft = await this.enrichPhase.track(
+    const enriched = await this.enrichPhase.track(
       enrichCostumeSettings(
         this.settings.description,
         this.settings,
@@ -75,11 +88,19 @@ export class CostumeGen extends Disposable {
         getProjectSettings(this.project)
       )
     )
-    this.setSettings(draft)
+    this.setSettings(enriched)
   }
 
   settings: CostumeSettings
+  /**
+   * Update multiple settings at once.
+   * NOTE: the name in updates may be altered to avoid conflict
+   */
   setSettings(updates: Partial<CostumeSettings>) {
+    if (updates.name != null && updates.name !== this.settings.name) {
+      const newName = ensureValidCostumeName(updates.name, this.parent)
+      updates = { ...updates, name: newName }
+    }
     Object.assign(this.settings, updates)
   }
 
