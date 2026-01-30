@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
+import { useEstimateRemainingTime } from '@/utils/remaining-time'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import { UIImg, UIButton, UIError } from '@/components/ui'
 import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
@@ -38,6 +39,21 @@ function handleSaveErrorBack() {
 }
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
+
+const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime({
+  estimatedTotal: 20,
+  updateInterval: 2,
+  minRemaining: 2
+})
+
+watch(
+  () => props.gen.generateState.status,
+  (status) => {
+    if (status === 'running') startTimer()
+    else stopTimer()
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -48,7 +64,14 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
       }}</UIButton>
     </template>
     <GenLoading v-if="gen.generateState.status === 'running'" variant="bg-spin">
-      {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
+      {{
+        remaining != null
+          ? $t({
+              en: `Generating costume... (about ${remaining} seconds remaining)`,
+              zh: `正在生成造型...（大约还剩 ${remaining} 秒）`
+            })
+          : $t({ en: 'Generating costume...', zh: '正在生成造型...' })
+      }}
     </GenLoading>
     <UIError v-else-if="gen.generateState.status === 'failed'">
       {{ $t(gen.generateState.error.userMessage) }}

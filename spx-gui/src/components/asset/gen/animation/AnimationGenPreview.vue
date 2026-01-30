@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
+import { useEstimateRemainingTime } from '@/utils/remaining-time'
 import type { AnimationGen } from '@/models/gen/animation-gen'
 import { UIButton, UIError } from '@/components/ui'
 import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
@@ -48,6 +49,21 @@ const videoPreviewKey = computed(() => {
   const gen = props.gen
   return gen.name + ':' + (gen.video != null ? gen.video.name : '')
 })
+
+const { remaining, start: startTimer, stop: stopTimer } = useEstimateRemainingTime({
+  estimatedTotal: 120,
+  updateInterval: 5,
+  minRemaining: 5
+})
+
+watch(
+  () => props.gen.generateVideoState.status,
+  (status) => {
+    if (status === 'running') startTimer()
+    else stopTimer()
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -58,7 +74,14 @@ const videoPreviewKey = computed(() => {
       }}</UIButton>
     </template>
     <GenLoading v-if="gen.generateVideoState.status === 'running'" variant="bg-spin">
-      {{ $t({ en: 'Generating animation...', zh: '正在生成动画...' }) }}
+      {{
+        remaining != null
+          ? $t({
+              en: `Generating animation... (about ${remaining} seconds remaining)`,
+              zh: `正在生成动画...（大约还剩 ${remaining} 秒）`
+            })
+          : $t({ en: 'Generating animation...', zh: '正在生成动画...' })
+      }}
     </GenLoading>
     <UIError v-else-if="gen.generateVideoState.status === 'failed'">
       {{ $t(gen.generateVideoState.error.userMessage) }}
