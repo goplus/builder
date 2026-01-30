@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { UICard, UICardHeader, UIIcon, UITooltip } from '@/components/ui'
 import type { Project } from '@/models/project'
 import MapViewer from './map-viewer/MapViewer.vue'
-import SpriteList from './SpriteList.vue'
+import SpritesPanel from './SpritesPanel.vue'
 import MapBasicConfig from './MapBasicConfig.vue'
 import type { Sprite } from '@/models/sprite'
 
@@ -55,7 +55,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
         </UICardHeader>
         <MapBasicConfig v-if="!collapsed" class="map-config" :project="project" />
       </UICard>
-      <SpriteList
+      <SpritesPanel
         class="sprite-list"
         :project="project"
         :selected-sprite="selectedSprite"

@@ -22,27 +22,7 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList :sortable="{ list: sprites }" @sorted="handleSorted">
-        <UIEmpty v-if="sprites.length === 0" size="medium">
-          {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
-        </UIEmpty>
-        <SpriteItem
-          v-for="sprite in sprites"
-          :key="sprite.id"
-          :sprite="sprite"
-          :selectable="{ selected: isSelected(sprite) }"
-          operable
-          droppable
-          @click="handleSpriteClick(sprite)"
-        />
-        <SpriteGenItem
-          v-for="gen in editorCtx.state.spriteGens"
-          :key="gen.id"
-          :ref="(el) => setSpriteGenItemRef(el, gen)"
-          :gen="gen"
-          @click="handleSpriteGenClick(gen)"
-        />
-      </PanelList>
+      <SpriteList />
       <PanelFooter
         v-if="footerExpanded && selectedSprite != null"
         v-radar="{
@@ -80,23 +60,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, shallowReactive, type ComponentPublicInstance } from 'vue'
+import { computed, ref } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
-import { SpriteGen } from '@/models/gen/sprite-gen'
-import { Sprite } from '@/models/sprite'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
-import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
-import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
+import SpriteList from '@/components/editor/sprite/SpriteList.vue'
 import CommonPanel from '../common/CommonPanel.vue'
-import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
-import { untilNotNull } from '@/utils/utils'
 
 defineProps<{
   expanded: boolean
@@ -116,14 +91,6 @@ const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWra
 
 const selectedSprite = computed(() => editorCtx.state.selectedSprite)
 
-function isSelected(sprite: Sprite) {
-  return sprite.id === selectedSprite.value?.id
-}
-
-function handleSpriteClick(sprite: Sprite) {
-  editorCtx.state.selectSprite(sprite.id)
-}
-
 const addFromLocalFile = useAddSpriteFromLocalFile()
 
 const handleAddFromLocalFile = useMessageHandle(
@@ -137,24 +104,6 @@ const handleAddFromLocalFile = useMessageHandle(
   }
 ).fn
 
-const spriteGenItemRefs = shallowReactive(new Map<string, HTMLElement>())
-function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, gen: SpriteGen) {
-  if (ref != null && '$el' in ref && ref.$el instanceof HTMLElement) spriteGenItemRefs.set(gen.id, ref.$el)
-  else spriteGenItemRefs.delete(gen.id)
-}
-
-onBeforeUnmount(
-  editorCtx.state.addSpriteGenCollapsePosProvider(async (gen) => {
-    const el = await untilNotNull(() => spriteGenItemRefs.get(gen.id))
-    el.scrollIntoView({ block: 'nearest' })
-    const rect = el.getBoundingClientRect()
-    return {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2
-    }
-  })
-)
-
 const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
@@ -164,39 +113,6 @@ const handleAddFromAssetLibrary = useMessageHandle(
   {
     en: 'Failed to add sprite from asset library',
     zh: '从素材库添加失败'
-  }
-).fn
-
-const handleSorted = useMessageHandle(
-  async (oldIdx: number, newIdx: number) => {
-    const action = { name: { en: 'Update sprite order', zh: '更新精灵顺序' } }
-    await editorCtx.project.history.doAction(action, () => editorCtx.project.moveSprite(oldIdx, newIdx))
-  },
-  {
-    en: 'Failed to update sprite order',
-    zh: '更新精灵顺序失败'
-  }
-).fn
-
-const invokeSpriteGenModal = useSpriteGenModal()
-
-const handleSpriteGenClick = useMessageHandle(
-  async (gen: SpriteGen) => {
-    const result = await invokeSpriteGenModal(gen)
-
-    // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
-    gen.dispose()
-    editorCtx.state.removeSpriteGen(gen.id)
-
-    await editorCtx.project.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-      editorCtx.project.addSprite(result)
-      await result.autoFit()
-    })
-    editorCtx.state.selectSprite(result.id)
-  },
-  {
-    en: 'Failed to add generated sprite',
-    zh: '添加生成的精灵失败'
   }
 ).fn
 </script>
