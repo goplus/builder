@@ -7,6 +7,10 @@ export type DragSortableOptions = {
   ghostClass?: string
   /** Function to call when the list is sorted */
   onSorted: (oldIndex: number, newIndex: number) => void
+  /** Function to filter whether an item can be moved. Return `true` if not allowed. */
+  filterItem?: (item: unknown) => boolean
+  /** Function to filter whether a move is allowed. Return `true` if not allowed. */
+  filterMove?: (oldIndex: number, newIndex: number) => boolean
 }
 
 const draggingItemRef = ref<unknown | null>(null)
@@ -19,56 +23,43 @@ const draggingItemRef = ref<unknown | null>(null)
 // As a workaround, we add a class to all children, then disable `:hover` effect in children (`UIBlockItem`, etc.) style.
 const disableHoverClass = 'drag-and-drop-disable-hover'
 
-export type SortableList = {
-  /**
-   * All items in the list.
-   * The order must be consistent with the children of Wrapper Element.
-   */
-  items: unknown[]
-  /**
-   * Optional range [start, end) to limit sortable items.
-   * Items outside this range cannot be dragged or serve as drop targets.
-   * When omitted, all items in the list are sortable.
-   */
-  sortableRange?: [number, number]
-}
-
 export function useDragSortable(
-  listSource: WatchSource<SortableList | null>,
+  listSource: WatchSource<unknown[] | null>,
   wrapperSource: WatchSource<HTMLElement | undefined | null>,
   options: DragSortableOptions
 ) {
   watchEffect(async (onCleanup) => {
-    const list = toValue<SortableList | null>(listSource)
-    if (list == null || list.items.length === 0) return
+    const list = toValue<unknown[] | null>(listSource)
+    if (list == null || list.length === 0) return
     await nextTick() // Ensure DOM updated for list change
 
     const wrapper = toValue<HTMLElement | undefined | null>(wrapperSource)
     if (wrapper == null) return
-
-    const rangeStartIdx = list.sortableRange?.[0] ?? 0
-    const rangeEndIdx = list.sortableRange?.[1] ?? list.items.length
 
     const sortable = Sortable.create(wrapper, {
       scroll: true,
       revertOnSpill: true,
       animation: 200,
       ghostClass: options.ghostClass,
+      filter(e, target) {
+        if (options.filterItem == null) return false
+        const idx = Array.from(wrapper.children).indexOf(target)
+        if (idx === -1) return false
+        return options.filterItem(list[idx])
+      },
       onMove(e) {
+        if (options.filterMove == null) return
         const children = Array.from(wrapper.children)
         const fromIdx = children.indexOf(e.dragged)
-        if (fromIdx < rangeStartIdx || fromIdx >= rangeEndIdx) {
-          return false
-        }
         const toIdx = children.indexOf(e.related)
-        if (toIdx < rangeStartIdx || toIdx >= rangeEndIdx) {
-          return false
-        }
+        // Defensive check, if not found, allow the move
+        if (fromIdx === -1 || toIdx === -1) return
+        return !options.filterMove(fromIdx, toIdx)
       },
       onStart(e) {
         const idx = Array.from(wrapper.children).indexOf(e.item)
         if (idx === -1) return
-        draggingItemRef.value = list.items[idx]
+        draggingItemRef.value = list[idx]
         for (const child of wrapper.children) child.classList.add(disableHoverClass)
       },
       onEnd(e) {
@@ -77,9 +68,6 @@ export function useDragSortable(
         const { oldDraggableIndex, newDraggableIndex } = e
         if (oldDraggableIndex == null || newDraggableIndex == null) return
         if (oldDraggableIndex === newDraggableIndex) return
-        // Defensive range check
-        if (oldDraggableIndex < rangeStartIdx || oldDraggableIndex >= rangeEndIdx) return
-        if (newDraggableIndex < rangeStartIdx || newDraggableIndex >= rangeEndIdx) return
         options.onSorted(oldDraggableIndex, newDraggableIndex)
       }
     })

@@ -22,7 +22,7 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList :sortable="{ list: sortableList }" @sorted="handleSorted">
+      <PanelList :sortable="{ list: sortableList, options: sortableOptions }" @sorted="handleSorted">
         <UIEmpty v-if="sprites.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
         </UIEmpty>
@@ -83,7 +83,6 @@
 import { computed, onBeforeUnmount, ref, shallowReactive, type ComponentPublicInstance } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
-import { type SortableList } from '@/utils/drag-and-drop'
 import { SpriteGen } from '@/models/gen/sprite-gen'
 import { Sprite } from '@/models/sprite'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
@@ -98,6 +97,7 @@ import PanelFooter from '../common/PanelFooter.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
 import { untilNotNull } from '@/utils/utils'
+import type { DragSortableOptions } from '@/utils/drag-and-drop.ts'
 
 defineProps<{
   expanded: boolean
@@ -168,10 +168,23 @@ const handleAddFromAssetLibrary = useMessageHandle(
   }
 ).fn
 
-const sortableList = computed<SortableList>(() => ({
-  items: [...editorCtx.project.sprites, ...editorCtx.state.spriteGens],
-  sortableRange: [0, editorCtx.project.sprites.length] as [number, number]
-}))
+const sortableList = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.spriteGens])
+
+const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
+  filterItem: (item: unknown) => {
+    return item instanceof SpriteGen
+  },
+  filterMove: (oldIndex: number, newIndex: number) => {
+    const totalList = sortableList.value
+    // spriteGens cannot be moved
+    const fromItem = totalList[oldIndex]
+    if (fromItem instanceof SpriteGen) return true
+    // sprites can only be moved to positions before spriteGens, i.e., cannot be moved to positions of spriteGens or after
+    const toItem = totalList[newIndex]
+    if (toItem instanceof SpriteGen) return true
+    return false
+  }
+}
 
 const handleSorted = useMessageHandle(
   // sprites are always before spriteGens, so the index is correct theoretically
