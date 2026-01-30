@@ -8,7 +8,7 @@ require (
 	github.com/goplus/builder/tools/ai v0.0.0
 	github.com/goplus/ixgo v0.61.0
 	github.com/goplus/mod v0.19.0
-	github.com/goplus/spx/ispx v0.0.0-20260128101819-b7293b5af809
+	github.com/goplus/spx/ispx v0.0.0-20260130022032-0aa827232e3b
 )
 
 require (
