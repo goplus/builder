@@ -11,7 +11,14 @@ import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackg
   <div class="preview-with-checkerboard-bg">
     <CheckerboardBackground class="background" />
     <slot>
-      <div class="placeholder">{{ $t({ en: 'Preview area', zh: '预览区域' }) }}</div>
+      <div class="placeholder">
+        {{
+          $t({
+            en: 'Enter details in the lower-left box and click "Generate".',
+            zh: '请在左下方描述细节，然后点击“生成”。'
+          })
+        }}
+      </div>
     </slot>
   </div>
 </template>

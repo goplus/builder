@@ -46,7 +46,7 @@ export class CostumeGen extends Disposable {
     this.project = project
     this.enrichPhase = new Phase({ en: 'enrich costume settings', zh: '丰富造型设置' })
     this.generateTask = new Task(TaskType.GenerateCostume)
-    this.generatePhase = new Phase({ en: 'generate costume image', zh: '生成造型图片' })
+    this.generatePhase = new Phase({ en: 'generate costume image', zh: '生成造型图片' }, 15)
     this.finishPhase = new Phase({ en: 'save costume', zh: '保存造型' })
     this.settings = {
       name: '',

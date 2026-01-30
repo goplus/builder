@@ -5,6 +5,7 @@ import type { AnimationGen } from '@/models/gen/animation-gen'
 import { UIButton, UIError } from '@/components/ui'
 import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
 import { useRenameAnimationGen } from '../..'
+import { humanizeRemaining } from '../common/remaining-time'
 import GenLoading from '../common/GenLoading.vue'
 import GenPreview from '../common/GenPreview.vue'
 import PreviewWithCheckerboardBg from '../common/PreviewWithCheckerboardBg.vue'
@@ -49,6 +50,12 @@ const videoPreviewKey = computed(() => {
   const gen = props.gen
   return gen.name + ':' + (gen.video != null ? gen.video.name : '')
 })
+
+const remaining = computed(() => {
+  const gen = props.gen
+  if (gen.generateVideoState.status !== 'running') return null
+  return gen.generateVideoState.remaining
+})
 </script>
 
 <template>
@@ -60,6 +67,7 @@ const videoPreviewKey = computed(() => {
     </template>
     <GenLoading v-if="gen.generateVideoState.status === 'running'" variant="bg-spin">
       {{ $t({ en: 'Generating animation...', zh: '正在生成动画...' }) }}
+      {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
     </GenLoading>
     <GenStateFailed v-else-if="gen.generateVideoState.status === 'failed'" :state-failed="gen.generateVideoState" />
     <PreviewWithCheckerboardBg v-else>

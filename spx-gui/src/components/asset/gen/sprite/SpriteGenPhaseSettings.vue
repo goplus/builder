@@ -8,11 +8,12 @@
 import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
-import SpriteSettingsInput from './SpriteSettingsInput.vue'
 import { useMessageHandle } from '@/utils/exception'
+import { humanizeRemaining } from '../common/remaining-time'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
+import SpriteSettingsInput from './SpriteSettingsInput.vue'
 import SpriteImageItem from './SpriteImageItem.vue'
 
 const props = defineProps<{
@@ -28,6 +29,12 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 })
 
 const hasPreview = computed(() => props.gen.image != null)
+
+const remaining = computed(() => {
+  const gen = props.gen
+  if (gen.imagesGenState.status !== 'running') return null
+  return gen.imagesGenState.remaining
+})
 </script>
 
 <template>
@@ -58,12 +65,18 @@ const hasPreview = computed(() => props.gen.image != null)
           <SpriteImageItem :file="file" :active="active" @click="select(file)" />
         </template>
         <template #tip>
-          {{
-            $t({
-              en: 'Select the sprite you like the most, or generate new ones.',
-              zh: '选择你最喜欢的一个精灵，或者重新生成。'
-            })
-          }}
+          <template v-if="gen.imagesGenState.status === 'running' && remaining != null">
+            {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
+            {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
+          </template>
+          <template v-else-if="gen.imagesGenState.status === 'finished'">
+            {{
+              $t({
+                en: 'Select the sprite you like the most, or generate new ones.',
+                zh: '选择你最喜欢的一个精灵，或者重新生成。'
+              })
+            }}
+          </template>
         </template>
       </ImageSelector>
 
