@@ -23,7 +23,7 @@ const quotaExceededMeta = computed(() => {
 <template>
   <UIError>
     <div>{{ $t(stateFailed.error.userMessage) }}</div>
-    <template v-if="quotaExceededMeta != null" #subMessage>
+    <template v-if="quotaExceededMeta != null" #sub-message>
       <QuotaExceededCountdown :quota-exceeded-meta="quotaExceededMeta" />
     </template>
   </UIError>

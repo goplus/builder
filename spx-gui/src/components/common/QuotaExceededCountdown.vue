@@ -30,6 +30,7 @@ import { spacingLocaleZhMessage, useInterval } from '@/utils/utils'
 import { type QuotaExceededMeta } from '@/apis/common/exception'
 
 const props = defineProps<{
+  // TODO: This could be optimized by passing in a target time to make it more generic
   quotaExceededMeta: QuotaExceededMeta
 }>()
 

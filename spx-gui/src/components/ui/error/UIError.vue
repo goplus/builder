@@ -4,9 +4,9 @@
     <h5 class="message">
       <slot></slot>
     </h5>
-    <h3 v-if="$slots.subMessage != null" class="sub-message">
-      <slot name="subMessage"></slot>
-    </h3>
+    <p v-if="$slots['sub-message'] != null" class="sub-message">
+      <slot name="sub-message"></slot>
+    </p>
     <div class="ops">
       <!-- TODO: consider using slot to support more custom operations -->
       <button v-if="retry != null" class="op-btn" @click="retry">
