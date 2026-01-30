@@ -49,8 +49,9 @@ const minRemaining = 2
 const updateInterval = 1
 
 watch(
-  () => props.gen.generateState,
-  (state) => {
+  () => props.gen.generateState.status,
+  () => {
+    const state = props.gen.generateState
     if (state.status === 'running') {
       const elapsed = (Date.now() - state.startAt) / 1000
       const estimatedTotal = Math.round(Math.max(minRemaining, genCostumeTimeConsuming - elapsed))

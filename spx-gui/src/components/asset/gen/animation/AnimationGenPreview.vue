@@ -59,8 +59,9 @@ const minRemaining = 3
 const updateInterval = 3
 
 watch(
-  () => props.gen.generateVideoState,
-  (state) => {
+  () => props.gen.generateVideoState.status,
+  () => {
+    const state = props.gen.generateVideoState
     if (state.status === 'running') {
       const elapsed = (Date.now() - state.startAt) / 1000
       const estimatedTotal = Math.round(Math.max(minRemaining, genVideoTimeConsuming - elapsed))
