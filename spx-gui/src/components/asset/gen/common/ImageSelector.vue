@@ -1,6 +1,7 @@
 <script lang="ts">
 import { inject } from 'vue'
 import type { ComputedRef, InjectionKey } from 'vue'
+import GenStateFailed from './GenStateFailed.vue'
 
 const imageSelectorCompactKey: InjectionKey<ComputedRef<boolean>> = Symbol('image-selector-compact')
 const imageSelectorDisabledKey: InjectionKey<ComputedRef<boolean>> = Symbol('image-selector-disabled')
@@ -20,7 +21,6 @@ export function useImageSelectorDisabled(): ComputedRef<boolean> {
 
 <script setup lang="ts">
 import { computed, provide, ref } from 'vue'
-import { UIError } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import type { File } from '@/models/common/file'
 import type { PhaseState } from '@/models/gen/common'
@@ -75,7 +75,7 @@ function handleSelect(file: File) {
           <slot name="loading-item" :index="idx"></slot>
         </template>
       </template>
-      <UIError v-else-if="state.status === 'failed'">{{ $t(state.error.userMessage) }}</UIError>
+      <GenStateFailed v-else-if="state.status === 'failed'" :state-failed="state"></GenStateFailed>
       <template v-else>
         <template v-for="(option, idx) in state.result ?? []" :key="idx">
           <slot name="item" :file="option" :active="selected === option" :select="handleSelect"></slot>

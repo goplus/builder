@@ -4,6 +4,9 @@
     <h5 class="message">
       <slot></slot>
     </h5>
+    <h3 v-if="$slots.subMessage != null" class="sub-message">
+      <slot name="subMessage"></slot>
+    </h3>
     <div class="ops">
       <!-- TODO: consider using slot to support more custom operations -->
       <button v-if="retry != null" class="op-btn" @click="retry">
@@ -81,6 +84,12 @@ const retry = computed(() =>
   font-size: 16px;
   line-height: 26px;
   color: var(--ui-color-grey-1000);
+}
+
+.sub-message {
+  font-size: 13px;
+  margin-top: 4px;
+  color: var(--ui-color-grey-900);
 }
 
 .ops {
