@@ -3,7 +3,7 @@ import { UIBlockItemTitle } from '@/components/ui'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import { computed } from 'vue'
 import GenItem from '../common/GenItem.vue'
-import costumeSVG from '../common/costume.svg?raw'
+import spriteSVG from '../common/sprite.svg?raw'
 import { isCostumesLoading } from '../costume/CostumeGenItem.vue'
 import { isAnimationsLoading } from '../animation/AnimationGenItem.vue'
 
@@ -32,7 +32,7 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
     }"
     :loading="isLoading"
     :highlight="highlight"
-    :placeholder="costumeSVG"
+    :placeholder="spriteSVG"
     :color="{
       main: 'sprite',
       loading: {

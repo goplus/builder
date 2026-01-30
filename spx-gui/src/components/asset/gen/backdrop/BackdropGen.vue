@@ -19,7 +19,13 @@ const emit = defineEmits<{
   finished: [Backdrop]
 }>()
 
-const canSubmit = computed(() => props.gen.image != null && props.gen.imagesGenState.status !== 'running')
+const imageInResult = computed(() => {
+  if (props.gen.image === null) return false
+  return props.gen.imagesGenState.result?.includes(props.gen.image)
+})
+const canSubmit = computed(
+  () => props.gen.image != null && imageInResult.value && props.gen.imagesGenState.status !== 'running'
+)
 const handleSubmit = useMessageHandle(
   async () => {
     const backdrop = await props.gen.finish()
@@ -73,7 +79,7 @@ const hasPreview = computed(() => props.gen.image != null)
       </ImageSelector>
 
       <template #preview>
-        <ImagePreview :file="gen.image" />
+        <ImagePreview :file="imageInResult ? gen.image : null" />
       </template>
     </LayoutWithPreview>
     <footer class="footer">

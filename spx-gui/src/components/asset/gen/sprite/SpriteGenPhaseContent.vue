@@ -6,13 +6,13 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
-import { useI18n } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { capture, useMessageHandle } from '@/utils/exception'
 import type { Sprite } from '@/models/sprite'
 import type { SpriteGen } from '@/models/gen/sprite-gen'
 import type { CostumeGen } from '@/models/gen/costume-gen'
 import type { AnimationGen } from '@/models/gen/animation-gen'
-import { UIButton, UITooltip, useConfirmDialog } from '@/components/ui'
+import { UIButton, UITooltip, useConfirmDialog, type ConfirmOptions } from '@/components/ui'
 import { useRenameAnimationGen, useRenameCostumeGen } from '../..'
 import CostumeSettingInput from '../costume/CostumeSettingsInput.vue'
 import AnimationSettingInput from '../animation/AnimationSettingsInput.vue'
@@ -21,6 +21,7 @@ import CostumeGenItem from '../costume/CostumeGenItem.vue'
 import AnimationGenItem from '../animation/AnimationGenItem.vue'
 import CostumeGenPreview from '../costume/CostumeGenPreview.vue'
 import AnimationGenPreview from '../animation/AnimationGenPreview.vue'
+import { humanizeListWithLimit } from '@/utils/utils'
 
 const props = defineProps<{
   gen: SpriteGen
@@ -129,20 +130,60 @@ async function beforeSubmit() {
   const { costumes, animations } = props.gen
   const finishedCostumes = costumes.filter((c) => c.result != null)
   const finishedAnimations = animations.filter((a) => a.result != null)
-  if (
+  let options: Omit<ConfirmOptions, 'title'> | null = null
+  if (!submittable.value) {
+    const mapName = (gen: CostumeGen | AnimationGen) => ({ en: gen.name, zh: gen.name })
+    const runningCostumes = costumes.filter((c) => c.generateState.status === 'running').map(mapName)
+    const runningAnimations = animations.filter((a) => a.generateVideoState.status === 'running').map(mapName)
+    const failedCostumes = costumes.filter((c) => c.generateState.status === 'failed').map(mapName)
+    const failedAnimations = animations.filter((a) => a.generateVideoState.status === 'failed').map(mapName)
+    const content: LocaleMessage[] = []
+    if (runningCostumes.length > 0 || runningAnimations.length > 0) {
+      const runningNames = humanizeListWithLimit(runningCostumes.concat(runningAnimations), 3)
+      content.push({
+        zh: `进行中任务： ${runningNames.zh}`,
+        en: `Running tasks: ${runningNames.en}`
+      })
+    }
+    if (failedCostumes.length > 0 || failedAnimations.length > 0) {
+      const failedNames = humanizeListWithLimit(failedCostumes.concat(failedAnimations), 3)
+      content.push({
+        zh: `报错任务： ${failedNames.zh}`,
+        en: `Failed tasks: ${failedNames.en}`
+      })
+    }
+    // There will be at least one task that is running or failed
+    content.push({
+      zh: '确定不处理直接采用吗？',
+      en: 'Are you sure to use it directly without processing?'
+    })
+    options = {
+      content: i18n.t({
+        zh: `${content.map((c) => c.zh).join('，')}`,
+        en: `${content.map((c) => c.en).join(',')}`
+      }),
+      cancelText: i18n.t({ zh: '继续处理', en: 'Continue processing' })
+    }
+  } else if (
     finishedCostumes.length === 1 &&
     finishedAnimations.length === 0 && // only default costume generated
     costumes.length + animations.length > 1 // while there are other unfinished items
   ) {
-    return confirm({
-      type: 'info',
-      title: i18n.t({ zh: '采用精灵', en: 'Use sprite' }),
+    options = {
       content: i18n.t({
         zh: '添加更多造型或动画可以让你的精灵更加生动。确定不添加，直接采用吗？',
         en: 'Adding more costumes or animations can make your sprite more lively. Are you sure to use it directly without adding more?'
       }),
-      cancelText: i18n.t({ zh: '继续添加', en: 'Continue adding' }),
-      confirmText: i18n.t({ zh: '直接采用', en: 'Use directly' })
+      cancelText: i18n.t({ zh: '继续添加', en: 'Continue adding' })
+    }
+  }
+
+  if (options != null) {
+    return confirm({
+      type: 'info',
+      title: i18n.t({ zh: '采用精灵', en: 'Use sprite' }),
+      confirmText: i18n.t({ zh: '直接采用', en: 'Use directly' }),
+      ...options
     })
   }
 }
@@ -237,7 +278,6 @@ const handleSubmit = useMessageHandle(
         v-radar="{ name: 'Use', desc: 'Click to finish and use the generated sprite in the project' }"
         color="primary"
         size="large"
-        :disabled="!submittable"
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"
       >

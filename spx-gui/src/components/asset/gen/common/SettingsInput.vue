@@ -244,9 +244,9 @@ provide(settingsInputCtxKey, ctx)
     .enriching {
       display: flex;
       align-items: center;
-      font-size: 12px;
       gap: 2px;
       height: fit-content;
+      font-size: 12px;
       color: var(--ui-color-turquoise-500);
 
       .animation {
