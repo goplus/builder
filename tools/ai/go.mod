@@ -2,7 +2,7 @@ module github.com/goplus/builder/tools/ai
 
 go 1.24.0
 
-require github.com/goplus/spx/v2 v2.0.0-pre.44
+require github.com/goplus/spx/v2 v2.0.0-pre.45
 
 require (
 	github.com/goplus/spbase v0.1.0 // indirect
