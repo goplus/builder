@@ -42,6 +42,12 @@ const slots = useSlots()
 </template>
 
 <style lang="scss" scoped>
+@property --bg-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 .gen-loading {
   width: 100%;
   height: 100%;
@@ -64,36 +70,34 @@ const slots = useSlots()
 
   &.variant-bg-spin {
     border-radius: 8px;
-    overflow: hidden;
-    // Force the creation of a stacking context to ensure the element and its children
-    // are rendered in a separate plane. This prevents issues where mix-blend-mode
-    // causes border-radius to be ignored in some browser engines.
-    filter: opacity(1);
-    container-type: size;
 
-    &::before {
-      content: '';
-      position: absolute;
-      // Use cqmax to ensure the background is always a square based on the container's largest side
-      // 142cqmax is slightly larger than the diagonal length (sqrt(2) ≈ 1.414), ensuring full coverage during rotation
-      width: 142cqmax;
-      height: 142cqmax;
-      top: 50%;
-      left: 50%;
-      will-change: transform;
-      background-image: radial-gradient(circle at 50% -20%, var(--ui-color-turquoise-200) 20%, transparent 70%),
-        radial-gradient(circle at 50% 120%, var(--ui-color-blue-200) 20%, transparent 70%),
-        radial-gradient(circle at -20% 50%, var(--ui-color-blue-100) 20%, transparent 70%),
-        radial-gradient(circle at 120% 50%, var(--ui-color-grey-100) 20%, transparent 70%);
+    // Use cos/sin to calculate the rotation position of each gradient center
+    // 100% is the rotation radius, 50% is the center offset
+    background-image: radial-gradient(
+        circle at calc(50% + cos(var(--bg-angle) + 0deg) * 100%) calc(50% + sin(var(--bg-angle) + 0deg) * 100%),
+        var(--ui-color-turquoise-200) 20%,
+        transparent 70%
+      ),
+      radial-gradient(
+        circle at calc(50% + cos(var(--bg-angle) + 90deg) * 100%) calc(50% + sin(var(--bg-angle) + 90deg) * 100%),
+        var(--ui-color-blue-200) 20%,
+        transparent 70%
+      ),
+      radial-gradient(
+        circle at calc(50% + cos(var(--bg-angle) + 180deg) * 100%) calc(50% + sin(var(--bg-angle) + 180deg) * 100%),
+        var(--ui-color-blue-100) 20%,
+        transparent 70%
+      ),
+      radial-gradient(
+        circle at calc(50% + cos(var(--bg-angle) + 270deg) * 100%) calc(50% + sin(var(--bg-angle) + 270deg) * 100%),
+        var(--ui-color-grey-100) 20%,
+        transparent 70%
+      );
 
-      animation: rotate-gradient 2.5s linear infinite;
-      @keyframes rotate-gradient {
-        from {
-          transform: translate(-50%, -50%) rotate(0deg);
-        }
-        to {
-          transform: translate(-50%, -50%) rotate(360deg);
-        }
+    animation: spin-gradient 4s linear infinite;
+    @keyframes spin-gradient {
+      to {
+        --bg-angle: 360deg;
       }
     }
 
