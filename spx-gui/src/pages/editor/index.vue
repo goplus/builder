@@ -28,17 +28,17 @@ import { ProgressCollector, ProgressReporter } from '@/utils/progress'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 import { composeQuery, useQuery } from '@/utils/query'
 import { clear } from '@/models/common/local'
-import { UIDetailedLoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
-import { useI18n } from '@/utils/i18n'
+import { UIDetailedLoading, UIError, useConfirmDialogWithResult, useMessage } from '@/components/ui'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import { untilNotNull, usePageTitle } from '@/utils/utils'
+import { humanizeListWithLimit, untilNotNull, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
-import { Editing, EditingMode } from '@/components/editor/editing'
+import { EditingMode } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 
 const props = defineProps<{
@@ -58,34 +58,26 @@ const copilotCtx = useAgentCopilotCtx()
 
 const router = useRouter()
 
-const withConfirm = useConfirmDialog()
+const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
 const { isOnline } = useNetwork()
 const m = useMessage()
 
-const askToOpenTargetWithAnotherInCache = (targetName: string, cachedName: string): Promise<boolean> => {
-  return new Promise((resolve) =>
-    withConfirm({
-      title: t({
-        en: `Open project ${targetName}?`,
-        zh: `打开项目 ${targetName}？`
-      }),
-      content: t({
-        en: `There are unsaved changes for project ${cachedName}. The changes will be discarded if you continue to open project ${targetName}. Are you sure to continue?`,
-        zh: `项目 ${cachedName} 存在未保存的变更，若继续打开项目 ${targetName}，项目 ${cachedName} 的变更将被丢弃。确定继续吗？`
-      }),
-      cancelText: t({
-        en: `Open project ${cachedName}`,
-        zh: `打开项目 ${cachedName}`
-      })
+const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: string): Promise<boolean> => {
+  return confirm({
+    title: t({
+      en: `Open project ${targetName}?`,
+      zh: `打开项目 ${targetName}？`
+    }),
+    content: t({
+      en: `There are unsaved changes for project ${cachedName}. The changes will be discarded if you continue to open project ${targetName}. Are you sure to continue?`,
+      zh: `项目 ${cachedName} 存在未保存的变更，若继续打开项目 ${targetName}，项目 ${cachedName} 的变更将被丢弃。确定继续吗？`
+    }),
+    cancelText: t({
+      en: `Open project ${cachedName}`,
+      zh: `打开项目 ${cachedName}`
     })
-      .then(() => {
-        resolve(true)
-      })
-      .catch(() => {
-        resolve(false)
-      })
-  )
+  })
 }
 
 const projectQueryRet = useQuery(
@@ -180,7 +172,7 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
   }
 
   if (localProject != null && localProject.name !== projectName) {
-    const stillOpenTarget = await askToOpenTargetWithAnotherInCache(projectName, localProject.name!)
+    const stillOpenTarget = await confirmOpenTargetWithAnotherInCache(projectName, localProject.name!)
     signal.throwIfAborted()
     if (stillOpenTarget) {
       await clear(LOCAL_CACHE_KEY)
@@ -212,67 +204,85 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
   return newProject
 }
 
-onBeforeRouteLeave(() => {
-  const editing = state.value?.editing
-  if (editing == null || !editing.dirty) return true
-  if (editing.mode === EditingMode.EffectFree) return navigationGuardForEffectFreeMode()
-  if (editing.mode === EditingMode.AutoSave) return navigationGuardForAutoSaveMode(editing)
+onBeforeRouteLeave(async () => {
+  const es = state.value
+  if (es == null) return true
+  const okToLeave = await checkChangesNotToBeSaved(es)
+  if (!okToLeave) return false
+  await ensureAutoSaved(es)
+  return true
 })
 
-function navigationGuardForAutoSaveMode(editing: Editing) {
-  return withConfirm({
-    title: t({
-      en: 'Save changes',
-      zh: '保存变更'
-    }),
-    content: t({
-      en: 'There are changes not saved yet. You must save them to the cloud before leaving.',
-      zh: '存在未保存的变更，你必须先保存到云端才能离开。'
-    }),
-    confirmText: t({
-      en: 'Save',
-      zh: '保存'
-    }),
-    async confirmHandler() {
-      try {
-        if (editing.dirty) await editing.saving?.flush()
-        await clear(LOCAL_CACHE_KEY)
-      } catch (e) {
-        m.error(t({ en: 'Failed to save changes', zh: '保存变更失败' }))
-        throw e
-      }
-    },
-    autoConfirm: true
-  }).catch(() => false)
-}
+/**
+ * Check changes that will not be saved, then confirm with user.
+ * If it is OK to leave, return true, otherwise return false.
+ */
+async function checkChangesNotToBeSaved(es: EditorState) {
+  const hasEdits = es.editing.mode === EditingMode.EffectFree && es.editing.dirty
+  const unfinishedAssetGens = [...es.spriteGens, ...es.backdropGens]
+  const hasUnfinishedAssetGens = unfinishedAssetGens.length > 0
+  if (!hasEdits && !hasUnfinishedAssetGens) return true
 
-function navigationGuardForEffectFreeMode() {
-  return withConfirm({
+  let changes: LocaleMessage
+  const unfinishedNames = humanizeListWithLimit(
+    unfinishedAssetGens.map((gen) => ({ en: gen.name, zh: gen.name })),
+    3
+  )
+  if (hasEdits && hasUnfinishedAssetGens) {
+    changes = {
+      en: `Project edits and unfinished asset generations (${unfinishedNames.en})`,
+      zh: `对项目的修改和未完成的素材生成（${unfinishedNames.zh}）`
+    }
+  } else if (hasEdits) {
+    changes = { en: 'Project edits', zh: '对项目的修改' }
+  } else {
+    changes = {
+      en: `Unfinished asset generations (${unfinishedNames.en})`,
+      zh: `未完成的素材生成（${unfinishedNames.zh}）`
+    }
+  }
+  return confirm({
     title: t({
-      en: 'Discard changes',
-      zh: '放弃变更'
+      en: 'Leave editor',
+      zh: '离开编辑器'
     }),
     content: t({
-      en: 'There are changes not saved yet. You can discard them and leave.',
-      zh: '存在未保存的变更，你可以放弃它们并离开。'
+      en: `${changes.en} will not be saved if you leave now. Are you sure to leave?`,
+      zh: `若现在离开，${changes.zh}将不会被保存。确定要离开吗？`
     }),
     cancelText: t({
       en: 'Keep editing',
       zh: '继续编辑'
     }),
     confirmText: t({
-      en: 'Discard changes',
-      zh: '放弃变更'
-    }),
-    async confirmHandler() {
-      await clear(LOCAL_CACHE_KEY)
-    }
-  }).catch(() => false)
+      en: 'Leave',
+      zh: '离开'
+    })
+  })
+}
+
+/** Ensure the changes to be auto-saved are saved */
+function ensureAutoSaved(es: EditorState) {
+  const editing = es.editing
+  if (!editing.dirty || editing.mode !== EditingMode.AutoSave || editing.saving == null) return
+  return m
+    .withLoading(
+      editing.saving.flush(),
+      t({
+        en: 'Saving project...',
+        zh: '保存项目中...'
+      })
+    )
+    .catch((e) => {
+      m.error(t({ en: 'Failed to save project', zh: '保存项目失败' }))
+      throw e
+    })
 }
 
 function handleBeforeUnload(event: BeforeUnloadEvent) {
-  const editing = state.value?.editing
-  if (editing != null && editing.dirty) {
+  const es = state.value
+  if (es == null) return
+  if (es.editing.dirty || es.spriteGens.length > 0 || es.backdropGens.length > 0) {
     event.preventDefault()
   }
 }

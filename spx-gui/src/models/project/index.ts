@@ -7,11 +7,12 @@ import { computed, reactive, watch, type ComputedRef, toValue, effectScope } fro
 
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
+import type { Prettify } from '@/utils/types'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
-import { Visibility, type ProjectData } from '@/apis/project'
+import { Visibility, type ProjectData, type ProjectExtraSettings } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
@@ -31,16 +32,23 @@ import { History } from './history'
 
 export type { Action } from './history'
 
-export type CloudMetadata = Omit<ProjectData, 'latestRelease' | 'files' | 'thumbnail'> & {
-  thumbnail: File | null
-}
+export type CloudMetadata = Prettify<
+  Omit<ProjectData, 'latestRelease' | 'files' | 'thumbnail'> & {
+    thumbnail: File | null
+  }
+>
 
-export type Metadata = Partial<CloudMetadata> & {
-  aiDescription?: string | null
-  aiDescriptionHash?: string | null
-}
+export type Metadata = Prettify<
+  Partial<CloudMetadata> & {
+    aiDescription?: string | null
+    aiDescriptionHash?: string | null
+  }
+>
 
-// TODO: better organization & type derivation
+/**
+ * A Project loaded from cloud.
+ * TODO: better organization & type derivation
+ */
 export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
@@ -121,6 +129,7 @@ export class Project extends Disposable {
    * It may not be synced with game content when project is under editing. See details in https://github.com/goplus/builder/issues/1807 .
    */
   thumbnail?: File | null
+  extraSettings?: ProjectExtraSettings
   viewCount?: number
   likeCount?: number
   releaseCount?: number
@@ -314,8 +323,13 @@ export class Project extends Disposable {
     this.instructions = instructions
   }
 
+  /** History instance which tracks project editing history */
   history: History // TODO: move to state `Editing`
-  historyMutex = new Mutex() // TODO: rename to some "atomic mutex", used to ensure atomicity of project operations
+  /**
+   * Mutex for transaction operations on the project.
+   * Use this to ensure transactional operations atomicity.
+   */
+  transactionMutex = new Mutex()
 
   // In project editor, we use `bindScreenshotTaker` to register a screenshot taker and
   // update thumbnail automatically. That way, the thumbnail will always reflect the latest changes
@@ -506,7 +520,12 @@ export class Project extends Disposable {
 
   /**
    * Export game files.
+   * The result is memoized, and will only be re-computed when the game content changed.
    * By watching result of this method, you can get notified when game content changed.
+   *
+   * NOTE: this method may return intermediate result during transactional edits.
+   *
+   * TODO: we may need to migrate most callers of this method to use some alternative methods that ensure atomicity.
    */
   exportGameFiles() {
     return toValue(this.exportGameFilesComputed)
@@ -520,7 +539,7 @@ export class Project extends Disposable {
 
   /** Export metadata & game files */
   async export(signal?: AbortSignal): Promise<[Metadata, Files]> {
-    return this.historyMutex.runExclusive(async () => {
+    return this.transactionMutex.runExclusive(async () => {
       // Do flush pending thumbnail updates to ensure the exported thumbnail up-to-date.
       // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
       // For more details, see https://github.com/goplus/builder/issues/1807 .

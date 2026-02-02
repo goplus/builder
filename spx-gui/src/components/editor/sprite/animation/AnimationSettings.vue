@@ -30,6 +30,7 @@
             <span v-if="boundStateNum > 0" class="value">{{ boundStateNum }}</span>
           </li>
           <li
+            v-if="soundEditable"
             v-radar="{ name: 'Edit sound', desc: 'Click to edit animation sound' }"
             class="setting"
             :class="{ active: activeSetting === 'sound' }"
@@ -42,12 +43,7 @@
         </ul>
       </template>
       <DurationEditor v-if="activeSetting === 'duration'" :animation="animation" @close="handleEditorClose" />
-      <BoundStateEditor
-        v-if="activeSetting === 'bound-state'"
-        :animation="animation"
-        :sprite="sprite"
-        @close="handleEditorClose"
-      />
+      <BoundStateEditor v-if="activeSetting === 'bound-state'" :animation="animation" @close="handleEditorClose" />
       <SoundEditor v-if="activeSetting === 'sound'" :animation="animation" @close="handleEditorClose" />
     </UIDropdown>
   </section>
@@ -56,21 +52,21 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { formatDuration } from '@/utils/audio'
-import type { Sprite } from '@/models/sprite'
 import type { Animation } from '@/models/animation'
 import { UIDropdown, UIIcon, isInPopup } from '@/components/ui'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import DurationEditor from './DurationEditor.vue'
 import BoundStateEditor from './state/BoundStateEditor.vue'
 import SoundEditor from './SoundEditor.vue'
-import type { Sound } from '@/models/sound'
 
 const props = defineProps<{
-  sprite: Sprite
   animation: Animation
-  sounds: Sound[]
+  /** If it is supported to edit sound of the animation */
+  soundEditable: boolean
 }>()
 
-const soundName = computed(() => props.sounds.find((s) => s.id === props.animation.sound)?.name)
+const editorCtx = useEditorCtx()
+const soundName = computed(() => editorCtx.project.sounds.find((s) => s.id === props.animation.sound)?.name)
 
 type Setting = 'duration' | 'bound-state' | 'sound'
 
@@ -84,7 +80,11 @@ function handleEditorClose() {
   activeSetting.value = null
 }
 
-const boundStateNum = computed(() => props.sprite.getAnimationBoundStates(props.animation.id).length)
+const boundStateNum = computed(() => {
+  const { sprite, id } = props.animation
+  if (sprite == null) return 0
+  return sprite.getAnimationBoundStates(id).length
+})
 
 function handleClickOutside(e: MouseEvent) {
   // There are popups (dropdown, modal, ...) in setting editor (e.g. "Record" in `SoundEditor`), we should not close the editor when user clicks in the popup content.

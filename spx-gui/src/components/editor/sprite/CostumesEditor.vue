@@ -24,7 +24,12 @@
       </UIMenu>
     </template>
     <template #detail>
-      <CostumeDetail v-if="state.selected != null" :sprite="sprite" :costume="state.selected" />
+      <CostumeDetail
+        v-if="state.selected != null"
+        :sprite="sprite"
+        :costume="state.selected"
+        @rename="handleRename(state.selected)"
+      />
     </template>
   </EditorList>
 </template>
@@ -67,7 +72,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/sprite'
 import { Costume } from '@/models/costume'
-import { useAddCostumeFromLocalFile } from '@/components/asset'
+import { useAddCostumeFromLocalFile, useRenameCostume } from '@/components/asset'
 import EditorList from '../common/EditorList.vue'
 import CostumeItem from './CostumeItem.vue'
 import CostumeDetail from './CostumeDetail.vue'
@@ -101,4 +106,10 @@ const handleSorted = useMessageHandle(
     zh: '更新造型顺序失败'
   }
 ).fn
+
+const renameCostume = useRenameCostume()
+const handleRename = useMessageHandle(renameCostume, {
+  en: 'Failed to rename costume',
+  zh: '重命名造型失败'
+}).fn
 </script>

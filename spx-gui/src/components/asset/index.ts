@@ -5,7 +5,7 @@ import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import type { AssetModel } from '@/models/common/asset'
+import { type AssetModel } from '@/models/common/asset'
 import { fromNativeFile } from '@/models/common/file'
 import { type Project } from '@/models/project'
 import { Backdrop } from '@/models/backdrop'
@@ -28,11 +28,31 @@ import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
+import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
+import { SpriteGen } from '@/models/gen/sprite-gen'
+import { BackdropGen } from '@/models/gen/backdrop-gen'
+import type { CostumeGen } from '@/models/gen/costume-gen'
+import type { AnimationGen } from '@/models/gen/animation-gen'
 
 export function useAddAssetFromLibrary() {
+  const editorCtx = useEditorCtx()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    return (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
+    return (await invokeAssetLibraryModal({
+      project,
+      type,
+      genCollapseHandler: async (gen) => {
+        // Add the ongoing asset generation to the editor state
+        if (gen instanceof SpriteGen) {
+          editorCtx.state.addSpriteGen(gen)
+          return editorCtx.state.getSpriteGenCollapsePos(gen)
+        } else if (gen instanceof BackdropGen) {
+          editorCtx.state.addBackdropGen(gen)
+          return editorCtx.state.getBackdropGenCollapsePos(gen)
+        }
+        return null
+      }
+    })) as Array<AssetModel<T>>
   }
 }
 
@@ -332,6 +352,51 @@ export function useRenameWidget() {
         },
         inputTip: assetName.widgetNameTip,
         warning: await getRenameWarning()
+      }
+    })
+  }
+}
+
+export function useSpriteGenModal() {
+  const invokeModal = useModal(SpriteGenModal)
+  return function spriteGenModal(spriteGen: SpriteGen) {
+    return invokeModal({ gen: spriteGen })
+  }
+}
+
+export function useRenameCostumeGen() {
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameCostumeGen(gen: CostumeGen) {
+    return invokeRenameModal({
+      target: {
+        name: gen.settings.name,
+        validateName(name) {
+          return assetName.validateCostumeName(name, gen.parent)
+        },
+        async applyName(newName) {
+          gen.setName(newName)
+        },
+        inputTip: assetName.costumeNameTip,
+        warning: null
+      }
+    })
+  }
+}
+
+export function useRenameAnimationGen() {
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameAnimationGen(gen: AnimationGen) {
+    return invokeRenameModal({
+      target: {
+        name: gen.settings.name,
+        validateName(name) {
+          return assetName.validateAnimationName(name, gen.parent)
+        },
+        async applyName(newName) {
+          gen.setName(newName)
+        },
+        inputTip: assetName.animationNameTip,
+        warning: null
       }
     })
   }

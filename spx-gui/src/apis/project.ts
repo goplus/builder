@@ -1,8 +1,9 @@
 import dayjs from 'dayjs'
-import type { FileCollection, ByPage, PaginationParams } from './common'
+import type { FileCollection, ByPage, PaginationParams, Perspective, ArtStyle } from './common'
 import { client, Visibility, ownerAll, timeStringify } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
 import { parseProjectReleaseFullName, stringifyProjectReleaseFullName, type ProjectRelease } from './project-release'
+import type { Prettify } from '@/utils/types'
 
 export { Visibility, ownerAll }
 
@@ -10,6 +11,27 @@ export enum ProjectDataType {
   Sprite = 0,
   Backdrop = 1,
   Sound = 2
+}
+
+/** Source of extra settings of the project. */
+export const enum ProjectExtraSettingsSource {
+  /** Settings generated automatically by the system (e.g., via AI analysis). */
+  Auto = 'auto',
+  /** Settings provided or adjusted manually by the user. */
+  Manual = 'manual'
+}
+
+/**
+ * Extra settings of the project.
+ * It may include graphic settings and other settings (e.g., lore, genre, audio style) in the future.
+ */
+export type ProjectExtraSettings = {
+  /** Source of settings */
+  source?: ProjectExtraSettingsSource
+  /** Art style indicates the visual style or aesthetic approach used in the creation of graphics */
+  artStyle?: ArtStyle
+  /** Perspective indicates the viewpoint from which the "game world" is viewed */
+  perspective?: Perspective
 }
 
 export type ProjectData = {
@@ -37,6 +59,8 @@ export type ProjectData = {
   description: string
   /** Instructions on how to interact with the project */
   instructions: string
+  /** Extra settings of the project */
+  extraSettings: ProjectExtraSettings
   /** Universal URL of the project's thumbnail image, may be empty (`""`) */
   thumbnail: string
   /** Number of times the project has been viewed */
@@ -49,19 +73,23 @@ export type ProjectData = {
   remixCount: number
 }
 
-export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility'> & {
-  /** Full name of the project or project release to remix from. */
-  remixSource: string
-}
+export type AddProjectByRemixParams = Prettify<
+  Pick<ProjectData, 'name' | 'visibility'> & {
+    /** Full name of the project or project release to remix from. */
+    remixSource: string
+  }
+>
 
-export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'>
+export type AddProjectParams = Prettify<Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'>>
 
 export async function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
   return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
-export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'> &
-  Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail'>>
+export type UpdateProjectParams = Prettify<
+  Pick<ProjectData, 'files' | 'visibility'> &
+    Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail' | 'extraSettings'>>
+>
 
 export async function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
   return client.put(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {

@@ -68,7 +68,7 @@ export class History {
   }
 
   redo() {
-    return this.project.historyMutex.runExclusive(() => this.goto(this.index + 1))
+    return this.project.transactionMutex.runExclusive(() => this.goto(this.index + 1))
   }
 
   getUndoAction() {
@@ -77,11 +77,11 @@ export class History {
   }
 
   undo() {
-    return this.project.historyMutex.runExclusive(() => this.goto(this.index - 1))
+    return this.project.transactionMutex.runExclusive(() => this.goto(this.index - 1))
   }
 
   doAction<T>(action: Action, fn: () => T | Promise<T>): Promise<T> {
-    return this.project.historyMutex.runExclusive(async () => {
+    return this.project.transactionMutex.runExclusive(async () => {
       // history after current state (for redo) will be discarded on any action
       this.states.splice(this.index)
 

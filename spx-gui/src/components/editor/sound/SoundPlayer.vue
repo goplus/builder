@@ -1,7 +1,7 @@
-<!-- Sound player for given audio src, based on `DumbSoundPlayer` -->
+<!-- Sound player for given audio src, based on `PlayControl` -->
 
 <template>
-  <DumbSoundPlayer
+  <PlayControl
     :playing="playing != null"
     :progress="playing?.progress ?? 0"
     :color="color"
@@ -16,16 +16,17 @@
 import { computed, onUnmounted, reactive, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
 import type { Color } from '@/components/ui'
-import DumbSoundPlayer, { type SoundPlayerSize } from './DumbSoundPlayer.vue'
+import PlayControl, { type Size } from '../common/PlayControl.vue'
 
 const props = defineProps<{
   src: string | null
   color: Color
-  size?: SoundPlayerSize
+  size?: Size
 }>()
 
 type Playing = {
-  progress: number // percent
+  /** Progress percentage, number in range `[0, 1]` */
+  progress: number
   audio: HTMLAudioElement
 }
 
@@ -41,9 +42,9 @@ async function handlePlay() {
 
 function makePlaying(src: string) {
   const audio = new Audio(src)
-  const p = reactive({ audio, progress: 0 })
+  const p = reactive<Playing>({ audio, progress: 0 })
   audio.addEventListener('timeupdate', () => {
-    p.progress = Math.round((audio.currentTime / audio.duration) * 100)
+    p.progress = audio.currentTime / audio.duration
   })
   audio.addEventListener('error', (e) => {
     console.warn('audio error:', e)

@@ -49,3 +49,6 @@ export type PruneProps<Props, Emits extends Record<string, any[]>> = Omit<
   Props,
   keyof ShortEmitsToProps<Emits> | keyof VNodeProps | keyof AllowedComponentProps
 >
+
+/** Prettify a type to make it more readable in IDEs */
+export type Prettify<T> = { [K in keyof T]: T[K] } & {}

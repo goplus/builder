@@ -1,15 +1,22 @@
+import type { Prettify } from '@/utils/types'
 import { AssetType, type AssetData } from '@/apis/asset'
-import { fromConfig, toConfig } from './file'
 import { Sound } from '../sound'
 import { Sprite } from '../sprite'
+import { Costume } from '../costume'
 import { Backdrop, type BackdropInits } from '../backdrop'
+import type { SpriteGen } from '../gen/sprite-gen'
+import type { BackdropGen } from '../gen/backdrop-gen'
+import { fromBlob, fromConfig, toConfig } from './file'
 import { getFiles, saveFiles } from './cloud'
-import { fromBlob } from '@/models/common/file'
-import { Costume } from '@/models/costume'
 
-export type PartialAssetData = Pick<AssetData, 'type' | 'files' | 'filesHash'>
+export type AssetMetadata = Partial<Omit<AssetData, 'files'>>
 
-export type AssetMetadata = Omit<AssetData, 'files'>
+/**
+ * Partial asset data includes
+ * - (required) essential data: type, files, filesHash
+ * - (optional) metadata: the rest fields in AssetData
+ */
+export type PartialAssetData = Prettify<Pick<AssetData, 'type' | 'files' | 'filesHash'> & AssetMetadata>
 
 export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
   ? Sound
@@ -19,11 +26,18 @@ export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.So
       ? Backdrop
       : never
 
+export type AssetGenModel<T extends AssetType = AssetType> = T extends AssetType.Sprite
+  ? SpriteGen
+  : T extends AssetType.Backdrop
+    ? BackdropGen
+    : never
+
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
   const { fileCollection, fileCollectionHash } = await saveFiles(
     sprite.export({ sounds: [], includeId: false, includeCode: false, includeAssetMetadata: false }) // animation sound is not preserved when saving as assets
   )
   return {
+    ...sprite.assetMetadata,
     type: AssetType.Sprite,
     files: fileCollection,
     filesHash: fileCollectionHash
@@ -53,6 +67,7 @@ export async function backdrop2Asset(backdrop: Backdrop): Promise<PartialAssetDa
   files[virtualBackdropConfigFileName] = fromConfig(virtualBackdropConfigFileName, config)
   const { fileCollection, fileCollectionHash } = await saveFiles(files)
   return {
+    ...backdrop.assetMetadata,
     type: AssetType.Backdrop,
     files: fileCollection,
     filesHash: fileCollectionHash
@@ -74,6 +89,7 @@ export async function sound2Asset(sound: Sound): Promise<PartialAssetData> {
     sound.export({ includeId: false, includeAssetMetadata: false })
   )
   return {
+    ...sound.assetMetadata,
     type: AssetType.Sound,
     files: fileCollection,
     filesHash: fileCollectionHash

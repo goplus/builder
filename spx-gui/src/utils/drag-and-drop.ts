@@ -7,6 +7,10 @@ export type DragSortableOptions = {
   ghostClass?: string
   /** Function to call when the list is sorted */
   onSorted: (oldIndex: number, newIndex: number) => void
+  /** Function to filter whether an item can be moved. Return `true` if not allowed. */
+  filterItem?: (item: unknown) => boolean
+  /** Function to filter whether a move is allowed. Return `true` if not allowed. */
+  filterMove?: (oldIndex: number, newIndex: number) => boolean
 }
 
 const draggingItemRef = ref<unknown | null>(null)
@@ -37,6 +41,21 @@ export function useDragSortable(
       revertOnSpill: true,
       animation: 200,
       ghostClass: options.ghostClass,
+      filter(e, target) {
+        if (options.filterItem == null) return false
+        const idx = Array.from(wrapper.children).indexOf(target)
+        if (idx === -1) return false
+        return options.filterItem(list[idx])
+      },
+      onMove(e) {
+        if (options.filterMove == null) return
+        const children = Array.from(wrapper.children)
+        const fromIdx = children.indexOf(e.dragged)
+        const toIdx = children.indexOf(e.related)
+        // Defensive check, if not found, allow the move
+        if (fromIdx === -1 || toIdx === -1) return
+        return !options.filterMove(fromIdx, toIdx)
+      },
       onStart(e) {
         const idx = Array.from(wrapper.children).indexOf(e.item)
         if (idx === -1) return

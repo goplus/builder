@@ -1,0 +1,82 @@
+<script lang="ts" setup>
+import { computed } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
+import type { SpriteGen } from '@/models/gen/sprite-gen'
+import SettingsInput from '../common/SettingsInput.vue'
+import SpriteCategoryInput from './SpriteCategoryInput.vue'
+import ArtStyleInput from '../common/ArtStyleInput.vue'
+import PerspectiveInput from '../common/PerspectiveInput.vue'
+import EnrichableSubmitButton from '../common/EnrichableSubmitButton.vue'
+
+const props = withDefaults(
+  defineProps<{
+    gen: SpriteGen
+    descriptionPlaceholder?: string
+  }>(),
+  {
+    descriptionPlaceholder: undefined
+  }
+)
+
+const emit = defineEmits<{
+  submit: []
+}>()
+
+const readonly = computed(() => props.gen.result != null)
+const enriching = computed(() => props.gen.enrichState.status === 'running')
+const imageGenerating = computed(() => props.gen.imagesGenState.status === 'running')
+const contentPreparing = computed(() => props.gen.contentPreparingState.status === 'running')
+const disabled = computed(() => imageGenerating.value || contentPreparing.value)
+const buttonDisabled = computed(() => disabled.value || enriching.value || props.gen.settings.description === '')
+
+const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
+  en: 'Failed to enrich sprite details',
+  zh: '丰富精灵细节失败'
+}).fn
+
+function handleSubmit() {
+  emit('submit') // For asset-library-modal, listen to event `submit` and do jump (from asset-library to sprite-gen)
+  props.gen.genImages()
+}
+
+const submitText = computed(() => {
+  if (props.gen.imagesGenState.status === 'initial') return { en: 'Generate', zh: '生成' }
+  return { en: 'Regenerate', zh: '重新生成' }
+})
+</script>
+
+<template>
+  <SettingsInput
+    v-radar="{
+      name: 'Sprite generation settings',
+      desc: 'Enter a sprite description, or enrich details to generate a sprite'
+    }"
+    :description="gen.settings.description"
+    :enriching="enriching"
+    :description-placeholder="descriptionPlaceholder"
+    :disabled="disabled"
+    :readonly="readonly"
+    @update:description="gen.setSettings({ description: $event })"
+    @enrich="handleEnrich"
+  >
+    <template #extra>
+      <SpriteCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
+      <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
+      <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
+    </template>
+    <template #submit>
+      <EnrichableSubmitButton
+        :radar="{ name: 'Submit', desc: 'Click to generate sprite images' }"
+        :enriched="gen.enrichState.status === 'finished'"
+        :enriching="enriching"
+        :disabled="buttonDisabled"
+        :loading="imageGenerating"
+        @enrich="handleEnrich"
+        @submit="handleSubmit"
+        >{{ $t(submitText) }}</EnrichableSubmitButton
+      >
+    </template>
+  </SettingsInput>
+</template>
+
+<style lang="scss" scoped></style>

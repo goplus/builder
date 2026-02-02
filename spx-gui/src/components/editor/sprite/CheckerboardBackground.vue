@@ -1,3 +1,4 @@
+<!-- TODO: move to some more "common" location -->
 <template>
   <div class="checkerboard-background-internal"></div>
 </template>

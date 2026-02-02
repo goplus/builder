@@ -50,8 +50,9 @@ export async function save(metadata: Metadata, files: LazyFiles, signal?: AbortS
 
   const metadataJson = JSON.stringify({
     description: metadata.description,
-    instructions: metadata.instructions
-  })
+    instructions: metadata.instructions,
+    extraSettings: metadata.extraSettings
+  } satisfies Metadata)
   zippable[metadataFileName] = new TextEncoder().encode(metadataJson)
 
   if (metadata.thumbnail != null) {

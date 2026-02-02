@@ -32,6 +32,7 @@ import RetryableWrapper from '../RetryableWrapper.vue'
 import { isQuotaExceededMeta } from '@/apis/common/exception'
 import { UIIcon } from '@/components/ui'
 
+// TODO: Consider using the `QuotaExceededCountdown` component directly in the future
 const props = defineProps<{
   round: Round
   isLastRound: boolean
