@@ -48,14 +48,14 @@ for dir in "$TUTORIAL_DIR"/*; do
                 cd - > /dev/null
 
                 echo "✓ Completed: $DIR_NAME"
-                ((built_count++))
+                built_count=$((built_count + 1))
             else
                 echo "↻ Cached: $DIR_NAME (up-to-date)"
-                ((cached_count++))
+                cached_count=$((cached_count + 1))
             fi
         else
             echo "⊘ Skipped: $(basename "$dir") (book.json not found)"
-            ((skipped_count++))
+            skipped_count=$((skipped_count + 1))
         fi
     fi
 done
