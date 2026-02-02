@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "./install-spx.sh && ./build-books.sh",
-    "predev": "./install-spx.sh && ./build-wasm.sh && ./build-books.sh",
+    "postinstall": "./install-spx.sh",
+    "predev": "./install-spx.sh && ./build-wasm.sh && ./build-tutorial-books.sh",
     "dev": "vite",
-    "build": "vue-tsc --build --force && vite build --mode ${NODE_ENV:-production}",
+    "build": "./build-tutorial-books.sh && vue-tsc --build --force && vite build --mode ${NODE_ENV:-production}",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
     "format-check": "prettier --check ./src",
@@ -84,5 +84,8 @@
   },
   "browserslist": [
     "baseline widely available on 2025-12-01"
-  ]
+  ],
+  "devDependencies": {
+    "honkit": "^6.1.6"
+  }
 }

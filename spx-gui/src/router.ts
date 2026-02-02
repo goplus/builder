@@ -172,10 +172,6 @@ const routes: Array<RouteRecordRaw> = [
     ]
   },
   {
-    path: '/books/:pathMatch(.*)*',
-    component: () => import('@/pages/books/books.vue')
-  },
-  {
     path: '/:pathMatch(.*)*',
     component: () => import('@/pages/404/index.vue')
   }

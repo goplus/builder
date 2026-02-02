@@ -16,7 +16,7 @@ dist-ssr
 report.html
 
 # GitBook generated files
-public/books
+public/tutorial-books
 
 npm-debug.log*
 .pnpm-error.log*
