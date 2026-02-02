@@ -69,15 +69,17 @@ const slots = useSlots()
     // are rendered in a separate plane. This prevents issues where mix-blend-mode
     // causes border-radius to be ignored in some browser engines.
     filter: opacity(1);
+    container-type: size;
 
     &::before {
       content: '';
       position: absolute;
-      width: 200%; // Temporarily adjusted to 200%, see if there is a better implementation later
-      height: 200%;
-      top: -50%;
-      left: -50%;
-      backdrop-filter: blur(50px);
+      // Use cqmax to ensure the background is always a square based on the container's largest side
+      // 142cqmax is slightly larger than the diagonal length (sqrt(2) ≈ 1.414), ensuring full coverage during rotation
+      width: 142cqmax;
+      height: 142cqmax;
+      top: 50%;
+      left: 50%;
       will-change: transform;
       background-image: radial-gradient(circle at 50% -20%, var(--ui-color-turquoise-200) 20%, transparent 70%),
         radial-gradient(circle at 50% 120%, var(--ui-color-blue-200) 20%, transparent 70%),
@@ -87,10 +89,10 @@ const slots = useSlots()
       animation: rotate-gradient 2.5s linear infinite;
       @keyframes rotate-gradient {
         from {
-          transform: rotate(0deg);
+          transform: translate(-50%, -50%) rotate(0deg);
         }
         to {
-          transform: rotate(360deg);
+          transform: translate(-50%, -50%) rotate(360deg);
         }
       }
     }
