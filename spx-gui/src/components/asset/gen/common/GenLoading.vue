@@ -70,6 +70,9 @@ const slots = useSlots()
 
   &.variant-bg-spin {
     border-radius: 8px;
+    // CSS Progressive Enhancement: Browsers that do not support @property will skip its definition.
+    // We can ensure compatibility by setting an initial value here.
+    --bg-angle: 0deg;
 
     // Use cos/sin to calculate the rotation position of each gradient center
     // 100% is the rotation radius, 50% is the center offset
