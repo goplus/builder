@@ -156,6 +156,12 @@ export class CostumeGen extends Disposable {
     })
   }
 
+  /**
+   * Cancel the ongoing generation if any.
+   * Note:
+   * - The cancellation requests will not be aborted even if this gen instance is disposed.
+   * - No exception will be thrown even if the cancellation requests fail.
+   */
   cancel() {
     return this.generateTask.tryCancel()
   }
