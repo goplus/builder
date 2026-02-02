@@ -2270,43 +2270,6 @@ paths:
               schema:
                 type: integer
 
-  /aigc/matting:
-    post:
-      tags:
-        - AIGC
-      deprecated: true
-      summary: Remove image background
-      description: |
-        Process the provided image URL to remove its background, resulting in a transparent background.
-
-        **Deprecated**: This endpoint is deprecated and will be removed in a future version. Use `POST /aigc/task` with
-        `type: "removeBackground"` instead, which provides better reliability for long-running operations.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - imageUrl
-              properties:
-                imageUrl:
-                  description: URL of the image to process for background removal.
-                  type: string
-                  format: uri
-      responses:
-        "200":
-          description: Successfully processed the image for background removal.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultUrl:
-                    description: URL of the processed image with background removed.
-                    type: string
-                    format: uri
-
   /util/upinfo:
     get:
       tags:
