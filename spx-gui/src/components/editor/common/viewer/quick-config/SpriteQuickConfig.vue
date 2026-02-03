@@ -7,7 +7,7 @@ import type { Project } from '@/models/project'
 import SizeConfigPanel from './sprite/SizeConfigPanel.vue'
 import HeadingConfigPanel from './sprite/HeadingConfigPanel.vue'
 import PositionConfigPanel from './sprite/PositionConfigPanel.vue'
-import { configTypeInjectionKey, updateConfigTypesInjectionKey } from './QuickConfig.vue'
+import { configTypeInjectionKey, updateConfigTypesInjectionKey } from './QuickConfigWrapper.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -19,8 +19,8 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-  'update:size': [number]
-  'update:heading': [number]
+  'update:size': [{ size: number }]
+  'update:heading': [{ heading: number }]
   'update:pos': [{ x: number; y: number }]
 }>()
 

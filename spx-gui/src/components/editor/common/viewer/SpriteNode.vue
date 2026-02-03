@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watchEffect } from 'vue'
+import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import type { Stage } from 'konva/lib/Stage'
 import type { Shape } from 'konva/lib/Shape'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
-import type { Action, Project } from '@/models/project'
+import type { Project } from '@/models/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
 import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
@@ -29,8 +29,11 @@ const emit = defineEmits<{
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
   updatePos: [{ x: number; y: number }]
+  updatePosEnd: [{ x: number; y: number }]
   updateHeading: [{ heading: number; leftRight?: LeftRight }]
+  updateHeadingEnd: [{ heading: number; leftRight?: LeftRight }]
   updateSize: [{ size: number }]
+  updateSizeEnd: [{ size: number }]
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -67,7 +70,8 @@ function updateSprite({
   oldX,
   x,
   oldY,
-  y
+  y,
+  isEnd = false
 }: {
   oldSize: number
   size: number
@@ -77,9 +81,14 @@ function updateSprite({
   x: number
   oldY: number
   y: number
+  isEnd?: boolean
 }) {
   if (oldSize !== size) {
-    emit('updateSize', { size })
+    if (isEnd) {
+      emit('updateSizeEnd', { size })
+    } else {
+      emit('updateSize', { size })
+    }
     return
   }
   if (oldHeading !== heading && props.sprite.rotationStyle !== RotationStyle.None) {
@@ -87,15 +96,23 @@ function updateSprite({
     if (props.sprite.rotationStyle === RotationStyle.LeftRight) {
       leftRight = headingToLeftRight(heading)
     }
-    emit('updateHeading', { heading, leftRight })
+    if (isEnd) {
+      emit('updateHeadingEnd', { heading, leftRight })
+    } else {
+      emit('updateHeading', { heading, leftRight })
+    }
     return
   }
   if (oldX !== x || oldY !== y) {
-    emit('updatePos', { x, y })
+    if (isEnd) {
+      emit('updatePosEnd', { x, y })
+    } else {
+      emit('updatePos', { x, y })
+    }
   }
 }
 
-const notifyUpdateSprite = (node: Shape | Stage) => {
+const notifyUpdateSprite = (node: Shape | Stage, isEnd = false) => {
   if (!props.selected) return
   const { x, y } = toPosition(node)
   updateSprite({
@@ -106,7 +123,8 @@ const notifyUpdateSprite = (node: Shape | Stage) => {
     oldX: props.sprite.x,
     x,
     oldY: props.sprite.y,
-    y
+    y,
+    isEnd
   })
 }
 
@@ -122,20 +140,12 @@ function handleDragMove(e: KonvaEventObject<unknown>) {
 
 function handleDragEnd(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
-  const sname = props.sprite.name
-  handleChange(e, {
-    name: { en: `Move sprite ${sname}`, zh: `移动精灵 ${sname}` }
-  })
-  notifyUpdateSprite(e.target)
+  notifyUpdateSprite(e.target, true)
   emit('dragEnd')
 }
 
 function handleTransformed(e: KonvaEventObject<unknown>) {
-  const sname = props.sprite.name
-  handleChange(e, {
-    name: { en: `Transform sprite ${sname}`, zh: `调整精灵 ${sname}` }
-  })
-  notifyUpdateSprite(e.target)
+  notifyUpdateSprite(e.target, true)
 }
 
 const config = computed<ImageConfig>(() => {
@@ -164,9 +174,14 @@ const config = computed<ImageConfig>(() => {
     // Note that you can get the same result with `ratation: 0, scaleX: -scaleX` here, but there will be problem
     // if the user then do transform with transformer. Konva transformer prefers to make `scaleX` positive.
   }
-  // After Sprite changes, updateXXX events also need to be triggered
+  return config
+})
+
+// After Sprite changes, updateXXX events also need to be triggered
+watch(config, () => {
   const node = nodeRef.value?.getNode()
   if (node != null) {
+    const { x, y, heading, size } = props.sprite
     const { x: oldX, y: oldY } = toPosition(node)
     const oldHeading = toHeading(node)
     const oldSize = toSize(node)
@@ -181,7 +196,6 @@ const config = computed<ImageConfig>(() => {
       y
     })
   }
-  return config
 })
 
 function toPosition(node: Shape | Stage) {
@@ -201,19 +215,6 @@ function toHeading(node: Shape | Stage) {
 function toSize(node: Shape | Stage) {
   const size = round(Math.abs(node.scaleX()) * bitmapResolution.value, 2)
   return size
-}
-/** Handler for position-change (drag) or transform */
-function handleChange(e: KonvaEventObject<unknown>, action: Action) {
-  const { sprite } = props
-  const { x, y } = toPosition(e.target)
-  const heading = toHeading(e.target)
-  const size = toSize(e.target)
-  props.project.history.doAction(action, () => {
-    sprite.setX(x)
-    sprite.setY(y)
-    sprite.setHeading(heading)
-    sprite.setSize(size)
-  })
 }
 
 function handleClick() {

@@ -6,7 +6,7 @@ import type { Project } from '@/models/project'
 import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import ConfigItem from '../common/ConfigItem.vue'
-import ZOrderConfigItem, { moveActionNames } from '../common/ZOrderConfigItem.vue'
+import ZorderConfigItem, { moveActionNames, type MoveAction } from '../common/ZorderConfigItem.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -56,7 +56,7 @@ const handleRotationStyleUpdate = wrapUpdateHandler(
   false
 )
 
-async function moveZorder(direction: keyof typeof moveActionNames) {
+async function moveZorder(direction: MoveAction) {
   await props.project.history.doAction({ name: moveActionNames[direction] }, () => {
     const { sprite, project } = props
     if (direction === 'up') {
@@ -73,7 +73,12 @@ async function moveZorder(direction: keyof typeof moveActionNames) {
 </script>
 
 <template>
-  <ConfigPanel v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }">
+  <ConfigPanel
+    v-radar="{
+      name: 'Sprite Quick Config Panel',
+      desc: 'Quick config for sprite rotation style, layer order, and more'
+    }"
+  >
     <div class="default-config-wrapper">
       <UITooltip v-for="(value, key) in rotationStyleTips" :key="key">
         {{ $t(value.tips) }}
@@ -86,7 +91,7 @@ async function moveZorder(direction: keyof typeof moveActionNames) {
         </template>
       </UITooltip>
       <UIDivider vertical />
-      <ZOrderConfigItem type="sprite" @move-zorder="moveZorder"></ZOrderConfigItem>
+      <ZorderConfigItem type="sprite" @move-zorder="moveZorder" />
     </div>
   </ConfigPanel>
 </template>

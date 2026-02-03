@@ -47,7 +47,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { timeout, until, untilTaskScheduled, useDebouncedModel } from '@/utils/utils'
+import { timeout, until, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
@@ -57,8 +57,11 @@ import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
-import QuickConfig, { type ConfigType } from '@/components/editor/common/viewer/quick-config/QuickConfig.vue'
+import QuickConfigWrapper, {
+  type ConfigType
+} from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
 import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
+import { useConfigModal, wrapperSpriteUpdateHandler } from '@/components/editor/common/viewer/quick-config/utils'
 
 const props = defineProps<{
   project: Project
@@ -383,35 +386,20 @@ const handleSpriteDragMove = throttle(
 )
 
 // quick config
-function wrapSpriteUpdateHandler<Args extends any[]>(handler: (sprite: Sprite, ...args: Args) => unknown) {
-  return (...args: Args) => {
-    const sprite = props.selectedSprite
-    if (sprite == null) return
-    const name = sprite.name
-    props.project.history.doAction({ name: { en: `Configure sprite ${name}`, zh: `修改精灵 ${name} 配置` } }, () =>
-      handler(sprite, ...args)
-    )
-  }
-}
-const [spriteSize] = useDebouncedModel(
+const provideSpriteContext = () => ({ sprite: props.selectedSprite, project: props.project })
+const [spriteConfigSize, updateSpriteSize] = useConfigModal(
   () => props.selectedSprite?.size,
-  wrapSpriteUpdateHandler((sprite, v) => {
-    if (v == null) return
-    sprite.setSize(v)
-  })
+  wrapperSpriteUpdateHandler((sprite, v) => sprite.setSize(v ?? 0), provideSpriteContext)
 )
-const [spriteHeading] = useDebouncedModel(
+const [spriteConfigHeading, updateSpriteHeading] = useConfigModal(
   () => props.selectedSprite?.heading,
-  wrapSpriteUpdateHandler((sprite, v) => sprite.setHeading(v ?? 0))
+  wrapperSpriteUpdateHandler((sprite, v) => sprite.setHeading(v ?? 0), provideSpriteContext)
 )
-const [spritePosX] = useDebouncedModel(
-  () => props.selectedSprite?.x,
-  wrapSpriteUpdateHandler((sprite, x) => sprite.setX(x ?? 0))
+const [spriteConfigPos, updateSpritePos] = useConfigModal(
+  () => [props.selectedSprite?.x, props.selectedSprite?.y],
+  wrapperSpriteUpdateHandler((sprite, [x, y]) => (sprite.setX(x ?? 0), sprite.setY(y ?? 0)), provideSpriteContext)
 )
-const [spritePosY] = useDebouncedModel(
-  () => props.selectedSprite?.y,
-  wrapSpriteUpdateHandler((sprite, y) => sprite.setY(y ?? 0))
-)
+
 const configTypesRef = ref<ConfigType[]>(['default'])
 const handleUpdateConfigType = throttle(
   (configType: ConfigType | ConfigType[] = [], updator = () => {}) => {
@@ -435,7 +423,7 @@ function handleSpriteDragEnd() {
   updateQuickConfigPosThrottled()
 }
 
-const quickConfigRef = ref<InstanceType<typeof QuickConfig> | null>(null)
+const quickConfigRef = ref<InstanceType<typeof QuickConfigWrapper> | null>(null)
 const quickConfigElRef = computed(() => quickConfigRef.value?.quickConfigDom())
 const quickConfigPopupContainerElRef = computed(() => quickConfigRef.value?.quickConfigPopupContainerDom())
 watch(
@@ -448,6 +436,62 @@ watch(
   },
   { immediate: true }
 )
+
+function getQuickConfigExtensions(quickConfigRect: DOMRect, popupContainerRect: DOMRect | null) {
+  let left = 30
+  let right = 30
+  let top = 30
+  let bottom = 30
+
+  if (popupContainerRect != null && popupContainerRect.width > 0 && popupContainerRect.height > 0) {
+    const { left: configLeft, right: configRight, top: configTop, bottom: configBottom } = quickConfigRect
+    const {
+      left: popupContainerLeft,
+      right: popupContainerRight,
+      top: popupContainerTop,
+      bottom: popupContainerBottom
+    } = popupContainerRect
+    if (popupContainerLeft < configLeft) {
+      left += configLeft - popupContainerLeft
+    }
+    if (popupContainerRight > configRight) {
+      right += popupContainerRight - configRight
+    }
+    if (popupContainerTop < configTop) {
+      top += configTop - popupContainerTop
+    }
+    if (popupContainerBottom > configBottom) {
+      bottom += popupContainerBottom - configBottom
+    }
+  }
+  return { left, right, top, bottom }
+}
+
+function getSpriteNodeAnchor(node: Konva.Node) {
+  const nodeWidth = node.width()
+  const nodeHeight = node.height()
+  const nodeOffsetX = node.offsetX()
+  const nodeOffsetY = node.offsetY()
+  const transform = node.getAbsoluteTransform()
+  const center = transform.point({
+    x: nodeWidth / 2 - nodeOffsetX,
+    y: nodeHeight / 2 - nodeOffsetY
+  })
+  const corners = [
+    { x: -nodeOffsetX, y: -nodeOffsetY },
+    { x: nodeWidth - nodeOffsetX, y: -nodeOffsetY },
+    { x: nodeWidth - nodeOffsetX, y: nodeHeight - nodeOffsetY },
+    { x: -nodeOffsetX, y: nodeHeight - nodeOffsetY }
+  ]
+  let bottomY = center.y
+  corners.forEach((point) => {
+    const globalPoint = transform.point(point)
+    if (globalPoint.y > bottomY) {
+      bottomY = globalPoint.y
+    }
+  })
+  return { centerX: center.x, bottomY }
+}
 
 function updateQuickConfigPos() {
   if (
@@ -467,76 +511,28 @@ function updateQuickConfigPos() {
   const quickConfigRect = quickConfigEl.getBoundingClientRect()
   const popupContainerRect = getVisibleChildrenUnionRect(quickConfigPopupContainerElRef.value)
 
-  let leftExtension = 30
-  let rightExtension = 30
-  let topExtension = 30
-  let bottomExtension = 30
-
-  if (popupContainerRect != null && popupContainerRect.width > 0 && popupContainerRect.height > 0) {
-    const { left: configLeft, right: configRight, top: configTop, bottom: configBottom } = quickConfigRect
-    const {
-      left: popupContainerLeft,
-      right: popupContainerRight,
-      top: popupContainerTop,
-      bottom: popupContainerBottom
-    } = popupContainerRect
-    if (popupContainerLeft < configLeft) {
-      leftExtension += configLeft - popupContainerLeft
-    }
-    if (popupContainerRight > configRight) {
-      rightExtension += popupContainerRight - configRight
-    }
-    if (popupContainerTop < configTop) {
-      topExtension += configTop - popupContainerTop
-    }
-    if (popupContainerBottom > configBottom) {
-      bottomExtension += popupContainerBottom - configBottom
-    }
-  }
-
-  const { width: configWidth, height: configHeight } = quickConfigRect
-  const containerW = containerSize.value.width
-  const containerH = containerSize.value.height
-
-  const nodeWidth = node.width()
-  const nodeHeight = node.height()
-  const nodeOffsetX = node.offsetX()
-  const nodeOffsetY = node.offsetY()
-  const transform = node.getAbsoluteTransform()
-  const center = transform.point({
-    x: nodeWidth / 2 - nodeOffsetX,
-    y: nodeHeight / 2 - nodeOffsetY
-  })
-  const corners = [
-    { x: -nodeOffsetX, y: -nodeOffsetY },
-    { x: nodeWidth - nodeOffsetX, y: -nodeOffsetY },
-    { x: nodeWidth - nodeOffsetX, y: nodeHeight - nodeOffsetY },
-    { x: -nodeOffsetX, y: nodeHeight - nodeOffsetY }
-  ]
-  let top = center.y
-  corners.forEach((point) => {
-    const globalPoint = transform.point(point)
-    if (globalPoint.y > top) {
-      top = globalPoint.y
-    }
-  })
+  const extensions = getQuickConfigExtensions(quickConfigRect, popupContainerRect)
+  const { centerX, bottomY } = getSpriteNodeAnchor(node)
 
   const GAP = 48
-  top += GAP
-  let left = center.x
+  let top = bottomY + GAP
+  let left = centerX
+
+  const { width: configWidth, height: configHeight } = quickConfigRect
+  const { width: containerW, height: containerH } = containerSize.value
 
   const halfConfigWidth = configWidth / 2
-  if (left - leftExtension - halfConfigWidth < 0) {
-    left = leftExtension + halfConfigWidth
-  } else if (left + halfConfigWidth + rightExtension > containerW) {
-    left = containerW - halfConfigWidth - rightExtension
+  if (left - extensions.left - halfConfigWidth < 0) {
+    left = extensions.left + halfConfigWidth
+  } else if (left + halfConfigWidth + extensions.right > containerW) {
+    left = containerW - halfConfigWidth - extensions.right
   }
 
-  if (top + configHeight + bottomExtension > containerH) {
-    top = containerH - configHeight - bottomExtension
+  if (top + configHeight + extensions.bottom > containerH) {
+    top = containerH - configHeight - extensions.bottom
   }
-  if (top - topExtension < 0) {
-    top = topExtension
+  if (top - extensions.top < 0) {
+    top = extensions.top
   }
 
   quickConfigEl.style.cssText = `transform: translate(${left}px, ${top}px) translateX(-50%)`
@@ -610,10 +606,16 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
             @update-heading="
-              handleUpdateConfigType($event.leftRight == null ? 'rotate' : [], () => (spriteHeading = $event.heading))
+              handleUpdateConfigType(
+                $event.leftRight == null ? 'rotate' : [],
+                () => (spriteConfigHeading = $event.heading)
+              )
             "
-            @update-pos="handleUpdateConfigType('pos', () => ((spritePosX = $event.x), (spritePosY = $event.y)))"
-            @update-size="handleUpdateConfigType('size', () => (spriteSize = $event.size))"
+            @update-heading-end="updateSpriteHeading($event.heading)"
+            @update-pos="handleUpdateConfigType('pos', () => (spriteConfigPos = [$event.x, $event.y]))"
+            @update-pos-end="updateSpritePos([$event.x, $event.y])"
+            @update-size="handleUpdateConfigType('size', () => (spriteConfigSize = $event.size))"
+            @update-size-end="updateSpriteSize($event.size)"
           />
         </v-group>
       </v-layer>
@@ -621,7 +623,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />
       </v-layer>
     </v-stage>
-    <QuickConfig
+    <QuickConfigWrapper
       ref="quickConfigRef"
       class="quick-config"
       :config-types="configTypesRef"
@@ -631,15 +633,15 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         v-if="selectedSprite"
         :sprite="selectedSprite"
         :project="project"
-        :size="spriteSize"
-        :heading="spriteHeading"
-        :x="spritePosX"
-        :y="spritePosY"
-        @update:size="spriteSize = $event"
-        @update:heading="spriteHeading = $event"
-        @update:pos="(spritePosX = $event.x), (spritePosY = $event.y)"
+        :size="spriteConfigSize"
+        :heading="spriteConfigHeading"
+        :x="spriteConfigPos[0]"
+        :y="spriteConfigPos[1]"
+        @update:size="updateSpriteSize($event.size)"
+        @update:heading="updateSpriteHeading($event.heading)"
+        @update:pos="updateSpritePos([$event.x, $event.y])"
       />
-    </QuickConfig>
+    </QuickConfigWrapper>
 
     <PositionIndicator :position="mousePos" />
 
@@ -662,10 +664,6 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
-
-  & > div {
-    outline: none;
-  }
 }
 
 .quick-config {

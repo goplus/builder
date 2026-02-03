@@ -10,12 +10,12 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:size': [number]
+  'update:size': [{ size: number }]
 }>()
 
 function handleSizePercentUpdate(sizeInPercent: number | null) {
   if (sizeInPercent == null) return
-  emit('update:size', round(sizeInPercent / 100, 2))
+  emit('update:size', { size: round(sizeInPercent / 100, 2) })
 }
 </script>
 

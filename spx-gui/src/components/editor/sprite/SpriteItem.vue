@@ -54,7 +54,12 @@ const radarNodeMeta = computed(() => {
 
 function toggleSpriteVisible() {
   const name = props.sprite.name
-  const action = { name: { en: `Toggle visibility for sprite ${name}`, zh: `切换精灵 ${name} 的可见性` } }
+  const action = {
+    name: {
+      en: `${props.sprite.visible ? 'Hide' : 'Show'} sprite ${name}`,
+      zh: `${props.sprite.visible ? '隐藏' : '显示'}精灵 ${name}`
+    }
+  }
   editorCtx.project.history.doAction(action, () => props.sprite.setVisible(!props.sprite.visible))
 }
 
@@ -168,10 +173,10 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
       <UIMenuItem
-        v-radar="{ name: 'Visibility control', desc: 'Control to toggle sprite visibility' }"
+        v-radar="{ name: 'Visibility', desc: 'Click to toggle visibility the sprite' }"
         @click="toggleSpriteVisible"
       >
-        {{ $t({ en: `${sprite.visible ? 'Hide' : 'Show'} Sprite`, zh: `${sprite.visible ? '隐藏' : '显示'}精灵` }) }}
+        {{ $t({ en: `${sprite.visible ? 'Hide' : 'Show'}`, zh: `${sprite.visible ? '隐藏' : '显示'}` }) }}
       </UIMenuItem>
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sprite' }"

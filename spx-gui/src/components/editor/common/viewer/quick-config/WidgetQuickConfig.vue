@@ -2,7 +2,7 @@
 import { inject } from 'vue'
 
 import type { Project } from '@/models/project'
-import { configTypeInjectionKey } from './QuickConfig.vue'
+import { configTypeInjectionKey } from './QuickConfigWrapper.vue'
 import type { Widget } from '@/models/widget'
 import DefaultConfigPanel from './widget/DefaultConfigPanel.vue'
 import SizeConfigPanel from './widget/SizeConfigPanel.vue'
@@ -17,7 +17,7 @@ defineProps<{
 }>()
 
 defineEmits<{
-  'update:size': [number]
+  'update:size': [{ size: number }]
   'update:pos': [{ x: number; y: number }]
 }>()
 

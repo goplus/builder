@@ -40,10 +40,16 @@
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
             @update-heading="
-              handleUpdateConfigType($event.leftRight == null ? 'rotate' : [], () => (spriteHeading = $event.heading))
+              handleUpdateConfigType(
+                $event.leftRight == null ? 'rotate' : [],
+                () => (spriteConfigHeading = $event.heading)
+              )
             "
-            @update-pos="handleUpdateConfigType('pos', () => ((spritePosX = $event.x), (spritePosY = $event.y)))"
-            @update-size="handleUpdateConfigType('size', () => (spriteSize = $event.size))"
+            @update-heading-end="updateSpriteHeading($event.heading)"
+            @update-pos="handleUpdateConfigType('pos', () => (spriteConfigPos = [$event.x, $event.y]))"
+            @update-pos-end="updateSpritePos([$event.x, $event.y])"
+            @update-size="handleUpdateConfigType('size', () => (spriteConfigSize = $event.size))"
+            @update-size-end="updateSpriteSize($event.size)"
           />
         </v-group>
       </v-layer>
@@ -54,8 +60,10 @@
           :widget="widget"
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
-          @update-pos="handleUpdateConfigType('pos', () => ((widgetPosX = $event.x), (widgetPosY = $event.y)))"
-          @update-size="handleUpdateConfigType('size', () => (widgetSize = $event.size))"
+          @update-pos="handleUpdateConfigType('pos', () => (widgetConfigPos = [$event.x, $event.y]))"
+          @update-pos-end="updateWidgetPos([$event.x, $event.y])"
+          @update-size="handleUpdateConfigType('size', () => (widgetConfigSize = $event.size))"
+          @update-size-end="updateWidgetSize($event.size)"
         />
       </v-layer>
       <v-layer>
@@ -66,30 +74,34 @@
         />
       </v-layer>
     </v-stage>
-    <QuickConfig class="quick-config" :config-types="configTypesRef" @update-config-types="configTypesRef = $event">
+    <QuickConfigWrapper
+      class="quick-config"
+      :config-types="configTypesRef"
+      @update-config-types="configTypesRef = $event"
+    >
       <SpriteQuickConfig
         v-if="editorCtx.state.selectedSprite"
         :sprite="editorCtx.state.selectedSprite"
         :project="editorCtx.project"
-        :size="spriteSize"
-        :heading="spriteHeading"
-        :x="spritePosX"
-        :y="spritePosY"
-        @update:size="spriteSize = $event"
-        @update:heading="spriteHeading = $event"
-        @update:pos="(spritePosX = $event.x), (spritePosY = $event.y)"
+        :size="spriteConfigSize"
+        :heading="spriteConfigHeading"
+        :x="spriteConfigPos[0]"
+        :y="spriteConfigPos[1]"
+        @update:size="updateSpriteSize($event.size)"
+        @update:heading="updateSpriteHeading($event.heading)"
+        @update:pos="updateSpritePos([$event.x, $event.y])"
       />
       <WidgetQuickConfig
         v-else-if="editorCtx.state.selectedWidget"
         :widget="editorCtx.state.selectedWidget"
         :project="editorCtx.project"
-        :size="widgetSize"
-        :x="widgetPosX"
-        :y="widgetPosY"
-        @update:size="widgetSize = $event"
-        @update:pos="(widgetPosX = $event.x), (widgetPosY = $event.y)"
+        :size="widgetConfigSize"
+        :x="widgetConfigPos[0]"
+        :y="widgetConfigPos[1]"
+        @update:size="updateWidgetSize($event.size)"
+        @update:pos="updateWidgetPos([$event.x, $event.y])"
       />
-    </QuickConfig>
+    </QuickConfigWrapper>
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
@@ -105,7 +117,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { untilTaskScheduled, until, untilNotNull, useDebouncedModel } from '@/utils/utils'
+import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import type { Sprite } from '@/models/sprite'
@@ -120,7 +132,14 @@ import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/Wi
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
-import QuickConfig, { type ConfigType } from '@/components/editor/common/viewer/quick-config/QuickConfig.vue'
+import QuickConfigWrapper, {
+  type ConfigType
+} from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
+import {
+  useConfigModal,
+  wrapperSpriteUpdateHandler,
+  wrapperWidgetUpdateHandler
+} from '@/components/editor/common/viewer/quick-config/utils'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
@@ -425,61 +444,30 @@ const handleSpriteDragMove = throttle(
 )
 
 // quick config
-function wrapSpriteUpdateHandler<Args extends any[]>(handler: (sprite: Sprite, ...args: Args) => unknown) {
-  return (...args: Args) => {
-    const sprite = editorCtx.state.selectedSprite
-    if (sprite == null) return
-    const name = sprite.name
-    editorCtx.project.history.doAction({ name: { en: `Configure sprite ${name}`, zh: `修改精灵 ${name} 配置` } }, () =>
-      handler(sprite, ...args)
-    )
-  }
-}
-const [spriteSize] = useDebouncedModel(
+const provideSpriteContext = () => ({ sprite: editorCtx.state.selectedSprite, project: editorCtx.project })
+const [spriteConfigSize, updateSpriteSize] = useConfigModal(
   () => editorCtx.state.selectedSprite?.size,
-  wrapSpriteUpdateHandler((sprite, v) => {
-    if (v == null) return
-    sprite.setSize(v)
-  })
+  wrapperSpriteUpdateHandler((sprite, size) => sprite.setSize(size ?? 0), provideSpriteContext)
 )
-const [spriteHeading] = useDebouncedModel(
+const [spriteConfigHeading, updateSpriteHeading] = useConfigModal(
   () => editorCtx.state.selectedSprite?.heading,
-  wrapSpriteUpdateHandler((sprite, v) => sprite.setHeading(v ?? 0))
+  wrapperSpriteUpdateHandler((sprite, heading) => sprite.setHeading(heading ?? 0), provideSpriteContext, false)
 )
-const [spritePosX] = useDebouncedModel(
-  () => editorCtx.state.selectedSprite?.x,
-  wrapSpriteUpdateHandler((sprite, x) => sprite.setX(x ?? 0))
-)
-const [spritePosY] = useDebouncedModel(
-  () => editorCtx.state.selectedSprite?.y,
-  wrapSpriteUpdateHandler((sprite, y) => sprite.setY(y ?? 0))
+const [spriteConfigPos, updateSpritePos] = useConfigModal(
+  () => [editorCtx.state.selectedSprite?.x, editorCtx.state.selectedSprite?.y],
+  wrapperSpriteUpdateHandler((sprite, [x, y]) => (sprite.setX(x ?? 0), sprite.setY(y ?? 0)), provideSpriteContext)
 )
 
-function wrapWidgetUpdateHandler<Args extends any[]>(handler: (widget: Widget, ...args: Args) => unknown) {
-  return (...args: Args) => {
-    const widget = editorCtx.state.selectedWidget
-    if (widget == null) return
-    const name = widget.name
-    editorCtx.project.history.doAction({ name: { en: `Configure sprite ${name}`, zh: `修改控件 ${name} 配置` } }, () =>
-      handler(widget, ...args)
-    )
-  }
-}
-const [widgetSize] = useDebouncedModel(
+const provideWidgetContext = () => ({ widget: editorCtx.state.selectedWidget, project: editorCtx.project })
+const [widgetConfigSize, updateWidgetSize] = useConfigModal(
   () => editorCtx.state.selectedWidget?.size,
-  wrapWidgetUpdateHandler((widget, v) => {
-    if (v == null) return
-    widget.setSize(v)
-  })
+  wrapperWidgetUpdateHandler((widget, v) => widget.setSize(v ?? 0), provideWidgetContext)
 )
-const [widgetPosX] = useDebouncedModel(
-  () => editorCtx.state.selectedWidget?.x,
-  wrapWidgetUpdateHandler((widget, x) => widget.setX(x ?? 0))
+const [widgetConfigPos, updateWidgetPos] = useConfigModal(
+  () => [editorCtx.state.selectedWidget?.x, editorCtx.state.selectedWidget?.y],
+  wrapperWidgetUpdateHandler((widget, [x, y]) => (widget.setX(x ?? 0), widget.setY(y ?? 0)), provideWidgetContext)
 )
-const [widgetPosY] = useDebouncedModel(
-  () => editorCtx.state.selectedWidget?.y,
-  wrapWidgetUpdateHandler((widget, y) => widget.setY(y ?? 0))
-)
+
 const configTypesRef = ref<ConfigType[]>(['default'])
 const handleUpdateConfigType = throttle((configType: ConfigType | ConfigType[] = [], updator: () => void) => {
   configTypesRef.value = ['default' as ConfigType].concat(configType)
@@ -539,10 +527,6 @@ watchEffect((onCleanup) => {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
-
-  & > div:focus {
-    outline: none;
-  }
 }
 
 .quick-config {

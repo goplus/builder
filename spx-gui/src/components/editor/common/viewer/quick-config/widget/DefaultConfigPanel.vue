@@ -2,14 +2,14 @@
 import ConfigPanel from '../common/ConfigPanel.vue'
 import type { Widget } from '@/models/widget'
 import type { Project } from '@/models/project'
-import ZOrderConfigItem, { moveActionNames } from '../common/ZOrderConfigItem.vue'
+import ZorderConfigItem, { moveActionNames, type MoveAction } from '../common/ZorderConfigItem.vue'
 
 const props = defineProps<{
   widget: Widget
   project: Project
 }>()
 
-async function moveZorder(direction: keyof typeof moveActionNames) {
+async function moveZorder(direction: MoveAction) {
   await props.project.history.doAction({ name: moveActionNames[direction] }, () => {
     const { widget, project } = props
     if (direction === 'up') {
@@ -26,8 +26,8 @@ async function moveZorder(direction: keyof typeof moveActionNames) {
 </script>
 
 <template>
-  <ConfigPanel>
-    <ZOrderConfigItem type="widget" @move-zorder="moveZorder" />
+  <ConfigPanel v-radar="{ name: 'Widget Quick Config Panel', desc: 'Quick config for widget layer order' }">
+    <ZorderConfigItem type="widget" @move-zorder="moveZorder" />
   </ConfigPanel>
 </template>
 

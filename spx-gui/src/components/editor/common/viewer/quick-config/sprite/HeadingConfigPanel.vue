@@ -11,7 +11,7 @@ defineProps<{
 }>()
 
 defineEmits<{
-  'update:heading': [number]
+  'update:heading': [{ heading: number }]
 }>()
 
 const rotateDropdownVisible = ref(false)
@@ -23,25 +23,25 @@ const rotateDropdownVisible = ref(false)
       trigger="manual"
       placement="top"
       :visible="rotateDropdownVisible"
-      :disabled="sprite.rotationStyle === RotationStyle.None"
+      :disabled="sprite.rotationStyle !== RotationStyle.Normal"
       @click-outside="rotateDropdownVisible = false"
     >
       <template #trigger>
         <UINumberInput
           v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
           class="heading-input"
-          :disabled="sprite.rotationStyle === RotationStyle.None"
+          :disabled="sprite.rotationStyle !== RotationStyle.Normal"
           :min="-180"
           :max="180"
           :value="heading"
-          @update:value="$emit('update:heading', $event ?? 0)"
+          @update:value="$emit('update:heading', { heading: $event ?? 0 })"
           @focus="rotateDropdownVisible = true"
         >
           <template #prefix>{{ $t({ en: 'Heading', zh: '朝向' }) }}</template>
         </UINumberInput>
       </template>
       <div class="rotation-heading-container">
-        <AnglePicker :model-value="heading" @update:model-value="$emit('update:heading', $event ?? 0)" />
+        <AnglePicker :model-value="heading" @update:model-value="$emit('update:heading', { heading: $event ?? 0 })" />
       </div>
     </UIDropdown>
   </ConfigPanel>

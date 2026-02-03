@@ -2,9 +2,9 @@
   <v-group
     :config="groupConfig"
     @dragmove="notifyUpdateMonitor($event.target)"
-    @dragend="handleDragEnd"
+    @dragend="notifyUpdateMonitor($event.target, true)"
     @transform="notifyUpdateMonitor($event.target)"
-    @transformend="handleTransformed"
+    @transformend="notifyUpdateMonitor($event.target, true)"
     @click="handleClick"
   >
     <v-rect :config="rectConfig" />
@@ -16,13 +16,11 @@
 </template>
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import type { KonvaEventObject } from 'konva/lib/Node'
 import type { TextConfig, Text } from 'konva/lib/shapes/Text'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { Stage } from 'konva/lib/Stage'
 import type { GroupConfig } from 'konva/lib/Group'
 import type { Shape, ShapeConfig } from 'konva/lib/Shape'
-import type { Action } from '@/models/project'
 import type { Size } from '@/models/common'
 import { round } from '@/utils/utils'
 import type { Monitor } from '@/models/widget/monitor'
@@ -38,7 +36,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   updatePos: [{ x: number; y: number }]
+  updatePosEnd: [{ x: number; y: number }]
   updateSize: [{ size: number }]
+  updateSizeEnd: [{ size: number }]
 }>()
 
 const uiVariables = useUIVariables()
@@ -92,7 +92,8 @@ function updateMonitor({
   oldX,
   x,
   oldY,
-  y
+  y,
+  isEnd = false
 }: {
   oldSize: number
   size: number
@@ -100,17 +101,20 @@ function updateMonitor({
   x: number
   oldY: number
   y: number
+  isEnd?: boolean
 }) {
   if (oldSize !== size) {
-    emit('updateSize', { size })
+    if (isEnd) emit('updateSizeEnd', { size })
+    else emit('updateSize', { size })
     return
   }
   if (oldX !== x || oldY !== y) {
-    emit('updatePos', { x, y })
+    if (isEnd) emit('updatePosEnd', { x, y })
+    else emit('updatePos', { x, y })
   }
 }
 
-const notifyUpdateMonitor = (e: Shape | Stage) => {
+const notifyUpdateMonitor = (e: Shape | Stage, isEnd = false) => {
   const { monitor } = props
   const { x, y } = toPosition(e)
   updateMonitor({
@@ -119,21 +123,8 @@ const notifyUpdateMonitor = (e: Shape | Stage) => {
     oldX: monitor.x,
     x,
     oldY: monitor.y,
-    y
-  })
-}
-
-function handleDragEnd(e: KonvaEventObject<unknown>) {
-  const sname = props.monitor.name
-  handleChange(e, {
-    name: { en: `Move widget ${sname}`, zh: `移动控件 ${sname}` }
-  })
-}
-
-function handleTransformed(e: KonvaEventObject<unknown>) {
-  const sname = props.monitor.name
-  handleChange(e, {
-    name: { en: `Transform widget ${sname}`, zh: `调整控件 ${sname}` }
+    y,
+    isEnd
   })
 }
 
@@ -239,17 +230,6 @@ function toPosition(node: Shape | Stage) {
 function toSize(node: Shape | Stage) {
   const size = round(node.scaleX(), 2)
   return size
-}
-/** Handler for position-change (drag) or transform */
-function handleChange(e: KonvaEventObject<unknown>, action: Action) {
-  const { monitor } = props
-  const { x, y } = toPosition(e.target)
-  const size = toSize(e.target)
-  editorCtx.project.history.doAction(action, () => {
-    monitor.setX(x)
-    monitor.setY(y)
-    monitor.setSize(size)
-  })
 }
 
 function handleClick() {

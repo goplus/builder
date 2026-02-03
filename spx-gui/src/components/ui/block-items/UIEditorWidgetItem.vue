@@ -22,12 +22,12 @@ withDefaults(
     name: string
     color?: 'stage' | 'primary'
     selectable?: false | { selected: boolean }
-    visible?: boolean
+    visible?: boolean | null
   }>(),
   {
     color: 'stage',
     selectable: false,
-    visible: true
+    visible: null
   }
 )
 </script>
