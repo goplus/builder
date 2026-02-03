@@ -13,7 +13,7 @@
 ![Course-1](./assets/初步-1.png)
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-1/sprites/Kiko/code
 
-```xgo
+```
 onStart => {
     step 160
 }
@@ -71,14 +71,14 @@ onStart => {
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-2/sprites/Kiko/code
 
 **原来的代码：**
-```xgo
+```
 onStart => {
     step 160
 }
 ```
 
 **修改后的代码：**
-```xgo
+```
 onStart => {
     step 200
 }
@@ -142,7 +142,7 @@ onStart => {
 - 💡 每次只改变一个参数，这样更容易看出变化
 - 💡 可以在代码旁边用注释记录不同参数的效果：
 
-```xgo
+```
 onStart => {
     step 200  // 这个距离刚好能到达萝卜
 }
@@ -173,7 +173,7 @@ onStart => {
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-3/sprites/Kiko/code
 
 **初始代码：**
-```xgo
+```
 onStart => {
     turn Right
     step 120
@@ -181,7 +181,7 @@ onStart => {
 ```
 
 **修改后的代码：**
-```xgo
+```
 onStart => {
     turn Right
     step 160
@@ -208,7 +208,7 @@ onStart => {
 
 程序会**从上到下**依次执行每一行代码：
 
-```xgo
+```
 onStart => {
     turn Right   // 第1步：先转向右边
     step 160     // 第2步：再向前走160步
@@ -225,7 +225,7 @@ onStart => {
 
 计算机程序像读书一样，从上往下一行一行执行：
 
-```xgo
+```
 onStart => {
     turn Right   // 第1行：先执行这个
     step 160     // 第2行：再执行这个
@@ -290,7 +290,7 @@ Left ←---+---→ Right
   2. 前进到萝卜位置
 - 实现：
 
-```xgo
+```
 turn Right
 step 160
 ```
@@ -327,7 +327,7 @@ step 160
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-4/sprites/Kiko/code
 
 **初始代码：**
-```xgo
+```
 onStart => {
     turn Right
     step 190
@@ -335,7 +335,7 @@ onStart => {
 ```
 
 **完整代码：**
-```xgo
+```
 onStart => {
     turn Right
     step 190
@@ -357,7 +357,7 @@ onStart => {
 
 让我们一步一步分析这段代码：
 
-```xgo
+```
 onStart => {
     turn Right   // 第1步：向右转90度
     step 190     // 第2步：向前走190步
@@ -388,7 +388,7 @@ onStart => {
 
 有趣的是，`turn Left` 和 `turn Right` 可以互相抵消：
 
-```xgo
+```
 turn Right   // 向右转 90 度
 turn Left    // 向左转 90 度
 // 结果：回到原来的方向！
@@ -396,7 +396,7 @@ turn Left    // 向左转 90 度
 
 但在我们的代码中，两次转向之间有 `step 190`，所以不会抵消：
 
-```xgo
+```
 turn Right   // 向右转 → 朝向改变了
 step 190     // 在新方向上前进
 turn Left    // 向左转 → 又改变朝向
@@ -437,7 +437,7 @@ step 160     // 在又一个新方向上前进
   3. 向左转，面向萝卜
   4. 向右走，到达萝卜
 - **实现**：
-  ```xgo
+  ```
   turn Right
   step 190
   turn Left
@@ -481,7 +481,7 @@ step 160     // 在又一个新方向上前进
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-6/sprites/Kiko/code
 
 **初始代码：**
-```xgo
+```
 onStart => {
     turn -30
     step 300
@@ -489,7 +489,7 @@ onStart => {
 ```
 
 **修改后的代码：**
-```xgo
+```
 onStart => {
     turn -45
     step 300
@@ -502,7 +502,7 @@ onStart => {
 
 `turn` 命令不仅可以接受 `Right`、`Left` 这样的方向常量，还可以接受**数字**作为参数：
 
-```xgo
+```
 turn -45  // 向左转 45 度
 ```
 
@@ -551,7 +551,7 @@ turn -45  // 向左转 45 度
 
 现在你知道了，`Right` 和 `Left` 其实就是特殊的角度：
 
-```xgo
+```
 turn Right   // 等同于 turn 90
 turn Left    // 等同于 turn -90
 ```
@@ -574,7 +574,7 @@ turn Left    // 等同于 turn -90
 
 **示例对比**
 
-```xgo
+```
 // 方式 1：使用方向常量（简单直观）
 turn Right
 step 100
@@ -603,7 +603,7 @@ step 100
 
 **负数的实际应用**
 
-```xgo
+```
 // 向右上方走（右转 45 度）
 turn 45
 step 200
@@ -688,7 +688,7 @@ step 200
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-7/sprites/Kiko/code
 
 **完整代码：**
-```xgo
+```
 onStart => {
     turn Right
     step 180
@@ -705,7 +705,7 @@ onStart => {
 
 让我们逐步分析这段代码，看看 Kiko 是如何完成这条 n 形路径的：
 
-```xgo
+```
 onStart => {
     turn Right   // 第1步：向右转90度
     step 180     // 第2步：向上走180步
@@ -742,7 +742,7 @@ onStart => {
 
 当代码变长时，添加注释会让代码更容易理解：
 
-```xgo
+```
 onStart => {
     // 第一段：向上走
     turn Right
