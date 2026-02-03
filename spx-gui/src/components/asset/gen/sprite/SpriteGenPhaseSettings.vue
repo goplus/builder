@@ -74,7 +74,7 @@ const remaining = computed(() => {
           <SpriteImageItem :file="file" :active="active" @click="select(file)" />
         </template>
         <template #tip>
-          <template v-if="gen.imagesGenState.status === 'running' && remaining != null">
+          <template v-if="gen.imagesGenState.status === 'running'">
             {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
             {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
           </template>

@@ -88,19 +88,23 @@ export class Phase<R> {
      * The name of the action being tracked, used for error messages.
      * For example, "generate video" or "extract frames".
      */
-    private actionName: LocaleMessage,
-    /** Optional run duration (estimated) in seconds, used for providing remaining time. */
-    private readonly runDuration: number | null = null
+    private actionName: LocaleMessage
   ) {
     this.state = { status: 'initial' }
   }
   reset() {
     this.state = { status: 'initial' }
   }
-  /** Tracks the state of the given promise. */
-  async track(promise: Promise<R>): Promise<R> {
-    this.state = { status: 'running', remaining: this.runDuration }
-    this.startTimer()
+  /**
+   * Tracks the state of the given promise.
+   * @param promise The promise to track.
+   * @param runDuration Optional estimated duration of the promise in seconds, used for providing remaining time.
+   */
+  async track(promise: Promise<R>, runDuration?: number): Promise<R> {
+    this.state = { status: 'running', remaining: runDuration ?? null }
+    if (runDuration != null && runDuration > 0) {
+      this.startTimer(runDuration)
+    }
     try {
       const result = await promise
       this.state = { status: 'finished', result }
@@ -122,9 +126,7 @@ export class Phase<R> {
     }
   }
 
-  private startTimer() {
-    if (this.runDuration == null || this.runDuration === 0) return
-    const duration = this.runDuration
+  private startTimer(duration: number) {
     // infer interval & minRemaining from runDuration
     const updateInterval = Math.round(Math.max(1, duration / 50))
     const minRemaining = updateInterval
@@ -146,9 +148,13 @@ export class Phase<R> {
     }
   }
 
-  /** Runs given function and tracks its state. */
-  async run(fn: () => Promise<R>): Promise<R> {
-    return this.track(fn())
+  /**
+   * Runs given function and tracks its state.
+   * @param fn The function that returns a promise to track.
+   * @param runDuration Optional estimated duration of the function in seconds, used for providing remaining time.
+   */
+  async run(fn: () => Promise<R>, runDuration?: number): Promise<R> {
+    return this.track(fn(), runDuration)
   }
 }
 
@@ -193,6 +199,15 @@ export class TaskException extends Exception {
   }
 }
 
+/** Estimated duration (in seconds) for each task type. null means duration is unknown. */
+const taskRunDuration: Record<TaskType, number | null> = {
+  [TaskType.RemoveBackground]: null,
+  [TaskType.GenerateCostume]: 15,
+  [TaskType.GenerateAnimationVideo]: 150,
+  [TaskType.ExtractVideoFrames]: 12,
+  [TaskType.GenerateBackdrop]: 15
+}
+
 export type TaskApis = Pick<typeof aigcApis, 'createTask' | 'cancelTask' | 'subscribeTaskEvents'>
 
 /** `Task` manages the lifecycle and state of an AIGC task. */
@@ -205,6 +220,11 @@ export class Task<T extends TaskType> extends Disposable {
   ) {
     super()
     this.data = null
+  }
+
+  /** Estimated duration (in seconds) for this task type, or null if unknown. */
+  get runDuration(): number | null {
+    return taskRunDuration[this.type] ?? null
   }
 
   async untilCompleted() {
