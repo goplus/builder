@@ -13,7 +13,7 @@ import {
   adoptAsset
 } from '@/apis/aigc'
 import { Project } from '../project'
-import { RotationStyle, Sprite } from '../sprite'
+import { RotationStyle, Sprite, State } from '../sprite'
 import { Costume } from '../costume'
 import type { Animation } from '../animation'
 import { getProjectSettings, Phase, Task } from './common'
@@ -179,7 +179,14 @@ export class SpriteGen extends Disposable {
         () => this.animations.map((a) => a.result).filter((a): a is Animation => a != null),
         (generatedAnimations) => {
           generatedAnimations.forEach((a) => {
-            if (!sprite.animations.includes(a)) sprite.addAnimation(a)
+            if (!sprite.animations.includes(a)) {
+              sprite.addAnimation(a)
+              // Auto bind to default state if no bound states
+              const boundStates = sprite.getAnimationBoundStates(a.id)
+              if (boundStates.length === 0) {
+                sprite.setAnimationBoundStates(a.id, [State.Default])
+              }
+            }
           })
           sprite.animations.slice().forEach((a) => {
             if (!generatedAnimations.includes(a)) sprite.removeAnimation(a.id)
