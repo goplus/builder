@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Default output base (can be overridden by environment variable or argument)
-OUTPUT_BASE="${OUTPUT_DIR:-$SCRIPT_DIR/../spx-gui/public/tutorial-books}"
+OUTPUT_BASE="${TUTORIAL_BOOKS_OUTPUT_DIR:-$SCRIPT_DIR/../spx-gui/public/tutorial-books}"
 # Convert to absolute path
 OUTPUT_BASE="$(cd "$(dirname "$OUTPUT_BASE")" && pwd)/$(basename "$OUTPUT_BASE")"
 
@@ -36,7 +36,7 @@ for dir in */; do
                 needs_rebuild=true
             else
                 # Check if any source file is newer than the output
-                newest_source=$(find "$dir" -type f -newer "$OUTPUT_DIR/index.html" 2>/dev/null | head -n 1)
+                newest_source=$(find "$dir" -type f -newer "$OUTPUT_DIR/index.html" | head -n 1)
                 if [ -n "$newest_source" ]; then
                     needs_rebuild=true
                 fi
