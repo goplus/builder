@@ -252,10 +252,18 @@ export class Task<T extends TaskType> extends Disposable {
     this.data = await this.apis.createTask(this.type, params, signal)
   }
 
-  /** Cancel the task if cancelable (started while not in terminal state). */
+  /**
+   * Cancel the task if cancelable (started while not in terminal state).
+   * Note:
+   * - The cancellation request will not be aborted even if this task instance is disposed.
+   * - No exception will be thrown even if the cancellation request fails.
+   */
   async tryCancel() {
     if (this.data == null || isTerminalTaskStatus(this.data.status)) return
-    return this.apis.cancelTask(this.data.id, this.getSignal())
+    const id = this.data.id
+    // We are not using `this.getSignal()` here to avoid aborting the "task cancellation" request itself when task is disposed.
+    // It is usual to call `dispose()` right after calling `tryCancel()` and we should not increase the burden of the caller.
+    await this.apis.cancelTask(id).catch((err) => capture(err, `failed to cancel task ${id}`))
   }
 }
 

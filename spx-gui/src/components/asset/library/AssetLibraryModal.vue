@@ -15,7 +15,7 @@ import {
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useI18n } from '@/utils/i18n'
-import { capture, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetGenModel, type AssetModel } from '@/models/common/asset'
@@ -94,7 +94,10 @@ watch(
   () => props.type,
   (type, _, onCleanup) => {
     assetGen.value = createAssetGen(type)
-    onCleanup(() => assetGen.value?.dispose())
+    onCleanup(() => {
+      assetGen.value?.cancel()
+      assetGen.value?.dispose()
+    })
   },
   { immediate: true }
 )
@@ -104,6 +107,7 @@ watch(
 watch(
   () => keyword.value,
   () => {
+    assetGen.value?.cancel()
     assetGen.value?.dispose()
     assetGen.value = createAssetGen(props.type)
   }
@@ -121,11 +125,11 @@ const headerStyle = computed(() => {
 })
 
 /**
- * Prevent assetGen from being disposed automatically.
+ * Prevent assetGen from being cancelled & disposed automatically.
  * This is useful when the user chooses to collapse the generation process
- * and we need to keep the assetGen instance alive.
+ * and we need to keep the assetGen instance alive and related tasks running.
  */
-function preventAssetGenDisposal(gen: AssetGenModel) {
+function keepAssetGenAlive(gen: AssetGenModel) {
   if (assetGen.value !== gen) return
   assetGen.value = null
 }
@@ -291,6 +295,7 @@ const handleBackToAssetLibrary = useMessageHandle(
     searchInput.value = ''
     keyword.value = ''
     isGenPhase.value = false
+    assetGen.value?.cancel()
     assetGen.value?.dispose()
     assetGen.value = createAssetGen(props.type)
   },
@@ -304,7 +309,7 @@ const modalRef = ref<InstanceType<typeof UIModal> | null>()
 async function handleGenCollapse() {
   const gen = assetGen.value
   if (gen == null) throw new Error('asset gen expected')
-  preventAssetGenDisposal(gen)
+  keepAssetGenAlive(gen)
   const transformOrigin = await props.genCollapseHandler(gen)
   if (modalRef.value != null && transformOrigin != null) {
     modalRef.value.setTransformOrigin(transformOrigin)
@@ -364,7 +369,6 @@ const handleModalClose = useMessageHandle(
         confirmText: i18n.t({ en: 'Exit', zh: '退出' })
       })
     }
-    assetGen.value?.cancel().catch((e) => capture(e, 'asset generation cancellation failed'))
     emit('cancelled')
   },
   { en: 'Failed to exit modal', zh: '退出失败' }

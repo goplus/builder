@@ -234,6 +234,7 @@ export class SpriteGen extends Disposable {
     if (index === -1) throw new Error(`Costume with id ${id} not found`)
     if (id === this.defaultCostume?.id) throw new Error('Cannot remove default costume')
     const [c] = this.costumes.splice(index, 1)
+    c.cancel()
     c.dispose()
   }
 
@@ -256,6 +257,7 @@ export class SpriteGen extends Disposable {
     const index = this.animations.findIndex((a) => a.id === id)
     if (index === -1) throw new Error(`Animation with id ${id} not found`)
     const [a] = this.animations.splice(index, 1)
+    a.cancel()
     a.dispose()
   }
 
@@ -310,6 +312,12 @@ export class SpriteGen extends Disposable {
     })
   }
 
+  /**
+   * Cancel the ongoing generations if any.
+   * Note:
+   * - The cancellation requests will not be aborted even if this gen instance is disposed.
+   * - No exception will be thrown even if the cancellation requests fail.
+   */
   cancel() {
     return Promise.all([
       this.genImagesTask.tryCancel(),
