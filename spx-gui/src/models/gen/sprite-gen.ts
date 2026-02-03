@@ -242,6 +242,12 @@ export class SpriteGen extends Disposable {
     const [c] = this.costumes.splice(index, 1)
     c.cancel()
     c.dispose()
+    if (this.selectedItem?.type === 'costume' && this.selectedItem.id === id) {
+      this.selectedItem = null
+    }
+  }
+  getCostumeById(id: string): CostumeGen | null {
+    return this.costumes.find((c) => c.id === id) || null
   }
 
   /** Animations gen */
@@ -265,11 +271,17 @@ export class SpriteGen extends Disposable {
     const [a] = this.animations.splice(index, 1)
     a.cancel()
     a.dispose()
+    if (this.selectedItem?.type === 'animation' && this.selectedItem.id === id) {
+      this.selectedItem = null
+    }
+  }
+  getAnimationById(id: string): AnimationGen | null {
+    return this.animations.find((a) => a.id === id) || null
   }
 
   result: Sprite | null
 
-  /** Store the user selected item state for restoration */
+  /** Persist the user selected item state across modal sessions */
   selectedItem: SpriteGenSelected | null = null
 
   setSelectedItem(item: SpriteGenSelected | null) {

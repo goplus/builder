@@ -38,9 +38,9 @@ const selected = computed(() => {
   const { type, id } = selectedItem
   switch (type) {
     case 'costume':
-      return { type: 'costume', costume: props.gen.costumes.find((c) => c.id === id) ?? null }
+      return { type: 'costume', costume: props.gen.getCostumeById(id) }
     case 'animation':
-      return { type: 'animation', animation: props.gen.animations.find((a) => a.id === id) ?? null }
+      return { type: 'animation', animation: props.gen.getAnimationById(id) }
     default:
       return null
   }
