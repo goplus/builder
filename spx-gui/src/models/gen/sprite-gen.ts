@@ -13,7 +13,7 @@ import {
   adoptAsset
 } from '@/apis/aigc'
 import { Project } from '../project'
-import { Sprite } from '../sprite'
+import { RotationStyle, Sprite } from '../sprite'
 import { Costume } from '../costume'
 import type { Animation } from '../animation'
 import { getProjectSettings, Phase, Task } from './common'
@@ -52,7 +52,7 @@ export class SpriteGen extends Disposable {
       perspective: Perspective.Unspecified
     }
     this.previewProject = new Project()
-    this.previewSprite = Sprite.create('')
+    this.previewSprite = this.createSprite()
     this.previewProject.addSprite(this.previewSprite)
     this.result = null
     this.addDisposer(() => {
@@ -61,6 +61,17 @@ export class SpriteGen extends Disposable {
       this.animations.forEach((a) => a.dispose())
     })
     return reactive(this) as this
+  }
+
+  /** Create a sprite instance based on current settings. */
+  private createSprite() {
+    const { name, perspective } = this.settings
+    return Sprite.create(name, '', {
+      rotationStyle: rotationStyleForPerspective(perspective)
+      // TODO: provide more initial settings when generated
+      // e.g., place the pivot at the feet for character sprites in side-scrolling or angled-top-down perspectives.
+      // For more details, see: https://github.com/goplus/builder/issues/2785
+    })
   }
 
   get name() {
@@ -138,7 +149,7 @@ export class SpriteGen extends Disposable {
       this.previewProject.removeSprite(this.previewSprite.id)
     }
 
-    const sprite = Sprite.create(this.settings.name)
+    const sprite = this.createSprite()
     this.previewSprite = sprite
     this.previewProject.addSprite(sprite)
     // Sync results of generations to sprite
@@ -265,7 +276,7 @@ export class SpriteGen extends Disposable {
 
   finish() {
     const previewSprite = this.previewSprite
-    const sprite = Sprite.create(this.settings.name)
+    const sprite = this.createSprite()
     for (const gen of this.costumes) {
       if (gen.result == null) continue
       previewSprite.removeCostume(gen.result.id)
@@ -348,5 +359,16 @@ const defaultCostumeExtraDescriptions: Record<SpriteCategory, LocaleMessage> = {
   [SpriteCategory.Unspecified]: {
     en: '',
     zh: ''
+  }
+}
+
+function rotationStyleForPerspective(perspective: Perspective): RotationStyle {
+  switch (perspective) {
+    case Perspective.SideScrolling:
+    case Perspective.AngledTopDown:
+      return RotationStyle.LeftRight
+    case Perspective.Unspecified:
+    default:
+      return RotationStyle.Normal
   }
 }

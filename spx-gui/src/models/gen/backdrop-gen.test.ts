@@ -1,46 +1,19 @@
-import { describe, it, expect, vi } from 'vitest'
-import * as aigcApis from '@/apis/aigc'
-import * as spxUtils from '@/utils/spx'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
 import { makeProject } from '../common/test'
+import { setupAigcMock, MockAigcApis } from './aigc-mock'
 import { BackdropGen } from './backdrop-gen'
 
-vi.spyOn(aigcApis, 'enrichBackdropSettings').mockImplementation((input) =>
-  Promise.resolve<aigcApis.BackdropSettings>({
-    name: 'Enriched Backdrop',
-    category: BackdropCategory.Unspecified,
-    description: `A beautiful backdrop of ${input}`,
-    artStyle: ArtStyle.Unspecified,
-    perspective: Perspective.Unspecified
-  })
-)
-vi.spyOn(aigcApis, 'createTask').mockImplementation(() => {
-  return Promise.resolve<aigcApis.Task<aigcApis.TaskType.GenerateBackdrop>>({
-    id: 'mock-task-id',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    type: aigcApis.TaskType.GenerateBackdrop,
-    status: aigcApis.TaskStatus.Pending
-  })
-})
-vi.spyOn(aigcApis, 'subscribeTaskEvents').mockImplementation(async function* () {
-  yield {
-    type: aigcApis.TaskEventType.Completed,
-    data: {
-      result: {
-        imageUrls: [
-          `http://example.com/generated-backdrop-1.png`,
-          `http://example.com/generated-backdrop-2.png`,
-          `http://example.com/generated-backdrop-3.png`,
-          `http://example.com/generated-backdrop-4.png`
-        ]
-      }
-    }
-  } satisfies aigcApis.TaskEventCompleted<aigcApis.TaskType.GenerateBackdrop>
-})
-vi.spyOn(spxUtils, 'adaptImg').mockImplementation((file) => Promise.resolve(file))
+setupAigcMock()
+
+const aigcMock = new MockAigcApis()
+aigcMock.mock()
 
 describe('BackdropGen', () => {
+  beforeEach(() => {
+    aigcMock.reset()
+  })
+
   it('should work well', async () => {
     const project = makeProject()
 
@@ -60,9 +33,9 @@ describe('BackdropGen', () => {
     await enriched
     expect(gen.enrichState.status).toBe('finished')
     expect(gen.enrichState.result).toEqual({
-      name: 'Enriched Backdrop',
+      name: 'enriched-backdrop',
       category: BackdropCategory.Unspecified,
-      description: 'A beautiful backdrop of A majestic mountain range under a clear blue sky',
+      description: 'Enriched description for A majestic mountain range under a clear blue sky',
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified
     })
@@ -87,7 +60,7 @@ describe('BackdropGen', () => {
 
     // 7. Finish the backdrop generation
     const backdrop = await gen.finish()
-    expect(backdrop.name).toBe('enriched Backdrop')
+    expect(backdrop.name).toBe('enriched-backdrop')
     expect(backdrop.assetMetadata).toEqual({
       description: 'A fantastic backdrop of a river flowing through a lush forest',
       extraSettings: {
@@ -96,5 +69,123 @@ describe('BackdropGen', () => {
         perspective: Perspective.AngledTopDown
       }
     })
+  })
+
+  it('should handle errors and retry successfully', async () => {
+    const project = makeProject()
+    const gen = new BackdropGen(project, 'A beautiful sunset over mountains')
+
+    // 1. First enrich attempt fails
+    aigcMock.injectErrorOnce('enrichBackdropSettings', new Error('Network error'))
+    const enrichPromise1 = gen.enrich()
+    await expect(enrichPromise1).rejects.toThrow('Network error')
+    expect(gen.enrichState.status).toBe('failed')
+
+    // 2. Retry enrich and succeed
+    const enrichPromise2 = gen.enrich()
+    expect(gen.enrichState.status).toBe('running')
+    await enrichPromise2
+    expect(gen.enrichState.status).toBe('finished')
+    expect(gen.enrichState.result?.name).toBe('enriched-backdrop')
+
+    // 3. First genImages attempt fails
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Task processing error'))
+    const genImagesPromise1 = gen.genImages()
+    await expect(genImagesPromise1).rejects.toThrow('Task processing error')
+    expect(gen.imagesGenState.status).toBe('failed')
+
+    // 4. Retry genImages and succeed
+    const genImagesPromise2 = gen.genImages()
+    expect(gen.imagesGenState.status).toBe('running')
+    await genImagesPromise2
+    expect(gen.imagesGenState.status).toBe('finished')
+    expect(gen.imagesGenState.result?.length).toBe(4)
+
+    // 5. Finish successfully
+    gen.setImage(gen.imagesGenState.result![0])
+    const backdrop = await gen.finish()
+    expect(backdrop.name).toBe('enriched-backdrop')
+  })
+
+  it('should validate backdrop name correctly', async () => {
+    const project = makeProject()
+    const gen = new BackdropGen(project, 'A scenic landscape')
+
+    await gen.enrich()
+    await gen.genImages()
+    gen.setImage(gen.imagesGenState.result![0])
+    const backdrop1 = await gen.finish()
+    project.stage.addBackdrop(backdrop1)
+
+    // Create another gen and try to set duplicate name should fail
+    const gen2 = new BackdropGen(project, 'Another landscape')
+    await gen2.enrich()
+    expect(() => gen2.setName(backdrop1.name)).toThrow()
+  })
+
+  it('should throw error when finishing without image', async () => {
+    const project = makeProject()
+    const gen = new BackdropGen(project, 'A test backdrop')
+
+    await gen.enrich()
+    await gen.genImages()
+
+    // Try to finish without setting image
+    await expect(gen.finish()).rejects.toThrow('image expected')
+  })
+
+  it('should throw error when recording adoption without result', async () => {
+    const project = makeProject()
+    const gen = new BackdropGen(project, 'A test backdrop')
+
+    await gen.enrich()
+    await gen.genImages()
+
+    // Try to record adoption without finishing
+    await expect(gen.recordAdoption()).rejects.toThrow('result backdrop expected')
+  })
+
+  it('should track isPreparePhase correctly', async () => {
+    const project = makeProject()
+    const gen = new BackdropGen(project, 'A test backdrop')
+
+    expect(gen.isPreparePhase).toBe(true)
+
+    await gen.enrich()
+    await gen.genImages()
+    expect(gen.isPreparePhase).toBe(true)
+
+    gen.setImage(gen.imagesGenState.result![0])
+    await gen.finish()
+    expect(gen.isPreparePhase).toBe(false)
+  })
+
+  it('should allow multiple enrichments', async () => {
+    const project = makeProject()
+    const gen = new BackdropGen(project, 'First description')
+
+    await gen.enrich()
+    expect(gen.enrichState.result?.description).toContain('First description')
+
+    gen.setSettings({ description: 'Second description' })
+    await gen.enrich()
+    expect(gen.enrichState.result?.description).toContain('Second description')
+  })
+
+  it('should allow multiple image generations', async () => {
+    const project = makeProject()
+    const gen = new BackdropGen(project, 'A test backdrop')
+
+    await gen.enrich()
+
+    await gen.genImages()
+    const firstBatch = gen.imagesGenState.result
+    expect(firstBatch?.length).toBe(4)
+
+    gen.setSettings({ artStyle: ArtStyle.FlatDesign })
+    await gen.genImages()
+    const secondBatch = gen.imagesGenState.result
+    expect(secondBatch?.length).toBe(4)
+    expect(secondBatch).not.toBe(firstBatch)
   })
 })
