@@ -34,6 +34,7 @@ RUN npm install
 COPY spx-gui .
 COPY docs ../docs
 COPY tools ../tools
+COPY tutorial ../tutorial
 # Copy assets (with wasm)
 COPY --from=go-builder /app/spx-gui/src/assets /app/spx-gui/src/assets
 
