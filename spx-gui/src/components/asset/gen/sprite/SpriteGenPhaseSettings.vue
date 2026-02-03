@@ -38,12 +38,6 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 })
 
 const hasPreview = computed(() => props.gen.image != null)
-
-const remaining = computed(() => {
-  const gen = props.gen
-  if (gen.imagesGenState.status !== 'running') return null
-  return gen.imagesGenState.remaining
-})
 </script>
 
 <template>
@@ -76,7 +70,7 @@ const remaining = computed(() => {
         <template #tip>
           <template v-if="gen.imagesGenState.status === 'running'">
             {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
-            {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
+            {{ gen.imagesGenState.remaining != null ? $t(humanizeRemaining(gen.imagesGenState.remaining)) : '' }}
           </template>
           <template v-else-if="gen.imagesGenState.status === 'finished'">
             {{

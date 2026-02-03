@@ -61,6 +61,7 @@ export type PhaseState<R> =
       status: 'initial'
       result?: null
       error?: null
+      remaining?: null
     }
   | {
       status: 'running'
@@ -72,11 +73,13 @@ export type PhaseState<R> =
       status: 'finished'
       result: R
       error?: null
+      remaining?: null
     }
   | {
       status: 'failed'
       result?: null
       error: Exception
+      remaining?: null
     }
 
 /** `Phase` tracks the state of an asynchronous process. */
