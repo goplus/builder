@@ -247,7 +247,7 @@ export class SpriteGen extends Disposable {
     }
   }
   getCostumeById(id: string): CostumeGen | null {
-    return this.costumes.find((c) => c.id === id) || null
+    return this.costumes.find((c) => c.id === id) ?? null
   }
 
   /** Animations gen */
@@ -276,7 +276,7 @@ export class SpriteGen extends Disposable {
     }
   }
   getAnimationById(id: string): AnimationGen | null {
-    return this.animations.find((a) => a.id === id) || null
+    return this.animations.find((a) => a.id === id) ?? null
   }
 
   result: Sprite | null
