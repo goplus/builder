@@ -5,7 +5,7 @@
 -->
 
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { capture, useMessageHandle } from '@/utils/exception'
 import type { Sprite } from '@/models/sprite'
@@ -32,16 +32,10 @@ const emit = defineEmits<{
   finished: [Sprite]
 }>()
 
-type Selected = {
-  type: 'costume' | 'animation'
-  id: string
-}
-
-const selectedRef = shallowRef<Selected | null>(null)
-
 const selected = computed(() => {
-  if (selectedRef.value == null) return null
-  const { type, id } = selectedRef.value
+  const selectedItem = props.gen.selectedItem
+  if (selectedItem == null) return null
+  const { type, id } = selectedItem
   switch (type) {
     case 'costume':
       return { type: 'costume', costume: props.gen.costumes.find((c) => c.id === id) ?? null }
@@ -53,7 +47,7 @@ const selected = computed(() => {
 })
 
 function select(type: 'costume' | 'animation', id: string) {
-  selectedRef.value = { type, id }
+  props.gen.setSelectedItem({ type, id })
 }
 
 watch(

@@ -24,6 +24,12 @@ import type { File } from '../common/file'
 import { getAnimationName, getCostumeName, validateSpriteName } from '../common/asset-name'
 import { sprite2Asset } from '../common/asset'
 
+/** User selected item in sprite gen */
+type SpriteGenSelected = {
+  type: 'costume' | 'animation'
+  id: string
+}
+
 export class SpriteGen extends Disposable {
   id: string
   private i18n: I18n
@@ -262,6 +268,13 @@ export class SpriteGen extends Disposable {
   }
 
   result: Sprite | null
+
+  /** Store the user selected item state for restoration */
+  selectedItem: SpriteGenSelected | null = null
+
+  setSelectedItem(item: SpriteGenSelected | null) {
+    this.selectedItem = item
+  }
 
   finish() {
     const previewSprite = this.previewSprite
