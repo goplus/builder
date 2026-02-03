@@ -140,7 +140,7 @@ export class AnimationGen extends Disposable {
       await this.generateVideoTask.start({ settings })
       const { videoUrl } = await this.generateVideoTask.untilCompleted()
       return createFileWithUniversalUrl(videoUrl)
-    }, this.generateVideoTask.runDuration ?? undefined)
+    }, this.generateVideoTask.runDuration)
     this.setVideo(video)
   }
 

@@ -118,7 +118,7 @@ export class SpriteGen extends Disposable {
       await this.genImagesTask.start({ settings, n: 4 })
       const { imageUrls } = await this.genImagesTask.untilCompleted()
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    }, this.genImagesTask.runDuration ?? undefined)
+    }, this.genImagesTask.runDuration)
   }
 
   image: File | null = null

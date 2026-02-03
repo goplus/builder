@@ -132,7 +132,7 @@ export class CostumeGen extends Disposable {
       const { imageUrls } = await this.generateTask.untilCompleted()
       if (imageUrls.length < 1) throw new Error('no costume image generated')
       return createFileWithUniversalUrl(imageUrls[0])
-    }, this.generateTask.runDuration ?? undefined)
+    }, this.generateTask.runDuration)
     this.setImage(image)
   }
 

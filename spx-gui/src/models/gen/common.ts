@@ -100,8 +100,8 @@ export class Phase<R> {
    * @param promise The promise to track.
    * @param runDuration Optional estimated duration of the promise in seconds, used for providing remaining time.
    */
-  async track(promise: Promise<R>, runDuration?: number): Promise<R> {
-    this.state = { status: 'running', remaining: runDuration ?? null }
+  async track(promise: Promise<R>, runDuration: number | null = null): Promise<R> {
+    this.state = { status: 'running', remaining: runDuration }
     if (runDuration != null && runDuration > 0) {
       this.startTimer(runDuration)
     }
@@ -127,7 +127,7 @@ export class Phase<R> {
   }
 
   private startTimer(duration: number) {
-    // infer interval & minRemaining from runDuration
+    // infer interval & minRemaining from duration
     const updateInterval = Math.round(Math.max(1, duration / 50))
     const minRemaining = updateInterval
     const startedAt = Date.now()
@@ -153,7 +153,7 @@ export class Phase<R> {
    * @param fn The function that returns a promise to track.
    * @param runDuration Optional estimated duration of the function in seconds, used for providing remaining time.
    */
-  async run(fn: () => Promise<R>, runDuration?: number): Promise<R> {
+  async run(fn: () => Promise<R>, runDuration: number | null = null): Promise<R> {
     return this.track(fn(), runDuration)
   }
 }
@@ -201,7 +201,7 @@ export class TaskException extends Exception {
 
 /** Estimated duration (in seconds) for each task type. null means duration is unknown. */
 const taskRunDuration: Record<TaskType, number | null> = {
-  [TaskType.RemoveBackground]: null,
+  [TaskType.RemoveBackground]: 5,
   [TaskType.GenerateCostume]: 15,
   [TaskType.GenerateAnimationVideo]: 150,
   [TaskType.ExtractVideoFrames]: 12,
