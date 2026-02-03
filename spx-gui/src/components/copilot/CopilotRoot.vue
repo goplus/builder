@@ -111,7 +111,7 @@ ${project.sounds.map((sound) => `- ${sound.name}`).join('\n')}
 ${project.stage.backdrops.map((backdrop) => `- ${backdrop.name}`).join('\n')}
 ### Widgets (num: ${project.stage.widgets.length})
 ${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}
-### physics: ${physics.enabled ? 'Enabled' : 'Disabled (Must enable in Map Edit Mode > Global Config for ALL physical features to take effect)'}`
+### physics: ${physics.enabled ? 'Enabled' : 'Disabled (Must be enabled for all physical properties to take effect)'}`
 }
 
 const getProjectContentParamsSchema = z.object({
