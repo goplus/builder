@@ -84,8 +84,5 @@
   },
   "browserslist": [
     "baseline widely available on 2025-12-01"
-  ],
-  "devDependencies": {
-    "honkit": "^6.1.6"
-  }
+  ]
 }
