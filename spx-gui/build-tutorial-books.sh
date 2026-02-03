@@ -23,7 +23,7 @@ for dir in "$TUTORIAL_DIR"/*; do
         # Check if book.json exists
         if [ -f "$dir/book.json" ]; then
             DIR_NAME=$(basename "$dir")
-            OUTPUT_DIR="$OUTPUT_BASE/$TUTORIAL_DIR/$DIR_NAME"
+            OUTPUT_DIR="$OUTPUT_BASE/$DIR_NAME"
 
             # Check if output exists and is up-to-date
             needs_rebuild=false
@@ -63,4 +63,4 @@ done
 echo ""
 echo "GitBook build completed!"
 echo "Built: $built_count, Cached: $cached_count, Skipped: $skipped_count"
-echo "Access path: /tutorial-books/$TUTORIAL_DIR/<directory-name>"
+echo "Access path: /tutorial-books/<directory-name>"
