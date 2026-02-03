@@ -72,7 +72,7 @@ export class BackdropGen extends Disposable {
       })
       const { imageUrls } = await this.generateTask.untilCompleted()
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    })
+    }, this.generateTask.runDuration)
   }
 
   image: File | null
