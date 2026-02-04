@@ -38,6 +38,7 @@ export class SpriteGen extends Disposable {
   private genImagesTask: Task<TaskType.GenerateCostume>
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
+  private inferredAnimationBindings: Record<State, string | undefined> | null = null
 
   constructor(i18n: I18n, project: Project, initialDescription = '') {
     super()
@@ -181,9 +182,17 @@ export class SpriteGen extends Disposable {
           generatedAnimations.forEach((a) => {
             if (!sprite.animations.includes(a)) {
               sprite.addAnimation(a)
-              // Auto bind to default state if no default animation is set
-              if (sprite.getDefaultAnimation() == null) {
-                sprite.setAnimationBoundStates(a.id, [State.Default])
+              // Auto bind to states based on inferred animation bindings if available.
+              // If the animation name has been changed by user, the binding may not be applied.
+              const inferredBindings = this.inferredAnimationBindings
+              if (inferredBindings != null) {
+                const animationName = a.name
+                const statesToBind = Object.entries(inferredBindings)
+                  .filter(([, name]) => name === animationName)
+                  .map(([state]) => state as State)
+                if (statesToBind.length > 0) {
+                  sprite.setAnimationBoundStates(a.id, statesToBind)
+                }
               }
             }
           })
@@ -223,6 +232,7 @@ export class SpriteGen extends Disposable {
 
       // Generate additional costumes & animations
       const settings = await genSpriteContentSettings(this.settings)
+      this.inferredAnimationBindings = settings.animationBindings ?? null
       this.costumes.push(
         ...settings.costumes.map((s) => new CostumeGen(this, project, { ...s, referenceCostumeId: defaultCostume.id }))
       )

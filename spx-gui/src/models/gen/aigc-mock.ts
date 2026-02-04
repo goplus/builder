@@ -17,6 +17,7 @@ import {
 } from '@/apis/aigc'
 import { AnimationLoopMode, ArtStyle, BackdropCategory, Perspective, SpriteCategory } from '@/apis/common'
 import * as aigcApis from '@/apis/aigc'
+import { State } from '@/models/sprite.ts'
 
 export function setupAigcMock() {
   vi.mock('@/apis/aigc', { spy: true })
@@ -167,7 +168,14 @@ export class MockAigcApis {
           loopMode: AnimationLoopMode.Loopable,
           referenceFrameUrl: null
         }
-      ]
+      ],
+      animationBindings: {
+        [State.Default]: 'walk',
+        [State.Die]: undefined,
+        [State.Step]: 'jump',
+        [State.Turn]: undefined,
+        [State.Glide]: undefined
+      }
     }
   }
 

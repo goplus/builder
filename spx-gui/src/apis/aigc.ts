@@ -13,6 +13,7 @@ import {
   type UniversalUrl
 } from './common'
 import type { AssetExtraSettings, AssetType } from './asset'
+import type { State } from '@/models/sprite.ts'
 
 export type ProjectSettings = {
   name: string
@@ -277,6 +278,7 @@ export async function enrichAssetSettings(
 export type SpriteContentSettings = {
   costumes: CostumeSettings[]
   animations: AnimationSettings[]
+  animationBindings?: Record<State, string | undefined>
 }
 
 export async function genSpriteContentSettings(
