@@ -2255,6 +2255,27 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AIGCAnimationSettings"
+                  animationBindings:
+                    description: Recommended mapping from sprite state enum values to animation names.
+                      Keys are sprite state enum values; values are the corresponding animation name strings.
+                    type: object
+                    properties:
+                      default:
+                        type: [ "string", "null" ]
+                      die:
+                        type: [ "string", "null" ]
+                      step:
+                        type: [ "string", "null" ]
+                      turn:
+                        type: [ "string", "null" ]
+                      glide:
+                        type: [ "string", "null" ]
+                    example:
+                      default: walk
+                      die: null
+                      step: jump
+                      turn: null
+                      glide: null
         "403":
           description: Insufficient permissions or quota.
           headers:
