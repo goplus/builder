@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
+import { TaskStatus } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { makeProject, mockFile } from '../common/test'
 import { setupAigcMock, MockAigcApis } from './aigc-mock'
@@ -273,5 +274,26 @@ describe('AnimationGen', () => {
     gen.resetFinishState()
     expect(gen.finishState.status).toBe('initial')
     expect(gen.result).toBeUndefined()
+  })
+
+  it('should cancel running animation tasks', async () => {
+    const project = makeProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      description: 'A test animation',
+      referenceCostumeId: defaultCostume.id
+    })
+    const tasks = aigcMock.tasks
+
+    const generatePromise = gen.generateVideo()
+    await aigcMock.waitForTaskCount(1)
+    await gen.cancel()
+
+    await expect(generatePromise).rejects.toThrow('cancelled')
+    const lastRecord = Array.from(tasks.values()).at(-1)
+    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
   })
 })

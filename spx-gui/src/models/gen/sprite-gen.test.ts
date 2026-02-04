@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
+import { TaskStatus } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as fileHelpers from '@/models/common/file'
 import { makeProject } from '../common/test'
@@ -240,6 +241,47 @@ describe('SpriteGen', () => {
     expect(gen.contentPreparingState.status).toBe('finished')
     expect(gen.costumes.length).toBe(3)
     expect(gen.animations.length).toBe(2)
+  })
+
+  it('should cancel running image generation', async () => {
+    const project = makeProject()
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A test sprite')
+    const tasks = aigcMock.tasks
+
+    const genImagesPromise = gen.genImages()
+    await aigcMock.waitForTaskCount(1)
+    await gen.cancel()
+
+    await expect(genImagesPromise).rejects.toThrow('cancelled')
+    const lastRecord = Array.from(tasks.values()).at(-1)
+    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
+  })
+
+  it('should cancel running costume and animation generations', async () => {
+    const project = makeProject()
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A test sprite')
+    const tasks = aigcMock.tasks
+
+    await gen.enrich()
+    await gen.genImages()
+    gen.setImage(gen.imagesGenState.result![0])
+    await gen.prepareContent()
+
+    const costumeGen = gen.costumes[1]
+    const animationGen = gen.animations[0]
+    const taskCountBefore = tasks.size
+
+    const costumePromise = costumeGen.generate()
+    const animationPromise = animationGen.generateVideo()
+    await aigcMock.waitForTaskCount(taskCountBefore + 2)
+    await gen.cancel()
+
+    await expect(costumePromise).rejects.toThrow('cancelled')
+    await expect(animationPromise).rejects.toThrow('cancelled')
+
+    const newRecords = Array.from(tasks.values()).slice(taskCountBefore)
+    expect(newRecords.length).toBe(2)
+    expect(newRecords.every((r) => r.task.status === TaskStatus.Cancelled)).toBe(true)
   })
 
   it('should set rotation style based on perspective', async () => {

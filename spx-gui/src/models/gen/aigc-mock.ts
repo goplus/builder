@@ -41,7 +41,7 @@ type MockableMethod =
 
 export class MockAigcApis {
   private seq = 0
-  private tasks = new Map<string, TaskRecord>()
+  tasks = new Map<string, TaskRecord>()
   private errorInjections = new Map<MockableMethod, Error>()
 
   mock() {
@@ -61,6 +61,12 @@ export class MockAigcApis {
     this.seq = 0
     this.tasks.clear()
     this.errorInjections.clear()
+  }
+
+  async waitForTaskCount(count = 1) {
+    while (this.tasks.size < count) {
+      await Promise.resolve()
+    }
   }
 
   injectErrorOnce(methodName: MockableMethod, error: Error) {

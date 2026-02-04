@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
+import { TaskStatus } from '@/apis/aigc'
 import { makeProject } from '../common/test'
 import { setupAigcMock, MockAigcApis } from './aigc-mock'
 import { BackdropGen } from './backdrop-gen'
@@ -187,5 +188,21 @@ describe('BackdropGen', () => {
     const secondBatch = gen.imagesGenState.result
     expect(secondBatch?.length).toBe(4)
     expect(secondBatch).not.toBe(firstBatch)
+  })
+
+  it('should cancel running image generation', async () => {
+    const project = makeProject()
+    const gen = new BackdropGen(project, 'A test backdrop')
+    const tasks = aigcMock.tasks
+
+    const waitForTask = aigcMock.waitForTaskCount(1)
+    const genImagesPromise = gen.genImages()
+    await waitForTask
+
+    await gen.cancel()
+    await expect(genImagesPromise).rejects.toThrow('cancelled')
+
+    const lastRecord = Array.from(tasks.values()).at(-1)
+    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
   })
 })

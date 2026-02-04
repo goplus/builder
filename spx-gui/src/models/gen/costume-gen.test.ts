@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ArtStyle, Perspective } from '@/apis/common'
-import { Facing } from '@/apis/aigc'
+import { Facing, TaskStatus } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { makeProject } from '../common/test'
 import { setupAigcMock, MockAigcApis } from './aigc-mock'
@@ -167,5 +167,21 @@ describe('CostumeGen', () => {
     gen.resetFinishState()
     expect(gen.finishState.status).toBe('initial')
     expect(gen.result).toBeUndefined()
+  })
+
+  it('should cancel running costume generation', async () => {
+    const project = makeProject()
+    const sprite = Sprite.create('TestSprite', '')
+    project.addSprite(sprite)
+    const gen = new CostumeGen(sprite, project, { description: 'A test costume' })
+    const tasks = aigcMock.tasks
+
+    const generatePromise = gen.generate()
+    await aigcMock.waitForTaskCount(1)
+    await gen.cancel()
+
+    await expect(generatePromise).rejects.toThrow('cancelled')
+    const lastRecord = Array.from(tasks.values()).at(-1)
+    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
   })
 })
