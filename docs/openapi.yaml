@@ -2256,20 +2256,33 @@ paths:
                     items:
                       $ref: "#/components/schemas/AIGCAnimationSettings"
                   animationBindings:
-                    description: Recommended mapping from sprite state enum values to animation names.
-                      Keys are sprite state enum values; values are the corresponding animation name strings.
+                    description: |
+                      Recommended mapping from sprite state enum values to animation names.
+                      Keys are sprite state enum values; values are animation name strings that should
+                      match the 'name' field from the animations array, or null if no animation is bound to that state.
                     type: object
+                    additionalProperties: false
                     properties:
                       default:
-                        type: [ "string", "null" ]
+                        oneOf:
+                          - type: string
+                          - type: 'null'
                       die:
-                        type: [ "string", "null" ]
+                        oneOf:
+                          - type: string
+                          - type: 'null'
                       step:
-                        type: [ "string", "null" ]
+                        oneOf:
+                          - type: string
+                          - type: 'null'
                       turn:
-                        type: [ "string", "null" ]
+                        oneOf:
+                          - type: string
+                          - type: 'null'
                       glide:
-                        type: [ "string", "null" ]
+                        oneOf:
+                          - type: string
+                          - type: 'null'
                     example:
                       default: walk
                       die: null
