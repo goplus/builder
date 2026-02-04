@@ -24,6 +24,12 @@ import type { File } from '../common/file'
 import { getAnimationName, getCostumeName, validateSpriteName } from '../common/asset-name'
 import { sprite2Asset } from '../common/asset'
 
+/** User selected item in sprite gen */
+type SpriteGenSelected = {
+  type: 'costume' | 'animation'
+  id: string
+}
+
 export class SpriteGen extends Disposable {
   id: string
   private i18n: I18n
@@ -247,6 +253,12 @@ export class SpriteGen extends Disposable {
     const [c] = this.costumes.splice(index, 1)
     c.cancel()
     c.dispose()
+    if (this.selectedItem?.type === 'costume' && this.selectedItem.id === id) {
+      this.selectedItem = null
+    }
+  }
+  getCostumeById(id: string): CostumeGen | null {
+    return this.costumes.find((c) => c.id === id) ?? null
   }
 
   /** Animations gen */
@@ -270,9 +282,22 @@ export class SpriteGen extends Disposable {
     const [a] = this.animations.splice(index, 1)
     a.cancel()
     a.dispose()
+    if (this.selectedItem?.type === 'animation' && this.selectedItem.id === id) {
+      this.selectedItem = null
+    }
+  }
+  getAnimationById(id: string): AnimationGen | null {
+    return this.animations.find((a) => a.id === id) ?? null
   }
 
   result: Sprite | null
+
+  /** Persist the user selected item state across modal sessions */
+  selectedItem: SpriteGenSelected | null = null
+
+  setSelectedItem(item: SpriteGenSelected | null) {
+    this.selectedItem = item
+  }
 
   finish() {
     const previewSprite = this.previewSprite
