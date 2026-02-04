@@ -181,9 +181,8 @@ export class SpriteGen extends Disposable {
           generatedAnimations.forEach((a) => {
             if (!sprite.animations.includes(a)) {
               sprite.addAnimation(a)
-              // Auto bind to default state if no bound states
-              const boundStates = sprite.getAnimationBoundStates(a.id)
-              if (boundStates.length === 0) {
+              // Auto bind to default state if no default animation is set
+              if (sprite.getDefaultAnimation() == null) {
                 sprite.setAnimationBoundStates(a.id, [State.Default])
               }
             }
