@@ -38,7 +38,7 @@ export class SpriteGen extends Disposable {
   private genImagesTask: Task<TaskType.GenerateCostume>
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
-  private inferredAnimationBindings: Partial<Record<State, string>> | null = null
+  private animationGenIdBindings: Partial<Record<State, string>> = {}
 
   constructor(i18n: I18n, project: Project, initialDescription = '') {
     super()
@@ -182,17 +182,14 @@ export class SpriteGen extends Disposable {
           generatedAnimations.forEach((a) => {
             if (!sprite.animations.includes(a)) {
               sprite.addAnimation(a)
-              // Auto bind to states based on inferred animation bindings if available.
-              // If the animation name has been changed by user, the binding may not be applied.
-              const inferredBindings = this.inferredAnimationBindings
-              if (inferredBindings != null) {
-                const animationName = a.name
-                const statesToBind = Object.entries(inferredBindings)
-                  .filter(([, name]) => name === animationName)
-                  .map(([state]) => state as State)
-                if (statesToBind.length > 0) {
-                  sprite.setAnimationBoundStates(a.id, statesToBind)
-                }
+              // Auto bind states based on recommended animation bindings
+              const aGen = this.animations.find((gen) => gen.result?.id === a.id)
+              if (aGen == null) return
+              const statesToBind = Object.entries(this.animationGenIdBindings)
+                .filter(([, genId]) => genId === aGen.id)
+                .map(([state]) => state as State)
+              if (statesToBind.length > 0) {
+                sprite.setAnimationBoundStates(a.id, statesToBind, false)
               }
             }
           })
@@ -232,13 +229,26 @@ export class SpriteGen extends Disposable {
 
       // Generate additional costumes & animations
       const settings = await genSpriteContentSettings(this.settings)
-      this.inferredAnimationBindings = settings.animationBindings ?? null
       this.costumes.push(
         ...settings.costumes.map((s) => new CostumeGen(this, project, { ...s, referenceCostumeId: defaultCostume.id }))
       )
       this.animations = settings.animations.map(
         (s) => new AnimationGen(this, project, { ...s, referenceCostumeId: defaultCostume.id })
       )
+      // Store recommended animation bindings. Replace animation names with animation-gen IDs in case of name changes.
+      const recommendedBindings = settings.animationBindings || {}
+      const animationNameToGenIdMap = new Map(this.animations.map((gen) => [gen.name, gen.id]))
+      // Only support Default, Step, and Die states (turn and glide are not supported for now)
+      const supportedStates = [State.Default, State.Step, State.Die] as const
+      this.animationGenIdBindings = Object.fromEntries(
+        supportedStates
+          .map((state) => {
+            const animationName = recommendedBindings[state]
+            const genId = animationName ? animationNameToGenIdMap.get(animationName) : undefined
+            return [state, genId]
+          })
+          .filter(([, genId]) => genId !== undefined)
+      ) as Partial<Record<State, string>>
     })
   }
 
