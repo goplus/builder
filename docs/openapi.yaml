@@ -2259,36 +2259,16 @@ paths:
                     description: |
                       Recommended mapping from sprite state enum values to animation names.
                       Keys are sprite state enum values; values are animation name strings that should
-                      match the 'name' field from the animations array, or null if no animation is bound to that state.
+                      match the 'name' field from the animations array, omitted if no animation is bound to that state.
                     type: object
                     additionalProperties: false
                     properties:
                       default:
-                        oneOf:
-                          - type: string
-                          - type: 'null'
-                      die:
-                        oneOf:
-                          - type: string
-                          - type: 'null'
+                        type: string
                       step:
-                        oneOf:
-                          - type: string
-                          - type: 'null'
-                      turn:
-                        oneOf:
-                          - type: string
-                          - type: 'null'
-                      glide:
-                        oneOf:
-                          - type: string
-                          - type: 'null'
-                    example:
-                      default: walk
-                      die: null
-                      step: jump
-                      turn: null
-                      glide: null
+                        type: string
+                      die:
+                        type: string
         "403":
           description: Insufficient permissions or quota.
           headers:
