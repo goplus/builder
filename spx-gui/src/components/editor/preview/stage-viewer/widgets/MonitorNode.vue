@@ -1,10 +1,10 @@
 <template>
   <v-group
     :config="groupConfig"
-    @dragmove="notifyUpdateMonitor($event.target)"
-    @dragend="notifyUpdateMonitor($event.target, true)"
-    @transform="notifyUpdateMonitor($event.target)"
-    @transformend="notifyUpdateMonitor($event.target, true)"
+    @dragmove="updateLocalConfigByShape($event.target)"
+    @dragend="syncLocalConfigByShape($event.target)"
+    @transform="updateLocalConfigByShape($event.target)"
+    @transformend="syncLocalConfigByShape($event.target)"
     @click="handleClick"
   >
     <v-rect :config="rectConfig" />
@@ -27,18 +27,13 @@ import type { Monitor } from '@/models/widget/monitor'
 import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
+import type { WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
 
 const props = defineProps<{
   monitor: Monitor
+  localConfig: WidgetLocalConfig | null
   viewportSize: Size
   nodeReadyMap: Map<string, boolean>
-}>()
-
-const emit = defineEmits<{
-  updatePos: [{ x: number; y: number }]
-  updatePosEnd: [{ x: number; y: number }]
-  updateSize: [{ size: number }]
-  updateSizeEnd: [{ size: number }]
 }>()
 
 const uiVariables = useUIVariables()
@@ -86,14 +81,13 @@ onMounted(() => {
   }
 })
 
-function updateMonitor({
+function updateLocalConfig({
   oldSize,
   size,
   oldX,
   x,
   oldY,
-  y,
-  isEnd = false
+  y
 }: {
   oldSize: number
   size: number
@@ -101,30 +95,48 @@ function updateMonitor({
   x: number
   oldY: number
   y: number
-  isEnd?: boolean
 }) {
-  if (oldSize !== size) {
-    if (isEnd) emit('updateSizeEnd', { size })
-    else emit('updateSize', { size })
+  const widgetLocalConfig = props.localConfig
+  if (widgetLocalConfig == null) return
+  if (size !== oldSize) {
+    widgetLocalConfig.setSize(size)
     return
   }
-  if (oldX !== x || oldY !== y) {
-    if (isEnd) emit('updatePosEnd', { x, y })
-    else emit('updatePos', { x, y })
+  if (x !== oldX || y !== oldY) {
+    widgetLocalConfig.setX(x)
+    widgetLocalConfig.setY(y)
   }
 }
 
-const notifyUpdateMonitor = (e: Shape | Stage, isEnd = false) => {
-  const { monitor } = props
-  const { x, y } = toPosition(e)
-  updateMonitor({
-    oldSize: monitor.size,
-    size: toSize(e),
-    oldX: monitor.x,
+function updateLocalConfigByShape(node: Shape | Stage) {
+  if (!props.localConfig == null) return
+  const { x, y } = toPosition(node)
+  updateLocalConfig({
+    oldX: props.monitor.x,
     x,
-    oldY: monitor.y,
+    oldY: props.monitor.y,
     y,
-    isEnd
+    oldSize: props.monitor.size,
+    size: toSize(node)
+  })
+}
+
+function syncLocalConfig({ x, y, size }: { x: number; y: number; size: number }) {
+  const widgetLocalConfig = props.localConfig
+  if (widgetLocalConfig == null) return
+  if (props.monitor.size !== size) {
+    widgetLocalConfig.setSize(size, false)
+    return
+  }
+  if (props.monitor.x !== x || props.monitor.y !== y) {
+    widgetLocalConfig.syncPos()
+  }
+}
+function syncLocalConfigByShape(node: Shape | Stage) {
+  syncLocalConfig({
+    size: toSize(node),
+    x: toPosition(node).x,
+    y: toPosition(node).y
   })
 }
 

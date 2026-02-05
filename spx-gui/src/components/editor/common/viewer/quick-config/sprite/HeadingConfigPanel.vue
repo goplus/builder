@@ -2,19 +2,20 @@
 import { ref } from 'vue'
 import { UIDropdown, UINumberInput } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
-import { RotationStyle, type Sprite } from '@/models/sprite'
+import { RotationStyle } from '@/models/sprite'
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
+import type { SpriteLocalConfig } from '../utils'
 
-defineProps<{
-  sprite: Sprite
-  heading: number
-}>()
-
-defineEmits<{
-  'update:heading': [{ heading: number }]
+const props = defineProps<{
+  localConfig: SpriteLocalConfig
 }>()
 
 const rotateDropdownVisible = ref(false)
+
+function handleUpdateHeading(heading: number) {
+  props.localConfig.setHeading(heading)
+  props.localConfig.syncHeading()
+}
 </script>
 
 <template>
@@ -23,25 +24,25 @@ const rotateDropdownVisible = ref(false)
       trigger="manual"
       placement="top"
       :visible="rotateDropdownVisible"
-      :disabled="sprite.rotationStyle !== RotationStyle.Normal"
+      :disabled="localConfig.rotationStyle !== RotationStyle.Normal"
       @click-outside="rotateDropdownVisible = false"
     >
       <template #trigger>
         <UINumberInput
           v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
           class="heading-input"
-          :disabled="sprite.rotationStyle !== RotationStyle.Normal"
+          :disabled="localConfig.rotationStyle !== RotationStyle.Normal"
           :min="-180"
           :max="180"
-          :value="heading"
-          @update:value="$emit('update:heading', { heading: $event ?? 0 })"
+          :value="localConfig.heading"
+          @update:value="handleUpdateHeading($event ?? 0)"
           @focus="rotateDropdownVisible = true"
         >
           <template #prefix>{{ $t({ en: 'Heading', zh: '朝向' }) }}</template>
         </UINumberInput>
       </template>
       <div class="rotation-heading-container">
-        <AnglePicker :model-value="heading" @update:model-value="$emit('update:heading', { heading: $event ?? 0 })" />
+        <AnglePicker :model-value="localConfig.heading" @update:model-value="handleUpdateHeading($event ?? 0)" />
       </div>
     </UIDropdown>
   </ConfigPanel>

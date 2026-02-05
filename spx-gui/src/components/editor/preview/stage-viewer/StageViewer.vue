@@ -32,6 +32,9 @@
             v-for="sprite in visibleSprites"
             :key="sprite.id"
             :sprite="sprite"
+            :local-config="
+              localConfig instanceof SpriteLocalConfig && localConfig.id === sprite.id ? localConfig : null
+            "
             :selected="editorCtx.state.selectedSprite?.id === sprite.id"
             :project="editorCtx.project"
             :map-size="mapSize"
@@ -39,17 +42,6 @@
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
-            @update-heading="
-              handleUpdateConfigType(
-                $event.leftRight == null ? 'rotate' : [],
-                () => (spriteConfigHeading = $event.heading)
-              )
-            "
-            @update-heading-end="updateSpriteHeading($event.heading)"
-            @update-pos="handleUpdateConfigType('pos', () => (spriteConfigPos = [$event.x, $event.y]))"
-            @update-pos-end="updateSpritePos([$event.x, $event.y])"
-            @update-size="handleUpdateConfigType('size', () => (spriteConfigSize = $event.size))"
-            @update-size-end="updateSpriteSize($event.size)"
           />
         </v-group>
       </v-layer>
@@ -58,12 +50,9 @@
           v-for="widget in visibleWidgets"
           :key="widget.id"
           :widget="widget"
+          :local-config="localConfig instanceof WidgetLocalConfig && localConfig.id === widget.id ? localConfig : null"
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
-          @update-pos="handleUpdateConfigType('pos', () => (widgetConfigPos = [$event.x, $event.y]))"
-          @update-pos-end="updateWidgetPos([$event.x, $event.y])"
-          @update-size="handleUpdateConfigType('size', () => (widgetConfigSize = $event.size))"
-          @update-size-end="updateWidgetSize($event.size)"
         />
       </v-layer>
       <v-layer>
@@ -80,26 +69,14 @@
       @update-config-types="configTypesRef = $event"
     >
       <SpriteQuickConfig
-        v-if="editorCtx.state.selectedSprite"
-        :sprite="editorCtx.state.selectedSprite"
+        v-if="localConfig instanceof SpriteLocalConfig"
+        :local-config="localConfig"
         :project="editorCtx.project"
-        :size="spriteConfigSize"
-        :heading="spriteConfigHeading"
-        :x="spriteConfigPos[0]"
-        :y="spriteConfigPos[1]"
-        @update:size="updateSpriteSize($event.size)"
-        @update:heading="updateSpriteHeading($event.heading)"
-        @update:pos="updateSpritePos([$event.x, $event.y])"
       />
       <WidgetQuickConfig
-        v-else-if="editorCtx.state.selectedWidget"
-        :widget="editorCtx.state.selectedWidget"
+        v-else-if="localConfig instanceof WidgetLocalConfig"
+        :local-config="localConfig"
         :project="editorCtx.project"
-        :size="widgetConfigSize"
-        :x="widgetConfigPos[0]"
-        :y="widgetConfigPos[1]"
-        @update:size="updateWidgetSize($event.size)"
-        @update:pos="updateWidgetPos([$event.x, $event.y])"
       />
     </QuickConfigWrapper>
     <PositionIndicator :position="mousePos" />
@@ -120,7 +97,6 @@ import { useFileUrl } from '@/utils/file'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
-import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
 import type { Widget } from '@/models/widget'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -135,11 +111,8 @@ import WidgetNode from './widgets/WidgetNode.vue'
 import QuickConfigWrapper, {
   type ConfigType
 } from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
-import {
-  useConfigModal,
-  wrapperSpriteUpdateHandler,
-  wrapperWidgetUpdateHandler
-} from '@/components/editor/common/viewer/quick-config/utils'
+import { LocalConfig, SpriteLocalConfig, WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
+import type { Sprite } from '@/models/sprite'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
@@ -444,35 +417,32 @@ const handleSpriteDragMove = throttle(
 )
 
 // quick config
-const provideSpriteContext = () => ({ sprite: editorCtx.state.selectedSprite, project: editorCtx.project })
-const [spriteConfigSize, updateSpriteSize] = useConfigModal(
-  () => editorCtx.state.selectedSprite?.size,
-  wrapperSpriteUpdateHandler((sprite, size) => sprite.setSize(size ?? 0), provideSpriteContext)
-)
-const [spriteConfigHeading, updateSpriteHeading] = useConfigModal(
-  () => editorCtx.state.selectedSprite?.heading,
-  wrapperSpriteUpdateHandler((sprite, heading) => sprite.setHeading(heading ?? 0), provideSpriteContext, false)
-)
-const [spriteConfigPos, updateSpritePos] = useConfigModal(
-  () => [editorCtx.state.selectedSprite?.x, editorCtx.state.selectedSprite?.y],
-  wrapperSpriteUpdateHandler((sprite, [x, y]) => (sprite.setX(x ?? 0), sprite.setY(y ?? 0)), provideSpriteContext)
-)
-
-const provideWidgetContext = () => ({ widget: editorCtx.state.selectedWidget, project: editorCtx.project })
-const [widgetConfigSize, updateWidgetSize] = useConfigModal(
-  () => editorCtx.state.selectedWidget?.size,
-  wrapperWidgetUpdateHandler((widget, v) => widget.setSize(v ?? 0), provideWidgetContext)
-)
-const [widgetConfigPos, updateWidgetPos] = useConfigModal(
-  () => [editorCtx.state.selectedWidget?.x, editorCtx.state.selectedWidget?.y],
-  wrapperWidgetUpdateHandler((widget, [x, y]) => (widget.setX(x ?? 0), widget.setY(y ?? 0)), provideWidgetContext)
+const localConfig = shallowRef<LocalConfig | null>(null)
+watch(
+  () => [editorCtx.state.selectedSprite, editorCtx.state.selectedWidget] as const,
+  ([sprite, widget], _, onCleanup) => {
+    if (sprite == null && widget == null) return
+    if (sprite != null) {
+      localConfig.value = new SpriteLocalConfig(sprite, editorCtx.project)
+    } else if (widget != null) {
+      localConfig.value = new WidgetLocalConfig(widget, editorCtx.project)
+    }
+    onCleanup(() => {
+      localConfig.value?.dispose()
+      localConfig.value = null
+    })
+  },
+  { immediate: true }
 )
 
 const configTypesRef = ref<ConfigType[]>(['default'])
-const handleUpdateConfigType = throttle((configType: ConfigType | ConfigType[] = [], updator: () => void) => {
-  configTypesRef.value = ['default' as ConfigType].concat(configType)
-  updator()
-}, 150)
+watch(
+  () => localConfig.value?.configTypes,
+  (configTypes) => {
+    if (configTypes == null || configTypes.length === 1) return
+    configTypesRef.value = configTypes
+  }
+)
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()

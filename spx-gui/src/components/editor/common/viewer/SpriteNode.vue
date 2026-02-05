@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 import type { Stage } from 'konva/lib/Stage'
 import type { Shape } from 'konva/lib/Shape'
 import type { KonvaEventObject } from 'konva/lib/Node'
@@ -10,9 +10,11 @@ import type { Size } from '@/models/common'
 import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
+import type { SpriteLocalConfig } from './quick-config/utils'
 
 const props = defineProps<{
   sprite: Sprite
+  localConfig: SpriteLocalConfig | null
   selected: boolean
   project: Project
   mapSize: Size
@@ -28,12 +30,6 @@ const emit = defineEmits<{
   selected: []
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
-  updatePos: [{ x: number; y: number }]
-  updatePosEnd: [{ x: number; y: number }]
-  updateHeading: [{ heading: number; leftRight?: LeftRight }]
-  updateHeadingEnd: [{ heading: number; leftRight?: LeftRight }]
-  updateSize: [{ size: number }]
-  updateSizeEnd: [{ size: number }]
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -62,75 +58,86 @@ onMounted(() => {
   }
 })
 
-function updateSprite({
-  oldSize,
-  size,
-  oldHeading,
-  heading,
+function updateLocalConfig({
   oldX,
   x,
   oldY,
   y,
-  isEnd = false
+  oldSize,
+  size,
+  oldHeading,
+  heading
 }: {
-  oldSize: number
-  size: number
-  oldHeading: number
-  heading: number
   oldX: number
   x: number
   oldY: number
   y: number
-  isEnd?: boolean
+  oldSize: number
+  size: number
+  oldHeading: number
+  heading: number
 }) {
-  if (oldSize !== size) {
-    if (isEnd) {
-      emit('updateSizeEnd', { size })
-    } else {
-      emit('updateSize', { size })
-    }
+  const spriteLocalConfig = props.localConfig
+  if (spriteLocalConfig == null) return
+  if (size !== oldSize) {
+    spriteLocalConfig.setSize(size)
     return
   }
-  if (oldHeading !== heading && props.sprite.rotationStyle !== RotationStyle.None) {
-    let leftRight: LeftRight | undefined = undefined
-    if (props.sprite.rotationStyle === RotationStyle.LeftRight) {
-      leftRight = headingToLeftRight(heading)
-    }
-    if (isEnd) {
-      emit('updateHeadingEnd', { heading, leftRight })
-    } else {
-      emit('updateHeading', { heading, leftRight })
-    }
+  if (heading !== oldHeading && spriteLocalConfig.rotationStyle === RotationStyle.Normal) {
+    spriteLocalConfig.setHeading(heading)
     return
   }
-  if (oldX !== x || oldY !== y) {
-    if (isEnd) {
-      emit('updatePosEnd', { x, y })
-    } else {
-      emit('updatePos', { x, y })
-    }
+  if (x !== oldX || y !== oldY) {
+    spriteLocalConfig.setX(x)
+    spriteLocalConfig.setY(y)
   }
 }
-
-const notifyUpdateSprite = (node: Shape | Stage, isEnd = false) => {
-  if (!props.selected) return
+function updateLocalConfigByShape(node: Shape | Stage) {
+  if (!props.selected || props.localConfig == null) return
   const { x, y } = toPosition(node)
-  updateSprite({
-    oldSize: props.sprite.size,
-    size: toSize(node),
-    oldHeading: props.sprite.heading,
-    heading: toHeading(node),
+  updateLocalConfig({
     oldX: props.sprite.x,
     x,
     oldY: props.sprite.y,
     y,
-    isEnd
+    oldSize: props.sprite.size,
+    size: toSize(node),
+    oldHeading: props.sprite.heading,
+    heading: toHeading(node)
+  })
+}
+
+function syncLocalConfig({ size, x, y, heading }: { size: number; x: number; y: number; heading: number }) {
+  const spriteLocalConfig = props.localConfig
+  if (spriteLocalConfig == null) return
+  if (size != null && props.sprite.size !== size) {
+    spriteLocalConfig.setSize(size, false)
+    spriteLocalConfig.syncSize()
+    return
+  }
+  if (props.sprite.heading !== heading) {
+    spriteLocalConfig.setHeading(heading, false)
+    spriteLocalConfig.syncHeading()
+    return
+  }
+  if (props.sprite.x !== x || props.sprite.y !== y) {
+    spriteLocalConfig.setX(x, false)
+    spriteLocalConfig.setX(x, false)
+    spriteLocalConfig.syncPos()
+  }
+}
+function syncLocalConfigByShape(node: Shape | Stage) {
+  syncLocalConfig({
+    size: toSize(node),
+    x: toPosition(node).x,
+    y: toPosition(node).y,
+    heading: toHeading(node)
   })
 }
 
 function handleDragMove(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
-  notifyUpdateSprite(e.target)
+  updateLocalConfigByShape(e.target)
   emit('dragMove', (delta) => {
     // Adjust position if camera scrolled during dragging to keep the sprite visually unmoved
     e.target.x(e.target.x() - delta.x)
@@ -140,12 +147,12 @@ function handleDragMove(e: KonvaEventObject<unknown>) {
 
 function handleDragEnd(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
-  notifyUpdateSprite(e.target, true)
+  syncLocalConfigByShape(e.target)
   emit('dragEnd')
 }
 
 function handleTransformed(e: KonvaEventObject<unknown>) {
-  notifyUpdateSprite(e.target, true)
+  syncLocalConfigByShape(e.target)
 }
 
 const config = computed<ImageConfig>(() => {
@@ -175,27 +182,6 @@ const config = computed<ImageConfig>(() => {
     // if the user then do transform with transformer. Konva transformer prefers to make `scaleX` positive.
   }
   return config
-})
-
-// After Sprite changes, updateXXX events also need to be triggered
-watch(config, () => {
-  const node = nodeRef.value?.getNode()
-  if (node != null) {
-    const { x, y, heading, size } = props.sprite
-    const { x: oldX, y: oldY } = toPosition(node)
-    const oldHeading = toHeading(node)
-    const oldSize = toSize(node)
-    updateSprite({
-      oldSize,
-      size,
-      oldHeading,
-      heading,
-      oldX,
-      x,
-      oldY,
-      y
-    })
-  }
 })
 
 function toPosition(node: Shape | Stage) {
@@ -228,7 +214,7 @@ function handleClick() {
     :config="config"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
-    @transform="notifyUpdateSprite($event.target)"
+    @transform="updateLocalConfigByShape($event.target)"
     @transformend="handleTransformed"
     @click="handleClick"
   />

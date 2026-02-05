@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import { UIDivider, UITooltip, type IconType } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
-import { headingToLeftRight, leftRightToHeading, RotationStyle, type Sprite } from '@/models/sprite'
+import { headingToLeftRight, leftRightToHeading, RotationStyle } from '@/models/sprite'
 import type { Project } from '@/models/project'
-import { wrapUpdateHandler } from '@/components/editor/common/config/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import ConfigItem from '../common/ConfigItem.vue'
 import ZorderConfigItem, { moveActionNames, type MoveAction } from '../common/ZorderConfigItem.vue'
+import type { SpriteLocalConfig } from '../utils'
 
 const props = defineProps<{
-  sprite: Sprite
+  localConfig: SpriteLocalConfig
   project: Project
 }>()
 
@@ -37,36 +37,32 @@ const rotationStyleTips = {
   }
 } satisfies Record<RotationStyle, { icon: IconType; tips: LocaleMessage }>
 
-const spriteContext = () => ({
-  sprite: props.sprite,
-  project: props.project
-})
-
-const handleRotationStyleUpdate = wrapUpdateHandler(
-  (style: RotationStyle) => {
-    props.sprite.setRotationStyle(style)
-    if (style === RotationStyle.None) props.sprite.setHeading(90)
+function handleRotationStyleUpdate(style: RotationStyle) {
+  const localConfig = props.localConfig
+  localConfig.syncToSprite((sprite) => {
+    sprite.setRotationStyle(style)
+    if (style === RotationStyle.None) {
+      sprite.setHeading(90)
+    }
     if (style === RotationStyle.LeftRight) {
       // normalize heading to 90 / -90
-      const normalizedHeading = leftRightToHeading(headingToLeftRight(props.sprite.heading))
-      props.sprite.setHeading(normalizedHeading)
+      const normalizedHeading = leftRightToHeading(headingToLeftRight(sprite.heading))
+      sprite.setHeading(normalizedHeading)
     }
-  },
-  spriteContext,
-  false
-)
+  })
+}
 
 async function moveZorder(direction: MoveAction) {
   await props.project.history.doAction({ name: moveActionNames[direction] }, () => {
-    const { sprite, project } = props
+    const { localConfig, project } = props
     if (direction === 'up') {
-      project.upSpriteZorder(sprite.id)
+      project.upSpriteZorder(localConfig.id)
     } else if (direction === 'down') {
-      project.downSpriteZorder(sprite.id)
+      project.downSpriteZorder(localConfig.id)
     } else if (direction === 'top') {
-      project.topSpriteZorder(sprite.id)
+      project.topSpriteZorder(localConfig.id)
     } else if (direction === 'bottom') {
-      project.bottomSpriteZorder(sprite.id)
+      project.bottomSpriteZorder(localConfig.id)
     }
   })
 }
@@ -84,7 +80,7 @@ async function moveZorder(direction: MoveAction) {
         {{ $t(value.tips) }}
         <template #trigger>
           <ConfigItem
-            :class="{ active: props.sprite.rotationStyle === key }"
+            :class="{ active: props.localConfig.rotationStyle === key }"
             :icon="value.icon"
             @click="handleRotationStyleUpdate(key)"
           />

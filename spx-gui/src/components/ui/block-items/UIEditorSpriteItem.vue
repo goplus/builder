@@ -4,7 +4,7 @@
     <UIBlockItemTitle size="medium">
       {{ name }}
       <template v-if="visible === false" #suffix>
-        <UIIcon class="eye-off" type="eyeOff" />
+        <UIIcon class="eye-off" type="eyeOff" :title="$t({ en: 'Invisible', zh: '不可见' })" />
       </template>
     </UIBlockItemTitle>
     <slot></slot>

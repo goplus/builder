@@ -61,7 +61,7 @@ import QuickConfigWrapper, {
   type ConfigType
 } from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
 import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
-import { useConfigModal, wrapperSpriteUpdateHandler } from '@/components/editor/common/viewer/quick-config/utils'
+import { SpriteLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
 
 const props = defineProps<{
   project: Project
@@ -386,30 +386,33 @@ const handleSpriteDragMove = throttle(
 )
 
 // quick config
-const provideSpriteContext = () => ({ sprite: props.selectedSprite, project: props.project })
-const [spriteConfigSize, updateSpriteSize] = useConfigModal(
-  () => props.selectedSprite?.size,
-  wrapperSpriteUpdateHandler((sprite, v) => sprite.setSize(v ?? 0), provideSpriteContext)
-)
-const [spriteConfigHeading, updateSpriteHeading] = useConfigModal(
-  () => props.selectedSprite?.heading,
-  wrapperSpriteUpdateHandler((sprite, v) => sprite.setHeading(v ?? 0), provideSpriteContext)
-)
-const [spriteConfigPos, updateSpritePos] = useConfigModal(
-  () => [props.selectedSprite?.x, props.selectedSprite?.y],
-  wrapperSpriteUpdateHandler((sprite, [x, y]) => (sprite.setX(x ?? 0), sprite.setY(y ?? 0)), provideSpriteContext)
+const localConfig = shallowRef<SpriteLocalConfig | null>(null)
+watch(
+  () => props.selectedSprite,
+  (sprite, _, onCleanup) => {
+    if (sprite == null) return
+    localConfig.value = new SpriteLocalConfig(sprite, props.project)
+    onCleanup(() => {
+      localConfig.value?.dispose()
+      localConfig.value = null
+    })
+  },
+  { immediate: true }
 )
 
 const configTypesRef = ref<ConfigType[]>(['default'])
-const handleUpdateConfigType = throttle(
-  (configType: ConfigType | ConfigType[] = [], updator = () => {}) => {
-    configTypesRef.value = ['default' as ConfigType].concat(configType)
-    updator()
-    nextTick(updateQuickConfigPos)
-  },
-  50,
-  {
-    trailing: true
+watch(
+  () => localConfig.value?.configTypes,
+  (configTypes) => {
+    if (configTypes == null || configTypes.length === 1) return
+    configTypesRef.value = configTypes
+  }
+)
+
+watch(
+  () => [localConfig.value?.x, localConfig.value?.y, localConfig.value?.heading, localConfig?.value?.size],
+  () => {
+    nextTick(updateQuickConfigPosThrottled)
   }
 )
 
@@ -598,6 +601,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             v-for="sprite in visibleSprites"
             :key="sprite.id"
             :sprite="sprite"
+            :local-config="localConfig?.id === sprite.id ? localConfig : null"
             :selected="selectedSprite?.id === sprite.id"
             :project="props.project"
             :map-size="mapSize"
@@ -605,17 +609,6 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
-            @update-heading="
-              handleUpdateConfigType(
-                $event.leftRight == null ? 'rotate' : [],
-                () => (spriteConfigHeading = $event.heading)
-              )
-            "
-            @update-heading-end="updateSpriteHeading($event.heading)"
-            @update-pos="handleUpdateConfigType('pos', () => (spriteConfigPos = [$event.x, $event.y]))"
-            @update-pos-end="updateSpritePos([$event.x, $event.y])"
-            @update-size="handleUpdateConfigType('size', () => (spriteConfigSize = $event.size))"
-            @update-size-end="updateSpriteSize($event.size)"
           />
         </v-group>
       </v-layer>
@@ -629,18 +622,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       :config-types="configTypesRef"
       @update-config-types="configTypesRef = $event"
     >
-      <SpriteQuickConfig
-        v-if="selectedSprite"
-        :sprite="selectedSprite"
-        :project="project"
-        :size="spriteConfigSize"
-        :heading="spriteConfigHeading"
-        :x="spriteConfigPos[0]"
-        :y="spriteConfigPos[1]"
-        @update:size="updateSpriteSize($event.size)"
-        @update:heading="updateSpriteHeading($event.heading)"
-        @update:pos="updateSpritePos([$event.x, $event.y])"
-      />
+      <SpriteQuickConfig v-if="localConfig != null" :local-config="localConfig" :project="project" />
     </QuickConfigWrapper>
 
     <PositionIndicator :position="mousePos" />

@@ -3,22 +3,14 @@ import { inject } from 'vue'
 
 import type { Project } from '@/models/project'
 import { configTypeInjectionKey } from './QuickConfigWrapper.vue'
-import type { Widget } from '@/models/widget'
 import DefaultConfigPanel from './widget/DefaultConfigPanel.vue'
-import SizeConfigPanel from './widget/SizeConfigPanel.vue'
-import PositionConfigPanel from './widget/PositionConfigPanel.vue'
+import SizeConfigPanel from './common/SizeConfigPanel.vue'
+import PositionConfigPanel from './common/PositionConfigPanel.vue'
+import type { WidgetLocalConfig } from './utils'
 
 defineProps<{
-  widget: Widget
+  localConfig: WidgetLocalConfig
   project: Project
-  size?: number
-  x?: number
-  y?: number
-}>()
-
-defineEmits<{
-  'update:size': [{ size: number }]
-  'update:pos': [{ x: number; y: number }]
 }>()
 
 const configType = inject(configTypeInjectionKey)
@@ -26,20 +18,9 @@ const configType = inject(configTypeInjectionKey)
 
 <template>
   <template v-if="configType != null">
-    <SizeConfigPanel
-      v-if="configType === 'size' && size != null"
-      :widget="widget"
-      :size="size"
-      @update:size="$emit('update:size', $event)"
-    />
-    <PositionConfigPanel
-      v-else-if="configType === 'pos' && x != null && y != null"
-      :widget="widget"
-      :x="x"
-      :y="y"
-      @update:pos="$emit('update:pos', $event)"
-    />
-    <DefaultConfigPanel v-else-if="configType === 'default'" :widget="widget" :project="project" />
+    <SizeConfigPanel v-if="configType === 'size'" name="monitor" :local-config="localConfig" />
+    <PositionConfigPanel v-else-if="configType === 'pos'" name="monitor" :local-config="localConfig" />
+    <DefaultConfigPanel v-else-if="configType === 'default'" :local-config="localConfig" :project="project" />
   </template>
 </template>
 
