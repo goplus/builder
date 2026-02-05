@@ -278,7 +278,7 @@ export async function enrichAssetSettings(
 export type SpriteContentSettings = {
   costumes: CostumeSettings[]
   animations: AnimationSettings[]
-  animationBindings?: Record<State, string | undefined>
+  animationBindings?: Partial<Record<State, string>>
 }
 
 export async function genSpriteContentSettings(

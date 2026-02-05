@@ -171,10 +171,7 @@ export class MockAigcApis {
       ],
       animationBindings: {
         [State.Default]: 'walk',
-        [State.Die]: undefined,
-        [State.Step]: 'jump',
-        [State.Turn]: undefined,
-        [State.Glide]: undefined
+        [State.Step]: 'jump'
       }
     }
   }

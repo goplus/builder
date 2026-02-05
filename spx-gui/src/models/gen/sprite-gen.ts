@@ -38,7 +38,7 @@ export class SpriteGen extends Disposable {
   private genImagesTask: Task<TaskType.GenerateCostume>
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
-  private inferredAnimationBindings: Record<State, string | undefined> | null = null
+  private inferredAnimationBindings: Partial<Record<State, string>> | null = null
 
   constructor(i18n: I18n, project: Project, initialDescription = '') {
     super()
