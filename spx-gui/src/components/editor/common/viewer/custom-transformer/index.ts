@@ -19,9 +19,33 @@ transformerFlipArrowDisabledImg.src = transformerFlipArrowDisabledPng
 const rotatorCircleImg = new Image()
 rotatorCircleImg.src = rotatorCirclePng
 
+export type TransformOp = 'rotate' | 'scale' | 'move' | 'flip'
+
+export type NodeUpdateEvent = {
+  op: TransformOp
+}
+
 export type CustomTransformerConfig = {
   rotationStyle?: 'none' | 'normal' | 'left-right'
 } & Pick<TransformerConfig, 'centeredScaling'>
+
+const scaleAnchors = [
+  'top-left',
+  'top-center',
+  'top-right',
+  'middle-left',
+  'middle-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right'
+]
+function getTransformOp(transformer: Konva.Transformer): TransformOp | null {
+  const activeAnchor = transformer.getActiveAnchor()
+  if (activeAnchor == null) return null
+  if (scaleAnchors.includes(activeAnchor)) return 'scale'
+  if (activeAnchor === 'rotater') return 'rotate'
+  return null
+}
 
 class RotatorTag extends Konva.Group {
   text: Konva.Text
@@ -200,7 +224,7 @@ export class CustomTransformer extends Konva.Transformer {
       // as it decides the flip based on the rotation only.
       node.scaleY(node.scaleY() * -1)
       node.rotation(node.rotation() - 180)
-      node._fire('transformend', { target: node })
+      node._fire('nodeupdated', { target: node, evt: { op: 'flip' } })
     })
 
     const right = new FlipButton('right')
@@ -237,10 +261,17 @@ export class CustomTransformer extends Konva.Transformer {
       // Konva.Transformer resets the pointer to '', and we need to override that.
       setCursor('grabbing')
     })
+    this.on('transform', () => {
+      const node = this._nodes[0]
+      node._fire('nodeupdating', { target: node, evt: { op: getTransformOp(this) } })
+    })
     this.on('transformend', () => {
       this.rotatorTag.visible(false)
       setCursor('')
       dragging = false
+
+      const node = this._nodes[0]
+      node._fire('nodeupdated', { target: node, evt: { op: getTransformOp(this) } })
     })
     this.on('rotationStyleChange', () => {
       this.update()

@@ -1,10 +1,10 @@
 <template>
   <v-group
     :config="groupConfig"
-    @dragmove="updateLocalConfigByShape($event.target)"
-    @dragend="syncLocalConfigByShape($event.target)"
-    @transform="updateLocalConfigByShape($event.target)"
-    @transformend="syncLocalConfigByShape($event.target)"
+    @dragmove="handleDragMove"
+    @dragend="handleDragEnd"
+    @nodeupdating="handleNodeUpdating"
+    @nodeupdated="handleNodeUpdated"
     @click="handleClick"
   >
     <v-rect :config="rectConfig" />
@@ -28,6 +28,8 @@ import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import type { WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
+import type { NodeUpdateEvent, TransformOp } from '@/components/editor/common/viewer/custom-transformer'
+import type { KonvaEventObject } from 'konva/lib/Node'
 
 const props = defineProps<{
   monitor: Monitor
@@ -81,63 +83,86 @@ onMounted(() => {
   }
 })
 
-function updateLocalConfig({
-  oldSize,
-  size,
-  oldX,
-  x,
-  oldY,
-  y
-}: {
-  oldSize: number
-  size: number
-  oldX: number
-  x: number
-  oldY: number
-  y: number
-}) {
+function updateLocalConfig(
+  {
+    oldSize,
+    size,
+    oldX,
+    x,
+    oldY,
+    y
+  }: {
+    oldSize: number
+    size: number
+    oldX: number
+    x: number
+    oldY: number
+    y: number
+  },
+  op: TransformOp
+) {
   const widgetLocalConfig = props.localConfig
   if (widgetLocalConfig == null) return
   if (size !== oldSize) {
-    widgetLocalConfig.setSize(size)
-    return
+    widgetLocalConfig.setSize(size, op === 'scale')
   }
   if (x !== oldX || y !== oldY) {
-    widgetLocalConfig.setX(x)
-    widgetLocalConfig.setY(y)
+    widgetLocalConfig.setX(x, op === 'move')
+    widgetLocalConfig.setY(y, op === 'move')
   }
 }
 
-function updateLocalConfigByShape(node: Shape | Stage) {
+function updateLocalConfigByShape(node: Shape | Stage, op: TransformOp) {
   if (!props.localConfig == null) return
   const { x, y } = toPosition(node)
-  updateLocalConfig({
-    oldX: props.monitor.x,
-    x,
-    oldY: props.monitor.y,
-    y,
-    oldSize: props.monitor.size,
-    size: toSize(node)
-  })
+  updateLocalConfig(
+    {
+      oldX: props.monitor.x,
+      x,
+      oldY: props.monitor.y,
+      y,
+      oldSize: props.monitor.size,
+      size: toSize(node)
+    },
+    op
+  )
 }
 
-function syncLocalConfig({ x, y, size }: { x: number; y: number; size: number }) {
+function syncLocalConfig({ x, y, size }: { x: number; y: number; size: number }, op: TransformOp) {
   const widgetLocalConfig = props.localConfig
   if (widgetLocalConfig == null) return
   if (props.monitor.size !== size) {
-    widgetLocalConfig.setSize(size, false)
-    return
+    widgetLocalConfig.setSize(size, op === 'scale')
   }
   if (props.monitor.x !== x || props.monitor.y !== y) {
     widgetLocalConfig.syncPos()
   }
+
+  widgetLocalConfig.syncAll()
 }
-function syncLocalConfigByShape(node: Shape | Stage) {
-  syncLocalConfig({
-    size: toSize(node),
-    x: toPosition(node).x,
-    y: toPosition(node).y
-  })
+function syncLocalConfigByShape(node: Shape | Stage, op: TransformOp) {
+  syncLocalConfig(
+    {
+      size: toSize(node),
+      x: toPosition(node).x,
+      y: toPosition(node).y
+    },
+    op
+  )
+}
+
+function handleDragMove(e: KonvaEventObject<NodeUpdateEvent>) {
+  updateLocalConfigByShape(e.target, 'move')
+}
+function handleDragEnd(e: KonvaEventObject<NodeUpdateEvent>) {
+  syncLocalConfigByShape(e.target, 'move')
+}
+
+function handleNodeUpdating(e: KonvaEventObject<NodeUpdateEvent>) {
+  updateLocalConfigByShape(e.target, e.evt.op)
+}
+function handleNodeUpdated(e: KonvaEventObject<NodeUpdateEvent>) {
+  syncLocalConfigByShape(e.target, e.evt.op)
 }
 
 const paddingX = 6 // px

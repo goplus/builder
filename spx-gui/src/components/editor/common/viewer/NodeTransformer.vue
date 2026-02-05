@@ -44,13 +44,13 @@ function setupKeyboardMovement(stage: Konva.Stage, selectedNode: Node) {
   stage.container().tabIndex = 1
   stage.container().focus()
   stage.container().style.outline = 'none'
-  const keyboardMovementEnd = debounce(() => selectedNode.fire('transformend'), 500)
+  const keyboardMovementEnd = debounce(() => selectedNode.fire('nodeupdated', { evt: { op: 'move' } }), 500)
   const handler = (e: KeyboardEvent) => {
     const idx = keyboardMovementCodes.indexOf(e.code)
     if (idx === -1) return
     selectedNode.x(selectedNode.x() + keyboardMovementOffset[idx][0])
     selectedNode.y(selectedNode.y() + keyboardMovementOffset[idx][1])
-    selectedNode.fire('transform')
+    selectedNode.fire('nodeupdating', { evt: { op: 'move' } })
     e.preventDefault()
     keyboardMovementEnd()
   }

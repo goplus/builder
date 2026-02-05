@@ -70,6 +70,12 @@ export class LocalConfig extends Disposable {
   }
 }
 
+// TODO: Temporary workaround: when rotating or scaling a Sprite/Widget, jittering may occur and cause position changes, which might trigger the 'pos' panel.
+// This fix has a limitation: if the current panel is 'rotate', it might not switch to the expected 'pos' panel after updating the Sprite/Widget.
+function shouldUpdatePosConfigType(configType: ConfigType | undefined) {
+  return configType != null && !['size', 'rotate'].includes(configType)
+}
+
 export class SpriteLocalConfig extends LocalConfig {
   constructor(
     private sprite: Sprite,
@@ -86,14 +92,14 @@ export class SpriteLocalConfig extends LocalConfig {
     this.addDisposer(
       watch(
         () => sprite.x,
-        (x, old) => this.setX(x, old != null),
+        (x, old) => this.setX(x, old != null && shouldUpdatePosConfigType(this.configTypes.at(-1))),
         { immediate: true }
       )
     )
     this.addDisposer(
       watch(
         () => sprite.y,
-        (y, old) => this.setY(y, old != null),
+        (y, old) => this.setY(y, old != null && shouldUpdatePosConfigType(this.configTypes.at(-1))),
         { immediate: true }
       )
     )
@@ -133,9 +139,13 @@ export class SpriteLocalConfig extends LocalConfig {
   }
   syncRotationStyle = this.doAction(() => this.sprite.setRotationStyle(this.rotationStyle))
 
-  syncToSprite(updater: (sprite: Sprite) => void) {
-    return this.doAction(() => updater(this.sprite), false)()
-  }
+  syncAll = this.doAction(() => {
+    this.sprite.setSize(this.size)
+    this.sprite.setX(this.x)
+    this.sprite.setY(this.y)
+    this.sprite.setHeading(this.heading)
+    this.sprite.setRotationStyle(this.rotationStyle)
+  })
 }
 
 export class WidgetLocalConfig extends LocalConfig {
@@ -148,14 +158,14 @@ export class WidgetLocalConfig extends LocalConfig {
     this.addDisposer(
       watch(
         () => widget.x,
-        (x, old) => this.setX(x, old != null),
+        (x, old) => this.setX(x, old != null && shouldUpdatePosConfigType(this.configTypes.at(-1))),
         { immediate: true }
       )
     )
     this.addDisposer(
       watch(
         () => widget.y,
-        (y, old) => this.setY(y, old != null),
+        (y, old) => this.setY(y, old != null && shouldUpdatePosConfigType(this.configTypes.at(-1))),
         { immediate: true }
       )
     )
@@ -167,4 +177,10 @@ export class WidgetLocalConfig extends LocalConfig {
       )
     )
   }
+
+  syncAll = this.doAction(() => {
+    this.widget.setSize(this.size)
+    this.widget.setX(this.x)
+    this.widget.setY(this.y)
+  })
 }

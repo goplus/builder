@@ -11,6 +11,7 @@ import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
 import type { SpriteLocalConfig } from './quick-config/utils'
+import type { NodeUpdateEvent, TransformOp } from './custom-transformer'
 
 const props = defineProps<{
   sprite: Sprite
@@ -58,86 +59,94 @@ onMounted(() => {
   }
 })
 
-function updateLocalConfig({
-  oldX,
-  x,
-  oldY,
-  y,
-  oldSize,
-  size,
-  oldHeading,
-  heading
-}: {
-  oldX: number
-  x: number
-  oldY: number
-  y: number
-  oldSize: number
-  size: number
-  oldHeading: number
-  heading: number
-}) {
+function updateLocalConfig(
+  {
+    oldX,
+    x,
+    oldY,
+    y,
+    oldSize,
+    size,
+    oldHeading,
+    heading
+  }: {
+    oldX: number
+    x: number
+    oldY: number
+    y: number
+    oldSize: number
+    size: number
+    oldHeading: number
+    heading: number
+  },
+  op: TransformOp
+) {
   const spriteLocalConfig = props.localConfig
   if (spriteLocalConfig == null) return
   if (size !== oldSize) {
-    spriteLocalConfig.setSize(size)
-    return
+    spriteLocalConfig.setSize(size, op === 'scale')
   }
-  if (heading !== oldHeading && spriteLocalConfig.rotationStyle === RotationStyle.Normal) {
-    spriteLocalConfig.setHeading(heading)
-    return
+  if (heading !== oldHeading) {
+    spriteLocalConfig.setHeading(heading, op === 'rotate')
   }
   if (x !== oldX || y !== oldY) {
-    spriteLocalConfig.setX(x)
-    spriteLocalConfig.setY(y)
+    spriteLocalConfig.setX(x, op === 'move')
+    spriteLocalConfig.setY(y, op === 'move')
   }
 }
-function updateLocalConfigByShape(node: Shape | Stage) {
+function updateLocalConfigByShape(node: Shape | Stage, op: TransformOp) {
   if (!props.selected || props.localConfig == null) return
   const { x, y } = toPosition(node)
-  updateLocalConfig({
-    oldX: props.sprite.x,
-    x,
-    oldY: props.sprite.y,
-    y,
-    oldSize: props.sprite.size,
-    size: toSize(node),
-    oldHeading: props.sprite.heading,
-    heading: toHeading(node)
-  })
+  updateLocalConfig(
+    {
+      oldX: props.sprite.x,
+      x,
+      oldY: props.sprite.y,
+      y,
+      oldSize: props.sprite.size,
+      size: toSize(node),
+      oldHeading: props.sprite.heading,
+      heading: toHeading(node)
+    },
+    op
+  )
 }
 
-function syncLocalConfig({ size, x, y, heading }: { size: number; x: number; y: number; heading: number }) {
+function syncLocalConfig(
+  { size, x, y, heading }: { size: number; x: number; y: number; heading: number },
+  op: TransformOp
+) {
   const spriteLocalConfig = props.localConfig
   if (spriteLocalConfig == null) return
+
   if (size != null && props.sprite.size !== size) {
-    spriteLocalConfig.setSize(size, false)
-    spriteLocalConfig.syncSize()
-    return
+    spriteLocalConfig.setSize(size, op === 'scale')
   }
   if (props.sprite.heading !== heading) {
-    spriteLocalConfig.setHeading(heading, false)
-    spriteLocalConfig.syncHeading()
-    return
+    spriteLocalConfig.setHeading(heading, op === 'rotate')
   }
   if (props.sprite.x !== x || props.sprite.y !== y) {
-    spriteLocalConfig.setX(x, false)
-    spriteLocalConfig.setX(x, false)
-    spriteLocalConfig.syncPos()
+    spriteLocalConfig.setX(x, op === 'move')
+    spriteLocalConfig.setY(y, op === 'move')
   }
+
+  spriteLocalConfig.syncAll()
 }
-function syncLocalConfigByShape(node: Shape | Stage) {
-  syncLocalConfig({
-    size: toSize(node),
-    x: toPosition(node).x,
-    y: toPosition(node).y,
-    heading: toHeading(node)
-  })
+function syncLocalConfigByShape(node: Shape | Stage, op: TransformOp) {
+  syncLocalConfig(
+    {
+      size: toSize(node),
+      x: toPosition(node).x,
+      y: toPosition(node).y,
+      heading: toHeading(node)
+    },
+    op
+  )
 }
 
 function handleDragMove(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
-  updateLocalConfigByShape(e.target)
+  updateLocalConfigByShape(e.target, 'move')
   emit('dragMove', (delta) => {
     // Adjust position if camera scrolled during dragging to keep the sprite visually unmoved
     e.target.x(e.target.x() - delta.x)
@@ -145,14 +154,17 @@ function handleDragMove(e: KonvaEventObject<unknown>) {
   })
 }
 
-function handleDragEnd(e: KonvaEventObject<unknown>) {
+function handleDragEnd(e: KonvaEventObject<TransformOp>) {
   cancelBubble(e)
-  syncLocalConfigByShape(e.target)
+  syncLocalConfigByShape(e.target, 'move')
   emit('dragEnd')
 }
 
-function handleTransformed(e: KonvaEventObject<unknown>) {
-  syncLocalConfigByShape(e.target)
+function handleNodeUpdating(e: KonvaEventObject<NodeUpdateEvent>) {
+  updateLocalConfigByShape(e.target, e.evt.op)
+}
+function handleNodeUpdated(e: KonvaEventObject<NodeUpdateEvent>) {
+  syncLocalConfigByShape(e.target, e.evt.op)
 }
 
 const config = computed<ImageConfig>(() => {
@@ -214,8 +226,8 @@ function handleClick() {
     :config="config"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
-    @transform="updateLocalConfigByShape($event.target)"
-    @transformend="handleTransformed"
+    @nodeupdating="handleNodeUpdating"
+    @nodeupdated="handleNodeUpdated"
     @click="handleClick"
   />
 </template>

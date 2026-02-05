@@ -59,7 +59,7 @@ function moveZorder(action: MoveAction) {
 
 <style lang="scss" scoped>
 .item {
-  width: max-content;
+  width: 100%;
   white-space: nowrap;
 }
 </style>
