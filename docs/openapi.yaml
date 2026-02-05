@@ -2269,6 +2269,9 @@ paths:
                         type: string
                       die:
                         type: string
+                    example:
+                      default: "idle"
+                      step: "walk"
         "403":
           description: Insufficient permissions or quota.
           headers:
