@@ -296,4 +296,83 @@ describe('AnimationGen', () => {
     const lastRecord = Array.from(tasks.values()).at(-1)
     expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
   })
+
+  it('should only return completed task IDs in getTaskIds', async () => {
+    const project = makeProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      description: 'A test animation',
+      referenceCostumeId: defaultCostume.id
+    })
+
+    await gen.enrich()
+    await gen.generateVideo()
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
+    await gen.extractFrames()
+
+    // Both tasks should be completed
+    const taskIds = gen.getTaskIds()
+    expect(taskIds).toHaveLength(2)
+    expect(taskIds).toContain(gen.generateVideoTask.data?.id)
+    expect(taskIds).toContain(gen.extractFramesTask.data?.id)
+  })
+
+  it('should exclude non-completed task IDs from getTaskIds', async () => {
+    const project = makeProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      description: 'A test animation',
+      referenceCostumeId: defaultCostume.id
+    })
+
+    await gen.enrich()
+    await gen.generateVideo()
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
+    await gen.extractFrames()
+
+    // Manually modify task statuses to simulate failures
+    if (gen.generateVideoTask.data) {
+      gen.generateVideoTask.data.status = TaskStatus.Failed
+    }
+    if (gen.extractFramesTask.data) {
+      gen.extractFramesTask.data.status = TaskStatus.Cancelled
+    }
+
+    // getTaskIds should return empty array since both tasks are not completed
+    const taskIds = gen.getTaskIds()
+    expect(taskIds).toHaveLength(0)
+  })
+
+  it('should handle mixed task statuses in getTaskIds', async () => {
+    const project = makeProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      description: 'A test animation',
+      referenceCostumeId: defaultCostume.id
+    })
+
+    await gen.enrich()
+    await gen.generateVideo()
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
+    await gen.extractFrames()
+
+    // Manually modify one task to fail, keep the other completed
+    if (gen.generateVideoTask.data) {
+      gen.generateVideoTask.data.status = TaskStatus.Failed
+    }
+
+    // getTaskIds should only return the completed extractFramesTask
+    const taskIds = gen.getTaskIds()
+    expect(taskIds).toHaveLength(1)
+    expect(taskIds[0]).toBe(gen.extractFramesTask.data?.id)
+  })
 })

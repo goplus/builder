@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import { TaskStatus } from '@/apis/aigc'
+import * as aigcApis from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as fileHelpers from '@/models/common/file'
 import { makeProject } from '../common/test'
@@ -319,5 +320,88 @@ describe('SpriteGen', () => {
     await gen3.prepareContent()
     const sprite3 = gen3.finish()
     expect(sprite3.rotationStyle).toBe(RotationStyle.Normal)
+  })
+
+  it('should only include completed task IDs in recordAdoption', async () => {
+    const project = makeProject()
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A test sprite')
+
+    await gen.enrich()
+    await gen.genImages()
+    gen.setImage(gen.imagesGenState.result![0])
+    await gen.prepareContent()
+
+    // Finish all sub-generations
+    for (const costumeGen of gen.costumes) {
+      await finishCostumeGen(costumeGen.name, costumeGen)
+    }
+    for (const animationGen of gen.animations) {
+      await finishAnimationGen(animationGen.name, animationGen)
+    }
+
+    const sprite = gen.finish()
+    project.addSprite(sprite)
+
+    // Mock adoptAsset to inspect the taskIds parameter
+    const adoptAssetCalls: unknown[] = []
+    vi.mocked(aigcApis.adoptAsset).mockImplementation(async (params) => {
+      adoptAssetCalls.push(params)
+    })
+
+    await gen.recordAdoption()
+
+    // Verify that taskIds contains all completed task IDs
+    expect(adoptAssetCalls).toHaveLength(1)
+    const adoptParams = adoptAssetCalls[0] as { taskIds: string[] }
+    // Should include: genImagesTask + costume tasks + animation tasks (generateVideo + extractFrames)
+    const expectedCount = 1 + gen.costumes.length + gen.animations.length * 2
+    expect(adoptParams.taskIds.length).toBeGreaterThanOrEqual(expectedCount)
+  })
+
+  it('should exclude failed/cancelled task IDs from recordAdoption', async () => {
+    const project = makeProject()
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A test sprite')
+
+    await gen.enrich()
+    await gen.genImages()
+    gen.setImage(gen.imagesGenState.result![0])
+    await gen.prepareContent()
+
+    // Finish all sub-generations
+    for (const costumeGen of gen.costumes) {
+      await finishCostumeGen(costumeGen.name, costumeGen)
+    }
+    for (const animationGen of gen.animations) {
+      await finishAnimationGen(animationGen.name, animationGen)
+    }
+
+    const sprite = gen.finish()
+    project.addSprite(sprite)
+
+    // Manually modify task statuses to simulate failures
+    if (gen.genImagesTask.data) {
+      gen.genImagesTask.data.status = TaskStatus.Failed
+    }
+    if (gen.costumes[0]?.generateTask.data) {
+      gen.costumes[0].generateTask.data.status = TaskStatus.Cancelled
+    }
+    if (gen.animations[0]?.generateVideoTask.data) {
+      gen.animations[0].generateVideoTask.data.status = TaskStatus.Failed
+    }
+
+    // Mock adoptAsset to inspect the taskIds parameter
+    const adoptAssetCalls: unknown[] = []
+    vi.mocked(aigcApis.adoptAsset).mockImplementation(async (params) => {
+      adoptAssetCalls.push(params)
+    })
+
+    await gen.recordAdoption()
+
+    // Verify that failed/cancelled tasks are excluded
+    expect(adoptAssetCalls).toHaveLength(1)
+    const adoptParams = adoptAssetCalls[0] as { taskIds: string[] }
+    expect(adoptParams.taskIds).not.toContain(gen.genImagesTask.data?.id)
+    expect(adoptParams.taskIds).not.toContain(gen.costumes[0]?.generateTask.data?.id)
+    expect(adoptParams.taskIds).not.toContain(gen.animations[0]?.generateVideoTask.data?.id)
   })
 })

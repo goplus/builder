@@ -184,4 +184,38 @@ describe('CostumeGen', () => {
     const lastRecord = Array.from(tasks.values()).at(-1)
     expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
   })
+
+  it('should only return completed task IDs in getTaskIds', async () => {
+    const project = makeProject()
+    const sprite = Sprite.create('TestSprite', '')
+    project.addSprite(sprite)
+    const gen = new CostumeGen(sprite, project, { description: 'A test costume' })
+
+    await gen.enrich()
+    await gen.generate()
+
+    // Task should be completed, so getTaskIds should return it
+    const taskIds = gen.getTaskIds()
+    expect(taskIds).toHaveLength(1)
+    expect(taskIds[0]).toBe(gen.generateTask.data?.id)
+  })
+
+  it('should exclude non-completed task IDs from getTaskIds', async () => {
+    const project = makeProject()
+    const sprite = Sprite.create('TestSprite', '')
+    project.addSprite(sprite)
+    const gen = new CostumeGen(sprite, project, { description: 'A test costume' })
+
+    await gen.enrich()
+    await gen.generate()
+
+    // Manually modify the task status to simulate a failed task
+    if (gen.generateTask.data) {
+      gen.generateTask.data.status = TaskStatus.Failed
+    }
+
+    // getTaskIds should return empty array since task is failed
+    const taskIds = gen.getTaskIds()
+    expect(taskIds).toHaveLength(0)
+  })
 })
