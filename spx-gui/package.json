@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "postinstall": "./install-spx.sh",
-    "predev": "./install-spx.sh && ./build-wasm.sh",
+    "predev": "./install-spx.sh && ./build-wasm.sh && ./build-tutorial-books.sh",
     "dev": "vite",
-    "build": "vue-tsc --build --force && vite build --mode ${NODE_ENV:-production}",
+    "build": "./build-tutorial-books.sh && vue-tsc --build --force && vite build --mode ${NODE_ENV:-production}",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
     "format-check": "prettier --check ./src",

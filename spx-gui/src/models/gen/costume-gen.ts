@@ -46,7 +46,7 @@ export class CostumeGen extends Disposable {
     this.project = project
     this.enrichPhase = new Phase({ en: 'enrich costume settings', zh: '丰富造型设置' })
     this.generateTask = new Task(TaskType.GenerateCostume)
-    this.generatePhase = new Phase({ en: 'generate costume image', zh: '生成造型图片' }, 15)
+    this.generatePhase = new Phase({ en: 'generate costume image', zh: '生成造型图片' })
     this.finishPhase = new Phase({ en: 'save costume', zh: '保存造型' })
     this.settings = {
       name: '',
@@ -132,7 +132,7 @@ export class CostumeGen extends Disposable {
       const { imageUrls } = await this.generateTask.untilCompleted()
       if (imageUrls.length < 1) throw new Error('no costume image generated')
       return createFileWithUniversalUrl(imageUrls[0])
-    })
+    }, this.generateTask.runDuration)
     this.setImage(image)
   }
 
@@ -156,6 +156,12 @@ export class CostumeGen extends Disposable {
     })
   }
 
+  /**
+   * Cancel the ongoing generation if any.
+   * Note:
+   * - The cancellation requests will not be aborted even if this gen instance is disposed.
+   * - No exception will be thrown even if the cancellation requests fail.
+   */
   cancel() {
     return this.generateTask.tryCancel()
   }

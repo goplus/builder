@@ -13,7 +13,7 @@ import {
   adoptAsset
 } from '@/apis/aigc'
 import { Project } from '../project'
-import { Sprite } from '../sprite'
+import { RotationStyle, Sprite, State } from '../sprite'
 import { Costume } from '../costume'
 import type { Animation } from '../animation'
 import { getProjectSettings, Phase, Task } from './common'
@@ -24,6 +24,12 @@ import type { File } from '../common/file'
 import { getAnimationName, getCostumeName, validateSpriteName } from '../common/asset-name'
 import { sprite2Asset } from '../common/asset'
 
+/** User selected item in sprite gen */
+type SpriteGenSelected = {
+  type: 'costume' | 'animation'
+  id: string
+}
+
 export class SpriteGen extends Disposable {
   id: string
   private i18n: I18n
@@ -32,6 +38,7 @@ export class SpriteGen extends Disposable {
   private genImagesTask: Task<TaskType.GenerateCostume>
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
+  private animationGenIdBindings: Partial<Record<State, string>> = {}
 
   constructor(i18n: I18n, project: Project, initialDescription = '') {
     super()
@@ -40,7 +47,7 @@ export class SpriteGen extends Disposable {
     this.project = project
     this.enrichPhase = new Phase({ en: 'enrich sprite settings', zh: '丰富角色设置' })
     this.genImagesTask = new Task(TaskType.GenerateCostume)
-    this.genImagesPhase = new Phase({ en: 'generate sprite images', zh: '生成角色图片' }, 15)
+    this.genImagesPhase = new Phase({ en: 'generate sprite images', zh: '生成角色图片' })
     this.prepareContentPhase = new Phase({ en: 'prepare sprite content', zh: '准备角色内容' })
     this.costumes = []
     this.animations = []
@@ -52,7 +59,7 @@ export class SpriteGen extends Disposable {
       perspective: Perspective.Unspecified
     }
     this.previewProject = new Project()
-    this.previewSprite = Sprite.create('')
+    this.previewSprite = this.createSprite()
     this.previewProject.addSprite(this.previewSprite)
     this.result = null
     this.addDisposer(() => {
@@ -61,6 +68,17 @@ export class SpriteGen extends Disposable {
       this.animations.forEach((a) => a.dispose())
     })
     return reactive(this) as this
+  }
+
+  /** Create a sprite instance based on current settings. */
+  private createSprite() {
+    const { name, perspective } = this.settings
+    return Sprite.create(name, '', {
+      rotationStyle: rotationStyleForPerspective(perspective)
+      // TODO: provide more initial settings when generated
+      // e.g., place the pivot at the feet for character sprites in side-scrolling or angled-top-down perspectives.
+      // For more details, see: https://github.com/goplus/builder/issues/2785
+    })
   }
 
   get name() {
@@ -118,7 +136,7 @@ export class SpriteGen extends Disposable {
       await this.genImagesTask.start({ settings, n: 4 })
       const { imageUrls } = await this.genImagesTask.untilCompleted()
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    })
+    }, this.genImagesTask.runDuration)
   }
 
   image: File | null = null
@@ -138,7 +156,7 @@ export class SpriteGen extends Disposable {
       this.previewProject.removeSprite(this.previewSprite.id)
     }
 
-    const sprite = Sprite.create(this.settings.name)
+    const sprite = this.createSprite()
     this.previewSprite = sprite
     this.previewProject.addSprite(sprite)
     // Sync results of generations to sprite
@@ -162,7 +180,18 @@ export class SpriteGen extends Disposable {
         () => this.animations.map((a) => a.result).filter((a): a is Animation => a != null),
         (generatedAnimations) => {
           generatedAnimations.forEach((a) => {
-            if (!sprite.animations.includes(a)) sprite.addAnimation(a)
+            if (!sprite.animations.includes(a)) {
+              sprite.addAnimation(a)
+              // Auto bind states based on recommended animation bindings
+              const aGen = this.animations.find((gen) => gen.result?.id === a.id)
+              if (aGen == null) return
+              const statesToBind = (Object.entries(this.animationGenIdBindings) as Array<[State, string]>)
+                .filter(([, genId]) => genId === aGen.id)
+                .map(([state]) => state)
+              if (statesToBind.length > 0) {
+                sprite.setAnimationBoundStates(a.id, statesToBind, false)
+              }
+            }
           })
           sprite.animations.slice().forEach((a) => {
             if (!generatedAnimations.includes(a)) sprite.removeAnimation(a.id)
@@ -206,6 +235,20 @@ export class SpriteGen extends Disposable {
       this.animations = settings.animations.map(
         (s) => new AnimationGen(this, project, { ...s, referenceCostumeId: defaultCostume.id })
       )
+      // Store recommended animation bindings. Replace animation names with animation-gen IDs in case of name changes.
+      const recommendedBindings = settings.animationBindings || {}
+      const animationNameToGenIdMap = new Map(this.animations.map((gen) => [gen.name, gen.id]))
+      // Only support Default, Step, and Die states (turn and glide are not supported for now)
+      const supportedStates = [State.Default, State.Step, State.Die] as const
+      this.animationGenIdBindings = Object.fromEntries(
+        supportedStates
+          .map((state) => {
+            const animationName = recommendedBindings[state]
+            const genId = animationName ? animationNameToGenIdMap.get(animationName) : null
+            return [state, genId]
+          })
+          .filter(([, genId]) => genId != null)
+      )
     })
   }
 
@@ -234,7 +277,14 @@ export class SpriteGen extends Disposable {
     if (index === -1) throw new Error(`Costume with id ${id} not found`)
     if (id === this.defaultCostume?.id) throw new Error('Cannot remove default costume')
     const [c] = this.costumes.splice(index, 1)
+    c.cancel()
     c.dispose()
+    if (this.selectedItem?.type === 'costume' && this.selectedItem.id === id) {
+      this.selectedItem = null
+    }
+  }
+  getCostumeById(id: string): CostumeGen | null {
+    return this.costumes.find((c) => c.id === id) ?? null
   }
 
   /** Animations gen */
@@ -256,14 +306,28 @@ export class SpriteGen extends Disposable {
     const index = this.animations.findIndex((a) => a.id === id)
     if (index === -1) throw new Error(`Animation with id ${id} not found`)
     const [a] = this.animations.splice(index, 1)
+    a.cancel()
     a.dispose()
+    if (this.selectedItem?.type === 'animation' && this.selectedItem.id === id) {
+      this.selectedItem = null
+    }
+  }
+  getAnimationById(id: string): AnimationGen | null {
+    return this.animations.find((a) => a.id === id) ?? null
   }
 
   result: Sprite | null
 
+  /** Persist the user selected item state across modal sessions */
+  selectedItem: SpriteGenSelected | null = null
+
+  setSelectedItem(item: SpriteGenSelected | null) {
+    this.selectedItem = item
+  }
+
   finish() {
     const previewSprite = this.previewSprite
-    const sprite = Sprite.create(this.settings.name)
+    const sprite = this.createSprite()
     for (const gen of this.costumes) {
       if (gen.result == null) continue
       previewSprite.removeCostume(gen.result.id)
@@ -310,6 +374,12 @@ export class SpriteGen extends Disposable {
     })
   }
 
+  /**
+   * Cancel the ongoing generations if any.
+   * Note:
+   * - The cancellation requests will not be aborted even if this gen instance is disposed.
+   * - No exception will be thrown even if the cancellation requests fail.
+   */
   cancel() {
     return Promise.all([
       this.genImagesTask.tryCancel(),
@@ -340,5 +410,16 @@ const defaultCostumeExtraDescriptions: Record<SpriteCategory, LocaleMessage> = {
   [SpriteCategory.Unspecified]: {
     en: '',
     zh: ''
+  }
+}
+
+function rotationStyleForPerspective(perspective: Perspective): RotationStyle {
+  switch (perspective) {
+    case Perspective.SideScrolling:
+    case Perspective.AngledTopDown:
+      return RotationStyle.LeftRight
+    case Perspective.Unspecified:
+    default:
+      return RotationStyle.Normal
   }
 }

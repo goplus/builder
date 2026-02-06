@@ -2255,6 +2255,23 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AIGCAnimationSettings"
+                  animationBindings:
+                    description: |
+                      Recommended mapping from sprite state enum values to animation names.
+                      Keys are sprite state enum values; values are animation name strings that should
+                      match the 'name' field from the animations array, omitted if no animation is bound to that state.
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      default:
+                        type: string
+                      step:
+                        type: string
+                      die:
+                        type: string
+                    example:
+                      default: "idle"
+                      step: "walk"
         "403":
           description: Insufficient permissions or quota.
           headers:
@@ -2269,43 +2286,6 @@ paths:
               description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
-
-  /aigc/matting:
-    post:
-      tags:
-        - AIGC
-      deprecated: true
-      summary: Remove image background
-      description: |
-        Process the provided image URL to remove its background, resulting in a transparent background.
-
-        **Deprecated**: This endpoint is deprecated and will be removed in a future version. Use `POST /aigc/task` with
-        `type: "removeBackground"` instead, which provides better reliability for long-running operations.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - imageUrl
-              properties:
-                imageUrl:
-                  description: URL of the image to process for background removal.
-                  type: string
-                  format: uri
-      responses:
-        "200":
-          description: Successfully processed the image for background removal.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultUrl:
-                    description: URL of the processed image with background removed.
-                    type: string
-                    format: uri
 
   /util/upinfo:
     get:

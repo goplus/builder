@@ -27,12 +27,14 @@ WORKDIR /app/spx-gui
 COPY spx-gui/package.json spx-gui/package-lock.json .
 COPY spx-gui/public ./public
 COPY spx-gui/install-spx.sh .
+COPY spx-gui/build-tutorial-books.sh .
 ARG NPM_CONFIG_REGISTRY
 RUN npm install
 
 COPY spx-gui .
 COPY docs ../docs
 COPY tools ../tools
+COPY tutorial ../tutorial
 # Copy assets (with wasm)
 COPY --from=go-builder /app/spx-gui/src/assets /app/spx-gui/src/assets
 

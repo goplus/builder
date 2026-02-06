@@ -66,7 +66,7 @@ export class AnimationGen extends Disposable {
     this.referenceCostumeId = referenceCostumeId
     this.enrichPhase = new Phase({ en: 'enrich animation settings', zh: '丰富动画设置' })
     this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
-    this.generateVideoPhase = new Phase({ en: 'generate animation video', zh: '生成动画视频' }, 150)
+    this.generateVideoPhase = new Phase({ en: 'generate animation video', zh: '生成动画视频' })
     this.video = null
     this.framesConfig = null
     this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
@@ -140,7 +140,7 @@ export class AnimationGen extends Disposable {
       await this.generateVideoTask.start({ settings })
       const { videoUrl } = await this.generateVideoTask.untilCompleted()
       return createFileWithUniversalUrl(videoUrl)
-    })
+    }, this.generateVideoTask.runDuration)
     this.setVideo(video)
   }
 
@@ -198,6 +198,12 @@ export class AnimationGen extends Disposable {
     })
   }
 
+  /**
+   * Cancel the ongoing generation/extraction if any.
+   * Note:
+   * - The cancellation requests will not be aborted even if this gen instance is disposed.
+   * - No exception will be thrown even if the cancellation requests fail.
+   */
   cancel() {
     return Promise.all([this.generateVideoTask.tryCancel(), this.extractFramesTask.tryCancel()])
   }
