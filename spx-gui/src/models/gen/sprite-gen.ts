@@ -10,6 +10,7 @@ import {
   type CostumeSettings,
   Facing,
   TaskType,
+  TaskStatus,
   adoptAsset
 } from '@/apis/aigc'
 import { Project } from '../project'
@@ -357,7 +358,7 @@ export class SpriteGen extends Disposable {
     const sprite = this.result
     if (sprite == null) throw new Error('result sprite expected')
     const taskIds = [
-      this.genImagesTask.data?.id,
+      this.genImagesTask.data?.status === TaskStatus.Completed ? this.genImagesTask.data.id : null,
       ...this.costumes.flatMap((c) => c.getTaskIds()),
       ...this.animations.flatMap((a) => a.getTaskIds())
     ].filter((id) => id != null)

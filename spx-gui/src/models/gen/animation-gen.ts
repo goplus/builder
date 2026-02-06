@@ -7,7 +7,8 @@ import {
   type AnimationSettings,
   enrichAnimationSettings,
   type TaskParamsExtractVideoFrames,
-  TaskType
+  TaskType,
+  TaskStatus
 } from '@/apis/aigc'
 import type { Project } from '../project'
 import { Sprite } from '../sprite'
@@ -76,7 +77,9 @@ export class AnimationGen extends Disposable {
   }
 
   getTaskIds() {
-    return [this.generateVideoTask, this.extractFramesTask].map((t) => t.data?.id).filter((id) => id != null)
+    return [this.generateVideoTask, this.extractFramesTask]
+      .filter((t) => t.data?.status === TaskStatus.Completed)
+      .map((t) => t.data!.id)
   }
 
   get name() {
