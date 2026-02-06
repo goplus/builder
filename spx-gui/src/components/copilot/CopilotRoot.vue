@@ -101,6 +101,7 @@ class GetProjectMetadataTool implements ToolDefinition {
 }
 
 function getProjectContent(project: Project) {
+  const physics = project.stage.physics
   return `\
 ### Sprites (num: ${project.sprites.length})
 ${project.sprites.map((sprite) => `- ${sprite.name}`).join('\n')}
@@ -109,7 +110,8 @@ ${project.sounds.map((sound) => `- ${sound.name}`).join('\n')}
 ### Backdrops (num: ${project.stage.backdrops.length})
 ${project.stage.backdrops.map((backdrop) => `- ${backdrop.name}`).join('\n')}
 ### Widgets (num: ${project.stage.widgets.length})
-${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}`
+${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}
+### Physics: ${physics.enabled ? 'Enabled' : 'Disabled'}`
 }
 
 const getProjectContentParamsSchema = z.object({

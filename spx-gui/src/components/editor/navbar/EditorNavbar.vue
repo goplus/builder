@@ -111,19 +111,31 @@
       >
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Default">
+            <UIButtonGroupItem
+              v-radar="{
+                name: 'Default mode',
+                desc: 'Editor for defining the behavior and resources of independent entities (Sprites, Sounds, Stage). It features code editing, internal resource (Costumes, Animations, Backdrops, Widgets) management, and game running/debugging'
+              }"
+              :value="EditMode.Default"
+            >
               <div class="icon" v-html="defaultModeSvg"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Default Mode', zh: '默认模式' }) }}
+          {{ $t({ en: 'Default mode', zh: '默认模式' }) }}
         </UITooltip>
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Map">
+            <UIButtonGroupItem
+              v-radar="{
+                name: 'Map edit mode',
+                desc: 'Map-centric editor for the game\'s spatial arrangement. It features sprite placement on the stage and global configuration (map size, physics, layer sorting, etc.)'
+              }"
+              :value="EditMode.Map"
+            >
               <div class="icon" v-html="mapEditModeSvg"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Map Edit Mode', zh: '地图编辑模式' }) }}
+          {{ $t({ en: 'Map edit mode', zh: '地图编辑模式' }) }}
         </UITooltip>
       </UIButtonGroup>
     </template>
