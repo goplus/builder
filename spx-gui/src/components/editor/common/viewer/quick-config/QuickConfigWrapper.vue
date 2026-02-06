@@ -7,9 +7,9 @@ export const updateConfigTypesInjectionKey: InjectionKey<(configTypes: ConfigTyp
 </script>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, provide, ref, watch, type InjectionKey, type Ref } from 'vue'
+import { provide, ref, watch, type InjectionKey, type Ref, onBeforeUnmount } from 'vue'
 
-import { providePopupContainer } from '@/components/ui'
+import { isInPopup } from '@/components/ui'
 
 const props = defineProps<{
   configTypes: Array<ConfigType>
@@ -21,7 +21,6 @@ const emits = defineEmits<{
 
 const configTypeRef = ref<ConfigType | null>(null)
 
-const quickConfigPopupContainerRef = ref<HTMLElement | undefined>()
 const quickConfigRef = ref<HTMLElement | undefined>()
 let timer: NodeJS.Timeout
 let activeInteractions = 0
@@ -61,15 +60,21 @@ function handleInteractionEnd() {
   }
 }
 
+function handleMouseLeave(e: MouseEvent) {
+  const relatedTarget = e.relatedTarget
+  if (relatedTarget instanceof HTMLElement && isInPopup(relatedTarget)) {
+    handleInteractionStart()
+    relatedTarget.addEventListener('mouseleave', handleInteractionEnd, { once: true })
+  }
+  handleInteractionEnd()
+}
+
 defineExpose({
-  quickConfigDom: () => quickConfigRef.value,
-  quickConfigPopupContainerDom: () => quickConfigPopupContainerRef.value
+  quickConfigDom: () => quickConfigRef.value
 })
 
 provide(configTypeInjectionKey, configTypeRef)
 provide(updateConfigTypesInjectionKey, (configTypes: ConfigType[]) => emits('updateConfigTypes', configTypes))
-
-providePopupContainer(quickConfigPopupContainerRef)
 
 onBeforeUnmount(() => clearTimeout(timer))
 </script>
@@ -81,16 +86,15 @@ onBeforeUnmount(() => clearTimeout(timer))
     @focusin="handleInteractionStart"
     @focusout="handleInteractionEnd"
     @mouseenter="handleInteractionStart"
-    @mouseleave="handleInteractionEnd"
+    @mouseleave="handleMouseLeave"
   >
     <slot></slot>
-    <!-- Mount the pop-up layer's container here, treating it as part of the component, to facilitate responding to mouseenter/mouseleave events. -->
-    <div ref="quickConfigPopupContainerRef"></div>
   </div>
 </template>
 
 <style lang="scss">
 .quick-config {
   position: absolute;
+  padding: 4px;
 }
 </style>

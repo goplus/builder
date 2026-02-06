@@ -1,44 +1,5 @@
-<script lang="ts">
-function getVisibleChildrenUnionRect(root: Element) {
-  let newRect: DOMRect | null = null
-
-  function isVisible(node: Element) {
-    const style = window.getComputedStyle(node)
-    return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'
-  }
-
-  const stack = [root]
-  while (stack.length > 0) {
-    const node = stack.pop()
-    if (!node || !isVisible(node)) continue
-
-    const rect = node.getBoundingClientRect()
-
-    if (rect.width > 0 && rect.height > 0) {
-      if (newRect == null) {
-        newRect = rect
-      } else {
-        const left = Math.min(newRect.left, rect.left)
-        const top = Math.min(newRect.top, rect.top)
-        const right = Math.max(newRect.right, rect.right)
-        const bottom = Math.max(newRect.bottom, rect.bottom)
-        newRect = new DOMRect(left, top, right - left, bottom - top)
-      }
-    } else {
-      if (node.children && node.children.length > 0) {
-        for (let i = node.children.length - 1; i >= 0; i--) {
-          stack.push(node.children[i])
-        }
-      }
-    }
-  }
-
-  return newRect
-}
-</script>
-
 <script setup lang="ts">
-import { debounce, throttle } from 'lodash'
+import { throttle } from 'lodash'
 import { computed, nextTick, onMounted, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
@@ -428,47 +389,6 @@ function handleSpriteDragEnd() {
 
 const quickConfigRef = ref<InstanceType<typeof QuickConfigWrapper> | null>(null)
 const quickConfigElRef = computed(() => quickConfigRef.value?.quickConfigDom())
-const quickConfigPopupContainerElRef = computed(() => quickConfigRef.value?.quickConfigPopupContainerDom())
-watch(
-  quickConfigPopupContainerElRef,
-  (container, _, onCleanup) => {
-    if (!container) return
-    const observer = new MutationObserver(debounce(updateQuickConfigPos, 100))
-    observer.observe(container, { childList: true, subtree: true, attributes: true })
-    onCleanup(() => observer.disconnect())
-  },
-  { immediate: true }
-)
-
-function getQuickConfigExtensions(quickConfigRect: DOMRect, popupContainerRect: DOMRect | null) {
-  let left = 30
-  let right = 30
-  let top = 30
-  let bottom = 30
-
-  if (popupContainerRect != null && popupContainerRect.width > 0 && popupContainerRect.height > 0) {
-    const { left: configLeft, right: configRight, top: configTop, bottom: configBottom } = quickConfigRect
-    const {
-      left: popupContainerLeft,
-      right: popupContainerRight,
-      top: popupContainerTop,
-      bottom: popupContainerBottom
-    } = popupContainerRect
-    if (popupContainerLeft < configLeft) {
-      left += configLeft - popupContainerLeft
-    }
-    if (popupContainerRight > configRight) {
-      right += popupContainerRight - configRight
-    }
-    if (popupContainerTop < configTop) {
-      top += configTop - popupContainerTop
-    }
-    if (popupContainerBottom > configBottom) {
-      bottom += popupContainerBottom - configBottom
-    }
-  }
-  return { left, right, top, bottom }
-}
 
 function getSpriteNodeAnchor(node: Konva.Node) {
   const nodeWidth = node.width()
@@ -501,8 +421,7 @@ function updateQuickConfigPos() {
     props.selectedSprite == null ||
     stageRef.value == null ||
     containerSize.value == null ||
-    quickConfigElRef.value == null ||
-    quickConfigPopupContainerElRef.value == null
+    quickConfigElRef.value == null
   ) {
     return
   }
@@ -512,9 +431,7 @@ function updateQuickConfigPos() {
 
   const quickConfigEl = quickConfigElRef.value
   const quickConfigRect = quickConfigEl.getBoundingClientRect()
-  const popupContainerRect = getVisibleChildrenUnionRect(quickConfigPopupContainerElRef.value)
-
-  const extensions = getQuickConfigExtensions(quickConfigRect, popupContainerRect)
+  const extensions = { left: 30, right: 30, top: 30, bottom: 30 }
   const { centerX, bottomY } = getSpriteNodeAnchor(node)
 
   const GAP = 48
