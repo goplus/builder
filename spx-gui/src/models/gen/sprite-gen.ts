@@ -244,11 +244,11 @@ export class SpriteGen extends Disposable {
         supportedStates
           .map((state) => {
             const animationName = recommendedBindings[state]
-            const genId = animationName ? animationNameToGenIdMap.get(animationName) : undefined
+            const genId = animationName ? animationNameToGenIdMap.get(animationName) : null
             return [state, genId]
           })
-          .filter(([, genId]) => genId !== undefined)
-      ) as Partial<Record<State, string>>
+          .filter(([, genId]) => genId != null)
+      )
     })
   }
 
