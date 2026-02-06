@@ -6,6 +6,7 @@ import * as fileHelpers from '@/models/common/file'
 import { makeProject } from '../common/test'
 import { setupAigcMock, MockAigcApis } from './aigc-mock'
 import { SpriteGen } from './sprite-gen'
+import { State } from '../sprite'
 import type { CostumeGen } from './costume-gen'
 import type { AnimationGen } from './animation-gen'
 import { RotationStyle } from '../sprite'
@@ -145,6 +146,8 @@ describe('SpriteGen', () => {
     expect(sprite.animations.length).toBe(2)
     expect(sprite.animations[0].name).toBe('walk')
     expect(sprite.animations[1].name).toBe('jump')
+    expect(sprite.getAnimationBoundStates(sprite.animations[0].id)).toEqual([State.Default])
+    expect(sprite.getAnimationBoundStates(sprite.animations[1].id)).toEqual([State.Step])
   })
 
   it('should validate sprite name correctly', async () => {

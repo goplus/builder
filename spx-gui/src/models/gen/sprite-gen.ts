@@ -13,7 +13,7 @@ import {
   adoptAsset
 } from '@/apis/aigc'
 import { Project } from '../project'
-import { RotationStyle, Sprite } from '../sprite'
+import { RotationStyle, Sprite, State } from '../sprite'
 import { Costume } from '../costume'
 import type { Animation } from '../animation'
 import { getProjectSettings, Phase, Task } from './common'
@@ -38,6 +38,7 @@ export class SpriteGen extends Disposable {
   private genImagesTask: Task<TaskType.GenerateCostume>
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
+  private animationGenIdBindings: Partial<Record<State, string>> = {}
 
   constructor(i18n: I18n, project: Project, initialDescription = '') {
     super()
@@ -179,7 +180,18 @@ export class SpriteGen extends Disposable {
         () => this.animations.map((a) => a.result).filter((a): a is Animation => a != null),
         (generatedAnimations) => {
           generatedAnimations.forEach((a) => {
-            if (!sprite.animations.includes(a)) sprite.addAnimation(a)
+            if (!sprite.animations.includes(a)) {
+              sprite.addAnimation(a)
+              // Auto bind states based on recommended animation bindings
+              const aGen = this.animations.find((gen) => gen.result?.id === a.id)
+              if (aGen == null) return
+              const statesToBind = (Object.entries(this.animationGenIdBindings) as Array<[State, string]>)
+                .filter(([, genId]) => genId === aGen.id)
+                .map(([state]) => state)
+              if (statesToBind.length > 0) {
+                sprite.setAnimationBoundStates(a.id, statesToBind, false)
+              }
+            }
           })
           sprite.animations.slice().forEach((a) => {
             if (!generatedAnimations.includes(a)) sprite.removeAnimation(a.id)
@@ -222,6 +234,20 @@ export class SpriteGen extends Disposable {
       )
       this.animations = settings.animations.map(
         (s) => new AnimationGen(this, project, { ...s, referenceCostumeId: defaultCostume.id })
+      )
+      // Store recommended animation bindings. Replace animation names with animation-gen IDs in case of name changes.
+      const recommendedBindings = settings.animationBindings || {}
+      const animationNameToGenIdMap = new Map(this.animations.map((gen) => [gen.name, gen.id]))
+      // Only support Default, Step, and Die states (turn and glide are not supported for now)
+      const supportedStates = [State.Default, State.Step, State.Die] as const
+      this.animationGenIdBindings = Object.fromEntries(
+        supportedStates
+          .map((state) => {
+            const animationName = recommendedBindings[state]
+            const genId = animationName ? animationNameToGenIdMap.get(animationName) : null
+            return [state, genId]
+          })
+          .filter(([, genId]) => genId != null)
       )
     })
   }
