@@ -1,0 +1,18 @@
+{
+  "recommendations": [
+    // Formating
+    "esbenp.prettier-vscode", // Prettier
+    "editorconfig.editorconfig", // EditorConfig
+
+    // Highlighting
+    "bradlc.vscode-tailwindcss", // Tailwind CSS
+    "unifiedjs.vscode-mdx", // MDX
+    "styled-components.vscode-styled-components", // styled()
+
+    // Lint
+    "dbaeumer.vscode-eslint", // ESLint
+    "yoavbls.pretty-ts-errors", // TypeScript
+    "stylelint.vscode-stylelint", // Stylelint
+    "davidanson.vscode-markdownlint" // markdownlint
+  ]
+}
