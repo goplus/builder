@@ -1,6 +1,7 @@
 <template>
   <UIConfigProvider :config="config">
-    <UIMessageProvider>
+    <DesktopRequiredGuide v-if="isMobile" />
+    <UIMessageProvider v-else>
       <UIModalProvider>
         <CopilotRoot>
           <TutorialRoot>
@@ -17,15 +18,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
 import CopilotRoot from '@/components/copilot/CopilotRoot.vue'
 import CopilotUI from '@/components/copilot/CopilotUI.vue'
 import TutorialRoot from '@/components/tutorials/TutorialRoot.vue'
+import DesktopRequiredGuide from '@/components/mobile/DesktopRequiredGuide.vue'
 import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from '@/utils/i18n'
 import { useInstallRouteLoading } from '@/utils/route-loading'
+
+const isMobile = ref(false)
+
+onMounted(() => {
+  // TODO: Consider move to utils/ua.ts, and make more robust detection
+  // Detect mobile devices
+  const userAgent = navigator.userAgent
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+  const isSmallScreen = window.matchMedia('(max-width: 768px)').matches
+
+  isMobile.value = mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen)
+})
 
 const { t } = useI18n()
 
