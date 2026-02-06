@@ -22,7 +22,7 @@ rotatorCircleImg.src = rotatorCirclePng
 export type TransformOp = 'rotate' | 'scale' | 'move' | 'flip'
 
 export type NodeUpdateEvent = {
-  op: TransformOp
+  op: TransformOp | null
 }
 
 export type CustomTransformerConfig = {
@@ -263,7 +263,7 @@ export class CustomTransformer extends Konva.Transformer {
     })
     this.on('transform', () => {
       const node = this._nodes[0]
-      node._fire('nodeupdating', { target: node, evt: { op: getTransformOp(this) } })
+      node._fire('nodeupdating', { target: node, evt: { op: getTransformOp(this) } satisfies NodeUpdateEvent })
     })
     this.on('transformend', () => {
       this.rotatorTag.visible(false)
@@ -271,7 +271,7 @@ export class CustomTransformer extends Konva.Transformer {
       dragging = false
 
       const node = this._nodes[0]
-      node._fire('nodeupdated', { target: node, evt: { op: getTransformOp(this) } })
+      node._fire('nodeupdated', { target: node, evt: { op: getTransformOp(this) } satisfies NodeUpdateEvent })
     })
     this.on('rotationStyleChange', () => {
       this.update()

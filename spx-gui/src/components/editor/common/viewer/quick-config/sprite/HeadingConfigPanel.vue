@@ -1,10 +1,12 @@
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { inject, ref, watch } from 'vue'
 import { UIDropdown, UINumberInput } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
 import { RotationStyle } from '@/models/sprite'
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
 import type { SpriteLocalConfig } from '../utils'
+import { updateConfigTypesInjectionKey } from '../QuickConfigWrapper.vue'
+import { debounce } from 'lodash'
 
 const props = defineProps<{
   localConfig: SpriteLocalConfig
@@ -12,10 +14,22 @@ const props = defineProps<{
 
 const rotateDropdownVisible = ref(false)
 
+const updateConfigTypes = inject(updateConfigTypesInjectionKey)
+watch(
+  () => props.localConfig.rotationStyle,
+  () => {
+    // If the selected sprite's rotationStyle is LeftRight or None, it needs to be restored to default immediately
+    if ([RotationStyle.LeftRight, RotationStyle.None].includes(props.localConfig.rotationStyle)) {
+      updateConfigTypes?.(['default'])
+    }
+  }
+)
+
 function handleUpdateHeading(heading: number) {
   props.localConfig.setHeading(heading)
-  props.localConfig.syncHeading()
+  props.localConfig.sync()
 }
+const handleUpdateHeadingDebounced = debounce(handleUpdateHeading, 300)
 </script>
 
 <template>
@@ -35,7 +49,7 @@ function handleUpdateHeading(heading: number) {
           :min="-180"
           :max="180"
           :value="localConfig.heading"
-          @update:value="handleUpdateHeading($event ?? 0)"
+          @update:value="handleUpdateHeadingDebounced($event ?? 0)"
           @focus="rotateDropdownVisible = true"
         >
           <template #prefix>{{ $t({ en: 'Heading', zh: '朝向' }) }}</template>

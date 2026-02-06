@@ -39,16 +39,16 @@ const rotationStyleTips = {
 
 function handleRotationStyleUpdate(style: RotationStyle) {
   const localConfig = props.localConfig
-  localConfig.setRotationStyle(style, false)
+  localConfig.setRotationStyle(style)
   if (style === RotationStyle.None) {
-    localConfig.setHeading(90, false)
+    localConfig.setHeading(90)
   }
   if (style === RotationStyle.LeftRight) {
     // normalize heading to 90 / -90
     const normalizedHeading = leftRightToHeading(headingToLeftRight(localConfig.heading))
-    localConfig.setHeading(normalizedHeading, false)
+    localConfig.setHeading(normalizedHeading)
   }
-  localConfig.syncAll()
+  localConfig.sync()
 }
 
 async function moveZorder(direction: MoveAction) {

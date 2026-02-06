@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { debounce } from 'lodash'
 import { UINumberInput } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
 import { round } from '@/utils/utils'
@@ -9,11 +10,11 @@ const props = defineProps<{
   localConfig: LocalConfig
 }>()
 
-function handleSizePercentUpdate(sizeInPercent: number | null) {
+const handleSizePercentUpdate = debounce((sizeInPercent: number | null) => {
   if (sizeInPercent == null) return
   props.localConfig.setSize(round(sizeInPercent / 100, 2))
-  props.localConfig.syncSize()
-}
+  props.localConfig.sync()
+}, 300)
 </script>
 
 <template>

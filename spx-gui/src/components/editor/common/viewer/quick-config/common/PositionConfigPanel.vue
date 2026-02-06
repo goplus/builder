@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { debounce } from 'lodash'
 import { UINumberInput } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
 import type { LocalConfig } from '../utils'
@@ -8,14 +9,14 @@ const props = defineProps<{
   localConfig: LocalConfig
 }>()
 
-function handleUpdateX(x: number) {
+const handleUpdateX = debounce((x: number) => {
   props.localConfig.setX(x)
-  props.localConfig.syncSize()
-}
-function handleUpdateY(y: number) {
+  props.localConfig.sync()
+}, 300)
+const handleUpdateY = debounce((y: number) => {
   props.localConfig.setY(y)
-  props.localConfig.syncSize()
-}
+  props.localConfig.sync()
+}, 300)
 </script>
 
 <template>

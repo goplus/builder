@@ -23,6 +23,7 @@ import QuickConfigWrapper, {
 } from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
 import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
 import { SpriteLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
+import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
 
 const props = defineProps<{
   project: Project
@@ -73,7 +74,9 @@ const updateMousePos = throttle(() => {
   }
 }, 50)
 
-function handleSpriteSelected(sprite: Sprite) {
+function handleSpriteSelected(localConfig: SpriteLocalConfig) {
+  const sprite = props.project.sprites.find((s) => s.id === localConfig.id)
+  if (sprite == null) return
   emit('update:selectedSprite', sprite)
 }
 
@@ -288,9 +291,12 @@ const loading = computed(() => {
   return false
 })
 
-const visibleSprites = computed(() => {
+const visibleSpriteLocalConfigs = computed(() => {
   const { zorder, sprites } = props.project
-  return zorder.map((id) => sprites.find((s) => s.id === id)).filter(Boolean) as Sprite[]
+  return zorder
+    .map((id) => sprites.find((s) => s.id === id))
+    .filter(Boolean)
+    .map((sprite) => new SpriteLocalConfig(sprite!, props.project)) as SpriteLocalConfig[]
 })
 
 let cameraEdgeScrollCheckTimer: ReturnType<typeof setInterval> | null = null
@@ -347,31 +353,32 @@ const handleSpriteDragMove = throttle(
 )
 
 // quick config
-const localConfig = shallowRef<SpriteLocalConfig | null>(null)
+const localConfigRef = shallowRef<SpriteLocalConfig | null | undefined>(null)
 watch(
   () => props.selectedSprite,
-  (sprite, _, onCleanup) => {
+  (sprite) => {
     if (sprite == null) return
-    localConfig.value = new SpriteLocalConfig(sprite, props.project)
-    onCleanup(() => {
-      localConfig.value?.dispose()
-      localConfig.value = null
-    })
+    localConfigRef.value = visibleSpriteLocalConfigs.value.find(({ id }) => id === sprite.id)
   },
   { immediate: true }
 )
 
 const configTypesRef = ref<ConfigType[]>(['default'])
-watch(
-  () => localConfig.value?.configTypes,
-  (configTypes) => {
-    if (configTypes == null || configTypes.length === 1) return
-    configTypesRef.value = configTypes
+const handleUpdateConfigType = throttle((configType: ConfigType | ConfigType[] = []) => {
+  configTypesRef.value = ['default' as ConfigType].concat(configType)
+}, 150)
+function handleSpriteUpdateTransformOp(op: TransformOp | null) {
+  if (op == null) return
+  if (op === 'move') {
+    handleUpdateConfigType('pos')
+  } else if (op === 'rotate') {
+    handleUpdateConfigType('rotate')
+  } else if (op === 'scale') {
+    handleUpdateConfigType('size')
   }
-)
-
+}
 watch(
-  () => [localConfig.value?.x, localConfig.value?.y, localConfig.value?.heading, localConfig?.value?.size],
+  () => [localConfigRef.value?.x, localConfigRef.value?.y, localConfigRef.value?.heading, localConfigRef.value?.size],
   () => {
     nextTick(updateQuickConfigPosThrottled)
   }
@@ -515,17 +522,17 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         <!-- Refer to: spx-gui/src/components/editor/preview/stage-viewer/StageViewer.vue -->
         <v-group>
           <SpriteNode
-            v-for="sprite in visibleSprites"
-            :key="sprite.id"
-            :sprite="sprite"
-            :local-config="localConfig?.id === sprite.id ? localConfig : null"
-            :selected="selectedSprite?.id === sprite.id"
+            v-for="localConfig in visibleSpriteLocalConfigs"
+            :key="localConfig.id"
+            :local-config="localConfig"
+            :selected="selectedSprite?.id === localConfig.id"
             :project="props.project"
             :map-size="mapSize"
             :node-ready-map="nodeReadyMap"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
-            @selected="handleSpriteSelected(sprite)"
+            @selected="handleSpriteSelected(localConfig)"
+            @update-transform-op="handleSpriteUpdateTransformOp"
           />
         </v-group>
       </v-layer>
@@ -539,7 +546,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       :config-types="configTypesRef"
       @update-config-types="configTypesRef = $event"
     >
-      <SpriteQuickConfig v-if="localConfig != null" :local-config="localConfig" :project="project" />
+      <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
     </QuickConfigWrapper>
 
     <PositionIndicator :position="mousePos" />

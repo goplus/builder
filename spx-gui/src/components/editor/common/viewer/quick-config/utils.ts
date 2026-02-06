@@ -1,151 +1,132 @@
-import { ref, watch, type Ref } from 'vue'
-import { debounce, throttle } from 'lodash'
+import { ref, type Ref } from 'vue'
+import { debounce } from 'lodash'
 import { RotationStyle, type Sprite } from '@/models/sprite'
 import type { Action, Project } from '@/models/project'
 import type { Widget } from '@/models/widget'
-import { Disposable } from '@/utils/disposable'
-import type { ConfigType } from './QuickConfigWrapper.vue'
 
-interface ILocalConfigSetter {
+interface ILocalConfigProvider {
   id: string
+
+  get x(): number
+  get y(): number
+  get size(): number
+  get visible(): boolean
+
   setX(x: number): void
   setY(y: number): void
   setSize(size: number): void
 }
 
-export class LocalConfig extends Disposable {
+interface ILocalConfigChanges {
+  x?: number
+  y?: number
+  size?: number
+  visible?: boolean
+}
+
+export class LocalConfig<T = unknown> {
   constructor(
-    private likeLocalConfig: ILocalConfigSetter,
-    protected project: Project,
+    private provider: ILocalConfigProvider,
+    private project: Project,
     private action: Action
-  ) {
-    super()
-    this.id = this.likeLocalConfig.id
+  ) {}
+
+  protected changes = ref({}) as Ref<ILocalConfigChanges & Partial<T>>
+
+  get id() {
+    return this.provider.id
   }
 
-  id: string
-
-  private configTypesRef: Ref<ConfigType[]> = ref(['default'])
-  get configTypes() {
-    return this.configTypesRef.value
-  }
-  updateConfigType = throttle(
-    (configType: ConfigType | ConfigType[] = []) =>
-      (this.configTypesRef.value = ['default' as ConfigType].concat(configType)),
-    150
-  )
-
-  private xRef: Ref<number> = ref(0)
   get x() {
-    return this.xRef.value
+    return this.changes.value.x ?? this.provider.x
   }
-  setX(x: number, updateConfigType = true) {
-    this.xRef.value = x
-    if (updateConfigType) this.updateConfigType('pos')
+  setX(x: number) {
+    this.changes.value.x = x
   }
 
-  private yRef: Ref<number> = ref(0)
   get y() {
-    return this.yRef.value
+    return this.changes.value.y ?? this.provider.y
   }
-  setY(y: number, updateConfigType = true) {
-    this.yRef.value = y
-    if (updateConfigType) this.updateConfigType('pos')
+  setY(y: number) {
+    this.changes.value.y = y
   }
-  syncPos = this.doAction(() => (this.likeLocalConfig.setX(this.x), this.likeLocalConfig.setY(this.y)))
 
-  private sizeRef: Ref<number> = ref(0)
   get size() {
-    return this.sizeRef.value
+    return this.changes.value.size ?? this.provider.size
   }
-  setSize(size: number, updateConfigType = true) {
-    this.sizeRef.value = size
-    if (updateConfigType) this.updateConfigType('size')
+  setSize(size: number) {
+    this.changes.value.size = size
   }
-  syncSize = this.doAction(() => this.likeLocalConfig.setSize(this.size))
+
+  get visible() {
+    return this.provider.visible
+  }
 
   protected doAction(updater: () => void, withDebounce = true) {
     const warpped = () => this.project.history.doAction(this.action, updater)
     return withDebounce ? debounce(warpped, 300) : warpped
   }
+
+  sync = this.doAction(() => {
+    Object.keys(this.changes.value).forEach((key) => this.applyChanges(key))
+    this.changes.value = {}
+  })
+
+  protected applyChanges(key: string) {
+    switch (key) {
+      case 'x':
+        this.provider.setX(this.x)
+        break
+      case 'y':
+        this.provider.setY(this.y)
+        break
+      case 'size':
+        this.provider.setSize(this.size)
+        break
+    }
+  }
 }
 
-// TODO: Temporary workaround: when rotating or scaling a Sprite/Widget, jittering may occur and cause position changes, which might trigger the 'pos' panel.
-// This fix has a limitation: if the current panel is 'rotate', it might not switch to the expected 'pos' panel after updating the Sprite/Widget.
-function shouldUpdatePosConfigType(configType: ConfigType | undefined) {
-  return configType != null && !['size', 'rotate'].includes(configType)
-}
-
-export class SpriteLocalConfig extends LocalConfig {
+export class SpriteLocalConfig extends LocalConfig<{
+  heading?: number
+  rotationStyle?: RotationStyle
+}> {
   constructor(
-    private sprite: Sprite,
+    public sprite: Sprite,
     project: Project
   ) {
     super(sprite, project, { name: { en: `Configure sprite ${sprite.name}`, zh: `修改精灵 ${sprite.name} 配置` } })
-    this.addDisposer(
-      watch(
-        () => sprite.rotationStyle,
-        (rotationStyle, old) => this.setRotationStyle(rotationStyle, old != null),
-        { immediate: true }
-      )
-    )
-    this.addDisposer(
-      watch(
-        () => sprite.x,
-        (x, old) => this.setX(x, old != null && shouldUpdatePosConfigType(this.configTypes.at(-1))),
-        { immediate: true }
-      )
-    )
-    this.addDisposer(
-      watch(
-        () => sprite.y,
-        (y, old) => this.setY(y, old != null && shouldUpdatePosConfigType(this.configTypes.at(-1))),
-        { immediate: true }
-      )
-    )
-    this.addDisposer(
-      watch(
-        () => sprite.heading,
-        (heading, old) => this.setHeading(heading, old != null && this.rotationStyle === RotationStyle.Normal),
-        { immediate: true }
-      )
-    )
-    this.addDisposer(
-      watch(
-        () => sprite.size,
-        (size, old) => this.setSize(size, old != null),
-        { immediate: true }
-      )
-    )
   }
 
-  private headingRef: Ref<number> = ref(0)
   get heading() {
-    return this.headingRef.value
+    return this.changes.value.heading ?? this.sprite.heading
   }
-  setHeading(heading: number, updateConfigType = true) {
-    this.headingRef.value = heading
-    if (updateConfigType) this.updateConfigType('rotate')
+  setHeading(heading: number) {
+    this.changes.value.heading = heading
   }
-  syncHeading = this.doAction(() => this.sprite.setHeading(this.heading))
 
-  private rotationStyleRef: Ref<RotationStyle> = ref(RotationStyle.Normal)
   get rotationStyle() {
-    return this.rotationStyleRef.value
+    return this.changes.value.rotationStyle ?? this.sprite.rotationStyle
   }
-  setRotationStyle(rotationStyle: RotationStyle, updateConfigType = true) {
-    this.rotationStyleRef.value = rotationStyle
-    if (updateConfigType) this.updateConfigType()
+  setRotationStyle(rotationStyle: RotationStyle) {
+    this.changes.value.rotationStyle = rotationStyle
   }
-  syncRotationStyle = this.doAction(() => this.sprite.setRotationStyle(this.rotationStyle))
 
-  syncAll = this.doAction(() => {
-    this.sprite.setSize(this.size)
-    this.sprite.setX(this.x)
-    this.sprite.setY(this.y)
-    this.sprite.setHeading(this.heading)
-    this.sprite.setRotationStyle(this.rotationStyle)
-  })
+  get defaultCostume() {
+    return this.sprite.defaultCostume
+  }
+
+  override applyChanges(key: string) {
+    super.applyChanges(key)
+    switch (key) {
+      case 'heading':
+        this.sprite.setHeading(this.heading)
+        break
+      case 'rotationStyle':
+        this.sprite.setRotationStyle(this.rotationStyle)
+        break
+    }
+  }
 }
 
 export class WidgetLocalConfig extends LocalConfig {
@@ -153,34 +134,14 @@ export class WidgetLocalConfig extends LocalConfig {
     private widget: Widget,
     project: Project
   ) {
-    super(widget, project, { name: { en: `Configure widget ${widget.name}`, zh: `修改控件 ${widget.name} 配置` } })
-
-    this.addDisposer(
-      watch(
-        () => widget.x,
-        (x, old) => this.setX(x, old != null && shouldUpdatePosConfigType(this.configTypes.at(-1))),
-        { immediate: true }
-      )
-    )
-    this.addDisposer(
-      watch(
-        () => widget.y,
-        (y, old) => this.setY(y, old != null && shouldUpdatePosConfigType(this.configTypes.at(-1))),
-        { immediate: true }
-      )
-    )
-    this.addDisposer(
-      watch(
-        () => widget.size,
-        (size, old) => this.setSize(size, old != null),
-        { immediate: true }
-      )
-    )
+    super(widget, project, { name: { en: `Configure widget ${widget.name}`, zh: `修改组件 ${widget.name} 配置` } })
   }
 
-  syncAll = this.doAction(() => {
-    this.widget.setSize(this.size)
-    this.widget.setX(this.x)
-    this.widget.setY(this.y)
-  })
+  get label() {
+    return this.widget.label
+  }
+
+  get variableName() {
+    return this.widget.variableName
+  }
 }

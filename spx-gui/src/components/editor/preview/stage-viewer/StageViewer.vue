@@ -29,30 +29,28 @@
         -->
         <v-group>
           <SpriteNode
-            v-for="sprite in visibleSprites"
-            :key="sprite.id"
-            :sprite="sprite"
-            :local-config="
-              localConfig instanceof SpriteLocalConfig && localConfig.id === sprite.id ? localConfig : null
-            "
-            :selected="editorCtx.state.selectedSprite?.id === sprite.id"
+            v-for="localConfig in visibleSpriteLocalConfigs"
+            :key="localConfig.id"
+            :local-config="localConfig"
+            :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
             :project="editorCtx.project"
             :map-size="mapSize"
             :node-ready-map="nodeReadyMap"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
-            @selected="handleSpriteSelected(sprite)"
+            @selected="handleSpriteSelected(localConfig)"
+            @update-transform-op="handleSpriteUpdateTransformOp"
           />
         </v-group>
       </v-layer>
       <v-layer>
         <WidgetNode
-          v-for="widget in visibleWidgets"
-          :key="widget.id"
-          :widget="widget"
-          :local-config="localConfig instanceof WidgetLocalConfig && localConfig.id === widget.id ? localConfig : null"
+          v-for="localConfig in visibleWidgetLocalConfigs"
+          :key="localConfig.id"
+          :local-config="localConfig"
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
+          @update-transform-op="handleSpriteUpdateTransformOp"
         />
       </v-layer>
       <v-layer>
@@ -69,13 +67,13 @@
       @update-config-types="configTypesRef = $event"
     >
       <SpriteQuickConfig
-        v-if="localConfig instanceof SpriteLocalConfig"
-        :local-config="localConfig"
+        v-if="localConfigRef instanceof SpriteLocalConfig"
+        :local-config="localConfigRef"
         :project="editorCtx.project"
       />
       <WidgetQuickConfig
-        v-else-if="localConfig instanceof WidgetLocalConfig"
-        :local-config="localConfig"
+        v-else-if="localConfigRef instanceof WidgetLocalConfig"
+        :local-config="localConfigRef"
         :project="editorCtx.project"
       />
     </QuickConfigWrapper>
@@ -98,7 +96,6 @@ import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/stage'
-import type { Widget } from '@/models/widget'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
@@ -111,8 +108,8 @@ import WidgetNode from './widgets/WidgetNode.vue'
 import QuickConfigWrapper, {
   type ConfigType
 } from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
-import { LocalConfig, SpriteLocalConfig, WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
-import type { Sprite } from '@/models/sprite'
+import { SpriteLocalConfig, WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
+import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
@@ -353,14 +350,20 @@ const loading = computed(() => {
   return false
 })
 
-const visibleSprites = computed(() => {
+const visibleSpriteLocalConfigs = computed(() => {
   const { zorder, sprites } = editorCtx.project
-  return zorder.map((id) => sprites.find((s) => s.id === id)).filter(Boolean) as Sprite[]
+  return zorder
+    .map((id) => sprites.find((s) => s.id === id))
+    .filter(Boolean)
+    .map((sprite) => new SpriteLocalConfig(sprite!, editorCtx.project)) as SpriteLocalConfig[]
 })
 
-const visibleWidgets = computed(() => {
+const visibleWidgetLocalConfigs = computed(() => {
   const { widgetsZorder, widgets } = editorCtx.project.stage
-  return widgetsZorder.map((id) => widgets.find((w) => w.id === id)).filter(Boolean) as Widget[]
+  return widgetsZorder
+    .map((id) => widgets.find((w) => w.id === id))
+    .filter(Boolean)
+    .map((widget) => new WidgetLocalConfig(widget!, editorCtx.project)) as WidgetLocalConfig[]
 })
 
 let cameraEdgeScrollCheckTimer: ReturnType<typeof setInterval> | null = null
@@ -417,39 +420,41 @@ const handleSpriteDragMove = throttle(
 )
 
 // quick config
-const localConfig = shallowRef<LocalConfig | null>(null)
+const localConfigRef = shallowRef<SpriteLocalConfig | WidgetLocalConfig | null | undefined>(null)
 watch(
   () => [editorCtx.state.selectedSprite, editorCtx.state.selectedWidget] as const,
-  ([sprite, widget], _, onCleanup) => {
+  ([sprite, widget]) => {
     if (sprite == null && widget == null) return
     if (sprite != null) {
-      localConfig.value = new SpriteLocalConfig(sprite, editorCtx.project)
+      localConfigRef.value = visibleSpriteLocalConfigs.value.find(({ id }) => id === sprite.id)
     } else if (widget != null) {
-      localConfig.value = new WidgetLocalConfig(widget, editorCtx.project)
+      localConfigRef.value = visibleWidgetLocalConfigs.value.find(({ id }) => id === widget.id)
     }
-    onCleanup(() => {
-      localConfig.value?.dispose()
-      localConfig.value = null
-    })
   },
   { immediate: true }
 )
 
 const configTypesRef = ref<ConfigType[]>(['default'])
-watch(
-  () => localConfig.value?.configTypes,
-  (configTypes) => {
-    if (configTypes == null || configTypes.length === 1) return
-    configTypesRef.value = configTypes
+const handleUpdateConfigType = throttle((configType: ConfigType | ConfigType[] = []) => {
+  configTypesRef.value = ['default' as ConfigType].concat(configType)
+}, 150)
+function handleSpriteUpdateTransformOp(op: TransformOp | null) {
+  if (op == null) return
+  if (op === 'move') {
+    handleUpdateConfigType('pos')
+  } else if (op === 'rotate') {
+    handleUpdateConfigType('rotate')
+  } else if (op === 'scale') {
+    handleUpdateConfigType('size')
   }
-)
+}
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
 }
 
-function handleSpriteSelected(sprite: Sprite) {
-  editorCtx.state.selectSprite(sprite.id)
+function handleSpriteSelected(localConfig: SpriteLocalConfig) {
+  editorCtx.state.selectSprite(localConfig.id)
 }
 
 function handleWheel(e: KonvaEventObject<WheelEvent>) {

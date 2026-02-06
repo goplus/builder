@@ -23,7 +23,6 @@ import type { GroupConfig } from 'konva/lib/Group'
 import type { Shape, ShapeConfig } from 'konva/lib/Shape'
 import type { Size } from '@/models/common'
 import { round } from '@/utils/utils'
-import type { Monitor } from '@/models/widget/monitor'
 import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
@@ -32,16 +31,19 @@ import type { NodeUpdateEvent, TransformOp } from '@/components/editor/common/vi
 import type { KonvaEventObject } from 'konva/lib/Node'
 
 const props = defineProps<{
-  monitor: Monitor
-  localConfig: WidgetLocalConfig | null
+  localConfig: WidgetLocalConfig
   viewportSize: Size
   nodeReadyMap: Map<string, boolean>
+}>()
+
+const emits = defineEmits<{
+  updateTransformOp: [op: TransformOp | null]
 }>()
 
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
-const nodeId = computed(() => getNodeId(props.monitor))
+const nodeId = computed(() => getNodeId(props.localConfig))
 const labelTextRef = ref<KonvaNodeInstance<Text>>()
 const valueTextRef = ref<KonvaNodeInstance<Text>>()
 const labelTextWidth = ref(0)
@@ -77,92 +79,46 @@ onMounted(() => {
   // Konva warning: Node has no parent. zIndex parameter is ignored.
   // Konva warning: Unexpected value 2 for zIndex property. zIndex is just index of a node in children of its parent. Expected value is from 0 to 1.
   // ```
-  const zIndex = editorCtx.project.stage.widgetsZorder.indexOf(props.monitor.id)
+  const zIndex = editorCtx.project.stage.widgetsZorder.indexOf(props.localConfig.id)
   if (zIndex >= 0) {
     labelTextRef.value!.getNode().zIndex(zIndex)
   }
 })
 
-function updateLocalConfig(
-  {
-    oldSize,
-    size,
-    oldX,
-    x,
-    oldY,
-    y
-  }: {
-    oldSize: number
-    size: number
-    oldX: number
-    x: number
-    oldY: number
-    y: number
-  },
-  op: TransformOp
-) {
-  const widgetLocalConfig = props.localConfig
-  if (widgetLocalConfig == null) return
-  if (size !== oldSize) {
-    widgetLocalConfig.setSize(size, op === 'scale')
+function updateLocalConfigByShape(node: Shape | Stage, op: TransformOp | null) {
+  const localConfig = props.localConfig
+  if (op === 'scale') {
+    localConfig.setSize(toSize(node))
   }
-  if (x !== oldX || y !== oldY) {
-    widgetLocalConfig.setX(x, op === 'move')
-    widgetLocalConfig.setY(y, op === 'move')
-  }
-}
-
-function updateLocalConfigByShape(node: Shape | Stage, op: TransformOp) {
-  if (!props.localConfig == null) return
   const { x, y } = toPosition(node)
-  updateLocalConfig(
-    {
-      oldX: props.monitor.x,
-      x,
-      oldY: props.monitor.y,
-      y,
-      oldSize: props.monitor.size,
-      size: toSize(node)
-    },
-    op
-  )
+  if (op === 'move') {
+    localConfig.setX(x)
+    localConfig.setY(y)
+  }
+  emits('updateTransformOp', op)
 }
 
-function syncLocalConfig({ x, y, size }: { x: number; y: number; size: number }, op: TransformOp) {
-  const widgetLocalConfig = props.localConfig
-  if (widgetLocalConfig == null) return
-  if (props.monitor.size !== size) {
-    widgetLocalConfig.setSize(size, op === 'scale')
-  }
-  if (props.monitor.x !== x || props.monitor.y !== y) {
-    widgetLocalConfig.syncPos()
-  }
-
-  widgetLocalConfig.syncAll()
-}
-function syncLocalConfigByShape(node: Shape | Stage, op: TransformOp) {
-  syncLocalConfig(
-    {
-      size: toSize(node),
-      x: toPosition(node).x,
-      y: toPosition(node).y
-    },
-    op
-  )
+function syncLocalConfigByShape(node: Shape | Stage) {
+  const localConfig = props.localConfig
+  localConfig.setSize(toSize(node))
+  const { x, y } = toPosition(node)
+  localConfig.setX(x)
+  localConfig.setY(y)
+  props.localConfig.sync()
 }
 
 function handleDragMove(e: KonvaEventObject<NodeUpdateEvent>) {
   updateLocalConfigByShape(e.target, 'move')
 }
 function handleDragEnd(e: KonvaEventObject<NodeUpdateEvent>) {
-  syncLocalConfigByShape(e.target, 'move')
+  syncLocalConfigByShape(e.target)
 }
 
 function handleNodeUpdating(e: KonvaEventObject<NodeUpdateEvent>) {
   updateLocalConfigByShape(e.target, e.evt.op)
 }
 function handleNodeUpdated(e: KonvaEventObject<NodeUpdateEvent>) {
-  syncLocalConfigByShape(e.target, e.evt.op)
+  syncLocalConfigByShape(e.target)
 }
 
 const paddingX = 6 // px
@@ -174,7 +130,7 @@ const labelValueSepGap = 2 // px, gap between [label, sep, value]
 const height = fontSize * lineHeight + paddingY * 2
 
 const groupConfig = computed<GroupConfig>(() => {
-  const { visible, x, y, size } = props.monitor
+  const { visible, x, y, size } = props.localConfig
   return {
     nodeId: nodeId.value,
     visible,
@@ -204,7 +160,7 @@ const rectConfig = computed<RectConfig>(() => {
 })
 
 const labelTextConfig = computed<TextConfig>(() => {
-  const { label } = props.monitor
+  const { label } = props.localConfig
   return {
     text: label,
     x: paddingX,
@@ -246,7 +202,7 @@ const valueBgConfig = computed<RectConfig>(() => {
 })
 
 const valueTextConfig = computed<TextConfig>(() => {
-  const { variableName } = props.monitor
+  const { variableName } = props.localConfig
   return {
     text: variableName === '' ? '   ' : `{${variableName}}`,
     x: paddingX + labelTextWidth.value + labelValueSepGap + labelValueSepWidth + labelValueSepGap,
@@ -270,6 +226,6 @@ function toSize(node: Shape | Stage) {
 }
 
 function handleClick() {
-  editorCtx.state.selectWidget(props.monitor.id)
+  editorCtx.state.selectWidget(props.localConfig.id)
 }
 </script>

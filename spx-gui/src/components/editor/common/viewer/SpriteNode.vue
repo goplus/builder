@@ -5,7 +5,7 @@ import type { Shape } from 'konva/lib/Shape'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { Project } from '@/models/project'
-import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
+import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading } from '@/models/sprite'
 import type { Size } from '@/models/common'
 import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
@@ -14,8 +14,7 @@ import type { SpriteLocalConfig } from './quick-config/utils'
 import type { NodeUpdateEvent, TransformOp } from './custom-transformer'
 
 const props = defineProps<{
-  sprite: Sprite
-  localConfig: SpriteLocalConfig | null
+  localConfig: SpriteLocalConfig
   selected: boolean
   project: Project
   mapSize: Size
@@ -27,19 +26,35 @@ export type CameraScrollNotifyFn = (
   delta: { x: number; y: number }
 ) => void
 
+type ConfigGetter = {
+  get x(): number
+  get y(): number
+  get rotationStyle(): RotationStyle
+  get heading(): number
+  get size(): number
+  get visible(): boolean
+}
+
 const emit = defineEmits<{
   selected: []
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
+  updateTransformOp: [op: TransformOp | null]
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
-const costume = computed(() => props.sprite.defaultCostume)
+const costume = computed(() => props.localConfig.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const [image] = useFileImg(() => costume.value?.img)
 const rawSize = useAsyncComputedLegacy(async () => costume.value?.getRawSize() ?? null)
 
-const nodeId = computed(() => getNodeId(props.sprite))
+const nodeId = computed(() => getNodeId(props.localConfig))
+
+const snapshotRef = ref<ConfigGetter | null>(null)
+const configGetter = computed(() => {
+  if (snapshotRef.value != null) return snapshotRef.value
+  return props.localConfig
+})
 
 watchEffect((onCleanup) => {
   props.nodeReadyMap.set(nodeId.value, image.value != null)
@@ -53,95 +68,38 @@ onMounted(() => {
   // Konva warning: Node has no parent. zIndex parameter is ignored.
   // Konva warning: Unexpected value 2 for zIndex property. zIndex is just index of a node in children of its parent. Expected value is from 0 to 1.
   // ```
-  const zIndex = props.project.zorder.indexOf(props.sprite.id)
+  const zIndex = props.project.zorder.indexOf(props.localConfig.id)
   if (zIndex >= 0) {
     nodeRef.value!.getNode().zIndex(zIndex)
   }
 })
 
-function updateLocalConfig(
-  {
-    oldX,
-    x,
-    oldY,
-    y,
-    oldSize,
-    size,
-    oldHeading,
-    heading
-  }: {
-    oldX: number
-    x: number
-    oldY: number
-    y: number
-    oldSize: number
-    size: number
-    oldHeading: number
-    heading: number
-  },
-  op: TransformOp
-) {
-  const spriteLocalConfig = props.localConfig
-  if (spriteLocalConfig == null) return
-  if (size !== oldSize) {
-    spriteLocalConfig.setSize(size, op === 'scale')
+function updateLocalConfigByShape(node: Shape | Stage, op: TransformOp | null) {
+  if (!props.selected) return
+  const localConfig = props.localConfig
+  if (op === 'scale') {
+    localConfig.setSize(toSize(node))
   }
-  if (heading !== oldHeading) {
-    spriteLocalConfig.setHeading(heading, op === 'rotate')
+  if (op === 'rotate' && localConfig.rotationStyle === RotationStyle.Normal) {
+    localConfig.setHeading(toHeading(node))
   }
-  if (x !== oldX || y !== oldY) {
-    spriteLocalConfig.setX(x, op === 'move')
-    spriteLocalConfig.setY(y, op === 'move')
-  }
-}
-function updateLocalConfigByShape(node: Shape | Stage, op: TransformOp) {
-  if (!props.selected || props.localConfig == null) return
   const { x, y } = toPosition(node)
-  updateLocalConfig(
-    {
-      oldX: props.sprite.x,
-      x,
-      oldY: props.sprite.y,
-      y,
-      oldSize: props.sprite.size,
-      size: toSize(node),
-      oldHeading: props.sprite.heading,
-      heading: toHeading(node)
-    },
-    op
-  )
+  if (op === 'move') {
+    localConfig.setX(x)
+    localConfig.setY(y)
+  }
+  emit('updateTransformOp', op)
 }
 
-function syncLocalConfig(
-  { size, x, y, heading }: { size: number; x: number; y: number; heading: number },
-  op: TransformOp
-) {
-  const spriteLocalConfig = props.localConfig
-  if (spriteLocalConfig == null) return
+function syncLocalConfigByShape(node: Shape | Stage) {
+  const localConfig = props.localConfig
+  localConfig.setSize(toSize(node))
+  localConfig.setHeading(toHeading(node))
+  const { x, y } = toPosition(node)
+  localConfig.setX(x)
+  localConfig.setY(y)
 
-  if (size != null && props.sprite.size !== size) {
-    spriteLocalConfig.setSize(size, op === 'scale')
-  }
-  if (props.sprite.heading !== heading) {
-    spriteLocalConfig.setHeading(heading, op === 'rotate')
-  }
-  if (props.sprite.x !== x || props.sprite.y !== y) {
-    spriteLocalConfig.setX(x, op === 'move')
-    spriteLocalConfig.setY(y, op === 'move')
-  }
-
-  spriteLocalConfig.syncAll()
-}
-function syncLocalConfigByShape(node: Shape | Stage, op: TransformOp) {
-  syncLocalConfig(
-    {
-      size: toSize(node),
-      x: toPosition(node).x,
-      y: toPosition(node).y,
-      heading: toHeading(node)
-    },
-    op
-  )
+  localConfig.sync()
 }
 
 function handleDragMove(e: KonvaEventObject<unknown>) {
@@ -156,19 +114,31 @@ function handleDragMove(e: KonvaEventObject<unknown>) {
 
 function handleDragEnd(e: KonvaEventObject<TransformOp>) {
   cancelBubble(e)
-  syncLocalConfigByShape(e.target, 'move')
+  syncLocalConfigByShape(e.target)
   emit('dragEnd')
 }
 
+// TODO: Temporarily cache localConfig data at the start of transformation to prevent abnormal Konva.Node behavior caused by continuous data updates during the process.
+function handleTransformStart() {
+  snapshotRef.value = {
+    x: props.localConfig.x,
+    y: props.localConfig.y,
+    heading: props.localConfig.heading,
+    size: props.localConfig.size,
+    visible: props.localConfig.visible,
+    rotationStyle: props.localConfig.rotationStyle
+  }
+}
 function handleNodeUpdating(e: KonvaEventObject<NodeUpdateEvent>) {
   updateLocalConfigByShape(e.target, e.evt.op)
 }
 function handleNodeUpdated(e: KonvaEventObject<NodeUpdateEvent>) {
-  syncLocalConfigByShape(e.target, e.evt.op)
+  syncLocalConfigByShape(e.target)
+  snapshotRef.value = null
 }
 
 const config = computed<ImageConfig>(() => {
-  const { visible, x, y, rotationStyle, heading, size } = props.sprite
+  const { visible, x, y, rotationStyle, heading, size } = configGetter.value
   const scale = size / bitmapResolution.value
   const costumePivot = costume.value?.pivot ?? { x: 0, y: 0 }
   const config = {
@@ -203,9 +173,9 @@ function toPosition(node: Shape | Stage) {
   return { x, y }
 }
 function toHeading(node: Shape | Stage) {
-  const { sprite } = props
-  let heading = sprite.heading
-  if (sprite.rotationStyle === RotationStyle.Normal || sprite.rotationStyle === RotationStyle.LeftRight) {
+  const { localConfig } = props
+  let heading = localConfig.heading
+  if (localConfig.rotationStyle === RotationStyle.Normal || localConfig.rotationStyle === RotationStyle.LeftRight) {
     heading = normalizeDegree(round(node.rotation() + 90))
   }
   return heading
@@ -226,6 +196,7 @@ function handleClick() {
     :config="config"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
+    @transformstart="handleTransformStart"
     @nodeupdating="handleNodeUpdating"
     @nodeupdated="handleNodeUpdated"
     @click="handleClick"
