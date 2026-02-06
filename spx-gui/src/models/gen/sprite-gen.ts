@@ -185,9 +185,9 @@ export class SpriteGen extends Disposable {
               // Auto bind states based on recommended animation bindings
               const aGen = this.animations.find((gen) => gen.result?.id === a.id)
               if (aGen == null) return
-              const statesToBind = Object.entries(this.animationGenIdBindings)
+              const statesToBind = (Object.entries(this.animationGenIdBindings) as Array<[State, string]>)
                 .filter(([, genId]) => genId === aGen.id)
-                .map(([state]) => state as State)
+                .map(([state]) => state)
               if (statesToBind.length > 0) {
                 sprite.setAnimationBoundStates(a.id, statesToBind, false)
               }
