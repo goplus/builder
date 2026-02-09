@@ -5,7 +5,6 @@ import transformerFlipArrowDisabledPng from './transformer-flip-arrow-disabled.p
 import rotatorCirclePng from './rotate-circle.png'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
-import { normalizeDegree, round } from '@/utils/utils'
 
 // There seems to be an issue rendering svg Image.
 // We are using 2x png here.
@@ -24,38 +23,6 @@ export type TransformOp = 'rotate' | 'scale' | 'move' | 'flip'
 export type CustomTransformerConfig = {
   rotationStyle?: 'none' | 'normal' | 'left-right'
 } & Pick<TransformerConfig, 'centeredScaling'>
-
-class RotatorTag extends Konva.Group {
-  text: Konva.Text
-  constructor() {
-    super()
-
-    // Offset the elements to make the rotation center visually centered.
-    const text = new Konva.Text({
-      text: '',
-      width: 42,
-      fontSize: 12,
-      fill: '#fff',
-      x: -21,
-      y: -5,
-      align: 'center'
-    })
-    const background = new Konva.Rect({
-      x: -21,
-      y: -8,
-      width: 42,
-      height: 16,
-      cornerRadius: 8,
-      fill: 'rgba(87, 96, 106, 1)'
-    })
-    this.text = text
-    this.add(background, text)
-  }
-
-  updateRotationNumber(rotationNumber: number) {
-    this.text.text(`${normalizeDegree(round(rotationNumber + 90))}°`)
-  }
-}
 
 class FlipButton extends Konva.Group {
   orientation: 'left' | 'right'
@@ -137,7 +104,6 @@ export class CustomTransformer extends Konva.Transformer {
     left: FlipButton
     right: FlipButton
   }
-  rotatorTag: RotatorTag
 
   rotationStyle(attr?: CustomTransformerConfig['rotationStyle']): CustomTransformerConfig['rotationStyle'] {
     if (!attr) return this.getAttr('rotationStyle')
@@ -213,10 +179,6 @@ export class CustomTransformer extends Konva.Transformer {
       right
     }
 
-    this.rotatorTag = new RotatorTag()
-    this.rotatorTag.visible(false)
-    this.add(this.rotatorTag)
-
     const rotator = this.children.find((n) => n.name().match(/rotater/))
     if (!(rotator instanceof Konva.Rect)) {
       throw new Error('rotator rect not found')
@@ -229,7 +191,6 @@ export class CustomTransformer extends Konva.Transformer {
     }
     let dragging = false
     rotator.on('mousedown touchstart', () => {
-      this.rotatorTag.visible(true)
       dragging = true
       setCursor('grabbing')
     })
@@ -239,7 +200,6 @@ export class CustomTransformer extends Konva.Transformer {
       setCursor('grabbing')
     })
     this.on('transformend', () => {
-      this.rotatorTag.visible(false)
       setCursor('')
       dragging = false
     })
@@ -271,10 +231,5 @@ export class CustomTransformer extends Konva.Transformer {
     } else {
       this.rotateEnabled(false)
     }
-
-    this.rotatorTag.rotation(-this.rotation())
-    this.rotatorTag.updateRotationNumber(this.rotation())
-    this.rotatorTag.x(this.width() / 2)
-    this.rotatorTag.y(-35)
   }
 }

@@ -363,10 +363,9 @@ watch(
   { immediate: true }
 )
 
-const handleUpdateConfigType = throttle(
-  (configType: ConfigType) => quickConfigRef.value?.updateConfigType(configType),
-  150
-)
+function handleUpdateConfigType(configType: ConfigType) {
+  quickConfigRef.value?.updateConfigType(configType)
+}
 function handleSpriteUpdateTransformOp(op: TransformOp | null) {
   if (op == null) return
   if (op === 'move') {
@@ -395,7 +394,7 @@ function handleSpriteDragEnd() {
 }
 
 const quickConfigRef = ref<InstanceType<typeof QuickConfigWrapper> | null>(null)
-const quickConfigElRef = computed(() => quickConfigRef.value?.quickConfigDom())
+const quickConfigElRef = computed(() => quickConfigRef.value?.getElement())
 
 function getSpriteNodeAnchor(node: Konva.Node) {
   const nodeWidth = node.width()
@@ -540,7 +539,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />
       </v-layer>
     </v-stage>
-    <QuickConfigWrapper ref="quickConfigRef" class="quick-config">
+    <QuickConfigWrapper v-if="!loading" ref="quickConfigRef" class="quick-config">
       <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
     </QuickConfigWrapper>
 

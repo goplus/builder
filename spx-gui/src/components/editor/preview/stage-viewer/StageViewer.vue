@@ -431,10 +431,9 @@ watch(
 )
 
 const quickConfigRef = ref<InstanceType<typeof QuickConfigWrapper> | null>(null)
-const handleUpdateConfigType = throttle(
-  (configType: ConfigType) => quickConfigRef.value?.updateConfigType(configType),
-  150
-)
+function handleUpdateConfigType(configType: ConfigType) {
+  quickConfigRef.value?.updateConfigType(configType)
+}
 function handleSpriteUpdateTransformOp(op: TransformOp | null) {
   if (op == null) return
   if (op === 'move') {

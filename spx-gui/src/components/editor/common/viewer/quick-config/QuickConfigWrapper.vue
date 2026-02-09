@@ -16,7 +16,7 @@ const quickConfigRef = ref<HTMLElement | undefined>()
 let timer: NodeJS.Timeout
 let activeInteractions = 0
 
-function flush() {
+function resetTimer() {
   clearTimeout(timer)
   if (configTypeRef.value === 'default') {
     return
@@ -26,9 +26,8 @@ function flush() {
 
 function updateConfigType(configType: ConfigType) {
   configTypeRef.value = configType
-  clearTimeout(timer)
   if (activeInteractions === 0) {
-    flush()
+    resetTimer()
   }
 }
 
@@ -39,12 +38,15 @@ function handleInteractionStart() {
 function handleInteractionEnd() {
   activeInteractions = Math.max(0, activeInteractions - 1)
   if (activeInteractions === 0) {
-    flush()
+    resetTimer()
   }
 }
 
 function handleMouseLeave(e: MouseEvent) {
   const relatedTarget = e.relatedTarget
+  // TODO: Temporary. We need a more reliable solution to keep ConfigPanel active.
+  // Current issue: If the mouse leaves ConfigPanel and enters something other than a Popup,
+  // the logic below fails, causing ConfigPanel back to `default`.
   if (relatedTarget instanceof HTMLElement && isInPopup(relatedTarget)) {
     relatedTarget.addEventListener('mouseleave', handleInteractionEnd, { once: true })
     return
@@ -53,7 +55,7 @@ function handleMouseLeave(e: MouseEvent) {
 }
 
 defineExpose({
-  quickConfigDom: () => quickConfigRef.value,
+  getElement: () => quickConfigRef.value,
   updateConfigType
 })
 
