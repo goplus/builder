@@ -61,7 +61,7 @@ export class CostumeGen extends Disposable {
     return reactive(this) as this
   }
 
-  /** Get task IDs for completed tasks only. Only completed task IDs will be returned. */
+  /** Get IDs for (completed) tasks. */
   getTaskIds() {
     if (this.generateTask.data?.status !== TaskStatus.Completed) return []
     return [this.generateTask.data.id]
