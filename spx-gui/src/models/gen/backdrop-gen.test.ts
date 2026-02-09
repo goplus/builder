@@ -227,7 +227,10 @@ describe('BackdropGen', () => {
     // Verify that taskIds contains the task ID (task should be completed)
     expect(adoptAssetCalls).toHaveLength(1)
     const adoptParams = adoptAssetCalls[0] as { taskIds: string[] }
-    const task = aigcMock.getTasksByType(TaskType.GenerateBackdrop).pop()
+    const tasks = Array.from(aigcMock.tasks.values())
+      .filter((record) => record.task.type === TaskType.GenerateBackdrop)
+      .map((record) => record.task)
+    const task = tasks[tasks.length - 1]
     expect(adoptParams.taskIds).toHaveLength(1)
     expect(adoptParams.taskIds[0]).toBe(task?.id)
   })
@@ -242,9 +245,12 @@ describe('BackdropGen', () => {
     await gen.finish()
 
     // Manually modify the task status to simulate a failed task
-    const task = aigcMock.getTasksByType(TaskType.GenerateBackdrop).pop()
-    if (task) {
-      aigcMock.setTaskStatus(task.id, TaskStatus.Failed)
+    const taskRecords = Array.from(aigcMock.tasks.values())
+      .filter((record) => record.task.type === TaskType.GenerateBackdrop)
+    const taskRecord = taskRecords[taskRecords.length - 1]
+    if (taskRecord) {
+      taskRecord.task.status = TaskStatus.Failed
+      taskRecord.task.updatedAt = new Date().toISOString()
     }
 
     // Mock adoptAsset to inspect the taskIds parameter

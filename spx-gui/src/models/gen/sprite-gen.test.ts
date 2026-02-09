@@ -380,21 +380,26 @@ describe('SpriteGen', () => {
 
     // Get tasks that we'll mark as failed
     // The order is: genImagesTask, then costume tasks, then animation tasks
-    const allCostumeTasks = aigcMock.getTasksByType(TaskType.GenerateCostume)
-    const allAnimationVideoTasks = aigcMock.getTasksByType(TaskType.GenerateAnimationVideo)
+    const allCostumeTasks = Array.from(aigcMock.tasks.values())
+      .filter((record) => record.task.type === TaskType.GenerateCostume)
+    const allAnimationVideoTasks = Array.from(aigcMock.tasks.values())
+      .filter((record) => record.task.type === TaskType.GenerateAnimationVideo)
 
     // Manually modify task statuses to simulate failures
     // Mark the first sprite genImagesTask as failed (it's the first GenerateCostume task)
     if (allCostumeTasks[0]) {
-      aigcMock.setTaskStatus(allCostumeTasks[0].id, TaskStatus.Failed)
+      allCostumeTasks[0].task.status = TaskStatus.Failed
+      allCostumeTasks[0].task.updatedAt = new Date().toISOString()
     }
     // Mark the first costume's generateTask as cancelled (it's the second GenerateCostume task)
     if (allCostumeTasks[1]) {
-      aigcMock.setTaskStatus(allCostumeTasks[1].id, TaskStatus.Cancelled)
+      allCostumeTasks[1].task.status = TaskStatus.Cancelled
+      allCostumeTasks[1].task.updatedAt = new Date().toISOString()
     }
     // Mark the first animation's generateVideoTask as failed
     if (allAnimationVideoTasks[0]) {
-      aigcMock.setTaskStatus(allAnimationVideoTasks[0].id, TaskStatus.Failed)
+      allAnimationVideoTasks[0].task.status = TaskStatus.Failed
+      allAnimationVideoTasks[0].task.updatedAt = new Date().toISOString()
     }
 
     // Mock adoptAsset to inspect the taskIds parameter
@@ -408,8 +413,8 @@ describe('SpriteGen', () => {
     // Verify that failed/cancelled tasks are excluded
     expect(adoptAssetCalls).toHaveLength(1)
     const adoptParams = adoptAssetCalls[0] as { taskIds: string[] }
-    expect(adoptParams.taskIds).not.toContain(allCostumeTasks[0]?.id)
-    expect(adoptParams.taskIds).not.toContain(allCostumeTasks[1]?.id)
-    expect(adoptParams.taskIds).not.toContain(allAnimationVideoTasks[0]?.id)
+    expect(adoptParams.taskIds).not.toContain(allCostumeTasks[0]?.task.id)
+    expect(adoptParams.taskIds).not.toContain(allCostumeTasks[1]?.task.id)
+    expect(adoptParams.taskIds).not.toContain(allAnimationVideoTasks[0]?.task.id)
   })
 })
