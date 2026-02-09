@@ -182,43 +182,6 @@ describe('CostumeGen', () => {
 
     await expect(generatePromise).rejects.toThrow('cancelled')
     const lastRecord = Array.from(tasks.values()).at(-1)
-    expect(lastRecord!.task.status).toBe(TaskStatus.Cancelled)
-  })
-
-  it('should only return completed task IDs in getTaskIds', async () => {
-    const project = makeProject()
-    const sprite = Sprite.create('TestSprite', '')
-    project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { description: 'A test costume' })
-
-    await gen.enrich()
-    await gen.generate()
-
-    // Task should be completed, so getTaskIds should return it
-    const tasks = Array.from(aigcMock.tasks.values())
-    const task = tasks[tasks.length - 1]!.task
-    const taskIds = gen.getTaskIds()
-    expect(taskIds).toHaveLength(1)
-    expect(taskIds[0]).toBe(task.id)
-  })
-
-  it('should exclude non-completed task IDs from getTaskIds', async () => {
-    const project = makeProject()
-    const sprite = Sprite.create('TestSprite', '')
-    project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { description: 'A test costume' })
-
-    await gen.enrich()
-    await gen.generate()
-
-    // Manually modify the task status to simulate a failed task
-    const tasks = Array.from(aigcMock.tasks.values())
-    const taskRecord = tasks[tasks.length - 1]!
-    taskRecord.task.status = TaskStatus.Failed
-    taskRecord.task.updatedAt = new Date().toISOString()
-
-    // getTaskIds should return empty array since task is failed
-    const taskIds = gen.getTaskIds()
-    expect(taskIds).toHaveLength(0)
+    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
   })
 })

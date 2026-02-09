@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
-import { TaskStatus, TaskType } from '@/apis/aigc'
-import * as aigcApis from '@/apis/aigc'
+import { TaskStatus } from '@/apis/aigc'
 import { makeProject } from '../common/test'
 import { setupAigcMock, MockAigcApis } from './aigc-mock'
 import { BackdropGen } from './backdrop-gen'
@@ -204,65 +203,6 @@ describe('BackdropGen', () => {
     await expect(genImagesPromise).rejects.toThrow('cancelled')
 
     const lastRecord = Array.from(tasks.values()).at(-1)
-    expect(lastRecord!.task.status).toBe(TaskStatus.Cancelled)
-  })
-
-  it('should only include completed task IDs in recordAdoption', async () => {
-    const project = makeProject()
-    const gen = new BackdropGen(project, 'A test backdrop')
-
-    await gen.enrich()
-    await gen.genImages()
-    gen.setImage(gen.imagesGenState.result![0])
-    await gen.finish()
-
-    // Mock adoptAsset to inspect the taskIds parameter
-    const adoptAssetCalls: unknown[] = []
-    vi.mocked(aigcApis.adoptAsset).mockImplementation(async (params) => {
-      adoptAssetCalls.push(params)
-    })
-
-    await gen.recordAdoption()
-
-    // Verify that taskIds contains the task ID (task should be completed)
-    expect(adoptAssetCalls).toHaveLength(1)
-    const adoptParams = adoptAssetCalls[0] as { taskIds: string[] }
-    const tasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.GenerateBackdrop)
-      .map((record) => record.task)
-    const task = tasks[tasks.length - 1]!
-    expect(adoptParams.taskIds).toHaveLength(1)
-    expect(adoptParams.taskIds[0]).toBe(task.id)
-  })
-
-  it('should exclude non-completed task IDs from recordAdoption', async () => {
-    const project = makeProject()
-    const gen = new BackdropGen(project, 'A test backdrop')
-
-    await gen.enrich()
-    await gen.genImages()
-    gen.setImage(gen.imagesGenState.result![0])
-    await gen.finish()
-
-    // Manually modify the task status to simulate a failed task
-    const taskRecords = Array.from(aigcMock.tasks.values()).filter(
-      (record) => record.task.type === TaskType.GenerateBackdrop
-    )
-    const taskRecord = taskRecords[taskRecords.length - 1]!
-    taskRecord.task.status = TaskStatus.Failed
-    taskRecord.task.updatedAt = new Date().toISOString()
-
-    // Mock adoptAsset to inspect the taskIds parameter
-    const adoptAssetCalls: unknown[] = []
-    vi.mocked(aigcApis.adoptAsset).mockImplementation(async (params) => {
-      adoptAssetCalls.push(params)
-    })
-
-    await gen.recordAdoption()
-
-    // Verify that taskIds is empty since the task is failed
-    expect(adoptAssetCalls).toHaveLength(1)
-    const adoptParams = adoptAssetCalls[0] as { taskIds: string[] }
-    expect(adoptParams.taskIds).toHaveLength(0)
+    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
   })
 })

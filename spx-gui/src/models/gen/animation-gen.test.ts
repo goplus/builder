@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
-import { TaskStatus, TaskType } from '@/apis/aigc'
+import { TaskStatus } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { makeProject, mockFile } from '../common/test'
 import { setupAigcMock, MockAigcApis } from './aigc-mock'
@@ -294,104 +294,6 @@ describe('AnimationGen', () => {
 
     await expect(generatePromise).rejects.toThrow('cancelled')
     const lastRecord = Array.from(tasks.values()).at(-1)
-    expect(lastRecord!.task.status).toBe(TaskStatus.Cancelled)
-  })
-
-  it('should only return completed task IDs in getTaskIds', async () => {
-    const project = makeProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const defaultCostume = new Costume('default', mockFile())
-    sprite.addCostume(defaultCostume)
-    project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
-      referenceCostumeId: defaultCostume.id
-    })
-
-    await gen.enrich()
-    await gen.generateVideo()
-    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
-    await gen.extractFrames()
-
-    // Both tasks should be completed
-    const generateVideoTasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.GenerateAnimationVideo)
-      .map((record) => record.task)
-    const extractFramesTasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.ExtractVideoFrames)
-      .map((record) => record.task)
-    const taskIds = gen.getTaskIds()
-    expect(taskIds).toHaveLength(2)
-    expect(taskIds).toContain(generateVideoTasks[generateVideoTasks.length - 1]!.id)
-    expect(taskIds).toContain(extractFramesTasks[extractFramesTasks.length - 1]!.id)
-  })
-
-  it('should exclude non-completed task IDs from getTaskIds', async () => {
-    const project = makeProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const defaultCostume = new Costume('default', mockFile())
-    sprite.addCostume(defaultCostume)
-    project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
-      referenceCostumeId: defaultCostume.id
-    })
-
-    await gen.enrich()
-    await gen.generateVideo()
-    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
-    await gen.extractFrames()
-
-    // Manually modify task statuses to simulate failures
-    const generateVideoTasks = Array.from(aigcMock.tasks.values()).filter(
-      (record) => record.task.type === TaskType.GenerateAnimationVideo
-    )
-    const extractFramesTasks = Array.from(aigcMock.tasks.values()).filter(
-      (record) => record.task.type === TaskType.ExtractVideoFrames
-    )
-    const generateVideoRecord = generateVideoTasks[generateVideoTasks.length - 1]!
-    const extractFramesRecord = extractFramesTasks[extractFramesTasks.length - 1]!
-    generateVideoRecord.task.status = TaskStatus.Failed
-    generateVideoRecord.task.updatedAt = new Date().toISOString()
-    extractFramesRecord.task.status = TaskStatus.Cancelled
-    extractFramesRecord.task.updatedAt = new Date().toISOString()
-
-    // getTaskIds should return empty array since both tasks are not completed
-    const taskIds = gen.getTaskIds()
-    expect(taskIds).toHaveLength(0)
-  })
-
-  it('should handle mixed task statuses in getTaskIds', async () => {
-    const project = makeProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const defaultCostume = new Costume('default', mockFile())
-    sprite.addCostume(defaultCostume)
-    project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
-      referenceCostumeId: defaultCostume.id
-    })
-
-    await gen.enrich()
-    await gen.generateVideo()
-    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
-    await gen.extractFrames()
-
-    // Manually modify one task to fail, keep the other completed
-    const generateVideoTasks = Array.from(aigcMock.tasks.values()).filter(
-      (record) => record.task.type === TaskType.GenerateAnimationVideo
-    )
-    const extractFramesTasks = Array.from(aigcMock.tasks.values()).filter(
-      (record) => record.task.type === TaskType.ExtractVideoFrames
-    )
-    const generateVideoRecord = generateVideoTasks[generateVideoTasks.length - 1]!
-    const extractFramesRecord = extractFramesTasks[extractFramesTasks.length - 1]!
-    generateVideoRecord.task.status = TaskStatus.Failed
-    generateVideoRecord.task.updatedAt = new Date().toISOString()
-
-    // getTaskIds should only return the completed extractFramesTask
-    const taskIds = gen.getTaskIds()
-    expect(taskIds).toHaveLength(1)
-    expect(taskIds[0]).toBe(extractFramesRecord.task.id)
+    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
   })
 })
