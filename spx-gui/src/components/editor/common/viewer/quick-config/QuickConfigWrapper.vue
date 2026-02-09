@@ -2,51 +2,34 @@
 export type ConfigType = 'default' | 'size' | 'rotate' | 'pos'
 
 export const configTypeInjectionKey: InjectionKey<Ref<ConfigType | null>> = Symbol('configType')
-export const updateConfigTypesInjectionKey: InjectionKey<(configTypes: ConfigType[]) => void> =
-  Symbol('updateConfigTypes')
+export const updateConfigTypeInjectionKey: InjectionKey<(configType: ConfigType) => void> = Symbol('updateConfigType')
 </script>
 
 <script lang="ts" setup>
-import { provide, ref, watch, type InjectionKey, type Ref, onBeforeUnmount } from 'vue'
+import { provide, ref, type InjectionKey, type Ref, onBeforeUnmount } from 'vue'
 
 import { isInPopup } from '@/components/ui'
 
-const props = defineProps<{
-  configTypes: Array<ConfigType>
-}>()
-
-const emits = defineEmits<{
-  updateConfigTypes: [ConfigType[]]
-}>()
-
-const configTypeRef = ref<ConfigType | null>(null)
+const configTypeRef = ref<ConfigType>('default')
 
 const quickConfigRef = ref<HTMLElement | undefined>()
 let timer: NodeJS.Timeout
 let activeInteractions = 0
 
-watch(
-  () => props.configTypes,
-  (configTypes) => {
-    const configType = configTypes.at(-1) ?? null
-    clearTimeout(timer)
-    configTypeRef.value = configType
-    if (activeInteractions === 0) {
-      flush()
-    }
-  },
-  {
-    immediate: true
-  }
-)
-
 function flush() {
   clearTimeout(timer)
-  // Keep the last one by default, unless configTypes is explicitly []
-  if (props.configTypes.length <= 1) {
+  if (configTypeRef.value === 'default') {
     return
   }
-  timer = setTimeout(() => emits('updateConfigTypes', props.configTypes.slice(0, -1)), 2000)
+  timer = setTimeout(() => updateConfigType('default'), 2000)
+}
+
+function updateConfigType(configType: ConfigType) {
+  configTypeRef.value = configType
+  clearTimeout(timer)
+  if (activeInteractions === 0) {
+    flush()
+  }
 }
 
 function handleInteractionStart() {
@@ -70,11 +53,12 @@ function handleMouseLeave(e: MouseEvent) {
 }
 
 defineExpose({
-  quickConfigDom: () => quickConfigRef.value
+  quickConfigDom: () => quickConfigRef.value,
+  updateConfigType
 })
 
 provide(configTypeInjectionKey, configTypeRef)
-provide(updateConfigTypesInjectionKey, (configTypes: ConfigType[]) => emits('updateConfigTypes', configTypes))
+provide(updateConfigTypeInjectionKey, updateConfigType)
 
 onBeforeUnmount(() => clearTimeout(timer))
 </script>

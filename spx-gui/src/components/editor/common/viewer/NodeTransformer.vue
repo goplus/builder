@@ -7,7 +7,7 @@ import { computed, nextTick, ref, watchEffect } from 'vue'
 import type { Node } from 'konva/lib/Node'
 import { Sprite } from '@/models/sprite'
 import type { Widget } from '@/models/widget'
-import type { CustomTransformer, CustomTransformerConfig, NodeUpdateEvent } from './custom-transformer'
+import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
 import { getNodeId } from './common'
 import { debounce } from 'lodash'
 import type Konva from 'konva'
@@ -44,16 +44,13 @@ function setupKeyboardMovement(stage: Konva.Stage, selectedNode: Node) {
   stage.container().tabIndex = 1
   stage.container().focus()
   stage.container().style.outline = 'none'
-  const keyboardMovementEnd = debounce(
-    () => selectedNode.fire('nodeupdated', { evt: { op: 'move' } satisfies NodeUpdateEvent }),
-    500
-  )
+  const keyboardMovementEnd = debounce(() => selectedNode.fire('transformend'), 500)
   const handler = (e: KeyboardEvent) => {
     const idx = keyboardMovementCodes.indexOf(e.code)
     if (idx === -1) return
     selectedNode.x(selectedNode.x() + keyboardMovementOffset[idx][0])
     selectedNode.y(selectedNode.y() + keyboardMovementOffset[idx][1])
-    selectedNode.fire('nodeupdating', { evt: { op: 'move' } satisfies NodeUpdateEvent })
+    selectedNode.fire('transform')
     e.preventDefault()
     keyboardMovementEnd()
   }

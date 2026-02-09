@@ -3,8 +3,9 @@
     :config="groupConfig"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
-    @nodeupdating="handleNodeUpdating"
-    @nodeupdated="handleNodeUpdated"
+    @transformstart="handleTransformStart"
+    @transform="handleTransform"
+    @transformend="handleTransformEnd"
     @click="handleClick"
   >
     <v-rect :config="rectConfig" />
@@ -27,8 +28,15 @@ import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import type { WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
-import type { NodeUpdateEvent, TransformOp } from '@/components/editor/common/viewer/custom-transformer'
+import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
 import type { KonvaEventObject } from 'konva/lib/Node'
+
+type ConfigGetter = {
+  get x(): number
+  get y(): number
+  get size(): number
+  get visible(): boolean
+}
 
 const props = defineProps<{
   localConfig: WidgetLocalConfig
@@ -48,6 +56,12 @@ const labelTextRef = ref<KonvaNodeInstance<Text>>()
 const valueTextRef = ref<KonvaNodeInstance<Text>>()
 const labelTextWidth = ref(0)
 const valueTextWidth = ref(0)
+
+const snapshotRef = ref<ConfigGetter | null>(null)
+const configGetter = computed(() => {
+  if (snapshotRef.value != null) return snapshotRef.value
+  return props.localConfig
+})
 
 // text change triggers node-size change, we need to trigger transformer update manually.
 // It's a Transformer bug that it doesn't update correctly when attached node size changed causing by text content change
@@ -85,19 +99,6 @@ onMounted(() => {
   }
 })
 
-function updateLocalConfigByShape(node: Shape | Stage, op: TransformOp | null) {
-  const localConfig = props.localConfig
-  if (op === 'scale') {
-    localConfig.setSize(toSize(node))
-  }
-  const { x, y } = toPosition(node)
-  if (op === 'move') {
-    localConfig.setX(x)
-    localConfig.setY(y)
-  }
-  emits('updateTransformOp', op)
-}
-
 function syncLocalConfigByShape(node: Shape | Stage) {
   const localConfig = props.localConfig
   localConfig.setSize(toSize(node))
@@ -107,18 +108,42 @@ function syncLocalConfigByShape(node: Shape | Stage) {
   props.localConfig.sync()
 }
 
-function handleDragMove(e: KonvaEventObject<NodeUpdateEvent>) {
-  updateLocalConfigByShape(e.target, 'move')
+function handleDragMove(e: KonvaEventObject<unknown>) {
+  const localConfig = props.localConfig
+  const { x, y } = toPosition(e.target)
+  localConfig.setX(x)
+  localConfig.setY(y)
+  emits('updateTransformOp', 'move')
 }
-function handleDragEnd(e: KonvaEventObject<NodeUpdateEvent>) {
+function handleDragEnd(e: KonvaEventObject<unknown>) {
   syncLocalConfigByShape(e.target)
 }
 
-function handleNodeUpdating(e: KonvaEventObject<NodeUpdateEvent>) {
-  updateLocalConfigByShape(e.target, e.evt.op)
+function handleTransformStart() {
+  snapshotRef.value = {
+    x: props.localConfig.x,
+    y: props.localConfig.y,
+    size: props.localConfig.size,
+    visible: props.localConfig.visible
+  }
 }
-function handleNodeUpdated(e: KonvaEventObject<NodeUpdateEvent>) {
+function handleTransform(e: KonvaEventObject<unknown>) {
+  const localConfig = props.localConfig
+  const { size: oldSize, x: oldX, y: oldY } = configGetter.value
+  const size = toSize(e.target)
+  if (oldSize !== size) {
+    localConfig.setSize(size)
+    emits('updateTransformOp', 'scale')
+  }
+  const { x, y } = toPosition(e.target)
+  if (oldX !== x || oldY !== y) {
+    localConfig.setX(x)
+    localConfig.setY(y)
+  }
+}
+function handleTransformEnd(e: KonvaEventObject<unknown>) {
   syncLocalConfigByShape(e.target)
+  snapshotRef.value = null
 }
 
 const paddingX = 6 // px
@@ -130,7 +155,7 @@ const labelValueSepGap = 2 // px, gap between [label, sep, value]
 const height = fontSize * lineHeight + paddingY * 2
 
 const groupConfig = computed<GroupConfig>(() => {
-  const { visible, x, y, size } = props.localConfig
+  const { visible, x, y, size } = configGetter.value
   return {
     nodeId: nodeId.value,
     visible,

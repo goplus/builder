@@ -5,7 +5,7 @@ import ConfigPanel from '../common/ConfigPanel.vue'
 import { RotationStyle } from '@/models/sprite'
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
 import type { SpriteLocalConfig } from '../utils'
-import { updateConfigTypesInjectionKey } from '../QuickConfigWrapper.vue'
+import { updateConfigTypeInjectionKey } from '../QuickConfigWrapper.vue'
 import { debounce } from 'lodash'
 
 const props = defineProps<{
@@ -14,13 +14,13 @@ const props = defineProps<{
 
 const rotateDropdownVisible = ref(false)
 
-const updateConfigTypes = inject(updateConfigTypesInjectionKey)
+const updateConfigType = inject(updateConfigTypeInjectionKey)
 watch(
   () => props.localConfig.rotationStyle,
   () => {
     // If the selected sprite's rotationStyle is LeftRight or None, it needs to be restored to default immediately
     if ([RotationStyle.LeftRight, RotationStyle.None].includes(props.localConfig.rotationStyle)) {
-      updateConfigTypes?.(['default'])
+      updateConfigType?.('default')
     }
   }
 )

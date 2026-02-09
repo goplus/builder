@@ -11,7 +11,7 @@ import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
 import type { SpriteLocalConfig } from './quick-config/utils'
-import type { NodeUpdateEvent, TransformOp } from './custom-transformer'
+import type { TransformOp } from './custom-transformer'
 
 const props = defineProps<{
   localConfig: SpriteLocalConfig
@@ -74,21 +74,26 @@ onMounted(() => {
   }
 })
 
-function updateLocalConfigByShape(node: Shape | Stage, op: TransformOp | null) {
+function updateLocalConfigByShape(node: Shape | Stage) {
   if (!props.selected) return
   const localConfig = props.localConfig
-  if (op === 'scale') {
-    localConfig.setSize(toSize(node))
+  const { x: oldX, y: oldY, heading: oldHeading, size: oldSize } = configGetter.value
+  const size = toSize(node)
+  if (oldSize !== size) {
+    localConfig.setSize(size)
+    emit('updateTransformOp', 'scale')
   }
-  if (op === 'rotate' && localConfig.rotationStyle === RotationStyle.Normal) {
-    localConfig.setHeading(toHeading(node))
+  const heading = toHeading(node)
+  if (oldHeading !== heading && localConfig.rotationStyle === RotationStyle.Normal) {
+    localConfig.setHeading(heading)
+    emit('updateTransformOp', 'rotate')
   }
+  // Sprite's pivot causes x or y to change when size or heading changes, so they need to be updated together
   const { x, y } = toPosition(node)
-  if (op === 'move') {
+  if (oldX !== x || oldY !== y) {
     localConfig.setX(x)
     localConfig.setY(y)
   }
-  emit('updateTransformOp', op)
 }
 
 function syncLocalConfigByShape(node: Shape | Stage) {
@@ -104,7 +109,12 @@ function syncLocalConfigByShape(node: Shape | Stage) {
 
 function handleDragMove(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
-  updateLocalConfigByShape(e.target, 'move')
+  const localConfig = props.localConfig
+  const { x, y } = toPosition(e.target)
+  localConfig.setX(x)
+  localConfig.setY(y)
+  emit('updateTransformOp', 'move')
+
   emit('dragMove', (delta) => {
     // Adjust position if camera scrolled during dragging to keep the sprite visually unmoved
     e.target.x(e.target.x() - delta.x)
@@ -129,10 +139,10 @@ function handleTransformStart() {
     rotationStyle: props.localConfig.rotationStyle
   }
 }
-function handleNodeUpdating(e: KonvaEventObject<NodeUpdateEvent>) {
-  updateLocalConfigByShape(e.target, e.evt.op)
+function handleTransform(e: KonvaEventObject<unknown>) {
+  updateLocalConfigByShape(e.target)
 }
-function handleNodeUpdated(e: KonvaEventObject<NodeUpdateEvent>) {
+function handleTransformEnd(e: KonvaEventObject<unknown>) {
   syncLocalConfigByShape(e.target)
   snapshotRef.value = null
 }
@@ -197,8 +207,8 @@ function handleClick() {
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
     @transformstart="handleTransformStart"
-    @nodeupdating="handleNodeUpdating"
-    @nodeupdated="handleNodeUpdated"
+    @transform="handleTransform"
+    @transformend="handleTransformEnd"
     @click="handleClick"
   />
 </template>

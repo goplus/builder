@@ -363,10 +363,10 @@ watch(
   { immediate: true }
 )
 
-const configTypesRef = ref<ConfigType[]>(['default'])
-const handleUpdateConfigType = throttle((configType: ConfigType | ConfigType[] = []) => {
-  configTypesRef.value = ['default' as ConfigType].concat(configType)
-}, 150)
+const handleUpdateConfigType = throttle(
+  (configType: ConfigType) => quickConfigRef.value?.updateConfigType(configType),
+  150
+)
 function handleSpriteUpdateTransformOp(op: TransformOp | null) {
   if (op == null) return
   if (op === 'move') {
@@ -540,12 +540,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />
       </v-layer>
     </v-stage>
-    <QuickConfigWrapper
-      ref="quickConfigRef"
-      class="quick-config"
-      :config-types="configTypesRef"
-      @update-config-types="configTypesRef = $event"
-    >
+    <QuickConfigWrapper ref="quickConfigRef" class="quick-config">
       <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
     </QuickConfigWrapper>
 

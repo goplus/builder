@@ -61,11 +61,7 @@
         />
       </v-layer>
     </v-stage>
-    <QuickConfigWrapper
-      class="quick-config"
-      :config-types="configTypesRef"
-      @update-config-types="configTypesRef = $event"
-    >
+    <QuickConfigWrapper ref="quickConfigRef" class="quick-config">
       <SpriteQuickConfig
         v-if="localConfigRef instanceof SpriteLocalConfig"
         :local-config="localConfigRef"
@@ -434,10 +430,11 @@ watch(
   { immediate: true }
 )
 
-const configTypesRef = ref<ConfigType[]>(['default'])
-const handleUpdateConfigType = throttle((configType: ConfigType | ConfigType[] = []) => {
-  configTypesRef.value = ['default' as ConfigType].concat(configType)
-}, 150)
+const quickConfigRef = ref<InstanceType<typeof QuickConfigWrapper> | null>(null)
+const handleUpdateConfigType = throttle(
+  (configType: ConfigType) => quickConfigRef.value?.updateConfigType(configType),
+  150
+)
 function handleSpriteUpdateTransformOp(op: TransformOp | null) {
   if (op == null) return
   if (op === 'move') {
