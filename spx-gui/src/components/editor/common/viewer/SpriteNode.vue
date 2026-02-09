@@ -1,7 +1,5 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, watchEffect } from 'vue'
-import type { Stage } from 'konva/lib/Stage'
-import type { Shape } from 'konva/lib/Shape'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { Project } from '@/models/project'
@@ -12,6 +10,7 @@ import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
 import type { SpriteLocalConfig } from './quick-config/utils'
 import type { TransformOp } from './custom-transformer'
+import type Konva from 'konva'
 
 const props = defineProps<{
   localConfig: SpriteLocalConfig
@@ -74,7 +73,7 @@ onMounted(() => {
   }
 })
 
-function updateLocalConfigByShape(node: Shape | Stage) {
+function updateLocalConfigByShape(node: Konva.Node) {
   if (!props.selected) return
   const localConfig = props.localConfig
   const { x: oldX, y: oldY, heading: oldHeading, size: oldSize } = configGetter.value
@@ -96,7 +95,7 @@ function updateLocalConfigByShape(node: Shape | Stage) {
   }
 }
 
-function syncLocalConfigByShape(node: Shape | Stage) {
+function syncLocalConfigByShape(node: Konva.Node) {
   const localConfig = props.localConfig
   localConfig.setSize(toSize(node))
   localConfig.setHeading(toHeading(node))
@@ -128,7 +127,7 @@ function handleDragEnd(e: KonvaEventObject<TransformOp>) {
   emit('dragEnd')
 }
 
-// TODO: Temporarily cache localConfig data at the start of transformation to prevent abnormal Konva.Node behavior caused by continuous data updates during the process.
+// Temporarily cache localConfig data at the start of transformation to prevent abnormal Konva.Node behavior caused by continuous data updates during the process.
 function handleTransformStart() {
   snapshotRef.value = {
     x: props.localConfig.x,
@@ -176,13 +175,13 @@ const config = computed<ImageConfig>(() => {
   return config
 })
 
-function toPosition(node: Shape | Stage) {
+function toPosition(node: Konva.Node) {
   const { mapSize } = props
   const x = round(node.x() - mapSize.width / 2)
   const y = round(mapSize.height / 2 - node.y())
   return { x, y }
 }
-function toHeading(node: Shape | Stage) {
+function toHeading(node: Konva.Node) {
   const { localConfig } = props
   let heading = localConfig.heading
   if (localConfig.rotationStyle === RotationStyle.Normal || localConfig.rotationStyle === RotationStyle.LeftRight) {
@@ -190,7 +189,7 @@ function toHeading(node: Shape | Stage) {
   }
   return heading
 }
-function toSize(node: Shape | Stage) {
+function toSize(node: Konva.Node) {
   const size = round(Math.abs(node.scaleX()) * bitmapResolution.value, 2)
   return size
 }

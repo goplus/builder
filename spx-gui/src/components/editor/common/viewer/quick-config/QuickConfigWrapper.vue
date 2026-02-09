@@ -1,5 +1,5 @@
 <script lang="ts">
-export type ConfigType = 'default' | 'size' | 'rotate' | 'pos'
+export type ConfigType = 'default' | 'size' | 'heading' | 'pos'
 
 export const configTypeInjectionKey: InjectionKey<Ref<ConfigType | null>> = Symbol('configType')
 export const updateConfigTypeInjectionKey: InjectionKey<(configType: ConfigType) => void> = Symbol('updateConfigType')
@@ -46,8 +46,8 @@ function handleInteractionEnd() {
 function handleMouseLeave(e: MouseEvent) {
   const relatedTarget = e.relatedTarget
   if (relatedTarget instanceof HTMLElement && isInPopup(relatedTarget)) {
-    handleInteractionStart()
     relatedTarget.addEventListener('mouseleave', handleInteractionEnd, { once: true })
+    return
   }
   handleInteractionEnd()
 }

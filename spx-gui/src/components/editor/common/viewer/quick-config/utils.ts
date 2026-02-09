@@ -1,5 +1,4 @@
 import { ref, type Ref } from 'vue'
-import { debounce } from 'lodash'
 import { RotationStyle, type Sprite } from '@/models/sprite'
 import type { Action, Project } from '@/models/project'
 import type { Widget } from '@/models/widget'
@@ -17,7 +16,7 @@ interface ILocalConfigProvider {
   setSize(size: number): void
 }
 
-interface ILocalConfigChanges {
+interface LocalConfigChanges {
   x?: number
   y?: number
   size?: number
@@ -31,7 +30,7 @@ export class LocalConfig<T = unknown> {
     private action: Action
   ) {}
 
-  protected changes = ref({}) as Ref<ILocalConfigChanges & Partial<T>>
+  protected changes = ref({}) as Ref<LocalConfigChanges & Partial<T>>
 
   get id() {
     return this.provider.id
@@ -62,15 +61,12 @@ export class LocalConfig<T = unknown> {
     return this.provider.visible
   }
 
-  protected doAction(updater: () => void, withDebounce = true) {
-    const warpped = () => this.project.history.doAction(this.action, updater)
-    return withDebounce ? debounce(warpped, 300) : warpped
+  sync() {
+    this.project.history.doAction(this.action, () => {
+      Object.keys(this.changes.value).forEach((key) => this.applyChanges(key))
+      this.changes.value = {}
+    })
   }
-
-  sync = this.doAction(() => {
-    Object.keys(this.changes.value).forEach((key) => this.applyChanges(key))
-    this.changes.value = {}
-  })
 
   protected applyChanges(key: string) {
     switch (key) {
@@ -92,7 +88,7 @@ export class SpriteLocalConfig extends LocalConfig<{
   rotationStyle?: RotationStyle
 }> {
   constructor(
-    public sprite: Sprite,
+    private sprite: Sprite,
     project: Project
   ) {
     super(sprite, project, { name: { en: `Configure sprite ${sprite.name}`, zh: `修改精灵 ${sprite.name} 配置` } })

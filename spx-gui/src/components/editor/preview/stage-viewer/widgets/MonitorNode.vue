@@ -19,9 +19,8 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { TextConfig, Text } from 'konva/lib/shapes/Text'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
-import type { Stage } from 'konva/lib/Stage'
 import type { GroupConfig } from 'konva/lib/Group'
-import type { Shape, ShapeConfig } from 'konva/lib/Shape'
+import type { ShapeConfig } from 'konva/lib/Shape'
 import type { Size } from '@/models/common'
 import { round } from '@/utils/utils'
 import { useUIVariables } from '@/components/ui'
@@ -30,6 +29,7 @@ import { getNodeId } from '@/components/editor/common/viewer/common'
 import type { WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
 import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
 import type { KonvaEventObject } from 'konva/lib/Node'
+import type Konva from 'konva'
 
 type ConfigGetter = {
   get x(): number
@@ -99,7 +99,7 @@ onMounted(() => {
   }
 })
 
-function syncLocalConfigByShape(node: Shape | Stage) {
+function syncLocalConfigByShape(node: Konva.Node) {
   const localConfig = props.localConfig
   localConfig.setSize(toSize(node))
   const { x, y } = toPosition(node)
@@ -239,13 +239,13 @@ const valueTextConfig = computed<TextConfig>(() => {
 
 watch(valueTextConfig, () => nextTick().then(updateValueTextWidth))
 
-function toPosition(node: Shape | Stage) {
+function toPosition(node: Konva.Node) {
   const x = round(node.x() - props.viewportSize.width / 2)
   const y = round(props.viewportSize.height / 2 - node.y())
   return { x, y }
 }
 
-function toSize(node: Shape | Stage) {
+function toSize(node: Konva.Node) {
   const size = round(node.scaleX(), 2)
   return size
 }
