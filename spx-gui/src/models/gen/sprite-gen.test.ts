@@ -258,7 +258,7 @@ describe('SpriteGen', () => {
 
     await expect(genImagesPromise).rejects.toThrow('cancelled')
     const lastRecord = Array.from(tasks.values()).at(-1)
-    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
+    expect(lastRecord!.task.status).toBe(TaskStatus.Cancelled)
   })
 
   it('should cancel running costume and animation generations', async () => {

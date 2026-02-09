@@ -182,7 +182,7 @@ describe('CostumeGen', () => {
 
     await expect(generatePromise).rejects.toThrow('cancelled')
     const lastRecord = Array.from(tasks.values()).at(-1)
-    expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
+    expect(lastRecord!.task.status).toBe(TaskStatus.Cancelled)
   })
 
   it('should only return completed task IDs in getTaskIds', async () => {
