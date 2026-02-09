@@ -76,6 +76,7 @@ export class AnimationGen extends Disposable {
     return reactive(this) as this
   }
 
+  /** Get task IDs for completed tasks only. Only completed task IDs will be returned. */
   getTaskIds() {
     return [this.generateVideoTask, this.extractFramesTask]
       .filter((t) => t.data?.status === TaskStatus.Completed)
