@@ -380,10 +380,12 @@ describe('SpriteGen', () => {
 
     // Get tasks that we'll mark as failed
     // The order is: genImagesTask, then costume tasks, then animation tasks
-    const allCostumeTasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.GenerateCostume)
-    const allAnimationVideoTasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.GenerateAnimationVideo)
+    const allCostumeTasks = Array.from(aigcMock.tasks.values()).filter(
+      (record) => record.task.type === TaskType.GenerateCostume
+    )
+    const allAnimationVideoTasks = Array.from(aigcMock.tasks.values()).filter(
+      (record) => record.task.type === TaskType.GenerateAnimationVideo
+    )
 
     // Manually modify task statuses to simulate failures
     // Mark the first sprite genImagesTask as failed (it's the first GenerateCostume task)

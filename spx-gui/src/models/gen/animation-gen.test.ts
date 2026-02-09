@@ -343,10 +343,12 @@ describe('AnimationGen', () => {
     await gen.extractFrames()
 
     // Manually modify task statuses to simulate failures
-    const generateVideoTasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.GenerateAnimationVideo)
-    const extractFramesTasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.ExtractVideoFrames)
+    const generateVideoTasks = Array.from(aigcMock.tasks.values()).filter(
+      (record) => record.task.type === TaskType.GenerateAnimationVideo
+    )
+    const extractFramesTasks = Array.from(aigcMock.tasks.values()).filter(
+      (record) => record.task.type === TaskType.ExtractVideoFrames
+    )
     const generateVideoRecord = generateVideoTasks[generateVideoTasks.length - 1]!
     const extractFramesRecord = extractFramesTasks[extractFramesTasks.length - 1]!
     generateVideoRecord.task.status = TaskStatus.Failed
@@ -376,10 +378,12 @@ describe('AnimationGen', () => {
     await gen.extractFrames()
 
     // Manually modify one task to fail, keep the other completed
-    const generateVideoTasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.GenerateAnimationVideo)
-    const extractFramesTasks = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.ExtractVideoFrames)
+    const generateVideoTasks = Array.from(aigcMock.tasks.values()).filter(
+      (record) => record.task.type === TaskType.GenerateAnimationVideo
+    )
+    const extractFramesTasks = Array.from(aigcMock.tasks.values()).filter(
+      (record) => record.task.type === TaskType.ExtractVideoFrames
+    )
     const generateVideoRecord = generateVideoTasks[generateVideoTasks.length - 1]!
     const extractFramesRecord = extractFramesTasks[extractFramesTasks.length - 1]!
     generateVideoRecord.task.status = TaskStatus.Failed

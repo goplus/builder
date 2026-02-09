@@ -245,8 +245,9 @@ describe('BackdropGen', () => {
     await gen.finish()
 
     // Manually modify the task status to simulate a failed task
-    const taskRecords = Array.from(aigcMock.tasks.values())
-      .filter((record) => record.task.type === TaskType.GenerateBackdrop)
+    const taskRecords = Array.from(aigcMock.tasks.values()).filter(
+      (record) => record.task.type === TaskType.GenerateBackdrop
+    )
     const taskRecord = taskRecords[taskRecords.length - 1]!
     taskRecord.task.status = TaskStatus.Failed
     taskRecord.task.updatedAt = new Date().toISOString()
