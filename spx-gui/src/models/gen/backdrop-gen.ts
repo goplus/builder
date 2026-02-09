@@ -104,8 +104,7 @@ export class BackdropGen extends Disposable {
   async recordAdoption() {
     const backdrop = this.result
     if (backdrop == null) throw new Error('result backdrop expected')
-    const taskIds =
-      this.generateTask.data?.status === TaskStatus.Completed ? [this.generateTask.data.id] : []
+    const taskIds = this.generateTask.data?.status === TaskStatus.Completed ? [this.generateTask.data.id] : []
     const assetData = await backdrop2Asset(backdrop)
     const { name: displayName, description, ...extraSettings } = this.settings
     return adoptAsset({
