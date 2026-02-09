@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
-import { TaskStatus } from '@/apis/aigc'
+import { TaskStatus, TaskType } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { makeProject, mockFile } from '../common/test'
 import { setupAigcMock, MockAigcApis } from './aigc-mock'
@@ -314,10 +314,12 @@ describe('AnimationGen', () => {
     await gen.extractFrames()
 
     // Both tasks should be completed
+    const generateVideoTasks = aigcMock.getTasksByType(TaskType.GenerateAnimationVideo)
+    const extractFramesTasks = aigcMock.getTasksByType(TaskType.ExtractVideoFrames)
     const taskIds = gen.getTaskIds()
     expect(taskIds).toHaveLength(2)
-    expect(taskIds).toContain(gen.generateVideoTask.data?.id)
-    expect(taskIds).toContain(gen.extractFramesTask.data?.id)
+    expect(taskIds).toContain(generateVideoTasks[generateVideoTasks.length - 1]?.id)
+    expect(taskIds).toContain(extractFramesTasks[extractFramesTasks.length - 1]?.id)
   })
 
   it('should exclude non-completed task IDs from getTaskIds', async () => {
@@ -337,11 +339,15 @@ describe('AnimationGen', () => {
     await gen.extractFrames()
 
     // Manually modify task statuses to simulate failures
-    if (gen.generateVideoTask.data) {
-      gen.generateVideoTask.data.status = TaskStatus.Failed
+    const generateVideoTasks = aigcMock.getTasksByType(TaskType.GenerateAnimationVideo)
+    const extractFramesTasks = aigcMock.getTasksByType(TaskType.ExtractVideoFrames)
+    const generateVideoTask = generateVideoTasks[generateVideoTasks.length - 1]
+    const extractFramesTask = extractFramesTasks[extractFramesTasks.length - 1]
+    if (generateVideoTask) {
+      aigcMock.setTaskStatus(generateVideoTask.id, TaskStatus.Failed)
     }
-    if (gen.extractFramesTask.data) {
-      gen.extractFramesTask.data.status = TaskStatus.Cancelled
+    if (extractFramesTask) {
+      aigcMock.setTaskStatus(extractFramesTask.id, TaskStatus.Cancelled)
     }
 
     // getTaskIds should return empty array since both tasks are not completed
@@ -366,13 +372,17 @@ describe('AnimationGen', () => {
     await gen.extractFrames()
 
     // Manually modify one task to fail, keep the other completed
-    if (gen.generateVideoTask.data) {
-      gen.generateVideoTask.data.status = TaskStatus.Failed
+    const generateVideoTasks = aigcMock.getTasksByType(TaskType.GenerateAnimationVideo)
+    const extractFramesTasks = aigcMock.getTasksByType(TaskType.ExtractVideoFrames)
+    const generateVideoTask = generateVideoTasks[generateVideoTasks.length - 1]
+    const extractFramesTask = extractFramesTasks[extractFramesTasks.length - 1]
+    if (generateVideoTask) {
+      aigcMock.setTaskStatus(generateVideoTask.id, TaskStatus.Failed)
     }
 
     // getTaskIds should only return the completed extractFramesTask
     const taskIds = gen.getTaskIds()
     expect(taskIds).toHaveLength(1)
-    expect(taskIds[0]).toBe(gen.extractFramesTask.data?.id)
+    expect(taskIds[0]).toBe(extractFramesTask?.id)
   })
 })

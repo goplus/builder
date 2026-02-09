@@ -70,6 +70,36 @@ export class MockAigcApis {
     }
   }
 
+  /**
+   * Set the status of a task by its ID.
+   * This is useful for testing scenarios where tasks fail or are cancelled.
+   */
+  setTaskStatus(taskId: string, status: TaskStatus) {
+    const record = this.tasks.get(taskId)
+    if (record == null) throw new Error(`unknown task id: ${taskId}`)
+    record.task.status = status
+    record.task.updatedAt = this.now()
+  }
+
+  /**
+   * Get the last created task.
+   * This is useful for tests that need to inspect or manipulate the most recently created task.
+   */
+  getLastTask(): Task | null {
+    const tasks = Array.from(this.tasks.values())
+    return tasks.length > 0 ? tasks[tasks.length - 1].task : null
+  }
+
+  /**
+   * Get tasks by type.
+   * This is useful for tests that need to find specific tasks.
+   */
+  getTasksByType<T extends TaskType>(type: T): Array<Task<T>> {
+    return Array.from(this.tasks.values())
+      .filter((record) => record.task.type === type)
+      .map((record) => record.task as Task<T>)
+  }
+
   injectErrorOnce(methodName: MockableMethod, error: Error) {
     this.errorInjections.set(methodName, error)
   }

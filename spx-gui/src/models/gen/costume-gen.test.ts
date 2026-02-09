@@ -195,9 +195,10 @@ describe('CostumeGen', () => {
     await gen.generate()
 
     // Task should be completed, so getTaskIds should return it
+    const task = aigcMock.getLastTask()
     const taskIds = gen.getTaskIds()
     expect(taskIds).toHaveLength(1)
-    expect(taskIds[0]).toBe(gen.generateTask.data?.id)
+    expect(taskIds[0]).toBe(task?.id)
   })
 
   it('should exclude non-completed task IDs from getTaskIds', async () => {
@@ -210,8 +211,9 @@ describe('CostumeGen', () => {
     await gen.generate()
 
     // Manually modify the task status to simulate a failed task
-    if (gen.generateTask.data) {
-      gen.generateTask.data.status = TaskStatus.Failed
+    const task = aigcMock.getLastTask()
+    if (task) {
+      aigcMock.setTaskStatus(task.id, TaskStatus.Failed)
     }
 
     // getTaskIds should return empty array since task is failed

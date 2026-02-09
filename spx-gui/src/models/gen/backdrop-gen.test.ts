@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
-import { TaskStatus } from '@/apis/aigc'
+import { TaskStatus, TaskType } from '@/apis/aigc'
 import * as aigcApis from '@/apis/aigc'
 import { makeProject } from '../common/test'
 import { setupAigcMock, MockAigcApis } from './aigc-mock'
@@ -227,8 +227,9 @@ describe('BackdropGen', () => {
     // Verify that taskIds contains the task ID (task should be completed)
     expect(adoptAssetCalls).toHaveLength(1)
     const adoptParams = adoptAssetCalls[0] as { taskIds: string[] }
+    const task = aigcMock.getTasksByType(TaskType.GenerateBackdrop).pop()
     expect(adoptParams.taskIds).toHaveLength(1)
-    expect(adoptParams.taskIds[0]).toBe(gen.generateTask.data?.id)
+    expect(adoptParams.taskIds[0]).toBe(task?.id)
   })
 
   it('should exclude non-completed task IDs from recordAdoption', async () => {
@@ -241,8 +242,9 @@ describe('BackdropGen', () => {
     await gen.finish()
 
     // Manually modify the task status to simulate a failed task
-    if (gen.generateTask.data) {
-      gen.generateTask.data.status = TaskStatus.Failed
+    const task = aigcMock.getTasksByType(TaskType.GenerateBackdrop).pop()
+    if (task) {
+      aigcMock.setTaskStatus(task.id, TaskStatus.Failed)
     }
 
     // Mock adoptAsset to inspect the taskIds parameter
