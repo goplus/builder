@@ -196,10 +196,10 @@ describe('CostumeGen', () => {
 
     // Task should be completed, so getTaskIds should return it
     const tasks = Array.from(aigcMock.tasks.values())
-    const task = tasks[tasks.length - 1]?.task
+    const task = tasks[tasks.length - 1]!.task
     const taskIds = gen.getTaskIds()
     expect(taskIds).toHaveLength(1)
-    expect(taskIds[0]).toBe(task?.id)
+    expect(taskIds[0]).toBe(task.id)
   })
 
   it('should exclude non-completed task IDs from getTaskIds', async () => {
@@ -213,11 +213,9 @@ describe('CostumeGen', () => {
 
     // Manually modify the task status to simulate a failed task
     const tasks = Array.from(aigcMock.tasks.values())
-    const taskRecord = tasks[tasks.length - 1]
-    if (taskRecord) {
-      taskRecord.task.status = TaskStatus.Failed
-      taskRecord.task.updatedAt = new Date().toISOString()
-    }
+    const taskRecord = tasks[tasks.length - 1]!
+    taskRecord.task.status = TaskStatus.Failed
+    taskRecord.task.updatedAt = new Date().toISOString()
 
     // getTaskIds should return empty array since task is failed
     const taskIds = gen.getTaskIds()
