@@ -8,14 +8,7 @@
     class="stage-viewer"
     @mousemove="updateMousePos"
   >
-    <v-stage
-      v-if="stageConfig != null"
-      ref="stageRef"
-      :config="stageConfig"
-      @mousedown="handleStageMousedown"
-      @contextmenu="handleContextMenu"
-      @wheel="handleWheel"
-    >
+    <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
         <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
         <DecoratorNode
@@ -36,26 +29,28 @@
         -->
         <v-group>
           <SpriteNode
-            v-for="sprite in visibleSprites"
-            :key="sprite.id"
-            :sprite="sprite"
-            :selected="editorCtx.state.selectedSprite?.id === sprite.id"
+            v-for="localConfig in visibleSpriteLocalConfigs"
+            :key="localConfig.id"
+            :local-config="localConfig"
+            :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
             :project="editorCtx.project"
             :map-size="mapSize"
             :node-ready-map="nodeReadyMap"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
-            @selected="handleSpriteSelected(sprite)"
+            @selected="handleSpriteSelected(localConfig)"
+            @update-transform-op="handleSpriteUpdateTransformOp"
           />
         </v-group>
       </v-layer>
       <v-layer>
         <WidgetNode
-          v-for="widget in visibleWidgets"
-          :key="widget.id"
-          :widget="widget"
+          v-for="localConfig in visibleWidgetLocalConfigs"
+          :key="localConfig.id"
+          :local-config="localConfig"
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
+          @update-transform-op="handleSpriteUpdateTransformOp"
         />
       </v-layer>
       <v-layer>
@@ -66,30 +61,18 @@
         />
       </v-layer>
     </v-stage>
-    <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
-      <UIMenu>
-        <UIMenuItem
-          v-radar="{ name: 'Move up', desc: 'Click to move sprite up in z-order' }"
-          @click="moveZorder('up')"
-          >{{ $t(moveActionNames.up) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move to top', desc: 'Click to move sprite to top in z-order' }"
-          @click="moveZorder('top')"
-          >{{ $t(moveActionNames.top) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move down', desc: 'Click to move sprite down in z-order' }"
-          @click="moveZorder('down')"
-          >{{ $t(moveActionNames.down) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move to bottom', desc: 'Click to move sprite to bottom in z-order' }"
-          @click="moveZorder('bottom')"
-          >{{ $t(moveActionNames.bottom) }}</UIMenuItem
-        >
-      </UIMenu>
-    </UIDropdown>
+    <QuickConfigWrapper ref="quickConfigRef" class="quick-config">
+      <SpriteQuickConfig
+        v-if="localConfigRef instanceof SpriteLocalConfig"
+        :local-config="localConfigRef"
+        :project="editorCtx.project"
+      />
+      <WidgetQuickConfig
+        v-else-if="localConfigRef instanceof WidgetLocalConfig"
+        :local-config="localConfigRef"
+        :project="editorCtx.project"
+      />
+    </QuickConfigWrapper>
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
@@ -100,24 +83,29 @@ import { throttle } from 'lodash'
 import { computed, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import type { Stage, StageConfig } from 'konva/lib/Stage'
+import type { StageConfig } from 'konva/lib/Stage'
 import type { LayerConfig } from 'konva/lib/Layer'
-import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
+import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
-import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
-import type { Widget } from '@/models/widget'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
+import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
+import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/WidgetQuickConfig.vue'
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
+import QuickConfigWrapper, {
+  type ConfigType
+} from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
+import { SpriteLocalConfig, WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
+import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
@@ -358,14 +346,20 @@ const loading = computed(() => {
   return false
 })
 
-const visibleSprites = computed(() => {
+const visibleSpriteLocalConfigs = computed(() => {
   const { zorder, sprites } = editorCtx.project
-  return zorder.map((id) => sprites.find((s) => s.id === id)).filter(Boolean) as Sprite[]
+  return zorder
+    .map((id) => sprites.find((s) => s.id === id))
+    .filter(Boolean)
+    .map((sprite) => new SpriteLocalConfig(sprite!, editorCtx.project)) as SpriteLocalConfig[]
 })
 
-const visibleWidgets = computed(() => {
+const visibleWidgetLocalConfigs = computed(() => {
   const { widgetsZorder, widgets } = editorCtx.project.stage
-  return widgetsZorder.map((id) => widgets.find((w) => w.id === id)).filter(Boolean) as Widget[]
+  return widgetsZorder
+    .map((id) => widgets.find((w) => w.id === id))
+    .filter(Boolean)
+    .map((widget) => new WidgetLocalConfig(widget!, editorCtx.project)) as WidgetLocalConfig[]
 })
 
 let cameraEdgeScrollCheckTimer: ReturnType<typeof setInterval> | null = null
@@ -421,76 +415,42 @@ const handleSpriteDragMove = throttle(
   }
 )
 
+// quick config
+const localConfigRef = shallowRef<SpriteLocalConfig | WidgetLocalConfig | null | undefined>(null)
+watch(
+  () => [editorCtx.state.selectedSprite, editorCtx.state.selectedWidget] as const,
+  ([sprite, widget]) => {
+    if (sprite == null && widget == null) return
+    if (sprite != null) {
+      localConfigRef.value = visibleSpriteLocalConfigs.value.find(({ id }) => id === sprite.id)
+    } else if (widget != null) {
+      localConfigRef.value = visibleWidgetLocalConfigs.value.find(({ id }) => id === widget.id)
+    }
+  },
+  { immediate: true }
+)
+
+const quickConfigRef = ref<InstanceType<typeof QuickConfigWrapper> | null>(null)
+function handleUpdateConfigType(configType: ConfigType) {
+  quickConfigRef.value?.updateConfigType(configType)
+}
+function handleSpriteUpdateTransformOp(op: TransformOp | null) {
+  if (op == null) return
+  if (op === 'move') {
+    handleUpdateConfigType('pos')
+  } else if (op === 'rotate') {
+    handleUpdateConfigType('heading')
+  } else if (op === 'scale') {
+    handleUpdateConfigType('size')
+  }
+}
+
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
 }
 
-function handleSpriteSelected(sprite: Sprite) {
-  editorCtx.state.selectSprite(sprite.id)
-}
-
-const menuVisible = ref(false)
-const menuPos = ref({ x: 0, y: 0 })
-
-function handleContextMenu(e: KonvaEventObject<MouseEvent>) {
-  e.evt.preventDefault()
-
-  // Ignore right click on backdrop.
-  // Konva.Rect is a subclass of Konva.Shape.
-  // Currently we have all sprites as Konva.Shape and backdrop as Konva.Rect.
-  if (e.target instanceof Konva.Rect) return
-
-  if (stageRef.value == null || e.target.parent == null) return
-  const stage: Stage = stageRef.value.getStage()
-  const pointerPos = stage.getPointerPosition()
-  if (pointerPos == null) return
-  const stagePos = stage.getContent().getBoundingClientRect()
-  const offsetY = -8 // offset for dropdown menu
-  menuPos.value = {
-    x: stagePos.x + pointerPos.x,
-    y: stagePos.y + pointerPos.y + offsetY
-  }
-  menuVisible.value = true
-}
-
-function handleStageMousedown() {
-  if (menuVisible.value) menuVisible.value = false
-}
-
-const moveActionNames = {
-  up: { en: 'Bring forward', zh: '向前移动' },
-  top: { en: 'Bring to front', zh: '移到最前' },
-  down: { en: 'Send backward', zh: '向后移动' },
-  bottom: { en: 'Send to back', zh: '移到最后' }
-}
-
-async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
-  const { state, project } = editorCtx
-  const { selectedSprite, selectedWidget } = state
-  await project.history.doAction({ name: moveActionNames[direction] }, () => {
-    if (selectedSprite != null) {
-      if (direction === 'up') {
-        project.upSpriteZorder(selectedSprite.id)
-      } else if (direction === 'down') {
-        project.downSpriteZorder(selectedSprite.id)
-      } else if (direction === 'top') {
-        project.topSpriteZorder(selectedSprite.id)
-      } else if (direction === 'bottom') {
-        project.bottomSpriteZorder(selectedSprite.id)
-      }
-    } else if (selectedWidget != null) {
-      if (direction === 'up') {
-        project.stage.upWidgetZorder(selectedWidget.id)
-      } else if (direction === 'down') {
-        project.stage.downWidgetZorder(selectedWidget.id)
-      } else if (direction === 'top') {
-        project.stage.topWidgetZorder(selectedWidget.id)
-      } else if (direction === 'bottom') {
-        project.stage.bottomWidgetZorder(selectedWidget.id)
-      }
-    }
-  })
-  menuVisible.value = false
+function handleSpriteSelected(localConfig: SpriteLocalConfig) {
+  editorCtx.state.selectSprite(localConfig.id)
 }
 
 function handleWheel(e: KonvaEventObject<WheelEvent>) {
@@ -538,5 +498,11 @@ watchEffect((onCleanup) => {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
+}
+
+.quick-config {
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 </style>
