@@ -3,7 +3,7 @@ import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
-import { enrichCostumeSettings, Facing, TaskType, type CostumeSettings } from '@/apis/aigc'
+import { enrichCostumeSettings, Facing, TaskType, TaskStatus, type CostumeSettings } from '@/apis/aigc'
 import type { File } from '../common/file'
 import { ensureValidCostumeName, validateCostumeName } from '../common/asset-name'
 import { createFileWithUniversalUrl, saveFile } from '../common/cloud'
@@ -61,8 +61,9 @@ export class CostumeGen extends Disposable {
     return reactive(this) as this
   }
 
+  /** Get IDs for (completed) tasks. */
   getTaskIds() {
-    if (this.generateTask.data == null) return []
+    if (this.generateTask.data?.status !== TaskStatus.Completed) return []
     return [this.generateTask.data.id]
   }
 
