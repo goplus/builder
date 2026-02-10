@@ -395,7 +395,7 @@
                               "effect": {
                                 "type": "shadow",
                                 "shadowType": "outer",
-                                "color": "#cbd2d8",
+                                "color": "$gery600",
                                 "offset": {
                                   "x": 0,
                                   "y": 4
@@ -602,7 +602,7 @@
                                   "effect": {
                                     "type": "shadow",
                                     "shadowType": "outer",
-                                    "color": "#0b8893",
+                                    "color": "$turquoise700",
                                     "offset": {
                                       "x": 0,
                                       "y": 4
@@ -10555,7 +10555,7 @@
                                   "effect": {
                                     "type": "shadow",
                                     "shadowType": "outer",
-                                    "color": "#0b8893",
+                                    "color": "$turquoise700",
                                     "offset": {
                                       "x": 0,
                                       "y": 4
@@ -10624,17 +10624,16 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "8m6Tl",
-                      "name": "OverviewIcon",
+                      "type": "icon_font",
+                      "id": "guHdN",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "/Users/yueman/Desktop/test builder/builder-dev/spx-gui/src/components/ui/icons/info.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "book-open-check",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$turquoise500"
                     },
                     {
                       "type": "text",
@@ -10679,17 +10678,16 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "Y6keG",
-                      "name": "ProjectsIcon",
+                      "type": "icon_font",
+                      "id": "AweoG",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/asset-library.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "folder-closed",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
@@ -10734,17 +10732,16 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "rcY1A",
-                      "name": "LikesIcon",
+                      "type": "icon_font",
+                      "id": "zi5J8",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/heart-hollow.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "heart",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
@@ -10789,17 +10786,16 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "luaor",
-                      "name": "FollowingIcon",
+                      "type": "icon_font",
+                      "id": "5yh5b",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/plus.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "user-star",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
@@ -10844,17 +10840,16 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "yEh0L",
-                      "name": "FollowersIcon",
+                      "type": "icon_font",
+                      "id": "mDyur",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/check.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "users-round",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
@@ -14219,8 +14214,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$turquoise700"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$turquoise700",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 8,
                       "padding": [
@@ -14257,7 +14260,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "ZMGH4",
+                  "id": "ze5nD",
                   "name": "Operations Row",
                   "width": "fill_container",
                   "gap": 12,
@@ -14265,7 +14268,7 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "rI8i1",
+                      "id": "mXKrb",
                       "name": "Rerun Button",
                       "enabled": false,
                       "height": 28,
@@ -14275,8 +14278,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$turquoise700"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$turquoise700",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 4,
                       "padding": [
@@ -14288,7 +14299,7 @@
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "kHsdq",
+                          "id": "bVRBZ",
                           "name": "rerunIcon",
                           "width": 14,
                           "height": 14,
@@ -14298,7 +14309,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "s0XsR",
+                          "id": "Tl3z8",
                           "name": "rerunLabel",
                           "fill": "#FFFFFF",
                           "content": "Rerun",
@@ -14311,7 +14322,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "AuFmN",
+                      "id": "CWRpX",
                       "name": "Stop Button",
                       "enabled": false,
                       "height": 28,
@@ -14321,8 +14332,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 8,
                       "padding": [
@@ -14334,7 +14353,7 @@
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "3Jy0G",
+                          "id": "QKKBc",
                           "name": "stopIcon",
                           "width": 14,
                           "height": 14,
@@ -14344,7 +14363,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "Qe5GD",
+                          "id": "ZKeiM",
                           "name": "stopLabel",
                           "fill": "$grey900",
                           "content": "Stop",
@@ -14357,7 +14376,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "p7ysH",
+                      "id": "iIlt0",
                       "name": "Enter Full Screen Button",
                       "enabled": false,
                       "width": 32,
@@ -14368,21 +14387,23 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        }
                       },
-                      "padding": [
-                        0,
-                        0,
-                        4,
-                        0
-                      ],
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
+                      },
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "4RD11",
+                          "id": "njXD9",
                           "name": "fullscreenIcon",
                           "width": 14,
                           "height": 14,
@@ -14394,25 +14415,31 @@
                     },
                     {
                       "type": "frame",
-                      "id": "Lfcjs",
+                      "id": "4I3Gz",
                       "name": "Share Button",
                       "width": 32,
                       "height": 28,
                       "fill": "$grey300",
                       "cornerRadius": 12,
                       "stroke": {
-                        "align": "outside",
-                        "thickness": {
-                          "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "0dwmk",
+                          "id": "WYVvn",
                           "name": "shareIcon",
                           "width": 14,
                           "height": 14,
@@ -14612,7 +14639,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "E0WRu",
+                  "id": "GzI3u",
                   "name": "Actions",
                   "width": "fill_container",
                   "gap": 12,
@@ -14621,7 +14648,7 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "zCqgO",
+                      "id": "2Ozec",
                       "name": "Edit Button",
                       "width": "fill_container",
                       "height": 36,
@@ -14631,8 +14658,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$turquoise700"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$turquoise700",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 8,
                       "padding": [
@@ -14644,7 +14679,7 @@
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "BPv32",
+                          "id": "iF2f4",
                           "name": "PaginationEllipsisIcon",
                           "width": 0,
                           "height": 0,
@@ -14654,7 +14689,7 @@
                         },
                         {
                           "type": "icon_font",
-                          "id": "EU0X9",
+                          "id": "JSpLH",
                           "name": "icon",
                           "width": 18,
                           "height": 18,
@@ -14664,7 +14699,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "whYpj",
+                          "id": "zHwr4",
                           "name": "label",
                           "fill": "#FFFFFF",
                           "content": "Edit",
@@ -14677,7 +14712,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "p9ZPz",
+                      "id": "56RuP",
                       "name": "Publish Button",
                       "width": "fill_container",
                       "height": 36,
@@ -14687,8 +14722,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 8,
                       "padding": [
@@ -14700,7 +14743,7 @@
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "ZQ62R",
+                          "id": "xNba2",
                           "name": "icon",
                           "width": 0,
                           "height": 0,
@@ -14710,7 +14753,7 @@
                         },
                         {
                           "type": "icon_font",
-                          "id": "DOFza",
+                          "id": "D4tnY",
                           "name": "PaginationEllipsisIcon",
                           "width": 18,
                           "height": 18,
@@ -14720,7 +14763,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "HcZFA",
+                          "id": "XuY2Z",
                           "name": "label",
                           "fill": "$grey900",
                           "content": "Publish",
@@ -14733,7 +14776,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "FbM0Y",
+                      "id": "JwMjS",
                       "name": "More Button",
                       "width": 40,
                       "height": 36,
@@ -14743,15 +14786,23 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "H2hlL",
+                          "id": "yjfLJ",
                           "name": "icon",
                           "width": 0,
                           "height": 0,
@@ -14761,7 +14812,7 @@
                         },
                         {
                           "type": "icon_font",
-                          "id": "pgxMP",
+                          "id": "re4kC",
                           "name": "PaginationEllipsisIcon",
                           "width": 18,
                           "height": 18,
@@ -17616,7 +17667,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "tlN4Y",
+                  "id": "KVkgd",
                   "name": "Operations Row",
                   "width": "fill_container",
                   "gap": 12,
@@ -17624,7 +17675,7 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "x2qcx",
+                      "id": "ZgsiG",
                       "name": "Rerun Button",
                       "height": 28,
                       "fill": "$turquoise500",
@@ -17633,8 +17684,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$turquoise700"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$turquoise700",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 4,
                       "padding": [
@@ -17646,7 +17705,7 @@
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "CRTbe",
+                          "id": "ZL0ld",
                           "name": "rerunIcon",
                           "width": 14,
                           "height": 14,
@@ -17656,7 +17715,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "EbojS",
+                          "id": "b4vgB",
                           "name": "rerunLabel",
                           "fill": "#FFFFFF",
                           "content": "Rerun",
@@ -17669,7 +17728,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "cc6LP",
+                      "id": "BpO9G",
                       "name": "Stop Button",
                       "height": 28,
                       "fill": "$grey300",
@@ -17678,8 +17737,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 8,
                       "padding": [
@@ -17691,7 +17758,7 @@
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "9Oen7",
+                          "id": "s6UvN",
                           "name": "stopIcon",
                           "width": 14,
                           "height": 14,
@@ -17701,7 +17768,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "h6eMY",
+                          "id": "wQYUS",
                           "name": "stopLabel",
                           "fill": "$grey900",
                           "content": "Stop",
@@ -17714,7 +17781,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "6ysLd",
+                      "id": "twYQA",
                       "name": "Enter Full Screen Button",
                       "width": 32,
                       "height": 28,
@@ -17724,15 +17791,23 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "z5W4F",
+                          "id": "xcRsr",
                           "name": "fullscreenIcon",
                           "width": 14,
                           "height": 14,
@@ -17744,25 +17819,31 @@
                     },
                     {
                       "type": "frame",
-                      "id": "4sNIG",
+                      "id": "cmivo",
                       "name": "Share Button",
                       "width": 32,
                       "height": 28,
                       "fill": "$grey300",
                       "cornerRadius": 12,
                       "stroke": {
-                        "align": "outside",
-                        "thickness": {
-                          "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "8ME8S",
+                          "id": "xH1na",
                           "name": "shareIcon",
                           "width": 14,
                           "height": 14,
@@ -17962,7 +18043,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "RZV2w",
+                  "id": "wchpE",
                   "name": "Actions",
                   "width": "fill_container",
                   "gap": 12,
@@ -17971,7 +18052,7 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "UQBYP",
+                      "id": "4kPV0",
                       "name": "Edit Button",
                       "width": "fill_container",
                       "height": 36,
@@ -17981,8 +18062,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$turquoise700"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$turquoise700",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 8,
                       "padding": [
@@ -17994,7 +18083,7 @@
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "EXpG3",
+                          "id": "WFcET",
                           "name": "PaginationEllipsisIcon",
                           "width": 0,
                           "height": 0,
@@ -18004,7 +18093,7 @@
                         },
                         {
                           "type": "icon_font",
-                          "id": "XCA7w",
+                          "id": "XFRUy",
                           "name": "icon",
                           "width": 18,
                           "height": 18,
@@ -18014,7 +18103,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "JUVgO",
+                          "id": "3nLzu",
                           "name": "label",
                           "fill": "#FFFFFF",
                           "content": "Edit",
@@ -18027,7 +18116,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "vDnM6",
+                      "id": "VI64R",
                       "name": "Publish Button",
                       "width": "fill_container",
                       "height": 36,
@@ -18037,8 +18126,16 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "gap": 8,
                       "padding": [
@@ -18050,7 +18147,7 @@
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "UBl4u",
+                          "id": "5UWZr",
                           "name": "icon",
                           "width": 0,
                           "height": 0,
@@ -18060,7 +18157,7 @@
                         },
                         {
                           "type": "icon_font",
-                          "id": "FTHeW",
+                          "id": "NKRFe",
                           "name": "PaginationEllipsisIcon",
                           "width": 18,
                           "height": 18,
@@ -18070,7 +18167,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "WpAzW",
+                          "id": "ugEeH",
                           "name": "label",
                           "fill": "$grey900",
                           "content": "Publish",
@@ -18083,7 +18180,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "UO76P",
+                      "id": "JxzFt",
                       "name": "More Button",
                       "width": 40,
                       "height": 36,
@@ -18093,15 +18190,23 @@
                         "align": "outside",
                         "thickness": {
                           "bottom": 4
-                        },
-                        "fill": "$gery600"
+                        }
+                      },
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "$gery600",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        }
                       },
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "d51nx",
+                          "id": "uT09G",
                           "name": "icon",
                           "width": 0,
                           "height": 0,
@@ -18111,7 +18216,7 @@
                         },
                         {
                           "type": "icon_font",
-                          "id": "0WUW4",
+                          "id": "zeWu2",
                           "name": "PaginationEllipsisIcon",
                           "width": 18,
                           "height": 18,
@@ -22175,7 +22280,7 @@
                                   "effect": {
                                     "type": "shadow",
                                     "shadowType": "outer",
-                                    "color": "#0b8893",
+                                    "color": "$turquoise700",
                                     "offset": {
                                       "x": 0,
                                       "y": 4
@@ -22222,7 +22327,7 @@
           "children": [
             {
               "type": "frame",
-              "id": "4v15u",
+              "id": "3v4DP",
               "name": "UserSidebar",
               "width": 212,
               "fill": "$grey100",
@@ -22230,11 +22335,10 @@
               "layout": "vertical",
               "gap": 8,
               "padding": 8,
-              "justifyContent": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "ge7I0",
+                  "id": "oE8OX",
                   "name": "OverviewLink",
                   "width": "fill_container",
                   "height": 44,
@@ -22245,21 +22349,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "8mTeS",
-                      "name": "OverviewIcon",
+                      "type": "icon_font",
+                      "id": "jYMrl",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "/Users/yueman/Desktop/test builder/builder-dev/spx-gui/src/components/ui/icons/info.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "book-open-check",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "vlr4K",
+                      "id": "ftma0",
                       "fill": "$grey900",
                       "content": "Overview",
                       "lineHeight": 1.5384615384615385,
@@ -22269,14 +22372,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "t5PYb",
+                      "id": "Ft7LS",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "8x799",
+                      "id": "ccygW",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -22289,7 +22392,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "YhQyY",
+                  "id": "nocAG",
                   "name": "ProjectsLink",
                   "width": "fill_container",
                   "height": 44,
@@ -22300,21 +22403,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "IVIKw",
-                      "name": "ProjectsIcon",
+                      "type": "icon_font",
+                      "id": "VXREZ",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/asset-library.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "folder-closed",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$turquoise500"
                     },
                     {
                       "type": "text",
-                      "id": "9KXsD",
+                      "id": "o7yTn",
                       "fill": "$turquoise500",
                       "content": "Projects",
                       "lineHeight": 1.5384615384615385,
@@ -22324,14 +22426,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "pANQz",
+                      "id": "UpxXh",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "K5wnR",
+                      "id": "mytxu",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -22344,7 +22446,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "MnqAX",
+                  "id": "hUMkf",
                   "name": "LikesLink",
                   "width": "fill_container",
                   "height": 44,
@@ -22355,21 +22457,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "Uvx6u",
-                      "name": "LikesIcon",
+                      "type": "icon_font",
+                      "id": "j62pG",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/heart-hollow.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "heart",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "4pQqy",
+                      "id": "h9p6d",
                       "fill": "$grey900",
                       "content": "Likes",
                       "lineHeight": 1.5384615384615385,
@@ -22379,14 +22480,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "bj3G1",
+                      "id": "maWJC",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "W2A68",
+                      "id": "q6i6y",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -22399,7 +22500,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "hq5ql",
+                  "id": "frYkO",
                   "name": "FollowingLink",
                   "width": "fill_container",
                   "height": 44,
@@ -22410,21 +22511,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "qJfFF",
-                      "name": "FollowingIcon",
+                      "type": "icon_font",
+                      "id": "zlOEw",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/plus.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "user-star",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "CiQ0o",
+                      "id": "TS2NV",
                       "fill": "$grey900",
                       "content": "Following",
                       "lineHeight": 1.4285714285714286,
@@ -22434,14 +22534,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "eGNZt",
+                      "id": "fs4Yp",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "F4Uxr",
+                      "id": "Qg2Wb",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -22454,7 +22554,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "QduDR",
+                  "id": "CtsQ3",
                   "name": "FollowersLink",
                   "width": "fill_container",
                   "height": 44,
@@ -22465,21 +22565,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "QMHCw",
-                      "name": "FollowersIcon",
+                      "type": "icon_font",
+                      "id": "mvO5q",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/check.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "users-round",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "p5VmD",
+                      "id": "Qi4uw",
                       "fill": "$grey900",
                       "content": "Followers",
                       "lineHeight": 1.5384615384615385,
@@ -22489,14 +22588,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "H9uIU",
+                      "id": "mticb",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "HftGS",
+                      "id": "7VlkS",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -23951,15 +24050,14 @@
             },
             {
               "type": "frame",
-              "id": "sghwI",
+              "id": "F57Kt",
               "name": "Operations Row",
               "gap": 12,
               "justifyContent": "end",
-              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "SneF3",
+                  "id": "Kjxzj",
                   "name": "Rerun Button",
                   "height": 28,
                   "fill": "$turquoise500",
@@ -23968,8 +24066,16 @@
                     "align": "outside",
                     "thickness": {
                       "bottom": 4
-                    },
-                    "fill": "$turquoise700"
+                    }
+                  },
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "$turquoise700",
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    }
                   },
                   "gap": 4,
                   "padding": [
@@ -23981,7 +24087,7 @@
                   "children": [
                     {
                       "type": "icon_font",
-                      "id": "vlzJ2",
+                      "id": "RMDos",
                       "name": "rerunIcon",
                       "width": 14,
                       "height": 14,
@@ -23991,7 +24097,7 @@
                     },
                     {
                       "type": "text",
-                      "id": "aqmYZ",
+                      "id": "urEuB",
                       "name": "rerunLabel",
                       "fill": "#FFFFFF",
                       "content": "Rerun",
@@ -24004,7 +24110,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "H7kTw",
+                  "id": "t9MBd",
                   "name": "Stop Button",
                   "height": 28,
                   "fill": "$grey300",
@@ -24013,8 +24119,16 @@
                     "align": "outside",
                     "thickness": {
                       "bottom": 4
-                    },
-                    "fill": "$gery600"
+                    }
+                  },
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "$gery600",
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    }
                   },
                   "gap": 8,
                   "padding": [
@@ -24026,7 +24140,7 @@
                   "children": [
                     {
                       "type": "icon_font",
-                      "id": "MknX7",
+                      "id": "r3pcG",
                       "name": "stopIcon",
                       "width": 14,
                       "height": 14,
@@ -24036,7 +24150,7 @@
                     },
                     {
                       "type": "text",
-                      "id": "gVo49",
+                      "id": "39yPT",
                       "name": "stopLabel",
                       "fill": "$grey900",
                       "content": "Stop",
@@ -24049,7 +24163,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "y78V2",
+                  "id": "dMfUW",
                   "name": "Enter Full Screen Button",
                   "width": 32,
                   "height": 28,
@@ -24059,19 +24173,64 @@
                     "align": "outside",
                     "thickness": {
                       "bottom": 4
-                    },
-                    "fill": "$gery600"
+                    }
+                  },
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "$gery600",
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    }
                   },
                   "justifyContent": "center",
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "icon_font",
-                      "id": "r6clx",
+                      "id": "KZZq6",
                       "name": "fullscreenIcon",
                       "width": 14,
                       "height": 14,
-                      "iconFontName": "minimize",
+                      "iconFontName": "maximize",
+                      "iconFontFamily": "lucide",
+                      "fill": "$grey900"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "oXg09",
+                  "name": "Share Button",
+                  "enabled": false,
+                  "width": 32,
+                  "height": 28,
+                  "fill": "$grey300",
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "$gery600",
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    }
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "LInmS",
+                      "name": "shareIcon",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "share-2",
                       "iconFontFamily": "lucide",
                       "fill": "$grey900"
                     }
@@ -27105,7 +27264,7 @@
                                   "effect": {
                                     "type": "shadow",
                                     "shadowType": "outer",
-                                    "color": "#0b8893",
+                                    "color": "$turquoise700",
                                     "offset": {
                                       "x": 0,
                                       "y": 4
@@ -27152,7 +27311,7 @@
           "children": [
             {
               "type": "frame",
-              "id": "MLqKI",
+              "id": "rol6j",
               "name": "UserSidebar",
               "width": 212,
               "fill": "$grey100",
@@ -27160,11 +27319,10 @@
               "layout": "vertical",
               "gap": 8,
               "padding": 8,
-              "justifyContent": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "MvV9E",
+                  "id": "TXsdY",
                   "name": "OverviewLink",
                   "width": "fill_container",
                   "height": 44,
@@ -27175,21 +27333,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "nSAqi",
-                      "name": "OverviewIcon",
+                      "type": "icon_font",
+                      "id": "2yE7f",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "/Users/yueman/Desktop/test builder/builder-dev/spx-gui/src/components/ui/icons/info.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "book-open-check",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "4xPMV",
+                      "id": "SRId8",
                       "fill": "$grey900",
                       "content": "Overview",
                       "lineHeight": 1.5384615384615385,
@@ -27199,14 +27356,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "E2FZk",
+                      "id": "Qv9KP",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "BManv",
+                      "id": "GhmWh",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -27219,7 +27376,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "8vpJq",
+                  "id": "0CffK",
                   "name": "ProjectsLink",
                   "width": "fill_container",
                   "height": 44,
@@ -27230,22 +27387,21 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "bYZ4f",
-                      "name": "ProjectsIcon",
+                      "type": "icon_font",
+                      "id": "xOEWW",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/asset-library.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "folder-closed",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "2WtDo",
-                      "fill": "$grey800",
+                      "id": "sN0QA",
+                      "fill": "$grey900",
                       "content": "Projects",
                       "lineHeight": 1.5384615384615385,
                       "fontFamily": "Inter",
@@ -27254,14 +27410,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "pBMUX",
+                      "id": "DwaWu",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "kD4G5",
+                      "id": "WPrqB",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -27274,7 +27430,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "wxhop",
+                  "id": "afNMe",
                   "name": "LikesLink",
                   "width": "fill_container",
                   "height": 44,
@@ -27285,21 +27441,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "vV8Rb",
-                      "name": "LikesIcon",
+                      "type": "icon_font",
+                      "id": "SwQQ8",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/heart-hollow.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "heart",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$turquoise500"
                     },
                     {
                       "type": "text",
-                      "id": "vNi4Y",
+                      "id": "NkfXr",
                       "fill": "$turquoise500",
                       "content": "Likes",
                       "lineHeight": 1.5384615384615385,
@@ -27309,14 +27464,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "sEYQw",
+                      "id": "Q9xXl",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "ZBBJQ",
+                      "id": "cMT20",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -27329,7 +27484,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "o0RHi",
+                  "id": "sli7v",
                   "name": "FollowingLink",
                   "width": "fill_container",
                   "height": 44,
@@ -27340,21 +27495,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "F2WXq",
-                      "name": "FollowingIcon",
+                      "type": "icon_font",
+                      "id": "jwFOo",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/plus.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "user-star",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "aJRnE",
+                      "id": "I3z1l",
                       "fill": "$grey900",
                       "content": "Following",
                       "lineHeight": 1.4285714285714286,
@@ -27364,14 +27518,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "GaCeD",
+                      "id": "GsXEx",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "eXxFq",
+                      "id": "XqwMZ",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -27384,7 +27538,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "UU1Kp",
+                  "id": "uXRfp",
                   "name": "FollowersLink",
                   "width": "fill_container",
                   "height": 44,
@@ -27395,21 +27549,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "AEvKG",
-                      "name": "FollowersIcon",
+                      "type": "icon_font",
+                      "id": "nhPpi",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/check.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "users-round",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "d3Q8N",
+                      "id": "Dbk8X",
                       "fill": "$grey900",
                       "content": "Followers",
                       "lineHeight": 1.5384615384615385,
@@ -27419,14 +27572,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "NGj4z",
+                      "id": "IsSUf",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "i8I8y",
+                      "id": "NhU0d",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -29354,7 +29507,7 @@
                                   "effect": {
                                     "type": "shadow",
                                     "shadowType": "outer",
-                                    "color": "#0b8893",
+                                    "color": "$turquoise700",
                                     "offset": {
                                       "x": 0,
                                       "y": 4
@@ -29401,7 +29554,7 @@
           "children": [
             {
               "type": "frame",
-              "id": "JOLvh",
+              "id": "2l9xy",
               "name": "UserSidebar",
               "width": 212,
               "fill": "$grey100",
@@ -29409,11 +29562,10 @@
               "layout": "vertical",
               "gap": 8,
               "padding": 8,
-              "justifyContent": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "zbbJh",
+                  "id": "HIVZU",
                   "name": "OverviewLink",
                   "width": "fill_container",
                   "height": 44,
@@ -29424,21 +29576,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "G6KAH",
-                      "name": "OverviewIcon",
+                      "type": "icon_font",
+                      "id": "Hh09F",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "/Users/yueman/Desktop/test builder/builder-dev/spx-gui/src/components/ui/icons/info.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "book-open-check",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "iqsyU",
+                      "id": "iNxef",
                       "fill": "$grey900",
                       "content": "Overview",
                       "lineHeight": 1.5384615384615385,
@@ -29448,14 +29599,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "73NkL",
+                      "id": "JpTnV",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "M6fi0",
+                      "id": "ntxJZ",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -29468,7 +29619,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "Aig1o",
+                  "id": "slFXp",
                   "name": "ProjectsLink",
                   "width": "fill_container",
                   "height": 44,
@@ -29479,22 +29630,21 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "VP9vl",
-                      "name": "ProjectsIcon",
+                      "type": "icon_font",
+                      "id": "tsR32",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/asset-library.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "folder-closed",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "RwGsz",
-                      "fill": "$grey800",
+                      "id": "QXA1E",
+                      "fill": "$grey900",
                       "content": "Projects",
                       "lineHeight": 1.5384615384615385,
                       "fontFamily": "Inter",
@@ -29503,14 +29653,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "J68Tu",
+                      "id": "CVkRM",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "dbNow",
+                      "id": "H966T",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -29523,7 +29673,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "VjJww",
+                  "id": "m0dNy",
                   "name": "LikesLink",
                   "width": "fill_container",
                   "height": 44,
@@ -29534,22 +29684,21 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "KfqPN",
-                      "name": "LikesIcon",
+                      "type": "icon_font",
+                      "id": "d6Xlb",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/heart-hollow.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "heart",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "ZJ9ca",
-                      "fill": "$grey800",
+                      "id": "IyLIl",
+                      "fill": "$grey900",
                       "content": "Likes",
                       "lineHeight": 1.5384615384615385,
                       "fontFamily": "Inter",
@@ -29558,14 +29707,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "IzFWl",
+                      "id": "oQUX7",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "CYudk",
+                      "id": "cRYDF",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -29578,7 +29727,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "Ls95B",
+                  "id": "Febu7",
                   "name": "FollowingLink",
                   "width": "fill_container",
                   "height": 44,
@@ -29589,21 +29738,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "B1uIy",
-                      "name": "FollowingIcon",
+                      "type": "icon_font",
+                      "id": "Tft1E",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/plus.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "user-star",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$turquoise500"
                     },
                     {
                       "type": "text",
-                      "id": "KPzo2",
+                      "id": "sLAnW",
                       "fill": "$turquoise500",
                       "content": "Following",
                       "lineHeight": 1.4285714285714286,
@@ -29613,14 +29761,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "O6ckG",
+                      "id": "sVpVL",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "gkGgK",
+                      "id": "nteQ8",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -29633,7 +29781,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "1aSAV",
+                  "id": "Nt4zB",
                   "name": "FollowersLink",
                   "width": "fill_container",
                   "height": 44,
@@ -29644,21 +29792,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "mW4Y3",
-                      "name": "FollowersIcon",
+                      "type": "icon_font",
+                      "id": "iLuX5",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/check.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "users-round",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "UBkwU",
+                      "id": "oxjcV",
                       "fill": "$grey900",
                       "content": "Followers",
                       "lineHeight": 1.5384615384615385,
@@ -29668,14 +29815,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "izeKs",
+                      "id": "OCwJO",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "Cy3EX",
+                      "id": "2oQCF",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -29865,7 +30012,7 @@
                                       "effect": {
                                         "type": "shadow",
                                         "shadowType": "outer",
-                                        "color": "#0b8893",
+                                        "color": "$turquoise700",
                                         "offset": {
                                           "x": 0,
                                           "y": 4
@@ -31442,7 +31589,7 @@
                                   "effect": {
                                     "type": "shadow",
                                     "shadowType": "outer",
-                                    "color": "#0b8893",
+                                    "color": "$turquoise700",
                                     "offset": {
                                       "x": 0,
                                       "y": 4
@@ -31489,7 +31636,7 @@
           "children": [
             {
               "type": "frame",
-              "id": "AMQtW",
+              "id": "c8QIi",
               "name": "UserSidebar",
               "width": 212,
               "fill": "$grey100",
@@ -31497,11 +31644,10 @@
               "layout": "vertical",
               "gap": 8,
               "padding": 8,
-              "justifyContent": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "Dm9dQ",
+                  "id": "XzIc6",
                   "name": "OverviewLink",
                   "width": "fill_container",
                   "height": 44,
@@ -31512,21 +31658,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "fsdER",
-                      "name": "OverviewIcon",
+                      "type": "icon_font",
+                      "id": "f1iPt",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "/Users/yueman/Desktop/test builder/builder-dev/spx-gui/src/components/ui/icons/info.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "book-open-check",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "zVPAv",
+                      "id": "ObK7T",
                       "fill": "$grey900",
                       "content": "Overview",
                       "lineHeight": 1.5384615384615385,
@@ -31536,14 +31681,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "DZF7y",
+                      "id": "UXbks",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "nhDIM",
+                      "id": "atzn0",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -31556,7 +31701,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "twnLk",
+                  "id": "snPe5",
                   "name": "ProjectsLink",
                   "width": "fill_container",
                   "height": 44,
@@ -31567,22 +31712,21 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "RfNLV",
-                      "name": "ProjectsIcon",
+                      "type": "icon_font",
+                      "id": "KNcUa",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/asset-library.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "folder-closed",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "WzXoB",
-                      "fill": "$grey800",
+                      "id": "pQ4RN",
+                      "fill": "$grey900",
                       "content": "Projects",
                       "lineHeight": 1.5384615384615385,
                       "fontFamily": "Inter",
@@ -31591,14 +31735,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "Crr2A",
+                      "id": "GM0XP",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "1DwEQ",
+                      "id": "V8fYC",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -31611,7 +31755,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "S3u07",
+                  "id": "rwPwu",
                   "name": "LikesLink",
                   "width": "fill_container",
                   "height": 44,
@@ -31622,22 +31766,21 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "IqIKm",
-                      "name": "LikesIcon",
+                      "type": "icon_font",
+                      "id": "mtEt7",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/heart-hollow.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "heart",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "3aUqX",
-                      "fill": "$grey800",
+                      "id": "gRxnz",
+                      "fill": "$grey900",
                       "content": "Likes",
                       "lineHeight": 1.5384615384615385,
                       "fontFamily": "Inter",
@@ -31646,14 +31789,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "yxJJo",
+                      "id": "Y8wyb",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "ALXvC",
+                      "id": "KNL4u",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -31666,7 +31809,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "PIatx",
+                  "id": "I1f9w",
                   "name": "FollowingLink",
                   "width": "fill_container",
                   "height": 44,
@@ -31677,22 +31820,21 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "Phcwo",
-                      "name": "FollowingIcon",
+                      "type": "icon_font",
+                      "id": "eSQTD",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/plus.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "user-star",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$grey800"
                     },
                     {
                       "type": "text",
-                      "id": "lAUPw",
-                      "fill": "$grey800",
+                      "id": "FKRsj",
+                      "fill": "$grey900",
                       "content": "Following",
                       "lineHeight": 1.4285714285714286,
                       "fontFamily": "Inter",
@@ -31701,14 +31843,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "ONxvf",
+                      "id": "s0yf9",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "3bHDD",
+                      "id": "EUbyK",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -31721,7 +31863,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "BUV8n",
+                  "id": "nYTKe",
                   "name": "FollowersLink",
                   "width": "fill_container",
                   "height": 44,
@@ -31732,21 +31874,20 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "W1NHg",
-                      "name": "FollowersIcon",
+                      "type": "icon_font",
+                      "id": "LwtIT",
+                      "name": "arrowProjects",
+                      "rotation": -0.3325024010822037,
                       "width": 20,
                       "height": 20,
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../builder-dev/spx-gui/src/components/ui/icons/check.svg",
-                        "mode": "stretch"
-                      }
+                      "iconFontName": "users-round",
+                      "iconFontFamily": "lucide",
+                      "weight": 400,
+                      "fill": "$turquoise500"
                     },
                     {
                       "type": "text",
-                      "id": "aP6fP",
+                      "id": "cohtS",
                       "fill": "$turquoise500",
                       "content": "Followers",
                       "lineHeight": 1.5384615384615385,
@@ -31756,14 +31897,14 @@
                     },
                     {
                       "type": "frame",
-                      "id": "hCGtL",
+                      "id": "Zh8mR",
                       "name": "Spacer",
                       "width": "fill_container",
                       "height": "fit_content(0)"
                     },
                     {
                       "type": "icon_font",
-                      "id": "htYGR",
+                      "id": "OK8LH",
                       "name": "ArrowIcon",
                       "width": 12,
                       "height": 12,
@@ -31953,7 +32094,7 @@
                                       "effect": {
                                         "type": "shadow",
                                         "shadowType": "outer",
-                                        "color": "#0b8893",
+                                        "color": "$turquoise700",
                                         "offset": {
                                           "x": 0,
                                           "y": 4
