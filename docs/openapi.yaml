@@ -107,9 +107,10 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - description
+              minProperties: 1
               properties:
+                displayName:
+                  $ref: "#/components/schemas/User/properties/displayName"
                 description:
                   $ref: "#/components/schemas/User/properties/description"
       responses:
@@ -198,6 +199,9 @@ paths:
                     - $ref: "#/components/schemas/ProjectReleaseFullName"
                 name:
                   $ref: "#/components/schemas/Project/properties/name"
+                displayName:
+                  description: Defaults to `name` if not provided.
+                  $ref: "#/components/schemas/Project/properties/displayName"
                 files:
                   description: |
                     File paths and their corresponding universal URLs associated with the project.
@@ -267,10 +271,12 @@ paths:
               - $ref: "#/components/schemas/ProjectFullName"
               - $ref: "#/components/schemas/ProjectReleaseFullName"
         - name: keyword
-          description: Filter projects by name pattern.
+          description: Filter projects by display name or name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Project/properties/name"
+            type: string
+            examples:
+              - Niu Xiao Qi
         - name: visibility
           description: Filter projects by visibility.
           in: query
@@ -400,6 +406,8 @@ paths:
                   $ref: "#/components/schemas/Project/properties/files"
                 visibility:
                   $ref: "#/components/schemas/Project/properties/visibility"
+                displayName:
+                  $ref: "#/components/schemas/Project/properties/displayName"
                 description:
                   $ref: "#/components/schemas/Project/properties/description"
                 instructions:
@@ -2550,6 +2558,11 @@ components:
           type: string
           examples:
             - NiuXiaoQi
+        displayName:
+          description: Display name of the project.
+          type: string
+          examples:
+            - Niu Xiao Qi
         version:
           description: Version number of the project.
           type: integer
