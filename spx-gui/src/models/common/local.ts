@@ -1,11 +1,31 @@
 import localforage from 'localforage'
-import type { Metadata } from '../project'
+import type { Metadata, IProject } from '../project'
 import { File, type Files, type Metadata as FileMetadata } from './file'
 
 const storage = localforage.createInstance({
   name: 'spx-gui',
   storeName: 'project'
 })
+
+export class LocalHelper {
+  constructor() {}
+
+  async load(project: IProject, key: string) {
+    const cached = await load(key)
+    if (cached == null) throw new Error('no project in local cache')
+    const { metadata, files } = cached
+    await project.load(metadata, files)
+  }
+
+  async save(project: IProject, key: string, signal?: AbortSignal) {
+    const [metadata, files] = await project.export(signal)
+    await save(key, metadata, files, signal)
+  }
+
+  clear(key: string) {
+    return clear(key)
+  }
+}
 
 type MetadataEx = Omit<Metadata, 'thumbnail'> & {
   files: string[]

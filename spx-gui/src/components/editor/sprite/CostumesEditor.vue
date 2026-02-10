@@ -70,8 +70,8 @@ export class CostumesEditorState {
 import { UIMenu, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
-import type { Sprite } from '@/models/sprite'
-import { Costume } from '@/models/costume'
+import type { Sprite } from '@/models/spx/sprite'
+import { Costume } from '@/models/spx/costume'
 import { useAddCostumeFromLocalFile, useRenameCostume } from '@/components/asset'
 import EditorList from '../common/EditorList.vue'
 import CostumeItem from './CostumeItem.vue'
@@ -87,11 +87,11 @@ const editorCtx = useEditorCtx()
 
 function handleSelect(costume: Costume) {
   const action = { name: { en: 'Set default costume', zh: '设置默认造型' } }
-  editorCtx.project.history.doAction(action, () => props.sprite.setDefaultCostume(costume.id))
+  editorCtx.state.history.doAction(action, () => props.sprite.setDefaultCostume(costume.id))
 }
 
 const addFromLocalFile = useAddCostumeFromLocalFile()
-const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.sprite, editorCtx.project), {
+const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.sprite), {
   en: 'Failed to add from local file',
   zh: '从本地文件添加失败'
 }).fn
@@ -99,7 +99,7 @@ const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.spr
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update costume order', zh: '更新造型顺序' } }
-    await editorCtx.project.history.doAction(action, () => props.sprite.moveCostume(oldIdx, newIdx))
+    await editorCtx.state.history.doAction(action, () => props.sprite.moveCostume(oldIdx, newIdx))
   },
   {
     en: 'Failed to update costume order',

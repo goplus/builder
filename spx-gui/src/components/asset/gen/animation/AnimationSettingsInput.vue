@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import type { AnimationGen } from '@/models/gen/animation-gen'
+import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
 import ReferenceCostumeInput from '../common/ReferenceCostumeInput.vue'

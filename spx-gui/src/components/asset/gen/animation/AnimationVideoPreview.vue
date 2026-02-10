@@ -106,7 +106,7 @@ import { computed, onScopeDispose, ref, toValue, watch, type Ref, type WatchSour
 import { useFileUrl } from '@/utils/file'
 import { untilNotNull } from '@/utils/utils'
 import type { File } from '@/models/common/file'
-import type { FramesConfig } from '@/models/gen/animation-gen'
+import type { FramesConfig } from '@/models/spx/gen/animation-gen'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
 import GenLoading from '../common/GenLoading.vue'
 

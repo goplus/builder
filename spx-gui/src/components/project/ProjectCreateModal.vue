@@ -54,8 +54,10 @@ import { useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
 import { getSignedInUsername } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { Project } from '@/models/project'
+import { XbpHelper } from '@/models/common/xbp'
+import { SpxProject } from '@/models/spx/project'
 import { getDefaultProjectFile } from '@/components/project'
+import { CloudHelper } from '@/models/common/cloud'
 
 const props = defineProps<{
   remixSource?: string
@@ -97,10 +99,10 @@ const handleSubmit = useMessageHandle(
     } else {
       const username = await untilNotNull(signedInUsername)
       const defaultProjectFile = await getDefaultProjectFile()
-      const project = new Project(username, projectName)
-      await project.loadXbpFile(defaultProjectFile)
+      const project = new SpxProject(username, projectName)
+      await new XbpHelper().load(project, defaultProjectFile)
       project.setVisibility(Visibility.Private)
-      await project.saveToCloud()
+      await new CloudHelper().save(project)
     }
     emit('resolved', projectName)
     return projectName

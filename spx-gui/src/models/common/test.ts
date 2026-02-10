@@ -1,38 +1,50 @@
-import { Project } from '../project'
-import { Sound } from '../sound'
-import { fromText } from '../common/file'
-import { Backdrop } from '../backdrop'
-import { Monitor } from '../widget/monitor'
-import { Sprite } from '../sprite'
-import { Costume } from '../costume'
-import { Animation } from '../animation'
+import { vi } from 'vitest'
+import { shallowReactive } from 'vue'
+import type { IProject, Metadata } from '@/models/project'
+import { fromText, type Files } from '../common/file'
+import Mutex from '@/utils/mutex'
 
 export function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
 }
 
-export function makeProject() {
-  const project = new Project()
-  const sound = new Sound('sound', mockFile())
-  project.addSound(sound)
-
-  const backdrop = new Backdrop('backdrop', mockFile())
-  project.stage.addBackdrop(backdrop)
-  const widget = new Monitor('monitor', {
-    x: 10,
-    y: 20,
-    label: 'Score',
-    variableName: 'score'
+export class SimpleProject implements IProject {
+  mutex = new Mutex()
+  public files: Files
+  constructor(
+    public owner?: string,
+    public name?: string,
+    files: Files = {}
+  ) {
+    this.files = shallowReactive({ ...files })
+  }
+  private getMetadata(): Metadata {
+    return {
+      owner: this.owner,
+      name: this.name
+    }
+  }
+  setMetadata = vi.fn((metadata: Metadata): void => {
+    Object.assign(this, metadata)
   })
-  project.stage.addWidget(widget)
-
-  const sprite = new Sprite('MySprite')
-  const costume = new Costume('default', mockFile())
-  sprite.addCostume(costume)
-  const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))
-  const animation = Animation.create('default', animationCostumes)
-  sprite.addAnimation(animation)
-  project.addSprite(sprite)
-  project.bindScreenshotTaker(async () => mockFile())
-  return project
+  loadFiles = vi.fn(async (files: Files, _signal?: AbortSignal): Promise<void> => {
+    void _signal
+    this.files = { ...files }
+  })
+  exportFiles = vi.fn((): Files => {
+    return { ...this.files }
+  })
+  export = vi.fn(async (_signal?: AbortSignal): Promise<[Metadata, Files]> => {
+    void _signal
+    return this.mutex.runExclusive(async () => {
+      return [this.getMetadata(), { ...this.files }]
+    })
+  })
+  load = vi.fn(async (metadata: Metadata, files: Files, _signal?: AbortSignal): Promise<void> => {
+    void _signal
+    await this.mutex.runExclusive(async () => {
+      Object.assign(this, metadata)
+      this.files = { ...files }
+    })
+  })
 }

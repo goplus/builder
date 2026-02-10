@@ -91,7 +91,7 @@ import { useFileUrl } from '@/utils/file'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
-import { MapMode } from '@/models/stage'
+import { MapMode } from '@/models/spx/stage'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
@@ -248,7 +248,7 @@ watch(
 
     // Set camera follow sprite
     if (project.cameraFollowSprite !== selectedSprite) {
-      project.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
+      editorCtx.state.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
         project.setCameraFollowSprite(selectedSprite?.id ?? null)
       )
     }
@@ -351,7 +351,7 @@ const visibleSpriteLocalConfigs = computed(() => {
   return zorder
     .map((id) => sprites.find((s) => s.id === id))
     .filter(Boolean)
-    .map((sprite) => new SpriteLocalConfig(sprite!, editorCtx.project)) as SpriteLocalConfig[]
+    .map((sprite) => new SpriteLocalConfig(sprite!, editorCtx.state.history)) as SpriteLocalConfig[]
 })
 
 const visibleWidgetLocalConfigs = computed(() => {
@@ -359,7 +359,7 @@ const visibleWidgetLocalConfigs = computed(() => {
   return widgetsZorder
     .map((id) => widgets.find((w) => w.id === id))
     .filter(Boolean)
-    .map((widget) => new WidgetLocalConfig(widget!, editorCtx.project)) as WidgetLocalConfig[]
+    .map((widget) => new WidgetLocalConfig(widget!, editorCtx.state.history)) as WidgetLocalConfig[]
 })
 
 let cameraEdgeScrollCheckTimer: ReturnType<typeof setInterval> | null = null

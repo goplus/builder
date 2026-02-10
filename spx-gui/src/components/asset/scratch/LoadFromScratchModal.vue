@@ -14,14 +14,14 @@
   </UIFormModal>
 </template>
 <script setup lang="ts">
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import { UIFormModal } from '@/components/ui'
 import type { ExportedScratchAssets } from '@/utils/scratch'
-import type { AssetModel } from '@/models/common/asset'
+import type { AssetModel } from '@/models/spx/common/asset'
 import LoadFromScratch from './LoadFromScratch.vue'
 
 defineProps<{
-  project: Project
+  project: SpxProject
   exportedScratchAssets: ExportedScratchAssets
   visible: boolean
 }>()

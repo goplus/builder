@@ -11,7 +11,7 @@ import { usePageTitle } from '@/utils/utils'
 import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
-import { Project } from '@/models/project'
+import { SpxProject, type CloudProject } from '@/models/spx/project'
 import { useUser, isSignedIn, getSignedInUsername, initiateSignIn } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
@@ -39,6 +39,7 @@ import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
 import kikoWaveSvg from './kiko-wave.svg?raw'
+import { CloudHelper } from '@/models/common/cloud'
 
 const props = defineProps<{
   owner: string
@@ -54,10 +55,10 @@ const {
   refetch: reloadProject
 } = useQuery(
   async (ctx) => {
-    const p = new Project()
+    const p = new SpxProject(props.owner, props.name)
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    const loaded = await p.loadFromCloud(props.owner, props.name, true, ctx.signal)
-    return loaded
+    await new CloudHelper().load(p, true, ctx.signal)
+    return p as CloudProject
   },
   {
     en: 'Failed to load project',
@@ -199,7 +200,10 @@ const handleLike = useMessageHandle(
   async () => {
     await ensureSignedIn()
     await likeProject(props.owner, props.name)
-    await project.value?.loadFromCloud(props.owner, props.name, true) // refresh project info (likeCount)
+    if (project.value != null) {
+      // refresh project info (likeCount)
+      await new CloudHelper().load(project.value, true)
+    }
   },
   { en: 'Failed to like', zh: '标记喜欢失败' }
 )
@@ -209,7 +213,10 @@ const handleUnlike = useMessageHandle(
   async () => {
     await ensureSignedIn()
     await unlikeProject(props.owner, props.name)
-    await project.value?.loadFromCloud(props.owner, props.name, true) // refresh project info (likeCount)
+    if (project.value != null) {
+      // refresh project info (likeCount)
+      await new CloudHelper().load(project.value, true)
+    }
   },
   { en: 'Failed to unlike', zh: '取消喜欢失败' }
 )

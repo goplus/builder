@@ -1,36 +1,41 @@
 import { ref, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { Project } from '@/models/project'
-import { Sprite } from '@/models/sprite'
-import { Sound } from '@/models/sound'
-import { Backdrop } from '@/models/backdrop'
-import { Monitor } from '@/models/widget/monitor'
-import { Costume } from '@/models/costume'
-import { Animation } from '@/models/animation'
-import { fromText } from '@/models/common/file'
+import { SpxProject } from '@/models/spx/project'
+import { Sprite } from '@/models/spx/sprite'
+import { Sound } from '@/models/spx/sound'
+import { Backdrop } from '@/models/spx/backdrop'
+import { Monitor } from '@/models/spx/widget/monitor'
+import { Costume } from '@/models/spx/costume'
+import { Animation } from '@/models/spx/animation'
 import type * as editing from './editing'
 
 import { EditorState, type IRouter, type Selected } from './editor-state'
+import type { CloudHelper } from '@/models/common/cloud'
+import { mockFile } from '@/models/common/test'
 
-function mockFile(name = 'mocked') {
-  return fromText(name, Math.random() + '')
+function mockCloudHelper(): CloudHelper {
+  return {
+    load: vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockResolvedValue(undefined)
+  }
 }
 
-function mockLocalStorage(): editing.LocalStorage {
+function mockLocalCacheHelper(): editing.ILocalCacheHelper {
   return {
+    save: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined)
   }
 }
 
-function createEmptyProject(): Project {
-  const project = new Project()
+function createEmptyProject(): SpxProject {
+  const project = new SpxProject()
   project.bindScreenshotTaker(async () => mockFile())
   return project
 }
 
-function createProjectWithResources(): Project {
-  const project = new Project()
+function createProjectWithResources(): SpxProject {
+  const project = new SpxProject()
 
   // Add sounds
   const sound1 = new Sound('sound1', mockFile())
@@ -101,13 +106,13 @@ function mockRouter() {
 }
 
 function createEditorState(
-  project: Project = createEmptyProject(),
+  project: SpxProject = createEmptyProject(),
   isOnline: WatchSource<boolean> = ref(true),
-  signedInUsername: WatchSource<string | null> = ref('user'),
-  localCacheKey: string = 'test-cache-key',
-  localStorage: editing.LocalStorage = mockLocalStorage()
+  signedInUsername: string | null = 'user',
+  cloudHelper: CloudHelper = mockCloudHelper(),
+  localCacheHelper: editing.ILocalCacheHelper = mockLocalCacheHelper()
 ): EditorState {
-  return new EditorState(project, isOnline, signedInUsername, localCacheKey, localStorage)
+  return new EditorState(project, isOnline, signedInUsername, cloudHelper, localCacheHelper)
 }
 
 describe('EditorState', () => {
@@ -257,19 +262,19 @@ describe('EditorState', () => {
       editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[0].id)
       await flushPromises()
 
-      await project.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
+      await editorState.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
         editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
       )
       await flushPromises()
 
       expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[1].name)
 
-      await project.history.undo()
+      await editorState.history.undo()
       await flushPromises()
 
       expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[0].name)
 
-      await project.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
+      await editorState.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
         editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
       )
       await flushPromises()

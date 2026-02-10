@@ -4,7 +4,7 @@ import { useHovered } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import type { AssetData } from '@/apis/asset'
-import { asset2Sprite } from '@/models/common/asset'
+import { asset2Sprite } from '@/models/spx/common/asset'
 import { UIImg, UISpriteItem } from '@/components/ui'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 

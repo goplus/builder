@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue'
-import { humanizeResourceType } from '@/models/common/resource-model'
+import { humanizeResourceType } from '@/models/spx/common/resource-model'
 import { UITabRadioGroup, UITabRadio, UISelect, UISelectOption } from '@/components/ui'
 import {
   InputKind,

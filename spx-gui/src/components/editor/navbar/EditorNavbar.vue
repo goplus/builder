@@ -163,7 +163,8 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
 import { convertScratchToXbp } from '@/apis/sb2xbp'
-import { type Project } from '@/models/project'
+import { XbpHelper } from '@/models/common/xbp'
+import { type SpxProject } from '@/models/spx/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
@@ -193,7 +194,7 @@ import defaultModeSvg from './icons/default-mode.svg?raw'
 import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
 
 const props = defineProps<{
-  project: Project | null
+  project: SpxProject | null
   state: EditorState | null
 }>()
 
@@ -223,11 +224,15 @@ const ownerInfoToDisplay = computed(() => {
   return null
 })
 
+const xbpHelper = new XbpHelper()
+
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 
 const handleImportProjectFile = useMessageHandle(
   async () => {
-    if (props.project == null) throw new Error('No project to import into')
+    const { project, state } = props
+    if (project == null) throw new Error('No project to import into')
+    if (state == null) throw new Error('Editor state expected')
     await confirm({
       title: i18n.t(importProjectFileMessage),
       content: i18n.t({
@@ -239,7 +244,7 @@ const handleImportProjectFile = useMessageHandle(
     const file = await selectFile({ accept: ['xbp', 'gbp' /** For backward compatibility */] })
     const action = { name: importProjectFileMessage }
     await m.withLoading(
-      props.project.history.doAction(action, () => props.project!.loadXbpFile(file)),
+      state.history.doAction(action, () => xbpHelper.load(project, file)),
       i18n.t({ en: 'Importing project file', zh: '导入项目文件中' })
     )
   },
@@ -254,7 +259,7 @@ const handleExportProjectFile = useMessageHandle(
     if (project == null) throw new Error('No project to export')
     // TODO: Consider moving `project.getSignal()` into `exportXbpFile` as built-in logic
     const xbpFile = await m.withLoading(
-      project.exportXbpFile(project.getSignal()),
+      xbpHelper.save(project, project.getSignal()),
       i18n.t({ en: 'Exporting project file', zh: '导出项目文件中' })
     )
     saveAs(xbpFile, xbpFile.name) // TODO: what if user cancelled download?
@@ -279,8 +284,9 @@ const handleImportAssetsFromScratch = useMessageHandle(
 const importScratchMessage = { en: 'Import Scratch project file', zh: '导入 Scratch 项目文件' }
 const handleImportFromScratch = useMessageHandle(
   async () => {
-    const { project } = props
+    const { project, state } = props
     if (project == null) throw new Error('project is not available')
+    if (state == null) throw new Error('Editor state is not available')
     // select Scratch project file (.sb2 or .sb3)
     const file = await selectFile({ accept: ['sb3', 'sb2'] })
 
@@ -298,7 +304,7 @@ const handleImportFromScratch = useMessageHandle(
 
     const action = { name: importScratchMessage }
     await m.withLoading(
-      project.history.doAction(action, () => project!.loadXbpFile(xbpFile)),
+      state.history.doAction(action, () => xbpHelper.load(project, xbpFile)),
       i18n.t({ en: 'Importing converted project file', zh: '导入已转换的项目文件' })
     )
   },
@@ -339,26 +345,26 @@ const handleRemoveProject = useMessageHandle(
   { en: 'Failed to remove project', zh: '删除项目失败' }
 ).fn
 
-const undoAction = computed(() => props.project?.history.getUndoAction() ?? null)
+const undoAction = computed(() => props.state?.history.getUndoAction())
 
 const undoText = computed(() => ({
   en: undoAction.value != null ? `Undo "${undoAction.value.name.en}"` : 'Undo',
   zh: undoAction.value != null ? `撤销“${undoAction.value.name.zh}”` : '撤销'
 }))
 
-const redoAction = computed(() => props.project?.history.getRedoAction() ?? null)
+const redoAction = computed(() => props.state?.history.getRedoAction())
 
 const redoText = computed(() => ({
   en: redoAction.value != null ? `Redo "${redoAction.value.name.en}"` : 'Redo',
   zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
 }))
 
-const handleUndo = useMessageHandle(() => props.project!.history.undo(), {
+const handleUndo = useMessageHandle(() => props.state?.history.undo(), {
   en: 'Failed to undo',
   zh: '撤销操作失败'
 })
 
-const handleRedo = useMessageHandle(() => props.project!.history.redo(), {
+const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
   en: 'Failed to redo',
   zh: '重做操作失败'
 })

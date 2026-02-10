@@ -1,24 +1,27 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { type Project } from '@/models/project'
-import { headingToLeftRight, LeftRight, leftRightToHeading, RotationStyle, type Sprite } from '@/models/sprite'
+import { type SpxProject } from '@/models/spx/project'
+import { headingToLeftRight, LeftRight, leftRightToHeading, RotationStyle, type Sprite } from '@/models/spx/sprite'
 
 import { wrapUpdateHandler } from '../utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
 import { UIButtonGroup, UIButtonGroupItem, UIDropdown, UIIcon, UINumberInput, UITooltip } from '@/components/ui'
 
 const props = defineProps<{
   sprite: Sprite
-  project: Project
+  project: SpxProject
 }>()
+
+const editorCtx = useEditorCtx()
 
 const rotateDropdownVisible = ref(false)
 
 const spriteContext = () => ({
   sprite: props.sprite,
-  project: props.project
+  history: editorCtx.state.history
 })
 
 const rotationStyleTips = {

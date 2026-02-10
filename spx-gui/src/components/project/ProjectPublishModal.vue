@@ -5,14 +5,14 @@ import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
-import { saveFile } from '@/models/common/cloud'
-import type { Project } from '@/models/project'
+import { CloudHelper, saveFile } from '@/models/common/cloud'
+import type { SpxProject } from '@/models/spx/project'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 import { stringifyProjectFullName } from '@/apis/project'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
   visible: boolean
 }>()
 
@@ -69,7 +69,7 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     if (isProjectUsingAIInteraction(project)) await project.ensureAIDescription(true) // Ensure AI description is available if needed
-    await project.saveToCloud()
+    await new CloudHelper().save(project)
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({
       projectFullName: stringifyProjectFullName(project.owner!, project.name!),

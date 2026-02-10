@@ -5,8 +5,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watchEffect } from 'vue'
 import type { Node } from 'konva/lib/Node'
-import { Sprite } from '@/models/sprite'
-import type { Widget } from '@/models/widget'
+import { Sprite } from '@/models/spx/sprite'
+import type { Widget } from '@/models/spx/widget'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
 import { getNodeId } from './common'
 import { debounce } from 'lodash'

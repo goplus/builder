@@ -1,17 +1,20 @@
 <script lang="ts" setup>
 import { UIDivider, UITooltip, type IconType } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
-import { headingToLeftRight, leftRightToHeading, RotationStyle } from '@/models/sprite'
-import type { Project } from '@/models/project'
+import { headingToLeftRight, leftRightToHeading, RotationStyle } from '@/models/spx/sprite'
+import type { SpxProject } from '@/models/spx/project'
 import type { LocaleMessage } from '@/utils/i18n'
 import ConfigItem from '../common/ConfigItem.vue'
 import ZorderConfigItem, { moveActionNames, type MoveAction } from '../common/ZorderConfigItem.vue'
 import type { SpriteLocalConfig } from '../utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const props = defineProps<{
   localConfig: SpriteLocalConfig
-  project: Project
+  project: SpxProject
 }>()
+
+const editorCtx = useEditorCtx()
 
 const rotationStyleTips = {
   [RotationStyle.Normal]: {
@@ -52,7 +55,7 @@ function handleRotationStyleUpdate(style: RotationStyle) {
 }
 
 async function moveZorder(direction: MoveAction) {
-  await props.project.history.doAction({ name: moveActionNames[direction] }, () => {
+  await editorCtx.state.history.doAction({ name: moveActionNames[direction] }, () => {
     const { localConfig, project } = props
     if (direction === 'up') {
       project.upSpriteZorder(localConfig.id)

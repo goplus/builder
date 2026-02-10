@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAsyncComputed } from '@/utils/utils'
-import type { Costume } from '@/models/costume'
+import type { Costume } from '@/models/spx/costume'
 import ParamSelector from './param-settings/ParamSelector.vue'
 import imgCostume from './param-settings/assets/costume.svg'
 

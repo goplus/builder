@@ -10,9 +10,9 @@ import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
 import { timeout, until, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
-import type { Project } from '@/models/project'
-import type { Sprite } from '@/models/sprite'
-import { MapMode } from '@/models/stage'
+import type { SpxProject } from '@/models/spx/project'
+import type { Sprite } from '@/models/spx/sprite'
+import { MapMode } from '@/models/spx/stage'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
@@ -24,15 +24,18 @@ import QuickConfigWrapper, {
 import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
 import { SpriteLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
 import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
   selectedSprite: Sprite | null
 }>()
 
 const emit = defineEmits<{
   'update:selectedSprite': [sprite: Sprite | null]
 }>()
+
+const editorCtx = useEditorCtx()
 
 const container = ref<HTMLElement | null>(null)
 const containerSizeRef = useContentSize(container)
@@ -296,7 +299,7 @@ const visibleSpriteLocalConfigs = computed(() => {
   return zorder
     .map((id) => sprites.find((s) => s.id === id))
     .filter(Boolean)
-    .map((sprite) => new SpriteLocalConfig(sprite!, props.project)) as SpriteLocalConfig[]
+    .map((sprite) => new SpriteLocalConfig(sprite!, editorCtx.state.history)) as SpriteLocalConfig[]
 })
 
 let cameraEdgeScrollCheckTimer: ReturnType<typeof setInterval> | null = null

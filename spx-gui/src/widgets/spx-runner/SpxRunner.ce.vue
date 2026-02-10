@@ -31,14 +31,15 @@
 <script setup lang="ts">
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import { ref, watch } from 'vue'
-import { Project, fullName } from '@/models/project'
+import { SpxProject, fullName } from '@/models/spx/project'
 import { shallowRef } from 'vue'
+import { CloudHelper } from '@/models/common/cloud'
 const props = defineProps<{ owner?: string; name?: string }>()
 const runner = ref()
 const run = ref(false)
 const ready = ref(false)
 const errorMsg = ref('')
-const project = shallowRef(new Project())
+const project = shallowRef(new SpxProject())
 watch(
   () => [props.owner, props.name],
   async ([owner, name]) => {
@@ -46,8 +47,8 @@ watch(
       ready.value = false
       errorMsg.value = ''
       try {
-        const newProject = new Project()
-        await newProject.loadFromCloud(owner, name, true)
+        const newProject = new SpxProject(owner, name)
+        await new CloudHelper().load(newProject, true)
         project.value.dispose()
         project.value = newProject
         ready.value = true

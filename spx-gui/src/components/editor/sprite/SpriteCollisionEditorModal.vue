@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { Sprite } from '@/models/sprite'
+import type { Sprite } from '@/models/spx/sprite'
 
 import { UIFormModal } from '@/components/ui'
 
 import SpriteCollisionEditor from './SpriteCollisionEditor.vue'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 
 defineProps<{
   sprite: Sprite
-  project: Project
+  project: SpxProject
   visible: boolean
 }>()
 

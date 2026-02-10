@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { UIEditorWidgetItem, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import type { Widget } from '@/models/widget'
+import type { Widget } from '@/models/spx/widget'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { getIcon } from './icon'
 import CornerMenu from '../../common/CornerMenu.vue'
@@ -34,7 +34,7 @@ const radarNodeMeta = computed(() => {
 function toggleWidgetVisible() {
   const name = props.widget.name
   const action = { name: { en: `Toggle visibility for widget ${name}`, zh: `切换控件 ${name} 的可见性` } }
-  editorCtx.project.history.doAction(action, () => props.widget.setVisible(!props.widget.visible))
+  editorCtx.state.history.doAction(action, () => props.widget.setVisible(!props.widget.visible))
 }
 
 const { fn: handleDuplicate } = useMessageHandle(
@@ -44,7 +44,7 @@ const { fn: handleDuplicate } = useMessageHandle(
     if (stage == null) throw new Error('stage expected')
 
     const action = { name: { en: `Duplicate widget ${widget.name}`, zh: `复制控件 ${widget.name}` } }
-    await editorCtx.project.history.doAction(action, () => {
+    await editorCtx.state.history.doAction(action, () => {
       const newWidget = widget.clone()
       stage.addWidgetAfter(newWidget, widget.id)
       editorCtx.state.selectWidget(newWidget.id)
@@ -61,7 +61,7 @@ const handleRemove = useMessageHandle(
     const { stage, name } = props.widget
     if (stage == null) throw new Error('stage expected')
     const action = { name: { en: `Remove widget ${name}`, zh: `删除控件 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => stage.removeWidget(props.widget.id))
+    await editorCtx.state.history.doAction(action, () => stage.removeWidget(props.widget.id))
   },
   {
     en: 'Failed to remove widget',

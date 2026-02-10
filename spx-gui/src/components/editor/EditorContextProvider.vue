@@ -7,7 +7,7 @@ import { useAppProvide, useAppInject } from '@/utils/app-state'
 import type { EditorState } from './editor-state'
 
 export type EditorCtx = {
-  project: Project
+  project: SpxProject
   state: EditorState
 }
 
@@ -38,11 +38,11 @@ export function useEditorCtx() {
 
 <script setup lang="ts">
 import { inject, provide, type InjectionKey } from 'vue'
-import { Project } from '@/models/project'
+import { SpxProject } from '@/models/spx/project'
 import { computedShallowReactive } from '@/utils/utils'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
   state: EditorState
 }>()
 

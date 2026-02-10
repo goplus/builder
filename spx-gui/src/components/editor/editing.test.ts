@@ -1,60 +1,61 @@
-import { shallowReactive, ref, type WatchSource } from 'vue'
+import { ref, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { timeout } from '@/utils/utils'
-import { fromText, type Files } from '@/models/common/file'
-import { Editing, type EditableProject, SavingState, EditingMode, type LocalStorage } from './editing'
-
-function mockFile(name = 'mocked') {
-  return fromText(name, Math.random() + '')
-}
+import { type Files } from '@/models/common/file'
+import type { CloudHelper } from '@/models/common/cloud'
+import { mockFile, SimpleProject } from '@/models/common/test'
+import type { IProject } from '@/models/project'
+import { Editing, SavingState, EditingMode, type ILocalCacheHelper } from './editing'
 
 function mockFiles() {
-  return shallowReactive({
+  return {
     'file1.txt': mockFile('file1.txt'),
     'file2.txt': mockFile('file2.txt'),
     'file3.txt': mockFile('file3.txt')
-  })
-}
-
-function mockProject({
-  files,
-  ...extra
-}: Partial<{
-  owner?: string
-  files?: Files
-  saveToCloud(signal?: AbortSignal): Promise<void>
-  saveToLocalCache(key: string, signal?: AbortSignal): Promise<void>
-}>): EditableProject {
-  return {
-    owner: 'user',
-    exportGameFiles: () => ({ ...files }),
-    saveToCloud: vi.fn().mockResolvedValue(undefined),
-    saveToLocalCache: vi.fn().mockResolvedValue(undefined),
-    ...extra
   }
 }
 
-function mockLocalStorage() {
+function mockProject({
+  files = mockFiles(),
+  owner,
+  name
+}: {
+  owner?: string
+  name?: string
+  files?: Files
+} = {}) {
+  return new SimpleProject(owner, name, files)
+}
+
+function mockCloudHelper(): CloudHelper {
   return {
+    load: vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockResolvedValue(undefined)
+  }
+}
+
+function mockLocalCacheHelper(): ILocalCacheHelper {
+  return {
+    save: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined)
   }
 }
 
 function makeEditing({
   project = mockProject({}),
+  mode = EditingMode.AutoSave,
   isOnline = () => true,
-  signedInUsername: username = () => 'user',
-  localCacheKey = 'LOCAL_CACHE_KEY',
-  localStorage = mockLocalStorage()
+  cloudHelper = mockCloudHelper(),
+  localCacheHelper = mockLocalCacheHelper()
 }: Partial<{
-  project: EditableProject
+  project: IProject
+  mode: EditingMode
   isOnline: WatchSource<boolean>
-  signedInUsername: WatchSource<string | null>
-  localCacheKey: string
-  localStorage: LocalStorage
+  cloudHelper: CloudHelper
+  localCacheHelper: ILocalCacheHelper
 }>) {
-  return new Editing(project, isOnline, username, localCacheKey, localStorage)
+  return new Editing(mode, project, cloudHelper, localCacheHelper, isOnline)
 }
 
 describe('Editing', () => {
@@ -71,121 +72,122 @@ describe('Editing', () => {
   })
 
   it('should do auto-save correctly', async () => {
-    const files = mockFiles()
-    const project = mockProject({
-      files,
-      saveToCloud: vi.fn(async (signal?: AbortSignal) => timeout(500, signal)),
-      saveToLocalCache: vi.fn(async (localCacheKey: string, signal?: AbortSignal) => timeout(100, signal))
-    })
-    const localStorage = mockLocalStorage()
-    const editing = makeEditing({ project, localStorage })
+    const cloudHelper = mockCloudHelper()
+    vi.mocked(cloudHelper.save).mockImplementation((project: IProject, signal?: AbortSignal) => timeout(500, signal))
+    const localCacheHelper = mockLocalCacheHelper()
+    vi.mocked(localCacheHelper.save).mockImplementation((project: IProject, signal?: AbortSignal) =>
+      timeout(100, signal)
+    )
+    const project = mockProject()
+    const editing = makeEditing({ project, localCacheHelper, cloudHelper })
     editing.start()
 
     expect(editing.mode).toBe(EditingMode.AutoSave)
     expect(editing.dirty).toBe(false)
     expect(editing.saving).toBeNull()
 
-    files['file1.txt'] = mockFile('file1.txt updated')
+    project.files['file1.txt'] = mockFile('file1.txt updated')
     await flushPromises()
     expect(editing.dirty).toBe(true)
     expect(editing.saving?.state).toBe(SavingState.Pending)
 
     vi.advanceTimersByTime(autoSaveToLocalCacheDelay)
     await flushPromises()
-    expect(project.saveToLocalCache).toHaveBeenCalledTimes(1)
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(1)
 
     vi.advanceTimersByTime(autoSaveToCloudDelay - autoSaveToLocalCacheDelay + 1)
     await flushPromises()
-    expect(project.saveToCloud).toHaveBeenCalledTimes(1)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(1)
     expect(editing.saving?.state).toBe(SavingState.InProgress)
 
     vi.advanceTimersByTime(500)
     await flushPromises()
     expect(editing.dirty).toBe(false)
     expect(editing.saving?.state).toBe(SavingState.Completed)
-    expect(localStorage.clear).toHaveBeenCalledTimes(1)
-    expect(localStorage.clear).toHaveBeenCalledWith('LOCAL_CACHE_KEY')
+    expect(localCacheHelper.clear).toHaveBeenCalledTimes(1)
   })
 
   // https://github.com/goplus/builder/pull/794#discussion_r1728120369
   it('should handle failed auto-save-to-cloud correctly', async () => {
-    const files = mockFiles()
-    const project = mockProject({
-      files,
-      saveToCloud: vi
-        .fn()
-        .mockRejectedValueOnce(new Error('Cloud save failed'))
-        .mockRejectedValueOnce(new Error('Cloud save failed again'))
-        .mockResolvedValue(undefined)
-    })
-    const editing = makeEditing({ project })
+    const project = mockProject()
+    const cloudHelper = mockCloudHelper()
+    vi.mocked(cloudHelper.save)
+      .mockRejectedValueOnce(new Error('Cloud save failed'))
+      .mockRejectedValueOnce(new Error('Cloud save failed again'))
+      .mockResolvedValue(undefined)
+    const editing = makeEditing({ project, cloudHelper })
     editing.start()
 
-    files['file1.txt'] = mockFile('file1.txt updated')
+    project.files['file1.txt'] = mockFile('file1.txt updated')
     await flushPromises()
 
     vi.advanceTimersByTime(autoSaveToCloudDelay)
     await flushPromises()
-    expect(project.saveToCloud).toHaveBeenCalledTimes(1)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(1)
     expect(editing.saving?.state).toBe(SavingState.Failed)
 
     vi.advanceTimersByTime(retryAutoSaveToCloudDelay)
     await flushPromises()
-    expect(project.saveToCloud).toHaveBeenCalledTimes(2)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(2)
     expect(editing.saving?.state).toBe(SavingState.Failed)
 
     vi.advanceTimersByTime(retryAutoSaveToCloudDelay)
     await flushPromises()
-    expect(project.saveToCloud).toHaveBeenCalledTimes(3)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(3)
     expect(editing.dirty).toBe(false)
     expect(editing.saving?.state).toBe(SavingState.Completed)
   })
 
   it('should cancel pending saving when editing is disposed', async () => {
-    const files = mockFiles()
-    const project = mockProject({ files })
-    const editing = makeEditing({ project })
+    const project = mockProject()
+    const cloudHelper = mockCloudHelper()
+    const localCacheHelper = mockLocalCacheHelper()
+    const editing = makeEditing({ project, localCacheHelper, cloudHelper })
     editing.start()
 
-    files['file1.txt'] = mockFile('file1.txt updated')
+    project.files['file1.txt'] = mockFile('file1.txt updated')
     await flushPromises()
 
     editing.dispose()
     vi.advanceTimersByTime(autoSaveToCloudDelay)
     await flushPromises()
-    expect(project.saveToLocalCache).toHaveBeenCalledTimes(0)
-    expect(project.saveToCloud).toHaveBeenCalledTimes(0)
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(0)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(0)
   })
 
   it('should abort previous saveToCloud call when a new one is initiated', async () => {
-    const files = mockFiles()
-    const project = mockProject({ files })
-    const editing = makeEditing({ project })
+    const project = mockProject()
+    const cloudHelper = mockCloudHelper()
+    const localCacheHelper = mockLocalCacheHelper()
+    const editing = makeEditing({ project, localCacheHelper, cloudHelper })
     editing.start()
 
-    files['file1.txt'] = mockFile('file1.txt updated')
+    project.files['file1.txt'] = mockFile('file1.txt updated')
     await flushPromises()
     vi.advanceTimersByTime(100)
-    files['file2.txt'] = mockFile('file2.txt updated')
+    project.files['file2.txt'] = mockFile('file2.txt updated')
     await flushPromises()
     vi.advanceTimersByTime(100)
-    files['file3.txt'] = mockFile('file3.txt updated')
+    project.files['file3.txt'] = mockFile('file3.txt updated')
     await flushPromises()
 
     vi.advanceTimersByTime(autoSaveToCloudDelay)
     await flushPromises()
     expect(editing.dirty).toBe(false)
     expect(editing.saving?.state).toBe(SavingState.Completed)
-    expect(project.saveToLocalCache).toHaveBeenCalledTimes(1)
-    expect(project.saveToCloud).toHaveBeenCalledTimes(1)
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(1)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(1)
   })
 
   it('should not trigger auto-save for effect-free mode', async () => {
-    const files = mockFiles()
-    const project = mockProject({ files, owner: 'project-owner' })
+    const project = mockProject({ owner: 'project-owner' })
+    const cloudHelper = mockCloudHelper()
+    const localCacheHelper = mockLocalCacheHelper()
     const editing = makeEditing({
       project,
-      signedInUsername: () => 'different-user' // Different user from project owner
+      mode: EditingMode.EffectFree,
+      localCacheHelper,
+      cloudHelper
     })
     editing.start()
 
@@ -194,7 +196,7 @@ describe('Editing', () => {
     expect(editing.saving).toBeNull()
 
     // Make changes to files
-    files['file1.txt'] = mockFile('file1.txt updated')
+    project.files['file1.txt'] = mockFile('file1.txt updated')
     await flushPromises()
 
     // Advance time to when auto-save would normally trigger
@@ -204,27 +206,26 @@ describe('Editing', () => {
     await flushPromises()
 
     // Auto-save should not have been triggered
-    expect(project.saveToLocalCache).toHaveBeenCalledTimes(0)
-    expect(project.saveToCloud).toHaveBeenCalledTimes(0)
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(0)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(0)
     expect(editing.dirty).toBe(true) // Files are dirty, but no saving is triggered
     expect(editing.saving).toBeNull()
   })
 
   it('should wait for online when during auto-save', async () => {
-    const files = mockFiles()
-    const project = mockProject({
-      files,
-      saveToCloud: vi.fn(async (signal?: AbortSignal) => timeout(500, signal)) // Add delay to mock save
-    })
+    const project = mockProject()
+    const cloudHelper = mockCloudHelper()
+    vi.mocked(cloudHelper.save).mockImplementation((project: IProject, signal?: AbortSignal) => timeout(500, signal))
     const isOnline = ref(false) // Start offline
-    const editing = makeEditing({ project, isOnline })
+    const localCacheHelper = mockLocalCacheHelper()
+    const editing = makeEditing({ project, isOnline, localCacheHelper, cloudHelper })
     editing.start()
 
     expect(editing.dirty).toBe(false)
     expect(editing.saving).toBeNull()
 
     // Make changes to files
-    files['file1.txt'] = mockFile('file1.txt updated')
+    project.files['file1.txt'] = mockFile('file1.txt updated')
     await flushPromises()
     expect(editing.dirty).toBe(true)
     expect(editing.saving?.state).toBe(SavingState.Pending)
@@ -232,14 +233,14 @@ describe('Editing', () => {
     // Local cache save should happen
     vi.advanceTimersByTime(autoSaveToLocalCacheDelay)
     await flushPromises()
-    expect(project.saveToLocalCache).toHaveBeenCalledTimes(1)
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(1)
 
     // Advance time past cloud save delay, but still offline
     vi.advanceTimersByTime(autoSaveToCloudDelay - autoSaveToLocalCacheDelay + 1)
     await flushPromises()
 
     // Cloud save should not have been called yet because we're offline
-    expect(project.saveToCloud).toHaveBeenCalledTimes(0)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(0)
     expect(editing.dirty).toBe(true)
     expect(editing.saving?.state).toBe(SavingState.Pending)
 
@@ -248,7 +249,7 @@ describe('Editing', () => {
     await flushPromises()
 
     // Now cloud save should be triggered and in progress
-    expect(project.saveToCloud).toHaveBeenCalledTimes(1)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(1)
     expect(editing.saving?.state).toBe(SavingState.InProgress)
 
     // Wait for save to complete

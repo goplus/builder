@@ -1,5 +1,5 @@
-import { Sprite } from '@/models/sprite'
-import type { Widget } from '@/models/widget'
+import { Sprite } from '@/models/spx/sprite'
+import type { Widget } from '@/models/spx/widget'
 import type { KonvaEventObject } from 'konva/lib/Node'
 
 import { SpriteLocalConfig, WidgetLocalConfig } from './quick-config/utils'

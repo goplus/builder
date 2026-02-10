@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { UIImg } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
-import type { Costume } from '@/models/costume'
+import type { Costume } from '@/models/spx/costume'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 

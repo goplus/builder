@@ -141,14 +141,14 @@ import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
 import type { Files } from '@/models/common/file'
 import { hashFiles } from '@/models/common/hash'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
 import { ensureAccessToken } from '@/stores/user'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
 
-const props = defineProps<{ project: Project }>()
+const props = defineProps<{ project: SpxProject }>()
 
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
@@ -237,7 +237,7 @@ async function reloadIframe() {
 }
 
 async function prepareAIInteraction(
-  project: Project,
+  project: SpxProject,
   iframeWindow: RunnerIframeWindow,
   reporter: ProgressReporter,
   signal?: AbortSignal
@@ -301,7 +301,7 @@ async function runInternal(ctrl: AbortController) {
     const initGameReporter = collector.getSubReporter({ en: 'Initializing project...', zh: '初始化项目中...' }, 5)
     const startGameReporter = collector.getSubReporter({ en: 'Starting project...', zh: '启动项目中...' }, 5)
 
-    const files = props.project.exportGameFiles()
+    const files = props.project.exportFiles()
 
     const iframeWindow = await untilNotNull(runnerIframeWindowRef, ctrl.signal)
     iframeLoadReporter.report(1)

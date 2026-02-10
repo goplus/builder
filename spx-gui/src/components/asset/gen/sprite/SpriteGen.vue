@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computedShallowReactive } from '@/utils/utils'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
-import type { Sprite } from '@/models/sprite'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { Sprite } from '@/models/spx/sprite'
 import { provideLocalEditorCtx, useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteGenPhaseSettings from './SpriteGenPhaseSettings.vue'
 import SpriteGenPhaseContent from './SpriteGenPhaseContent.vue'

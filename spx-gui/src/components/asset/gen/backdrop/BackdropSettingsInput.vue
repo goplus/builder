@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import type { BackdropGen } from '@/models/gen/backdrop-gen'
+import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import SettingsInput from '../common/SettingsInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'

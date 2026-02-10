@@ -21,13 +21,13 @@
 import { onMounted, onUnmounted, computed } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { getSignedInUsername } from '@/stores/user'
-import { Project } from '@/models/project'
+import { SpxProject } from '@/models/spx/project'
 import { getProjectEditorRoute } from '@/router'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, ProgressReporter } from '@/utils/progress'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 import { composeQuery, useQuery } from '@/utils/query'
-import { clear } from '@/models/common/local'
+import { LocalHelper, clear } from '@/models/common/local'
 import { UIDetailedLoading, UIError, useConfirmDialogWithResult, useMessage } from '@/components/ui'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
@@ -38,8 +38,9 @@ import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
-import { EditingMode } from '@/components/editor/editing'
+import { EditingMode, LocalCacheHelper } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
+import { CloudHelper } from '@/models/common/cloud'
 
 const props = defineProps<{
   ownerName: string
@@ -52,6 +53,8 @@ usePageTitle(() => ({
 }))
 
 const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
+const localCacheHelper = new LocalCacheHelper(new LocalHelper(), LOCAL_CACHE_KEY)
+const cloudHelper = new CloudHelper()
 
 const signedInUsername = computed(() => getSignedInUsername())
 const copilotCtx = useAgentCopilotCtx()
@@ -94,9 +97,10 @@ const projectQueryRet = useQuery(
 const project = projectQueryRet.data
 
 const stateQueryRet = useQuery(async (ctx) => {
+  const username = signedInUsername.value
   const project = await composeQuery(ctx, projectQueryRet)
   ctx.signal.throwIfAborted()
-  const state = new EditorState(project, isOnline, signedInUsername, LOCAL_CACHE_KEY)
+  const state = new EditorState(project, isOnline, username, cloudHelper, localCacheHelper)
   state.disposeOnSignal(ctx.signal)
   state.syncWithRouter(router)
   state.editing.start()
@@ -149,11 +153,11 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
     10
   )
 
-  let localProject: Project | null
+  let localProject: SpxProject | null
   try {
-    localProject = new Project()
+    localProject = new SpxProject()
     localProject.disposeOnSignal(signal)
-    await localProject.loadFromLocalCache(LOCAL_CACHE_KEY)
+    await new LocalHelper().load(localProject, LOCAL_CACHE_KEY)
   } catch (e) {
     console.warn('Failed to load project from local cache', e)
     localProject = null
@@ -183,11 +187,11 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
     }
   }
 
-  let newProject = new Project()
+  let newProject = new SpxProject(ownerName, projectName)
   newProject.disposeOnSignal(signal)
   // For projects not owned by the signed-in user, we prefer to load the published version.
   const preferPublishedContent = signedInUsername.value !== ownerName
-  await newProject.loadFromCloud(ownerName, projectName, preferPublishedContent, signal, loadFromCloudReporter)
+  await new CloudHelper().load(newProject, preferPublishedContent, signal, loadFromCloudReporter)
 
   // If there is no newer cloud version, use local version without confirmation.
   // If there is a newer cloud version, use cloud version without confirmation.
