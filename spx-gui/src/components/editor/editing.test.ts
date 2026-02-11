@@ -87,7 +87,7 @@ describe('Editing', () => {
     expect(editing.dirty).toBe(false)
     expect(editing.saving).toBeNull()
 
-    project.files['file1.txt'] = mockFile('file1.txt updated')
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
     await flushPromises()
     expect(editing.dirty).toBe(true)
     expect(editing.saving?.state).toBe(SavingState.Pending)
@@ -119,7 +119,7 @@ describe('Editing', () => {
     const editing = makeEditing({ project, cloudHelper })
     editing.start()
 
-    project.files['file1.txt'] = mockFile('file1.txt updated')
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
     await flushPromises()
 
     vi.advanceTimersByTime(autoSaveToCloudDelay)
@@ -146,7 +146,7 @@ describe('Editing', () => {
     const editing = makeEditing({ project, localCacheHelper, cloudHelper })
     editing.start()
 
-    project.files['file1.txt'] = mockFile('file1.txt updated')
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
     await flushPromises()
 
     editing.dispose()
@@ -163,13 +163,13 @@ describe('Editing', () => {
     const editing = makeEditing({ project, localCacheHelper, cloudHelper })
     editing.start()
 
-    project.files['file1.txt'] = mockFile('file1.txt updated')
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
     await flushPromises()
     vi.advanceTimersByTime(100)
-    project.files['file2.txt'] = mockFile('file2.txt updated')
+    project.setFile('file2.txt', mockFile('file2.txt updated'))
     await flushPromises()
     vi.advanceTimersByTime(100)
-    project.files['file3.txt'] = mockFile('file3.txt updated')
+    project.setFile('file3.txt', mockFile('file3.txt updated'))
     await flushPromises()
 
     vi.advanceTimersByTime(autoSaveToCloudDelay)
@@ -197,7 +197,7 @@ describe('Editing', () => {
     expect(editing.saving).toBeNull()
 
     // Make changes to files
-    project.files['file1.txt'] = mockFile('file1.txt updated')
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
     await flushPromises()
 
     // Advance time to when auto-save would normally trigger
@@ -226,7 +226,7 @@ describe('Editing', () => {
     expect(editing.saving).toBeNull()
 
     // Make changes to files
-    project.files['file1.txt'] = mockFile('file1.txt updated')
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
     await flushPromises()
     expect(editing.dirty).toBe(true)
     expect(editing.saving?.state).toBe(SavingState.Pending)
