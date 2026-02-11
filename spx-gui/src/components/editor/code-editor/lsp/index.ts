@@ -254,7 +254,7 @@ export class SpxLSPClient extends Disposable {
     )
   }
 
-  async workspaceExecuteCommandXGoGetProperty(
+  async workspaceExecuteCommandXGoGetProperties(
     ctx: RequestContext,
     ...params: xgoGetProperties.Arguments
   ): Promise<xgoGetProperties.Result> {
