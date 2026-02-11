@@ -4,6 +4,8 @@ import * as Sentry from '@sentry/vue'
 import type { Router } from 'vue-router'
 import VueKonva from 'vue-konva'
 import { VueQueryPlugin } from '@tanstack/vue-query'
+import dotLottiePlayerWasmUrl from '@lottiefiles/dotlottie-web/dist/dotlottie-player.wasm?url'
+import { setWasmUrl as setDotLottieWasmUrl } from '@lottiefiles/dotlottie-vue'
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -23,6 +25,8 @@ import { sentryDsn, sentryTracesSampleRate, sentryLSPSampleRate, defaultLang } f
 import { createRadar } from './utils/radar'
 import { createSpotlight } from './utils/spotlight'
 import { createAppState } from './utils/app-state'
+
+setDotLottieWasmUrl(dotLottiePlayerWasmUrl)
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
