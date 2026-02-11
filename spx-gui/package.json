@@ -75,6 +75,7 @@
     "vue-konva": "^3.1.0",
     "vue-router": "^4.2.5",
     "vue-tsc": "^3.1.1",
+    "ua-parser-js": "^2.0.9",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.24.1"
   },

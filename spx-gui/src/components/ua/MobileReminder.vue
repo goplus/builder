@@ -1,5 +1,5 @@
 <template>
-  <div class="desktop-required-guide">
+  <div class="mobile-reminder">
     <div v-if="showCopiedMessage" class="copied-message">
       <UIIcon type="success" />
       <span>{{ t({ en: 'Copied to clipboard!', zh: '已复制到剪贴板！' }) }}</span>
@@ -13,7 +13,7 @@
         {{
           t({
             en: 'This application is not supported on mobile devices. Please access it from a desktop.',
-            zh: '该功能暂不支持移动端，请使用电脑访问'
+            zh: '该应用暂不支持移动端，请使用电脑访问'
           })
         }}
       </p>
@@ -60,7 +60,7 @@ function copyAccessUrl() {
 </script>
 
 <style lang="scss" scoped>
-.desktop-required-guide {
+.mobile-reminder {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
