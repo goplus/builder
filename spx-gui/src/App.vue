@@ -1,8 +1,8 @@
 <template>
   <UIConfigProvider :config="config">
-    <MobileReminder v-if="showMobileReminder" />
-    <UIMessageProvider v-else>
-      <UIModalProvider>
+    <UIMessageProvider>
+      <MobileReminder v-if="showMobileReminder" />
+      <UIModalProvider v-else>
         <BrowserVersionReminder />
         <CopilotRoot>
           <TutorialRoot>

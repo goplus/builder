@@ -2,8 +2,10 @@
   <UIDialog
     type="warning"
     size="small"
-    :visible="visible"
     :title="$t({ en: 'Browser Version Unsupported', zh: '浏览器版本不支持' })"
+    :visible="visible"
+    :mask-closable="true"
+    @update:visible="visible = $event"
   >
     <div>{{ $t(content) }}</div>
     <footer class="footer">
@@ -30,7 +32,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { checkBrowserVersion } from '@/utils/ua.ts'
+import { checkBrowserVersion } from '@/utils/ua'
 import { type LocaleMessage } from '@/utils/i18n'
 import UIDialog from '@/components/ui/dialog/UIDialog.vue'
 import UIButton from '../ui/UIButton.vue'

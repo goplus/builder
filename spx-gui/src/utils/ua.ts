@@ -1,7 +1,6 @@
-import { UAParser } from 'ua-parser-js'
-import { BrowserName } from 'ua-parser-js/enums'
+import uaParser from 'ua-parser-js'
 
-const ua = UAParser(navigator.userAgent)
+const ua = uaParser(navigator.userAgent)
 
 export default ua
 
@@ -9,7 +8,14 @@ export function isMobile() {
   return ua.device.type === 'mobile' || ua.device.type === 'tablet'
 }
 
-// Minimum recommended browser versions, consistent with `browserslist` in package.json
+export const BrowserName = {
+  CHROME: 'Chrome',
+  EDGE: 'Edge',
+  FIREFOX: 'Firefox',
+  SAFARI: 'Safari'
+} as const
+
+// Minimum recommended browser versions, derived from `browserslist` in package.json
 const recommendedBrowserVersions: Record<string, number> = {
   [BrowserName.CHROME]: 111,
   [BrowserName.EDGE]: 111,
