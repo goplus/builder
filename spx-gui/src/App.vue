@@ -19,18 +19,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
 import CopilotRoot from '@/components/copilot/CopilotRoot.vue'
 import CopilotUI from '@/components/copilot/CopilotUI.vue'
 import TutorialRoot from '@/components/tutorials/TutorialRoot.vue'
-import MobileReminder from '@/components/ua/MobileReminder.vue'
-import BrowserVersionReminder from '@/components/ua/BrowserVersionReminder.vue'
 import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from '@/utils/i18n'
 import { useInstallRouteLoading } from '@/utils/route-loading'
 import { isMobile } from '@/utils/ua'
+
+const MobileReminder = defineAsyncComponent(() => import('@/components/ua/MobileReminder.vue'))
+const BrowserVersionReminder = defineAsyncComponent(() => import('@/components/ua/BrowserVersionReminder.vue'))
 
 const showMobileReminder = isMobile()
 

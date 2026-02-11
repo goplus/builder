@@ -37,19 +37,23 @@ import { type LocaleMessage } from '@/utils/i18n'
 import UIDialog from '@/components/ui/dialog/UIDialog.vue'
 import UIButton from '../ui/UIButton.vue'
 
-const defaultTip: LocaleMessage = {
+const fallbackMessage: LocaleMessage = {
   en: 'Your browser version may not support all features. Please update your browser for the best experience.',
   zh: '您的浏览器版本可能无法支持全部功能，建议更新浏览器以获得最佳体验。'
 }
 
 const visible = ref(false)
-const content = ref(defaultTip)
+const content = ref(fallbackMessage)
 
 const localStorageKey = 'spx-gui-browser-version-reminder-ignored'
 
 function handleDoNotShowAgain() {
   visible.value = false
-  localStorage.setItem(localStorageKey, 'true')
+  try {
+    localStorage.setItem(localStorageKey, 'true')
+  } catch (e) {
+    console.warn('Failed to save preference:', e)
+  }
 }
 
 function handleConfirm() {
@@ -57,8 +61,13 @@ function handleConfirm() {
 }
 
 onMounted(() => {
-  const isIgnored = localStorage.getItem(localStorageKey)
-  if (isIgnored === 'true') return
+  let isIgnored = false
+  try {
+    isIgnored = localStorage.getItem(localStorageKey) === 'true'
+  } catch (e) {
+    console.warn('Failed to read localStorage:', e)
+  }
+  if (isIgnored) return
 
   const checkResult = checkBrowserVersion()
   if (checkResult.ok) return
