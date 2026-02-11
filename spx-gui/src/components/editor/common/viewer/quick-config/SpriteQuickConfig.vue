@@ -2,17 +2,17 @@
 import { inject, watch } from 'vue'
 
 import DefaultConfigPanel from './sprite/DefaultConfigPanel.vue'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import SizeConfigPanel from './common/SizeConfigPanel.vue'
 import HeadingConfigPanel from './sprite/HeadingConfigPanel.vue'
 import PositionConfigPanel from './common/PositionConfigPanel.vue'
 import { configTypeInjectionKey, updateConfigTypeInjectionKey } from './QuickConfigWrapper.vue'
 import type { SpriteLocalConfig } from './utils'
-import { RotationStyle } from '@/models/sprite'
+import { RotationStyle } from '@/models/spx/sprite'
 
 const props = defineProps<{
   localConfig: SpriteLocalConfig
-  project: Project
+  project: SpxProject
 }>()
 
 const configType = inject(configTypeInjectionKey)

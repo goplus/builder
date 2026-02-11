@@ -2,8 +2,8 @@
 import { computed, onMounted, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
-import type { Project } from '@/models/project'
-import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading } from '@/models/sprite'
+import type { SpxProject } from '@/models/spx/project'
+import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading } from '@/models/spx/sprite'
 import type { Size } from '@/models/common'
 import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
@@ -15,7 +15,7 @@ import type Konva from 'konva'
 const props = defineProps<{
   localConfig: SpriteLocalConfig
   selected: boolean
-  project: Project
+  project: SpxProject
   mapSize: Size
   nodeReadyMap: Map<string, boolean>
 }>()

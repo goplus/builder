@@ -1,16 +1,19 @@
 <script lang="ts" setup>
 import ConfigPanel from '../common/ConfigPanel.vue'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import ZorderConfigItem, { moveActionNames, type MoveAction } from '../common/ZorderConfigItem.vue'
 import type { WidgetLocalConfig } from '../utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const props = defineProps<{
   localConfig: WidgetLocalConfig
-  project: Project
+  project: SpxProject
 }>()
 
+const editorCtx = useEditorCtx()
+
 async function moveZorder(direction: MoveAction) {
-  await props.project.history.doAction({ name: moveActionNames[direction] }, () => {
+  await editorCtx.state.history.doAction({ name: moveActionNames[direction] }, () => {
     const { localConfig, project } = props
     if (direction === 'up') {
       project.stage.upWidgetZorder(localConfig.id)

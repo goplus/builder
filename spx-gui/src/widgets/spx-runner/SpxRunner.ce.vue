@@ -1,11 +1,3 @@
-<!--
- * @Author: Zhang Zhi Yang
- * @Date: 2024-02-26 17:49:39
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-09 14:46:03
- * @FilePath: \builder\spx-gui\src\widgets\widget\spx-runner\SpxRunner.ce.vue
- * @Description: 
--->
 <template>
   <div class="spx-runner-widget">
     <div class="operation">
@@ -28,17 +20,20 @@
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
+import { ref, watch, shallowRef } from 'vue'
+import { SpxProject, fullName } from '@/models/spx/project'
+import { cloudHelpers } from '@/models/common/cloud'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
-import { ref, watch } from 'vue'
-import { Project, fullName } from '@/models/project'
-import { shallowRef } from 'vue'
+
 const props = defineProps<{ owner?: string; name?: string }>()
 const runner = ref()
 const run = ref(false)
 const ready = ref(false)
 const errorMsg = ref('')
-const project = shallowRef(new Project())
+const project = shallowRef(new SpxProject())
+
 watch(
   () => [props.owner, props.name],
   async ([owner, name]) => {
@@ -46,8 +41,8 @@ watch(
       ready.value = false
       errorMsg.value = ''
       try {
-        const newProject = new Project()
-        await newProject.loadFromCloud(owner, name, true)
+        const newProject = new SpxProject(owner, name)
+        await cloudHelpers.load(newProject, true)
         project.value.dispose()
         project.value = newProject
         ready.value = true
@@ -72,6 +67,7 @@ const onStop = () => {
   runner.value.stop()
 }
 </script>
+
 <style lang="scss">
 .spx-runner-widget {
   position: relative;

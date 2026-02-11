@@ -12,7 +12,7 @@ export function isAnimationsLoading(gens: AnimationGen[]) {
 import { computed, ref } from 'vue'
 
 import { UIBlockItemTitle, UIImg } from '@/components/ui'
-import type { AnimationGen } from '@/models/gen/animation-gen'
+import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import CornerMenu from '@/components/editor/common/CornerMenu.vue'
 import RenameMenuItem from '@/components/editor/common/corner-menu-item/RenameMenuItem.vue'
 import RemoveMenuItem from '@/components/editor/common/corner-menu-item/RemoveMenuItem.vue'

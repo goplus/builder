@@ -18,8 +18,8 @@ import { useI18n, type I18n } from '@/utils/i18n'
 import { escapeHTML, unicodeSafeSlice, until } from '@/utils/utils'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 import * as projectApis from '@/apis/project'
-import type { Sprite } from '@/models/sprite'
-import { Project } from '@/models/project'
+import type { Sprite } from '@/models/spx/sprite'
+import { SpxProject } from '@/models/spx/project'
 import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
@@ -35,6 +35,7 @@ import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
 import { userSessionStorageRef } from '@/utils/user-storage'
+import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
@@ -64,9 +65,12 @@ const listProjectsTool: ToolDefinition = {
 }
 
 class Retriever {
-  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  constructor(
+    private editorCtxRef: ComputedRef<EditorCtx | undefined>,
+    private cloudHelpers: CloudHelpers
+  ) {}
 
-  async getProject(project: string | undefined, signal?: AbortSignal): Promise<Project> {
+  async getProject(project: string | undefined, signal?: AbortSignal): Promise<SpxProject> {
     const currentProject = this.editorCtxRef.value?.project
     if (project == null) {
       if (currentProject == null) throw new Error('No project specified and no current editing project available')
@@ -76,8 +80,8 @@ class Retriever {
     if (currentProject != null && currentProject.owner === owner && currentProject.name === name) {
       return currentProject
     }
-    const p = new Project()
-    await p.loadFromCloud(owner, name, true, signal)
+    const p = new SpxProject(owner, name)
+    await this.cloudHelpers.load(p, true, signal)
     return p
   }
 }
@@ -100,7 +104,7 @@ class GetProjectMetadataTool implements ToolDefinition {
   }
 }
 
-function getProjectContent(project: Project) {
+function getProjectContent(project: SpxProject) {
   const physics = project.stage.physics
   return `\
 ### Sprites (num: ${project.sprites.length})
@@ -416,8 +420,7 @@ const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
 const editorCtxRef = useEditorCtxRef()
 const codeEditorCtxRef = useCodeEditorCtxRef()
-
-const retriever = new Retriever(editorCtxRef)
+const retriever = new Retriever(editorCtxRef, cloudHelpers)
 const copilot = new Copilot()
 onUnmounted(() => copilot.dispose())
 

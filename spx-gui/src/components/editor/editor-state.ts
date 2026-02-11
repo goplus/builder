@@ -2,23 +2,25 @@ import { ref, shallowReactive, watch, type Ref, type WatchSource } from 'vue'
 import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } from 'vue-router'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
-import type { ResourceModel } from '@/models/common/resource-model'
-import type { Project } from '@/models/project'
-import { Stage } from '@/models/stage'
-import { Sprite } from '@/models/sprite'
-import { Sound } from '@/models/sound'
-import { Backdrop } from '@/models/backdrop'
-import { isWidget } from '@/models/widget'
-import { Costume } from '@/models/costume'
-import { Animation } from '@/models/animation'
-import { SpriteGen } from '@/models/gen/sprite-gen'
-import { BackdropGen } from '@/models/gen/backdrop-gen'
+import { AssetType } from '@/apis/asset'
+import { CloudHelpers } from '@/models/common/cloud'
+import type { AssetGenModel } from '@/models/spx/common/asset'
+import type { ResourceModel } from '@/models/spx/common/resource-model'
+import type { SpxProject } from '@/models/spx/project'
+import { Stage } from '@/models/spx/stage'
+import { Sprite } from '@/models/spx/sprite'
+import { Sound } from '@/models/spx/sound'
+import { Backdrop } from '@/models/spx/backdrop'
+import { isWidget } from '@/models/spx/widget'
+import { Costume } from '@/models/spx/costume'
+import { Animation } from '@/models/spx/animation'
+import { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
 import * as editing from './editing'
-import { AssetType } from '@/apis/asset'
-import type { AssetGenModel } from '@/models/common/asset'
+import { EditingMode } from './editing'
 
 type GenCollapsePos = { x: number; y: number }
 type CollapsePosProvider<T extends AssetType> = (gen: AssetGenModel<T>) => Promise<GenCollapsePos | null>
@@ -52,17 +54,19 @@ export enum EditMode {
 
 export class EditorState extends Disposable {
   constructor(
-    private project: Project,
+    private project: SpxProject,
     isOnline: WatchSource<boolean>,
-    signedInUsername: WatchSource<string | null>,
-    localCacheKey: string,
-    localStorage?: editing.LocalStorage
+    signedInUsername: string | null,
+    cloudHelpers: CloudHelpers,
+    localCache: editing.ILocalCache
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
-    this.addDisposable(
-      (this.editing = new editing.Editing(project, isOnline, signedInUsername, localCacheKey, localStorage))
-    )
+    let editingMode = EditingMode.AutoSave
+    if (signedInUsername == null || signedInUsername !== this.project.owner) {
+      editingMode = EditingMode.EffectFree
+    }
+    this.addDisposable((this.editing = new editing.Editing(editingMode, project, cloudHelpers, localCache, isOnline)))
     this.addDisposable((this.stageState = new StageEditorState(() => project.stage)))
 
     this.addDisposer(() => this.spriteState?.dispose())
@@ -85,6 +89,9 @@ export class EditorState extends Disposable {
 
   runtime: Runtime
   editing: editing.Editing
+  get history() {
+    return this.editing.history
+  }
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
 

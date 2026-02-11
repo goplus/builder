@@ -5,7 +5,7 @@ import { ProgressCollector } from '@/utils/progress'
 import { getHighlighter } from '@/utils/spx/highlighter'
 import { composeQuery, useQuery, type QueryRet } from '@/utils/query'
 import { useAppInject, useAppProvide } from '@/utils/app-state'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import { ToolRegistry } from '@/components/agent-copilot/mcp/registry'
 import type { EditorState } from '../editor-state'
 import { DiagnosticSeverity } from './common'
@@ -127,7 +127,7 @@ const spxLanguageConfiguration: monaco.languages.LanguageConfiguration = {
 }
 
 export function useProvideCodeEditorCtx(
-  projectRet: QueryRet<Project>,
+  projectRet: QueryRet<SpxProject>,
   editorStateRet: QueryRet<EditorState>,
   registry: ToolRegistry
 ): QueryRet<unknown> {
@@ -158,7 +158,7 @@ export function useProvideCodeEditorCtx(
         composeQuery(ctx, monacoQueryRet)
       ])
       ctx.signal.throwIfAborted()
-      const codeEditor = new CodeEditor(project, editorState.runtime, monaco, registry)
+      const codeEditor = new CodeEditor(project, editorState.history, editorState.runtime, monaco, registry)
       codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor
     },

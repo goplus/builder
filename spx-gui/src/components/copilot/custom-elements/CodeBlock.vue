@@ -22,7 +22,7 @@ const handleInsert = useMessageHandle(
     if (editorCtx == null) throw new Error('Editor context is not available')
     const codeEditorUI = codeEditorCtxRef.value?.getEditor()?.getAttachedUI()
     if (codeEditorUI == null) throw new Error('Code editor UI is not available')
-    return editorCtx.project.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+    return editorCtx.state.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
       codeEditorUI.insertBlockText(code.value)
     )
   },

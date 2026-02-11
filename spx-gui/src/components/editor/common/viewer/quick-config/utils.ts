@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
-import { RotationStyle, type Sprite } from '@/models/sprite'
-import type { Action, Project } from '@/models/project'
-import type { Widget } from '@/models/widget'
+import { RotationStyle, type Sprite } from '@/models/spx/sprite'
+import type { Action, History } from '@/components/editor/history'
+import type { Widget } from '@/models/spx/widget'
 
 interface ILocalConfigProvider {
   id: string
@@ -26,7 +26,7 @@ interface LocalConfigChanges {
 export class LocalConfig<T = unknown> {
   constructor(
     private provider: ILocalConfigProvider,
-    private project: Project,
+    private history: History,
     private action: Action
   ) {}
 
@@ -62,7 +62,7 @@ export class LocalConfig<T = unknown> {
   }
 
   sync() {
-    this.project.history.doAction(this.action, () => {
+    this.history.doAction(this.action, () => {
       Object.keys(this.changes.value).forEach((key) => this.applyChanges(key))
       this.changes.value = {}
     })
@@ -89,9 +89,9 @@ export class SpriteLocalConfig extends LocalConfig<{
 }> {
   constructor(
     private sprite: Sprite,
-    project: Project
+    history: History
   ) {
-    super(sprite, project, { name: { en: `Configure sprite ${sprite.name}`, zh: `修改精灵 ${sprite.name} 配置` } })
+    super(sprite, history, { name: { en: `Configure sprite ${sprite.name}`, zh: `修改精灵 ${sprite.name} 配置` } })
   }
 
   get heading() {
@@ -128,9 +128,9 @@ export class SpriteLocalConfig extends LocalConfig<{
 export class WidgetLocalConfig extends LocalConfig {
   constructor(
     private widget: Widget,
-    project: Project
+    history: History
   ) {
-    super(widget, project, { name: { en: `Configure widget ${widget.name}`, zh: `修改组件 ${widget.name} 配置` } })
+    super(widget, history, { name: { en: `Configure widget ${widget.name}`, zh: `修改组件 ${widget.name} 配置` } })
   }
 
   get label() {

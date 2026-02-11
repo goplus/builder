@@ -17,8 +17,15 @@ import { debounce } from 'lodash'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { type Project } from '@/models/project'
-import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetGenModel, type AssetModel } from '@/models/common/asset'
+import { type SpxProject } from '@/models/spx/project'
+import {
+  asset2Backdrop,
+  asset2Sound,
+  asset2Sprite,
+  type AssetGenModel,
+  type AssetModel
+} from '@/models/spx/common/asset'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import { getAssetCategories } from './category'
 import SoundItem from './SoundItem.vue'
@@ -26,8 +33,8 @@ import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
 import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
-import { SpriteGen } from '@/models/gen/sprite-gen'
-import { BackdropGen } from '@/models/gen/backdrop-gen'
+import { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
@@ -40,7 +47,7 @@ import soundBanner from './asset-library-sound-banner.png'
 const props = defineProps<{
   type: AssetType
   visible: boolean
-  project: Project
+  project: SpxProject
   /**
    * When collapse is triggered, we first need to use genCollapseHandler to implement
    * the logic for collapsing generation (e.g., adding it to the editor-state context),
@@ -54,6 +61,8 @@ const emit = defineEmits<{
   cancelled: []
   resolved: [AssetModel[]]
 }>()
+
+const editorCtx = useEditorCtx()
 
 const i18n = useI18n()
 const searchInput = ref('')
@@ -255,7 +264,9 @@ const handleConfirm = useMessageHandle(
     const action = {
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
-    const assetModels = await props.project.history.doAction(action, () => Promise.all(selected.map(addAssetToProject)))
+    const assetModels = await editorCtx.state.history.doAction(action, () =>
+      Promise.all(selected.map(addAssetToProject))
+    )
     emit('resolved', assetModels)
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }
@@ -324,7 +335,7 @@ const handleGenFinished = useMessageHandle(
     // Consider moving asset addition outside AssetLibraryModal for better separation of concerns.
     // However, this would introduce a delay between the modal close and assets addition, potentially degrading UX.
     // TODO: Review this trade-off
-    const added = await props.project.history.doAction(
+    const added = await editorCtx.state.history.doAction(
       {
         name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
       },

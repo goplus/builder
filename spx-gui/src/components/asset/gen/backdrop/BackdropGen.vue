@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
-import type { Backdrop } from '@/models/backdrop'
-import type { BackdropGen } from '@/models/gen/backdrop-gen'
+import type { Backdrop } from '@/models/spx/backdrop'
+import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { capture, useMessageHandle } from '@/utils/exception'
 import { humanizeRemaining } from '../common/remaining-time'
 import BackdropSettingInput from './BackdropSettingsInput.vue'

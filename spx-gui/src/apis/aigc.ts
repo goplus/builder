@@ -13,7 +13,8 @@ import {
   type UniversalUrl
 } from './common'
 import type { AssetExtraSettings, AssetType } from './asset'
-import type { State } from '@/models/sprite.ts'
+// TODO: avoid dep from apis to models
+import type { State } from '@/models/spx/sprite'
 
 export type ProjectSettings = {
   name: string

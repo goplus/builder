@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { Size } from '@/models/common'
-import type { Decorator } from '@/models/tilemap'
+import type { Decorator } from '@/models/spx/tilemap'
 import { normalizeDegree } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 

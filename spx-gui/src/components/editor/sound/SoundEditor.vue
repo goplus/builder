@@ -71,7 +71,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { UIIcon, UITab, UITabs } from '@/components/ui'
-import type { Sound } from '@/models/sound'
+import type { Sound } from '@/models/spx/sound'
 import { useFileUrl } from '@/utils/file'
 import { stripExt } from '@/utils/path'
 import AssetName from '@/components/asset/AssetName.vue'
@@ -169,7 +169,7 @@ const handleSave = useMessageHandle(
     const newFile = fromBlob(newFileName, blob)
     const sname = props.sound.name
     const action = { name: { en: `Update sound ${sname}`, zh: `修改声音 ${sname}` } }
-    await editorCtx.project.history.doAction(action, () => props.sound.setFile(newFile))
+    await editorCtx.state.history.doAction(action, () => props.sound.setFile(newFile))
   },
   {
     en: 'Failed to save sound',

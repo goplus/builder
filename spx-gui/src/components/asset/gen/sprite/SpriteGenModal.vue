@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Sprite } from '@/models/sprite'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
+import type { Sprite } from '@/models/spx/sprite'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { UIFormModal } from '@/components/ui'
 import SpriteGenComp from './SpriteGen.vue'
 

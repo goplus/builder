@@ -1,38 +1,55 @@
-import { Project } from '../project'
-import { Sound } from '../sound'
-import { fromText } from '../common/file'
-import { Backdrop } from '../backdrop'
-import { Monitor } from '../widget/monitor'
-import { Sprite } from '../sprite'
-import { Costume } from '../costume'
-import { Animation } from '../animation'
+import { vi } from 'vitest'
+import { shallowRef } from 'vue'
+import type { IProject, Metadata } from '@/models/project'
+import { fromText, type File, type Files } from '../common/file'
+import Mutex from '@/utils/mutex'
 
 export function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
 }
 
-export function makeProject() {
-  const project = new Project()
-  const sound = new Sound('sound', mockFile())
-  project.addSound(sound)
+export class MockProject implements IProject {
+  mutex = new Mutex()
 
-  const backdrop = new Backdrop('backdrop', mockFile())
-  project.stage.addBackdrop(backdrop)
-  const widget = new Monitor('monitor', {
-    x: 10,
-    y: 20,
-    label: 'Score',
-    variableName: 'score'
+  private filesRef = shallowRef<Files>({})
+  setFile(path: string, file: File): void {
+    this.filesRef.value = { ...this.filesRef.value, [path]: file }
+  }
+
+  constructor(
+    public owner?: string,
+    public name?: string,
+    files: Files = {}
+  ) {
+    this.filesRef.value = files
+  }
+  private getMetadata(): Metadata {
+    return {
+      owner: this.owner,
+      name: this.name
+    }
+  }
+  setMetadata = vi.fn((metadata: Metadata): void => {
+    Object.assign(this, metadata)
   })
-  project.stage.addWidget(widget)
-
-  const sprite = new Sprite('MySprite')
-  const costume = new Costume('default', mockFile())
-  sprite.addCostume(costume)
-  const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))
-  const animation = Animation.create('default', animationCostumes)
-  sprite.addAnimation(animation)
-  project.addSprite(sprite)
-  project.bindScreenshotTaker(async () => mockFile())
-  return project
+  loadFiles = vi.fn(async (files: Files, _signal?: AbortSignal): Promise<void> => {
+    void _signal
+    this.filesRef.value = files
+  })
+  exportFiles = vi.fn((): Files => {
+    return this.filesRef.value
+  })
+  export = vi.fn(async (_signal?: AbortSignal): Promise<[Metadata, Files]> => {
+    void _signal
+    return this.mutex.runExclusive(async () => {
+      return [this.getMetadata(), this.filesRef.value]
+    })
+  })
+  load = vi.fn(async (metadata: Metadata, files: Files, _signal?: AbortSignal): Promise<void> => {
+    void _signal
+    await this.mutex.runExclusive(async () => {
+      Object.assign(this, metadata)
+      this.filesRef.value = { ...files }
+    })
+  })
 }

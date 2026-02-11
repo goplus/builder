@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import type { Project } from '@/models/project'
-import type { Sprite } from '@/models/sprite'
+import type { SpxProject } from '@/models/spx/project'
+import type { Sprite } from '@/models/spx/sprite'
 import { useMessageHandle } from '@/utils/exception'
 
 import { getCssVars, UICard, UIIcon, UIMenu, UIMenuItem, UITooltip, useUIVariables } from '@/components/ui'
@@ -14,7 +14,7 @@ import PanelFooter from '../panels/common/PanelFooter.vue'
 import SpriteBasicConfig from './SpriteBasicConfig.vue'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
   selectedSprite: Sprite | null
 }>()
 

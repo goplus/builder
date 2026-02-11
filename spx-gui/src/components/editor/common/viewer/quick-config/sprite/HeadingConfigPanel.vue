@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { UIDropdown, UINumberInput } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
-import { RotationStyle } from '@/models/sprite'
+import { RotationStyle } from '@/models/spx/sprite'
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
 import type { SpriteLocalConfig } from '../utils'
 import { debounce } from 'lodash'

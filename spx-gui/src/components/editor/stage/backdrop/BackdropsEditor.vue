@@ -71,8 +71,8 @@ import { computed } from 'vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
-import type { Stage } from '@/models/stage'
-import { Backdrop } from '@/models/backdrop'
+import type { Stage } from '@/models/spx/stage'
+import { Backdrop } from '@/models/spx/backdrop'
 import { useAddAssetFromLibrary, useAddBackdropFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
@@ -89,7 +89,7 @@ const stage = computed(() => editorCtx.project.stage)
 
 function handleSelect(backdrop: Backdrop) {
   const action = { name: { en: 'Set default backdrop', zh: '设置默认背景' } }
-  editorCtx.project.history.doAction(action, () => stage.value.setDefaultBackdrop(backdrop.id))
+  editorCtx.state.history.doAction(action, () => stage.value.setDefaultBackdrop(backdrop.id))
 }
 
 const addBackdropFromLocalFile = useAddBackdropFromLocalFile()
@@ -121,7 +121,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update backdrop order', zh: '更新背景顺序' } }
-    await editorCtx.project.history.doAction(action, () => stage.value.moveBackdrop(oldIdx, newIdx))
+    await editorCtx.state.history.doAction(action, () => stage.value.moveBackdrop(oldIdx, newIdx))
   },
   {
     en: 'Failed to update backdrop order',

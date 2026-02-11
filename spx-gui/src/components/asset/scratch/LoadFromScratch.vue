@@ -45,29 +45,32 @@
 <script setup lang="ts">
 import { shallowReactive, watch } from 'vue'
 import { NGrid, NGridItem } from 'naive-ui'
-import { Sound } from '@/models/sound'
-import { Sprite } from '@/models/sprite'
+import { Sound } from '@/models/spx/sound'
+import { Sprite } from '@/models/spx/sprite'
 import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
-import { Backdrop } from '@/models/backdrop'
-import { Costume } from '@/models/costume'
+import { Backdrop } from '@/models/spx/backdrop'
+import { Costume } from '@/models/spx/costume'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import type { ExportedScratchCostume, ExportedScratchSound, ExportedScratchSprite } from '@/utils/scratch'
-import { type Project } from '@/models/project'
-import type { AssetModel } from '@/models/common/asset'
+import { type SpxProject } from '@/models/spx/project'
+import type { AssetModel } from '@/models/spx/common/asset'
 import { UIButton } from '@/components/ui'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 
 const props = defineProps<{
   scratchAssets: ExportedScratchAssets
-  project: Project
+  project: SpxProject
 }>()
 
 const emit = defineEmits<{
   imported: [AssetModel[]]
 }>()
+
+const editorCtx = useEditorCtx()
 
 const selected = {
   backdrops: shallowReactive(new Set<ExportedScratchCostume>()),
@@ -111,7 +114,6 @@ const selectBackdrop = (backdrop: ExportedScratchCostume) => {
 const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
   return fromBlob(`${scratchFile.name}.${scratchFile.extension}`, scratchFile.blob)
 }
-
 const importSprite = async (asset: ExportedScratchSprite) => {
   const costumes = await Promise.all(
     asset.costumes.map((costume) =>
@@ -153,7 +155,7 @@ const importSelected = useMessageHandle(
   async () => {
     const { sprites, sounds, backdrops } = selected
     const action = { name: { en: 'Import from Scratch file', zh: '从 Scratch 项目文件导入' } }
-    const imported = await props.project.history.doAction(action, () =>
+    const imported = await editorCtx.state.history.doAction(action, () =>
       Promise.all([
         ...Array.from(sprites).map(importSprite),
         ...Array.from(sounds).map(importSound),

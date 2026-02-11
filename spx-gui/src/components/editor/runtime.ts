@@ -1,7 +1,7 @@
 import { effectScope, reactive, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 
 // TODO: move TextDocumentRange to some proper place
 import type { TextDocumentRange } from './code-editor/common'
@@ -61,7 +61,7 @@ export class Runtime extends Emitter<{
     this.outputs.splice(0, this.outputs.length)
   }
 
-  constructor(private project: Project) {
+  constructor(private project: SpxProject) {
     super()
 
     const reactiveThis = reactive(this) as this
@@ -76,7 +76,7 @@ export class Runtime extends Emitter<{
         () => reactiveThis.emit('didChangeOutput')
       )
       watch(
-        () => reactiveThis.project.exportGameFiles(),
+        () => reactiveThis.project.exportFiles(),
         async () => {
           await until(() => reactiveThis.running.mode !== 'debug')
           reactiveThis.clearOutputs()

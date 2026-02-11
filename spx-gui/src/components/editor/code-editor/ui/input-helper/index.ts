@@ -73,7 +73,7 @@ export class InputHelperController extends Disposable {
 
     this.addDisposer(
       watch(
-        () => [this.providerRef.value, this.ui.project.exportGameFiles(), this.ui.activeTextDocument],
+        () => [this.providerRef.value, this.ui.project.exportFiles(), this.ui.activeTextDocument],
         () => refreshSlots(),
         { immediate: true }
       )

@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
 import { humanizeRemaining } from '../common/remaining-time'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
