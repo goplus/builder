@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import { shallowReactive } from 'vue'
+import { reactive } from 'vue'
 import type { IProject, Metadata } from '@/models/project'
 import { fromText, type Files } from '../common/file'
 import Mutex from '@/utils/mutex'
@@ -8,7 +8,7 @@ export function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
 }
 
-export class SimpleProject implements IProject {
+export class MockProject implements IProject {
   mutex = new Mutex()
   public files: Files
   constructor(
@@ -16,7 +16,8 @@ export class SimpleProject implements IProject {
     public name?: string,
     files: Files = {}
   ) {
-    this.files = shallowReactive({ ...files })
+    this.files = { ...files }
+    return reactive(this) as this
   }
   private getMetadata(): Metadata {
     return {
@@ -32,12 +33,12 @@ export class SimpleProject implements IProject {
     this.files = { ...files }
   })
   exportFiles = vi.fn((): Files => {
-    return { ...this.files }
+    return this.files
   })
   export = vi.fn(async (_signal?: AbortSignal): Promise<[Metadata, Files]> => {
     void _signal
     return this.mutex.runExclusive(async () => {
-      return [this.getMetadata(), { ...this.files }]
+      return [this.getMetadata(), this.files]
     })
   })
   load = vi.fn(async (metadata: Metadata, files: Files, _signal?: AbortSignal): Promise<void> => {

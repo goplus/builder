@@ -6,6 +6,7 @@
 import { useAppProvide, useAppInject } from '@/utils/app-state'
 import type { EditorState } from './editor-state'
 
+// TODO: consider merging EditorCtx with EditorState, since EditorState already contains all the data in EditorCtx and more.
 export type EditorCtx = {
   project: SpxProject
   state: EditorState

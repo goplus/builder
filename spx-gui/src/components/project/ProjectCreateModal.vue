@@ -54,10 +54,10 @@ import { useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
 import { getSignedInUsername } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { XbpHelper } from '@/models/common/xbp'
+import { cloudHelpers } from '@/models/common/cloud'
+import { xbpHelpers } from '@/models/common/xbp'
 import { SpxProject } from '@/models/spx/project'
 import { getDefaultProjectFile } from '@/components/project'
-import { CloudHelper } from '@/models/common/cloud'
 
 const props = defineProps<{
   remixSource?: string
@@ -71,7 +71,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const signedInUsername = computed(() => getSignedInUsername())
-
 const title = computed(() => {
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
   return { en: `Remix ${props.remixSource}`, zh: `改编 ${props.remixSource}` }
@@ -100,9 +99,9 @@ const handleSubmit = useMessageHandle(
       const username = await untilNotNull(signedInUsername)
       const defaultProjectFile = await getDefaultProjectFile()
       const project = new SpxProject(username, projectName)
-      await new XbpHelper().load(project, defaultProjectFile)
+      await xbpHelpers.load(project, defaultProjectFile)
       project.setVisibility(Visibility.Private)
-      await new CloudHelper().save(project)
+      await cloudHelpers.save(project)
     }
     emit('resolved', projectName)
     return projectName

@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { InjectionKey } from 'vue'
 import { until } from '@/utils/utils'
-import { CloudHelper } from '@/models/common/cloud'
+import { cloudHelpers } from '@/models/common/cloud'
 
 export type McpConnectionStatus = {
   client: boolean
@@ -205,7 +205,7 @@ async function createProject(options: CreateProjectOptions) {
   project.setVisibility(Visibility.Private)
 
   try {
-    await new CloudHelper().save(project)
+    await cloudHelpers.save(project)
 
     const projectRoute = getOwnProjectEditorRoute(projectName)
 

@@ -93,7 +93,7 @@ const defaultViewportSize: ViewportSize = defaultMapSize
 const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
 const disabledAudioAttenuationFlag = 0
 
-export class SpxProject extends Disposable {
+export class SpxProject extends Disposable implements IProject {
   id?: string
   createdAt?: string
   updatedAt?: string
@@ -713,6 +713,3 @@ function orderBy<T extends Sprite | Sound>(list: T[], order: string[] | undefine
     return order.indexOf(a.id) - order.indexOf(b.id)
   })
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _p: IProject = new SpxProject() // For type checking only, will not be used at runtime

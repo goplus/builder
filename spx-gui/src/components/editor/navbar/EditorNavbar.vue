@@ -163,7 +163,6 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
 import { convertScratchToXbp } from '@/apis/sb2xbp'
-import { XbpHelper } from '@/models/common/xbp'
 import { type SpxProject } from '@/models/spx/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
@@ -171,6 +170,7 @@ import { getProjectPageRoute } from '@/router'
 import { showTutorialsEntry } from '@/utils/env'
 import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
+import { xbpHelpers } from '@/models/common/xbp'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
@@ -224,8 +224,6 @@ const ownerInfoToDisplay = computed(() => {
   return null
 })
 
-const xbpHelper = new XbpHelper()
-
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 
 const handleImportProjectFile = useMessageHandle(
@@ -244,7 +242,7 @@ const handleImportProjectFile = useMessageHandle(
     const file = await selectFile({ accept: ['xbp', 'gbp' /** For backward compatibility */] })
     const action = { name: importProjectFileMessage }
     await m.withLoading(
-      state.history.doAction(action, () => xbpHelper.load(project, file)),
+      state.history.doAction(action, () => xbpHelpers.load(project, file)),
       i18n.t({ en: 'Importing project file', zh: '导入项目文件中' })
     )
   },
@@ -259,7 +257,7 @@ const handleExportProjectFile = useMessageHandle(
     if (project == null) throw new Error('No project to export')
     // TODO: Consider moving `project.getSignal()` into `exportXbpFile` as built-in logic
     const xbpFile = await m.withLoading(
-      xbpHelper.save(project, project.getSignal()),
+      xbpHelpers.save(project, project.getSignal()),
       i18n.t({ en: 'Exporting project file', zh: '导出项目文件中' })
     )
     saveAs(xbpFile, xbpFile.name) // TODO: what if user cancelled download?
@@ -304,7 +302,7 @@ const handleImportFromScratch = useMessageHandle(
 
     const action = { name: importScratchMessage }
     await m.withLoading(
-      state.history.doAction(action, () => xbpHelper.load(project, xbpFile)),
+      state.history.doAction(action, () => xbpHelpers.load(project, xbpFile)),
       i18n.t({ en: 'Importing converted project file', zh: '导入已转换的项目文件' })
     )
   },

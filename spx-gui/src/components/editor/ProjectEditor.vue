@@ -61,7 +61,7 @@ import type { z } from 'zod'
 import { Monitor } from '@/models/spx/widget/monitor'
 import { EditMode } from './editor-state'
 import MapEditor from './map-editor/MapEditor.vue'
-import { CloudHelper } from '@/models/common/cloud'
+import { cloudHelpers } from '@/models/common/cloud'
 
 const editorCtx = useEditorCtx()
 const copilotCtx = useAgentCopilotCtx()
@@ -112,7 +112,7 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   project.value.addSprite(sprite)
   await sprite.autoFit()
   editorCtx.state.selectSprite(sprite.id)
-  new CloudHelper().save(project.value)
+  cloudHelpers.save(project.value)
   return {
     success: true,
     message: `Successfully added sprite "${args.spriteName}" to project "${project.value.name}"`
@@ -123,7 +123,7 @@ async function addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
   const backdrop = await genBackdropFromCanvas(args.backdropName, 800, 600, args.color)
   project.value.stage.addBackdrop(backdrop)
   editorCtx.state.selectBackdrop(backdrop.id)
-  new CloudHelper().save(project.value)
+  cloudHelpers.save(project.value)
   return {
     success: true,
     message: `Successfully added backdrop "${args.backdropName}" to project "${project.value.name}"`

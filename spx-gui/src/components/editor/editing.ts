@@ -2,21 +2,21 @@ import { watchEffect, type WatchSource, watch, ref, shallowRef } from 'vue'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import { timeout, until } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
-import { LocalHelper } from '@/models/common/local'
 import type { IProject } from '@/models/project'
-import type { CloudHelper } from '@/models/common/cloud'
+import type { CloudHelpers } from '@/models/common/cloud'
 import { History } from './history'
-
-export interface ILocalCacheHelper {
-  save(project: IProject, signal?: AbortSignal): Promise<void>
-  clear(): Promise<void>
-}
 
 export enum SavingState {
   Pending,
   InProgress,
   Completed,
   Failed
+}
+
+export interface ILocalCache {
+  load(project: IProject): Promise<boolean>
+  save(project: IProject, signal?: AbortSignal): Promise<void>
+  clear(): Promise<void>
 }
 
 export class Saving {
@@ -27,8 +27,8 @@ export class Saving {
 
   constructor(
     private project: IProject,
-    private cloudHelper: CloudHelper,
-    private localCacheHelper: ILocalCacheHelper,
+    private cloudHelper: CloudHelpers,
+    private localCacheHelper: ILocalCache,
     private isOnline: WatchSource<boolean>,
     private signal: AbortSignal
   ) {
@@ -85,19 +85,6 @@ export enum EditingMode {
   EffectFree
 }
 
-export class LocalCacheHelper implements ILocalCacheHelper {
-  constructor(
-    private localHelper: LocalHelper,
-    private cacheKey: string
-  ) {}
-  async save(project: IProject, signal?: AbortSignal) {
-    await this.localHelper.save(project, this.cacheKey, signal)
-  }
-  async clear() {
-    await this.localHelper.clear(this.cacheKey)
-  }
-}
-
 // TODO: Move `History` into `Editing` (or `EditorState`).
 
 export class Editing extends Disposable {
@@ -106,22 +93,13 @@ export class Editing extends Disposable {
   constructor(
     public mode: EditingMode,
     private project: IProject,
-    private cloudHelper: CloudHelper,
-    private localCacheHelper: ILocalCacheHelper,
+    private cloudHelper: CloudHelpers,
+    private localCacheHelper: ILocalCache,
     private isOnline: WatchSource<boolean>
-    // private signedInUsername: WatchSource<string | null>
   ) {
     super()
     this.history = new History(project)
   }
-
-  // get mode(): EditingMode {
-  //   const username = toValue(this.signedInUsername)
-  //   if (username == null || username !== this.project.owner) {
-  //     return EditingMode.EffectFree
-  //   }
-  //   return EditingMode.AutoSave
-  // }
 
   private startAutoPreload() {
     this.addDisposer(

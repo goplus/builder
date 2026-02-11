@@ -15,7 +15,7 @@ import ProjectPublishedModal from './ProjectPublishedModal.vue'
  * 4. Replace `./default-project.xbp` with the exported file.
  */
 import defaultProjectFileUrl from './default-project.xbp?url'
-import { CloudHelper } from '@/models/common/cloud'
+import { cloudHelpers } from '@/models/common/cloud'
 
 /**
  * Get the default project file as a File object
@@ -81,11 +81,10 @@ export function usePublishProject() {
 export function useUnpublishProject() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
-
   // TODO: message for exception
   async function makePrivate(project: SpxProject) {
     project.setVisibility(Visibility.Private)
-    await new CloudHelper().save(project)
+    await cloudHelpers.save(project)
   }
 
   return async function unpublishProject(project: SpxProject) {

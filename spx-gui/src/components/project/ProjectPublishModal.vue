@@ -5,7 +5,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
-import { CloudHelper, saveFile } from '@/models/common/cloud'
+import { cloudHelpers, saveFile } from '@/models/common/cloud'
 import type { SpxProject } from '@/models/spx/project'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
@@ -22,7 +22,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
 const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 
 /** If this is the first time the project is published */
@@ -69,7 +68,7 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     if (isProjectUsingAIInteraction(project)) await project.ensureAIDescription(true) // Ensure AI description is available if needed
-    await new CloudHelper().save(project)
+    await cloudHelpers.save(project)
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({
       projectFullName: stringifyProjectFullName(project.owner!, project.name!),

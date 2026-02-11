@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { timeout } from '@/utils/utils'
 import { type Files } from '@/models/common/file'
-import type { CloudHelper } from '@/models/common/cloud'
-import { mockFile, SimpleProject } from '@/models/common/test'
+import type { CloudHelpers } from '@/models/common/cloud'
+import { mockFile, MockProject } from '@/models/common/test'
 import type { IProject } from '@/models/project'
-import { Editing, SavingState, EditingMode, type ILocalCacheHelper } from './editing'
+import { Editing, SavingState, EditingMode, type ILocalCache } from './editing'
 
-function mockFiles() {
+function makeFiles() {
   return {
     'file1.txt': mockFile('file1.txt'),
     'file2.txt': mockFile('file2.txt'),
@@ -16,8 +16,8 @@ function mockFiles() {
   }
 }
 
-function mockProject({
-  files = mockFiles(),
+function makeProject({
+  files = makeFiles(),
   owner,
   name
 }: {
@@ -25,35 +25,36 @@ function mockProject({
   name?: string
   files?: Files
 } = {}) {
-  return new SimpleProject(owner, name, files)
+  return new MockProject(owner, name, files)
 }
 
-function mockCloudHelper(): CloudHelper {
+function makeCloudHelper(): CloudHelpers {
   return {
     load: vi.fn().mockResolvedValue(undefined),
     save: vi.fn().mockResolvedValue(undefined)
   }
 }
 
-function mockLocalCacheHelper(): ILocalCacheHelper {
+function makeLocalCache(): ILocalCache {
   return {
+    load: vi.fn().mockResolvedValue(undefined),
     save: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined)
   }
 }
 
 function makeEditing({
-  project = mockProject({}),
+  project = makeProject({}),
   mode = EditingMode.AutoSave,
   isOnline = () => true,
-  cloudHelper = mockCloudHelper(),
-  localCacheHelper = mockLocalCacheHelper()
+  cloudHelper = makeCloudHelper(),
+  localCacheHelper = makeLocalCache()
 }: Partial<{
   project: IProject
   mode: EditingMode
   isOnline: WatchSource<boolean>
-  cloudHelper: CloudHelper
-  localCacheHelper: ILocalCacheHelper
+  cloudHelper: CloudHelpers
+  localCacheHelper: ILocalCache
 }>) {
   return new Editing(mode, project, cloudHelper, localCacheHelper, isOnline)
 }
@@ -72,13 +73,13 @@ describe('Editing', () => {
   })
 
   it('should do auto-save correctly', async () => {
-    const cloudHelper = mockCloudHelper()
+    const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.save).mockImplementation((project: IProject, signal?: AbortSignal) => timeout(500, signal))
-    const localCacheHelper = mockLocalCacheHelper()
+    const localCacheHelper = makeLocalCache()
     vi.mocked(localCacheHelper.save).mockImplementation((project: IProject, signal?: AbortSignal) =>
       timeout(100, signal)
     )
-    const project = mockProject()
+    const project = makeProject()
     const editing = makeEditing({ project, localCacheHelper, cloudHelper })
     editing.start()
 
@@ -109,8 +110,8 @@ describe('Editing', () => {
 
   // https://github.com/goplus/builder/pull/794#discussion_r1728120369
   it('should handle failed auto-save-to-cloud correctly', async () => {
-    const project = mockProject()
-    const cloudHelper = mockCloudHelper()
+    const project = makeProject()
+    const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.save)
       .mockRejectedValueOnce(new Error('Cloud save failed'))
       .mockRejectedValueOnce(new Error('Cloud save failed again'))
@@ -139,9 +140,9 @@ describe('Editing', () => {
   })
 
   it('should cancel pending saving when editing is disposed', async () => {
-    const project = mockProject()
-    const cloudHelper = mockCloudHelper()
-    const localCacheHelper = mockLocalCacheHelper()
+    const project = makeProject()
+    const cloudHelper = makeCloudHelper()
+    const localCacheHelper = makeLocalCache()
     const editing = makeEditing({ project, localCacheHelper, cloudHelper })
     editing.start()
 
@@ -156,9 +157,9 @@ describe('Editing', () => {
   })
 
   it('should abort previous saveToCloud call when a new one is initiated', async () => {
-    const project = mockProject()
-    const cloudHelper = mockCloudHelper()
-    const localCacheHelper = mockLocalCacheHelper()
+    const project = makeProject()
+    const cloudHelper = makeCloudHelper()
+    const localCacheHelper = makeLocalCache()
     const editing = makeEditing({ project, localCacheHelper, cloudHelper })
     editing.start()
 
@@ -180,9 +181,9 @@ describe('Editing', () => {
   })
 
   it('should not trigger auto-save for effect-free mode', async () => {
-    const project = mockProject({ owner: 'project-owner' })
-    const cloudHelper = mockCloudHelper()
-    const localCacheHelper = mockLocalCacheHelper()
+    const project = makeProject({ owner: 'project-owner' })
+    const cloudHelper = makeCloudHelper()
+    const localCacheHelper = makeLocalCache()
     const editing = makeEditing({
       project,
       mode: EditingMode.EffectFree,
@@ -213,11 +214,11 @@ describe('Editing', () => {
   })
 
   it('should wait for online when during auto-save', async () => {
-    const project = mockProject()
-    const cloudHelper = mockCloudHelper()
+    const project = makeProject()
+    const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.save).mockImplementation((project: IProject, signal?: AbortSignal) => timeout(500, signal))
     const isOnline = ref(false) // Start offline
-    const localCacheHelper = mockLocalCacheHelper()
+    const localCacheHelper = makeLocalCache()
     const editing = makeEditing({ project, isOnline, localCacheHelper, cloudHelper })
     editing.start()
 

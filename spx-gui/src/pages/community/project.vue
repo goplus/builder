@@ -38,8 +38,8 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+import { cloudHelpers } from '@/models/common/cloud'
 import kikoWaveSvg from './kiko-wave.svg?raw'
-import { CloudHelper } from '@/models/common/cloud'
 
 const props = defineProps<{
   owner: string
@@ -47,7 +47,6 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-
 const {
   data: project,
   isLoading,
@@ -57,7 +56,7 @@ const {
   async (ctx) => {
     const p = new SpxProject(props.owner, props.name)
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    await new CloudHelper().load(p, true, ctx.signal)
+    await cloudHelpers.load(p, true, ctx.signal)
     return p as CloudProject
   },
   {
@@ -202,7 +201,7 @@ const handleLike = useMessageHandle(
     await likeProject(props.owner, props.name)
     if (project.value != null) {
       // refresh project info (likeCount)
-      await new CloudHelper().load(project.value, true)
+      await cloudHelpers.load(project.value, true)
     }
   },
   { en: 'Failed to like', zh: '标记喜欢失败' }
@@ -215,7 +214,7 @@ const handleUnlike = useMessageHandle(
     await unlikeProject(props.owner, props.name)
     if (project.value != null) {
       // refresh project info (likeCount)
-      await new CloudHelper().load(project.value, true)
+      await cloudHelpers.load(project.value, true)
     }
   },
   { en: 'Failed to unlike', zh: '取消喜欢失败' }

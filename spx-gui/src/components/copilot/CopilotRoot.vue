@@ -35,7 +35,7 @@ import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
 import { userSessionStorageRef } from '@/utils/user-storage'
-import { CloudHelper } from '@/models/common/cloud'
+import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
@@ -65,7 +65,10 @@ const listProjectsTool: ToolDefinition = {
 }
 
 class Retriever {
-  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  constructor(
+    private editorCtxRef: ComputedRef<EditorCtx | undefined>,
+    private cloudHelpers: CloudHelpers
+  ) {}
 
   async getProject(project: string | undefined, signal?: AbortSignal): Promise<SpxProject> {
     const currentProject = this.editorCtxRef.value?.project
@@ -78,7 +81,7 @@ class Retriever {
       return currentProject
     }
     const p = new SpxProject(owner, name)
-    await new CloudHelper().load(p, true, signal)
+    await this.cloudHelpers.load(p, true, signal)
     return p
   }
 }
@@ -417,8 +420,7 @@ const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
 const editorCtxRef = useEditorCtxRef()
 const codeEditorCtxRef = useCodeEditorCtxRef()
-
-const retriever = new Retriever(editorCtxRef)
+const retriever = new Retriever(editorCtxRef, cloudHelpers)
 const copilot = new Copilot()
 onUnmounted(() => copilot.dispose())
 

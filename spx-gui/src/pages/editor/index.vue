@@ -17,6 +17,23 @@
   </section>
 </template>
 
+<script lang="ts">
+const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
+
+class LocalCache implements ILocalCache {
+  constructor(private helpers: LocalHelpers) {}
+  load(project: IProject) {
+    return this.helpers.load(project, LOCAL_CACHE_KEY)
+  }
+  save(project: IProject, signal?: AbortSignal) {
+    return this.helpers.save(project, LOCAL_CACHE_KEY, signal)
+  }
+  clear() {
+    return this.helpers.clear(LOCAL_CACHE_KEY)
+  }
+}
+</script>
+
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
@@ -27,7 +44,6 @@ import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, ProgressReporter } from '@/utils/progress'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 import { composeQuery, useQuery } from '@/utils/query'
-import { LocalHelper, clear } from '@/models/common/local'
 import { UIDetailedLoading, UIError, useConfirmDialogWithResult, useMessage } from '@/components/ui'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
@@ -38,9 +54,11 @@ import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
-import { EditingMode, LocalCacheHelper } from '@/components/editor/editing'
+import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
-import { CloudHelper } from '@/models/common/cloud'
+import { cloudHelpers } from '@/models/common/cloud'
+import { localHelpers, type LocalHelpers } from '@/models/common/local'
+import type { IProject } from '@/models/project'
 
 const props = defineProps<{
   ownerName: string
@@ -52,9 +70,7 @@ usePageTitle(() => ({
   zh: `编辑 ${props.projectName}`
 }))
 
-const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
-const localCacheHelper = new LocalCacheHelper(new LocalHelper(), LOCAL_CACHE_KEY)
-const cloudHelper = new CloudHelper()
+const localCache = new LocalCache(localHelpers)
 
 const signedInUsername = computed(() => getSignedInUsername())
 const copilotCtx = useAgentCopilotCtx()
@@ -100,7 +116,7 @@ const stateQueryRet = useQuery(async (ctx) => {
   const username = signedInUsername.value
   const project = await composeQuery(ctx, projectQueryRet)
   ctx.signal.throwIfAborted()
-  const state = new EditorState(project, isOnline, username, cloudHelper, localCacheHelper)
+  const state = new EditorState(project, isOnline, username, cloudHelpers, localCache)
   state.disposeOnSignal(ctx.signal)
   state.syncWithRouter(router)
   state.editing.start()
@@ -157,11 +173,12 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
   try {
     localProject = new SpxProject()
     localProject.disposeOnSignal(signal)
-    await new LocalHelper().load(localProject, LOCAL_CACHE_KEY)
+    const loaded = await localCache.load(localProject)
+    if (!loaded) localProject = null
   } catch (e) {
     console.warn('Failed to load project from local cache', e)
     localProject = null
-    await clear(LOCAL_CACHE_KEY)
+    await localCache.clear()
   }
   signal.throwIfAborted()
   loadFromLocalCacheReporter.report(1)
@@ -171,7 +188,7 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
   // Local Cache Saving & Restoring
   if (localProject != null && localProject.owner !== ownerName) {
     // Case 4: Different user: Discard local cache
-    await clear(LOCAL_CACHE_KEY)
+    await localCache.clear()
     localProject = null
   }
 
@@ -179,7 +196,7 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
     const stillOpenTarget = await confirmOpenTargetWithAnotherInCache(projectName, localProject.name!)
     signal.throwIfAborted()
     if (stillOpenTarget) {
-      await clear(LOCAL_CACHE_KEY)
+      await localCache.clear()
       localProject = null
     } else {
       openProject(localProject.owner!, localProject.name!)
@@ -191,7 +208,7 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
   newProject.disposeOnSignal(signal)
   // For projects not owned by the signed-in user, we prefer to load the published version.
   const preferPublishedContent = signedInUsername.value !== ownerName
-  await new CloudHelper().load(newProject, preferPublishedContent, signal, loadFromCloudReporter)
+  await cloudHelpers.load(newProject, preferPublishedContent, signal, loadFromCloudReporter)
 
   // If there is no newer cloud version, use local version without confirmation.
   // If there is a newer cloud version, use cloud version without confirmation.
@@ -200,7 +217,7 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
     if (newProject.version <= localProject.version) {
       newProject = localProject
     } else {
-      await clear(LOCAL_CACHE_KEY)
+      await localCache.clear()
     }
   }
 

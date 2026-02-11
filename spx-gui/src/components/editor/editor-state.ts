@@ -3,7 +3,7 @@ import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } f
 import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
 import { AssetType } from '@/apis/asset'
-import { CloudHelper } from '@/models/common/cloud'
+import { CloudHelpers } from '@/models/common/cloud'
 import type { AssetGenModel } from '@/models/spx/common/asset'
 import type { ResourceModel } from '@/models/spx/common/resource-model'
 import type { SpxProject } from '@/models/spx/project'
@@ -52,47 +52,13 @@ export enum EditMode {
   Map = 'map'
 }
 
-// class ProjectWithGens implements IProject {
-//   constructor(private project: IProject) {}
-//   get transactionMutex() {
-//     return this.project.transactionMutex
-//   }
-//   get owner() {
-//     return this.project.owner
-//   }
-//   get name() {
-//     return this.project.name
-//   }
-//   loadMetadata(metadata: Metadata) {
-//     return this.project.loadMetadata(metadata)
-//   }
-//   exportFiles() {
-//     const files = this.project.exportFiles()
-//     // TODO: Include gen files
-//     return files
-//   }
-//   loadFiles(files: Files, signal?: AbortSignal): Promise<void> {
-//     return this.project.loadFiles(files, signal)
-//   }
-//   async load(metadata: Metadata, files: Files, signal?: AbortSignal) {
-//     await this.project.load(metadata, files, signal)
-//     // TODO: Load gen files
-//     return
-//   }
-//   async export(signal?: AbortSignal): Promise<[Metadata, Files]> {
-//     const [metadata, files] = await this.project.export(signal)
-//     // TODO: Include gen files
-//     return [metadata, files]
-//   }
-// }
-
 export class EditorState extends Disposable {
   constructor(
     private project: SpxProject,
     isOnline: WatchSource<boolean>,
     signedInUsername: string | null,
-    cloudHelper: CloudHelper,
-    localCacheHelper: editing.ILocalCacheHelper
+    cloudHelpers: CloudHelpers,
+    localCache: editing.ILocalCache
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
@@ -100,9 +66,7 @@ export class EditorState extends Disposable {
     if (signedInUsername == null || signedInUsername !== this.project.owner) {
       editingMode = EditingMode.EffectFree
     }
-    this.addDisposable(
-      (this.editing = new editing.Editing(editingMode, project, cloudHelper, localCacheHelper, isOnline))
-    )
+    this.addDisposable((this.editing = new editing.Editing(editingMode, project, cloudHelpers, localCache, isOnline)))
     this.addDisposable((this.stageState = new StageEditorState(() => project.stage)))
 
     this.addDisposer(() => this.spriteState?.dispose())
