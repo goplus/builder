@@ -18,7 +18,7 @@ import {
 } from '../common'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
-import { xgoGetInputSlots, xgoRenameResources } from './spxls/commands'
+import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
   isDocumentLinkForResourceReference,
@@ -250,6 +250,17 @@ export class SpxLSPClient extends Disposable {
     return this.executeCommand<xgoGetInputSlots.Arguments, xgoGetInputSlots.Result>(
       ctx,
       xgoGetInputSlots.command,
+      ...params
+    )
+  }
+
+  async workspaceExecuteCommandXGoGetProperty(
+    ctx: RequestContext,
+    ...params: xgoGetProperties.Arguments
+  ): Promise<xgoGetProperties.Result> {
+    return this.executeCommand<xgoGetProperties.Arguments, xgoGetProperties.Result>(
+      ctx,
+      xgoGetProperties.command,
       ...params
     )
   }
