@@ -3,6 +3,7 @@
     <UIMessageProvider>
       <MobileReminder v-if="showMobileReminder" />
       <UIModalProvider v-else>
+        <UpdateNotification />
         <BrowserVersionReminder />
         <CopilotRoot>
           <TutorialRoot>
@@ -36,6 +37,8 @@ const BrowserVersionReminder = defineAsyncComponent(
 )
 
 const showMobileReminder = isMobile()
+
+const UpdateNotification = defineAsyncComponent(() => import('@/components/app/UpdateNotification.vue'))
 
 const { t } = useI18n()
 

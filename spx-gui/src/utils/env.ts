@@ -55,3 +55,6 @@ export const showTutorialsEntry = import.meta.env.VITE_SHOW_TUTORIALS_ENTRY === 
 
 /** Default language, e.g. `en`, `zh` */
 export const defaultLang = (import.meta.env.VITE_DEFAULT_LANG as string) || 'en'
+
+/** Whether the app is running in development mode */
+export const isDev = import.meta.env.DEV
