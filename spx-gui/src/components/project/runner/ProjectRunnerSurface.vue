@@ -420,8 +420,8 @@ defineExpose({
     >
       <div v-if="overlayActive && (overlayVisible || overlayClosing || overlayOpening)" class="header">
         <div class="header-left"></div>
-        <div class="project-name">
-          {{ project.name }}
+        <div class="display-name">
+          {{ project.displayName }}
         </div>
         <div class="header-right">
           <UIButton
@@ -636,7 +636,7 @@ defineExpose({
   flex-basis: 30%;
 }
 
-.project-name {
+.display-name {
   flex: 1;
   flex-basis: 40%;
   text-align: center;

@@ -10,8 +10,8 @@
       <div class="alert">
         {{
           $t({
-            en: 'The project name cannot be modified after it is created.',
-            zh: '项目名创建后无法修改。'
+            en: 'The project name will also be used in project URLs.',
+            zh: '项目名同时也会用于项目 URL。'
           })
         }}
       </div>
@@ -88,10 +88,11 @@ function handleCancel() {
 
 const handleSubmit = useMessageHandle(
   async () => {
-    const projectName = form.value.name
+    const projectName = form.value.name.trim()
     if (props.remixSource != null) {
       await addProject({
         name: projectName,
+        displayName: projectName,
         visibility: Visibility.Private,
         remixSource: props.remixSource
       })
@@ -101,6 +102,7 @@ const handleSubmit = useMessageHandle(
       const project = new SpxProject(username, projectName)
       const serialized = await xbpHelpers.load(defaultProjectFile)
       await project.load(serialized)
+      project.setDisplayName(projectName)
       project.setVisibility(Visibility.Private)
       const exported = await project.export()
       const saved = await cloudHelpers.save(exported)
@@ -123,8 +125,8 @@ async function validateName(name: string): Promise<FormValidationResult> {
 
   if (!/^[\w-]+$/.test(name))
     return t({
-      en: 'The project name can only contain letters, numbers, - and _',
-      zh: '项目名仅可包含字母、数字、- 及 _'
+      en: 'The project name can only contain letters, digits, and the characters - and _.',
+      zh: '项目名仅可包含字母、数字以及字符 - 和 _。'
     })
 
   if (name.length > 100)

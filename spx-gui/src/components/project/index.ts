@@ -7,6 +7,9 @@ import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
 import ProjectPublishModal from './ProjectPublishModal.vue'
 import ProjectPublishedModal from './ProjectPublishedModal.vue'
+import ProjectModifyNameWarningModal from './ProjectModifyNameWarningModal.vue'
+import ProjectModifyNameModal from './ProjectModifyNameModal.vue'
+
 /**
  * How to update the default project:
  * 1. Use XBuilder to create / open a project.
@@ -47,12 +50,16 @@ export function useRemoveProject() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
 
-  return async function removeProject(owner: string, name: string) {
+  return async function removeProject(owner: string, name: string, displayName: string) {
+    const projectFullName = `${owner}/${name}`
     return withConfirm({
-      title: t({ en: `Remove project ${name}`, zh: `删除项目 ${name}` }),
+      title: t({
+        en: `Remove project ${displayName} (${projectFullName})`,
+        zh: `删除项目 ${displayName} (${projectFullName})`
+      }),
       content: t({
-        en: `Removed projects can not be recovered. Are you sure you want to remove project ${name}?`,
-        zh: `删除后的项目无法恢复，确定要删除项目 ${name} 吗？`
+        en: `Removed projects cannot be recovered. Are you sure you want to remove project ${displayName} (${projectFullName})?`,
+        zh: `删除后的项目无法恢复，确定要删除项目 ${displayName} (${projectFullName}) 吗？`
       }),
       // TODO: message for exception
       confirmHandler: () => deleteProject(owner, name)
@@ -65,6 +72,16 @@ export function useShareProject() {
 
   return async function shareProject(owner: string, name: string) {
     await modal({ owner, name })
+  }
+}
+
+export function useModifyProjectName() {
+  const warningModal = useModal(ProjectModifyNameWarningModal)
+  const modifyNameModal = useModal(ProjectModifyNameModal)
+
+  return async function modifyProjectName(project: SpxProject) {
+    await warningModal({})
+    return modifyNameModal({ project })
   }
 }
 

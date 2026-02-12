@@ -55,6 +55,10 @@
               <template #icon><img :src="projectPageSvg" /></template>
               {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
             </UIMenuItem>
+            <UIMenuItem v-if="canManageProject" class="modify-project-name-item" @click="handleModifyProjectName">
+              <template #icon><img :src="modifyProjectNameSvg" /></template>
+              {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
+            </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup v-if="canManageProject" :disabled="project == null">
             <UIMenuItem @click="handleRemoveProject">
@@ -88,16 +92,12 @@
     </template>
     <template #center>
       <template v-if="project != null">
-        <div v-if="ownerInfoToDisplay" class="owner-info">{{ ownerInfoToDisplay.displayName }}</div>
-        <div class="project-name">{{ project.name }}</div>
-        <div v-if="autoSaveStateIcon != null" class="auto-save-state">
-          <UITooltip placement="right">
-            <template #trigger>
-              <div :class="['icon', autoSaveStateIcon.stateClass]" v-html="autoSaveStateIcon.svg"></div>
-            </template>
-            {{ $t(autoSaveStateIcon.desc) }}
-          </UITooltip>
-        </div>
+        <EditorProjectDisplayName
+          :project="project"
+          :can-edit="canEditProjectDisplayName"
+          :owner-display-name="ownerInfoToDisplay?.displayName ?? null"
+          :auto-save-state-icon="autoSaveStateIcon"
+        />
       </template>
     </template>
     <template #right>
@@ -166,9 +166,9 @@ import { convertScratchToXbp } from '@/apis/sb2xbp'
 import { type SpxProject } from '@/models/spx/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
-import { getProjectPageRoute } from '@/router'
+import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { showTutorialsEntry } from '@/utils/env'
-import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
+import { useModifyProjectName, usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
 import { xbpHelpers } from '@/models/common/xbp'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
@@ -176,11 +176,13 @@ import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
+import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
 import { SavingState, EditingMode } from '../editing'
 import { EditMode, type EditorState } from '../editor-state'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
+import modifyProjectNameSvg from './icons/modify-project-name.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import importAssetsScratchSvg from './icons/import-assets-scratch.svg'
 import publishSvg from './icons/publish.svg'
@@ -203,18 +205,14 @@ const i18n = useI18n()
 const router = useRouter()
 const confirm = useConfirmDialog()
 const canManageProject = computed(() => {
-  if (props.project == null) return false
   const signedInUsername = getSignedInUsername()
-  if (signedInUsername == null) return false
-  if (props.project.owner !== signedInUsername) return false
-  return true
+  if (signedInUsername == null || props.project == null) return false
+  return props.project.owner === signedInUsername
 })
 
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
 
-const selectedEditMode = computed(() =>
-  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Default
-)
+const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 
 const ownerInfoToDisplay = computed(() => {
   const owner = projectOwnerRet.data.value
@@ -321,6 +319,23 @@ const handlePublishProject = useMessageHandle(() => publishProject(props.project
   zh: '发布项目失败'
 }).fn
 
+const modifyProjectName = useModifyProjectName()
+const handleModifyProjectName = useMessageHandle(
+  async () => {
+    const project = props.project
+    if (project == null) throw new Error('project is not available')
+    const previousName = project.name
+    const nextName = await modifyProjectName(project)
+    if (nextName == null) return
+    if (nextName !== previousName && project.owner != null) {
+      router.replace(getProjectEditorRoute(project.owner, nextName))
+    }
+  },
+  { en: 'Failed to modify project name', zh: '修改项目名失败' }
+).fn
+
+const canEditProjectDisplayName = computed(() => canManageProject.value && isOnline.value)
+
 const unpublishProject = useUnpublishProject()
 const handleUnpublishProject = useMessageHandle(
   () => unpublishProject(props.project!),
@@ -343,7 +358,7 @@ function handleOpenProjectPage() {
 const removeProject = useRemoveProject()
 const handleRemoveProject = useMessageHandle(
   async () => {
-    await removeProject(props.project!.owner!, props.project!.name!)
+    await removeProject(props.project!.owner!, props.project!.name!, props.project!.displayName)
     router.push('/')
   },
   { en: 'Failed to remove project', zh: '删除项目失败' }
@@ -421,17 +436,8 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   }
 }
 
-.owner-info,
-.project-name {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 16px;
-}
-
-.owner-info::after {
-  content: '/';
-  margin: 0 4px;
+.modify-project-name-item {
+  width: 100%;
 }
 
 .icon {
@@ -470,31 +476,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
     &:hover:not(:disabled) {
       background-color: var(--ui-color-primary-600);
       cursor: pointer;
-    }
-  }
-}
-
-.auto-save-state {
-  margin-left: 8px;
-  cursor: pointer;
-
-  .icon {
-    width: 24px;
-    height: 24px;
-
-    &.pending :deep(svg) path,
-    &.saving :deep(svg) path {
-      stroke-dasharray: 2;
-    }
-
-    &.saving :deep(svg) path {
-      animation: dash 1s linear infinite;
-
-      @keyframes dash {
-        to {
-          stroke-dashoffset: 24;
-        }
-      }
     }
   }
 }

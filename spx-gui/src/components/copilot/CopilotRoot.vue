@@ -49,7 +49,7 @@ const listProjectsParamsSchema = z.object({
   owner: z
     .string()
     .describe("The owner's username. Defaults to the current-signed-in user. Use * to include projects from all users"),
-  keyword: z.string().optional().describe('Keyword in the project name'),
+  keyword: z.string().optional().describe('Keyword in the project display name or project name'),
   pageSize: z.number().describe('Number of projects to return per page'),
   pageIndex: z.number().describe('Page index, starting from 1')
 })
@@ -335,7 +335,7 @@ class ProjectContextProvider implements ICopilotContextProvider {
     const project = this.editorCtxRef.value?.project
     if (project == null) return ''
     return `# Current project
-The user is now working on project: ${project.owner}/${project.name}
+The user is now working on project: ${project.displayName} (${project.owner}/${project.name})
 ## Project content
 ${getProjectContent(project)}`
   }

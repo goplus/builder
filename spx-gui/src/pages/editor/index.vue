@@ -62,12 +62,6 @@ const props = defineProps<{
   ownerName: string
   projectName: string
 }>()
-
-usePageTitle(() => ({
-  en: `Edit ${props.projectName}`,
-  zh: `编辑 ${props.projectName}`
-}))
-
 const localCache = new LocalCache(localHelpers)
 
 const signedInUsername = computed(() => getSignedInUsername())
@@ -132,6 +126,14 @@ const stateQueryRet = useQuery(
 )
 
 const state = stateQueryRet.data
+
+usePageTitle(() => {
+  const displayName = state.value?.project.displayName ?? props.projectName
+  return {
+    en: `Edit ${displayName}`,
+    zh: `编辑 ${displayName}`
+  }
+})
 
 if (copilotCtx.mcp.registry == null) {
   throw new Error('Copilot registry not initialized')

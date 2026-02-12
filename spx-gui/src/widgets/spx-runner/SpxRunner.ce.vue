@@ -13,7 +13,7 @@
       </div>
       <div v-if="ready && !errorMsg" class="ready">
         <p>project ready</p>
-        <p>{{ fullName(project.owner!, project.name!) }}</p>
+        <p>{{ project.displayName }} ({{ fullName(project.owner!, project.name!) }})</p>
       </div>
 
       <ProjectRunner ref="runner" :project="project" />
