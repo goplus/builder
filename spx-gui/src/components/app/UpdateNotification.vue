@@ -13,7 +13,6 @@
     :confirm-text="$t({ en: 'Reload Now', zh: '立即刷新' })"
     :confirm-handler="handleReload"
     @cancelled="handleCancel"
-    @resolved="handleReload"
   />
 </template>
 

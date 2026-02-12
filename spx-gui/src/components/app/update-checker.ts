@@ -10,7 +10,7 @@
  * - Uses HTTP HEAD requests to minimize bandwidth
  * - Stores ETag in localStorage for comparison across page loads
  */
-import { isDev } from '@/utils/env.ts'
+import { isDev } from '@/utils/env'
 
 export type UpdateCallback = () => void
 
@@ -21,9 +21,9 @@ const etagLocalStorageKey = 'spx-gui-etag'
 /**
  * Checks if there is a new version of the application available
  *
- * @returns true if a new version is detected, false otherwise
+ * @returns true if a new version is detected, false if no update, null if check failed
  */
-export async function checkForUpdates(): Promise<boolean> {
+export async function checkForUpdates(): Promise<boolean | null> {
   try {
     const response = await fetch('/index.html', {
       method: 'HEAD',
@@ -39,7 +39,7 @@ export async function checkForUpdates(): Promise<boolean> {
     return lastEtag != null && lastEtag !== etag
   } catch (error) {
     console.error('Failed to check for updates:', error)
-    return false
+    return null
   }
 }
 
@@ -55,12 +55,24 @@ export function startUpdateChecker(intervalMs: number, onUpdate: UpdateCallback)
     console.warn('Update checker is already running.')
     return
   }
+
+  const MAX_FAILURES = 5
+  let consecutiveFailures = 0
+
   const check = async () => {
     const hasUpdate = await checkForUpdates()
-    if (hasUpdate) {
-      onUpdate()
+    if (hasUpdate == null) {
+      consecutiveFailures++
+      if (consecutiveFailures >= MAX_FAILURES) {
+        stopUpdateChecker()
+        console.warn('Update checker disabled after repeated failures')
+      }
+    } else {
+      consecutiveFailures = 0
+      if (hasUpdate) onUpdate()
     }
   }
+
   check()
   updateCheckTimer = setInterval(check, intervalMs)
 }
