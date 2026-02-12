@@ -1,16 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { checkForUpdates, startUpdateChecker, stopUpdateChecker, reloadApp } from './update-checker'
+import { checkForUpdates, startUpdateChecker, stopUpdateChecker, reloadApp, resetUpdateChecker } from './update-checker'
 
 vi.mock('@/utils/env', () => ({
   isDev: false
 }))
 
 describe('update-checker', () => {
-  const etagKey = 'spx-gui-etag'
-
   beforeEach(() => {
-    localStorage.clear()
     vi.clearAllMocks()
+    resetUpdateChecker()
   })
 
   afterEach(() => {
@@ -18,20 +16,34 @@ describe('update-checker', () => {
   })
 
   describe('checkForUpdates', () => {
-    it('should return false when etag is not available', async () => {
+    it('should return null when response is not ok', async () => {
       global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
         headers: {
           get: () => null
         }
       })
 
       const hasUpdate = await checkForUpdates()
-      expect(hasUpdate).toBe(false)
+      expect(hasUpdate).toBe(null)
     })
 
-    it('should store etag on first check', async () => {
+    it('should return null when etag is not available', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: () => null
+        }
+      })
+
+      const hasUpdate = await checkForUpdates()
+      expect(hasUpdate).toBe(null)
+    })
+
+    it('should return false on first check', async () => {
       const etag = '"abc123"'
       global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: (key: string) => (key === 'etag' ? etag : null)
         }
@@ -39,16 +51,24 @@ describe('update-checker', () => {
 
       const hasUpdate = await checkForUpdates()
       expect(hasUpdate).toBe(false)
-      expect(localStorage.getItem(etagKey)).toBe(etag)
     })
 
     it('should detect update when etag changes', async () => {
       const oldEtag = '"abc123"'
       const newEtag = '"def456"'
 
-      localStorage.setItem(etagKey, oldEtag)
-
+      // First check with old etag
       global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: (key: string) => (key === 'etag' ? oldEtag : null)
+        }
+      })
+      await checkForUpdates()
+
+      // Second check with new etag
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: (key: string) => (key === 'etag' ? newEtag : null)
         }
@@ -60,9 +80,19 @@ describe('update-checker', () => {
 
     it('should return false when etag is unchanged', async () => {
       const etag = '"abc123"'
-      localStorage.setItem(etagKey, etag)
 
+      // First check
       global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: (key: string) => (key === 'etag' ? etag : null)
+        }
+      })
+      await checkForUpdates()
+
+      // Second check with same etag
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: (key: string) => (key === 'etag' ? etag : null)
         }
@@ -85,6 +115,7 @@ describe('update-checker', () => {
 
     it('should use HEAD method and no-cache', async () => {
       const fetchSpy = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: () => null
         }
@@ -106,17 +137,21 @@ describe('update-checker', () => {
       const oldEtag = '"abc123"'
       const newEtag = '"def456"'
 
-      localStorage.setItem(etagKey, oldEtag)
-
-      global.fetch = vi.fn().mockResolvedValue({
-        headers: {
-          get: (key: string) => (key === 'etag' ? newEtag : null)
-        }
+      let callCount = 0
+      global.fetch = vi.fn().mockImplementation(() => {
+        callCount++
+        const etag = callCount === 1 ? oldEtag : newEtag
+        return Promise.resolve({
+          ok: true,
+          headers: {
+            get: (key: string) => (key === 'etag' ? etag : null)
+          }
+        })
       })
 
       startUpdateChecker(100, onUpdate)
 
-      await new Promise((resolve) => setTimeout(resolve, 50))
+      await new Promise((resolve) => setTimeout(resolve, 150))
       expect(onUpdate).toHaveBeenCalled()
     })
 
@@ -124,9 +159,8 @@ describe('update-checker', () => {
       const onUpdate = vi.fn()
       const etag = '"abc123"'
 
-      localStorage.setItem(etagKey, etag)
-
       global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: (key: string) => (key === 'etag' ? etag : null)
         }
@@ -134,13 +168,14 @@ describe('update-checker', () => {
 
       startUpdateChecker(100, onUpdate)
 
-      await new Promise((resolve) => setTimeout(resolve, 50))
+      await new Promise((resolve) => setTimeout(resolve, 150))
       expect(onUpdate).not.toHaveBeenCalled()
     })
 
     it('should check periodically', async () => {
       const onUpdate = vi.fn()
       const fetchSpy = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: () => null
         }
@@ -158,6 +193,7 @@ describe('update-checker', () => {
       const onUpdate = vi.fn()
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: () => null
         }
@@ -212,24 +248,27 @@ describe('update-checker', () => {
       let callCount = 0
       const fetchSpy = vi.fn().mockImplementation(() => {
         callCount++
-        // Fail 3 times, then succeed, then fail 3 more times
-        if (callCount <= 3 || callCount > 4) {
+        // Pattern: fail, success, fail, success, ...
+        // This ensures we never hit 5 consecutive failures
+        if (callCount % 2 === 1) {
           return Promise.reject(new Error('Network error'))
         }
         return Promise.resolve({
+          ok: true,
           headers: {
-            get: () => null
+            get: (key: string) => (key === 'etag' ? '"v1"' : null)
           }
         })
       })
       global.fetch = fetchSpy
 
-      startUpdateChecker(50, onUpdate)
+      startUpdateChecker(40, onUpdate)
 
-      // Wait for 7+ checks (3 failures + 1 success + 3 failures)
+      // Wait for 10 checks: F S F S F S F S F S
       await new Promise((resolve) => setTimeout(resolve, 400))
+      stopUpdateChecker()
 
-      // Should not have stopped because failure count was reset after success
+      // Should not have stopped because failure count was reset after each success
       expect(consoleWarnSpy).not.toHaveBeenCalledWith('Update checker disabled after repeated failures')
 
       consoleWarnSpy.mockRestore()
@@ -241,6 +280,7 @@ describe('update-checker', () => {
     it('should stop the update checker', async () => {
       const onUpdate = vi.fn()
       const fetchSpy = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: () => null
         }
@@ -261,6 +301,7 @@ describe('update-checker', () => {
     it('should allow starting checker again after stopping', () => {
       const onUpdate = vi.fn()
       global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
         headers: {
           get: () => null
         }

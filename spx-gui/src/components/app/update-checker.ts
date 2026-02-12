@@ -8,7 +8,7 @@
  * Implementation details:
  * - Only runs in production builds
  * - Uses HTTP HEAD requests to minimize bandwidth
- * - Stores ETag in localStorage for comparison across page loads
+ * - Stores ETag in memory during the session
  */
 import { isDev } from '@/utils/env'
 
@@ -16,7 +16,7 @@ export type UpdateCallback = () => void
 
 let updateCheckTimer: ReturnType<typeof setInterval> | null = null
 
-const etagLocalStorageKey = 'spx-gui-etag'
+let lastEtag: string | null = null
 
 /**
  * Checks if there is a new version of the application available
@@ -29,14 +29,13 @@ export async function checkForUpdates(): Promise<boolean | null> {
       method: 'HEAD',
       cache: 'no-cache'
     })
+    if (!response.ok) return null
     const etag = response.headers.get('etag')
-    if (etag == null) return false
+    if (etag == null) return null
 
-    const lastEtag = localStorage.getItem(etagLocalStorageKey)
-    // Save the new etag immediately
-    localStorage.setItem(etagLocalStorageKey, etag)
-    // Return true if there was an update
-    return lastEtag != null && lastEtag !== etag
+    const hasUpdate = lastEtag != null && lastEtag !== etag
+    lastEtag = etag
+    return hasUpdate
   } catch (error) {
     console.error('Failed to check for updates:', error)
     return null
@@ -44,7 +43,7 @@ export async function checkForUpdates(): Promise<boolean | null> {
 }
 
 /**
- * Starts periodic checking for application updates
+ * Starts periodic checking for application updates. Automatically stops after 5 consecutive check failures.
  *
  * @param intervalMs - Check interval in milliseconds
  * @param onUpdate - Callback function to be called when an update is detected
@@ -92,4 +91,12 @@ export function stopUpdateChecker() {
  */
 export function reloadApp() {
   window.location.reload()
+}
+
+/**
+ * Resets the update checker state (for testing)
+ */
+export function resetUpdateChecker() {
+  lastEtag = null
+  stopUpdateChecker()
 }
