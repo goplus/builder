@@ -41,9 +41,7 @@ function handleCancel() {
 }
 
 onMounted(() => {
-  startUpdateChecker(60000, () => {
-    show()
-  })
+  startUpdateChecker(60 * 1000, show)
 })
 
 onUnmounted(() => {
