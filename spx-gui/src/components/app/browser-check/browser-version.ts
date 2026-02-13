@@ -1,4 +1,4 @@
-import ua from '@/utils/ua'
+import { getBrowser } from '@/utils/ua'
 
 export const BrowserName = {
   CHROME: 'Chrome',
@@ -29,8 +29,8 @@ export type BrowserCheckResult =
  *   - `{ ok: false, browserName: null, recommendedBrowser, recommendedVersion }` if the browser is unknown/unsupported
  */
 export function checkBrowserVersion(): BrowserCheckResult {
-  const browserName = ua.browser.name
-  if (!browserName || !(browserName in recommendedBrowserVersions)) {
+  const { name, version } = getBrowser()
+  if (name == null || !(name in recommendedBrowserVersions)) {
     return {
       ok: false,
       browserName: null,
@@ -38,12 +38,12 @@ export function checkBrowserVersion(): BrowserCheckResult {
       recommendedVersion: recommendedBrowserVersions[BrowserName.CHROME]
     }
   }
-  const recommendedVersion = recommendedBrowserVersions[browserName]
-  const browserVersion = ua.browser.version || '0'
+  const recommendedVersion = recommendedBrowserVersions[name]
+  const browserVersion = version || '0'
   if (compareVersions(browserVersion, recommendedVersion) >= 0) {
     return { ok: true }
   }
-  return { ok: false, browserName, recommendedVersion }
+  return { ok: false, browserName: name, recommendedVersion }
 }
 
 /**

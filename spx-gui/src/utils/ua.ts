@@ -1,9 +1,18 @@
-import uaParser from 'ua-parser-js'
+import Bowser from 'bowser'
 
-const ua = uaParser(navigator.userAgent)
+const parser = Bowser.getParser(navigator.userAgent)
 
-export default ua
+export function isMobile(): boolean {
+  const { type } = parser.getPlatform()
+  // type is 'bot' | 'desktop' | 'mobile' | 'tablet' | 'tv' | undefined
+  return type === 'mobile' || type === 'tablet'
+}
 
-export function isMobile() {
-  return ua.device.type === 'mobile' || ua.device.type === 'tablet'
+export interface Browser {
+  name?: string
+  version?: string
+}
+
+export function getBrowser(): Browser {
+  return parser.getBrowser()
 }
