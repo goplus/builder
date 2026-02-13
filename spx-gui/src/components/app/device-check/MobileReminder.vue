@@ -4,24 +4,24 @@
       <img :src="imgDesktopRequired" alt="Desktop Required Image" />
     </div>
     <div class="guide-text">
-      <h1>{{ t({ en: 'Desktop Required', zh: '访问限制' }) }}</h1>
+      <h1>{{ t({ en: 'Please visit on desktop', zh: '请在电脑上访问' }) }}</h1>
       <p>
         {{
           t({
-            en: 'This application is not supported on mobile devices. Please access it from a desktop.',
-            zh: '该应用暂不支持移动端，请使用电脑访问'
+            en: 'XBuilder is designed for desktop devices. Please visit this page on your computer for the full experience.',
+            zh: 'XBuilder 需要在电脑上使用，请在电脑浏览器中访问以获得完整体验'
           })
         }}
       </p>
     </div>
     <UIButton
       v-if="isClipboardSupported"
-      v-radar="{ name: 'Copy Access URL', desc: 'Button to copy the access URL' }"
+      v-radar="{ name: 'Copy Link', desc: 'Button to copy the page URL' }"
       size="large"
       icon="copy"
       @click="handleCopy"
     >
-      {{ t({ en: 'Copy Access URL', zh: '复制访问地址' }) }}
+      {{ t({ en: 'Copy link', zh: '复制链接' }) }}
     </UIButton>
   </div>
 </template>

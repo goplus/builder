@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { compareVersions } from './ua'
+import { compareVersions } from './browser-version'
 
 describe('compareVersions', () => {
   it('should compare major versions correctly', () => {

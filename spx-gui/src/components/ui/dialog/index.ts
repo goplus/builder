@@ -1,8 +1,9 @@
 import { Cancelled } from '@/utils/exception'
 import { useModal } from '../modal'
+import UIDialog from './UIDialog.vue'
 import UIConfirmDialog, { type Props as UIConfirmDialogProps } from './UIConfirmDialog.vue'
 
-export { UIConfirmDialog }
+export { UIDialog, UIConfirmDialog }
 
 export type ConfirmOptions = Omit<UIConfirmDialogProps, 'visible'>
 

@@ -30,8 +30,8 @@ import { useI18n } from '@/utils/i18n'
 import { useInstallRouteLoading } from '@/utils/route-loading'
 import { isMobile } from '@/utils/ua'
 
-const MobileReminder = defineAsyncComponent(() => import('@/components/ua/MobileReminder.vue'))
-const BrowserVersionReminder = defineAsyncComponent(() => import('@/components/ua/BrowserVersionReminder.vue'))
+const MobileReminder = defineAsyncComponent(() => import('@/components/app/device-check/MobileReminder.vue'))
+const BrowserVersionReminder = defineAsyncComponent(() => import('@/components/app/browser-check/BrowserVersionReminder.vue'))
 
 const showMobileReminder = isMobile()
 

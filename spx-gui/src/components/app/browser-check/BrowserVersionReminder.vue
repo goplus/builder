@@ -32,10 +32,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { checkBrowserVersion } from '@/utils/ua'
 import { type LocaleMessage } from '@/utils/i18n'
-import UIDialog from '@/components/ui/dialog/UIDialog.vue'
-import UIButton from '../ui/UIButton.vue'
+import { UIDialog, UIButton } from '@/components/ui'
+import { checkBrowserVersion } from './browser-version'
 
 const fallbackMessage: LocaleMessage = {
   en: 'Your browser version may not support all features. Please update your browser for the best experience.',
@@ -73,16 +72,16 @@ onMounted(() => {
   if (checkResult.ok) return
 
   if (checkResult.browserName == null) {
-    const { recommendedBrowser, recommendedVersion } = checkResult
+    const { recommendedBrowser } = checkResult
     content.value = {
-      en: `Your browser may not support all features. For the best experience, please use ${recommendedBrowser} (version ${recommendedVersion} or later).`,
-      zh: `您的浏览器可能无法支持全部功能，建议使用 ${recommendedBrowser}（${recommendedVersion} 或更高版本）以获得最佳体验。`
+      en: `Your browser may not support all features. For the best experience, please use the latest version of ${recommendedBrowser}.`,
+      zh: `您的浏览器可能无法支持全部功能，建议使用最新版本的 ${recommendedBrowser} 以获得最佳体验。`
     }
   } else {
-    const { recommendedVersion } = checkResult
+    const { browserName } = checkResult
     content.value = {
-      en: `Your browser version may not support all features. Please update to version ${recommendedVersion} or later for the best experience.`,
-      zh: `您的浏览器版本可能无法支持全部功能，建议更新到 ${recommendedVersion} 或更高版本以获得最佳体验。`
+      en: `Your browser version may not support all features. Please update ${browserName} to the latest version for the best experience.`,
+      zh: `您的浏览器版本可能无法支持全部功能，建议将 ${browserName} 更新到最新版本以获得最佳体验。`
     }
   }
   visible.value = true
