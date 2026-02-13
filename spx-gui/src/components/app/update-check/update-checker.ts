@@ -15,7 +15,7 @@ import { isDev } from '@/utils/env'
 export type UpdateCallback = () => void
 
 let updateCheckTimer: ReturnType<typeof setInterval> | null = null
-
+let isStopped = true
 let lastEtag: string | null = null
 
 /**
@@ -55,6 +55,7 @@ export function startUpdateChecker(intervalMs: number, onUpdate: UpdateCallback)
     return
   }
 
+  isStopped = false
   const MAX_FAILURES = 5
   let consecutiveFailures = 0
 
@@ -62,7 +63,7 @@ export function startUpdateChecker(intervalMs: number, onUpdate: UpdateCallback)
     try {
       const hasUpdate = await checkForUpdates()
       consecutiveFailures = 0
-      if (hasUpdate) onUpdate()
+      if (hasUpdate && !isStopped) onUpdate()
     } catch (error) {
       console.error('Failed to check for updates:', error)
       consecutiveFailures++
@@ -81,6 +82,7 @@ export function startUpdateChecker(intervalMs: number, onUpdate: UpdateCallback)
  * Stops the update checker
  */
 export function stopUpdateChecker() {
+  isStopped = true
   if (updateCheckTimer != null) {
     clearInterval(updateCheckTimer)
     updateCheckTimer = null

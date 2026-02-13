@@ -38,7 +38,7 @@ const BrowserVersionReminder = defineAsyncComponent(
 
 const showMobileReminder = isMobile()
 
-const UpdateNotification = defineAsyncComponent(() => import('@/components/app/UpdateNotification.vue'))
+const UpdateNotification = defineAsyncComponent(() => import('@/components/app/update-check/UpdateNotification.vue'))
 
 const { t } = useI18n()
 
