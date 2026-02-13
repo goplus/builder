@@ -16,19 +16,19 @@ describe('update-checker', () => {
   })
 
   describe('checkForUpdates', () => {
-    it('should return null when response is not ok', async () => {
+    it('should throw error when response is not ok', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
+        status: 404,
         headers: {
           get: () => null
         }
       })
 
-      const hasUpdate = await checkForUpdates()
-      expect(hasUpdate).toBe(null)
+      await expect(checkForUpdates()).rejects.toThrow('HTTP error: 404')
     })
 
-    it('should return null when etag is not available', async () => {
+    it('should throw error when etag is not available', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
@@ -36,8 +36,7 @@ describe('update-checker', () => {
         }
       })
 
-      const hasUpdate = await checkForUpdates()
-      expect(hasUpdate).toBe(null)
+      await expect(checkForUpdates()).rejects.toThrow('ETag header not found')
     })
 
     it('should return false on first check', async () => {
@@ -102,22 +101,17 @@ describe('update-checker', () => {
       expect(hasUpdate).toBe(false)
     })
 
-    it('should return null and log error on fetch failure', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    it('should throw error on fetch failure', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
-      const hasUpdate = await checkForUpdates()
-      expect(hasUpdate).toBe(null)
-      expect(consoleErrorSpy).toHaveBeenCalled()
-
-      consoleErrorSpy.mockRestore()
+      await expect(checkForUpdates()).rejects.toThrow('Network error')
     })
 
     it('should use HEAD method and no-cache', async () => {
       const fetchSpy = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
-          get: () => null
+          get: (key: string) => (key === 'etag' ? '"v1"' : null)
         }
       })
       global.fetch = fetchSpy
@@ -177,7 +171,7 @@ describe('update-checker', () => {
       const fetchSpy = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
-          get: () => null
+          get: (key: string) => (key === 'etag' ? '"v1"' : null)
         }
       })
       global.fetch = fetchSpy
@@ -195,7 +189,7 @@ describe('update-checker', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
-          get: () => null
+          get: (key: string) => (key === 'etag' ? '"v1"' : null)
         }
       })
 
@@ -282,7 +276,7 @@ describe('update-checker', () => {
       const fetchSpy = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
-          get: () => null
+          get: (key: string) => (key === 'etag' ? '"v1"' : null)
         }
       })
       global.fetch = fetchSpy
@@ -303,7 +297,7 @@ describe('update-checker', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
-          get: () => null
+          get: (key: string) => (key === 'etag' ? '"v1"' : null)
         }
       })
 

@@ -19,27 +19,27 @@ let updateCheckTimer: ReturnType<typeof setInterval> | null = null
 let lastEtag: string | null = null
 
 /**
- * Checks if there is a new version of the application available
+ * Checks if there is a new version of the application available (exposed for testing)
  *
- * @returns true if a new version is detected, false if no update, null if check failed
+ * @returns true if a new version is detected, false if no update
+ * @throws {Error} If the check fails (network error, HTTP error, or missing ETag)
  */
-export async function checkForUpdates(): Promise<boolean | null> {
-  try {
-    const response = await fetch('/index.html', {
-      method: 'HEAD',
-      cache: 'no-cache'
-    })
-    if (!response.ok) return null
-    const etag = response.headers.get('etag')
-    if (etag == null) return null
-
-    const hasUpdate = lastEtag != null && lastEtag !== etag
-    lastEtag = etag
-    return hasUpdate
-  } catch (error) {
-    console.error('Failed to check for updates:', error)
-    return null
+export async function checkForUpdates(): Promise<boolean> {
+  const response = await fetch('/index.html', {
+    method: 'HEAD',
+    cache: 'no-cache'
+  })
+  if (!response.ok) {
+    throw new Error(`HTTP error: ${response.status}`)
   }
+  const etag = response.headers.get('etag')
+  if (etag == null) {
+    throw new Error('ETag header not found')
+  }
+
+  const hasUpdate = lastEtag != null && lastEtag !== etag
+  lastEtag = etag
+  return hasUpdate
 }
 
 /**
@@ -59,16 +59,17 @@ export function startUpdateChecker(intervalMs: number, onUpdate: UpdateCallback)
   let consecutiveFailures = 0
 
   const check = async () => {
-    const hasUpdate = await checkForUpdates()
-    if (hasUpdate == null) {
+    try {
+      const hasUpdate = await checkForUpdates()
+      consecutiveFailures = 0
+      if (hasUpdate) onUpdate()
+    } catch (error) {
+      console.error('Failed to check for updates:', error)
       consecutiveFailures++
       if (consecutiveFailures >= MAX_FAILURES) {
         stopUpdateChecker()
         console.warn('Update checker disabled after repeated failures')
       }
-    } else {
-      consecutiveFailures = 0
-      if (hasUpdate) onUpdate()
     }
   }
 
