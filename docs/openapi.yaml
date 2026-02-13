@@ -402,6 +402,9 @@ paths:
                 - files
                 - visibility
               properties:
+                name:
+                  description: New name of the project. If provided, the project will be renamed.
+                  $ref: "#/components/schemas/Project/properties/name"
                 files:
                   $ref: "#/components/schemas/Project/properties/files"
                 visibility:
