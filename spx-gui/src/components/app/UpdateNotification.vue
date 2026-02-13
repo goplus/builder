@@ -12,7 +12,7 @@
     :cancel-text="$t({ en: 'Later', zh: '稍后' })"
     :confirm-text="$t({ en: 'Reload Now', zh: '立即刷新' })"
     :confirm-handler="handleReload"
-    @cancelled="handleCancel"
+    @cancelled="handleRemindLater"
   />
 </template>
 
@@ -23,7 +23,13 @@ import { reloadApp, startUpdateChecker, stopUpdateChecker } from './update-check
 
 const visible = ref(false)
 
+const REMIND_LATER_DELAY_MS = 5 * 60 * 1000 // 5 minutes
+let laterTimer: ReturnType<typeof setTimeout> | null = null
+
 function show() {
+  if (laterTimer != null) {
+    return
+  }
   visible.value = true
 }
 
@@ -35,8 +41,12 @@ function handleReload() {
   reloadApp()
 }
 
-function handleCancel() {
+function handleRemindLater() {
   hide()
+  laterTimer = setTimeout(() => {
+    laterTimer = null
+    show()
+  }, REMIND_LATER_DELAY_MS)
 }
 
 onMounted(() => {
@@ -45,5 +55,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopUpdateChecker()
+  if (laterTimer != null) {
+    clearTimeout(laterTimer)
+    laterTimer = null
+  }
 })
 </script>
