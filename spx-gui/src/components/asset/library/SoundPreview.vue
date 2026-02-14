@@ -7,9 +7,9 @@
 <script setup lang="ts">
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
-import { asset2Sound } from '@/models/common/asset'
+import { asset2Sound } from '@/models/spx/common/asset'
 import type { AssetData } from '@/apis/asset'
-import { Sound } from '@/models/sound'
+import { Sound } from '@/models/spx/sound'
 import SoundPlayer from '@/components/editor/sound/SoundPlayer.vue'
 
 const props = defineProps<{

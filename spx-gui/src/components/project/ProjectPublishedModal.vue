@@ -3,11 +3,11 @@ import { computed } from 'vue'
 import { UIButton, UIFormModal, UITextInput, UILink } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectPageRoute } from '@/router'
-import { Project } from '@/models/project'
+import { SpxProject } from '@/models/spx/project'
 
 const props = defineProps<{
   visible: boolean
-  project: Project
+  project: SpxProject
 }>()
 
 const emit = defineEmits<{

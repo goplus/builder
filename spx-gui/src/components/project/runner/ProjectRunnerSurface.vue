@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref, shallowRef, watch } from 'vue'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { Project } from '@/models/project'
+import { SpxProject } from '@/models/spx/project'
 import { UIButton, UITooltip } from '@/components/ui'
 import ProjectRunner from './ProjectRunner.vue'
 
@@ -10,7 +10,7 @@ type RunnerState = 'initial' | 'loading' | 'running'
 
 const props = withDefaults(
   defineProps<{
-    project: Project
+    project: SpxProject
     fullscreen?: boolean
     inlineAnchor?: () => HTMLElement | null
     onRun?: () => void | Promise<void>

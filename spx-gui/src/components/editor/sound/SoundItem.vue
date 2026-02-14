@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
-import { Sound } from '@/models/sound'
+import { Sound } from '@/models/spx/sound'
 import { UIEditorSoundItem } from '@/components/ui'
 import CornerMenu from '../common/CornerMenu.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
@@ -44,7 +44,7 @@ const { fn: handleDuplicate } = useMessageHandle(
   async () => {
     const sound = props.sound
     const action = { name: { en: `Duplicate sound ${sound.name}`, zh: `复制声音 ${sound.name}` } }
-    await editorCtx.project.history.doAction(action, () => {
+    await editorCtx.state.history.doAction(action, () => {
       const newSound = sound.clone()
       editorCtx.project.addSoundAfter(newSound, sound.id)
       editorCtx.state.selectSound(newSound.id)
@@ -60,7 +60,7 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.sound.name
     const action = { name: { en: `Remove sound ${name}`, zh: `删除声音 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => editorCtx.project.removeSound(props.sound.id))
+    await editorCtx.state.history.doAction(action, () => editorCtx.project.removeSound(props.sound.id))
   },
   {
     en: 'Failed to remove sound',

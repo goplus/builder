@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
 import { humanizeRemaining } from '../common/remaining-time'
-import type { CostumeGen } from '@/models/gen/costume-gen'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { UIImg, UIButton, UIError } from '@/components/ui'
 import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
 import { useRenameCostumeGen } from '../..'
@@ -40,12 +40,6 @@ function handleSaveErrorBack() {
 }
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
-
-const remaining = computed(() => {
-  const gen = props.gen
-  if (gen.generateState.status !== 'running') return null
-  return gen.generateState.remaining
-})
 </script>
 
 <template>
@@ -57,7 +51,7 @@ const remaining = computed(() => {
     </template>
     <GenLoading v-if="gen.generateState.status === 'running'" variant="bg-spin">
       {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
-      {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
+      {{ gen.generateState.remaining != null ? $t(humanizeRemaining(gen.generateState.remaining)) : '' }}
     </GenLoading>
     <GenStateFailed v-else-if="gen.generateState.status === 'failed'" :state-failed="gen.generateState" />
     <GenLoading v-else-if="imgLoading" variant="bg-spin">

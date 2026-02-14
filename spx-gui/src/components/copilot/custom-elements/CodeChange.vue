@@ -94,7 +94,7 @@ const handleApply = useMessageHandle(
         en: 'The original code has changed',
         zh: '原代码已被更改'
       })
-    await editorCtx.project.history.doAction({ name: { en: 'Apply code change', zh: '应用代码更改' } }, () =>
+    await editorCtx.state.history.doAction({ name: { en: 'Apply code change', zh: '应用代码更改' } }, () =>
       textDocument.pushEdits([{ range, newText: codeToAdd.value }])
     )
   },

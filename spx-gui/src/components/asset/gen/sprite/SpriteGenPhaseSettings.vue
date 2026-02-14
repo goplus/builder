@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
 import { humanizeRemaining } from '../common/remaining-time'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
@@ -38,12 +38,6 @@ const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
 })
 
 const hasPreview = computed(() => props.gen.image != null)
-
-const remaining = computed(() => {
-  const gen = props.gen
-  if (gen.imagesGenState.status !== 'running') return null
-  return gen.imagesGenState.remaining
-})
 </script>
 
 <template>
@@ -74,9 +68,9 @@ const remaining = computed(() => {
           <SpriteImageItem :file="file" :active="active" @click="select(file)" />
         </template>
         <template #tip>
-          <template v-if="gen.imagesGenState.status === 'running' && remaining != null">
+          <template v-if="gen.imagesGenState.status === 'running'">
             {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
-            {{ remaining != null ? $t(humanizeRemaining(remaining)) : '' }}
+            {{ gen.imagesGenState.remaining != null ? $t(humanizeRemaining(gen.imagesGenState.remaining)) : '' }}
           </template>
           <template v-else-if="gen.imagesGenState.status === 'finished'">
             {{

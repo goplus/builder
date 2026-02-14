@@ -5,15 +5,15 @@
 
 import { computed } from 'vue'
 import { SnippetParser as BaseSnippetParser, Text, Variable } from '@/utils/snippet-parser'
-import { Sprite } from '@/models/sprite'
-import type { WidgetType } from '@/models/widget'
-import type { Project } from '@/models/project'
+import { Sprite } from '@/models/spx/sprite'
+import type { WidgetType } from '@/models/spx/widget'
+import type { SpxProject } from '@/models/spx/project'
 import { textDocumentId2ResourceModelId } from '../common'
 import type { CodeEditorUI } from './code-editor-ui'
 
 export class SnippetParser {
   constructor(
-    private project: Project,
+    private project: SpxProject,
     private ui: CodeEditorUI
   ) {}
 

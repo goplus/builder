@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import type { Project } from '@/models/project'
-import type { Physics } from '@/models/stage'
+import type { SpxProject } from '@/models/spx/project'
+import type { Physics } from '@/models/spx/stage'
 
 import { UISwitch } from '@/components/ui'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
 }>()
+
+const editorCtx = useEditorCtx()
 
 function applyPhysicsProps(physics: Partial<Physics>) {
   const oldPhysics = props.project.stage.physics
@@ -14,7 +17,7 @@ function applyPhysicsProps(physics: Partial<Physics>) {
 }
 
 const handlePhysicsEnabledChange = (v: boolean) => {
-  props.project.history.doAction(
+  editorCtx.state.history.doAction(
     { name: { en: `Configure map physics ${v ? 'enable' : 'disable'}`, zh: `修改地图物理特性${v ? '启用' : '禁用'}` } },
     () => applyPhysicsProps({ enabled: v })
   )

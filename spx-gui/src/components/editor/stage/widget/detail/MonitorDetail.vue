@@ -81,7 +81,7 @@ import { UITextInput, UINumberInput, UIButtonGroup, UIButtonGroupItem, UIIcon } 
 import { round } from '@/utils/utils'
 import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'
-import type { Monitor } from '@/models/widget/monitor'
+import type { Monitor } from '@/models/spx/widget/monitor'
 import { useRenameWidget } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import EditorItemDetail from '../../../common/EditorItemDetail.vue'
@@ -128,7 +128,7 @@ function wrapUpdateHandler<Args extends any[]>(
 ): (...args: Args) => void {
   const name = props.monitor.name
   const action = { name: { en: `Configure widget ${name}`, zh: `修改控件 ${name} 配置` } }
-  const wrapped = (...args: Args) => editorCtx.project.history.doAction(action, () => handler(...args))
+  const wrapped = (...args: Args) => editorCtx.state.history.doAction(action, () => handler(...args))
   return withDebounce ? debounce(wrapped, 300) : wrapped
 }
 </script>

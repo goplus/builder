@@ -42,7 +42,7 @@ export async function getSignedInUser(): Promise<SignedInUser> {
   return await (client.get(`/user`) as Promise<SignedInUser>)
 }
 
-export type UpdateSignedInUserParams = Pick<User, 'description'>
+export type UpdateSignedInUserParams = Partial<Pick<User, 'displayName' | 'description'>>
 
 export async function updateSignedInUser(params: UpdateSignedInUserParams) {
   return await (client.put(`/user`, params) as Promise<SignedInUser>)
