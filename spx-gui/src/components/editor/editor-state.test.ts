@@ -1,36 +1,42 @@
 import { ref, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { Project } from '@/models/project'
-import { Sprite } from '@/models/sprite'
-import { Sound } from '@/models/sound'
-import { Backdrop } from '@/models/backdrop'
-import { Monitor } from '@/models/widget/monitor'
-import { Costume } from '@/models/costume'
-import { Animation } from '@/models/animation'
-import { fromText } from '@/models/common/file'
+import { SpxProject } from '@/models/spx/project'
+import { Sprite } from '@/models/spx/sprite'
+import { Sound } from '@/models/spx/sound'
+import { Backdrop } from '@/models/spx/backdrop'
+import { Monitor } from '@/models/spx/widget/monitor'
+import { Costume } from '@/models/spx/costume'
+import { Animation } from '@/models/spx/animation'
 import type * as editing from './editing'
 
 import { EditorState, type IRouter, type Selected } from './editor-state'
+import type { CloudHelpers } from '@/models/common/cloud'
+import { mockFile } from '@/models/common/test'
 
-function mockFile(name = 'mocked') {
-  return fromText(name, Math.random() + '')
+function makeCloudHelpers(): CloudHelpers {
+  return {
+    load: vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockResolvedValue(undefined)
+  }
 }
 
-function mockLocalStorage(): editing.LocalStorage {
+function makeLocalCache(): editing.ILocalCache {
   return {
+    load: vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined)
   }
 }
 
-function createEmptyProject(): Project {
-  const project = new Project()
+function makeEmptyProject(): SpxProject {
+  const project = new SpxProject()
   project.bindScreenshotTaker(async () => mockFile())
   return project
 }
 
-function createProjectWithResources(): Project {
-  const project = new Project()
+function makeProjectWithResources(): SpxProject {
+  const project = new SpxProject()
 
   // Add sounds
   const sound1 = new Sound('sound1', mockFile())
@@ -86,7 +92,7 @@ function createProjectWithResources(): Project {
   return project
 }
 
-function mockRouter() {
+function makeRouter() {
   const currentRoute = ref({
     fullPath: '/',
     params: {},
@@ -100,14 +106,14 @@ function mockRouter() {
   } satisfies IRouter
 }
 
-function createEditorState(
-  project: Project = createEmptyProject(),
+function makeEditorState(
+  project: SpxProject = makeEmptyProject(),
   isOnline: WatchSource<boolean> = ref(true),
-  signedInUsername: WatchSource<string | null> = ref('user'),
-  localCacheKey: string = 'test-cache-key',
-  localStorage: editing.LocalStorage = mockLocalStorage()
+  signedInUsername: string | null = 'user',
+  cloudHelpers: CloudHelpers = makeCloudHelpers(),
+  localCache: editing.ILocalCache = makeLocalCache()
 ): EditorState {
-  return new EditorState(project, isOnline, signedInUsername, localCacheKey, localStorage)
+  return new EditorState(project, isOnline, signedInUsername, cloudHelpers, localCache)
 }
 
 describe('EditorState', () => {
@@ -121,8 +127,8 @@ describe('EditorState', () => {
 
   describe('initialization', () => {
     it('should initialize with empty project and default to sprite selection', async () => {
-      const project = createEmptyProject()
-      const editorState = createEditorState(project)
+      const project = makeEmptyProject()
+      const editorState = makeEditorState(project)
 
       await flushPromises()
 
@@ -137,8 +143,8 @@ describe('EditorState', () => {
     })
 
     it('should initialize with normal project and auto-select first sprite', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       await flushPromises()
 
@@ -155,8 +161,8 @@ describe('EditorState', () => {
 
   describe('selection methods', () => {
     it('should select stage correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       editorState.select({ type: 'stage' })
       await flushPromises()
@@ -174,8 +180,8 @@ describe('EditorState', () => {
     })
 
     it('should select sprite by id correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       const sprite = project.sprites[1] // sprite2
 
       editorState.select({ type: 'sprite', id: sprite.id })
@@ -195,8 +201,8 @@ describe('EditorState', () => {
     })
 
     it('should select sound by id correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       const sound = project.sounds[1] // sound2
 
       editorState.select({ type: 'sound', id: sound.id })
@@ -212,8 +218,8 @@ describe('EditorState', () => {
     })
 
     it('should handle non-existent sprite id gracefully', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       editorState.select({ type: 'sprite', id: 'non-existent-id' })
       await flushPromises()
@@ -233,8 +239,8 @@ describe('EditorState', () => {
     })
 
     it('should handle non-existent sound id gracefully', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       editorState.select({ type: 'sound', id: 'non-existent-id' })
       await flushPromises()
@@ -251,25 +257,25 @@ describe('EditorState', () => {
     })
 
     it('should select correctly with undo/redo', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[0].id)
       await flushPromises()
 
-      await project.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
+      await editorState.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
         editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
       )
       await flushPromises()
 
       expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[1].name)
 
-      await project.history.undo()
+      await editorState.history.undo()
       await flushPromises()
 
       expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[0].name)
 
-      await project.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
+      await editorState.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
         editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
       )
       await flushPromises()
@@ -280,8 +286,8 @@ describe('EditorState', () => {
 
   describe('selectByName methods', () => {
     it('should select sprite by name correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       editorState.selectByName({ type: 'sprite', name: 'sprite2' })
       await flushPromises()
@@ -299,8 +305,8 @@ describe('EditorState', () => {
     })
 
     it('should select sound by name correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       editorState.selectByName({ type: 'sound', name: 'sound2' })
       await flushPromises()
@@ -315,8 +321,8 @@ describe('EditorState', () => {
     })
 
     it('should handle non-existent names gracefully', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       editorState.selectByName({ type: 'sprite', name: 'non-existent' })
       await flushPromises()
@@ -338,8 +344,8 @@ describe('EditorState', () => {
 
   describe('convenience selection methods', () => {
     it('should select sprite by id using selectSprite', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       const sprite = project.sprites[0]
 
       editorState.selectSprite(sprite.id)
@@ -351,8 +357,8 @@ describe('EditorState', () => {
     })
 
     it('should select sound by id using selectSound', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       const sound = project.sounds[0]
 
       editorState.selectSound(sound.id)
@@ -364,8 +370,8 @@ describe('EditorState', () => {
     })
 
     it('should select widget correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       const widget = project.stage.widgets[0]
 
       editorState.selectWidget(widget.id)
@@ -383,8 +389,8 @@ describe('EditorState', () => {
     })
 
     it('should select backdrop correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       const backdrop = project.stage.backdrops[0]
 
       editorState.selectBackdrop(backdrop.id)
@@ -402,8 +408,8 @@ describe('EditorState', () => {
     })
 
     it('should select costume correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       const sprite = project.sprites[0]
       const costume = sprite.costumes[1] // costume2
 
@@ -425,8 +431,8 @@ describe('EditorState', () => {
     })
 
     it('should select animation correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       const sprite = project.sprites[0]
       const animation = sprite.animations[1]
 
@@ -450,8 +456,8 @@ describe('EditorState', () => {
 
   describe('selectResource method', () => {
     it('should select different resource types correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       // Test sprite selection
       editorState.selectResource(project.sprites[1])
@@ -505,9 +511,9 @@ describe('EditorState', () => {
 
   describe('router integration', () => {
     it('should sync selection to router correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
-      const router = mockRouter()
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -528,9 +534,9 @@ describe('EditorState', () => {
     })
 
     it('should sync from router to selection correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
-      const router = mockRouter()
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -553,9 +559,9 @@ describe('EditorState', () => {
     })
 
     it('should handle stage routes correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
-      const router = mockRouter()
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -575,9 +581,9 @@ describe('EditorState', () => {
     })
 
     it('should handle sprite sub-routes correctly', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
-      const router = mockRouter()
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -604,9 +610,9 @@ describe('EditorState', () => {
     })
 
     it('should default to sprites route when no specific route provided', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
-      const router = mockRouter()
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -632,9 +638,9 @@ describe('EditorState', () => {
     })
 
     it('should do replace instead of push when selected resource renamed', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
-      const router = mockRouter()
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -677,8 +683,8 @@ describe('EditorState', () => {
 
   describe('resource management', () => {
     it('should auto-select first sprite when current selection becomes invalid', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       // Select second sprite
       editorState.selectSprite(project.sprites[1].id)
@@ -695,8 +701,8 @@ describe('EditorState', () => {
     })
 
     it('should auto-select first sound when current selection becomes invalid', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       // Select second sound
       editorState.selectSound(project.sounds[1].id)
@@ -712,8 +718,8 @@ describe('EditorState', () => {
     })
 
     it('should handle project with no sprites gracefully', async () => {
-      const project = createEmptyProject()
-      const editorState = createEditorState(project)
+      const project = makeEmptyProject()
+      const editorState = makeEditorState(project)
 
       editorState.select({ type: 'sprite' })
       await flushPromises()
@@ -726,8 +732,8 @@ describe('EditorState', () => {
     })
 
     it('should handle project with no sounds gracefully', async () => {
-      const project = createEmptyProject()
-      const editorState = createEditorState(project)
+      const project = makeEmptyProject()
+      const editorState = makeEditorState(project)
 
       editorState.select({ type: 'sound' })
       await flushPromises()
@@ -739,8 +745,8 @@ describe('EditorState', () => {
     })
 
     it('should handle adding new sprites correctly', async () => {
-      const project = createEmptyProject()
-      const editorState = createEditorState(project)
+      const project = makeEmptyProject()
+      const editorState = makeEditorState(project)
 
       // Initially no sprite selected
       expect(editorState.selectedSprite).toBeNull()
@@ -756,8 +762,8 @@ describe('EditorState', () => {
     })
 
     it('should handle adding new sounds correctly', async () => {
-      const project = createEmptyProject()
-      const editorState = createEditorState(project)
+      const project = makeEmptyProject()
+      const editorState = makeEditorState(project)
       editorState.select({ type: 'sound' })
 
       // Initially no sound selected
@@ -774,8 +780,8 @@ describe('EditorState', () => {
     })
 
     it('should preserve in-sprite type selection when switching between sprites', async () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       editorState.selectSprite(project.sprites[0].id)
       editorState.spriteState!.select('costumes')
@@ -833,8 +839,8 @@ describe('EditorState', () => {
 
   describe('error handling', () => {
     it('should throw error for invalid target type in select', () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       expect(() => {
         editorState.select({ type: 'invalid' } as any)
@@ -844,8 +850,8 @@ describe('EditorState', () => {
     })
 
     it('should throw error for invalid target type in selectByName', () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
 
       expect(() => {
         editorState.selectByName({ type: 'invalid' } as any)
@@ -855,8 +861,8 @@ describe('EditorState', () => {
     })
 
     it('should throw error when trying to select costume without sprite state', async () => {
-      const project = createEmptyProject() // Project with no sprites
-      const editorState = createEditorState(project)
+      const project = makeEmptyProject() // Project with no sprites
+      const editorState = makeEditorState(project)
 
       expect(() => {
         editorState.selectCostume('non-existent-sprite-id', 'costume-id')
@@ -866,8 +872,8 @@ describe('EditorState', () => {
     })
 
     it('should throw error when trying to select animation without sprite state', async () => {
-      const project = createEmptyProject() // Project with no sprites
-      const editorState = createEditorState(project)
+      const project = makeEmptyProject() // Project with no sprites
+      const editorState = makeEditorState(project)
 
       expect(() => {
         editorState.selectAnimation('non-existent-sprite-id', 'animation-id')
@@ -879,8 +885,8 @@ describe('EditorState', () => {
 
   describe('disposal', () => {
     it('should dispose all resources correctly', () => {
-      const project = createProjectWithResources()
-      const editorState = createEditorState(project)
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
       editorState.selectAnimation(project.sprites[0].id, project.sprites[0].animations[0].id)
 
       // Ensure runtime and editing are created

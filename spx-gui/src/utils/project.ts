@@ -1,10 +1,10 @@
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 
 /** Pattern to detect AI Interaction usage in code */
 const aiPlayerPattern = /\sai\.Player/
 
 /** Check if project is using AI Interaction features */
-export function isProjectUsingAIInteraction(project: Project): boolean {
+export function isProjectUsingAIInteraction(project: SpxProject): boolean {
   // Check stage code
   if (project.stage.code && aiPlayerPattern.test(project.stage.code)) {
     return true
@@ -21,7 +21,7 @@ export function isProjectUsingAIInteraction(project: Project): boolean {
 }
 
 /** Check if sign-in is required for running the project */
-export function isSignInRequiredForProject(project: Project): boolean {
+export function isSignInRequiredForProject(project: SpxProject): boolean {
   // AI Interaction features require sign-in
   if (isProjectUsingAIInteraction(project)) {
     return true

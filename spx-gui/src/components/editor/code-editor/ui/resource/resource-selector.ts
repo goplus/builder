@@ -1,13 +1,13 @@
 import { AssetType } from '@/apis/asset'
-import type { ResourceModel } from '@/models/common/resource-model'
-import type { Project } from '@/models/project'
-import { Sound } from '@/models/sound'
-import { Sprite } from '@/models/sprite'
-import { Animation } from '@/models/animation'
-import { Backdrop } from '@/models/backdrop'
-import { type Widget } from '@/models/widget'
-import { Costume } from '@/models/costume'
-import type { Stage } from '@/models/stage'
+import type { ResourceModel } from '@/models/spx/common/resource-model'
+import type { SpxProject } from '@/models/spx/project'
+import { Sound } from '@/models/spx/sound'
+import { Sprite } from '@/models/spx/sprite'
+import { Animation } from '@/models/spx/animation'
+import { Backdrop } from '@/models/spx/backdrop'
+import { type Widget } from '@/models/spx/widget'
+import { Costume } from '@/models/spx/costume'
+import type { Stage } from '@/models/spx/stage'
 import type { LocaleMessage } from '@/utils/i18n'
 import {
   useAddAssetFromLibrary,
@@ -45,7 +45,7 @@ class SoundSelector implements IResourceSelector<Sound> {
     return this.project.sounds
   }
 
-  constructor(private project: Project) {}
+  constructor(private project: SpxProject) {}
 
   useCreateMethods() {
     const addFromLocalFile = useAddSoundFromLocalFile()
@@ -74,7 +74,7 @@ class SpriteSelector implements IResourceSelector<Sprite> {
     return this.project.sprites
   }
 
-  constructor(private project: Project) {}
+  constructor(private project: SpxProject) {}
 
   useCreateMethods() {
     const addFromLocalFile = useAddSpriteFromLocalFile()
@@ -99,7 +99,7 @@ class AnimationSelector implements IResourceSelector<Animation> {
   }
 
   constructor(
-    private project: Project,
+    private project: SpxProject,
     private sprite: Sprite
   ) {}
 
@@ -120,7 +120,7 @@ class BackdropSelector implements IResourceSelector<Backdrop> {
     return this.project.stage.backdrops
   }
 
-  constructor(private project: Project) {}
+  constructor(private project: SpxProject) {}
 
   useCreateMethods() {
     const addFromLocalFile = useAddBackdropFromLocalFile()
@@ -144,7 +144,7 @@ class WidgetSelector implements IResourceSelector<Widget> {
     return this.project.stage.widgets
   }
 
-  constructor(private project: Project) {}
+  constructor(private project: SpxProject) {}
 
   useCreateMethods() {
     const addMonitor = useAddMonitor()
@@ -164,7 +164,7 @@ class CostumeSelector implements IResourceSelector<Costume> {
   }
 
   constructor(
-    private project: Project,
+    private project: SpxProject,
     private sprite: Sprite
   ) {}
 
@@ -173,14 +173,14 @@ class CostumeSelector implements IResourceSelector<Costume> {
     return [
       {
         label: { en: 'Select local file', zh: '选择本地文件' },
-        handler: () => addFromLocalFile(this.sprite, this.project)
+        handler: () => addFromLocalFile(this.sprite)
       }
     ]
   }
 }
 
 export function createResourceSelector(
-  project: Project,
+  project: SpxProject,
   contextURI: ResourceContextURI
 ): IResourceSelector<SelectableResource> {
   const { parent, type } = parseResourceContextURI(contextURI)

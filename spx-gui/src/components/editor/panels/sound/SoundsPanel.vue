@@ -55,7 +55,7 @@ import { computed, ref } from 'vue'
 import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { Sound } from '@/models/sound'
+import { Sound } from '@/models/spx/sound'
 import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import SoundItem from '@/components/editor/sound/SoundItem.vue'
@@ -125,7 +125,7 @@ const handleRecord = useMessageHandle(
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update sound order', zh: '更新声音顺序' } }
-    await editorCtx.project.history.doAction(action, () => editorCtx.project.moveSound(oldIdx, newIdx))
+    await editorCtx.state.history.doAction(action, () => editorCtx.project.moveSound(oldIdx, newIdx))
   },
   {
     en: 'Failed to update sound order',

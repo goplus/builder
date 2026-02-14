@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Animation } from '@/models/animation'
+import type { Animation } from '@/models/spx/animation'
 import { UIDropdownModal, UINumberInput } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
@@ -32,7 +32,7 @@ const actionName = { en: 'Adjust animation duration', zh: '调整动画时长' }
 const duration = ref(props.animation.duration)
 
 async function handleConfirm() {
-  await editorCtx.project.history.doAction({ name: actionName }, () => {
+  await editorCtx.state.history.doAction({ name: actionName }, () => {
     props.animation.setDuration(duration.value)
   })
   emit('close')

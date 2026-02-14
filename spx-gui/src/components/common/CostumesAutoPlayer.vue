@@ -2,7 +2,7 @@
 import { ref, watchEffect } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { getCleanupSignal, type OnCleanup } from '@/utils/disposable'
-import type { Costume } from '@/models/costume'
+import type { Costume } from '@/models/spx/costume'
 import CostumesPlayer from './CostumesPlayer.vue'
 
 const props = defineProps<{

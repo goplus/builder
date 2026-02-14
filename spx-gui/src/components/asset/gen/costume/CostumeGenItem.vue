@@ -11,7 +11,7 @@ export function isCostumesLoading(gens: CostumeGen[]) {
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { UIBlockItemTitle, UIImg } from '@/components/ui'
-import type { CostumeGen } from '@/models/gen/costume-gen'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import CornerMenu from '@/components/editor/common/CornerMenu.vue'
 import RenameMenuItem from '@/components/editor/common/corner-menu-item/RenameMenuItem.vue'
 import RemoveMenuItem from '@/components/editor/common/corner-menu-item/RemoveMenuItem.vue'

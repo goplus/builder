@@ -1,27 +1,27 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { type Project } from '@/models/project'
-import { headingToLeftRight, LeftRight, leftRightToHeading, RotationStyle, type Sprite } from '@/models/sprite'
+import { type SpxProject } from '@/models/spx/project'
+import { headingToLeftRight, LeftRight, leftRightToHeading, RotationStyle, type Sprite } from '@/models/spx/sprite'
 
 import { wrapUpdateHandler } from '../utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
-import { UIButtonGroup, UIButtonGroupItem, UIDropdown, UINumberInput, UITooltip } from '@/components/ui'
-import rotateIcon from './rotate.svg?raw'
-import leftRightIcon from './left-right.svg?raw'
-import noRotateIcon from './no-rotate.svg?raw'
+import { UIButtonGroup, UIButtonGroupItem, UIDropdown, UIIcon, UINumberInput, UITooltip } from '@/components/ui'
 
 const props = defineProps<{
   sprite: Sprite
-  project: Project
+  project: SpxProject
 }>()
+
+const editorCtx = useEditorCtx()
 
 const rotateDropdownVisible = ref(false)
 
 const spriteContext = () => ({
   sprite: props.sprite,
-  project: props.project
+  history: editorCtx.state.history
 })
 
 const rotationStyleTips = {
@@ -71,7 +71,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
         {{ $t(rotationStyleTips.normal) }}
         <template #trigger>
           <UIButtonGroupItem :value="RotationStyle.Normal">
-            <i class="rotation-icon" v-html="rotateIcon"></i>
+            <UIIcon type="rotateAround" />
           </UIButtonGroupItem>
         </template>
       </UITooltip>
@@ -79,7 +79,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
         {{ $t(rotationStyleTips.leftRight) }}
         <template #trigger>
           <UIButtonGroupItem :value="RotationStyle.LeftRight">
-            <i class="rotation-icon" v-html="leftRightIcon"></i>
+            <UIIcon type="leftRight" />
           </UIButtonGroupItem>
         </template>
       </UITooltip>
@@ -87,7 +87,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
         {{ $t(rotationStyleTips.none) }}
         <template #trigger>
           <UIButtonGroupItem :value="RotationStyle.None">
-            <i class="rotation-icon" v-html="noRotateIcon"></i>
+            <UIIcon type="notRotate" />
           </UIButtonGroupItem>
         </template>
       </UITooltip>
@@ -147,15 +147,5 @@ const handleHeadingUpdate = wrapUpdateHandler(
   flex-direction: column;
   align-items: center;
   gap: 12px;
-}
-
-.rotation-icon {
-  display: flex;
-  width: 16px;
-  height: 16px;
-  :deep(svg) {
-    width: 100%;
-    height: 100%;
-  }
 }
 </style>

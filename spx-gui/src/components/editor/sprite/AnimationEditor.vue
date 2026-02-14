@@ -107,7 +107,7 @@ export class AnimationsEditorState extends Disposable {
 import { ref, type Ref, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
-import type { Sprite } from '@/models/sprite'
+import type { Sprite } from '@/models/spx/sprite'
 import EditorList from '../common/EditorList.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
@@ -140,7 +140,7 @@ const handleGroupCostumes = useMessageHandle(
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update animation order', zh: '更新动画顺序' } }
-    await editorCtx.project.history.doAction(action, () => props.sprite.moveAnimation(oldIdx, newIdx))
+    await editorCtx.state.history.doAction(action, () => props.sprite.moveAnimation(oldIdx, newIdx))
   },
   {
     en: 'Failed to update animation order',

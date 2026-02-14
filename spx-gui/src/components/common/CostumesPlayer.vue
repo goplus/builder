@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { getImgDrawingCtx } from '@/utils/canvas'
 import { File } from '@/models/common/file'
-import type { Costume } from '@/models/costume'
+import type { Costume } from '@/models/spx/costume'
 import { UIImg } from '../ui'
 
 const props = defineProps<{

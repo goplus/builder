@@ -4,10 +4,10 @@ import { useSaveAssetToLibrary } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { UIMenuItem } from '@/components/ui'
 
-import type { AssetModel } from '@/models/common/asset'
-import { Sprite } from '@/models/sprite'
-import { Backdrop } from '@/models/backdrop'
-import { Sound } from '@/models/sound'
+import type { AssetModel } from '@/models/spx/common/asset'
+import { Sprite } from '@/models/spx/sprite'
+import { Backdrop } from '@/models/spx/backdrop'
+import { Sound } from '@/models/spx/sound'
 
 const props = defineProps<{
   item: AssetModel

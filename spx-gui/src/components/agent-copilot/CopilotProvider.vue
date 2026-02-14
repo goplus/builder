@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { InjectionKey } from 'vue'
 import { until } from '@/utils/utils'
+import { cloudHelpers } from '@/models/common/cloud'
 
 export type McpConnectionStatus = {
   client: boolean
@@ -99,7 +100,7 @@ import { createProjectToolDescription, CreateProjectArgsSchema } from './mcp/def
 import { getProject, Visibility } from '@/apis/project'
 import { useRouter } from 'vue-router'
 import { getOwnProjectEditorRoute } from '@/router'
-import { Project } from '@/models/project'
+import { SpxProject } from '@/models/spx/project'
 import McpDebugger from './mcp/McpDebugger.vue'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
@@ -200,11 +201,11 @@ async function createProject(options: CreateProjectOptions) {
     // Handle error checking project existence
   }
 
-  const project = new Project(signedInUsername, projectName)
+  const project = new SpxProject(signedInUsername, projectName)
   project.setVisibility(Visibility.Private)
 
   try {
-    await project.saveToCloud()
+    await cloudHelpers.save(project)
 
     const projectRoute = getOwnProjectEditorRoute(projectName)
 
