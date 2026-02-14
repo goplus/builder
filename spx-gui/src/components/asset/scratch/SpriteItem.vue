@@ -20,8 +20,8 @@ import { UIImg, UISpriteItem, UICornerIcon } from '@/components/ui'
 import { useHovered } from '@/utils/dom'
 import type { ExportedScratchCostume, ExportedScratchSprite } from '@/utils/scratch'
 import { fromBlob } from '@/models/common/file'
-import { Costume } from '@/models/costume'
-import { defaultFps } from '@/models/animation'
+import { Costume } from '@/models/spx/costume'
+import { defaultFps } from '@/models/spx/animation'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 
 const props = defineProps<{

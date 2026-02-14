@@ -44,27 +44,30 @@
 </template>
 <script setup lang="ts">
 import { UIButton, UICheckbox, UIFormModal } from '@/components/ui'
-import type { Animation } from '@/models/animation'
-import type { Project } from '@/models/project'
+import type { Animation } from '@/models/spx/animation'
+import type { SpxProject } from '@/models/spx/project'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 import { ref } from 'vue'
 
 const props = defineProps<{
   visible: boolean
   animation: Animation
-  project: Project
+  project: SpxProject
 }>()
 const emit = defineEmits<{
   cancelled: []
   resolved: []
 }>()
 
+const editorCtx = useEditorCtx()
+
 const preserveCostumes = ref(false)
 
 const handleConfirm = async () => {
   const sprite = props.animation.sprite
   if (sprite == null) throw new Error('sprite not found')
-  await props.project.history.doAction(
+  await editorCtx.state.history.doAction(
     {
       name: {
         en: `Remove animation ${props.animation.name}`,

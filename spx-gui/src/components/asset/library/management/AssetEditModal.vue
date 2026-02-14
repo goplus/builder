@@ -4,7 +4,7 @@ import { UIForm, UIFormItem, UITextInput, UIButton, UIFormModal, UIRadio, UIRadi
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { type AssetData, AssetType, updateAsset } from '@/apis/asset'
-import { validateAssetDisplayName } from '@/models/common/asset-name'
+import { validateAssetDisplayName } from '@/models/spx/common/asset-name'
 import { getAssetCategories } from '../category'
 import BackdropPreview from '../BackdropPreview.vue'
 import SpritePreview from '../SpritePreview.vue'

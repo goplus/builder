@@ -107,9 +107,10 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - description
+              minProperties: 1
               properties:
+                displayName:
+                  $ref: "#/components/schemas/User/properties/displayName"
                 description:
                   $ref: "#/components/schemas/User/properties/description"
       responses:
@@ -198,6 +199,9 @@ paths:
                     - $ref: "#/components/schemas/ProjectReleaseFullName"
                 name:
                   $ref: "#/components/schemas/Project/properties/name"
+                displayName:
+                  description: Defaults to `name` if not provided.
+                  $ref: "#/components/schemas/Project/properties/displayName"
                 files:
                   description: |
                     File paths and their corresponding universal URLs associated with the project.
@@ -267,10 +271,12 @@ paths:
               - $ref: "#/components/schemas/ProjectFullName"
               - $ref: "#/components/schemas/ProjectReleaseFullName"
         - name: keyword
-          description: Filter projects by name pattern.
+          description: Filter projects by display name or name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Project/properties/name"
+            type: string
+            examples:
+              - Niu Xiao Qi
         - name: visibility
           description: Filter projects by visibility.
           in: query
@@ -396,10 +402,15 @@ paths:
                 - files
                 - visibility
               properties:
+                name:
+                  description: New name of the project. If provided, the project will be renamed.
+                  $ref: "#/components/schemas/Project/properties/name"
                 files:
                   $ref: "#/components/schemas/Project/properties/files"
                 visibility:
                   $ref: "#/components/schemas/Project/properties/visibility"
+                displayName:
+                  $ref: "#/components/schemas/Project/properties/displayName"
                 description:
                   $ref: "#/components/schemas/Project/properties/description"
                 instructions:
@@ -2255,6 +2266,23 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AIGCAnimationSettings"
+                  animationBindings:
+                    description: |
+                      Recommended mapping from sprite state enum values to animation names.
+                      Keys are sprite state enum values; values are animation name strings that should
+                      match the 'name' field from the animations array, omitted if no animation is bound to that state.
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      default:
+                        type: string
+                      step:
+                        type: string
+                      die:
+                        type: string
+                    example:
+                      default: "idle"
+                      step: "walk"
         "403":
           description: Insufficient permissions or quota.
           headers:
@@ -2269,43 +2297,6 @@ paths:
               description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
-
-  /aigc/matting:
-    post:
-      tags:
-        - AIGC
-      deprecated: true
-      summary: Remove image background
-      description: |
-        Process the provided image URL to remove its background, resulting in a transparent background.
-
-        **Deprecated**: This endpoint is deprecated and will be removed in a future version. Use `POST /aigc/task` with
-        `type: "removeBackground"` instead, which provides better reliability for long-running operations.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - imageUrl
-              properties:
-                imageUrl:
-                  description: URL of the image to process for background removal.
-                  type: string
-                  format: uri
-      responses:
-        "200":
-          description: Successfully processed the image for background removal.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultUrl:
-                    description: URL of the processed image with background removed.
-                    type: string
-                    format: uri
 
   /util/upinfo:
     get:
@@ -2570,6 +2561,11 @@ components:
           type: string
           examples:
             - NiuXiaoQi
+        displayName:
+          description: Display name of the project.
+          type: string
+          examples:
+            - Niu Xiao Qi
         version:
           description: Version number of the project.
           type: integer

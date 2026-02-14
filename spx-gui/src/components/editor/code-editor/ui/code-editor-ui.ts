@@ -4,7 +4,7 @@ import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
 import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import type { Copilot } from '@/components/copilot/copilot'
 import type { EditorState } from '../../editor-state'
 import {
@@ -188,7 +188,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
   constructor(
     private mainTextDocumentId: TextDocumentIdentifier,
-    public project: Project,
+    public project: SpxProject,
     private editorState: EditorState,
     public i18n: I18n,
     public monaco: Monaco,

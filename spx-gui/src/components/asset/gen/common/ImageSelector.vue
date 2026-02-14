@@ -23,7 +23,7 @@ export function useImageSelectorDisabled(): ComputedRef<boolean> {
 import { computed, provide, ref } from 'vue'
 import { useContentSize } from '@/utils/dom'
 import type { File } from '@/models/common/file'
-import type { PhaseState } from '@/models/gen/common'
+import type { PhaseState } from '@/models/spx/gen/common'
 
 const props = withDefaults(
   defineProps<{

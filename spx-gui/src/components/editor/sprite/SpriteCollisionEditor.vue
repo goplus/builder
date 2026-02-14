@@ -14,22 +14,25 @@ import { useFileImg } from '@/utils/file'
 import { useContentSize } from '@/utils/dom'
 import { getContentBoundingRect } from '@/utils/img'
 import { toNativeFile } from '@/models/common/file'
-import { CollisionShapeType, type Sprite } from '@/models/sprite'
-import type { Pivot as CostumePivot } from '@/models/costume'
+import { CollisionShapeType, type Sprite } from '@/models/spx/sprite'
+import type { Pivot as CostumePivot } from '@/models/spx/costume'
 import type { CustomTransformer, CustomTransformerConfig } from '../common/viewer/custom-transformer'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
   sprite: Sprite
 }>()
 
 const emits = defineEmits<{
   updateSuccess: []
 }>()
+
+const editorCtx = useEditorCtx()
 
 const i18n = useI18n()
 const wrapper = ref<HTMLDivElement | null>(null)
@@ -262,7 +265,7 @@ const { fn: handleConfirm } = useMessageHandle(
     const defaultCostume = props.sprite.defaultCostume
     if (defaultCostume == null) throw new Error('Sprite has no default costume')
 
-    await props.project.history.doAction({ name: { en: 'Update sprite collision', zh: '更新精灵碰撞' } }, () => {
+    await editorCtx.state.history.doAction({ name: { en: 'Update sprite collision', zh: '更新精灵碰撞' } }, () => {
       sprite.applyCostumesPivotChange({
         x: pivotPos.value.x - defaultCostume.pivot.x,
         y: pivotPos.value.y - defaultCostume.pivot.y

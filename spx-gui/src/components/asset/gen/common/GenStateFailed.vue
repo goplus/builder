@@ -2,7 +2,7 @@
 import { ApiException, isQuotaExceededMeta } from '@/apis/common/exception'
 import QuotaExceededCountdown from '@/components/common/QuotaExceededCountdown.vue'
 import { UIError } from '@/components/ui'
-import type { PhaseState } from '@/models/gen/common'
+import type { PhaseState } from '@/models/spx/gen/common'
 import { computed } from 'vue'
 
 export type PhaseStateFailed<R> = Extract<PhaseState<R>, { status: 'failed' }>

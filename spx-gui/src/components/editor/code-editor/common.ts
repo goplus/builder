@@ -3,15 +3,15 @@ import * as lsp from 'vscode-languageserver-protocol'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
 import { exprForSpxDirection, type ColorValue, exprForSpxColor } from '@/utils/spx'
-import type { Project } from '@/models/project'
-import { ResourceModelIdentifier, type ResourceModel, type ResourceModelType } from '@/models/common/resource-model'
-import { Sprite } from '@/models/sprite'
-import { Sound } from '@/models/sound'
-import { Backdrop } from '@/models/backdrop'
-import { Costume } from '@/models/costume'
-import { Animation } from '@/models/animation'
-import { isWidget } from '@/models/widget'
-import { stageCodeFilePaths } from '@/models/stage'
+import type { SpxProject } from '@/models/spx/project'
+import { ResourceModelIdentifier, type ResourceModel, type ResourceModelType } from '@/models/spx/common/resource-model'
+import { Sprite } from '@/models/spx/sprite'
+import { Sound } from '@/models/spx/sound'
+import { Backdrop } from '@/models/spx/backdrop'
+import { Costume } from '@/models/spx/costume'
+import { Animation } from '@/models/spx/animation'
+import { isWidget } from '@/models/spx/widget'
+import { stageCodeFilePaths } from '@/models/spx/stage'
 
 /**
  * Position stands for the position of a **character** in the document.
@@ -595,7 +595,7 @@ export function parseResourceContextURI(uri: ResourceContextURI): ResourceContex
   return { parent, type: lastType }
 }
 
-export function getResourceModel(project: Project, resourceId: ResourceIdentifier): ResourceModel | null {
+export function getResourceModel(project: SpxProject, resourceId: ResourceIdentifier): ResourceModel | null {
   const parsed = parseResourceURI(resourceId.uri)
   switch (parsed[0].type) {
     case 'sound':
@@ -860,7 +860,7 @@ export function getCodeFilePath(textDocumentURI: string) {
 
 export function textDocumentId2ResourceModelId(
   id: TextDocumentIdentifier,
-  project: Project
+  project: SpxProject
 ): ResourceModelIdentifier | null {
   const codeFilePath = getCodeFilePath(id.uri)
   if (stageCodeFilePaths.includes(codeFilePath)) {

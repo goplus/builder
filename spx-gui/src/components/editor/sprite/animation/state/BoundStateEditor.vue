@@ -45,8 +45,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Animation } from '@/models/animation'
-import { State } from '@/models/sprite'
+import type { Animation } from '@/models/spx/animation'
+import { State } from '@/models/spx/sprite'
 import { UIDropdownModal, UICornerIcon, UIBlockItem } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import iconStateDefault from './default.svg?raw'
@@ -76,7 +76,7 @@ function handleStateItemClick(state: State) {
 }
 
 async function handleConfirm() {
-  await editorCtx.project.history.doAction({ name: actionName }, () => {
+  await editorCtx.state.history.doAction({ name: actionName }, () => {
     const sprite = props.animation.sprite
     if (sprite == null) throw new Error('Animation has no associated sprite')
     sprite.setAnimationBoundStates(props.animation.id, boundStates.value)

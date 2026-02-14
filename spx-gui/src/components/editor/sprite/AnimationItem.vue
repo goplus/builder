@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { UIImg, UIEditorSpriteItem, useModal } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { useHovered } from '@/utils/dom'
-import type { Animation } from '@/models/animation'
+import type { Animation } from '@/models/spx/animation'
 import { useMessageHandle } from '@/utils/exception'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
@@ -48,7 +48,7 @@ const { fn: handleDuplicate } = useMessageHandle(
       throw new Error('Unable to duplicate animation because it has not been added to the sprite yet.')
     }
     const action = { name: { en: `Duplicate animation ${animation.name}`, zh: `复制动画 ${animation.name}` } }
-    await editorCtx.project.history.doAction(action, () => {
+    await editorCtx.state.history.doAction(action, () => {
       const newAnimation = animation.clone()
       sprite.addAnimationAfter(newAnimation, animation.id)
       editorCtx.state.selectAnimation(sprite.id, newAnimation.id)

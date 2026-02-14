@@ -11,7 +11,7 @@
 import { UILoading } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
-import type { Backdrop } from '@/models/backdrop'
+import type { Backdrop } from '@/models/spx/backdrop'
 import { useRenameBackdrop } from '@/components/asset'
 import EditorItemDetail from '../../common/EditorItemDetail.vue'
 

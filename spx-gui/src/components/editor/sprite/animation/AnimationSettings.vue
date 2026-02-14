@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { formatDuration } from '@/utils/audio'
-import type { Animation } from '@/models/animation'
+import type { Animation } from '@/models/spx/animation'
 import { UIDropdown, UIIcon, isInPopup } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import DurationEditor from './DurationEditor.vue'

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { UIEditorBackdropItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
-import type { Backdrop } from '@/models/backdrop'
+import type { Backdrop } from '@/models/spx/backdrop'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import CornerMenu from '../../common/CornerMenu.vue'
 import { useMessageHandle } from '@/utils/exception'
@@ -49,7 +49,7 @@ const { fn: handleDuplicate } = useMessageHandle(
   async () => {
     const backdrop = props.backdrop
     const action = { name: { en: `duplicate backdrop ${backdrop.name}`, zh: `复制背景 ${backdrop.name}` } }
-    await editorCtx.project.history.doAction(action, () => {
+    await editorCtx.state.history.doAction(action, () => {
       const stage = stageRef.value
       const newBackdrop = backdrop.clone()
       stage.addBackdropAfter(newBackdrop, backdrop.id)
@@ -66,7 +66,7 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.backdrop.name
     const action = { name: { en: `Remove backdrop ${name}`, zh: `删除背景 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => stageRef.value.removeBackdrop(props.backdrop.id))
+    await editorCtx.state.history.doAction(action, () => stageRef.value.removeBackdrop(props.backdrop.id))
   },
   {
     en: 'Failed to remove backdrop',

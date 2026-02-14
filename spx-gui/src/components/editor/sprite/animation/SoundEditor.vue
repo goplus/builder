@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Animation } from '@/models/animation'
+import type { Animation } from '@/models/spx/animation'
 import { UIDropdownModal, UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from '@/components/editor/sound/SoundItem.vue'
@@ -98,7 +98,7 @@ const handleRecord = useMessageHandle(
 ).fn
 
 async function handleConfirm() {
-  await editorCtx.project.history.doAction({ name: actionName }, () => props.animation.setSound(selected.value))
+  await editorCtx.state.history.doAction({ name: actionName }, () => props.animation.setSound(selected.value))
   emit('close')
 }
 </script>
