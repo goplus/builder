@@ -48,7 +48,7 @@ export class InlayHintController extends Disposable {
 
     this.addDisposer(
       watch(
-        () => [this.ui.project.exportGameFiles(), this.ui.activeTextDocument],
+        () => [this.ui.project.exportFiles(), this.ui.activeTextDocument],
         () => refresh(),
         { immediate: true }
       )

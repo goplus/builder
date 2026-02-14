@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { UIBlockItemTitle } from '@/components/ui'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { computed } from 'vue'
 import GenItem from '../common/GenItem.vue'
 import spriteSVG from '../common/sprite.svg?raw'

@@ -4,10 +4,10 @@ import { useHovered } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
 import { useDragDroppable } from '@/utils/drag-and-drop'
-import { Sprite } from '@/models/sprite'
-import { Costume } from '@/models/costume'
-import { Animation } from '@/models/animation'
-import { UIImg, UIEditorSpriteItem } from '@/components/ui'
+import { Sprite } from '@/models/spx/sprite'
+import { Costume } from '@/models/spx/costume'
+import { Animation } from '@/models/spx/animation'
+import { UIImg, UIEditorSpriteItem, UIMenuItem } from '@/components/ui'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
@@ -52,11 +52,22 @@ const radarNodeMeta = computed(() => {
   return { name, desc }
 })
 
+function toggleSpriteVisible() {
+  const name = props.sprite.name
+  const action = {
+    name: {
+      en: `${props.sprite.visible ? 'Hide' : 'Show'} sprite ${name}`,
+      zh: `${props.sprite.visible ? '隐藏' : '显示'}精灵 ${name}`
+    }
+  }
+  editorCtx.state.history.doAction(action, () => props.sprite.setVisible(!props.sprite.visible))
+}
+
 const { fn: handleDuplicate } = useMessageHandle(
   async () => {
     const sprite = props.sprite
     const action = { name: { en: `Duplicate sprite ${sprite.name}`, zh: `复制精灵 ${sprite.name}` } }
-    await editorCtx.project.history.doAction(action, () => {
+    await editorCtx.state.history.doAction(action, () => {
       const newSprite = sprite.clone()
       // Offset the new sprite a bit to avoid being exactly overlapped with the original one
       newSprite.setX(newSprite.x + 10)
@@ -76,7 +87,7 @@ const handleRemove = useMessageHandle(
     const spriteId = props.sprite.id
     const spriteName = props.sprite.name
     const action = { name: { en: `Remove sprite ${spriteName}`, zh: `删除精灵 ${spriteName}` } }
-    await editorCtx.project.history.doAction(action, () => editorCtx.project.removeSprite(spriteId))
+    await editorCtx.state.history.doAction(action, () => editorCtx.project.removeSprite(spriteId))
   },
   {
     en: 'Failed to remove sprite',
@@ -87,7 +98,7 @@ const handleRemove = useMessageHandle(
 const duplicateCostume = useMessageHandle(
   async (costume: Costume) => {
     const action = { name: { en: `Duplicate costume`, zh: `复制造型` } }
-    await editorCtx.project.history.doAction(action, async () => {
+    await editorCtx.state.history.doAction(action, async () => {
       const newCostume = costume.clone()
       props.sprite.addCostume(newCostume)
       props.sprite.setDefaultCostume(newCostume.id)
@@ -108,7 +119,7 @@ const { fn: handleRename } = useMessageHandle(() => renameSprite(props.sprite), 
 const duplicateAnimation = useMessageHandle(
   async (animation: Animation) => {
     const action = { name: { en: `Duplicate animation`, zh: `复制动画` } }
-    await editorCtx.project.history.doAction(action, async () => {
+    await editorCtx.state.history.doAction(action, async () => {
       const newAnimation = animation.clone()
       props.sprite.addAnimation(newAnimation)
       if (animation.sprite != null) {
@@ -148,6 +159,7 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     :name="sprite.name"
     :selectable="selectable"
     :color="color"
+    :visible="sprite.visible"
   >
     <template #img="{ style }">
       <CostumesAutoPlayer
@@ -160,6 +172,12 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <UIMenuItem
+        v-radar="{ name: 'Visibility', desc: 'Click to toggle visibility the sprite' }"
+        @click="toggleSpriteVisible"
+      >
+        {{ $t({ en: `${sprite.visible ? 'Hide' : 'Show'}`, zh: `${sprite.visible ? '隐藏' : '显示'}` }) }}
+      </UIMenuItem>
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sprite' }"
         @click="handleDuplicate"

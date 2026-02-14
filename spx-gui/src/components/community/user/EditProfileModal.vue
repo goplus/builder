@@ -24,11 +24,21 @@ const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 const avatarUrl = useAvatarUrl(() => props.user.avatar)
 
 const form = useForm({
+  displayName: [props.user.displayName, validateDisplayName],
   description: [props.user.description, validateDescription]
 })
 
+function validateDisplayName(val: string) {
+  const trimmed = val.trim()
+  if (trimmed === '') return t({ en: 'The name must not be blank', zh: '名字不可为空' })
+  if (trimmed.length > 100) return t({ en: 'The name must be 100 characters or fewer', zh: '名字不能超过 100 字' })
+  return null
+}
+
 function validateDescription(val: string) {
-  if (val.length > 200) return t({ en: 'The input must be 200 characters or fewer', zh: '输入不能超过 200 字' })
+  const trimmed = val.trim()
+  if (trimmed.length > 200)
+    return t({ en: 'The description must be 200 characters or fewer', zh: '个人简介不能超过 200 字' })
   return null
 }
 
@@ -39,7 +49,10 @@ function handleCancel() {
 const updateProfile = useUpdateSignedInUser()
 
 const handleSubmit = useMessageHandle(async () => {
-  const updated = await updateProfile({ description: form.value.description })
+  const updated = await updateProfile({
+    displayName: form.value.displayName.trim(),
+    description: form.value.description.trim()
+  })
   emit('resolved', updated)
 })
 </script>
@@ -55,11 +68,10 @@ const handleSubmit = useMessageHandle(async () => {
     <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
     <UIImg class="avatar" :src="avatarUrl" />
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <UIFormItem :label="$t({ en: 'Name', zh: '名字' })">
+      <UIFormItem :label="$t({ en: 'Name', zh: '名字' })" path="displayName">
         <UITextInput
-          v-radar="{ name: 'User name input', desc: 'Input field showing the user name' }"
-          :value="user.displayName"
-          disabled
+          v-model:value="form.value.displayName"
+          v-radar="{ name: 'User name input', desc: 'Input field for user display name' }"
         />
       </UIFormItem>
       <UIFormItem :label="$t({ en: 'About me', zh: '关于我' })" path="description">

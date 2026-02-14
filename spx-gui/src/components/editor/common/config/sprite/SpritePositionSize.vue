@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { type Project } from '@/models/project'
-import { type Sprite } from '@/models/sprite'
+import { type SpxProject } from '@/models/spx/project'
+import { type Sprite } from '@/models/spx/sprite'
 import { wrapUpdateHandler } from '../utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 import { round } from '@/utils/utils'
 
@@ -11,12 +12,14 @@ import { UINumberInput } from '@/components/ui'
 
 const props = defineProps<{
   sprite: Sprite
-  project: Project
+  project: SpxProject
 }>()
+
+const editorCtx = useEditorCtx()
 
 const spriteContext = () => ({
   sprite: props.sprite,
-  project: props.project
+  history: editorCtx.state.history
 })
 
 // use `round` to avoid `0.07 * 100 = 7.000000000000001`

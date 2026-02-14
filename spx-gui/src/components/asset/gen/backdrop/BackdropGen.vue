@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIButton } from '@/components/ui'
-import type { Backdrop } from '@/models/backdrop'
-import type { BackdropGen } from '@/models/gen/backdrop-gen'
+import type { Backdrop } from '@/models/spx/backdrop'
+import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { capture, useMessageHandle } from '@/utils/exception'
+import { humanizeRemaining } from '../common/remaining-time'
 import BackdropSettingInput from './BackdropSettingsInput.vue'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
@@ -69,12 +70,18 @@ const hasPreview = computed(() => props.gen.image != null)
           <BackdropImageItem :file="file" :active="active" @click="select(file)" />
         </template>
         <template #tip>
-          {{
-            $t({
-              en: 'Select the backdrop you like the most, or generate new ones.',
-              zh: '选择你最喜欢的一个背景，或者重新生成。'
-            })
-          }}
+          <template v-if="gen.imagesGenState.status === 'running'">
+            {{ $t({ en: `Generating backdrops... `, zh: `正在生成背景...` }) }}
+            {{ gen.imagesGenState.remaining != null ? $t(humanizeRemaining(gen.imagesGenState.remaining)) : '' }}
+          </template>
+          <template v-else-if="gen.imagesGenState.status === 'finished'">
+            {{
+              $t({
+                en: 'Select the backdrop you like the most, or generate new ones.',
+                zh: '选择你最喜欢的一个背景，或者重新生成。'
+              })
+            }}
+          </template>
         </template>
       </ImageSelector>
 

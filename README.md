@@ -12,6 +12,12 @@ You can try XBuilder online at https://xbuilder.com.
 
 For users in mainland China, we recommend visiting https://x.qiniu.com for optimal performance.
 
+## Learn more about XBuilder
+
+Read [Product Design](./docs/product/index.md) to understand the core concepts in XBuilder.
+
+Read other content in [product docs directory](./docs/product/) to learn more about XBuilder's key features.
+
 ## How to develop
 
-See details in [Develop XBuilder](./docs/develop/index.md).
+For information like project structure, environment requirements, etc., refer to [Develop XBuilder](./docs/develop/index.md).

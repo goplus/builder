@@ -18,7 +18,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/spx'
-import { Sprite } from '@/models/sprite'
+import { Sprite } from '@/models/spx/sprite'
 import {
   useRenameAnimation,
   useRenameBackdrop,
@@ -27,11 +27,11 @@ import {
   useRenameSprite,
   useRenameWidget
 } from '@/components/asset'
-import { Sound } from '@/models/sound'
-import { Costume } from '@/models/costume'
-import { Animation } from '@/models/animation'
-import { Backdrop } from '@/models/backdrop'
-import { isWidget } from '@/models/widget'
+import { Sound } from '@/models/spx/sound'
+import { Costume } from '@/models/spx/costume'
+import { Animation } from '@/models/spx/animation'
+import { Backdrop } from '@/models/spx/backdrop'
+import { isWidget } from '@/models/spx/widget'
 import { providePopupContainer, useModal } from '@/components/ui'
 import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 import RenameModal from '@/components/common/RenameModal.vue'
@@ -88,7 +88,7 @@ async function rename(textDocumentId: TextDocumentIdentifier, position: Position
       name,
       validateName: validateXGoIdentifierName,
       applyName: (newName) =>
-        editorCtx.project.history.doAction({ name: { en: 'Rename', zh: '重命名' } }, () =>
+        editorCtx.state.history.doAction({ name: { en: 'Rename', zh: '重命名' } }, () =>
           codeEditorCtx.mustEditor().rename(textDocumentId, position, newName)
         ),
       inputTip: getXGoIdentifierNameTip(),

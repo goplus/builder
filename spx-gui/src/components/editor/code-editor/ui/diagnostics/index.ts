@@ -55,7 +55,7 @@ export class DiagnosticsController extends Disposable {
 
     this.addDisposer(
       watch(
-        () => [this.ui.project.exportGameFiles(), this.ui.activeTextDocument],
+        () => [this.ui.project.exportFiles(), this.ui.activeTextDocument],
         () => refreshDiagnostics(),
         { immediate: true }
       )

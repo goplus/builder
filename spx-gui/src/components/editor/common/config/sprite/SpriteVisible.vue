@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { type Project } from '@/models/project'
-import { type Sprite } from '@/models/sprite'
+import { type SpxProject } from '@/models/spx/project'
+import { type Sprite } from '@/models/spx/sprite'
 import { wrapUpdateHandler } from '../utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 import { UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
 
 const props = defineProps<{
   sprite: Sprite
-  project: Project
+  project: SpxProject
 }>()
+
+const editorCtx = useEditorCtx()
 
 const spriteContext = () => ({
   sprite: props.sprite,
-  project: props.project
+  history: editorCtx.state.history
 })
 
 const handleVisibleUpdate = wrapUpdateHandler(

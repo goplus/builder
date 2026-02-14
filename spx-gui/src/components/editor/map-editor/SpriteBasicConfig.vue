@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { Project } from '@/models/project'
-import { PhysicsMode, type Sprite } from '@/models/sprite'
+import type { SpxProject } from '@/models/spx/project'
+import { PhysicsMode, type Sprite } from '@/models/spx/sprite'
 import { useMessageHandle } from '@/utils/exception'
 
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
@@ -16,7 +16,7 @@ import AssetName from '@/components/asset/AssetName.vue'
 
 const props = defineProps<{
   sprite: Sprite
-  project: Project
+  project: SpxProject
 }>()
 
 const emit = defineEmits<{

@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 import { useFileUrl } from '@/utils/file'
-import type { Costume } from '@/models/costume'
+import type { Costume } from '@/models/spx/costume'
 import { UIImg, UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
 
 const props = defineProps<{

@@ -3,8 +3,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Widget } from '@/models/widget'
-import { Monitor } from '@/models/widget/monitor'
+import type { Widget } from '@/models/spx/widget'
+import { Monitor } from '@/models/spx/widget/monitor'
 import MonitorDetail from './MonitorDetail.vue'
 
 defineProps<{

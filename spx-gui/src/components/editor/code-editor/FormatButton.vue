@@ -24,7 +24,7 @@ const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
 const handleFormat = useMessageHandle(
   () =>
-    editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
+    editorCtx.state.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
       codeEditorCtx.mustEditor().formatTextDocument(getTextDocumentId(props.codeFilePath))
     ),
   {

@@ -1,6 +1,7 @@
 import { createDirectUploadTask } from 'qiniu-js'
 import { usercontentBaseUrl } from '@/utils/env'
 import { filename } from '@/utils/path'
+import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
 import { mergeSignals } from '@/utils/disposable'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
@@ -11,13 +12,48 @@ import { Visibility, addProject, getProject, updateProject } from '@/apis/projec
 import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException, TimeoutException } from '@/utils/exception'
 import { getUphostsByRegion } from '@/utils/kodo'
-import type { Metadata } from '../project'
+import type { Metadata, IProject } from '../project'
 import { File, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
 import { createAIDescriptionFiles, extractAIDescription } from './'
 import { getUniversalUrlScheme, stringifyDataUrl, stringifyKodoUrl, UniversalUrlScheme } from '@/utils/universal-url'
 
-export async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
+/** Helpers for cloud storage of project data. */
+export class CloudHelpers {
+  async load(
+    project: IProject,
+    preferPublishedContent: boolean = false,
+    signal?: AbortSignal,
+    reporter?: ProgressReporter
+  ) {
+    const { owner, name } = project
+    if (owner == null || name == null) throw new Error('owner and name expected to load project from cloud')
+    const collector = reporter != null ? ProgressCollector.collectorFor(reporter) : null
+    const cloudLoadReporter = collector?.getSubReporter(
+      { en: 'Downloading project info...', zh: '正在下载项目信息...' },
+      1
+    )
+    const projectLoadReporter = collector?.getSubReporter({ en: 'Loading project...', zh: '正在载入项目...' }, 1)
+
+    const { metadata, files } = await load(owner, name, preferPublishedContent, signal)
+    signal?.throwIfAborted()
+    cloudLoadReporter?.report(1)
+
+    await project.load(metadata, files)
+    signal?.throwIfAborted()
+    projectLoadReporter?.report(1)
+  }
+
+  async save(project: IProject, signal?: AbortSignal): Promise<void> {
+    const [metadata, files] = await project.export(signal)
+    const saved = await save(metadata, files, signal)
+    project.setMetadata(saved.metadata)
+  }
+}
+
+export const cloudHelpers = new CloudHelpers()
+
+async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
   let projectData = await getProject(owner, name, signal)
   if (preferPublishedContent) {
     const published = getPublishedContent(projectData)
@@ -38,7 +74,7 @@ export function getPublishedContent(project: ProjectData) {
   return null
 }
 
-export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
+async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
   const { owner, name, id } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })

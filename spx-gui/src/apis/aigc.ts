@@ -13,6 +13,8 @@ import {
   type UniversalUrl
 } from './common'
 import type { AssetExtraSettings, AssetType } from './asset'
+// TODO: avoid dep from apis to models
+import type { State } from '@/models/spx/sprite'
 
 export type ProjectSettings = {
   name: string
@@ -277,6 +279,7 @@ export async function enrichAssetSettings(
 export type SpriteContentSettings = {
   costumes: CostumeSettings[]
   animations: AnimationSettings[]
+  animationBindings: Partial<Record<State, string>>
 }
 
 export async function genSpriteContentSettings(

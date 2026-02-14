@@ -3,12 +3,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, effect, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watchEffect } from 'vue'
 import type { Node } from 'konva/lib/Node'
-import { Sprite } from '@/models/sprite'
-import type { Widget } from '@/models/widget'
+import { Sprite } from '@/models/spx/sprite'
+import type { Widget } from '@/models/spx/widget'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
 import { getNodeId } from './common'
+import { debounce } from 'lodash'
+import type Konva from 'konva'
 
 const props = defineProps<{
   target: Sprite | Widget | null
@@ -30,7 +32,36 @@ const config = computed<CustomTransformerConfig>(() => {
   }
 })
 
-effect(async () => {
+const keyboardMovementCodes = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft']
+const keyboardMovementOffset = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0]
+]
+
+function setupKeyboardMovement(stage: Konva.Stage, selectedNode: Node) {
+  stage.container().tabIndex = 1
+  stage.container().focus()
+  stage.container().style.outline = 'none'
+  const keyboardMovementEnd = debounce(() => selectedNode.fire('dragend'), 500)
+  const handler = (e: KeyboardEvent) => {
+    const idx = keyboardMovementCodes.indexOf(e.code)
+    if (idx === -1) return
+    selectedNode.x(selectedNode.x() + keyboardMovementOffset[idx][0])
+    selectedNode.y(selectedNode.y() + keyboardMovementOffset[idx][1])
+    selectedNode.fire('dragmove')
+    e.preventDefault()
+    keyboardMovementEnd()
+  }
+  stage.container().addEventListener('keydown', handler)
+  return () => {
+    keyboardMovementEnd.cancel()
+    stage.container().removeEventListener('keydown', handler)
+  }
+}
+
+watchEffect(async (onCleanup) => {
   if (transformer.value == null) return
   const transformerNode = transformer.value.getNode()
   transformerNode.nodes([])
@@ -44,6 +75,8 @@ effect(async () => {
   if (selectedNode == null || selectedNode === (transformerNode as any).node()) return
   await nextTick() // Wait to ensure the selected node updated by Konva
   transformerNode.nodes([selectedNode])
+
+  onCleanup(setupKeyboardMovement(stage, selectedNode))
 })
 
 defineExpose({
