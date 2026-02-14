@@ -1,0 +1,1416 @@
+{
+  "metadata": {
+    "exportedAt": "2026-01-28T10:31:23.518Z",
+    "componentName": "1440*900-预览页-精灵代码页",
+    "totalElements": 90,
+    "nestingDepth": 9,
+    "plugin": "Figma to JSON Exporter"
+  },
+  "designTokens": {
+    "colors": {
+      "color-rgb(255, 255, 255)": "rgb(255, 255, 255)",
+      "color-rgb(167, 177, 187)": "rgb(167, 177, 187)",
+      "color-rgb(11, 192, 207)": "rgb(11, 192, 207)",
+      "color-rgb(36, 41, 47)": "rgb(36, 41, 47)"
+    },
+    "fonts": {
+      "inter": {
+        "family": "Inter",
+        "sizes": {
+          "size-12": "12px",
+          "size-16": "16px"
+        },
+        "weights": {
+          "weight-500": "500",
+          "weight-600": "600"
+        }
+      }
+    },
+    "spacing": {
+      "gap-20": "20px",
+      "padding-right-16": "16px",
+      "gap-492": "492px",
+      "gap-8": "8px",
+      "gap-16": "16px",
+      "padding-top-12": "12px",
+      "padding-right-4": "4px",
+      "padding-bottom-12": "12px",
+      "padding-left-4": "4px",
+      "gap-12": "12px",
+      "padding-left-16": "16px",
+      "padding-bottom-16": "16px",
+      "gap-10": "10px",
+      "padding-right-8": "8px",
+      "padding-left-8": "8px",
+      "gap-4": "4px",
+      "padding-top-49": "49px",
+      "padding-right-120": "120px",
+      "padding-bottom-49": "49px",
+      "padding-left-120": "120px",
+      "padding-top-3": "3px",
+      "padding-right-12": "12px",
+      "padding-bottom-3": "3px",
+      "padding-left-12": "12px",
+      "padding-top-6": "6px",
+      "padding-bottom-6": "6px",
+      "gap-113": "113px"
+    },
+    "effects": {
+      "shadow-12-4": {
+        "x": 0,
+        "y": 4,
+        "blur": 12,
+        "color": "rgba(181, 235, 240, 0.6499999761581421)"
+      },
+      "shadow-4-4": {
+        "x": 0,
+        "y": 4,
+        "blur": 4,
+        "color": "rgba(0, 0, 0, 0.25)"
+      }
+    }
+  },
+  "structure": {
+    "name": "1440-900----------",
+    "type": "FRAME",
+    "size": {
+      "w": 1440,
+      "h": 900
+    },
+    "styles": {
+      "layout": {
+        "direction": "row",
+        "gap": 0,
+        "align": {
+          "main": "start",
+          "cross": "start"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "editor-edit-sprite-sound-stage-console",
+        "type": "FRAME",
+        "size": {
+          "w": 492,
+          "h": 371
+        },
+        "styles": {
+          "layout": {
+            "direction": "column",
+            "gap": 20,
+            "align": {
+              "main": "start",
+              "cross": "start"
+            }
+          }
+        },
+        "children": [
+          {
+            "name": "frame-1000004754",
+            "type": "FRAME",
+            "size": {
+              "w": 492,
+              "h": 371
+            },
+            "styles": {
+              "layout": {
+                "direction": "row",
+                "gap": 20,
+                "align": {
+                  "main": "space-between",
+                  "cross": "start"
+                }
+              }
+            },
+            "children": [
+              {
+                "name": "sprites---sounds",
+                "type": "FRAME",
+                "size": {
+                  "w": 392,
+                  "h": 371
+                },
+                "styles": {
+                  "bg": "rgb(255, 255, 255)",
+                  "radius": 8,
+                  "shadow": {
+                    "x": 0,
+                    "y": 4,
+                    "blur": 12,
+                    "color": "rgba(181, 235, 240, 0.6499999761581421)"
+                  },
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "editor-edit-page",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "editor-edit-page",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "stage",
+                "type": "FRAME",
+                "size": {
+                  "w": 80,
+                  "h": 371
+                },
+                "styles": {
+                  "bg": "rgb(255, 255, 255)",
+                  "radius": 8,
+                  "shadow": {
+                    "x": 0,
+                    "y": 4,
+                    "blur": 12,
+                    "color": "rgba(181, 235, 240, 0.6499999761581421)"
+                  },
+                  "layout": {
+                    "direction": "column",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "center"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "editor-edit-page",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "editor-left-panel",
+        "type": "FRAME",
+        "size": {
+          "w": 888,
+          "h": 810
+        },
+        "styles": {
+          "bg": "rgb(255, 255, 255)",
+          "radius": 8,
+          "shadow": {
+            "x": 0,
+            "y": 4,
+            "blur": 12,
+            "color": "rgba(181, 235, 240, 0.6499999761581421)"
+          },
+          "layout": {
+            "direction": "column",
+            "gap": 0,
+            "align": {
+              "main": "start",
+              "cross": "start"
+            }
+          }
+        },
+        "children": [
+          {
+            "name": "editor-navigation-edit-area-bar",
+            "type": "FRAME",
+            "size": {
+              "w": 888,
+              "h": 44
+            },
+            "styles": {
+              "border": {
+                "width": 1,
+                "color": "rgb(234, 239, 243)"
+              },
+              "layout": {
+                "direction": "row",
+                "gap": 492,
+                "align": {
+                  "main": "space-between",
+                  "cross": "center"
+                },
+                "padding": [
+                  0,
+                  16,
+                  0,
+                  0
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "-editor-navigation-edit-area-bar",
+                "type": "FRAME",
+                "size": {
+                  "w": 305,
+                  "h": 44
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "-editor-tab-edit-area-bar",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "-editor-tab-edit-area-bar",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "-editor-tab-edit-area-bar",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "frame-1000004755",
+                "type": "FRAME",
+                "size": {
+                  "w": 80,
+                  "h": 32
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 8,
+                    "align": {
+                      "main": "start",
+                      "cross": "center"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "backdrop",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 225,
+                      "h": 32
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 16,
+                        "align": {
+                          "main": "start",
+                          "cross": "center"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "component-text-tooltip",
+                        "type": "INSTANCE",
+                        "size": {
+                          "w": 0,
+                          "h": 0
+                        }
+                      },
+                      {
+                        "name": "tab-combination-tab",
+                        "type": "INSTANCE",
+                        "size": {
+                          "w": 0,
+                          "h": 0
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "name": "button-2",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "frame-1000004756",
+            "type": "FRAME",
+            "size": {
+              "w": 888,
+              "h": 766
+            },
+            "styles": {
+              "layout": {
+                "direction": "row",
+                "gap": 0,
+                "align": {
+                  "main": "start",
+                  "cross": "start"
+                }
+              }
+            },
+            "children": [
+              {
+                "name": "controls",
+                "type": "FRAME",
+                "size": {
+                  "w": 60,
+                  "h": 766
+                },
+                "styles": {
+                  "border": {
+                    "width": 1,
+                    "color": "rgb(234, 239, 243)"
+                  },
+                  "layout": {
+                    "direction": "column",
+                    "gap": 12,
+                    "align": {
+                      "main": "start",
+                      "cross": "center"
+                    },
+                    "padding": [
+                      12,
+                      4,
+                      12,
+                      4
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "name": "navigation-left-navigation-button",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "navigation-left-navigation-button",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "navigation-left-navigation-button",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "navigation-left-navigation-button",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "navigation-left-navigation-button",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "navigation-left-navigation-button",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "navigation-left-navigation-button",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "container",
+                "type": "FRAME",
+                "size": {
+                  "w": 306,
+                  "h": 732
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "column",
+                    "gap": 20,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    },
+                    "padding": [
+                      12,
+                      16,
+                      0,
+                      16
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "name": "container",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 274,
+                      "h": 190
+                    },
+                    "styles": {
+                      "border": {
+                        "width": 1,
+                        "color": "rgb(217, 223, 229)"
+                      },
+                      "layout": {
+                        "direction": "column",
+                        "gap": 8,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        },
+                        "padding": [
+                          0,
+                          0,
+                          16,
+                          0
+                        ]
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "frame-1000002790",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 274,
+                          "h": 18
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "row",
+                            "gap": 10,
+                            "align": {
+                              "main": "space-between",
+                              "cross": "center"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "aaaa",
+                            "type": "TEXT",
+                            "size": {
+                              "w": 29,
+                              "h": 18
+                            },
+                            "content": "Aaaa",
+                            "styles": {
+                              "bg": "rgb(167, 177, 187)",
+                              "text": {
+                                "family": "Inter",
+                                "size": 12,
+                                "weight": "500",
+                                "align": "left"
+                              }
+                            }
+                          },
+                          {
+                            "name": "settings",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "name": "container",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 274,
+                          "h": 148
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "column",
+                            "gap": 12,
+                            "align": {
+                              "main": "center",
+                              "cross": "start"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "container",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 274,
+                      "h": 510
+                    },
+                    "styles": {
+                      "border": {
+                        "width": 1,
+                        "color": "rgb(217, 223, 229)"
+                      },
+                      "layout": {
+                        "direction": "column",
+                        "gap": 8,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        },
+                        "padding": [
+                          0,
+                          0,
+                          16,
+                          0
+                        ]
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "frame-1000002790",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 274,
+                          "h": 18
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "row",
+                            "gap": 10,
+                            "align": {
+                              "main": "space-between",
+                              "cross": "center"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "bbbb",
+                            "type": "TEXT",
+                            "size": {
+                              "w": 31,
+                              "h": 18
+                            },
+                            "content": "Bbbb",
+                            "styles": {
+                              "bg": "rgb(167, 177, 187)",
+                              "text": {
+                                "family": "Inter",
+                                "size": 12,
+                                "weight": "500",
+                                "align": "left"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "name": "container",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 274,
+                          "h": 468
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "column",
+                            "gap": 12,
+                            "align": {
+                              "main": "center",
+                              "cross": "start"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "api-reference",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "frame-1000004759",
+                "type": "FRAME",
+                "size": {
+                  "w": 522,
+                  "h": 766
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 10,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "code",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 522,
+                      "h": 766
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "frame-1000004760",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 466,
+                          "h": 766
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "row",
+                            "gap": 10,
+                            "align": {
+                              "main": "start",
+                              "cross": "start"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "frame-1000004758",
+                            "type": "FRAME",
+                            "size": {
+                              "w": 476,
+                              "h": 766
+                            },
+                            "styles": {
+                              "layout": {
+                                "direction": "row",
+                                "gap": 10,
+                                "align": {
+                                  "main": "start",
+                                  "cross": "start"
+                                }
+                              }
+                            },
+                            "children": [
+                              {
+                                "name": "code-workspace",
+                                "type": "FRAME",
+                                "size": {
+                                  "w": 476,
+                                  "h": 1030
+                                },
+                                "styles": {
+                                  "layout": {
+                                    "direction": "row",
+                                    "gap": 10,
+                                    "align": {
+                                      "main": "start",
+                                      "cross": "start"
+                                    }
+                                  }
+                                },
+                                "children": [
+                                  {
+                                    "name": "editor-code-workspace",
+                                    "type": "INSTANCE",
+                                    "size": {
+                                      "w": 0,
+                                      "h": 0
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "frame-1000002778",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 56,
+                          "h": 766
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "column",
+                            "gap": 0,
+                            "align": {
+                              "main": "space-between",
+                              "cross": "center"
+                            },
+                            "padding": [
+                              12,
+                              8,
+                              12,
+                              8
+                            ]
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "card-sprite-list",
+                            "type": "INSTANCE",
+                            "size": {
+                              "w": 0,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "zoom",
+                            "type": "FRAME",
+                            "size": {
+                              "w": 40,
+                              "h": 128
+                            },
+                            "styles": {
+                              "layout": {
+                                "direction": "column",
+                                "gap": 4,
+                                "align": {
+                                  "main": "start",
+                                  "cross": "start"
+                                }
+                              }
+                            },
+                            "children": [
+                              {
+                                "name": "code-zoom-button",
+                                "type": "INSTANCE",
+                                "size": {
+                                  "w": 0,
+                                  "h": 0
+                                }
+                              },
+                              {
+                                "name": "code-zoom-button",
+                                "type": "INSTANCE",
+                                "size": {
+                                  "w": 0,
+                                  "h": 0
+                                }
+                              },
+                              {
+                                "name": "code-zoom-button",
+                                "type": "INSTANCE",
+                                "size": {
+                                  "w": 0,
+                                  "h": 0
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "navigation-top-navigation-bar",
+        "type": "FRAME",
+        "size": {
+          "w": 1440,
+          "h": 50
+        },
+        "styles": {
+          "bg": "rgb(11, 192, 207)",
+          "layout": {
+            "direction": "row",
+            "gap": 10,
+            "align": {
+              "main": "space-between",
+              "cross": "start"
+            }
+          }
+        },
+        "children": [
+          {
+            "name": "-",
+            "type": "FRAME",
+            "size": {
+              "w": 480,
+              "h": 50
+            },
+            "styles": {
+              "layout": {
+                "direction": "row",
+                "gap": 0,
+                "align": {
+                  "main": "start",
+                  "cross": "center"
+                }
+              }
+            },
+            "children": [
+              {
+                "name": "logo-xbuilder-wordlogo-nav-bar",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "line",
+                "type": "FRAME",
+                "size": {
+                  "w": 1,
+                  "h": 24
+                },
+                "styles": {
+                  "bg": "rgb(255, 255, 255)",
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "-navigation-top-navigation-bar-button",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "-navigation-top-navigation-bar-button",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "-navigation-top-navigation-bar-button",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "-navigation-top-navigation-bar-button",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "-navigation-top-navigation-bar-button",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "-navigation-top-navigation-bar-project-name",
+            "type": "FRAME",
+            "size": {
+              "w": 480,
+              "h": 50
+            },
+            "styles": {
+              "layout": {
+                "direction": "row",
+                "gap": 4,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  49,
+                  120,
+                  49,
+                  120
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "text",
+                "type": "FRAME",
+                "size": {
+                  "w": 186,
+                  "h": 32
+                },
+                "styles": {
+                  "border": {
+                    "width": 1,
+                    "color": "rgb(0, 0, 0)"
+                  },
+                  "radius": 12,
+                  "layout": {
+                    "direction": "row",
+                    "gap": 8,
+                    "align": {
+                      "main": "center",
+                      "cross": "center"
+                    },
+                    "padding": [
+                      3,
+                      12,
+                      3,
+                      12
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "name": "----",
+                    "type": "TEXT",
+                    "size": {
+                      "w": 130,
+                      "h": 26
+                    },
+                    "content": "my-test-gameccc",
+                    "styles": {
+                      "bg": "rgb(255, 255, 255)",
+                      "text": {
+                        "family": "Inter",
+                        "size": 16,
+                        "weight": "600",
+                        "align": "left"
+                      }
+                    }
+                  },
+                  {
+                    "name": "icon-cloud-check-outlined",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "-",
+            "type": "FRAME",
+            "size": {
+              "w": 480,
+              "h": 50
+            },
+            "styles": {
+              "layout": {
+                "direction": "row",
+                "gap": 0,
+                "align": {
+                  "main": "end",
+                  "cross": "center"
+                },
+                "padding": [
+                  0,
+                  8,
+                  0,
+                  0
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004765",
+                "type": "FRAME",
+                "size": {
+                  "w": 180,
+                  "h": 50
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "center"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "-navigation-top-navigation-bar-switch",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "-navigation-top-navigation-bar-button",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "editor-preview-window",
+        "type": "FRAME",
+        "size": {
+          "w": 492,
+          "h": 419
+        },
+        "styles": {
+          "radius": 8,
+          "shadow": {
+            "x": 0,
+            "y": 4,
+            "blur": 12,
+            "color": "rgba(181, 235, 240, 0.6499999761581421)"
+          },
+          "layout": {
+            "direction": "column",
+            "gap": 0,
+            "align": {
+              "main": "start",
+              "cross": "center"
+            }
+          }
+        },
+        "children": [
+          {
+            "name": "component-navigation-bar",
+            "type": "FRAME",
+            "size": {
+              "w": 492,
+              "h": 44
+            },
+            "styles": {
+              "bg": "rgb(255, 255, 255)",
+              "layout": {
+                "direction": "row",
+                "gap": 113,
+                "align": {
+                  "main": "space-between",
+                  "cross": "center"
+                },
+                "padding": [
+                  6,
+                  16,
+                  6,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "preview",
+                "type": "TEXT",
+                "size": {
+                  "w": 64,
+                  "h": 26
+                },
+                "content": "Preview",
+                "styles": {
+                  "bg": "rgb(36, 41, 47)",
+                  "text": {
+                    "family": "Inter",
+                    "size": 16,
+                    "weight": "600",
+                    "align": "left"
+                  }
+                }
+              },
+              {
+                "name": "component-preview-button-new",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "frame-1000004623",
+            "type": "FRAME",
+            "size": {
+              "w": 492,
+              "h": 375
+            },
+            "styles": {
+              "bg": "rgb(255, 255, 255)",
+              "border": {
+                "width": 1,
+                "color": "rgb(234, 239, 243)"
+              },
+              "shadow": {
+                "x": 0,
+                "y": 4,
+                "blur": 4,
+                "color": "rgba(0, 0, 0, 0.25)"
+              },
+              "layout": {
+                "direction": "column",
+                "gap": 10,
+                "align": {
+                  "main": "start",
+                  "cross": "start"
+                },
+                "padding": [
+                  12,
+                  12,
+                  12,
+                  12
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004622",
+                "type": "FRAME",
+                "size": {
+                  "w": 468,
+                  "h": 351
+                },
+                "styles": {
+                  "radius": 8,
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "4-3",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "components": 0,
+    "instances": 49,
+    "frames": 37,
+    "texts": 4,
+    "hasAutoLayout": true,
+    "hasEffects": true
+  }
+}
