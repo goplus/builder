@@ -81,7 +81,8 @@ class Retriever {
       return currentProject
     }
     const p = new SpxProject(owner, name)
-    await this.cloudHelpers.load(p, true, signal)
+    const serialized = await this.cloudHelpers.load(owner, name, true, signal)
+    await p.load(serialized)
     return p
   }
 }

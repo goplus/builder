@@ -23,7 +23,7 @@ import { DumbTilemap as Tilemap } from './tilemap'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { RawWidgetConfig } from './widget'
-import type { CloudMetadata, IProject, Metadata } from '@/models/project'
+import type { CloudMetadata, IProject, Metadata, ProjectSerialized } from '@/models/project'
 
 /**
  * A Project loaded from cloud.
@@ -509,21 +509,21 @@ export class SpxProject extends Disposable implements IProject {
   }
 
   /** Load with metadata & game files */
-  async load(metadata: Metadata, files: Files) {
+  async load({ metadata, files }: ProjectSerialized) {
     // TODO: consume signal
     this.setMetadata(metadata)
     await this.loadFiles(files)
   }
 
   /** Export metadata & game files */
-  async export(signal?: AbortSignal): Promise<[Metadata, Files]> {
+  async export(signal?: AbortSignal): Promise<ProjectSerialized> {
     return this.mutex.runExclusive(async () => {
       // Do flush pending thumbnail updates to ensure the exported thumbnail up-to-date.
       // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
       // For more details, see https://github.com/goplus/builder/issues/1807 .
       await this.updateThumbnail.flush()
       if (isProjectUsingAIInteraction(this)) await this.ensureAIDescription(undefined, signal) // Ensure AI description is available if needed
-      return [this.exportMetadata(), this.exportFiles()]
+      return { metadata: this.exportMetadata(), files: this.exportFiles() }
     })
   }
 

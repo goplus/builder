@@ -90,12 +90,12 @@ describe('Animation', () => {
     const project = makeProject()
     project.sprites[0].animations[0].setSound(project.sounds[0].id)
 
-    const [metadata, files] = await project.export()
+    const { metadata, files } = await project.export()
     const delayedFiles: Files = Object.fromEntries(
       Object.entries(files).map(([path, file]) => [path, delayFile(file!, 50)])
     )
     const newProject = new SpxProject()
-    await newProject.load(metadata, delayedFiles)
+    await newProject.load({ metadata, files: delayedFiles })
     expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].id)
   })
 
@@ -107,9 +107,9 @@ describe('Animation', () => {
     // id should be not null and not empty
     expect(id).not.toBeNull()
 
-    const [metadata, files] = await project.export()
+    const { metadata, files } = await project.export()
     const newProject = new SpxProject()
-    await newProject.load(metadata, files)
+    await newProject.load({ metadata, files })
     const newSprite = newProject.sprites[0]
     const newAnimation = newSprite.animations[0]
     expect(newAnimation.id).toBe(id)

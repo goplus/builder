@@ -1,6 +1,6 @@
 <script lang="ts">
 export function isAnimationLoading(gen: AnimationGen) {
-  return [gen.enrichState.status, gen.generateVideoState.status, gen.extractFramesState.status].includes('running')
+  return [gen.enrichState.status, gen.generateVideoState.status, gen.finishState.status].includes('running')
 }
 
 export function isAnimationsLoading(gens: AnimationGen[]) {

@@ -56,7 +56,8 @@ const {
   async (ctx) => {
     const p = new SpxProject(props.owner, props.name)
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    await cloudHelpers.load(p, true, ctx.signal)
+    const serialized = await cloudHelpers.load(props.owner, props.name, true, ctx.signal)
+    await p.load(serialized)
     return p as CloudProject
   },
   {
@@ -201,7 +202,8 @@ const handleLike = useMessageHandle(
     await likeProject(props.owner, props.name)
     if (project.value != null) {
       // refresh project info (likeCount)
-      await cloudHelpers.load(project.value, true)
+      const serialized = await cloudHelpers.load(project.value.owner!, project.value.name!, true)
+      await project.value.load(serialized)
     }
   },
   { en: 'Failed to like', zh: '标记喜欢失败' }
@@ -214,7 +216,8 @@ const handleUnlike = useMessageHandle(
     await unlikeProject(props.owner, props.name)
     if (project.value != null) {
       // refresh project info (likeCount)
-      await cloudHelpers.load(project.value, true)
+      const serialized = await cloudHelpers.load(project.value.owner!, project.value.name!, true)
+      await project.value.load(serialized)
     }
   },
   { en: 'Failed to unlike', zh: '取消喜欢失败' }

@@ -28,7 +28,7 @@ import type { PhaseState } from '@/models/spx/gen/common'
 const props = withDefaults(
   defineProps<{
     state: PhaseState<File[]>
-    selected: File | null
+    selected: number | null
     disabled?: boolean
   }>(),
   {
@@ -37,7 +37,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  select: [File]
+  select: [number]
 }>()
 
 const wrapperRef = ref<HTMLElement | null>(null)
@@ -56,9 +56,9 @@ provide(
   computed(() => props.disabled)
 )
 
-function handleSelect(file: File) {
+function handleSelect(index: number) {
   if (props.disabled) return
-  emit('select', file)
+  emit('select', index)
 }
 </script>
 
@@ -78,7 +78,7 @@ function handleSelect(file: File) {
       <GenStateFailed v-else-if="state.status === 'failed'" :state-failed="state"></GenStateFailed>
       <template v-else>
         <template v-for="(option, idx) in state.result ?? []" :key="idx">
-          <slot name="item" :file="option" :active="selected === option" :select="handleSelect"></slot>
+          <slot name="item" :file="option" :active="selected === idx" :on-click="() => handleSelect(idx)"></slot>
         </template>
       </template>
     </ul>

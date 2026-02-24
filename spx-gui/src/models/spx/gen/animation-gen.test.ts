@@ -1,19 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
-import { TaskStatus } from '@/apis/aigc'
+import { TaskStatus, TaskType } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { makeSpxProject } from '../common/test'
-import { mockFile } from '../../common/test'
-import { setupAigcMock, MockAigcApis } from './aigc-mock'
+import { mockFile, sndConfig, sndFiles } from '../../common/test'
+import { setupAigcMock } from './aigc-mock'
 import { Sprite } from '../sprite'
 import { AnimationGen } from './animation-gen'
 import { Costume } from '../costume'
 
-setupAigcMock()
+const aigcMock = setupAigcMock()
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
-
-const aigcMock = new MockAigcApis()
-aigcMock.mock()
 
 describe('AnimationGen', () => {
   beforeEach(() => {
@@ -29,7 +27,7 @@ describe('AnimationGen', () => {
 
     // 1. Create AnimationGen with initial settings
     const gen = new AnimationGen(sprite, project, {
-      description: 'A walking animation',
+      settings: { description: 'A walking animation' },
       referenceCostumeId: defaultCostume.id
     })
     expect(gen.settings.description).toBe('A walking animation')
@@ -70,13 +68,10 @@ describe('AnimationGen', () => {
       interval: 200
     })
 
-    // 7. Extract frames
-    await gen.extractFrames()
-    expect(gen.extractFramesState.status).toBe('finished')
-    expect(gen.extractFramesState.result).not.toBeNull()
-
-    // 8. Finish the animation generation
+    // 7. Extract frames and save animation
     const animation = await gen.finish()
+    expect(gen.finishState.status).toBe('finished')
+    expect(gen.finishState.result).not.toBeNull()
     expect(animation.name).toBe('enriched-animation')
   })
 
@@ -88,20 +83,19 @@ describe('AnimationGen', () => {
     project.addSprite(sprite)
 
     const gen1 = new AnimationGen(sprite, project, {
-      description: 'First animation',
+      settings: { description: 'First animation' },
       referenceCostumeId: defaultCostume.id
     })
     await gen1.enrich()
     gen1.setSettings({ name: 'walk' })
     await gen1.generateVideo()
     gen1.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
-    await gen1.extractFrames()
     const animation1 = await gen1.finish()
     sprite.addAnimation(animation1)
 
     // Create another gen with duplicate name should fail
     const gen2 = new AnimationGen(sprite, project, {
-      description: 'Second animation',
+      settings: { description: 'Second animation' },
       referenceCostumeId: sprite.costumes[0].id
     })
     await gen2.enrich()
@@ -115,7 +109,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
     const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
+      settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
 
@@ -142,7 +136,7 @@ describe('AnimationGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, { description: 'A test animation' })
+    const gen = new AnimationGen(sprite, project, { settings: { description: 'A test animation' } })
 
     await gen.enrich()
 
@@ -157,7 +151,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
     const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
+      settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
 
@@ -165,7 +159,7 @@ describe('AnimationGen', () => {
     gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
 
     // Try to extract frames without generating video
-    await expect(gen.extractFrames()).rejects.toThrow('video not ready yet')
+    await expect(gen.finish()).rejects.toThrow('video not ready yet')
   })
 
   it('should throw error when extracting frames without frames config', async () => {
@@ -175,7 +169,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
     const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
+      settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
 
@@ -183,26 +177,7 @@ describe('AnimationGen', () => {
     await gen.generateVideo()
 
     // Try to extract frames without frames config
-    await expect(gen.extractFrames()).rejects.toThrow('frames config not set')
-  })
-
-  it('should throw error when finishing without frames', async () => {
-    const project = makeSpxProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const defaultCostume = new Costume('default', mockFile())
-    sprite.addCostume(defaultCostume)
-    project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
-      referenceCostumeId: defaultCostume.id
-    })
-
-    await gen.enrich()
-    await gen.generateVideo()
-    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
-
-    // Try to finish without extracting frames
-    await expect(gen.finish()).rejects.toThrow('frame images expected')
+    await expect(gen.finish()).rejects.toThrow('frames config not set')
   })
 
   it('should allow multiple enrichments', async () => {
@@ -212,7 +187,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
     const gen = new AnimationGen(sprite, project, {
-      description: 'First description',
+      settings: { description: 'First description' },
       referenceCostumeId: defaultCostume.id
     })
 
@@ -231,7 +206,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
     const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
+      settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
 
@@ -255,7 +230,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
     const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
+      settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
 
@@ -265,7 +240,6 @@ describe('AnimationGen', () => {
     await gen.enrich()
     await gen.generateVideo()
     gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
-    await gen.extractFrames()
 
     const animation = await gen.finish()
     expect(gen.finishState.status).toBe('finished')
@@ -284,7 +258,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
     const gen = new AnimationGen(sprite, project, {
-      description: 'A test animation',
+      settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
     const tasks = aigcMock.tasks
@@ -296,5 +270,200 @@ describe('AnimationGen', () => {
     await expect(generatePromise).rejects.toThrow('cancelled')
     const lastRecord = Array.from(tasks.values()).at(-1)
     expect(lastRecord?.task.status).toBe(TaskStatus.Cancelled)
+  })
+
+  it('should export and load correctly while enrich is running', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      settings: { description: 'Enrich running animation' },
+      referenceCostumeId: defaultCostume.id
+    })
+
+    const enrichPromise = gen.enrich()
+    expect(gen.enrichState.status).toBe('running')
+
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    const loadedGen = AnimationGen.load(sprite, project, config, files)
+
+    expect(loadedGen.enrichState.status).toBe('initial')
+    expect(loadedGen.generateVideoState.status).toBe('initial')
+    expect(loadedGen.finishState.status).toBe('initial')
+    expect(loadedGen.video).toBeNull()
+
+    await enrichPromise
+  })
+
+  it('should export and load correctly after generateVideo finished but before finish', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      settings: { description: 'Generated video pre-extract animation' },
+      referenceCostumeId: defaultCostume.id
+    })
+
+    await gen.enrich()
+    await gen.generateVideo()
+
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    const loadedGen = AnimationGen.load(sprite, project, config, files)
+
+    expect(loadedGen.enrichState.status).toBe('finished')
+    expect(loadedGen.generateVideoState.status).toBe('finished')
+    expect(typeof loadedGen.video?.arrayBuffer).toBe('function')
+    expect(loadedGen.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
+    expect(loadedGen.finishState.status).toBe('initial')
+  })
+
+  it('should export and load correctly after finish completed', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      settings: { description: 'Extracted pre-finish animation' },
+      referenceCostumeId: defaultCostume.id
+    })
+
+    await gen.enrich()
+    await gen.generateVideo()
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
+    await gen.finish()
+
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    const loadedGen = AnimationGen.load(sprite, project, config, files)
+
+    expect(loadedGen.generateVideoState.status).toBe('finished')
+    expect(loadedGen.finishState.status).toBe('finished')
+    expect(loadedGen.result).not.toBeNull()
+    expect(loadedGen.result?.name).toBe(gen.result?.name)
+  })
+
+  it('should export and load correctly', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      settings: { description: 'A test animation export/load' },
+      referenceCostumeId: defaultCostume.id
+    })
+
+    await gen.enrich()
+    await gen.generateVideo()
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
+    await gen.finish()
+
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    const loadedGen = AnimationGen.load(sprite, project, config, files)
+
+    expect(loadedGen.id).toBe(gen.id)
+    expect(loadedGen.settings).toEqual(gen.settings)
+    expect(loadedGen.enrichState.status).toBe('finished')
+    expect(loadedGen.generateVideoState.status).toBe('finished')
+    expect(loadedGen.finishState.status).toBe('finished')
+    expect(loadedGen.result).not.toBeNull()
+    expect(loadedGen.result).not.toBe(gen.result)
+    expect(loadedGen.result?.id).toBe(gen.result?.id)
+    expect(loadedGen.result?.name).toBe(gen.result?.name)
+    expect(loadedGen.result?.costumes.length).toBe(gen.result?.costumes.length)
+  })
+
+  it('should export and load running generateVideo state correctly', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      settings: { description: 'Running video animation' },
+      referenceCostumeId: defaultCostume.id
+    })
+
+    let resolveTask: (() => void) | null = null
+    const taskPaused = new Promise<void>((r) => {
+      resolveTask = r
+    })
+
+    aigcMock.registerTaskHandler(TaskType.GenerateAnimationVideo, async function* (_task, _params, defaultHandler) {
+      await taskPaused
+      yield* defaultHandler()
+    })
+
+    const generatePromise = gen.generateVideo()
+    await flushPromises()
+    expect(gen.generateVideoState.status).toBe('running')
+
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    const loadedGen = AnimationGen.load(sprite, project, config, files)
+
+    await flushPromises()
+    expect(loadedGen.generateVideoState.status).toBe('running')
+
+    resolveTask!()
+    await generatePromise
+    await flushPromises()
+
+    expect(gen.generateVideoState.status).toBe('finished')
+    expect(loadedGen.generateVideoState.status).toBe('finished')
+    expect(loadedGen.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
+  })
+
+  it('should export and load running finish state correctly', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(sprite, project, {
+      settings: { description: 'Running extract animation' },
+      referenceCostumeId: defaultCostume.id
+    })
+
+    await gen.enrich()
+    await gen.generateVideo()
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
+
+    let resolveTask: (() => void) | null = null
+    const taskPaused = new Promise<void>((r) => {
+      resolveTask = r
+    })
+
+    aigcMock.registerTaskHandler(TaskType.ExtractVideoFrames, async function* (_task, _params, defaultHandler) {
+      await taskPaused
+      yield* defaultHandler()
+    })
+
+    const finishPromise = gen.finish()
+    await flushPromises()
+    expect(gen.finishState.status).toBe('running')
+
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    const loadedGen = AnimationGen.load(sprite, project, config, files)
+
+    await flushPromises()
+    expect(loadedGen.finishState.status).toBe('running')
+
+    resolveTask!()
+    await finishPromise
+
+    expect(gen.finishState.status).toBe('finished')
+    expect(loadedGen.finishState.status).toBe('finished')
+    expect(loadedGen.finishState.result?.name).toBe(gen.finishState.result?.name)
+    expect(loadedGen.finishState.result?.costumes.length).toBe(gen.finishState.result?.costumes.length)
   })
 })

@@ -205,7 +205,9 @@ async function createProject(options: CreateProjectOptions) {
   project.setVisibility(Visibility.Private)
 
   try {
-    await cloudHelpers.save(project)
+    const serialized = await project.export()
+    const saved = await cloudHelpers.save(serialized)
+    project.setMetadata(saved.metadata)
 
     const projectRoute = getOwnProjectEditorRoute(projectName)
 

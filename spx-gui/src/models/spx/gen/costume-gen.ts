@@ -1,25 +1,59 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
+import { extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import { ArtStyle, Perspective } from '@/apis/common'
-import { enrichCostumeSettings, Facing, TaskType, TaskStatus, type CostumeSettings } from '@/apis/aigc'
-import type { File } from '../../common/file'
+import {
+  enrichCostumeSettings,
+  Facing,
+  isTerminalTaskStatus,
+  TaskType,
+  TaskStatus,
+  type CostumeSettings
+} from '@/apis/aigc'
+import type { File, Files } from '../../common/file'
 import { ensureValidCostumeName, validateCostumeName } from '../common/asset-name'
 import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
 import type { SpxProject } from '../project'
 import { Sprite } from '../sprite'
-import { Costume } from '../costume'
-import { getProjectSettings, getSpriteSettings, Phase, Task } from './common'
+import { Costume, type RawCostumeConfig } from '../costume'
+import {
+  getProjectSettings,
+  getSpriteSettings,
+  mapPhaseResult,
+  Phase,
+  Task,
+  taskDurations,
+  type PhaseSerialized,
+  type TaskSerialized
+} from './common'
 import { SpriteGen } from './sprite-gen'
 
-export type CostumeGenInits = Prettify<
-  Partial<
-    Omit<CostumeSettings, 'referenceImageUrl'> & {
-      referenceCostumeId: string | null
-    }
-  >
+export type CostumeGenInits = {
+  id?: string
+  settings?: Partial<Omit<CostumeSettings, 'referenceImageUrl'>>
+  referenceCostumeId?: string
+  image?: File
+  enrichPhase?: Phase<CostumeSettings>
+  generateTask?: Task<TaskType.GenerateCostume>
+  generatePhase?: Phase<File>
+  finishPhase?: Phase<Costume>
+}
+
+export type RawCostumeGenConfig = Prettify<
+  Omit<CostumeGenInits, 'result' | 'enrichPhase' | 'generateTask' | 'generatePhase' | 'finishPhase' | 'image'> & {
+    imagePath?: string
+    enrichPhaseSerialized?: PhaseSerialized<CostumeSettings>
+    generateTaskSerialized?: TaskSerialized<TaskType.GenerateCostume>
+    generatePhaseSerialized?: PhaseSerialized<string>
+    finishPhaseSerialized?: PhaseSerialized<RawCostumeConfig>
+  }
 >
+
+function assetsPathFor(basePath: string, name: string) {
+  return `${basePath}/costumes/${name}`
+}
 
 /** `CostumeGen` tracks the generation process of a costume. */
 export class CostumeGen extends Disposable {
@@ -31,23 +65,19 @@ export class CostumeGen extends Disposable {
   }
   private project: SpxProject
   private enrichPhase: Phase<CostumeSettings>
-  private generateTask: Task<TaskType.GenerateCostume>
+  private generateTask: Task<TaskType.GenerateCostume> | null
   private generatePhase: Phase<File>
   private finishPhase: Phase<Costume>
 
-  constructor(
-    parent: Sprite | SpriteGen,
-    project: SpxProject,
-    { referenceCostumeId = null, ...settings }: CostumeGenInits
-  ) {
+  constructor(parent: Sprite | SpriteGen, project: SpxProject, inits: CostumeGenInits = {}) {
     super()
-    this.id = nanoid()
+    this.id = inits.id ?? nanoid()
     this.parent = parent
     this.project = project
-    this.enrichPhase = new Phase({ en: 'enrich costume settings', zh: '丰富造型设置' })
-    this.generateTask = new Task(TaskType.GenerateCostume)
-    this.generatePhase = new Phase({ en: 'generate costume image', zh: '生成造型图片' })
-    this.finishPhase = new Phase({ en: 'save costume', zh: '保存造型' })
+    this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich costume settings', zh: '丰富造型设置' })
+    this.generateTask = inits.generateTask ?? null
+    this.generatePhase = inits.generatePhase ?? new Phase({ en: 'generate costume image', zh: '生成造型图片' })
+    this.finishPhase = inits.finishPhase ?? new Phase({ en: 'save costume', zh: '保存造型' })
     this.settings = {
       name: '',
       description: '',
@@ -55,15 +85,16 @@ export class CostumeGen extends Disposable {
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
       referenceImageUrl: null,
-      ...settings
+      ...inits.settings
     }
-    this.referenceCostumeId = referenceCostumeId
+    this.referenceCostumeId = inits.referenceCostumeId ?? null
+    this.image = inits.image ?? null
     return reactive(this) as this
   }
 
   /** Get IDs for (completed) tasks. */
   getTaskIds() {
-    if (this.generateTask.data?.status !== TaskStatus.Completed) return []
+    if (this.generateTask?.data?.status !== TaskStatus.Completed) return []
     return [this.generateTask.data.id]
   }
 
@@ -129,11 +160,23 @@ export class CostumeGen extends Disposable {
       const referenceCostume = this.referenceCostume
       const referenceImageUrl = referenceCostume != null ? await saveFile(referenceCostume.img) : null
       const settings = { ...this.settings, referenceImageUrl }
+      this.generateTask?.tryCancel()
+      this.generateTask = new Task(TaskType.GenerateCostume)
       await this.generateTask.start({ settings, n: 1 })
       const { imageUrls } = await this.generateTask.untilCompleted()
       if (imageUrls.length < 1) throw new Error('no costume image generated')
       return createFileWithUniversalUrl(imageUrls[0])
-    }, this.generateTask.runDuration)
+    }, taskDurations[TaskType.GenerateCostume])
+    this.setImage(image)
+  }
+  async restoreGenerateTask() {
+    const task = this.generateTask
+    if (task?.data == null || isTerminalTaskStatus(task.data?.status)) return
+    const image = await this.generatePhase.run(async () => {
+      const { imageUrls } = await task.untilCompleted()
+      if (imageUrls.length < 1) throw new Error('no costume image generated')
+      return createFileWithUniversalUrl(imageUrls[0])
+    }, taskDurations[TaskType.GenerateCostume])
     this.setImage(image)
   }
 
@@ -164,6 +207,87 @@ export class CostumeGen extends Disposable {
    * - No exception will be thrown even if the cancellation requests fail.
    */
   cancel() {
-    return this.generateTask.tryCancel()
+    return this.generateTask?.tryCancel()
+  }
+
+  export(basePath = 'gen/assets'): [RawCostumeGenConfig, Files] {
+    const files: Files = {}
+    const assetsPath = assetsPathFor(basePath, this.name)
+    const image = this.image
+    const imagePath = image != null ? `${assetsPath}/image${extname(image.name)}` : null
+    if (image != null && imagePath != null) {
+      files[imagePath] = image
+    }
+    const finishPhaseSerialized = mapPhaseResult(this.finishPhase.export(), (result) => {
+      const [resultConfig, resultFiles] = result.export({ basePath: `${assetsPath}/result` })
+      Object.assign(files, resultFiles)
+      return resultConfig
+    })
+    const config: RawCostumeGenConfig = {
+      id: this.id,
+      settings: this.settings,
+      referenceCostumeId: this.referenceCostumeId ?? undefined,
+      enrichPhaseSerialized: this.enrichPhase.export(),
+      generateTaskSerialized: this.generateTask?.export(),
+      generatePhaseSerialized: mapPhaseResult(this.generatePhase.export(), (result) => {
+        const filePath = `${assetsPath}/generated${extname(result.name)}`
+        files[filePath] = result
+        return filePath
+      }),
+      finishPhaseSerialized
+    }
+    if (imagePath != null) config.imagePath = imagePath
+    return [config, files]
+  }
+
+  static load(
+    parent: Sprite | SpriteGen,
+    project: SpxProject,
+    config: RawCostumeGenConfig,
+    files: Files,
+    basePath = 'gen/assets'
+  ) {
+    const {
+      id,
+      settings,
+      imagePath,
+      enrichPhaseSerialized,
+      generateTaskSerialized,
+      generatePhaseSerialized,
+      finishPhaseSerialized,
+      referenceCostumeId
+    } = config
+    const genId = id ?? nanoid()
+    if (settings?.name == null) throw new Error('settings name expected in costume gen config')
+    const assetsPath = assetsPathFor(basePath, settings.name)
+    const inits: CostumeGenInits = { id: genId }
+    if (settings != null) inits.settings = settings
+    if (referenceCostumeId != null) inits.referenceCostumeId = referenceCostumeId
+    if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
+    if (generateTaskSerialized != null) inits.generateTask = Task.load(generateTaskSerialized)
+    if (generatePhaseSerialized != null) {
+      inits.generatePhase = Phase.load(
+        mapPhaseResult(generatePhaseSerialized, (filePath) => {
+          const file = files[filePath]
+          if (file == null) throw new Error(`file ${filePath} not found for costume gen ${genId}`)
+          return file
+        })
+      )
+    }
+    if (imagePath != null) {
+      const image = files[imagePath]
+      if (image == null) throw new Error(`file ${imagePath} not found for costume gen ${genId}`)
+      inits.image = image
+    }
+    if (finishPhaseSerialized != null) {
+      inits.finishPhase = Phase.load(
+        mapPhaseResult(finishPhaseSerialized, (costumeConfig) => {
+          return Costume.load(costumeConfig, files, { basePath: `${assetsPath}/result`, includeId: true })
+        })
+      )
+    }
+    const gen = new CostumeGen(parent, project, inits)
+    gen.restoreGenerateTask()
+    return gen
   }
 }

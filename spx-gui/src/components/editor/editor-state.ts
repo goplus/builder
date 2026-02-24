@@ -1,10 +1,10 @@
-import { ref, shallowReactive, watch, type Ref, type WatchSource } from 'vue'
+import { computed, ref, watch, type Ref, type WatchSource } from 'vue'
 import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } from 'vue-router'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
-import { AssetType } from '@/apis/asset'
+import type { I18n } from '@/utils/i18n'
 import { CloudHelpers } from '@/models/common/cloud'
-import type { AssetGenModel } from '@/models/spx/common/asset'
+import type { Files } from '@/models/common/file'
 import type { ResourceModel } from '@/models/spx/common/resource-model'
 import type { SpxProject } from '@/models/spx/project'
 import { Stage } from '@/models/spx/stage'
@@ -14,16 +14,13 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { isWidget } from '@/models/spx/widget'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
-import { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
+import type { IProject, Metadata, ProjectSerialized } from '@/models/project'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
 import * as editing from './editing'
-import { EditingMode } from './editing'
-
-type GenCollapsePos = { x: number; y: number }
-type CollapsePosProvider<T extends AssetType> = (gen: AssetGenModel<T>) => Promise<GenCollapsePos | null>
+import { History } from './history'
+import { GenState } from './gen'
 
 export type SelectedType = 'stage' | 'sprite' | 'sound'
 
@@ -52,9 +49,54 @@ export enum EditMode {
   Map = 'map'
 }
 
-export class EditorState extends Disposable {
+class SpxProjectWithGens implements IProject {
   constructor(
     private project: SpxProject,
+    private genState: GenState
+  ) {}
+  get mutex() {
+    return this.project.mutex
+  }
+  get owner() {
+    return this.project.owner
+  }
+  get name() {
+    return this.project.name
+  }
+  setMetadata(metadata: Metadata) {
+    return this.project.setMetadata(metadata)
+  }
+  private filesComputed = computed(() => {
+    const files: Files = {}
+    const projectFiles = this.project.exportFiles()
+    Object.assign(files, projectFiles)
+    const genFiles = this.genState.export()
+    Object.assign(files, genFiles)
+    return files
+  })
+  exportFiles() {
+    return this.filesComputed.value
+  }
+  async loadFiles(files: Files): Promise<void> {
+    await Promise.all([this.project.loadFiles(files), this.genState.load(files)])
+  }
+  async load({ metadata, files }: ProjectSerialized) {
+    await Promise.all([this.project.load({ metadata, files }), this.genState.load(files)])
+  }
+  async export(signal?: AbortSignal): Promise<ProjectSerialized> {
+    const files: Files = {}
+    const { metadata, files: projectFiles } = await this.project.export(signal)
+    Object.assign(files, projectFiles)
+    const genFiles = this.genState.export()
+    Object.assign(files, genFiles)
+    return { metadata, files }
+  }
+}
+
+export class EditorState extends Disposable {
+  constructor(
+    i18n: I18n,
+    readonly project: SpxProject,
     isOnline: WatchSource<boolean>,
     signedInUsername: string | null,
     cloudHelpers: CloudHelpers,
@@ -62,11 +104,12 @@ export class EditorState extends Disposable {
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
-    let editingMode = EditingMode.AutoSave
-    if (signedInUsername == null || signedInUsername !== this.project.owner) {
-      editingMode = EditingMode.EffectFree
-    }
-    this.addDisposable((this.editing = new editing.Editing(editingMode, project, cloudHelpers, localCache, isOnline)))
+    this.history = new History(project)
+    this.addDisposable((this.genState = new GenState(i18n, project)))
+    const projectWithGens = new SpxProjectWithGens(project, this.genState)
+    this.addDisposable(
+      (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedInUsername))
+    )
     this.addDisposable((this.stageState = new StageEditorState(() => project.stage)))
 
     this.addDisposer(() => this.spriteState?.dispose())
@@ -88,68 +131,11 @@ export class EditorState extends Disposable {
   }
 
   runtime: Runtime
+  history: History
+  genState: GenState
   editing: editing.Editing
-  get history() {
-    return this.editing.history
-  }
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
-
-  spriteGens = shallowReactive<SpriteGen[]>([])
-  addSpriteGen(gen: SpriteGen) {
-    this.spriteGens.push(gen)
-  }
-  removeSpriteGen(id: string) {
-    const index = this.spriteGens.findIndex((gen) => gen.id === id)
-    if (index < 0) throw new Error('SpriteGen not found in editor state')
-    const [gen] = this.spriteGens.splice(index, 1)
-    gen.dispose()
-  }
-
-  backdropGens = shallowReactive<BackdropGen[]>([])
-  addBackdropGen(gen: BackdropGen) {
-    this.backdropGens.push(gen)
-  }
-  removeBackdropGen(id: string) {
-    const index = this.backdropGens.findIndex((gen) => gen.id === id)
-    if (index < 0) throw new Error('BackdropGen not found in editor state')
-    const [gen] = this.backdropGens.splice(index, 1)
-    gen.dispose()
-  }
-
-  private genCollapsePosProviderMap = shallowReactive(new Map<AssetType, CollapsePosProvider<AssetType>[]>())
-  private addGenCollapsePosProvider<T extends AssetType>(type: T, provider: CollapsePosProvider<T>) {
-    const providers = this.genCollapsePosProviderMap.get(type) ?? []
-    this.genCollapsePosProviderMap.set(type, [...providers, provider])
-    return () => {
-      this.genCollapsePosProviderMap.set(
-        type,
-        (this.genCollapsePosProviderMap.get(type) ?? []).filter((p) => p !== provider)
-      )
-    }
-  }
-  addSpriteGenCollapsePosProvider(provider: CollapsePosProvider<AssetType.Sprite>) {
-    return this.addGenCollapsePosProvider(AssetType.Sprite, provider)
-  }
-  addBackdropGenCollapsePosProvider(provider: CollapsePosProvider<AssetType.Backdrop>) {
-    return this.addGenCollapsePosProvider(AssetType.Backdrop, provider)
-  }
-  /**
-   * Retrieves the collapse position for the given generator.
-   * Acts as a consumer of collapse positions, returning the result from a registered provider
-   * for the generator's asset type, or null if no providers are available.
-   */
-  private async getGenCollapsePos<T extends AssetType>(assetType: T, gen: AssetGenModel<T>) {
-    const providers = this.genCollapsePosProviderMap.get(assetType) ?? []
-    const provider = providers.at(-1)
-    return provider != null ? provider(gen) : null
-  }
-  getSpriteGenCollapsePos(gen: SpriteGen) {
-    return this.getGenCollapsePos(AssetType.Sprite, gen)
-  }
-  getBackdropGenCollapsePos(gen: BackdropGen) {
-    return this.getGenCollapsePos(AssetType.Backdrop, gen)
-  }
 
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)
   private selectedTypeRef = ref<SelectedType>('sprite')

@@ -15,14 +15,14 @@ const props = defineProps<{
 
 const readonly = computed(() => props.gen.result != null)
 const isGenerating = computed(() => props.gen.generateVideoState.status === 'running')
-const isExtractingFrames = computed(() => props.gen.extractFramesState.status === 'running')
-const disabled = computed(() => isGenerating.value || isExtractingFrames.value)
+const isFinishing = computed(() => props.gen.finishState.status === 'running')
+const disabled = computed(() => isGenerating.value || isFinishing.value)
 const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
   en: 'Failed to enrich animation details',
   zh: '丰富动画细节失败'
 }).fn
 const submitDisabled = computed(
-  () => props.gen.enrichState.status === 'running' || isExtractingFrames.value || props.gen.settings.description === ''
+  () => props.gen.enrichState.status === 'running' || isFinishing.value || props.gen.settings.description === ''
 )
 const submitText = computed(() => {
   if (props.gen.generateVideoState.status === 'initial') return { en: 'Generate', zh: '生成' }

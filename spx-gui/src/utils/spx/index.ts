@@ -156,7 +156,9 @@ export function normalizeXGoIdentifierAssetName(src: string, cas: 'camel' | 'pas
   if (parts.length === 0) return ''
   const [firstpart, ...otherParts] = parts
   const result = [cas === 'pascal' ? upFirst(firstpart) : firstpart, ...otherParts.map(upFirst)].join('')
-  return unicodeSafeSlice(result, 0, 20) // 20 should be enough, it will be hard to read with too long name
+  // 50 should be enough, it will be hard to read with too long name
+  // TODO: should we move the truncation to outer layer?
+  return unicodeSafeSlice(result, 0, 50)
 }
 
 export const specialDirections = [

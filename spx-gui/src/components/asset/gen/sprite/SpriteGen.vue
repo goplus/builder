@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
+import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import type { Sprite } from '@/models/spx/sprite'
@@ -22,6 +23,7 @@ const emit = defineEmits<{
   finished: [Sprite]
 }>()
 
+const i18n = useI18n()
 const signedInUsername = computed(() => getSignedInUsername())
 const { isOnline } = useNetwork()
 // Local cache is not really used in sprite gen, so a dummy implementation is sufficient.
@@ -32,7 +34,7 @@ const localCache: ILocalCache = {
 }
 // We should override the state to avoid history operations caused by animation / costume changes within sprite gen.
 const editorStateInGen = useComputedDisposable(
-  () => new EditorState(props.gen.previewProject, isOnline, signedInUsername.value, cloudHelpers, localCache)
+  () => new EditorState(i18n, props.gen.previewProject, isOnline, signedInUsername.value, cloudHelpers, localCache)
 )
 const editorCtxInGen = computedShallowReactive(() => ({
   project: props.gen.previewProject,
