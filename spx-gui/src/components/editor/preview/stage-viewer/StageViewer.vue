@@ -231,7 +231,9 @@ watch([viewportSize, mapSize], () => setMapPos(mapPos.value))
 
 // If camera enabled, update camera behavior when selected sprite changes
 watch(
-  // The selectedSprite instance always changes after undo or redo; use the id to determine if it's the same sprite.
+  // After undo/redo, every sprite instance is replaced, so reference equality always changes.
+  // Watch by id instead, and skip the handler when the same sprite is still selected,
+  // to avoid spurious camera-follow history entries on undo/redo.
   () => editorCtx.state.selectedSprite?.id,
   async (selectedSpriteId, oldSelectedSpriteId, onCleanup) => {
     const project = editorCtx.project
