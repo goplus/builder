@@ -235,12 +235,12 @@ watch(
   // Watch by id instead, and skip the handler when the same sprite is still selected,
   // to avoid spurious camera-follow history entries on undo/redo.
   () => editorCtx.state.selectedSprite?.id,
-  async (selectedSpriteId, oldSelectedSpriteId, onCleanup) => {
+  async (selectedSpriteId, _, onCleanup) => {
     const project = editorCtx.project
-    const selectedSprite = editorCtx.state.selectedSprite
-    if (!project.isCameraEnabled || oldSelectedSpriteId === selectedSpriteId) return
+    if (!project.isCameraEnabled) return
 
     await untilTaskScheduled('user-visible', getCleanupSignal(onCleanup))
+    const selectedSprite = editorCtx.state.selectedSprite
     // Center map to selected sprite if it's out of viewport
     if (selectedSprite != null && !inViewport(selectedSprite)) {
       const mapPosForSprite = {
