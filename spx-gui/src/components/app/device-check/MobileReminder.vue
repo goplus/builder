@@ -9,7 +9,7 @@
         {{
           t({
             en: 'XBuilder is designed for desktop devices. Please visit this page on your computer for the full experience.',
-            zh: 'XBuilder 专为桌面端设计，请在电脑浏览器中访问以获得完整体验'
+            zh: 'XBuilder 为桌面设备设计，请在电脑浏览器中访问以获得完整体验'
           })
         }}
       </p>
