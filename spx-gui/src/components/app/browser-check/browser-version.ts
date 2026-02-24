@@ -1,11 +1,11 @@
 import { getBrowser } from '@/utils/ua'
 
-export const BrowserName = {
-  CHROME: 'Chrome',
-  EDGE: 'Edge',
-  FIREFOX: 'Firefox',
-  SAFARI: 'Safari'
-} as const
+export enum BrowserName {
+  CHROME = 'Chrome',
+  EDGE = 'Edge',
+  FIREFOX = 'Firefox',
+  SAFARI = 'Safari'
+}
 
 // Minimum recommended browser versions (manually maintained to match browserslist config)
 const recommendedBrowserVersions: Record<string, string> = {
