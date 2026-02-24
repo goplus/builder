@@ -251,7 +251,7 @@ watch(
     }
 
     // Set camera follow sprite
-    if (project.cameraFollowSprite !== selectedSprite) {
+    if (project.cameraFollowSprite?.id !== selectedSpriteId) {
       editorCtx.state.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
         project.setCameraFollowSprite(selectedSpriteId ?? null)
       )
