@@ -34,6 +34,7 @@
     "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/test-utils": "^2.4.5",
     "@vue/tsconfig": "^0.8.1",
+    "bowser": "^2.14.1",
     "browserslist": "^4.28.0",
     "browserslist-to-esbuild": "^2.1.1",
     "casdoor-js-sdk": "^0.16.0",
