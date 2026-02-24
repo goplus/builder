@@ -231,12 +231,16 @@ watch([viewportSize, mapSize], () => setMapPos(mapPos.value))
 
 // If camera enabled, update camera behavior when selected sprite changes
 watch(
-  () => editorCtx.state.selectedSprite,
-  async (selectedSprite, _, onCleanup) => {
+  // After undo/redo, every sprite instance is replaced, so reference equality always changes.
+  // Watch by id instead, and skip the handler when the same sprite is still selected,
+  // to avoid spurious camera-follow history entries on undo/redo.
+  () => editorCtx.state.selectedSprite?.id,
+  async (selectedSpriteId, _, onCleanup) => {
     const project = editorCtx.project
     if (!project.isCameraEnabled) return
 
     await untilTaskScheduled('user-visible', getCleanupSignal(onCleanup))
+    const selectedSprite = editorCtx.state.selectedSprite
     // Center map to selected sprite if it's out of viewport
     if (selectedSprite != null && !inViewport(selectedSprite)) {
       const mapPosForSprite = {
@@ -247,9 +251,9 @@ watch(
     }
 
     // Set camera follow sprite
-    if (project.cameraFollowSprite !== selectedSprite) {
+    if (project.cameraFollowSprite?.id !== selectedSpriteId) {
       editorCtx.state.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
-        project.setCameraFollowSprite(selectedSprite?.id ?? null)
+        project.setCameraFollowSprite(selectedSpriteId ?? null)
       )
     }
   },
