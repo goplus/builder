@@ -1,19 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { checkForUpdates, startUpdateChecker, stopUpdateChecker, reloadApp, resetUpdateChecker } from './update-checker'
-
-const envMock = vi.hoisted(() => ({ isDev: false }))
-
-vi.mock('@/utils/env', () => envMock)
+import { UpdateChecker } from './update-checker'
 
 describe('update-checker', () => {
+  let checker: UpdateChecker
+
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
-    resetUpdateChecker()
+    checker = new UpdateChecker()
   })
 
   afterEach(() => {
-    stopUpdateChecker()
+    checker.stop()
     vi.restoreAllMocks()
     vi.useRealTimers()
   })
@@ -28,7 +26,7 @@ describe('update-checker', () => {
         }
       })
 
-      expect(checkForUpdates()).rejects.toThrow('HTTP error: 404')
+      await expect(checker.checkForUpdates()).rejects.toThrow('HTTP error: 404')
     })
 
     it('should throw error when etag is not available', async () => {
@@ -39,7 +37,7 @@ describe('update-checker', () => {
         }
       })
 
-      expect(checkForUpdates()).rejects.toThrow('ETag header not found')
+      await expect(checker.checkForUpdates()).rejects.toThrow('ETag header not found')
     })
 
     it('should return false on first check', async () => {
@@ -51,7 +49,7 @@ describe('update-checker', () => {
         }
       })
 
-      const hasUpdate = await checkForUpdates()
+      const hasUpdate = await checker.checkForUpdates()
       expect(hasUpdate).toBe(false)
     })
 
@@ -66,7 +64,7 @@ describe('update-checker', () => {
           get: (key: string) => (key === 'etag' ? oldEtag : null)
         }
       })
-      await checkForUpdates()
+      await checker.checkForUpdates()
 
       // Second check with new etag
       global.fetch = vi.fn().mockResolvedValue({
@@ -76,7 +74,7 @@ describe('update-checker', () => {
         }
       })
 
-      const hasUpdate = await checkForUpdates()
+      const hasUpdate = await checker.checkForUpdates()
       expect(hasUpdate).toBe(true)
     })
 
@@ -90,7 +88,7 @@ describe('update-checker', () => {
           get: (key: string) => (key === 'etag' ? etag : null)
         }
       })
-      await checkForUpdates()
+      await checker.checkForUpdates()
 
       // Second check with same etag
       global.fetch = vi.fn().mockResolvedValue({
@@ -100,14 +98,14 @@ describe('update-checker', () => {
         }
       })
 
-      const hasUpdate = await checkForUpdates()
+      const hasUpdate = await checker.checkForUpdates()
       expect(hasUpdate).toBe(false)
     })
 
     it('should throw error on fetch failure', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
-      expect(checkForUpdates()).rejects.toThrow('Network error')
+      await expect(checker.checkForUpdates()).rejects.toThrow('Network error')
     })
 
     it('should use HEAD method and no-cache', async () => {
@@ -119,37 +117,16 @@ describe('update-checker', () => {
       })
       global.fetch = fetchSpy
 
-      await checkForUpdates()
+      await checker.checkForUpdates()
 
-      expect(fetchSpy).toHaveBeenCalledWith('/index.html', {
+      expect(fetchSpy).toHaveBeenCalledWith('/', {
         method: 'HEAD',
         cache: 'no-cache'
       })
     })
   })
 
-  describe('startUpdateChecker', () => {
-    it('should not start checker in dev mode', async () => {
-      envMock.isDev = true
-      const onUpdate = vi.fn()
-      const fetchSpy = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: {
-          get: (key: string) => (key === 'etag' ? '"v1"' : null)
-        }
-      })
-      global.fetch = fetchSpy
-
-      startUpdateChecker(100, onUpdate)
-
-      await vi.advanceTimersByTimeAsync(250)
-
-      expect(fetchSpy).not.toHaveBeenCalled()
-      expect(onUpdate).not.toHaveBeenCalled()
-
-      envMock.isDev = false
-    })
-
+  describe('start', () => {
     it('should call onUpdate callback when update is detected', async () => {
       const onUpdate = vi.fn()
       const oldEtag = '"abc123"'
@@ -167,7 +144,7 @@ describe('update-checker', () => {
         })
       })
 
-      startUpdateChecker(100, onUpdate)
+      checker.start(100, onUpdate)
 
       await vi.advanceTimersByTimeAsync(150)
       expect(onUpdate).toHaveBeenCalled()
@@ -184,7 +161,7 @@ describe('update-checker', () => {
         }
       })
 
-      startUpdateChecker(100, onUpdate)
+      checker.start(100, onUpdate)
 
       await vi.advanceTimersByTimeAsync(150)
       expect(onUpdate).not.toHaveBeenCalled()
@@ -200,7 +177,7 @@ describe('update-checker', () => {
       })
       global.fetch = fetchSpy
 
-      startUpdateChecker(100, onUpdate)
+      checker.start(100, onUpdate)
 
       await vi.advanceTimersByTimeAsync(250)
 
@@ -217,8 +194,8 @@ describe('update-checker', () => {
         }
       })
 
-      startUpdateChecker(100, onUpdate)
-      startUpdateChecker(100, onUpdate)
+      checker.start(100, onUpdate)
+      checker.start(100, onUpdate)
 
       expect(consoleWarnSpy).toHaveBeenCalledWith('Update checker is already running.')
       consoleWarnSpy.mockRestore()
@@ -228,7 +205,7 @@ describe('update-checker', () => {
       const onUpdate = vi.fn()
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
-      startUpdateChecker(100, onUpdate)
+      checker.start(100, onUpdate)
 
       await vi.advanceTimersByTimeAsync(50)
       expect(onUpdate).not.toHaveBeenCalled()
@@ -241,7 +218,7 @@ describe('update-checker', () => {
       const fetchSpy = vi.fn().mockRejectedValue(new Error('Network error'))
       global.fetch = fetchSpy
 
-      startUpdateChecker(50, onUpdate)
+      checker.start(50, onUpdate)
 
       await vi.advanceTimersByTimeAsync(250)
 
@@ -275,10 +252,10 @@ describe('update-checker', () => {
         })
       })
 
-      startUpdateChecker(40, onUpdate)
+      checker.start(40, onUpdate)
 
       await vi.advanceTimersByTimeAsync(400)
-      stopUpdateChecker()
+      checker.stop()
 
       expect(consoleWarnSpy).not.toHaveBeenCalledWith('Update checker disabled after repeated failures')
 
@@ -287,7 +264,7 @@ describe('update-checker', () => {
     })
   })
 
-  describe('stopUpdateChecker', () => {
+  describe('stop', () => {
     it('should stop the update checker', async () => {
       const onUpdate = vi.fn()
       const fetchSpy = vi.fn().mockResolvedValue({
@@ -298,11 +275,11 @@ describe('update-checker', () => {
       })
       global.fetch = fetchSpy
 
-      startUpdateChecker(100, onUpdate)
+      checker.start(100, onUpdate)
       await vi.advanceTimersByTimeAsync(50)
 
       const callCountBeforeStop = fetchSpy.mock.calls.length
-      stopUpdateChecker()
+      checker.stop()
 
       await vi.advanceTimersByTimeAsync(150)
 
@@ -318,23 +295,10 @@ describe('update-checker', () => {
         }
       })
 
-      startUpdateChecker(100, onUpdate)
-      stopUpdateChecker()
+      checker.start(100, onUpdate)
+      checker.stop()
 
-      expect(() => startUpdateChecker(100, onUpdate)).not.toThrow()
-    })
-  })
-
-  describe('reloadApp', () => {
-    it('should call window.location.reload', () => {
-      const reloadSpy = vi.fn()
-      Object.defineProperty(window, 'location', {
-        value: { reload: reloadSpy },
-        writable: true
-      })
-
-      reloadApp()
-      expect(reloadSpy).toHaveBeenCalled()
+      expect(() => checker.start(100, onUpdate)).not.toThrow()
     })
   })
 })

@@ -55,12 +55,3 @@ export const showTutorialsEntry = import.meta.env.VITE_SHOW_TUTORIALS_ENTRY === 
 
 /** Default language, e.g. `en`, `zh` */
 export const defaultLang = (import.meta.env.VITE_DEFAULT_LANG as string) || 'en'
-
-/**
- * Whether the app is running in development mode
- *
- * Note: We use `process.env.NODE_ENV` instead of `import.meta.env.DEV` to ensure
- * this is only true in actual development. `import.meta.env.DEV` would also be true
- * for custom modes like 'staging' that use the dev server, which is not desired.
- */
-export const isDev = process.env.NODE_ENV === 'development'
