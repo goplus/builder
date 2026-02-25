@@ -3,14 +3,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watchEffect } from 'vue'
+import { computed, nextTick, ref, watch, watchEffect } from 'vue'
 import type { Node } from 'konva/lib/Node'
 import { Sprite } from '@/models/spx/sprite'
 import type { Widget } from '@/models/spx/widget'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
 import { getNodeId } from './common'
 import { debounce } from 'lodash'
-import type Konva from 'konva'
+import type { OnCleanup } from '@/utils/disposable'
 
 const props = defineProps<{
   target: Sprite | Widget | null
@@ -40,7 +40,9 @@ const keyboardMovementOffset = [
   [-1, 0]
 ]
 
-function setupKeyboardMovement(stage: Konva.Stage, selectedNode: Node) {
+function setupKeyboardMovement(selectedNode: Node, onCleanup: OnCleanup) {
+  const stage = selectedNode.getStage()
+  if (stage == null) return
   stage.container().tabIndex = 1
   stage.container().focus()
   stage.container().style.outline = 'none'
@@ -55,13 +57,22 @@ function setupKeyboardMovement(stage: Konva.Stage, selectedNode: Node) {
     keyboardMovementEnd()
   }
   stage.container().addEventListener('keydown', handler)
-  return () => {
+  onCleanup(() => {
     keyboardMovementEnd.cancel()
     stage.container().removeEventListener('keydown', handler)
-  }
+  })
 }
 
-watchEffect(async (onCleanup) => {
+const selectedNodeRef = computed(() => {
+  if (props.target == null || transformer.value == null) return null
+  const transformerNode = transformer.value.getNode()
+  const stage = transformerNode.getStage()
+  if (stage == null) return null
+  const nodeId = getNodeId(props.target)
+  return stage.findOne((node: Node) => node.getAttr('nodeId') === nodeId)
+})
+
+watchEffect(async () => {
   if (transformer.value == null) return
   const transformerNode = transformer.value.getNode()
   transformerNode.nodes([])
@@ -69,14 +80,15 @@ watchEffect(async (onCleanup) => {
   const nodeId = getNodeId(props.target)
   // Wait for node ready, so that Konva can get correct node size
   if (!props.nodeReadyMap.get(nodeId)) return
-  const stage = transformerNode.getStage()
-  if (stage == null) throw new Error('no stage')
-  const selectedNode = stage.findOne((node: Node) => node.getAttr('nodeId') === nodeId)
+  const selectedNode = selectedNodeRef.value
   if (selectedNode == null || selectedNode === (transformerNode as any).node()) return
   await nextTick() // Wait to ensure the selected node updated by Konva
   transformerNode.nodes([selectedNode])
+})
 
-  onCleanup(setupKeyboardMovement(stage, selectedNode))
+watch(selectedNodeRef, (selectedNode, _, onCleanup) => {
+  if (selectedNode == null) return
+  setupKeyboardMovement(selectedNode, onCleanup)
 })
 
 defineExpose({
