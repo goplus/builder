@@ -24,7 +24,6 @@ import {
   mapPhaseResult,
   Phase,
   Task,
-  taskDurations,
   type PhaseSerialized,
   type TaskSerialized
 } from './common'
@@ -156,27 +155,27 @@ export class CostumeGen extends Disposable {
   }
   async generate() {
     this.setImage(null)
-    const image = await this.generatePhase.run(async () => {
+    const image = await this.generatePhase.run(async (reporter) => {
       const referenceCostume = this.referenceCostume
       const referenceImageUrl = referenceCostume != null ? await saveFile(referenceCostume.img) : null
       const settings = { ...this.settings, referenceImageUrl }
       this.generateTask?.tryCancel()
       this.generateTask = new Task(TaskType.GenerateCostume)
       await this.generateTask.start({ settings, n: 1 })
-      const { imageUrls } = await this.generateTask.untilCompleted()
+      const { imageUrls } = await this.generateTask.untilCompleted(reporter)
       if (imageUrls.length < 1) throw new Error('no costume image generated')
       return createFileWithUniversalUrl(imageUrls[0])
-    }, taskDurations[TaskType.GenerateCostume])
+    })
     this.setImage(image)
   }
   async restoreGenerateTask() {
     const task = this.generateTask
     if (task?.data == null || isTerminalTaskStatus(task.data?.status)) return
-    const image = await this.generatePhase.run(async () => {
-      const { imageUrls } = await task.untilCompleted()
+    const image = await this.generatePhase.run(async (reporter) => {
+      const { imageUrls } = await task.untilCompleted(reporter)
       if (imageUrls.length < 1) throw new Error('no costume image generated')
       return createFileWithUniversalUrl(imageUrls[0])
-    }, taskDurations[TaskType.GenerateCostume])
+    })
     this.setImage(image)
   }
 

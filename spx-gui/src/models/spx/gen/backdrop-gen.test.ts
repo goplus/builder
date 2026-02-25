@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
@@ -433,6 +433,50 @@ describe('BackdropGen', () => {
     expect(loadedGen.imagesGenState.result?.[0].meta.universalUrl).toBe(
       gen.imagesGenState.result?.[0].meta.universalUrl
     )
+  })
+
+  it('should compute remaining time accurately after export/load', async () => {
+    vi.useFakeTimers()
+    try {
+      const baseTime = new Date('2024-01-01T00:00:00Z').getTime()
+      vi.setSystemTime(baseTime)
+
+      const project = makeSpxProject()
+      const gen = new BackdropGen(project, {
+        settings: { description: 'Remaining time test' }
+      })
+
+      await gen.enrich()
+
+      let resumeTask: (() => void) | null = null
+      aigcMock.registerTaskHandler(TaskType.GenerateBackdrop, async function* (_task, _params, defaultHandler) {
+        await new Promise<void>((r) => {
+          resumeTask = r
+        })
+        yield* defaultHandler()
+      })
+
+      gen.genImages()
+      await flushPromises()
+      expect(gen.imagesGenState.status).toBe('running')
+
+      const rawFiles = gen.export()
+      const files = sndFiles(rawFiles)
+      // Simulate 5 seconds elapsed since task creation
+      vi.setSystemTime(baseTime + 5000)
+
+      const loadedGen = await BackdropGen.load(gen.name, project, files)
+      await flushPromises()
+
+      expect(loadedGen.imagesGenState.status).toBe('running')
+      // Task duration for GenerateBackdrop is 15s; 5s elapsed → 10s remaining
+      expect(loadedGen.imagesGenState.timeLeft).toBe(10000)
+
+      resumeTask!()
+      await flushPromises()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('should loadAll from exported files', async () => {

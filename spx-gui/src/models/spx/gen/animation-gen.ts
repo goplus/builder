@@ -25,7 +25,6 @@ import {
   mapPhaseResult,
   Phase,
   Task,
-  taskDurations,
   type PhaseSerialized,
   type TaskSerialized
 } from './common'
@@ -170,7 +169,7 @@ export class AnimationGen extends Disposable {
   async generateVideo() {
     this.setVideo(null)
     this.setFramesConfig(null)
-    const video = await this.generateVideoPhase.run(async () => {
+    const video = await this.generateVideoPhase.run(async (reporter) => {
       const costume = this.referenceCostume
       if (costume == null) throw new Error('reference costume expected')
       const referenceFrameUrl = await saveFile(costume.img)
@@ -178,20 +177,20 @@ export class AnimationGen extends Disposable {
       this.generateVideoTask?.tryCancel()
       this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
       await this.generateVideoTask.start({ settings })
-      const { videoUrl } = await this.generateVideoTask.untilCompleted()
+      const { videoUrl } = await this.generateVideoTask.untilCompleted(reporter)
       return createFileWithUniversalUrl(videoUrl)
-    }, taskDurations[TaskType.GenerateAnimationVideo])
+    })
     this.setVideo(video)
   }
   restoreGenerateVideoTask() {
     const task = this.generateVideoTask
     if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
-    this.generateVideoPhase.run(async () => {
-      const { videoUrl } = await task.untilCompleted()
+    this.generateVideoPhase.run(async (reporter) => {
+      const { videoUrl } = await task.untilCompleted(reporter)
       const video = createFileWithUniversalUrl(videoUrl)
       this.setVideo(video)
       return video
-    }, taskDurations[TaskType.GenerateAnimationVideo])
+    })
   }
 
   video: File | null
@@ -229,20 +228,20 @@ export class AnimationGen extends Disposable {
     const { video, framesConfig } = this
     if (video == null) throw new Error('video not ready yet')
     if (framesConfig == null) throw new Error('frames config not set')
-    return this.finishPhase.run(async () => {
+    return this.finishPhase.run(async (reporter) => {
       const videoUrl = await saveFile(video)
       this.extractFramesTask?.tryCancel()
       this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
       await this.extractFramesTask.start({ videoUrl, ...framesConfig })
-      const { frameUrls } = await this.extractFramesTask.untilCompleted()
+      const { frameUrls } = await this.extractFramesTask.untilCompleted(reporter)
       return this.createAnimationFromFrames(frameUrls)
     })
   }
   restoreExtractFramesTask() {
     const task = this.extractFramesTask
     if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
-    this.finishPhase.run(async () => {
-      const { frameUrls } = await task.untilCompleted()
+    this.finishPhase.run(async (reporter) => {
+      const { frameUrls } = await task.untilCompleted(reporter)
       return this.createAnimationFromFrames(frameUrls)
     })
   }

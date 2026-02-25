@@ -20,15 +20,7 @@ import { SpxProject } from '../project'
 import { RotationStyle, Sprite, State } from '../sprite'
 import { Costume } from '../costume'
 import type { Animation } from '../animation'
-import {
-  getProjectSettings,
-  mapPhaseResult,
-  Phase,
-  Task,
-  taskDurations,
-  type PhaseSerialized,
-  type TaskSerialized
-} from './common'
+import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
 import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
 import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
 import { createFileWithUniversalUrl } from '../../common/cloud'
@@ -206,22 +198,22 @@ export class SpriteGen extends Disposable {
   }
   async genImages() {
     this.setImageIndex(null)
-    return this.genImagesPhase.run(async () => {
+    return this.genImagesPhase.run(async (reporter) => {
       const settings = this.getDefaultCostumeSettings()
       this.genImagesTask?.tryCancel()
       this.genImagesTask = new Task(TaskType.GenerateCostume)
       await this.genImagesTask.start({ settings, n: 4 })
-      const { imageUrls } = await this.genImagesTask.untilCompleted()
+      const { imageUrls } = await this.genImagesTask.untilCompleted(reporter)
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    }, taskDurations[TaskType.GenerateCostume])
+    })
   }
   private restoreGenImagesTask() {
     const task = this.genImagesTask
     if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
-    this.genImagesPhase.run(async () => {
-      const { imageUrls } = await task.untilCompleted()
+    this.genImagesPhase.run(async (reporter) => {
+      const { imageUrls } = await task.untilCompleted(reporter)
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    }, taskDurations[TaskType.GenerateCostume])
+    })
   }
 
   imageIndex: number | null = null

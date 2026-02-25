@@ -283,7 +283,10 @@ onUnmounted(() => {
 })
 
 async function runInternal(ctrl: AbortController) {
-  const startingState = shallowReactive({ type: 'starting', progress: { percentage: 0, desc: null } } satisfies State)
+  const startingState = shallowReactive({
+    type: 'starting',
+    progress: { percentage: 0, desc: null, timeLeft: null }
+  } satisfies State)
   state.value = startingState
   const collector = new ProgressCollector()
   collector.onProgress(throttle((progress) => (startingState.progress = progress), 100))
@@ -324,7 +327,7 @@ async function runInternal(ctrl: AbortController) {
     await uiUpdated(ctrl.signal)
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
-    startGameReporter.startAutoReport(10 * 1000)
+    startGameReporter.startAutoReport(10_000)
     await iframeWindow.startGame()
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)

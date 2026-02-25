@@ -1,6 +1,7 @@
 import { ActionException, Cancelled, capture, Exception } from '@/utils/exception'
 import { Disposable, mergeSignals } from '@/utils/disposable'
 import type { LocaleMessage } from '@/utils/i18n'
+import { ProgressReporter } from '@/utils/progress'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import * as aigcApis from '@/apis/aigc'
 import {
@@ -61,30 +62,26 @@ export type PhaseState<R> =
       status: 'initial'
       result?: null
       error?: null
-      remaining?: null
+      timeLeft?: null
     }
   | {
       status: 'running'
       result?: null
       error?: null
-      /**
-       * (estimated) remaining time in seconds
-       * TODO: Consider using [progress reporter](src/utils/progress.ts) to provide more accurate and real-time progress update.
-       * See details in https://github.com/goplus/builder/issues/2844
-       */
-      remaining: number | null
+      /** Estimated time left in milliseconds, derived from task progress reports. `null` if unknown. */
+      timeLeft: number | null
     }
   | {
       status: 'finished'
       result: R
       error?: null
-      remaining?: null
+      timeLeft?: null
     }
   | {
       status: 'failed'
       result?: null
       error: Exception
-      remaining?: null
+      timeLeft?: null
     }
 
 // Note: it's not the Phase's responsibility to ensure the `result` in state is serializable.
@@ -103,7 +100,6 @@ export function mapPhaseResult<R, T>(serialized: PhaseSerialized<R>, fn: (input:
 
 /** `Phase` tracks the state of an asynchronous process. */
 export class Phase<R> {
-  private _timer: ReturnType<typeof setInterval> | null = null
   constructor(
     /**
      * The name of the action being tracked, used for error messages.
@@ -115,17 +111,7 @@ export class Phase<R> {
   reset() {
     this.state = { status: 'initial' }
   }
-  /** Tracks the state of the given promise. */
-  async track(
-    /** The promise to track. */
-    promise: Promise<R>,
-    /** Optional estimated duration of the promise in seconds, used for providing remaining time. */
-    runDuration: number | null = null
-  ): Promise<R> {
-    this.state = { status: 'running', remaining: runDuration }
-    if (runDuration != null && runDuration > 0) {
-      this.startTimer(runDuration)
-    }
+  private async _track(promise: Promise<R>): Promise<R> {
     try {
       const result = await promise
       this.state = { status: 'finished', result }
@@ -142,43 +128,28 @@ export class Phase<R> {
         capture(err)
       }
       throw err
-    } finally {
-      this.stopTimer()
     }
   }
 
-  private startTimer(duration: number) {
-    // infer interval & minRemaining from duration
-    const updateInterval = Math.round(Math.max(1, duration / 50))
-    const minRemaining = updateInterval
-    const startedAt = Date.now()
-
-    if (this._timer != null) clearInterval(this._timer)
-    this._timer = setInterval(() => {
-      if (this.state.status !== 'running') return
-      const elapsed = (Date.now() - startedAt) / 1000
-      const remaining = Math.round(Math.max(minRemaining, duration - elapsed))
-      // Keep the same state object to avoid triggering files re-export due to auto-save on stage change.
-      // This is a bit hacky, while it should be properly handled by https://github.com/goplus/builder/issues/2844.
-      this.state.remaining = remaining
-    }, updateInterval * 1000)
+  /** Tracks the state of the given promise without progress reporting. */
+  async track(promise: Promise<R>): Promise<R> {
+    this.state = { status: 'running', timeLeft: null }
+    return this._track(promise)
   }
 
-  private stopTimer() {
-    if (this._timer) {
-      clearInterval(this._timer)
-      this._timer = null
-    }
-  }
-
-  /** Runs given function and tracks its state. */
-  async run(
-    /** The function that returns a promise to track. */
-    fn: () => Promise<R>,
-    /** Optional estimated duration of the function in seconds, used for providing remaining time. */
-    runDuration: number | null = null
-  ): Promise<R> {
-    return this.track(fn(), runDuration)
+  /**
+   * Runs given function and tracks its state.
+   * The function receives a `ProgressReporter` which updates `state.timeLeft`.
+   */
+  async run(fn: (reporter: ProgressReporter) => Promise<R>): Promise<R> {
+    const reporter = new ProgressReporter((p) => {
+      if (this.state.status === 'running' && p.timeLeft != null) {
+        // Mutate the existing state object to avoid triggering unnecessary reactivity
+        this.state.timeLeft = p.timeLeft
+      }
+    })
+    this.state = { status: 'running', timeLeft: null }
+    return this._track(fn(reporter))
   }
 
   static load<R>(serialized: PhaseSerialized<R>): Phase<R> {
@@ -269,9 +240,16 @@ export class Task<T extends TaskType> extends Disposable {
     super()
   }
 
-  async untilCompleted() {
+  async untilCompleted(reporter?: ProgressReporter) {
     const data = this.data
     if (data == null) throw new Error('task not started')
+    if (reporter != null && !isTerminalTaskStatus(data.status)) {
+      const elapsed = Date.now() - new Date(data.createdAt).getTime()
+      const taskDurationMs = taskDurations[this.type] * 1000
+      const timeLeft = Math.max(1000, taskDurationMs - elapsed)
+      // startAutoReport reports percentage: 0 synchronously, so Phase.run sets state.timeLeft immediately
+      reporter.startAutoReport(timeLeft)
+    }
     if (!isTerminalTaskStatus(data.status)) {
       const ctrl = new AbortController()
       const signal = mergeSignals(this.getSignal(), ctrl.signal)
@@ -301,6 +279,7 @@ export class Task<T extends TaskType> extends Disposable {
         }
       }
     }
+    reporter?.report(1)
     if (data.status === TaskStatus.Completed) return data.result!
     else if (data.status === TaskStatus.Failed) throw new TaskException(data.id, data.error!)
     else if (data.status === TaskStatus.Cancelled) throw new Cancelled('task cancelled')
