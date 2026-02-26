@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, nextTick, onMounted, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, shallowRef, watch, watchEffect, onUnmounted } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
@@ -8,7 +8,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { timeout, until, untilTaskScheduled } from '@/utils/utils'
+import { until, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import type { SpxProject } from '@/models/spx/project'
 import type { Sprite } from '@/models/spx/sprite'
@@ -197,7 +197,7 @@ watch(
         x: viewportSize.value.width / 2 - (mapSize.value.width / 2 + selectedSprite.x) * mapScale.value,
         y: viewportSize.value.height / 2 - (mapSize.value.height / 2 - selectedSprite.y) * mapScale.value
       }
-      setMapPosWithTransition(mapPosForSprite, 300).then(updateQuickConfigPosThrottled)
+      setMapPosWithTransition(mapPosForSprite, 300).then(updateQuickConfigPosDeferred)
     }
   },
   { immediate: true }
@@ -219,7 +219,7 @@ function handleMapDragMove(e: KonvaEventObject<MouseEvent>) {
   const { x, y } = getValidMapPos({ x: map.x(), y: map.y() })
   map.x(x)
   map.y(y)
-  updateQuickConfigPosThrottled()
+  updateQuickConfigPosDeferred()
 }
 
 function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
@@ -382,7 +382,7 @@ function handleSpriteUpdateTransformOp(op: TransformOp | null) {
 watch(
   () => [localConfigRef.value?.x, localConfigRef.value?.y, localConfigRef.value?.heading, localConfigRef.value?.size],
   () => {
-    nextTick(updateQuickConfigPosThrottled)
+    nextTick(updateQuickConfigPosDeferred)
   }
 )
 
@@ -393,7 +393,7 @@ onMounted(async () => {
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
-  updateQuickConfigPosThrottled()
+  updateQuickConfigPosDeferred()
 }
 
 const quickConfigRef = ref<InstanceType<typeof QuickConfigWrapper> | null>(null)
@@ -466,19 +466,21 @@ function updateQuickConfigPos() {
 
   quickConfigEl.style.cssText = `transform: translate(${left}px, ${top}px) translateX(-50%)`
 }
-const updateQuickConfigPosThrottled = throttle(updateQuickConfigPos, 50, { trailing: true })
-watch(
-  // Respond to changes in rotationStyle to avoid quick config position issues
-  () => [props.selectedSprite, props.selectedSprite?.rotationStyle],
-  async ([sprite]) => {
-    if (sprite == null) return
-    await timeout(0)
-    updateQuickConfigPosThrottled()
-  },
-  { immediate: true }
-)
+
+let updateRafId: number | null = null
+const updateQuickConfigPosDeferred = () => {
+  if (updateRafId != null) return
+  updateRafId = requestAnimationFrame(() => {
+    updateQuickConfigPos()
+    updateRafId = null
+  })
+}
+onUnmounted(() => {
+  if (updateRafId != null) cancelAnimationFrame(updateRafId)
+})
+
 // Update when container resizes
-watch(containerSize, updateQuickConfigPosThrottled)
+watch(containerSize, updateQuickConfigPosDeferred)
 
 const scaleBy = 1.02
 
@@ -498,7 +500,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     x: pointer.x - mousePointTo.x * newScale,
     y: pointer.y - mousePointTo.y * newScale
   })
-  updateQuickConfigPosThrottled()
+  updateQuickConfigPosDeferred()
 }
 </script>
 
@@ -539,7 +541,12 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         </v-group>
       </v-layer>
       <v-layer>
-        <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />
+        <NodeTransformer
+          ref="nodeTransformerRef"
+          :node-ready-map="nodeReadyMap"
+          :target="selectedSprite"
+          @selected-node="updateQuickConfigPos"
+        />
       </v-layer>
     </v-stage>
     <QuickConfigWrapper v-if="!loading" ref="quickConfigRef" class="quick-config">

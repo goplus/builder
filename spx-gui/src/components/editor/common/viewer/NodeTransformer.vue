@@ -17,6 +17,10 @@ const props = defineProps<{
   nodeReadyMap: Map<string, boolean>
 }>()
 
+const emit = defineEmits<{
+  selectedNode: [node: Node]
+}>()
+
 const transformer = ref<KonvaNodeInstance<CustomTransformer>>()
 
 const config = computed<CustomTransformerConfig>(() => {
@@ -75,6 +79,7 @@ watchEffect(async (onCleanup) => {
   if (selectedNode == null || selectedNode === (transformerNode as any).node()) return
   await nextTick() // Wait to ensure the selected node updated by Konva
   transformerNode.nodes([selectedNode])
+  emit('selectedNode', selectedNode)
 
   onCleanup(setupKeyboardMovement(stage, selectedNode))
 })
