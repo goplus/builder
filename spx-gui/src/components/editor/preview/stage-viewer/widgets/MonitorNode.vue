@@ -41,7 +41,6 @@ type ConfigGetter = {
 const props = defineProps<{
   localConfig: WidgetLocalConfig
   viewportSize: Size
-  nodeReadyMap: Map<string, boolean>
 }>()
 
 const emits = defineEmits<{
@@ -63,24 +62,14 @@ const configGetter = computed(() => {
   return props.localConfig
 })
 
-// text change triggers node-size change, we need to trigger transformer update manually.
-// It's a Transformer bug that it doesn't update correctly when attached node size changed causing by text content change
-async function triggerTransformerUpdate() {
-  props.nodeReadyMap.set(nodeId.value, false)
-  await nextTick()
-  props.nodeReadyMap.set(nodeId.value, true)
-}
-
 function updateLabelTextWidth() {
   if (labelTextRef.value == null) return
   labelTextWidth.value = labelTextRef.value.getNode().getWidth()
-  triggerTransformerUpdate()
 }
 
 function updateValueTextWidth() {
   if (valueTextRef.value == null) return
   valueTextWidth.value = valueTextRef.value.getNode().getWidth()
-  triggerTransformerUpdate()
 }
 
 onMounted(() => {

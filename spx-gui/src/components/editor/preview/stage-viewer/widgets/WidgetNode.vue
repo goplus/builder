@@ -20,5 +20,5 @@ watchEffect((onCleanup) => {
 </script>
 
 <template>
-  <MonitorNode :local-config="localConfig" :viewport-size="viewportSize" :node-ready-map="nodeReadyMap"></MonitorNode>
+  <MonitorNode :local-config="localConfig" :viewport-size="viewportSize"></MonitorNode>
 </template>
