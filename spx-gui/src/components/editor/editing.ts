@@ -105,6 +105,9 @@ export type UIHelpersForLoadingProject = {
  * Note: `Editing` operates on the full project (including gen state via `SpxProjectWithGens`).
  * `History` (undo/redo) is intentionally kept separate in `EditorState` and operates only on
  * the base `SpxProject` files, so that gen-state changes do not affect the undo/redo stack.
+ *
+ * TODO: Rename `Editing` to a more descriptive name (e.g., `ProjectSession` or `EditingSession`)
+ * that better reflects its role as the overall manager of a project editing lifecycle.
  */
 export class Editing extends Disposable {
   mode: EditingMode
