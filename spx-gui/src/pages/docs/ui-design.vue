@@ -265,6 +265,16 @@
         </div>
       </div>
       <div class="component-wrapper">
+        <h3>UIButtonTest</h3>
+        <div class="content-wrapper">
+          <div class="item">
+            <UIButtonTest icon="play">Default</UIButtonTest>
+            <UIButtonTest icon="play" disabled>Disabled</UIButtonTest>
+            <UIButtonTest icon="play" loading>Loading</UIButtonTest>
+          </div>
+        </div>
+      </div>
+      <div class="component-wrapper">
         <h3>UITag</h3>
         <div class="setting-wrapper">
           <div>
@@ -328,7 +338,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { UIButton, UISelect, UISelectOption, UITag, useMessage } from '@/components/ui'
+import { UIButton, UIButtonTest, UISelect, UISelectOption, UITag, useMessage } from '@/components/ui'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
