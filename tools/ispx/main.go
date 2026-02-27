@@ -8,7 +8,7 @@ import (
 	"github.com/goplus/ixgo"
 	"github.com/goplus/ixgo/xgobuild"
 	"github.com/goplus/mod/modfile"
-	"github.com/goplus/spx/ispx"
+	"github.com/goplus/spx/v2/pkg/ispx"
 )
 
 func init() {
