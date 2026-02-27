@@ -75,6 +75,10 @@ export type RawProjectConfig = RawStageConfig &
      * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
      */
     builder_soundOrder?: string[]
+    /**
+     * Maximum FPS for the project. Builder always serializes this as 60.
+     */
+    maxFPS?: number
   }
 
 export type ScreenshotTaker = (
@@ -411,6 +415,7 @@ export class SpxProject extends Disposable implements IProject {
       builder_spriteOrder: spriteOrder,
       builder_soundOrder: soundOrder,
       tilemapPath,
+      maxFPS,
       ...rawStageConfig
     } = config
 
@@ -483,7 +488,8 @@ export class SpxProject extends Disposable implements IProject {
       tilemapPath: tilemap?.tilemapPath,
       zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
-      builder_soundOrder: this.sounds.map((s) => s.id)
+      builder_soundOrder: this.sounds.map((s) => s.id),
+      maxFPS: 60 // always 60 fps
     }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
