@@ -116,7 +116,6 @@ const stateQueryRet = useQuery(
     ctx.signal.throwIfAborted()
     const state = new EditorState(i18n, project, isOnline, username, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
-    state.syncWithRouter(router)
     await state.editing.loadProject(
       {
         confirmOpenTargetWithAnotherInCache,
@@ -126,6 +125,7 @@ const stateQueryRet = useQuery(
       ctx.signal
     )
     state.editing.startEditing()
+    state.syncWithRouter(router)
     return state
   },
   { en: 'Failed to load project', zh: '加载项目失败' }
