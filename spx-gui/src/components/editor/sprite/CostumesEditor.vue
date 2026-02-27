@@ -49,7 +49,10 @@ export class CostumesEditorState {
   /** Select a costume by its name */
   selectByName(name: string): void {
     const costume = this.getSprite()?.costumes.find((costume) => costume.name === name)
-    if (costume == null) throw new Error(`Costume with name "${name}" not found`)
+    if (costume == null) {
+      capture(new Error(`Costume with name "${name}" not found`))
+      return
+    }
     this.select(costume.id)
   }
   /** Select a costume (by specifying route path) */
@@ -68,7 +71,7 @@ export class CostumesEditorState {
 
 <script setup lang="ts">
 import { UIMenu, UIMenuItem } from '@/components/ui'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/spx/sprite'
 import { Costume } from '@/models/spx/costume'

@@ -49,7 +49,10 @@ export class BackdropsEditorState {
   /** Select a backdrop by its name */
   selectByName(name: string): void {
     const backdrop = this.getStage().backdrops.find((backdrop) => backdrop.name === name)
-    if (backdrop == null) throw new Error(`Backdrop with name "${name}" not found`)
+    if (backdrop == null) {
+      capture(new Error(`Backdrop with name "${name}" not found`))
+      return
+    }
     this.select(backdrop.id)
   }
   /** Select a backdrop (by specifying route path) */
@@ -69,7 +72,7 @@ export class BackdropsEditorState {
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Stage } from '@/models/spx/stage'
 import { Backdrop } from '@/models/spx/backdrop'
