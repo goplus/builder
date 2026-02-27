@@ -5,7 +5,6 @@ import { timeout, until } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
 import type { IProject, ProjectSerialized } from '@/models/project'
 import type { CloudHelpers } from '@/models/common/cloud'
-import { History } from './history'
 
 export enum SavingState {
   Pending,
@@ -96,9 +95,19 @@ export type UIHelpersForLoadingProject = {
   openProject: (owner: string, name: string) => void
 }
 
+/**
+ * `Editing` manages the lifecycle of editing a project, including:
+ * - Determining the editing mode (AutoSave vs EffectFree) based on user ownership
+ * - Loading the project from cloud/local cache on initialization
+ * - Monitoring dirty state and triggering auto-saves
+ * - Pre-loading project files for performance
+ *
+ * Note: `Editing` operates on the full project (including gen state via `SpxProjectWithGens`).
+ * `History` (undo/redo) is intentionally kept separate in `EditorState` and operates only on
+ * the base `SpxProject` files, so that gen-state changes do not affect the undo/redo stack.
+ */
 export class Editing extends Disposable {
   mode: EditingMode
-  history: History
   constructor(
     private project: IProject,
     private cloudHelpers: CloudHelpers,
@@ -111,7 +120,6 @@ export class Editing extends Disposable {
     if (signedInUsername == null || signedInUsername !== this.project.owner) {
       this.mode = EditingMode.EffectFree
     }
-    this.history = new History(project)
   }
 
   private startAutoPreload() {
