@@ -7,7 +7,7 @@ const runnerUrl = `${runnerBaseUrl}/runner.html`
 const assetURLs = {
   // TODO: include these assets as "static asset" to generate immutable URLs
   'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
-  'gdspx.wasm': ispxWasmUrl,
+  'ispx.wasm': ispxWasmUrl,
   'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
   'engine.zip': `${runnerBaseUrl}/engine.zip`
 }
