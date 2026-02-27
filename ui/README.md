@@ -47,6 +47,6 @@ archive/
 - 未合并的设计，不允许开发实现
 
 如果你要修改设计，请先阅读：
-📖 docs/team-workflow.md
-📖 docs/design-review-checklist.md
-📖 docs/pr-template.md
+- 📖 docs/team-workflow.md
+- 📖 docs/design-review-checklist.md
+- 📖 docs/pr-template.md
