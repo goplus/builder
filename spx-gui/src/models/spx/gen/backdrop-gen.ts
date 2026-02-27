@@ -19,15 +19,7 @@ import { ensureValidBackdropName, validateBackdropName, type BackdropLikeParent 
 import { backdrop2Asset } from '../common/asset'
 import type { SpxProject } from '../project'
 import { Backdrop, type RawBackdropConfig } from '../backdrop'
-import {
-  getProjectSettings,
-  mapPhaseResult,
-  Phase,
-  Task,
-  taskDurations,
-  type PhaseSerialized,
-  type TaskSerialized
-} from './common'
+import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
 
 export type BackdropGenInits = {
   id?: string
@@ -124,7 +116,7 @@ export class BackdropGen extends Disposable {
     return this.generatePhase.state
   }
   genImages() {
-    return this.generatePhase.run(async () => {
+    return this.generatePhase.run(async (reporter) => {
       this.setImageIndex(null)
 
       this.generateTask?.tryCancel()
@@ -133,17 +125,17 @@ export class BackdropGen extends Disposable {
         settings: this.settings,
         n: 4
       })
-      const { imageUrls } = await this.generateTask.untilCompleted()
+      const { imageUrls } = await this.generateTask.untilCompleted(reporter)
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    }, taskDurations[TaskType.GenerateBackdrop])
+    })
   }
   restoreGenerateTask() {
     const task = this.generateTask
     if (task?.data == null || isTerminalTaskStatus(task.data?.status)) return
-    this.generatePhase.run(async () => {
-      const { imageUrls } = await task.untilCompleted()
+    this.generatePhase.run(async (reporter) => {
+      const { imageUrls } = await task.untilCompleted(reporter)
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    }, taskDurations[TaskType.GenerateBackdrop])
+    })
   }
 
   imageIndex: number | null

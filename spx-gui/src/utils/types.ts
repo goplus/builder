@@ -52,3 +52,6 @@ export type PruneProps<Props, Emits extends Record<string, any[]>> = Omit<
 
 /** Prettify a type to make it more readable in IDEs */
 export type Prettify<T> = { [K in keyof T]: T[K] } & {}
+
+/** Make some keys in T optional */
+export type PartialBy<T, K extends keyof T> = Prettify<Omit<T, K> & Partial<Pick<T, K>>>

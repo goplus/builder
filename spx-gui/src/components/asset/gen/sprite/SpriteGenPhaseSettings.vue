@@ -9,7 +9,7 @@ import { computed, ref } from 'vue'
 import { UIButton } from '@/components/ui'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
-import { humanizeRemaining } from '../common/remaining-time'
+import { humanizeTimeLeft } from '../common/time-left'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
@@ -68,7 +68,7 @@ function handleImageSelect(index: number) {
         <template #tip>
           <template v-if="gen.imagesGenState.status === 'running'">
             {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
-            {{ gen.imagesGenState.remaining != null ? $t(humanizeRemaining(gen.imagesGenState.remaining)) : '' }}
+            {{ gen.imagesGenState.timeLeft != null ? $t(humanizeTimeLeft(gen.imagesGenState.timeLeft)) : '' }}
           </template>
           <template v-else-if="gen.imagesGenState.status === 'finished'">
             {{
