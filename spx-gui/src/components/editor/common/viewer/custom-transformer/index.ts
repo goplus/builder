@@ -168,6 +168,7 @@ export class CustomTransformer extends Konva.Transformer {
       // as it decides the flip based on the rotation only.
       node.scaleY(node.scaleY() * -1)
       node.rotation(node.rotation() - 180)
+      node.fire('transformend', { target: node })
     })
 
     const right = new FlipButton('right')
