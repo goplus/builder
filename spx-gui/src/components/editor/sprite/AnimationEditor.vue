@@ -86,7 +86,10 @@ export class AnimationsEditorState extends Disposable {
   /** Select a target (by name) */
   selectByName(name: string): void {
     const animation = this.animations.find((animation) => animation.name === name)
-    if (animation == null) throw new Error(`Animation with name "${name}" not found`)
+    if (animation == null) {
+      capture(new Error(`Animation with name "${name}" not found`))
+      return
+    }
     this.select(animation.id)
   }
   /** Select a target (by specifying route path) */
@@ -110,7 +113,7 @@ import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/spx/sprite'
 import EditorList from '../common/EditorList.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { useAddAnimationByGroupingCostumes, useRenameAnimation } from '@/components/asset'
 import AnimationDetail from './AnimationDetail.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
