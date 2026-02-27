@@ -5,6 +5,7 @@ import { timeout, until } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
 import type { IProject, ProjectSerialized } from '@/models/project'
 import type { CloudHelpers } from '@/models/common/cloud'
+import { History } from './history'
 
 export enum SavingState {
   Pending,
@@ -97,6 +98,7 @@ export type UIHelpersForLoadingProject = {
 
 export class Editing extends Disposable {
   mode: EditingMode
+  history: History
   constructor(
     private project: IProject,
     private cloudHelpers: CloudHelpers,
@@ -109,6 +111,7 @@ export class Editing extends Disposable {
     if (signedInUsername == null || signedInUsername !== this.project.owner) {
       this.mode = EditingMode.EffectFree
     }
+    this.history = new History(project)
   }
 
   private startAutoPreload() {

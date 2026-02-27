@@ -19,7 +19,6 @@ import { StageEditorState, type Selected as StageEditorSelected } from './stage/
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
 import * as editing from './editing'
-import { History } from './history'
 import { GenState } from './gen'
 
 export type SelectedType = 'stage' | 'sprite' | 'sound'
@@ -104,7 +103,6 @@ export class EditorState extends Disposable {
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
-    this.history = new History(project)
     this.addDisposable((this.genState = new GenState(i18n, project)))
     const projectWithGens = new SpxProjectWithGens(project, this.genState)
     this.addDisposable(
@@ -131,7 +129,9 @@ export class EditorState extends Disposable {
   }
 
   runtime: Runtime
-  history: History
+  get history() {
+    return this.editing.history
+  }
   genState: GenState
   editing: editing.Editing
   stageState: StageEditorState
