@@ -83,9 +83,6 @@ defineExpose({
   getNode() {
     return transformer.value?.getNode()
   },
-  forceUpdate() {
-    transformer.value?.getNode().forceUpdate()
-  },
   withHidden<T>(callback: () => T): T {
     transformer.value?.getNode().hide()
     const ret = callback()

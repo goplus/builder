@@ -88,7 +88,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { untilTaskScheduled, until, untilNotNull, timeout } from '@/utils/utils'
+import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/spx/stage'
@@ -432,23 +432,6 @@ watch(
     }
   },
   { immediate: true }
-)
-
-watch(
-  () => {
-    const config = localConfigRef.value
-    if (config instanceof WidgetLocalConfig && nodeTransformerRef.value != null) {
-      return [config.label, config.variableName]
-    }
-    return null
-  },
-  async (value) => {
-    if (value != null && nodeTransformerRef.value != null) {
-      // Ensure the monitor node updates the label and value widths before updating the transformer
-      await timeout()
-      nodeTransformerRef.value.forceUpdate()
-    }
-  }
 )
 
 const quickConfigRef = ref<InstanceType<typeof QuickConfigWrapper> | null>(null)

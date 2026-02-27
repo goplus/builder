@@ -1,5 +1,6 @@
 <template>
   <v-group
+    ref="groupNodeRef"
     :config="groupConfig"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
@@ -19,7 +20,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { TextConfig, Text } from 'konva/lib/shapes/Text'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
-import type { GroupConfig } from 'konva/lib/Group'
+import type { Group, GroupConfig } from 'konva/lib/Group'
 import type { ShapeConfig } from 'konva/lib/Shape'
 import type { Size } from '@/models/common'
 import { round } from '@/utils/utils'
@@ -51,6 +52,7 @@ const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
 const nodeId = computed(() => getNodeId(props.localConfig))
+const groupNodeRef = ref<KonvaNodeInstance<Group>>()
 const labelTextRef = ref<KonvaNodeInstance<Text>>()
 const valueTextRef = ref<KonvaNodeInstance<Text>>()
 const labelTextWidth = ref(0)
@@ -62,14 +64,24 @@ const configGetter = computed(() => {
   return props.localConfig
 })
 
+// text change triggers node-size change, we need to trigger transformer update manually.
+// It's a Transformer bug that it doesn't update correctly when attached node size changed caused by text content change.
+async function triggerTransformerUpdate() {
+  await nextTick()
+  // The Transformer binds some events after selecting a node, and we use these events to force a transformer update.
+  groupNodeRef.value?.getNode().fire('widthChange')
+}
+
 function updateLabelTextWidth() {
   if (labelTextRef.value == null) return
   labelTextWidth.value = labelTextRef.value.getNode().getWidth()
+  triggerTransformerUpdate()
 }
 
 function updateValueTextWidth() {
   if (valueTextRef.value == null) return
   valueTextWidth.value = valueTextRef.value.getNode().getWidth()
+  triggerTransformerUpdate()
 }
 
 onMounted(() => {
