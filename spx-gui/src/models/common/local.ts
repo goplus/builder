@@ -1,5 +1,5 @@
 import localforage from 'localforage'
-import type { Metadata, IProject } from '../project'
+import type { Metadata, ProjectSerialized } from '../project'
 import { File, type Files, type Metadata as FileMetadata } from './file'
 
 const storage = localforage.createInstance({
@@ -9,23 +9,11 @@ const storage = localforage.createInstance({
 
 /** Helpers for local storage (IndexedDB based) of project data. */
 export class LocalHelpers {
-  /**
-   * Load project from local storage by given storage key.
-   * Resolves with `false` if no data found.
-   * Resolves with `true` if data loaded successfully.
-   */
-  async load(project: IProject, key: string): Promise<boolean> {
-    const loaded = await load(key)
-    if (loaded == null) return false
-    const { metadata, files } = loaded
-    await project.load(metadata, files)
-    return true
+  load(key: string, signal?: AbortSignal): Promise<ProjectSerialized | null> {
+    return load(key, signal)
   }
-
-  /** Save project to local storage with given storage key. */
-  async save(project: IProject, key: string, signal?: AbortSignal) {
-    const [metadata, files] = await project.export(signal)
-    await save(key, metadata, files, signal)
+  save(key: string, { metadata, files }: ProjectSerialized, signal?: AbortSignal) {
+    return save(key, metadata, files, signal)
   }
 
   /** Clear data in local storage with given storage key. */
@@ -100,15 +88,17 @@ async function clear(key: string) {
   await Promise.all([removeMetadataEx(key), ...metadataEx.files.map((path) => removeFile(key, path))])
 }
 
-async function load(key: string) {
+async function load(key: string, signal?: AbortSignal) {
   // TODO: check project owner & name
   const metadataEx = await getMetadataEx(key)
+  signal?.throwIfAborted()
   if (metadataEx == null) return null
   const { files: fileList, thumbnail: rawThumbnail, ...metadata } = metadataEx
   const files: Files = {}
   await Promise.all(
     fileList.map(async (path) => {
       files[path] = await readFile(key, path)
+      signal?.throwIfAborted()
     })
   )
   let thumbnail: File | null = null

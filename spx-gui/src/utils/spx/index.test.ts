@@ -12,7 +12,7 @@ describe('normalizeXGoIdentifierAssetName', () => {
     expect(normalizeXGoIdentifierAssetName('abc中 文en', 'camel')).toBe('abc中文en')
     expect(normalizeXGoIdentifierAssetName('abc中 文En', 'camel')).toBe('abc中文En')
     expect(normalizeXGoIdentifierAssetName('123abc 456', 'camel')).toBe('abc456')
-    expect(normalizeXGoIdentifierAssetName(repeat('a', 120), 'camel')).toBe(repeat('a', 20))
+    expect(normalizeXGoIdentifierAssetName(repeat('a', 120), 'camel')).toBe(repeat('a', 50))
   })
   it('should work well with pascal case', () => {
     expect(normalizeXGoIdentifierAssetName('abc', 'pascal')).toBe('Abc')
@@ -24,7 +24,7 @@ describe('normalizeXGoIdentifierAssetName', () => {
     expect(normalizeXGoIdentifierAssetName('abc中 文en', 'pascal')).toBe('Abc中文en')
     expect(normalizeXGoIdentifierAssetName('abc中 文en', 'pascal')).toBe('Abc中文en')
     expect(normalizeXGoIdentifierAssetName('123abc 456', 'pascal')).toBe('Abc456')
-    expect(normalizeXGoIdentifierAssetName(repeat('a', 120), 'pascal')).toBe('A' + repeat('a', 19))
+    expect(normalizeXGoIdentifierAssetName(repeat('a', 120), 'pascal')).toBe('A' + repeat('a', 49))
   })
 })
 

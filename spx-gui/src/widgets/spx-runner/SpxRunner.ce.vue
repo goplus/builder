@@ -42,7 +42,8 @@ watch(
       errorMsg.value = ''
       try {
         const newProject = new SpxProject(owner, name)
-        await cloudHelpers.load(newProject, true)
+        const serialized = await cloudHelpers.load(owner, name, true)
+        await newProject.load(serialized)
         project.value.dispose()
         project.value = newProject
         ready.value = true

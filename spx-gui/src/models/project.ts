@@ -19,6 +19,11 @@ export type Metadata = Partial<CloudMetadata> & {
   aiDescriptionHash?: string | null
 }
 
+export type ProjectSerialized = {
+  metadata: Metadata
+  files: Files
+}
+
 export interface IProject {
   /**
    * Mutex for transaction operations on the project.
@@ -45,12 +50,14 @@ export interface IProject {
   /**
    * Export project content to files.
    *
-   * The result is expected to be memoized, and will only be re-computed when the project content changed.
-   * By watching result of this method, the caller can get notified when project content changed.
+   * The result is expected to be memoized and will only be re-computed when the project content changes.
+   * By observing the result of this method, the caller can be notified when the project content is updated.
    *
-   * NOTE: this method may return intermediate result during transactional edits.
+   * NOTE: This method may return intermediate results during transactional edits.
    *
-   * TODO: we may need to migrate most callers of this method to use some alternative methods that ensure atomicity.
+   * TODO:
+   * - Consider migrating most callers of this method to alternative methods that ensure atomicity.
+   * - The implementation of this method may introduce additional complexity and potential bugs; we may need to remove or redesign it in the future.
    */
   exportFiles(): Files
 
@@ -61,7 +68,7 @@ export interface IProject {
    * Implementations may combine them to ensure transactional loading, control ordering, or perform
    * additional work before, during, or after loading.
    */
-  load(metadata: Metadata, files: Files, signal?: AbortSignal): Promise<void>
+  load(serialized: ProjectSerialized, signal?: AbortSignal): Promise<void>
 
   /**
    * Export project to metadata and files for saving.
@@ -70,5 +77,5 @@ export interface IProject {
    * Implementations may combine them to ensure transactional exporting, control ordering, or perform
    * additional work before, during, or after exporting.
    */
-  export(signal?: AbortSignal): Promise<[Metadata, Files]>
+  export(signal?: AbortSignal): Promise<ProjectSerialized>
 }

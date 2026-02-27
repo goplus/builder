@@ -10,7 +10,7 @@ import { zip, unzip, type Zippable } from '@/utils/zip'
 import { filename, stripExt } from '@/utils/path'
 import { getExtFromMime } from '@/utils/file'
 import { File as LazyFile, toConfig, type Files as LazyFiles } from './file'
-import type { Metadata, IProject } from '../project'
+import type { Metadata, ProjectSerialized } from '../project'
 import { createAIDescriptionFiles, extractAIDescription } from './'
 
 const metadataFileName = 'builder-meta.json'
@@ -18,13 +18,11 @@ const thumbnailFileName = 'builder-thumbnail'
 
 /** Helpers for loading project from or saving project to xbp files. */
 export class XbpHelpers {
-  async load(project: IProject, file: globalThis.File) {
-    const { metadata, files } = await load(file)
-    await project.load(metadata, files)
+  load(file: globalThis.File): Promise<ProjectSerialized> {
+    return load(file)
   }
-  async save(project: IProject, signal?: AbortSignal) {
-    const [metadata, files] = await project.export(signal)
-    return await save(metadata, files, signal)
+  save({ metadata, files }: ProjectSerialized, signal?: AbortSignal) {
+    return save(metadata, files, signal)
   }
 }
 

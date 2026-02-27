@@ -84,7 +84,9 @@ export function useUnpublishProject() {
   // TODO: message for exception
   async function makePrivate(project: SpxProject) {
     project.setVisibility(Visibility.Private)
-    await cloudHelpers.save(project)
+    const serialized = await project.export()
+    const saved = await cloudHelpers.save(serialized)
+    project.setMetadata(saved.metadata)
   }
 
   return async function unpublishProject(project: SpxProject) {

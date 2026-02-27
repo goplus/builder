@@ -1,6 +1,7 @@
 import { ref, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import { createI18n } from '@/utils/i18n'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { Sound } from '@/models/spx/sound'
@@ -16,8 +17,8 @@ import { mockFile } from '@/models/common/test'
 
 function makeCloudHelpers(): CloudHelpers {
   return {
-    load: vi.fn().mockResolvedValue(undefined),
-    save: vi.fn().mockResolvedValue(undefined)
+    load: vi.fn().mockResolvedValue({ metadata: {}, files: {} }),
+    save: vi.fn().mockResolvedValue({ metadata: {}, files: {} })
   }
 }
 
@@ -113,7 +114,7 @@ function makeEditorState(
   cloudHelpers: CloudHelpers = makeCloudHelpers(),
   localCache: editing.ILocalCache = makeLocalCache()
 ): EditorState {
-  return new EditorState(project, isOnline, signedInUsername, cloudHelpers, localCache)
+  return new EditorState(createI18n({ lang: 'en' }), project, isOnline, signedInUsername, cloudHelpers, localCache)
 }
 
 describe('EditorState', () => {

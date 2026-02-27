@@ -68,7 +68,9 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     if (isProjectUsingAIInteraction(project)) await project.ensureAIDescription(true) // Ensure AI description is available if needed
-    await cloudHelpers.save(project)
+    const serialized = await project.export()
+    const saved = await cloudHelpers.save(serialized)
+    project.setMetadata(saved.metadata)
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({
       projectFullName: stringifyProjectFullName(project.owner!, project.name!),

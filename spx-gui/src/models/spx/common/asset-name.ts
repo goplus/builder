@@ -154,7 +154,9 @@ export function validateWidgetName(name: string, parent: WidgetLikeParent | null
 export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   if (src === '') return ''
   const result = cas === 'pascal' ? upFirst(src) : lowFirst(src)
-  return unicodeSafeSlice(result, 0, 20) // 20 should be enough, it will be hard to read with too long name
+  // 50 should be enough, it will be hard to read with too long name
+  // TODO: should we move the truncation to outer layer?
+  return unicodeSafeSlice(result, 0, 50)
 }
 
 function getValidName(base: string, isValid: (name: string) => boolean) {

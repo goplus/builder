@@ -1,34 +1,71 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
+import { extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
 import {
   type AnimationSettings,
   enrichAnimationSettings,
+  isTerminalTaskStatus,
   type TaskParamsExtractVideoFrames,
   TaskType,
   TaskStatus
 } from '@/apis/aigc'
 import type { SpxProject } from '../project'
 import { Sprite } from '../sprite'
-import type { File } from '../../common/file'
+import type { File, Files } from '../../common/file'
 import { ensureValidAnimationName, validateAnimationName } from '../common/asset-name'
 import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
-import { Animation } from '../animation'
-import { Costume } from '../costume'
-import { getProjectSettings, getSpriteSettings, Phase, Task } from './common'
+import { Animation, type RawAnimationConfig } from '../animation'
+import { Costume, type RawCostumeConfig } from '../costume'
+import {
+  getProjectSettings,
+  getSpriteSettings,
+  mapPhaseResult,
+  Phase,
+  Task,
+  taskDurations,
+  type PhaseSerialized,
+  type TaskSerialized
+} from './common'
 import type { SpriteGen } from './sprite-gen'
 
 export type FramesConfig = Omit<TaskParamsExtractVideoFrames, 'videoUrl'>
 
-export type AnimationGenInits = Prettify<
-  Partial<
-    Omit<AnimationSettings, 'referenceFrameUrl'> & {
-      referenceCostumeId: string | null
-    }
-  >
+export type AnimationGenInits = {
+  id?: string
+  settings?: Partial<Omit<AnimationSettings, 'referenceFrameUrl'>>
+  referenceCostumeId?: string | null
+  video?: File
+  framesConfig?: FramesConfig
+  enrichPhase?: Phase<AnimationSettings>
+  generateVideoTask?: Task<TaskType.GenerateAnimationVideo>
+  generateVideoPhase?: Phase<File>
+  extractFramesTask?: Task<TaskType.ExtractVideoFrames>
+  finishPhase?: Phase<Animation>
+}
+
+export type RawAnimationGenConfig = Prettify<
+  Omit<
+    AnimationGenInits,
+    'enrichPhase' | 'generateVideoTask' | 'generateVideoPhase' | 'extractFramesTask' | 'finishPhase' | 'video'
+  > & {
+    videoPath?: string
+    enrichPhaseSerialized?: PhaseSerialized<AnimationSettings>
+    generateVideoTaskSerialized?: TaskSerialized<TaskType.GenerateAnimationVideo>
+    generateVideoPhaseSerialized?: PhaseSerialized<string>
+    extractFramesTaskSerialized?: TaskSerialized<TaskType.ExtractVideoFrames>
+    finishPhaseSerialized?: PhaseSerialized<{
+      animationConfig: RawAnimationConfig
+      costumeConfigs: RawCostumeConfig[]
+    }>
+  }
 >
+
+function assetsPathFor(basePath: string, name: string) {
+  return `${basePath}/animations/${name}`
+}
 
 export class AnimationGen extends Disposable {
   id: string
@@ -40,19 +77,14 @@ export class AnimationGen extends Disposable {
   private project: SpxProject
 
   private enrichPhase: Phase<AnimationSettings>
-  private generateVideoTask: Task<TaskType.GenerateAnimationVideo>
+  private generateVideoTask: Task<TaskType.GenerateAnimationVideo> | null
   private generateVideoPhase: Phase<File>
-  private extractFramesTask: Task<TaskType.ExtractVideoFrames>
-  private extractFramesPhase: Phase<File[]>
+  private extractFramesTask: Task<TaskType.ExtractVideoFrames> | null
   private finishPhase: Phase<Animation>
 
-  constructor(
-    parent: Sprite | SpriteGen,
-    project: SpxProject,
-    { referenceCostumeId = null, ...settings }: AnimationGenInits
-  ) {
+  constructor(parent: Sprite | SpriteGen, project: SpxProject, inits: AnimationGenInits = {}) {
     super()
-    this.id = nanoid()
+    this.id = inits.id ?? nanoid()
     this.parent = parent
     this.project = project
     this.settings = {
@@ -62,23 +94,25 @@ export class AnimationGen extends Disposable {
       perspective: Perspective.Unspecified,
       loopMode: AnimationLoopMode.NonLoopable,
       referenceFrameUrl: null,
-      ...settings
+      ...inits.settings
     }
-    this.referenceCostumeId = referenceCostumeId
-    this.enrichPhase = new Phase({ en: 'enrich animation settings', zh: '丰富动画设置' })
-    this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
-    this.generateVideoPhase = new Phase({ en: 'generate animation video', zh: '生成动画视频' })
-    this.video = null
-    this.framesConfig = null
-    this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
-    this.extractFramesPhase = new Phase({ en: 'extract video frames', zh: '提取视频帧' })
-    this.finishPhase = new Phase({ en: 'save animation', zh: '保存动画' })
+    this.referenceCostumeId = inits.referenceCostumeId ?? null
+    this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich animation settings', zh: '丰富动画设置' })
+    this.generateVideoTask = inits.generateVideoTask ?? null
+    this.generateVideoPhase =
+      inits.generateVideoPhase ?? new Phase({ en: 'generate animation video', zh: '生成动画视频' })
+    this.video = inits.video ?? null
+    this.framesConfig = inits.framesConfig ?? null
+    this.extractFramesTask = inits.extractFramesTask ?? null
+    this.finishPhase =
+      inits.finishPhase ?? new Phase({ en: 'extract frames and save animation', zh: '提取帧并保存动画' })
     return reactive(this) as this
   }
 
   /** Get IDs for (completed) tasks. */
   getTaskIds() {
     return [this.generateVideoTask, this.extractFramesTask]
+      .filter((t): t is Task<TaskType.GenerateAnimationVideo> | Task<TaskType.ExtractVideoFrames> => t != null)
       .filter((t) => t.data?.status === TaskStatus.Completed)
       .map((t) => t.data!.id)
   }
@@ -141,11 +175,23 @@ export class AnimationGen extends Disposable {
       if (costume == null) throw new Error('reference costume expected')
       const referenceFrameUrl = await saveFile(costume.img)
       const settings = { ...this.settings, referenceFrameUrl }
+      this.generateVideoTask?.tryCancel()
+      this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
       await this.generateVideoTask.start({ settings })
       const { videoUrl } = await this.generateVideoTask.untilCompleted()
       return createFileWithUniversalUrl(videoUrl)
-    }, this.generateVideoTask.runDuration)
+    }, taskDurations[TaskType.GenerateAnimationVideo])
     this.setVideo(video)
+  }
+  restoreGenerateVideoTask() {
+    const task = this.generateVideoTask
+    if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
+    this.generateVideoPhase.run(async () => {
+      const { videoUrl } = await task.untilCompleted()
+      const video = createFileWithUniversalUrl(videoUrl)
+      this.setVideo(video)
+      return video
+    }, taskDurations[TaskType.GenerateAnimationVideo])
   }
 
   video: File | null
@@ -158,47 +204,46 @@ export class AnimationGen extends Disposable {
     this.framesConfig = config
   }
 
-  get extractFramesState() {
-    return this.extractFramesPhase.state
-  }
-  resetExtractFramesState() {
-    this.extractFramesPhase.reset()
-  }
-  async extractFrames() {
-    const { video, framesConfig } = this
-    if (video == null) throw new Error('video not ready yet')
-    if (framesConfig == null) throw new Error('frames config not set')
-    return this.extractFramesPhase.run(async () => {
-      const videoUrl = await saveFile(video)
-      await this.extractFramesTask.start({ videoUrl, ...framesConfig })
-      const { frameUrls } = await this.extractFramesTask.untilCompleted()
-      const frames = frameUrls.map((url) => createFileWithUniversalUrl(url))
-      return frames
-    })
-  }
-
   get finishState() {
     return this.finishPhase.state
-  }
-  get result() {
-    return this.finishPhase.state.result
   }
   resetFinishState() {
     this.finishPhase.reset()
   }
+  get result() {
+    return this.finishPhase.state.result
+  }
+  private async createAnimationFromFrames(frameUrls: string[]) {
+    const frameImgs = frameUrls.map((url) => createFileWithUniversalUrl(url))
+    const costumes = await Promise.all(
+      frameImgs.map(async (img, i) => {
+        const costumeName = `${this.settings.name}_frame_${i + 1}`
+        const costume = await Costume.create(costumeName, img)
+        await costume.autoFit()
+        return costume
+      })
+    )
+    return Animation.create(this.settings.name, costumes)
+  }
   async finish() {
-    const frameImgs = this.extractFramesPhase.state.result
-    if (frameImgs == null) throw new Error('frame images expected')
+    const { video, framesConfig } = this
+    if (video == null) throw new Error('video not ready yet')
+    if (framesConfig == null) throw new Error('frames config not set')
     return this.finishPhase.run(async () => {
-      const costumes = await Promise.all(
-        frameImgs.map(async (img, i) => {
-          const costumeName = `${this.settings.name}_frame_${i + 1}`
-          const costume = await Costume.create(costumeName, img)
-          await costume.autoFit()
-          return costume
-        })
-      )
-      return Animation.create(this.settings.name, costumes)
+      const videoUrl = await saveFile(video)
+      this.extractFramesTask?.tryCancel()
+      this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
+      await this.extractFramesTask.start({ videoUrl, ...framesConfig })
+      const { frameUrls } = await this.extractFramesTask.untilCompleted()
+      return this.createAnimationFromFrames(frameUrls)
+    })
+  }
+  restoreExtractFramesTask() {
+    const task = this.extractFramesTask
+    if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
+    this.finishPhase.run(async () => {
+      const { frameUrls } = await task.untilCompleted()
+      return this.createAnimationFromFrames(frameUrls)
     })
   }
 
@@ -209,6 +254,106 @@ export class AnimationGen extends Disposable {
    * - No exception will be thrown even if the cancellation requests fail.
    */
   cancel() {
-    return Promise.all([this.generateVideoTask.tryCancel(), this.extractFramesTask.tryCancel()])
+    return Promise.all([this.generateVideoTask?.tryCancel(), this.extractFramesTask?.tryCancel()])
+  }
+
+  export(basePath = 'gen/assets'): [RawAnimationGenConfig, Files] {
+    const files: Files = {}
+    const assetsPath = assetsPathFor(basePath, this.name)
+
+    const config: RawAnimationGenConfig = {
+      id: this.id,
+      settings: this.settings,
+      referenceCostumeId: this.referenceCostumeId ?? undefined,
+      framesConfig: this.framesConfig ?? undefined,
+      enrichPhaseSerialized: this.enrichPhase.export(),
+      generateVideoTaskSerialized: this.generateVideoTask?.export(),
+      generateVideoPhaseSerialized: mapPhaseResult(this.generateVideoPhase.export(), (result) => {
+        const filePath = `${assetsPath}/generated_video${extname(result.name)}`
+        files[filePath] = result
+        return filePath
+      }),
+      extractFramesTaskSerialized: this.extractFramesTask?.export(),
+      finishPhaseSerialized: mapPhaseResult(this.finishPhase.export(), (result) => {
+        const [animationConfig, costumeConfigs, animationFiles] = result.export(`${assetsPath}/result`, {
+          sounds: [],
+          includeId: true
+        })
+        Object.assign(files, animationFiles)
+        return { animationConfig, costumeConfigs }
+      })
+    }
+
+    if (this.video != null) {
+      const videoPath = `${assetsPath}/video${extname(this.video.name)}`
+      files[videoPath] = this.video
+      config.videoPath = videoPath
+    }
+
+    return [config, files]
+  }
+
+  static load(
+    parent: Sprite | SpriteGen,
+    project: SpxProject,
+    config: RawAnimationGenConfig,
+    files: Files,
+    basePath = 'gen/assets'
+  ) {
+    const {
+      id,
+      settings,
+      referenceCostumeId,
+      framesConfig,
+      videoPath,
+      enrichPhaseSerialized,
+      generateVideoTaskSerialized,
+      generateVideoPhaseSerialized,
+      extractFramesTaskSerialized,
+      finishPhaseSerialized
+    } = config
+
+    const genId = id ?? nanoid()
+    if (settings?.name == null) throw new Error('settings name expected in animation gen config')
+    const settingsName = settings.name
+    const assetsPath = assetsPathFor(basePath, settingsName)
+
+    const inits: AnimationGenInits = { id: genId }
+    inits.settings = settings
+    if (referenceCostumeId != null) inits.referenceCostumeId = referenceCostumeId
+    if (framesConfig != null) inits.framesConfig = framesConfig
+    if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
+    if (generateVideoTaskSerialized != null) inits.generateVideoTask = Task.load(generateVideoTaskSerialized)
+    if (generateVideoPhaseSerialized != null) {
+      inits.generateVideoPhase = Phase.load(
+        mapPhaseResult(generateVideoPhaseSerialized, (filePath) => {
+          const file = files[filePath]
+          if (file == null) throw new Error(`file ${filePath} not found for animation gen ${genId}`)
+          return file
+        })
+      )
+    }
+    if (extractFramesTaskSerialized != null) inits.extractFramesTask = Task.load(extractFramesTaskSerialized)
+    if (finishPhaseSerialized != null) {
+      inits.finishPhase = Phase.load(
+        mapPhaseResult(finishPhaseSerialized, ({ animationConfig, costumeConfigs }) => {
+          const costumes = costumeConfigs.map((costumeConfig) =>
+            Costume.load(costumeConfig, files, { basePath: `${assetsPath}/result`, includeId: true })
+          )
+          const [animation] = Animation.load(settingsName, animationConfig, costumes, { sounds: [], includeId: true })
+          return animation
+        })
+      )
+    }
+    if (videoPath != null) {
+      const videoFile = files[videoPath]
+      if (videoFile == null) throw new Error(`file ${videoPath} not found for animation gen ${genId}`)
+      inits.video = videoFile
+    }
+
+    const gen = new AnimationGen(parent, project, inits)
+    gen.restoreGenerateVideoTask()
+    gen.restoreExtractFramesTask()
+    return gen
   }
 }

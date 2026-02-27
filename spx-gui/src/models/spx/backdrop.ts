@@ -29,6 +29,8 @@ const backdropAssetPath = 'assets'
 export type BackdropExportLoadOptions = {
   includeId?: boolean
   includeAssetMetadata?: boolean
+  /** Path of directory which contains the backdrop's asset (image) file. Defaults to 'assets' */
+  assetPath?: string
 }
 
 export class Backdrop {
@@ -101,11 +103,11 @@ export class Backdrop {
       ...inits
     }: RawBackdropConfig,
     files: Files,
-    { includeId = true, includeAssetMetadata = true }: BackdropExportLoadOptions = {}
+    { includeId = true, includeAssetMetadata = true, assetPath = backdropAssetPath }: BackdropExportLoadOptions = {}
   ) {
     if (name == null) throw new Error(`name expected for backdrop`)
     if (path == null) throw new Error(`path expected for backdrop ${name}`)
-    const file = files[resolve(backdropAssetPath, path)]
+    const file = files[resolve(assetPath, path)]
     if (file == null) throw new Error(`file ${path} for backdrop ${name} not found`)
     if (imageWidth != null && imageHeight != null && file.meta.imgSize == null) {
       file.meta.imgSize = { width: imageWidth, height: imageHeight }
@@ -117,10 +119,11 @@ export class Backdrop {
     })
   }
 
-  export({ includeId = true, includeAssetMetadata = true }: BackdropExportLoadOptions = {}): [
-    RawBackdropConfig,
-    Files
-  ] {
+  export({
+    includeId = true,
+    includeAssetMetadata = true,
+    assetPath = backdropAssetPath
+  }: BackdropExportLoadOptions = {}): [RawBackdropConfig, Files] {
     const filename = this.name + extname(this.img.name)
     const config: RawBackdropConfig = {
       bitmapResolution: this.bitmapResolution,
@@ -137,7 +140,7 @@ export class Backdrop {
       config.imageHeight = imgSize.height
     }
     const files = {
-      [resolve(backdropAssetPath, filename)]: this.img
+      [resolve(assetPath, filename)]: this.img
     }
     return [config, files]
   }

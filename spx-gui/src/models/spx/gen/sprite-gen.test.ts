@@ -1,21 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
+import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
 import { TaskStatus } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as fileHelpers from '@/models/common/file'
+import { sndFiles } from '@/models/common/test'
+import { GenState } from '@/components/editor/gen'
+import { RotationStyle, State } from '../sprite'
 import { makeSpxProject } from '../common/test'
-import { setupAigcMock, MockAigcApis } from './aigc-mock'
-import { SpriteGen } from './sprite-gen'
-import { State } from '../sprite'
 import type { CostumeGen } from './costume-gen'
 import type { AnimationGen } from './animation-gen'
-import { RotationStyle } from '../sprite'
+import { SpriteGen } from './sprite-gen'
 
-setupAigcMock()
+const aigcMock = setupAigcMock()
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
-
-const aigcMock = new MockAigcApis()
-aigcMock.mock()
 
 async function finishCostumeGen(name: string, gen: CostumeGen) {
   gen.setSettings({
@@ -37,7 +36,6 @@ async function finishAnimationGen(name: string, gen: AnimationGen) {
     duration: 1000,
     interval: 300
   })
-  await gen.extractFrames()
   return gen.finish()
 }
 
@@ -93,7 +91,7 @@ describe('SpriteGen', () => {
     const images = await gen.genImages()
     expect(gen.imagesGenState.status).toBe('finished')
     expect(images.length).toBe(4)
-    gen.setImage(images[0])
+    gen.setImageIndex(0)
     expect(gen.image).toBe(images[0])
 
     // Prepare sprite content
@@ -150,22 +148,27 @@ describe('SpriteGen', () => {
     expect(sprite.getAnimationBoundStates(sprite.animations[1].id)).toEqual([State.Step])
   })
 
-  it('should validate sprite name correctly', async () => {
+  it('should validate sprite name when parent is set', () => {
+    const i18n = createI18n({ lang: 'en' })
     const project = makeSpxProject()
-    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A test sprite')
+    const genState = new GenState(i18n, project)
 
-    await gen.enrich()
-    gen.setSettings({ name: 'Sprite1' })
-    await gen.genImages()
-    gen.setImage(gen.imagesGenState.result![0])
-    await gen.prepareContent()
-    const sprite1 = gen.finish()
-    project.addSprite(sprite1)
+    const gen1 = new SpriteGen(i18n, project, {
+      settings: { name: 'Knight' }
+    })
+    genState.addSprite(gen1)
 
-    // Create another gen with duplicate name should fail
-    const gen2 = new SpriteGen(createI18n({ lang: 'en' }), project, 'Another sprite')
-    await gen2.enrich()
-    expect(() => gen2.setName('Sprite1')).toThrow()
+    const gen2 = new SpriteGen(i18n, project, {
+      settings: { name: 'Wizard' }
+    })
+    genState.addSprite(gen2)
+
+    // Should throw when trying to set a name that conflicts with another gen in the same GenState
+    expect(() => gen2.setName('Knight')).toThrow()
+
+    // Should allow setting a unique name
+    gen2.setName('Archer')
+    expect(gen2.settings.name).toBe('Archer')
   })
 
   it('should handle errors and retry successfully', async () => {
@@ -189,6 +192,16 @@ describe('SpriteGen', () => {
     // Retry genImages and succeed
     await gen.genImages()
     expect(gen.imagesGenState.status).toBe('finished')
+  })
+
+  it('should use default costume as default reference for animations', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A test sprite')
+    await gen.enrich()
+    await gen.genImages()
+    gen.setImageIndex(0)
+    await gen.prepareContent()
+    expect(gen.animations[0].referenceCostume).toBe(gen.defaultCostume!.result)
   })
 
   it('should throw error when preparing content without image', async () => {
@@ -236,7 +249,7 @@ describe('SpriteGen', () => {
 
     await gen.enrich()
     await gen.genImages()
-    gen.setImage(gen.imagesGenState.result![0])
+    gen.setImageIndex(0)
 
     const prepared = gen.prepareContent()
     expect(gen.contentPreparingState.status).toBe('running')
@@ -267,7 +280,7 @@ describe('SpriteGen', () => {
 
     await gen.enrich()
     await gen.genImages()
-    gen.setImage(gen.imagesGenState.result![0])
+    gen.setImageIndex(0)
     await gen.prepareContent()
 
     const costumeGen = gen.costumes[1]
@@ -295,7 +308,7 @@ describe('SpriteGen', () => {
     await gen1.enrich()
     gen1.setSettings({ perspective: Perspective.SideScrolling })
     await gen1.genImages()
-    gen1.setImage(gen1.imagesGenState.result![0])
+    gen1.setImageIndex(0)
     await gen1.prepareContent()
     const sprite1 = gen1.finish()
     expect(sprite1.rotationStyle).toBe(RotationStyle.LeftRight)
@@ -305,7 +318,7 @@ describe('SpriteGen', () => {
     await gen2.enrich()
     gen2.setSettings({ name: 'Sprite2', perspective: Perspective.AngledTopDown })
     await gen2.genImages()
-    gen2.setImage(gen2.imagesGenState.result![0])
+    gen2.setImageIndex(0)
     await gen2.prepareContent()
     const sprite2 = gen2.finish()
     expect(sprite2.rotationStyle).toBe(RotationStyle.LeftRight)
@@ -315,9 +328,278 @@ describe('SpriteGen', () => {
     await gen3.enrich()
     gen3.setSettings({ name: 'Sprite3', perspective: Perspective.Unspecified })
     await gen3.genImages()
-    gen3.setImage(gen3.imagesGenState.result![0])
+    gen3.setImageIndex(0)
     await gen3.prepareContent()
     const sprite3 = gen3.finish()
     expect(sprite3.rotationStyle).toBe(RotationStyle.Normal)
+  })
+
+  describe('export/load', () => {
+    function getPreviewSpriteContentSnapshot(gen: SpriteGen) {
+      const previewSprite = gen.previewSprite
+      return {
+        costumes: previewSprite.costumes
+          .map((c) => ({ id: c.id, name: c.name }))
+          .sort((a, b) => a.id.localeCompare(b.id)),
+        animations: previewSprite.animations
+          .map((a) => ({
+            id: a.id,
+            name: a.name,
+            boundStates: previewSprite
+              .getAnimationBoundStates(a.id)
+              .slice()
+              .sort((a1, a2) => a1.localeCompare(a2))
+          }))
+          .sort((a, b) => a.id.localeCompare(b.id))
+      }
+    }
+
+    async function assertExportLoad(gen: SpriteGen) {
+      const i18n = createI18n({ lang: 'en' })
+      const project = makeSpxProject()
+      const rawFiles = gen.export()
+      const files = sndFiles(rawFiles)
+      const loaded = await SpriteGen.load(gen.name, i18n, project, files)
+      assertSpriteGenEqual(gen, loaded)
+      return loaded
+    }
+
+    function assertSpriteGenEqual(original: SpriteGen, loaded: SpriteGen) {
+      expect(loaded.id).toBe(original.id)
+      expect(loaded.settings).toEqual(original.settings)
+      expect(loaded.imageIndex).toBe(original.imageIndex)
+      expect(loaded.enrichState.status).toBe(original.enrichState.status)
+      if (original.enrichState.status === 'finished') {
+        expect(loaded.enrichState.result).toEqual(original.enrichState.result)
+      }
+      expect(loaded.imagesGenState.status).toBe(original.imagesGenState.status)
+      expect(loaded.contentPreparingState.status).toBe(original.contentPreparingState.status)
+      expect(loaded.costumes.length).toBe(original.costumes.length)
+      expect(loaded.animations.length).toBe(original.animations.length)
+      for (let i = 0; i < original.costumes.length; i++) {
+        expect(loaded.costumes[i].id).toBe(original.costumes[i].id)
+        expect(loaded.costumes[i].settings).toEqual(original.costumes[i].settings)
+      }
+      for (let i = 0; i < original.animations.length; i++) {
+        expect(loaded.animations[i].id).toBe(original.animations[i].id)
+        expect(loaded.animations[i].settings).toEqual(original.animations[i].settings)
+      }
+    }
+
+    it('should export and load initial state', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      gen.setSettings({ name: 'Knight' })
+      await assertExportLoad(gen)
+    })
+
+    it('should export and load after enrich', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      await assertExportLoad(gen)
+    })
+
+    it('should export and load after genImages', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      await gen.genImages()
+      gen.setImageIndex(2)
+      const loaded = await assertExportLoad(gen)
+      expect(loaded.imageIndex).toBe(2)
+      expect(loaded.imagesGenState.status).toBe('finished')
+      expect(loaded.imagesGenState.result?.length).toBe(4)
+    })
+
+    it('should export and load after prepareContent', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      gen.setSettings({ name: 'Knight' })
+      await gen.genImages()
+      gen.setImageIndex(0)
+      await gen.prepareContent()
+      const loaded = await assertExportLoad(gen)
+      expect(loaded.contentPreparingState.status).toBe('finished')
+      expect(loaded.costumes.length).toBe(3)
+      expect(loaded.animations.length).toBe(2)
+    })
+
+    it('should export and load with selectedItem', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      gen.setSettings({ name: 'Knight' })
+      await gen.genImages()
+      gen.setImageIndex(0)
+      await gen.prepareContent()
+      gen.setSelectedItem({ type: 'costume', id: gen.costumes[1].id })
+      const loaded = await assertExportLoad(gen)
+      expect(loaded.selectedItem).toEqual({ type: 'costume', id: gen.costumes[1].id })
+    })
+
+    it('should export and load with finished costumes and animations', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      gen.setSettings({ name: 'Knight' })
+      await gen.genImages()
+      gen.setImageIndex(0)
+      await gen.prepareContent()
+
+      await finishCostumeGen('Costume 1', gen.costumes[1])
+      await finishAnimationGen('walk', gen.animations[0])
+
+      const loaded = await assertExportLoad(gen)
+      expect(loaded.costumes[1].finishState.status).toBe('finished')
+      expect(loaded.costumes[1].result).not.toBeNull()
+      expect(loaded.costumes[1].result!.name).toBe(gen.costumes[1].result!.name)
+      expect(loaded.animations[0].finishState.status).toBe('finished')
+      expect(loaded.animations[0].result).not.toBeNull()
+      expect(loaded.animations[0].result!.name).toBe(gen.animations[0].result!.name)
+    })
+
+    it('should keep previewSprite costumes and animations after export and load', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      gen.setSettings({ name: 'Knight' })
+      await gen.genImages()
+      gen.setImageIndex(0)
+      await gen.prepareContent()
+
+      await finishCostumeGen('Costume 1', gen.costumes[1])
+      await finishAnimationGen('walk', gen.animations[0])
+      await flushPromises()
+
+      const originalSnapshot = getPreviewSpriteContentSnapshot(gen)
+      const loaded = await assertExportLoad(gen)
+      await flushPromises()
+      const loadedSnapshot = getPreviewSpriteContentSnapshot(loaded)
+
+      expect(loadedSnapshot).toEqual(originalSnapshot)
+    })
+
+    it('should restore animation referenceCostume after export and load', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      gen.setSettings({ name: 'Knight' })
+      await gen.genImages()
+      gen.setImageIndex(0)
+      await gen.prepareContent()
+
+      const loaded1 = await assertExportLoad(gen)
+      expect(loaded1.animations[0].referenceCostume).toBe(loaded1.defaultCostume!.result)
+
+      const targetCostumeGen = gen.costumes[1]
+      await finishCostumeGen('Costume 1', targetCostumeGen)
+      gen.animations[0].setReferenceCostume(targetCostumeGen.result!.id)
+      expect(gen.animations[0].referenceCostume).toBe(targetCostumeGen.result)
+
+      const loaded2 = await assertExportLoad(gen)
+      expect(loaded2.animations[0].referenceCostume).toBe(loaded2.costumes[1].result)
+    })
+
+    it('should export and load full finished state', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      gen.setSettings({
+        name: 'Knight',
+        artStyle: ArtStyle.FlatDesign,
+        perspective: Perspective.AngledTopDown
+      })
+      await gen.genImages()
+      gen.setImageIndex(0)
+      await gen.prepareContent()
+
+      for (const c of gen.costumes.slice(1)) {
+        await finishCostumeGen(c.name, c)
+      }
+      for (const a of gen.animations) {
+        await finishAnimationGen(a.name, a)
+      }
+
+      const loaded = await assertExportLoad(gen)
+      expect(loaded.costumes.every((c) => c.finishState.status === 'finished')).toBe(true)
+      expect(loaded.animations.every((a) => a.finishState.status === 'finished')).toBe(true)
+    })
+
+    it('should not have file path conflicts between nested costume and animation gens', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      gen.setSettings({ name: 'Knight' })
+      await gen.genImages()
+      gen.setImageIndex(0)
+      await gen.prepareContent()
+
+      await finishCostumeGen('Costume 1', gen.costumes[1])
+      await finishAnimationGen('walk', gen.animations[0])
+
+      const files = gen.export()
+      const filePaths = Object.keys(files)
+      const uniquePaths = new Set(filePaths)
+      expect(filePaths.length).toBe(uniquePaths.size)
+    })
+
+    it('should export and load with genImages task running', async () => {
+      const project = makeSpxProject()
+      const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A brave knight')
+      await gen.enrich()
+      gen.setSettings({ name: 'Knight' })
+
+      const genImagesPromise = gen.genImages()
+      await aigcMock.waitForTaskCount(1)
+
+      const rawFiles = gen.export()
+      const files = sndFiles(rawFiles)
+
+      const i18n = createI18n({ lang: 'en' })
+      const loadProject = makeSpxProject()
+      const loaded = await SpriteGen.load(gen.name, i18n, loadProject, files)
+      expect(loaded.imagesGenState.status).toBe('running')
+
+      await genImagesPromise
+      await flushPromises()
+      expect(gen.imagesGenState.status).toBe('finished')
+      expect(loaded.imagesGenState.status).toBe('finished')
+      expect(loaded.imagesGenState.result?.length).toBe(gen.imagesGenState.result?.length)
+    })
+
+    it('should loadAll from exported files', async () => {
+      const i18n = createI18n({ lang: 'en' })
+      const project = makeSpxProject()
+
+      const gen1 = new SpriteGen(i18n, project, 'A brave knight')
+      await gen1.enrich()
+      gen1.setSettings({ name: 'Knight' })
+      await gen1.genImages()
+      gen1.setImageIndex(0)
+
+      const gen2 = new SpriteGen(i18n, project, 'A wise wizard')
+      await gen2.enrich()
+      gen2.setSettings({ name: 'Wizard' })
+
+      const allFiles = { ...gen1.export(), ...gen2.export() }
+      const files = sndFiles(allFiles)
+
+      const loadedGens = await SpriteGen.loadAll(i18n, makeSpxProject(), files)
+      expect(loadedGens.length).toBe(2)
+
+      const loadedNames = loadedGens.map((g) => g.name).sort()
+      expect(loadedNames).toEqual(['Knight', 'Wizard'])
+
+      const loadedKnight = loadedGens.find((g) => g.name === 'Knight')!
+      expect(loadedKnight.imagesGenState.status).toBe('finished')
+      expect(loadedKnight.imagesGenState.result?.length).toBe(4)
+      expect(loadedKnight.imageIndex).toBe(0)
+
+      const loadedWizard = loadedGens.find((g) => g.name === 'Wizard')!
+      expect(loadedWizard.enrichState.status).toBe('finished')
+      expect(loadedWizard.imagesGenState.status).toBe('initial')
+    })
   })
 })

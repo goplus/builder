@@ -37,6 +37,13 @@ class Loading {
     this.promise = loader(this.ctrl.signal)
   }
 
+  // There's cases when `Loading` instance is aborted while the waiting
+  // promises not settled yet. So we need to expose the aborted status of Loading instance to
+  // allow `File` to check the aborted status synchronously to avoid waiting for aborted loadings.
+  get aborted() {
+    return this.ctrl.signal.aborted
+  }
+
   private waitingNum = 0
   private cancelWaiting(reason: unknown) {
     this.waitingNum--
@@ -96,7 +103,7 @@ export class File {
 
   arrayBuffer(signal?: AbortSignal) {
     if (this.content != null) return Promise.resolve(this.content)
-    if (this.loading != null) return this.loading.wait(signal)
+    if (this.loading != null && !this.loading.aborted) return this.loading.wait(signal)
     this.loading = new Loading((signal) =>
       this.loader(signal)
         .then((ab) => {

@@ -112,7 +112,9 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   project.value.addSprite(sprite)
   await sprite.autoFit()
   editorCtx.state.selectSprite(sprite.id)
-  cloudHelpers.save(project.value)
+  project.value
+    .export()
+    .then((serialized) => cloudHelpers.save(serialized).then((saved) => project.value.setMetadata(saved.metadata)))
   return {
     success: true,
     message: `Successfully added sprite "${args.spriteName}" to project "${project.value.name}"`
@@ -123,7 +125,9 @@ async function addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
   const backdrop = await genBackdropFromCanvas(args.backdropName, 800, 600, args.color)
   project.value.stage.addBackdrop(backdrop)
   editorCtx.state.selectBackdrop(backdrop.id)
-  cloudHelpers.save(project.value)
+  project.value
+    .export()
+    .then((serialized) => cloudHelpers.save(serialized).then((saved) => project.value.setMetadata(saved.metadata)))
   return {
     success: true,
     message: `Successfully added backdrop "${args.backdropName}" to project "${project.value.name}"`

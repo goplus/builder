@@ -1,5 +1,7 @@
 import { nanoid } from 'nanoid'
 import { reactive, watch } from 'vue'
+import type { Prettify } from '@/utils/types'
+import { extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
@@ -11,18 +13,34 @@ import {
   Facing,
   TaskType,
   TaskStatus,
+  isTerminalTaskStatus,
   adoptAsset
 } from '@/apis/aigc'
 import { SpxProject } from '../project'
 import { RotationStyle, Sprite, State } from '../sprite'
 import { Costume } from '../costume'
 import type { Animation } from '../animation'
-import { getProjectSettings, Phase, Task } from './common'
-import { CostumeGen } from './costume-gen'
-import { AnimationGen } from './animation-gen'
+import {
+  getProjectSettings,
+  mapPhaseResult,
+  Phase,
+  Task,
+  taskDurations,
+  type PhaseSerialized,
+  type TaskSerialized
+} from './common'
+import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
+import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
 import { createFileWithUniversalUrl } from '../../common/cloud'
-import type { File } from '../../common/file'
-import { getAnimationName, getCostumeName, validateSpriteName } from '../common/asset-name'
+import type { File, Files } from '../../common/file'
+import { fromConfig, toConfig, listDirs } from '../../common/file'
+import {
+  ensureValidSpriteName,
+  getAnimationName,
+  getCostumeName,
+  validateSpriteName,
+  type SpriteLikeParent
+} from '../common/asset-name'
 import { sprite2Asset } from '../common/asset'
 
 /** User selected item in sprite gen */
@@ -31,34 +49,76 @@ type SpriteGenSelected = {
   id: string
 }
 
+export const spriteGenAssetPath = 'assets/sprite-gens'
+const spriteGenConfigFileName = 'index.json'
+
+function assetsPathFor(name: string) {
+  return `gen/assets/sprites/${name}`
+}
+
+export type SpriteGenInits = {
+  id?: string
+  settings?: Partial<SpriteSettings>
+  imageIndex?: number | null
+  selectedItem?: SpriteGenSelected | null
+  animationGenIdBindings?: Partial<Record<State, string>>
+  enrichPhase?: Phase<SpriteSettings>
+  genImagesTask?: Task<TaskType.GenerateCostume>
+  genImagesPhase?: Phase<File[]>
+  prepareContentPhase?: Phase<void>
+  costumes?: CostumeGen[]
+  animations?: AnimationGen[]
+}
+
+export type RawSpriteGenConfig = Prettify<
+  Omit<
+    SpriteGenInits,
+    'enrichPhase' | 'genImagesTask' | 'genImagesPhase' | 'prepareContentPhase' | 'costumes' | 'animations'
+  > & {
+    enrichPhaseSerialized?: PhaseSerialized<SpriteSettings>
+    genImagesTaskSerialized?: TaskSerialized<TaskType.GenerateCostume>
+    genImagesPhaseSerialized?: PhaseSerialized<string[]>
+    prepareContentPhaseSerialized?: PhaseSerialized<void>
+    costumeConfigs?: RawCostumeGenConfig[]
+    animationConfigs?: RawAnimationGenConfig[]
+  }
+>
+
 export class SpriteGen extends Disposable {
   id: string
   private i18n: I18n
   private project: SpxProject
   private enrichPhase: Phase<SpriteSettings>
-  private genImagesTask: Task<TaskType.GenerateCostume>
+  private genImagesTask: Task<TaskType.GenerateCostume> | null
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
   private animationGenIdBindings: Partial<Record<State, string>> = {}
 
-  constructor(i18n: I18n, project: SpxProject, initialDescription = '') {
+  constructor(i18n: I18n, project: SpxProject, inits: SpriteGenInits | string = {}) {
     super()
-    this.id = nanoid()
+    const initialDescription = typeof inits === 'string' ? inits : ''
+    if (typeof inits === 'string') inits = {}
+    this.id = inits.id ?? nanoid()
     this.i18n = i18n
     this.project = project
-    this.enrichPhase = new Phase({ en: 'enrich sprite settings', zh: '丰富角色设置' })
-    this.genImagesTask = new Task(TaskType.GenerateCostume)
-    this.genImagesPhase = new Phase({ en: 'generate sprite images', zh: '生成角色图片' })
-    this.prepareContentPhase = new Phase({ en: 'prepare sprite content', zh: '准备角色内容' })
-    this.costumes = []
-    this.animations = []
+    this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich sprite settings', zh: '丰富角色设置' })
+    this.genImagesTask = inits.genImagesTask ?? null
+    this.genImagesPhase = inits.genImagesPhase ?? new Phase({ en: 'generate sprite images', zh: '生成角色图片' })
+    this.prepareContentPhase =
+      inits.prepareContentPhase ?? new Phase({ en: 'prepare sprite content', zh: '准备角色内容' })
+    this.costumes = inits.costumes ?? []
+    this.animations = inits.animations ?? []
+    this.animationGenIdBindings = inits.animationGenIdBindings ?? {}
     this.settings = {
       name: '',
       category: SpriteCategory.Unspecified,
       description: initialDescription,
       artStyle: ArtStyle.Unspecified,
-      perspective: Perspective.Unspecified
+      perspective: Perspective.Unspecified,
+      ...inits.settings
     }
+    this.imageIndex = inits.imageIndex ?? null
+    this.selectedItem = inits.selectedItem ?? null
     this.previewProject = new SpxProject()
     this.previewSprite = this.createSprite()
     this.previewProject.addSprite(this.previewSprite)
@@ -82,11 +142,16 @@ export class SpriteGen extends Disposable {
     })
   }
 
+  private parent: SpriteLikeParent | null = null
+  setParent(parent: SpriteLikeParent | null) {
+    this.parent = parent
+  }
+
   get name() {
     return this.settings.name
   }
   setName(name: string) {
-    const err = validateSpriteName(name, this.project)
+    const err = validateSpriteName(name, this.parent)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
   }
@@ -102,7 +167,15 @@ export class SpriteGen extends Disposable {
   }
 
   settings: SpriteSettings
+  /**
+   * Update multiple settings at once.
+   * NOTE: the name in updates may be altered to avoid conflict
+   */
   setSettings(updates: Partial<SpriteSettings>) {
+    if (updates.name != null && updates.name !== this.settings.name) {
+      const newName = ensureValidSpriteName(updates.name, this.parent)
+      updates = { ...updates, name: newName }
+    }
     Object.assign(this.settings, updates)
   }
 
@@ -132,17 +205,34 @@ export class SpriteGen extends Disposable {
     }
   }
   async genImages() {
+    this.setImageIndex(null)
     return this.genImagesPhase.run(async () => {
       const settings = this.getDefaultCostumeSettings()
+      this.genImagesTask?.tryCancel()
+      this.genImagesTask = new Task(TaskType.GenerateCostume)
       await this.genImagesTask.start({ settings, n: 4 })
       const { imageUrls } = await this.genImagesTask.untilCompleted()
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    }, this.genImagesTask.runDuration)
+    }, taskDurations[TaskType.GenerateCostume])
+  }
+  private restoreGenImagesTask() {
+    const task = this.genImagesTask
+    if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
+    this.genImagesPhase.run(async () => {
+      const { imageUrls } = await task.untilCompleted()
+      return imageUrls.map((url) => createFileWithUniversalUrl(url))
+    }, taskDurations[TaskType.GenerateCostume])
   }
 
-  image: File | null = null
-  setImage(file: File) {
-    this.image = file
+  imageIndex: number | null = null
+  get image(): File | null {
+    if (this.imageIndex == null) return null
+    const images = this.imagesGenState.result
+    if (images == null) return null
+    return images[this.imageIndex] ?? null
+  }
+  setImageIndex(index: number | null) {
+    this.imageIndex = index
   }
 
   /** The project instance for preview within generation */
@@ -173,7 +263,8 @@ export class SpriteGen extends Disposable {
           sprite.costumes.slice().forEach((c) => {
             if (!generatedCostumes.includes(c)) sprite.removeCostume(c.id)
           })
-        }
+        },
+        { immediate: true }
       )
     )
     sprite.addDisposer(
@@ -197,7 +288,8 @@ export class SpriteGen extends Disposable {
           sprite.animations.slice().forEach((a) => {
             if (!generatedAnimations.includes(a)) sprite.removeAnimation(a.id)
           })
-        }
+        },
+        { immediate: true }
       )
     )
   }
@@ -223,7 +315,7 @@ export class SpriteGen extends Disposable {
       this.preparePreviewSprite()
 
       // Generate default costume
-      const defaultCostumeGen = new CostumeGen(this, project, this.getDefaultCostumeSettings())
+      const defaultCostumeGen = new CostumeGen(this, project, { settings: this.getDefaultCostumeSettings() })
       defaultCostumeGen.setImage(image)
       const defaultCostume = await defaultCostumeGen.finish()
       this.costumes.push(defaultCostumeGen)
@@ -231,10 +323,12 @@ export class SpriteGen extends Disposable {
       // Generate additional costumes & animations
       const settings = await genSpriteContentSettings(this.settings)
       this.costumes.push(
-        ...settings.costumes.map((s) => new CostumeGen(this, project, { ...s, referenceCostumeId: defaultCostume.id }))
+        ...settings.costumes.map(
+          (s) => new CostumeGen(this, project, { settings: s, referenceCostumeId: defaultCostume.id })
+        )
       )
       this.animations = settings.animations.map(
-        (s) => new AnimationGen(this, project, { ...s, referenceCostumeId: defaultCostume.id })
+        (s) => new AnimationGen(this, project, { settings: s, referenceCostumeId: defaultCostume.id })
       )
       // Store recommended animation bindings. Replace animation names with animation-gen IDs in case of name changes.
       const recommendedBindings = settings.animationBindings || {}
@@ -264,10 +358,12 @@ export class SpriteGen extends Disposable {
     const defaultCostumeGen = this.defaultCostume
     if (defaultCostumeGen == null) throw new Error('default costume expected')
     const costumeGen = new CostumeGen(this, this.project, {
-      name,
-      artStyle: this.settings.artStyle,
-      perspective: this.settings.perspective,
-      facing: defaultCostumeGen.settings.facing,
+      settings: {
+        name,
+        artStyle: this.settings.artStyle,
+        perspective: this.settings.perspective,
+        facing: defaultCostumeGen.settings.facing
+      },
       referenceCostumeId: defaultCostumeGen.result?.id
     })
     this.costumes.push(costumeGen)
@@ -295,9 +391,11 @@ export class SpriteGen extends Disposable {
     const defaultCostumeGen = this.defaultCostume
     if (defaultCostumeGen == null) throw new Error('default costume expected')
     const animationGen = new AnimationGen(this, this.project, {
-      name,
-      artStyle: this.settings.artStyle,
-      perspective: this.settings.perspective,
+      settings: {
+        name,
+        artStyle: this.settings.artStyle,
+        perspective: this.settings.perspective
+      },
       referenceCostumeId: defaultCostumeGen.result?.id
     })
     this.animations.push(animationGen)
@@ -358,7 +456,7 @@ export class SpriteGen extends Disposable {
     const sprite = this.result
     if (sprite == null) throw new Error('result sprite expected')
     const taskIds = [
-      this.genImagesTask.data?.status === TaskStatus.Completed ? this.genImagesTask.data.id : null,
+      this.genImagesTask?.data?.status === TaskStatus.Completed ? this.genImagesTask.data.id : null,
       ...this.costumes.flatMap((c) => c.getTaskIds()),
       ...this.animations.flatMap((a) => a.getTaskIds())
     ].filter((id) => id != null)
@@ -383,10 +481,110 @@ export class SpriteGen extends Disposable {
    */
   cancel() {
     return Promise.all([
-      this.genImagesTask.tryCancel(),
+      this.genImagesTask?.tryCancel(),
       ...this.costumes.map((c) => c.cancel()),
       ...this.animations.map((a) => a.cancel())
     ])
+  }
+
+  static async loadAll(i18n: I18n, project: SpxProject, files: Files) {
+    const names = listDirs(files, spriteGenAssetPath)
+    return Promise.all(names.map((name) => SpriteGen.load(name, i18n, project, files)))
+  }
+
+  static async load(name: string, i18n: I18n, project: SpxProject, files: Files) {
+    const configFile = files[`${spriteGenAssetPath}/${name}/${spriteGenConfigFileName}`]
+    if (configFile == null) throw new Error(`config file not found for sprite gen ${name}`)
+    const config = (await toConfig(configFile)) as RawSpriteGenConfig
+    const {
+      id,
+      settings,
+      imageIndex,
+      selectedItem,
+      animationGenIdBindings,
+      enrichPhaseSerialized,
+      genImagesTaskSerialized,
+      genImagesPhaseSerialized,
+      prepareContentPhaseSerialized,
+      costumeConfigs,
+      animationConfigs
+    } = config
+
+    const genId = id ?? nanoid()
+    if (settings?.name == null) throw new Error('settings name expected in sprite gen config')
+    const basePath = assetsPathFor(settings.name)
+
+    const inits: SpriteGenInits = { id: genId }
+    inits.settings = settings
+    if (imageIndex != null) inits.imageIndex = imageIndex
+    if (selectedItem != null) inits.selectedItem = selectedItem
+    if (animationGenIdBindings != null) inits.animationGenIdBindings = animationGenIdBindings
+    if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
+    if (genImagesTaskSerialized != null) inits.genImagesTask = Task.load(genImagesTaskSerialized)
+    if (genImagesPhaseSerialized != null) {
+      inits.genImagesPhase = Phase.load(
+        mapPhaseResult(genImagesPhaseSerialized, (filePaths) =>
+          filePaths.map((filePath) => {
+            const file = files[filePath]
+            if (file == null) throw new Error(`file ${filePath} not found for sprite gen ${genId}`)
+            return file
+          })
+        )
+      )
+    }
+    if (prepareContentPhaseSerialized != null) inits.prepareContentPhase = Phase.load(prepareContentPhaseSerialized)
+
+    const gen = new SpriteGen(i18n, project, inits)
+
+    if (costumeConfigs != null) {
+      gen.costumes = costumeConfigs.map((cc) => CostumeGen.load(gen, project, cc, files, basePath))
+    }
+    if (animationConfigs != null) {
+      gen.animations = animationConfigs.map((ac) => AnimationGen.load(gen, project, ac, files, basePath))
+    }
+    if (gen.contentPreparingState.status === 'finished') {
+      gen.preparePreviewSprite()
+    }
+    gen.restoreGenImagesTask()
+    return gen
+  }
+
+  export(): Files {
+    const files: Files = {}
+    const basePath = assetsPathFor(this.name)
+
+    const costumeConfigs: RawCostumeGenConfig[] = this.costumes.map((c) => {
+      const [cc, cf] = c.export(basePath)
+      Object.assign(files, cf)
+      return cc
+    })
+    const animationConfigs: RawAnimationGenConfig[] = this.animations.map((a) => {
+      const [ac, af] = a.export(basePath)
+      Object.assign(files, af)
+      return ac
+    })
+
+    const config: RawSpriteGenConfig = {
+      id: this.id,
+      settings: this.settings,
+      animationGenIdBindings: this.animationGenIdBindings,
+      enrichPhaseSerialized: this.enrichPhase.export(),
+      genImagesTaskSerialized: this.genImagesTask?.export(),
+      genImagesPhaseSerialized: mapPhaseResult(this.genImagesPhase.export(), (result) =>
+        result.map((file, idx) => {
+          const filePath = `${basePath}/images/image_${idx}${extname(file.name)}`
+          files[filePath] = file
+          return filePath
+        })
+      ),
+      prepareContentPhaseSerialized: this.prepareContentPhase.export(),
+      costumeConfigs,
+      animationConfigs
+    }
+    if (this.imageIndex != null) config.imageIndex = this.imageIndex
+    if (this.selectedItem != null) config.selectedItem = this.selectedItem
+    files[`${spriteGenAssetPath}/${this.name}/${spriteGenConfigFileName}`] = fromConfig(spriteGenConfigFileName, config)
+    return files
   }
 }
 

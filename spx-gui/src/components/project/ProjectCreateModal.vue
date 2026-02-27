@@ -99,9 +99,12 @@ const handleSubmit = useMessageHandle(
       const username = await untilNotNull(signedInUsername)
       const defaultProjectFile = await getDefaultProjectFile()
       const project = new SpxProject(username, projectName)
-      await xbpHelpers.load(project, defaultProjectFile)
+      const serialized = await xbpHelpers.load(defaultProjectFile)
+      await project.load(serialized)
       project.setVisibility(Visibility.Private)
-      await cloudHelpers.save(project)
+      const exported = await project.export()
+      const saved = await cloudHelpers.save(exported)
+      project.setMetadata(saved.metadata)
     }
     emit('resolved', projectName)
     return projectName

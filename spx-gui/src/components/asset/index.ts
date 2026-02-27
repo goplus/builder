@@ -44,11 +44,11 @@ export function useAddAssetFromLibrary() {
       genCollapseHandler: async (gen) => {
         // Add the ongoing asset generation to the editor state
         if (gen instanceof SpriteGen) {
-          editorCtx.state.addSpriteGen(gen)
-          return editorCtx.state.getSpriteGenCollapsePos(gen)
+          editorCtx.state.genState.addSprite(gen)
+          return editorCtx.state.genState.getSpritePos(gen)
         } else if (gen instanceof BackdropGen) {
-          editorCtx.state.addBackdropGen(gen)
-          return editorCtx.state.getBackdropGenCollapsePos(gen)
+          editorCtx.state.genState.addBackdrop(gen)
+          return editorCtx.state.genState.getBackdropPos(gen)
         }
         return null
       }

@@ -242,7 +242,10 @@ const handleImportProjectFile = useMessageHandle(
     const file = await selectFile({ accept: ['xbp', 'gbp' /** For backward compatibility */] })
     const action = { name: importProjectFileMessage }
     await m.withLoading(
-      state.history.doAction(action, () => xbpHelpers.load(project, file)),
+      state.history.doAction(action, async () => {
+        const serialized = await xbpHelpers.load(file)
+        await project.load(serialized)
+      }),
       i18n.t({ en: 'Importing project file', zh: '导入项目文件中' })
     )
   },
@@ -255,9 +258,9 @@ const handleExportProjectFile = useMessageHandle(
   async () => {
     const project = props.project
     if (project == null) throw new Error('No project to export')
-    // TODO: Consider moving `project.getSignal()` into `exportXbpFile` as built-in logic
+    const signal = project.getSignal()
     const xbpFile = await m.withLoading(
-      xbpHelpers.save(project, project.getSignal()),
+      project.export(signal).then((serialized) => xbpHelpers.save(serialized, signal)),
       i18n.t({ en: 'Exporting project file', zh: '导出项目文件中' })
     )
     saveAs(xbpFile, xbpFile.name) // TODO: what if user cancelled download?
@@ -302,7 +305,10 @@ const handleImportFromScratch = useMessageHandle(
 
     const action = { name: importScratchMessage }
     await m.withLoading(
-      state.history.doAction(action, () => xbpHelpers.load(project, xbpFile)),
+      state.history.doAction(action, async () => {
+        const serialized = await xbpHelpers.load(xbpFile)
+        await project.load(serialized)
+      }),
       i18n.t({ en: 'Importing converted project file', zh: '导入已转换的项目文件' })
     )
   },

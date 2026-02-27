@@ -67,7 +67,12 @@ export type PhaseState<R> =
       status: 'running'
       result?: null
       error?: null
-      remaining: number | null // (estimated) remaining time in seconds
+      /**
+       * (estimated) remaining time in seconds
+       * TODO: Consider using [progress reporter](src/utils/progress.ts) to provide more accurate and real-time progress update.
+       * See details in https://github.com/goplus/builder/issues/2844
+       */
+      remaining: number | null
     }
   | {
       status: 'finished'
@@ -82,28 +87,41 @@ export type PhaseState<R> =
       remaining?: null
     }
 
+// Note: it's not the Phase's responsibility to ensure the `result` in state is serializable.
+// The caller should handle the serialization when necessary.
+export type PhaseSerialized<R> = {
+  state: PhaseState<R>
+  actionName: LocaleMessage
+}
+
+/** Maps the `result` in given serialized `Phase` using the given function. */
+export function mapPhaseResult<R, T>(serialized: PhaseSerialized<R>, fn: (input: R) => T): PhaseSerialized<T> {
+  const { state, actionName } = serialized
+  if (state.status !== 'finished') return { state, actionName }
+  return { state: { ...state, result: fn(state.result) }, actionName }
+}
+
 /** `Phase` tracks the state of an asynchronous process. */
 export class Phase<R> {
-  state: PhaseState<R>
   private _timer: ReturnType<typeof setInterval> | null = null
   constructor(
     /**
      * The name of the action being tracked, used for error messages.
      * For example, "generate video" or "extract frames".
      */
-    private actionName: LocaleMessage
-  ) {
-    this.state = { status: 'initial' }
-  }
+    private actionName: LocaleMessage,
+    public state: PhaseState<R> = { status: 'initial' }
+  ) {}
   reset() {
     this.state = { status: 'initial' }
   }
-  /**
-   * Tracks the state of the given promise.
-   * @param promise The promise to track.
-   * @param runDuration Optional estimated duration of the promise in seconds, used for providing remaining time.
-   */
-  async track(promise: Promise<R>, runDuration: number | null = null): Promise<R> {
+  /** Tracks the state of the given promise. */
+  async track(
+    /** The promise to track. */
+    promise: Promise<R>,
+    /** Optional estimated duration of the promise in seconds, used for providing remaining time. */
+    runDuration: number | null = null
+  ): Promise<R> {
     this.state = { status: 'running', remaining: runDuration }
     if (runDuration != null && runDuration > 0) {
       this.startTimer(runDuration)
@@ -140,7 +158,9 @@ export class Phase<R> {
       if (this.state.status !== 'running') return
       const elapsed = (Date.now() - startedAt) / 1000
       const remaining = Math.round(Math.max(minRemaining, duration - elapsed))
-      this.state = { ...this.state, remaining }
+      // Keep the same state object to avoid triggering files re-export due to auto-save on stage change.
+      // This is a bit hacky, while it should be properly handled by https://github.com/goplus/builder/issues/2844.
+      this.state.remaining = remaining
     }, updateInterval * 1000)
   }
 
@@ -151,13 +171,34 @@ export class Phase<R> {
     }
   }
 
-  /**
-   * Runs given function and tracks its state.
-   * @param fn The function that returns a promise to track.
-   * @param runDuration Optional estimated duration of the function in seconds, used for providing remaining time.
-   */
-  async run(fn: () => Promise<R>, runDuration: number | null = null): Promise<R> {
+  /** Runs given function and tracks its state. */
+  async run(
+    /** The function that returns a promise to track. */
+    fn: () => Promise<R>,
+    /** Optional estimated duration of the function in seconds, used for providing remaining time. */
+    runDuration: number | null = null
+  ): Promise<R> {
     return this.track(fn(), runDuration)
+  }
+
+  static load<R>(serialized: PhaseSerialized<R>): Phase<R> {
+    return new Phase(serialized.actionName, serialized.state)
+  }
+
+  export(): PhaseSerialized<R> {
+    let { state, actionName } = this
+    if (
+      // It is complex to serialize the error (exception) object, so we choose not to save the failed state.
+      // Using `initial` state instead to allow users to retry the action.
+      state.status === 'failed' ||
+      // We also opt not to save the running state, as it is not feasible for Phase to resume the running process (for example, calling an API).
+      // Instead, we save it as the `initial` state, allowing the caller to determine whether to recover the process,
+      // which will then set the phase state back to `running`.
+      state.status === 'running'
+    ) {
+      state = { status: 'initial' }
+    }
+    return { state, actionName }
   }
 }
 
@@ -203,7 +244,7 @@ export class TaskException extends Exception {
 }
 
 /** Estimated duration (in seconds) for each task type. null means duration is unknown. */
-const taskRunDuration: Record<TaskType, number | null> = {
+export const taskDurations: Record<TaskType, number> = {
   [TaskType.RemoveBackground]: 5,
   [TaskType.GenerateCostume]: 15,
   [TaskType.GenerateAnimationVideo]: 150,
@@ -213,21 +254,19 @@ const taskRunDuration: Record<TaskType, number | null> = {
 
 export type TaskApis = Pick<typeof aigcApis, 'createTask' | 'cancelTask' | 'subscribeTaskEvents'>
 
+export type TaskSerialized<T extends TaskType> = {
+  type: T
+  data: TaskData<T> | null
+}
+
 /** `Task` manages the lifecycle and state of an AIGC task. */
 export class Task<T extends TaskType> extends Disposable {
-  data: TaskData<T> | null
-
   constructor(
     private type: T,
+    public data: TaskData<T> | null = null,
     private apis: TaskApis = aigcApis
   ) {
     super()
-    this.data = null
-  }
-
-  /** Estimated duration (in seconds) for this task type, or null if unknown. */
-  get runDuration(): number | null {
-    return taskRunDuration[this.type] ?? null
   }
 
   async untilCompleted() {
@@ -270,7 +309,6 @@ export class Task<T extends TaskType> extends Disposable {
 
   /** Start task with given parameters. */
   async start(params: TaskParams<T>) {
-    this.tryCancel()
     const signal = this.getSignal()
     this.data = await this.apis.createTask(this.type, params, signal)
   }
@@ -287,6 +325,14 @@ export class Task<T extends TaskType> extends Disposable {
     // We are not using `this.getSignal()` here to avoid aborting the "task cancellation" request itself when task is disposed.
     // It is usual to call `dispose()` right after calling `tryCancel()` and we should not increase the burden of the caller.
     await this.apis.cancelTask(id).catch((err) => capture(err, `failed to cancel task ${id}`))
+  }
+
+  static load<T extends TaskType>(serialized: TaskSerialized<T>, apis: TaskApis = aigcApis): Task<T> {
+    return new Task(serialized.type, serialized.data, apis)
+  }
+
+  export(): TaskSerialized<T> {
+    return { type: this.type, data: this.data }
   }
 }
 

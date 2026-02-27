@@ -32,7 +32,7 @@ function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, gen:
 }
 
 onBeforeUnmount(
-  editorCtx.state.addSpriteGenCollapsePosProvider(async (gen) => {
+  editorCtx.state.genState.registerSpritePosProvider(async (gen) => {
     const el = await untilNotNull(() => spriteGenItemRefs.get(gen.id))
     el.scrollIntoView({ block: 'nearest' })
     const rect = el.getBoundingClientRect()
@@ -43,7 +43,7 @@ onBeforeUnmount(
   })
 )
 
-const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.spriteGens])
+const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.genState.sprites])
 
 const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
   filterItem: (item: unknown) => {
@@ -81,7 +81,7 @@ const handleSpriteGenClick = useMessageHandle(
 
     // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
     gen.dispose()
-    editorCtx.state.removeSpriteGen(gen.id)
+    editorCtx.state.genState.removeSprite(gen.id)
 
     await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
       editorCtx.project.addSprite(result)
@@ -111,7 +111,7 @@ const handleSpriteGenClick = useMessageHandle(
       @click="handleSpriteClick(sprite)"
     />
     <SpriteGenItem
-      v-for="gen in editorCtx.state.spriteGens"
+      v-for="gen in editorCtx.state.genState.sprites"
       :key="gen.id"
       :ref="(el) => setSpriteGenItemRef(el, gen)"
       :gen="gen"
