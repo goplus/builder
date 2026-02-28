@@ -973,7 +973,9 @@ export class CodeEditor extends Disposable {
 
       this.getAttachedUI()?.open(targetDoc.id)
 
-      targetDoc.setValue(code)
+      await this.history.doAction({ name: { en: 'Write code file', zh: '写入代码文件' } }, () =>
+        targetDoc.setValue(code)
+      )
 
       const diagnostics = await this.getDiagnostics({ file })
       const files = await this.listFiles()
