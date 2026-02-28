@@ -76,7 +76,7 @@ export type RawProjectConfig = RawStageConfig &
      */
     builder_soundOrder?: string[]
     /**
-     * Maximum FPS for the project. Builder always serializes this as 60.
+     * Maximum FPS for the project.
      */
     maxFPS?: number
   }
@@ -118,6 +118,7 @@ export class SpxProject extends Disposable implements IProject {
   likeCount?: number
   releaseCount?: number
   remixCount?: number
+  maxFPS?: number
 
   stage: Stage
   tilemap?: Tilemap | null
@@ -439,6 +440,8 @@ export class SpxProject extends Disposable implements IProject {
       }
     })
 
+    this.maxFPS = maxFPS
+
     this.stage.dispose()
     const stageConfig = { ...rawStageConfig, widgets }
     const stage = await Stage.load(stageConfig, files)
@@ -489,7 +492,7 @@ export class SpxProject extends Disposable implements IProject {
       zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
       builder_soundOrder: this.sounds.map((s) => s.id),
-      maxFPS: 60 // always 60 fps
+      maxFPS: this.maxFPS ?? 60 // Default is 60 FPS
     }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
