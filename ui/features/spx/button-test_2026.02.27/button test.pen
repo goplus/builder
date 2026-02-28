@@ -165,7 +165,7 @@
                   "y": 2.249267578125,
                   "name": "play",
                   "geometry": "M14.66003 11.38685l-10.07605 6.16602c-2.005 1.227-4.58398-0.21211-4.58398-2.55811l0-11.98901c0-2.346 2.57898-3.78486 4.58398-2.55786l10.07605 6.16601c1.785 1.093 1.785 3.68095 0 4.77295z",
-                  "fill": "$turquoise400",
+                  "fill": "$turquoise700",
                   "width": 11.999088287353516,
                   "height": 13.50053596496582,
                   "stroke": {
@@ -179,7 +179,7 @@
               "type": "text",
               "id": "PIOpV",
               "name": "Button Text",
-              "fill": "$turquoise400",
+              "fill": "$turquoise700",
               "content": "Button Text",
               "lineHeight": 1.6,
               "textAlign": "center",
