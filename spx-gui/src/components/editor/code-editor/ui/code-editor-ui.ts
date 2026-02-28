@@ -470,8 +470,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
     // so we transform snippet to text and insert it directly.
     const text = parsed.toString()
-    if (isBlockDefinitionKind(ddi.kind)) this.insertBlockText(text, range)
-    else this.insertInlineText(text, range)
+    if (isBlockDefinitionKind(ddi.kind)) return this.insertBlockText(text, range)
+    else return this.insertInlineText(text, range)
   }
 
   private cursorPositionRef = shallowRef<Position | null>(null)

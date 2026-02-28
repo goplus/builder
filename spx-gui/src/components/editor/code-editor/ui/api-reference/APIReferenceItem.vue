@@ -4,6 +4,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown } from '@/components/ui'
 import { type Action, setDdiDragData } from '../../common'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -18,12 +19,19 @@ const props = defineProps<{
   interactionDisabled: boolean
 }>()
 
+const editorCtx = useEditorCtx()
 const codeEditorUICtx = useCodeEditorUICtx()
 
-const handleInsert = useMessageHandle(() => codeEditorUICtx.ui.insertDefinition(props.item), {
-  en: 'Failed to insert',
-  zh: '插入失败'
-}).fn
+const handleInsert = useMessageHandle(
+  () =>
+    editorCtx.state.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+      codeEditorUICtx.ui.insertDefinition(props.item)
+    ),
+  {
+    en: 'Failed to insert',
+    zh: '插入失败'
+  }
+).fn
 
 const parsed = computed(() => {
   const parsed = codeEditorUICtx.ui.parseSnippet(props.item.insertSnippet)

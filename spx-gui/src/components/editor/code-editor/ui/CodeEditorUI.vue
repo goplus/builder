@@ -170,7 +170,7 @@ function handleMonacoEditorDragLeave(e: DragEvent) {
   handleMonacoEditorDrag(null)
 }
 
-function handleMonacoEditorDrop(e: DragEvent) {
+async function handleMonacoEditorDrop(e: DragEvent) {
   e.preventDefault()
 
   const ui = uiRef.value
@@ -184,12 +184,16 @@ function handleMonacoEditorDrop(e: DragEvent) {
   const range = { start: position, end: position }
   const ddi = getDdiDragData(e.dataTransfer)
   if (ddi != null) {
-    ui.insertDefinition(ddi, range)
+    await editorCtx.state.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+      ui.insertDefinition(ddi, range)
+    )
     return
   }
   const dataTextPlain = e.dataTransfer.getData('text/plain')
   if (dataTextPlain !== '') {
-    ui.insertText(dataTextPlain, range)
+    await editorCtx.state.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+      ui.insertText(dataTextPlain, range)
+    )
     return
   }
 }

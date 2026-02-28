@@ -18,6 +18,30 @@ import {
 import { toMonacoPosition, toMonacoRange, fromMonacoPosition, fromMonacoRange } from './ui/common'
 import type { Monaco, monaco } from './monaco'
 
+/**
+ * Indicates the origin of a text change in `TextDocument`.
+ *
+ * When Monaco's model content changes (via `onDidChangeContent`), we need to know
+ * who initiated the change to decide whether `TextDocument` should record it in history:
+ *
+ * - `User`: The change comes from direct user interaction with the Monaco editor
+ *   (typing, pasting via browser, etc.). In this case, `TextDocument` (via `CodeOwner`)
+ *   is responsible for calling `history.doAction` to record the change.
+ *
+ * - `Program`: The change comes from application code calling `TextDocument` methods
+ *   like `pushEdits` or `setValue`. In this case, `TextDocument` does NOT record history.
+ *   The **caller** (direct or indirect) is responsible for wrapping the call in
+ *   `history.doAction` if the change should be undoable.
+ *
+ * NOTE: This design has a known limitation. Some callers of `pushEdits` are essentially
+ * alternative input methods (e.g., completion, input helper) and should behave like `User`
+ * changes (mergeable "Update xxx code" history), while others (e.g., format, apply copilot
+ * code change) need distinct, non-mergeable history actions. Currently all `pushEdits` /
+ * `setValue` calls use `Program`, forcing every caller to handle history explicitly.
+ * A planned improvement (see [#2881](https://github.com/goplus/builder/issues/2881)) will
+ * allow callers to control history behavior via a parameter, so that "alternative input" callers
+ * get automatic User-like history by default.
+ */
 enum CodeChangeKind {
   /** User interaction with monaco editor */
   User,
@@ -158,10 +182,22 @@ export class TextDocument
     this.monacoTextModel.setValue(newCode)
   }, 100)
 
-  /** Kind of the current change */
+  /**
+   * Kind of the current change. Defaults to `User` so that changes from
+   * direct Monaco interactions (typing, etc.) are automatically recorded
+   * in history by `CodeOwner.setCode`. Methods like `pushEdits` and
+   * `setValue` temporarily switch this to `Program` via
+   * `withChangeKindProgram`, delegating history responsibility to the caller.
+   */
   private changeKind = CodeChangeKind.User
 
-  /** Set the change kind to programmatic */
+  /**
+   * Temporarily set `changeKind` to `Program` while executing `fn`.
+   * Any Monaco model change triggered within `fn` will be treated as a
+   * programmatic change, so `CodeOwner.setCode` will skip `history.doAction`.
+   * The caller of the public method (e.g., `pushEdits`, `setValue`) is
+   * responsible for wrapping the call in `history.doAction` if needed.
+   */
   private withChangeKindProgram(fn: () => void) {
     const original = this.changeKind
     this.changeKind = CodeChangeKind.Program
@@ -176,6 +212,11 @@ export class TextDocument
     return this.monacoTextModel.getValue()
   }
 
+  /**
+   * Replace the entire text model value programmatically.
+   * History is NOT recorded here — the caller is responsible for wrapping
+   * this call in `history.doAction` if the change should be undoable.
+   */
   setValue(newValue: string) {
     this.withChangeKindProgram(() => {
       this.monacoTextModel.setValue(newValue)
@@ -215,6 +256,11 @@ export class TextDocument
     return fromMonacoRange(this.monacoTextModel.getFullModelRange())
   }
 
+  /**
+   * Apply edits to the Monaco text model programmatically.
+   * History is NOT recorded here — the caller is responsible for wrapping
+   * this call in `history.doAction` if the edits should be undoable.
+   */
   pushEdits(edits: TextEdit[]): void {
     this.withChangeKindProgram(() => {
       this.monacoTextModel.pushEditOperations(
