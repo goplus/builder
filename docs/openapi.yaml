@@ -96,7 +96,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
-    put:
+    patch:
       tags:
         - Users
       summary: Update the authenticated user
@@ -374,7 +374,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
-    put:
+    patch:
       tags:
         - Projects
       summary: Update a project
@@ -398,9 +398,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - files
-                - visibility
+              minProperties: 1
               properties:
                 name:
                   description: New name of the project. If provided, the project will be renamed.
@@ -818,7 +816,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
-    put:
+    patch:
       tags:
         - Assets
       summary: Update an asset
@@ -842,15 +840,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - displayName
-                - type
-                - category
-                - description
-                - extraSettings
-                - files
-                - filesHash
-                - visibility
+              minProperties: 1
               properties:
                 displayName:
                   $ref: "#/components/schemas/Asset/properties/displayName"
@@ -1014,7 +1004,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
-    put:
+    patch:
       tags:
         - Courses
       summary: Update a course
@@ -1037,12 +1027,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - title
-                - thumbnail
-                - entrypoint
-                - references
-                - prompt
+              minProperties: 1
               properties:
                 title:
                   $ref: "#/components/schemas/Course/properties/title"
@@ -1200,7 +1185,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CourseSeries"
-    put:
+    patch:
       tags:
         - Course Series
       summary: Update a course series
@@ -1223,10 +1208,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - title
-                - courseIDs
-                - order
+              minProperties: 1
               properties:
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
