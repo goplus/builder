@@ -1,5 +1,5 @@
 {
-  "version": "2.7",
+  "version": "2.8",
   "children": [
     {
       "type": "frame",
@@ -21,7 +21,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "./点阵.png",
+            "url": "./images/点阵.png",
             "mode": "fill"
           },
           "width": 1440,
