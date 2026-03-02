@@ -10,6 +10,12 @@
 
 ## 2️⃣ PR 描述必须包含
 
+### 关联issues
+
+-最常用的是 update #issue编号 （代表完成大 issue 的小更新改动）
+-ref #issue编号 （代表与某个 issue 有逻辑关联）
+-close #issue编号 （代表关闭某个 issue ，这通常是前端用的指令）
+
 ### 背景
 
 为什么改？
