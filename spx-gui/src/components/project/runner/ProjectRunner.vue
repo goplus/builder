@@ -42,9 +42,9 @@ type RunnerFiles = {
 }
 
 interface RunnerIframeWindow extends Window {
-  setAIInteractionAPIEndpoint: (endpoint: string) => void
-  setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
-  setAIDescription: (description: string) => void
+  xbuilder_set_ai_interaction_api_endpoint: (endpoint: string) => void
+  xbuilder_set_ai_interaction_api_token_provider: (provider: () => Promise<string>) => void
+  xbuilder_set_ai_description: (description: string) => void
   /** Init the engine. Can be called early; project-agnostic. */
   initEngine(assetURLs: Record<string, string>, config?: EngineConfig): Promise<void>
   /** Init the game with project files. Should be called after `initEngine`, before `startGame` or earlier (when files change, etc.). */
@@ -250,9 +250,9 @@ async function prepareAIInteraction(
   const aiDescription = await project.ensureAIDescription(false, signal)
   if (engineInitPromise == null) throw new Error('engineInitPromise expected')
   await engineInitPromise
-  iframeWindow.setAIDescription(aiDescription)
-  iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
-  iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
+  iframeWindow.xbuilder_set_ai_description(aiDescription)
+  iframeWindow.xbuilder_set_ai_interaction_api_endpoint(apiBaseUrl + '/ai/interaction')
+  iframeWindow.xbuilder_set_ai_interaction_api_token_provider(async () => (await ensureAccessToken()) ?? '')
   reporter.report(1)
   return
 }
