@@ -24,7 +24,7 @@ func init() {
 
 // ispxInit initializes the ispx interpreter with extended capabilities.
 func ispxInit() error {
-	ixgoCtx := ixgo.NewContext(ixgo.SupportMultipleInterp)
+	ixgoCtx := ixgo.NewContext(ixgo.SupportMultipleInterp | xgobuild.StaticLoad)
 	ixgoCtx.Lookup = nil // Let [ispx.Init] handle the lookup.
 	ixgoCtx.SetPanic(logWithPanicInfo)
 
@@ -48,6 +48,27 @@ func ispxInit() error {
 	if err := initAI(ixgoCtx); err != nil {
 		return fmt.Errorf("failed to init ai: %w", err)
 	}
+
+	ixgoCtx.Loader.Import("fmt")
+	ixgoCtx.Loader.Import("os")
+	ixgoCtx.Loader.Import("sync/atomic")
+	ixgoCtx.Loader.Import("sync/atomic")
+	ixgoCtx.Loader.Import("sync/atomic")
+	ixgoCtx.Loader.Import("math")
+	ixgoCtx.Loader.Import("time")
+	ixgoCtx.Loader.Import("sync")
+	ixgoCtx.Loader.Import("io")
+	ixgoCtx.Loader.Import("io/fs")
+	ixgoCtx.Loader.Import("reflect")
+	ixgoCtx.Loader.Import("strconv")
+	ixgoCtx.Loader.Import("strings")
+	ixgoCtx.Loader.Import("github.com/goplus/spx/v2")
+	ixgoCtx.Loader.Import("github.com/qiniu/x/osx")
+	ixgoCtx.Loader.Import("github.com/qiniu/x/xgo")
+	ixgoCtx.Loader.Import("github.com/qiniu/x/xgo/ng")
+	ixgoCtx.Loader.Import("github.com/qiniu/x/stringutil")
+	ixgoCtx.Loader.Import("github.com/qiniu/x/stringslice")
+	ixgoCtx.Loader.Import("github.com/goplus/builder/tools/ai")
 
 	return ispx.Init(ixgoCtx)
 }
