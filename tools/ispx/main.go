@@ -52,8 +52,6 @@ func ispxInit() error {
 	ixgoCtx.Loader.Import("fmt")
 	ixgoCtx.Loader.Import("os")
 	ixgoCtx.Loader.Import("sync/atomic")
-	ixgoCtx.Loader.Import("sync/atomic")
-	ixgoCtx.Loader.Import("sync/atomic")
 	ixgoCtx.Loader.Import("math")
 	ixgoCtx.Loader.Import("time")
 	ixgoCtx.Loader.Import("sync")
