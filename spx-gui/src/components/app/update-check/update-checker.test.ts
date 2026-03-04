@@ -150,6 +150,35 @@ describe('update-checker', () => {
       expect(onUpdate).toHaveBeenCalled()
     })
 
+    it('should stop polling after update is detected', async () => {
+      const onUpdate = vi.fn()
+      const oldEtag = '"abc123"'
+      const newEtag = '"def456"'
+
+      let callCount = 0
+      const fetchSpy = vi.fn().mockImplementation(() => {
+        callCount++
+        const etag = callCount === 1 ? oldEtag : newEtag
+        return Promise.resolve({
+          ok: true,
+          headers: {
+            get: (key: string) => (key === 'etag' ? etag : null)
+          }
+        })
+      })
+      global.fetch = fetchSpy
+
+      checker.start(100, onUpdate)
+
+      // First check (initial) + second check (detects update)
+      await vi.advanceTimersByTimeAsync(150)
+      expect(onUpdate).toHaveBeenCalledTimes(1)
+
+      const callsAfterUpdate = fetchSpy.mock.calls.length
+      await vi.advanceTimersByTimeAsync(300)
+      expect(fetchSpy.mock.calls.length).toBe(callsAfterUpdate)
+    })
+
     it('should not call onUpdate callback when no update is detected', async () => {
       const onUpdate = vi.fn()
       const etag = '"abc123"'
