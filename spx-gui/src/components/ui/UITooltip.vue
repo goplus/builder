@@ -2,6 +2,7 @@
   <NTooltip
     class="ui-tooltip"
     trigger="hover"
+    :delay="600"
     :to="attachTo"
     :placement="placement"
     :show="visible"
