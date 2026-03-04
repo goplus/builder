@@ -141,7 +141,7 @@ describe('AnimationGen', () => {
     await gen.enrich()
 
     // Try to generate video without reference costume
-    await expect(gen.generateVideo()).rejects.toThrow('reference costume expected')
+    await expect(gen.generateVideo()).rejects.toThrow('reference image expected')
   })
 
   it('should throw error when extracting frames without video', async () => {

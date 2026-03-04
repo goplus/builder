@@ -23,7 +23,7 @@ import type { Animation } from '../animation'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
 import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
 import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
-import { createFileWithUniversalUrl } from '../../common/cloud'
+import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
 import type { File, Files } from '../../common/file'
 import { fromConfig, toConfig, listDirs } from '../../common/file'
 import {
@@ -53,6 +53,7 @@ export type SpriteGenInits = {
   settings?: Partial<SpriteSettings>
   imageIndex?: number | null
   selectedItem?: SpriteGenSelected | null
+  referenceImage?: File | null
   animationGenIdBindings?: Partial<Record<State, string>>
   enrichPhase?: Phase<SpriteSettings>
   genImagesTask?: Task<TaskType.GenerateCostume>
@@ -65,8 +66,15 @@ export type SpriteGenInits = {
 export type RawSpriteGenConfig = Prettify<
   Omit<
     SpriteGenInits,
-    'enrichPhase' | 'genImagesTask' | 'genImagesPhase' | 'prepareContentPhase' | 'costumes' | 'animations'
+    | 'enrichPhase'
+    | 'genImagesTask'
+    | 'genImagesPhase'
+    | 'prepareContentPhase'
+    | 'costumes'
+    | 'animations'
+    | 'referenceImage'
   > & {
+    referenceImagePath?: string
     enrichPhaseSerialized?: PhaseSerialized<SpriteSettings>
     genImagesTaskSerialized?: TaskSerialized<TaskType.GenerateCostume>
     genImagesPhaseSerialized?: PhaseSerialized<string[]>
@@ -111,6 +119,7 @@ export class SpriteGen extends Disposable {
     }
     this.imageIndex = inits.imageIndex ?? null
     this.selectedItem = inits.selectedItem ?? null
+    this.referenceImage = inits.referenceImage ?? null
     this.previewProject = new SpxProject()
     this.previewSprite = this.createSprite()
     this.previewProject.addSprite(this.previewSprite)
@@ -200,6 +209,9 @@ export class SpriteGen extends Disposable {
     this.setImageIndex(null)
     return this.genImagesPhase.run(async (reporter) => {
       const settings = this.getDefaultCostumeSettings()
+      if (this.referenceImage != null) {
+        settings.referenceImageUrl = await saveFile(this.referenceImage)
+      }
       this.genImagesTask?.tryCancel()
       this.genImagesTask = new Task(TaskType.GenerateCostume)
       await this.genImagesTask.start({ settings, n: 4 })
@@ -416,6 +428,11 @@ export class SpriteGen extends Disposable {
     this.selectedItem = item
   }
 
+  referenceImage: File | null = null
+  setReferenceImage(file: File | null) {
+    this.referenceImage = file
+  }
+
   finish() {
     const previewSprite = this.previewSprite
     const sprite = this.createSprite()
@@ -493,6 +510,7 @@ export class SpriteGen extends Disposable {
       settings,
       imageIndex,
       selectedItem,
+      referenceImagePath,
       animationGenIdBindings,
       enrichPhaseSerialized,
       genImagesTaskSerialized,
@@ -510,6 +528,10 @@ export class SpriteGen extends Disposable {
     inits.settings = settings
     if (imageIndex != null) inits.imageIndex = imageIndex
     if (selectedItem != null) inits.selectedItem = selectedItem
+    if (referenceImagePath != null) {
+      const refFile = files[referenceImagePath]
+      if (refFile != null) inits.referenceImage = refFile
+    }
     if (animationGenIdBindings != null) inits.animationGenIdBindings = animationGenIdBindings
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (genImagesTaskSerialized != null) inits.genImagesTask = Task.load(genImagesTaskSerialized)
@@ -572,6 +594,11 @@ export class SpriteGen extends Disposable {
       prepareContentPhaseSerialized: this.prepareContentPhase.export(),
       costumeConfigs,
       animationConfigs
+    }
+    if (this.referenceImage != null) {
+      const refPath = `${basePath}/referenceImage${extname(this.referenceImage.name)}`
+      files[refPath] = this.referenceImage
+      config.referenceImagePath = refPath
     }
     if (this.imageIndex != null) config.imageIndex = this.imageIndex
     if (this.selectedItem != null) config.selectedItem = this.selectedItem
