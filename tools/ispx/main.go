@@ -11,6 +11,13 @@ import (
 	"github.com/goplus/spx/v2/pkg/ispx"
 )
 
+var (
+	// defaultPackagesToImport is the list of packages that are always imported by ispx.
+	defaultPackagesToImport = []string{
+		"github.com/goplus/builder/tools/ai",
+	}
+)
+
 func init() {
 	// NOTE: Keep in sync with the config in spx's gop.mod.
 	xgobuild.RegisterProject(&modfile.Project{
@@ -27,6 +34,9 @@ func ispxInit() error {
 	ixgoCtx := ixgo.NewContext(ixgo.SupportMultipleInterp | xgobuild.StaticLoad)
 	ixgoCtx.Lookup = nil // Let [ispx.Init] handle the lookup.
 	ixgoCtx.SetPanic(logWithPanicInfo)
+	for _, pkg := range defaultPackagesToImport {
+		ixgoCtx.Loader.Import(pkg)
+	}
 
 	// Override fmt.Print* functions to log with caller info.
 	ixgoCtx.RegisterExternal("fmt.Print", func(frame *ixgo.Frame, a ...any) (n int, err error) {
@@ -48,25 +58,6 @@ func ispxInit() error {
 	if err := initAI(ixgoCtx); err != nil {
 		return fmt.Errorf("failed to init ai: %w", err)
 	}
-
-	ixgoCtx.Loader.Import("fmt")
-	ixgoCtx.Loader.Import("os")
-	ixgoCtx.Loader.Import("sync/atomic")
-	ixgoCtx.Loader.Import("math")
-	ixgoCtx.Loader.Import("time")
-	ixgoCtx.Loader.Import("sync")
-	ixgoCtx.Loader.Import("io")
-	ixgoCtx.Loader.Import("io/fs")
-	ixgoCtx.Loader.Import("reflect")
-	ixgoCtx.Loader.Import("strconv")
-	ixgoCtx.Loader.Import("strings")
-	ixgoCtx.Loader.Import("github.com/goplus/spx/v2")
-	ixgoCtx.Loader.Import("github.com/qiniu/x/osx")
-	ixgoCtx.Loader.Import("github.com/qiniu/x/xgo")
-	ixgoCtx.Loader.Import("github.com/qiniu/x/xgo/ng")
-	ixgoCtx.Loader.Import("github.com/qiniu/x/stringutil")
-	ixgoCtx.Loader.Import("github.com/qiniu/x/stringslice")
-	ixgoCtx.Loader.Import("github.com/goplus/builder/tools/ai")
 
 	return ispx.Init(ixgoCtx)
 }
