@@ -6,7 +6,7 @@ import { useIsRouteLoaded } from '@/utils/route-loading'
 
 import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
 
-import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
+import { useCopilot } from '@/components/copilot/context'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'

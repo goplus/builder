@@ -133,7 +133,6 @@ export class MockAigcApis {
   async enrichBackdropSettings(
     input: string,
     settings?: BackdropSettings,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _projectSettings?: ProjectSettings
   ): Promise<BackdropSettings> {
     this.checkAndThrowError('enrichBackdropSettings')
@@ -143,9 +142,7 @@ export class MockAigcApis {
   async enrichCostumeSettings(
     input: string,
     settings?: CostumeSettings,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _spriteSettings?: SpriteSettings,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _projectSettings?: ProjectSettings
   ): Promise<CostumeSettings> {
     this.checkAndThrowError('enrichCostumeSettings')
@@ -155,9 +152,7 @@ export class MockAigcApis {
   async enrichAnimationSettings(
     input: string,
     settings?: AnimationSettings,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _spriteSettings?: SpriteSettings,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _projectSettings?: ProjectSettings
   ): Promise<AnimationSettings> {
     this.checkAndThrowError('enrichAnimationSettings')
@@ -167,7 +162,6 @@ export class MockAigcApis {
   async enrichSpriteSettings(
     input: string,
     settings?: SpriteSettings,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _projectSettings?: ProjectSettings
   ): Promise<SpriteSettings> {
     this.checkAndThrowError('enrichSpriteSettings')

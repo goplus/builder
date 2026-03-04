@@ -28,7 +28,7 @@ const displayFilename = computed(() => {
 })
 
 // Set language for syntax highlighting
-const determinedLanguage = 'spx'
+const determinedLanguage = 'xgo'
 
 // Default collapsed state for the code block
 const initialCollapsed = ref(true)

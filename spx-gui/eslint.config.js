@@ -19,7 +19,7 @@ export default defineConfigWithVueTs(
       '**/wasm_exec.js',
       'src/utils/snippet-parser/**',
       'src/assets/wasm/**',
-      'src/components/editor/code-editor/ui/completion/fuzzy/**'
+      'src/components/editor/code-editor/xgo-code-editor/ui/completion/fuzzy/**'
     ]
   },
 
@@ -71,7 +71,8 @@ export default defineConfigWithVueTs(
         'warn',
         {
           ignoreRestSiblings: true,
-          destructuredArrayIgnorePattern: '^_'
+          destructuredArrayIgnorePattern: '^_',
+          argsIgnorePattern: '^_'
         }
       ],
       'vue/one-component-per-file': 'off',

@@ -169,9 +169,12 @@ import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
+import {
+  useCodeEditor,
+  DiagnosticSeverity,
+  textDocumentId2CodeFileName
+} from '@/components/editor/code-editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
-import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
@@ -179,7 +182,7 @@ import publishSvg from './publish.svg'
 import { getSignedInUsername } from '@/stores/user'
 
 const editorCtx = useEditorCtx()
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditor = useCodeEditor()
 const { isOnline } = useNetwork()
 
 const runtime = computed(() => editorCtx.state.runtime)
@@ -283,7 +286,7 @@ function handleExit(code: number) {
 }
 
 async function checkAndNotifyError() {
-  const r = await codeEditorCtx.mustEditor().diagnosticWorkspace()
+  const r = await codeEditor.diagnosticWorkspace()
   const codeFilesWithError: LocaleMessage[] = []
   for (const item of r.items) {
     if (!item.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue

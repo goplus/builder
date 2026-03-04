@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
+import { getHighlighter, theme, tabSize } from '@/utils/xgo/highlighter'
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useSlotText } from '@/utils/vnode'
 
 const props = withDefaults(
   defineProps<{
-    /** Only `spx` supported now. */
+    /** Only `xgo` supported now. */
     language?: string
     mode: 'block' | 'inline'
     /** If show line numbers */
@@ -17,7 +17,7 @@ const props = withDefaults(
     deletion?: boolean
   }>(),
   {
-    language: 'spx',
+    language: 'xgo',
     lineNumbers: false,
     addition: false,
     deletion: false
@@ -35,7 +35,7 @@ const hasLineNumbers = computed(() => {
 const codeHtml = computed(() => {
   if (highlighter.value == null) return ''
   // Sometimes Copilot makes mistakes about go/xgo, we correct it here.
-  const language = ['spx', 'xgo', 'go'].includes(props.language) ? 'spx' : 'plaintext'
+  const language = ['spx', 'xgo', 'go'].includes(props.language) ? 'xgo' : 'plaintext'
   return highlighter.value.codeToHtml(codeToDisplay.value, {
     lang: language,
     structure: props.mode === 'block' ? 'classic' : 'inline',

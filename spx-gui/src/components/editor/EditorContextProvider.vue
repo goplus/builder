@@ -39,7 +39,7 @@ export function useEditorCtx() {
 
 <script setup lang="ts">
 import { inject, provide, type InjectionKey } from 'vue'
-import { SpxProject } from '@/models/spx/project'
+import type { SpxProject } from '@/models/spx/project'
 import { computedShallowReactive } from '@/utils/utils'
 
 const props = defineProps<{
