@@ -3,17 +3,18 @@
     <UIMessageProvider>
       <MobileReminder v-if="showMobileReminder" />
       <UIModalProvider v-else>
-        <UpdateNotification />
         <BrowserVersionReminder />
-        <CopilotRoot>
-          <TutorialRoot>
-            <AgentCopilotProvider>
-              <RouterView />
-              <SpotlightUI />
-              <CopilotUI />
-            </AgentCopilotProvider>
-          </TutorialRoot>
-        </CopilotRoot>
+        <UpdateNotificationProvider>
+          <CopilotRoot>
+            <TutorialRoot>
+              <AgentCopilotProvider>
+                <RouterView />
+                <SpotlightUI />
+                <CopilotUI />
+              </AgentCopilotProvider>
+            </TutorialRoot>
+          </CopilotRoot>
+        </UpdateNotificationProvider>
       </UIModalProvider>
     </UIMessageProvider>
   </UIConfigProvider>
@@ -23,7 +24,7 @@
 import { computed, defineAsyncComponent } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import BrowserVersionReminder from '@/components/app/browser-check/BrowserVersionReminder.vue'
-import UpdateNotification from '@/components/app/update-check/UpdateNotification.vue'
+import UpdateNotificationProvider from '@/components/app/update-check/UpdateNotificationProvider.vue'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
 import CopilotRoot from '@/components/copilot/CopilotRoot.vue'
 import CopilotUI from '@/components/copilot/CopilotUI.vue'
