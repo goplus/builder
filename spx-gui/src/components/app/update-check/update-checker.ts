@@ -61,7 +61,10 @@ export class UpdateChecker {
       try {
         const hasUpdate = await this.checkForUpdates()
         consecutiveFailures = 0
-        if (hasUpdate && this.updateCheckTimer != null) onUpdate()
+        if (hasUpdate && this.updateCheckTimer != null) {
+          this.stop()
+          onUpdate()
+        }
       } catch (error) {
         console.error('Failed to check for updates:', error)
         consecutiveFailures++
