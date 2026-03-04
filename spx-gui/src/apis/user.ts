@@ -42,7 +42,7 @@ export function getSignedInUser(): Promise<SignedInUser> {
   return client.get(`/user`) as Promise<SignedInUser>
 }
 
-export type UpdateSignedInUserParams = Partial<Pick<User, 'displayName' | 'description'>>
+export type UpdateSignedInUserParams = Partial<Pick<User, 'username' | 'displayName' | 'description'>>
 
 export function updateSignedInUser(params: UpdateSignedInUserParams) {
   return client.patch(`/user`, params) as Promise<SignedInUser>

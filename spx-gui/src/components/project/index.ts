@@ -1,4 +1,5 @@
 import { useModal, useConfirmDialog } from '@/components/ui'
+import ModificationWarningModal from '@/components/common/ModificationWarningModal.vue'
 import { Visibility, deleteProject } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import type { SpxProject } from '@/models/spx/project'
@@ -7,7 +8,6 @@ import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
 import ProjectPublishModal from './ProjectPublishModal.vue'
 import ProjectPublishedModal from './ProjectPublishedModal.vue'
-import ProjectModifyNameWarningModal from './ProjectModifyNameWarningModal.vue'
 import ProjectModifyNameModal from './ProjectModifyNameModal.vue'
 
 /**
@@ -76,11 +76,31 @@ export function useShareProject() {
 }
 
 export function useModifyProjectName() {
-  const warningModal = useModal(ProjectModifyNameWarningModal)
+  const warningModal = useModal(ModificationWarningModal)
   const modifyNameModal = useModal(ProjectModifyNameModal)
 
   return async function modifyProjectName(project: SpxProject) {
-    await warningModal({})
+    await warningModal({
+      radar: { name: 'Project name warning modal', desc: 'Warning modal shown before editing project name' },
+      title: { en: 'Modify project name', zh: '修改项目名' },
+      tip: { en: 'Changing the project name may have the following impacts.', zh: '修改项目名，可能造成以下影响。' },
+      items: [
+        {
+          en: 'The project page URL will change, and existing links will no longer work.',
+          zh: '项目页面 URL 将会变更，原有链接将无法访问。'
+        },
+        {
+          en: 'Existing sharing links to this project will become invalid.',
+          zh: '已有的项目分享链接将会失效。'
+        },
+        {
+          en: 'This operation may take a moment to complete.',
+          zh: '该操作可能需要一点时间才能完成。'
+        }
+      ],
+      confirmText: { en: 'I understand, let me change the project name', zh: '我已知晓，让我更改项目名' },
+      confirmRadar: { name: 'Continue button', desc: 'Click to continue editing project name' }
+    })
     return modifyNameModal({ project })
   }
 }
