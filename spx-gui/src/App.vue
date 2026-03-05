@@ -4,15 +4,17 @@
       <MobileReminder v-if="showMobileReminder" />
       <UIModalProvider v-else>
         <BrowserVersionReminder />
-        <CopilotRoot>
-          <TutorialRoot>
-            <AgentCopilotProvider>
-              <RouterView />
-              <SpotlightUI />
-              <CopilotUI />
-            </AgentCopilotProvider>
-          </TutorialRoot>
-        </CopilotRoot>
+        <UpdateNotificationWrapper>
+          <CopilotRoot>
+            <TutorialRoot>
+              <AgentCopilotProvider>
+                <RouterView />
+                <SpotlightUI />
+                <CopilotUI />
+              </AgentCopilotProvider>
+            </TutorialRoot>
+          </CopilotRoot>
+        </UpdateNotificationWrapper>
       </UIModalProvider>
     </UIMessageProvider>
   </UIConfigProvider>
@@ -21,6 +23,8 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
+import BrowserVersionReminder from '@/components/app/browser-check/BrowserVersionReminder.vue'
+import UpdateNotificationWrapper from '@/components/app/update-check/UpdateNotificationWrapper.vue'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
 import CopilotRoot from '@/components/copilot/CopilotRoot.vue'
 import CopilotUI from '@/components/copilot/CopilotUI.vue'
@@ -31,9 +35,6 @@ import { useInstallRouteLoading } from '@/utils/route-loading'
 import { isMobile } from '@/utils/ua'
 
 const MobileReminder = defineAsyncComponent(() => import('@/components/app/device-check/MobileReminder.vue'))
-const BrowserVersionReminder = defineAsyncComponent(
-  () => import('@/components/app/browser-check/BrowserVersionReminder.vue')
-)
 
 const showMobileReminder = isMobile()
 
