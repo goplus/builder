@@ -443,7 +443,7 @@ function handleSpriteUpdateTransformOp(op: TransformOp | null) {
   if (op === 'move') {
     handleUpdateConfigType('pos')
   } else if (op === 'rotate') {
-    handleUpdateConfigType('heading')
+    handleUpdateConfigType('rotation')
   } else if (op === 'scale') {
     handleUpdateConfigType('size')
   }

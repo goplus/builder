@@ -69,6 +69,9 @@ import layer from './layer.svg?raw'
 import notRotate from './not-rotate.svg?raw'
 import leftRight from './left-right.svg?raw'
 import rotateAround from './rotate-around.svg?raw'
+import back from './back.svg?raw'
+import position from './position.svg?raw'
+import resize from './resize.svg?raw'
 
 const typeIconMap = {
   file,
@@ -134,7 +137,10 @@ const typeIconMap = {
   minus,
   layer,
   notRotate,
-  leftRight
+  leftRight,
+  back,
+  position,
+  resize
 }
 
 export type Type = keyof typeof typeIconMap

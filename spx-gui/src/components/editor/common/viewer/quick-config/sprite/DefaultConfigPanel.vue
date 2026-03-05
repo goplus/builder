@@ -1,12 +1,11 @@
 <script lang="ts" setup>
-import { UIDivider, UITooltip, type IconType } from '@/components/ui'
+import { UITooltip } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
-import { headingToLeftRight, leftRightToHeading, RotationStyle } from '@/models/spx/sprite'
 import type { SpxProject } from '@/models/spx/project'
-import type { LocaleMessage } from '@/utils/i18n'
 import ConfigItem from '../common/ConfigItem.vue'
-import ZorderConfigItem, { moveActionNames, type MoveAction } from '../common/ZorderConfigItem.vue'
+import ZorderConfigDropdown, { moveActionNames, type MoveAction } from '../common/ZorderConfigDropdown.vue'
 import type { SpriteLocalConfig } from '../utils'
+import { useQuickConfigContext } from '../QuickConfigWrapper.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const props = defineProps<{
@@ -15,44 +14,7 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
-
-const rotationStyleTips = {
-  [RotationStyle.Normal]: {
-    icon: 'rotateAround',
-    tips: {
-      en: 'Normal: the sprite can be rotated to any heading',
-      zh: '正常旋转：精灵可以被旋转到任意方向'
-    }
-  },
-  [RotationStyle.LeftRight]: {
-    icon: 'leftRight',
-    tips: {
-      en: 'Left-Right: the sprite can only be flipped horizontally',
-      zh: '左右翻转：精灵只可以在水平方向翻转'
-    }
-  },
-  [RotationStyle.None]: {
-    icon: 'notRotate',
-    tips: {
-      en: "Don't Rotate: the sprite will not be rotated",
-      zh: '不旋转：精灵不会被旋转'
-    }
-  }
-} satisfies Record<RotationStyle, { icon: IconType; tips: LocaleMessage }>
-
-function handleRotationStyleUpdate(style: RotationStyle) {
-  const localConfig = props.localConfig
-  localConfig.setRotationStyle(style)
-  if (style === RotationStyle.None) {
-    localConfig.setHeading(90)
-  }
-  if (style === RotationStyle.LeftRight) {
-    // normalize heading to 90 / -90
-    const normalizedHeading = leftRightToHeading(headingToLeftRight(localConfig.heading))
-    localConfig.setHeading(normalizedHeading)
-  }
-  localConfig.sync()
-}
+const { updateConfigType } = useQuickConfigContext()
 
 async function moveZorder(direction: MoveAction) {
   await editorCtx.state.history.doAction({ name: moveActionNames[direction] }, () => {
@@ -74,22 +36,36 @@ async function moveZorder(direction: MoveAction) {
   <ConfigPanel
     v-radar="{
       name: 'Sprite Quick Config Panel',
-      desc: 'Quick config for sprite rotation style, layer order, and more'
+      desc: 'Quick config for sprite rotation settings and layer order'
     }"
   >
     <div class="default-config-wrapper">
-      <UITooltip v-for="(value, key) in rotationStyleTips" :key="key">
-        {{ $t(value.tips) }}
+      <UITooltip>
+        {{ $t({ en: 'Position', zh: '位置' }) }}
         <template #trigger>
-          <ConfigItem
-            :class="{ active: props.localConfig.rotationStyle === key }"
-            :icon="value.icon"
-            @click="handleRotationStyleUpdate(key)"
-          />
+          <ConfigItem icon="position" @click="updateConfigType('pos')" />
         </template>
       </UITooltip>
-      <UIDivider vertical />
-      <ZorderConfigItem type="sprite" @move-zorder="moveZorder" />
+      <UITooltip>
+        {{ $t({ en: 'Rotation', zh: '旋转' }) }}
+        <template #trigger>
+          <ConfigItem icon="rotate" @click="updateConfigType('rotation')" />
+        </template>
+      </UITooltip>
+      <UITooltip>
+        {{ $t({ en: 'Size', zh: '大小' }) }}
+        <template #trigger>
+          <ConfigItem icon="resize" @click="updateConfigType('size')" />
+        </template>
+      </UITooltip>
+      <ZorderConfigDropdown type="sprite" @move-zorder="moveZorder">
+        <UITooltip>
+          {{ $t({ en: 'Layer order', zh: '图层顺序' }) }}
+          <template #trigger>
+            <ConfigItem icon="layer" />
+          </template>
+        </UITooltip>
+      </ZorderConfigDropdown>
     </div>
   </ConfigPanel>
 </template>

@@ -1,8 +1,20 @@
 <script lang="ts">
-export type ConfigType = 'default' | 'size' | 'heading' | 'pos'
+import { inject } from 'vue'
 
-export const configTypeInjectionKey: InjectionKey<Ref<ConfigType | null>> = Symbol('configType')
-export const updateConfigTypeInjectionKey: InjectionKey<(configType: ConfigType) => void> = Symbol('updateConfigType')
+export type ConfigType = 'default' | 'pos' | 'rotation' | 'size'
+
+export interface QuickConfigContext {
+  configType: Ref<ConfigType>
+  updateConfigType: (configType: ConfigType) => void
+}
+
+const quickConfigInjectionKey: InjectionKey<QuickConfigContext> = Symbol('quickConfig')
+
+export function useQuickConfigContext() {
+  const ctx = inject(quickConfigInjectionKey)
+  if (ctx == null) throw new Error('useQuickConfigContext should be called inside of QuickConfigWrapper')
+  return ctx
+}
 </script>
 
 <script lang="ts" setup>
@@ -21,7 +33,7 @@ function resetTimer() {
   if (configTypeRef.value === 'default') {
     return
   }
-  timer = setTimeout(() => updateConfigType('default'), 2000)
+  timer = setTimeout(() => updateConfigType('default'), 5000)
 }
 
 function updateConfigType(configType: ConfigType) {
@@ -59,8 +71,7 @@ defineExpose({
   updateConfigType
 })
 
-provide(configTypeInjectionKey, configTypeRef)
-provide(updateConfigTypeInjectionKey, updateConfigType)
+provide(quickConfigInjectionKey, { configType: configTypeRef, updateConfigType })
 
 onBeforeUnmount(() => clearTimeout(timer))
 </script>

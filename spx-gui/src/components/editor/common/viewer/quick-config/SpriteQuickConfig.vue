@@ -1,41 +1,34 @@
 <script lang="ts" setup>
-import { inject, watch } from 'vue'
-
-import DefaultConfigPanel from './sprite/DefaultConfigPanel.vue'
 import type { SpxProject } from '@/models/spx/project'
+import DefaultConfigPanel from './sprite/DefaultConfigPanel.vue'
 import SizeConfigPanel from './common/SizeConfigPanel.vue'
-import HeadingConfigPanel from './sprite/HeadingConfigPanel.vue'
+import RotationConfigPanel from './sprite/RotationConfigPanel.vue'
 import PositionConfigPanel from './common/PositionConfigPanel.vue'
-import { configTypeInjectionKey, updateConfigTypeInjectionKey } from './QuickConfigWrapper.vue'
+import { useQuickConfigContext } from './QuickConfigWrapper.vue'
 import type { SpriteLocalConfig } from './utils'
-import { RotationStyle } from '@/models/spx/sprite'
 
-const props = defineProps<{
+defineProps<{
   localConfig: SpriteLocalConfig
   project: SpxProject
 }>()
 
-const configType = inject(configTypeInjectionKey)
+const { configType, updateConfigType } = useQuickConfigContext()
 
-const updateConfigType = inject(updateConfigTypeInjectionKey)
-watch(
-  () => props.localConfig.rotationStyle,
-  () => {
-    // If the selected sprite's rotationStyle is LeftRight or None, it needs to be restored to default immediately
-    if ([RotationStyle.LeftRight, RotationStyle.None].includes(props.localConfig.rotationStyle)) {
-      updateConfigType?.('default')
-    }
-  }
-)
+function backToDefault() {
+  updateConfigType('default')
+}
 </script>
 
 <template>
-  <template v-if="configType != null">
-    <SizeConfigPanel v-if="configType === 'size'" name="sprite" :local-config="localConfig" />
-    <HeadingConfigPanel v-else-if="configType === 'heading'" :local-config="localConfig" />
-    <PositionConfigPanel v-else-if="configType === 'pos'" name="sprite" :local-config="localConfig" />
-    <DefaultConfigPanel v-else-if="configType === 'default'" :local-config="localConfig" :project="project" />
-  </template>
+  <SizeConfigPanel v-if="configType === 'size'" name="sprite" :local-config="localConfig" :on-back="backToDefault" />
+  <RotationConfigPanel v-else-if="configType === 'rotation'" :local-config="localConfig" :on-back="backToDefault" />
+  <PositionConfigPanel
+    v-else-if="configType === 'pos'"
+    name="sprite"
+    :local-config="localConfig"
+    :on-back="backToDefault"
+  />
+  <DefaultConfigPanel v-else-if="configType === 'default'" :local-config="localConfig" :project="project" />
 </template>
 
 <style lang="scss" scoped></style>
