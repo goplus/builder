@@ -142,7 +142,13 @@ function handleTransform(e: KonvaEventObject<unknown>) {
   updateLocalConfigByShape(e.target)
 }
 function handleTransformEnd(e: KonvaEventObject<unknown>) {
+  // Flip buttons in LeftRight mode fire `transformend` directly without `transformstart`/`transform`,
+  // so snapshot is null and `updateLocalConfigByShape` never runs. Capture heading before sync to detect flip.
+  const oldHeading = snapshotRef.value?.heading ?? props.localConfig.heading
   syncLocalConfigByShape(e.target)
+  if (props.localConfig.rotationStyle === RotationStyle.LeftRight && oldHeading !== props.localConfig.heading) {
+    emit('updateTransformOp', 'flip')
+  }
   snapshotRef.value = null
 }
 

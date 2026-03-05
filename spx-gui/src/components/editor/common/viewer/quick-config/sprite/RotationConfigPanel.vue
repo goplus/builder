@@ -152,7 +152,7 @@ const handleUpdateHeadingDebounced = debounce(handleUpdateHeading, 300)
 }
 
 .heading-input {
-  width: 130px;
+  width: 120px;
 }
 
 .heading-picker-container {

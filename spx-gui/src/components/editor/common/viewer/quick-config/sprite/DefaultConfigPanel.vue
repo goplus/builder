@@ -14,7 +14,15 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
-const { updateConfigType } = useQuickConfigContext()
+const { updateConfigType, pauseAutoBackToDefault } = useQuickConfigContext()
+
+// Open a sub-panel via user click. `updateConfigType` is called first (which resets
+// autoBackToDefaultPaused), then `pauseAutoBackToDefault` re-pauses it so the
+// sub-panel stays open until the user explicitly clicks "Back".
+function handleOpenSubPanel(configType: 'pos' | 'rotation' | 'size') {
+  updateConfigType(configType)
+  pauseAutoBackToDefault()
+}
 
 async function moveZorder(direction: MoveAction) {
   await editorCtx.state.history.doAction({ name: moveActionNames[direction] }, () => {
@@ -36,26 +44,26 @@ async function moveZorder(direction: MoveAction) {
   <ConfigPanel
     v-radar="{
       name: 'Sprite Quick Config Panel',
-      desc: 'Quick config for sprite rotation settings and layer order'
+      desc: 'Quick config for sprite position, rotation, size and layer order'
     }"
   >
     <div class="default-config-wrapper">
       <UITooltip>
         {{ $t({ en: 'Position', zh: '位置' }) }}
         <template #trigger>
-          <ConfigItem icon="position" @click="updateConfigType('pos')" />
+          <ConfigItem icon="position" @click="handleOpenSubPanel('pos')" />
         </template>
       </UITooltip>
       <UITooltip>
         {{ $t({ en: 'Rotation', zh: '旋转' }) }}
         <template #trigger>
-          <ConfigItem icon="rotate" @click="updateConfigType('rotation')" />
+          <ConfigItem icon="rotate" @click="handleOpenSubPanel('rotation')" />
         </template>
       </UITooltip>
       <UITooltip>
         {{ $t({ en: 'Size', zh: '大小' }) }}
         <template #trigger>
-          <ConfigItem icon="resize" @click="updateConfigType('size')" />
+          <ConfigItem icon="resize" @click="handleOpenSubPanel('size')" />
         </template>
       </UITooltip>
       <ZorderConfigDropdown type="sprite" @move-zorder="moveZorder">

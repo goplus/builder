@@ -442,7 +442,7 @@ function handleSpriteUpdateTransformOp(op: TransformOp | null) {
   if (op == null) return
   if (op === 'move') {
     handleUpdateConfigType('pos')
-  } else if (op === 'rotate') {
+  } else if (op === 'rotate' || op === 'flip') {
     handleUpdateConfigType('rotation')
   } else if (op === 'scale') {
     handleUpdateConfigType('size')
