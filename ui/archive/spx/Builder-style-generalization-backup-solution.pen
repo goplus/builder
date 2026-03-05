@@ -615,7 +615,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "./images/用户头像.png",
+                                  "url": "../images/用户头像.png",
                                   "mode": "fill"
                                 }
                               ],
@@ -6475,7 +6475,7 @@
                                           "fill": {
                                             "type": "image",
                                             "enabled": true,
-                                            "url": "./images/sprite.png",
+                                            "url": "../images/sprite.png",
                                             "mode": "stretch"
                                           },
                                           "width": 36,
@@ -7546,8 +7546,8 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
-                                                        "mode": "stretch"
+                                                        "url": "../images/sprite.png",
+                                                        "mode": "fill"
                                                       },
                                                       "width": 60,
                                                       "height": 60,
@@ -7701,8 +7701,8 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
-                                                        "mode": "stretch"
+                                                        "url": "../images/sprite.png",
+                                                        "mode": "fill"
                                                       },
                                                       "width": 60,
                                                       "height": 60,
@@ -7807,7 +7807,7 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
+                                                        "url": "../images/sprite.png",
                                                         "mode": "fill"
                                                       },
                                                       "width": 60,
@@ -11165,7 +11165,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/ai canvas logo.png",
+                                    "url": "../images/ai canvas logo.png",
                                     "mode": "fill"
                                   },
                                   "width": 14,
@@ -12078,7 +12078,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/地图背景.png",
+                                        "url": "../images/地图背景.png",
                                         "mode": "fill"
                                       },
                                       "stroke": {
@@ -12217,7 +12217,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/用户头像.png",
+                                        "url": "../images/用户头像.png",
                                         "mode": "stretch"
                                       },
                                       "width": 26,
@@ -12581,7 +12581,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/地图背景.png",
+                                        "url": "../images/地图背景.png",
                                         "mode": "fill"
                                       },
                                       "stroke": {
@@ -12720,7 +12720,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/用户头像.png",
+                                        "url": "../images/用户头像.png",
                                         "mode": "stretch"
                                       },
                                       "width": 26,
@@ -13084,7 +13084,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/地图背景.png",
+                                        "url": "../images/地图背景.png",
                                         "mode": "fill"
                                       },
                                       "stroke": {
@@ -13223,7 +13223,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/用户头像.png",
+                                        "url": "../images/用户头像.png",
                                         "mode": "stretch"
                                       },
                                       "width": 26,
@@ -13587,7 +13587,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/地图背景.png",
+                                        "url": "../images/地图背景.png",
                                         "mode": "fill"
                                       },
                                       "stroke": {
@@ -13726,7 +13726,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/用户头像.png",
+                                        "url": "../images/用户头像.png",
                                         "mode": "stretch"
                                       },
                                       "width": 26,
@@ -14198,7 +14198,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -14336,7 +14336,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/用户头像.png",
+                                    "url": "../images/用户头像.png",
                                     "mode": "stretch"
                                   },
                                   "width": 26,
@@ -14700,7 +14700,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -14838,7 +14838,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/用户头像.png",
+                                    "url": "../images/用户头像.png",
                                     "mode": "stretch"
                                   },
                                   "width": 26,
@@ -15202,7 +15202,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -15340,7 +15340,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/用户头像.png",
+                                    "url": "../images/用户头像.png",
                                     "mode": "stretch"
                                   },
                                   "width": 26,
@@ -15704,7 +15704,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -15842,7 +15842,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/用户头像.png",
+                                    "url": "../images/用户头像.png",
                                     "mode": "stretch"
                                   },
                                   "width": 26,
@@ -16148,7 +16148,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/地图背景.png",
+                                        "url": "../images/地图背景.png",
                                         "mode": "fill"
                                       },
                                       "stroke": {
@@ -16240,7 +16240,7 @@
                                                     {
                                                       "type": "image",
                                                       "enabled": true,
-                                                      "url": "",
+                                                      "url": "../images/用户头像.png",
                                                       "mode": "stretch"
                                                     }
                                                   ],
@@ -16451,7 +16451,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/地图背景.png",
+                                        "url": "../images/地图背景.png",
                                         "mode": "fill"
                                       },
                                       "stroke": {
@@ -16543,7 +16543,7 @@
                                                     {
                                                       "type": "image",
                                                       "enabled": true,
-                                                      "url": "",
+                                                      "url": "../images/用户头像.png",
                                                       "mode": "stretch"
                                                     }
                                                   ],
@@ -16754,7 +16754,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/地图背景.png",
+                                        "url": "../images/地图背景.png",
                                         "mode": "fill"
                                       },
                                       "stroke": {
@@ -16846,7 +16846,7 @@
                                                     {
                                                       "type": "image",
                                                       "enabled": true,
-                                                      "url": "",
+                                                      "url": "../images/用户头像.png",
                                                       "mode": "stretch"
                                                     }
                                                   ],
@@ -17057,7 +17057,7 @@
                                       "fill": {
                                         "type": "image",
                                         "enabled": true,
-                                        "url": "./images/地图背景.png",
+                                        "url": "../images/地图背景.png",
                                         "mode": "fill"
                                       },
                                       "stroke": {
@@ -17149,7 +17149,7 @@
                                                     {
                                                       "type": "image",
                                                       "enabled": true,
-                                                      "url": "",
+                                                      "url": "../images/用户头像.png",
                                                       "mode": "stretch"
                                                     }
                                                   ],
@@ -17813,7 +17813,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "./images/用户头像.png",
+                                  "url": "../images/用户头像.png",
                                   "mode": "fill"
                                 }
                               ],
@@ -23673,7 +23673,7 @@
                                           "fill": {
                                             "type": "image",
                                             "enabled": true,
-                                            "url": "./images/sprite.png",
+                                            "url": "../images/sprite.png",
                                             "mode": "stretch"
                                           },
                                           "width": 36,
@@ -24744,8 +24744,8 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
-                                                        "mode": "stretch"
+                                                        "url": "../images/sprite.png",
+                                                        "mode": "fill"
                                                       },
                                                       "width": 60,
                                                       "height": 60,
@@ -24899,8 +24899,8 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
-                                                        "mode": "stretch"
+                                                        "url": "../images/sprite.png",
+                                                        "mode": "fill"
                                                       },
                                                       "width": 60,
                                                       "height": 60,
@@ -25005,7 +25005,7 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
+                                                        "url": "../images/sprite.png",
                                                         "mode": "fill"
                                                       },
                                                       "width": 60,
@@ -27467,7 +27467,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -27608,7 +27608,7 @@
                                     {
                                       "type": "image",
                                       "enabled": true,
-                                      "url": "./images/用户头像.png",
+                                      "url": "../images/用户头像.png",
                                       "mode": "fill"
                                     }
                                   ],
@@ -27973,7 +27973,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -28114,7 +28114,7 @@
                                     {
                                       "type": "image",
                                       "enabled": true,
-                                      "url": "./images/用户头像.png",
+                                      "url": "../images/用户头像.png",
                                       "mode": "stretch"
                                     }
                                   ],
@@ -28479,7 +28479,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -28620,7 +28620,7 @@
                                     {
                                       "type": "image",
                                       "enabled": true,
-                                      "url": "./images/用户头像.png",
+                                      "url": "../images/用户头像.png",
                                       "mode": "stretch"
                                     }
                                   ],
@@ -28985,7 +28985,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -29126,7 +29126,7 @@
                                     {
                                       "type": "image",
                                       "enabled": true,
-                                      "url": "./images/用户头像.png",
+                                      "url": "../images/用户头像.png",
                                       "mode": "stretch"
                                     }
                                   ],
@@ -29597,7 +29597,7 @@
                               "fill": {
                                 "type": "image",
                                 "enabled": true,
-                                "url": "./images/地图背景.png",
+                                "url": "../images/地图背景.png",
                                 "mode": "fill"
                               },
                               "stroke": {
@@ -29737,7 +29737,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "./images/用户头像.png",
+                                  "url": "../images/用户头像.png",
                                   "mode": "stretch"
                                 }
                               ],
@@ -30102,7 +30102,7 @@
                               "fill": {
                                 "type": "image",
                                 "enabled": true,
-                                "url": "./images/地图背景.png",
+                                "url": "../images/地图背景.png",
                                 "mode": "fill"
                               },
                               "stroke": {
@@ -30242,7 +30242,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "./images/用户头像.png",
+                                  "url": "../images/用户头像.png",
                                   "mode": "stretch"
                                 }
                               ],
@@ -30607,7 +30607,7 @@
                               "fill": {
                                 "type": "image",
                                 "enabled": true,
-                                "url": "./images/地图背景.png",
+                                "url": "../images/地图背景.png",
                                 "mode": "fill"
                               },
                               "stroke": {
@@ -30747,7 +30747,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "./images/用户头像.png",
+                                  "url": "../images/用户头像.png",
                                   "mode": "stretch"
                                 }
                               ],
@@ -31112,7 +31112,7 @@
                               "fill": {
                                 "type": "image",
                                 "enabled": true,
-                                "url": "./images/地图背景.png",
+                                "url": "../images/地图背景.png",
                                 "mode": "fill"
                               },
                               "stroke": {
@@ -31252,7 +31252,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "./images/用户头像.png",
+                                  "url": "../images/用户头像.png",
                                   "mode": "stretch"
                                 }
                               ],
@@ -31557,7 +31557,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -31649,7 +31649,7 @@
                                                 {
                                                   "type": "image",
                                                   "enabled": true,
-                                                  "url": "",
+                                                  "url": "../images/用户头像.png",
                                                   "mode": "stretch"
                                                 }
                                               ],
@@ -31860,7 +31860,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -31952,7 +31952,7 @@
                                                 {
                                                   "type": "image",
                                                   "enabled": true,
-                                                  "url": "",
+                                                  "url": "../images/用户头像.png",
                                                   "mode": "stretch"
                                                 }
                                               ],
@@ -32163,7 +32163,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -32255,7 +32255,7 @@
                                                 {
                                                   "type": "image",
                                                   "enabled": true,
-                                                  "url": "",
+                                                  "url": "../images/用户头像.png",
                                                   "mode": "stretch"
                                                 }
                                               ],
@@ -32466,7 +32466,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "./images/地图背景.png",
+                                    "url": "../images/地图背景.png",
                                     "mode": "fill"
                                   },
                                   "stroke": {
@@ -32558,7 +32558,7 @@
                                                 {
                                                   "type": "image",
                                                   "enabled": true,
-                                                  "url": "",
+                                                  "url": "../images/用户头像.png",
                                                   "mode": "stretch"
                                                 }
                                               ],
@@ -33968,7 +33968,7 @@
                               "fill": {
                                 "type": "image",
                                 "enabled": true,
-                                "url": "./images/ai canvas logo.png",
+                                "url": "../images/ai canvas logo.png",
                                 "mode": "fill"
                               },
                               "width": 14,
@@ -35080,7 +35080,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "./images/用户头像.png",
+                                  "url": "../images/用户头像.png",
                                   "mode": "fill"
                                 }
                               ],
@@ -40858,7 +40858,7 @@
                                           "fill": {
                                             "type": "image",
                                             "enabled": true,
-                                            "url": "./images/sprite.png",
+                                            "url": "../images/sprite.png",
                                             "mode": "stretch"
                                           },
                                           "width": 36,
@@ -41924,8 +41924,8 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
-                                                        "mode": "stretch"
+                                                        "url": "../images/sprite.png",
+                                                        "mode": "fill"
                                                       },
                                                       "width": 60,
                                                       "height": 60,
@@ -42077,8 +42077,8 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
-                                                        "mode": "stretch"
+                                                        "url": "../images/sprite.png",
+                                                        "mode": "fill"
                                                       },
                                                       "width": 60,
                                                       "height": 60,
@@ -42180,7 +42180,7 @@
                                                       "fill": {
                                                         "type": "image",
                                                         "enabled": true,
-                                                        "url": "./images/sprite.png",
+                                                        "url": "../images/sprite.png",
                                                         "mode": "fill"
                                                       },
                                                       "width": 60,
