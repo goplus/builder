@@ -1,5 +1,5 @@
 <template>
-  <div class="update-notification-provider">
+  <div class="update-notification-wrapper">
     <div v-if="visible" class="notification" role="status" aria-live="polite">
       <div class="message">
         <DotLottieVue class="icon" autoplay loop :src="notificationIconUrl" />
@@ -39,6 +39,7 @@ const checker = new UpdateChecker()
 
 function show() {
   visible.value = true
+  checker.stop()
 }
 
 function handleReload() {
@@ -55,7 +56,7 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.update-notification-provider {
+.update-notification-wrapper {
   display: flex;
   flex-direction: column;
   height: 100%;

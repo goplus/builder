@@ -10,6 +10,7 @@
  * - Uses HTTP HEAD requests to minimize bandwidth
  * - Stores current version ETag in memory during the session
  */
+import { capture } from '@/utils/exception'
 
 export type UpdateCallback = () => void
 
@@ -37,12 +38,13 @@ export class UpdateChecker {
     }
 
     const hasUpdate = this.currentEtag != null && this.currentEtag !== etag
-    this.currentEtag = etag
+    // Initialize currentEtag on first check
+    if (this.currentEtag == null) this.currentEtag = etag
     return hasUpdate
   }
 
   /**
-   * Starts periodic checking for application updates. Automatically stops after 5 consecutive check failures.
+   * Starts periodic checking for application updates.
    *
    * @param intervalMs - Check interval in milliseconds
    * @param onUpdate - Callback function to be called when an update is detected
@@ -54,24 +56,13 @@ export class UpdateChecker {
       return
     }
 
-    const MAX_FAILURES = 5
-    let consecutiveFailures = 0
-
     const check = async () => {
+      if (!navigator.onLine) return
       try {
         const hasUpdate = await this.checkForUpdates()
-        consecutiveFailures = 0
-        if (hasUpdate && this.updateCheckTimer != null) {
-          this.stop()
-          onUpdate()
-        }
+        if (hasUpdate && this.updateCheckTimer != null) onUpdate()
       } catch (error) {
-        console.error('Failed to check for updates:', error)
-        consecutiveFailures++
-        if (consecutiveFailures >= MAX_FAILURES) {
-          this.stop()
-          console.warn('Update checker disabled after repeated failures')
-        }
+        capture(error, 'Failed to check for updates')
       }
     }
 

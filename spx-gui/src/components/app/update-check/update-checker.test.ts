@@ -150,35 +150,6 @@ describe('update-checker', () => {
       expect(onUpdate).toHaveBeenCalled()
     })
 
-    it('should stop polling after update is detected', async () => {
-      const onUpdate = vi.fn()
-      const oldEtag = '"abc123"'
-      const newEtag = '"def456"'
-
-      let callCount = 0
-      const fetchSpy = vi.fn().mockImplementation(() => {
-        callCount++
-        const etag = callCount === 1 ? oldEtag : newEtag
-        return Promise.resolve({
-          ok: true,
-          headers: {
-            get: (key: string) => (key === 'etag' ? etag : null)
-          }
-        })
-      })
-      global.fetch = fetchSpy
-
-      checker.start(100, onUpdate)
-
-      // First check (initial) + second check (detects update)
-      await vi.advanceTimersByTimeAsync(150)
-      expect(onUpdate).toHaveBeenCalledTimes(1)
-
-      const callsAfterUpdate = fetchSpy.mock.calls.length
-      await vi.advanceTimersByTimeAsync(300)
-      expect(fetchSpy.mock.calls.length).toBe(callsAfterUpdate)
-    })
-
     it('should not call onUpdate callback when no update is detected', async () => {
       const onUpdate = vi.fn()
       const etag = '"abc123"'
@@ -240,56 +211,22 @@ describe('update-checker', () => {
       expect(onUpdate).not.toHaveBeenCalled()
     })
 
-    it('should stop checker after 5 consecutive failures', async () => {
+    it('should skip check when offline', async () => {
       const onUpdate = vi.fn()
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      const fetchSpy = vi.fn().mockRejectedValue(new Error('Network error'))
+      const fetchSpy = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: (key: string) => (key === 'etag' ? '"v1"' : null)
+        }
+      })
       global.fetch = fetchSpy
 
-      checker.start(50, onUpdate)
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+
+      checker.start(100, onUpdate)
 
       await vi.advanceTimersByTimeAsync(250)
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Update checker disabled after repeated failures')
-      expect(fetchSpy.mock.calls.length).toBeLessThanOrEqual(6)
-
-      const callsBeforeWait = fetchSpy.mock.calls.length
-      await vi.advanceTimersByTimeAsync(150)
-      expect(fetchSpy.mock.calls.length).toBe(callsBeforeWait)
-
-      consoleWarnSpy.mockRestore()
-      consoleErrorSpy.mockRestore()
-    })
-
-    it('should reset failure count on successful check', async () => {
-      const onUpdate = vi.fn()
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-
-      let callCount = 0
-      global.fetch = vi.fn().mockImplementation(() => {
-        callCount++
-        if (callCount % 2 === 1) {
-          return Promise.reject(new Error('Network error'))
-        }
-        return Promise.resolve({
-          ok: true,
-          headers: {
-            get: (key: string) => (key === 'etag' ? '"v1"' : null)
-          }
-        })
-      })
-
-      checker.start(40, onUpdate)
-
-      await vi.advanceTimersByTimeAsync(400)
-      checker.stop()
-
-      expect(consoleWarnSpy).not.toHaveBeenCalledWith('Update checker disabled after repeated failures')
-
-      consoleWarnSpy.mockRestore()
-      consoleErrorSpy.mockRestore()
+      expect(fetchSpy).not.toHaveBeenCalled()
     })
   })
 
