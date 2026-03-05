@@ -6,7 +6,8 @@ import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import { packageSpx } from '@/utils/spx'
 import { hashFiles } from '@/models/common/hash'
 import type { Files } from '@/models/common/file'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
+import type { History } from '@/components/editor/history'
 import { RuntimeOutputKind, type Runtime } from '@/components/editor/runtime'
 import { DocumentBase } from './document-base'
 import { SpxLSPClient, type RequestContext } from './lsp'
@@ -362,7 +363,7 @@ class DiagnosticsProvider
   constructor(
     private runtime: Runtime,
     private lspClient: SpxLSPClient,
-    private project: Project
+    private project: SpxProject
   ) {
     super()
 
@@ -386,7 +387,7 @@ class DiagnosticsProvider
 
   private async getRuntimeDiagnostics(ctx: DiagnosticsContext) {
     const { outputs, filesHash } = this.runtime
-    const currentFilesHash = await hashFiles(this.project.exportGameFiles(), ctx.signal)
+    const currentFilesHash = await hashFiles(this.project.exportFiles(), ctx.signal)
     if (filesHash !== currentFilesHash) return []
     const diagnostics: Diagnostic[] = []
     for (const output of outputs) {
@@ -436,7 +437,7 @@ class DiagnosticsProvider
   private lspWorkspaceDiagnosticReportCache = new WeakMap<Files, Promise<lsp.WorkspaceDiagnosticReport>>()
 
   getLSWorkspaceDiagnosticReportWithCache(ctx: RequestContext) {
-    const files = this.project.exportGameFiles()
+    const files = this.project.exportFiles()
     const cached = this.lspWorkspaceDiagnosticReportCache.get(files)
     if (cached != null) return cached
     const result = this.lspClient.workspaceDiagnostic(ctx, { previousResultIds: [] }).catch((err) => {
@@ -765,7 +766,8 @@ export class CodeEditor extends Disposable {
   private hoverProvider: HoverProvider
 
   constructor(
-    private project: Project,
+    private project: SpxProject,
+    private history: History,
     private runtime: Runtime,
     private monaco: Monaco,
     private registry: ToolRegistry
@@ -971,7 +973,9 @@ export class CodeEditor extends Disposable {
 
       this.getAttachedUI()?.open(targetDoc.id)
 
-      targetDoc.setValue(code)
+      await this.history.doAction({ name: { en: 'Write code file', zh: '写入代码文件' } }, () =>
+        targetDoc.setValue(code)
+      )
 
       const diagnostics = await this.getDiagnostics({ file })
       const files = await this.listFiles()
@@ -1012,7 +1016,7 @@ export class CodeEditor extends Disposable {
   private addTextDocument(id: TextDocumentIdentifier) {
     const resourceModelId = textDocumentId2ResourceModelId(id, this.project)
     if (resourceModelId == null) throw new Error(`Invalid text document id: ${id.uri}`)
-    const textDocument = createTextDocument(resourceModelId, this.project, this.monaco)
+    const textDocument = createTextDocument(resourceModelId, this.project, this.history, this.monaco)
     this.textDocuments.set(resourceModelId.toString(), textDocument)
     this.addDisposable(textDocument)
     return textDocument

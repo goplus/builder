@@ -13,8 +13,8 @@
 import { ref } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import type { Sound } from '@/models/sound'
-import type { Project } from '@/models/project'
+import type { Sound } from '@/models/spx/sound'
+import type { SpxProject } from '@/models/spx/project'
 import { UIFormModal, useConfirmDialog } from '@/components/ui'
 import SoundRecorder from './SoundRecorder.vue'
 
@@ -22,7 +22,7 @@ const recordStarted = ref(false)
 
 defineProps<{
   visible: boolean
-  project: Project
+  project: SpxProject
 }>()
 
 const emit = defineEmits<{

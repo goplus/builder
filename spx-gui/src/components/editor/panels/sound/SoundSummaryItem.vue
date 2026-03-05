@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { Sound } from '@/models/sound'
+import { Sound } from '@/models/spx/sound'
 import { UIIcon } from '@/components/ui'
 import PanelSummaryItem from '../common/PanelSummaryItem.vue'
 

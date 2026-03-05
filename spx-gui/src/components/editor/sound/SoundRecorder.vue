@@ -103,20 +103,23 @@
 import { ref } from 'vue'
 import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
-import { Sound } from '@/models/sound'
-import type { Project } from '@/models/project'
+import { Sound } from '@/models/spx/sound'
+import type { SpxProject } from '@/models/spx/project'
 import { UIButton, UIIcon } from '@/components/ui'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import { WaveformRecorder } from './waveform'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
 }>()
 
 const emit = defineEmits<{
   saved: [Sound]
   recordStarted: []
 }>()
+
+const editorCtx = useEditorCtx()
 
 const recordingState = ref<'yetStarted' | 'recording' | 'recorded'>('yetStarted')
 
@@ -146,7 +149,7 @@ const saveRecording = async () => {
   const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`, wav)
   const sound = await Sound.create('recording', file)
   const action = { name: { en: 'Add recording', zh: '添加录音' } }
-  await props.project.history.doAction(action, () => props.project.addSound(sound))
+  await editorCtx.state.history.doAction(action, () => props.project.addSound(sound))
   emit('saved', sound)
 }
 

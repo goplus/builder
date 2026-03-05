@@ -5,13 +5,13 @@
 -->
 
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { capture, useMessageHandle } from '@/utils/exception'
-import type { Sprite } from '@/models/sprite'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
-import type { CostumeGen } from '@/models/gen/costume-gen'
-import type { AnimationGen } from '@/models/gen/animation-gen'
+import type { Sprite } from '@/models/spx/sprite'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
+import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { UIButton, UITooltip, useConfirmDialog, type ConfirmOptions } from '@/components/ui'
 import { useRenameAnimationGen, useRenameCostumeGen } from '../..'
 import CostumeSettingInput from '../costume/CostumeSettingsInput.vue'
@@ -32,28 +32,22 @@ const emit = defineEmits<{
   finished: [Sprite]
 }>()
 
-type Selected = {
-  type: 'costume' | 'animation'
-  id: string
-}
-
-const selectedRef = shallowRef<Selected | null>(null)
-
 const selected = computed(() => {
-  if (selectedRef.value == null) return null
-  const { type, id } = selectedRef.value
+  const selectedItem = props.gen.selectedItem
+  if (selectedItem == null) return null
+  const { type, id } = selectedItem
   switch (type) {
     case 'costume':
-      return { type: 'costume', costume: props.gen.costumes.find((c) => c.id === id) ?? null }
+      return { type: 'costume', costume: props.gen.getCostumeById(id) }
     case 'animation':
-      return { type: 'animation', animation: props.gen.animations.find((a) => a.id === id) ?? null }
+      return { type: 'animation', animation: props.gen.getAnimationById(id) }
     default:
       return null
   }
 })
 
 function select(type: 'costume' | 'animation', id: string) {
-  selectedRef.value = { type, id }
+  props.gen.setSelectedItem({ type, id })
 }
 
 watch(

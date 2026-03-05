@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { UICard, UICardHeader, UIIcon, UITooltip } from '@/components/ui'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import MapViewer from './map-viewer/MapViewer.vue'
 import SpritesPanel from './SpritesPanel.vue'
 import MapBasicConfig from './MapBasicConfig.vue'
-import type { Sprite } from '@/models/sprite'
+import type { Sprite } from '@/models/spx/sprite'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
   selectedSpriteId: string | null
 }>()
 

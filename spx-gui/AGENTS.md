@@ -26,10 +26,6 @@ Keep import statements in order:
 2. Internal libraries: from base to specific, e.g., from `utils` to `models` to `components`
 3. Local files: relative paths starting with `./` or `../`
 
-### Code Formatting
-
-* Use Prettier (`npx prettier --write <file>`) for code formatting after making changes.
-
 ### Naming Conventions
 
 * Use `PascalCase` for the following:
@@ -46,9 +42,17 @@ Keep import statements in order:
 * Check `src/models/project/index.test.ts` for examples of constructing mock `Project` instances.
 * If test cases fail due to minor issues, fix them in the source code.
 * If test cases fail due to complex reasons, leave the test case unchanged and add a comment explaining the issue.
-* When running test cases, use the `--run` option to disable watch mode and get notified when tests finish. For example: `npm run test -- --run src/components/editor/editing.test.ts` runs tests in `editing.test.ts` in non-watch mode.
+* When running test cases, use the `--run` option to disable watch mode and get notified when tests finish. For example: `npm run test -- --run src/components/editor/editing.test.ts` or `npx vitest --run src/components/editor/editing.test.ts` runs tests in `editing.test.ts` in non-watch mode.
 * It's OK to use type assertions like `as any` or `as unknown` to bypass type errors if you are sure of the types, but try to avoid them if possible.
 * Avoid data sharing among test cases. Each test case should be independent and not rely on the state set by another test case.
+
+## Static Checks and Formatting
+
+* `npm run type-check` runs TypeScript type checking.
+* `npm run lint` runs ESLint.
+* `npm run test` runs unit tests.
+* Run the appropriate checks when making large changes and there are no pending TODOs that would cause static checks to fail.
+* Use Prettier (`npx prettier --write <file>`) for code formatting after making changes.
 
 ## Vue Component Development
 

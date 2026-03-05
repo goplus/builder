@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import type { Project } from '@/models/project'
-import { LayerSortMode } from '@/models/stage'
+import type { SpxProject } from '@/models/spx/project'
+import { LayerSortMode } from '@/models/spx/stage'
 
 import { UIRadioGroup, UIRadio, UITooltip } from '@/components/ui'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
 }>()
 
+const editorCtx = useEditorCtx()
+
 const handleLayerSortModeChange = (v: string | null) => {
-  props.project.history.doAction(
+  editorCtx.state.history.doAction(
     {
       name: {
         en: `Configure map layer sorting to ${v === LayerSortMode.Default ? 'default' : 'vertical'}`,

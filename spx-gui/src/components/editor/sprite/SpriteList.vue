@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type ComponentPublicInstance, computed, onBeforeUnmount, shallowReactive } from 'vue'
-import { Sprite } from '@/models/sprite'
-import { SpriteGen } from '@/models/gen/sprite-gen'
+import { Sprite } from '@/models/spx/sprite'
+import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
 import type { DragSortableOptions } from '@/utils/drag-and-drop'
@@ -32,7 +32,7 @@ function setSpriteGenItemRef(ref: Element | ComponentPublicInstance | null, gen:
 }
 
 onBeforeUnmount(
-  editorCtx.state.addSpriteGenCollapsePosProvider(async (gen) => {
+  editorCtx.state.genState.registerSpritePosProvider(async (gen) => {
     const el = await untilNotNull(() => spriteGenItemRefs.get(gen.id))
     el.scrollIntoView({ block: 'nearest' })
     const rect = el.getBoundingClientRect()
@@ -43,7 +43,7 @@ onBeforeUnmount(
   })
 )
 
-const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.spriteGens])
+const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.genState.sprites])
 
 const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
   filterItem: (item: unknown) => {
@@ -65,7 +65,7 @@ const handleSorted = useMessageHandle(
   // sprites are always before spriteGens, so the index is correct theoretically
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update sprite order', zh: '更新精灵顺序' } }
-    await editorCtx.project.history.doAction(action, () => editorCtx.project.moveSprite(oldIdx, newIdx))
+    await editorCtx.state.history.doAction(action, () => editorCtx.project.moveSprite(oldIdx, newIdx))
   },
   {
     en: 'Failed to update sprite order',
@@ -81,9 +81,9 @@ const handleSpriteGenClick = useMessageHandle(
 
     // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
     gen.dispose()
-    editorCtx.state.removeSpriteGen(gen.id)
+    editorCtx.state.genState.removeSprite(gen.id)
 
-    await editorCtx.project.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
+    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
       editorCtx.project.addSprite(result)
       await result.autoFit()
     })
@@ -111,7 +111,7 @@ const handleSpriteGenClick = useMessageHandle(
       @click="handleSpriteClick(sprite)"
     />
     <SpriteGenItem
-      v-for="gen in editorCtx.state.spriteGens"
+      v-for="gen in editorCtx.state.genState.sprites"
       :key="gen.id"
       :ref="(el) => setSpriteGenItemRef(el, gen)"
       :gen="gen"

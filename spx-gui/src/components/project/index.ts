@@ -1,7 +1,7 @@
 import { useModal, useConfirmDialog } from '@/components/ui'
 import { Visibility, deleteProject } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
@@ -15,6 +15,7 @@ import ProjectPublishedModal from './ProjectPublishedModal.vue'
  * 4. Replace `./default-project.xbp` with the exported file.
  */
 import defaultProjectFileUrl from './default-project.xbp?url'
+import { cloudHelpers } from '@/models/common/cloud'
 
 /**
  * Get the default project file as a File object
@@ -71,7 +72,7 @@ export function usePublishProject() {
   const invokePublishModal = useModal(ProjectPublishModal)
   const invokePublishedModal = useModal(ProjectPublishedModal)
 
-  return async function publishProject(project: Project) {
+  return async function publishProject(project: SpxProject) {
     await invokePublishModal({ project })
     invokePublishedModal({ project })
   }
@@ -80,14 +81,15 @@ export function usePublishProject() {
 export function useUnpublishProject() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
-
   // TODO: message for exception
-  async function makePrivate(project: Project) {
+  async function makePrivate(project: SpxProject) {
     project.setVisibility(Visibility.Private)
-    await project.saveToCloud()
+    const serialized = await project.export()
+    const saved = await cloudHelpers.save(serialized)
+    project.setMetadata(saved.metadata)
   }
 
-  return async function unpublishProject(project: Project) {
+  return async function unpublishProject(project: SpxProject) {
     return withConfirm({
       title: t({ en: 'Unpublish project', zh: '取消发布项目' }),
       content: t({

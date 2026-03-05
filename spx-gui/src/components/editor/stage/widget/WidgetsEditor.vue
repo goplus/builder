@@ -77,7 +77,10 @@ export class WidgetsEditorState extends Disposable {
   /** Select a target (by name) */
   selectByName(name: string): void {
     const widget = this.getStage().widgets.find((widget) => widget.name === name)
-    if (widget == null) throw new Error(`Widget with name "${name}" not found`)
+    if (widget == null) {
+      capture(new Error(`Widget with name "${name}" not found`))
+      return
+    }
     this.select(widget.id)
   }
   /** Select a target (by specifying route path) */
@@ -97,10 +100,10 @@ export class WidgetsEditorState extends Disposable {
 <script setup lang="ts">
 import { computed, ref, watch, type Ref } from 'vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
-import type { Stage } from '@/models/stage'
+import type { Stage } from '@/models/spx/stage'
 import { useAddMonitor } from '@/components/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import EditorList from '../../common/EditorList.vue'
@@ -131,7 +134,7 @@ const handleAddMonitor = useMessageHandle(
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update widget order', zh: '更新控件顺序' } }
-    await editorCtx.project.history.doAction(action, () => stage.value.moveWidget(oldIdx, newIdx))
+    await editorCtx.state.history.doAction(action, () => stage.value.moveWidget(oldIdx, newIdx))
   },
   {
     en: 'Failed to update widget order',

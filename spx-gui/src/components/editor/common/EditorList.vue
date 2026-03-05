@@ -26,7 +26,7 @@
 import { computed, ref } from 'vue'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { humanizeResourceType, type ResourceModelType } from '@/models/common/resource-model'
+import { humanizeResourceType, type ResourceModelType } from '@/models/spx/common/resource-model'
 import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
 
 const props = withDefaults(

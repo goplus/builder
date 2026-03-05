@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
-import { asset2Backdrop } from '@/models/common/asset'
+import { asset2Backdrop } from '@/models/spx/common/asset'
 import { UIBackdropItem } from '@/components/ui'
 
 const props = defineProps<{

@@ -40,10 +40,10 @@
 <script setup lang="ts">
 import { UITooltip, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import type { MapMode } from '@/models/stage'
+import type { MapMode } from '@/models/spx/stage'
 
 const handleUpdateMapMode = (mode: MapMode) => {
-  editorCtx.project.history.doAction({ name: { en: 'Update backdrop mode', zh: '修改背景模式' } }, () => {
+  editorCtx.state.history.doAction({ name: { en: 'Update backdrop mode', zh: '修改背景模式' } }, () => {
     editorCtx.project.stage.setMapMode(mode)
   })
 }

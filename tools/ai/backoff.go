@@ -31,10 +31,8 @@ func backoffSleep(base, cap time.Duration, attempt int) time.Duration {
 func backoffAttempts(ctx context.Context, maxAttempts int, base, cap time.Duration) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		for attempt := range maxAttempts {
-			select {
-			case <-ctx.Done():
+			if ctx.Err() != nil {
 				return
-			default:
 			}
 
 			if !yield(attempt) {

@@ -6,7 +6,7 @@ import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
 import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import {
   fromLSPRange,
   type DefinitionIdentifier,
@@ -119,7 +119,7 @@ type TelemetryEventParamsForNotification = TelemetryEventBaseParams & {
 type TelemetryEventParams = TelemetryEventParamsForCall | TelemetryEventParamsForNotification
 
 export class SpxLSPClient extends Disposable {
-  constructor(private project: Project) {
+  constructor(private project: SpxProject) {
     super()
   }
 
@@ -128,7 +128,7 @@ export class SpxLSPClient extends Disposable {
 
   async loadFiles(signal: AbortSignal) {
     this.isFilesStale.value = true
-    const files = this.project.exportGameFiles()
+    const files = this.project.exportFiles()
     const loadedFiles: SpxlsFiles = {}
     await Promise.all(
       Object.entries(files).map(async ([path, file]) => {

@@ -11,13 +11,30 @@ import { Visibility, addProject, getProject, updateProject } from '@/apis/projec
 import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException, TimeoutException } from '@/utils/exception'
 import { getUphostsByRegion } from '@/utils/kodo'
-import type { Metadata } from '../project'
+import type { Metadata, ProjectSerialized } from '../project'
 import { File, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
 import { createAIDescriptionFiles, extractAIDescription } from './'
 import { getUniversalUrlScheme, stringifyDataUrl, stringifyKodoUrl, UniversalUrlScheme } from '@/utils/universal-url'
 
-export async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
+/** Helpers for cloud storage of project data. */
+export class CloudHelpers {
+  load(
+    owner: string,
+    name: string,
+    preferPublishedContent: boolean = false,
+    signal?: AbortSignal
+  ): Promise<ProjectSerialized> {
+    return load(owner, name, preferPublishedContent, signal)
+  }
+  save({ metadata, files }: ProjectSerialized, signal?: AbortSignal) {
+    return save(metadata, files, signal)
+  }
+}
+
+export const cloudHelpers = new CloudHelpers()
+
+async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
   let projectData = await getProject(owner, name, signal)
   if (preferPublishedContent) {
     const published = getPublishedContent(projectData)
@@ -38,7 +55,7 @@ export function getPublishedContent(project: ProjectData) {
   return null
 }
 
-export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
+async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
   const { owner, name, id } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
