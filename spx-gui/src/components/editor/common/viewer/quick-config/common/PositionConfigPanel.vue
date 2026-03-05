@@ -25,16 +25,16 @@ const handleUpdateY = debounce((y: number) => {
   <ConfigPanel>
     <div class="position-config-wrapper">
       <UINumberInput
-        class="position-input"
         v-radar="{ name: 'X position input', desc: `Input to set ${name} X position` }"
+        class="position-input"
         :value="localConfig.x"
         @update:value="handleUpdateX($event ?? 0)"
       >
         <template #prefix>X</template>
       </UINumberInput>
       <UINumberInput
-        class="position-input"
         v-radar="{ name: 'Y position input', desc: `Input to set ${name} Y position` }"
+        class="position-input"
         :value="localConfig.y"
         @update:value="handleUpdateY($event ?? 0)"
       >
