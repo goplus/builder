@@ -4,7 +4,7 @@
     {
       "type": "frame",
       "id": "ZXsVf",
-      "x": -350.21148036253777,
+      "x": -350,
       "y": 300,
       "name": "Community Home signin",
       "width": 1440,
@@ -12,6 +12,158 @@
       "layout": "vertical",
       "alignItems": "center",
       "children": [
+        {
+          "type": "frame",
+          "id": "6sW5E",
+          "name": "New Version Notification",
+          "width": 1440,
+          "height": 50,
+          "fill": "#fff6ebff",
+          "stroke": {
+            "align": "inside",
+            "thickness": 2
+          },
+          "gap": 306,
+          "padding": [
+            11,
+            24
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Q7Toi",
+              "name": "Frame 2",
+              "width": "fill_container",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "gap": 24,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "4N6GW",
+                  "name": "Frame 3",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "MsTJO",
+                      "name": "Frame 1000004878",
+                      "clip": true,
+                      "width": 20,
+                      "height": 20,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 0.8333333730697632
+                      },
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "id": "sww1P",
+                          "x": -2.5,
+                          "y": -2.5,
+                          "name": "Notification 3",
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "../images/Notification-2.gif",
+                            "mode": "fill"
+                          },
+                          "width": 25,
+                          "height": 25,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 0.1666666567325592
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "smFc2",
+                      "name": "Frame 1",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "gap": 4,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Z3gwr",
+                          "name": "XBuilder 新版本上线！",
+                          "fill": "#57606aff",
+                          "content": "XBuilder 新版本上线！",
+                          "lineHeight": 1.5714285714285714,
+                          "textAlignVertical": "middle",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "C6V4r",
+                          "name": "为确保最佳使用体验，请更新至最新版本",
+                          "fill": "#57606aff",
+                          "content": "为确保最佳使用体验，请更新至最新版本",
+                          "lineHeight": 1.5714285714285714,
+                          "textAlignVertical": "middle",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Cbusc",
+                  "name": "Button",
+                  "height": 26,
+                  "fill": "#faa135ff",
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": 4,
+                  "padding": [
+                    5,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "9B94P",
+                      "name": "Button Text",
+                      "fill": "#ffffffff",
+                      "content": "更新体验",
+                      "lineHeight": 1.6923076923076923,
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
         {
           "type": "frame",
           "id": "3g97s",
