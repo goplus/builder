@@ -164,10 +164,6 @@ export class Client {
     return this.requestBinary(path, payload, { ...options, method: 'POST' })
   }
 
-  put(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
-    return this.requestJSON(path, payload, { ...options, method: 'PUT' })
-  }
-
   patch(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
     return this.requestJSON(path, payload, { ...options, method: 'PATCH' })
   }

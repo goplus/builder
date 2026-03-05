@@ -38,12 +38,12 @@ export type GenerateMessageOptions = {
 
 const timeout = 15 * 1000
 
-export async function generateMessage(scope: CopilotScope, messages: Message[], options?: GenerateMessageOptions) {
-  return (await client.post(
+export function generateMessage(scope: CopilotScope, messages: Message[], options?: GenerateMessageOptions) {
+  return client.post(
     '/copilot/message',
     { scope, messages },
     { timeout: timeout, signal: options?.signal }
-  )) as Message
+  ) as Promise<Message>
 }
 
 export async function* generateStreamMessage(
