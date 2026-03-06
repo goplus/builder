@@ -71,7 +71,7 @@ async function validateName(name: string): Promise<FormValidationResult> {
       zh: '项目名长度超出限制（最多 100 个字符）'
     })
 
-  if (name === currentName.value) return
+  if (name.toLowerCase() === currentName.value.toLowerCase()) return
 
   const owner = props.project.owner
   if (owner == null) throw new Error('Project owner is not loaded')
