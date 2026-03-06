@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
-import { humanizeRemaining } from '../common/remaining-time'
-import type { CostumeGen } from '@/models/gen/costume-gen'
+import { humanizeTimeLeft } from '../common/time-left'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { UIImg, UIButton, UIError } from '@/components/ui'
 import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
 import { useRenameCostumeGen } from '../..'
@@ -51,7 +51,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
     </template>
     <GenLoading v-if="gen.generateState.status === 'running'" variant="bg-spin">
       {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
-      {{ gen.generateState.remaining != null ? $t(humanizeRemaining(gen.generateState.remaining)) : '' }}
+      {{ gen.generateState.timeLeft != null ? $t(humanizeTimeLeft(gen.generateState.timeLeft)) : '' }}
     </GenLoading>
     <GenStateFailed v-else-if="gen.generateState.status === 'failed'" :state-failed="gen.generateState" />
     <GenLoading v-else-if="imgLoading" variant="bg-spin">

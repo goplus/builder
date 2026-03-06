@@ -1,22 +1,27 @@
 <script setup lang="ts">
 import { debounce } from 'lodash'
 
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 
 import { UINumberInput } from '@/components/ui'
-import { defaultMapSize } from '@/models/stage'
+import { defaultMapSize } from '@/models/spx/stage'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
 }>()
+
+const editorCtx = useEditorCtx()
 
 const handleWidthChange = debounce((v: number | null) => {
   const action = { name: { en: `Configure map width`, zh: `修改地图宽度` } }
-  props.project.history.doAction(action, () => props.project.stage.setMapWidth(v != null ? v : defaultMapSize.width))
+  editorCtx.state.history.doAction(action, () => props.project.stage.setMapWidth(v != null ? v : defaultMapSize.width))
 }, 300)
 const handleHeightChange = debounce((v: number | null) => {
   const action = { name: { en: `Configure map height`, zh: `修改地图高度` } }
-  props.project.history.doAction(action, () => props.project.stage.setMapHeight(v != null ? v : defaultMapSize.height))
+  editorCtx.state.history.doAction(action, () =>
+    props.project.stage.setMapHeight(v != null ? v : defaultMapSize.height)
+  )
 }, 300)
 </script>
 

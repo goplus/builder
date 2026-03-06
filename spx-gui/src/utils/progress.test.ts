@@ -21,26 +21,84 @@ describe('ProgressReporter', () => {
     reporter.report(0.8, { en: 'quux', zh: 'quux' })
     expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.8, desc: { en: 'quux', zh: 'quux' } })
   })
+
+  it('should report timeLeft as null by default', () => {
+    const onProgress = vitest.fn()
+    const reporter = new ProgressReporter(onProgress)
+    reporter.report(0.5, { en: 'foo', zh: 'foo' })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({
+      percentage: 0.5,
+      desc: { en: 'foo', zh: 'foo' },
+      timeLeft: null
+    })
+  })
+
+  it('should report timeLeft when provided', () => {
+    const onProgress = vitest.fn()
+    const reporter = new ProgressReporter(onProgress)
+    reporter.report({ percentage: 0.3, desc: null, timeLeft: 5000 })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({
+      percentage: 0.3,
+      desc: null,
+      timeLeft: 5000
+    })
+    reporter.report(0.8, { en: 'bar', zh: 'bar' })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({
+      percentage: 0.8,
+      desc: { en: 'bar', zh: 'bar' },
+      timeLeft: null
+    })
+  })
+
+  it('should pass through timeLeft when reporting with object', () => {
+    const onProgress = vitest.fn()
+    const reporter = new ProgressReporter(onProgress)
+    reporter.report({ percentage: 0.5, desc: { en: 'foo', zh: 'foo' }, timeLeft: 3000 })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({
+      percentage: 0.5,
+      desc: { en: 'foo', zh: 'foo' },
+      timeLeft: 3000
+    })
+  })
+
   describe('startAutoReport', () => {
     it('should work well', async () => {
       async function checkWithTimes(estimatedTimes: number) {
         const percentages: number[] = []
         const onProgress = vitest.fn((p) => percentages.push(p.percentage))
-        const reporter = new ProgressReporter(onProgress)
         const interval = 100
         const maxTimes = estimatedTimes * 2
+        const reporter = new ProgressReporter(onProgress)
         await reporter.startAutoReport(interval * estimatedTimes, interval)
         expect([
-          maxTimes,
-          maxTimes + 1 // There may be little difference due to floating-point-number calculation issue in JS
+          maxTimes + 1,
+          maxTimes + 2 // There may be little difference due to floating-point-number calculation issue in JS
         ]).includes(onProgress.mock.calls.length)
-        for (let i = 0; i < maxTimes; i++) {
+        // percentages[0] is the immediate initial report (percentage: 0)
+        expect(percentages[0]).toBe(0)
+        for (let i = 1; i <= maxTimes; i++) {
           expect(percentages[i]).toBeGreaterThan(0)
           expect(percentages[i]).toBeLessThan(1)
-          if (i > 0) expect(percentages[i]).toBeGreaterThan(percentages[i - 1])
+          if (i > 1) expect(percentages[i]).toBeGreaterThan(percentages[i - 1])
         }
       }
       await Promise.all([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(checkWithTimes))
+    })
+    it('should report decreasing timeLeft', async () => {
+      const timeCost = 500
+      const interval = 100
+      const onProgress = vitest.fn()
+      const reporter = new ProgressReporter(onProgress)
+      await reporter.startAutoReport(timeCost, interval)
+      const etls: number[] = onProgress.mock.calls.map(([p]) => p.timeLeft)
+      expect(etls.length).toBeGreaterThan(0)
+      for (const etl of etls) {
+        expect(etl).toBeGreaterThan(0)
+        expect(etl).toBeLessThanOrEqual(timeCost)
+      }
+      for (let i = 0; i < etls.length - 1; i++) {
+        expect(etls[i]).toBeGreaterThan(etls[i + 1])
+      }
     })
     it('should stop when finished', async () => {
       const onProgress = vitest.fn()
@@ -49,7 +107,7 @@ describe('ProgressReporter', () => {
       await timeout(250)
       reporter.report(1)
       await autoReportDone
-      expect(onProgress).toHaveBeenCalledTimes(3)
+      expect(onProgress).toHaveBeenCalledTimes(4)
     })
   })
 })
@@ -133,6 +191,60 @@ describe('ProgressCollector', () => {
     expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 1, desc: null })
   })
 
+  it('should use weight for percentage calculation', () => {
+    const onProgress = vitest.fn()
+    const collector = new ProgressCollector()
+    collector.onProgress(onProgress)
+    const subReporter1 = collector.getSubReporter(null, 1)
+    const subReporter2 = collector.getSubReporter(null, 3)
+
+    subReporter1.report(1)
+    // 1 / 4 = 0.25
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.25 })
+
+    subReporter2.report(1)
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 1 })
+  })
+
+  it('should aggregate timeLeft from sub-tasks', () => {
+    const onProgress = vitest.fn()
+    const collector = new ProgressCollector()
+    collector.onProgress(onProgress)
+
+    const sub1 = collector.getSubReporter(null, 1)
+    const sub2 = collector.getSubReporter(null, 1)
+
+    // sub1 reports timeLeft
+    sub1.report({ percentage: 0.5, desc: null, timeLeft: 2000 })
+    // sub1 remaining: 1 * 0.5 = 0.5, sub2 remaining: 1 * 1 = 1, total remaining: 1.5
+    // timeLeft = 2000 * (1.5 / 0.5) = 6000
+    expect(onProgress.mock.lastCall![0].timeLeft).toBe(6000)
+
+    sub1.report(1)
+    // sub1 finished, no unfinished sub-task reports timeLeft
+    expect(onProgress.mock.lastCall![0].timeLeft).toBe(null)
+
+    sub2.report({ percentage: 0.5, desc: null, timeLeft: 1000 })
+    // sub2 remaining: 1 * 0.5 = 0.5, total remaining: 0.5
+    // timeLeft = 1000 * (0.5 / 0.5) = 1000
+    expect(onProgress.mock.lastCall![0].timeLeft).toBe(1000)
+  })
+
+  it('should aggregate timeLeft with different weights', () => {
+    const onProgress = vitest.fn()
+    const collector = new ProgressCollector()
+    collector.onProgress(onProgress)
+
+    const sub1 = collector.getSubReporter(null, 1)
+    collector.getSubReporter(null, 3)
+
+    // sub1 at 50% with timeLeft=1000
+    sub1.report({ percentage: 0.5, desc: null, timeLeft: 1000 })
+    // sub1 remaining: 1 * 0.5 = 0.5, sub2 remaining: 3 * 1 = 3, total remaining: 3.5
+    // timeLeft = 1000 * (3.5 / 0.5) = 7000
+    expect(onProgress.mock.lastCall![0].timeLeft).toBe(7000)
+  })
+
   it('should collect progress well with nested collector', () => {
     const onProgress = vitest.fn()
     const collector = new ProgressCollector()
@@ -164,6 +276,28 @@ describe('ProgressCollector', () => {
 
     subReporter21.report(1)
     expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 1, desc: null })
+  })
+
+  it('should aggregate percentage with nested collectors using weights', () => {
+    const onProgress = vitest.fn()
+    const collector = new ProgressCollector()
+    collector.onProgress(onProgress)
+    const subReporter1 = collector.getSubReporter(null, 1)
+    const subReporter2 = collector.getSubReporter(null, 1)
+    const subCollector1 = ProgressCollector.collectorFor(subReporter1)
+    const sub11 = subCollector1.getSubReporter(null, 1)
+    const sub12 = subCollector1.getSubReporter(null, 1)
+
+    sub11.report(1)
+    // sub11 done: 1/(1+1)=0.5 for subReporter1, percentage = 0.5 * 1 / (1+1) = 0.25
+    expect(onProgress.mock.lastCall![0].percentage).toBeCloseTo(0.25)
+
+    sub12.report(1)
+    // subReporter1 fully done: 1/(1+1) = 0.5
+    expect(onProgress.mock.lastCall![0].percentage).toBeCloseTo(0.5)
+
+    subReporter2.report(1)
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 1 })
   })
 
   describe('collectorFor', () => {

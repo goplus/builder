@@ -3,11 +3,11 @@ import { computed } from 'vue'
 import { UIButton, UIFormModal, UITextInput, UILink } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectPageRoute } from '@/router'
-import { Project } from '@/models/project'
+import { SpxProject } from '@/models/spx/project'
 
 const props = defineProps<{
   visible: boolean
-  project: Project
+  project: SpxProject
 }>()
 
 const emit = defineEmits<{
@@ -28,7 +28,7 @@ const handleCopy = useMessageHandle(
 <template>
   <UIFormModal
     :radar="{ name: 'Project published modal', desc: 'Modal showing project published successfully' }"
-    :title="$t({ en: `Project ${project.name} published`, zh: `项目 ${project.name} 发布成功` })"
+    :title="$t({ en: `Project ${project.displayName} published`, zh: `项目 ${project.displayName} 发布成功` })"
     :visible="props.visible"
     :auto-focus="false"
     @update:visible="emit('cancelled')"

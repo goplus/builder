@@ -5,11 +5,11 @@
 -->
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { UIButton } from '@/components/ui'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
-import { humanizeRemaining } from '../common/remaining-time'
+import { humanizeTimeLeft } from '../common/time-left'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
@@ -21,23 +21,21 @@ const props = defineProps<{
   descriptionPlaceholder?: string
 }>()
 
-// Only allow submission if the selected image is part of the generated results.
-// If the image is not in the results, it might be inconsistent with the current settings
-// (e.g., after modifying the description and regenerating), so we prevent submission in this case.
-const imageInResult = computed(() => {
-  if (props.gen.image == null) return false
-  return props.gen.imagesGenState.result?.includes(props.gen.image)
-})
-const canSubmit = computed(
-  () => props.gen.image != null && imageInResult.value && props.gen.imagesGenState.status !== 'running'
-)
+const canSubmit = computed(() => props.gen.image != null)
 
 const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
   en: 'Failed to generate sprite content',
   zh: '生成精灵内容失败'
 })
 
-const hasPreview = computed(() => props.gen.image != null)
+// The preview area remains visible once the user has selected any generated image.
+// Example: if a user selects an image and then triggers regeneration,
+// the preview area stays visible even when no image is selected during or after generation.
+const hasPreview = ref(props.gen.imageIndex != null)
+function handleImageSelect(index: number) {
+  props.gen.setImageIndex(index)
+  hasPreview.value = true
+}
 </script>
 
 <template>
@@ -57,20 +55,20 @@ const hasPreview = computed(() => props.gen.image != null)
       />
       <ImageSelector
         :state="gen.imagesGenState"
-        :selected="gen.image"
+        :selected="gen.imageIndex"
         :disabled="handleSubmit.isLoading.value"
-        @select="gen.setImage($event)"
+        @select="handleImageSelect"
       >
         <template #loading-item>
           <SpriteImageItem loading />
         </template>
-        <template #item="{ file, active, select }">
-          <SpriteImageItem :file="file" :active="active" @click="select(file)" />
+        <template #item="{ file, active, onClick }">
+          <SpriteImageItem :file="file" :active="active" @click="onClick" />
         </template>
         <template #tip>
           <template v-if="gen.imagesGenState.status === 'running'">
             {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
-            {{ gen.imagesGenState.remaining != null ? $t(humanizeRemaining(gen.imagesGenState.remaining)) : '' }}
+            {{ gen.imagesGenState.timeLeft != null ? $t(humanizeTimeLeft(gen.imagesGenState.timeLeft)) : '' }}
           </template>
           <template v-else-if="gen.imagesGenState.status === 'finished'">
             {{
@@ -84,7 +82,7 @@ const hasPreview = computed(() => props.gen.image != null)
       </ImageSelector>
 
       <template #preview>
-        <ImagePreview :file="imageInResult ? gen.image : null" />
+        <ImagePreview :file="gen.image" />
       </template>
     </LayoutWithPreview>
     <footer class="footer">

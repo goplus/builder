@@ -1,7 +1,7 @@
 import { nextTick, ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
-import { type ProgressHandler } from './progress'
+import { type ProgressReportParams } from './progress'
 import { useQuery, composeQuery, type QueryContext } from './query'
 import { withSetup } from './test'
 import { timeout } from './utils'
@@ -265,7 +265,7 @@ describe('composeQuery', () => {
   })
 
   it('should work well with progress', async () => {
-    let report1!: ProgressHandler, report2!: ProgressHandler
+    let report1!: (p: ProgressReportParams) => void, report2!: (p: ProgressReportParams) => void
     let resolve1!: () => void, resolve2!: () => void
     const [ret1, ret2, ret3] = withSetup(() => {
       const ret1 = useQuery(async (ctx: QueryContext) => {

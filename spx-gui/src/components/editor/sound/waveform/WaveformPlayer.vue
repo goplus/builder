@@ -29,6 +29,14 @@ const registered = registerPlayer(stop)
 
 const play = async () => {
   if (!audioElement.value) return
+
+  // Ensure AudioContext is running to comply with browser autoplay policies,
+  // especially after a page refresh.
+  const audioContext = getAudioContext()
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume()
+  }
+
   if (!Number.isFinite(audioElement.value.duration)) {
     console.warn('audio duration is invalid. Started from the beginning.')
     // This can happen when the audio is not loaded yet.

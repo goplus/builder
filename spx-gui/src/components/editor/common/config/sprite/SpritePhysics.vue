@@ -9,17 +9,20 @@ enum PhysicsFlag {
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import { type Project } from '@/models/project'
-import { PhysicsMode, type Sprite } from '@/models/sprite'
+import { type SpxProject } from '@/models/spx/project'
+import { PhysicsMode, type Sprite } from '@/models/spx/sprite'
 import { wrapUpdateHandler } from '../utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 import { UICheckbox, UICheckboxGroup, UITooltip } from '@/components/ui'
 import { isEmpty, xor } from 'lodash'
 
 const props = defineProps<{
   sprite: Sprite
-  project: Project
+  project: SpxProject
 }>()
+
+const editorCtx = useEditorCtx()
 
 function isGravity(checkedList: string[] = checkedPhysicsFlags.value) {
   return checkedList.includes(PhysicsFlag.Gravity)
@@ -51,7 +54,7 @@ watch(
 
 const applyPhysicsModeToSprite = wrapUpdateHandler(
   (physicsMode: PhysicsMode) => props.sprite.setPhysicsMode(physicsMode),
-  () => ({ project: props.project, sprite: props.sprite }),
+  () => ({ history: editorCtx.state.history, sprite: props.sprite }),
   false
 )
 

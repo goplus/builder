@@ -1,7 +1,7 @@
 <template>
   <section class="editor-home">
     <header class="editor-header">
-      <EditorNavbar :project="project" :state="state" />
+      <EditorNavbar :project="state?.project ?? null" :state="state" />
     </header>
     <main class="editor-main">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
@@ -10,48 +10,59 @@
       <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
         {{ $t(allQueryRet.error.value.userMessage) }}
       </UIError>
-      <EditorContextProvider v-else :project="project!" :state="state!">
+      <EditorContextProvider v-else :project="state!.project" :state="state!">
         <ProjectEditor />
       </EditorContextProvider>
     </main>
   </section>
 </template>
 
+<script lang="ts">
+const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
+
+class LocalCache implements ILocalCache {
+  constructor(private helpers: LocalHelpers) {}
+  load(signal?: AbortSignal) {
+    return this.helpers.load(LOCAL_CACHE_KEY, signal)
+  }
+  save(serialized: ProjectSerialized, signal?: AbortSignal): Promise<void> {
+    return this.helpers.save(LOCAL_CACHE_KEY, serialized, signal)
+  }
+  clear() {
+    return this.helpers.clear(LOCAL_CACHE_KEY)
+  }
+}
+</script>
+
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from 'vue'
+import { onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { getSignedInUsername } from '@/stores/user'
-import { Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
-import { Cancelled } from '@/utils/exception'
-import { ProgressCollector, ProgressReporter } from '@/utils/progress'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 import { composeQuery, useQuery } from '@/utils/query'
-import { clear } from '@/models/common/local'
 import { UIDetailedLoading, UIError, useConfirmDialogWithResult, useMessage } from '@/components/ui'
-import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import { humanizeListWithLimit, untilNotNull, usePageTitle } from '@/utils/utils'
+import { untilNotNull, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
-import { EditingMode } from '@/components/editor/editing'
+import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
+import { cloudHelpers } from '@/models/common/cloud'
+import { localHelpers, type LocalHelpers } from '@/models/common/local'
+import type { ProjectSerialized } from '@/models/project'
+import { SpxProject } from '@/models/spx/project'
 
 const props = defineProps<{
   ownerName: string
   projectName: string
 }>()
-
-usePageTitle(() => ({
-  en: `Edit ${props.projectName}`,
-  zh: `编辑 ${props.projectName}`
-}))
-
-const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
+const localCache = new LocalCache(localHelpers)
 
 const signedInUsername = computed(() => getSignedInUsername())
 const copilotCtx = useAgentCopilotCtx()
@@ -59,7 +70,8 @@ const copilotCtx = useAgentCopilotCtx()
 const router = useRouter()
 
 const confirm = useConfirmDialogWithResult()
-const { t } = useI18n()
+const i18n = useI18n()
+const { t } = i18n
 const { isOnline } = useNetwork()
 const m = useMessage()
 
@@ -80,42 +92,59 @@ const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: str
   })
 }
 
-const projectQueryRet = useQuery(
+const stateQueryRet = useQuery(
   async (ctx) => {
-    // We need to access deps (`ownerName`, `projectName`) synchronously,
+    // We need to access deps (`ownerName`, `projectName`, `signedInUsername`) synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const project = await loadProject(props.ownerName, props.projectName, ctx.signal, ctx.reporter)
+    const ownerName = props.ownerName
+    const projectName = props.projectName
+    const username = signedInUsername.value
+
+    // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause infinite loop of query fetching.
+    // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
+    await nextTick()
+
+    const project = new SpxProject(ownerName, projectName)
+    project.disposeOnSignal(ctx.signal)
     ;(window as any).project = project // for debug purpose, TODO: remove me
-    return project
+    ctx.signal.throwIfAborted()
+    const state = new EditorState(i18n, project, isOnline, username, cloudHelpers, localCache)
+    state.disposeOnSignal(ctx.signal)
+    await state.editing.loadProject(
+      {
+        confirmOpenTargetWithAnotherInCache,
+        openProject
+      },
+      ctx.reporter,
+      ctx.signal
+    )
+    state.editing.startEditing()
+    state.syncWithRouter(router)
+    return state
   },
   { en: 'Failed to load project', zh: '加载项目失败' }
 )
 
-const project = projectQueryRet.data
-
-const stateQueryRet = useQuery(async (ctx) => {
-  const project = await composeQuery(ctx, projectQueryRet)
-  ctx.signal.throwIfAborted()
-  const state = new EditorState(project, isOnline, signedInUsername, LOCAL_CACHE_KEY)
-  state.disposeOnSignal(ctx.signal)
-  state.syncWithRouter(router)
-  state.editing.start()
-  return state
-})
-
 const state = stateQueryRet.data
+
+usePageTitle(() => {
+  const displayName = state.value?.project.displayName ?? props.projectName
+  return {
+    en: `Edit ${displayName}`,
+    zh: `编辑 ${displayName}`
+  }
+})
 
 if (copilotCtx.mcp.registry == null) {
   throw new Error('Copilot registry not initialized')
 }
 
-const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, stateQueryRet, copilotCtx.mcp.registry)
+const codeEditorQueryRet = useProvideCodeEditorCtx(stateQueryRet, copilotCtx.mcp.registry)
 
 const allQueryRet = useQuery(
   (ctx) =>
     Promise.all([
-      composeQuery(ctx, projectQueryRet, [{ en: 'Loading project...', zh: '加载项目中...' }, 2]),
-      composeQuery(ctx, stateQueryRet, [{ en: 'Initializing editor...', zh: '初始化编辑器中...' }, 0.1]),
+      composeQuery(ctx, stateQueryRet, [{ en: 'Loading project...', zh: '加载项目中...' }, 2]),
       composeQuery(ctx, codeEditorQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
     ]),
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
@@ -131,78 +160,12 @@ onMounted(async () => {
   const { publish, ...restQuery } = currentRoute.query
   const shouldPublish = publish !== undefined // Vue Router returns `publish: null` for `?publish`
   if (shouldPublish) {
-    const p = await untilNotNull(project)
-    publishProject(p).finally(() => {
+    const s = await untilNotNull(state)
+    publishProject(s.project).finally(() => {
       router.replace({ query: restQuery }) // Remove `publish` from query
     })
   }
 })
-
-async function loadProject(ownerName: string, projectName: string, signal: AbortSignal, reporter: ProgressReporter) {
-  const collector = ProgressCollector.collectorFor(reporter)
-  const loadFromLocalCacheReporter = collector.getSubReporter(
-    { en: 'Reading local cache...', zh: '读取本地缓存中...' },
-    1
-  )
-  const loadFromCloudReporter = collector.getSubReporter(
-    { en: 'Loading project from cloud...', zh: '从云端加载项目中...' },
-    10
-  )
-
-  let localProject: Project | null
-  try {
-    localProject = new Project()
-    localProject.disposeOnSignal(signal)
-    await localProject.loadFromLocalCache(LOCAL_CACHE_KEY)
-  } catch (e) {
-    console.warn('Failed to load project from local cache', e)
-    localProject = null
-    await clear(LOCAL_CACHE_KEY)
-  }
-  signal.throwIfAborted()
-  loadFromLocalCacheReporter.report(1)
-
-  // https://github.com/goplus/builder/issues/259
-  // https://github.com/goplus/builder/issues/393
-  // Local Cache Saving & Restoring
-  if (localProject != null && localProject.owner !== ownerName) {
-    // Case 4: Different user: Discard local cache
-    await clear(LOCAL_CACHE_KEY)
-    localProject = null
-  }
-
-  if (localProject != null && localProject.name !== projectName) {
-    const stillOpenTarget = await confirmOpenTargetWithAnotherInCache(projectName, localProject.name!)
-    signal.throwIfAborted()
-    if (stillOpenTarget) {
-      await clear(LOCAL_CACHE_KEY)
-      localProject = null
-    } else {
-      openProject(localProject.owner!, localProject.name!)
-      throw new Cancelled('Open another project')
-    }
-  }
-
-  let newProject = new Project()
-  newProject.disposeOnSignal(signal)
-  // For projects not owned by the signed-in user, we prefer to load the published version.
-  const preferPublishedContent = signedInUsername.value !== ownerName
-  await newProject.loadFromCloud(ownerName, projectName, preferPublishedContent, signal, loadFromCloudReporter)
-
-  // If there is no newer cloud version, use local version without confirmation.
-  // If there is a newer cloud version, use cloud version without confirmation.
-  // (clear local cache if cloud version is newer)
-  if (localProject != null) {
-    if (newProject.version <= localProject.version) {
-      newProject = localProject
-    } else {
-      await clear(LOCAL_CACHE_KEY)
-    }
-  }
-
-  signal.throwIfAborted()
-  return newProject
-}
 
 onBeforeRouteLeave(async () => {
   const es = state.value
@@ -219,36 +182,15 @@ onBeforeRouteLeave(async () => {
  */
 async function checkChangesNotToBeSaved(es: EditorState) {
   const hasEdits = es.editing.mode === EditingMode.EffectFree && es.editing.dirty
-  const unfinishedAssetGens = [...es.spriteGens, ...es.backdropGens]
-  const hasUnfinishedAssetGens = unfinishedAssetGens.length > 0
-  if (!hasEdits && !hasUnfinishedAssetGens) return true
-
-  let changes: LocaleMessage
-  const unfinishedNames = humanizeListWithLimit(
-    unfinishedAssetGens.map((gen) => ({ en: gen.name, zh: gen.name })),
-    3
-  )
-  if (hasEdits && hasUnfinishedAssetGens) {
-    changes = {
-      en: `Project edits and unfinished asset generations (${unfinishedNames.en})`,
-      zh: `对项目的修改和未完成的素材生成（${unfinishedNames.zh}）`
-    }
-  } else if (hasEdits) {
-    changes = { en: 'Project edits', zh: '对项目的修改' }
-  } else {
-    changes = {
-      en: `Unfinished asset generations (${unfinishedNames.en})`,
-      zh: `未完成的素材生成（${unfinishedNames.zh}）`
-    }
-  }
+  if (!hasEdits) return true
   return confirm({
     title: t({
       en: 'Leave editor',
       zh: '离开编辑器'
     }),
     content: t({
-      en: `${changes.en} will not be saved if you leave now. Are you sure to leave?`,
-      zh: `若现在离开，${changes.zh}将不会被保存。确定要离开吗？`
+      en: `Project edits will not be saved if you leave now. Are you sure to leave?`,
+      zh: `若现在离开，对项目的修改将不会被保存。确定要离开吗？`
     }),
     cancelText: t({
       en: 'Keep editing',
@@ -282,9 +224,7 @@ function ensureAutoSaved(es: EditorState) {
 function handleBeforeUnload(event: BeforeUnloadEvent) {
   const es = state.value
   if (es == null) return
-  if (es.editing.dirty || es.spriteGens.length > 0 || es.backdropGens.length > 0) {
-    event.preventDefault()
-  }
+  if (es.editing.dirty) event.preventDefault()
 }
 
 function preventDefaultSaveBehavior(event: KeyboardEvent) {

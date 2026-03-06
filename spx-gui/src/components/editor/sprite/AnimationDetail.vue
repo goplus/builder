@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Animation } from '@/models/animation'
+import type { Animation } from '@/models/spx/animation'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import AnimationPlayer from './animation/AnimationPlayer.vue'

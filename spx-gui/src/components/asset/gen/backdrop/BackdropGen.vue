@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { UIButton } from '@/components/ui'
-import type { Backdrop } from '@/models/backdrop'
-import type { BackdropGen } from '@/models/gen/backdrop-gen'
+import type { Backdrop } from '@/models/spx/backdrop'
+import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { capture, useMessageHandle } from '@/utils/exception'
-import { humanizeRemaining } from '../common/remaining-time'
+import { humanizeTimeLeft } from '../common/time-left'
 import BackdropSettingInput from './BackdropSettingsInput.vue'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
@@ -20,13 +20,7 @@ const emit = defineEmits<{
   finished: [Backdrop]
 }>()
 
-const imageInResult = computed(() => {
-  if (props.gen.image == null) return false
-  return props.gen.imagesGenState.result?.includes(props.gen.image)
-})
-const canSubmit = computed(
-  () => props.gen.image != null && imageInResult.value && props.gen.imagesGenState.status !== 'running'
-)
+const canSubmit = computed(() => props.gen.image != null)
 const handleSubmit = useMessageHandle(
   async () => {
     const backdrop = await props.gen.finish()
@@ -41,7 +35,14 @@ const handleSubmit = useMessageHandle(
   }
 )
 
-const hasPreview = computed(() => props.gen.image != null)
+// The preview area remains visible once the user has selected any generated image.
+// Example: if a user selects an image and then triggers regeneration,
+// the preview area stays visible even when no image is selected during or after generation.
+const hasPreview = ref(props.gen.imageIndex != null)
+function handleImageSelect(index: number) {
+  props.gen.setImageIndex(index)
+  hasPreview.value = true
+}
 </script>
 
 <template>
@@ -59,20 +60,20 @@ const hasPreview = computed(() => props.gen.image != null)
       />
       <ImageSelector
         :state="gen.imagesGenState"
-        :selected="gen.image"
+        :selected="gen.imageIndex"
         :disabled="handleSubmit.isLoading.value"
-        @select="gen.setImage($event)"
+        @select="handleImageSelect"
       >
         <template #loading-item>
           <BackdropImageItem loading />
         </template>
-        <template #item="{ file, active, select }">
-          <BackdropImageItem :file="file" :active="active" @click="select(file)" />
+        <template #item="{ file, active, onClick }">
+          <BackdropImageItem :file="file" :active="active" @click="onClick" />
         </template>
         <template #tip>
           <template v-if="gen.imagesGenState.status === 'running'">
             {{ $t({ en: `Generating backdrops... `, zh: `正在生成背景...` }) }}
-            {{ gen.imagesGenState.remaining != null ? $t(humanizeRemaining(gen.imagesGenState.remaining)) : '' }}
+            {{ gen.imagesGenState.timeLeft != null ? $t(humanizeTimeLeft(gen.imagesGenState.timeLeft)) : '' }}
           </template>
           <template v-else-if="gen.imagesGenState.status === 'finished'">
             {{
@@ -86,7 +87,7 @@ const hasPreview = computed(() => props.gen.image != null)
       </ImageSelector>
 
       <template #preview>
-        <ImagePreview :file="imageInResult ? gen.image : null" />
+        <ImagePreview :file="gen.image" />
       </template>
     </LayoutWithPreview>
     <footer class="footer">

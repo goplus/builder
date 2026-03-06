@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
-import { Sprite } from '@/models/sprite'
-import { Stage } from '@/models/stage'
+import { Sprite } from '@/models/spx/sprite'
+import { Stage } from '@/models/spx/stage'
 import { UIImg, UITooltip } from '@/components/ui'
 import { textDocumentId2CodeFileName, textDocumentId2ResourceModelId } from '../../common'
 import type { TextDocument } from '../../text-document'

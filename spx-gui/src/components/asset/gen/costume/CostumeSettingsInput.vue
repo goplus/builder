@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import type { CostumeGen } from '@/models/gen/costume-gen'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
 import ReferenceCostumeInput from '../common/ReferenceCostumeInput.vue'

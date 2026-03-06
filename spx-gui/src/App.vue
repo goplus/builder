@@ -1,24 +1,30 @@
 <template>
   <UIConfigProvider :config="config">
     <UIMessageProvider>
-      <UIModalProvider>
-        <CopilotRoot>
-          <TutorialRoot>
-            <AgentCopilotProvider>
-              <RouterView />
-              <SpotlightUI />
-              <CopilotUI />
-            </AgentCopilotProvider>
-          </TutorialRoot>
-        </CopilotRoot>
+      <MobileReminder v-if="showMobileReminder" />
+      <UIModalProvider v-else>
+        <BrowserVersionReminder />
+        <UpdateNotificationWrapper>
+          <CopilotRoot>
+            <TutorialRoot>
+              <AgentCopilotProvider>
+                <RouterView />
+                <SpotlightUI />
+                <CopilotUI />
+              </AgentCopilotProvider>
+            </TutorialRoot>
+          </CopilotRoot>
+        </UpdateNotificationWrapper>
       </UIModalProvider>
     </UIMessageProvider>
   </UIConfigProvider>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
+import BrowserVersionReminder from '@/components/app/browser-check/BrowserVersionReminder.vue'
+import UpdateNotificationWrapper from '@/components/app/update-check/UpdateNotificationWrapper.vue'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
 import CopilotRoot from '@/components/copilot/CopilotRoot.vue'
 import CopilotUI from '@/components/copilot/CopilotUI.vue'
@@ -26,6 +32,11 @@ import TutorialRoot from '@/components/tutorials/TutorialRoot.vue'
 import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from '@/utils/i18n'
 import { useInstallRouteLoading } from '@/utils/route-loading'
+import { isMobile } from '@/utils/ua'
+
+const MobileReminder = defineAsyncComponent(() => import('@/components/app/device-check/MobileReminder.vue'))
+
+const showMobileReminder = isMobile()
 
 const { t } = useI18n()
 

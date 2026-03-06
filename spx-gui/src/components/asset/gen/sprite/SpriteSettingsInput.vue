@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import type { SpriteGen } from '@/models/gen/sprite-gen'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import SettingsInput from '../common/SettingsInput.vue'
 import SpriteCategoryInput from './SpriteCategoryInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'

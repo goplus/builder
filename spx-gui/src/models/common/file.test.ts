@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { timeout } from '@/utils/utils'
 import { File } from './file'
 
@@ -15,12 +15,13 @@ function makeLoader() {
   const fn = (signal?: AbortSignal) => {
     loaderAborted = false
     loaderCallCount++
-    signal?.addEventListener('abort', () => {
-      loaderAborted = true
-    })
     promise = new Promise<ArrayBuffer>((rs, rj) => {
       resolve = rs
       reject = rj
+    })
+    signal?.addEventListener('abort', () => {
+      loaderAborted = true
+      reject(signal.reason)
     })
     return promise
   }
@@ -186,6 +187,38 @@ describe('File', () => {
       await expect(promise3).rejects.toThrow('aborted 3')
 
       expect(loader.callCount).toBe(1)
+    })
+    it('should load well after all concurrent calls aborted with loader not responding to signal in time', async () => {
+      const ab = makeAB('test')
+      const loader = vi.fn(async (signal?: AbortSignal) => {
+        // Though the signal will be aborted in 50ms, the loader won't respond to it until 200ms,
+        // which simulates the case where the loader is not responsive to signal in time
+        await timeout(200)
+        signal?.throwIfAborted()
+        return ab
+      })
+      const file = new File('test.txt', loader)
+      const ctrl1 = new AbortController()
+      const assertion1 = expect(file.arrayBuffer(ctrl1.signal)).rejects.toThrow('aborted 1')
+      const ctrl2 = new AbortController()
+      const assertion2 = expect(file.arrayBuffer(ctrl2.signal)).rejects.toThrow('aborted 2')
+      await timeout(50)
+      const ctrl3 = new AbortController()
+      const assertion3 = expect(file.arrayBuffer(ctrl3.signal)).rejects.toThrow('aborted 3')
+
+      await timeout(50)
+      ctrl1.abort(new Error('aborted 1'))
+      ctrl2.abort(new Error('aborted 2'))
+      ctrl3.abort(new Error('aborted 3'))
+
+      // The aborted calls should not cause following calls to be aborted
+      // await timeout(50)
+      const assertion4 = expect(file.arrayBuffer()).resolves.toBe(ab)
+      expect(loader).toHaveBeenCalledTimes(2)
+      await timeout(50)
+      const assertion5 = expect(file.arrayBuffer()).resolves.toBe(ab)
+      await Promise.all([assertion1, assertion2, assertion3, assertion4, assertion5])
+      expect(loader).toHaveBeenCalledTimes(2)
     })
   })
 })

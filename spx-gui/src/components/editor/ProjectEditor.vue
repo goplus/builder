@@ -55,12 +55,13 @@ import {
   listMonitorsToolDescription,
   ListMonitorsArgsSchema
 } from '@/components/agent-copilot/mcp/definitions'
-import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
+import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/spx/common/asset'
 import { computed, watchEffect } from 'vue'
 import type { z } from 'zod'
-import { Monitor } from '@/models/widget/monitor'
+import { Monitor } from '@/models/spx/widget/monitor'
 import { EditMode } from './editor-state'
 import MapEditor from './map-editor/MapEditor.vue'
+import { cloudHelpers } from '@/models/common/cloud'
 
 const editorCtx = useEditorCtx()
 const copilotCtx = useAgentCopilotCtx()
@@ -76,7 +77,7 @@ async function listMonitors() {
   const monitors = project.value.stage.widgets.filter((widget) => widget instanceof Monitor)
   return {
     success: true,
-    message: `Successfully listed ${monitors.length} monitors in project "${project.value.name}"`,
+    message: `Successfully listed ${monitors.length} monitors in project "${project.value.displayName}"`,
     monitors: monitors.map((monitor) => ({
       name: monitor.name,
       label: monitor.label,
@@ -102,7 +103,7 @@ async function addMonitor(args: AddMonitorOptions) {
   project.value.stage.addWidget(monitor)
   return {
     success: true,
-    message: `Successfully added monitor "${monitor.name}" to project "${project.value.name}"`
+    message: `Successfully added monitor "${monitor.name}" to project "${project.value.displayName}"`
   }
 }
 
@@ -111,10 +112,12 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   project.value.addSprite(sprite)
   await sprite.autoFit()
   editorCtx.state.selectSprite(sprite.id)
-  project.value.saveToCloud()
+  project.value
+    .export()
+    .then((serialized) => cloudHelpers.save(serialized).then((saved) => project.value.setMetadata(saved.metadata)))
   return {
     success: true,
-    message: `Successfully added sprite "${args.spriteName}" to project "${project.value.name}"`
+    message: `Successfully added sprite "${args.spriteName}" to project "${project.value.displayName}"`
   }
 }
 
@@ -122,10 +125,12 @@ async function addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
   const backdrop = await genBackdropFromCanvas(args.backdropName, 800, 600, args.color)
   project.value.stage.addBackdrop(backdrop)
   editorCtx.state.selectBackdrop(backdrop.id)
-  project.value.saveToCloud()
+  project.value
+    .export()
+    .then((serialized) => cloudHelpers.save(serialized).then((saved) => project.value.setMetadata(saved.metadata)))
   return {
     success: true,
-    message: `Successfully added backdrop "${args.backdropName}" to project "${project.value.name}"`
+    message: `Successfully added backdrop "${args.backdropName}" to project "${project.value.displayName}"`
   }
 }
 

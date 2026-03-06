@@ -7,7 +7,7 @@ const runnerUrl = `${runnerBaseUrl}/runner.html`
 const assetURLs = {
   // TODO: include these assets as "static asset" to generate immutable URLs
   'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
-  'gdspx.wasm': ispxWasmUrl,
+  'ispx.wasm': ispxWasmUrl,
   'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
   'engine.zip': `${runnerBaseUrl}/engine.zip`
 }
@@ -42,9 +42,9 @@ type RunnerFiles = {
 }
 
 interface RunnerIframeWindow extends Window {
-  setAIInteractionAPIEndpoint: (endpoint: string) => void
-  setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
-  setAIDescription: (description: string) => void
+  xbuilder_set_ai_interaction_api_endpoint: (endpoint: string) => void
+  xbuilder_set_ai_interaction_api_token_provider: (provider: () => Promise<string>) => void
+  xbuilder_set_ai_description: (description: string) => void
   /** Init the engine. Can be called early; project-agnostic. */
   initEngine(assetURLs: Record<string, string>, config?: EngineConfig): Promise<void>
   /** Init the game with project files. Should be called after `initEngine`, before `startGame` or earlier (when files change, etc.). */
@@ -141,14 +141,14 @@ import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
 import type { Files } from '@/models/common/file'
 import { hashFiles } from '@/models/common/hash'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
 import { ensureAccessToken } from '@/stores/user'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
 
-const props = defineProps<{ project: Project }>()
+const props = defineProps<{ project: SpxProject }>()
 
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
@@ -237,7 +237,7 @@ async function reloadIframe() {
 }
 
 async function prepareAIInteraction(
-  project: Project,
+  project: SpxProject,
   iframeWindow: RunnerIframeWindow,
   reporter: ProgressReporter,
   signal?: AbortSignal
@@ -250,9 +250,9 @@ async function prepareAIInteraction(
   const aiDescription = await project.ensureAIDescription(false, signal)
   if (engineInitPromise == null) throw new Error('engineInitPromise expected')
   await engineInitPromise
-  iframeWindow.setAIDescription(aiDescription)
-  iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
-  iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
+  iframeWindow.xbuilder_set_ai_description(aiDescription)
+  iframeWindow.xbuilder_set_ai_interaction_api_endpoint(apiBaseUrl + '/ai/interaction')
+  iframeWindow.xbuilder_set_ai_interaction_api_token_provider(async () => (await ensureAccessToken()) ?? '')
   reporter.report(1)
   return
 }
@@ -283,7 +283,10 @@ onUnmounted(() => {
 })
 
 async function runInternal(ctrl: AbortController) {
-  const startingState = shallowReactive({ type: 'starting', progress: { percentage: 0, desc: null } } satisfies State)
+  const startingState = shallowReactive({
+    type: 'starting',
+    progress: { percentage: 0, desc: null, timeLeft: null }
+  } satisfies State)
   state.value = startingState
   const collector = new ProgressCollector()
   collector.onProgress(throttle((progress) => (startingState.progress = progress), 100))
@@ -301,7 +304,7 @@ async function runInternal(ctrl: AbortController) {
     const initGameReporter = collector.getSubReporter({ en: 'Initializing project...', zh: '初始化项目中...' }, 5)
     const startGameReporter = collector.getSubReporter({ en: 'Starting project...', zh: '启动项目中...' }, 5)
 
-    const files = props.project.exportGameFiles()
+    const files = props.project.exportFiles()
 
     const iframeWindow = await untilNotNull(runnerIframeWindowRef, ctrl.signal)
     iframeLoadReporter.report(1)
@@ -324,7 +327,7 @@ async function runInternal(ctrl: AbortController) {
     await uiUpdated(ctrl.signal)
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
-    startGameReporter.startAutoReport(10 * 1000)
+    startGameReporter.startAutoReport(10_000)
     await iframeWindow.startGame()
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)
