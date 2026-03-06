@@ -30,3 +30,24 @@ export namespace xgoGetInputSlots {
   }
   export type Result = XGoInputSlot[] | null
 }
+
+export namespace xgoGetProperties {
+  export const command = 'xgo.getProperties'
+  type XGoGetPropertiesParams = {
+    /** The target name, for example `Game` or a specific sprite name. */
+    target: string
+  }
+  export type Arguments = [XGoGetPropertiesParams]
+  /** A property of a target type. */
+  export type XGoProperty = {
+    /** The property name. */
+    name: string
+    /** The property type as a string. */
+    type: string
+    /** The kind of property. */
+    kind: 'field' | 'method'
+    /** Optional documentation for the property. */
+    doc?: string
+  }
+  export type Result = XGoProperty[]
+}
