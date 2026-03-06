@@ -392,6 +392,25 @@ describe('Editing.loadProject', () => {
     expect(project.load).toHaveBeenCalledWith(cloudData, expect.anything())
   })
 
+  it('should treat cache name with different casing as the same project', async () => {
+    const cloudData = makeSerialized('alice', 'my-project', 1)
+    const localData = makeSerialized('alice', 'My-Project', 2)
+    const cloudHelper = makeCloudHelper()
+    vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
+    const localCacheHelper = makeLocalCache(localData)
+
+    const project = makeProject({ owner: 'alice', name: 'my-project' })
+    const editing = makeEditing({ project, cloudHelper, localCacheHelper })
+
+    const helpers = makeUIHelpers()
+
+    await editing.loadProject(helpers, makeReporter(), new AbortController().signal)
+
+    expect(helpers.confirmOpenTargetWithAnotherInCache).not.toHaveBeenCalled()
+    expect(localCacheHelper.clear).not.toHaveBeenCalled()
+    expect(project.load).toHaveBeenCalledWith(localData, expect.anything())
+  })
+
   it('should open cached project and throw Cancelled when user chooses cached project over target', async () => {
     const cloudData = makeSerialized('alice', 'my-project', 1)
     const localData = makeSerialized('alice', 'cached-project', 2)

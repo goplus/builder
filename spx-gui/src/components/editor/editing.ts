@@ -221,7 +221,11 @@ export class Editing extends Disposable {
         localData = null
         this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
       }
-      if (localMetadata.owner === ownerName && localMetadata.name != null && localMetadata.name !== projectName) {
+      if (
+        localMetadata.owner === ownerName &&
+        localMetadata.name != null &&
+        localMetadata.name.toLowerCase() !== projectName.toLowerCase()
+      ) {
         // If project name mismatch, ask user whether to open the cached project or not, to avoid potential data loss by clearing cache
         const stillOpenTarget = await helpers.confirmOpenTargetWithAnotherInCache(projectName, localMetadata.name)
         signal.throwIfAborted()

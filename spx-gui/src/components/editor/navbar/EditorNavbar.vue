@@ -166,7 +166,7 @@ import { convertScratchToXbp } from '@/apis/sb2xbp'
 import { type SpxProject } from '@/models/spx/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
-import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
+import { getProjectPageRoute } from '@/router'
 import { showTutorialsEntry } from '@/utils/env'
 import { useModifyProjectName, usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
@@ -328,7 +328,15 @@ const handleModifyProjectName = useMessageHandle(
     const nextName = await modifyProjectName(project)
     if (nextName == null) return
     if (nextName !== previousName && project.owner != null) {
-      router.replace(getProjectEditorRoute(project.owner, nextName))
+      const currentRoute = router.currentRoute.value
+      router.replace({
+        params: {
+          ...currentRoute.params,
+          ownerName: project.owner,
+          projectName: nextName
+        },
+        query: currentRoute.query
+      })
     }
   },
   { en: 'Failed to modify project name', zh: '修改项目名失败' }
