@@ -61,7 +61,7 @@
         />
       </v-layer>
     </v-stage>
-    <QuickConfigWrapper ref="quickConfigRef" class="quick-config">
+    <QuickConfigWrapper v-if="localConfigRef != null" ref="quickConfigRef" class="quick-config">
       <SpriteQuickConfig
         v-if="localConfigRef instanceof SpriteLocalConfig"
         :local-config="localConfigRef"
@@ -424,7 +424,10 @@ const localConfigRef = shallowRef<SpriteLocalConfig | WidgetLocalConfig | null |
 watch(
   () => [editorCtx.state.selectedSprite, editorCtx.state.selectedWidget] as const,
   ([sprite, widget]) => {
-    if (sprite == null && widget == null) return
+    if (sprite == null && widget == null) {
+      localConfigRef.value = null
+      return
+    }
     if (sprite != null) {
       localConfigRef.value = visibleSpriteLocalConfigs.value.find(({ id }) => id === sprite.id)
     } else if (widget != null) {
@@ -442,8 +445,8 @@ function handleSpriteUpdateTransformOp(op: TransformOp | null) {
   if (op == null) return
   if (op === 'move') {
     handleUpdateConfigType('pos')
-  } else if (op === 'rotate') {
-    handleUpdateConfigType('heading')
+  } else if (op === 'rotate' || op === 'flip') {
+    handleUpdateConfigType('rotation')
   } else if (op === 'scale') {
     handleUpdateConfigType('size')
   }

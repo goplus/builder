@@ -1,8 +1,20 @@
 <script lang="ts">
-export type ConfigType = 'default' | 'size' | 'heading' | 'pos'
+import { inject } from 'vue'
 
-export const configTypeInjectionKey: InjectionKey<Ref<ConfigType | null>> = Symbol('configType')
-export const updateConfigTypeInjectionKey: InjectionKey<(configType: ConfigType) => void> = Symbol('updateConfigType')
+export type ConfigType = 'default' | 'pos' | 'rotation' | 'size'
+
+export interface QuickConfigContext {
+  configType: Ref<ConfigType>
+  updateConfigType: (configType: ConfigType, manual?: boolean) => void
+}
+
+const quickConfigInjectionKey: InjectionKey<QuickConfigContext> = Symbol('quickConfig')
+
+export function useQuickConfigContext() {
+  const ctx = inject(quickConfigInjectionKey)
+  if (ctx == null) throw new Error('useQuickConfigContext should be called inside of QuickConfigWrapper')
+  return ctx
+}
 </script>
 
 <script lang="ts" setup>
@@ -15,22 +27,37 @@ const configTypeRef = ref<ConfigType>('default')
 const quickConfigRef = ref<HTMLElement | undefined>()
 let timer: NodeJS.Timeout
 let activeInteractions = 0
+// Tracks manual panel entry so auto-back does not override the user's intent.
+let autoBackToDefaultPaused = false
 
+// Schedule auto-back-to-default when no active interactions (mouse/focus) are happening.
 function resetTimer() {
   clearTimeout(timer)
-  if (configTypeRef.value === 'default') {
+  if (configTypeRef.value === 'default' || autoBackToDefaultPaused) {
     return
   }
-  timer = setTimeout(() => updateConfigType('default'), 2000)
+  timer = setTimeout(() => updateConfigType('default'), 5000)
 }
 
-function updateConfigType(configType: ConfigType) {
+// Switch the active config panel.
+// Pass `manual: true` when the user explicitly opens a sub-panel from `DefaultConfigPanel`,
+// so auto-back-to-default is paused until the user clicks "Back".
+// Other triggers (e.g. transformer drag) omit this, so auto-back remains enabled.
+function updateConfigType(configType: ConfigType, manual?: boolean) {
   configTypeRef.value = configType
+  if (manual) {
+    autoBackToDefaultPaused = true
+    clearTimeout(timer)
+    return
+  }
+  autoBackToDefaultPaused = false
   if (activeInteractions === 0) {
     resetTimer()
   }
 }
 
+// Track mouse/focus interactions to pause the auto-back timer while the user
+// is actively interacting with the panel.
 function handleInteractionStart() {
   clearTimeout(timer)
   activeInteractions++
@@ -59,8 +86,10 @@ defineExpose({
   updateConfigType
 })
 
-provide(configTypeInjectionKey, configTypeRef)
-provide(updateConfigTypeInjectionKey, updateConfigType)
+provide(quickConfigInjectionKey, {
+  configType: configTypeRef,
+  updateConfigType
+})
 
 onBeforeUnmount(() => clearTimeout(timer))
 </script>

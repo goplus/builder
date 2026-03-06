@@ -10,7 +10,6 @@ export type MoveAction = keyof typeof moveActionNames
 
 <script lang="ts" setup>
 import { UIDropdown, UIMenu, UIMenuItem } from '@/components/ui'
-import ConfigItem from './ConfigItem.vue'
 
 defineProps<{ type: 'sprite' | 'widget' }>()
 
@@ -26,7 +25,7 @@ function moveZorder(action: MoveAction) {
 <template>
   <UIDropdown trigger="click" placement="top">
     <template #trigger>
-      <ConfigItem icon="layer" />
+      <slot></slot>
     </template>
     <UIMenu>
       <UIMenuItem

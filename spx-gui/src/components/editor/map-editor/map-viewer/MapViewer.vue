@@ -360,7 +360,10 @@ const localConfigRef = shallowRef<SpriteLocalConfig | null | undefined>(null)
 watch(
   () => props.selectedSprite,
   (sprite) => {
-    if (sprite == null) return
+    if (sprite == null) {
+      localConfigRef.value = null
+      return
+    }
     localConfigRef.value = visibleSpriteLocalConfigs.value.find(({ id }) => id === sprite.id)
   },
   { immediate: true }
@@ -373,8 +376,8 @@ function handleSpriteUpdateTransformOp(op: TransformOp | null) {
   if (op == null) return
   if (op === 'move') {
     handleUpdateConfigType('pos')
-  } else if (op === 'rotate') {
-    handleUpdateConfigType('heading')
+  } else if (op === 'rotate' || op === 'flip') {
+    handleUpdateConfigType('rotation')
   } else if (op === 'scale') {
     handleUpdateConfigType('size')
   }
@@ -549,7 +552,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         />
       </v-layer>
     </v-stage>
-    <QuickConfigWrapper v-if="!loading" ref="quickConfigRef" class="quick-config">
+    <QuickConfigWrapper v-if="!loading && localConfigRef != null" ref="quickConfigRef" class="quick-config">
       <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
     </QuickConfigWrapper>
 
