@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { watch } from 'vue'
 import type { SpxProject } from '@/models/spx/project'
 import DefaultConfigPanel from './sprite/DefaultConfigPanel.vue'
 import SizeConfigPanel from './common/SizeConfigPanel.vue'
@@ -7,12 +8,18 @@ import PositionConfigPanel from './common/PositionConfigPanel.vue'
 import { useQuickConfigContext } from './QuickConfigWrapper.vue'
 import type { SpriteLocalConfig } from './utils'
 
-defineProps<{
+const props = defineProps<{
   localConfig: SpriteLocalConfig
   project: SpxProject
 }>()
 
 const { configType, updateConfigType } = useQuickConfigContext()
+
+watch(
+  () => props.localConfig,
+  () => updateConfigType('default'),
+  { immediate: true }
+)
 
 function backToDefault() {
   updateConfigType('default')
