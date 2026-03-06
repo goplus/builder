@@ -2,7 +2,7 @@
   <NTooltip
     class="ui-tooltip"
     trigger="hover"
-    :delay="600"
+    :delay="delay"
     :to="attachTo"
     :placement="placement"
     :show="visible"
@@ -35,10 +35,12 @@ withDefaults(
   defineProps<{
     placement?: Placement
     visible?: boolean
+    delay?: number
   }>(),
   {
     placement: 'top',
-    visible: undefined
+    visible: undefined,
+    delay: 600
   }
 )
 

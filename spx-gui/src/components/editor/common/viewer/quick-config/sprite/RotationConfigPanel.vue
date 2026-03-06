@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 import { debounce } from 'lodash'
 import {
   UIButtonGroup,
@@ -53,6 +53,7 @@ const rotationStyleItems = [
 ] satisfies Array<{ style: RotationStyle; icon: IconType; tips: LocaleMessage }>
 
 function handleRotationStyleUpdate(style: RotationStyle) {
+  rotateDropdownVisible.value = false
   const localConfig = props.localConfig
   localConfig.setRotationStyle(style)
   if (style === RotationStyle.None) {
@@ -71,6 +72,8 @@ function handleUpdateHeading(heading: number) {
   props.localConfig.sync()
 }
 const handleUpdateHeadingDebounced = debounce(handleUpdateHeading, 300)
+
+onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
 </script>
 
 <template>
@@ -116,7 +119,10 @@ const handleUpdateHeadingDebounced = debounce(handleUpdateHeading, 300)
           </UINumberInput>
         </template>
         <div class="heading-picker-container">
-          <AnglePicker :model-value="localConfig.heading" @update:model-value="handleUpdateHeading($event ?? 0)" />
+          <AnglePicker
+            :model-value="localConfig.heading"
+            @update:model-value="handleUpdateHeadingDebounced($event ?? 0)"
+          />
         </div>
       </UIDropdown>
       <UIButtonGroup

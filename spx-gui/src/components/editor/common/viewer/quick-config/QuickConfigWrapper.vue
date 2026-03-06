@@ -24,17 +24,17 @@ import { provide, ref, type InjectionKey, type Ref, onBeforeUnmount } from 'vue'
 import { isInPopup } from '@/components/ui'
 
 const configTypeRef = ref<ConfigType>('default')
-// Tracks manual panel entry so auto-back does not override the user's intent.
-const autoBackToDefaultPaused = ref(false)
 
 const quickConfigRef = ref<HTMLElement | undefined>()
 let timer: NodeJS.Timeout
 let activeInteractions = 0
+// Tracks manual panel entry so auto-back does not override the user's intent.
+let autoBackToDefaultPaused = false
 
 // Schedule auto-back-to-default when no active interactions (mouse/focus) are happening.
 function resetTimer() {
   clearTimeout(timer)
-  if (configTypeRef.value === 'default' || autoBackToDefaultPaused.value) {
+  if (configTypeRef.value === 'default' || autoBackToDefaultPaused) {
     return
   }
   timer = setTimeout(() => updateConfigType('default'), 5000)
@@ -45,7 +45,7 @@ function resetTimer() {
 // Callers that want to suppress auto-back should call `pauseAutoBackToDefault` after this.
 function updateConfigType(configType: ConfigType) {
   configTypeRef.value = configType
-  autoBackToDefaultPaused.value = false
+  autoBackToDefaultPaused = false
   if (activeInteractions === 0) {
     resetTimer()
   }
@@ -54,7 +54,7 @@ function updateConfigType(configType: ConfigType) {
 // Suppress the auto-back timer. Used when the user manually opens a sub-panel
 // so it stays open until they explicitly click "Back".
 function pauseAutoBackToDefault() {
-  autoBackToDefaultPaused.value = true
+  autoBackToDefaultPaused = true
   clearTimeout(timer)
 }
 

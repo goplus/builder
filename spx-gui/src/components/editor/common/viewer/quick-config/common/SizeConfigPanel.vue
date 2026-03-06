@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { onBeforeUnmount } from 'vue'
 import { debounce } from 'lodash'
 import { UIDivider, UINumberInput, UITooltip } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
@@ -17,6 +18,8 @@ const handleSizePercentUpdate = debounce((sizeInPercent: number | null) => {
   props.localConfig.setSize(round(sizeInPercent / 100, 2))
   props.localConfig.sync()
 }, 300)
+
+onBeforeUnmount(() => handleSizePercentUpdate.cancel())
 </script>
 
 <template>

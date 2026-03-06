@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { onBeforeUnmount } from 'vue'
 import { debounce } from 'lodash'
 import { UIDivider, UINumberInput, UITooltip } from '@/components/ui'
 import ConfigPanel from '../common/ConfigPanel.vue'
@@ -19,6 +20,11 @@ const handleUpdateY = debounce((y: number) => {
   props.localConfig.setY(y)
   props.localConfig.sync()
 }, 300)
+
+onBeforeUnmount(() => {
+  handleUpdateX.cancel()
+  handleUpdateY.cancel()
+})
 </script>
 
 <template>
