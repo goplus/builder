@@ -35,26 +35,6 @@
       box-shadow: 0 10px 30px rgba(36, 41, 47, 0.1);
     }
 
-    .top {
-      height: 40px;
-      border-bottom: 1px solid #e8edf2;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 12px;
-      font-size: 12px;
-      background: #fafcff;
-    }
-
-    .badge {
-      border: 1px solid #d4e8ef;
-      background: #ecf8fb;
-      border-radius: 999px;
-      padding: 2px 8px;
-      font-size: 12px;
-      text-transform: lowercase;
-    }
-
     .canvas {
       width: 1440px;
       height: 900px;
@@ -76,10 +56,11 @@
 
     .sprite-range {
       position: absolute;
-      left: 134px;
-      top: 34px;
+      left: 134.5px;
+      top: 75.5px;
       width: 199px;
-      cursor: ew-resize;
+      cursor: grab;
+      transform-origin: center;
     }
 
     .sprite-range.horizontal {
@@ -90,10 +71,15 @@
       width: 199px;
       height: 200px;
       border: 1px solid #0aa5be;
-      background: #fff url("../images/Sprite-review.png") center/cover no-repeat;
+      background:url("../images/Sprite-review.png") center/cover no-repeat;
       position: relative;
       transform-origin: center;
-      cursor: ew-resize;
+      cursor: grab;
+    }
+
+    .sprite-range.dragging,
+    .sprite-range.dragging .sprite-box {
+      cursor: grabbing;
     }
 
     .sprite-box.flipped {
@@ -107,14 +93,19 @@
       background: #ffffff;
       border: 0.5px solid #d9dfe5;
       box-shadow: 0 2px 3.5px rgba(36, 41, 47, 0.05);
-      position: relative;
-      margin: 0 auto 4px auto;
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translate(-50%, calc(-100% - 4px));
       display: none;
+      cursor: grab;
+      z-index: 2;
     }
 
     .rotating-btn.show {
       display: block;
     }
+    .sprite-range.dragging .rotating-btn { cursor: grabbing; }
 
     .rotating-btn svg {
       position: absolute;
@@ -137,6 +128,8 @@
       position: absolute;
       box-shadow: 0 2px 3.5px rgba(36, 41, 47, 0.05);
     }
+    .dot.tl, .dot.br { cursor: nwse-resize; }
+    .dot.tr, .dot.bl { cursor: nesw-resize; }
 
     .tl { left: -6px; top: -6px; }
     .tr { right: -6px; top: -6px; }
@@ -172,10 +165,7 @@
       top: 3px;
       width: 14px;
       height: 14px;
-      transform-origin: 50% 50%;
     }
-    .range-btn.to-left svg.icon { transform: rotate(90deg) scaleX(-1); }
-    .range-btn.to-right svg.icon { transform: rotate(-90deg) scaleX(-1); }
     .range-btn .arrow-path { fill: #a7b1bb; }
     .range-btn.active-arrow .arrow-path { fill: #0bc0cf; }
 
@@ -273,45 +263,89 @@
     }
 
     .input.small { width: 75px; }
-    .input.size { width: 109px; justify-content: space-between; }
+    .input.size { width: 109px; justify-content: space-between; white-space: nowrap; }
+    .input.size > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .value-input {
+      width: 38px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--grey1000);
+      font: inherit;
+      line-height: inherit;
+      text-align: right;
+      padding: 0;
+    }
+    .value-input.size-value { width: 30px; }
 
     .muted { color: #57606a; }
 
     .sep {
-      width: 20px;
-      height: 32px;
-      display: grid;
-      place-items: center;
-      position: relative;
+      width: 1px;
+      height: 20px;
+      display: block;
+      align-self: center;
       user-select: none;
       color: transparent;
       font-size: 0;
+      background: var(--line);
     }
 
     .sep::before {
-      content: "";
-      width: 1px;
-      height: 20px;
-      background: var(--line);
-      display: block;
+      content: none;
     }
 
     .group {
-      border: 1px solid var(--panel-line);
+      height: 32px;
+      border: 0;
       border-radius: 12px;
       overflow: hidden;
-      display: flex;
-      align-items: center;
+      display: inline-flex;
+      align-items: stretch;
+      background: #fff;
     }
 
     .group .slot {
-      border-radius: 0;
       width: 32px;
       height: 32px;
+      border-radius: 0;
+      border: 0;
+      background: var(--grey300);
+      padding: 0;
+    }
+
+    .group .slot:hover {
+      background: var(--grey300);
+    }
+
+    .group .slot.active {
+      background: var(--turquoise200);
+      border-radius: 0;
+    }
+
+    .group .slot.active:hover {
+      background: var(--turquoise200);
+    }
+
+    .group .slot:active {
+      border-radius: 0;
+    }
+
+    .back-slot {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 0;
+      background: transparent;
+      padding: 0;
+    }
+
+    .back-slot:hover {
+      background: transparent;
     }
 
     .lr {
-      border: 1px solid var(--panel-line);
+      border: 0;
       border-radius: 12px;
       overflow: hidden;
       display: flex;
@@ -367,11 +401,6 @@
 </head>
 <body>
   <div class="viewport">
-    <div class="top">
-      <div>Optimize Sprite Quick Config</div>
-      <div class="badge" id="stateBadge">default</div>
-    </div>
-
     <div class="canvas" id="canvas">
       <div class="window" id="window">
         <div class="sprite-range" id="spriteRange">
@@ -396,7 +425,7 @@
 
         <div class="panel active" id="panel-default" style="left:162px;">
           <button class="slot" data-action="to-location" aria-label="location" data-tip="location">
-            <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.61899995803833 1.3318697214126587)" d="M4.101 0.23513c0.15009-0.15053 0.35393-0.23513 0.5665-0.23513 0.21257 0 0.41641 0.0846 0.5665 0.23513l1.79 1.791c0.17537 0.16702 0.24643 0.41597 0.18565 0.65039-0.06078 0.23442-0.24384 0.41749-0.47826 0.47826-0.23442 0.06078-0.48337-0.01029-0.65039-0.18565l-0.747-0.747 0 3.806c0.937 0.242 1.675 0.98 1.916 1.916l3.58 0-0.749-0.746c-0.24941-0.26243-0.24394-0.67591 0.01234-0.93164 0.25627-0.25573 0.66976-0.26033 0.93166-0.01036l1.79 1.791c0.31151 0.31226 0.31151 0.81774 0 1.13l-1.79 1.792c-0.2604 0.26068-0.68282 0.2609-0.9435 0.0005-0.26068-0.2604-0.2609-0.68282-0.0005-0.9435l0.748-0.747-3.578 0c-0.24412 0.94092-0.98032 1.67483-1.922 1.916l0.006 0.084 0 1.333c-0.01387 0.35806-0.30817 0.64118-0.6665 0.64118-0.35833 0-0.65263-0.28312-0.6665-0.64118l0-1.333q0-0.042 0.005-0.084c-0.94336-0.24173-1.68029-0.97789-1.923-1.921l-0.082 0.005-1.335 0c-0.36837 0-0.667-0.29863-0.667-0.667 0-0.36837 0.29863-0.667 0.667-0.667l1.334 0q0.042 0 0.082 0.006c0.24-0.94 0.98-1.68 1.918-1.922l0-3.807-0.748 0.747c-0.16845 0.16827-0.41388 0.23389-0.64383 0.17215-0.22995-0.06175-0.4095-0.24148-0.471-0.4715-0.0615-0.23002 0.00438-0.47538 0.17283-0.64365l1.79-1.791z m0.566 7.044c-0.73647 0-1.3335 0.59703-1.3335 1.3335 0 0.73647 0.59703 1.3335 1.3335 1.3335 0.73647 0 1.3335-0.59703 1.3335-1.3335 0-0.73647-0.59703-1.3335-1.3335-1.3335"/></svg>
+            <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(0.3330000042915344 0.3330000042915344)" d="M7.667 0c0.385 0 0.696 0.313 0.696 0.698l0 1.393q0 0.023-0.002 0.044c2.52707 0.31802 4.51746 2.30799 4.836 4.835l1.44 0c0.38494 0 0.697 0.31206 0.697 0.697 0 0.38494-0.31206 0.697-0.697 0.697l-1.44 0c-0.31877 2.52597-2.30803 4.51524-4.834 4.834l0 1.439c0 0.38467-0.31183 0.6965-0.6965 0.6965-0.38467 0-0.6965-0.31183-0.6965-0.6965l0-1.44c-2.52565-0.31867-4.51481-2.30742-4.834-4.833l-1.439 0c-0.38494 0-0.697-0.31206-0.697-0.697 0-0.38494 0.31206-0.697 0.697-0.697l1.44 0c0.31854-2.52701 2.30893-4.51698 4.836-4.835l-0.002-0.044 0-1.393c0-0.385 0.312-0.698 0.697-0.698m0 3.485c-2.27402 0.04973-4.09154 1.90743-4.09154 4.182 0 2.27457 1.81752 4.13227 4.09154 4.182 2.30965 0 4.182-1.87235 4.182-4.182 0-2.30965-1.87234-4.182-4.182-4.182m0 2.788c0.77016 0.00055 1.39405 0.62534 1.3935 1.3955-0.00055 0.77016-0.62534 1.39405-1.3955 1.3935-0.77044-0.00028-1.39478-0.62506-1.3945-1.3955 0.00028-0.77044 0.62506-1.39478 1.3955-1.3945"/></svg>
           </button>
           <button class="slot" data-action="to-rotate" aria-label="rerun" data-tip="rotate">
             <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.3700000047683716 1.332999348640442)" d="M12.703 6.671c0.366 0.04 0.63 0.37 0.59 0.736-0.37826 3.37452-3.23134 5.92624-6.627 5.927-2.09857 0.00087-4.0748-0.98744-5.333-2.667l0 1.333c-0.01387 0.35806-0.30817 0.64118-0.6665 0.64118-0.35833 0-0.65263-0.28312-0.6665-0.64118l0-3.267c0-0.404 0.328-0.733 0.733-0.733l3.267 0c0.36837 0 0.667 0.29863 0.667 0.667 0 0.36837-0.29863 0.667-0.667 0.667l-1.953 0c1.15382 1.99278 3.45584 3.0206 5.70981 2.54935 2.25397-0.47124 3.95139-2.33524 4.21019-4.62335 0.04-0.366 0.37-0.63 0.736-0.59m-6.073-6.67c2.09857-0.00087 4.0748 0.98743 5.333 2.667l0-1.333c0-0.36837 0.29863-0.667 0.667-0.667 0.36837 0 0.667 0.29863 0.667 0.667l0 3.267c-0.00055 0.4046-0.3284 0.73245-0.733 0.733l-3.267 0c-0.36837 0-0.667-0.29863-0.667-0.667 0-0.36837 0.29863-0.667 0.667-0.667l1.952 0c-1.15415-1.99192-3.45568-3.01906-5.70908-2.54789-2.2534 0.47117-3.95056 2.33441-4.20992 4.62189-0.05245 0.35515-0.37658 0.60507-0.73339 0.56549-0.35681-0.03959-0.61828-0.35448-0.59161-0.71249 0.37817-3.37376 3.23011-5.92523 6.625-5.927"/></svg>
@@ -405,23 +434,23 @@
             <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.3329999446868896 1.3329999446868896)" d="M11.334 0c1.10457 0 2 0.89543 2 2l0 9.334c0 1.10457-0.89543 2-2 2l-9.334 0c-1.10457 0-2-0.89543-2-2l0-9.334c0-1.10457 0.89543-2 2-2l9.334 0z m-9.334 1.334c-0.36782 0-0.666 0.29818-0.666 0.666l0 8.877 2.83-2.83-1.01 0c-0.35366-0.01939-0.63049-0.31181-0.63049-0.666 0-0.35419 0.27683-0.64661 0.63049-0.666l2.533 0c0.21217 0 0.41566 0.08428 0.56569 0.23431 0.15003 0.15003 0.23431 0.35351 0.23431 0.56569l0 2.533c0 0.36837-0.29863 0.667-0.667 0.667-0.36837 0-0.667-0.29863-0.667-0.667l0-1.105-3.056 3.057 9.238 0c0.17663 0 0.34603-0.07017 0.47093-0.19507 0.1249-0.1249 0.19507-0.2943 0.19507-0.47093l0-9.01-3.01 3.01 1.01 0c0.24428-0.00946 0.47416 0.11546 0.59911 0.32557 0.12495 0.21011 0.12495 0.47174 0 0.68186-0.12495 0.21011-0.35483 0.33504-0.59911 0.32557l-2.534 0c-0.21217 0-0.41566-0.08428-0.56569-0.23431-0.15003-0.15003-0.23431-0.35351-0.23431-0.56569l0-2.533c0.01387-0.35806 0.30817-0.64118 0.6665-0.64118 0.35833 0 0.65263 0.28312 0.6665 0.64118l0 1.104 3.105-3.104-9.105 0z"/></svg>
           </button>
           <button class="slot" data-action="toggle-layer" id="layerBtn" aria-label="layer" data-tip="layer">
-            <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.9996534585952759 1.9997951984405518)" d="M11.77835 8.03821c0.34739-0.12288 0.72862 0.05911 0.8515 0.4065 0.12288 0.34739-0.05911 0.72862-0.4065 0.85149l-5.667 2.00001c-0.144 0.0507-0.301 0.0507-0.445 0l-5.666-2.00001c-0.32783-0.13601-0.49206-0.50464-0.37393-0.83932 0.11812-0.33469 0.47736-0.51857 0.81793-0.41867l5.445 1.92 5.444-1.92z m0-2.667c0.34739-0.12288 0.72862 0.05911 0.8515 0.4065 0.12288 0.34739-0.05911 0.72862-0.4065 0.85149l-5.667 2c-0.144 0.0507-0.301 0.0507-0.445 0l-5.666-2c-0.34766-0.12288-0.52988-0.50434-0.407-0.852 0.12288-0.34766 0.50434-0.52988 0.852-0.407l5.445 1.92001 5.443-1.919z m-5.634-5.34401c0.14526-0.04271 0.30071-0.03495 0.441 0.022l5.667 2.305c0.25001 0.10206 0.41382 0.34479 0.41491 0.61483 0.0011 0.27004-0.16074 0.51409-0.40991 0.61817l-5.667 2.36101c-0.16423 0.06806-0.34877 0.06806-0.513 0l-5.667-2.36101c-0.2491-0.10428-0.41074-0.34847-0.40942-0.6185 0.00131-0.27004 0.16532-0.51264 0.41542-0.6145l5.666-2.304 0.062-0.023z m-3.726 2.95101l3.916 1.63199 3.915-1.63199-3.915-1.592-3.916 1.592z"/></svg>
+            <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(0.6665598750114441 1.434475302696228)" d="M13.63744 9.30653c0.40206-0.14194 0.84306 0.06894 0.985 0.47099 0.14194 0.40206-0.06894 0.84306-0.471 0.985l-6.561 2.31601c-0.16672 0.05831-0.34828 0.05831-0.515 0l-6.56-2.31601c-0.38104-0.15637-0.57255-0.58405-0.43544-0.97244 0.13711-0.38839 0.55468-0.60106 0.94944-0.48355l6.303 2.22499 6.305-2.22499z m0-3.08801c0.39714-0.12429 0.8214 0.08812 0.95984 0.48056 0.13844 0.39243-0.05863 0.82403-0.44584 0.97644l-6.561 2.316c-0.16658 0.05911-0.34842 0.05911-0.515 0l-6.56-2.316c-0.38721-0.15242-0.58428-0.58402-0.44584-0.97644 0.13844-0.39243 0.5627-0.60484 0.95984-0.48056l6.303 2.22501 6.305-2.22501z m-6.525-6.186c0.16809-0.05047 0.34838-0.042 0.511 0.024l6.562 2.67c0.28852 0.11883 0.4773 0.39947 0.47861 0.71151 0.00131 0.31203-0.1851 0.59425-0.47261 0.71549l-6.56 2.734c-0.19061 0.08-0.40539 0.08-0.596 0l-6.56-2.734c-0.28897-0.12023-0.47675-0.40303-0.47543-0.71601 0.00131-0.31298 0.19147-0.59419 0.48143-0.71199l6.56-2.669 0.071-0.024z m-4.313 3.417l4.533 1.89 4.533-1.89-4.532-1.844-4.534 1.844z"/></svg>
           </button>
         </div>
 
         <div class="panel" id="panel-location" style="left:134.5px;">
-          <div class="input small"><span class="muted">X</span><span>-120</span></div>
-          <div class="input small"><span class="muted">Y</span><span>18</span></div>
+          <div class="input small"><span class="muted">X</span><input id="locXInput" class="value-input" type="text" inputmode="numeric" value="0" aria-label="x value"></div>
+          <div class="input small"><span class="muted">Y</span><input id="locYInput" class="value-input" type="text" inputmode="numeric" value="0" aria-label="y value"></div>
           <div class="sep">|</div>
-          <button class="slot" data-action="to-default" aria-label="back" data-tip="back">
+          <button class="slot back-slot" data-action="to-default" aria-label="back" data-tip="back">
             <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.3329999446868896 2.000685930252075)" d="M2.567 0.16031c0.27946-0.23942 0.70008-0.20696 0.9395 0.0725 0.23942 0.27946 0.20696 0.70008-0.0725 0.9395l-0.965 0.827 5.863 0c2.652 0 4.895 2.157 4.998 4.808 0.11 2.802-2.196 5.192-4.998 5.192l-5.666 0c-0.3681 0-0.6665-0.2984-0.6665-0.6665 0-0.3681 0.2984-0.6665 0.6665-0.6665l5.666 0c2.047 0 3.746-1.764 3.666-3.807-0.076-1.936-1.73-3.526-3.666-3.526l-6.056 0 1.196 1.196c0.24968 0.26217 0.24464 0.67564-0.01136 0.93164-0.256 0.256-0.66947 0.26104-0.93164 0.01136l-2.334-2.334c-0.05104-0.05239-0.09356-0.11245-0.126-0.178-0.0267-0.05589-0.04587-0.11507-0.057-0.176l-0.004-0.02-0.006-0.044-0.001-0.031-0.001-0.023 0.001-0.015 0-0.01 0.001-0.013c0.00335-0.0393 0.00903-0.07837 0.017-0.117l0.004-0.016c0.01114-0.03776 0.02449-0.07482 0.04-0.111l0.008-0.018c0.04403-0.08478 0.10495-0.15965 0.179-0.22l2.317-1.986z"/></svg>
           </button>
         </div>
 
         <div class="panel" id="panel-size" style="left:157px;">
-          <div class="input size"><span><span class="muted">Size</span> <span>100</span></span><span class="muted">%</span></div>
+          <div class="input size"><span><span class="muted">Size</span> <input id="sizeInput" class="value-input size-value" type="text" inputmode="numeric" value="100" aria-label="size value"></span><span class="muted">%</span></div>
           <div class="sep">|</div>
-          <button class="slot" data-action="to-default" aria-label="back" data-tip="back">
+          <button class="slot back-slot" data-action="to-default" aria-label="back" data-tip="back">
             <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.3329999446868896 2.000685930252075)" d="M2.567 0.16031c0.27946-0.23942 0.70008-0.20696 0.9395 0.0725 0.23942 0.27946 0.20696 0.70008-0.0725 0.9395l-0.965 0.827 5.863 0c2.652 0 4.895 2.157 4.998 4.808 0.11 2.802-2.196 5.192-4.998 5.192l-5.666 0c-0.3681 0-0.6665-0.2984-0.6665-0.6665 0-0.3681 0.2984-0.6665 0.6665-0.6665l5.666 0c2.047 0 3.746-1.764 3.666-3.807-0.076-1.936-1.73-3.526-3.666-3.526l-6.056 0 1.196 1.196c0.24968 0.26217 0.24464 0.67564-0.01136 0.93164-0.256 0.256-0.66947 0.26104-0.93164 0.01136l-2.334-2.334c-0.05104-0.05239-0.09356-0.11245-0.126-0.178-0.0267-0.05589-0.04587-0.11507-0.057-0.176l-0.004-0.02-0.006-0.044-0.001-0.031-0.001-0.023 0.001-0.015 0-0.01 0.001-0.013c0.00335-0.0393 0.00903-0.07837 0.017-0.117l0.004-0.016c0.01114-0.03776 0.02449-0.07482 0.04-0.111l0.008-0.018c0.04403-0.08478 0.10495-0.15965 0.179-0.22l2.317-1.986z"/></svg>
           </button>
         </div>
@@ -438,9 +467,9 @@
               <svg viewBox="0 0 16 16"><path class="icon-path" fill-rule="evenodd" transform="translate(1.9999998807907104 1.9999998807907104)" d="M9.58889 5.06904l1.27461-1.50636c0.58525 0.84065 0.95975 1.83835 1.04638 2.91559l1.34817 0c0.58849 0 0.94158 0.65268 0.62058 1.14487l-2.25764 3.52021c-0.28889 0.46009-0.95228 0.46009-1.25187 0l-2.24694-3.52021c-0.32099-0.49219 0.0321-1.14487 0.62058-1.14487l1.28397 0c-0.06096-0.50362-0.21255-0.979-0.43784-1.40923z m2.34341-4.31762l-10.51398 12.42562c-0.01924 0.02274-0.0361 0.04669-0.0506 0.07156l-0.48602 0.57438c-0.17837 0.2108-0.49386 0.23709-0.70466 0.05872-0.2108-0.17837-0.23709-0.49386-0.05872-0.70466l1.6577-1.9591c-1.09629-1.0827-1.77601-2.58624-1.77601-4.24748 0-3.28482 2.67493-5.97045 5.97045-5.97045 1.30351 0 2.51035 0.42092 3.49216 1.13376l1.6557-1.95673c0.17837-0.2108 0.49386-0.23709 0.70466-0.05872 0.18806 0.15913 0.22928 0.4274 0.10932 0.6331z m-8.51837 11.6153l1.27314-1.50462c0.40401 0.13386 0.83553 0.20636 1.28339 0.20636 0.51466 0 0.93088 0.41622 0.93088 0.93087 0 0.52429-0.41622 0.94158-0.93088 0.94158-0.91462 0-1.78143-0.20604-2.55653-0.57419z m4.83428-8.79773c-0.65088-0.43991-1.43455-0.69653-2.27775-0.69653-2.25657 0-4.098 1.84035-4.098 4.098 0 1.08612 0.42618 2.07565 1.11975 2.81017l5.256-6.21164z"/></svg>
             </button>
           </div>
-          <div class="input"><span class="muted">Heading</span><span>45</span></div>
+          <div class="input"><span class="muted">Heading</span><input id="headingInput" class="value-input" type="text" inputmode="numeric" value="90" aria-label="heading value"></div>
           <div class="sep">|</div>
-          <button class="slot" data-action="to-default" aria-label="back" data-tip="back">
+          <button class="slot back-slot" data-action="to-default" aria-label="back" data-tip="back">
             <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.3329999446868896 2.000685930252075)" d="M2.567 0.16031c0.27946-0.23942 0.70008-0.20696 0.9395 0.0725 0.23942 0.27946 0.20696 0.70008-0.0725 0.9395l-0.965 0.827 5.863 0c2.652 0 4.895 2.157 4.998 4.808 0.11 2.802-2.196 5.192-4.998 5.192l-5.666 0c-0.3681 0-0.6665-0.2984-0.6665-0.6665 0-0.3681 0.2984-0.6665 0.6665-0.6665l5.666 0c2.047 0 3.746-1.764 3.666-3.807-0.076-1.936-1.73-3.526-3.666-3.526l-6.056 0 1.196 1.196c0.24968 0.26217 0.24464 0.67564-0.01136 0.93164-0.256 0.256-0.66947 0.26104-0.93164 0.01136l-2.334-2.334c-0.05104-0.05239-0.09356-0.11245-0.126-0.178-0.0267-0.05589-0.04587-0.11507-0.057-0.176l-0.004-0.02-0.006-0.044-0.001-0.031-0.001-0.023 0.001-0.015 0-0.01 0.001-0.013c0.00335-0.0393 0.00903-0.07837 0.017-0.117l0.004-0.016c0.01114-0.03776 0.02449-0.07482 0.04-0.111l0.008-0.018c0.04403-0.08478 0.10495-0.15965 0.179-0.22l2.317-1.986z"/></svg>
           </button>
         </div>
@@ -458,11 +487,11 @@
             </button>
           </div>
           <div class="lr">
-            <button class="active" title="Left">Left</button>
-            <button data-action="to-horizontal-right" title="Right">Right</button>
+            <button id="panel5LeftText" data-action="to-horizontal-left" class="active" title="Left">Left</button>
+            <button id="panel5RightText" data-action="to-panel5-right" title="Right">Right</button>
           </div>
           <div class="sep">|</div>
-          <button class="slot" data-action="to-default" aria-label="back" data-tip="back">
+          <button class="slot back-slot" data-action="to-default" aria-label="back" data-tip="back">
             <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.3329999446868896 2.000685930252075)" d="M2.567 0.16031c0.27946-0.23942 0.70008-0.20696 0.9395 0.0725 0.23942 0.27946 0.20696 0.70008-0.0725 0.9395l-0.965 0.827 5.863 0c2.652 0 4.895 2.157 4.998 4.808 0.11 2.802-2.196 5.192-4.998 5.192l-5.666 0c-0.3681 0-0.6665-0.2984-0.6665-0.6665 0-0.3681 0.2984-0.6665 0.6665-0.6665l5.666 0c2.047 0 3.746-1.764 3.666-3.807-0.076-1.936-1.73-3.526-3.666-3.526l-6.056 0 1.196 1.196c0.24968 0.26217 0.24464 0.67564-0.01136 0.93164-0.256 0.256-0.66947 0.26104-0.93164 0.01136l-2.334-2.334c-0.05104-0.05239-0.09356-0.11245-0.126-0.178-0.0267-0.05589-0.04587-0.11507-0.057-0.176l-0.004-0.02-0.006-0.044-0.001-0.031-0.001-0.023 0.001-0.015 0-0.01 0.001-0.013c0.00335-0.0393 0.00903-0.07837 0.017-0.117l0.004-0.016c0.01114-0.03776 0.02449-0.07482 0.04-0.111l0.008-0.018c0.04403-0.08478 0.10495-0.15965 0.179-0.22l2.317-1.986z"/></svg>
           </button>
         </div>
@@ -484,7 +513,7 @@
             <button class="active" title="Right">Right</button>
           </div>
           <div class="sep">|</div>
-          <button class="slot" data-action="to-default" aria-label="back" data-tip="back">
+          <button class="slot back-slot" data-action="to-default" aria-label="back" data-tip="back">
             <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.3329999446868896 2.000685930252075)" d="M2.567 0.16031c0.27946-0.23942 0.70008-0.20696 0.9395 0.0725 0.23942 0.27946 0.20696 0.70008-0.0725 0.9395l-0.965 0.827 5.863 0c2.652 0 4.895 2.157 4.998 4.808 0.11 2.802-2.196 5.192-4.998 5.192l-5.666 0c-0.3681 0-0.6665-0.2984-0.6665-0.6665 0-0.3681 0.2984-0.6665 0.6665-0.6665l5.666 0c2.047 0 3.746-1.764 3.666-3.807-0.076-1.936-1.73-3.526-3.666-3.526l-6.056 0 1.196 1.196c0.24968 0.26217 0.24464 0.67564-0.01136 0.93164-0.256 0.256-0.66947 0.26104-0.93164 0.01136l-2.334-2.334c-0.05104-0.05239-0.09356-0.11245-0.126-0.178-0.0267-0.05589-0.04587-0.11507-0.057-0.176l-0.004-0.02-0.006-0.044-0.001-0.031-0.001-0.023 0.001-0.015 0-0.01 0.001-0.013c0.00335-0.0393 0.00903-0.07837 0.017-0.117l0.004-0.016c0.01114-0.03776 0.02449-0.07482 0.04-0.111l0.008-0.018c0.04403-0.08478 0.10495-0.15965 0.179-0.22l2.317-1.986z"/></svg>
           </button>
         </div>
@@ -502,7 +531,7 @@
             </button>
           </div>
           <div class="sep">|</div>
-          <button class="slot" data-action="to-default" aria-label="back" data-tip="back">
+          <button class="slot back-slot" data-action="to-default" aria-label="back" data-tip="back">
             <svg viewBox="0 0 16 16"><path class="icon-path" transform="translate(1.3329999446868896 2.000685930252075)" d="M2.567 0.16031c0.27946-0.23942 0.70008-0.20696 0.9395 0.0725 0.23942 0.27946 0.20696 0.70008-0.0725 0.9395l-0.965 0.827 5.863 0c2.652 0 4.895 2.157 4.998 4.808 0.11 2.802-2.196 5.192-4.998 5.192l-5.666 0c-0.3681 0-0.6665-0.2984-0.6665-0.6665 0-0.3681 0.2984-0.6665 0.6665-0.6665l5.666 0c2.047 0 3.746-1.764 3.666-3.807-0.076-1.936-1.73-3.526-3.666-3.526l-6.056 0 1.196 1.196c0.24968 0.26217 0.24464 0.67564-0.01136 0.93164-0.256 0.256-0.66947 0.26104-0.93164 0.01136l-2.334-2.334c-0.05104-0.05239-0.09356-0.11245-0.126-0.178-0.0267-0.05589-0.04587-0.11507-0.057-0.176l-0.004-0.02-0.006-0.044-0.001-0.031-0.001-0.023 0.001-0.015 0-0.01 0.001-0.013c0.00335-0.0393 0.00903-0.07837 0.017-0.117l0.004-0.016c0.01114-0.03776 0.02449-0.07482 0.04-0.111l0.008-0.018c0.04403-0.08478 0.10495-0.15965 0.179-0.22l2.317-1.986z"/></svg>
           </button>
         </div>
@@ -533,68 +562,377 @@
     const layerBtn = document.getElementById("layerBtn");
     const spriteRange = document.getElementById("spriteRange");
     const spriteBox = document.querySelector(".sprite-box");
+    const windowEl = document.getElementById("window");
     const rangeLeft = document.getElementById("rangeLeft");
     const rangeRight = document.getElementById("rangeRight");
+    const panel5LeftText = document.getElementById("panel5LeftText");
+    const panel5RightText = document.getElementById("panel5RightText");
+    const rangeLeftIcon = document.querySelector("#rangeLeft .icon");
+    const rangeRightIcon = document.querySelector("#rangeRight .icon");
     const rotatingBtn = document.getElementById("rotatingBtn");
+    const cornerDots = Array.from(document.querySelectorAll(".sprite-box .dot"));
+    const rangeLeftIconPath = document.querySelector("#rangeLeft .arrow-path");
+    const rangeRightIconPath = document.querySelector("#rangeRight .arrow-path");
+    const locXInput = document.getElementById("locXInput");
+    const locYInput = document.getElementById("locYInput");
+    const headingInput = document.getElementById("headingInput");
+    const sizeInput = document.getElementById("sizeInput");
 
     let state = "default";
+    let transformState = "rotate";
+    let flipState = "horizontal-left";
     let spriteDragOffsetX = 0;
+    let spriteDragOffsetY = 0;
+    let spriteWidth = 199;
+    let spriteHeight = 200;
     let isDraggingSprite = false;
+    let isRotatingSprite = false;
+    let isResizingSprite = false;
     let dragStartClientX = 0;
+    let dragStartClientY = 0;
     let dragStartLeft = 0;
+    let dragStartTop = 0;
+    let resizeStartWidth = 0;
+    let resizeStartHeight = 0;
+    let resizeCorner = "";
+    let spriteRotationDeg = 0;
+    let rotatePrevPointerAngle = 0;
+    let idleTimer = null;
+    let idleReturnState = null;
+    const IDLE_RETURN_MS = 2000;
+    const RESIZE_SENSITIVITY = 1.2;
+    const ARROW_PATH_ACTIVE = "M0.35221 2.73742l3.02999-2.555c0.23351-0.19551 0.55929-0.23767 0.83488-0.10803 0.27559 0.12964 0.45084 0.40748 0.44913 0.71203l0 5.421c0 0.669-0.776 1.033-1.284 0.603l-3.03-2.553c-0.22338-0.18905-0.35221-0.46686-0.35221-0.7595 0-0.29264 0.12883-0.57045 0.35221-0.7595";
+    const ARROW_PATH_INACTIVE = ARROW_PATH_ACTIVE;
+    const LOCATION_VALUE_BASE = { x: 0, y: 0 };
+    const HEADING_BASE = 90;
+    const HEADING_MIN = -180;
+    const HEADING_MAX = 180;
+    const SIZE_BASE_WIDTH = 199;
+    const SIZE_BASE_HEIGHT = 200;
+    const SIZE_MIN_PERCENT = 10;
+    const SIZE_MAX_PERCENT = 500;
     const spritePos = {
-      default: { x: 134, y: 34 },
-      location: { x: 134, y: 34 },
-      size: { x: 134, y: 34 },
-      rotate: { x: 134, y: 34 },
+      default: { x: 134.5, y: 75.5 },
+      location: { x: 134.5, y: 75.5 },
+      size: { x: 134.5, y: 75.5 },
+      rotate: { x: 134.5, y: 75.5 },
       "horizontal-left": { x: 134, y: 46 },
       "horizontal-right": { x: 134, y: 46 },
       "not-rotate": { x: 134, y: 46 }
     };
 
-    function render() {
-      Object.keys(panels).forEach((k) => panels[k].classList.toggle("active", k === state));
-      stateBadge.textContent = state;
+    function getCurrentSpriteLeft() {
+      return parseFloat(spriteRange.style.left) || (spritePos[state]?.x ?? spritePos.default.x);
+    }
 
-      const horizontal = state === "horizontal-left" || state === "horizontal-right";
-      const pos = spritePos[state] || spritePos.default;
+    function getCurrentSpriteTop() {
+      return parseFloat(spriteRange.style.top) || (spritePos[state]?.y ?? spritePos.default.y);
+    }
+
+    function switchStatePreserveSprite(nextState) {
+      const currentLeft = getCurrentSpriteLeft();
+      const currentTop = getCurrentSpriteTop();
+      state = nextState;
+      const useHorizontalBaseOnDefault =
+        nextState === "default" && (transformState === "horizontal-left" || transformState === "horizontal-right");
+      const nextBase = useHorizontalBaseOnDefault
+        ? (spritePos[transformState] || spritePos.default)
+        : (spritePos[nextState] || spritePos.default);
+      spriteDragOffsetX = currentLeft - nextBase.x;
+      spriteDragOffsetY = currentTop - nextBase.y;
+    }
+
+    function clearIdleReturnTimer() {
+      if (!idleTimer) return;
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+
+    function scheduleIdleReturn() {
+      clearIdleReturnTimer();
+      if (!idleReturnState || isDraggingSprite || isRotatingSprite || isResizingSprite || !["location", "rotate", "size", "horizontal-left", "horizontal-right", "not-rotate"].includes(state)) return;
+      idleTimer = setTimeout(() => {
+        if (isDraggingSprite || isRotatingSprite || isResizingSprite || !["location", "rotate", "size", "horizontal-left", "horizontal-right", "not-rotate"].includes(state) || !idleReturnState) return;
+        switchStatePreserveSprite("default");
+        idleReturnState = null;
+        render();
+      }, IDLE_RETURN_MS);
+    }
+
+    function getPointerAngleDeg(e) {
+      const rect = spriteBox.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      return Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+    }
+
+    function shortestAngleDelta(nextDeg, prevDeg) {
+      let delta = nextDeg - prevDeg;
+      while (delta > 180) delta -= 360;
+      while (delta < -180) delta += 360;
+      return delta;
+    }
+
+    function setArrowIcon(pathNode, d, transform) {
+      if (!pathNode) return;
+      pathNode.setAttribute("d", d);
+      pathNode.setAttribute("transform", transform);
+    }
+
+    function setArrowIconStyle(svgNode, left, top) {
+      if (!svgNode) return;
+      svgNode.style.left = `${left}px`;
+      svgNode.style.top = `${top}px`;
+    }
+
+    function parseLocationValue(raw, fallback) {
+      const cleaned = String(raw ?? "").trim().replace(/[^\d-]/g, "");
+      if (!cleaned || cleaned === "-") return fallback;
+      const parsed = parseInt(cleaned, 10);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function syncLocationInputsFromOffsets() {
+      if (!locXInput || !locYInput) return;
+      if (document.activeElement !== locXInput) {
+        locXInput.value = String(Math.round(LOCATION_VALUE_BASE.x + spriteDragOffsetX));
+      }
+      if (document.activeElement !== locYInput) {
+        locYInput.value = String(Math.round(LOCATION_VALUE_BASE.y + spriteDragOffsetY));
+      }
+    }
+
+    function applyLocationInputValues() {
+      if (!locXInput || !locYInput) return;
+      const nextX = parseLocationValue(locXInput.value, Math.round(LOCATION_VALUE_BASE.x + spriteDragOffsetX));
+      const nextY = parseLocationValue(locYInput.value, Math.round(LOCATION_VALUE_BASE.y + spriteDragOffsetY));
+      locXInput.value = String(nextX);
+      locYInput.value = String(nextY);
+      spriteDragOffsetX = nextX - LOCATION_VALUE_BASE.x;
+      spriteDragOffsetY = nextY - LOCATION_VALUE_BASE.y;
+      render();
+    }
+
+    function normalizeHeadingValue(value) {
+      let v = value;
+      while (v > HEADING_MAX) v -= 360;
+      while (v < HEADING_MIN) v += 360;
+      return v;
+    }
+
+    function syncHeadingInputFromRotation() {
+      if (!headingInput || document.activeElement === headingInput) return;
+      const heading = normalizeHeadingValue(Math.round(HEADING_BASE + spriteRotationDeg));
+      headingInput.value = String(heading);
+    }
+
+    function applyHeadingInputValue() {
+      if (!headingInput) return;
+      const fallback = normalizeHeadingValue(Math.round(HEADING_BASE + spriteRotationDeg));
+      const parsedHeading = parseLocationValue(headingInput.value, fallback);
+      const nextHeading = normalizeHeadingValue(parsedHeading);
+      headingInput.value = String(nextHeading);
+      const currentHeading = normalizeHeadingValue(HEADING_BASE + spriteRotationDeg);
+      const delta = shortestAngleDelta(nextHeading, currentHeading);
+      spriteRotationDeg += delta;
+      render();
+    }
+
+    function getCurrentSizePercent() {
+      return Math.round((spriteWidth / SIZE_BASE_WIDTH) * 100);
+    }
+
+    function clampSizePercent(value) {
+      return Math.max(SIZE_MIN_PERCENT, Math.min(SIZE_MAX_PERCENT, value));
+    }
+
+    function syncSizeInputFromScale() {
+      if (!sizeInput || document.activeElement === sizeInput) return;
+      sizeInput.value = String(getCurrentSizePercent());
+    }
+
+    function applySizeInputValue() {
+      if (!sizeInput) return;
+      const fallback = getCurrentSizePercent();
+      const parsed = parseLocationValue(sizeInput.value, fallback);
+      const nextPercent = clampSizePercent(parsed);
+      sizeInput.value = String(nextPercent);
+
+      const currentLeft = getCurrentSpriteLeft();
+      const currentTop = getCurrentSpriteTop();
+      const centerX = currentLeft + spriteWidth / 2;
+      const centerY = currentTop + spriteHeight / 2;
+      const scale = nextPercent / 100;
+      let nextWidth = SIZE_BASE_WIDTH * scale;
+      let nextHeight = SIZE_BASE_HEIGHT * scale;
+      let nextLeft = centerX - nextWidth / 2;
+      let nextTop = centerY - nextHeight / 2;
+
+      const windowRect = windowEl.getBoundingClientRect();
+      const maxLeft = Math.max(0, Math.round(windowRect.width) - nextWidth);
+      const maxTop = Math.max(0, Math.round(windowRect.height) - nextHeight - 24);
+      nextLeft = Math.max(0, Math.min(maxLeft, nextLeft));
+      nextTop = Math.max(0, Math.min(maxTop, nextTop));
+
+      spriteWidth = nextWidth;
+      spriteHeight = nextHeight;
+      spriteDragOffsetX = nextLeft - spritePos.size.x;
+      spriteDragOffsetY = nextTop - spritePos.size.y;
+      render();
+    }
+
+    function setArrowIconTransform(svgNode, transform) {
+      if (!svgNode) return;
+      svgNode.style.transform = transform;
+      svgNode.style.transformOrigin = "50% 50%";
+    }
+
+    function switchToHorizontalLeftAndUpright() {
+      const currentLeft = getCurrentSpriteLeft();
+      const currentTop = getCurrentSpriteTop();
+      state = "horizontal-left";
+      transformState = "horizontal-left";
+      flipState = "horizontal-left";
+      const nextBase = spritePos["horizontal-left"] || spritePos.default;
+      spriteDragOffsetX = currentLeft - nextBase.x;
+      spriteDragOffsetY = currentTop - nextBase.y;
+      spriteRotationDeg = 0;
+      isRotatingSprite = false;
+    }
+
+    function switchToHorizontalRightAndUpright() {
+      const currentLeft = getCurrentSpriteLeft();
+      const currentTop = getCurrentSpriteTop();
+      state = "horizontal-right";
+      transformState = "horizontal-right";
+      flipState = "horizontal-right";
+      const nextBase = spritePos["horizontal-right"] || spritePos.default;
+      spriteDragOffsetX = currentLeft - nextBase.x;
+      spriteDragOffsetY = currentTop - nextBase.y;
+      spriteRotationDeg = 0;
+      isRotatingSprite = false;
+    }
+
+    function switchToPanel6AsNotRotate() {
+      const currentLeft = getCurrentSpriteLeft();
+      const currentTop = getCurrentSpriteTop();
+      state = "not-rotate";
+      transformState = "not-rotate";
+      const nextBase = spritePos["not-rotate"] || spritePos.default;
+      spriteDragOffsetX = currentLeft - nextBase.x;
+      spriteDragOffsetY = currentTop - nextBase.y;
+      spriteRotationDeg = 0;
+      isRotatingSprite = false;
+    }
+
+    function openRotateEntryFromDefault() {
+      if (transformState === "horizontal-left") {
+        switchToHorizontalLeftAndUpright();
+        return;
+      }
+      if (transformState === "horizontal-right") {
+        switchToHorizontalRightAndUpright();
+        return;
+      }
+      if (transformState === "not-rotate") {
+        switchToPanel6AsNotRotate();
+        return;
+      }
+      state = "rotate";
+      transformState = "rotate";
+    }
+
+    function switchHorizontalByArrow(direction) {
+      idleReturnState = "default";
+      clearIdleReturnTimer();
+      if (direction === "left") {
+        switchToHorizontalLeftAndUpright();
+      } else {
+        switchToHorizontalRightAndUpright();
+      }
+      render();
+      scheduleIdleReturn();
+    }
+
+    function render() {
+      if ((state === "horizontal-left" || state === "horizontal-right")
+        && (transformState === "horizontal-left" || transformState === "horizontal-right")) {
+        if (spriteRotationDeg !== 0) spriteRotationDeg = 0;
+      }
+
+      Object.keys(panels).forEach((k) => panels[k].classList.toggle("active", k === state));
+      if (stateBadge) stateBadge.textContent = state;
+
+      const horizontal = transformState === "horizontal-left" || transformState === "horizontal-right";
+      const baseStateForPos = state === "default" && horizontal ? transformState : state;
+      const pos = spritePos[baseStateForPos] || spritePos.default;
       spriteRange.style.left = `${pos.x + spriteDragOffsetX}px`;
-      spriteRange.style.top = `${pos.y}px`;
+      spriteRange.style.top = `${pos.y + spriteDragOffsetY}px`;
+      spriteRange.style.width = `${spriteWidth}px`;
       spriteRange.classList.toggle("horizontal", horizontal && pos.y === 46);
-      spriteBox.classList.toggle("flipped", state === "horizontal-right");
-      rotatingBtn.classList.toggle("show", ["default", "location", "size", "rotate"].includes(state));
+      spriteRange.classList.toggle("dragging", isDraggingSprite || isRotatingSprite || isResizingSprite);
+      if (horizontal) {
+        spriteRotationDeg = 0;
+        spriteRange.style.transform = "none";
+      } else {
+        spriteRange.style.transform = `rotate(${spriteRotationDeg}deg)`;
+      }
+      const flip = flipState === "horizontal-left" ? "scaleX(-1)" : "none";
+      spriteBox.style.transform = flip;
+      spriteBox.style.width = `${spriteWidth}px`;
+      spriteBox.style.height = `${spriteHeight}px`;
+      rotatingBtn.classList.toggle("show", ["default", "location", "size", "rotate"].includes(state) && transformState === "rotate");
       rangeLeft.style.display = horizontal ? "flex" : "none";
       rangeRight.style.display = horizontal ? "flex" : "none";
 
-      if (state === "horizontal-left") {
+      if (transformState === "horizontal-left") {
         rangeLeft.style.left = "-10px";
-        rangeRight.style.left = "189px";
+        rangeRight.style.left = `${spriteWidth - 10}px`;
+        rangeLeft.style.top = `${Math.round(spriteHeight / 2) - 10}px`;
+        rangeRight.style.top = `${Math.round(spriteHeight / 2) - 10}px`;
+        setArrowIcon(rangeLeftIconPath, ARROW_PATH_ACTIVE, "translate(4.083794593811035 3.502579689025879)");
+        setArrowIcon(rangeRightIconPath, ARROW_PATH_INACTIVE, "translate(4.083794593811035 3.502579689025879)");
+        setArrowIconStyle(rangeLeftIcon, 3, 3);
+        setArrowIconStyle(rangeRightIcon, 3, 3);
+        setArrowIconTransform(rangeLeftIcon, "none");
+        setArrowIconTransform(rangeRightIcon, "rotate(180deg) scaleX(1)");
         rangeLeft.classList.remove("inactive");
         rangeRight.classList.add("inactive");
         rangeLeft.classList.add("active-arrow");
         rangeRight.classList.remove("active-arrow");
-        rangeLeft.classList.add("to-left");
-        rangeLeft.classList.remove("to-right");
-        rangeRight.classList.add("to-right");
-        rangeRight.classList.remove("to-left");
       }
-      if (state === "horizontal-right") {
+      if (transformState === "horizontal-right") {
         rangeLeft.style.left = "-10px";
-        rangeRight.style.left = "189px";
+        rangeRight.style.left = `${spriteWidth - 10}px`;
+        rangeLeft.style.top = `${Math.round(spriteHeight / 2) - 10}px`;
+        rangeRight.style.top = `${Math.round(spriteHeight / 2) - 10}px`;
+        setArrowIcon(rangeLeftIconPath, ARROW_PATH_INACTIVE, "translate(4.083794593811035 3.502579689025879)");
+        setArrowIcon(rangeRightIconPath, ARROW_PATH_ACTIVE, "translate(4.083794593811035 3.502579689025879)");
+        setArrowIconStyle(rangeLeftIcon, 3, 3);
+        setArrowIconStyle(rangeRightIcon, 3, 3);
+        setArrowIconTransform(rangeLeftIcon, "rotate(-180deg) scaleX(-1)");
+        setArrowIconTransform(rangeRightIcon, "scaleX(-1)");
         rangeLeft.classList.add("inactive");
         rangeRight.classList.remove("inactive");
         rangeLeft.classList.remove("active-arrow");
         rangeRight.classList.add("active-arrow");
-        rangeLeft.classList.add("to-left");
-        rangeLeft.classList.remove("to-right");
-        rangeRight.classList.add("to-right");
-        rangeRight.classList.remove("to-left");
       }
       if (!horizontal) {
+        setArrowIconTransform(rangeLeftIcon, "none");
+        setArrowIconTransform(rangeRightIcon, "none");
         rangeLeft.classList.remove("inactive");
         rangeRight.classList.remove("inactive");
         rangeLeft.classList.remove("active-arrow");
         rangeRight.classList.remove("active-arrow");
+      }
+
+      syncLocationInputsFromOffsets();
+      syncHeadingInputFromRotation();
+      syncSizeInputFromScale();
+
+      if (panel5LeftText && panel5RightText) {
+        panel5LeftText.classList.toggle("active", state === "horizontal-left" && transformState !== "horizontal-right");
+        panel5RightText.classList.toggle("active", state === "horizontal-left" && transformState === "horizontal-right");
       }
 
       layerBtn.classList.toggle("active", expandList.classList.contains("show") && state === "default");
@@ -606,6 +944,9 @@
     }
 
     document.addEventListener("click", (e) => {
+      if (idleReturnState) {
+        scheduleIdleReturn();
+      }
       const btn = e.target.closest("[data-action]");
       if (!btn) {
         if (!e.target.closest("#expandList")) {
@@ -616,13 +957,62 @@
       }
 
       const action = btn.getAttribute("data-action");
-      if (action === "to-default") state = "default";
-      if (action === "to-location") state = "location";
-      if (action === "to-size") state = "size";
-      if (action === "to-rotate") state = "rotate";
-      if (action === "to-horizontal-left") state = "horizontal-left";
-      if (action === "to-horizontal-right") state = "horizontal-right";
-      if (action === "to-not-rotate") state = "not-rotate";
+      idleReturnState = null;
+      clearIdleReturnTimer();
+      if (action === "to-default") {
+        if (state === "default") {
+          state = "default";
+        } else {
+          switchStatePreserveSprite("default");
+        }
+      }
+      if (action === "to-location") {
+        if (state === "location") {
+          state = "location";
+        } else {
+          switchStatePreserveSprite("location");
+        }
+      }
+      if (action === "to-size") {
+        if (state === "size") {
+          state = "size";
+        } else {
+          switchStatePreserveSprite("size");
+        }
+      }
+      if (action === "to-rotate") {
+        if (state === "default") {
+          openRotateEntryFromDefault();
+        } else {
+          transformState = "rotate";
+          switchStatePreserveSprite("rotate");
+          isRotatingSprite = false;
+        }
+      }
+      if (action === "to-horizontal-left") {
+        if (state === "rotate" || state === "not-rotate") {
+          if (flipState === "horizontal-right") {
+            switchToHorizontalRightAndUpright();
+          } else {
+            switchToHorizontalLeftAndUpright();
+          }
+        } else {
+          switchToHorizontalLeftAndUpright();
+        }
+      }
+      if (action === "to-horizontal-right") switchToHorizontalRightAndUpright();
+      if (action === "to-panel5-right") {
+        state = "horizontal-right";
+        transformState = "horizontal-right";
+        flipState = "horizontal-right";
+        spriteRotationDeg = 0;
+        isRotatingSprite = false;
+      }
+      if (action === "to-not-rotate") switchToPanel6AsNotRotate();
+      if (["rotate", "horizontal-left", "horizontal-right", "not-rotate"].includes(state)
+        && !(state === "horizontal-right" && transformState === "not-rotate")) {
+        transformState = state;
+      }
       if (action === "toggle-layer" && state === "default") {
         expandList.classList.toggle("show");
       }
@@ -630,33 +1020,184 @@
       render();
     });
 
-    spriteBox.addEventListener("pointerdown", (e) => {
-      const currentLeft = parseFloat(spriteRange.style.left) || (spritePos[state]?.x ?? spritePos.default.x);
+    spriteRange.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("#rotatingBtn") || e.target.closest(".dot") || e.target.closest(".range-btn")) return;
+      const currentLeft = getCurrentSpriteLeft();
+      const currentTop = getCurrentSpriteTop();
       if (state !== "location") {
-        spriteDragOffsetX = currentLeft - spritePos.location.x;
-        state = "location";
+        idleReturnState = "default";
+        switchStatePreserveSprite("location");
         render();
       }
+      clearIdleReturnTimer();
       isDraggingSprite = true;
       dragStartClientX = e.clientX;
+      dragStartClientY = e.clientY;
       dragStartLeft = parseFloat(spriteRange.style.left) || currentLeft;
-      spriteBox.setPointerCapture?.(e.pointerId);
+      dragStartTop = parseFloat(spriteRange.style.top) || currentTop;
+      spriteRange.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    });
+
+    rangeLeft.addEventListener("click", (e) => {
+      e.stopPropagation();
+      switchHorizontalByArrow("left");
+    });
+
+    rangeRight.addEventListener("click", (e) => {
+      e.stopPropagation();
+      switchHorizontalByArrow("right");
+    });
+
+    cornerDots.forEach((dot) => {
+      const corner =
+        dot.classList.contains("tl") ? "tl" :
+        dot.classList.contains("tr") ? "tr" :
+        dot.classList.contains("bl") ? "bl" : "br";
+      dot.dataset.corner = corner;
+      dot.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        if (state !== "size") {
+          idleReturnState = "default";
+          switchStatePreserveSprite("size");
+        } else if (!idleReturnState) {
+          idleReturnState = "default";
+        }
+        clearIdleReturnTimer();
+        isResizingSprite = true;
+        resizeCorner = corner;
+        dragStartClientX = e.clientX;
+        dragStartClientY = e.clientY;
+        dragStartLeft = getCurrentSpriteLeft();
+        dragStartTop = getCurrentSpriteTop();
+        resizeStartWidth = spriteWidth;
+        resizeStartHeight = spriteHeight;
+        dot.setPointerCapture?.(e.pointerId);
+        render();
+        e.preventDefault();
+      });
+    });
+
+    rotatingBtn.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      const currentLeft = getCurrentSpriteLeft();
+      const currentTop = getCurrentSpriteTop();
+      if (state !== "rotate") {
+        idleReturnState = "default";
+        transformState = "rotate";
+        switchStatePreserveSprite("rotate");
+      } else if (!idleReturnState) {
+        idleReturnState = "default";
+      }
+      clearIdleReturnTimer();
+      isRotatingSprite = true;
+      rotatePrevPointerAngle = getPointerAngleDeg(e);
+      dragStartLeft = parseFloat(spriteRange.style.left) || currentLeft;
+      dragStartTop = parseFloat(spriteRange.style.top) || currentTop;
+      rotatingBtn.setPointerCapture?.(e.pointerId);
+      render();
       e.preventDefault();
     });
 
     document.addEventListener("pointermove", (e) => {
-      if (!isDraggingSprite) return;
-      const dx = e.clientX - dragStartClientX;
-      const nextLeft = dragStartLeft + dx;
-      const minX = 0;
-      const maxX = 468 - 199;
-      const clampedLeft = Math.max(minX, Math.min(maxX, nextLeft));
-      spriteDragOffsetX = clampedLeft - spritePos.location.x;
-      render();
+      if (isResizingSprite) {
+        const minSize = 80;
+        const maxSize = 420;
+        const centerX = dragStartLeft + resizeStartWidth / 2;
+        const centerY = dragStartTop + resizeStartHeight / 2;
+        const startRadius = Math.hypot(dragStartClientX - centerX, dragStartClientY - centerY);
+        const currentRadius = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+        const rawScale = startRadius > 0 ? currentRadius / startRadius : 1;
+        const adjustedScale = 1 + (rawScale - 1) * RESIZE_SENSITIVITY;
+        const minScale = Math.max(minSize / resizeStartWidth, minSize / resizeStartHeight);
+        const maxScale = Math.min(maxSize / resizeStartWidth, maxSize / resizeStartHeight);
+        const scale = Math.max(minScale, Math.min(maxScale, adjustedScale));
+        let nextWidth = resizeStartWidth * scale;
+        let nextHeight = resizeStartHeight * scale;
+        let nextLeft = centerX - nextWidth / 2;
+        let nextTop = centerY - nextHeight / 2;
+
+        const windowRect = windowEl.getBoundingClientRect();
+        const maxLeft = Math.max(0, Math.round(windowRect.width) - nextWidth);
+        const maxTop = Math.max(0, Math.round(windowRect.height) - nextHeight - 24);
+        nextLeft = Math.max(0, Math.min(maxLeft, nextLeft));
+        nextTop = Math.max(0, Math.min(maxTop, nextTop));
+
+        spriteWidth = nextWidth;
+        spriteHeight = nextHeight;
+        spriteDragOffsetX = nextLeft - spritePos.size.x;
+        spriteDragOffsetY = nextTop - spritePos.size.y;
+        render();
+        return;
+      }
+
+      if (isDraggingSprite) {
+        const dx = e.clientX - dragStartClientX;
+        const dy = e.clientY - dragStartClientY;
+        const nextLeft = dragStartLeft + dx;
+        const nextTop = dragStartTop + dy;
+        const spriteRect = spriteRange.getBoundingClientRect();
+        const windowRect = windowEl.getBoundingClientRect();
+        const spriteWidth = Math.round(spriteRect.width);
+        const spriteHeight = Math.round(spriteRect.height);
+        const minX = 0;
+        const minY = 0;
+        const maxX = Math.max(0, Math.round(windowRect.width) - spriteWidth);
+        const maxY = Math.max(0, Math.round(windowRect.height) - spriteHeight);
+        const clampedLeft = Math.max(minX, Math.min(maxX, nextLeft));
+        const clampedTop = Math.max(minY, Math.min(maxY, nextTop));
+        spriteDragOffsetX = clampedLeft - spritePos.location.x;
+        spriteDragOffsetY = clampedTop - spritePos.location.y;
+        render();
+        return;
+      }
+
+      if (isRotatingSprite) {
+        const currentAngle = getPointerAngleDeg(e);
+        const delta = shortestAngleDelta(currentAngle, rotatePrevPointerAngle);
+        spriteRotationDeg += delta;
+        rotatePrevPointerAngle = currentAngle;
+        render();
+      }
     });
 
     document.addEventListener("pointerup", () => {
       isDraggingSprite = false;
+      isRotatingSprite = false;
+      isResizingSprite = false;
+      render();
+      scheduleIdleReturn();
+    });
+
+    [locXInput, locYInput, headingInput, sizeInput].forEach((input) => {
+      if (!input) return;
+      input.addEventListener("input", () => {
+        if (input === headingInput) {
+          const sanitized = String(input.value ?? "").replace(/[^\d-]/g, "");
+          input.value = sanitized;
+        }
+        if (input === sizeInput) {
+          input.value = String(input.value ?? "").replace(/[^\d]/g, "");
+        }
+        idleReturnState = "default";
+        scheduleIdleReturn();
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          input.blur();
+        }
+      });
+      input.addEventListener("blur", () => {
+        if (input === headingInput) {
+          applyHeadingInputValue();
+        } else if (input === sizeInput) {
+          applySizeInputValue();
+        } else {
+          applyLocationInputValues();
+        }
+        scheduleIdleReturn();
+      });
     });
 
     render();
