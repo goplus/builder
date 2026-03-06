@@ -26,12 +26,12 @@ function backToDefault() {
 </script>
 
 <template>
-  <SizeConfigPanel v-if="configType === 'size'" name="monitor" :local-config="localConfig" :on-back="backToDefault" />
+  <SizeConfigPanel v-if="configType === 'size'" name="monitor" :local-config="localConfig" @back="backToDefault" />
   <PositionConfigPanel
     v-else-if="configType === 'pos'"
     name="monitor"
     :local-config="localConfig"
-    :on-back="backToDefault"
+    @back="backToDefault"
   />
   <DefaultConfigPanel v-else-if="configType === 'default'" :local-config="localConfig" :project="project" />
 </template>

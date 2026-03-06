@@ -5,8 +5,7 @@ export type ConfigType = 'default' | 'pos' | 'rotation' | 'size'
 
 export interface QuickConfigContext {
   configType: Ref<ConfigType>
-  updateConfigType: (configType: ConfigType) => void
-  pauseAutoBackToDefault: () => void
+  updateConfigType: (configType: ConfigType, manual?: boolean) => void
 }
 
 const quickConfigInjectionKey: InjectionKey<QuickConfigContext> = Symbol('quickConfig')
@@ -40,22 +39,21 @@ function resetTimer() {
   timer = setTimeout(() => updateConfigType('default'), 5000)
 }
 
-// Switch the active config panel. Also resets `autoBackToDefaultPaused` so that
-// externally triggered switches (e.g. transformer drag) always respect auto-back.
-// Callers that want to suppress auto-back should call `pauseAutoBackToDefault` after this.
-function updateConfigType(configType: ConfigType) {
+// Switch the active config panel.
+// Pass `manual: true` when the user explicitly opens a sub-panel from `DefaultConfigPanel`,
+// so auto-back-to-default is paused until the user clicks "Back".
+// Other triggers (e.g. transformer drag) omit this, so auto-back remains enabled.
+function updateConfigType(configType: ConfigType, manual?: boolean) {
   configTypeRef.value = configType
+  if (manual) {
+    autoBackToDefaultPaused = true
+    clearTimeout(timer)
+    return
+  }
   autoBackToDefaultPaused = false
   if (activeInteractions === 0) {
     resetTimer()
   }
-}
-
-// Suppress the auto-back timer. Used when the user manually opens a sub-panel
-// so it stays open until they explicitly click "Back".
-function pauseAutoBackToDefault() {
-  autoBackToDefaultPaused = true
-  clearTimeout(timer)
 }
 
 // Track mouse/focus interactions to pause the auto-back timer while the user
@@ -90,8 +88,7 @@ defineExpose({
 
 provide(quickConfigInjectionKey, {
   configType: configTypeRef,
-  updateConfigType,
-  pauseAutoBackToDefault
+  updateConfigType
 })
 
 onBeforeUnmount(() => clearTimeout(timer))

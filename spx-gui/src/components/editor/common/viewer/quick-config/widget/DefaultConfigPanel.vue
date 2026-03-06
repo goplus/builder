@@ -14,14 +14,10 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
-const { updateConfigType, pauseAutoBackToDefault } = useQuickConfigContext()
+const { updateConfigType } = useQuickConfigContext()
 
-// Open a sub-panel via user click. `updateConfigType` is called first (which resets
-// autoBackToDefaultPaused), then `pauseAutoBackToDefault` re-pauses it so the
-// sub-panel stays open until the user explicitly clicks "Back".
 function handleOpenSubPanel(configType: 'pos' | 'size') {
-  updateConfigType(configType)
-  pauseAutoBackToDefault()
+  updateConfigType(configType, true)
 }
 
 async function moveZorder(direction: MoveAction) {

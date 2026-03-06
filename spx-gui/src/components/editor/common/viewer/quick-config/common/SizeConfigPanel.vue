@@ -10,7 +10,10 @@ import type { LocalConfig } from '../utils'
 const props = defineProps<{
   name: 'sprite' | 'monitor'
   localConfig: LocalConfig
-  onBack: () => void
+}>()
+
+const emit = defineEmits<{
+  back: []
 }>()
 
 const handleSizePercentUpdate = debounce((sizeInPercent: number | null) => {
@@ -39,7 +42,7 @@ onBeforeUnmount(() => handleSizePercentUpdate.cancel())
       <UITooltip>
         {{ $t({ en: 'Back', zh: '返回' }) }}
         <template #trigger>
-          <ConfigItem icon="back" @click="props.onBack" />
+          <ConfigItem icon="back" @click="emit('back')" />
         </template>
       </UITooltip>
     </div>

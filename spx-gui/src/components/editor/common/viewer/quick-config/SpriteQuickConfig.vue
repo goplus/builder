@@ -27,13 +27,13 @@ function backToDefault() {
 </script>
 
 <template>
-  <SizeConfigPanel v-if="configType === 'size'" name="sprite" :local-config="localConfig" :on-back="backToDefault" />
-  <RotationConfigPanel v-else-if="configType === 'rotation'" :local-config="localConfig" :on-back="backToDefault" />
+  <SizeConfigPanel v-if="configType === 'size'" name="sprite" :local-config="localConfig" @back="backToDefault" />
+  <RotationConfigPanel v-else-if="configType === 'rotation'" :local-config="localConfig" @back="backToDefault" />
   <PositionConfigPanel
     v-else-if="configType === 'pos'"
     name="sprite"
     :local-config="localConfig"
-    :on-back="backToDefault"
+    @back="backToDefault"
   />
   <DefaultConfigPanel v-else-if="configType === 'default'" :local-config="localConfig" :project="project" />
 </template>

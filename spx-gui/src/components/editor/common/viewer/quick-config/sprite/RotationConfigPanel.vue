@@ -20,7 +20,10 @@ import type { LocaleMessage } from '@/utils/i18n'
 
 const props = defineProps<{
   localConfig: SpriteLocalConfig
-  onBack: () => void
+}>()
+
+const emit = defineEmits<{
+  back: []
 }>()
 
 const rotateDropdownVisible = ref(false)
@@ -143,7 +146,7 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
       <UITooltip>
         {{ $t({ en: 'Back', zh: '返回' }) }}
         <template #trigger>
-          <ConfigItem class="rotation-back" icon="back" @click="props.onBack" />
+          <ConfigItem class="rotation-back" icon="back" @click="emit('back')" />
         </template>
       </UITooltip>
     </div>
