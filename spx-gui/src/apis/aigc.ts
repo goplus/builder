@@ -182,19 +182,15 @@ export type TaskParams<T extends TaskType = TaskType> = {
   [TaskType.GenerateBackdrop]: TaskParamsGenerateBackdrop
 }[T]
 
-export async function createTask<T extends TaskType>(
-  type: T,
-  params: TaskParams<T>,
-  signal?: AbortSignal
-): Promise<Task<T>> {
+export function createTask<T extends TaskType>(type: T, params: TaskParams<T>, signal?: AbortSignal): Promise<Task<T>> {
   return client.post('/aigc/task', { type, parameters: params }, { signal }) as Promise<Task<T>>
 }
 
-export async function getTask(taskID: string, signal?: AbortSignal): Promise<Task> {
+export function getTask(taskID: string, signal?: AbortSignal): Promise<Task> {
   return client.get(`/aigc/task/${encodeURIComponent(taskID)}`, undefined, { signal }) as Promise<Task>
 }
 
-export async function cancelTask(taskID: string, signal?: AbortSignal): Promise<Task> {
+export function cancelTask(taskID: string, signal?: AbortSignal): Promise<Task> {
   return client.post(`/aigc/task/${encodeURIComponent(taskID)}/cancellation`, undefined, { signal }) as Promise<Task>
 }
 
@@ -266,7 +262,7 @@ export type EnrichAssetSettingsParams = {
 
 export type EnrichAssetSettingsResult = SpriteSettings | CostumeSettings | AnimationSettings | BackdropSettings
 
-export async function enrichAssetSettings(
+export function enrichAssetSettings(
   params: EnrichAssetSettingsParams,
   signal?: AbortSignal
 ): Promise<EnrichAssetSettingsResult> {
@@ -282,7 +278,7 @@ export type SpriteContentSettings = {
   animationBindings: Partial<Record<State, string>>
 }
 
-export async function genSpriteContentSettings(
+export function genSpriteContentSettings(
   settings: SpriteSettings,
   signal?: AbortSignal
 ): Promise<SpriteContentSettings> {
@@ -293,13 +289,13 @@ export async function genSpriteContentSettings(
   ) as Promise<SpriteContentSettings>
 }
 
-export async function enrichBackdropSettings(
+export function enrichBackdropSettings(
   input: string,
   settings?: BackdropSettings,
   projectSettings?: ProjectSettings,
   signal?: AbortSignal
 ): Promise<BackdropSettings> {
-  const result = (await enrichAssetSettings(
+  return enrichAssetSettings(
     {
       assetType: AIGCAssetType.Backdrop,
       input,
@@ -307,18 +303,17 @@ export async function enrichBackdropSettings(
       projectSettings
     },
     signal
-  )) as BackdropSettings
-  return result
+  ) as Promise<BackdropSettings>
 }
 
-export async function enrichCostumeSettings(
+export function enrichCostumeSettings(
   input: string,
   settings?: CostumeSettings,
   spriteSettings?: SpriteSettings,
   projectSettings?: ProjectSettings,
   signal?: AbortSignal
 ): Promise<CostumeSettings> {
-  const result = (await enrichAssetSettings(
+  return enrichAssetSettings(
     {
       assetType: AIGCAssetType.Costume,
       input,
@@ -327,18 +322,17 @@ export async function enrichCostumeSettings(
       projectSettings
     },
     signal
-  )) as CostumeSettings
-  return result
+  ) as Promise<CostumeSettings>
 }
 
-export async function enrichAnimationSettings(
+export function enrichAnimationSettings(
   input: string,
   settings?: AnimationSettings,
   spriteSettings?: SpriteSettings,
   projectSettings?: ProjectSettings,
   signal?: AbortSignal
 ): Promise<AnimationSettings> {
-  const result = (await enrichAssetSettings(
+  return enrichAssetSettings(
     {
       assetType: AIGCAssetType.Animation,
       input,
@@ -347,17 +341,16 @@ export async function enrichAnimationSettings(
       projectSettings
     },
     signal
-  )) as AnimationSettings
-  return result
+  ) as Promise<AnimationSettings>
 }
 
-export async function enrichSpriteSettings(
+export function enrichSpriteSettings(
   input: string,
   settings?: SpriteSettings,
   projectSettings?: ProjectSettings,
   signal?: AbortSignal
 ): Promise<SpriteSettings> {
-  const result = (await enrichAssetSettings(
+  return enrichAssetSettings(
     {
       assetType: AIGCAssetType.Sprite,
       input,
@@ -365,8 +358,7 @@ export async function enrichSpriteSettings(
       projectSettings
     },
     signal
-  )) as SpriteSettings
-  return result
+  ) as Promise<SpriteSettings>
 }
 
 export type AssetAdoptionParams = {
