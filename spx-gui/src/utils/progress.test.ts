@@ -84,7 +84,7 @@ describe('ProgressReporter', () => {
       }
       await Promise.all([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(checkWithTimes))
     })
-    it('should report decreasing timeLeft', async () => {
+    it('should report non-increasing timeLeft based on wall-clock time', async () => {
       const timeCost = 500
       const interval = 100
       const onProgress = vitest.fn()
@@ -92,12 +92,16 @@ describe('ProgressReporter', () => {
       await reporter.startAutoReport(timeCost, interval)
       const etls: number[] = onProgress.mock.calls.map(([p]) => p.timeLeft)
       expect(etls.length).toBeGreaterThan(0)
+      // First report should be timeCost (initial, before any elapsed time)
+      expect(etls[0]).toBe(timeCost)
       for (const etl of etls) {
-        expect(etl).toBeGreaterThan(0)
+        // timeLeft is wall-clock based: clamped to [0, timeCost]
+        expect(etl).toBeGreaterThanOrEqual(0)
         expect(etl).toBeLessThanOrEqual(timeCost)
       }
       for (let i = 0; i < etls.length - 1; i++) {
-        expect(etls[i]).toBeGreaterThan(etls[i + 1])
+        // timeLeft should be non-increasing over time
+        expect(etls[i]).toBeGreaterThanOrEqual(etls[i + 1])
       }
     })
     it('should stop when finished', async () => {

@@ -218,7 +218,7 @@ export class TaskException extends Exception {
 export const taskDurations: Record<TaskType, number> = {
   [TaskType.RemoveBackground]: 5,
   [TaskType.GenerateCostume]: 15,
-  [TaskType.GenerateAnimationVideo]: 150,
+  [TaskType.GenerateAnimationVideo]: 180,
   [TaskType.ExtractVideoFrames]: 12,
   [TaskType.GenerateBackdrop]: 15
 }

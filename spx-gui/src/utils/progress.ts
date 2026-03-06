@@ -43,6 +43,9 @@ export class ProgressReporter {
    * Start reporting progress automatically: a series of progress will be reported in given interval.
    * Reports start from `percentage: 0` and keep increasing.
    * Reports stop when `timeCost * 2` is reached (at `percentage: 0.99`), or `percentage: 1` is reported manually.
+   *
+   * The `timeLeft` in each report is wall-clock based (decreases linearly at ~1 second per second),
+   * independent of the progress curve, so the ETA display remains stable.
    */
   startAutoReport(
     /** Estimated time cost in milliseconds */
@@ -57,6 +60,7 @@ export class ProgressReporter {
       // Quadratic function to generate reports: y = x^2 / (x^2 + factor)
       // when x = maxTimes, y = maxPercentage
       const factor = (maxTimes ** 2 * (1 - maxPercentage)) / maxPercentage
+      const startTime = Date.now()
       // Report immediately at percentage: 0
       this.report({ percentage: 0, desc: null, timeLeft: timeCost })
       let times = 0
@@ -70,11 +74,11 @@ export class ProgressReporter {
         times++
         const timesSquared = times ** 2
         const percentage = timesSquared / (timesSquared + factor)
-        this.report({
-          percentage,
-          desc: null,
-          timeLeft: timeCost * (1 - percentage)
-        })
+        // Use wall-clock elapsed time for ETA so it decreases at a stable ~1 second per second rate,
+        // independent of the non-linear progress curve
+        const elapsed = Date.now() - startTime
+        const timeLeft = Math.max(0, timeCost - elapsed)
+        this.report({ percentage, desc: null, timeLeft })
       }, interval)
     })
   }
