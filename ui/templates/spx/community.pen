@@ -35343,7 +35343,7 @@
       "children": [
         {
           "type": "frame",
-          "id": "8eT7C",
+          "id": "1cmtv",
           "name": "New Version Notification",
           "width": 1440,
           "height": 50,
@@ -35362,7 +35362,7 @@
           "children": [
             {
               "type": "frame",
-              "id": "uCdfW",
+              "id": "frZSO",
               "name": "Frame 2",
               "width": "fill_container",
               "stroke": {
@@ -35375,7 +35375,7 @@
               "children": [
                 {
                   "type": "frame",
-                  "id": "nP7Fu",
+                  "id": "Qxn1m",
                   "name": "Frame 3",
                   "stroke": {
                     "align": "inside",
@@ -35386,7 +35386,7 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "111LL",
+                      "id": "o7wsr",
                       "name": "Frame 1000004878",
                       "clip": true,
                       "width": 20,
@@ -35399,14 +35399,14 @@
                       "children": [
                         {
                           "type": "rectangle",
-                          "id": "pU4HB",
+                          "id": "MR44m",
                           "x": -2.5,
                           "y": -2.5,
                           "name": "Notification 3",
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../images/Notification-2.gif",
+                            "url": "../../features/spx/images/Notification-2.gif",
                             "mode": "fill"
                           },
                           "width": 25,
@@ -35420,7 +35420,7 @@
                     },
                     {
                       "type": "frame",
-                      "id": "ki4bv",
+                      "id": "yWu7U",
                       "name": "Frame 1",
                       "stroke": {
                         "align": "inside",
@@ -35431,7 +35431,7 @@
                       "children": [
                         {
                           "type": "text",
-                          "id": "8HQnS",
+                          "id": "nFPT0",
                           "name": "XBuilder 新版本上线！",
                           "fill": "#57606aff",
                           "content": "XBuilder 新版本上线！",
@@ -35443,7 +35443,7 @@
                         },
                         {
                           "type": "text",
-                          "id": "rtvPu",
+                          "id": "ri7uu",
                           "name": "为确保最佳使用体验，请更新至最新版本",
                           "fill": "#57606aff",
                           "content": "为确保最佳使用体验，请更新至最新版本",
@@ -35459,7 +35459,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "ib8ci",
+                  "id": "GWyna",
                   "name": "Button",
                   "height": 26,
                   "fill": "#faa135ff",
@@ -35478,7 +35478,7 @@
                   "children": [
                     {
                       "type": "text",
-                      "id": "leVl7",
+                      "id": "bkqIG",
                       "name": "Button Text",
                       "fill": "#ffffffff",
                       "content": "更新体验",
