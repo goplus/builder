@@ -77,7 +77,7 @@ async function listMonitors() {
   const monitors = project.value.stage.widgets.filter((widget) => widget instanceof Monitor)
   return {
     success: true,
-    message: `Successfully listed ${monitors.length} monitors in project "${project.value.name}"`,
+    message: `Successfully listed ${monitors.length} monitors in project "${project.value.displayName}"`,
     monitors: monitors.map((monitor) => ({
       name: monitor.name,
       label: monitor.label,
@@ -103,7 +103,7 @@ async function addMonitor(args: AddMonitorOptions) {
   project.value.stage.addWidget(monitor)
   return {
     success: true,
-    message: `Successfully added monitor "${monitor.name}" to project "${project.value.name}"`
+    message: `Successfully added monitor "${monitor.name}" to project "${project.value.displayName}"`
   }
 }
 
@@ -117,7 +117,7 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
     .then((serialized) => cloudHelpers.save(serialized).then((saved) => project.value.setMetadata(saved.metadata)))
   return {
     success: true,
-    message: `Successfully added sprite "${args.spriteName}" to project "${project.value.name}"`
+    message: `Successfully added sprite "${args.spriteName}" to project "${project.value.displayName}"`
   }
 }
 
@@ -130,7 +130,7 @@ async function addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
     .then((serialized) => cloudHelpers.save(serialized).then((saved) => project.value.setMetadata(saved.metadata)))
   return {
     success: true,
-    message: `Successfully added backdrop "${args.backdropName}" to project "${project.value.name}"`
+    message: `Successfully added backdrop "${args.backdropName}" to project "${project.value.displayName}"`
   }
 }
 

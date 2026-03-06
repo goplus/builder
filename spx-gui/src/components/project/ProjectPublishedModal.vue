@@ -28,7 +28,7 @@ const handleCopy = useMessageHandle(
 <template>
   <UIFormModal
     :radar="{ name: 'Project published modal', desc: 'Modal showing project published successfully' }"
-    :title="$t({ en: `Project ${project.name} published`, zh: `项目 ${project.name} 发布成功` })"
+    :title="$t({ en: `Project ${project.displayName} published`, zh: `项目 ${project.displayName} 发布成功` })"
     :visible="props.visible"
     :auto-focus="false"
     @update:visible="emit('cancelled')"

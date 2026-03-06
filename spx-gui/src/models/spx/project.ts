@@ -104,6 +104,7 @@ export class SpxProject extends Disposable implements IProject {
   owner?: string
   remixedFrom?: string | null
   name?: string
+  displayName = ''
   version = 0
   visibility?: Visibility
   description?: string
@@ -296,6 +297,10 @@ export class SpxProject extends Disposable implements IProject {
     }
   }
 
+  setDisplayName(displayName: string) {
+    this.displayName = displayName
+  }
+
   setVisibility(visibility: Visibility) {
     this.visibility = visibility
   }
@@ -361,6 +366,9 @@ export class SpxProject extends Disposable implements IProject {
     const reactiveThis = reactive(this) as this
     this.owner = owner
     this.name = name
+    if (name != null) {
+      this.displayName = name
+    }
     this.zorder = []
     this.stage = new Stage()
     this.sprites = []
@@ -391,6 +399,7 @@ export class SpxProject extends Disposable implements IProject {
       updatedAt: this.updatedAt,
       owner: this.owner,
       name: this.name,
+      displayName: this.displayName,
       version: this.version,
       visibility: this.visibility,
       description: this.description,

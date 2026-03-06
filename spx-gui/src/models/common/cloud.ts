@@ -7,7 +7,7 @@ import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
-import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
+import { Visibility, addProject, getProject, type UpdateProjectParams, updateProject } from '@/apis/project'
 import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException, TimeoutException } from '@/utils/exception'
 import { getUphostsByRegion } from '@/utils/kodo'
@@ -56,9 +56,10 @@ export function getPublishedContent(project: ProjectData) {
 }
 
 async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
-  const { owner, name, id } = metadata
+  const { owner, name, displayName, id } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
+  if (!displayName) throw new DefaultException({ en: 'project display name not specified', zh: '未指定项目显示名' })
 
   const aiDescriptionFiles = createAIDescriptionFiles(metadata)
   const filesToSave = { ...files, ...aiDescriptionFiles }
@@ -75,19 +76,18 @@ async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
     thumbnail,
     ...savedMetadata
   } = await (id != null
-    ? updateProject(
-        owner,
-        name,
-        {
+    ? (() => {
+        const updateParams: UpdateProjectParams = {
           visibility,
           files: fileCollection,
+          displayName,
           description: metadata.description,
           instructions: metadata.instructions,
           thumbnail: thumbnailUniversalUrl
-        },
-        signal
-      )
-    : addProject({ name, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection }, signal))
+        }
+        return updateProject(owner, name, updateParams, signal)
+      })()
+    : addProject({ name, displayName, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection }, signal))
   signal?.throwIfAborted()
 
   metadata = { ...savedMetadata, thumbnail: metadata.thumbnail }

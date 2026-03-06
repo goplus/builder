@@ -87,7 +87,7 @@ const handleSubmit = useMessageHandle(
 <template>
   <UIFormModal
     :radar="{ name: 'Project publish modal', desc: 'Modal for publishing projects' }"
-    :title="$t({ en: `Publish ${project.name}`, zh: `发布 ${project.name}` })"
+    :title="$t({ en: `Publish ${project.displayName}`, zh: `发布 ${project.displayName}` })"
     :style="{ width: '560px' }"
     :visible="props.visible"
     @update:visible="handleCancel"

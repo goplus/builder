@@ -69,11 +69,11 @@ const {
 const { data: ownerInfo } = useUser(() => props.owner)
 
 usePageTitle(() => {
-  if (ownerInfo.value == null) return null
+  if (ownerInfo.value == null || project.value == null) return null
   return [
     {
-      en: props.name,
-      zh: props.name
+      en: project.value.displayName,
+      zh: project.value.displayName
     },
     {
       en: ownerInfo.value.displayName,
@@ -288,7 +288,7 @@ const handlePublish = useMessageHandle(
 const removeProject = useRemoveProject()
 const handleRemove = useMessageHandle(
   async () => {
-    await removeProject(props.owner, props.name)
+    await removeProject(props.owner, props.name, project.value!.displayName)
     await router.push(getUserPageRoute(getSignedInUsername()!, 'projects'))
   },
   { en: 'Failed to remove project', zh: '删除项目失败' },
@@ -441,7 +441,7 @@ const remixesRet = useQuery(
       </div>
       <div class="right">
         <template v-if="project != null">
-          <h2 class="title">{{ project.name }}</h2>
+          <h2 class="title">{{ project.displayName }}</h2>
           <RemixedFrom v-if="project.remixedFrom != null" class="remixed-from" :remixed-from="project.remixedFrom" />
           <div class="info">
             <OwnerInfo :owner="project.owner!" />

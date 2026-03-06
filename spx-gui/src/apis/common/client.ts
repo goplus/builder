@@ -168,6 +168,10 @@ export class Client {
     return this.requestJSON(path, payload, { ...options, method: 'PUT' })
   }
 
+  patch(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestJSON(path, payload, { ...options, method: 'PATCH' })
+  }
+
   delete(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     if (params != null) path = withQueryParams(path, params)
     return this.requestJSON(path, null, { ...options, method: 'DELETE' })

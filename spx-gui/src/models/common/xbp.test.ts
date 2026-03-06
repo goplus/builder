@@ -55,6 +55,7 @@ describe('save & load', () => {
 
   it('should save & load project with metadata correctly', async () => {
     const project = makeProject('test')
+    project.setDisplayName('Test Project')
     project.setDescription('test description')
     project.setInstructions('test instructions')
     const { metadata, files } = await project.export()
@@ -63,6 +64,7 @@ describe('save & load', () => {
     const project2 = new SpxProject(undefined, 'test2')
     await project2.load(loaded)
     expect(project2.name).toBe('test2')
+    expect(project2.displayName).toBe('Test Project')
     expect(project2.description).toBe('test description')
     expect(project2.instructions).toBe('test instructions')
   })

@@ -61,6 +61,7 @@ export async function save(metadata: Metadata, files: LazyFiles, signal?: AbortS
   const zippable: Zippable = {}
 
   const metadataJson = JSON.stringify({
+    displayName: metadata.displayName,
     description: metadata.description,
     instructions: metadata.instructions,
     extraSettings: metadata.extraSettings

@@ -90,6 +90,7 @@ This is a sample of how project data is stored in the backend database and retur
   "id": "proj_abc123def456",
   "owner": "john-doe",
   "name": "my-game-project",
+  "displayName": "My game project",
   "description": "A simple platformer game with sprites and sounds",
   "instructions": "Use arrow keys to move, space to jump",
   "visibility": "public",
