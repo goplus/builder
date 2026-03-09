@@ -1272,31 +1272,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - messages
-              properties:
-                messages:
-                  description: Input messages.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotMessage"
-                  examples:
-                    - - role: user
-                        content:
-                          type: text
-                          text: Hello, world!
-                tools:
-                  description: Use Mcp tools.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotTool"
-                  examples:
-                    - - type: function
-                        function:
-                          name: create_project
-                          description: Create a new project.
-                          parameters: { "name": "My Project" }
+              $ref: "#/components/schemas/CopilotMessageRequest"
 
       responses:
         "201":
@@ -1304,12 +1280,107 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CopilotMessage"
-                examples:
-                  - role: copilot
-                    content:
-                      type: text
-                      text: Hello!
+                $ref: "#/components/schemas/CopilotCopilotMessage"
+              example:
+                role: copilot
+                content:
+                  type: text
+                  text: Hello!
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
+              schema:
+                type: integer
+
+  /copilot/sse/message:
+    post:
+      tags:
+        - Copilot
+      summary: Generate a structured SSE stream message
+      description: |
+        Generate a structured SSE stream message by sending a list of input messages.
+
+        This is the rollout target for new structured streaming clients. During rollout, the legacy
+        `POST /copilot/stream/message` endpoint remains available with its existing behavior unchanged so clients can
+        migrate incrementally.
+
+        The response is a Server-Sent Events (SSE) stream where each `data:` line contains a single JSON object.
+
+        #### Event semantics
+
+        | Event | Data schema | Semantics |
+        |-------|-------------|-----------|
+        | `text_delta` | `CopilotSSETextDeltaEvent` | Incremental assistant text fragment. Concatenate `text` values in order to reconstruct `content.text`. |
+        | `tool_call_delta` | `CopilotSSEToolCallDeltaEvent` | Incremental fragment for one assistant tool call. Merge fragments by `index`; `id`, `function.name`, and `function.arguments` are omitted when a fragment does not update them. |
+        | `done` | `CopilotSSEDoneEvent` | Terminal success event. Emitted after all prior deltas. `finishReason` is the provider finish reason such as `stop` or `tool_calls`. |
+        | `error` | `CopilotSSEErrorEvent` | Terminal failure event emitted if streaming fails after the HTTP response has started. No `done` event follows `error`. |
+
+        A successful stream may contain any number of `text_delta` and `tool_call_delta` events before the final
+        `done` event. Assistant responses may be text-only, tool-call-only, or contain both.
+
+        #### Quota & rate limits
+
+        - Each message consumes 1 quota from the authenticated user's allowance.
+        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
+        - Long-window quota limits vary based on the authenticated user's plan.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CopilotMessageRequest"
+      responses:
+        "200":
+          description: |
+            Structured SSE stream established.
+
+            Parse the stream as SSE frames and then decode each event's JSON `data` payload according to the event
+            type.
+          content:
+            "text/event-stream":
+              schema:
+                type: string
+                description: |
+                  Server-Sent Events stream containing `text_delta`, `tool_call_delta`, `done`, and `error` events.
+              examples:
+                textOnly:
+                  summary: Text-only assistant response
+                  value: |
+                    event: text_delta
+                    data: {"text":"Hello"}
+
+                    event: text_delta
+                    data: {"text":"!"}
+
+                    event: done
+                    data: {"finishReason":"stop"}
+                textAndToolCall:
+                  summary: Assistant text followed by a tool call
+                  value: |
+                    event: text_delta
+                    data: {"text":"Let me check that for you."}
+
+                    event: tool_call_delta
+                    data: {"index":0,"id":"call_1","function":{"name":"list_projects","arguments":"{\"query\":\"demo\"}"}}
+
+                    event: done
+                    data: {"finishReason":"tool_calls"}
+                providerError:
+                  summary: Stream failure after the response has started
+                  value: |
+                    event: error
+                    data: {"reason":"streamFailed","message":"stream failed"}
         "403":
           description: Insufficient permissions or quota to perform this operation.
           headers:
@@ -1333,6 +1404,10 @@ paths:
       description: |
         Generate a stream message by sending a list of input messages.
 
+        This is the legacy streaming endpoint kept during rollout. New structured streaming integrations should use
+        `POST /copilot/sse/message`, while this endpoint remains available with unchanged behavior for backward
+        compatibility.
+
         #### Quota & rate limits
 
         - Each message consumes 1 quota from the authenticated user's allowance.
@@ -1345,31 +1420,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - messages
-              properties:
-                messages:
-                  description: Input messages.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotMessage"
-                  examples:
-                    - - role: user
-                        content:
-                          type: text
-                          text: Hello, world!
-                tools:
-                  description: Use Mcp tools.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotTool"
-                  examples:
-                    - - type: function
-                        function:
-                          name: create_project
-                          description: Create a new project.
-                          parameters: { "name": "My Project" }
+              $ref: "#/components/schemas/CopilotMessageRequest"
       responses:
         "201":
           description: Stream Message successfully generated.
@@ -2825,31 +2876,279 @@ components:
 
     CopilotMessage:
       description: Message in a copilot conversation.
+      oneOf:
+        - $ref: "#/components/schemas/CopilotUserMessage"
+        - $ref: "#/components/schemas/CopilotCopilotMessage"
+        - $ref: "#/components/schemas/CopilotToolMessage"
+      discriminator:
+        propertyName: role
+        mapping:
+          user: "#/components/schemas/CopilotUserMessage"
+          copilot: "#/components/schemas/CopilotCopilotMessage"
+          tool: "#/components/schemas/CopilotToolMessage"
+
+    CopilotMessageContent:
+      description: Message content payload.
       type: object
+      required:
+        - type
+        - text
+      additionalProperties: false
+      properties:
+        type:
+          description: Type of the message. For now, only `text` is supported.
+          type: string
+          enum:
+            - text
+          examples:
+            - text
+        text:
+          description: Text content of the message.
+          type: string
+          examples:
+            - Hello!
+
+    CopilotUserMessage:
+      description: User-authored message in a copilot conversation.
+      type: object
+      required:
+        - role
+        - content
+      additionalProperties: false
       properties:
         role:
           description: Role of the message.
           type: string
           enum:
             - user
-            - copilot
           examples:
             - user
         content:
-          type: object
-          properties:
-            type:
-              description: Type of the message. For now, only `"text"` is supported.
-              type: string
-              enum:
-                - text
-              examples:
-                - text
-            text:
-              description: Text content of the message.
-              type: string
-              examples:
-                - Hello!
+          $ref: "#/components/schemas/CopilotMessageContent"
+
+    CopilotCopilotMessage:
+      description: |
+        Copilot-authored message in a copilot conversation.
+
+        `content`, `toolCalls`, or both may be present, but at least one of them must be included.
+      type: object
+      required:
+        - role
+      additionalProperties: false
+      minProperties: 2
+      properties:
+        role:
+          description: Role of the message.
+          type: string
+          enum:
+            - copilot
+          examples:
+            - copilot
+        content:
+          $ref: "#/components/schemas/CopilotMessageContent"
+        toolCalls:
+          description: Structured tool calls emitted by the copilot message.
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CopilotRequestToolCall"
+
+    CopilotToolMessage:
+      description: Tool result message in a copilot conversation.
+      type: object
+      required:
+        - role
+        - toolCallId
+        - content
+      additionalProperties: false
+      properties:
+        role:
+          description: Role of the message.
+          type: string
+          enum:
+            - tool
+          examples:
+            - tool
+        toolCallId:
+          description: Tool call identifier of the assistant tool call this result corresponds to.
+          type: string
+          examples:
+            - call_1
+        content:
+          $ref: "#/components/schemas/CopilotMessageContent"
+
+    CopilotMessageRequest:
+      description: Request payload for copilot message generation endpoints.
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          description: |
+            Input messages.
+
+            This request shape supports prior assistant `toolCalls` and tool result messages with `toolCallId`.
+          type: array
+          items:
+            $ref: "#/components/schemas/CopilotMessage"
+          examples:
+            - - role: user
+                content:
+                  type: text
+                  text: Hello, world!
+              - role: copilot
+                toolCalls:
+                  - id: call_1
+                    type: function
+                    function:
+                      name: create_project
+                      arguments: '{"name":"My Project"}'
+              - role: tool
+                toolCallId: call_1
+                content:
+                  type: text
+                  text: '{"id":"project_123"}'
+        tools:
+          description: Tools available for the copilot to use.
+          type: array
+          items:
+            $ref: "#/components/schemas/CopilotTool"
+          examples:
+            - - type: function
+                function:
+                  name: create_project
+                  description: Create a new project.
+                  parameters: { "name": "My Project" }
+
+    CopilotRequestToolCall:
+      description: Structured tool call supplied on a prior copilot message.
+      type: object
+      required:
+        - id
+        - type
+        - function
+      additionalProperties: false
+      properties:
+        id:
+          description: Unique tool call identifier.
+          type: string
+          examples:
+            - call_1
+        type:
+          description: Type of the tool call.
+          type: string
+          enum:
+            - function
+          examples:
+            - function
+        function:
+          $ref: "#/components/schemas/CopilotRequestToolCallFunction"
+
+    CopilotRequestToolCallFunction:
+      description: Function payload of a structured tool call.
+      type: object
+      required:
+        - name
+        - arguments
+      additionalProperties: false
+      properties:
+        name:
+          description: Name of the function.
+          type: string
+          examples:
+            - create_project
+        arguments:
+          description: JSON-stringified arguments for the function call.
+          type: string
+          examples:
+            - '{"name":"My Project"}'
+
+    CopilotSSETextDeltaEvent:
+      description: Payload of a `text_delta` SSE event from `POST /copilot/sse/message`.
+      type: object
+      required:
+        - text
+      additionalProperties: false
+      properties:
+        text:
+          description: Incremental assistant text fragment. Concatenate fragments in order.
+          type: string
+          examples:
+            - Hello
+
+    CopilotSSEToolCallDeltaEvent:
+      description: |
+        Payload of a `tool_call_delta` SSE event from `POST /copilot/sse/message`.
+
+        Merge fragments by `index` to reconstruct one entry in assistant `toolCalls`.
+      type: object
+      required:
+        - index
+      additionalProperties: false
+      properties:
+        index:
+          description: Zero-based tool call position within the assistant message's `toolCalls` array.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 0
+        id:
+          description: Tool call identifier fragment, present when emitted by the provider for this delta.
+          type: string
+          examples:
+            - call_1
+        function:
+          $ref: "#/components/schemas/CopilotSSEToolCallDeltaFunction"
+
+    CopilotSSEToolCallDeltaFunction:
+      description: Incremental function fragment nested inside a `tool_call_delta` event.
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          description: Function name fragment, usually emitted once near the start of the tool call.
+          type: string
+          examples:
+            - list_projects
+        arguments:
+          description: JSON-stringified arguments fragment for the tool call.
+          type: string
+          examples:
+            - '{"query":"demo"}'
+
+    CopilotSSEDoneEvent:
+      description: Payload of a terminal `done` SSE event from `POST /copilot/sse/message`.
+      type: object
+      required:
+        - finishReason
+      additionalProperties: false
+      properties:
+        finishReason:
+          description: Provider finish reason for the completed assistant turn.
+          type: string
+          examples:
+            - stop
+            - tool_calls
+
+    CopilotSSEErrorEvent:
+      description: Payload of a terminal `error` SSE event from `POST /copilot/sse/message`.
+      type: object
+      required:
+        - reason
+        - message
+      additionalProperties: false
+      properties:
+        reason:
+          description: Machine-readable error reason for programmatic handling.
+          type: string
+          examples:
+            - streamFailed
+        message:
+          description: Human-readable streaming error message.
+          type: string
+          examples:
+            - stream failed
 
     CopilotTool:
       description: Tool available for copilot to use.
@@ -2868,8 +3167,6 @@ components:
             name:
               description: Name of the function.
               type: string
-              enum:
-                - create_project
               examples:
                 - create_project
             description:
