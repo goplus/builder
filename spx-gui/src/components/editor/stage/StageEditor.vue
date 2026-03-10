@@ -9,20 +9,21 @@
       color="stage"
       @update:value="(type) => state.select(type as SelectedType)"
     >
-      <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">{{
-        $t({ en: 'Code', zh: '代码' })
-      }}</UITab>
-      <UITab v-radar="{ name: 'Widgets tab', desc: 'Click to switch to widgets management view' }" value="widgets">{{
-        $t({ en: 'Widgets', zh: '控件' })
-      }}</UITab>
-      <UITab v-radar="{ name: 'Sounds tab', desc: 'Click to switch to sounds management view' }" value="sounds">{{
-        $t({ en: 'Sounds', zh: '声音' })
-      }}</UITab>
+      <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">
+        {{ $t({ en: 'Code', zh: '代码' }) }}
+      </UITab>
+      <UITab v-radar="{ name: 'Widgets tab', desc: 'Click to switch to widgets management view' }" value="widgets">
+        {{ $t({ en: 'Widgets', zh: '控件' }) }}
+      </UITab>
+      <UITab v-radar="{ name: 'Sounds tab', desc: 'Click to switch to sounds management view' }" value="sounds">
+        {{ $t({ en: 'Sounds', zh: '声音' }) }}
+      </UITab>
       <UITab
         v-radar="{ name: 'Backdrops tab', desc: 'Click to switch to backdrops management view' }"
         value="backdrops"
-        >{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab
       >
+        {{ $t({ en: 'Backdrops', zh: '背景' }) }}
+      </UITab>
     </UITabs>
     <template #extra>
       <FormatButton v-if="state.selected.type === 'code'" :code-file-path="stage.codeFilePath" />
@@ -194,7 +195,8 @@ import { CodeEditorUI, FormatButton } from '../code-editor/spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor, { BackdropsEditorState } from './backdrop/BackdropsEditor.vue'
 import WidgetsEditor, { WidgetsEditorState } from './widget/WidgetsEditor.vue'
-import SoundsEditor, { SoundsEditorState } from './sound/SoundsEditor.vue'
+import SoundsEditor from './sound/SoundsEditor.vue'
+import { SoundsEditorState } from './sound/sounds-editor-state'
 import BackdropModeSelector from './backdrop/BackdropModeSelector.vue'
 
 defineProps<{

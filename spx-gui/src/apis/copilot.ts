@@ -52,7 +52,7 @@ export async function* generateStreamMessage(
   options?: GenerateMessageOptions
 ): AsyncIterableIterator<string> {
   try {
-    const stream = await client.postTextStream(
+    const stream = client.postTextStream(
       '/copilot/stream/message',
       { scope, messages },
       {
@@ -81,7 +81,7 @@ export async function* workflowStreamMessage(
   }
 ): AsyncIterableIterator<string> {
   try {
-    const stream = await client.postTextStream(
+    const stream = client.postTextStream(
       '/workflow/stream/message',
       {
         messages,

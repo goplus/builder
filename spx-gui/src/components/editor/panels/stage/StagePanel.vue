@@ -13,17 +13,35 @@
       </div>
       <UIDivider />
       <div class="quick-actions">
-        <button class="quick-btn" type="button" @click="openTab('widgets')">
+        <button
+          v-radar="{ name: 'Widgets quick entry', desc: 'Quick entry to open widgets management tab in stage editor' }"
+          class="quick-btn"
+          type="button"
+          @click="openTab('widgets')"
+        >
           <!-- eslint-disable-next-line vue/no-v-html -->
           <span class="icon" v-html="widgetSvg"></span>
           <span>{{ $t({ en: 'Widgets', zh: '控件' }) }}</span>
         </button>
-        <button class="quick-btn" type="button" @click="openTab('sounds')">
+        <button
+          v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
+          class="quick-btn"
+          type="button"
+          @click="openTab('sounds')"
+        >
           <!-- eslint-disable-next-line vue/no-v-html -->
           <span class="icon" v-html="soundSvg"></span>
           <span>{{ $t({ en: 'Sounds', zh: '声音' }) }}</span>
         </button>
-        <button class="quick-btn" type="button" @click="openTab('backdrops')">
+        <button
+          v-radar="{
+            name: 'Backdrops quick entry',
+            desc: 'Quick entry to open backdrops management tab in stage editor'
+          }"
+          class="quick-btn"
+          type="button"
+          @click="openTab('backdrops')"
+        >
           <!-- eslint-disable-next-line vue/no-v-html -->
           <span class="icon" v-html="backdropSvg"></span>
           <span>{{ $t({ en: 'Backdrops', zh: '背景' }) }}</span>

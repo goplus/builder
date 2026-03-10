@@ -3,7 +3,13 @@
     <UICard v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }" class="main">
       <SpritesPanel />
     </UICard>
-    <UICard v-radar="{ name: 'Stage panel', desc: 'Panel for stage of the project' }" class="sider">
+    <UICard
+      v-radar="{
+        name: 'Stage panel',
+        desc: 'Panel for stage of the project, with quick entries to widgets, sounds and backdrops tabs'
+      }"
+      class="sider"
+    >
       <StagePanel />
     </UICard>
   </div>
