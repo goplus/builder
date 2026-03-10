@@ -18,7 +18,7 @@
       "command": "bash build-wasm.sh",
       "options": {
         "env": {
-          "GOTOOLCHAIN": "go1.24.4"
+          "GOTOOLCHAIN": "go1.25.8"
         }
       },
       "presentation": {
