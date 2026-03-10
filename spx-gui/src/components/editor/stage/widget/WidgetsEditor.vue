@@ -54,10 +54,10 @@ export class WidgetsEditorState extends Disposable {
 
     this.addDisposer(
       watch(
-        () => this.selected,
-        (selected) => {
-          if (selected == null && this.getStage().widgets.length > 0) {
-            this.select(this.getStage().widgets[0].id)
+        () => [this.selected, this.getStage().widgets[0]?.id] as const,
+        ([selected, firstWidgetId]) => {
+          if (selected == null && firstWidgetId != null) {
+            this.select(firstWidgetId)
           }
         }
       )

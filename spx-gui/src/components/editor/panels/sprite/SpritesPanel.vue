@@ -1,11 +1,10 @@
 <template>
   <CommonPanel
     v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }"
-    :expanded="expanded"
+    :expanded="true"
     :active="selectedSprite != null"
     :title="$t({ en: 'Sprites', zh: '精灵' })"
     color="sprite"
-    @expand="emit('expand')"
   >
     <template #add-options>
       <UIMenu>
@@ -47,14 +46,6 @@ import CommonPanel from '../common/CommonPanel.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 
-defineProps<{
-  expanded: boolean
-}>()
-
-const emit = defineEmits<{
-  expand: []
-}>()
-
 const editorCtx = useEditorCtx()
 
 const sprites = computed(() => editorCtx.project.sprites)
@@ -89,30 +80,4 @@ const handleAddFromAssetLibrary = useMessageHandle(
 ).fn
 </script>
 
-<style scoped lang="scss">
-.overview-sprite-list {
-  padding: 12px;
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.footer-expand-button {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  right: 12px;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0px -2px 8px 0px rgba(51, 51, 51, 0.08);
-  background-color: var(--ui-color-grey-300);
-  cursor: pointer;
-}
-
-.footer-expand-icon {
-  transform: rotate(180deg);
-}
-</style>
+<style scoped lang="scss"></style>

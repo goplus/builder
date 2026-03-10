@@ -16,7 +16,7 @@
 import { computed, onUnmounted, reactive, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
 import type { Color } from '@/components/ui'
-import PlayControl, { type Size } from '../common/PlayControl.vue'
+import PlayControl, { type Size } from '../../common/PlayControl.vue'
 
 const props = defineProps<{
   src: string | null

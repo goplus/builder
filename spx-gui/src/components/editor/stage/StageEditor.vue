@@ -15,6 +15,9 @@
       <UITab v-radar="{ name: 'Widgets tab', desc: 'Click to switch to widgets management view' }" value="widgets">{{
         $t({ en: 'Widgets', zh: '控件' })
       }}</UITab>
+      <UITab v-radar="{ name: 'Sounds tab', desc: 'Click to switch to sounds management view' }" value="sounds">{{
+        $t({ en: 'Sounds', zh: '声音' })
+      }}</UITab>
       <UITab
         v-radar="{ name: 'Backdrops tab', desc: 'Click to switch to backdrops management view' }"
         value="backdrops"
@@ -37,11 +40,12 @@
     :code-file-path="stage.codeFilePath"
   />
   <WidgetsEditor v-if="state.selected.type === 'widgets'" :state="state.widgetsState" />
-  <BackdropsEditor v-if="state.selected.type === 'backdrops'" :state="state.backdropsState" />
+  <SoundsEditor v-else-if="state.selected.type === 'sounds'" :state="state.soundsState" />
+  <BackdropsEditor v-else-if="state.selected.type === 'backdrops'" :state="state.backdropsState" />
 </template>
 
 <script lang="ts">
-export type SelectedType = 'code' | 'widgets' | 'backdrops'
+export type SelectedType = 'code' | 'widgets' | 'sounds' | 'backdrops'
 
 export type Selected =
   | {
@@ -52,13 +56,18 @@ export type Selected =
       widget: Widget | null
     }
   | {
+      type: 'sounds'
+      sound: Sound | null
+    }
+  | {
       type: 'backdrops'
       backdrop: Backdrop | null
     }
 
 export class StageEditorState extends Disposable {
-  constructor(getStage: () => Stage) {
+  constructor(getStage: () => Stage, getSounds: () => Sound[]) {
     super()
+    this.soundsState = new SoundsEditorState(getSounds)
     this.widgetsState = new WidgetsEditorState(getStage)
     this.backdropsState = new BackdropsEditorState(getStage)
 
@@ -77,12 +86,18 @@ export class StageEditorState extends Disposable {
   }
 
   widgetsState: WidgetsEditorState
+  soundsState: SoundsEditorState
   backdropsState: BackdropsEditorState
   private selectedTypeRef = ref<SelectedType>('code')
 
   get selectedWidget() {
     if (this.selectedTypeRef.value !== 'widgets') return null
     return this.widgetsState.selected
+  }
+
+  get selectedSound() {
+    if (this.selectedTypeRef.value !== 'sounds') return null
+    return this.soundsState.selected
   }
 
   get selectedBackdrop() {
@@ -97,6 +112,8 @@ export class StageEditorState extends Disposable {
         return { type: 'code' }
       case 'widgets':
         return { type: 'widgets', widget: this.widgetsState.selected }
+      case 'sounds':
+        return { type: 'sounds', sound: this.soundsState.selected }
       case 'backdrops':
         return { type: 'backdrops', backdrop: this.backdropsState.selected }
       default:
@@ -111,6 +128,11 @@ export class StageEditorState extends Disposable {
   selectWidget(widgetId: string) {
     this.select('widgets')
     this.widgetsState.select(widgetId)
+  }
+
+  selectSound(soundId: string) {
+    this.select('sounds')
+    this.soundsState.select(soundId)
   }
 
   selectBackdrop(backdropId: string) {
@@ -130,6 +152,11 @@ export class StageEditorState extends Disposable {
         this.select('widgets')
         this.widgetsState.selectByRoute(extra)
         break
+      case 'sounds': {
+        this.select('sounds')
+        this.soundsState.selectByRoute(extra)
+        break
+      }
       case 'backdrops':
         this.select('backdrops')
         this.backdropsState.selectByRoute(extra)
@@ -145,6 +172,8 @@ export class StageEditorState extends Disposable {
         return ['code']
       case 'widgets':
         return ['widgets', ...this.widgetsState.getRoute()]
+      case 'sounds':
+        return ['sounds', ...this.soundsState.getRoute()]
       case 'backdrops':
         return ['backdrops', ...this.backdropsState.getRoute()]
     }
@@ -157,6 +186,7 @@ import { ref, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Widget } from '@/models/spx/widget'
+import type { Sound } from '@/models/spx/sound'
 import type { Backdrop } from '@/models/spx/backdrop'
 import type { Stage } from '@/models/spx/stage'
 import { UITabs, UITab } from '@/components/ui'
@@ -164,6 +194,7 @@ import { CodeEditorUI, FormatButton } from '../code-editor/spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor, { BackdropsEditorState } from './backdrop/BackdropsEditor.vue'
 import WidgetsEditor, { WidgetsEditorState } from './widget/WidgetsEditor.vue'
+import SoundsEditor, { SoundsEditorState } from './sound/SoundsEditor.vue'
 import BackdropModeSelector from './backdrop/BackdropModeSelector.vue'
 
 defineProps<{

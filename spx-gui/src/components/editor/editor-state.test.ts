@@ -138,7 +138,6 @@ describe('EditorState', () => {
         expect(editorState.selected.sprite).toBeNull()
       }
       expect(editorState.selectedSprite).toBeNull()
-      expect(editorState.selectedSound).toBeNull()
 
       editorState.dispose()
     })
@@ -175,7 +174,6 @@ describe('EditorState', () => {
         }
       } satisfies Selected)
       expect(editorState.selectedSprite).toBeNull()
-      expect(editorState.selectedSound).toBeNull()
 
       editorState.dispose()
     })
@@ -201,23 +199,6 @@ describe('EditorState', () => {
       editorState.dispose()
     })
 
-    it('should select sound by id correctly', async () => {
-      const project = makeProjectWithResources()
-      const editorState = makeEditorState(project)
-      const sound = project.sounds[1] // sound2
-
-      editorState.select({ type: 'sound', id: sound.id })
-      await flushPromises()
-
-      expect(editorState.selected).toEqual({
-        type: 'sound',
-        sound
-      } satisfies Selected)
-      expect(editorState.selectedSound).toBe(sound)
-
-      editorState.dispose()
-    })
-
     it('should handle non-existent sprite id gracefully', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
@@ -235,24 +216,6 @@ describe('EditorState', () => {
       // When selecting a non-existent sprite ID, the selectedSpriteIdRef is set but no sprite is found
       // The auto-selection logic will kick in and select the first sprite
       expect(editorState.selectedSprite).toBe(project.sprites[0])
-
-      editorState.dispose()
-    })
-
-    it('should handle non-existent sound id gracefully', async () => {
-      const project = makeProjectWithResources()
-      const editorState = makeEditorState(project)
-
-      editorState.select({ type: 'sound', id: 'non-existent-id' })
-      await flushPromises()
-
-      expect(editorState.selected).toEqual({
-        type: 'sound',
-        sound: project.sounds[0]
-      } satisfies Selected)
-      // When selecting a non-existent sound ID, the selectedSoundIdRef is set but no sound is found
-      // The auto-selection logic will kick in and select the first sound
-      expect(editorState.selectedSound).toBe(project.sounds[0])
 
       editorState.dispose()
     })
@@ -305,22 +268,6 @@ describe('EditorState', () => {
       editorState.dispose()
     })
 
-    it('should select sound by name correctly', async () => {
-      const project = makeProjectWithResources()
-      const editorState = makeEditorState(project)
-
-      editorState.selectByName({ type: 'sound', name: 'sound2' })
-      await flushPromises()
-
-      expect(editorState.selected).toEqual({
-        type: 'sound',
-        sound: project.sounds[1]
-      } satisfies Selected)
-      expect(editorState.selectedSound?.name).toBe('sound2')
-
-      editorState.dispose()
-    })
-
     it('should handle non-existent names gracefully', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
@@ -365,7 +312,13 @@ describe('EditorState', () => {
       editorState.selectSound(sound.id)
       await flushPromises()
 
-      expect(editorState.selectedSound).toBe(sound)
+      expect(editorState.selected).toEqual({
+        type: 'stage',
+        stageSelected: {
+          type: 'sounds',
+          sound
+        }
+      } satisfies Selected)
 
       editorState.dispose()
     })
@@ -466,7 +419,13 @@ describe('EditorState', () => {
 
       // Test sound selection
       editorState.selectResource(project.sounds[1])
-      expect(editorState.selectedSound).toBe(project.sounds[1])
+      expect(editorState.selected).toEqual({
+        type: 'stage',
+        stageSelected: {
+          type: 'sounds',
+          sound: project.sounds[1]
+        }
+      } satisfies Selected)
 
       // Test stage selection
       editorState.selectResource(project.stage)
@@ -552,8 +511,39 @@ describe('EditorState', () => {
       await flushPromises()
 
       expect(editorState.selected).toEqual({
-        type: 'sound',
-        sound: project.sounds[1]
+        type: 'stage',
+        stageSelected: {
+          type: 'sounds',
+          sound: project.sounds[1]
+        }
+      } satisfies Selected)
+
+      editorState.dispose()
+    })
+
+    it('should handle legacy bare sounds route correctly', async () => {
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
+      const router = makeRouter()
+
+      editorState.syncWithRouter(router)
+      await flushPromises()
+
+      // Simulate old top-level sounds route without sound name
+      router.currentRoute.value = {
+        ...router.currentRoute.value,
+        params: {
+          inEditorPath: ['sounds']
+        }
+      }
+      await flushPromises()
+
+      expect(editorState.selected).toEqual({
+        type: 'stage',
+        stageSelected: {
+          type: 'sounds',
+          sound: project.sounds[0]
+        }
       } satisfies Selected)
 
       editorState.dispose()
@@ -708,12 +698,19 @@ describe('EditorState', () => {
       // Select second sound
       editorState.selectSound(project.sounds[1].id)
       await flushPromises()
-      expect(editorState.selectedSound).toBe(project.sounds[1])
+      expect(editorState.stageState.selectedSound).toBe(project.sounds[1])
 
       // Remove the selected sound
       project.removeSound(project.sounds[1].id)
       await flushPromises()
-      expect(editorState.selectedSound).toBe(project.sounds[0])
+      expect(editorState.stageState.selectedSound).toBe(project.sounds[0])
+      expect(editorState.selected).toEqual({
+        type: 'stage',
+        stageSelected: {
+          type: 'sounds',
+          sound: project.sounds[0]
+        }
+      } satisfies Selected)
 
       editorState.dispose()
     })
@@ -736,11 +733,17 @@ describe('EditorState', () => {
       const project = makeEmptyProject()
       const editorState = makeEditorState(project)
 
-      editorState.select({ type: 'sound' })
+      editorState.selectSound('missing-sound-id')
       await flushPromises()
 
-      expect(editorState.selected.type).toBe('sound')
-      expect(editorState.selectedSound).toBeNull()
+      expect(editorState.selected).toEqual({
+        type: 'stage',
+        stageSelected: {
+          type: 'sounds',
+          sound: null
+        }
+      } satisfies Selected)
+      expect(editorState.stageState.selectedSound).toBeNull()
 
       editorState.dispose()
     })
@@ -765,17 +768,18 @@ describe('EditorState', () => {
     it('should handle adding new sounds correctly', async () => {
       const project = makeEmptyProject()
       const editorState = makeEditorState(project)
-      editorState.select({ type: 'sound' })
+
+      editorState.selectSound('missing-sound-id')
 
       // Initially no sound selected
-      expect(editorState.selectedSound).toBeNull()
+      expect(editorState.stageState.selectedSound).toBeNull()
 
       // Add a sound
       const newSound = new Sound('newSound', mockFile())
       project.addSound(newSound)
       await flushPromises()
 
-      expect(editorState.selectedSound).toBe(newSound)
+      expect(editorState.stageState.selectedSound).toBe(newSound)
 
       editorState.dispose()
     })

@@ -86,8 +86,8 @@ export const sprite = {
   bgSelected: yellow[200]
 }
 export const sound = {
-  ...purple,
-  bgSelected: purple[200]
+  ...blue,
+  bgSelected: blue[200]
 }
 export const stage = {
   ...blue,

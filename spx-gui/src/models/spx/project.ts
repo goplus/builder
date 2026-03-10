@@ -123,6 +123,8 @@ export class SpxProject extends Disposable implements IProject {
   stage: Stage
   tilemap?: Tilemap | null
   sprites: Sprite[]
+  // Sounds are kept at the project level (not in Stage) because sprite animations
+  // reference sounds by ID, and `removeSound` must clean up those cross-sprite references.
   sounds: Sound[]
   zorder: string[]
 
