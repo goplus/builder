@@ -87,7 +87,7 @@ export class WidgetsEditorState extends Disposable {
   selectByRoute(path: PathSegments) {
     const [name] = shiftPath(path)
     if (name == null) return
-    return this.selectByName(name)
+    this.selectByName(name)
   }
   /** Get route path for the current selection */
   getRoute(): PathSegments {

@@ -72,6 +72,7 @@ export class StageEditorState extends Disposable {
     this.widgetsState = new WidgetsEditorState(getStage)
     this.backdropsState = new BackdropsEditorState(getStage)
 
+    this.addDisposable(this.soundsState)
     this.addDisposable(this.widgetsState)
 
     this.addDisposer(
