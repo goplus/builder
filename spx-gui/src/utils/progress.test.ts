@@ -84,24 +84,26 @@ describe('ProgressReporter', () => {
       }
       await Promise.all([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(checkWithTimes))
     })
-    it('should report non-increasing timeLeft based on wall-clock time', async () => {
+    it('should report strictly decreasing timeLeft consistent with linear progress', async () => {
       const timeCost = 500
       const interval = 100
       const onProgress = vitest.fn()
       const reporter = new ProgressReporter(onProgress)
       await reporter.startAutoReport(timeCost, interval)
-      const etls: number[] = onProgress.mock.calls.map(([p]) => p.timeLeft)
-      expect(etls.length).toBeGreaterThan(0)
-      // First report should be timeCost (initial, before any elapsed time)
-      expect(etls[0]).toBe(timeCost)
-      for (const etl of etls) {
-        // timeLeft is wall-clock based: clamped to [0, timeCost]
-        expect(etl).toBeGreaterThanOrEqual(0)
-        expect(etl).toBeLessThanOrEqual(timeCost)
-      }
-      for (let i = 0; i < etls.length - 1; i++) {
-        // timeLeft should be non-increasing over time
-        expect(etls[i]).toBeGreaterThanOrEqual(etls[i + 1])
+      const reports: { percentage: number; timeLeft: number }[] = onProgress.mock.calls.map(([p]) => p)
+      expect(reports.length).toBeGreaterThan(0)
+      // First report should be at percentage 0 with timeCost as timeLeft
+      expect(reports[0].percentage).toBe(0)
+      expect(reports[0].timeLeft).toBe(timeCost)
+      for (let i = 1; i < reports.length; i++) {
+        const { percentage, timeLeft } = reports[i]
+        // timeLeft is derived from linear progress: timeCost * (1 - percentage / maxPercentage)
+        expect(timeLeft).toBeGreaterThanOrEqual(0)
+        expect(timeLeft).toBeLessThanOrEqual(timeCost)
+        // timeLeft should strictly decrease
+        expect(timeLeft).toBeLessThan(reports[i - 1].timeLeft)
+        // progress and ETA are consistent: percentage / maxPercentage + timeLeft / timeCost ≈ 1
+        expect(percentage / 0.99 + timeLeft / timeCost).toBeCloseTo(1)
       }
     })
     it('should stop when finished', async () => {
