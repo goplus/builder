@@ -26,13 +26,13 @@
 import { computed, ref } from 'vue'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { humanizeResourceType, type ResourceModelType } from '@/models/spx/common/resource-model'
+import { humanizeResourceType, type ResourceType } from '@/models/spx/common/resource'
 import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
 
 const props = withDefaults(
   defineProps<{
     color: Color
-    resourceType: ResourceModelType
+    resourceType: ResourceType
     sortable?: { list: unknown[] } | false
   }>(),
   {

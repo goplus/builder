@@ -2,9 +2,7 @@ import { effectScope, reactive, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
 import type { SpxProject } from '@/models/spx/project'
-
-// TODO: move TextDocumentRange to some proper place
-import type { TextDocumentRange } from './code-editor/common'
+import type { TextDocumentRange } from './code-editor/xgo-code-editor'
 
 export type RunningState =
   | {

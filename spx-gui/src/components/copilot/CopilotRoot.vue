@@ -2,16 +2,7 @@
 import { z } from 'zod'
 import dayjs from 'dayjs'
 import { debounce } from 'lodash'
-import {
-  inject,
-  onBeforeUnmount,
-  onMounted,
-  onUnmounted,
-  provide,
-  watch,
-  type ComputedRef,
-  type InjectionKey
-} from 'vue'
+import { onBeforeUnmount, onMounted, onUnmounted, watch, type ComputedRef } from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
@@ -23,9 +14,14 @@ import { SpxProject } from '@/models/spx/project'
 import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
-import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
-import { getCodeFilePath, isSelectionEmpty, textDocumentId2CodeFileName } from '../editor/code-editor/common'
-import type { TextDocument } from '../editor/code-editor/text-document'
+import {
+  useCodeEditorRef,
+  getCodeFilePath,
+  isSelectionEmpty,
+  textDocumentId2CodeFileName,
+  type TextDocument,
+  CodeEditor
+} from '../editor/code-editor/spx-code-editor'
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as toolUse from './custom-elements/ToolUse'
@@ -36,14 +32,7 @@ import * as codeChange from './custom-elements/CodeChange.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
-
-const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
-
-export function useCopilot(): Copilot {
-  const copilot = inject(copilotInjectionKey)
-  if (!copilot) throw new Error('Copilot not provided')
-  return copilot
-}
+import { provideCopilot } from './context'
 
 const listProjectsParamsSchema = z.object({
   owner: z
@@ -227,12 +216,12 @@ class GetCodeDiagnosticsTool implements ToolDefinition {
   description = 'Get code diagnostics (errors or warnings) of current editing project.'
   parameters = getCodeDiagnosticsParamsSchema
 
-  constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
+  constructor(private codeEditorRef: ComputedRef<CodeEditor | null>) {}
 
   async implementation(_: z.infer<typeof getCodeDiagnosticsParamsSchema>, signal?: AbortSignal) {
-    const codeEditorCtx = this.codeEditorCtxRef.value
-    if (codeEditorCtx == null) throw new Error('Code editor context is not available')
-    return codeEditorCtx.mustEditor().diagnosticWorkspace(signal)
+    const codeEditor = this.codeEditorRef.value
+    if (codeEditor == null) throw new Error('Code editor is not available')
+    return codeEditor.diagnosticWorkspace(signal)
   }
 }
 
@@ -352,7 +341,7 @@ ${JSON.stringify(getSpriteContent(sprite))}`
 }
 
 class CodeContextProvider implements ICopilotContextProvider {
-  constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
+  constructor(private codeEditorRef: ComputedRef<CodeEditor | null>) {}
 
   private sampleCode(activeTextDocument: TextDocument, line: number) {
     const threshold = 10
@@ -363,7 +352,7 @@ class CodeContextProvider implements ICopilotContextProvider {
   }
 
   provideContext(): string {
-    const codeEditorUI = this.codeEditorCtxRef.value?.getEditor()?.getAttachedUI()
+    const codeEditorUI = this.codeEditorRef.value?.getAttachedUI()
     if (codeEditorUI == null) return ''
     const { activeTextDocument, cursorPosition, selection } = codeEditorUI
     if (activeTextDocument == null) return ''
@@ -420,7 +409,7 @@ const router = useRouter()
 const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
 const editorCtxRef = useEditorCtxRef()
-const codeEditorCtxRef = useCodeEditorCtxRef()
+const codeEditorRef = useCodeEditorRef()
 const retriever = new Retriever(editorCtxRef, cloudHelpers)
 const copilot = new Copilot()
 onUnmounted(() => copilot.dispose())
@@ -430,7 +419,7 @@ copilot.registerTool(new GetProjectMetadataTool(retriever))
 copilot.registerTool(new GetProjectContentTool(retriever))
 copilot.registerTool(new GetSpriteContentTool(retriever))
 copilot.registerTool(new GetProjectCodeTool(retriever))
-copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorCtxRef))
+copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorRef))
 copilot.registerCustomElement({
   tagName: toolUse.tagName,
   description: toolUse.detailedDescription,
@@ -473,7 +462,7 @@ copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
 copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
 copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))
-copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
+copilot.registerContextProvider(new CodeContextProvider(codeEditorRef))
 copilot.registerContextProvider(new RuntimeContextProvider(editorCtxRef))
 
 const isRouteLoaded = useIsRouteLoaded()
@@ -530,7 +519,7 @@ watch(
   { immediate: true }
 )
 
-provide(copilotInjectionKey, copilot)
+provideCopilot(copilot)
 
 const sessionRef = userSessionStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
 onMounted(() => {

@@ -20,8 +20,7 @@ import type { Widget } from '@/models/spx/widget'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
 import { useEditorCtx } from '../editor/EditorContextProvider.vue'
-import { useCodeEditorCtx, useRenameWarning } from '../editor/code-editor/context'
-import { getResourceIdentifier } from '../editor/code-editor/common'
+import { useCodeEditor, useRenameWarning, getResourceIdentifier } from '../editor/code-editor/spx-code-editor'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetSaveModal from './library/AssetSaveModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
@@ -209,7 +208,7 @@ export function useAddMonitor() {
 
 export function useRenameSprite() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameSprite(sprite: Sprite) {
@@ -222,7 +221,7 @@ export function useRenameSprite() {
         async applyName(newName) {
           const action = { name: { en: 'Rename sprite', zh: '重命名精灵' } }
           await editorCtx.state.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(sprite), newName)
+            await codeEditor.renameResource(getResourceIdentifier(sprite), newName)
             sprite.setName(newName)
           })
         },
@@ -235,7 +234,7 @@ export function useRenameSprite() {
 
 export function useRenameSound() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameSound(sound: Sound) {
@@ -248,7 +247,7 @@ export function useRenameSound() {
         async applyName(newName) {
           const action = { name: { en: 'Rename sound', zh: '重命名声音' } }
           await editorCtx.state.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(sound), newName)
+            await codeEditor.renameResource(getResourceIdentifier(sound), newName)
             sound.setName(newName)
           })
         },
@@ -261,7 +260,7 @@ export function useRenameSound() {
 
 export function useRenameCostume() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameCostume(costume: Costume) {
@@ -274,7 +273,7 @@ export function useRenameCostume() {
         async applyName(newName) {
           const action = { name: { en: 'Rename costume', zh: '重命名造型' } }
           await editorCtx.state.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(costume), newName)
+            await codeEditor.renameResource(getResourceIdentifier(costume), newName)
             costume.setName(newName)
           })
         },
@@ -287,7 +286,7 @@ export function useRenameCostume() {
 
 export function useRenameBackdrop() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameBackdrop(backdrop: Backdrop) {
@@ -300,7 +299,7 @@ export function useRenameBackdrop() {
         async applyName(newName) {
           const action = { name: { en: 'Rename backdrop', zh: '重命名背景' } }
           await editorCtx.state.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(backdrop), newName)
+            await codeEditor.renameResource(getResourceIdentifier(backdrop), newName)
             backdrop.setName(newName)
           })
         },
@@ -313,7 +312,7 @@ export function useRenameBackdrop() {
 
 export function useRenameAnimation() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameAnimation(animation: Animation) {
@@ -326,7 +325,7 @@ export function useRenameAnimation() {
         async applyName(newName) {
           const action = { name: { en: 'Rename animation', zh: '重命名动画' } }
           await editorCtx.state.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(animation), newName)
+            await codeEditor.renameResource(getResourceIdentifier(animation), newName)
             animation.setName(newName)
           })
         },
@@ -339,7 +338,7 @@ export function useRenameAnimation() {
 
 export function useRenameWidget() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameWidget(widget: Widget) {
@@ -352,7 +351,7 @@ export function useRenameWidget() {
         async applyName(newName) {
           const action = { name: { en: 'Rename widget', zh: '重命名控件' } }
           await editorCtx.state.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(widget), newName)
+            await codeEditor.renameResource(getResourceIdentifier(widget), newName)
             widget.setName(newName)
           })
         },

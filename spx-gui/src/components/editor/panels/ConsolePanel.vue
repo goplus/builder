@@ -6,8 +6,7 @@ import { useI18n } from '@/utils/i18n'
 import { UICard, UICardHeader, UIEmpty } from '@/components/ui'
 import type { RuntimeOutput } from '@/components/editor/runtime'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import CodeLink from '../code-editor/CodeLink.vue'
-import { textDocumentId2CodeFileName } from '../code-editor/common'
+import { CodeLink, textDocumentId2CodeFileName } from '../code-editor/spx-code-editor'
 
 const i18n = useI18n()
 const editorCtx = useEditorCtx()

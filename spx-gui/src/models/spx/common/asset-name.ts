@@ -1,6 +1,6 @@
 import { lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/spx'
+import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/xgo'
 
 function validateAssetName(name: string) {
   if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }

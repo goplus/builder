@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { ElementContent, RootContent } from 'hast'
 import { splitTokens, type ShikiTransformer } from 'shiki/core'
 import * as lsp from 'vscode-languageserver-protocol'
-import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
+import { getHighlighter, theme, tabSize } from '@/utils/xgo/highlighter'
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useSlotText } from '@/utils/vnode'
 
@@ -11,7 +11,7 @@ export type InlayHints = Array<lsp.InlayHint>
 
 const props = withDefaults(
   defineProps<{
-    /** Only `spx` supported now. */
+    /** Only `xgo` supported now. */
     language?: string
     mode: 'block' | 'inline'
     /** If show line numbers */
@@ -24,7 +24,7 @@ const props = withDefaults(
     inlayHints?: string
   }>(),
   {
-    language: 'spx',
+    language: 'xgo',
     lineNumbers: false,
     addition: false,
     deletion: false,
@@ -52,7 +52,7 @@ const hasLineNumbers = computed(() => {
 const codeHtml = computed(() => {
   if (highlighter.value == null) return ''
   // Sometimes Copilot makes mistakes about go/xgo, we correct it here.
-  const lang = ['spx', 'xgo', 'go'].includes(props.language) ? 'spx' : 'plaintext'
+  const lang = ['spx', 'xgo', 'go'].includes(props.language) ? 'xgo' : 'plaintext'
   const structure = props.mode === 'block' ? 'classic' : 'inline'
   const transformers: ShikiTransformer[] = []
   if (props.mode === 'inline') {
