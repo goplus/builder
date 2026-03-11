@@ -39,6 +39,7 @@ export class Runtime extends Emitter<{
   didExit: number
 }> {
   static readonly defaultMaxOutputs = 1000
+  static readonly maxMaxOutputs = 10_000
 
   running: RunningState = { mode: 'none' }
 
@@ -58,19 +59,26 @@ export class Runtime extends Emitter<{
   private outputRing: Array<RuntimeOutput | null> = []
   private outputHead = 0
   private outputCount = 0
+  private outputVersion = 0
+  private outputsCache: RuntimeOutput[] = []
+  private outputsCacheVersion = -1
 
   /** Outputs of last debugging, from oldest to latest. */
-  get outputs() {
+  get outputs(): readonly RuntimeOutput[] {
+    if (this.outputsCacheVersion === this.outputVersion) return this.outputsCache
     const outputs: RuntimeOutput[] = []
     for (let i = 0; i < this.outputCount; i++) {
       const idx = (this.outputHead + i) % this.maxOutputs
       const output = this.outputRing[idx]
       if (output != null) outputs.push(output)
     }
-    return outputs
+    this.outputsCache = outputs
+    this.outputsCacheVersion = this.outputVersion
+    return this.outputsCache
   }
 
   private emitDidChangeOutput() {
+    this.outputVersion += 1
     this.emit('didChangeOutput')
   }
 
@@ -86,18 +94,14 @@ export class Runtime extends Emitter<{
   }
 
   private resetOutputs(outputs: RuntimeOutput[]) {
-    this.outputRing = []
+    this.outputRing.splice(0, this.outputRing.length, ...outputs)
     this.outputHead = 0
-    this.outputCount = 0
-    for (const output of outputs) {
-      this.outputRing.push(output)
-      this.outputCount += 1
-    }
+    this.outputCount = outputs.length
   }
 
   setMaxOutputs(limit: number) {
     if (!Number.isFinite(limit)) return
-    const nextLimit = Math.max(1, Math.floor(limit))
+    const nextLimit = Math.min(Math.max(1, Math.floor(limit)), Runtime.maxMaxOutputs)
     if (this.maxOutputs === nextLimit) return
     const preservedOutputs = this.getRecentOutputs(nextLimit)
     this.maxOutputs = nextLimit
@@ -119,7 +123,7 @@ export class Runtime extends Emitter<{
   }
 
   clearOutputs() {
-    this.outputRing = []
+    this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
     this.emitDidChangeOutput()

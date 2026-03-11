@@ -42,6 +42,13 @@ describe('Runtime', () => {
     expect(runtime.outputs.map((item) => item.message)).toEqual(['output-3', 'output-4'])
   })
 
+  it('should clamp max outputs to a safe upper bound', () => {
+    const runtime = makeRuntime()
+
+    runtime.setMaxOutputs(999_999_999)
+    expect(runtime.maxOutputs).toBe(10_000)
+  })
+
   it('should keep output order after ring wraps and max size changes', () => {
     const runtime = makeRuntime()
     runtime.setMaxOutputs(3)
