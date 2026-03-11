@@ -225,7 +225,7 @@ export function useRenameSprite() {
             await codeEditor.renameResource(getResourceIdentifier(sprite), newName)
             sprite.setName(newName)
             for (const widget of editorCtx.project.stage.widgets) {
-              if (widget.type === 'monitor' && widget.target === oldName) {
+              if (widget instanceof Monitor && widget.target === oldName) {
                 widget.setTarget(newName)
               }
             }

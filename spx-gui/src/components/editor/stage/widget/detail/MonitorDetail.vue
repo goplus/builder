@@ -21,10 +21,10 @@
             <UISelect
               v-radar="{ name: 'Target select', desc: 'Select target for monitor value' }"
               class="input"
-              :value="targetSelectValue"
+              :value="monitor.target"
               @update:value="handleTargetUpdate"
             >
-              <UISelectOption :value="stageTargetValue">{{ $t({ en: 'Stage', zh: '舞台' }) }}</UISelectOption>
+              <UISelectOption value="">{{ $t({ en: 'Stage', zh: '舞台' }) }}</UISelectOption>
               <UISelectOption v-for="sprite in sprites" :key="sprite.name" :value="sprite.name">
                 {{ sprite.name }}
               </UISelectOption>
@@ -140,11 +140,6 @@ const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
 
 const sprites = computed(() => editorCtx.project.sprites)
 
-// UISelect treats `value === ''` as no selection, so we use a sentinel for stage target.
-// `$` is not a valid XGo identifier character, so it cannot conflict with any sprite name.
-const stageTargetValue = '$stage'
-const targetSelectValue = computed(() => (props.monitor.target === '' ? stageTargetValue : props.monitor.target))
-
 const properties = useAsyncComputed(async (onCleanup) => {
   const target = props.monitor.target
   const signal = getCleanupSignal(onCleanup)
@@ -165,7 +160,7 @@ const properties = useAsyncComputed(async (onCleanup) => {
 const handleLabelUpdate = wrapUpdateHandler((label: string) => props.monitor.setLabel(label), false)
 
 const handleTargetUpdate = wrapUpdateHandler((target: string | null) => {
-  props.monitor.setTarget(target === stageTargetValue ? '' : target ?? '')
+  props.monitor.setTarget(target ?? '')
   props.monitor.setVariableName('')
 }, false)
 

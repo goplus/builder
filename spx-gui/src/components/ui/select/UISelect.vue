@@ -3,7 +3,7 @@
     <span class="label" :class="{ placeholder: selectedRef == null }">{{ selectedRef?.label ?? placeholder }}</span>
     <UIIcon class="arrow" type="arrowDown" />
     <select ref="selectRef" class="select" :value="value" @change="handleSelectChange">
-      <option v-if="selectedRef == null" disabled value="">{{ placeholder }}</option>
+      <option v-if="selectedRef == null" disabled :value="placeholderValue">{{ placeholder }}</option>
       <slot></slot>
     </select>
   </div>
@@ -33,13 +33,17 @@ type Selected = {
   label: string
 } | null
 
+// Internal sentinel for the disabled placeholder option.
+// Uses a NUL character so it cannot collide with any real option value.
+const placeholderValue = '\0'
+
 const selectedRef = ref<Selected>(null)
 const selectRef = ref<HTMLSelectElement | null>(null)
 
 async function syncSelected() {
   const select = await untilNotNull(() => selectRef.value)
   const selectedOption = select.selectedOptions[0]
-  if (selectedOption == null || selectedOption.value === '') {
+  if (selectedOption == null || selectedOption.disabled) {
     selectedRef.value = null
     return
   }
