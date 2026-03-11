@@ -19,7 +19,8 @@ import {
   type Property,
   type ILSPClient,
   type RequestContext,
-  type LSPClientEvents
+  type LSPClientEvents,
+  type PropertyRenamedEvent
 } from '../../xgo-code-editor'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
@@ -27,7 +28,9 @@ import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/
 import { xgoPropertyRenamedNotification } from './spxls/notifications'
 import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } from './spxls/methods'
 import type { WorkerHandler } from './worker'
-import { lspStageTarget } from '../common'
+
+/** The LSP target name for stage (the "Game" type in spx). */
+const lspStageTarget = 'Game'
 
 interface IConnectionWithFiles extends IConnection {
   sendFiles(files: SpxlsFiles): void
@@ -117,12 +120,12 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     this.addDisposable(this.emitter)
   }
 
-  onEvent(event: keyof LSPClientEvents, listener: (eventData: LSPClientEvents[typeof event]) => void): Disposer {
-    return this.emitter.on(event, listener)
-  }
-
-  onceEvent(event: keyof LSPClientEvents, listener: (eventData: LSPClientEvents[typeof event]) => void): Disposer {
-    return this.emitter.once(event, listener)
+  /**
+   * Register a handler for property rename events.
+   * The event's `target` is empty string for stage, or a sprite name.
+   */
+  onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void) {
+    return this.emitter.on('propertyRenamed', handler)
   }
 
   private connection: IConnectionWithFiles | undefined
@@ -181,7 +184,7 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
       xgoPropertyRenamedNotification.method,
       (params: xgoPropertyRenamedNotification.Params) => {
         this.emitter.emit('propertyRenamed', {
-          target: params.target,
+          target: params.target === lspStageTarget ? '' : params.target,
           oldName: params.oldName,
           newName: params.newName
         })

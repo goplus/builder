@@ -255,9 +255,6 @@ export type SpxInputTypedValue =
 
 export type InputValueForSpxType<T> = (SpxInputTypedValue & { type: T })['value']
 
-/** The LSP target name for stage (the "Game" type in spx). */
-export const lspStageTarget = 'Game'
-
 /** Get visible monitors whose variable binding is invalid */
 export async function getInvalidMonitors(
   monitors: Monitor[],

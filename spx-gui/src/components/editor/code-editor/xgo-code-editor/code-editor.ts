@@ -3,7 +3,7 @@ import { Disposable } from '@/utils/disposable'
 import type { IXGoProject } from './project'
 import type { History } from '@/components/editor/history'
 import { type IDocumentBase, DocumentBase } from './document-base'
-import type { ILSPClient, PropertyRenamedEvent } from './lsp/types'
+import type { ILSPClient } from './lsp/types'
 import {
   type ICodeEditorUIController,
   type IDiagnosticsProvider,
@@ -58,7 +58,6 @@ export type CodeEditorParams = {
   resourceProvider?: IResourceProvider
   inputHelperProvider?: IInputHelperProvider
   inlayHintProvider?: IInlayHintProvider
-  propertyRenamedHandler?: (event: PropertyRenamedEvent) => void
 }
 
 export class CodeEditor extends Disposable {
@@ -76,7 +75,6 @@ export class CodeEditor extends Disposable {
   private completionProvider: ICompletionProvider
   private diagnosticsProvider: IDiagnosticsProvider
   private snippetVariablesProvider: ISnippetVariablesProvider
-  private propertyRenamedHandler: ((event: PropertyRenamedEvent) => void) | null
 
   constructor(params: CodeEditorParams) {
     super()
@@ -98,7 +96,6 @@ export class CodeEditor extends Disposable {
       new CompletionProvider(params.lspClient, this.documentBase, params.project.classFramework)
     this.diagnosticsProvider = params.diagnosticsProvider ?? new DiagnosticsProvider(params.lspClient, params.project)
     this.snippetVariablesProvider = params.snippetVariablesProvider ?? new SnippetVariablesProvider()
-    this.propertyRenamedHandler = params.propertyRenamedHandler ?? null
   }
 
   async getFileCode(args: { file: string }) {
@@ -317,25 +314,16 @@ export class CodeEditor extends Disposable {
 
   /** Update code for renaming */
   async rename(id: TextDocumentIdentifier, position: Position, newName: string) {
-    // Note: The LSP server ensures the notification event triggers before the rename response,
-    // so we can rely on this behavior without waiting for the notification to arrive.
-    const removeListener = this.lspClient.onceEvent('propertyRenamed', (event) => {
-      this.propertyRenamedHandler?.(event)
-    })
-    try {
-      const edit = await this.lspClient.textDocumentRename(
-        {},
-        {
-          textDocument: id,
-          position: toLSPPosition(position),
-          newName
-        }
-      )
-      if (edit == null) return
-      this.applyWorkspaceEdit(edit)
-    } finally {
-      removeListener()
-    }
+    const edit = await this.lspClient.textDocumentRename(
+      {},
+      {
+        textDocument: id,
+        position: toLSPPosition(position),
+        newName
+      }
+    )
+    if (edit == null) return
+    this.applyWorkspaceEdit(edit)
   }
 
   /** Update code for resource renaming, should be called before model name update */

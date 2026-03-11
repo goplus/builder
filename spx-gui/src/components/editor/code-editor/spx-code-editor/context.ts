@@ -42,6 +42,14 @@ export function useProvideCodeEditorCtx(editorStateRet: QueryRet<SpxEditorState>
       ctx.signal.throwIfAborted()
       const project = new SpxCodeEditorProject(spxProject, history)
       const lspClient = new SpxLSPClient(spxProject)
+      // Listen to property rename events to update monitor widgets that reference the renamed variable.
+      lspClient.onPropertyRenamed(({ target, oldName, newName }) => {
+        for (const widget of spxProject.stage.widgets) {
+          if (widget.type === 'monitor' && widget.target === target && widget.variableName === oldName) {
+            widget.setVariableName(newName)
+          }
+        }
+      })
       lspClient.init()
       const documentBase = new DocumentBase([...Object.values(spxDefinitionsByName), ...spxKeyDefinitions])
       const resourceProvider = new SpxResourceProvider(lspClient, spxProject)

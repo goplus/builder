@@ -122,7 +122,7 @@ import { capture, useMessageHandle } from '@/utils/exception'
 import type { Monitor } from '@/models/spx/widget/monitor'
 import { useRenameWidget } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { useCodeEditor } from '@/components/editor/code-editor/spx-code-editor/context'
+import { useCodeEditor } from '@/components/editor/code-editor/spx-code-editor'
 import EditorItemDetail from '../../../common/EditorItemDetail.vue'
 import monitorIcon from '../monitor.svg?raw'
 

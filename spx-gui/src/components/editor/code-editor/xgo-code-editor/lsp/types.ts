@@ -27,7 +27,7 @@ export type RequestContext = {
 export type { DefinitionIdentifier }
 
 export type PropertyRenamedEvent = {
-  /** The LSP target name */
+  /** The target that owns the property. */
   target: string
   /** The original name of the property before renaming */
   oldName: string
@@ -81,6 +81,5 @@ export interface ILSPClient {
   getCompletionItems(ctx: RequestContext, params: lsp.CompletionParams): Promise<lsp.CompletionItem[]>
   getInputSlots(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<InputSlot[]>
   getProperties(ctx: RequestContext, target: string): Promise<Property[]>
-  onEvent(event: keyof LSPClientEvents, listener: (eventData: LSPClientEvents[typeof event]) => void): Disposer
-  onceEvent(event: keyof LSPClientEvents, listener: (eventData: LSPClientEvents[typeof event]) => void): Disposer
+  onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void): Disposer
 }
