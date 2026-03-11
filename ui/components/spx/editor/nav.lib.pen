@@ -19,7 +19,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "../images/navbar bg.png",
+            "url": "../../../features/spx/images/navbar bg.png",
             "mode": "fill"
           },
           "stroke": {
@@ -612,7 +612,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "../images/用户头像.png",
+                                  "url": "../../../images/用户头像.png",
                                   "mode": "fill"
                                 }
                               ],
@@ -651,7 +651,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "../images/navbar bg.png",
+            "url": "../../../features/spx/images/navbar bg.png",
             "mode": "fill"
           },
           "stroke": {
@@ -1255,7 +1255,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "../images/用户头像.png",
+                                  "url": "../../../images/用户头像.png",
                                   "mode": "fill"
                                 }
                               ],
@@ -1294,7 +1294,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "../images/navbar bg.png",
+            "url": "../../../features/spx/images/navbar bg.png",
             "mode": "fill"
           },
           "stroke": {
@@ -1887,7 +1887,7 @@
                                 {
                                   "type": "image",
                                   "enabled": true,
-                                  "url": "../images/用户头像.png",
+                                  "url": "../../../images/用户头像.png",
                                   "mode": "fill"
                                 }
                               ],
@@ -1926,7 +1926,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "../images/navbar bg.png",
+            "url": "../../../features/spx/images/navbar bg.png",
             "mode": "fill"
           },
           "stroke": {
@@ -2602,7 +2602,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "../images/navbar bg.png",
+            "url": "../../../features/spx/images/navbar bg.png",
             "mode": "fill"
           },
           "stroke": {
@@ -3278,7 +3278,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "../images/navbar bg.png",
+            "url": "../../../features/spx/images/navbar bg.png",
             "mode": "fill"
           },
           "stroke": {

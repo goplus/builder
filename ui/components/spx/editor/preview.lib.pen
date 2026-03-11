@@ -594,7 +594,7 @@
                     {
                       "type": "image",
                       "enabled": true,
-                      "url": "../images/项目运行.png",
+                      "url": "../../../images/项目运行.png",
                       "mode": "fill"
                     },
                     {
@@ -1256,7 +1256,7 @@
                         {
                           "type": "image",
                           "enabled": true,
-                          "url": "../images/项目运行.png",
+                          "url": "../../../images/项目运行.png",
                           "mode": "fill"
                         },
                         "#24292f99"
@@ -1917,7 +1917,7 @@
                     {
                       "type": "image",
                       "enabled": true,
-                      "url": "../images/项目运行.png",
+                      "url": "../../../images/项目运行.png",
                       "mode": "fill"
                     },
                     {
@@ -2572,7 +2572,7 @@
                     {
                       "type": "image",
                       "enabled": true,
-                      "url": "../images/项目运行.png",
+                      "url": "../../../images/项目运行.png",
                       "mode": "fill"
                     },
                     "#24292f99"

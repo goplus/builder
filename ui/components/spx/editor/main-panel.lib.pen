@@ -5820,7 +5820,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "../images/sprite.png",
+                                    "url": "../../../images/sprite.png",
                                     "mode": "stretch"
                                   },
                                   "width": 36,
@@ -6266,172 +6266,104 @@
                   "alignItems": "center",
                   "children": [
                     {
+                      "id": "kWfsS",
+                      "type": "ref",
+                      "ref": "zijpP",
+                      "x": 16,
+                      "y": 12
+                    },
+                    {
+                      "id": "kZdLB",
+                      "type": "ref",
+                      "ref": "xH8C8",
+                      "x": 16,
+                      "y": 108
+                    },
+                    {
                       "type": "frame",
-                      "id": "GeMkB",
-                      "name": "sprite-costume-card",
-                      "width": 88,
-                      "height": 88,
+                      "id": "gTXTX",
+                      "name": "normal",
+                      "fill": "$grey300",
+                      "cornerRadius": 8,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1
                       },
-                      "layout": "none",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": 2,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "F8nV9",
-                          "x": 0,
-                          "y": 0,
-                          "name": "normal",
-                          "fill": "$yellow200",
-                          "cornerRadius": 8,
+                          "id": "FZYyq",
+                          "name": "costume01",
+                          "width": 84,
+                          "height": 60,
                           "stroke": {
                             "align": "inside",
-                            "thickness": 2,
-                            "fill": "$yellow500"
+                            "thickness": 0.9375
                           },
-                          "layout": "vertical",
-                          "gap": 2,
-                          "padding": 2,
-                          "alignItems": "center",
+                          "layout": "none",
                           "children": [
                             {
-                              "type": "frame",
-                              "id": "6Vy0J",
-                              "name": "costume01",
-                              "width": 84,
+                              "type": "rectangle",
+                              "cornerRadius": 8,
+                              "id": "sPpwu",
+                              "x": 12,
+                              "y": 0,
+                              "name": "image-00043-3673961838-ok-1",
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "../../../images/sprite.png",
+                                "mode": "stretch"
+                              },
+                              "width": 60,
                               "height": 60,
                               "stroke": {
                                 "align": "inside",
-                                "thickness": 0.9375
-                              },
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "rectangle",
-                                  "cornerRadius": 8,
-                                  "id": "mSk1m",
-                                  "x": 12,
-                                  "y": 0,
-                                  "name": "image-00043-3673961838-ok-1",
-                                  "fill": {
-                                    "type": "image",
-                                    "enabled": true,
-                                    "url": "../images/sprite.png",
-                                    "mode": "stretch"
-                                  },
-                                  "width": 60,
-                                  "height": 60,
-                                  "stroke": {
-                                    "align": "inside",
-                                    "thickness": 1
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "ruuca",
-                              "name": "costume-name",
-                              "width": 84,
-                              "height": 22,
-                              "cornerRadius": 12,
-                              "stroke": {
-                                "align": "inside",
                                 "thickness": 1
-                              },
-                              "gap": 10,
-                              "padding": [
-                                0,
-                                8
-                              ],
-                              "justifyContent": "center",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "0LQUH",
-                                  "name": "costume01",
-                                  "fill": "$grey1000",
-                                  "content": "Sprite01",
-                                  "lineHeight": 1.6,
-                                  "textAlign": "center",
-                                  "fontFamily": "Alibaba Health Font 2.0 CN",
-                                  "fontSize": 10,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                              }
                             }
                           ]
                         },
                         {
                           "type": "frame",
-                          "id": "9SHDm",
-                          "x": 68,
-                          "y": -4,
-                          "name": "more",
-                          "width": 24,
-                          "height": 24,
-                          "fill": "$yellow500",
-                          "cornerRadius": 24,
+                          "id": "MnvmP",
+                          "name": "costume-name",
+                          "width": 84,
+                          "height": 22,
+                          "cornerRadius": 12,
                           "stroke": {
                             "align": "inside",
-                            "thickness": 0.7674450874328613
+                            "thickness": 1
                           },
-                          "layout": "none",
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
-                              "type": "frame",
-                              "id": "d233Y",
-                              "x": 4,
-                              "y": 4,
-                              "name": "icon-more-horizontal-filled",
-                              "width": 16,
-                              "height": 16,
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 1
-                              },
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "path",
-                                  "id": "zlDql",
-                                  "x": 1.3433431386947632,
-                                  "y": 6.666666507720947,
-                                  "name": "more-horizontal",
-                                  "geometry": "M2.005 4c-1.104 0-2.005-0.896-2.005-2 0-1.104 0.89-2 1.995-2l0.01 0c1.104 0 2 0.896 2 2 0 1.104-0.895 2-2 2z m10.00001-2c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.995 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z m8 0c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.99499 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z",
-                                  "fill": "$--ui-color-grey-100",
-                                  "width": 13.336669921875,
-                                  "height": 2.6666667461395264,
-                                  "stroke": {
-                                    "align": "inside",
-                                    "thickness": 1
-                                  }
-                                }
-                              ]
+                              "type": "text",
+                              "id": "fj0ES",
+                              "name": "costume01",
+                              "fill": "$grey1000",
+                              "content": "Sprite01",
+                              "lineHeight": 1.6,
+                              "textAlign": "center",
+                              "fontFamily": "Alibaba Health Font 2.0 CN",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "tHbQO",
-                      "name": "sprite-costume-card",
-                      "width": 88,
-                      "height": 88,
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1
-                      },
-                      "layout": "none",
-                      "children": [
+                        },
                         {
                           "type": "frame",
-                          "id": "IH1gq",
-                          "x": 0,
-                          "y": 0,
+                          "id": "gEdrD",
                           "name": "normal",
                           "fill": "$grey300",
                           "cornerRadius": 8,
@@ -6446,7 +6378,7 @@
                           "children": [
                             {
                               "type": "frame",
-                              "id": "5CMIZ",
+                              "id": "dliw9",
                               "name": "costume01",
                               "width": 84,
                               "height": 60,
@@ -6459,14 +6391,14 @@
                                 {
                                   "type": "rectangle",
                                   "cornerRadius": 8,
-                                  "id": "AixNf",
+                                  "id": "CSwEz",
                                   "x": 12,
                                   "y": 0,
                                   "name": "image-00043-3673961838-ok-1",
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "../images/sprite.png",
+                                    "url": "../../../images/sprite.png",
                                     "mode": "stretch"
                                   },
                                   "width": 60,
@@ -6480,7 +6412,7 @@
                             },
                             {
                               "type": "frame",
-                              "id": "RvelG",
+                              "id": "hkNYF",
                               "name": "costume-name",
                               "width": 84,
                               "height": 22,
@@ -6499,7 +6431,7 @@
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "PXlzQ",
+                                  "id": "rIaeX",
                                   "name": "costume01",
                                   "fill": "$grey1000",
                                   "content": "Sprite01",
@@ -6508,106 +6440,90 @@
                                   "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "r7bPc",
-                      "name": "sprite-costume-card",
-                      "width": 88,
-                      "height": 88,
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1
-                      },
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "yN6VP",
-                          "x": 0,
-                          "y": 0,
-                          "name": "normal",
-                          "fill": "$grey300",
-                          "cornerRadius": 8,
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": 1
-                          },
-                          "layout": "vertical",
-                          "gap": 2,
-                          "padding": 2,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "XUwiZ",
-                              "name": "costume01",
-                              "width": 84,
-                              "height": 60,
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 0.9375
-                              },
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "rectangle",
-                                  "cornerRadius": 8,
-                                  "id": "qzYa2",
-                                  "x": 12,
-                                  "y": 0,
-                                  "name": "image-00043-3673961838-ok-1",
-                                  "fill": {
-                                    "type": "image",
-                                    "enabled": true,
-                                    "url": "../images/sprite.png",
-                                    "mode": "stretch"
-                                  },
-                                  "width": 60,
-                                  "height": 60,
-                                  "stroke": {
-                                    "align": "inside",
-                                    "thickness": 1
-                                  }
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "1yB8v",
-                              "name": "costume-name",
-                              "width": 84,
-                              "height": 22,
-                              "cornerRadius": 12,
+                              "id": "ciqik",
+                              "name": "normal",
+                              "fill": "$grey300",
+                              "cornerRadius": 8,
                               "stroke": {
                                 "align": "inside",
                                 "thickness": 1
                               },
-                              "gap": 10,
-                              "padding": [
-                                0,
-                                8
-                              ],
-                              "justifyContent": "center",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "padding": 2,
                               "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "EprZ0",
+                                  "type": "frame",
+                                  "id": "iUxva",
                                   "name": "costume01",
-                                  "fill": "$grey1000",
-                                  "content": "Sprite01",
-                                  "lineHeight": 1.6,
-                                  "textAlign": "center",
-                                  "fontFamily": "Alibaba Health Font 2.0 CN",
-                                  "fontSize": 10,
-                                  "fontWeight": "normal"
+                                  "width": 84,
+                                  "height": 60,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 0.9375
+                                  },
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "cornerRadius": 8,
+                                      "id": "SFrDS",
+                                      "x": 12,
+                                      "y": 0,
+                                      "name": "image-00043-3673961838-ok-1",
+                                      "fill": {
+                                        "type": "image",
+                                        "enabled": true,
+                                        "url": "../../../images/sprite.png",
+                                        "mode": "stretch"
+                                      },
+                                      "width": 60,
+                                      "height": 60,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 1
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "t1oUd",
+                                  "name": "costume-name",
+                                  "width": 84,
+                                  "height": 22,
+                                  "cornerRadius": 12,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "gap": 10,
+                                  "padding": [
+                                    0,
+                                    8
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "fXcct",
+                                      "name": "costume01",
+                                      "fill": "$grey1000",
+                                      "content": "Sprite01",
+                                      "lineHeight": 1.6,
+                                      "textAlign": "center",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
                                 }
                               ]
                             }
@@ -8006,7 +7922,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../images/sprite.png",
+                            "url": "../../../images/sprite.png",
                             "mode": "stretch"
                           },
                           "width": 368,
@@ -8277,7 +8193,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../images/Union.png",
+                            "url": "../../../images/Union.png",
                             "mode": "fit"
                           }
                         },
@@ -8925,7 +8841,7 @@
           "children": [
             {
               "type": "frame",
-              "id": "ZqFi4",
+              "id": "TRvEM",
               "name": "Left Panel",
               "width": 120,
               "height": "fill_container",
@@ -8934,8 +8850,8 @@
               "children": [
                 {
                   "type": "frame",
-                  "id": "ivzRN",
-                  "name": "Animations List",
+                  "id": "oMbGh",
+                  "name": "Costume List",
                   "width": 120,
                   "height": "fill_container",
                   "fill": "$grey100",
@@ -8955,172 +8871,104 @@
                   "alignItems": "center",
                   "children": [
                     {
+                      "id": "1UlkE",
+                      "type": "ref",
+                      "ref": "zijpP",
+                      "x": 16,
+                      "y": 12
+                    },
+                    {
+                      "id": "nYeUX",
+                      "type": "ref",
+                      "ref": "xH8C8",
+                      "x": 16,
+                      "y": 108
+                    },
+                    {
                       "type": "frame",
-                      "id": "ysFNc",
-                      "name": "sprite-animation-card",
-                      "width": 88,
-                      "height": 88,
+                      "id": "kXLqb",
+                      "name": "normal",
+                      "fill": "$grey300",
+                      "cornerRadius": 8,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1
                       },
-                      "layout": "none",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": 2,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "8UWRI",
-                          "x": 0,
-                          "y": 0,
-                          "name": "normal",
-                          "fill": "$yellow200",
-                          "cornerRadius": 8,
+                          "id": "VxxHN",
+                          "name": "costume01",
+                          "width": 84,
+                          "height": 60,
                           "stroke": {
                             "align": "inside",
-                            "thickness": 2,
-                            "fill": "$yellow500"
+                            "thickness": 0.9375
                           },
-                          "layout": "vertical",
-                          "gap": 2,
-                          "padding": 2,
-                          "alignItems": "center",
+                          "layout": "none",
                           "children": [
                             {
-                              "type": "frame",
-                              "id": "8SeVX",
-                              "name": "animation01",
-                              "width": 84,
+                              "type": "rectangle",
+                              "cornerRadius": 8,
+                              "id": "EyrGV",
+                              "x": 12,
+                              "y": 0,
+                              "name": "image-00043-3673961838-ok-1",
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "../../../images/sprite.png",
+                                "mode": "stretch"
+                              },
+                              "width": 60,
                               "height": 60,
                               "stroke": {
                                 "align": "inside",
-                                "thickness": 0.9375
-                              },
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "rectangle",
-                                  "cornerRadius": 8,
-                                  "id": "rPBJc",
-                                  "x": 12,
-                                  "y": 0,
-                                  "name": "image-00043-3673961838-ok-1",
-                                  "fill": {
-                                    "type": "image",
-                                    "enabled": true,
-                                    "url": "../images/sprite.png",
-                                    "mode": "stretch"
-                                  },
-                                  "width": 60,
-                                  "height": 60,
-                                  "stroke": {
-                                    "align": "inside",
-                                    "thickness": 1
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "48PtE",
-                              "name": "animation-name",
-                              "width": 84,
-                              "height": 22,
-                              "cornerRadius": 12,
-                              "stroke": {
-                                "align": "inside",
                                 "thickness": 1
-                              },
-                              "gap": 10,
-                              "padding": [
-                                0,
-                                8
-                              ],
-                              "justifyContent": "center",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "aSmgG",
-                                  "name": "Sprite01",
-                                  "fill": "$grey1000",
-                                  "content": "Sprite01",
-                                  "lineHeight": 1.6,
-                                  "textAlign": "center",
-                                  "fontFamily": "Alibaba Health Font 2.0 CN",
-                                  "fontSize": 10,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                              }
                             }
                           ]
                         },
                         {
                           "type": "frame",
-                          "id": "toKvl",
-                          "x": 68,
-                          "y": -4,
-                          "name": "more",
-                          "width": 24,
-                          "height": 24,
-                          "fill": "$yellow500",
-                          "cornerRadius": 24,
+                          "id": "w2gTY",
+                          "name": "costume-name",
+                          "width": 84,
+                          "height": 22,
+                          "cornerRadius": 12,
                           "stroke": {
                             "align": "inside",
-                            "thickness": 0.7674450874328613
+                            "thickness": 1
                           },
-                          "layout": "none",
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
-                              "type": "frame",
-                              "id": "OxFO3",
-                              "x": 4,
-                              "y": 4,
-                              "name": "icon-more-horizontal-filled",
-                              "width": 16,
-                              "height": 16,
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 1
-                              },
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "path",
-                                  "id": "WnVZx",
-                                  "x": 1.3433431386947632,
-                                  "y": 6.666666507720947,
-                                  "name": "more-horizontal",
-                                  "geometry": "M2.005 4c-1.104 0-2.005-0.896-2.005-2 0-1.104 0.89-2 1.995-2l0.01 0c1.104 0 2 0.896 2 2 0 1.104-0.895 2-2 2z m10.00001-2c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.995 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z m8 0c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.99499 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z",
-                                  "fill": "$--ui-color-grey-100",
-                                  "width": 13.336669921875,
-                                  "height": 2.6666667461395264,
-                                  "stroke": {
-                                    "align": "inside",
-                                    "thickness": 1
-                                  }
-                                }
-                              ]
+                              "type": "text",
+                              "id": "gIh1x",
+                              "name": "costume01",
+                              "fill": "$grey1000",
+                              "content": "Sprite01",
+                              "lineHeight": 1.6,
+                              "textAlign": "center",
+                              "fontFamily": "Alibaba Health Font 2.0 CN",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "joMST",
-                      "name": "sprite-animation-card",
-                      "width": 88,
-                      "height": 88,
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1
-                      },
-                      "layout": "none",
-                      "children": [
+                        },
                         {
                           "type": "frame",
-                          "id": "o3r5g",
-                          "x": 0,
-                          "y": 0,
+                          "id": "0885H",
                           "name": "normal",
                           "fill": "$grey300",
                           "cornerRadius": 8,
@@ -9135,8 +8983,8 @@
                           "children": [
                             {
                               "type": "frame",
-                              "id": "cALlE",
-                              "name": "animation01",
+                              "id": "wIu6Z",
+                              "name": "costume01",
                               "width": 84,
                               "height": 60,
                               "stroke": {
@@ -9148,14 +8996,14 @@
                                 {
                                   "type": "rectangle",
                                   "cornerRadius": 8,
-                                  "id": "kzPzK",
+                                  "id": "fTyga",
                                   "x": 12,
                                   "y": 0,
                                   "name": "image-00043-3673961838-ok-1",
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "../images/sprite.png",
+                                    "url": "../../../images/sprite.png",
                                     "mode": "stretch"
                                   },
                                   "width": 60,
@@ -9169,8 +9017,8 @@
                             },
                             {
                               "type": "frame",
-                              "id": "KZQ9f",
-                              "name": "animation-name",
+                              "id": "dU8Z6",
+                              "name": "costume-name",
                               "width": 84,
                               "height": 22,
                               "cornerRadius": 12,
@@ -9188,8 +9036,8 @@
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "iAj6J",
-                                  "name": "Sprite01",
+                                  "id": "D3fXv",
+                                  "name": "costume01",
                                   "fill": "$grey1000",
                                   "content": "Sprite01",
                                   "lineHeight": 1.6,
@@ -9197,106 +9045,90 @@
                                   "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "QggVw",
-                      "name": "sprite-animation-card",
-                      "width": 88,
-                      "height": 88,
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1
-                      },
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "rDc5w",
-                          "x": 0,
-                          "y": 0,
-                          "name": "normal",
-                          "fill": "$grey300",
-                          "cornerRadius": 8,
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": 1
-                          },
-                          "layout": "vertical",
-                          "gap": 2,
-                          "padding": 2,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "j97MZ",
-                              "name": "animation01",
-                              "width": 84,
-                              "height": 60,
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 0.9375
-                              },
-                              "layout": "none",
-                              "children": [
-                                {
-                                  "type": "rectangle",
-                                  "cornerRadius": 8,
-                                  "id": "FuoWQ",
-                                  "x": 12,
-                                  "y": 0,
-                                  "name": "image-00043-3673961838-ok-1",
-                                  "fill": {
-                                    "type": "image",
-                                    "enabled": true,
-                                    "url": "../images/sprite.png",
-                                    "mode": "stretch"
-                                  },
-                                  "width": 60,
-                                  "height": 60,
-                                  "stroke": {
-                                    "align": "inside",
-                                    "thickness": 1
-                                  }
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "GJTYs",
-                              "name": "animation-name",
-                              "width": 84,
-                              "height": 22,
-                              "cornerRadius": 12,
+                              "id": "47wR6",
+                              "name": "normal",
+                              "fill": "$grey300",
+                              "cornerRadius": 8,
                               "stroke": {
                                 "align": "inside",
                                 "thickness": 1
                               },
-                              "gap": 10,
-                              "padding": [
-                                0,
-                                8
-                              ],
-                              "justifyContent": "center",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "padding": 2,
                               "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "igKXw",
-                                  "name": "Sprite01",
-                                  "fill": "$grey1000",
-                                  "content": "Sprite01",
-                                  "lineHeight": 1.6,
-                                  "textAlign": "center",
-                                  "fontFamily": "Alibaba Health Font 2.0 CN",
-                                  "fontSize": 10,
-                                  "fontWeight": "normal"
+                                  "type": "frame",
+                                  "id": "xSKpt",
+                                  "name": "costume01",
+                                  "width": 84,
+                                  "height": 60,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 0.9375
+                                  },
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "cornerRadius": 8,
+                                      "id": "aAcvo",
+                                      "x": 12,
+                                      "y": 0,
+                                      "name": "image-00043-3673961838-ok-1",
+                                      "fill": {
+                                        "type": "image",
+                                        "enabled": true,
+                                        "url": "../../../images/sprite.png",
+                                        "mode": "stretch"
+                                      },
+                                      "width": 60,
+                                      "height": 60,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 1
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "kWrRo",
+                                  "name": "costume-name",
+                                  "width": 84,
+                                  "height": 22,
+                                  "cornerRadius": 12,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "gap": 10,
+                                  "padding": [
+                                    0,
+                                    8
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "JylBM",
+                                      "name": "costume01",
+                                      "fill": "$grey1000",
+                                      "content": "Sprite01",
+                                      "lineHeight": 1.6,
+                                      "textAlign": "center",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                                      "fontSize": 10,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
                                 }
                               ]
                             }
@@ -9308,7 +9140,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "DQuhw",
+                  "id": "EOBiT",
                   "name": "Add Button",
                   "rotation": -0.10539739597776332,
                   "width": "fill_container",
@@ -9326,7 +9158,7 @@
                   "children": [
                     {
                       "type": "icon_font",
-                      "id": "bp0Gl",
+                      "id": "RUuB2",
                       "name": "addIcon",
                       "width": 16,
                       "height": 16,
@@ -10695,7 +10527,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../images/sprite.png",
+                            "url": "../../../images/sprite.png",
                             "mode": "stretch"
                           },
                           "width": 368,
@@ -16764,7 +16596,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "../images/sprite.png",
+                                    "url": "../../../pages/spx/images/sprite.png",
                                     "mode": "stretch"
                                   },
                                   "width": 36,
@@ -19238,7 +19070,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "../images/backdrop.png",
+                                    "url": "../../../images/backdrop.png",
                                     "mode": "stretch"
                                   },
                                   "width": 52,
@@ -19387,7 +19219,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "../images/backdrop.png",
+                                    "url": "../../../images/backdrop.png",
                                     "mode": "stretch"
                                   },
                                   "width": 52,
@@ -19487,7 +19319,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "../images/backdrop.png",
+                                    "url": "../../../images/backdrop.png",
                                     "mode": "stretch"
                                   },
                                   "width": 52,
@@ -20927,7 +20759,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../images/backdrop.png",
+                            "url": "../../../images/backdrop.png",
                             "mode": "stretch"
                           },
                           "width": 400,
@@ -23329,6 +23161,271 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "zijpP",
+      "x": 1026,
+      "y": -202,
+      "name": "2",
+      "reusable": true,
+      "width": 88,
+      "height": 88,
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "V3fD7",
+          "x": 0,
+          "y": 0,
+          "name": "normal",
+          "fill": "$yellow200",
+          "cornerRadius": 8,
+          "stroke": {
+            "align": "inside",
+            "thickness": 2,
+            "fill": "$yellow500"
+          },
+          "layout": "vertical",
+          "gap": 2,
+          "padding": 2,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "dWVdI",
+              "name": "costume01",
+              "width": 84,
+              "height": 60,
+              "stroke": {
+                "align": "inside",
+                "thickness": 0.9375
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 8,
+                  "id": "LJXcB",
+                  "x": 12,
+                  "y": 0,
+                  "name": "image-00043-3673961838-ok-1",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "../../../images/sprite.png",
+                    "mode": "stretch"
+                  },
+                  "width": 60,
+                  "height": 60,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Q7RbU",
+              "name": "costume-name",
+              "width": 84,
+              "height": 22,
+              "cornerRadius": 12,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "gap": 10,
+              "padding": [
+                0,
+                8
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "bKUE3",
+                  "name": "costume01",
+                  "fill": "$grey1000",
+                  "content": "Sprite01",
+                  "lineHeight": 1.6,
+                  "textAlign": "center",
+                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "YoHkt",
+          "x": 68,
+          "y": -4,
+          "name": "more",
+          "width": 24,
+          "height": 24,
+          "fill": "$yellow500",
+          "cornerRadius": 24,
+          "stroke": {
+            "align": "inside",
+            "thickness": 0.7674450874328613
+          },
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "UvpFt",
+              "x": 4,
+              "y": 4,
+              "name": "icon-more-horizontal-filled",
+              "width": 16,
+              "height": 16,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "path",
+                  "id": "KjAjX",
+                  "x": 1.3433431386947632,
+                  "y": 6.666666507720947,
+                  "name": "more-horizontal",
+                  "geometry": "M2.005 4c-1.104 0-2.005-0.896-2.005-2 0-1.104 0.89-2 1.995-2l0.01 0c1.104 0 2 0.896 2 2 0 1.104-0.895 2-2 2z m10.00001-2c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.995 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z m8 0c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.99499 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z",
+                  "fill": "$--ui-color-grey-100",
+                  "width": 13.336669921875,
+                  "height": 2.6666667461395264,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "xH8C8",
+      "x": 1144,
+      "y": -202,
+      "name": "1",
+      "reusable": true,
+      "width": 88,
+      "height": 88,
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "926xi",
+          "x": 0,
+          "y": 0,
+          "name": "normal",
+          "fill": "$grey300",
+          "cornerRadius": 8,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "layout": "vertical",
+          "gap": 2,
+          "padding": 2,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "pweDO",
+              "name": "costume01",
+              "width": 84,
+              "height": 60,
+              "stroke": {
+                "align": "inside",
+                "thickness": 0.9375
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 8,
+                  "id": "0RVY8",
+                  "x": 12,
+                  "y": 0,
+                  "name": "image-00043-3673961838-ok-1",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "../../../images/sprite.png",
+                    "mode": "stretch"
+                  },
+                  "width": 60,
+                  "height": 60,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "2Hq5Y",
+              "name": "costume-name",
+              "width": 84,
+              "height": 22,
+              "cornerRadius": 12,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "gap": 10,
+              "padding": [
+                0,
+                8
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "OlmGn",
+                  "name": "costume01",
+                  "fill": "$grey1000",
+                  "content": "Sprite01",
+                  "lineHeight": 1.6,
+                  "textAlign": "center",
+                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "DtJrz",
+      "x": 1275.0725254825247,
+      "y": -307.3333601790265,
+      "width": 250,
+      "height": 219,
+      "content": "在当前文件制作 sprite-card component 复用到 editor- panel-sprite-costumes 能正常使用"
     }
   ],
   "variables": {
@@ -23492,5 +23589,8 @@
       "type": "color",
       "value": "#0bc0cf"
     }
+  },
+  "imports": {
+    "s": "side-panel.lib.pen"
   }
 }

@@ -21,7 +21,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "./images/navbar bg.png",
+            "url": "../../features/spx/images/navbar bg.png",
             "mode": "fill"
           },
           "layout": "vertical",
@@ -35502,7 +35502,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "./images/navbar bg.png",
+            "url": "../../features/spx/images/navbar bg.png",
             "mode": "fill"
           },
           "padding": [
@@ -35868,7 +35868,7 @@
                                     {
                                       "type": "image",
                                       "enabled": true,
-                                      "url": "./images/用户头像.png",
+                                      "url": "../../images/用户头像.png",
                                       "mode": "fill"
                                     }
                                   ],

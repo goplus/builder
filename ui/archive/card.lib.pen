@@ -1,0 +1,281 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "Card",
+      "clip": true,
+      "width": 800,
+      "height": 600,
+      "fill": "#FFFFFF",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "Jotqm",
+          "x": 56,
+          "y": 22,
+          "name": "sprite/card/default",
+          "reusable": true,
+          "fill": "$grey300",
+          "cornerRadius": 8,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "layout": "vertical",
+          "gap": 2,
+          "padding": 2,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "9Xj3M",
+              "name": "sprite01",
+              "width": 84,
+              "height": 60,
+              "stroke": {
+                "align": "inside",
+                "thickness": 0.9375
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 8,
+                  "id": "uRADz",
+                  "x": 12,
+                  "y": 0,
+                  "name": "image-00043-3673961838-ok-1",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "../images/sprite.png",
+                    "mode": "fill"
+                  },
+                  "width": 60,
+                  "height": 60,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bYaLF",
+              "name": "sprite-name-chip-02",
+              "width": 84,
+              "height": 22,
+              "cornerRadius": 12,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "gap": 10,
+              "padding": [
+                0,
+                8
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Saoii",
+                  "name": "Sprite01",
+                  "fill": "$grey1000",
+                  "content": "Sprite01",
+                  "lineHeight": 1.6,
+                  "textAlign": "center",
+                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "7E9YE",
+          "x": 56,
+          "y": 139,
+          "name": "sprite/card/selected",
+          "reusable": true,
+          "width": 88,
+          "height": 88,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "HFY2e",
+              "x": 0,
+              "y": 0,
+              "name": "normal",
+              "fill": "$yellow200",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 2,
+                "fill": "$yellow500"
+              },
+              "layout": "vertical",
+              "gap": 2,
+              "padding": 2,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ECmQM",
+                  "name": "sprite01",
+                  "width": 84,
+                  "height": 60,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 0.9375
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 8,
+                      "id": "jzBfQ",
+                      "x": 12,
+                      "y": 0,
+                      "name": "image-00043-3673961838-ok-1",
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "../images/sprite.png",
+                        "mode": "fill"
+                      },
+                      "width": 60,
+                      "height": 60,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "oP7AA",
+                  "name": "sprite-name-chip-01",
+                  "width": 84,
+                  "height": 22,
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": 10,
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "7iKUP",
+                      "name": "Sprite01",
+                      "fill": "$grey1000",
+                      "content": "Sprite01",
+                      "lineHeight": 1.6,
+                      "textAlign": "center",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xM5ri",
+              "x": 68,
+              "y": -4,
+              "name": "more",
+              "width": 24,
+              "height": 24,
+              "fill": "$yellow500",
+              "cornerRadius": 24,
+              "stroke": {
+                "align": "inside",
+                "thickness": 0.7674450874328613
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "dthM5",
+                  "x": 4,
+                  "y": 4,
+                  "name": "icon-more-horizontal-filled",
+                  "width": 16,
+                  "height": 16,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "path",
+                      "id": "iYZ9C",
+                      "x": 1.3433431386947632,
+                      "y": 6.666666507720947,
+                      "name": "more-horizontal",
+                      "geometry": "M2.005 4c-1.104 0-2.005-0.896-2.005-2 0-1.104 0.89-2 1.995-2l0.01 0c1.104 0 2 0.896 2 2 0 1.104-0.895 2-2 2z m10.00001-2c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.995 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z m8 0c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.99499 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z",
+                      "fill": "$grey100",
+                      "width": 13.336669921875,
+                      "height": 2.6666667461395264,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "yellow200": {
+      "type": "color",
+      "value": "#FFF6EB"
+    },
+    "yellow500": {
+      "type": "color",
+      "value": "#FAA135"
+    },
+    "grey1000": {
+      "type": "color",
+      "value": "#24292f"
+    },
+    "grey300": {
+      "type": "color",
+      "value": "#f6f8fa"
+    },
+    "grey100": {
+      "type": "color",
+      "value": "#ffffff"
+    }
+  }
+}
