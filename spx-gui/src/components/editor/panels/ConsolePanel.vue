@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
 import { computed, ref } from 'vue'
-import { useBottomSticky } from '@/utils/dom'
+import { useBottomSticky, useContentSize } from '@/utils/dom'
 import { useI18n } from '@/utils/i18n'
 import { UICard, UICardHeader, UIEmpty, UISelect, UISelectOption } from '@/components/ui'
 import type { RuntimeOutput } from '@/components/editor/runtime'
@@ -15,7 +15,12 @@ const outputs = computed(() => runtime.value.outputs)
 
 const outputContainerRef = ref<HTMLElement | null>(null)
 useBottomSticky(outputContainerRef)
+const outputContainerSize = useContentSize(outputContainerRef)
+const outputContainerScrollTop = ref(0)
 const outputLimitOptions = [500, 1000, 2000]
+const virtualizeThreshold = 300
+const virtualizedEstimatedOutputHeight = 24
+const virtualizedOverscan = 20
 
 const outputLimit = computed<string>({
   get: () => runtime.value.maxOutputs + '',
@@ -24,6 +29,38 @@ const outputLimit = computed<string>({
     runtime.value.setMaxOutputs(Number(value))
   }
 })
+
+const shouldVirtualizeOutputs = computed(() => outputs.value.length > virtualizeThreshold)
+const virtualizedVisibleCount = computed(() => {
+  const height = outputContainerSize.value?.height ?? 0
+  return Math.max(1, Math.ceil(height / virtualizedEstimatedOutputHeight))
+})
+const virtualizedStartIndex = computed(() => {
+  if (!shouldVirtualizeOutputs.value) return 0
+  const idx = Math.floor(outputContainerScrollTop.value / virtualizedEstimatedOutputHeight) - virtualizedOverscan
+  return Math.max(0, idx)
+})
+const virtualizedEndIndex = computed(() => {
+  if (!shouldVirtualizeOutputs.value) return outputs.value.length
+  const end = virtualizedStartIndex.value + virtualizedVisibleCount.value + virtualizedOverscan * 2
+  return Math.min(outputs.value.length, end)
+})
+const visibleOutputs = computed(() => {
+  if (!shouldVirtualizeOutputs.value) return outputs.value
+  return outputs.value.slice(virtualizedStartIndex.value, virtualizedEndIndex.value)
+})
+const virtualizedPaddingTop = computed(() => {
+  if (!shouldVirtualizeOutputs.value) return 0
+  return virtualizedStartIndex.value * virtualizedEstimatedOutputHeight
+})
+const virtualizedPaddingBottom = computed(() => {
+  if (!shouldVirtualizeOutputs.value) return 0
+  return (outputs.value.length - virtualizedEndIndex.value) * virtualizedEstimatedOutputHeight
+})
+
+function handleOutputContainerScroll(e: Event) {
+  outputContainerScrollTop.value = (e.target as HTMLElement).scrollTop
+}
 
 function humanizeTime(time: number) {
   const d = dayjs(time)
@@ -75,7 +112,7 @@ const initializingError = computed(() => {
         </div>
       </div>
     </UICardHeader>
-    <ul ref="outputContainerRef" class="output-container">
+    <ul ref="outputContainerRef" class="output-container" @scroll="handleOutputContainerScroll">
       <UIEmpty v-if="runtime.running.mode !== 'debug'" size="small">
         {{ $t({ en: 'Not running in debug mode', zh: '未处于调试模式' }) }}
       </UIEmpty>
@@ -90,13 +127,31 @@ const initializingError = computed(() => {
       <UIEmpty v-else-if="outputs.length === 0" size="small">
         {{ $t({ en: 'No output', zh: '无输出' }) }}
       </UIEmpty>
-      <li v-for="output in outputs" v-else :key="output.id" class="output" :class="`kind-${output.kind}`">
-        <span class="time">{{ humanizeTime(output.time) }}</span>
-        <CodeLink v-if="getOutputSourceLocation(output) != null" class="link" v-bind="getOutputSourceLocation(output)!">
-          {{ getOutputSourceLocationText(output) }}
-        </CodeLink>
-        <span class="message">{{ output.message }}</span>
-      </li>
+      <template v-else>
+        <li
+          v-if="shouldVirtualizeOutputs && virtualizedPaddingTop > 0"
+          aria-hidden="true"
+          class="output-spacer"
+          :style="{ height: `${virtualizedPaddingTop}px` }"
+        ></li>
+        <li v-for="output in visibleOutputs" :key="output.id" class="output" :class="`kind-${output.kind}`">
+          <span class="time">{{ humanizeTime(output.time) }}</span>
+          <CodeLink
+            v-if="getOutputSourceLocation(output) != null"
+            class="link"
+            v-bind="getOutputSourceLocation(output)!"
+          >
+            {{ getOutputSourceLocationText(output) }}
+          </CodeLink>
+          <span class="message">{{ output.message }}</span>
+        </li>
+        <li
+          v-if="shouldVirtualizeOutputs && virtualizedPaddingBottom > 0"
+          aria-hidden="true"
+          class="output-spacer"
+          :style="{ height: `${virtualizedPaddingBottom}px` }"
+        ></li>
+      </template>
     </ul>
   </UICard>
 </template>
@@ -138,6 +193,11 @@ const initializingError = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.output-spacer {
+  list-style: none;
+  flex: 0 0 auto;
 }
 
 .output {
