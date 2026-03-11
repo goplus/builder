@@ -40,6 +40,7 @@ export class Runtime extends Emitter<{
 }> {
   static readonly defaultMaxOutputs = 1000
   static readonly maxMaxOutputs = 10_000
+  static readonly outputChangeEventThrottleMs = 16
 
   running: RunningState = { mode: 'none' }
 
@@ -62,6 +63,7 @@ export class Runtime extends Emitter<{
   private outputVersion = 0
   private outputsCache: RuntimeOutput[] = []
   private outputsCacheVersion = -1
+  private outputChangeEventTimer: ReturnType<typeof setTimeout> | null = null
 
   /** Outputs of last debugging, from oldest to latest. */
   get outputs(): readonly RuntimeOutput[] {
@@ -77,9 +79,23 @@ export class Runtime extends Emitter<{
     return this.outputsCache
   }
 
-  private emitDidChangeOutput() {
-    this.outputVersion += 1
+  private flushDidChangeOutput() {
+    this.outputChangeEventTimer = null
     this.emit('didChangeOutput')
+  }
+
+  private emitDidChangeOutput({ immediate = false }: { immediate?: boolean } = {}) {
+    this.outputVersion += 1
+    if (immediate) {
+      if (this.outputChangeEventTimer != null) {
+        clearTimeout(this.outputChangeEventTimer)
+        this.outputChangeEventTimer = null
+      }
+      this.flushDidChangeOutput()
+      return
+    }
+    if (this.outputChangeEventTimer != null) return
+    this.outputChangeEventTimer = setTimeout(() => this.flushDidChangeOutput(), Runtime.outputChangeEventThrottleMs)
   }
 
   private getRecentOutputs(limit: number) {
@@ -106,7 +122,7 @@ export class Runtime extends Emitter<{
     const preservedOutputs = this.getRecentOutputs(nextLimit)
     this.maxOutputs = nextLimit
     this.resetOutputs(preservedOutputs)
-    this.emitDidChangeOutput()
+    this.emitDidChangeOutput({ immediate: true })
   }
 
   addOutput(output: RuntimeOutputInput) {
@@ -126,7 +142,7 @@ export class Runtime extends Emitter<{
     this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
-    this.emitDidChangeOutput()
+    this.emitDidChangeOutput({ immediate: true })
   }
 
   constructor(private project: SpxProject) {
@@ -146,6 +162,12 @@ export class Runtime extends Emitter<{
           reactiveThis.clearOutputs()
         }
       )
+    })
+    reactiveThis.addDisposer(() => {
+      if (reactiveThis.outputChangeEventTimer != null) {
+        clearTimeout(reactiveThis.outputChangeEventTimer)
+        reactiveThis.outputChangeEventTimer = null
+      }
     })
     reactiveThis.addDisposer(() => scope.stop())
 

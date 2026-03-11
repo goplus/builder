@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { SpxProject } from '@/models/spx/project'
 import { Runtime, RuntimeOutputKind } from './runtime'
 
@@ -68,7 +68,8 @@ describe('Runtime', () => {
     expect(runtime.outputs.map((item) => item.message)).toEqual(['output-4', 'output-5', 'output-6'])
   })
 
-  it('should emit didChangeOutput when outputs are added, cleared, or max size changes', () => {
+  it('should throttle didChangeOutput for addOutput and keep clear/setMax immediate', () => {
+    vi.useFakeTimers()
     const runtime = makeRuntime()
     let changeCount = 0
     runtime.on('didChangeOutput', () => {
@@ -76,9 +77,18 @@ describe('Runtime', () => {
     })
 
     appendLog(runtime, 'output-1')
-    runtime.clearOutputs()
-    runtime.setMaxOutputs(500)
+    appendLog(runtime, 'output-2')
+    expect(changeCount).toBe(0)
+    vi.advanceTimersByTime(Runtime.outputChangeEventThrottleMs)
+    expect(changeCount).toBe(1)
 
+    runtime.clearOutputs()
+    expect(changeCount).toBe(2)
+
+    appendLog(runtime, 'output-3')
+    runtime.setMaxOutputs(500)
     expect(changeCount).toBe(3)
+
+    vi.useRealTimers()
   })
 })
