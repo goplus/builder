@@ -121,13 +121,9 @@ export class Runtime extends Emitter<{
   }
 
   private resetOutputs(outputs: RuntimeOutput[]) {
+    this.outputRing.splice(0, this.outputRing.length, ...outputs)
     this.outputRing.length = this.maxOutputs
-    for (let i = 0; i < outputs.length; i++) {
-      this.outputRing[i] = outputs[i]
-    }
-    for (let i = outputs.length; i < this.maxOutputs; i++) {
-      this.outputRing[i] = null
-    }
+    this.outputRing.fill(null, outputs.length)
     this.outputHead = 0
     this.outputCount = outputs.length
     this.invalidateOutputsCache()
