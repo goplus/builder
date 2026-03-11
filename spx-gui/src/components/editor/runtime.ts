@@ -1,4 +1,4 @@
-import { effectScope, reactive, watch } from 'vue'
+import { effectScope, reactive, toRaw, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
 import type { SpxProject } from '@/models/spx/project'
@@ -38,7 +38,7 @@ export class Runtime extends Emitter<{
   didChangeOutput: void
   didExit: number
 }> {
-  static readonly defaultMaxOutputs = 1000
+  static readonly defaultMaxOutputs = 500
   static readonly maxMaxOutputs = 10_000
   static readonly outputChangeEventThrottleMs = 16
 
@@ -60,32 +60,43 @@ export class Runtime extends Emitter<{
   private outputRing: Array<RuntimeOutput | null> = []
   private outputHead = 0
   private outputCount = 0
-  private outputVersion = 0
+  private outputChangeTick = 0
   private outputsCache: RuntimeOutput[] = []
-  private outputsCacheVersion = -1
+  private outputsCacheDirty = true
   private outputChangeEventTimer: ReturnType<typeof setTimeout> | null = null
+
+  private trackOutputChangeTick() {
+    return this.outputChangeTick
+  }
 
   /** Outputs of last debugging, from oldest to latest. */
   get outputs(): readonly RuntimeOutput[] {
-    if (this.outputsCacheVersion === this.outputVersion) return this.outputsCache
+    // Depend on a throttled reactive tick only, so `addOutput` can be batched.
+    this.trackOutputChangeTick()
+    const rawThis = toRaw(this) as this
+    if (!rawThis.outputsCacheDirty) return rawThis.outputsCache
     const outputs: RuntimeOutput[] = []
-    for (let i = 0; i < this.outputCount; i++) {
-      const idx = (this.outputHead + i) % this.maxOutputs
-      const output = this.outputRing[idx]
+    for (let i = 0; i < rawThis.outputCount; i++) {
+      const idx = (rawThis.outputHead + i) % rawThis.maxOutputs
+      const output = rawThis.outputRing[idx]
       if (output != null) outputs.push(output)
     }
-    this.outputsCache = outputs
-    this.outputsCacheVersion = this.outputVersion
-    return this.outputsCache
+    rawThis.outputsCache = outputs
+    rawThis.outputsCacheDirty = false
+    return rawThis.outputsCache
+  }
+
+  private invalidateOutputsCache() {
+    this.outputsCacheDirty = true
   }
 
   private flushDidChangeOutput() {
     this.outputChangeEventTimer = null
+    this.outputChangeTick += 1
     this.emit('didChangeOutput')
   }
 
   private emitDidChangeOutput({ immediate = false }: { immediate?: boolean } = {}) {
-    this.outputVersion += 1
     if (immediate) {
       if (this.outputChangeEventTimer != null) {
         clearTimeout(this.outputChangeEventTimer)
@@ -113,6 +124,7 @@ export class Runtime extends Emitter<{
     this.outputRing.splice(0, this.outputRing.length, ...outputs)
     this.outputHead = 0
     this.outputCount = outputs.length
+    this.invalidateOutputsCache()
   }
 
   setMaxOutputs(limit: number) {
@@ -135,6 +147,7 @@ export class Runtime extends Emitter<{
       this.outputRing[this.outputHead] = nextOutput
       this.outputHead = (this.outputHead + 1) % this.maxOutputs
     }
+    this.invalidateOutputsCache()
     this.emitDidChangeOutput()
   }
 
@@ -142,6 +155,7 @@ export class Runtime extends Emitter<{
     this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
+    this.invalidateOutputsCache()
     this.emitDidChangeOutput({ immediate: true })
   }
 
