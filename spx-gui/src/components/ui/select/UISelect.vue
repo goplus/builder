@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { untilNotNull } from '@/utils/utils'
 import UIIcon from '../icons/UIIcon.vue'
 
@@ -56,6 +56,19 @@ function handleSelectChange() {
 watch(() => props.value, syncSelected, {
   flush: 'post', // wait for HTML select to react to value change
   immediate: true
+})
+
+// Re-sync when child options change (e.g., async-loaded options)
+let observer: MutationObserver | null = null
+
+onMounted(() => {
+  if (selectRef.value == null) return
+  observer = new MutationObserver(() => syncSelected())
+  observer.observe(selectRef.value, { childList: true })
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
 })
 </script>
 

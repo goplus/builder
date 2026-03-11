@@ -611,6 +611,17 @@ export type InputSlot = {
   range: Range
 }
 
+export type Property = {
+  /** The property name, for example `x` or `y` */
+  name: string
+  /** The property type, for example `number` or `string` */
+  type: string
+  /** The kind of the property, either a field or a method */
+  kind: 'field' | 'method'
+  /** Optional documentation for the property */
+  doc?: string
+}
+
 export function positionEq(a: Position | null, b: Position | null) {
   if (a == null || b == null) return a == b
   return a.line === b.line && a.column === b.column

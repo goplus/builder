@@ -4,7 +4,15 @@
  */
 
 import type * as lsp from 'vscode-languageserver-protocol'
-import type { TextDocumentIdentifier, Position, ResourceReference, InputSlot, DefinitionIdentifier } from '../common'
+import type { Disposer } from '@/utils/disposable'
+import type {
+  TextDocumentIdentifier,
+  Position,
+  ResourceReference,
+  InputSlot,
+  DefinitionIdentifier,
+  Property
+} from '../common'
 
 export type RequestContext = {
   /** Optional signal to cancel the request */
@@ -17,6 +25,19 @@ export type RequestContext = {
 }
 
 export type { DefinitionIdentifier }
+
+export type PropertyRenamedEvent = {
+  /** The LSP target name */
+  target: string
+  /** The original name of the property before renaming */
+  oldName: string
+  /** The new name of the property after renaming */
+  newName: string
+}
+
+export type LSPClientEvents = {
+  propertyRenamed: PropertyRenamedEvent
+}
 
 /**
  * Generic LSP client interface — extracted from SpxLSPClient method signatures.
@@ -59,4 +80,7 @@ export interface ILSPClient {
   getResourceReferences(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<ResourceReference[]>
   getCompletionItems(ctx: RequestContext, params: lsp.CompletionParams): Promise<lsp.CompletionItem[]>
   getInputSlots(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<InputSlot[]>
+  getProperties(ctx: RequestContext, target: string): Promise<Property[]>
+  onEvent(event: keyof LSPClientEvents, listener: (eventData: LSPClientEvents[typeof event]) => void): Disposer
+  onceEvent(event: keyof LSPClientEvents, listener: (eventData: LSPClientEvents[typeof event]) => void): Disposer
 }

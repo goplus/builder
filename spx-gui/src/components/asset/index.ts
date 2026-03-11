@@ -221,8 +221,14 @@ export function useRenameSprite() {
         async applyName(newName) {
           const action = { name: { en: 'Rename sprite', zh: '重命名精灵' } }
           await editorCtx.state.history.doAction(action, async () => {
+            const oldName = sprite.name
             await codeEditor.renameResource(getResourceIdentifier(sprite), newName)
             sprite.setName(newName)
+            for (const widget of editorCtx.project.stage.widgets) {
+              if (widget.type === 'monitor' && widget.target === oldName) {
+                widget.setTarget(newName)
+              }
+            }
           })
         },
         inputTip: assetName.spriteNameTip,
