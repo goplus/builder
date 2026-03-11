@@ -7,8 +7,22 @@ export enum BrowserName {
   SAFARI = 'Safari'
 }
 
+// Map of known bowser output names (lowercase) to our BrowserName enum.
+// bowser may return names like 'Microsoft Edge' instead of 'Edge'.
+const browserAliases: Record<string, BrowserName> = {
+  'microsoft edge': BrowserName.EDGE
+}
+
+function normalizeBrowserName(name: string): BrowserName | null {
+  const lower = name.toLowerCase()
+  for (const bn of Object.values(BrowserName)) {
+    if (lower === bn.toLowerCase()) return bn
+  }
+  return browserAliases[lower] ?? null
+}
+
 // Minimum recommended browser versions (manually maintained to match browserslist config)
-const recommendedBrowserVersions: Record<string, string> = {
+const recommendedBrowserVersions: Record<BrowserName, string> = {
   [BrowserName.CHROME]: '111',
   [BrowserName.EDGE]: '111',
   [BrowserName.FIREFOX]: '113',
@@ -30,7 +44,8 @@ export type BrowserCheckResult =
  */
 export function checkBrowserVersion(): BrowserCheckResult {
   const { name, version } = getBrowser()
-  if (name == null || !(name in recommendedBrowserVersions)) {
+  const browserName = name != null ? normalizeBrowserName(name) : null
+  if (browserName == null) {
     return {
       ok: false,
       browserName: null,
@@ -38,12 +53,12 @@ export function checkBrowserVersion(): BrowserCheckResult {
       recommendedVersion: recommendedBrowserVersions[BrowserName.CHROME]
     }
   }
-  const recommendedVersion = recommendedBrowserVersions[name]
+  const recommendedVersion = recommendedBrowserVersions[browserName]
   const browserVersion = version || '0'
   if (compareVersions(browserVersion, recommendedVersion) >= 0) {
     return { ok: true }
   }
-  return { ok: false, browserName: name, recommendedVersion }
+  return { ok: false, browserName, recommendedVersion }
 }
 
 /**
