@@ -174,7 +174,7 @@ import {
   DiagnosticSeverity,
   textDocumentId2CodeFileName
 } from '@/components/editor/code-editor/spx-code-editor'
-import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
+import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputInput } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
@@ -220,7 +220,7 @@ const confirm = useConfirmDialog()
 
 const lastPanicOutput = ref<RuntimeOutput | null>(null)
 
-function appendRuntimeOutput(output: RuntimeOutput) {
+function appendRuntimeOutput(output: RuntimeOutputInput) {
   runtime.value.addOutput(output)
 }
 

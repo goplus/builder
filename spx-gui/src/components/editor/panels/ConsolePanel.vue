@@ -3,7 +3,7 @@ import dayjs from 'dayjs'
 import { computed, ref } from 'vue'
 import { useBottomSticky } from '@/utils/dom'
 import { useI18n } from '@/utils/i18n'
-import { UICard, UICardHeader, UIEmpty } from '@/components/ui'
+import { UICard, UICardHeader, UIEmpty, UISelect, UISelectOption } from '@/components/ui'
 import type { RuntimeOutput } from '@/components/editor/runtime'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { CodeLink, textDocumentId2CodeFileName } from '../code-editor/spx-code-editor'
@@ -11,9 +11,19 @@ import { CodeLink, textDocumentId2CodeFileName } from '../code-editor/spx-code-e
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const runtime = computed(() => editorCtx.state.runtime)
+const outputs = computed(() => runtime.value.outputs)
 
 const outputContainerRef = ref<HTMLElement | null>(null)
 useBottomSticky(outputContainerRef)
+const outputLimitOptions = [500, 1000, 2000]
+
+const outputLimit = computed<string>({
+  get: () => runtime.value.maxOutputs + '',
+  set: (value) => {
+    if (value == null) return
+    runtime.value.setMaxOutputs(Number(value))
+  }
+})
 
 function humanizeTime(time: number) {
   const d = dayjs(time)
@@ -49,7 +59,21 @@ const initializingError = computed(() => {
 <template>
   <UICard class="console-panel">
     <UICardHeader>
-      {{ $t({ en: 'Console', zh: '控制台' }) }}
+      <div class="header">
+        <span>{{ $t({ en: 'Console', zh: '控制台' }) }}</span>
+        <div class="controls">
+          <span class="controls-label">{{ $t({ en: 'Max logs', zh: '日志上限' }) }}</span>
+          <UISelect
+            v-model:value="outputLimit"
+            v-radar="{ name: 'Console log limit', desc: 'Select max retained runtime log entries in console panel' }"
+            class="controls-select"
+          >
+            <UISelectOption v-for="limit in outputLimitOptions" :key="limit" :value="limit + ''">
+              {{ limit }}
+            </UISelectOption>
+          </UISelect>
+        </div>
+      </div>
     </UICardHeader>
     <ul ref="outputContainerRef" class="output-container">
       <UIEmpty v-if="runtime.running.mode !== 'debug'" size="small">
@@ -63,10 +87,10 @@ const initializingError = computed(() => {
         <span class="time">{{ humanizeTime(initializingError.time) }}</span>
         <span class="message">{{ initializingError.message }}</span>
       </li>
-      <UIEmpty v-else-if="runtime.outputs.length === 0" size="small">
+      <UIEmpty v-else-if="outputs.length === 0" size="small">
         {{ $t({ en: 'No output', zh: '无输出' }) }}
       </UIEmpty>
-      <li v-for="(output, i) in runtime.outputs" v-else :key="i" class="output" :class="`kind-${output.kind}`">
+      <li v-for="output in outputs" v-else :key="output.id" class="output" :class="`kind-${output.kind}`">
         <span class="time">{{ humanizeTime(output.time) }}</span>
         <CodeLink v-if="getOutputSourceLocation(output) != null" class="link" v-bind="getOutputSourceLocation(output)!">
           {{ getOutputSourceLocationText(output) }}
@@ -82,6 +106,31 @@ const initializingError = computed(() => {
   display: flex;
   flex-direction: column;
 }
+
+.header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-gap-middle);
+}
+
+.controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls-label {
+  font-size: 12px;
+  color: var(--ui-color-grey-700);
+  white-space: nowrap;
+}
+
+.controls-select {
+  width: 96px;
+}
+
 .output-container {
   padding: 12px;
   flex: 1 1 0;

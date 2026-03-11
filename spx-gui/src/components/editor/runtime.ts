@@ -24,6 +24,7 @@ export enum RuntimeOutputKind {
 }
 
 export interface RuntimeOutput {
+  id: number
   kind: RuntimeOutputKind
   /** Timestamp in milliseconds */
   time: number
@@ -31,10 +32,14 @@ export interface RuntimeOutput {
   source?: TextDocumentRange
 }
 
+export type RuntimeOutputInput = Omit<RuntimeOutput, 'id'>
+
 export class Runtime extends Emitter<{
   didChangeOutput: void
   didExit: number
 }> {
+  static readonly defaultMaxOutputs = 1000
+
   running: RunningState = { mode: 'none' }
 
   setRunning(running: RunningState, filesHash?: string) {
@@ -46,17 +51,78 @@ export class Runtime extends Emitter<{
     }
   }
 
-  /** Outputs of last debugging */
-  outputs: RuntimeOutput[] = []
   /** Project files' hash of last debugging */
   filesHash: string | null = null
+  maxOutputs = Runtime.defaultMaxOutputs
+  private nextOutputId = 0
+  private outputRing: Array<RuntimeOutput | null> = []
+  private outputHead = 0
+  private outputCount = 0
 
-  addOutput(output: RuntimeOutput) {
-    this.outputs.push(output)
+  /** Outputs of last debugging, from oldest to latest. */
+  get outputs() {
+    const outputs: RuntimeOutput[] = []
+    for (let i = 0; i < this.outputCount; i++) {
+      const idx = (this.outputHead + i) % this.maxOutputs
+      const output = this.outputRing[idx]
+      if (output != null) outputs.push(output)
+    }
+    return outputs
+  }
+
+  private emitDidChangeOutput() {
+    this.emit('didChangeOutput')
+  }
+
+  private getRecentOutputs(limit: number) {
+    const count = Math.min(limit, this.outputCount)
+    const outputs: RuntimeOutput[] = []
+    for (let i = this.outputCount - count; i < this.outputCount; i++) {
+      const idx = (this.outputHead + i) % this.maxOutputs
+      const output = this.outputRing[idx]
+      if (output != null) outputs.push(output)
+    }
+    return outputs
+  }
+
+  private resetOutputs(outputs: RuntimeOutput[]) {
+    this.outputRing = []
+    this.outputHead = 0
+    this.outputCount = 0
+    for (const output of outputs) {
+      this.outputRing.push(output)
+      this.outputCount += 1
+    }
+  }
+
+  setMaxOutputs(limit: number) {
+    if (!Number.isFinite(limit)) return
+    const nextLimit = Math.max(1, Math.floor(limit))
+    if (this.maxOutputs === nextLimit) return
+    const preservedOutputs = this.getRecentOutputs(nextLimit)
+    this.maxOutputs = nextLimit
+    this.resetOutputs(preservedOutputs)
+    this.emitDidChangeOutput()
+  }
+
+  addOutput(output: RuntimeOutputInput) {
+    const nextOutput: RuntimeOutput = { ...output, id: this.nextOutputId++ }
+    if (this.outputCount < this.maxOutputs) {
+      const tailIdx = (this.outputHead + this.outputCount) % this.maxOutputs
+      this.outputRing[tailIdx] = nextOutput
+      this.outputCount += 1
+    } else {
+      this.outputRing[this.outputHead] = nextOutput
+      this.outputHead = (this.outputHead + 1) % this.maxOutputs
+    }
+    this.emitDidChangeOutput()
   }
 
   clearOutputs() {
-    this.outputs.splice(0, this.outputs.length)
+    this.outputRing = []
+    this.outputHead = 0
+    this.outputCount = 0
+    this.emitDidChangeOutput()
   }
 
   constructor(private project: SpxProject) {
@@ -69,10 +135,6 @@ export class Runtime extends Emitter<{
     // TODO: we may extract this pattern as a method of class `Disposable`, e.g. `runWithDetachedEffectScope`, to simplify the usage.
     const scope = effectScope(true)
     scope.run(() => {
-      watch(
-        () => reactiveThis.outputs.slice(),
-        () => reactiveThis.emit('didChangeOutput')
-      )
       watch(
         () => reactiveThis.project.exportFiles(),
         async () => {
