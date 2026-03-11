@@ -21,7 +21,7 @@ const feedbackProps = computed(() => ({
 const resultContent = computed<string | null>(() => {
   const copilotMessages: string[] = []
   for (const message of props.round.resultMessages) {
-    if (message.role === 'copilot') copilotMessages.push(message.content)
+    if (message.role === 'copilot' && message.content != null) copilotMessages.push(message.content)
   }
   // TODO: render in-progress message and other messages separately to improve performance & user experience
   if (props.round.inProgressCopilotMessageContent != null) {

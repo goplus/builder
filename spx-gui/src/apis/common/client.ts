@@ -181,6 +181,10 @@ export class Client {
     if (params != null) path = withQueryParams(path, params)
     return this.requestJSONSSE(path, null, { ...options, method: 'GET' })
   }
+
+  postJSONSSE(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestJSONSSE(path, payload, { ...options, method: 'POST' })
+  }
 }
 
 export type QueryParams = {
