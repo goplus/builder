@@ -42,9 +42,10 @@ export class ProgressReporter {
   /**
    * Start reporting progress automatically: a series of progress will be reported in given interval.
    * Reports start from `percentage: 0` and keep increasing.
-   * Reports stop when `timeCost * 2` is reached (at `percentage: 0.99`), or `percentage: 1` is reported manually.
+   * Reports stop when `timeCost` is reached (at `percentage: 0.99`), or `percentage: 1` is reported manually.
    *
    * Both progress percentage and ETA use a linear algorithm so they remain consistent with each other.
+   * Percentage reaches 0.99 exactly at the estimated time cost.
    */
   startAutoReport(
     /** Estimated time cost in milliseconds */
@@ -53,8 +54,6 @@ export class ProgressReporter {
     interval = Math.max(300, Math.round(timeCost / 50))
   ) {
     return new Promise<void>((resolve) => {
-      const estimatedTimes = timeCost / interval
-      const maxTimes = estimatedTimes * 2
       const maxPercentage = 0.99
       // Report immediately at percentage: 0
       this.report({ percentage: 0, desc: null, timeLeft: timeCost })
@@ -67,10 +66,11 @@ export class ProgressReporter {
           return
         }
         times++
-        // Linear function: percentage increases uniformly per tick
-        const percentage = (times / maxTimes) * maxPercentage
-        // ETA derived from linear progress so it stays consistent with the progress bar
-        const timeLeft = timeCost * (1 - percentage / maxPercentage)
+        const elapsed = times * interval
+        // Linear function: reaches maxPercentage exactly at estimated time cost
+        const percentage = Math.min(maxPercentage, (elapsed / timeCost) * maxPercentage)
+        // ETA consistent with linear progress: decreases at wall-clock rate, reaches 0 at timeCost
+        const timeLeft = Math.max(0, timeCost - elapsed)
         this.report({ percentage, desc: null, timeLeft })
       }, interval)
     })
