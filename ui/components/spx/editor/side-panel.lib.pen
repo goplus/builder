@@ -176,25 +176,359 @@
                           ],
                           "children": [
                             {
-                              "id": "9HpW4",
-                              "type": "ref",
-                              "ref": "m:S7kwy",
-                              "x": 16,
-                              "y": 12
+                              "type": "frame",
+                              "id": "wl4X8",
+                              "name": "sprite-card-01",
+                              "width": 88,
+                              "height": 88,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1
+                              },
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Lks5E",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "normal",
+                                  "fill": "$yellow200",
+                                  "cornerRadius": 8,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 2,
+                                    "fill": "$yellow500"
+                                  },
+                                  "layout": "vertical",
+                                  "gap": 2,
+                                  "padding": 2,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "W1Rdl",
+                                      "name": "sprite01",
+                                      "width": 84,
+                                      "height": 60,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 0.9375
+                                      },
+                                      "layout": "none",
+                                      "children": [
+                                        {
+                                          "type": "rectangle",
+                                          "cornerRadius": 8,
+                                          "id": "3xpfe",
+                                          "x": 12,
+                                          "y": 0,
+                                          "name": "image-00043-3673961838-ok-1",
+                                          "fill": {
+                                            "type": "image",
+                                            "enabled": true,
+                                            "url": "../images/sprite.png",
+                                            "mode": "fill"
+                                          },
+                                          "width": 60,
+                                          "height": 60,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "BBa3U",
+                                      "name": "sprite-name-chip-01",
+                                      "width": 84,
+                                      "height": 22,
+                                      "cornerRadius": 12,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 1
+                                      },
+                                      "gap": 10,
+                                      "padding": [
+                                        0,
+                                        8
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "WGwKf",
+                                          "name": "Sprite01",
+                                          "fill": "$grey1000",
+                                          "content": "Sprite01",
+                                          "lineHeight": 1.6,
+                                          "textAlign": "center",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                                          "fontSize": 10,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "PJzbh",
+                                  "x": 68,
+                                  "y": -4,
+                                  "name": "more",
+                                  "width": 24,
+                                  "height": 24,
+                                  "fill": "$yellow500",
+                                  "cornerRadius": 24,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 0.7674450874328613
+                                  },
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "D6HL9",
+                                      "x": 4,
+                                      "y": 4,
+                                      "name": "icon-more-horizontal-filled",
+                                      "width": 16,
+                                      "height": 16,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 1
+                                      },
+                                      "layout": "none",
+                                      "children": [
+                                        {
+                                          "type": "path",
+                                          "id": "gn10x",
+                                          "x": 1.3433431386947632,
+                                          "y": 6.666666507720947,
+                                          "name": "more-horizontal",
+                                          "geometry": "M2.005 4c-1.104 0-2.005-0.896-2.005-2 0-1.104 0.89-2 1.995-2l0.01 0c1.104 0 2 0.896 2 2 0 1.104-0.895 2-2 2z m10.00001-2c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.995 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z m8 0c0-1.104-0.896-2-2-2l-0.01001 0c-1.104 0-1.99499 0.896-1.995 2 0 1.104 0.90001 2 2.00501 2 1.105 0 2-0.896 2-2z",
+                                          "fill": "$grey100",
+                                          "width": 13.336669921875,
+                                          "height": 2.6666667461395264,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
                             },
                             {
-                              "id": "Abd0J",
-                              "type": "ref",
-                              "ref": "m:yZYoW",
-                              "x": 112,
-                              "y": 12
+                              "type": "frame",
+                              "id": "EvY9o",
+                              "name": "sprite-card-02",
+                              "width": 88,
+                              "height": 88,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1
+                              },
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "TSEKF",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "normal",
+                                  "fill": "$grey300",
+                                  "cornerRadius": 8,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "vertical",
+                                  "gap": 2,
+                                  "padding": 2,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "pxixe",
+                                      "name": "sprite01",
+                                      "width": 84,
+                                      "height": 60,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 0.9375
+                                      },
+                                      "layout": "none",
+                                      "children": [
+                                        {
+                                          "type": "rectangle",
+                                          "cornerRadius": 8,
+                                          "id": "XHouH",
+                                          "x": 12,
+                                          "y": 0,
+                                          "name": "image-00043-3673961838-ok-1",
+                                          "fill": {
+                                            "type": "image",
+                                            "enabled": true,
+                                            "url": "../images/sprite.png",
+                                            "mode": "fill"
+                                          },
+                                          "width": 60,
+                                          "height": 60,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "n6l4H",
+                                      "name": "sprite-name-chip-02",
+                                      "width": 84,
+                                      "height": 22,
+                                      "cornerRadius": 12,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 1
+                                      },
+                                      "gap": 10,
+                                      "padding": [
+                                        0,
+                                        8
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "pz1xE",
+                                          "name": "Sprite01",
+                                          "fill": "$grey1000",
+                                          "content": "Sprite01",
+                                          "lineHeight": 1.6,
+                                          "textAlign": "center",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                                          "fontSize": 10,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
                             },
                             {
-                              "id": "8QT9D",
-                              "type": "ref",
-                              "ref": "m:yZYoW",
-                              "x": 208,
-                              "y": 12
+                              "type": "frame",
+                              "id": "gC9w8",
+                              "name": "sprite-card-03",
+                              "width": 88,
+                              "height": 88,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1
+                              },
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "DlWuX",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "normal",
+                                  "fill": "$grey300",
+                                  "cornerRadius": 8,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "vertical",
+                                  "gap": 2,
+                                  "padding": 2,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "Q4RSz",
+                                      "name": "sprite01",
+                                      "width": 84,
+                                      "height": 60,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 0.9375
+                                      },
+                                      "layout": "none",
+                                      "children": [
+                                        {
+                                          "type": "rectangle",
+                                          "cornerRadius": 8,
+                                          "id": "iyDUI",
+                                          "x": 12,
+                                          "y": 0,
+                                          "name": "image-00043-3673961838-ok-1",
+                                          "fill": {
+                                            "type": "image",
+                                            "enabled": true,
+                                            "url": "../images/sprite.png",
+                                            "mode": "fill"
+                                          },
+                                          "width": 60,
+                                          "height": 60,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "UVN7N",
+                                      "name": "sprite-name-chip-03",
+                                      "width": 84,
+                                      "height": 22,
+                                      "fill": {
+                                        "type": "color",
+                                        "color": "$grey1000",
+                                        "enabled": false
+                                      },
+                                      "cornerRadius": 12,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 1
+                                      },
+                                      "gap": 10,
+                                      "padding": [
+                                        0,
+                                        8
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "6oxnG",
+                                          "name": "Sprite01",
+                                          "fill": "$--ui-color-title",
+                                          "content": "Sprite01",
+                                          "lineHeight": 1.6,
+                                          "textAlign": "center",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                                          "fontSize": 10,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
                             }
                           ]
                         }
@@ -1765,11 +2099,79 @@
                       "alignItems": "center",
                       "children": [
                         {
-                          "id": "1C7Zx",
-                          "type": "ref",
-                          "ref": "m:OVOqe",
-                          "x": 12,
-                          "y": 12
+                          "type": "frame",
+                          "id": "e9DSu",
+                          "name": "stage-card-01",
+                          "width": 56,
+                          "height": 44,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1
+                          },
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "lgE9X",
+                              "x": 0,
+                              "y": 0,
+                              "name": "stage-card-02",
+                              "clip": true,
+                              "width": 56,
+                              "height": 44,
+                              "fill": "$grey300",
+                              "cornerRadius": 8,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 0.692307710647583
+                              },
+                              "layout": "vertical",
+                              "padding": 2,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "NNGpe",
+                                  "name": "backdrop",
+                                  "clip": true,
+                                  "width": 52,
+                                  "height": 40,
+                                  "fill": "$grey100",
+                                  "cornerRadius": 6,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "id": "O4LU8",
+                                      "x": -10,
+                                      "y": 0,
+                                      "name": "image-00058-175191715-1",
+                                      "fill": [
+                                        {
+                                          "type": "image",
+                                          "enabled": true,
+                                          "url": "../images/项目运行.png",
+                                          "mode": "stretch"
+                                        },
+                                        "#ffffff26"
+                                      ],
+                                      "width": 72,
+                                      "height": 40,
+                                      "stroke": {
+                                        "align": "inside",
+                                        "thickness": 1
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
                         }
                       ]
                     }
@@ -3375,83 +3777,935 @@
                               "gap": 8,
                               "children": [
                                 {
-                                  "id": "ZI4nE",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 0,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "DoDin",
+                                  "name": "sprite-card-02",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "nU1y7",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Frame 1",
+                                      "gap": 8,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "fA7Ol",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "dfXuR",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "u4bWW",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "UbNQu",
+                                              "name": "sprite-name-chip-02",
+                                              "width": 84,
+                                              "height": 22,
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "y8T81",
+                                                  "name": "Sprite01",
+                                                  "fill": "$grey1000",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "OFGBP",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "w2dfl",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "DiPxm",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "Ho32x",
+                                              "name": "sprite-name-chip-03",
+                                              "width": 84,
+                                              "height": 22,
+                                              "fill": {
+                                                "type": "color",
+                                                "color": "$grey1000",
+                                                "enabled": false
+                                              },
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "hsFEM",
+                                                  "name": "Sprite01",
+                                                  "fill": "$--ui-color-title",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "7B4Sj",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "cfFoP",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "Lm6RO",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "vfjWR",
+                                              "name": "sprite-name-chip-02",
+                                              "width": 84,
+                                              "height": 22,
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "CZBHw",
+                                                  "name": "Sprite01",
+                                                  "fill": "$grey1000",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
                                 },
                                 {
-                                  "id": "eO0UF",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 96,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "szRlS",
+                                  "name": "sprite-card-03",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none"
                                 },
                                 {
-                                  "id": "beanO",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 192,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "UPHVF",
+                                  "name": "sprite-card-02",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none"
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "vBvDp",
+                              "id": "ttOuJ",
                               "name": "spritelist",
                               "gap": 8,
                               "children": [
                                 {
-                                  "id": "o70QU",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 0,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "5TqGc",
+                                  "name": "sprite-card-02",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "xavlD",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Frame 1",
+                                      "gap": 8,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "rwMAM",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "hlQYV",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "yeJlF",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "aKctS",
+                                              "name": "sprite-name-chip-02",
+                                              "width": 84,
+                                              "height": 22,
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "gDWzG",
+                                                  "name": "Sprite01",
+                                                  "fill": "$grey1000",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "55tMj",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "6gJBS",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "K5ww9",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "2iwZd",
+                                              "name": "sprite-name-chip-03",
+                                              "width": 84,
+                                              "height": 22,
+                                              "fill": {
+                                                "type": "color",
+                                                "color": "$grey1000",
+                                                "enabled": false
+                                              },
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "aDcIY",
+                                                  "name": "Sprite01",
+                                                  "fill": "$--ui-color-title",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "fzVLl",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "ZmZPC",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "RhvfX",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "VePfG",
+                                              "name": "sprite-name-chip-02",
+                                              "width": 84,
+                                              "height": 22,
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "vVYjr",
+                                                  "name": "Sprite01",
+                                                  "fill": "$grey1000",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
                                 },
                                 {
-                                  "id": "R2eLW",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 96,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "4q62p",
+                                  "name": "sprite-card-03",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none"
                                 },
                                 {
-                                  "id": "ZTLjd",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 192,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "k7teo",
+                                  "name": "sprite-card-02",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none"
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "s3nX9",
+                              "id": "7LDZU",
                               "name": "spritelist",
                               "gap": 8,
                               "children": [
                                 {
-                                  "id": "lQ4hY",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 0,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "2EHDA",
+                                  "name": "sprite-card-02",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "gC36u",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Frame 1",
+                                      "gap": 8,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "Z8Ho2",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "26RhW",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "o1MrT",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "sKxFv",
+                                              "name": "sprite-name-chip-02",
+                                              "width": 84,
+                                              "height": 22,
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "jEWtn",
+                                                  "name": "Sprite01",
+                                                  "fill": "$grey1000",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "zrRMf",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "3AJtp",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "eJ763",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "xTBGV",
+                                              "name": "sprite-name-chip-03",
+                                              "width": 84,
+                                              "height": 22,
+                                              "fill": {
+                                                "type": "color",
+                                                "color": "$grey1000",
+                                                "enabled": false
+                                              },
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "UdkZt",
+                                                  "name": "Sprite01",
+                                                  "fill": "$--ui-color-title",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "0rHPB",
+                                          "name": "normal",
+                                          "fill": "$grey300",
+                                          "cornerRadius": 8,
+                                          "stroke": {
+                                            "align": "inside",
+                                            "thickness": 1
+                                          },
+                                          "layout": "vertical",
+                                          "gap": 2,
+                                          "padding": 2,
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "6jPLe",
+                                              "name": "sprite01",
+                                              "width": 84,
+                                              "height": 60,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 0.9375
+                                              },
+                                              "layout": "none",
+                                              "children": [
+                                                {
+                                                  "type": "rectangle",
+                                                  "cornerRadius": 8,
+                                                  "id": "aeucw",
+                                                  "x": 12,
+                                                  "y": 0,
+                                                  "name": "image-00043-3673961838-ok-1",
+                                                  "fill": {
+                                                    "type": "image",
+                                                    "enabled": true,
+                                                    "url": "../images/sprite.png",
+                                                    "mode": "fill"
+                                                  },
+                                                  "width": 60,
+                                                  "height": 60,
+                                                  "stroke": {
+                                                    "align": "inside",
+                                                    "thickness": 1
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "type": "frame",
+                                              "id": "Rdnrw",
+                                              "name": "sprite-name-chip-02",
+                                              "width": 84,
+                                              "height": 22,
+                                              "cornerRadius": 12,
+                                              "stroke": {
+                                                "align": "inside",
+                                                "thickness": 1
+                                              },
+                                              "gap": 10,
+                                              "padding": [
+                                                0,
+                                                8
+                                              ],
+                                              "justifyContent": "center",
+                                              "alignItems": "center",
+                                              "children": [
+                                                {
+                                                  "type": "text",
+                                                  "id": "xisGT",
+                                                  "name": "Sprite01",
+                                                  "fill": "$grey1000",
+                                                  "content": "Sprite01",
+                                                  "lineHeight": 1.6,
+                                                  "textAlign": "center",
+                                                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                                                  "fontSize": 10,
+                                                  "fontWeight": "normal"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
                                 },
                                 {
-                                  "id": "NRJjm",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 96,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "H1v36",
+                                  "name": "sprite-card-03",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none"
                                 },
                                 {
-                                  "id": "HDkl7",
-                                  "type": "ref",
-                                  "ref": "m:yZYoW",
-                                  "x": 192,
-                                  "y": 0
+                                  "type": "frame",
+                                  "id": "DpTOk",
+                                  "name": "sprite-card-02",
+                                  "width": 88,
+                                  "height": 88,
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 1
+                                  },
+                                  "layout": "none"
                                 }
                               ]
                             }
@@ -4165,8 +5419,5 @@
       "type": "color",
       "value": "#219FFC"
     }
-  },
-  "imports": {
-    "m": "../common/card.lib.pen"
   }
 }
