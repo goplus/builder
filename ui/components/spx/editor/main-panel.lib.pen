@@ -16596,7 +16596,7 @@
                                   "fill": {
                                     "type": "image",
                                     "enabled": true,
-                                    "url": "../../../pages/spx/images/sprite.png",
+                                    "url": "../../../images/sprite.png",
                                     "mode": "stretch"
                                   },
                                   "width": 36,
@@ -23589,8 +23589,5 @@
       "type": "color",
       "value": "#0bc0cf"
     }
-  },
-  "imports": {
-    "s": "side-panel.lib.pen"
   }
 }
