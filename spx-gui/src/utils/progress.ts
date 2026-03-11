@@ -69,8 +69,8 @@ export class ProgressReporter {
         const elapsed = times * interval
         // Linear function: reaches maxPercentage exactly at estimated time cost
         const percentage = Math.min(maxPercentage, (elapsed / timeCost) * maxPercentage)
-        // ETA consistent with linear progress: decreases at wall-clock rate, reaches 0 at timeCost
-        const timeLeft = Math.max(0, timeCost - elapsed)
+        // ETA derived from percentage so it stays consistent: percentage + timeLeft/timeCost = 1
+        const timeLeft = timeCost * (1 - percentage)
         this.report({ percentage, desc: null, timeLeft })
       }, interval)
     })

@@ -99,18 +99,18 @@ describe('ProgressReporter', () => {
       expect(reports[0].timeLeft).toBe(timeCost)
       for (let i = 1; i < reports.length; i++) {
         const { percentage, timeLeft } = reports[i]
-        // timeLeft decreases at wall-clock rate: max(0, timeCost - elapsed)
-        expect(timeLeft).toBeGreaterThanOrEqual(0)
+        // timeLeft derived from percentage: timeCost * (1 - percentage)
+        expect(timeLeft).toBeGreaterThan(0)
         expect(timeLeft).toBeLessThanOrEqual(timeCost)
         // timeLeft should strictly decrease
         expect(timeLeft).toBeLessThan(reports[i - 1].timeLeft)
-        // progress and ETA are consistent: percentage / maxPercentage + timeLeft / timeCost ≈ 1
-        expect(percentage / 0.99 + timeLeft / timeCost).toBeCloseTo(1)
+        // progress and ETA are consistent: percentage + timeLeft / timeCost ≈ 1
+        expect(percentage + timeLeft / timeCost).toBeCloseTo(1)
       }
-      // At estimated time cost, percentage should reach 0.99 and timeLeft should reach 0
+      // At estimated time cost, percentage should reach 0.99 and timeLeft = timeCost * (1 - 0.99)
       const lastReport = reports[reports.length - 1]
       expect(lastReport.percentage).toBeCloseTo(0.99)
-      expect(lastReport.timeLeft).toBe(0)
+      expect(lastReport.timeLeft).toBeCloseTo(timeCost * (1 - 0.99))
     })
     it('should stop when finished', async () => {
       const onProgress = vitest.fn()
