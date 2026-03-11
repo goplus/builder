@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
+import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
 import { TaskStatus, TaskType } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { makeSpxProject } from '../common/test'
 import { mockFile, sndConfig, sndFiles } from '../../common/test'
-import { setupAigcMock } from './aigc-mock'
 import { Sprite } from '../sprite'
+import { createI18n } from '@/utils/i18n'
 import { AnimationGen } from './animation-gen'
 import { Costume } from '../costume'
 
 const aigcMock = setupAigcMock()
+const i18n = createI18n({ lang: 'en' })
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
 
 describe('AnimationGen', () => {
@@ -26,7 +28,7 @@ describe('AnimationGen', () => {
     project.addSprite(sprite)
 
     // 1. Create AnimationGen with initial settings
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'A walking animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -82,7 +84,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
 
-    const gen1 = new AnimationGen(sprite, project, {
+    const gen1 = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'First animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -94,7 +96,7 @@ describe('AnimationGen', () => {
     sprite.addAnimation(animation1)
 
     // Create another gen with duplicate name should fail
-    const gen2 = new AnimationGen(sprite, project, {
+    const gen2 = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'Second animation' },
       referenceCostumeId: sprite.costumes[0].id
     })
@@ -108,7 +110,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -136,7 +138,7 @@ describe('AnimationGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, { settings: { description: 'A test animation' } })
+    const gen = new AnimationGen(i18n, sprite, project, { settings: { description: 'A test animation' } })
 
     await gen.enrich()
 
@@ -150,7 +152,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -168,7 +170,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -186,7 +188,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'First description' },
       referenceCostumeId: defaultCostume.id
     })
@@ -199,13 +201,27 @@ describe('AnimationGen', () => {
     expect(gen.enrichState.result?.description).toContain('Second description')
   })
 
+  it('should forward ui language to enrich api', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile())
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(createI18n({ lang: 'zh' }), sprite, project, {
+      settings: { description: 'A test animation' },
+      referenceCostumeId: defaultCostume.id
+    })
+    await gen.enrich()
+    expect(vi.mocked(aigcMock.enrichAnimationSettings).mock.calls.at(-1)?.[4]).toBe('zh')
+  })
+
   it('should allow multiple video generations', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -229,7 +245,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -257,7 +273,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'A test animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -278,7 +294,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'Enrich running animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -288,7 +304,7 @@ describe('AnimationGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = AnimationGen.load(sprite, project, config, files)
+    const loadedGen = AnimationGen.load(i18n, sprite, project, config, files)
 
     expect(loadedGen.enrichState.status).toBe('initial')
     expect(loadedGen.generateVideoState.status).toBe('initial')
@@ -304,7 +320,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'Generated video pre-extract animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -314,7 +330,7 @@ describe('AnimationGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = AnimationGen.load(sprite, project, config, files)
+    const loadedGen = AnimationGen.load(i18n, sprite, project, config, files)
 
     expect(loadedGen.enrichState.status).toBe('finished')
     expect(loadedGen.generateVideoState.status).toBe('finished')
@@ -329,7 +345,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'Extracted pre-finish animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -341,7 +357,7 @@ describe('AnimationGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = AnimationGen.load(sprite, project, config, files)
+    const loadedGen = AnimationGen.load(i18n, sprite, project, config, files)
 
     expect(loadedGen.generateVideoState.status).toBe('finished')
     expect(loadedGen.finishState.status).toBe('finished')
@@ -355,7 +371,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'A test animation export/load' },
       referenceCostumeId: defaultCostume.id
     })
@@ -367,7 +383,7 @@ describe('AnimationGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = AnimationGen.load(sprite, project, config, files)
+    const loadedGen = AnimationGen.load(i18n, sprite, project, config, files)
 
     expect(loadedGen.id).toBe(gen.id)
     expect(loadedGen.settings).toEqual(gen.settings)
@@ -387,7 +403,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'Running video animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -408,7 +424,7 @@ describe('AnimationGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = AnimationGen.load(sprite, project, config, files)
+    const loadedGen = AnimationGen.load(i18n, sprite, project, config, files)
 
     await flushPromises()
     expect(loadedGen.generateVideoState.status).toBe('running')
@@ -428,7 +444,7 @@ describe('AnimationGen', () => {
     const defaultCostume = new Costume('default', mockFile())
     sprite.addCostume(defaultCostume)
     project.addSprite(sprite)
-    const gen = new AnimationGen(sprite, project, {
+    const gen = new AnimationGen(i18n, sprite, project, {
       settings: { description: 'Running extract animation' },
       referenceCostumeId: defaultCostume.id
     })
@@ -453,7 +469,7 @@ describe('AnimationGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = AnimationGen.load(sprite, project, config, files)
+    const loadedGen = AnimationGen.load(i18n, sprite, project, config, files)
 
     await flushPromises()
     expect(loadedGen.finishState.status).toBe('running')

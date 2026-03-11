@@ -252,12 +252,15 @@ export const enum AIGCAssetType {
   Backdrop = 'backdrop'
 }
 
+export type Lang = 'en' | 'zh'
+
 export type EnrichAssetSettingsParams = {
   assetType: AIGCAssetType
   input: string
   settings?: SpriteSettings | CostumeSettings | AnimationSettings | BackdropSettings
   spriteSettings?: SpriteSettings
   projectSettings?: ProjectSettings
+  lang?: Lang
 }
 
 export type EnrichAssetSettingsResult = SpriteSettings | CostumeSettings | AnimationSettings | BackdropSettings
@@ -280,11 +283,12 @@ export type SpriteContentSettings = {
 
 export function genSpriteContentSettings(
   settings: SpriteSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<SpriteContentSettings> {
   return client.post(
     '/aigc/sprite/content-settings',
-    { settings },
+    { settings, lang },
     { signal, timeout: 60 * 1000 }
   ) as Promise<SpriteContentSettings>
 }
@@ -293,6 +297,7 @@ export function enrichBackdropSettings(
   input: string,
   settings?: BackdropSettings,
   projectSettings?: ProjectSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<BackdropSettings> {
   return enrichAssetSettings(
@@ -300,7 +305,8 @@ export function enrichBackdropSettings(
       assetType: AIGCAssetType.Backdrop,
       input,
       settings,
-      projectSettings
+      projectSettings,
+      lang
     },
     signal
   ) as Promise<BackdropSettings>
@@ -311,6 +317,7 @@ export function enrichCostumeSettings(
   settings?: CostumeSettings,
   spriteSettings?: SpriteSettings,
   projectSettings?: ProjectSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<CostumeSettings> {
   return enrichAssetSettings(
@@ -319,7 +326,8 @@ export function enrichCostumeSettings(
       input,
       settings,
       spriteSettings,
-      projectSettings
+      projectSettings,
+      lang
     },
     signal
   ) as Promise<CostumeSettings>
@@ -330,6 +338,7 @@ export function enrichAnimationSettings(
   settings?: AnimationSettings,
   spriteSettings?: SpriteSettings,
   projectSettings?: ProjectSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<AnimationSettings> {
   return enrichAssetSettings(
@@ -338,7 +347,8 @@ export function enrichAnimationSettings(
       input,
       settings,
       spriteSettings,
-      projectSettings
+      projectSettings,
+      lang
     },
     signal
   ) as Promise<AnimationSettings>
@@ -348,6 +358,7 @@ export function enrichSpriteSettings(
   input: string,
   settings?: SpriteSettings,
   projectSettings?: ProjectSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<SpriteSettings> {
   return enrichAssetSettings(
@@ -355,7 +366,8 @@ export function enrichSpriteSettings(
       assetType: AIGCAssetType.Sprite,
       input,
       settings,
-      projectSettings
+      projectSettings,
+      lang
     },
     signal
   ) as Promise<SpriteSettings>

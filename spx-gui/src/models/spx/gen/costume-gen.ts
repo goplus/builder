@@ -3,6 +3,7 @@ import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
+import type { I18n } from '@/utils/i18n'
 import { ArtStyle, Perspective } from '@/apis/common'
 import {
   enrichCostumeSettings,
@@ -57,6 +58,7 @@ function assetsPathFor(basePath: string, name: string) {
 /** `CostumeGen` tracks the generation process of a costume. */
 export class CostumeGen extends Disposable {
   id: string
+  private i18n: I18n
   parent: Sprite | SpriteGen
   get sprite(): Sprite {
     if (this.parent instanceof Sprite) return this.parent
@@ -68,9 +70,10 @@ export class CostumeGen extends Disposable {
   private generatePhase: Phase<File>
   private finishPhase: Phase<Costume>
 
-  constructor(parent: Sprite | SpriteGen, project: SpxProject, inits: CostumeGenInits = {}) {
+  constructor(i18n: I18n, parent: Sprite | SpriteGen, project: SpxProject, inits: CostumeGenInits = {}) {
     super()
     this.id = inits.id ?? nanoid()
+    this.i18n = i18n
     this.parent = parent
     this.project = project
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich costume settings', zh: '丰富造型设置' })
@@ -116,7 +119,8 @@ export class CostumeGen extends Disposable {
         this.settings.description,
         this.settings,
         getSpriteSettings(this.sprite),
-        getProjectSettings(this.project)
+        getProjectSettings(this.project),
+        this.i18n.lang.value
       )
     )
     this.setSettings(enriched)
@@ -240,6 +244,7 @@ export class CostumeGen extends Disposable {
   }
 
   static load(
+    i18n: I18n,
     parent: Sprite | SpriteGen,
     project: SpxProject,
     config: RawCostumeGenConfig,
@@ -285,7 +290,7 @@ export class CostumeGen extends Disposable {
         })
       )
     }
-    const gen = new CostumeGen(parent, project, inits)
+    const gen = new CostumeGen(i18n, parent, project, inits)
     gen.restoreGenerateTask()
     return gen
   }
