@@ -86,7 +86,7 @@ describe('Runtime', () => {
     expect(changeCount).toBe(2)
 
     appendLog(runtime, 'output-3')
-    runtime.setMaxOutputs(500)
+    runtime.setMaxOutputs(200)
     expect(changeCount).toBe(3)
 
     vi.useRealTimers()

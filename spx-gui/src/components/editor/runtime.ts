@@ -121,7 +121,13 @@ export class Runtime extends Emitter<{
   }
 
   private resetOutputs(outputs: RuntimeOutput[]) {
-    this.outputRing.splice(0, this.outputRing.length, ...outputs)
+    this.outputRing.length = this.maxOutputs
+    for (let i = 0; i < outputs.length; i++) {
+      this.outputRing[i] = outputs[i]
+    }
+    for (let i = outputs.length; i < this.maxOutputs; i++) {
+      this.outputRing[i] = null
+    }
     this.outputHead = 0
     this.outputCount = outputs.length
     this.invalidateOutputsCache()
@@ -155,7 +161,8 @@ export class Runtime extends Emitter<{
     this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
-    this.invalidateOutputsCache()
+    this.outputsCache = []
+    this.outputsCacheDirty = false
     this.emitDidChangeOutput({ immediate: true })
   }
 
