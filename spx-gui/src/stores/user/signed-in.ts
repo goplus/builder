@@ -165,7 +165,9 @@ export function useUpdateSignedInUser() {
   const queryCache = useQueryCache()
 
   return useAction(
-    async function updateSignedInUser(params: Pick<apis.UpdateSignedInUserParams, 'displayName' | 'description'>) {
+    async function updateSignedInUser(
+      params: Pick<apis.UpdateSignedInUserParams, 'displayName' | 'avatar' | 'description'>
+    ) {
       const updated = await apis.updateSignedInUser(params)
       queryCache.invalidate(getUserQueryKey(updated.username))
       return updated

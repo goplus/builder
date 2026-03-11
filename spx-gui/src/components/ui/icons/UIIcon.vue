@@ -73,6 +73,7 @@ import rotateAround from './rotate-around.svg?raw'
 import back from './back.svg?raw'
 import position from './position.svg?raw'
 import resize from './resize.svg?raw'
+import camera from './camera.svg?raw'
 
 const typeIconMap = {
   file,
@@ -142,7 +143,8 @@ const typeIconMap = {
   leftRight,
   back,
   position,
-  resize
+  resize,
+  camera
 }
 
 export type Type = keyof typeof typeIconMap

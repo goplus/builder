@@ -114,6 +114,8 @@ paths:
                   $ref: "#/components/schemas/User/properties/username"
                 displayName:
                   $ref: "#/components/schemas/User/properties/displayName"
+                avatar:
+                  $ref: "#/components/schemas/User/properties/avatar"
                 description:
                   $ref: "#/components/schemas/User/properties/description"
       responses:
