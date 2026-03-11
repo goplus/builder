@@ -7,18 +7,17 @@ export enum BrowserName {
   SAFARI = 'Safari'
 }
 
-// Map of known bowser output names (lowercase) to our BrowserName enum.
-// bowser may return names like 'Microsoft Edge' instead of 'Edge'.
-const browserAliases: Record<string, BrowserName> = {
-  'microsoft edge': BrowserName.EDGE
+// Map common browser names (lowercased) found in user-agent strings to the `BrowserName` enum,
+// including known variants like `microsoft edge` returned by the bowser library.
+const browserNameMap: Record<string, BrowserName> = {
+  ...Object.fromEntries(Object.values(BrowserName).map((name) => [name.toLowerCase(), name])),
+  'google chrome': BrowserName.CHROME,
+  'microsoft edge': BrowserName.EDGE,
+  'mozilla firefox': BrowserName.FIREFOX
 }
 
 function normalizeBrowserName(name: string): BrowserName | null {
-  const lower = name.toLowerCase()
-  for (const bn of Object.values(BrowserName)) {
-    if (lower === bn.toLowerCase()) return bn
-  }
-  return browserAliases[lower] ?? null
+  return browserNameMap[name.toLowerCase()] ?? null
 }
 
 // Minimum recommended browser versions (manually maintained to match browserslist config)
