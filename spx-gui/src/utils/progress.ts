@@ -42,7 +42,10 @@ export class ProgressReporter {
   /**
    * Start reporting progress automatically: a series of progress will be reported in given interval.
    * Reports start from `percentage: 0` and keep increasing.
-   * Reports stop when `timeCost * 2` is reached (at `percentage: 0.99`), or `percentage: 1` is reported manually.
+   * Reports stop when `timeCost` is reached (at `percentage: 0.99`), or `percentage: 1` is reported manually.
+   *
+   * Both progress percentage and ETA use a linear algorithm so they remain consistent with each other.
+   * Percentage reaches 0.99 exactly at the estimated time cost.
    */
   startAutoReport(
     /** Estimated time cost in milliseconds */
@@ -51,12 +54,7 @@ export class ProgressReporter {
     interval = Math.max(300, Math.round(timeCost / 50))
   ) {
     return new Promise<void>((resolve) => {
-      const estimatedTimes = timeCost / interval
-      const maxTimes = estimatedTimes * 2
       const maxPercentage = 0.99
-      // Quadratic function to generate reports: y = x^2 / (x^2 + factor)
-      // when x = maxTimes, y = maxPercentage
-      const factor = (maxTimes ** 2 * (1 - maxPercentage)) / maxPercentage
       // Report immediately at percentage: 0
       this.report({ percentage: 0, desc: null, timeLeft: timeCost })
       let times = 0
@@ -68,13 +66,12 @@ export class ProgressReporter {
           return
         }
         times++
-        const timesSquared = times ** 2
-        const percentage = timesSquared / (timesSquared + factor)
-        this.report({
-          percentage,
-          desc: null,
-          timeLeft: timeCost * (1 - percentage)
-        })
+        const elapsed = times * interval
+        // Linear function: reaches maxPercentage exactly at estimated time cost
+        const percentage = Math.min(maxPercentage, (elapsed / timeCost) * maxPercentage)
+        // ETA derived from percentage so it stays consistent: percentage + timeLeft/timeCost = 1
+        const timeLeft = timeCost * (1 - percentage)
+        this.report({ percentage, desc: null, timeLeft })
       }, interval)
     })
   }

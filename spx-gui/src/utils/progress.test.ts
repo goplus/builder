@@ -67,38 +67,50 @@ describe('ProgressReporter', () => {
         const percentages: number[] = []
         const onProgress = vitest.fn((p) => percentages.push(p.percentage))
         const interval = 100
-        const maxTimes = estimatedTimes * 2
         const reporter = new ProgressReporter(onProgress)
         await reporter.startAutoReport(interval * estimatedTimes, interval)
+        // Stops after reaching 0.99 at estimatedTimes ticks, so total = initial + estimatedTimes
         expect([
-          maxTimes + 1,
-          maxTimes + 2 // There may be little difference due to floating-point-number calculation issue in JS
+          estimatedTimes + 1,
+          estimatedTimes + 2 // There may be little difference due to floating-point-number calculation issue in JS
         ]).includes(onProgress.mock.calls.length)
         // percentages[0] is the immediate initial report (percentage: 0)
         expect(percentages[0]).toBe(0)
-        for (let i = 1; i <= maxTimes; i++) {
+        for (let i = 1; i <= estimatedTimes; i++) {
           expect(percentages[i]).toBeGreaterThan(0)
           expect(percentages[i]).toBeLessThan(1)
           if (i > 1) expect(percentages[i]).toBeGreaterThan(percentages[i - 1])
         }
+        // At estimated time cost, percentage must reach exactly 0.99
+        expect(percentages[estimatedTimes]).toBeCloseTo(0.99)
       }
       await Promise.all([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(checkWithTimes))
     })
-    it('should report decreasing timeLeft', async () => {
+    it('should report strictly decreasing timeLeft consistent with linear progress', async () => {
       const timeCost = 500
       const interval = 100
       const onProgress = vitest.fn()
       const reporter = new ProgressReporter(onProgress)
       await reporter.startAutoReport(timeCost, interval)
-      const etls: number[] = onProgress.mock.calls.map(([p]) => p.timeLeft)
-      expect(etls.length).toBeGreaterThan(0)
-      for (const etl of etls) {
-        expect(etl).toBeGreaterThan(0)
-        expect(etl).toBeLessThanOrEqual(timeCost)
+      const reports: { percentage: number; timeLeft: number }[] = onProgress.mock.calls.map(([p]) => p)
+      expect(reports.length).toBeGreaterThan(0)
+      // First report should be at percentage 0 with timeCost as timeLeft
+      expect(reports[0].percentage).toBe(0)
+      expect(reports[0].timeLeft).toBe(timeCost)
+      for (let i = 1; i < reports.length; i++) {
+        const { percentage, timeLeft } = reports[i]
+        // timeLeft derived from percentage: timeCost * (1 - percentage)
+        expect(timeLeft).toBeGreaterThan(0)
+        expect(timeLeft).toBeLessThanOrEqual(timeCost)
+        // timeLeft should strictly decrease
+        expect(timeLeft).toBeLessThan(reports[i - 1].timeLeft)
+        // progress and ETA are consistent: percentage + timeLeft / timeCost ≈ 1
+        expect(percentage + timeLeft / timeCost).toBeCloseTo(1)
       }
-      for (let i = 0; i < etls.length - 1; i++) {
-        expect(etls[i]).toBeGreaterThan(etls[i + 1])
-      }
+      // At estimated time cost, percentage should reach 0.99 and timeLeft = timeCost * (1 - 0.99)
+      const lastReport = reports[reports.length - 1]
+      expect(lastReport.percentage).toBeCloseTo(0.99)
+      expect(lastReport.timeLeft).toBeCloseTo(timeCost * (1 - 0.99))
     })
     it('should stop when finished', async () => {
       const onProgress = vitest.fn()
