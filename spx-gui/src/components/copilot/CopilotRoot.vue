@@ -24,7 +24,6 @@ import {
 } from '../editor/code-editor/spx-code-editor'
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
-import * as toolUse from './custom-elements/ToolUse'
 import * as pageLink from './custom-elements/PageLink'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
@@ -420,13 +419,6 @@ copilot.registerTool(new GetProjectContentTool(retriever))
 copilot.registerTool(new GetSpriteContentTool(retriever))
 copilot.registerTool(new GetProjectCodeTool(retriever))
 copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorRef))
-copilot.registerCustomElement({
-  tagName: toolUse.tagName,
-  description: toolUse.detailedDescription,
-  attributes: toolUse.attributes,
-  isRaw: toolUse.isRaw,
-  component: toolUse.default
-})
 copilot.registerCustomElement({
   tagName: pageLink.tagName,
   description: pageLink.detailedDescription,
