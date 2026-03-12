@@ -48,9 +48,8 @@
       <template v-else>
         <div class="icon-button">
           <div class="icon-button-wrapper">
-            <UIButton shape="circle" size="large" icon="reload" color="blue" @click="resetRecording" />
+            <UIButton shape="circle" size="large" icon="reload" color="boring" @click="resetRecording" />
           </div>
-
           <span>
             {{
               $t({
@@ -65,7 +64,7 @@
             style="width: 56px; height: 56px"
             shape="circle"
             size="large"
-            color="purple"
+            color="blue"
             @click="waveformRecorderRef?.startPlayback()"
           >
             <template #icon>
@@ -106,7 +105,7 @@ import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/spx/sound'
 import type { SpxProject } from '@/models/spx/project'
 import { UIButton, UIIcon } from '@/components/ui'
-import { useEditorCtx } from '../EditorContextProvider.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import { WaveformRecorder } from './waveform'
 

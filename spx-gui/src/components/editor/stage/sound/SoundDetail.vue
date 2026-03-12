@@ -1,15 +1,4 @@
 <template>
-  <EditorHeader>
-    <UITabs
-      v-radar="{ name: 'Sound editor tabs', desc: 'Navigation tab for sound editing' }"
-      value="sound"
-      color="sound"
-    >
-      <UITab v-radar="{ name: 'Sound tab', desc: 'Click to switch to sound editing view' }" value="sound">{{
-        $t({ en: 'Sound', zh: '声音' })
-      }}</UITab>
-    </UITabs>
-  </EditorHeader>
   <div class="main">
     <div class="header">
       <div class="name">
@@ -36,7 +25,7 @@
       @stop="handleStop"
       @play="handlePlay"
     />
-    <div class="opeartions">
+    <div class="operations">
       <PlayControl
         color="sound"
         :playing="playing != null"
@@ -70,20 +59,18 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { UIIcon, UITab, UITabs } from '@/components/ui'
-import type { Sound } from '@/models/spx/sound'
 import { useFileUrl } from '@/utils/file'
 import { stripExt } from '@/utils/path'
-import AssetName from '@/components/asset/AssetName.vue'
-import { useEditorCtx } from '../EditorContextProvider.vue'
-import EditorHeader from '../common/EditorHeader.vue'
-import PlayControl from '../common/PlayControl.vue'
-import VolumeSlider from './VolumeSlider.vue'
-import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
-import { UIButton } from '@/components/ui'
-import { useRenameSound } from '@/components/asset'
 import { formatDuration, useAudioDuration } from '@/utils/audio'
+import { fromBlob } from '@/models/common/file'
+import type { Sound } from '@/models/spx/sound'
+import { UIIcon, UIButton } from '@/components/ui'
+import { useRenameSound } from '@/components/asset'
+import AssetName from '@/components/asset/AssetName.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import PlayControl from '../../common/PlayControl.vue'
+import VolumeSlider from './VolumeSlider.vue'
 import { WaveformPlayer } from './waveform'
 
 const props = defineProps<{
@@ -180,6 +167,7 @@ const handleSave = useMessageHandle(
 
 <style scoped lang="scss">
 .main {
+  width: 100%;
   padding: 24px 20px;
   display: flex;
   flex-direction: column;
@@ -219,7 +207,7 @@ const handleSave = useMessageHandle(
   flex: 1 1 0;
 }
 
-.opeartions {
+.operations {
   display: flex;
 
   .volume-slider {
