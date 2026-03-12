@@ -26,7 +26,8 @@ import {
   getCodeFilePath,
   type WorkspaceDiagnostics,
   type TextDocumentDiagnostics,
-  fromLSPDiagnostic
+  fromLSPDiagnostic,
+  type Property
 } from './common'
 import { TextDocument } from './text-document'
 import { type Monaco } from './monaco'
@@ -330,6 +331,11 @@ export class CodeEditor extends Disposable {
     const edit = await this.lspClient.workspaceExecuteCommandXGoRenameResources({}, { resource, newName })
     if (edit == null) return
     this.applyWorkspaceEdit(edit)
+  }
+
+  /** Get properties for a given target */
+  async getProperties(target: string, signal?: AbortSignal): Promise<Property[]> {
+    return this.lspClient.getProperties({ signal }, target)
   }
 
   private uis: ICodeEditorUIController[] = []

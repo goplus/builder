@@ -72,15 +72,19 @@ async function triggerTransformerUpdate() {
   groupNodeRef.value?.getNode().fire('widthChange')
 }
 
+const minLabelTextWidth = 16 // px, minimum width when label is empty
+
 function updateLabelTextWidth() {
   if (labelTextRef.value == null) return
-  labelTextWidth.value = labelTextRef.value.getNode().getWidth()
+  labelTextWidth.value = Math.max(labelTextRef.value.getNode().getWidth(), minLabelTextWidth)
   triggerTransformerUpdate()
 }
 
+const minValueTextWidth = 32 // px, minimum width when variableName is empty
+
 function updateValueTextWidth() {
   if (valueTextRef.value == null) return
-  valueTextWidth.value = valueTextRef.value.getNode().getWidth()
+  valueTextWidth.value = Math.max(valueTextRef.value.getNode().getWidth(), minValueTextWidth)
   triggerTransformerUpdate()
 }
 
@@ -155,6 +159,10 @@ const labelValueSepWidth = 13 // px
 const labelValueSepGap = 2 // px, gap between [label, sep, value]
 const height = fontSize * lineHeight + paddingY * 2
 
+const labelSectionWidth = computed(() => {
+  return labelTextWidth.value + labelValueSepGap + labelValueSepWidth + labelValueSepGap
+})
+
 const groupConfig = computed<GroupConfig>(() => {
   const { visible, x, y, size } = configGetter.value
   return {
@@ -169,14 +177,7 @@ const groupConfig = computed<GroupConfig>(() => {
 })
 
 const rectConfig = computed<RectConfig>(() => {
-  const width =
-    paddingX +
-    labelTextWidth.value +
-    labelValueSepGap +
-    labelValueSepWidth +
-    labelValueSepGap +
-    valueTextWidth.value +
-    paddingX
+  const width = paddingX + labelSectionWidth.value + valueTextWidth.value + paddingX
   return {
     width,
     height,
@@ -216,11 +217,10 @@ const labelValueSepConfig = computed<ShapeConfig>(() => {
 })
 
 const valueBgConfig = computed<RectConfig>(() => {
-  const width = labelValueSepGap + valueTextWidth.value + paddingX
   return {
-    x: paddingX + labelTextWidth.value + labelValueSepGap + labelValueSepWidth,
+    x: paddingX + labelSectionWidth.value - labelValueSepGap,
     y: 0,
-    width,
+    width: labelValueSepGap + valueTextWidth.value + paddingX,
     height,
     fill: uiVariables.color.turquoise[200],
     cornerRadius: [0, 8, 8, 0]
@@ -228,10 +228,17 @@ const valueBgConfig = computed<RectConfig>(() => {
 })
 
 const valueTextConfig = computed<TextConfig>(() => {
-  const { variableName } = props.localConfig
+  const { target, variableName } = props.localConfig
+  let text: string
+  if (variableName === '') {
+    text = ''
+  } else {
+    const prefix = target !== '' ? `${target}.` : ''
+    text = `{${prefix}${variableName}}`
+  }
   return {
-    text: variableName === '' ? '   ' : `{${variableName}}`,
-    x: paddingX + labelTextWidth.value + labelValueSepGap + labelValueSepWidth + labelValueSepGap,
+    text,
+    x: paddingX + labelSectionWidth.value,
     y: paddingY,
     lineHeight,
     fill: uiVariables.color.blue.main

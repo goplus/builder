@@ -3,6 +3,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import * as Sentry from '@sentry/vue'
 import { Cancelled } from '@/utils/exception'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
+import Emitter from '@/utils/emitter'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
 import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
@@ -15,14 +16,21 @@ import {
   type TextDocumentIdentifier,
   containsPosition,
   type InputSlot,
+  type Property,
   type ILSPClient,
-  type RequestContext
+  type RequestContext,
+  type LSPClientEvents,
+  type PropertyRenamedEvent
 } from '../../xgo-code-editor'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
-import { xgoGetInputSlots, xgoRenameResources } from './spxls/commands'
+import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/commands'
+import { xgoPropertyRenamedNotification } from './spxls/notifications'
 import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } from './spxls/methods'
 import type { WorkerHandler } from './worker'
+
+/** The LSP target name for stage (the "Game" type in spx). */
+const lspStageTarget = 'Game'
 
 interface IConnectionWithFiles extends IConnection {
   sendFiles(files: SpxlsFiles): void
@@ -105,8 +113,19 @@ type TelemetryEventParamsForNotification = TelemetryEventBaseParams & {
 type TelemetryEventParams = TelemetryEventParamsForCall | TelemetryEventParamsForNotification
 
 export class SpxLSPClient extends Disposable implements ILSPClient {
+  private emitter = new Emitter<LSPClientEvents>()
+
   constructor(private project: SpxProject) {
     super()
+    this.addDisposable(this.emitter)
+  }
+
+  /**
+   * Register a handler for property rename events.
+   * The event's `target` is empty string for stage, or a sprite name.
+   */
+  onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void) {
+    return this.emitter.on('propertyRenamed', handler)
   }
 
   private connection: IConnectionWithFiles | undefined
@@ -159,6 +178,18 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     this.lcRef.value.onNotification(lsp.TelemetryEventNotification.method, (params) => {
       this.handleTelemetryEventNotification(params)
     })
+
+    // Register handler for property renamed notifications
+    this.lcRef.value.onNotification(
+      xgoPropertyRenamedNotification.method,
+      (params: xgoPropertyRenamedNotification.Params) => {
+        this.emitter.emit('propertyRenamed', {
+          target: params.target === lspStageTarget ? '' : params.target,
+          oldName: params.oldName,
+          newName: params.newName
+        })
+      }
+    )
   }
 
   dispose() {
@@ -236,6 +267,17 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     return this.executeCommand<xgoGetInputSlots.Arguments, xgoGetInputSlots.Result>(
       ctx,
       xgoGetInputSlots.command,
+      ...params
+    )
+  }
+
+  async workspaceExecuteCommandXGoGetProperties(
+    ctx: RequestContext,
+    ...params: xgoGetProperties.Arguments
+  ): Promise<xgoGetProperties.Result> {
+    return this.executeCommand<xgoGetProperties.Arguments, xgoGetProperties.Result>(
+      ctx,
+      xgoGetProperties.command,
       ...params
     )
   }
@@ -407,5 +449,11 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
       ...item,
       range: fromLSPRange(item.range)
     }))
+  }
+
+  /** Get properties for a given target (empty string for stage, sprite name otherwise) */
+  async getProperties(ctx: RequestContext, target: string): Promise<Property[]> {
+    const lspTarget = target === '' ? lspStageTarget : target
+    return this.workspaceExecuteCommandXGoGetProperties(ctx, { target: lspTarget })
   }
 }

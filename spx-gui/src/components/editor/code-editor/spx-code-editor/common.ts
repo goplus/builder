@@ -6,6 +6,7 @@
  */
 
 import type { ColorValue } from '@/utils/spx'
+import { capture } from '@/utils/exception'
 import type { SpxProject } from '@/models/spx/project'
 import { type ResourceModel, type ResourceType } from '@/models/spx/common/resource'
 import { Sprite } from '@/models/spx/sprite'
@@ -14,6 +15,7 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
 import { isWidget } from '@/models/spx/widget'
+import type { Monitor } from '@/models/spx/widget/monitor'
 import { Stage, stageCodeFilePaths } from '@/models/spx/stage'
 import {
   BuiltInInputType as XGoBuiltInInputType,
@@ -21,7 +23,8 @@ import {
   type ResourceContextURI,
   type ResourceIdentifier,
   type TextDocumentIdentifier,
-  getCodeFilePath
+  getCodeFilePath,
+  type Property
 } from '../xgo-code-editor'
 
 export type { ResourceModel }
@@ -251,3 +254,44 @@ export type SpxInputTypedValue =
     }
 
 export type InputValueForSpxType<T> = (SpxInputTypedValue & { type: T })['value']
+
+/** Get visible monitors whose variable binding is invalid */
+export async function getInvalidMonitors(
+  monitors: Monitor[],
+  spriteNames: Set<string>,
+  getProperties: (target: string, signal?: AbortSignal) => Promise<Property[]>,
+  signal?: AbortSignal
+): Promise<Monitor[]> {
+  const visibleMonitors = monitors.filter((m) => m.visible)
+  if (visibleMonitors.length === 0) return []
+
+  // Cache for successfully fetched properties of each target to avoid redundant LSP requests.
+  // Failed targets are not cached so they can be retried for subsequent monitors.
+  const propertyNamesMap = new Map<string, Set<string>>()
+  const invalidMonitors: Monitor[] = []
+  for (const monitor of visibleMonitors) {
+    if (monitor.variableName === '') {
+      invalidMonitors.push(monitor)
+      continue
+    }
+    if (monitor.target !== '' && !spriteNames.has(monitor.target)) {
+      invalidMonitors.push(monitor)
+      continue
+    }
+    let propertyNames = propertyNamesMap.get(monitor.target)
+    if (propertyNames == null) {
+      try {
+        const properties = await getProperties(monitor.target, signal)
+        propertyNames = new Set(properties.map((p) => p.name))
+        propertyNamesMap.set(monitor.target, propertyNames)
+      } catch (e) {
+        capture(e, `Failed to load properties for target: "${monitor.target}"`)
+        continue
+      }
+    }
+    if (!propertyNames.has(monitor.variableName)) {
+      invalidMonitors.push(monitor)
+    }
+  }
+  return invalidMonitors
+}

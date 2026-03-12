@@ -1,5 +1,5 @@
 import type * as lsp from 'vscode-languageserver-protocol'
-import type { Input, InputSlotKind, ResourceIdentifier, InputSlotAccept } from '../../../xgo-code-editor'
+import type { Input, InputSlotKind, Property, ResourceIdentifier, InputSlotAccept } from '../../../xgo-code-editor'
 
 export namespace xgoRenameResources {
   export const command = 'xgo.renameResources'
@@ -29,4 +29,14 @@ export namespace xgoGetInputSlots {
     range: lsp.Range
   }
   export type Result = XGoInputSlot[] | null
+}
+
+export namespace xgoGetProperties {
+  export const command = 'xgo.getProperties'
+  type XGoGetPropertiesParams = {
+    /** The target name, `Game` for stage or a specific sprite name. */
+    target: string
+  }
+  export type Arguments = [XGoGetPropertiesParams]
+  export type Result = Property[]
 }
