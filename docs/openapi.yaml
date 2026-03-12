@@ -883,6 +883,95 @@ paths:
         "204":
           description: Successfully deleted the asset.
 
+  /aigc/asset/description:
+    post:
+      tags:
+        - AIGC
+      summary: Generate asset description
+      description: |
+        Generate a description for an asset using AI based on the provided text prompt and image input.
+
+        This endpoint accepts multimodal input (text and image) to generate a contextual description
+        suitable for embedding and search operations. The text prompt typically includes the asset's
+        display name and additional context about how the description will be used.
+
+        #### Image requirements
+
+        - Format: PNG only (`image/png`)
+        - Maximum image size: 5 MB (after decoding the base64 content)
+        - Images must be provided as base64-encoded data URLs
+        - Other formats (SVG, JPEG, WebP) must be converted to PNG before sending
+
+        #### Quota & rate limits
+
+        - Each request consumes 1 quota from the authenticated user's AIGC allowance.
+        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: array
+                  description: Array of content items including text and image inputs.
+                  minItems: 1
+                  maxItems: 10
+                  items:
+                    oneOf:
+                      - $ref: "#/components/schemas/InputText"
+                      - $ref: "#/components/schemas/InputImage"
+                    discriminator:
+                      propertyName: type
+                      mapping:
+                        inputText: "#/components/schemas/InputText"
+                        inputImage: "#/components/schemas/InputImage"
+            examples:
+              tornado:
+                summary: Generate description for a tornado sprite
+                value:
+                  content:
+                    - type: inputText
+                      text: "Generate a description for a sprite named 'Tornado'."
+                    - type: inputImage
+                      imageUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+      responses:
+        "200":
+          description: Successfully generated description.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - description
+                properties:
+                  description:
+                    type: string
+                    description: The AI-generated description for the asset.
+                    examples:
+                      - "A powerful rotating column of air extending from a thunderstorm to the ground, characterized by its distinctive funnel shape and destructive force."
+        "400":
+          description: Invalid request parameters.
+        "401":
+          description: Unauthorized - authentication required.
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
+              schema:
+                type: integer
+
   /course:
     post:
       tags:
@@ -3523,6 +3612,59 @@ components:
           type: string
           examples:
             - z0
+
+    InputText:
+      description: Text input for multimodal content.
+      type: object
+      required:
+        - type
+        - text
+      additionalProperties: false
+      properties:
+        type:
+          description: Content type identifier.
+          type: string
+          enum:
+            - inputText
+          examples:
+            - inputText
+        text:
+          description: The text content.
+          type: string
+          maxLength: 2000
+          examples:
+            - "Generate a description for a sprite named 'Tornado'."
+
+    InputImage:
+      description: Image input for multimodal content.
+      type: object
+      required:
+        - type
+        - imageUrl
+      additionalProperties: false
+      properties:
+        type:
+          description: Content type identifier.
+          type: string
+          enum:
+            - inputImage
+          examples:
+            - inputImage
+        imageUrl:
+          description: |
+            Base64-encoded PNG image data URL.
+
+            All images must be provided as PNG format. If you have images in other formats (SVG, JPEG, WebP),
+            convert them to PNG before sending.
+
+            Maximum image size: 5 MB (after decoding the base64 content).
+
+            Format: `data:image/png;base64,<base64_data>`
+          type: string
+          format: uri
+          maxLength: 7000000
+          examples:
+            - "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
     ByPage:
       description: Paginated response wrapper.
