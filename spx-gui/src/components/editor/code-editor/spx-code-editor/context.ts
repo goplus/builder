@@ -44,6 +44,11 @@ export function useProvideCodeEditorCtx(editorStateRet: QueryRet<SpxEditorState>
       const lspClient = new SpxLSPClient(spxProject)
       // Listen to property rename events to update monitor widgets that reference the renamed variable.
       lspClient.onPropertyRenamed(({ target, oldName, newName }) => {
+        // NOTE: No need to go through history.doAction here. This event is a side effect of
+        // a rename action that already has its own history entry. History is snapshot-based, so
+        // undo/redo will restore the full model state (including monitor variableName) correctly.
+        // P.S. The LSP server ensures the notification fires before the rename response,
+        // so this runs before the history snapshot is taken — no risk of interleaving changes.
         for (const widget of spxProject.stage.widgets) {
           if (widget.type === 'monitor' && widget.target === target && widget.variableName === oldName) {
             widget.setVariableName(newName)
