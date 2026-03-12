@@ -1,4 +1,4 @@
-import { effectScope, reactive, toRaw, watch } from 'vue'
+import { effectScope, ref, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
 import type { SpxProject } from '@/models/spx/project'
@@ -42,57 +42,56 @@ export class Runtime extends Emitter<{
   static readonly maxMaxOutputs = 10_000
   static readonly outputChangeEventThrottleMs = 16
 
-  running: RunningState = { mode: 'none' }
+  private runningRef = shallowRef<RunningState>({ mode: 'none' })
+  private filesHashRef = ref<string | null>(null)
+  private maxOutputsRef = ref(Runtime.defaultMaxOutputs)
+  private outputsRef = shallowRef<RuntimeOutput[]>([])
+
+  get running() {
+    return this.runningRef.value
+  }
+
+  get filesHash() {
+    return this.filesHashRef.value
+  }
+
+  get maxOutputs() {
+    return this.maxOutputsRef.value
+  }
+
+  /** Public output snapshot, updated together with `didChangeOutput` for batched UI consumption. */
+  get outputs(): readonly RuntimeOutput[] {
+    return this.outputsRef.value
+  }
 
   setRunning(running: RunningState, filesHash?: string) {
-    this.running = running
+    this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
       const nextHash = filesHash ?? this.filesHash
       if (nextHash == null) throw new Error('filesHash is required when running in debug mode')
-      this.filesHash = nextHash
+      this.filesHashRef.value = nextHash
     }
   }
 
-  /** Project files' hash of last debugging */
-  filesHash: string | null = null
-  maxOutputs = Runtime.defaultMaxOutputs
   private nextOutputId = 0
   private outputRing: Array<RuntimeOutput | null> = []
   private outputHead = 0
   private outputCount = 0
-  private outputChangeTick = 0
-  private outputsCache: RuntimeOutput[] = []
-  private outputsCacheDirty = true
   private outputChangeEventTimer: ReturnType<typeof setTimeout> | null = null
 
-  private trackOutputChangeTick() {
-    return this.outputChangeTick
-  }
-
-  /** Outputs of last debugging, from oldest to latest. */
-  get outputs(): readonly RuntimeOutput[] {
-    // Depend on a throttled reactive tick only, so `addOutput` can be batched.
-    this.trackOutputChangeTick()
-    const rawThis = toRaw(this) as this
-    if (!rawThis.outputsCacheDirty) return rawThis.outputsCache
+  private syncOutputs() {
     const outputs: RuntimeOutput[] = []
-    for (let i = 0; i < rawThis.outputCount; i++) {
-      const idx = (rawThis.outputHead + i) % rawThis.maxOutputs
-      const output = rawThis.outputRing[idx]
+    for (let i = 0; i < this.outputCount; i++) {
+      const idx = (this.outputHead + i) % this.maxOutputs
+      const output = this.outputRing[idx]
       if (output != null) outputs.push(output)
     }
-    rawThis.outputsCache = outputs
-    rawThis.outputsCacheDirty = false
-    return rawThis.outputsCache
-  }
-
-  private invalidateOutputsCache() {
-    this.outputsCacheDirty = true
+    this.outputsRef.value = outputs
   }
 
   private flushDidChangeOutput() {
     this.outputChangeEventTimer = null
-    this.outputChangeTick += 1
+    this.syncOutputs()
     this.emit('didChangeOutput')
   }
 
@@ -126,7 +125,6 @@ export class Runtime extends Emitter<{
     this.outputRing.fill(null, outputs.length)
     this.outputHead = 0
     this.outputCount = outputs.length
-    this.invalidateOutputsCache()
   }
 
   setMaxOutputs(limit: number) {
@@ -134,7 +132,7 @@ export class Runtime extends Emitter<{
     const nextLimit = Math.min(Math.max(1, Math.floor(limit)), Runtime.maxMaxOutputs)
     if (this.maxOutputs === nextLimit) return
     const preservedOutputs = this.getRecentOutputs(nextLimit)
-    this.maxOutputs = nextLimit
+    this.maxOutputsRef.value = nextLimit
     this.resetOutputs(preservedOutputs)
     this.emitDidChangeOutput({ immediate: true })
   }
@@ -149,7 +147,6 @@ export class Runtime extends Emitter<{
       this.outputRing[this.outputHead] = nextOutput
       this.outputHead = (this.outputHead + 1) % this.maxOutputs
     }
-    this.invalidateOutputsCache()
     this.emitDidChangeOutput()
   }
 
@@ -157,15 +154,11 @@ export class Runtime extends Emitter<{
     this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
-    this.outputsCache = []
-    this.outputsCacheDirty = false
     this.emitDidChangeOutput({ immediate: true })
   }
 
   constructor(private project: SpxProject) {
     super()
-
-    const reactiveThis = reactive(this) as this
 
     // Use detached scope to prevent vue component setup from capturing watch-effects below, which are expected to be handled by `Runtime` itself.
     // If not, error `TypeError: Cannot read properties of undefined (reading 'stop')` will be thrown when component unmounted.
@@ -173,21 +166,19 @@ export class Runtime extends Emitter<{
     const scope = effectScope(true)
     scope.run(() => {
       watch(
-        () => reactiveThis.project.exportFiles(),
+        () => this.project.exportFiles(),
         async () => {
-          await until(() => reactiveThis.running.mode !== 'debug')
-          reactiveThis.clearOutputs()
+          await until(() => this.running.mode !== 'debug')
+          this.clearOutputs()
         }
       )
     })
-    reactiveThis.addDisposer(() => {
-      if (reactiveThis.outputChangeEventTimer != null) {
-        clearTimeout(reactiveThis.outputChangeEventTimer)
-        reactiveThis.outputChangeEventTimer = null
+    this.addDisposer(() => {
+      if (this.outputChangeEventTimer != null) {
+        clearTimeout(this.outputChangeEventTimer)
+        this.outputChangeEventTimer = null
       }
     })
-    reactiveThis.addDisposer(() => scope.stop())
-
-    return reactiveThis
+    this.addDisposer(() => scope.stop())
   }
 }
