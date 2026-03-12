@@ -883,6 +883,90 @@ paths:
         "204":
           description: Successfully deleted the asset.
 
+  /asset/description:
+    post:
+      tags:
+        - Assets
+      summary: Generate asset description
+      description: |
+        Generate a description for an asset using AI based on the display name and an image.
+
+        This endpoint accepts multimodal input (text and image) to generate a contextual description
+        suitable for embedding and search operations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: array
+                  description: Array of content items including text and image inputs.
+                  minItems: 1
+                  items:
+                    oneOf:
+                      - type: object
+                        required:
+                          - type
+                          - text
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - input_text
+                            description: Content type identifier for text input.
+                          text:
+                            type: string
+                            description: The text content describing the asset context.
+                      - type: object
+                        required:
+                          - type
+                          - image_url
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                              - input_image
+                            description: Content type identifier for image input.
+                          image_url:
+                            type: string
+                            format: uri
+                            description: |
+                              Base64-encoded image data URL.
+
+                              Format: `data:image/png;base64,<base64_data>`
+            examples:
+              tornado:
+                summary: Generate description for a tornado sprite
+                value:
+                  content:
+                    - type: input_text
+                      text: "这个图片的 displayname是：龙卷风，给他加一条描述信息，这个描述信息，会用于我做 embedding 识别。"
+                    - type: input_image
+                      image_url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+      responses:
+        "200":
+          description: Successfully generated description.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - description
+                properties:
+                  description:
+                    type: string
+                    description: The AI-generated description for the asset.
+                    examples:
+                      - "龙卷风是一种强烈的旋转气流现象，通常呈漏斗状，具有极大的破坏力。"
+        "400":
+          description: Invalid request parameters.
+        "401":
+          description: Unauthorized - authentication required.
+
   /course:
     post:
       tags:
