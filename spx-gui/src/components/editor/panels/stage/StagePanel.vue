@@ -3,36 +3,18 @@
     <!-- TODO: use UICardHeader? -->
     <h4 class="header">{{ $t({ en: 'Stage', zh: '舞台' }) }}</h4>
     <main class="main">
-      <div
-        v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
-        class="overview"
-        :class="{ active }"
-        @click="activate"
-      >
-        <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
+      <div class="stages">
+        <div
+          v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
+          class="overview"
+          :class="{ active }"
+          @click="activate"
+        >
+          <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
+        </div>
       </div>
       <UIDivider />
       <div class="quick-actions">
-        <button
-          v-radar="{ name: 'Widgets quick entry', desc: 'Quick entry to open widgets management tab in stage editor' }"
-          class="quick-btn"
-          type="button"
-          @click="openTab('widgets')"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <span class="icon" v-html="widgetSvg"></span>
-          <span>{{ $t({ en: 'Widgets', zh: '控件' }) }}</span>
-        </button>
-        <button
-          v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
-          class="quick-btn"
-          type="button"
-          @click="openTab('sounds')"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <span class="icon" v-html="soundSvg"></span>
-          <span>{{ $t({ en: 'Sounds', zh: '声音' }) }}</span>
-        </button>
         <button
           v-radar="{
             name: 'Backdrops quick entry',
@@ -45,6 +27,26 @@
           <!-- eslint-disable-next-line vue/no-v-html -->
           <span class="icon" v-html="backdropSvg"></span>
           <span>{{ $t({ en: 'Backdrops', zh: '背景' }) }}</span>
+        </button>
+        <button
+          v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
+          class="quick-btn"
+          type="button"
+          @click="openTab('sounds')"
+        >
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <span class="icon" v-html="soundSvg"></span>
+          <span>{{ $t({ en: 'Sounds', zh: '声音' }) }}</span>
+        </button>
+        <button
+          v-radar="{ name: 'Widgets quick entry', desc: 'Quick entry to open widgets management tab in stage editor' }"
+          class="quick-btn"
+          type="button"
+          @click="openTab('widgets')"
+        >
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <span class="icon" v-html="widgetSvg"></span>
+          <span>{{ $t({ en: 'Widgets', zh: '控件' }) }}</span>
         </button>
       </div>
     </main>
@@ -69,7 +71,7 @@ function activate() {
   editorCtx.state.select({ type: 'stage' })
 }
 
-function openTab(type: Extract<SelectedType, 'widgets' | 'sounds' | 'backdrops'>) {
+function openTab(type: Extract<SelectedType, 'backdrops' | 'sounds' | 'widgets'>) {
   editorCtx.state.select({ type: 'stage' })
   editorCtx.state.stageState.select(type)
 }
@@ -83,8 +85,13 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
 
 <style scoped lang="scss">
 .stage-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
   .header {
-    height: 44px;
+    flex: 0 0 44px;
     width: 80px;
     display: flex;
     justify-content: center;
@@ -104,6 +111,8 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
   }
 
   .main {
+    flex: 1 1 0;
+    overflow-y: auto;
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -119,6 +128,9 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
   position: relative;
   border-radius: var(--ui-border-radius-1);
   background-color: var(--ui-color-grey-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 
   &:not(.active):hover {
@@ -127,15 +139,15 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
 
   &.active {
     padding: 0;
-    background-color: var(--ui-color-grey-400);
+    background-color: var(--ui-color-blue-200);
     border: 2px solid var(--ui-color-stage-main);
   }
 
   .img {
-    width: 100%;
-    height: 100%;
+    width: 44px;
+    height: 44px;
+    border-radius: 4px;
     object-fit: cover;
-    border-radius: 6px;
   }
 }
 
@@ -147,7 +159,7 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
   .quick-btn {
     width: 56px;
     height: 56px;
-    border-radius: 8px;
+    border-radius: var(--ui-border-radius-1);
     background-color: var(--ui-color-grey-300);
     border: none;
     outline: none;
