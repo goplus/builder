@@ -43,11 +43,9 @@ export class Runtime extends Emitter<{
   didExit: number
 }> {
   static readonly defaultMaxOutputs = 500
-  static readonly maxMaxOutputs = 10_000
 
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
-  private maxOutputsRef = ref(Runtime.defaultMaxOutputs)
   private outputsRef = shallowRef<RuntimeOutput[]>([])
 
   get running() {
@@ -59,7 +57,7 @@ export class Runtime extends Emitter<{
   }
 
   get maxOutputs() {
-    return this.maxOutputsRef.value
+    return Runtime.defaultMaxOutputs
   }
 
   /** Public output snapshot, updated together with `didChangeOutput` for batched UI consumption. */
@@ -130,35 +128,6 @@ export class Runtime extends Emitter<{
     }
     if (this.scheduledOutputFlush != null) return
     this.scheduleDidChangeOutput()
-  }
-
-  private getRecentOutputs(limit: number) {
-    const count = Math.min(limit, this.outputCount)
-    const outputs: RuntimeOutput[] = []
-    for (let i = this.outputCount - count; i < this.outputCount; i++) {
-      const idx = (this.outputHead + i) % this.maxOutputs
-      const output = this.outputRing[idx]
-      if (output != null) outputs.push(output)
-    }
-    return outputs
-  }
-
-  private resetOutputs(outputs: RuntimeOutput[]) {
-    this.outputRing.splice(0, this.outputRing.length, ...outputs)
-    this.outputRing.length = this.maxOutputs
-    this.outputRing.fill(null, outputs.length)
-    this.outputHead = 0
-    this.outputCount = outputs.length
-  }
-
-  setMaxOutputs(limit: number) {
-    if (!Number.isFinite(limit)) return
-    const nextLimit = Math.min(Math.max(1, Math.floor(limit)), Runtime.maxMaxOutputs)
-    if (this.maxOutputs === nextLimit) return
-    const preservedOutputs = this.getRecentOutputs(nextLimit)
-    this.maxOutputsRef.value = nextLimit
-    this.resetOutputs(preservedOutputs)
-    this.emitDidChangeOutput({ immediate: true })
   }
 
   addOutput(output: RuntimeOutputDraft) {

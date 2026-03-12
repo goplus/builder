@@ -41,71 +41,42 @@ function withMockedAnimationFrame() {
 }
 
 describe('Runtime', () => {
-  it('should keep latest outputs within max size and assign stable ids', () => {
+  it('should keep latest outputs within default max size and assign stable ids', () => {
     vi.useFakeTimers()
     withMockedAnimationFrame()
     const runtime = makeRuntime()
-    runtime.setMaxOutputs(2)
 
-    appendLog(runtime, 'output-1')
-    appendLog(runtime, 'output-2')
-    appendLog(runtime, 'output-3')
+    for (let i = 0; i < Runtime.defaultMaxOutputs + 1; i++) {
+      appendLog(runtime, `output-${i}`)
+    }
     flushOutputs()
 
-    expect(runtime.outputs.map((item) => item.message)).toEqual(['output-2', 'output-3'])
-    expect(runtime.outputs.map((item) => item.id)).toEqual([1, 2])
+    expect(runtime.outputs.length).toBe(Runtime.defaultMaxOutputs)
+    expect(runtime.outputs[0].message).toBe('output-1')
+    expect(runtime.outputs.at(-1)?.message).toBe(`output-${Runtime.defaultMaxOutputs}`)
+    expect(runtime.outputs[0].id).toBe(1)
+    expect(runtime.outputs.at(-1)?.id).toBe(Runtime.defaultMaxOutputs)
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 
-  it('should trim existing outputs immediately after max size changes', () => {
+  it('should expose fixed default max outputs', () => {
+    const runtime = makeRuntime()
+    expect(runtime.maxOutputs).toBe(Runtime.defaultMaxOutputs)
+  })
+
+  it('should keep output order after ring wraps', () => {
     vi.useFakeTimers()
     withMockedAnimationFrame()
     const runtime = makeRuntime()
 
-    appendLog(runtime, 'output-1')
-    appendLog(runtime, 'output-2')
-    appendLog(runtime, 'output-3')
-    appendLog(runtime, 'output-4')
+    for (let i = 0; i < Runtime.defaultMaxOutputs + 3; i++) {
+      appendLog(runtime, `output-${i}`)
+    }
     flushOutputs()
-
-    runtime.setMaxOutputs(3)
-    expect(runtime.outputs.map((item) => item.message)).toEqual(['output-2', 'output-3', 'output-4'])
-
-    runtime.setMaxOutputs(2)
-    expect(runtime.outputs.map((item) => item.message)).toEqual(['output-3', 'output-4'])
-    vi.useRealTimers()
-    vi.unstubAllGlobals()
-  })
-
-  it('should clamp max outputs to a safe upper bound', () => {
-    const runtime = makeRuntime()
-
-    runtime.setMaxOutputs(999_999_999)
-    expect(runtime.maxOutputs).toBe(10_000)
-  })
-
-  it('should keep output order after ring wraps and max size changes', () => {
-    vi.useFakeTimers()
-    withMockedAnimationFrame()
-    const runtime = makeRuntime()
-    runtime.setMaxOutputs(3)
-
-    appendLog(runtime, 'output-1')
-    appendLog(runtime, 'output-2')
-    appendLog(runtime, 'output-3')
-    appendLog(runtime, 'output-4')
-    appendLog(runtime, 'output-5')
-    flushOutputs()
-    expect(runtime.outputs.map((item) => item.message)).toEqual(['output-3', 'output-4', 'output-5'])
-
-    runtime.setMaxOutputs(2)
-    expect(runtime.outputs.map((item) => item.message)).toEqual(['output-4', 'output-5'])
-
-    runtime.setMaxOutputs(4)
-    appendLog(runtime, 'output-6')
-    flushOutputs()
-    expect(runtime.outputs.map((item) => item.message)).toEqual(['output-4', 'output-5', 'output-6'])
+    expect(runtime.outputs.length).toBe(Runtime.defaultMaxOutputs)
+    expect(runtime.outputs[0].message).toBe('output-3')
+    expect(runtime.outputs.at(-1)?.message).toBe(`output-${Runtime.defaultMaxOutputs + 2}`)
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })
@@ -124,7 +95,7 @@ describe('Runtime', () => {
     vi.unstubAllGlobals()
   })
 
-  it('should throttle didChangeOutput for addOutput and keep clear/setMax immediate', () => {
+  it('should throttle didChangeOutput for addOutput and keep clear immediate', () => {
     vi.useFakeTimers()
     withMockedAnimationFrame()
     const runtime = makeRuntime()
@@ -141,10 +112,6 @@ describe('Runtime', () => {
 
     runtime.clearOutputs()
     expect(changeCount).toBe(2)
-
-    appendLog(runtime, 'output-3')
-    runtime.setMaxOutputs(200)
-    expect(changeCount).toBe(3)
 
     vi.useRealTimers()
     vi.unstubAllGlobals()
