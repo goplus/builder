@@ -2,6 +2,7 @@
  * @file Simple, Type-safe Event Emitter
  */
 
+import { markRaw } from 'vue'
 import { Disposable } from './disposable'
 
 export type EventType = string
@@ -11,7 +12,8 @@ export type Handler<T = unknown> = (event: T) => void
 export type Off = () => void
 
 export default class Emitter<Events extends Record<EventType, unknown>> extends Disposable {
-  private map = new Map<keyof Events, Handler[]>()
+  // We use `markRaw` to prevent Vue from making `map` reactive, which may cause unexpected dependency collection & triggering.
+  private map = markRaw(new Map<keyof Events, Handler[]>())
 
   on<Type extends keyof Events>(type: Type, handler: Handler<Events[Type]>): Off {
     const handlers = this.map.get(type) ?? []
