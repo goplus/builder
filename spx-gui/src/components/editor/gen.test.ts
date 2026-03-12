@@ -80,7 +80,7 @@ describe('GenState', () => {
       const project = makeSpxProject()
       const genState = new GenState(i18n, project)
 
-      const backdropGen = new BackdropGen(project, {
+      const backdropGen = new BackdropGen(i18n, project, {
         settings: { name: '' }
       })
 
@@ -94,12 +94,12 @@ describe('GenState', () => {
       const project = makeSpxProject()
       const genState = new GenState(i18n, project)
 
-      const backdropGen1 = new BackdropGen(project, {
+      const backdropGen1 = new BackdropGen(i18n, project, {
         settings: { name: 'forest' }
       })
       genState.addBackdrop(backdropGen1)
 
-      const backdropGen2 = new BackdropGen(project, {
+      const backdropGen2 = new BackdropGen(i18n, project, {
         settings: { name: 'forest' }
       })
       genState.addBackdrop(backdropGen2)
@@ -115,9 +115,9 @@ describe('GenState', () => {
       const genState = new GenState(i18n, project)
 
       const backdropGens = [
-        new BackdropGen(project, { settings: { name: 'castle' } }),
-        new BackdropGen(project, { settings: { name: 'castle' } }),
-        new BackdropGen(project, { settings: { name: 'castle' } })
+        new BackdropGen(i18n, project, { settings: { name: 'castle' } }),
+        new BackdropGen(i18n, project, { settings: { name: 'castle' } }),
+        new BackdropGen(i18n, project, { settings: { name: 'castle' } })
       ]
 
       backdropGens.forEach((gen) => genState.addBackdrop(gen))

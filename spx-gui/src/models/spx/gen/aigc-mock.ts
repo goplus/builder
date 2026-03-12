@@ -85,15 +85,24 @@ export class MockAigcApis {
   private taskHandlers = new Map<TaskType, TaskHandler>()
 
   mock() {
-    vi.mocked(aigcApis.enrichBackdropSettings).mockImplementation(this.enrichBackdropSettings.bind(this))
-    vi.mocked(aigcApis.enrichCostumeSettings).mockImplementation(this.enrichCostumeSettings.bind(this))
-    vi.mocked(aigcApis.enrichAnimationSettings).mockImplementation(this.enrichAnimationSettings.bind(this))
-    vi.mocked(aigcApis.enrichSpriteSettings).mockImplementation(this.enrichSpriteSettings.bind(this))
-    vi.mocked(aigcApis.genSpriteContentSettings).mockImplementation(this.genSpriteContentSettings.bind(this))
-    vi.mocked(aigcApis.createTask).mockImplementation(this.createTask.bind(this))
-    vi.mocked(aigcApis.getTask).mockImplementation(this.getTask.bind(this))
-    vi.mocked(aigcApis.cancelTask).mockImplementation(this.cancelTask.bind(this))
-    vi.mocked(aigcApis.subscribeTaskEvents).mockImplementation(this.subscribeTaskEvents.bind(this))
+    this.enrichBackdropSettings = vi.fn(this.enrichBackdropSettings.bind(this))
+    vi.mocked(aigcApis.enrichBackdropSettings).mockImplementation(this.enrichBackdropSettings)
+    this.enrichCostumeSettings = vi.fn(this.enrichCostumeSettings.bind(this))
+    vi.mocked(aigcApis.enrichCostumeSettings).mockImplementation(this.enrichCostumeSettings)
+    this.enrichAnimationSettings = vi.fn(this.enrichAnimationSettings.bind(this))
+    vi.mocked(aigcApis.enrichAnimationSettings).mockImplementation(this.enrichAnimationSettings)
+    this.enrichSpriteSettings = vi.fn(this.enrichSpriteSettings.bind(this))
+    vi.mocked(aigcApis.enrichSpriteSettings).mockImplementation(this.enrichSpriteSettings)
+    this.genSpriteContentSettings = vi.fn(this.genSpriteContentSettings.bind(this))
+    vi.mocked(aigcApis.genSpriteContentSettings).mockImplementation(this.genSpriteContentSettings)
+    this.createTask = vi.fn(this.createTask.bind(this))
+    vi.mocked(aigcApis.createTask).mockImplementation(this.createTask)
+    this.getTask = vi.fn(this.getTask.bind(this))
+    vi.mocked(aigcApis.getTask).mockImplementation(this.getTask)
+    this.cancelTask = vi.fn(this.cancelTask.bind(this))
+    vi.mocked(aigcApis.cancelTask).mockImplementation(this.cancelTask)
+    this.subscribeTaskEvents = vi.fn(this.subscribeTaskEvents.bind(this))
+    vi.mocked(aigcApis.subscribeTaskEvents).mockImplementation(this.subscribeTaskEvents)
     vi.mocked(aigcApis.adoptAsset).mockResolvedValue()
   }
 
@@ -102,6 +111,7 @@ export class MockAigcApis {
     this.tasks.clear()
     this.errorInjections.clear()
     this.taskHandlers.clear()
+    vi.clearAllMocks()
   }
 
   registerTaskHandler<T extends TaskType>(type: T, handler: TaskHandler<T>) {
@@ -133,7 +143,8 @@ export class MockAigcApis {
   async enrichBackdropSettings(
     input: string,
     settings?: BackdropSettings,
-    _projectSettings?: ProjectSettings
+    _projectSettings?: ProjectSettings,
+    _lang?: aigcApis.Lang
   ): Promise<BackdropSettings> {
     this.checkAndThrowError('enrichBackdropSettings')
     return this.enrichAssetSettings(AIGCAssetType.Backdrop, input, settings) as BackdropSettings
@@ -143,7 +154,8 @@ export class MockAigcApis {
     input: string,
     settings?: CostumeSettings,
     _spriteSettings?: SpriteSettings,
-    _projectSettings?: ProjectSettings
+    _projectSettings?: ProjectSettings,
+    _lang?: aigcApis.Lang
   ): Promise<CostumeSettings> {
     this.checkAndThrowError('enrichCostumeSettings')
     return this.enrichAssetSettings(AIGCAssetType.Costume, input, settings) as CostumeSettings
@@ -153,7 +165,8 @@ export class MockAigcApis {
     input: string,
     settings?: AnimationSettings,
     _spriteSettings?: SpriteSettings,
-    _projectSettings?: ProjectSettings
+    _projectSettings?: ProjectSettings,
+    _lang?: aigcApis.Lang
   ): Promise<AnimationSettings> {
     this.checkAndThrowError('enrichAnimationSettings')
     return this.enrichAssetSettings(AIGCAssetType.Animation, input, settings) as AnimationSettings
@@ -162,13 +175,14 @@ export class MockAigcApis {
   async enrichSpriteSettings(
     input: string,
     settings?: SpriteSettings,
-    _projectSettings?: ProjectSettings
+    _projectSettings?: ProjectSettings,
+    _lang?: aigcApis.Lang
   ): Promise<SpriteSettings> {
     this.checkAndThrowError('enrichSpriteSettings')
     return this.enrichAssetSettings(AIGCAssetType.Sprite, input, settings) as SpriteSettings
   }
 
-  async genSpriteContentSettings(settings: SpriteSettings): Promise<SpriteContentSettings> {
+  async genSpriteContentSettings(settings: SpriteSettings, _lang?: aigcApis.Lang): Promise<SpriteContentSettings> {
     this.checkAndThrowError('genSpriteContentSettings')
     return {
       costumes: [

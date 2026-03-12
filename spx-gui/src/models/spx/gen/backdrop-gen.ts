@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import type { Prettify } from '@/utils/types'
+import type { I18n } from '@/utils/i18n'
 import { extname } from '@/utils/path'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
 import {
@@ -50,14 +51,16 @@ function assetsPathFor(name: string) {
 
 export class BackdropGen extends Disposable {
   id: string
+  private i18n: I18n
   private project: SpxProject
   private enrichPhase: Phase<BackdropSettings>
   private generateTask: Task<TaskType.GenerateBackdrop> | null
   private generatePhase: Phase<File[]>
 
-  constructor(project: SpxProject, inits: BackdropGenInits = {}) {
+  constructor(i18n: I18n, project: SpxProject, inits: BackdropGenInits = {}) {
     super()
     this.id = inits.id ?? nanoid()
+    this.i18n = i18n
     this.project = project
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich backdrop settings', zh: '丰富背景设置' })
     this.generateTask = inits.generateTask ?? null
@@ -94,7 +97,12 @@ export class BackdropGen extends Disposable {
   }
   async enrich() {
     const draft = await this.enrichPhase.track(
-      enrichBackdropSettings(this.settings.description, this.settings, getProjectSettings(this.project))
+      enrichBackdropSettings(
+        this.settings.description,
+        this.settings,
+        getProjectSettings(this.project),
+        this.i18n.lang.value
+      )
     )
     this.setSettings(draft)
   }
@@ -230,12 +238,12 @@ export class BackdropGen extends Disposable {
     return files
   }
 
-  static async loadAll(project: SpxProject, files: Files) {
+  static async loadAll(i18n: I18n, project: SpxProject, files: Files) {
     const names = listDirs(files, backdropGenAssetPath)
-    return Promise.all(names.map((name) => BackdropGen.load(name, project, files)))
+    return Promise.all(names.map((name) => BackdropGen.load(name, i18n, project, files)))
   }
 
-  static async load(name: string, project: SpxProject, files: Files) {
+  static async load(name: string, i18n: I18n, project: SpxProject, files: Files) {
     const configFile = files[`${backdropGenAssetPath}/${name}/${backdropGenConfigFileName}`]
     if (configFile == null) throw new Error(`config file not found for backdrop gen ${name}`)
     const config = (await toConfig(configFile)) as RawBackdropGenConfig
@@ -258,7 +266,7 @@ export class BackdropGen extends Disposable {
       )
     }
     if (resultConfig != null) inits.result = Backdrop.load(resultConfig, files, { assetPath: `${assetsPath}/result` })
-    const gen = new BackdropGen(project, inits)
+    const gen = new BackdropGen(i18n, project, inits)
     gen.restoreGenerateTask()
     return gen
   }

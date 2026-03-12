@@ -2321,6 +2321,15 @@ paths:
                 projectSettings:
                   description: Optional project settings to provide context for enrichment.
                   $ref: "#/components/schemas/AIGCProjectSettings"
+                lang:
+                  description: |
+                    Language the AI should use for all generated text (names, descriptions, etc.).
+                    When provided, the output strictly follows this language regardless of the input language.
+                    When omitted, the AI infers language from the user input.
+                  type: string
+                  enum:
+                    - en
+                    - zh
       responses:
         "200":
           description: Successfully enriched settings.
@@ -2370,6 +2379,15 @@ paths:
               properties:
                 settings:
                   $ref: "#/components/schemas/AIGCSpriteSettings"
+                lang:
+                  description: |
+                    Language the AI should use for all generated text (names, descriptions, etc.).
+                    When provided, the output strictly follows this language regardless of the input language.
+                    When omitted, the AI infers language from the user input.
+                  type: string
+                  enum:
+                    - en
+                    - zh
       responses:
         "200":
           description: Successfully generated content settings.

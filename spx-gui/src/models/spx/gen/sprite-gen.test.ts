@@ -226,6 +226,19 @@ describe('SpriteGen', () => {
     expect(gen.enrichState.result?.description).toContain('Second description')
   })
 
+  it('should forward ui language to enrich and sprite content apis', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(createI18n({ lang: 'zh' }), project, 'A test sprite')
+
+    await gen.enrich()
+    expect(vi.mocked(aigcMock.enrichSpriteSettings).mock.calls.at(-1)?.[3]).toBe('zh')
+
+    await gen.genImages()
+    gen.setImageIndex(0)
+    await gen.prepareContent()
+    expect(vi.mocked(aigcMock.genSpriteContentSettings).mock.calls.at(-1)?.[1]).toBe('zh')
+  })
+
   it('should allow multiple image generations', async () => {
     const project = makeSpxProject()
     const gen = new SpriteGen(createI18n({ lang: 'en' }), project, 'A test sprite')

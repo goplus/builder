@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { ArtStyle, Perspective } from '@/apis/common'
+import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
 import { Facing, TaskStatus, TaskType } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { sndConfig, sndFiles } from '@/models/common/test'
 import { makeSpxProject } from '../common/test'
-import { setupAigcMock } from './aigc-mock'
 import { Sprite } from '../sprite'
+import { createI18n } from '@/utils/i18n'
 import { CostumeGen } from './costume-gen'
 
 const aigcMock = setupAigcMock()
+const i18n = createI18n({ lang: 'en' })
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
 
 describe('CostumeGen', () => {
@@ -23,7 +25,7 @@ describe('CostumeGen', () => {
     project.addSprite(sprite)
 
     // 1. Create CostumeGen with initial settings
-    const gen = new CostumeGen(sprite, project, {
+    const gen = new CostumeGen(i18n, sprite, project, {
       settings: { description: 'A red cape costume' }
     })
     expect(gen.settings.description).toBe('A red cape costume')
@@ -61,7 +63,7 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'A test costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'A test costume' } })
 
     // First enrich attempt fails
     aigcMock.injectErrorOnce('enrichCostumeSettings', new Error('Network error'))
@@ -88,7 +90,7 @@ describe('CostumeGen', () => {
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
 
-    const gen1 = new CostumeGen(sprite, project, { settings: { description: 'First costume' } })
+    const gen1 = new CostumeGen(i18n, sprite, project, { settings: { description: 'First costume' } })
     await gen1.enrich()
     gen1.setSettings({ name: 'costume-1' })
     await gen1.generate()
@@ -96,7 +98,7 @@ describe('CostumeGen', () => {
     sprite.addCostume(costume1)
 
     // Create another gen with duplicate name should fail
-    const gen2 = new CostumeGen(sprite, project, { settings: { description: 'Second costume' } })
+    const gen2 = new CostumeGen(i18n, sprite, project, { settings: { description: 'Second costume' } })
     await gen2.enrich()
     expect(() => gen2.setName('costume-1')).toThrow()
   })
@@ -105,7 +107,7 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'A test costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'A test costume' } })
 
     await gen.enrich()
 
@@ -117,7 +119,7 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'First description' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'First description' } })
 
     await gen.enrich()
     expect(gen.enrichState.result?.description).toContain('First description')
@@ -127,11 +129,23 @@ describe('CostumeGen', () => {
     expect(gen.enrichState.result?.description).toContain('Second description')
   })
 
+  it('should forward ui language to enrich api', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    project.addSprite(sprite)
+    const gen = new CostumeGen(createI18n({ lang: 'zh' }), sprite, project, {
+      settings: { description: 'A test costume' }
+    })
+
+    await gen.enrich()
+    expect(vi.mocked(aigcMock.enrichCostumeSettings).mock.calls.at(-1)?.[4]).toBe('zh')
+  })
+
   it('should allow multiple generations', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'A test costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'A test costume' } })
 
     await gen.enrich()
 
@@ -150,7 +164,7 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'A test costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'A test costume' } })
 
     expect(gen.finishState.status).toBe('initial')
     expect(gen.result).toBeUndefined()
@@ -172,7 +186,7 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'A test costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'A test costume' } })
     const tasks = aigcMock.tasks
 
     const generatePromise = gen.generate()
@@ -188,14 +202,14 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'Enrich running costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'Enrich running costume' } })
 
     const enrichPromise = gen.enrich()
     expect(gen.enrichState.status).toBe('running')
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = CostumeGen.load(sprite, project, config, files)
+    const loadedGen = CostumeGen.load(i18n, sprite, project, config, files)
 
     // running phase is serialized as initial
     expect(loadedGen.enrichState.status).toBe('initial')
@@ -210,7 +224,9 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'Enrich finished pre-generate costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { description: 'Enrich finished pre-generate costume' }
+    })
 
     await gen.enrich()
     expect(gen.enrichState.status).toBe('finished')
@@ -220,7 +236,7 @@ describe('CostumeGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = CostumeGen.load(sprite, project, config, files)
+    const loadedGen = CostumeGen.load(i18n, sprite, project, config, files)
 
     expect(loadedGen.enrichState.status).toBe('finished')
     expect(loadedGen.enrichState.result).toEqual(gen.enrichState.result)
@@ -233,7 +249,7 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'Generated pre-finish costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'Generated pre-finish costume' } })
 
     await gen.enrich()
     await gen.generate()
@@ -244,7 +260,7 @@ describe('CostumeGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = CostumeGen.load(sprite, project, config, files)
+    const loadedGen = CostumeGen.load(i18n, sprite, project, config, files)
 
     expect(loadedGen.enrichState.status).toBe('finished')
     expect(loadedGen.generateState.status).toBe('finished')
@@ -258,7 +274,7 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'A test costume export/load' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'A test costume export/load' } })
 
     await gen.enrich()
     await gen.generate()
@@ -267,7 +283,7 @@ describe('CostumeGen', () => {
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
 
-    const loadedGen = CostumeGen.load(sprite, project, config, files)
+    const loadedGen = CostumeGen.load(i18n, sprite, project, config, files)
 
     expect(loadedGen.id).toBe(gen.id)
     expect(loadedGen.settings).toEqual(gen.settings)
@@ -289,7 +305,7 @@ describe('CostumeGen', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
-    const gen = new CostumeGen(sprite, project, { settings: { description: 'Running test costume' } })
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'Running test costume' } })
 
     let resolveTask: (() => void) | null = null
     const taskPaused = new Promise<void>((r) => {
@@ -307,7 +323,7 @@ describe('CostumeGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = CostumeGen.load(sprite, project, config, files)
+    const loadedGen = CostumeGen.load(i18n, sprite, project, config, files)
 
     await flushPromises()
     expect(loadedGen.generateState.status).toBe('running')

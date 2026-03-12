@@ -153,7 +153,12 @@ export class SpriteGen extends Disposable {
   }
   async enrich() {
     const draft = await this.enrichPhase.track(
-      enrichSpriteSettings(this.settings.description, this.settings, getProjectSettings(this.project))
+      enrichSpriteSettings(
+        this.settings.description,
+        this.settings,
+        getProjectSettings(this.project),
+        this.i18n.lang.value
+      )
     )
     this.setSettings(draft)
   }
@@ -307,20 +312,20 @@ export class SpriteGen extends Disposable {
       this.preparePreviewSprite()
 
       // Generate default costume
-      const defaultCostumeGen = new CostumeGen(this, project, { settings: this.getDefaultCostumeSettings() })
+      const defaultCostumeGen = new CostumeGen(this.i18n, this, project, { settings: this.getDefaultCostumeSettings() })
       defaultCostumeGen.setImage(image)
       const defaultCostume = await defaultCostumeGen.finish()
       this.costumes.push(defaultCostumeGen)
 
       // Generate additional costumes & animations
-      const settings = await genSpriteContentSettings(this.settings)
+      const settings = await genSpriteContentSettings(this.settings, this.i18n.lang.value)
       this.costumes.push(
         ...settings.costumes.map(
-          (s) => new CostumeGen(this, project, { settings: s, referenceCostumeId: defaultCostume.id })
+          (s) => new CostumeGen(this.i18n, this, project, { settings: s, referenceCostumeId: defaultCostume.id })
         )
       )
       this.animations = settings.animations.map(
-        (s) => new AnimationGen(this, project, { settings: s, referenceCostumeId: defaultCostume.id })
+        (s) => new AnimationGen(this.i18n, this, project, { settings: s, referenceCostumeId: defaultCostume.id })
       )
       // Store recommended animation bindings. Replace animation names with animation-gen IDs in case of name changes.
       const recommendedBindings = settings.animationBindings || {}
@@ -349,7 +354,7 @@ export class SpriteGen extends Disposable {
     const name = getCostumeName(this)
     const defaultCostumeGen = this.defaultCostume
     if (defaultCostumeGen == null) throw new Error('default costume expected')
-    const costumeGen = new CostumeGen(this, this.project, {
+    const costumeGen = new CostumeGen(this.i18n, this, this.project, {
       settings: {
         name,
         artStyle: this.settings.artStyle,
@@ -382,7 +387,7 @@ export class SpriteGen extends Disposable {
     const name = getAnimationName(this)
     const defaultCostumeGen = this.defaultCostume
     if (defaultCostumeGen == null) throw new Error('default costume expected')
-    const animationGen = new AnimationGen(this, this.project, {
+    const animationGen = new AnimationGen(this.i18n, this, this.project, {
       settings: {
         name,
         artStyle: this.settings.artStyle,
@@ -529,10 +534,10 @@ export class SpriteGen extends Disposable {
     const gen = new SpriteGen(i18n, project, inits)
 
     if (costumeConfigs != null) {
-      gen.costumes = costumeConfigs.map((cc) => CostumeGen.load(gen, project, cc, files, basePath))
+      gen.costumes = costumeConfigs.map((cc) => CostumeGen.load(i18n, gen, project, cc, files, basePath))
     }
     if (animationConfigs != null) {
-      gen.animations = animationConfigs.map((ac) => AnimationGen.load(gen, project, ac, files, basePath))
+      gen.animations = animationConfigs.map((ac) => AnimationGen.load(i18n, gen, project, ac, files, basePath))
     }
     if (gen.contentPreparingState.status === 'finished') {
       gen.preparePreviewSprite()
