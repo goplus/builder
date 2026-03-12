@@ -42,7 +42,7 @@ useDragSortable(sortableList, listWrapper, {
 
 <style scoped lang="scss">
 .panel-list {
-  flex: 1 1 0;
+  flex: 1 0 112px; // 112px: 1 row of sprite items height
   overflow-y: auto;
   margin: 0;
   padding: 12px 0 12px 12px; // no right padding to allow optional scrollbar
