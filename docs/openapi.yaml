@@ -109,6 +109,9 @@ paths:
               type: object
               minProperties: 1
               properties:
+                username:
+                  description: New username of the authenticated user. If provided, the username will be modified.
+                  $ref: "#/components/schemas/User/properties/username"
                 displayName:
                   $ref: "#/components/schemas/User/properties/displayName"
                 description:

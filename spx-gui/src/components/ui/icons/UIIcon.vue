@@ -52,6 +52,7 @@ import success from './success.svg?raw'
 import apply from './apply.svg?raw'
 import insert from './insert.svg?raw'
 import copy from './copy.svg?raw'
+import copyAltFilled from './copy-alt-filled.svg?raw'
 import fullScreen from './full-screen.svg?raw'
 import enterFullScreen from './enter-full-screen.svg?raw'
 import exitFullScreen from './exit-full-screen.svg?raw'
@@ -122,6 +123,7 @@ const typeIconMap = {
   apply,
   insert,
   copy,
+  copyAltFilled,
   fullScreen,
   enterFullScreen,
   exitFullScreen,
