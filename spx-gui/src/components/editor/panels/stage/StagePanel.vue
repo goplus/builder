@@ -3,7 +3,7 @@
     <!-- TODO: use UICardHeader? -->
     <h4 class="header">{{ $t({ en: 'Stage', zh: '舞台' }) }}</h4>
     <main class="main">
-      <div class="stages">
+      <div class="stage">
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
           class="overview"
@@ -13,7 +13,7 @@
           <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
         </div>
       </div>
-      <UIDivider />
+      <UIDivider class="divider" />
       <div class="quick-actions">
         <button
           v-radar="{
@@ -112,46 +112,55 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
 
   .main {
     flex: 1 1 0;
-    overflow-y: auto;
-    padding: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
   }
 }
 
-.overview {
-  width: 56px;
-  height: 56px;
-  padding: 2px;
-  position: relative;
-  border-radius: var(--ui-border-radius-1);
-  background-color: var(--ui-color-grey-300);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+.stage {
+  flex: 0 0 auto;
+  padding: 12px;
 
-  &:not(.active):hover {
-    background-color: var(--ui-color-grey-400);
-  }
+  .overview {
+    width: 56px;
+    height: 56px;
+    padding: 2px;
+    position: relative;
+    border-radius: var(--ui-border-radius-1);
+    background-color: var(--ui-color-grey-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 
-  &.active {
-    padding: 0;
-    background-color: var(--ui-color-blue-200);
-    border: 2px solid var(--ui-color-stage-main);
-  }
+    &:not(.active):hover {
+      background-color: var(--ui-color-grey-400);
+    }
 
-  .img {
-    width: 44px;
-    height: 44px;
-    border-radius: 4px;
-    object-fit: cover;
+    &.active {
+      padding: 0;
+      background-color: var(--ui-color-blue-200);
+      border: 2px solid var(--ui-color-stage-main);
+    }
+
+    .img {
+      width: 44px;
+      height: 44px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
   }
+}
+
+.divider {
+  width: 40px;
 }
 
 .quick-actions {
+  flex: 1 0 72px;
+  overflow-y: auto;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;

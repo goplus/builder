@@ -1,5 +1,5 @@
 <template>
-  <div class="sprite-panel" :style="cssVars">
+  <div class="sprites-panel" :style="cssVars">
     <section v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }" class="details">
       <PanelHeader :active="selectedSprite != null">
         {{ $t({ en: 'Sprites', zh: '精灵' }) }}
@@ -69,7 +69,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
 </script>
 
 <style scoped lang="scss">
-.sprite-panel {
+.sprites-panel {
   width: 100%;
   height: 100%;
   overflow: hidden;
