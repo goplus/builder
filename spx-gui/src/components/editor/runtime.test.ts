@@ -15,12 +15,35 @@ function appendLog(runtime: Runtime, message: string) {
 }
 
 function flushOutputs() {
-  vi.advanceTimersByTime(Runtime.outputChangeEventThrottleMs)
+  vi.advanceTimersByTime(16)
+}
+
+function withMockedAnimationFrame() {
+  let nextFrameId = 1
+  const frameTimers = new Map<number, ReturnType<typeof setTimeout>>()
+
+  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+    const frameId = nextFrameId++
+    const timerId = setTimeout(() => {
+      frameTimers.delete(frameId)
+      cb(performance.now())
+    }, 16)
+    frameTimers.set(frameId, timerId)
+    return frameId
+  })
+  vi.stubGlobal('cancelAnimationFrame', (frameId: number) => {
+    const timerId = frameTimers.get(frameId)
+    if (timerId != null) {
+      clearTimeout(timerId)
+      frameTimers.delete(frameId)
+    }
+  })
 }
 
 describe('Runtime', () => {
   it('should keep latest outputs within max size and assign stable ids', () => {
     vi.useFakeTimers()
+    withMockedAnimationFrame()
     const runtime = makeRuntime()
     runtime.setMaxOutputs(2)
 
@@ -32,10 +55,12 @@ describe('Runtime', () => {
     expect(runtime.outputs.map((item) => item.message)).toEqual(['output-2', 'output-3'])
     expect(runtime.outputs.map((item) => item.id)).toEqual([1, 2])
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('should trim existing outputs immediately after max size changes', () => {
     vi.useFakeTimers()
+    withMockedAnimationFrame()
     const runtime = makeRuntime()
 
     appendLog(runtime, 'output-1')
@@ -50,6 +75,7 @@ describe('Runtime', () => {
     runtime.setMaxOutputs(2)
     expect(runtime.outputs.map((item) => item.message)).toEqual(['output-3', 'output-4'])
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('should clamp max outputs to a safe upper bound', () => {
@@ -61,6 +87,7 @@ describe('Runtime', () => {
 
   it('should keep output order after ring wraps and max size changes', () => {
     vi.useFakeTimers()
+    withMockedAnimationFrame()
     const runtime = makeRuntime()
     runtime.setMaxOutputs(3)
 
@@ -80,10 +107,12 @@ describe('Runtime', () => {
     flushOutputs()
     expect(runtime.outputs.map((item) => item.message)).toEqual(['output-4', 'output-5', 'output-6'])
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('should expose output snapshot only after throttled flush for addOutput', () => {
     vi.useFakeTimers()
+    withMockedAnimationFrame()
     const runtime = makeRuntime()
 
     appendLog(runtime, 'output-1')
@@ -92,10 +121,12 @@ describe('Runtime', () => {
     flushOutputs()
     expect(runtime.outputs.map((item) => item.message)).toEqual(['output-1'])
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('should throttle didChangeOutput for addOutput and keep clear/setMax immediate', () => {
     vi.useFakeTimers()
+    withMockedAnimationFrame()
     const runtime = makeRuntime()
     let changeCount = 0
     runtime.on('didChangeOutput', () => {
@@ -105,7 +136,7 @@ describe('Runtime', () => {
     appendLog(runtime, 'output-1')
     appendLog(runtime, 'output-2')
     expect(changeCount).toBe(0)
-    vi.advanceTimersByTime(Runtime.outputChangeEventThrottleMs)
+    flushOutputs()
     expect(changeCount).toBe(1)
 
     runtime.clearOutputs()
@@ -116,5 +147,6 @@ describe('Runtime', () => {
     expect(changeCount).toBe(3)
 
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 })

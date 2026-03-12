@@ -32,7 +32,11 @@ export interface RuntimeOutput {
   source?: TextDocumentRange
 }
 
-export type RuntimeOutputInput = Omit<RuntimeOutput, 'id'>
+export type RuntimeOutputDraft = Omit<RuntimeOutput, 'id'>
+
+type ScheduledOutputFlush =
+  | { kind: 'animation-frame'; id: number }
+  | { kind: 'timeout'; id: ReturnType<typeof setTimeout> }
 
 export class Runtime extends Emitter<{
   didChangeOutput: void
@@ -40,7 +44,6 @@ export class Runtime extends Emitter<{
 }> {
   static readonly defaultMaxOutputs = 500
   static readonly maxMaxOutputs = 10_000
-  static readonly outputChangeEventThrottleMs = 16
 
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
@@ -77,7 +80,7 @@ export class Runtime extends Emitter<{
   private outputRing: Array<RuntimeOutput | null> = []
   private outputHead = 0
   private outputCount = 0
-  private outputChangeEventTimer: ReturnType<typeof setTimeout> | null = null
+  private scheduledOutputFlush: ScheduledOutputFlush | null = null
 
   private syncOutputs() {
     const outputs: RuntimeOutput[] = []
@@ -90,22 +93,43 @@ export class Runtime extends Emitter<{
   }
 
   private flushDidChangeOutput() {
-    this.outputChangeEventTimer = null
+    this.scheduledOutputFlush = null
     this.syncOutputs()
     this.emit('didChangeOutput')
   }
 
+  private scheduleDidChangeOutput() {
+    if (typeof requestAnimationFrame === 'function') {
+      this.scheduledOutputFlush = {
+        kind: 'animation-frame',
+        id: requestAnimationFrame(() => this.flushDidChangeOutput())
+      }
+      return
+    }
+    this.scheduledOutputFlush = {
+      kind: 'timeout',
+      id: setTimeout(() => this.flushDidChangeOutput(), 16)
+    }
+  }
+
+  private cancelScheduledDidChangeOutput() {
+    if (this.scheduledOutputFlush == null) return
+    if (this.scheduledOutputFlush.kind === 'animation-frame') {
+      cancelAnimationFrame(this.scheduledOutputFlush.id)
+    } else {
+      clearTimeout(this.scheduledOutputFlush.id)
+    }
+    this.scheduledOutputFlush = null
+  }
+
   private emitDidChangeOutput({ immediate = false }: { immediate?: boolean } = {}) {
     if (immediate) {
-      if (this.outputChangeEventTimer != null) {
-        clearTimeout(this.outputChangeEventTimer)
-        this.outputChangeEventTimer = null
-      }
+      this.cancelScheduledDidChangeOutput()
       this.flushDidChangeOutput()
       return
     }
-    if (this.outputChangeEventTimer != null) return
-    this.outputChangeEventTimer = setTimeout(() => this.flushDidChangeOutput(), Runtime.outputChangeEventThrottleMs)
+    if (this.scheduledOutputFlush != null) return
+    this.scheduleDidChangeOutput()
   }
 
   private getRecentOutputs(limit: number) {
@@ -137,7 +161,7 @@ export class Runtime extends Emitter<{
     this.emitDidChangeOutput({ immediate: true })
   }
 
-  addOutput(output: RuntimeOutputInput) {
+  addOutput(output: RuntimeOutputDraft) {
     const nextOutput: RuntimeOutput = { ...output, id: this.nextOutputId++ }
     if (this.outputCount < this.maxOutputs) {
       const tailIdx = (this.outputHead + this.outputCount) % this.maxOutputs
@@ -174,10 +198,7 @@ export class Runtime extends Emitter<{
       )
     })
     this.addDisposer(() => {
-      if (this.outputChangeEventTimer != null) {
-        clearTimeout(this.outputChangeEventTimer)
-        this.outputChangeEventTimer = null
-      }
+      this.cancelScheduledDidChangeOutput()
     })
     this.addDisposer(() => scope.stop())
   }
