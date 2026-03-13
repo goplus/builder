@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { type ComponentPublicInstance, computed, onBeforeUnmount, shallowReactive } from 'vue'
+import { type ComponentPublicInstance, computed, onBeforeUnmount, ref, shallowReactive } from 'vue'
 import { Sprite } from '@/models/spx/sprite'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
-import type { DragSortableOptions } from '@/utils/drag-and-drop'
+import { type DragSortableOptions, useDragSortable } from '@/utils/drag-and-drop'
 
 import { useSpriteGenModal } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import PanelList from '@/components/editor/panels/common/PanelList.vue'
 import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import { UIEmpty } from '@/components/ui'
@@ -44,6 +43,7 @@ onBeforeUnmount(
 )
 
 const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.genState.sprites])
+const listWrapper = ref<HTMLElement | null>(null)
 
 const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
   filterItem: (item: unknown) => {
@@ -77,7 +77,7 @@ const invokeSpriteGenModal = useSpriteGenModal()
 
 const handleSpriteGenClick = useMessageHandle(
   async (gen: SpriteGen) => {
-    const result = await invokeSpriteGenModal(gen)
+    const result = (await invokeSpriteGenModal(gen)) as Sprite
 
     // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
     gen.dispose()
@@ -94,10 +94,18 @@ const handleSpriteGenClick = useMessageHandle(
     zh: '添加生成的精灵失败'
   }
 ).fn
+
+useDragSortable(list, listWrapper, {
+  ghostClass: 'sortable-ghost-item',
+  onSorted(oldIdx, newIdx) {
+    handleSorted(oldIdx, newIdx)
+  },
+  ...sortableOptions
+})
 </script>
 
 <template>
-  <PanelList :sortable="{ list, options: sortableOptions }" @sorted="handleSorted">
+  <div ref="listWrapper" class="sprite-list">
     <UIEmpty v-if="list.length === 0" size="medium">
       {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
     </UIEmpty>
@@ -117,7 +125,27 @@ const handleSpriteGenClick = useMessageHandle(
       :gen="gen"
       @click="handleSpriteGenClick(gen)"
     />
-  </PanelList>
+  </div>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.sprite-list {
+  flex: 1 0 112px; // 112px: 1 row of sprite items height
+  overflow-y: auto;
+  margin: 0;
+  padding: 12px 0 12px 12px; // no right padding to allow optional scrollbar
+  scrollbar-width: thin;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+
+  :deep(.sortable-ghost-item) {
+    border-color: var(--ui-color-grey-400) !important;
+    background-color: var(--ui-color-grey-400) !important;
+    * {
+      visibility: hidden;
+    }
+  }
+}
+</style>

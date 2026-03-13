@@ -26,14 +26,16 @@
       @play="handlePlay"
     />
     <div class="operations">
-      <PlayControl
-        color="sound"
-        :playing="playing != null"
-        :progress="playing?.progress ?? 0"
-        :play-handler="handlePlayClick"
-        :loading="audioLoading"
-        @stop="handleStopClick"
-      />
+      <div class="play-btn">
+        <PlayControl
+          color="sound"
+          :playing="playing != null"
+          :progress="playing?.progress ?? 0"
+          :play-handler="handlePlayClick"
+          :loading="audioLoading"
+          @stop="handleStopClick"
+        />
+      </div>
       <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
       <div class="spacer" />
       <div v-if="editing" class="editing-buttons">
@@ -41,8 +43,9 @@
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
           color="boring"
           @click="handleResetEdit"
-          >{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton
         >
+          {{ $t({ en: 'Cancel', zh: '取消' }) }}
+        </UIButton>
         <UIButton
           v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
           color="success"
@@ -210,15 +213,20 @@ const handleSave = useMessageHandle(
 .operations {
   display: flex;
 
+  .play-btn {
+    flex: 0 0 36px;
+  }
+
   .volume-slider {
-    width: 400px;
-    margin: 0 48px;
+    flex: 0 1 438px;
+    margin: 0 24px;
   }
 
   .editing-buttons {
     display: flex;
     gap: 8px;
     align-items: center;
+    word-break: keep-all;
   }
 }
 
