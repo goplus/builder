@@ -1,0 +1,294 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "so3Mg",
+      "x": -721,
+      "y": -94,
+      "name": "Project Search Page",
+      "width": 1440,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "padding": [
+        0,
+        0,
+        40,
+        0
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "id": "la00p",
+          "type": "ref",
+          "ref": "t:sKPE5",
+          "x": 0,
+          "y": 0,
+          "children": [
+            {
+              "id": "nHN4t",
+              "type": "ref",
+              "ref": "t:832Oq"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "j0KrA",
+          "name": "content",
+          "clip": true,
+          "width": 1440,
+          "height": 695,
+          "fill": "$grey300",
+          "layout": "vertical",
+          "gap": 20,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "hhuwk",
+              "name": "sub header",
+              "clip": true,
+              "width": 1440,
+              "fill": "$grey100",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "HWMDT",
+                  "name": "sub header content",
+                  "clip": true,
+                  "width": 988,
+                  "padding": [
+                    16,
+                    0
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "6aRBW",
+                      "name": "Results Text",
+                      "fill": "$grey1000",
+                      "content": "Found 250 results for 57667",
+                      "lineHeight": 1.625,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "medium"
+                    },
+                    {
+                      "id": "MHimZ",
+                      "type": "ref",
+                      "ref": "t:XihxW",
+                      "x": 768,
+                      "y": 16,
+                      "children": [
+                        {
+                          "id": "jMoxH",
+                          "type": "ref",
+                          "ref": "t:b1OHc"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "OVlC7",
+              "name": "Grid",
+              "gap": 16,
+              "children": [
+                {
+                  "id": "6Bc7f",
+                  "type": "ref",
+                  "ref": "t:pwk0c",
+                  "x": 0,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "SK0fl",
+                      "type": "ref",
+                      "ref": "t:rIuyc"
+                    }
+                  ]
+                },
+                {
+                  "id": "thUUs",
+                  "type": "ref",
+                  "ref": "t:pwk0c",
+                  "x": 248,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "ppd6v",
+                      "type": "ref",
+                      "ref": "t:rIuyc"
+                    }
+                  ]
+                },
+                {
+                  "id": "SBl2w",
+                  "type": "ref",
+                  "ref": "t:pwk0c",
+                  "x": 496,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "mKMY9",
+                      "type": "ref",
+                      "ref": "t:rIuyc"
+                    }
+                  ]
+                },
+                {
+                  "id": "Ok4r4",
+                  "type": "ref",
+                  "ref": "t:pwk0c",
+                  "x": 744,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "y98Fe",
+                      "type": "ref",
+                      "ref": "t:rIuyc"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ty1gU",
+              "name": "Grid",
+              "gap": 16,
+              "children": [
+                {
+                  "id": "4L36h",
+                  "type": "ref",
+                  "ref": "t:pwk0c",
+                  "x": 0,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "CaquH",
+                      "type": "ref",
+                      "ref": "t:rIuyc"
+                    }
+                  ]
+                },
+                {
+                  "id": "k6Q4Q",
+                  "type": "ref",
+                  "ref": "t:pwk0c",
+                  "x": 248,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "CfB60",
+                      "type": "ref",
+                      "ref": "t:rIuyc"
+                    }
+                  ]
+                },
+                {
+                  "id": "HXZma",
+                  "type": "ref",
+                  "ref": "t:pwk0c",
+                  "x": 496,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "GeIyW",
+                      "type": "ref",
+                      "ref": "t:rIuyc"
+                    }
+                  ]
+                },
+                {
+                  "id": "HyWiF",
+                  "type": "ref",
+                  "ref": "t:pwk0c",
+                  "x": 744,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "AqnR2",
+                      "type": "ref",
+                      "ref": "t:rIuyc"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hRLlE",
+              "name": "Pagination",
+              "width": "fill_container",
+              "cornerRadius": 8,
+              "gap": 8,
+              "padding": 16,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "TC9WX",
+                  "type": "ref",
+                  "ref": "t:bm7Pn",
+                  "x": 504,
+                  "y": 16,
+                  "children": [
+                    {
+                      "id": "1AtOO",
+                      "type": "ref",
+                      "ref": "t:SG7PY"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "grey100": {
+      "type": "color",
+      "value": "#ffffff"
+    },
+    "grey300": {
+      "type": "color",
+      "value": "#f6f8fa"
+    },
+    "grey800": {
+      "type": "color",
+      "value": "#6e7781"
+    },
+    "grey700": {
+      "type": "color",
+      "value": "#a7b1bb"
+    },
+    "grey1000": {
+      "type": "color",
+      "value": "#24292f"
+    },
+    "grey400": {
+      "type": "color",
+      "value": "#eaeff3"
+    },
+    "grey900": {
+      "type": "color",
+      "value": "#57606A"
+    }
+  },
+  "imports": {
+    "t": "../../components/spx/builder-component.lib.pen"
+  }
+}
