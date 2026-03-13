@@ -89,7 +89,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
   gap: var(--ui-gap-middle);
 
   @include responsive(desktop-large) {
-    flex-basis: 494px;
+    flex-basis: 496px;
   }
 
   .collapse-header {
