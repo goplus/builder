@@ -440,7 +440,8 @@ function getStageInlineAnchor() {
 
 <style scoped lang="scss">
 .editor-preview {
-  height: 419px;
+  // TODO: The fixed height here should be removed. Instead, set the StageViewer size (maintaining 4:3 aspect ratio) and let this container adapt its height accordingly.
+  height: 422px;
   display: flex;
   flex-direction: column;
   position: relative;
