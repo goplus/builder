@@ -14,40 +14,45 @@
         </div>
       </div>
       <UIDivider class="divider" />
-      <div class="quick-actions">
-        <button
-          v-radar="{
-            name: 'Backdrops quick entry',
-            desc: 'Quick entry to open backdrops management tab in stage editor'
-          }"
-          class="quick-btn"
-          type="button"
-          @click="openTab('backdrops')"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <span class="icon" v-html="backdropSvg"></span>
-          <span>{{ $t({ en: 'Backdrops', zh: '背景' }) }}</span>
-        </button>
-        <button
-          v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
-          class="quick-btn"
-          type="button"
-          @click="openTab('sounds')"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <span class="icon" v-html="soundSvg"></span>
-          <span>{{ $t({ en: 'Sounds', zh: '声音' }) }}</span>
-        </button>
-        <button
-          v-radar="{ name: 'Widgets quick entry', desc: 'Quick entry to open widgets management tab in stage editor' }"
-          class="quick-btn"
-          type="button"
-          @click="openTab('widgets')"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <span class="icon" v-html="widgetSvg"></span>
-          <span>{{ $t({ en: 'Widgets', zh: '控件' }) }}</span>
-        </button>
+      <div class="scroll-container">
+        <div class="quick-actions">
+          <button
+            v-radar="{
+              name: 'Backdrops quick entry',
+              desc: 'Quick entry to open backdrops management tab in stage editor'
+            }"
+            class="quick-btn"
+            type="button"
+            @click="openTab('backdrops')"
+          >
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <span class="icon" v-html="backdropSvg"></span>
+            <span>{{ $t({ en: 'Backdrops', zh: '背景' }) }}</span>
+          </button>
+          <button
+            v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
+            class="quick-btn"
+            type="button"
+            @click="openTab('sounds')"
+          >
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <span class="icon" v-html="soundSvg"></span>
+            <span>{{ $t({ en: 'Sounds', zh: '声音' }) }}</span>
+          </button>
+          <button
+            v-radar="{
+              name: 'Widgets quick entry',
+              desc: 'Quick entry to open widgets management tab in stage editor'
+            }"
+            class="quick-btn"
+            type="button"
+            @click="openTab('widgets')"
+          >
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <span class="icon" v-html="widgetSvg"></span>
+            <span>{{ $t({ en: 'Widgets', zh: '控件' }) }}</span>
+          </button>
+        </div>
       </div>
     </main>
   </section>
@@ -157,12 +162,18 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
   width: 40px;
 }
 
-.quick-actions {
+.scroll-container {
   flex: 1 0 72px;
   overflow-y: auto;
-  padding: 12px;
+  width: 100%;
+  padding: 12px 0 12px 12px; // no right padding to allow optional scrollbar
+  scrollbar-width: thin;
+}
+
+.quick-actions {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
 
   .quick-btn {
