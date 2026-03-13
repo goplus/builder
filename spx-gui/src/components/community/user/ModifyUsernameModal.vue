@@ -6,7 +6,6 @@ import {
   UIFormItem,
   UIFormModal,
   UITextInput,
-  useMessage,
   useForm,
   type FormValidationResult
 } from '@/components/ui'
@@ -27,7 +26,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const m = useMessage()
 const currentUsername = computed(() => props.username)
 
 const form = useForm({
@@ -74,7 +72,6 @@ const handleSubmit = useMessageHandle(async () => {
     return newUsername
   }
   const updated = await modifySignedInUsername(newUsername)
-  m.success(t({ en: 'Username modified successfully', zh: '用户名修改成功' }))
   emit('resolved', updated.username)
   return updated.username
 })
