@@ -21,7 +21,7 @@ will display a code change that removes line 10 & 11, then adds the new code con
 export const attributes = z.object({
   file: codeFilePathSchema,
   line: z.string().describe('Position (line number) to do change, 1-based'),
-  removeLineCount: z.string().optional().describe('Line count to remove. No line will be removed if not provided')
+  'remove-line-count': z.string().optional().describe('Line count to remove. No line will be removed if not provided')
 })
 </script>
 
