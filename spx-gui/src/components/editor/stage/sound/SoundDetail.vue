@@ -214,7 +214,7 @@ const handleSave = useMessageHandle(
   display: flex;
 
   .play-btn {
-    flex: 0 0 36px;
+    flex: 0 0 auto;
   }
 
   .volume-slider {
@@ -223,10 +223,10 @@ const handleSave = useMessageHandle(
   }
 
   .editing-buttons {
+    flex: 0 0 auto;
     display: flex;
     gap: 8px;
     align-items: center;
-    word-break: keep-all;
   }
 }
 

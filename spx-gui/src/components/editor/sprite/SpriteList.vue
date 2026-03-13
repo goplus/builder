@@ -73,11 +73,19 @@ const handleSorted = useMessageHandle(
   }
 ).fn
 
+useDragSortable(list, listWrapper, {
+  ghostClass: 'sortable-ghost-item',
+  onSorted(oldIdx, newIdx) {
+    handleSorted(oldIdx, newIdx)
+  },
+  ...sortableOptions
+})
+
 const invokeSpriteGenModal = useSpriteGenModal()
 
 const handleSpriteGenClick = useMessageHandle(
   async (gen: SpriteGen) => {
-    const result = (await invokeSpriteGenModal(gen)) as Sprite
+    const result = await invokeSpriteGenModal(gen)
 
     // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
     gen.dispose()
@@ -94,14 +102,6 @@ const handleSpriteGenClick = useMessageHandle(
     zh: '添加生成的精灵失败'
   }
 ).fn
-
-useDragSortable(list, listWrapper, {
-  ghostClass: 'sortable-ghost-item',
-  onSorted(oldIdx, newIdx) {
-    handleSorted(oldIdx, newIdx)
-  },
-  ...sortableOptions
-})
 </script>
 
 <template>
@@ -141,6 +141,8 @@ useDragSortable(list, listWrapper, {
   gap: 8px;
 
   :deep(.sortable-ghost-item) {
+    // Shadow-like effect
+    // TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem`
     border-color: var(--ui-color-grey-400) !important;
     background-color: var(--ui-color-grey-400) !important;
     * {
