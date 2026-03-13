@@ -206,10 +206,6 @@ const handleSave = useMessageHandle(
   }
 }
 
-.spacer {
-  flex: 1 1 0;
-}
-
 .operations {
   display: flex;
 
@@ -220,6 +216,10 @@ const handleSave = useMessageHandle(
   .volume-slider {
     flex: 0 1 438px;
     margin: 0 24px;
+  }
+
+  .spacer {
+    flex: 1 1 0;
   }
 
   .editing-buttons {
