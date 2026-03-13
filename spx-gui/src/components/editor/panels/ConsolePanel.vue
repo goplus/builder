@@ -50,7 +50,7 @@ const initializingError = computed(() => {
 <template>
   <UICard class="console-panel">
     <UICardHeader>
-      <span>{{ $t({ en: 'Console', zh: '控制台' }) }}</span>
+      {{ $t({ en: 'Console', zh: '控制台' }) }}
     </UICardHeader>
     <ul ref="outputContainerRef" class="output-container">
       <UIEmpty v-if="runtime.running.mode !== 'debug'" size="small">

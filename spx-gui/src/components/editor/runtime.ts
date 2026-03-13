@@ -34,10 +34,6 @@ export interface RuntimeOutput {
 
 export type RuntimeOutputDraft = Omit<RuntimeOutput, 'id'>
 
-type ScheduledOutputFlush =
-  | { kind: 'animation-frame'; id: number }
-  | { kind: 'timeout'; id: ReturnType<typeof setTimeout> }
-
 export class Runtime extends Emitter<{
   didChangeOutput: void
   didExit: number
@@ -78,7 +74,7 @@ export class Runtime extends Emitter<{
   private outputRing: Array<RuntimeOutput | null> = []
   private outputHead = 0
   private outputCount = 0
-  private scheduledOutputFlush: ScheduledOutputFlush | null = null
+  private scheduledOutputFlush: number | null = null
 
   private syncOutputs() {
     const outputs: RuntimeOutput[] = []
@@ -97,26 +93,12 @@ export class Runtime extends Emitter<{
   }
 
   private scheduleDidChangeOutput() {
-    if (typeof requestAnimationFrame === 'function') {
-      this.scheduledOutputFlush = {
-        kind: 'animation-frame',
-        id: requestAnimationFrame(() => this.flushDidChangeOutput())
-      }
-      return
-    }
-    this.scheduledOutputFlush = {
-      kind: 'timeout',
-      id: setTimeout(() => this.flushDidChangeOutput(), 16)
-    }
+    this.scheduledOutputFlush = requestAnimationFrame(() => this.flushDidChangeOutput())
   }
 
   private cancelScheduledDidChangeOutput() {
     if (this.scheduledOutputFlush == null) return
-    if (this.scheduledOutputFlush.kind === 'animation-frame') {
-      cancelAnimationFrame(this.scheduledOutputFlush.id)
-    } else {
-      clearTimeout(this.scheduledOutputFlush.id)
-    }
+    cancelAnimationFrame(this.scheduledOutputFlush)
     this.scheduledOutputFlush = null
   }
 
