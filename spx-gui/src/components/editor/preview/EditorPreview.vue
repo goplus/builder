@@ -175,7 +175,7 @@ import {
   textDocumentId2CodeFileName,
   getInvalidMonitors
 } from '@/components/editor/code-editor/spx-code-editor'
-import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
+import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
@@ -221,7 +221,7 @@ const confirm = useConfirmDialog()
 
 const lastPanicOutput = ref<RuntimeOutput | null>(null)
 
-function appendRuntimeOutput(output: RuntimeOutput) {
+function appendRuntimeOutput(output: RuntimeOutputDraft) {
   runtime.value.addOutput(output)
 }
 
