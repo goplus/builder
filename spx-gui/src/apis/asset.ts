@@ -74,7 +74,7 @@ export function addAsset(params: AddAssetParams) {
 export type UpdateAssetParams = AddAssetParams
 
 export function updateAsset(id: string, params: UpdateAssetParams) {
-  return client.put(`/asset/${encodeURIComponent(id)}`, params) as Promise<AssetData>
+  return client.patch(`/asset/${encodeURIComponent(id)}`, params) as Promise<AssetData>
 }
 
 export function deleteAsset(id: string) {

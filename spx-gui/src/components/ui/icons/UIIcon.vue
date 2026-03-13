@@ -52,6 +52,7 @@ import success from './success.svg?raw'
 import apply from './apply.svg?raw'
 import insert from './insert.svg?raw'
 import copy from './copy.svg?raw'
+import copyAltFilled from './copy-alt-filled.svg?raw'
 import fullScreen from './full-screen.svg?raw'
 import enterFullScreen from './enter-full-screen.svg?raw'
 import exitFullScreen from './exit-full-screen.svg?raw'
@@ -72,6 +73,7 @@ import rotateAround from './rotate-around.svg?raw'
 import back from './back.svg?raw'
 import position from './position.svg?raw'
 import resize from './resize.svg?raw'
+import camera from './camera.svg?raw'
 
 const typeIconMap = {
   file,
@@ -122,6 +124,7 @@ const typeIconMap = {
   apply,
   insert,
   copy,
+  copyAltFilled,
   fullScreen,
   enterFullScreen,
   exitFullScreen,
@@ -140,7 +143,8 @@ const typeIconMap = {
   leftRight,
   back,
   position,
-  resize
+  resize,
+  camera
 }
 
 export type Type = keyof typeof typeIconMap

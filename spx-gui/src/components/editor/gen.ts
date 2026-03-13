@@ -99,7 +99,7 @@ export class GenState extends Disposable {
     this.backdrops.splice(0).forEach((gen) => gen.dispose())
     const [loadedSprites, loadedBackdrops] = await Promise.all([
       SpriteGen.loadAll(this.i18n, this.project, files),
-      BackdropGen.loadAll(this.project, files)
+      BackdropGen.loadAll(this.i18n, this.project, files)
     ])
     loadedSprites.forEach((gen) => this.addSprite(gen))
     loadedBackdrops.forEach((gen) => this.addBackdrop(gen))

@@ -182,19 +182,15 @@ export type TaskParams<T extends TaskType = TaskType> = {
   [TaskType.GenerateBackdrop]: TaskParamsGenerateBackdrop
 }[T]
 
-export async function createTask<T extends TaskType>(
-  type: T,
-  params: TaskParams<T>,
-  signal?: AbortSignal
-): Promise<Task<T>> {
+export function createTask<T extends TaskType>(type: T, params: TaskParams<T>, signal?: AbortSignal): Promise<Task<T>> {
   return client.post('/aigc/task', { type, parameters: params }, { signal }) as Promise<Task<T>>
 }
 
-export async function getTask(taskID: string, signal?: AbortSignal): Promise<Task> {
+export function getTask(taskID: string, signal?: AbortSignal): Promise<Task> {
   return client.get(`/aigc/task/${encodeURIComponent(taskID)}`, undefined, { signal }) as Promise<Task>
 }
 
-export async function cancelTask(taskID: string, signal?: AbortSignal): Promise<Task> {
+export function cancelTask(taskID: string, signal?: AbortSignal): Promise<Task> {
   return client.post(`/aigc/task/${encodeURIComponent(taskID)}/cancellation`, undefined, { signal }) as Promise<Task>
 }
 
@@ -256,17 +252,20 @@ export const enum AIGCAssetType {
   Backdrop = 'backdrop'
 }
 
+export type Lang = 'en' | 'zh'
+
 export type EnrichAssetSettingsParams = {
   assetType: AIGCAssetType
   input: string
   settings?: SpriteSettings | CostumeSettings | AnimationSettings | BackdropSettings
   spriteSettings?: SpriteSettings
   projectSettings?: ProjectSettings
+  lang?: Lang
 }
 
 export type EnrichAssetSettingsResult = SpriteSettings | CostumeSettings | AnimationSettings | BackdropSettings
 
-export async function enrichAssetSettings(
+export function enrichAssetSettings(
   params: EnrichAssetSettingsParams,
   signal?: AbortSignal
 ): Promise<EnrichAssetSettingsResult> {
@@ -282,91 +281,96 @@ export type SpriteContentSettings = {
   animationBindings: Partial<Record<State, string>>
 }
 
-export async function genSpriteContentSettings(
+export function genSpriteContentSettings(
   settings: SpriteSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<SpriteContentSettings> {
   return client.post(
     '/aigc/sprite/content-settings',
-    { settings },
+    { settings, lang },
     { signal, timeout: 60 * 1000 }
   ) as Promise<SpriteContentSettings>
 }
 
-export async function enrichBackdropSettings(
+export function enrichBackdropSettings(
   input: string,
   settings?: BackdropSettings,
   projectSettings?: ProjectSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<BackdropSettings> {
-  const result = (await enrichAssetSettings(
+  return enrichAssetSettings(
     {
       assetType: AIGCAssetType.Backdrop,
       input,
       settings,
-      projectSettings
+      projectSettings,
+      lang
     },
     signal
-  )) as BackdropSettings
-  return result
+  ) as Promise<BackdropSettings>
 }
 
-export async function enrichCostumeSettings(
+export function enrichCostumeSettings(
   input: string,
   settings?: CostumeSettings,
   spriteSettings?: SpriteSettings,
   projectSettings?: ProjectSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<CostumeSettings> {
-  const result = (await enrichAssetSettings(
+  return enrichAssetSettings(
     {
       assetType: AIGCAssetType.Costume,
       input,
       settings,
       spriteSettings,
-      projectSettings
+      projectSettings,
+      lang
     },
     signal
-  )) as CostumeSettings
-  return result
+  ) as Promise<CostumeSettings>
 }
 
-export async function enrichAnimationSettings(
+export function enrichAnimationSettings(
   input: string,
   settings?: AnimationSettings,
   spriteSettings?: SpriteSettings,
   projectSettings?: ProjectSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<AnimationSettings> {
-  const result = (await enrichAssetSettings(
+  return enrichAssetSettings(
     {
       assetType: AIGCAssetType.Animation,
       input,
       settings,
       spriteSettings,
-      projectSettings
+      projectSettings,
+      lang
     },
     signal
-  )) as AnimationSettings
-  return result
+  ) as Promise<AnimationSettings>
 }
 
-export async function enrichSpriteSettings(
+export function enrichSpriteSettings(
   input: string,
   settings?: SpriteSettings,
   projectSettings?: ProjectSettings,
+  lang?: Lang,
   signal?: AbortSignal
 ): Promise<SpriteSettings> {
-  const result = (await enrichAssetSettings(
+  return enrichAssetSettings(
     {
       assetType: AIGCAssetType.Sprite,
       input,
       settings,
-      projectSettings
+      projectSettings,
+      lang
     },
     signal
-  )) as SpriteSettings
-  return result
+  ) as Promise<SpriteSettings>
 }
 
 export type AssetAdoptionParams = {

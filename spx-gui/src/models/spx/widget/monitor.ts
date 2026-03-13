@@ -5,7 +5,9 @@ import { defaultMapSize } from '../stage'
 
 export type MonitorInits = BaseWidgetInits & {
   label?: string
-  /** Name of some global variable, whose value will be rendered in `Monitor` */
+  /** Target name: empty string for stage, sprite name for sprite */
+  target?: string
+  /** Name of the property on the target, whose value will be rendered in `Monitor` */
   variableName?: string
 }
 
@@ -19,10 +21,8 @@ export type RawMonitorConfig = BaseRawWidgetConfig & {
 
 // There are different modes for monitor, but only `mode: 1` is supported
 const supportedMode = 1
-// There are different targets for monitor, but only `target: ""` is supported, which means use global scope as target
-const supportedTarget = ''
-// `val` for spx: `getVar:${variableName}`
-const prefixForVariable = 'getVar:'
+// Legacy prefix for `val` field: old configs stored `val` as `getVar:${variableName}`
+const legacyValPrefix = 'getVar:'
 
 export class Monitor extends BaseWidget {
   label: string
@@ -30,15 +30,27 @@ export class Monitor extends BaseWidget {
     this.label = label
   }
 
-  /** Name of some global variable, whose value will be rendered in `Monitor` */
+  /**
+   * Target name: empty string for stage, sprite name for sprite.
+   * Unlike other id-based references (e.g., animation→sound, sprite→animation, zorder→sprite),
+   * here we store the name directly because Monitor's export/load doesn't have access to the
+   * project's sprite list. Sprite renames are handled by manually syncing in `useRenameSprite`.
+   */
+  target: string
+  setTarget(target: string) {
+    this.target = target
+  }
+
+  /** Name of the property on the target, whose value will be rendered in `Monitor` */
   variableName: string
   setVariableName(name: string) {
     this.variableName = name
   }
 
-  constructor(name: string, { label, variableName, ...extraInits }: MonitorInits) {
+  constructor(name: string, { label, target, variableName, ...extraInits }: MonitorInits) {
     super(name, 'monitor', extraInits)
     this.label = label ?? ''
+    this.target = target ?? ''
     this.variableName = variableName ?? ''
     return reactive(this) as this
   }
@@ -63,11 +75,9 @@ export class Monitor extends BaseWidget {
     if (type !== 'monitor') throw new Error(`unexpected type ${type}`)
     if (name == null) throw new Error('name expected for monitor')
     if (mode !== supportedMode) throw new Error(`unsupported mode: ${mode} for monitor ${name}`)
-    if (target !== supportedTarget) throw new Error(`unsupported target: ${target} for monitor ${name}`)
     if (val == null) throw new Error(`val expected for monitor ${name}`)
-    if (!val.startsWith(prefixForVariable)) throw new Error(`unexpected val: ${val} for monitor ${name}`)
-    const variableName = val.slice(prefixForVariable.length)
-    return new Monitor(name, { ...inits, id, variableName })
+    const variableName = val.startsWith(legacyValPrefix) ? val.slice(legacyValPrefix.length) : val
+    return new Monitor(name, { ...inits, id, target: target ?? '', variableName })
   }
 
   clone(preserveId = false) {
@@ -78,6 +88,7 @@ export class Monitor extends BaseWidget {
       size: this.size,
       visible: this.visible,
       label: this.label,
+      target: this.target,
       variableName: this.variableName
     })
   }
@@ -87,9 +98,9 @@ export class Monitor extends BaseWidget {
       ...super.export(),
       type: 'monitor',
       label: this.label,
-      val: `${prefixForVariable}${this.variableName}`,
       mode: supportedMode,
-      target: supportedTarget
+      target: this.target,
+      val: this.variableName
     }
   }
 }

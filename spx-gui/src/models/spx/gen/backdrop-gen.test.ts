@@ -10,6 +10,7 @@ import { makeSpxProject } from '../common/test'
 import { BackdropGen } from './backdrop-gen'
 
 const aigcMock = setupAigcMock()
+const i18n = createI18n({ lang: 'en' })
 
 describe('BackdropGen', () => {
   beforeEach(() => {
@@ -20,7 +21,7 @@ describe('BackdropGen', () => {
     const project = makeSpxProject()
 
     // 1. Create BackdropGen with initial description
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'A sunny beach with palm trees and clear blue water' }
     })
     expect(gen.settings.description).toBe('A sunny beach with palm trees and clear blue water')
@@ -77,7 +78,7 @@ describe('BackdropGen', () => {
 
   it('should handle errors and retry successfully', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'A beautiful sunset over mountains' }
     })
 
@@ -118,12 +119,12 @@ describe('BackdropGen', () => {
     const project = makeSpxProject()
     const genState = new GenState(i18n, project)
 
-    const gen1 = new BackdropGen(project, {
+    const gen1 = new BackdropGen(i18n, project, {
       settings: { name: 'forest' }
     })
     genState.addBackdrop(gen1)
 
-    const gen2 = new BackdropGen(project, {
+    const gen2 = new BackdropGen(i18n, project, {
       settings: { name: 'desert' }
     })
     genState.addBackdrop(gen2)
@@ -138,7 +139,7 @@ describe('BackdropGen', () => {
 
   it('should throw error when finishing without image', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'A test backdrop' }
     })
 
@@ -151,7 +152,7 @@ describe('BackdropGen', () => {
 
   it('should throw error when recording adoption without result', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'A test backdrop' }
     })
 
@@ -164,7 +165,7 @@ describe('BackdropGen', () => {
 
   it('should track isPreparePhase correctly', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'A test backdrop' }
     })
 
@@ -181,7 +182,7 @@ describe('BackdropGen', () => {
 
   it('should allow multiple enrichments', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'First description' }
     })
 
@@ -193,9 +194,19 @@ describe('BackdropGen', () => {
     expect(gen.enrichState.result?.description).toContain('Second description')
   })
 
+  it('should forward ui language to enrich api', async () => {
+    const project = makeSpxProject()
+    const gen = new BackdropGen(createI18n({ lang: 'zh' }), project, {
+      settings: { description: 'A test backdrop' }
+    })
+
+    await gen.enrich()
+    expect(vi.mocked(aigcMock.enrichBackdropSettings).mock.calls.at(-1)?.[3]).toBe('zh')
+  })
+
   it('should allow multiple image generations', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'A test backdrop' }
     })
 
@@ -214,7 +225,7 @@ describe('BackdropGen', () => {
 
   it('should cancel running image generation', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'A test backdrop' }
     })
     const tasks = aigcMock.tasks
@@ -232,7 +243,7 @@ describe('BackdropGen', () => {
 
   it('should export and load correctly while enrich is running', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'Enrich running test' }
     })
 
@@ -241,7 +252,7 @@ describe('BackdropGen', () => {
 
     const rawFiles = gen.export()
     const files = sndFiles(rawFiles)
-    const loadedGen = await BackdropGen.load(gen.name, project, files)
+    const loadedGen = await BackdropGen.load(gen.name, i18n, project, files)
 
     // `Phase.export` serializes running state to initial for retry/recovery
     expect(loadedGen.enrichState.status).toBe('initial')
@@ -254,7 +265,7 @@ describe('BackdropGen', () => {
 
   it('should export and load correctly after enrich finished but before image generation', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'Enrich finished pre-gen test' }
     })
 
@@ -265,7 +276,7 @@ describe('BackdropGen', () => {
 
     const rawFiles = gen.export()
     const files = sndFiles(rawFiles)
-    const loadedGen = await BackdropGen.load(gen.name, project, files)
+    const loadedGen = await BackdropGen.load(gen.name, i18n, project, files)
 
     expect(loadedGen.enrichState.status).toBe('finished')
     expect(loadedGen.enrichState.result).toEqual(gen.enrichState.result)
@@ -276,7 +287,7 @@ describe('BackdropGen', () => {
 
   it('should export and load correctly after genImages finished but before finish', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'Generated pre-finish test' }
     })
 
@@ -290,7 +301,7 @@ describe('BackdropGen', () => {
 
     const rawFiles = gen.export()
     const files = sndFiles(rawFiles)
-    const loadedGen = await BackdropGen.load(gen.name, project, files)
+    const loadedGen = await BackdropGen.load(gen.name, i18n, project, files)
 
     expect(loadedGen.enrichState.status).toBe('finished')
     expect(loadedGen.imagesGenState.status).toBe('finished')
@@ -303,7 +314,7 @@ describe('BackdropGen', () => {
 
   it('should export and load correctly', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'A test backdrop' }
     })
 
@@ -323,7 +334,7 @@ describe('BackdropGen', () => {
     const files = sndFiles(rawFiles)
 
     // 5. Load
-    const loadedGen = await BackdropGen.load(gen.name, project, files)
+    const loadedGen = await BackdropGen.load(gen.name, i18n, project, files)
     await flushPromises()
 
     // Verify basic properties
@@ -360,7 +371,7 @@ describe('BackdropGen', () => {
 
   it('should export and load running state correctly', async () => {
     const project = makeSpxProject()
-    const gen = new BackdropGen(project, {
+    const gen = new BackdropGen(i18n, project, {
       settings: { description: 'Running test' }
     })
 
@@ -396,7 +407,7 @@ describe('BackdropGen', () => {
     const files = sndFiles(rawFiles)
 
     // 3. Load from exported state
-    const loadedGen = await BackdropGen.load(gen.name, project, files)
+    const loadedGen = await BackdropGen.load(gen.name, i18n, project, files)
 
     await flushPromises()
     expect(loadedGen.imagesGenState.status).toBe('running')
@@ -442,7 +453,7 @@ describe('BackdropGen', () => {
       vi.setSystemTime(baseTime)
 
       const project = makeSpxProject()
-      const gen = new BackdropGen(project, {
+      const gen = new BackdropGen(i18n, project, {
         settings: { description: 'Remaining time test' }
       })
 
@@ -465,7 +476,7 @@ describe('BackdropGen', () => {
       // Simulate 5 seconds elapsed since task creation
       vi.setSystemTime(baseTime + 5000)
 
-      const loadedGen = await BackdropGen.load(gen.name, project, files)
+      const loadedGen = await BackdropGen.load(gen.name, i18n, project, files)
       await flushPromises()
 
       expect(loadedGen.imagesGenState.status).toBe('running')
@@ -482,14 +493,14 @@ describe('BackdropGen', () => {
   it('should loadAll from exported files', async () => {
     const project = makeSpxProject()
 
-    const gen1 = new BackdropGen(project, {
+    const gen1 = new BackdropGen(i18n, project, {
       settings: { description: 'A sunny beach', name: 'Beach' }
     })
     await gen1.enrich()
     await gen1.genImages()
     gen1.setImageIndex(0)
 
-    const gen2 = new BackdropGen(project, {
+    const gen2 = new BackdropGen(i18n, project, {
       settings: { description: 'A mountain range', name: 'Mountain' }
     })
     await gen2.enrich()
@@ -497,7 +508,7 @@ describe('BackdropGen', () => {
     const allFiles = { ...gen1.export(), ...gen2.export() }
     const files = sndFiles(allFiles)
 
-    const loadedGens = await BackdropGen.loadAll(makeSpxProject(), files)
+    const loadedGens = await BackdropGen.loadAll(i18n, makeSpxProject(), files)
     expect(loadedGens.length).toBe(2)
 
     const loadedNames = loadedGens.map((g) => g.name).sort()

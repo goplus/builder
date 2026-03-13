@@ -3,7 +3,7 @@
 ## Environment Requirements
 
 - **Node.js**: >= 20.11.1
-- **Go**: >= 1.24.0
+- **Go**: >= 1.25.0
 
 ## Install Dependencies
 

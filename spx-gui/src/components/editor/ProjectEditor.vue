@@ -13,9 +13,8 @@
       * We use custom directive to capture UI information, which does not work well with KeepAlive.
         For details, see: https://github.com/vuejs/core/issues/2349
     -->
-    <SoundEditor v-if="selected.type === 'sound' && selected.sound != null" :sound="selected.sound" />
     <SpriteEditor
-      v-else-if="selected.type === 'sprite' && selected.sprite != null"
+      v-if="selected.type === 'sprite' && selected.sprite != null"
       :sprite="selected.sprite"
       :state="editorCtx.state.spriteState!"
     />
@@ -36,7 +35,6 @@
 
 <script setup lang="ts">
 import { UICard } from '@/components/ui'
-import SoundEditor from './sound/SoundEditor.vue'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
 import EditorPreview from './preview/EditorPreview.vue'
@@ -235,7 +233,7 @@ onBeforeUnmount(() => {
   overflow: visible; // avoid cutting dropdown menu of CodeTextEditor (monaco)
 }
 .sider {
-  flex: 0 0 492px;
+  flex: 0 0 496px;
   min-width: 0;
   display: flex;
   flex-direction: column;

@@ -7,9 +7,8 @@ import type { LocaleMessage } from '@/utils/i18n'
 import { Disposable, type Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
-import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
-import { tagName as toolUseTagName } from './custom-elements/ToolUse'
-import { findCustomComponentUsages } from './MarkdownView.vue'
+import { accumulateToolCallDelta, finalizeToolCalls, type ToolCallDraft } from './tool-call'
+import { ToolExecutor, type ToolExecution } from './tool-executor'
 import dayjs from 'dayjs'
 import { ApiException } from '@/apis/common/exception'
 
@@ -42,8 +41,12 @@ export type UserEventMessage = {
 
 export type UserMessage = UserTextMessage | UserEventMessage
 
-export type CopilotMessage = TextMessage & {
+export type CopilotMessage = {
   role: 'copilot'
+  /** Text content of the message. Not present if the message only contains tool calls. */
+  content?: string
+  /** Tool calls included in the message. */
+  toolCalls?: apis.ToolCallInfo[]
 }
 
 export type ToolMessage = {
@@ -54,10 +57,27 @@ export type ToolMessage = {
 
 export type Message = UserMessage | CopilotMessage | ToolMessage
 
+function getToolExecutionText(execution: ToolExecution): string {
+  switch (execution.state) {
+    case 'executing':
+      return 'Executing tool...'
+    case 'completed': {
+      const serializedResult = JSON.stringify(execution.result)
+      return serializedResult == null ? 'null' : serializedResult
+    }
+    case 'failed':
+      return `Tool execution failed: ${execution.error}`
+  }
+}
+
+function toMessageContent(text: string): apis.MessageContent {
+  return { type: 'text', text }
+}
+
 export function toApiMessage(m: Message): apis.Message {
-  let textContent: string
   switch (m.role) {
-    case 'user':
+    case 'user': {
+      let textContent: string
       switch (m.type) {
         case 'text':
           textContent = m.content
@@ -66,30 +86,24 @@ export function toApiMessage(m: Message): apis.Message {
           textContent = `<event>${m.detail}</event>`
           break
       }
-      break
-    case 'copilot':
-      textContent = m.content
-      break
-    case 'tool':
-      switch (m.execution.state) {
-        case 'executing':
-          textContent = 'Executing tool...'
-          break
-        case 'completed':
-          textContent = `<tool-result id="${m.callId}">${JSON.stringify(m.execution.result)}</tool-result>`
-          break
-        case 'failed':
-          textContent = `Tool execution failed: ${m.execution.error}`
-          break
+      return {
+        role: m.role,
+        content: toMessageContent(textContent)
       }
-      break
-  }
-  return {
-    role: m.role === 'tool' ? 'user' : m.role, // TODO: remove me
-    content: {
-      type: 'text',
-      text: textContent
     }
+    case 'copilot': {
+      return {
+        role: 'copilot',
+        content: m.content != null ? toMessageContent(m.content) : undefined,
+        toolCalls: m.toolCalls
+      }
+    }
+    case 'tool':
+      return {
+        role: 'tool',
+        toolCallId: m.callId,
+        content: toMessageContent(getToolExecutionText(m.execution))
+      }
   }
 }
 
@@ -125,8 +139,8 @@ export enum RoundState {
   Failed = 'failed'
 }
 
-export interface IMessageStreamGenerator {
-  generateStreamMessage: typeof apis.generateStreamMessage
+export interface IMessageEventGenerator {
+  generateSSEMessage: typeof apis.generateSSEMessage
 }
 
 // NOTE: Keep backward compatibility of `RoundExported` to avoid errors when loading old sessions.
@@ -224,14 +238,16 @@ export class Round {
     return round
   }
 
-  private sealInProgressCopilotMessage(): CopilotMessage {
+  private sealInProgressCopilotMessage(toolCallDrafts: Array<ToolCallDraft | null>): CopilotMessage {
     const content = this.inProgressCopilotMessageContentRef.value
-    if (content == null) throw new Error('No in-progress copilot message content to seal')
+    const toolCalls = finalizeToolCalls(toolCallDrafts)
+    if (content == null && toolCalls.length === 0)
+      throw new Error('No in-progress copilot message content or tool calls to seal')
     this.inProgressCopilotMessageContentRef.value = null
     return {
       role: 'copilot',
-      type: 'text',
-      content
+      content: content ?? undefined,
+      toolCalls
     }
   }
 
@@ -250,6 +266,8 @@ export class Round {
       return
     }
 
+    this.inProgressCopilotMessageContentRef.value = null
+
     if (err instanceof ApiException) {
       this.apiExceptionCode = err.code
       this.apiExceptionMeta = err.meta
@@ -264,14 +282,11 @@ export class Round {
 
   private async handleCopilotMessage(message: CopilotMessage) {
     this.resultMessages.push(message)
-    const ccus = findCustomComponentUsages(message.content, this.copilot)
-    const toolExecutionInputs: ToolExecutionInput[] = []
-    for (const ccu of ccus) {
-      if (ccu.name !== toolUseTagName) continue
-      const props = ccu.props
-      const id = props.id + ''
-      toolExecutionInputs.push({ ...props, id })
-    }
+    const toolExecutionInputs = (message.toolCalls ?? []).map((c) => ({
+      id: c.id,
+      tool: c.function.name,
+      parameters: c.function.arguments
+    }))
     if (toolExecutionInputs.length === 0) {
       this.completeRound()
       return
@@ -299,17 +314,31 @@ export class Round {
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
-      const result = this.copilot.generator.generateStreamMessage('standard', sampledApiMessages, {
-        signal: this.ctrl.signal
+      const toolCalls: Array<ToolCallDraft | null> = []
+      const result = this.copilot.generator.generateSSEMessage('standard', sampledApiMessages, {
+        signal: this.ctrl.signal,
+        tools: this.copilot.getTools().map(toApiTool)
       })
-      for await (const chunk of result) {
-        if (this.inProgressCopilotMessageContentRef.value == null) {
-          this.inProgressCopilotMessageContentRef.value = ''
-          this.setState(RoundState.InProgress)
+      for await (const event of result) {
+        switch (event.type) {
+          case 'text_delta':
+            if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
+            if (this.inProgressCopilotMessageContentRef.value == null) {
+              this.inProgressCopilotMessageContentRef.value = ''
+            }
+            this.inProgressCopilotMessageContentRef.value += event.data.text
+            break
+          case 'tool_call_delta':
+            if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
+            accumulateToolCallDelta(toolCalls, event)
+            break
+          case 'done':
+            break
+          case 'error':
+            throw new Error(event.data.message)
         }
-        this.inProgressCopilotMessageContentRef.value += chunk
       }
-      const message = this.sealInProgressCopilotMessage()
+      const message = this.sealInProgressCopilotMessage(toolCalls)
       this.handleCopilotMessage(message)
     } catch (err) {
       this.handleResponseError(err)
@@ -475,6 +504,18 @@ function stringifyZodSchema(schema: ZodTypeAny): string {
   return JSON.stringify(pruned)
 }
 
+function toApiTool(tool: ToolDefinition): apis.Tool {
+  const { $schema, ...parameters } = zodToJsonSchema(tool.parameters)
+  return {
+    type: apis.ToolType.Function,
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters
+    }
+  }
+}
+
 export interface ISessionExportedStorage {
   set(value: SessionExported | null): void
   get(): SessionExported | null
@@ -500,7 +541,7 @@ export class Copilot extends Disposable {
   private toolMap = new Map<string, ToolDefinition>()
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
 
-  private getTools(): ToolDefinition[] {
+  getTools(): ToolDefinition[] {
     return Array.from(this.toolMap.values())
   }
 
@@ -512,7 +553,7 @@ export class Copilot extends Disposable {
 
   executor = new ToolExecutor(() => this.getTools())
 
-  constructor(public generator: IMessageStreamGenerator = apis) {
+  constructor(public generator: IMessageEventGenerator = apis) {
     super()
   }
 
@@ -551,23 +592,6 @@ ${stringifyZodSchema(customElement.attributes)}
 ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
   }
 
-  private getToolPrompt(tool: ToolDefinition) {
-    return `### Tool \`${tool.name}\`
-${tool.description}
-Parameters schema:
-\`\`\`json
-${stringifyZodSchema(tool.parameters)}
-\`\`\``
-  }
-
-  private getToolsPrompt() {
-    const tools = this.getTools()
-    if (tools.length === 0) return "# Available tools\nThere's no tools available."
-    return `# Available tools
-
-${tools.map((tool) => this.getToolPrompt(tool)).join('\n\n')}`
-  }
-
   private getTopicPrompt() {
     if (this.currentSession == null) return ''
     const topic = this.currentSession.topic
@@ -578,7 +602,7 @@ ${topic.description}`
   }
 
   getContextMessage(): UserTextMessage {
-    const parts = [this.getCustomElementsPrompt(), this.getToolsPrompt(), this.getContext(), this.getTopicPrompt()]
+    const parts = [this.getCustomElementsPrompt(), this.getContext(), this.getTopicPrompt()]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`
@@ -760,10 +784,31 @@ export function sampleApiMessages(
   const sampled: apis.Message[] = []
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]
-    const size = msg.content.text.length
+    const size = getMessageSize(msg)
     if (totalSize + size > limit) break
     totalSize += size
     sampled.unshift(msg)
   }
   return sampled
+}
+
+/**
+ * Get the size of a message for context sampling.
+ * Note that the size is not strictly defined, but should reflect the relative token usage of messages to some extent.
+ */
+function getMessageSize(message: apis.Message): number {
+  switch (message.role) {
+    case 'user':
+    case 'tool':
+      return message.content.text.length
+    case 'copilot': {
+      const contentSize = message.content?.text.length ?? 0
+      const toolCallsSize = (message.toolCalls ?? []).reduce(
+        (sum, c) => sum + c.function.name.length + c.function.arguments.length,
+        0
+      )
+      return contentSize + toolCallsSize
+    }
+  }
+  throw new Error(`Unknown message role: ${(message as any).role}`)
 }

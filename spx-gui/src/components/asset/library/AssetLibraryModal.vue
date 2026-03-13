@@ -96,7 +96,7 @@ function createAssetGen(type: AssetType) {
   return {
     [AssetType.Sound]: null,
     [AssetType.Sprite]: new SpriteGen(i18n, props.project),
-    [AssetType.Backdrop]: new BackdropGen(props.project)
+    [AssetType.Backdrop]: new BackdropGen(i18n, props.project)
   }[type]
 }
 watch(

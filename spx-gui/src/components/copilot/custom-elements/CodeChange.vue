@@ -21,7 +21,7 @@ will display a code change that removes line 10 & 11, then adds the new code con
 export const attributes = z.object({
   file: codeFilePathSchema,
   line: z.string().describe('Position (line number) to do change, 1-based'),
-  removeLineCount: z.string().optional().describe('Line count to remove. No line will be removed if not provided')
+  'remove-line-count': z.string().optional().describe('Line count to remove. No line will be removed if not provided')
 })
 </script>
 
@@ -31,9 +31,12 @@ import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle, ActionException } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
-import CodeLink from '@/components/editor/code-editor/CodeLink.vue'
-import { getTextDocumentId, type Range } from '@/components/editor/code-editor/common'
-import { useCodeEditorCtxRef } from '@/components/editor/code-editor/context'
+import {
+  CodeLink,
+  getTextDocumentId,
+  type Range,
+  useCodeEditorRef
+} from '@/components/editor/code-editor/spx-code-editor'
 import BlockWrapper from './common/BlockWrapper.vue'
 import BlockFooter from './common/BlockFooter.vue'
 import BlockActionBtn from './common/BlockActionBtn.vue'
@@ -48,7 +51,7 @@ const props = defineProps<{
 }>()
 
 const editorCtxRef = useEditorCtxRef()
-const codeEditorCtxRef = useCodeEditorCtxRef()
+const codeEditorRef = useCodeEditorRef()
 
 const childrenText = useSlotText()
 const codeToAdd = computed(() => {
@@ -60,9 +63,9 @@ const codeToAdd = computed(() => {
 })
 
 const target = computed(() => {
-  const codeEditorCtx = codeEditorCtxRef.value
-  if (codeEditorCtx == null) return null
-  const textDocument = codeEditorCtx.mustEditor().getTextDocument(getTextDocumentId(props.file))
+  const codeEditor = codeEditorRef.value
+  if (codeEditor == null) return null
+  const textDocument = codeEditor.getTextDocument(getTextDocumentId(props.file))
   if (textDocument == null) return null
   const startLine = parseInt(props.line, 10)
   const removeLineCount = props.removeLineCount == null ? 0 : parseInt(props.removeLineCount, 10)

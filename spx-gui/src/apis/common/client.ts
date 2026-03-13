@@ -164,10 +164,6 @@ export class Client {
     return this.requestBinary(path, payload, { ...options, method: 'POST' })
   }
 
-  put(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
-    return this.requestJSON(path, payload, { ...options, method: 'PUT' })
-  }
-
   patch(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
     return this.requestJSON(path, payload, { ...options, method: 'PATCH' })
   }
@@ -184,6 +180,10 @@ export class Client {
   getJSONSSE(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     if (params != null) path = withQueryParams(path, params)
     return this.requestJSONSSE(path, null, { ...options, method: 'GET' })
+  }
+
+  postJSONSSE(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestJSONSSE(path, payload, { ...options, method: 'POST' })
   }
 }
 

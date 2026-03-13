@@ -38,6 +38,7 @@
     "browserslist": "^4.28.0",
     "browserslist-to-esbuild": "^2.1.1",
     "casdoor-js-sdk": "^0.16.0",
+    "cropperjs": "^2.1.0",
     "csv-stringify": "^6.5.2",
     "dayjs": "^1.11.10",
     "eslint": "^9.39.1",

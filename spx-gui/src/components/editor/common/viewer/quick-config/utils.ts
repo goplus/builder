@@ -137,6 +137,10 @@ export class WidgetLocalConfig extends LocalConfig {
     return this.widget.label
   }
 
+  get target() {
+    return this.widget.target
+  }
+
   get variableName() {
     return this.widget.variableName
   }

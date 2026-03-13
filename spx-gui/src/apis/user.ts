@@ -34,18 +34,18 @@ export type UserCapabilities = {
   canUsePremiumLLM: boolean
 }
 
-export async function getUser(name: string): Promise<User> {
-  return await (client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>)
+export function getUser(name: string): Promise<User> {
+  return client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>
 }
 
-export async function getSignedInUser(): Promise<SignedInUser> {
-  return await (client.get(`/user`) as Promise<SignedInUser>)
+export function getSignedInUser(): Promise<SignedInUser> {
+  return client.get(`/user`) as Promise<SignedInUser>
 }
 
-export type UpdateSignedInUserParams = Partial<Pick<User, 'displayName' | 'description'>>
+export type UpdateSignedInUserParams = Partial<Pick<User, 'username' | 'displayName' | 'avatar' | 'description'>>
 
-export async function updateSignedInUser(params: UpdateSignedInUserParams) {
-  return await (client.put(`/user`, params) as Promise<SignedInUser>)
+export function updateSignedInUser(params: UpdateSignedInUserParams) {
+  return client.patch(`/user`, params) as Promise<SignedInUser>
 }
 
 export type ListUserParams = PaginationParams & {
@@ -59,8 +59,8 @@ export type ListUserParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export async function listUsers(params: ListUserParams) {
-  return await (client.get('/users/list', params) as Promise<ByPage<User>>)
+export function listUsers(params: ListUserParams) {
+  return client.get('/users/list', params) as Promise<ByPage<User>>
 }
 
 /**
@@ -83,10 +83,10 @@ export async function isFollowing(username: string) {
   }
 }
 
-export async function follow(username: string) {
-  await client.post(`/user/${encodeURIComponent(username)}/following`)
+export function follow(username: string) {
+  return client.post(`/user/${encodeURIComponent(username)}/following`) as Promise<void>
 }
 
-export async function unfollow(username: string) {
-  await client.delete(`/user/${encodeURIComponent(username)}/following`)
+export function unfollow(username: string) {
+  return client.delete(`/user/${encodeURIComponent(username)}/following`) as Promise<void>
 }

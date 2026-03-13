@@ -14,7 +14,6 @@ import { Visibility, type ProjectExtraSettings } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from './common/asset-name'
-import { ResourceModelIdentifier, type ResourceModel } from './common/resource-model'
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
 import { isProjectUsingAIInteraction } from '@/utils/project'
@@ -124,6 +123,8 @@ export class SpxProject extends Disposable implements IProject {
   stage: Stage
   tilemap?: Tilemap | null
   sprites: Sprite[]
+  // Sounds are kept at the project level (not in Stage) because sprite animations
+  // reference sounds by ID, and `removeSound` must clean up those cross-sprite references.
   sounds: Sound[]
   zorder: string[]
 
@@ -282,19 +283,6 @@ export class SpxProject extends Disposable implements IProject {
     const mapSize = this.stage.getMapSize()
     const viewport = this.viewportSize
     return mapSize.width > viewport.width || mapSize.height > viewport.height
-  }
-
-  getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
-    switch (id.type) {
-      case 'stage':
-        return this.stage
-      case 'sprite':
-        return this.sprites.find((s) => s.id === id.id) ?? null
-      case 'sound':
-        return this.sounds.find((s) => s.id === id.id) ?? null
-      default:
-        throw new Error(`unsupported resource type: ${id.type}`)
-    }
   }
 
   setDisplayName(displayName: string) {

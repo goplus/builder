@@ -35,7 +35,7 @@ class LocalCache implements ILocalCache {
 </script>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { getSignedInUsername } from '@/stores/user'
 import { getProjectEditorRoute } from '@/router'
@@ -48,7 +48,18 @@ import { untilNotNull, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
-import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
+import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/spx-code-editor'
+import {
+  writeToFileToolDescription,
+  WriteToFileArgsSchema,
+  listFilesToolDescription,
+  ListFilesArgsSchema,
+  getDiagnosticsToolDescription,
+  GetDiagnosticsArgsSchema,
+  getFileCodeToolDescription,
+  GetFileCodeArgsSchema
+} from '@/components/agent-copilot/mcp/definitions'
+import * as z from 'zod'
 import { usePublishProject } from '@/components/project'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
@@ -135,11 +146,78 @@ usePageTitle(() => {
   }
 })
 
-if (copilotCtx.mcp.registry == null) {
+const { registry } = copilotCtx.mcp
+if (registry == null) {
   throw new Error('Copilot registry not initialized')
 }
 
-const codeEditorQueryRet = useProvideCodeEditorCtx(stateQueryRet, copilotCtx.mcp.registry)
+const codeEditorQueryRet = useProvideCodeEditorCtx(stateQueryRet)
+
+watch(
+  codeEditorQueryRet.data,
+  (editor, _, onCleanUp) => {
+    if (editor == null) return
+    registry.registerTools(
+      [
+        {
+          description: writeToFileToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = WriteToFileArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${writeToFileToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async (args) => editor.writeToFile(args)
+          }
+        },
+        {
+          description: listFilesToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = ListFilesArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${listFilesToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async () => editor.listFiles()
+          }
+        },
+        {
+          description: getDiagnosticsToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = GetDiagnosticsArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${getDiagnosticsToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async () => editor.getDiagnostics()
+          }
+        },
+        {
+          description: getFileCodeToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = GetFileCodeArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${getFileCodeToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async (args: z.infer<typeof GetFileCodeArgsSchema>) => editor.getFileCode(args)
+          }
+        }
+      ],
+      'code-editor'
+    )
+    onCleanUp(() => registry.unregisterProviderTools('code-editor'))
+  },
+  { immediate: true }
+)
 
 const allQueryRet = useQuery(
   (ctx) =>
@@ -253,7 +331,7 @@ function openProject(owner: string, name: string) {
 <style scoped lang="scss">
 .editor-home {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 

@@ -23,7 +23,7 @@ export const attributes = z.object({})
 import { onMounted } from 'vue'
 
 import { useTutorial } from './tutorial'
-import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
+import { useCopilot } from '@/components/copilot/context'
 import { useModal } from '@/components/ui'
 
 const tutorial = useTutorial()

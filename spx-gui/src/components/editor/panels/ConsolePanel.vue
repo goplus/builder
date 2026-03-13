@@ -6,12 +6,12 @@ import { useI18n } from '@/utils/i18n'
 import { UICard, UICardHeader, UIEmpty } from '@/components/ui'
 import type { RuntimeOutput } from '@/components/editor/runtime'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import CodeLink from '../code-editor/CodeLink.vue'
-import { textDocumentId2CodeFileName } from '../code-editor/common'
+import { CodeLink, textDocumentId2CodeFileName } from '../code-editor/spx-code-editor'
 
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const runtime = computed(() => editorCtx.state.runtime)
+const outputs = computed(() => runtime.value.outputs)
 
 const outputContainerRef = ref<HTMLElement | null>(null)
 useBottomSticky(outputContainerRef)
@@ -64,10 +64,10 @@ const initializingError = computed(() => {
         <span class="time">{{ humanizeTime(initializingError.time) }}</span>
         <span class="message">{{ initializingError.message }}</span>
       </li>
-      <UIEmpty v-else-if="runtime.outputs.length === 0" size="small">
+      <UIEmpty v-else-if="outputs.length === 0" size="small">
         {{ $t({ en: 'No output', zh: '无输出' }) }}
       </UIEmpty>
-      <li v-for="(output, i) in runtime.outputs" v-else :key="i" class="output" :class="`kind-${output.kind}`">
+      <li v-for="output in outputs" v-else :key="output.id" class="output" :class="`kind-${output.kind}`">
         <span class="time">{{ humanizeTime(output.time) }}</span>
         <CodeLink v-if="getOutputSourceLocation(output) != null" class="link" v-bind="getOutputSourceLocation(output)!">
           {{ getOutputSourceLocationText(output) }}
@@ -83,6 +83,7 @@ const initializingError = computed(() => {
   display: flex;
   flex-direction: column;
 }
+
 .output-container {
   padding: 12px;
   flex: 1 1 0;

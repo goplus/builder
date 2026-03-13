@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { type User } from '@/apis/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
 import { useMessageHandle } from '@/utils/exception'
@@ -10,22 +11,47 @@ import TextView from '../TextView.vue'
 import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
 import EditProfileModal from './EditProfileModal.vue'
+import UserUsernameInline from './UserUsernameInline.vue'
 import { getCoverImgUrl } from './cover'
+import { getUserPageRoute } from '@/router'
 
 const props = defineProps<{
   user: User
 }>()
 
+const router = useRouter()
+const route = useRoute()
 const isSignedInUser = computed(() => props.user.username === getSignedInUsername())
 const avatarUrl = useAvatarUrl(() => props.user.avatar)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)
 
-const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ user: props.user }), {
-  en: 'Failed to update profile',
-  zh: '更新个人信息失败'
-}).fn
+function replaceCurrentUserRoute(oldUsername: string, newUsername: string) {
+  if (oldUsername === newUsername) return
+  if (route.params.name !== oldUsername) return
+
+  const oldBasePath = getUserPageRoute(oldUsername)
+  if (!route.path.startsWith(oldBasePath)) return
+
+  router.replace({
+    path: `${getUserPageRoute(newUsername)}${route.path.slice(oldBasePath.length)}`,
+    query: route.query,
+    hash: route.hash
+  })
+}
+
+const handleEditProfile = useMessageHandle(
+  async () => {
+    const oldUsername = props.user.username
+    const updated = await invokeEditProfileModal({ user: props.user })
+    replaceCurrentUserRoute(oldUsername, updated.username)
+  },
+  {
+    en: 'Failed to update profile',
+    zh: '更新个人信息失败'
+  }
+).fn
 </script>
 
 <template>
@@ -34,10 +60,11 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
     <UIImg class="avatar" :src="avatarUrl" />
     <div class="content">
       <div class="info">
-        <h2 class="name">
-          {{ user.displayName }}
+        <div class="title-row">
+          <h2 class="name">{{ user.displayName }}</h2>
+          <UserUsernameInline :username="user.username" />
           <UserJoinedAt class="joined-at" :time="user.createdAt" />
-        </h2>
+        </div>
         <TextView style="max-height: 66px" :text="user.description" />
       </div>
       <div class="op">
@@ -92,17 +119,18 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
   flex-direction: column;
   gap: 12px;
 
-  .name {
+  .title-row {
     display: flex;
-    align-items: end;
+    flex-wrap: wrap;
+    align-items: center;
     gap: var(--ui-gap-middle);
+  }
+
+  .name {
     font-size: 20px;
     line-height: 28px;
     color: var(--ui-color-title);
-  }
-
-  .joined-at {
-    margin-bottom: 2px;
+    margin: 0;
   }
 
   .description {

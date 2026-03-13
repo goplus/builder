@@ -87,7 +87,7 @@ export type AddProjectParams = Prettify<
   Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'> & Partial<Pick<ProjectData, 'displayName'>>
 >
 
-export async function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
+export function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
   return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
@@ -100,7 +100,7 @@ export type UpdateProjectParams = Prettify<
   >
 >
 
-export async function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
+export function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
   return client.patch(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
     signal
   }) as Promise<ProjectData>
@@ -138,11 +138,11 @@ export type ListProjectParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export async function listProject(params?: ListProjectParams) {
+export function listProject(params?: ListProjectParams) {
   return client.get('/projects/list', params) as Promise<ByPage<ProjectData>>
 }
 
-export async function getProject(owner: string, name: string, signal?: AbortSignal) {
+export function getProject(owner: string, name: string, signal?: AbortSignal) {
   return client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, undefined, {
     signal
   }) as Promise<ProjectData>
@@ -192,7 +192,7 @@ export async function exploreProjects({ order, count }: ExploreParams) {
 }
 
 /** Record a view for the given project */
-export async function recordProjectView(owner: string, name: string) {
+export function recordProjectView(owner: string, name: string) {
   return client.post(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/view`) as Promise<void>
 }
 
@@ -216,11 +216,11 @@ export async function isLiking(owner: string, name: string) {
   }
 }
 
-export async function likeProject(owner: string, name: string) {
+export function likeProject(owner: string, name: string) {
   return client.post(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`) as Promise<void>
 }
 
-export async function unlikeProject(owner: string, name: string) {
+export function unlikeProject(owner: string, name: string) {
   return client.delete(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`) as Promise<void>
 }
 

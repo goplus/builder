@@ -30,7 +30,7 @@ import MarkdownView, {
   type Components
 } from '@/components/common/markdown-vue/MarkdownView'
 import CodeBlock from './custom-elements/CodeBlock.vue'
-import { useCopilot } from './CopilotRoot.vue'
+import { useCopilot } from './context'
 import type { Copilot } from './copilot'
 
 defineProps<{

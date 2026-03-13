@@ -15,6 +15,7 @@ function makeStage() {
 
   const widget = new Monitor('monitor', {
     label: 'label11',
+    target: 'MySprite',
     x: 10,
     y: 10,
     visible: true,
@@ -39,9 +40,50 @@ describe('Widget', () => {
     expect(clone.visible).toEqual(widget.visible)
 
     expect(clone.type).toEqual('monitor')
+    expect(clone.target).toEqual('MySprite')
     expect(clone.variableName).toEqual('variableName1')
 
     stage.addWidget(clone)
     expect(clone.stage).toEqual(stage)
+  })
+})
+
+describe('Monitor.load', () => {
+  it('should default target to empty string when not provided', () => {
+    const monitor = Monitor.load({
+      type: 'monitor',
+      name: 'monitor1',
+      mode: 1,
+      val: 'score',
+      label: 'Score'
+    })
+    expect(monitor.target).toEqual('')
+    expect(monitor.variableName).toEqual('score')
+  })
+
+  it('should load val without legacy prefix', () => {
+    const monitor = Monitor.load({
+      type: 'monitor',
+      name: 'monitor1',
+      mode: 1,
+      target: 'MySprite',
+      val: 'score',
+      label: 'Score'
+    })
+    expect(monitor.target).toEqual('MySprite')
+    expect(monitor.variableName).toEqual('score')
+  })
+
+  it('should load val with legacy getVar: prefix', () => {
+    const monitor = Monitor.load({
+      type: 'monitor',
+      name: 'monitor1',
+      mode: 1,
+      target: '',
+      val: 'getVar:score',
+      label: 'Score'
+    })
+    expect(monitor.target).toEqual('')
+    expect(monitor.variableName).toEqual('score')
   })
 })

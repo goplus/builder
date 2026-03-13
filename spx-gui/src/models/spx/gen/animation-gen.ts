@@ -3,6 +3,7 @@ import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
+import type { I18n } from '@/utils/i18n'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
 import {
   type AnimationSettings,
@@ -74,6 +75,7 @@ export class AnimationGen extends Disposable {
     return this.parent.previewSprite
   }
   private project: SpxProject
+  private i18n: I18n
 
   private enrichPhase: Phase<AnimationSettings>
   private generateVideoTask: Task<TaskType.GenerateAnimationVideo> | null
@@ -81,9 +83,10 @@ export class AnimationGen extends Disposable {
   private extractFramesTask: Task<TaskType.ExtractVideoFrames> | null
   private finishPhase: Phase<Animation>
 
-  constructor(parent: Sprite | SpriteGen, project: SpxProject, inits: AnimationGenInits = {}) {
+  constructor(i18n: I18n, parent: Sprite | SpriteGen, project: SpxProject, inits: AnimationGenInits = {}) {
     super()
     this.id = inits.id ?? nanoid()
+    this.i18n = i18n
     this.parent = parent
     this.project = project
     this.settings = {
@@ -135,7 +138,8 @@ export class AnimationGen extends Disposable {
         this.settings.description,
         this.settings,
         getSpriteSettings(this.sprite),
-        getProjectSettings(this.project)
+        getProjectSettings(this.project),
+        this.i18n.lang.value
       )
     )
     this.setSettings(enriched)
@@ -293,6 +297,7 @@ export class AnimationGen extends Disposable {
   }
 
   static load(
+    i18n: I18n,
     parent: Sprite | SpriteGen,
     project: SpxProject,
     config: RawAnimationGenConfig,
@@ -350,7 +355,7 @@ export class AnimationGen extends Disposable {
       inits.video = videoFile
     }
 
-    const gen = new AnimationGen(parent, project, inits)
+    const gen = new AnimationGen(i18n, parent, project, inits)
     gen.restoreGenerateVideoTask()
     gen.restoreExtractFramesTask()
     return gen

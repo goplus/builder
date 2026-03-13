@@ -1,12 +1,25 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
-import { useMessageHandle } from '@/utils/exception'
-import { useAvatarUrl } from '@/stores/user/avatar'
-import { useI18n } from '@/utils/i18n'
+import { computed, ref } from 'vue'
 import { type User } from '@/apis/user'
-import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
+import { selectFile } from '@/utils/file'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { useI18n } from '@/utils/i18n'
+import {
+  UIButton,
+  UIForm,
+  UIFormItem,
+  UIFormModal,
+  UIIcon,
+  UIImg,
+  UITextInput,
+  useForm,
+  useModal
+} from '@/components/ui'
 import { getCoverImgUrl } from './cover'
 import { useUpdateSignedInUser } from '@/stores/user'
+import { useAvatarUrl } from '@/stores/user/avatar'
+import EditAvatarModal from './EditAvatarModal.vue'
+import UserUsernameInline from './UserUsernameInline.vue'
 
 const props = defineProps<{
   user: User
@@ -20,8 +33,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+const maxAvatarInputFileSize = 50 * 1024 * 1024
+const acceptedAvatarFileExts = ['png', 'jpg', 'jpeg', 'webp']
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
-const avatarUrl = useAvatarUrl(() => props.user.avatar)
+const pendingAvatarRef = ref<string | null>(null)
+const currentAvatar = computed(() => pendingAvatarRef.value ?? props.user.avatar)
+const avatarUrl = useAvatarUrl(() => currentAvatar.value)
 
 const form = useForm({
   displayName: [props.user.displayName, validateDisplayName],
@@ -46,7 +63,42 @@ function handleCancel() {
   emit('cancelled')
 }
 
+function validateAvatarInputFile(file: globalThis.File) {
+  if (file.type !== '' && !file.type.startsWith('image/')) {
+    throw new DefaultException({
+      en: 'Selected file must be an image',
+      zh: '所选文件必须是图片'
+    })
+  }
+
+  if (file.size > maxAvatarInputFileSize) {
+    throw new DefaultException({
+      en: 'Avatar image must be 50 MiB or smaller',
+      zh: '头像图片不能超过 50 MiB'
+    })
+  }
+}
+
 const updateProfile = useUpdateSignedInUser()
+const invokeEditAvatarModal = useModal(EditAvatarModal)
+
+const handleChooseAvatar = useMessageHandle(
+  async () => {
+    const file = await selectFile({ accept: acceptedAvatarFileExts })
+    validateAvatarInputFile(file)
+    const updated = await invokeEditAvatarModal({ file })
+    pendingAvatarRef.value = updated.avatar
+  },
+  { en: 'Failed to select avatar image', zh: '选择头像图片失败' }
+)
+
+function handleUsernameModified(newUsername: string) {
+  emit('resolved', {
+    ...props.user,
+    username: newUsername,
+    avatar: currentAvatar.value
+  })
+}
 
 const handleSubmit = useMessageHandle(async () => {
   const updated = await updateProfile({
@@ -66,12 +118,28 @@ const handleSubmit = useMessageHandle(async () => {
     @update:visible="handleCancel"
   >
     <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
-    <UIImg class="avatar" :src="avatarUrl" />
+    <div class="account-section">
+      <button
+        v-radar="{ name: 'Edit avatar button', desc: 'Click to choose a new avatar image' }"
+        class="avatar-button"
+        type="button"
+        @click="handleChooseAvatar.fn"
+      >
+        <UIImg class="avatar" :src="avatarUrl" size="cover" />
+        <UIIcon class="avatar-trigger" type="camera" />
+      </button>
+      <UserUsernameInline
+        class="account-username"
+        :username="props.user.username"
+        show-modify
+        @modified="handleUsernameModified"
+      />
+    </div>
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <UIFormItem :label="$t({ en: 'Name', zh: '名字' })" path="displayName">
         <UITextInput
           v-model:value="form.value.displayName"
-          v-radar="{ name: 'User name input', desc: 'Input field for user display name' }"
+          v-radar="{ name: 'Display name input', desc: 'Input field for user display name' }"
         />
       </UIFormItem>
       <UIFormItem :label="$t({ en: 'About me', zh: '关于我' })" path="description">
@@ -112,14 +180,58 @@ const handleSubmit = useMessageHandle(async () => {
   background-repeat: no-repeat;
 }
 
-.avatar {
-  margin-top: -48px;
-  margin-bottom: 20px;
+.account-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin: -44px 0 var(--ui-gap-large);
+}
+
+.avatar-button {
+  position: relative;
+  flex: 0 0 auto;
   width: 120px;
   height: 120px;
+  padding: 0;
+  border: none;
+  background: none;
+  outline: none;
+  box-shadow: none;
+  cursor: pointer;
+
+  &:hover .avatar-trigger,
+  &:focus-visible .avatar-trigger {
+    color: var(--ui-color-turquoise-300);
+  }
+
+  &:active .avatar-trigger {
+    transform: scale(0.96);
+  }
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
   border: 2px solid var(--ui-color-grey-100);
   border-radius: 50%;
   background-color: var(--ui-color-grey-100);
+}
+
+.avatar-trigger {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  height: 32px;
+  color: var(--ui-color-turquoise-200);
+  transition:
+    color 0.2s,
+    transform 0.2s;
+}
+
+.account-username {
+  min-width: 0;
+  margin-top: 64px;
 }
 
 .footer {

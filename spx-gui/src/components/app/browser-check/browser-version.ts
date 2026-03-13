@@ -7,8 +7,21 @@ export enum BrowserName {
   SAFARI = 'Safari'
 }
 
+// Map common browser names (lowercased) found in user-agent strings to the `BrowserName` enum,
+// including known variants like `microsoft edge` returned by the bowser library.
+const browserNameMap: Record<string, BrowserName> = {
+  ...Object.fromEntries(Object.values(BrowserName).map((name) => [name.toLowerCase(), name])),
+  'google chrome': BrowserName.CHROME,
+  'microsoft edge': BrowserName.EDGE,
+  'mozilla firefox': BrowserName.FIREFOX
+}
+
+function normalizeBrowserName(name: string): BrowserName | null {
+  return browserNameMap[name.toLowerCase()] ?? null
+}
+
 // Minimum recommended browser versions (manually maintained to match browserslist config)
-const recommendedBrowserVersions: Record<string, string> = {
+const recommendedBrowserVersions: Record<BrowserName, string> = {
   [BrowserName.CHROME]: '111',
   [BrowserName.EDGE]: '111',
   [BrowserName.FIREFOX]: '113',
@@ -30,7 +43,8 @@ export type BrowserCheckResult =
  */
 export function checkBrowserVersion(): BrowserCheckResult {
   const { name, version } = getBrowser()
-  if (name == null || !(name in recommendedBrowserVersions)) {
+  const browserName = name != null ? normalizeBrowserName(name) : null
+  if (browserName == null) {
     return {
       ok: false,
       browserName: null,
@@ -38,12 +52,12 @@ export function checkBrowserVersion(): BrowserCheckResult {
       recommendedVersion: recommendedBrowserVersions[BrowserName.CHROME]
     }
   }
-  const recommendedVersion = recommendedBrowserVersions[name]
+  const recommendedVersion = recommendedBrowserVersions[browserName]
   const browserVersion = version || '0'
   if (compareVersions(browserVersion, recommendedVersion) >= 0) {
     return { ok: true }
   }
-  return { ok: false, browserName: name, recommendedVersion }
+  return { ok: false, browserName, recommendedVersion }
 }
 
 /**

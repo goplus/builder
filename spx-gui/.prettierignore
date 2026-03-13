@@ -2,7 +2,7 @@
 wasm_exec.js
 # 3rd party code or configuration
 src/components/ui/reset.css
-src/components/editor/code-editor/ui/completion/fuzzy/*
-src/utils/spx/default-light-theme.json
-src/utils/spx/gop-tm-language.json
+src/components/editor/code-editor/xgo-code-editor/ui/completion/fuzzy/*
+src/utils/xgo/default-light-theme.json
+src/utils/xgo/gop-tm-language.json
 src/utils/snippet-parser/*
