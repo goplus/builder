@@ -95,7 +95,8 @@ export class MockAigcApis {
     vi.mocked(aigcApis.enrichSpriteSettings).mockImplementation(this.enrichSpriteSettings)
     this.genSpriteContentSettings = vi.fn(this.genSpriteContentSettings.bind(this))
     vi.mocked(aigcApis.genSpriteContentSettings).mockImplementation(this.genSpriteContentSettings)
-    this.createTask = vi.fn(this.createTask.bind(this))
+    // `as` preserve the generic method signature because vi.fn widens it to Task<TaskType>.
+    this.createTask = vi.fn(this.createTask.bind(this)) as typeof this.createTask
     vi.mocked(aigcApis.createTask).mockImplementation(this.createTask)
     this.getTask = vi.fn(this.getTask.bind(this))
     vi.mocked(aigcApis.getTask).mockImplementation(this.getTask)
