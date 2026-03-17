@@ -5,8 +5,6 @@
 import type { JsonSchema7Type } from 'zod-to-json-schema'
 import { client } from './common'
 
-export type CopilotScope = 'standard' | 'code'
-
 export enum ToolType {
   Function = 'function'
 }
@@ -96,23 +94,14 @@ export type GenerateSSEMessageOptions = GenerateMessageOptions & {
 
 const timeout = 15 * 1000
 
-export function generateMessage(scope: CopilotScope, messages: Message[], options?: GenerateMessageOptions) {
-  return client.post(
-    '/copilot/message',
-    { scope, messages },
-    { timeout: timeout, signal: options?.signal }
-  ) as Promise<Message>
-}
-
 export async function* generateSSEMessage(
-  scope: CopilotScope,
   messages: Message[],
   options?: GenerateSSEMessageOptions
 ): AsyncIterableIterator<MessageEvent> {
   try {
     const stream = client.postJSONSSE(
       '/copilot/sse/message',
-      { scope, messages, tools: options?.tools },
+      { scope: 'standard', messages, tools: options?.tools },
       {
         timeout: timeout,
         signal: options?.signal

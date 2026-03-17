@@ -315,7 +315,7 @@ export class Round {
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
       const toolCalls: Array<ToolCallDraft | null> = []
-      const result = this.copilot.generator.generateSSEMessage('standard', sampledApiMessages, {
+      const result = this.copilot.generator.generateSSEMessage(sampledApiMessages, {
         signal: this.ctrl.signal,
         tools: this.copilot.getTools().map(toApiTool)
       })

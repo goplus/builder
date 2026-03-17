@@ -1345,56 +1345,6 @@ paths:
           description: Successfully deleted the course series.
         "403":
           description: Insufficient permissions to perform this operation.
-
-  /copilot/message:
-    post:
-      tags:
-        - Copilot
-      summary: Generate a message
-      description: |
-        Generate a message by sending a list of input messages.
-
-        #### Quota & rate limits
-
-        - Each message consumes 1 quota from the authenticated user's allowance.
-        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
-        - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
-          time in seconds.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CopilotMessageRequest"
-
-      responses:
-        "201":
-          description: Message successfully generated.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CopilotCopilotMessage"
-              example:
-                role: copilot
-                content:
-                  type: text
-                  text: Hello!
-        "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
-        "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
-
   /copilot/sse/message:
     post:
       tags:
@@ -1402,10 +1352,6 @@ paths:
       summary: Generate a structured SSE stream message
       description: |
         Generate a structured SSE stream message by sending a list of input messages.
-
-        This is the rollout target for new structured streaming clients. During rollout, the legacy
-        `POST /copilot/stream/message` endpoint remains available with its existing behavior unchanged so clients can
-        migrate incrementally.
 
         The response is a Server-Sent Events (SSE) stream where each `data:` line contains a single JSON object.
 
@@ -1490,51 +1436,6 @@ paths:
               schema:
                 type: integer
 
-  /copilot/stream/message:
-    post:
-      tags:
-        - Copilot
-      summary: Generate a stream message
-      description: |
-        Generate a stream message by sending a list of input messages.
-
-        This is the legacy streaming endpoint kept during rollout. New structured streaming integrations should use
-        `POST /copilot/sse/message`, while this endpoint remains available with unchanged behavior for backward
-        compatibility.
-
-        #### Quota & rate limits
-
-        - Each message consumes 1 quota from the authenticated user's allowance.
-        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
-        - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
-          time in seconds.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CopilotMessageRequest"
-      responses:
-        "201":
-          description: Stream Message successfully generated.
-          content:
-            application/stream:
-        "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
-        "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
-
   /workflow/stream/message:
     post:
       tags:
@@ -1587,7 +1488,9 @@ paths:
         "201":
           description: Stream Message successfully generated.
           content:
-            application/stream:
+            text/plain:
+              schema:
+                type: string
         "403":
           description: Insufficient permissions or quota to perform this operation.
           headers:
