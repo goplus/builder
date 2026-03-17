@@ -1,7 +1,6 @@
 /// <reference types="vitest" />
 
 import path from 'node:path'
-import type { PreRenderedChunk } from 'rollup'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
@@ -92,7 +91,7 @@ export default defineConfig(({ mode }) => {
           'spx-runner': resolve('src/widgets/spx-runner/index.ts')
         },
         output: {
-          entryFileNames: (chunkInfo: PreRenderedChunk) => {
+          entryFileNames: (chunkInfo: { name: string }) => {
             if (chunkInfo.name === 'main') {
               return 'assets/[name]-[hash].js'
             }
