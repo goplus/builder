@@ -52,18 +52,6 @@ export type ResourceNameWithType = {
   name: string
 }
 
-/**
- * We should encode resource name in URI because it may contain special characters (e.g., `/`),
- * but now the language server doesn't do the encoding when constructing the URI, which causes problems.
- * We temporarily disable encoding to keep things working, but we should fix the language server
- * to do the encoding and re-enable this in the future.
- */
-const shouldEncodeResourceName = false
-
-export function encodeResourceName(name: string): string {
-  return shouldEncodeResourceName ? encodeURIComponent(name) : name
-}
-
 export function parseResourceURI(uri: ResourceURI): ResourceNameWithType[] {
   if (!isResourceUri(uri)) throw new Error(`Invalid resource URI: ${uri}`)
   const parts = uri.slice(resourceURIPrefix.length).split('/').map(decodeURIComponent)
@@ -140,21 +128,21 @@ export function getResourceModel(project: SpxProject, resourceId: ResourceIdenti
 }
 
 export function getResourceURI(resource: ResourceModel): string {
-  if (resource instanceof Sprite) return `${resourceURIPrefix}sprites/${encodeResourceName(resource.name)}`
-  if (resource instanceof Sound) return `${resourceURIPrefix}sounds/${encodeResourceName(resource.name)}`
-  if (resource instanceof Backdrop) return `${resourceURIPrefix}backdrops/${encodeResourceName(resource.name)}`
+  if (resource instanceof Sprite) return `${resourceURIPrefix}sprites/${encodeURIComponent(resource.name)}`
+  if (resource instanceof Sound) return `${resourceURIPrefix}sounds/${encodeURIComponent(resource.name)}`
+  if (resource instanceof Backdrop) return `${resourceURIPrefix}backdrops/${encodeURIComponent(resource.name)}`
   if (resource instanceof Costume) {
     const parent = resource.parent
     if (parent == null) throw new Error(`Costume ${resource.name} has no sprite`)
     if (!(parent instanceof Sprite)) throw new Error(`Invalid parent type: ${parent}`)
-    return `${resourceURIPrefix}sprites/${encodeResourceName(parent.name)}/costumes/${encodeResourceName(resource.name)}`
+    return `${resourceURIPrefix}sprites/${encodeURIComponent(parent.name)}/costumes/${encodeURIComponent(resource.name)}`
   }
   if (resource instanceof Animation) {
     const sprite = resource.sprite
     if (sprite == null) throw new Error(`Animation ${resource.name} has no sprite`)
-    return `${resourceURIPrefix}sprites/${encodeResourceName(sprite.name)}/animations/${encodeResourceName(resource.name)}`
+    return `${resourceURIPrefix}sprites/${encodeURIComponent(sprite.name)}/animations/${encodeURIComponent(resource.name)}`
   }
-  if (isWidget(resource)) return `${resourceURIPrefix}widgets/${encodeResourceName(resource.name)}`
+  if (isWidget(resource)) return `${resourceURIPrefix}widgets/${encodeURIComponent(resource.name)}`
   if (resource instanceof Stage) return `${resourceURIPrefix}stage`
   throw new Error(`Unsupported resource type: ${resource}`)
 }
