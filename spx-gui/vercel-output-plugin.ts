@@ -2,7 +2,9 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { Plugin, ResolvedConfig } from 'vite'
 
-// Generates the Vercel build output used by this static deployment.
+// Generates the `.vercel/output` artifacts for this static deployment following
+// the Vercel Build Output API v3 spec: https://vercel.com/docs/build-output-api/v3
+// This plugin only emits static assets and config.json; it does not manage functions or edge outputs.
 
 type HeaderRule = {
   source: string
