@@ -1488,9 +1488,7 @@ paths:
         "201":
           description: Stream Message successfully generated.
           content:
-            text/plain:
-              schema:
-                type: string
+            application/stream:
         "403":
           description: Insufficient permissions or quota to perform this operation.
           headers:
