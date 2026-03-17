@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 
 import path from 'node:path'
+import type { PreRenderedChunk } from 'rollup'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
@@ -12,6 +13,8 @@ const resolve = (dir: string) => path.join(__dirname, dir)
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const vercelProxiedApiBaseURL = env.VITE_VERCEL_PROXIED_API_BASE_URL == null ? null : env.VITE_VERCEL_PROXIED_API_BASE_URL
+
   return {
     plugins: [
       vue(),
@@ -66,7 +69,7 @@ export default defineConfig(({ mode }) => {
         rewrites: [
           {
             source: '/api/(.*)',
-            destination: (env.VITE_VERCEL_PROXIED_API_BASE_URL as string) + '/$1'
+            destination: vercelProxiedApiBaseURL == null ? null : `${vercelProxiedApiBaseURL}/$1`
           },
           {
             source: '/(.*)',
@@ -89,7 +92,7 @@ export default defineConfig(({ mode }) => {
           'spx-runner': resolve('src/widgets/spx-runner/index.ts')
         },
         output: {
-          entryFileNames: (chunkInfo) => {
+          entryFileNames: (chunkInfo: PreRenderedChunk) => {
             if (chunkInfo.name === 'main') {
               return 'assets/[name]-[hash].js'
             }

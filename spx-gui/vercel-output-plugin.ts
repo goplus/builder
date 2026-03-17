@@ -14,7 +14,7 @@ type HeaderRule = {
 
 type RewriteRule = {
   source: string
-  destination: string
+  destination: string | null
 }
 
 type Route =
@@ -40,21 +40,17 @@ type Options = {
 
 const defaultOutputDir = '.vercel/output'
 
+const escapeRegex = (value: string): string => value.replace(/[|\\{}()[\]^$+?.]/g, '\\$&')
+
 const buildRouteSource = (source: string): string => {
-  if (source === '/(.*)') {
-    return '^(?:/(.*))$'
+  if (!source.startsWith('/')) {
+    return source
   }
 
-  const segmentCatchAllMatch = source.match(/^\/([^()]+)\/\(\.\*\)$/)
-  if (segmentCatchAllMatch != null) {
-    return `^/${segmentCatchAllMatch[1]}(?:/(.*))$`
-  }
+  const wildcard = '(.*)'
+  const pattern = source.split(wildcard).map(escapeRegex).join(wildcard)
 
-  if (source.startsWith('/')) {
-    return `^${source}$`
-  }
-
-  return source
+  return `^${pattern}$`
 }
 
 const toHeaderRoute = (rule: HeaderRule): Route => ({
@@ -63,11 +59,17 @@ const toHeaderRoute = (rule: HeaderRule): Route => ({
   continue: true
 })
 
-const toRewriteRoute = (rule: RewriteRule): Route => ({
-  src: buildRouteSource(rule.source),
-  dest: rule.destination,
-  check: true
-})
+const toRewriteRoute = (rule: RewriteRule): Route => {
+  if (rule.destination == null) {
+    throw new Error(`rewrite destination for ${rule.source} is not set`)
+  }
+
+  return {
+    src: buildRouteSource(rule.source),
+    dest: rule.destination,
+    check: true
+  }
+}
 
 const getOutputDir = (config: ResolvedConfig, outputDir: string): string => path.resolve(config.root, outputDir)
 
@@ -93,28 +95,31 @@ export const createVercelOutputPlugin = ({ outputDir = defaultOutputDir, headers
       }
 
       const distDir = path.resolve(resolvedConfig.root, resolvedConfig.build.outDir)
-      const outputRoot = getOutputDir(resolvedConfig, outputDir)
       const staticDir = getStaticDir(resolvedConfig, outputDir)
+      const configPath = getConfigPath(resolvedConfig, outputDir)
 
-      await fs.rm(outputRoot, { recursive: true, force: true })
+      await fs.rm(staticDir, { recursive: true, force: true })
+      await fs.rm(configPath, { force: true })
       await fs.mkdir(staticDir, { recursive: true })
-      await fs.cp(distDir, staticDir, { recursive: true })
 
       const routes: Route[] = [...headers.map(toHeaderRoute), { handle: 'filesystem' }, ...rewrites.map(toRewriteRoute)]
 
-      await fs.writeFile(
-        getConfigPath(resolvedConfig, outputDir),
-        JSON.stringify(
-          {
-            version: 3,
-            routes,
-            overrides: {}
-          },
-          null,
-          2
-        ),
-        'utf-8'
-      )
+      await Promise.all([
+        fs.cp(distDir, staticDir, { recursive: true }),
+        fs.writeFile(
+          configPath,
+          JSON.stringify(
+            {
+              version: 3,
+              routes,
+              overrides: {}
+            },
+            null,
+            2
+          ),
+          'utf-8'
+        )
+      ])
     }
   }
 }
