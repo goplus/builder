@@ -74,17 +74,6 @@ export class StageEditorState extends Disposable {
 
     this.addDisposable(this.soundsState)
     this.addDisposable(this.widgetsState)
-
-    this.addDisposer(
-      watch(
-        () => this.widgetsState.selected,
-        (selectedWidget) => {
-          if (selectedWidget != null) {
-            this.select('widgets')
-          }
-        }
-      )
-    )
   }
 
   backdropsState: BackdropsEditorState
@@ -184,7 +173,7 @@ export class StageEditorState extends Disposable {
 </script>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Stage } from '@/models/spx/stage'
