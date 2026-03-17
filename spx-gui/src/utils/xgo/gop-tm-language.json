@@ -1930,8 +1930,8 @@
 					}
 				},
 				{
-					"comment": "one line with semicolon(;) without formatting gofmt - single type | property variables and types",
-					"match": "(?:((?:(?:\\w+\\,\\s*)+)?(?:\\w+\\s+))?([^;`\\\"\\/}]+)(?:\\;|(?=\\})))",
+					"comment": "one field per match - semicolon-terminated or ending before } - handles inline struct fields with optional variable names",
+					"match": "(?:\\s*((?:\\w+\\s*,\\s*)*\\w+\\s+)?([^\\s;`\\\"\\/}\\r\\n][^;`\\\"\\/}\\r\\n]*)(?:\\;|(?=\\})))",
 					"captures": {
 						"1": {
 							"patterns": [
