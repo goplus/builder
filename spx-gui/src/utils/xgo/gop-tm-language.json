@@ -1931,36 +1931,27 @@
 				},
 				{
 					"comment": "one line with semicolon(;) without formatting gofmt - single type | property variables and types",
-					"match": "(?:(?<=\\{)((?:\\s*(?:(?:(?:\\w+\\,\\s*)+)?(?:\\w+\\s+))?(?:(?:(?:\\s*(?:[\\*\\[\\]]+)?(?:\\<\\-\\s*)?\\bchan\\b(?:\\s*\\<\\-)?\\s*)+)?(?:[\\S]+)(?:\\;)?))+)\\s*(?=\\}))",
+					"match": "(?:((?:(?:\\w+\\,\\s*)+)?(?:\\w+\\s+))?([^;`\\\"\\/}]+)(?:\\;|(?=\\})))",
 					"captures": {
 						"1": {
 							"patterns": [
 								{
-									"match": "(?:((?:(?:\\w+\\,\\s*)+)?(?:\\w+\\s+))?((?:(?:\\s*(?:[\\*\\[\\]]+)?(?:\\<\\-\\s*)?\\bchan\\b(?:\\s*\\<\\-)?\\s*)+)?(?:[\\S]+)(?:\\;)?))",
-									"captures": {
-										"1": {
-											"patterns": [
-												{
-													"include": "#type-declarations"
-												},
-												{
-													"match": "(?:\\w+)",
-													"name": "variable.other.property.gop"
-												}
-											]
-										},
-										"2": {
-											"patterns": [
-												{
-													"include": "#type-declarations"
-												},
-												{
-													"match": "(?:\\w+)",
-													"name": "entity.name.type.gop"
-												}
-											]
-										}
-									}
+									"include": "#type-declarations"
+								},
+								{
+									"match": "(?:\\w+)",
+									"name": "variable.other.property.gop"
+								}
+							]
+						},
+						"2": {
+							"patterns": [
+								{
+									"include": "#type-declarations"
+								},
+								{
+									"match": "(?:\\w+)",
+									"name": "entity.name.type.gop"
 								}
 							]
 						}
