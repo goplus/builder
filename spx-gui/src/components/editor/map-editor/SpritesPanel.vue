@@ -3,13 +3,14 @@ import { computed, ref, watch } from 'vue'
 
 import type { SpxProject } from '@/models/spx/project'
 import type { Sprite } from '@/models/spx/sprite'
+import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 
 import { getCssVars, UICard, UIIcon, UIMenu, UIMenuItem, UITooltip, useUIVariables } from '@/components/ui'
-import SpriteList from '@/components/editor/sprite/SpriteList.vue'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useGenerateAsset } from '@/components/asset'
+import { useEditorCtx } from '../EditorContextProvider.vue'
+import SpriteList from '../sprite/SpriteList.vue'
 import PanelHeader from '../panels/common/PanelHeader.vue'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
-import { AssetType } from '@/apis/asset'
 import PanelFooter from '../panels/common/PanelFooter.vue'
 import SpriteBasicConfig from './SpriteBasicConfig.vue'
 
@@ -21,6 +22,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:selectedSprite': [sprite: Sprite]
 }>()
+
+const editorCtx = useEditorCtx()
 
 const footerExpanded = ref(props.selectedSprite != null)
 watch(
@@ -59,6 +62,18 @@ const handleAddFromAssetLibrary = useMessageHandle(
     zh: '从素材库添加失败'
   }
 ).fn
+
+const generateAsset = useGenerateAsset()
+const handleGenerate = useMessageHandle(
+  async () => {
+    const sprite = await generateAsset(editorCtx.project, AssetType.Sprite)
+    editorCtx.state.selectSprite(sprite.id)
+  },
+  {
+    en: 'Failed to generate sprite',
+    zh: '生成精灵失败'
+  }
+).fn
 </script>
 
 <template>
@@ -74,13 +89,21 @@ const handleAddFromAssetLibrary = useMessageHandle(
           <UIMenuItem
             v-radar="{ name: 'Add from local file', desc: 'Click to add sprite from local file' }"
             @click="handleAddFromLocalFile"
-            >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
           >
+            {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
+          </UIMenuItem>
           <UIMenuItem
             v-radar="{ name: 'Add from asset library', desc: 'Click to add sprite from asset library' }"
             @click="handleAddFromAssetLibrary"
-            >{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem
           >
+            {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
+          </UIMenuItem>
+          <UIMenuItem
+            v-radar="{ name: 'Generate sprite', desc: 'Click to generate sprite with AI' }"
+            @click="handleGenerate"
+          >
+            {{ $t({ en: 'Generate with AI', zh: 'AI 生成' }) }}
+          </UIMenuItem>
         </UIMenu>
       </template>
     </PanelHeader>

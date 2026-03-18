@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, h, ref, shallowReactive, shallowRef, watch, type Component, type CSSProperties } from 'vue'
+import { computed, ref, shallowReactive, shallowRef, watch, type Component } from 'vue'
 import {
   UITextInput,
   UIPagination,
@@ -36,8 +36,8 @@ import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSetti
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
-import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
-import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
+import { useAssetGen, addAssetGenResultToProject } from '../gen/useAssetGen'
+import AssetGenComp from '../gen/AssetGen.vue'
 
 import genAssetIcon from './gen-asset.svg?raw'
 import spriteBanner from './asset-library-sprite-banner.png'
@@ -91,36 +91,12 @@ const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | nul
     })[props.type]
 )
 
-const assetGen = shallowRef<AssetGenModel | null>(null)
-function createAssetGen(type: AssetType) {
-  return {
-    [AssetType.Sound]: null,
-    [AssetType.Sprite]: new SpriteGen(i18n, props.project),
-    [AssetType.Backdrop]: new BackdropGen(i18n, props.project)
-  }[type]
-}
-watch(
-  () => props.type,
-  (type, _, onCleanup) => {
-    assetGen.value = createAssetGen(type)
-    onCleanup(() => {
-      assetGen.value?.cancel()
-      assetGen.value?.dispose()
-    })
-  },
-  { immediate: true }
-)
+const typeRef = computed(() => props.type)
+const { assetGen, cancellable, keepAlive, reset: resetAssetGen } = useAssetGen(i18n, props.project, typeRef)
 
 // Recreate assetGen when keyword changes to ensure fresh state for new searches.
 // TODO: Recreating assetGen on every keyword change might be too frequent. Consider constructing it only when needed.
-watch(
-  () => keyword.value,
-  () => {
-    assetGen.value?.cancel()
-    assetGen.value?.dispose()
-    assetGen.value = createAssetGen(props.type)
-  }
-)
+watch(keyword, () => resetAssetGen(props.type))
 
 const headerStyle = computed(() => {
   const banner = {
@@ -131,40 +107,6 @@ const headerStyle = computed(() => {
   return {
     backgroundImage: `url(${banner})`
   }
-})
-
-/**
- * Prevent assetGen from being cancelled & disposed automatically.
- * This is useful when the user chooses to collapse the generation process
- * and we need to keep the assetGen instance alive and related tasks running.
- */
-function keepAssetGenAlive(gen: AssetGenModel) {
-  if (assetGen.value !== gen) return
-  assetGen.value = null
-}
-
-const AssetGenComp = computed(() => {
-  const gen = assetGen.value
-  if (gen == null) return null
-  if (gen instanceof SpriteGen) {
-    return (props: CSSProperties) =>
-      h(SpriteGenComp, {
-        ...props,
-        gen,
-        descriptionPlaceholder: keyword.value.trim(),
-        onCollapse: handleGenCollapse,
-        onFinished: handleGenFinished
-      })
-  } else if (gen instanceof BackdropGen) {
-    return (props: CSSProperties) =>
-      h(BackdropGenComp, {
-        ...props,
-        gen: gen as BackdropGen,
-        descriptionPlaceholder: keyword.value.trim(),
-        onFinished: handleGenFinished
-      })
-  }
-  return null
 })
 
 const entityMessages = {
@@ -289,8 +231,6 @@ function handleGenStart() {
   isGenPhase.value = true
 }
 
-const backButtonVisible = computed(() => (assetGen.value != null ? assetGen.value.isPreparePhase : false))
-
 // Handle returning to the asset library: reset search criteria and recreate assetGen to prevent unexpected intermediate states.
 const handleBackToAssetLibrary = useMessageHandle(
   async () => {
@@ -306,9 +246,7 @@ const handleBackToAssetLibrary = useMessageHandle(
     searchInput.value = ''
     keyword.value = ''
     isGenPhase.value = false
-    assetGen.value?.cancel()
-    assetGen.value?.dispose()
-    assetGen.value = createAssetGen(props.type)
+    resetAssetGen(props.type)
   },
   {
     en: 'Failed to return to asset library',
@@ -320,7 +258,7 @@ const modalRef = ref<InstanceType<typeof UIModal> | null>()
 async function handleGenCollapse() {
   const gen = assetGen.value
   if (gen == null) throw new Error('asset gen expected')
-  keepAssetGenAlive(gen)
+  keepAlive(gen)
   const transformOrigin = await props.genCollapseHandler(gen)
   if (modalRef.value != null && transformOrigin != null) {
     modalRef.value.setTransformOrigin(transformOrigin)
@@ -339,21 +277,7 @@ const handleGenFinished = useMessageHandle(
       {
         name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
       },
-      async () => {
-        if (gen instanceof SpriteGen) {
-          const sprite = gen.result
-          if (sprite == null) throw new Error('sprite generation not finished')
-          props.project.addSprite(sprite)
-          await sprite.autoFit()
-          return sprite
-        } else if (gen instanceof BackdropGen) {
-          const backdrop = gen.result
-          if (backdrop == null) throw new Error('backdrop generation not finished')
-          props.project.stage.addBackdrop(backdrop)
-          return backdrop
-        }
-        throw new Error('unknown asset type')
-      }
+      () => addAssetGenResultToProject(gen, props.project)
     )
     emit('resolved', [added])
   },
@@ -404,7 +328,7 @@ const title = computed(() => {
     <header class="header">
       <div class="header-left">
         <UIButton
-          v-if="isGenPhase && backButtonVisible"
+          v-if="isGenPhase && cancellable"
           class="back-asset"
           color="white"
           icon="arrowAlt"
@@ -417,8 +341,14 @@ const title = computed(() => {
       <UIModalClose class="close" @click="handleModalClose" />
     </header>
 
-    <template v-if="isGenPhase && AssetGenComp != null">
-      <AssetGenComp class="asset-gen" />
+    <template v-if="isGenPhase && assetGen != null">
+      <AssetGenComp
+        class="asset-gen"
+        :gen="assetGen"
+        :description-placeholder="keyword.trim()"
+        @collapse="handleGenCollapse"
+        @finished="handleGenFinished"
+      />
     </template>
     <template v-else>
       <div class="asset-library">

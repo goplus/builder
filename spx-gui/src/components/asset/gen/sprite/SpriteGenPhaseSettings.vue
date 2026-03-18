@@ -96,8 +96,9 @@ function handleImageSelect(index: number) {
         :disabled="!canSubmit"
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"
-        >{{ $t({ en: 'Next', zh: '下一步' }) }}</UIButton
       >
+        {{ $t({ en: 'Next', zh: '下一步' }) }}
+      </UIButton>
     </footer>
   </main>
 </template>
