@@ -163,13 +163,21 @@ async function setMapPosWithTransition(pos: Pos, durationInMs: number) {
 
 // When viewport size or map size changes, fit the map in the viewport and center it.
 watch(
-  [viewportSize, mapSize, fittingMapScale],
-  async ([vSize, mSize, targetScale]) => {
-    if (vSize == null || targetScale == null) return
+  [
+    // Watch width and height separately to avoid unnecessary recentering when project/stage objects are rebuilt
+    // without actual size changes. This typically happens after history undo/redo.
+    () => viewportSize.value?.width,
+    () => viewportSize.value?.height,
+    () => mapSize.value.width,
+    () => mapSize.value.height,
+    fittingMapScale
+  ],
+  ([vWidth, vHeight, mWidth, mHeight, targetScale]) => {
+    if (vWidth == null || vHeight == null || targetScale == null) return
     const scale = setMapScale(targetScale)
     setMapPos({
-      x: (vSize.width - mSize.width * scale) / 2,
-      y: (vSize.height - mSize.height * scale) / 2
+      x: (vWidth - mWidth * scale) / 2,
+      y: (vHeight - mHeight * scale) / 2
     })
   },
   { immediate: true }
@@ -189,9 +197,12 @@ function inViewport({ x, y }: Pos) {
 }
 
 watch(
-  () => props.selectedSprite,
-  async (selectedSprite, _, onCleanup) => {
+  // After undo/redo, the selected sprite instance is replaced even when the same sprite stays selected.
+  // Watch by id instead so we only recentre when the actual selected sprite changes.
+  () => props.selectedSprite?.id,
+  async (_, __, onCleanup) => {
     await untilTaskScheduled('user-visible', getCleanupSignal(onCleanup))
+    const selectedSprite = props.selectedSprite
     if (selectedSprite != null && viewportSize.value != null && !inViewport(selectedSprite)) {
       const mapPosForSprite = {
         x: viewportSize.value.width / 2 - (mapSize.value.width / 2 + selectedSprite.x) * mapScale.value,
