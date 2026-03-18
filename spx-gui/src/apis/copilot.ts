@@ -101,7 +101,7 @@ export async function* generateSSEMessage(
   try {
     const stream = client.postJSONSSE(
       '/copilot/sse/message',
-      { scope: 'standard', messages, tools: options?.tools },
+      { messages, tools: options?.tools },
       {
         timeout: timeout,
         signal: options?.signal

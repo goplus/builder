@@ -159,7 +159,6 @@ describe('generateSSEMessage', () => {
     expect(mockedPostJSONSSE).toHaveBeenCalledWith(
       '/copilot/sse/message',
       {
-        scope: 'standard',
         messages: [],
         tools
       },
