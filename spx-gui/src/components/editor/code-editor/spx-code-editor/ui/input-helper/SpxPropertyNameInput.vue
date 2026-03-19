@@ -5,7 +5,9 @@ export function getDefaultValue() {
 </script>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
+import { capture } from '@/utils/exception'
+import { getCleanupSignal } from '@/utils/disposable'
 import { UISelect, UISelectOption } from '@/components/ui'
 import { stageCodeFilePaths } from '@/models/spx/stage'
 import {
@@ -15,7 +17,6 @@ import {
   type Property,
   type TextDocument
 } from '../../../xgo-code-editor'
-import { capture } from '@/utils/exception'
 
 const props = defineProps<{
   value: string
@@ -40,34 +41,38 @@ const codeEditor = useCodeEditor()
 
 const properties = ref<Property[]>([])
 
-async function getProperties(textDocument: TextDocument) {
+async function getProperties(textDocument: TextDocument, signal?: AbortSignal) {
   const codeFilePath = getCodeFilePath(textDocument.id.uri)
   const isStage = stageCodeFilePaths.includes(codeFilePath)
-  const stageProperties = await codeEditor.getProperties('')
   if (isStage) {
-    return stageProperties
+    return await codeEditor.getProperties('', signal)
   }
   const spriteName = codeFilePath.replace(/\.spx$/, '')
-  const spriteProperties = await codeEditor.getProperties(spriteName)
+  const [stageProperties, spriteProperties] = await Promise.all([
+    codeEditor.getProperties('', signal),
+    codeEditor.getProperties(spriteName, signal)
+  ])
   const spritePropertyNames = new Set(spriteProperties.map((p) => p.name))
   return [...spriteProperties, ...stageProperties.filter((p) => !spritePropertyNames.has(p.name))]
 }
 
-watch(
-  () => ui.activeTextDocument,
-  async (textDocument) => {
-    if (textDocument == null) {
-      properties.value = []
-      return
-    }
-    try {
-      properties.value = await getProperties(textDocument)
-    } catch (e) {
-      capture(e, 'Failed to get properties in SpxPropertyNameInput')
-    }
-  },
-  { immediate: true }
-)
+watchEffect(async (onCleanup) => {
+  const textDocument = ui.activeTextDocument
+  if (textDocument == null) {
+    properties.value = []
+    return
+  }
+  const signal = getCleanupSignal(onCleanup)
+  try {
+    const result = await getProperties(textDocument, signal)
+    if (signal.aborted) return
+    properties.value = result
+  } catch (e) {
+    if (signal.aborted) return
+    properties.value = []
+    capture(e, 'Failed to get properties in SpxPropertyNameInput')
+  }
+})
 </script>
 
 <template>

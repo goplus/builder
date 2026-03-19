@@ -143,6 +143,7 @@ export class SpxInputHelperProvider extends InputHelperProvider {
           getDefaultValue: spxPropertyNameInput.getDefaultValue,
           exprForInput: (input: InPlaceInput) => {
             if (input.type !== SpxInputType.SpxPropertyName) return null
+            if (input.value === '') return null // guard empty default
             return JSON.stringify(input.value as InputValueForSpxType<SpxInputType.SpxPropertyName>)
           }
         } satisfies InputTypeHandler<string>
