@@ -1,26 +1,40 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { UIButton } from '@/components/ui'
+import { AssetType, type AssetData } from '@/apis/asset'
 import type { Backdrop } from '@/models/spx/backdrop'
 import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { capture, useMessageHandle } from '@/utils/exception'
+import { useI18n } from '@/utils/i18n'
 import { humanizeTimeLeft } from '../common/time-left'
 import BackdropSettingInput from './BackdropSettingsInput.vue'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
+import AssetSuggestions from '../common/AssetSuggestions.vue'
+import { useAssetSuggestions, buildGenSettingsKeyword } from '../common/useAssetSuggestions'
 import BackdropImageItem from './BackdropImageItem.vue'
+import BackdropItem from '@/components/asset/library/BackdropItem.vue'
 
-const props = defineProps<{
-  gen: BackdropGen
-  descriptionPlaceholder?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    gen: BackdropGen
+    descriptionPlaceholder?: string
+    enableLibrarySearch?: boolean
+  }>(),
+  {
+    descriptionPlaceholder: undefined,
+    enableLibrarySearch: false
+  }
+)
 
 const emit = defineEmits<{
   finished: [Backdrop]
+  assetPicked: [AssetData]
 }>()
 
 const canSubmit = computed(() => props.gen.image != null)
+const i18n = useI18n()
 const handleSubmit = useMessageHandle(
   async () => {
     const backdrop = await props.gen.finish()
@@ -43,6 +57,20 @@ function handleImageSelect(index: number) {
   props.gen.setImageIndex(index)
   hasPreview.value = true
 }
+
+const isLibrarySearchEnabled = computed(
+  () => props.enableLibrarySearch && props.gen.imagesGenState.status === 'initial'
+)
+
+const {
+  suggestions,
+  selected: selectedAsset,
+  toggle: toggleSelectedAsset
+} = useAssetSuggestions(
+  AssetType.Backdrop,
+  () => buildGenSettingsKeyword(i18n, props.gen.settings),
+  () => isLibrarySearchEnabled.value
+)
 </script>
 
 <template>
@@ -58,6 +86,25 @@ function handleImageSelect(index: number) {
         :disabled="handleSubmit.isLoading.value"
         :description-placeholder="descriptionPlaceholder"
       />
+      <AssetSuggestions
+        v-if="isLibrarySearchEnabled"
+        :type="AssetType.Backdrop"
+        :suggestions="suggestions"
+        :selected="selectedAsset"
+        @toggle="toggleSelectedAsset"
+      >
+        <template #item="{ asset, selected, onClick }">
+          <BackdropItem :asset="asset" :selected="selected" @click="onClick" />
+        </template>
+        <template #tip>
+          {{
+            $t({
+              en: `There are related backdrops in the library. You can choose the one you like or continue generating.`,
+              zh: `素材库中已有相关的背景，可以选择你喜欢的背景直接使用，或者继续生成。`
+            })
+          }}
+        </template>
+      </AssetSuggestions>
       <ImageSelector
         :state="gen.imagesGenState"
         :selected="gen.imageIndex"
@@ -92,6 +139,19 @@ function handleImageSelect(index: number) {
     </LayoutWithPreview>
     <footer class="footer">
       <UIButton
+        v-if="selectedAsset != null"
+        v-radar="{
+          name: 'Use',
+          desc: 'Click to use the selected library asset'
+        }"
+        color="primary"
+        size="large"
+        @click="emit('assetPicked', selectedAsset!)"
+      >
+        {{ $t({ en: 'Use', zh: '采用' }) }}
+      </UIButton>
+      <UIButton
+        v-else
         v-radar="{
           name: 'Use',
           desc: 'Finish and use the generated backdrop in the project'

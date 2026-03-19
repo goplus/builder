@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
+import type { AssetData } from '@/apis/asset'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import type { Sprite } from '@/models/spx/sprite'
 import { getSignedInUsername } from '@/stores/user'
@@ -16,11 +17,13 @@ import SpriteGenPhaseContent from './SpriteGenPhaseContent.vue'
 const props = defineProps<{
   gen: SpriteGen
   descriptionPlaceholder?: string
+  enableLibrarySearch?: boolean
 }>()
 
 const emit = defineEmits<{
   collapse: []
   finished: [Sprite]
+  assetPicked: [AssetData]
 }>()
 
 const i18n = useI18n()
@@ -51,7 +54,13 @@ provideLocalEditorCtx(editorCtxInGen)
     @collapse="emit('collapse')"
     @finished="emit('finished', $event)"
   />
-  <SpriteGenPhaseSettings v-else :gen="gen" :description-placeholder="descriptionPlaceholder" />
+  <SpriteGenPhaseSettings
+    v-else
+    :gen="gen"
+    :description-placeholder="descriptionPlaceholder"
+    :enable-library-search="enableLibrarySearch"
+    @asset-picked="emit('assetPicked', $event)"
+  />
 </template>
 
 <style lang="scss" scoped></style>

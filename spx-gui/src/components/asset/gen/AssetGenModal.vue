@@ -3,9 +3,9 @@ import { computed, ref } from 'vue'
 import { UIModal, UIModalClose, useConfirmDialog, type ModalTransformOrigin } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { AssetType } from '@/apis/asset'
+import { AssetType, type AssetData } from '@/apis/asset'
 import type { SpxProject } from '@/models/spx/project'
-import type { AssetGenModel, AssetModel } from '@/models/spx/common/asset'
+import { addAssetToProject, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useAssetGen, addAssetGenResultToProject } from './useAssetGen'
 import AssetGenComp from './AssetGen.vue'
@@ -71,6 +71,22 @@ const handleGenFinished = useMessageHandle(
   }
 ).fn
 
+const handleAssetPicked = useMessageHandle(
+  async (asset: AssetData) => {
+    const added = await editorCtx.state.history.doAction(
+      {
+        name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
+      },
+      () => addAssetToProject(asset, props.project)
+    )
+    emit('resolved', added)
+  },
+  {
+    en: 'Failed to add asset',
+    zh: '素材添加失败'
+  }
+)
+
 const handleModalClose = useMessageHandle(
   async () => {
     const em = entityMessage.value
@@ -106,8 +122,10 @@ const handleModalClose = useMessageHandle(
       v-if="assetGen != null"
       class="asset-gen"
       :gen="assetGen"
+      enable-library-search
       @collapse="handleGenCollapse"
       @finished="handleGenFinished"
+      @asset-picked="handleAssetPicked.fn"
     />
   </UIModal>
 </template>

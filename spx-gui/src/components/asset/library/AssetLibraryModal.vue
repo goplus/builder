@@ -18,13 +18,7 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type SpxProject } from '@/models/spx/project'
-import {
-  asset2Backdrop,
-  asset2Sound,
-  asset2Sprite,
-  type AssetGenModel,
-  type AssetModel
-} from '@/models/spx/common/asset'
+import { addAssetToProject, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import { getAssetCategories } from './category'
@@ -178,36 +172,13 @@ const genSuggestionMessage = computed(() => {
 
 const selected = shallowReactive<AssetData[]>([])
 
-async function addAssetToProject(asset: AssetData) {
-  switch (asset.type) {
-    case AssetType.Sprite: {
-      const sprite = await asset2Sprite(asset)
-      props.project.addSprite(sprite)
-      await sprite.autoFit()
-      return sprite
-    }
-    case AssetType.Backdrop: {
-      const backdrop = await asset2Backdrop(asset)
-      props.project.stage.addBackdrop(backdrop)
-      return backdrop
-    }
-    case AssetType.Sound: {
-      const sound = await asset2Sound(asset)
-      props.project.addSound(sound)
-      return sound
-    }
-    default:
-      throw new Error('unknown asset type')
-  }
-}
-
 const handleConfirm = useMessageHandle(
   async () => {
     const action = {
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
     const assetModels = await editorCtx.state.history.doAction(action, () =>
-      Promise.all(selected.map(addAssetToProject))
+      Promise.all(selected.map((asset) => addAssetToProject(asset, props.project)))
     )
     emit('resolved', assetModels)
   },
@@ -397,9 +368,14 @@ const title = computed(() => {
                     <div class="empty-tip">
                       <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>
                       <span class="highlight">{{ $t({ zh: `“${keyword}”`, en: `"${keyword}"` }) }}</span>
-                      <span>{{
-                        $t({ zh: '相关的素材，不如让 AI 帮你生成一个？', en: '. Why not let AI generate one for you?' })
-                      }}</span>
+                      <span>
+                        {{
+                          $t({
+                            zh: '相关的素材，不如让 AI 帮你生成一个？',
+                            en: '. Why not let AI generate one for you?'
+                          })
+                        }}
+                      </span>
                     </div>
                     <SettingsInput
                       class="settings-input"

@@ -6,22 +6,6 @@ import type { AssetGenModel } from '@/models/spx/common/asset'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 
-export async function addAssetGenResultToProject(gen: AssetGenModel, project: SpxProject) {
-  if (gen instanceof SpriteGen) {
-    const sprite = gen.result
-    if (sprite == null) throw new Error('sprite generation not finished')
-    project.addSprite(sprite)
-    await sprite.autoFit()
-    return sprite
-  } else if (gen instanceof BackdropGen) {
-    const backdrop = gen.result
-    if (backdrop == null) throw new Error('backdrop generation not finished')
-    project.stage.addBackdrop(backdrop)
-    return backdrop
-  }
-  throw new Error('unknown asset type')
-}
-
 export function useAssetGen(i18n: I18n, project: SpxProject, type: Ref<AssetType>) {
   const assetGen = shallowRef<AssetGenModel | null>(null)
 
@@ -67,4 +51,20 @@ export function useAssetGen(i18n: I18n, project: SpxProject, type: Ref<AssetType
   }
 
   return { assetGen, cancellable, keepAlive, reset }
+}
+
+export async function addAssetGenResultToProject(gen: AssetGenModel, project: SpxProject) {
+  if (gen instanceof SpriteGen) {
+    const sprite = gen.result
+    if (sprite == null) throw new Error('sprite generation not finished')
+    project.addSprite(sprite)
+    await sprite.autoFit()
+    return sprite
+  } else if (gen instanceof BackdropGen) {
+    const backdrop = gen.result
+    if (backdrop == null) throw new Error('backdrop generation not finished')
+    project.stage.addBackdrop(backdrop)
+    return backdrop
+  }
+  throw new Error('unknown asset type')
 }
