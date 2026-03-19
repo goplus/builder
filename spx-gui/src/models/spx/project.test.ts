@@ -7,13 +7,13 @@ import { fromText, toConfig, type Files } from '../common/file'
 import * as hashHelper from '../common/hash'
 import { Backdrop } from './backdrop'
 import { Monitor } from './widget/monitor'
-import { SpxProject, projectConfigFilePath, type RawProjectConfig } from './project'
+import { SpxProject, projectConfigFilePath, type RawProjectConfig, type ScreenshotTaker } from './project'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
 }
 
-function makeProject(screenshotTaker: (() => Promise<ReturnType<typeof mockFile>>) | null = async () => mockFile()) {
+function makeProject(screenshotTaker: ScreenshotTaker | null = async () => mockFile()) {
   const project = new SpxProject()
   const sound = new Sound('sound', mockFile())
   project.addSound(sound)
@@ -104,6 +104,7 @@ describe('Project', () => {
     const thumbnail = mockFile('thumbnail')
     const unbindScreenshotTaker = project.bindScreenshotTaker(async () => thumbnail)
 
+    // Schedule the debounced update first, then flush it immediately for a deterministic assertion.
     project['updateThumbnail']()
     await project['updateThumbnail'].flush()
     unbindScreenshotTaker()
