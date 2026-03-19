@@ -9,12 +9,10 @@ import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 export function useAssetGen(i18n: I18n, project: SpxProject, type: Ref<AssetType>) {
   const assetGen = shallowRef<AssetGenModel | null>(null)
 
-  function createAssetGen(t: AssetType) {
-    return {
-      [AssetType.Sound]: null,
-      [AssetType.Sprite]: new SpriteGen(i18n, project),
-      [AssetType.Backdrop]: new BackdropGen(i18n, project)
-    }[t]
+  function createAssetGen(t: AssetType): AssetGenModel | null {
+    if (t === AssetType.Sprite) return new SpriteGen(i18n, project)
+    if (t === AssetType.Backdrop) return new BackdropGen(i18n, project)
+    return null
   }
 
   watch(

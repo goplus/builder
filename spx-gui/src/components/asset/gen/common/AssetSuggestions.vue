@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AssetType, type AssetData } from '@/apis/asset'
+import type { AssetType, AssetData } from '@/apis/asset'
 
 const props = defineProps<{
   type: AssetType
@@ -33,7 +33,7 @@ function isSelected(asset: AssetData) {
 
 <style lang="scss" scoped>
 .asset-suggestions {
-  height: 170px;
+  height: 170px; // Fixed height to prevent layout shift when suggestions appear/disappear
   display: flex;
   flex-direction: column;
   align-items: center;

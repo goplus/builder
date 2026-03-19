@@ -89,6 +89,8 @@ const handleAssetPicked = useMessageHandle(
 
 const handleModalClose = useMessageHandle(
   async () => {
+    // It may be more user-friendly to do collapse automatically, or notify user about collapsing
+    // TODO: Review strategy here later
     const em = entityMessage.value
     await confirm({
       title: i18n.t({ zh: `退出${em.zh}生成？`, en: `Exit ${em.en} generation?` }),

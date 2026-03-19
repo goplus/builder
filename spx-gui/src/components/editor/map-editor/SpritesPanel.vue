@@ -67,7 +67,7 @@ const generateAsset = useGenerateAsset()
 const handleGenerate = useMessageHandle(
   async () => {
     const sprite = await generateAsset(editorCtx.project, AssetType.Sprite)
-    editorCtx.state.selectSprite(sprite.id)
+    handleSpriteClick(sprite)
   },
   {
     en: 'Failed to generate sprite',

@@ -52,8 +52,8 @@ export function useGenerateAsset() {
   const editorCtx = useEditorCtx()
   const genCollapseHandler = makeGenCollapseHandler(editorCtx)
   const invokeAssetGenModal = useModal(AssetGenModal)
-  return async function generateAsset(project: SpxProject, type: AssetType) {
-    return invokeAssetGenModal({ project, type, genCollapseHandler })
+  return async function generateAsset<T extends AssetType>(project: SpxProject, type: T) {
+    return (await invokeAssetGenModal({ project, type, genCollapseHandler })) as AssetModel<T>
   }
 }
 

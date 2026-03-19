@@ -27,8 +27,8 @@ import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
 import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
-import { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
 import { useAssetGen, addAssetGenResultToProject } from '../gen/useAssetGen'
 import AssetGenComp from '../gen/AssetGen.vue'
@@ -88,7 +88,8 @@ const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | nul
 const typeRef = computed(() => props.type)
 const { assetGen, cancellable, keepAlive, reset: resetAssetGen } = useAssetGen(i18n, props.project, typeRef)
 
-// Recreate assetGen when keyword changes to ensure fresh state for new searches.
+// When search results are empty, SettingsInput is shown inline and may modify assetGen state.
+// Reset assetGen on keyword change to avoid stale state if the user searches again without entering gen phase.
 // TODO: Recreating assetGen on every keyword change might be too frequent. Consider constructing it only when needed.
 watch(keyword, () => resetAssetGen(props.type))
 

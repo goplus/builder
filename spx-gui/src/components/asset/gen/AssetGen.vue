@@ -29,6 +29,7 @@ defineEmits<{
     @finished="$emit('finished')"
     @asset-picked="$emit('assetPicked', $event)"
   />
+  <!-- BackdropGen has a single-phase flow, so collapse is not needed -->
   <BackdropGenComp
     v-else-if="gen instanceof BackdropGen"
     :gen="gen"

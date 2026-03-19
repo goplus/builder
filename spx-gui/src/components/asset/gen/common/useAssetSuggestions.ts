@@ -1,4 +1,4 @@
-import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import { debounce } from 'lodash'
 import type { I18n } from '@/utils/i18n'
 import { listAsset, Visibility, type AssetData, type AssetType } from '@/apis/asset'
@@ -11,35 +11,33 @@ import {
   backdropCategoryOptions
 } from './param-settings/data'
 
-export function useAssetSuggestions(
-  type: AssetType,
-  keyword: () => string,
-  enabled: () => boolean
-): {
-  suggestions: ShallowRef<AssetData[]>
-  isLoading: Ref<boolean>
-  selected: ShallowRef<AssetData | null>
-  toggle: (asset: AssetData) => void
-} {
+export function useAssetSuggestions(type: AssetType, keyword: () => string, enabled: () => boolean) {
   const suggestions = shallowRef<AssetData[]>([])
+  // `isLoading` is not used for now, but we keep it here for potential future use (e.g., showing loading state in the UI).
   const isLoading = ref(false)
   const selected = shallowRef<AssetData | null>(null)
+  let abortCtrl: AbortController | null = null
 
-  const doSearch = debounce(async (keyword: string) => {
+  const doSearch = debounce(async (kw: string) => {
+    abortCtrl?.abort()
+    const ctrl = new AbortController()
+    abortCtrl = ctrl
     isLoading.value = true
     try {
       const result = await listAsset({
-        keyword,
+        keyword: kw,
         type,
         pageSize: 4,
         pageIndex: 1,
         visibility: Visibility.Public,
         owner: ownerAll
       })
+      if (ctrl.signal.aborted) return
       suggestions.value = result.data
+      isLoading.value = false
     } catch {
+      if (ctrl.signal.aborted) return
       suggestions.value = []
-    } finally {
       isLoading.value = false
     }
   }, 500)
@@ -49,6 +47,8 @@ export function useAssetSuggestions(
     ([kw, isEnabled]) => {
       if (!isEnabled || kw.trim() === '') {
         doSearch.cancel()
+        abortCtrl?.abort()
+        abortCtrl = null
         suggestions.value = []
         selected.value = null
         isLoading.value = false
