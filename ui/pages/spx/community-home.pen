@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -24,7 +24,12 @@
               "type": "ref",
               "ref": "r:ZFyMf",
               "x": 0,
-              "y": 0
+              "y": 0,
+              "descendants": {
+                "r:OE7h6/r:rgkvL": {
+                  "enabled": false
+                }
+              }
             }
           ]
         },
@@ -135,22 +140,28 @@
                               ]
                             },
                             {
+                              "type": "frame",
                               "id": "T8VtU",
-                              "type": "ref",
-                              "ref": "r:pDTpo",
-                              "x": 0,
-                              "y": 92,
+                              "name": "Button/Default",
+                              "clip": true,
                               "children": [
                                 {
                                   "id": "7Qvzs",
                                   "type": "ref",
                                   "ref": "r:IDB2y",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Button/Large/Primary/Shadow/Square/Default",
                                   "descendants": {
-                                    "r:1egfI": {
+                                    "r:wH3BG": {
+                                      "x": 0,
+                                      "y": 0
+                                    },
+                                    "r:4zALr": {
                                       "enabled": false
                                     },
                                     "r:2su3n": {
-                                      "content": "Join now"
+                                      "content": "join now"
                                     }
                                   }
                                 }
@@ -6681,6 +6692,8 @@
                                         {
                                           "type": "text",
                                           "id": "3f4pb",
+                                          "x": 0,
+                                          "y": 0,
                                           "name": "X",
                                           "enabled": false,
                                           "fill": "#ffffffff",
@@ -6694,6 +6707,8 @@
                                         {
                                           "type": "text",
                                           "id": "AHVs3",
+                                          "x": 0,
+                                          "y": 0,
                                           "name": "builder",
                                           "enabled": false,
                                           "fill": "#ffffffff",
@@ -6811,6 +6826,8 @@
                                         {
                                           "type": "group",
                                           "id": "qDhQs",
+                                          "x": 0,
+                                          "y": 0,
                                           "name": "2",
                                           "enabled": false,
                                           "children": [
@@ -6948,6 +6965,8 @@
                                         {
                                           "type": "group",
                                           "id": "yNBKB",
+                                          "x": 0,
+                                          "y": 0,
                                           "name": "1",
                                           "enabled": false,
                                           "children": [
@@ -7900,20 +7919,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -7929,20 +7935,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -7958,20 +7951,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -7987,20 +7967,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -8095,20 +8062,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8124,20 +8078,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8153,20 +8094,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8182,20 +8110,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -8291,20 +8206,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8320,20 +8222,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8349,20 +8238,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8378,20 +8254,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -8677,20 +8540,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8706,20 +8556,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8735,20 +8572,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8764,20 +8588,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -8872,20 +8683,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8901,20 +8699,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8930,20 +8715,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8959,20 +8731,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -9068,20 +8827,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -9097,20 +8843,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -9126,20 +8859,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -9155,20 +8875,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -9225,5 +8932,11 @@
   },
   "imports": {
     "r": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "dialer_icon3",
+      "url": "../../../dialer_icon3.ttf"
+    }
+  ]
 }

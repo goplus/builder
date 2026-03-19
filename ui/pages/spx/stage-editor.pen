@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -33,7 +33,7 @@
               "y": 0,
               "descendants": {
                 "G:BExiL": {
-                  "x": 139.66500000000002
+                  "x": 139.665
                 }
               }
             }
@@ -52,6 +52,9 @@
               "x": 0,
               "y": 0,
               "descendants": {
+                "G:7RooU/G:pkmAo": {
+                  "enabled": false
+                },
                 "G:THTPV": {
                   "y": 3.9675902359154804
                 }
@@ -116,7 +119,7 @@
               "y": 0,
               "descendants": {
                 "G:BExiL": {
-                  "x": 139.66500000000002
+                  "x": 139.665
                 }
               }
             }
@@ -194,7 +197,7 @@
               "y": 0,
               "descendants": {
                 "G:BExiL": {
-                  "x": 139.66500000000002
+                  "x": 139.665
                 }
               }
             }
@@ -272,7 +275,7 @@
               "y": 0,
               "descendants": {
                 "G:BExiL": {
-                  "x": 139.66500000000002
+                  "x": 139.665
                 }
               }
             }
@@ -292,7 +295,7 @@
               "y": 0,
               "descendants": {
                 "G:PM6np": {
-                  "y": 4.086377119577447
+                  "y": 4.086377119577446
                 }
               }
             },
@@ -492,5 +495,11 @@
   },
   "imports": {
     "G": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "dialer_icon3",
+      "url": "../../../dialer_icon3.ttf"
+    }
+  ]
 }
