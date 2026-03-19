@@ -264,5 +264,11 @@
   },
   "imports": {
     "a": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "dialer_icon3",
+      "url": "../../../dialer_icon3.ttf"
+    }
+  ]
 }
