@@ -37,6 +37,7 @@ import SpxKeyInput, * as spxKeyInput from './ui/input-helper/SpxKeyInput.vue'
 import SpxPlayActionInput, * as spxPlayActionInput from './ui/input-helper/SpxPlayActionInput.vue'
 import SpxSpecialObjInput, * as spxSpecialObjInput from './ui/input-helper/SpxSpecialObjInput.vue'
 import SpxRotationStyleInput, * as spxRotationStyleInput from './ui/input-helper/SpxRotationStyleInput.vue'
+import SpxPropertyNameInput, * as spxPropertyNameInput from './ui/input-helper/SpxPropertyNameInput.vue'
 
 export class SpxInputHelperProvider extends InputHelperProvider {
   constructor(lspClient: SpxLSPClient, resourceProvider: IResourceProvider) {
@@ -133,6 +134,16 @@ export class SpxInputHelperProvider extends InputHelperProvider {
           exprForInput: (input: InPlaceInput) => {
             if (input.type !== SpxInputType.SpxRotationStyle) return null
             return input.value as InputValueForSpxType<SpxInputType.SpxRotationStyle>
+          }
+        } satisfies InputTypeHandler<string>
+      case SpxInputType.SpxPropertyName:
+        return {
+          component: SpxPropertyNameInput,
+          getTitle: () => ({ en: 'Select a property', zh: '选择属性' }),
+          getDefaultValue: spxPropertyNameInput.getDefaultValue,
+          exprForInput: (input: InPlaceInput) => {
+            if (input.type !== SpxInputType.SpxPropertyName) return null
+            return JSON.stringify(input.value as InputValueForSpxType<SpxInputType.SpxPropertyName>)
           }
         } satisfies InputTypeHandler<string>
       default:

@@ -203,6 +203,8 @@ export enum SpxInputType {
   SpxSpecialObj = 'spx-special-obj',
   /** `RotationStyle` in spx */
   SpxRotationStyle = 'spx-rotation-style',
+  /** Property name values in spx */
+  SpxPropertyName = 'spx-property-name',
   /** Unknown type */
   Unknown = XGoBuiltInInputType.Unknown
 }
@@ -238,6 +240,11 @@ export type SpxInputTypedValue =
   | {
       type: SpxInputType.SpxRotationStyle
       /** Name of `RotationStyle` in spx, e.g., `Normal` */
+      value: string
+    }
+  | {
+      type: SpxInputType.SpxPropertyName
+      /** Property name of spx stage/sprite */
       value: string
     }
 
