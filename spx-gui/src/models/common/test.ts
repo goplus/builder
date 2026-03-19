@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 import { shallowRef } from 'vue'
 import Mutex from '@/utils/mutex'
-import type { IProject, Metadata, ProjectSerialized } from '@/models/project'
+import type { IProject, PartialMetadata, ProjectSerialized } from '@/models/project'
 import { File, fromText, type Files } from '../common/file'
 import { createFileWithUniversalUrl } from './cloud'
 
@@ -24,13 +24,13 @@ export class MockProject implements IProject {
   ) {
     this.filesRef.value = files
   }
-  private getMetadata(): Metadata {
+  private getMetadata(): PartialMetadata {
     return {
       owner: this.owner,
       name: this.name
     }
   }
-  setMetadata = vi.fn((metadata: Metadata): void => {
+  setMetadata = vi.fn((metadata: PartialMetadata): void => {
     Object.assign(this, metadata)
   })
   loadFiles = vi.fn(async (files: Files, _signal?: AbortSignal): Promise<void> => {

@@ -24,12 +24,12 @@ const numInColumn = 2
 const height = numInColumn * (courseItemHeight + coursePadding) - coursePadding
 
 const props = defineProps<{
-  courseSeriesId: string
+  courseSeriesIdInput: string
 }>()
 
 const tutorial = useTutorial()
 
-const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesId), {
+const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesIdInput), {
   en: 'Failed to load course series',
   zh: '加载课程系列失败'
 })
@@ -67,7 +67,7 @@ const courseQuery = useQuery(
   async (ctx) => {
     return listCourse(
       {
-        courseSeriesID: props.courseSeriesId,
+        courseSeriesID: props.courseSeriesIdInput,
         pageIndex: page.value,
         pageSize: pageSize.value,
         orderBy: 'sequenceInCourseSeries',

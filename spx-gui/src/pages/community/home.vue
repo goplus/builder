@@ -121,7 +121,7 @@ import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { ExploreOrder, exploreProjects, listProject } from '@/apis/project'
 import { getExploreRoute, getUserPageRoute } from '@/router'
-import { isSignedIn, getSignedInUsername } from '@/stores/user'
+import { isSignedIn, useSignedInUser } from '@/stores/user'
 import { useResponsive } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
@@ -133,17 +133,16 @@ usePageTitle([])
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
-
-const signedInUsername = computed(() => getSignedInUsername())
+const signedInUser = useSignedInUser()
 
 const myProjectsRoute = computed(() => {
-  if (signedInUsername.value == null) return ''
-  return getUserPageRoute(signedInUsername.value, 'projects')
+  if (signedInUser.value == null) return ''
+  return getUserPageRoute(signedInUser.value.username, 'projects')
 })
 
 const myProjects = useQuery(
   async () => {
-    if (signedInUsername.value == null) return []
+    if (!isSignedIn()) return []
     const { data: projects } = await listProject({
       pageIndex: 1,
       pageSize: numInRow.value,
@@ -169,14 +168,11 @@ const communityRemixingProjects = useQuery(
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
-const followingCreatedRoute = computed(() => {
-  if (signedInUsername.value == null) return ''
-  return getExploreRoute(ExploreOrder.FollowingCreated)
-})
+const followingCreatedRoute = computed(() => getExploreRoute(ExploreOrder.FollowingCreated))
 
 const followingCreatedProjects = useQuery(
   async () => {
-    if (signedInUsername.value == null) return []
+    if (!isSignedIn()) return []
     return exploreProjects({ order: ExploreOrder.FollowingCreated, count: numInRow.value })
   },
   { en: 'Failed to load projects', zh: '加载失败' }

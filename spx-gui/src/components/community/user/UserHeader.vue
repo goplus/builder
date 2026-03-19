@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { type User } from '@/apis/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
 import { useMessageHandle } from '@/utils/exception'
-import { getSignedInUsername } from '@/stores/user'
+import { useSignedInUser } from '@/stores/user'
 import { UIButton, UIImg, useModal } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import TextView from '../TextView.vue'
@@ -21,7 +21,8 @@ const props = defineProps<{
 
 const router = useRouter()
 const route = useRoute()
-const isSignedInUser = computed(() => props.user.username === getSignedInUsername())
+const signedInUser = useSignedInUser()
+const isSignedInUser = computed(() => props.user.username === signedInUser.value?.username)
 const avatarUrl = useAvatarUrl(() => props.user.avatar)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 

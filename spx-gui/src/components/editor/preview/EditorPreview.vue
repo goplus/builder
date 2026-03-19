@@ -166,6 +166,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
+import { useSignedInUser } from '@/stores/user'
 import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -180,11 +181,11 @@ import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
 import publishSvg from './publish.svg'
-import { getSignedInUsername } from '@/stores/user'
 
 const editorCtx = useEditorCtx()
 const codeEditor = useCodeEditor()
 const { isOnline } = useNetwork()
+const signedInUser = useSignedInUser()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
@@ -344,7 +345,7 @@ async function executeRun(action: 'run' | 'rerun') {
 
 const canManageProject = computed(() => {
   if (editorCtx.project == null) return false
-  const signedInUsername = getSignedInUsername()
+  const signedInUsername = signedInUser.value?.username
   if (signedInUsername == null) return false
   if (editorCtx.project.owner !== signedInUsername) return false
   return true

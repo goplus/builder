@@ -2,7 +2,7 @@ import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import type { ExploreOrder } from './apis/project'
-import { initiateSignIn, isSignedIn, getSignedInUsername } from './stores/user'
+import { initiateSignIn, isSignedIn, getUnresolvedSignedInUsername } from './stores/user'
 
 export function getProjectEditorRoute(ownerName: string, projectName: string, publish = false) {
   ownerName = encodeURIComponent(ownerName)
@@ -11,7 +11,7 @@ export function getProjectEditorRoute(ownerName: string, projectName: string, pu
 }
 
 export function getOwnProjectEditorRoute(projectName: string, publish = false) {
-  const username = getSignedInUsername()
+  const username = getUnresolvedSignedInUsername()
   if (username == null) throw new Error('User not signed in')
   return getProjectEditorRoute(username, projectName, publish)
 }
@@ -71,7 +71,7 @@ const routes: Array<RouteRecordRaw> = [
         meta: { isSearch: true }
       },
       {
-        path: '/user/:name',
+        path: '/user/:nameInput',
         component: () => import('@/pages/community/user/index.vue'),
         props: true,
         children: [
@@ -103,7 +103,7 @@ const routes: Array<RouteRecordRaw> = [
         ]
       },
       {
-        path: '/project/:owner/:name',
+        path: '/project/:ownerInput/:nameInput',
         component: () => import('@/pages/community/project.vue'),
         props: true
       }
@@ -114,7 +114,7 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/'
   },
   {
-    path: '/editor/:ownerName/:projectName/:inEditorPath*',
+    path: '/editor/:ownerNameInput/:projectNameInput/:inEditorPath*',
     component: () => import('@/pages/editor/index.vue'),
     props: true
   },
@@ -123,27 +123,27 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/tutorials/index.vue')
   },
   {
-    path: '/course/:courseSeriesId/:courseId/start',
+    path: '/course/:courseSeriesIdInput/:courseIdInput/start',
     component: () => import('@/pages/tutorials/course-start.vue'),
     props: true
   },
   {
-    path: '/course-series/:courseSeriesId',
+    path: '/course-series/:courseSeriesIdInput',
     component: () => import('@/pages/tutorials/course-series.vue'),
     props: true
   },
   {
-    path: '/editor/:projectName',
+    path: '/editor/:projectNameInput',
     redirect(to) {
-      const { projectName } = to.params
-      const username = getSignedInUsername()
+      const { projectNameInput } = to.params
+      const username = getUnresolvedSignedInUsername()
       // Route with `redirect` will not trigger the global `beforeEach` guard,
       // so we need to check sign-in status here.
       if (username == null) {
         initiateSignIn()
         throw new Error('User not signed in') // prevent router from redirecting
       }
-      return getProjectEditorRoute(username, projectName as string)
+      return getProjectEditorRoute(username, projectNameInput as string)
     }
   },
   {

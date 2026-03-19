@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import dayjs from 'dayjs'
 import { debounce } from 'lodash'
-import { onBeforeUnmount, onMounted, onUnmounted, watch, type ComputedRef } from 'vue'
+import { onBeforeUnmount, onMounted, onUnmounted, toValue, watch, type ComputedRef, type WatchSource } from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
@@ -11,7 +11,6 @@ import { useIsRouteLoaded } from '@/utils/route-loading'
 import * as projectApis from '@/apis/project'
 import type { Sprite } from '@/models/spx/sprite'
 import { SpxProject } from '@/models/spx/project'
-import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
 import {
@@ -29,6 +28,7 @@ import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
+import { useSignedInStateQuery, type SignedInState } from '@/stores/user'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 import { provideCopilot } from './context'
@@ -68,7 +68,7 @@ class Retriever {
     if (currentProject != null && currentProject.owner === owner && currentProject.name === name) {
       return currentProject
     }
-    const p = new SpxProject(owner, name)
+    const p = new SpxProject()
     const serialized = await this.cloudHelpers.load(owner, name, true, signal)
     await p.load(serialized)
     return p
@@ -298,12 +298,16 @@ If there's an API References UI in code editor, encourage the user to insert cod
 }
 
 class UserContextProvider implements ICopilotContextProvider {
+  constructor(private signedInState: WatchSource<SignedInState | null>) {}
+
   provideContext(): string {
-    const signedInUsername = getSignedInUsername()
+    const signedInState = toValue(this.signedInState)
     const userInfo =
-      signedInUsername != null
-        ? `Now the user is signed in with name "${signedInUsername}"`
-        : 'The user is not signed in'
+      signedInState == null
+        ? 'The signed-in state is still loading'
+        : signedInState.isSignedIn
+          ? `Now the user is signed in with name "${signedInState.user.username}"`
+          : 'The user is not signed in'
     return `# Current user
 ${userInfo}`
   }
@@ -409,6 +413,7 @@ const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
 const editorCtxRef = useEditorCtxRef()
 const codeEditorRef = useCodeEditorRef()
+const signedInStateQuery = useSignedInStateQuery()
 const retriever = new Retriever(editorCtxRef, cloudHelpers)
 const copilot = new Copilot()
 onUnmounted(() => copilot.dispose())
@@ -450,7 +455,7 @@ copilot.registerCustomElement({
 
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
-copilot.registerContextProvider(new UserContextProvider())
+copilot.registerContextProvider(new UserContextProvider(signedInStateQuery.data))
 copilot.registerContextProvider(new LocationContextProvider(router))
 copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
 copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))

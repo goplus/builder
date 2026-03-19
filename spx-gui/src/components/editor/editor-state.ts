@@ -3,6 +3,7 @@ import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } f
 import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
+import type { QueryRet } from '@/utils/query'
 import { CloudHelpers } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import type { ResourceModel } from '@/models/spx/common/resource'
@@ -14,7 +15,8 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { isWidget } from '@/models/spx/widget'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
-import type { IProject, Metadata, ProjectSerialized } from '@/models/project'
+import type { IProject, PartialMetadata, ProjectSerialized } from '@/models/project'
+import type { SignedInState } from '@/stores/user'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
@@ -59,7 +61,7 @@ class SpxProjectWithGens implements IProject {
   get name() {
     return this.project.name
   }
-  setMetadata(metadata: Metadata) {
+  setMetadata(metadata: PartialMetadata) {
     return this.project.setMetadata(metadata)
   }
   private filesComputed = computed(() => {
@@ -94,7 +96,7 @@ export class EditorState extends Disposable {
     i18n: I18n,
     readonly project: SpxProject,
     isOnline: WatchSource<boolean>,
-    signedInUsername: string | null,
+    signedInStateQuery: QueryRet<SignedInState>,
     cloudHelpers: CloudHelpers,
     localCache: editing.ILocalCache
   ) {
@@ -104,7 +106,7 @@ export class EditorState extends Disposable {
     this.addDisposable((this.genState = new GenState(i18n, project)))
     const projectWithGens = new SpxProjectWithGens(project, this.genState)
     this.addDisposable(
-      (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedInUsername))
+      (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedInStateQuery))
     )
     this.addDisposable(
       (this.stageState = new StageEditorState(

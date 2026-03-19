@@ -46,7 +46,7 @@ type Context = 'home' | 'user' | 'project'
 
 defineProps<{
   linkTo?: string | null
-  queryRet: QueryRet<unknown[]>
+  queryRet: QueryRet<unknown[] | null>
   context: Context
   numInRow: number
 }>()
