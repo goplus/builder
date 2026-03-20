@@ -137,7 +137,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/builder使用.png",
+                            "url": "../../images/builder-usage.png",
                             "mode": "fill"
                           },
                           "cornerRadius": 20,

@@ -89,7 +89,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -634,7 +634,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -1151,7 +1151,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -1661,7 +1661,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -1903,7 +1903,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2016,7 +2016,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2129,7 +2129,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2242,7 +2242,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2355,7 +2355,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2578,7 +2578,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -2820,7 +2820,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2933,7 +2933,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -3046,7 +3046,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -3159,7 +3159,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -3272,7 +3272,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,

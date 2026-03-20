@@ -65,7 +65,7 @@
                     {
                       "type": "image",
                       "enabled": true,
-                      "url": "../../images/项目运行.png",
+                      "url": "../../images/project-run.png",
                       "mode": "fill"
                     },
                     "#24292f99"
@@ -189,7 +189,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "cornerRadius": 12
@@ -881,7 +881,7 @@
                     {
                       "type": "image",
                       "enabled": true,
-                      "url": "../../images/项目运行.png",
+                      "url": "../../images/project-run.png",
                       "mode": "fill"
                     },
                     {
@@ -1082,7 +1082,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "cornerRadius": 12
@@ -1827,7 +1827,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "../../images/项目全屏.png",
+            "url": "../../images/project-fullscreen.png",
             "mode": "stretch"
           },
           "justifyContent": "center",
