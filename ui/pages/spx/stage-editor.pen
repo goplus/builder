@@ -666,11 +666,11 @@
   "fonts": [
     {
       "name": "XBuilder_Icons_01",
-      "url": "../../images/XBuilder_icon1.ttf"
+      "url": "../../images/xbuilder-icon1.ttf"
     },
     {
       "name": "XBuilder_Icons_02",
-      "url": "../../images/XBuilder_Icons_02.ttf"
+      "url": "../../images/xbuilder-icons-02.ttf"
     }
   ]
 }

@@ -60,7 +60,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -605,7 +605,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -1122,7 +1122,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -1632,7 +1632,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -2549,7 +2549,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -3459,11 +3459,11 @@
   "fonts": [
     {
       "name": "XBuilder_Icons_01",
-      "url": "../../images/XBuilder_icon1.ttf"
+      "url": "../../images/xbuilder-icon1.ttf"
     },
     {
       "name": "XBuilder_Icons_02",
-      "url": "../../images/XBuilder_Icons_02.ttf"
+      "url": "../../images/xbuilder-icons-02.ttf"
     }
   ]
 }
