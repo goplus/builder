@@ -19,9 +19,6 @@ import {
 } from '@/apis/aigc'
 import type { SpxProject } from '../project'
 import type { Sprite } from '../sprite'
-import type { AssetGenModel } from '../common/asset'
-import { SpriteGen } from './sprite-gen'
-import { BackdropGen } from './backdrop-gen'
 
 export function getProjectSettings(project: SpxProject): ProjectSettings {
   return {
@@ -58,22 +55,6 @@ export function getSpriteSettings(sprite: Sprite): SpriteSettings {
     artStyle: extraSettings?.artStyle ?? ArtStyle.Unspecified,
     perspective: extraSettings?.perspective ?? Perspective.Unspecified
   }
-}
-
-export async function addAssetGenResultToProject(gen: AssetGenModel, project: SpxProject) {
-  if (gen instanceof SpriteGen) {
-    const sprite = gen.result
-    if (sprite == null) throw new Error('sprite generation not finished')
-    project.addSprite(sprite)
-    await sprite.autoFit()
-    return sprite
-  } else if (gen instanceof BackdropGen) {
-    const backdrop = gen.result
-    if (backdrop == null) throw new Error('backdrop generation not finished')
-    project.stage.addBackdrop(backdrop)
-    return backdrop
-  }
-  throw new Error('unknown asset type')
 }
 
 export type PhaseState<R> =

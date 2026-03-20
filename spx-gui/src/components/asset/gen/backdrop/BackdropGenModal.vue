@@ -1,22 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UIModal, UIModalClose, useConfirmDialog, type ModalTransformOrigin } from '@/components/ui'
+import { UIModal, UIModalClose, useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
-import type { Sprite } from '@/models/spx/sprite'
-import type { SpriteGen as SpriteGenModel } from '@/models/spx/gen/sprite-gen'
+import type { Backdrop } from '@/models/spx/backdrop'
+import type { BackdropGen as BackdropGenModel } from '@/models/spx/gen/backdrop-gen'
 import type { SpxProject } from '@/models/spx/project'
-import type { AssetGenModel } from '@/models/spx/common/asset'
 import { useAssetGen } from '../use-asset-gen'
-import SpriteGenComp from './SpriteGen.vue'
+import BackdropGenComp from './BackdropGen.vue'
 
 const props = withDefaults(
   defineProps<{
     visible: boolean
     project: SpxProject
-    gen?: SpriteGenModel
-    genCollapseHandler: (gen: AssetGenModel) => Promise<ModalTransformOrigin | null>
+    gen?: BackdropGenModel
   }>(),
   {
     gen: undefined
@@ -24,36 +22,23 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  resolved: [Sprite]
+  resolved: [Backdrop]
   cancelled: []
 }>()
 
 const i18n = useI18n()
 const confirm = useConfirmDialog()
 
-const typeRef = computed(() => (props.gen != null ? null : AssetType.Sprite))
-const { assetGen: internalGen, keepAlive } = useAssetGen(props.project, typeRef)
+const typeRef = computed(() => (props.gen != null ? null : AssetType.Backdrop))
+const { assetGen: internalGen } = useAssetGen(props.project, typeRef)
 const activeGen = computed(() => props.gen ?? internalGen.value)
 
 const modalRef = ref<InstanceType<typeof UIModal> | null>(null)
 
-async function handleGenCollapse() {
-  const gen = activeGen.value
-  if (gen == null) throw new Error('sprite gen expected')
-  if (props.gen == null) {
-    keepAlive(gen)
-  }
-  const transformOrigin = await props.genCollapseHandler(gen)
-  if (modalRef.value != null && transformOrigin != null) {
-    modalRef.value.setTransformOrigin(transformOrigin)
-  }
-  emit('cancelled')
-}
-
 const handleModalClose = useMessageHandle(
   async () => {
     await confirm({
-      title: i18n.t({ zh: '退出精灵生成？', en: 'Exit sprite generation?' }),
+      title: i18n.t({ zh: '退出背景生成？', en: 'Exit backdrop generation?' }),
       content: i18n.t({
         zh: '当前内容不会被保存，确定要退出吗？',
         en: 'Current progress will not be saved. Are you sure to exit?'
@@ -69,23 +54,22 @@ const handleModalClose = useMessageHandle(
 <template>
   <UIModal
     ref="modalRef"
-    :radar="{ name: 'Sprite generation modal', desc: 'Modal for sprite generation' }"
+    :radar="{ name: 'Backdrop generation modal', desc: 'Modal for backdrop generation' }"
     style="width: 1076px; height: 800px"
     :visible="visible"
     mask-closable
     @update:visible="handleModalClose"
   >
     <header class="header">
-      <h2 class="title">{{ $t({ zh: '生成精灵', en: 'Sprite Generator' }) }}</h2>
+      <h2 class="title">{{ $t({ zh: '生成背景', en: 'Backdrop Generator' }) }}</h2>
       <UIModalClose class="close" @click="handleModalClose" />
     </header>
 
-    <SpriteGenComp
+    <BackdropGenComp
       v-if="activeGen != null"
-      class="sprite-gen"
+      class="backdrop-gen"
       :gen="activeGen"
       library-search-enabled
-      @collapse="handleGenCollapse"
       @resolved="emit('resolved', $event)"
     />
   </UIModal>
@@ -106,7 +90,7 @@ const handleModalClose = useMessageHandle(
   }
 }
 
-.sprite-gen {
+.backdrop-gen {
   flex: 1 1 0;
   min-height: 0;
 }

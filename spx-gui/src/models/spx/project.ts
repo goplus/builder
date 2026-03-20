@@ -156,6 +156,11 @@ export class SpxProject extends Disposable implements IProject {
       this.zorder = [...this.zorder, sprite.id]
     }
   }
+  /** Add given sprite to project and auto-fit its position & size */
+  async addSpriteWithAutoFit(sprite: Sprite) {
+    this.addSprite(sprite)
+    await sprite.autoFit()
+  }
   /**
    * Add a sprite after the specified reference sprite.
    */

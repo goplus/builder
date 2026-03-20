@@ -7,7 +7,7 @@ import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 
 import { getCssVars, UICard, UIIcon, UIMenu, UIMenuItem, UITooltip, useUIVariables } from '@/components/ui'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useGenerateAsset } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import SpriteList from '../sprite/SpriteList.vue'
 import PanelHeader from '../panels/common/PanelHeader.vue'
@@ -63,10 +63,13 @@ const handleAddFromAssetLibrary = useMessageHandle(
   }
 ).fn
 
-const generateAsset = useGenerateAsset()
+const invokeSpriteGenModal = useSpriteGenModal()
 const handleGenerate = useMessageHandle(
   async () => {
-    const sprite = await generateAsset(editorCtx.project, AssetType.Sprite)
+    const sprite = await invokeSpriteGenModal(editorCtx.project)
+    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () =>
+      editorCtx.project.addSpriteWithAutoFit(sprite)
+    )
     handleSpriteClick(sprite)
   },
   {

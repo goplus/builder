@@ -3,9 +3,8 @@ import { computed } from 'vue'
 import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import type { AssetData } from '@/apis/asset'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import type { Sprite } from '@/models/spx/sprite'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { getSignedInUsername } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import { provideLocalEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -22,8 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   collapse: []
-  finished: [Sprite]
-  assetPicked: [AssetData]
+  resolved: [Sprite]
 }>()
 
 const i18n = useI18n()
@@ -52,14 +50,14 @@ provideLocalEditorCtx(editorCtxInGen)
     v-if="gen.contentPreparingState.status === 'finished'"
     :gen="gen"
     @collapse="emit('collapse')"
-    @finished="emit('finished', $event)"
+    @resolved="emit('resolved', $event)"
   />
   <SpriteGenPhaseSettings
     v-else
     :gen="gen"
     :description-placeholder="descriptionPlaceholder"
     :library-search-enabled="librarySearchEnabled"
-    @asset-picked="emit('assetPicked', $event)"
+    @resolved="emit('resolved', $event)"
   />
 </template>
 

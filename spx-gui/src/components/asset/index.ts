@@ -28,7 +28,7 @@ import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
-import AssetGenModal from './gen/AssetGenModal.vue'
+import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
@@ -48,12 +48,19 @@ function makeGenCollapseHandler(editorCtx: EditorCtx) {
   }
 }
 
-export function useGenerateAsset() {
+export function useSpriteGenModal() {
   const editorCtx = useEditorCtx()
   const genCollapseHandler = makeGenCollapseHandler(editorCtx)
-  const invokeAssetGenModal = useModal(AssetGenModal)
-  return async function generateAsset<T extends AssetType>(project: SpxProject, type: T) {
-    return (await invokeAssetGenModal({ project, type, genCollapseHandler })) as AssetModel<T>
+  const invokeModal = useModal(SpriteGenModal)
+  return function invokeSpriteGenModal(project: SpxProject, gen?: SpriteGen) {
+    return invokeModal({ project, gen, genCollapseHandler })
+  }
+}
+
+export function useBackdropGenModal() {
+  const invokeModal = useModal(BackdropGenModal)
+  return function invokeBackdropGenModal(project: SpxProject, gen?: BackdropGen) {
+    return invokeModal({ project, gen })
   }
 }
 
@@ -110,10 +117,7 @@ export function useAddSpriteFromLocalFile() {
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    await editorCtx.state.history.doAction({ name: actionMessage }, async () => {
-      project.addSprite(sprite)
-      await sprite.autoFit()
-    })
+    await editorCtx.state.history.doAction({ name: actionMessage }, () => project.addSpriteWithAutoFit(sprite))
     return sprite
   }
 }
@@ -380,13 +384,6 @@ export function useRenameWidget() {
         warning: await getRenameWarning()
       }
     })
-  }
-}
-
-export function useSpriteGenModal() {
-  const invokeModal = useModal(SpriteGenModal)
-  return function spriteGenModal(spriteGen: SpriteGen) {
-    return invokeModal({ gen: spriteGen })
   }
 }
 

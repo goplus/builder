@@ -84,7 +84,7 @@ import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Stage } from '@/models/spx/stage'
 import { Backdrop } from '@/models/spx/backdrop'
-import { useAddAssetFromLibrary, useAddBackdropFromLocalFile, useGenerateAsset } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddBackdropFromLocalFile, useBackdropGenModal } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import EditorList from '../../common/EditorList.vue'
@@ -129,10 +129,13 @@ const handleAddFromAssetLibrary = useMessageHandle(
   }
 ).fn
 
-const generateAsset = useGenerateAsset()
+const invokeBackdropGenModal = useBackdropGenModal()
 const handleGenerate = useMessageHandle(
   async () => {
-    const backdrop = await generateAsset(editorCtx.project, AssetType.Backdrop)
+    const backdrop = await invokeBackdropGenModal(editorCtx.project)
+    await editorCtx.state.history.doAction({ name: { en: 'Add backdrop', zh: '添加背景' } }, () => {
+      editorCtx.project.stage.addBackdrop(backdrop)
+    })
     props.state.select(backdrop.id)
   },
   {

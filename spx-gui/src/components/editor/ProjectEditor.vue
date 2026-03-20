@@ -107,8 +107,7 @@ async function addMonitor(args: AddMonitorOptions) {
 
 async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   const sprite = await genSpriteFromCanvas(args.spriteName, args.size, args.size, args.color)
-  project.value.addSprite(sprite)
-  await sprite.autoFit()
+  await project.value.addSpriteWithAutoFit(sprite)
   editorCtx.state.selectSprite(sprite.id)
   project.value
     .export()

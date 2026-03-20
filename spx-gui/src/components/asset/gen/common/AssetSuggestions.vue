@@ -19,9 +19,9 @@ function isSelected(asset: AssetData) {
 </script>
 
 <template>
-  <div class="asset-suggestions">
-    <UILoading v-if="loading" />
-    <template v-if="!loading && suggestions.length > 0">
+  <UILoading v-if="loading" />
+  <div v-else class="asset-suggestions">
+    <template v-if="suggestions.length > 0">
       <ul class="list">
         <template v-for="asset in suggestions" :key="asset.id">
           <slot name="item" :asset="asset" :selected="isSelected(asset)" :on-click="() => emit('toggle', asset)"></slot>
@@ -36,7 +36,6 @@ function isSelected(asset: AssetData) {
 
 <style lang="scss" scoped>
 .asset-suggestions {
-  height: 170px; // Fixed height to prevent layout shift when suggestions appear/disappear
   display: flex;
   flex-direction: column;
   align-items: center;

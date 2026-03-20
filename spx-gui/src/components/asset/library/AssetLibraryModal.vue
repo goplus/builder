@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref, shallowReactive, shallowRef, watch, type Component } from 'vue'
+import { computed, ref, shallowReactive, shallowRef, watch, type Component, h } from 'vue'
 import {
   UITextInput,
   UIPagination,
@@ -18,6 +18,8 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type SpxProject } from '@/models/spx/project'
+import { Sprite } from '@/models/spx/sprite'
+import { Backdrop } from '@/models/spx/backdrop'
 import { addAssetToProject, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -27,12 +29,12 @@ import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
 import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
-import { addAssetGenResultToProject } from '@/models/spx/gen/common'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
+import { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
+import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
+import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 import { useAssetGen } from '../gen/use-asset-gen'
-import AssetGenComp from '../gen/AssetGen.vue'
 
 import genAssetIcon from './gen-asset.svg?raw'
 import spriteBanner from './asset-library-sprite-banner.png'
@@ -242,25 +244,42 @@ async function handleGenCollapse() {
 }
 
 const handleGenFinished = useMessageHandle(
-  async () => {
-    const gen = assetGen.value
-    if (gen == null) throw new Error('asset gen expected')
-    // Consider moving asset addition outside AssetLibraryModal for better separation of concerns.
-    // However, this would introduce a delay between the modal close and assets addition, potentially degrading UX.
-    // TODO: Review this trade-off
-    const added = await editorCtx.state.history.doAction(
-      {
-        name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
-      },
-      () => addAssetGenResultToProject(gen, props.project)
+  async (model: AssetModel) => {
+    await editorCtx.state.history.doAction(
+      { name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` } },
+      () => {
+        if (model instanceof Sprite) return props.project.addSpriteWithAutoFit(model)
+        if (model instanceof Backdrop) props.project.stage.addBackdrop(model)
+      }
     )
-    emit('resolved', [added])
+    emit('resolved', [model])
   },
-  {
-    en: 'Failed to generate asset',
-    zh: '素材生成失败'
-  }
+  { en: 'Failed to add asset', zh: '素材添加失败' }
 ).fn
+
+const AssetGenComp = computed(() => {
+  const gen = assetGen.value
+  if (gen == null) return null
+  if (gen instanceof SpriteGen) {
+    return (attrs: Record<string, unknown>) =>
+      h(SpriteGenComp, {
+        ...attrs,
+        gen,
+        descriptionPlaceholder: keyword.value.trim(),
+        onCollapse: handleGenCollapse,
+        onResolved: handleGenFinished
+      })
+  } else if (gen instanceof BackdropGen) {
+    return (attrs: Record<string, unknown>) =>
+      h(BackdropGenComp, {
+        ...attrs,
+        gen,
+        descriptionPlaceholder: keyword.value.trim(),
+        onResolved: handleGenFinished
+      })
+  }
+  return null
+})
 
 const confirm = useConfirmDialog()
 
@@ -316,14 +335,8 @@ const title = computed(() => {
       <UIModalClose class="close" @click="handleModalClose" />
     </header>
 
-    <template v-if="isGenPhase && assetGen != null">
-      <AssetGenComp
-        class="asset-gen"
-        :gen="assetGen"
-        :description-placeholder="keyword.trim()"
-        @collapse="handleGenCollapse"
-        @finished="handleGenFinished"
-      />
+    <template v-if="isGenPhase && AssetGenComp != null">
+      <AssetGenComp class="asset-gen" />
     </template>
     <template v-else>
       <div class="asset-library">
