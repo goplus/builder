@@ -254,7 +254,7 @@
                               "fill": "$grey700",
                               "content": "r",
                               "lineHeight": 1,
-                              "fontFamily": "XBuilder_Icons_01",
+                              "fontFamily": "xbuilder-icons-01",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             },
@@ -309,7 +309,7 @@
                               "fill": "$grey700",
                               "content": "E",
                               "lineHeight": 1,
-                              "fontFamily": "XBuilder_Icons_01",
+                              "fontFamily": "xbuilder-icons-01",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             },
@@ -369,7 +369,7 @@
                               "fill": "$grey700",
                               "content": "I",
                               "lineHeight": 1,
-                              "fontFamily": "XBuilder_Icons_01",
+                              "fontFamily": "xbuilder-icons-01",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             },
@@ -1883,11 +1883,11 @@
   },
   "fonts": [
     {
-      "name": "XBuilder_Icons_01",
-      "url": "../../images/xbuilder-icon1.ttf"
+      "name": "xbuilder-icons-01",
+      "url": "../../images/xbuilder-icons-01.ttf"
     },
     {
-      "name": "XBuilder_Icons_02",
+      "name": "xbuilder-icons-02",
       "url": "../../images/xbuilder-icons-02.ttf"
     }
   ]
