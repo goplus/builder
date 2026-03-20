@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"
 
 # Keep this version in sync with `VITE_SPX_VERSION` in `.env`.
-SPX_VERSION="2.0.0-pre.47"
+SPX_VERSION="2.0.0-pre.47.0.20260317084052-07546096faba"
 
 SPX_NAME="spx_${SPX_VERSION}"
 SPX_RELEASE_URL="https://github.com/goplus/spx/releases/download/v${SPX_VERSION}/spx_web.zip"
