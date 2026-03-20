@@ -5,14 +5,13 @@ import { AssetType, type AssetData } from '@/apis/asset'
 import type { Backdrop } from '@/models/spx/backdrop'
 import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { capture, useMessageHandle } from '@/utils/exception'
-import { useI18n } from '@/utils/i18n'
 import { humanizeTimeLeft } from '../common/time-left'
 import BackdropSettingInput from './BackdropSettingsInput.vue'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
 import AssetSuggestions from '../common/AssetSuggestions.vue'
-import { useAssetSuggestions, buildGenSettingsKeyword } from '../common/useAssetSuggestions'
+import { useAssetSuggestions } from '../common/use-asset-suggestions'
 import BackdropImageItem from './BackdropImageItem.vue'
 import BackdropItem from '@/components/asset/library/BackdropItem.vue'
 
@@ -20,11 +19,11 @@ const props = withDefaults(
   defineProps<{
     gen: BackdropGen
     descriptionPlaceholder?: string
-    enableLibrarySearch?: boolean
+    librarySearchEnabled?: boolean
   }>(),
   {
     descriptionPlaceholder: undefined,
-    enableLibrarySearch: false
+    librarySearchEnabled: false
   }
 )
 
@@ -34,7 +33,6 @@ const emit = defineEmits<{
 }>()
 
 const canSubmit = computed(() => props.gen.image != null)
-const i18n = useI18n()
 const handleSubmit = useMessageHandle(
   async () => {
     const backdrop = await props.gen.finish()
@@ -59,18 +57,15 @@ function handleImageSelect(index: number) {
 }
 
 const isLibrarySearchEnabled = computed(
-  () => props.enableLibrarySearch && props.gen.imagesGenState.status === 'initial'
+  () => props.librarySearchEnabled && props.gen.imagesGenState.status === 'initial'
 )
 
 const {
   suggestions,
+  isLoading: isSuggestionsLoading,
   selected: selectedAsset,
   toggle: toggleSelectedAsset
-} = useAssetSuggestions(
-  AssetType.Backdrop,
-  () => buildGenSettingsKeyword(i18n, props.gen.settings),
-  () => isLibrarySearchEnabled.value
-)
+} = useAssetSuggestions(AssetType.Backdrop, () => props.gen.settings.description, isLibrarySearchEnabled)
 </script>
 
 <template>
@@ -89,6 +84,7 @@ const {
       <AssetSuggestions
         v-if="isLibrarySearchEnabled"
         :type="AssetType.Backdrop"
+        :loading="isSuggestionsLoading"
         :suggestions="suggestions"
         :selected="selectedAsset"
         @toggle="toggleSelectedAsset"
@@ -146,7 +142,7 @@ const {
         }"
         color="primary"
         size="large"
-        @click="emit('assetPicked', selectedAsset!)"
+        @click="emit('assetPicked', selectedAsset)"
       >
         {{ $t({ en: 'Use', zh: '采用' }) }}
       </UIButton>

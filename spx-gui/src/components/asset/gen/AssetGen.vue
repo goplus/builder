@@ -9,7 +9,7 @@ import BackdropGenComp from './backdrop/BackdropGen.vue'
 defineProps<{
   gen: AssetGenModel
   descriptionPlaceholder?: string
-  enableLibrarySearch?: boolean
+  librarySearchEnabled?: boolean
 }>()
 
 defineEmits<{
@@ -24,7 +24,7 @@ defineEmits<{
     v-if="gen instanceof SpriteGen"
     :gen="gen"
     :description-placeholder="descriptionPlaceholder"
-    :enable-library-search="enableLibrarySearch"
+    :library-search-enabled="librarySearchEnabled"
     @collapse="$emit('collapse')"
     @finished="$emit('finished')"
     @asset-picked="$emit('assetPicked', $event)"
@@ -34,7 +34,7 @@ defineEmits<{
     v-else-if="gen instanceof BackdropGen"
     :gen="gen"
     :description-placeholder="descriptionPlaceholder"
-    :enable-library-search="enableLibrarySearch"
+    :library-search-enabled="librarySearchEnabled"
     @finished="$emit('finished')"
     @asset-picked="$emit('assetPicked', $event)"
   />

@@ -6,8 +6,9 @@ import { useMessageHandle } from '@/utils/exception'
 import { AssetType, type AssetData } from '@/apis/asset'
 import type { SpxProject } from '@/models/spx/project'
 import { addAssetToProject, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
+import { addAssetGenResultToProject } from '@/models/spx/gen/common'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { useAssetGen, addAssetGenResultToProject } from './useAssetGen'
+import { useAssetGen } from './use-asset-gen'
 import AssetGenComp from './AssetGen.vue'
 
 const props = defineProps<{
@@ -27,7 +28,7 @@ const i18n = useI18n()
 const confirm = useConfirmDialog()
 
 const typeRef = computed(() => props.type)
-const { assetGen, keepAlive } = useAssetGen(i18n, props.project, typeRef)
+const { assetGen, keepAlive } = useAssetGen(props.project, typeRef)
 
 const entityMessages = {
   [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
@@ -124,7 +125,7 @@ const handleModalClose = useMessageHandle(
       v-if="assetGen != null"
       class="asset-gen"
       :gen="assetGen"
-      enable-library-search
+      library-search-enabled
       @collapse="handleGenCollapse"
       @finished="handleGenFinished"
       @asset-picked="handleAssetPicked.fn"

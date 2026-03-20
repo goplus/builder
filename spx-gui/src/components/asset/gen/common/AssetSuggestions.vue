@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { AssetType, AssetData } from '@/apis/asset'
+import { UILoading } from '@/components/ui'
 
 const props = defineProps<{
   type: AssetType
+  loading: boolean
   suggestions: AssetData[]
   selected: AssetData | null
 }>()
@@ -18,7 +20,8 @@ function isSelected(asset: AssetData) {
 
 <template>
   <div class="asset-suggestions">
-    <template v-if="suggestions.length > 0">
+    <UILoading v-if="loading" />
+    <template v-if="!loading && suggestions.length > 0">
       <ul class="list">
         <template v-for="asset in suggestions" :key="asset.id">
           <slot name="item" :asset="asset" :selected="isSelected(asset)" :on-click="() => emit('toggle', asset)"></slot>

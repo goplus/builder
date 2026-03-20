@@ -32,7 +32,7 @@
           v-radar="{ name: 'Generate backdrop', desc: 'Click to generate backdrop with AI' }"
           @click="handleGenerate"
         >
-          {{ $t({ en: 'Generate with AI', zh: 'AI 生成' }) }}
+          {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
         </UIMenuItem>
       </UIMenu>
     </template>

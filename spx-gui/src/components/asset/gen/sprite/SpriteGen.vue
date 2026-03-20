@@ -17,7 +17,7 @@ import SpriteGenPhaseContent from './SpriteGenPhaseContent.vue'
 const props = defineProps<{
   gen: SpriteGen
   descriptionPlaceholder?: string
-  enableLibrarySearch?: boolean
+  librarySearchEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -58,7 +58,7 @@ provideLocalEditorCtx(editorCtxInGen)
     v-else
     :gen="gen"
     :description-placeholder="descriptionPlaceholder"
-    :enable-library-search="enableLibrarySearch"
+    :library-search-enabled="librarySearchEnabled"
     @asset-picked="emit('assetPicked', $event)"
   />
 </template>

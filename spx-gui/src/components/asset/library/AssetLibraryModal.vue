@@ -27,10 +27,11 @@ import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
 import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
+import { addAssetGenResultToProject } from '@/models/spx/gen/common'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
-import { useAssetGen, addAssetGenResultToProject } from '../gen/useAssetGen'
+import { useAssetGen } from '../gen/use-asset-gen'
 import AssetGenComp from '../gen/AssetGen.vue'
 
 import genAssetIcon from './gen-asset.svg?raw'
@@ -86,12 +87,14 @@ const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | nul
 )
 
 const typeRef = computed(() => props.type)
-const { assetGen, cancellable, keepAlive, reset: resetAssetGen } = useAssetGen(i18n, props.project, typeRef)
+const { assetGen, keepAlive, reset: resetAssetGen } = useAssetGen(props.project, typeRef)
 
 // When search results are empty, SettingsInput is shown inline and may modify assetGen state.
 // Reset assetGen on keyword change to avoid stale state if the user searches again without entering gen phase.
 // TODO: Recreating assetGen on every keyword change might be too frequent. Consider constructing it only when needed.
 watch(keyword, () => resetAssetGen(props.type))
+
+const backButtonVisible = computed(() => (assetGen.value != null ? assetGen.value.isPreparePhase : false))
 
 const headerStyle = computed(() => {
   const banner = {
@@ -300,7 +303,7 @@ const title = computed(() => {
     <header class="header">
       <div class="header-left">
         <UIButton
-          v-if="isGenPhase && cancellable"
+          v-if="isGenPhase && backButtonVisible"
           class="back-asset"
           color="white"
           icon="arrowAlt"
@@ -333,8 +336,9 @@ const title = computed(() => {
               size="large"
               clearable
               :placeholder="$t({ zh: '搜索', en: 'Search' })"
-              ><template #prefix><UIIcon type="search" /></template
-            ></UITextInput>
+            >
+              <template #prefix><UIIcon type="search" /></template>
+            </UITextInput>
 
             <div class="recommended-buttons">
               <UIButton
@@ -344,8 +348,9 @@ const title = computed(() => {
                 color="white"
                 size="small"
                 @click="searchInput = [searchInput, $t(r.message)].filter(Boolean).join(' ')"
-                >{{ $t(r.message) }}</UIButton
               >
+                {{ $t(r.message) }}
+              </UIButton>
             </div>
           </header>
 

@@ -9,14 +9,13 @@ import { computed, ref } from 'vue'
 import { UIButton } from '@/components/ui'
 import { AssetType, type AssetData } from '@/apis/asset'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { humanizeTimeLeft } from '../common/time-left'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
 import AssetSuggestions from '../common/AssetSuggestions.vue'
-import { useAssetSuggestions, buildGenSettingsKeyword } from '../common/useAssetSuggestions'
+import { useAssetSuggestions } from '../common/use-asset-suggestions'
 import SpriteSettingsInput from './SpriteSettingsInput.vue'
 import SpriteImageItem from './SpriteImageItem.vue'
 import SpriteItem from '@/components/asset/library/SpriteItem.vue'
@@ -25,19 +24,17 @@ const props = withDefaults(
   defineProps<{
     gen: SpriteGen
     descriptionPlaceholder?: string
-    enableLibrarySearch?: boolean
+    librarySearchEnabled?: boolean
   }>(),
   {
     descriptionPlaceholder: undefined,
-    enableLibrarySearch: false
+    librarySearchEnabled: false
   }
 )
 
 const emit = defineEmits<{
   assetPicked: [AssetData]
 }>()
-
-const i18n = useI18n()
 
 const canSubmit = computed(() => props.gen.image != null)
 
@@ -56,18 +53,15 @@ function handleImageSelect(index: number) {
 }
 
 const isLibrarySearchEnabled = computed(
-  () => props.enableLibrarySearch && props.gen.imagesGenState.status === 'initial'
+  () => props.librarySearchEnabled && props.gen.imagesGenState.status === 'initial'
 )
 
 const {
   suggestions,
+  isLoading: isSuggestionsLoading,
   selected: selectedAsset,
   toggle: toggleSelectedAsset
-} = useAssetSuggestions(
-  AssetType.Sprite,
-  () => buildGenSettingsKeyword(i18n, props.gen.settings),
-  () => isLibrarySearchEnabled.value
-)
+} = useAssetSuggestions(AssetType.Sprite, () => props.gen.settings.description, isLibrarySearchEnabled)
 </script>
 
 <template>
@@ -88,6 +82,7 @@ const {
       <AssetSuggestions
         v-if="isLibrarySearchEnabled"
         :type="AssetType.Sprite"
+        :loading="isSuggestionsLoading"
         :suggestions="suggestions"
         :selected="selectedAsset"
         @toggle="toggleSelectedAsset"
@@ -145,7 +140,7 @@ const {
         }"
         color="primary"
         size="large"
-        @click="emit('assetPicked', selectedAsset!)"
+        @click="emit('assetPicked', selectedAsset)"
       >
         {{ $t({ en: 'Use', zh: '采用' }) }}
       </UIButton>

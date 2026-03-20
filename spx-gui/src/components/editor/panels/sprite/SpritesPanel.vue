@@ -21,7 +21,7 @@
               v-radar="{ name: 'Generate sprite', desc: 'Click to generate sprite with AI' }"
               @click="handleGenerate"
             >
-              {{ $t({ en: 'Generate with AI', zh: 'AI 生成' }) }}
+              {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
             </UIMenuItem>
           </UIMenu>
         </template>
