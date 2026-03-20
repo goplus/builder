@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -29,7 +29,9 @@
             {
               "id": "nHN4t",
               "type": "ref",
-              "ref": "t:832Oq"
+              "ref": "t:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -86,11 +88,14 @@
                       "ref": "t:XihxW",
                       "x": 768,
                       "y": 16,
+                      "width": "fit_content",
                       "children": [
                         {
                           "id": "jMoxH",
                           "type": "ref",
-                          "ref": "t:b1OHc"
+                          "ref": "t:b1OHc",
+                          "x": 0,
+                          "y": 0
                         }
                       ]
                     }
@@ -114,7 +119,9 @@
                     {
                       "id": "SK0fl",
                       "type": "ref",
-                      "ref": "t:rIuyc"
+                      "ref": "t:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -128,7 +135,9 @@
                     {
                       "id": "ppd6v",
                       "type": "ref",
-                      "ref": "t:rIuyc"
+                      "ref": "t:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -142,7 +151,9 @@
                     {
                       "id": "mKMY9",
                       "type": "ref",
-                      "ref": "t:rIuyc"
+                      "ref": "t:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -156,7 +167,9 @@
                     {
                       "id": "y98Fe",
                       "type": "ref",
-                      "ref": "t:rIuyc"
+                      "ref": "t:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 }
@@ -178,7 +191,9 @@
                     {
                       "id": "CaquH",
                       "type": "ref",
-                      "ref": "t:rIuyc"
+                      "ref": "t:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -192,7 +207,9 @@
                     {
                       "id": "CfB60",
                       "type": "ref",
-                      "ref": "t:rIuyc"
+                      "ref": "t:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -206,7 +223,9 @@
                     {
                       "id": "GeIyW",
                       "type": "ref",
-                      "ref": "t:rIuyc"
+                      "ref": "t:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -220,7 +239,9 @@
                     {
                       "id": "AqnR2",
                       "type": "ref",
-                      "ref": "t:rIuyc"
+                      "ref": "t:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 }
@@ -243,11 +264,14 @@
                   "ref": "t:bm7Pn",
                   "x": 504,
                   "y": 16,
+                  "width": "fit_content",
                   "children": [
                     {
                       "id": "1AtOO",
                       "type": "ref",
-                      "ref": "t:SG7PY"
+                      "ref": "t:SG7PY",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 }
@@ -290,5 +314,11 @@
   },
   "imports": {
     "t": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/XBuilder_icon1.ttf"
+    }
+  ]
 }

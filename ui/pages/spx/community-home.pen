@@ -26,6 +26,9 @@
               "x": 0,
               "y": 0,
               "descendants": {
+                "r:W8a7k": {
+                  "y": 13.046298500431835
+                },
                 "r:OE7h6/r:rgkvL": {
                   "enabled": false
                 }
@@ -152,16 +155,19 @@
                                   "x": 0,
                                   "y": 0,
                                   "name": "Button/Large/Primary/Shadow/Square/Default",
+                                  "width": "fit_content",
                                   "descendants": {
                                     "r:wH3BG": {
                                       "x": 0,
-                                      "y": 0
+                                      "y": 0,
+                                      "width": "fit_content"
                                     },
                                     "r:4zALr": {
                                       "enabled": false
                                     },
                                     "r:2su3n": {
-                                      "content": "join now"
+                                      "content": "join now",
+                                      "x": 24
                                     }
                                   }
                                 }
@@ -8888,6 +8894,11 @@
       ]
     }
   ],
+  "themes": {
+    "2:Accent": [
+      "Default"
+    ]
+  },
   "variables": {
     "grey300": {
       "type": "color",
@@ -8928,6 +8939,50 @@
     "grey400": {
       "type": "color",
       "value": "#eaeff3"
+    },
+    "2:grey100": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ffffff",
+          "theme": {
+            "2:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "2:grey300": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#f6f8fa",
+          "theme": {
+            "2:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "2:grey800": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#6e7781",
+          "theme": {
+            "2:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "2:grey700": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#a7b1bb",
+          "theme": {
+            "2:Accent": "Default"
+          }
+        }
+      ]
     }
   },
   "imports": {
@@ -8935,8 +8990,8 @@
   },
   "fonts": [
     {
-      "name": "dialer_icon3",
-      "url": "../../../dialer_icon3.ttf"
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/XBuilder_icon1.ttf"
     }
   ]
 }

@@ -88,7 +88,15 @@
                           "ref": "m:IDB2y",
                           "width": "fit_content",
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "m:4zALr": {
+                              "content": "Y"
+                            },
+                            "m:2su3n": {
+                              "content": "Run"
+                            }
+                          }
                         }
                       ]
                     }
@@ -216,7 +224,10 @@
                             {
                               "type": "frame",
                               "id": "Jzj4T",
+                              "x": 0,
+                              "y": 4,
                               "name": "heart-filled",
+                              "enabled": false,
                               "width": 14,
                               "height": 14,
                               "layout": "none",
@@ -232,6 +243,16 @@
                                   "height": 10.791529893875122
                                 }
                               ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "bkZxe",
+                              "fill": "$grey700",
+                              "content": "r",
+                              "lineHeight": 1,
+                              "fontFamily": "XBuilder_Icons_01",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -258,7 +279,10 @@
                             {
                               "type": "frame",
                               "id": "PLX0a",
+                              "x": 0,
+                              "y": 4,
                               "name": "eye-filled",
+                              "enabled": false,
                               "width": 14,
                               "height": 14,
                               "layout": "none",
@@ -274,6 +298,16 @@
                                   "height": 8.16700029373169
                                 }
                               ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "jym0b",
+                              "fill": "$grey700",
+                              "content": "E",
+                              "lineHeight": 1,
+                              "fontFamily": "XBuilder_Icons_01",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -300,7 +334,10 @@
                             {
                               "type": "frame",
                               "id": "uLAzx",
+                              "x": 0,
+                              "y": 4,
                               "name": "remix-filled",
+                              "enabled": false,
                               "width": 14,
                               "height": 14,
                               "layout": "none",
@@ -321,6 +358,16 @@
                                   }
                                 }
                               ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "NApkj",
+                              "fill": "$grey700",
+                              "content": "I",
+                              "lineHeight": 1,
+                              "fontFamily": "XBuilder_Icons_01",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -349,29 +396,45 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "id": "LfjDM",
-                      "type": "ref",
-                      "ref": "m:ngVqF",
-                      "x": 0,
-                      "y": 0,
-                      "width": "fill_container",
-                      "descendants": {
-                        "m:qu0Rs": {
-                          "width": "fill_container"
-                        }
-                      }
-                    },
-                    {
                       "id": "gFo30",
                       "type": "ref",
                       "ref": "m:IDB2y",
-                      "x": 188,
+                      "x": 0,
                       "y": 0,
                       "layout": "horizontal",
                       "width": "fill_container",
                       "descendants": {
                         "m:wH3BG": {
                           "width": "fill_container"
+                        },
+                        "m:4zALr": {
+                          "x": 61.5,
+                          "content": "l"
+                        },
+                        "m:2su3n": {
+                          "x": 87.5,
+                          "content": "Edit"
+                        }
+                      }
+                    },
+                    {
+                      "id": "LfjDM",
+                      "type": "ref",
+                      "ref": "m:ngVqF",
+                      "x": 188,
+                      "y": 0,
+                      "width": "fill_container",
+                      "descendants": {
+                        "m:qu0Rs": {
+                          "width": "fill_container"
+                        },
+                        "m:yhkaY": {
+                          "x": 49,
+                          "content": "l"
+                        },
+                        "m:28nFU": {
+                          "x": 75,
+                          "content": "publish"
                         }
                       }
                     },
@@ -387,7 +450,12 @@
                           "type": "ref",
                           "ref": "m:GFnln",
                           "x": 0,
-                          "y": 0
+                          "y": 0,
+                          "descendants": {
+                            "m:ZtNvd": {
+                              "content": "6"
+                            }
+                          }
                         }
                       ]
                     }
@@ -1807,8 +1875,8 @@
   },
   "fonts": [
     {
-      "name": "dialer_icon3",
-      "url": "../../../dialer_icon3.ttf"
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/XBuilder_icon1.ttf"
     }
   ]
 }

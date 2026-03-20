@@ -866,6 +866,7 @@
                           "ref": "j:XihxW",
                           "x": 756,
                           "y": 0,
+                          "width": "fit_content",
                           "children": [
                             {
                               "id": "JNkys",
@@ -1375,6 +1376,7 @@
                           "ref": "j:XihxW",
                           "x": 756,
                           "y": 0,
+                          "width": "fit_content",
                           "children": [
                             {
                               "id": "NdwpB",
@@ -3456,8 +3458,8 @@
   },
   "fonts": [
     {
-      "name": "dialer_icon3",
-      "url": "../../../dialer_icon3.ttf"
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/XBuilder_icon1.ttf"
     }
   ]
 }

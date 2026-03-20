@@ -24,6 +24,7 @@
           "ref": "G:sKPE5",
           "x": 0,
           "y": 0,
+          "height": "fit_content",
           "children": [
             {
               "id": "aoz5T",
@@ -31,9 +32,45 @@
               "ref": "G:sExhj",
               "x": 0,
               "y": 0,
+              "height": "fit_content",
               "descendants": {
+                "G:7Cxm2": {
+                  "y": 13.046298500431833
+                },
+                "G:9PHq5": {
+                  "y": 13.046298500431835
+                },
                 "G:BExiL": {
                   "x": 139.665
+                },
+                "G:8oWEL": {
+                  "height": "fit_content"
+                },
+                "G:f9x4M": {
+                  "height": "fit_content"
+                },
+                "G:yaA2W": {
+                  "height": "fit_content"
+                },
+                "G:RJvR6": {
+                  "height": "fit_content"
+                },
+                "G:7Npma": {
+                  "x": -0.06918083459372326,
+                  "y": 0
+                },
+                "G:ehXoT": {
+                  "y": 7.069314292620738
+                },
+                "G:CJ56K": {
+                  "height": "fit_content",
+                  "x": 42
+                },
+                "G:s9LT0": {
+                  "y": 7.069314292620736
+                },
+                "G:NMpWM": {
+                  "y": 0.03459041729686163
                 }
               }
             }
@@ -110,6 +147,7 @@
           "ref": "G:sKPE5",
           "x": 0,
           "y": 0,
+          "height": "fit_content",
           "children": [
             {
               "id": "Rb1f2",
@@ -117,9 +155,45 @@
               "ref": "G:sExhj",
               "x": 0,
               "y": 0,
+              "height": "fit_content",
               "descendants": {
+                "G:7Cxm2": {
+                  "y": 13.046298500431833
+                },
+                "G:9PHq5": {
+                  "y": 13.046298500431835
+                },
                 "G:BExiL": {
                   "x": 139.665
+                },
+                "G:8oWEL": {
+                  "height": "fit_content"
+                },
+                "G:f9x4M": {
+                  "height": "fit_content"
+                },
+                "G:yaA2W": {
+                  "height": "fit_content"
+                },
+                "G:RJvR6": {
+                  "height": "fit_content"
+                },
+                "G:7Npma": {
+                  "x": -0.06918083459372326,
+                  "y": 0
+                },
+                "G:ehXoT": {
+                  "y": 7.069314292620738
+                },
+                "G:CJ56K": {
+                  "height": "fit_content",
+                  "x": 42
+                },
+                "G:s9LT0": {
+                  "y": 7.069314292620736
+                },
+                "G:NMpWM": {
+                  "y": 0.03459041729686163
                 }
               }
             }
@@ -136,7 +210,13 @@
               "type": "ref",
               "ref": "G:xtmAF",
               "x": 0,
-              "y": 0
+              "y": 0,
+              "descendants": {
+                "G:ra7Og": {
+                  "x": 51.9852972911389,
+                  "y": 14.014729779865018
+                }
+              }
             },
             {
               "type": "frame",
@@ -188,6 +268,7 @@
           "ref": "G:sKPE5",
           "x": 0,
           "y": 0,
+          "height": "fit_content",
           "children": [
             {
               "id": "lIpWn",
@@ -195,9 +276,45 @@
               "ref": "G:sExhj",
               "x": 0,
               "y": 0,
+              "height": "fit_content",
               "descendants": {
+                "G:7Cxm2": {
+                  "y": 13.046298500431833
+                },
+                "G:9PHq5": {
+                  "y": 13.046298500431835
+                },
                 "G:BExiL": {
                   "x": 139.665
+                },
+                "G:8oWEL": {
+                  "height": "fit_content"
+                },
+                "G:f9x4M": {
+                  "height": "fit_content"
+                },
+                "G:yaA2W": {
+                  "height": "fit_content"
+                },
+                "G:RJvR6": {
+                  "height": "fit_content"
+                },
+                "G:7Npma": {
+                  "x": -0.06918083459372326,
+                  "y": 0
+                },
+                "G:ehXoT": {
+                  "y": 7.069314292620738
+                },
+                "G:CJ56K": {
+                  "height": "fit_content",
+                  "x": 42
+                },
+                "G:s9LT0": {
+                  "y": 7.069314292620736
+                },
+                "G:NMpWM": {
+                  "y": 0.03459041729686163
                 }
               }
             }
@@ -214,7 +331,13 @@
               "type": "ref",
               "ref": "G:ax7Jh",
               "x": 0,
-              "y": 0
+              "y": 0,
+              "descendants": {
+                "G:qCXzh": {
+                  "x": 51.9852972911389,
+                  "y": 14.014729779865018
+                }
+              }
             },
             {
               "type": "frame",
@@ -266,6 +389,7 @@
           "ref": "G:sKPE5",
           "x": 0,
           "y": 0,
+          "height": "fit_content",
           "children": [
             {
               "id": "oiCcM",
@@ -273,9 +397,45 @@
               "ref": "G:sExhj",
               "x": 0,
               "y": 0,
+              "height": "fit_content",
               "descendants": {
+                "G:7Cxm2": {
+                  "y": 13.046298500431833
+                },
+                "G:9PHq5": {
+                  "y": 13.046298500431835
+                },
                 "G:BExiL": {
                   "x": 139.665
+                },
+                "G:8oWEL": {
+                  "height": "fit_content"
+                },
+                "G:f9x4M": {
+                  "height": "fit_content"
+                },
+                "G:yaA2W": {
+                  "height": "fit_content"
+                },
+                "G:RJvR6": {
+                  "height": "fit_content"
+                },
+                "G:7Npma": {
+                  "x": -0.06918083459372326,
+                  "y": 0
+                },
+                "G:ehXoT": {
+                  "y": 7.069314292620738
+                },
+                "G:CJ56K": {
+                  "height": "fit_content",
+                  "x": 42
+                },
+                "G:s9LT0": {
+                  "y": 7.069314292620736
+                },
+                "G:NMpWM": {
+                  "y": 0.03459041729686163
                 }
               }
             }
@@ -294,8 +454,15 @@
               "x": 0,
               "y": 0,
               "descendants": {
+                "G:W3tVa": {
+                  "x": 51.9852972911389,
+                  "y": 14.014729779865018
+                },
                 "G:PM6np": {
                   "y": 4.086377119577446
+                },
+                "G:JVgPr": {
+                  "y": 4.086377119577447
                 }
               }
             },
@@ -498,8 +665,8 @@
   },
   "fonts": [
     {
-      "name": "dialer_icon3",
-      "url": "../../../dialer_icon3.ttf"
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/XBuilder_icon1.ttf"
     }
   ]
 }
