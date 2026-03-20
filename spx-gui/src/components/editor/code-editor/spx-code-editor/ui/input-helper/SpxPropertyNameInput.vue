@@ -65,10 +65,9 @@ watchEffect(async (onCleanup) => {
   const signal = getCleanupSignal(onCleanup)
   try {
     const result = await getProperties(textDocument, signal)
-    if (signal.aborted) return
+    signal.throwIfAborted()
     properties.value = result
   } catch (e) {
-    if (signal.aborted) return
     properties.value = []
     capture(e, 'Failed to get properties in SpxPropertyNameInput')
   }
