@@ -201,6 +201,12 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Camera.ypos`,
   `xgo:${packageSpx}?Camera.setXYpos`,
   `xgo:${packageSpx}?Camera.follow#0`
+
+  // TODO: Decide whether to include these var-related APIs in the reference list. They are currently excluded because they are less commonly used and may require additional explanation on variable scopes, which could be complex for beginners.
+  // `xgo:${packageSpx}?Game.showVar`,
+  // `xgo:${packageSpx}?Game.hideVar`,
+  // `xgo:${packageSpx}?Sprite.showVar`,
+  // `xgo:${packageSpx}?Sprite.hideVar`
 ]
 
 const categoryViewInfos: APICategoryViewInfo[] = [

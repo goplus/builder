@@ -2663,6 +2663,56 @@ export const getWidget: DefinitionDocumentationItem = {
   })
 }
 
+export const gameShowVar: DefinitionDocumentationItem = {
+  categories: [categories.game.others],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.showVar'
+  },
+  // TODO: provide a snippet variable like `$BUILDER_FIRST_PROPERTY_NAME`
+  insertSnippet: 'showVar ${1:""}',
+  insertSnippetParameterHints: ['name'],
+  overview: 'showVar name',
+  detail: makeBasicMarkdownString({
+    en: 'Show a variable on the monitor, with the parameter being the variable name as a string',
+    zh: '在监视器上显示一个变量，参数为变量名字符串'
+  })
+}
+
+export const gameHideVar: DefinitionDocumentationItem = {
+  categories: [categories.game.others],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.hideVar'
+  },
+  // TODO: provide a snippet variable like `$BUILDER_FIRST_PROPERTY_NAME`
+  insertSnippet: 'hideVar ${1:""}',
+  insertSnippetParameterHints: ['name'],
+  overview: 'hideVar name',
+  detail: makeBasicMarkdownString({
+    en: 'Hide a variable on the monitor, with the parameter being the variable name as a string',
+    zh: '在监视器上隐藏一个变量，参数为变量名字符串'
+  })
+}
+
+export const spriteShowVar: DefinitionDocumentationItem = {
+  ...gameShowVar,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.showVar'
+  }
+}
+
+export const spriteHideVar: DefinitionDocumentationItem = {
+  ...gameHideVar,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.hideVar'
+  }
+}
+
 export const HSB: DefinitionDocumentationItem = {
   categories: [],
   kind: DefinitionKind.Function,
