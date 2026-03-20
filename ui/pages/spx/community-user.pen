@@ -2514,7 +2514,7 @@
           "type": "ref",
           "ref": "j:sKPE5",
           "x": 0,
-          "y": -5.684341886080802e-14,
+          "y": 0,
           "children": [
             {
               "id": "Q8C6O",
@@ -3460,6 +3460,10 @@
     {
       "name": "XBuilder_Icons_01",
       "url": "../../images/XBuilder_icon1.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/XBuilder_Icons_02.ttf"
     }
   ]
 }

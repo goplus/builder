@@ -319,6 +319,10 @@
     {
       "name": "XBuilder_Icons_01",
       "url": "../../images/XBuilder_icon1.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/XBuilder_Icons_02.ttf"
     }
   ]
 }

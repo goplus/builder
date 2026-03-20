@@ -90,11 +90,15 @@
                           "x": 0,
                           "y": 0,
                           "descendants": {
+                            "m:wH3BG": {
+                              "width": "fit_content"
+                            },
                             "m:4zALr": {
                               "content": "Y"
                             },
                             "m:2su3n": {
-                              "content": "Run"
+                              "content": "Run",
+                              "x": 50
                             }
                           }
                         }
@@ -451,7 +455,11 @@
                           "ref": "m:GFnln",
                           "x": 0,
                           "y": 0,
+                          "width": "fit_content",
                           "descendants": {
+                            "m:QW6oW": {
+                              "width": "fit_content"
+                            },
                             "m:ZtNvd": {
                               "content": "6"
                             }
@@ -1877,6 +1885,10 @@
     {
       "name": "XBuilder_Icons_01",
       "url": "../../images/XBuilder_icon1.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/XBuilder_Icons_02.ttf"
     }
   ]
 }
