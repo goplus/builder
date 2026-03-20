@@ -7,13 +7,13 @@ import { fromText, toConfig, type Files } from '../common/file'
 import * as hashHelper from '../common/hash'
 import { Backdrop } from './backdrop'
 import { Monitor } from './widget/monitor'
-import { SpxProject, projectConfigFilePath, type RawProjectConfig } from './project'
+import { SpxProject, projectConfigFilePath, type RawProjectConfig, type ScreenshotTaker } from './project'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
 }
 
-function makeProject() {
+function makeProject(screenshotTaker: ScreenshotTaker | null = async () => mockFile()) {
   const project = new SpxProject()
   const sound = new Sound('sound', mockFile())
   project.addSound(sound)
@@ -35,7 +35,7 @@ function makeProject() {
   const animation = Animation.create('default', animationCostumes)
   sprite.addAnimation(animation)
   project.addSprite(sprite)
-  project.bindScreenshotTaker(async () => mockFile())
+  if (screenshotTaker != null) project.bindScreenshotTaker(screenshotTaker)
   return project
 }
 
@@ -97,6 +97,20 @@ describe('Project', () => {
     const files2 = project.exportFiles()
     const hash2 = await hashHelper.hashFiles(files2)
     expect(hash).toBe(hash2)
+  })
+
+  it('should export with existing thumbnail after screenshot taker unbound', async () => {
+    const project = makeProject(null)
+    const thumbnail = mockFile('thumbnail')
+    const unbindScreenshotTaker = project.bindScreenshotTaker(async () => thumbnail)
+
+    // Schedule the debounced update first, then flush it immediately for a deterministic assertion.
+    project['updateThumbnail']()
+    await project['updateThumbnail'].flush()
+    unbindScreenshotTaker()
+
+    const { metadata } = await project.export()
+    expect(metadata.thumbnail).toBe(thumbnail)
   })
 
   it('should move sprites correctly', async () => {

@@ -61,7 +61,7 @@ describe('generateSSEMessage', () => {
       ])
     )
 
-    const events = await collectMessageEvents(generateSSEMessage('standard', []))
+    const events = await collectMessageEvents(generateSSEMessage([]))
 
     expect(events).toEqual([
       {
@@ -104,7 +104,7 @@ describe('generateSSEMessage', () => {
       ])
     )
 
-    const events = await collectMessageEvents(generateSSEMessage('standard', []))
+    const events = await collectMessageEvents(generateSSEMessage([]))
 
     expect(events).toEqual([
       {
@@ -154,12 +154,11 @@ describe('generateSSEMessage', () => {
       ])
     )
 
-    await collectMessageEvents(generateSSEMessage('standard', [], { tools }))
+    await collectMessageEvents(generateSSEMessage([], { tools }))
 
     expect(mockedPostJSONSSE).toHaveBeenCalledWith(
       '/copilot/sse/message',
       {
-        scope: 'standard',
         messages: [],
         tools
       },

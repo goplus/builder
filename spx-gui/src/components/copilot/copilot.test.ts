@@ -190,9 +190,8 @@ class MockMessageEventGenerator implements IMessageEventGenerator {
   }
 
   async *generateSSEMessage(
-    scope: apis.CopilotScope,
     messages: apis.Message[],
-    options?: apis.GenerateMessageOptions
+    options?: apis.GenerateSSEMessageOptions
   ): AsyncIterableIterator<apis.MessageEvent> {
     const batch = this.eventBatches[this.callCount] ?? []
     this.callCount += 1
@@ -226,9 +225,8 @@ class MockSingleBatchMessageEventGenerator implements IMessageEventGenerator {
   ) {}
 
   async *generateSSEMessage(
-    scope: apis.CopilotScope,
     messages: apis.Message[],
-    options?: apis.GenerateMessageOptions
+    options?: apis.GenerateSSEMessageOptions
   ): AsyncIterableIterator<apis.MessageEvent> {
     for (const event of this.events) {
       if (options?.signal?.aborted) {
@@ -254,9 +252,8 @@ class MockBatchedMessageEventGenerator implements IMessageEventGenerator {
   ) {}
 
   async *generateSSEMessage(
-    scope: apis.CopilotScope,
     messages: apis.Message[],
-    options?: apis.GenerateMessageOptions
+    options?: apis.GenerateSSEMessageOptions
   ): AsyncIterableIterator<apis.MessageEvent> {
     this.calls.push(messages)
     this.callOptions.push(options ?? null)

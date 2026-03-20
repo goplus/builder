@@ -471,10 +471,18 @@ function handleWheel(e: KonvaEventObject<WheelEvent>) {
 
 // TODO: implement a standalone screenshot taker which does not depend on StageViewer
 // See details in https://github.com/goplus/builder/issues/1807 .
+const canTakeScreenshot = computed(() => stageConfig.value != null)
+
+function ensureCanTakeScreenshot() {
+  if (!canTakeScreenshot.value) throw new Error('stage viewer is not renderable for screenshot')
+}
+
 async function takeScreenshot(name: string, signal?: AbortSignal) {
+  ensureCanTakeScreenshot()
   const stage = await untilNotNull(stageRef, signal)
   const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
   await until(() => !loading.value, signal)
+  ensureCanTakeScreenshot()
   // Omit transform control when taking screenshot
   const blob = await nodeTransformer.withHidden(
     () =>
@@ -488,6 +496,7 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
 }
 
 watchEffect((onCleanup) => {
+  if (!canTakeScreenshot.value) return
   const unbind = editorCtx.project.bindScreenshotTaker(takeScreenshot)
   onCleanup(unbind)
 })
