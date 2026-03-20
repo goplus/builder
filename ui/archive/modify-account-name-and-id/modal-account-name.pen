@@ -243,7 +243,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../images/personal-information-background.png",
+                    "url": "../../images/personal-information-background.png",
                     "mode": "fill"
                   },
                   "width": 560,
@@ -333,7 +333,7 @@
                 {
                   "type": "image",
                   "enabled": true,
-                  "url": "../images/avatar.png",
+                  "url": "../../images/avatar.png",
                   "mode": "fill"
                 }
               ],
@@ -1446,7 +1446,7 @@
                   "type": "image",
                   "opacity": 0.800000011920929,
                   "enabled": true,
-                  "url": "../images/upload-profile-picture.png",
+                  "url": "../../images/upload-profile-picture.png",
                   "mode": "fill"
                 }
               ],
@@ -1477,7 +1477,7 @@
                     {
                       "type": "image",
                       "enabled": true,
-                      "url": "../images/Upload-profile-picture ( circle ).png",
+                      "url": "../../images/upload-profile-picture-circle.png",
                       "mode": "fill"
                     }
                   ],
@@ -2033,7 +2033,7 @@
           "fill": {
             "type": "image",
             "enabled": true,
-            "url": "../images/navbar bg.png",
+            "url": "../../images/navbar-bg.png",
             "mode": "fill"
           },
           "padding": [
@@ -2399,7 +2399,7 @@
                                     {
                                       "type": "image",
                                       "enabled": true,
-                                      "url": "../images/avatar.png",
+                                      "url": "../../images/avatar.png",
                                       "mode": "fill"
                                     }
                                   ],
@@ -2456,7 +2456,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../images/personal-information-background.png",
+                    "url": "../../images/personal-information-background.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -2485,7 +2485,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../images/avatar.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,

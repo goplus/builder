@@ -11,7 +11,7 @@
       "fill": {
         "type": "image",
         "enabled": true,
-        "url": "../images/navbar bg.png",
+        "url": "../../images/navbar-bg.png",
         "mode": "fill"
       },
       "stroke": {
@@ -604,7 +604,13 @@
                             {
                               "type": "image",
                               "enabled": true,
-                              "url": "../images/avatar.png",
+                              "url": "../../images/avatar.png",
+                              "mode": "fill"
+                            },
+                            {
+                              "type": "image",
+                              "enabled": true,
+                              "url": "",
                               "mode": "fill"
                             }
                           ],
@@ -645,7 +651,7 @@
       "fill": {
         "type": "image",
         "enabled": true,
-        "url": "../images/navbar bg.png",
+        "url": "../../images/navbar-bg.png",
         "mode": "fill"
       },
       "stroke": {
@@ -1263,7 +1269,13 @@
                             {
                               "type": "image",
                               "enabled": true,
-                              "url": "../images/avatar.png",
+                              "url": "../../images/avatar.png",
+                              "mode": "fill"
+                            },
+                            {
+                              "type": "image",
+                              "enabled": true,
+                              "url": "",
                               "mode": "fill"
                             }
                           ],
@@ -1304,7 +1316,7 @@
       "fill": {
         "type": "image",
         "enabled": true,
-        "url": "../images/navbar bg.png",
+        "url": "../../images/navbar-bg.png",
         "mode": "fill"
       },
       "stroke": {
@@ -1955,7 +1967,13 @@
                             {
                               "type": "image",
                               "enabled": true,
-                              "url": "../images/avatar.png",
+                              "url": "../../images/avatar.png",
+                              "mode": "fill"
+                            },
+                            {
+                              "type": "image",
+                              "enabled": true,
+                              "url": "",
                               "mode": "fill"
                             }
                           ],
@@ -1996,7 +2014,7 @@
       "fill": {
         "type": "image",
         "enabled": true,
-        "url": "../images/navbar bg.png",
+        "url": "../../images/navbar-bg.png",
         "mode": "fill"
       },
       "stroke": {
@@ -2647,7 +2665,13 @@
                             {
                               "type": "image",
                               "enabled": true,
-                              "url": "../images/avatar.png",
+                              "url": "../../images/avatar.png",
+                              "mode": "fill"
+                            },
+                            {
+                              "type": "image",
+                              "enabled": true,
+                              "url": "",
                               "mode": "fill"
                             }
                           ],
