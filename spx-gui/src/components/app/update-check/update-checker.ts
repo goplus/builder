@@ -21,7 +21,7 @@ export class UpdateChecker {
   /** Normalizes ETag values by removing weak validator prefix and trimming whitespace */
   private normalizeEtag(etag: string): string {
     const trimmed = etag.trim()
-    return trimmed.startsWith('W/') ? trimmed.slice(2).trim() : trimmed
+    return trimmed.startsWith('W/') ? trimmed.slice(2) : trimmed
   }
 
   /**
