@@ -24,6 +24,7 @@
           "ref": "a:sKPE5",
           "x": 0,
           "y": 0,
+          "height": "fit_content",
           "children": [
             {
               "id": "R1AFg",
@@ -31,9 +32,51 @@
               "ref": "a:sExhj",
               "x": 0,
               "y": 0,
+              "height": "fit_content",
               "descendants": {
+                "a:7Cxm2": {
+                  "y": 13.046298500431833
+                },
+                "a:9PHq5": {
+                  "y": 13.046298500431835
+                },
                 "a:BExiL": {
-                  "x": 139.665
+                  "x": 139.6188794436042
+                },
+                "a:rJfp4": {
+                  "x": 12
+                },
+                "a:pVdMD": {
+                  "y": 4.046298500431835
+                },
+                "a:8oWEL": {
+                  "height": "fit_content"
+                },
+                "a:f9x4M": {
+                  "height": "fit_content"
+                },
+                "a:yaA2W": {
+                  "height": "fit_content"
+                },
+                "a:RJvR6": {
+                  "height": "fit_content"
+                },
+                "a:7Npma": {
+                  "x": -0.06918083459372326,
+                  "y": 0
+                },
+                "a:ehXoT": {
+                  "y": 7.069314292620738
+                },
+                "a:CJ56K": {
+                  "height": "fit_content",
+                  "x": 42
+                },
+                "a:s9LT0": {
+                  "y": 7.069314292620736
+                },
+                "a:NMpWM": {
+                  "y": 0.03459041729686163
                 }
               }
             }
@@ -110,6 +153,7 @@
           "ref": "a:sKPE5",
           "x": 0,
           "y": 0,
+          "height": "fit_content",
           "children": [
             {
               "id": "WFsY2",
@@ -117,9 +161,51 @@
               "ref": "a:sExhj",
               "x": 0,
               "y": 0,
+              "height": "fit_content",
               "descendants": {
+                "a:7Cxm2": {
+                  "y": 13.046298500431833
+                },
+                "a:9PHq5": {
+                  "y": 13.046298500431835
+                },
                 "a:BExiL": {
-                  "x": 139.665
+                  "x": 139.6188794436042
+                },
+                "a:rJfp4": {
+                  "x": 12
+                },
+                "a:pVdMD": {
+                  "y": 4.046298500431835
+                },
+                "a:8oWEL": {
+                  "height": "fit_content"
+                },
+                "a:f9x4M": {
+                  "height": "fit_content"
+                },
+                "a:yaA2W": {
+                  "height": "fit_content"
+                },
+                "a:RJvR6": {
+                  "height": "fit_content"
+                },
+                "a:7Npma": {
+                  "x": -0.06918083459372326,
+                  "y": 0
+                },
+                "a:ehXoT": {
+                  "y": 7.069314292620738
+                },
+                "a:CJ56K": {
+                  "height": "fit_content",
+                  "x": 42
+                },
+                "a:s9LT0": {
+                  "y": 7.069314292620736
+                },
+                "a:NMpWM": {
+                  "y": 0.03459041729686163
                 }
               }
             }
@@ -136,7 +222,13 @@
               "type": "ref",
               "ref": "a:SVFo4",
               "x": 0,
-              "y": 0
+              "y": 0,
+              "descendants": {
+                "a:eBBT8": {
+                  "x": 51.9852972911389,
+                  "y": 14.014729779865018
+                }
+              }
             },
             {
               "type": "frame",
@@ -188,6 +280,7 @@
           "ref": "a:sKPE5",
           "x": 0,
           "y": 0,
+          "height": "fit_content",
           "children": [
             {
               "id": "6c7sF",
@@ -195,9 +288,51 @@
               "ref": "a:sExhj",
               "x": 0,
               "y": 0,
+              "height": "fit_content",
               "descendants": {
+                "a:7Cxm2": {
+                  "y": 13.046298500431833
+                },
+                "a:9PHq5": {
+                  "y": 13.046298500431835
+                },
                 "a:BExiL": {
-                  "x": 139.665
+                  "x": 139.6188794436042
+                },
+                "a:rJfp4": {
+                  "x": 12
+                },
+                "a:pVdMD": {
+                  "y": 4.046298500431835
+                },
+                "a:8oWEL": {
+                  "height": "fit_content"
+                },
+                "a:f9x4M": {
+                  "height": "fit_content"
+                },
+                "a:yaA2W": {
+                  "height": "fit_content"
+                },
+                "a:RJvR6": {
+                  "height": "fit_content"
+                },
+                "a:7Npma": {
+                  "x": -0.06918083459372326,
+                  "y": 0
+                },
+                "a:ehXoT": {
+                  "y": 7.069314292620738
+                },
+                "a:CJ56K": {
+                  "height": "fit_content",
+                  "x": 42
+                },
+                "a:s9LT0": {
+                  "y": 7.069314292620736
+                },
+                "a:NMpWM": {
+                  "y": 0.03459041729686163
                 }
               }
             }
@@ -214,7 +349,13 @@
               "type": "ref",
               "ref": "a:EnaZY",
               "x": 0,
-              "y": 0
+              "y": 0,
+              "descendants": {
+                "a:pWBWq": {
+                  "x": 51.9852972911389,
+                  "y": 14.014729779865018
+                }
+              }
             },
             {
               "type": "frame",
@@ -275,8 +416,12 @@
   },
   "fonts": [
     {
-      "name": "dialer_icon3",
-      "url": "../../../dialer_icon3.ttf"
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/xbuilder-icons-01.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/xbuilder-icons-02.ttf"
     }
   ]
 }

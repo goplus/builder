@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -19,11 +19,61 @@
           "ref": "y:sKPE5",
           "x": 0,
           "y": 0,
+          "height": "fit_content",
           "children": [
             {
               "id": "9Os2U",
               "type": "ref",
-              "ref": "y:sExhj"
+              "ref": "y:sExhj",
+              "height": "fit_content",
+              "x": 0,
+              "y": 0,
+              "descendants": {
+                "y:7Cxm2": {
+                  "y": 13.046298500431833
+                },
+                "y:9PHq5": {
+                  "y": 13.046298500431833
+                },
+                "y:BExiL": {
+                  "x": 139.6188794436042
+                },
+                "y:rJfp4": {
+                  "x": 12
+                },
+                "y:pVdMD": {
+                  "y": 4.046298500431837
+                },
+                "y:8oWEL": {
+                  "height": "fit_content"
+                },
+                "y:f9x4M": {
+                  "height": "fit_content"
+                },
+                "y:yaA2W": {
+                  "height": "fit_content"
+                },
+                "y:RJvR6": {
+                  "height": "fit_content"
+                },
+                "y:7Npma": {
+                  "x": -0.06918083459371971,
+                  "y": 0
+                },
+                "y:ehXoT": {
+                  "y": 7.069314292620738
+                },
+                "y:CJ56K": {
+                  "height": "fit_content",
+                  "x": 42
+                },
+                "y:s9LT0": {
+                  "y": 7.069314292620736
+                },
+                "y:NMpWM": {
+                  "y": 0.03459041729686163
+                }
+              }
             }
           ]
         },
@@ -158,5 +208,15 @@
   },
   "imports": {
     "y": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/xbuilder-icons-01.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/xbuilder-icons-02.ttf"
+    }
+  ]
 }

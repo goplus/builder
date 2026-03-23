@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -38,7 +38,9 @@
                 {
                   "id": "kpFCr",
                   "type": "ref",
-                  "ref": "P:832Oq"
+                  "ref": "P:832Oq",
+                  "x": 0,
+                  "y": 0
                 }
               ]
             },
@@ -940,11 +942,14 @@
                   "ref": "P:bm7Pn",
                   "x": 604,
                   "y": 16,
+                  "width": "fit_content",
                   "children": [
                     {
                       "id": "5HHGD",
                       "type": "ref",
-                      "ref": "P:X3aQ5"
+                      "ref": "P:X3aQ5",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 }
@@ -983,7 +988,9 @@
             {
               "id": "Cbjqj",
               "type": "ref",
-              "ref": "P:832Oq"
+              "ref": "P:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -1543,5 +1550,15 @@
   },
   "imports": {
     "P": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/xbuilder-icons-01.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/xbuilder-icons-02.ttf"
+    }
+  ]
 }
