@@ -1,26 +1,22 @@
-import { watchEffect, type WatchSource, watch, toValue, ref, shallowRef } from 'vue'
+import { watchEffect, type WatchSource, watch, ref, shallowRef } from 'vue'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
+import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { timeout, until } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
-import type { Files } from '@/models/common/file'
-import * as localHelper from '@/models/common/local'
-
-export interface EditableProject {
-  owner?: string
-  exportGameFiles(): Files
-  saveToCloud(signal?: AbortSignal): Promise<void>
-  saveToLocalCache(key: string, signal?: AbortSignal): Promise<void>
-}
-
-export interface LocalStorage {
-  clear(key: string): Promise<void>
-}
+import type { IProject, ProjectSerialized } from '@/models/project'
+import type { CloudHelpers } from '@/models/common/cloud'
 
 export enum SavingState {
   Pending,
   InProgress,
   Completed,
   Failed
+}
+
+export interface ILocalCache {
+  load(signal?: AbortSignal): Promise<ProjectSerialized | null>
+  save(serialized: ProjectSerialized, signal?: AbortSignal): Promise<void>
+  clear(): Promise<void>
 }
 
 export class Saving {
@@ -30,10 +26,10 @@ export class Saving {
   }
 
   constructor(
-    private project: EditableProject,
-    private localStorage: LocalStorage,
+    private project: IProject,
+    private cloudHelper: CloudHelpers,
+    private localCacheHelper: ILocalCache,
     private isOnline: WatchSource<boolean>,
-    private localCacheKey: string,
     private signal: AbortSignal
   ) {
     this.start()
@@ -41,7 +37,10 @@ export class Saving {
 
   private async start() {
     timeout(1000, this.signal)
-      .then(() => this.project.saveToLocalCache(this.localCacheKey, this.signal))
+      .then(async () => {
+        const serialized = await this.project.export(this.signal)
+        return this.localCacheHelper.save(serialized, this.signal)
+      })
       .catch((e) => capture(e, 'Failed to save to local cache'))
     try {
       await timeout(1500, this.signal)
@@ -57,10 +56,12 @@ export class Saving {
     const signal = this.signal
     try {
       this.stateRef.value = SavingState.InProgress
-      await this.project.saveToCloud(signal)
+      const serialized = await this.project.export(signal)
+      const saved = await this.cloudHelper.save(serialized, signal)
+      this.project.setMetadata(saved.metadata)
       signal.throwIfAborted()
       this.stateRef.value = SavingState.Completed
-      this.localStorage.clear(this.localCacheKey)
+      this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
     } catch (err) {
       if (err instanceof Cancelled) return
       capture(err, 'Failed to save project to cloud')
@@ -89,32 +90,46 @@ export enum EditingMode {
   EffectFree
 }
 
-// TODO: Move `History` into `Editing` (or `EditorState`).
+export type UIHelpersForLoadingProject = {
+  confirmOpenTargetWithAnotherInCache: (targetName: string, cachedName: string) => Promise<boolean>
+  openProject: (owner: string, name: string) => void
+}
 
+/**
+ * `Editing` manages the lifecycle of editing a project, including:
+ * - Determining the editing mode (AutoSave vs EffectFree) based on user ownership
+ * - Loading the project from cloud/local cache on initialization
+ * - Monitoring dirty state and triggering auto-saves
+ * - Pre-loading project files for performance
+ *
+ * Note: `Editing` operates on the full project (including gen state via `SpxProjectWithGens`).
+ * `History` (undo/redo) is intentionally kept separate in `EditorState` and operates only on
+ * the base `SpxProject` files, so that gen-state changes do not affect the undo/redo stack.
+ *
+ * TODO: Since history in not included in `Editing` now, which is counterintuitive, consider
+ * renaming it with a more accurate name.
+ */
 export class Editing extends Disposable {
+  mode: EditingMode
   constructor(
-    private project: EditableProject,
+    private project: IProject,
+    private cloudHelpers: CloudHelpers,
+    private localCacheHelper: ILocalCache,
     private isOnline: WatchSource<boolean>,
-    private signedInUsername: WatchSource<string | null>,
-    private localCacheKey: string,
-    private localStorage: LocalStorage = localHelper
+    private signedInUsername: string | null
   ) {
     super()
-  }
-
-  get mode(): EditingMode {
-    const username = toValue(this.signedInUsername)
-    if (username == null || username !== this.project.owner) {
-      return EditingMode.EffectFree
+    this.mode = EditingMode.AutoSave
+    if (signedInUsername == null || signedInUsername !== this.project.owner) {
+      this.mode = EditingMode.EffectFree
     }
-    return EditingMode.AutoSave
   }
 
   private startAutoPreload() {
     this.addDisposer(
       watchEffect((onCleanup) => {
         const signal = getCleanupSignal(onCleanup)
-        const files = this.project.exportGameFiles()
+        const files = this.project.exportFiles()
         Object.values(files).forEach((file) => {
           if (file == null) return
           file.arrayBuffer(signal).catch((e) => {
@@ -134,7 +149,7 @@ export class Editing extends Disposable {
   private startDirtyMonitoring() {
     this.addDisposer(
       watch(
-        () => this.project.exportGameFiles(),
+        () => this.project.exportFiles(),
         () => (this.dirtyRef.value = true)
       )
     )
@@ -159,12 +174,12 @@ export class Editing extends Disposable {
   private startAutoSave() {
     this.addDisposer(
       watch(
-        () => this.project.exportGameFiles(),
+        () => this.project.exportFiles(),
         (_, __, onCleanup) => {
           if (this.mode === EditingMode.EffectFree) return
 
           const signal = getCleanupSignal(onCleanup)
-          const saving = new Saving(this.project, this.localStorage, this.isOnline, this.localCacheKey, signal)
+          const saving = new Saving(this.project, this.cloudHelpers, this.localCacheHelper, this.isOnline, signal)
 
           this.savingRef.value = saving
           signal.addEventListener('abort', () => (this.savingRef.value = null))
@@ -173,7 +188,82 @@ export class Editing extends Disposable {
     )
   }
 
-  start() {
+  async loadProject(helpers: UIHelpersForLoadingProject, reporter: ProgressReporter, signal: AbortSignal) {
+    const collector = ProgressCollector.collectorFor(reporter)
+    const loadFromLocalCacheReporter = collector.getSubReporter(
+      { en: 'Reading local cache...', zh: '读取本地缓存中...' },
+      1
+    )
+    const loadFromCloudReporter = collector.getSubReporter(
+      { en: 'Loading project from cloud...', zh: '从云端加载项目中...' },
+      5
+    )
+    const projectLoadReporter = collector.getSubReporter({ en: 'Loading project...', zh: '加载项目中...' }, 5)
+
+    const { owner: ownerName, name: projectName } = this.project
+    if (ownerName == null || projectName == null) throw new Error('Project owner and name expected')
+
+    // For details about local-cache saving & restoring
+    // https://github.com/goplus/builder/issues/259
+    // https://github.com/goplus/builder/issues/393
+    let localData: ProjectSerialized | null = null
+    try {
+      localData = await this.localCacheHelper.load(signal)
+    } catch (e) {
+      if (e instanceof Cancelled) throw e
+      capture(e, 'Failed to load local cache')
+      this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
+    }
+    if (localData != null) {
+      const localMetadata = localData.metadata
+      // If owner mismatch, ignore & clear the cached data
+      if (localMetadata.owner !== ownerName) {
+        localData = null
+        this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
+      }
+      if (
+        localMetadata.owner === ownerName &&
+        localMetadata.name != null &&
+        localMetadata.name.toLowerCase() !== projectName.toLowerCase()
+      ) {
+        // If project name mismatch, ask user whether to open the cached project or not, to avoid potential data loss by clearing cache
+        const stillOpenTarget = await helpers.confirmOpenTargetWithAnotherInCache(projectName, localMetadata.name)
+        signal.throwIfAborted()
+        if (stillOpenTarget) {
+          localData = null
+          this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
+        } else {
+          helpers.openProject(localMetadata.owner, localMetadata.name)
+          throw new Cancelled('Open another project')
+        }
+      }
+    }
+    signal.throwIfAborted()
+    loadFromLocalCacheReporter.report(1)
+
+    // For projects not owned by the signed-in user, we prefer to load the published version.
+    const preferPublishedContent = this.signedInUsername !== ownerName
+    const cloudData = await this.cloudHelpers.load(ownerName, projectName, preferPublishedContent, signal)
+    signal.throwIfAborted()
+    loadFromCloudReporter.report(1)
+
+    let finalData = cloudData
+    if (localData != null) {
+      const cloudVersion = cloudData?.metadata.version ?? -1
+      const localVersion = localData.metadata.version ?? -1
+      if (cloudVersion > localVersion) {
+        // If cloud version is newer, ignore & clear the cached data to avoid potential conflict
+        this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
+      } else {
+        finalData = localData
+      }
+    }
+    await this.project.load(finalData, signal)
+    signal.throwIfAborted()
+    projectLoadReporter.report(1)
+  }
+
+  startEditing() {
     this.startDirtyMonitoring()
     this.startAutoPreload()
     this.startAutoSave()

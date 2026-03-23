@@ -96,7 +96,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
-    put:
+    patch:
       tags:
         - Users
       summary: Update the authenticated user
@@ -107,9 +107,15 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - description
+              minProperties: 1
               properties:
+                username:
+                  description: New username of the authenticated user. If provided, the username will be modified.
+                  $ref: "#/components/schemas/User/properties/username"
+                displayName:
+                  $ref: "#/components/schemas/User/properties/displayName"
+                avatar:
+                  $ref: "#/components/schemas/User/properties/avatar"
                 description:
                   $ref: "#/components/schemas/User/properties/description"
       responses:
@@ -198,6 +204,9 @@ paths:
                     - $ref: "#/components/schemas/ProjectReleaseFullName"
                 name:
                   $ref: "#/components/schemas/Project/properties/name"
+                displayName:
+                  description: Defaults to `name` if not provided.
+                  $ref: "#/components/schemas/Project/properties/displayName"
                 files:
                   description: |
                     File paths and their corresponding universal URLs associated with the project.
@@ -267,10 +276,12 @@ paths:
               - $ref: "#/components/schemas/ProjectFullName"
               - $ref: "#/components/schemas/ProjectReleaseFullName"
         - name: keyword
-          description: Filter projects by name pattern.
+          description: Filter projects by display name or name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Project/properties/name"
+            type: string
+            examples:
+              - Niu Xiao Qi
         - name: visibility
           description: Filter projects by visibility.
           in: query
@@ -368,7 +379,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
-    put:
+    patch:
       tags:
         - Projects
       summary: Update a project
@@ -392,14 +403,17 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - files
-                - visibility
+              minProperties: 1
               properties:
+                name:
+                  description: New name of the project. If provided, the project will be renamed.
+                  $ref: "#/components/schemas/Project/properties/name"
                 files:
                   $ref: "#/components/schemas/Project/properties/files"
                 visibility:
                   $ref: "#/components/schemas/Project/properties/visibility"
+                displayName:
+                  $ref: "#/components/schemas/Project/properties/displayName"
                 description:
                   $ref: "#/components/schemas/Project/properties/description"
                 instructions:
@@ -807,7 +821,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
-    put:
+    patch:
       tags:
         - Assets
       summary: Update an asset
@@ -831,15 +845,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - displayName
-                - type
-                - category
-                - description
-                - extraSettings
-                - files
-                - filesHash
-                - visibility
+              minProperties: 1
               properties:
                 displayName:
                   $ref: "#/components/schemas/Asset/properties/displayName"
@@ -881,6 +887,95 @@ paths:
       responses:
         "204":
           description: Successfully deleted the asset.
+
+  /aigc/asset/description:
+    post:
+      tags:
+        - AIGC
+      summary: Generate asset description
+      description: |
+        Generate a description for an asset using AI based on the provided text prompt and image input.
+
+        This endpoint accepts multimodal input (text and image) to generate a contextual description
+        suitable for embedding and search operations. The text prompt typically includes the asset's
+        display name and additional context about how the description will be used.
+
+        #### Image requirements
+
+        - Format: PNG only (`image/png`)
+        - Maximum image size: 5 MB (after decoding the base64 content)
+        - Images must be provided as base64-encoded data URLs
+        - Other formats (SVG, JPEG, WebP) must be converted to PNG before sending
+
+        #### Quota & rate limits
+
+        - Each request consumes 1 quota from the authenticated user's AIGC allowance.
+        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: array
+                  description: Array of content items including text and image inputs.
+                  minItems: 1
+                  maxItems: 10
+                  items:
+                    oneOf:
+                      - $ref: "#/components/schemas/InputText"
+                      - $ref: "#/components/schemas/InputImage"
+                    discriminator:
+                      propertyName: type
+                      mapping:
+                        inputText: "#/components/schemas/InputText"
+                        inputImage: "#/components/schemas/InputImage"
+            examples:
+              tornado:
+                summary: Generate description for a tornado sprite
+                value:
+                  content:
+                    - type: inputText
+                      text: "Generate a description for a sprite named 'Tornado'."
+                    - type: inputImage
+                      imageUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+      responses:
+        "200":
+          description: Successfully generated description.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - description
+                properties:
+                  description:
+                    type: string
+                    description: The AI-generated description for the asset.
+                    examples:
+                      - "A powerful rotating column of air extending from a thunderstorm to the ground, characterized by its distinctive funnel shape and destructive force."
+        "400":
+          description: Invalid request parameters.
+        "401":
+          description: Unauthorized - authentication required.
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
+              schema:
+                type: integer
 
   /course:
     post:
@@ -1003,7 +1098,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
-    put:
+    patch:
       tags:
         - Courses
       summary: Update a course
@@ -1026,12 +1121,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - title
-                - thumbnail
-                - entrypoint
-                - references
-                - prompt
+              minProperties: 1
               properties:
                 title:
                   $ref: "#/components/schemas/Course/properties/title"
@@ -1189,7 +1279,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CourseSeries"
-    put:
+    patch:
       tags:
         - Course Series
       summary: Update a course series
@@ -1212,10 +1302,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - title
-                - courseIDs
-                - order
+              minProperties: 1
               properties:
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
@@ -1258,14 +1345,27 @@ paths:
           description: Successfully deleted the course series.
         "403":
           description: Insufficient permissions to perform this operation.
-
-  /copilot/message:
+  /copilot/sse/message:
     post:
       tags:
         - Copilot
-      summary: Generate a message
+      summary: Generate a structured SSE stream message
       description: |
-        Generate a message by sending a list of input messages.
+        Generate a structured SSE stream message by sending a list of input messages.
+
+        The response is a Server-Sent Events (SSE) stream where each `data:` line contains a single JSON object.
+
+        #### Event semantics
+
+        | Event | Data schema | Semantics |
+        |-------|-------------|-----------|
+        | `text_delta` | `CopilotSSETextDeltaEvent` | Incremental assistant text fragment. Concatenate `text` values in order to reconstruct `content.text`. |
+        | `tool_call_delta` | `CopilotSSEToolCallDeltaEvent` | Incremental fragment for one assistant tool call. Merge fragments by `index`; `id`, `function.name`, and `function.arguments` are omitted when a fragment does not update them. |
+        | `done` | `CopilotSSEDoneEvent` | Terminal success event. Emitted after all prior deltas. `finishReason` is the provider finish reason such as `stop` or `tool_calls`. |
+        | `error` | `CopilotSSEErrorEvent` | Terminal failure event emitted if streaming fails after the HTTP response has started. No `done` event follows `error`. |
+
+        A successful stream may contain any number of `text_delta` and `tool_call_delta` events before the final
+        `done` event. Assistant responses may be text-only, tool-call-only, or contain both.
 
         #### Quota & rate limits
 
@@ -1279,109 +1379,48 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - messages
-              properties:
-                messages:
-                  description: Input messages.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotMessage"
-                  examples:
-                    - - role: user
-                        content:
-                          type: text
-                          text: Hello, world!
-                tools:
-                  description: Use Mcp tools.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotTool"
-                  examples:
-                    - - type: function
-                        function:
-                          name: create_project
-                          description: Create a new project.
-                          parameters: { "name": "My Project" }
-
+              $ref: "#/components/schemas/CopilotMessageRequest"
       responses:
-        "201":
-          description: Message successfully generated.
+        "200":
+          description: |
+            Structured SSE stream established.
+
+            Parse the stream as SSE frames and then decode each event's JSON `data` payload according to the event
+            type.
           content:
-            application/json:
+            "text/event-stream":
               schema:
-                $ref: "#/components/schemas/CopilotMessage"
-                examples:
-                  - role: copilot
-                    content:
-                      type: text
-                      text: Hello!
-        "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
-        "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+                type: string
+                description: |
+                  Server-Sent Events stream containing `text_delta`, `tool_call_delta`, `done`, and `error` events.
+              examples:
+                textOnly:
+                  summary: Text-only assistant response
+                  value: |
+                    event: text_delta
+                    data: {"text":"Hello"}
 
-  /copilot/stream/message:
-    post:
-      tags:
-        - Copilot
-      summary: Generate a stream message
-      description: |
-        Generate a stream message by sending a list of input messages.
+                    event: text_delta
+                    data: {"text":"!"}
 
-        #### Quota & rate limits
+                    event: done
+                    data: {"finishReason":"stop"}
+                textAndToolCall:
+                  summary: Assistant text followed by a tool call
+                  value: |
+                    event: text_delta
+                    data: {"text":"Let me check that for you."}
 
-        - Each message consumes 1 quota from the authenticated user's allowance.
-        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
-        - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
-          time in seconds.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - messages
-              properties:
-                messages:
-                  description: Input messages.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotMessage"
-                  examples:
-                    - - role: user
-                        content:
-                          type: text
-                          text: Hello, world!
-                tools:
-                  description: Use Mcp tools.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotTool"
-                  examples:
-                    - - type: function
-                        function:
-                          name: create_project
-                          description: Create a new project.
-                          parameters: { "name": "My Project" }
-      responses:
-        "201":
-          description: Stream Message successfully generated.
-          content:
-            application/stream:
+                    event: tool_call_delta
+                    data: {"index":0,"id":"call_1","function":{"name":"list_projects","arguments":"{\"query\":\"demo\"}"}}
+
+                    event: done
+                    data: {"finishReason":"tool_calls"}
+                providerError:
+                  summary: Stream failure after the response has started
+                  value: |
+                    event: error
+                    data: {"reason":"streamFailed","message":"stream failed"}
         "403":
           description: Insufficient permissions or quota to perform this operation.
           headers:
@@ -2188,6 +2227,15 @@ paths:
                 projectSettings:
                   description: Optional project settings to provide context for enrichment.
                   $ref: "#/components/schemas/AIGCProjectSettings"
+                lang:
+                  description: |
+                    Language the AI should use for all generated text (names, descriptions, etc.).
+                    When provided, the output strictly follows this language regardless of the input language.
+                    When omitted, the AI infers language from the user input.
+                  type: string
+                  enum:
+                    - en
+                    - zh
       responses:
         "200":
           description: Successfully enriched settings.
@@ -2237,6 +2285,15 @@ paths:
               properties:
                 settings:
                   $ref: "#/components/schemas/AIGCSpriteSettings"
+                lang:
+                  description: |
+                    Language the AI should use for all generated text (names, descriptions, etc.).
+                    When provided, the output strictly follows this language regardless of the input language.
+                    When omitted, the AI infers language from the user input.
+                  type: string
+                  enum:
+                    - en
+                    - zh
       responses:
         "200":
           description: Successfully generated content settings.
@@ -2255,6 +2312,23 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AIGCAnimationSettings"
+                  animationBindings:
+                    description: |
+                      Recommended mapping from sprite state enum values to animation names.
+                      Keys are sprite state enum values; values are animation name strings that should
+                      match the 'name' field from the animations array, omitted if no animation is bound to that state.
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      default:
+                        type: string
+                      step:
+                        type: string
+                      die:
+                        type: string
+                    example:
+                      default: "idle"
+                      step: "walk"
         "403":
           description: Insufficient permissions or quota.
           headers:
@@ -2269,43 +2343,6 @@ paths:
               description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
-
-  /aigc/matting:
-    post:
-      tags:
-        - AIGC
-      deprecated: true
-      summary: Remove image background
-      description: |
-        Process the provided image URL to remove its background, resulting in a transparent background.
-
-        **Deprecated**: This endpoint is deprecated and will be removed in a future version. Use `POST /aigc/task` with
-        `type: "removeBackground"` instead, which provides better reliability for long-running operations.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - imageUrl
-              properties:
-                imageUrl:
-                  description: URL of the image to process for background removal.
-                  type: string
-                  format: uri
-      responses:
-        "200":
-          description: Successfully processed the image for background removal.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultUrl:
-                    description: URL of the processed image with background removed.
-                    type: string
-                    format: uri
 
   /util/upinfo:
     get:
@@ -2570,6 +2607,11 @@ components:
           type: string
           examples:
             - NiuXiaoQi
+        displayName:
+          description: Display name of the project.
+          type: string
+          examples:
+            - Niu Xiao Qi
         version:
           description: Version number of the project.
           type: integer
@@ -2847,31 +2889,279 @@ components:
 
     CopilotMessage:
       description: Message in a copilot conversation.
+      oneOf:
+        - $ref: "#/components/schemas/CopilotUserMessage"
+        - $ref: "#/components/schemas/CopilotCopilotMessage"
+        - $ref: "#/components/schemas/CopilotToolMessage"
+      discriminator:
+        propertyName: role
+        mapping:
+          user: "#/components/schemas/CopilotUserMessage"
+          copilot: "#/components/schemas/CopilotCopilotMessage"
+          tool: "#/components/schemas/CopilotToolMessage"
+
+    CopilotMessageContent:
+      description: Message content payload.
       type: object
+      required:
+        - type
+        - text
+      additionalProperties: false
+      properties:
+        type:
+          description: Type of the message. For now, only `text` is supported.
+          type: string
+          enum:
+            - text
+          examples:
+            - text
+        text:
+          description: Text content of the message.
+          type: string
+          examples:
+            - Hello!
+
+    CopilotUserMessage:
+      description: User-authored message in a copilot conversation.
+      type: object
+      required:
+        - role
+        - content
+      additionalProperties: false
       properties:
         role:
           description: Role of the message.
           type: string
           enum:
             - user
-            - copilot
           examples:
             - user
         content:
-          type: object
-          properties:
-            type:
-              description: Type of the message. For now, only `"text"` is supported.
-              type: string
-              enum:
-                - text
-              examples:
-                - text
-            text:
-              description: Text content of the message.
-              type: string
-              examples:
-                - Hello!
+          $ref: "#/components/schemas/CopilotMessageContent"
+
+    CopilotCopilotMessage:
+      description: |
+        Copilot-authored message in a copilot conversation.
+
+        `content`, `toolCalls`, or both may be present, but at least one of them must be included.
+      type: object
+      required:
+        - role
+      additionalProperties: false
+      minProperties: 2
+      properties:
+        role:
+          description: Role of the message.
+          type: string
+          enum:
+            - copilot
+          examples:
+            - copilot
+        content:
+          $ref: "#/components/schemas/CopilotMessageContent"
+        toolCalls:
+          description: Structured tool calls emitted by the copilot message.
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CopilotRequestToolCall"
+
+    CopilotToolMessage:
+      description: Tool result message in a copilot conversation.
+      type: object
+      required:
+        - role
+        - toolCallId
+        - content
+      additionalProperties: false
+      properties:
+        role:
+          description: Role of the message.
+          type: string
+          enum:
+            - tool
+          examples:
+            - tool
+        toolCallId:
+          description: Tool call identifier of the assistant tool call this result corresponds to.
+          type: string
+          examples:
+            - call_1
+        content:
+          $ref: "#/components/schemas/CopilotMessageContent"
+
+    CopilotMessageRequest:
+      description: Request payload for copilot message generation endpoints.
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          description: |
+            Input messages.
+
+            This request shape supports prior assistant `toolCalls` and tool result messages with `toolCallId`.
+          type: array
+          items:
+            $ref: "#/components/schemas/CopilotMessage"
+          examples:
+            - - role: user
+                content:
+                  type: text
+                  text: Hello, world!
+              - role: copilot
+                toolCalls:
+                  - id: call_1
+                    type: function
+                    function:
+                      name: create_project
+                      arguments: '{"name":"My Project"}'
+              - role: tool
+                toolCallId: call_1
+                content:
+                  type: text
+                  text: '{"id":"project_123"}'
+        tools:
+          description: Tools available for the copilot to use.
+          type: array
+          items:
+            $ref: "#/components/schemas/CopilotTool"
+          examples:
+            - - type: function
+                function:
+                  name: create_project
+                  description: Create a new project.
+                  parameters: { "name": "My Project" }
+
+    CopilotRequestToolCall:
+      description: Structured tool call supplied on a prior copilot message.
+      type: object
+      required:
+        - id
+        - type
+        - function
+      additionalProperties: false
+      properties:
+        id:
+          description: Unique tool call identifier.
+          type: string
+          examples:
+            - call_1
+        type:
+          description: Type of the tool call.
+          type: string
+          enum:
+            - function
+          examples:
+            - function
+        function:
+          $ref: "#/components/schemas/CopilotRequestToolCallFunction"
+
+    CopilotRequestToolCallFunction:
+      description: Function payload of a structured tool call.
+      type: object
+      required:
+        - name
+        - arguments
+      additionalProperties: false
+      properties:
+        name:
+          description: Name of the function.
+          type: string
+          examples:
+            - create_project
+        arguments:
+          description: JSON-stringified arguments for the function call.
+          type: string
+          examples:
+            - '{"name":"My Project"}'
+
+    CopilotSSETextDeltaEvent:
+      description: Payload of a `text_delta` SSE event from `POST /copilot/sse/message`.
+      type: object
+      required:
+        - text
+      additionalProperties: false
+      properties:
+        text:
+          description: Incremental assistant text fragment. Concatenate fragments in order.
+          type: string
+          examples:
+            - Hello
+
+    CopilotSSEToolCallDeltaEvent:
+      description: |
+        Payload of a `tool_call_delta` SSE event from `POST /copilot/sse/message`.
+
+        Merge fragments by `index` to reconstruct one entry in assistant `toolCalls`.
+      type: object
+      required:
+        - index
+      additionalProperties: false
+      properties:
+        index:
+          description: Zero-based tool call position within the assistant message's `toolCalls` array.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 0
+        id:
+          description: Tool call identifier fragment, present when emitted by the provider for this delta.
+          type: string
+          examples:
+            - call_1
+        function:
+          $ref: "#/components/schemas/CopilotSSEToolCallDeltaFunction"
+
+    CopilotSSEToolCallDeltaFunction:
+      description: Incremental function fragment nested inside a `tool_call_delta` event.
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          description: Function name fragment, usually emitted once near the start of the tool call.
+          type: string
+          examples:
+            - list_projects
+        arguments:
+          description: JSON-stringified arguments fragment for the tool call.
+          type: string
+          examples:
+            - '{"query":"demo"}'
+
+    CopilotSSEDoneEvent:
+      description: Payload of a terminal `done` SSE event from `POST /copilot/sse/message`.
+      type: object
+      required:
+        - finishReason
+      additionalProperties: false
+      properties:
+        finishReason:
+          description: Provider finish reason for the completed assistant turn.
+          type: string
+          examples:
+            - stop
+            - tool_calls
+
+    CopilotSSEErrorEvent:
+      description: Payload of a terminal `error` SSE event from `POST /copilot/sse/message`.
+      type: object
+      required:
+        - reason
+        - message
+      additionalProperties: false
+      properties:
+        reason:
+          description: Machine-readable error reason for programmatic handling.
+          type: string
+          examples:
+            - streamFailed
+        message:
+          description: Human-readable streaming error message.
+          type: string
+          examples:
+            - stream failed
 
     CopilotTool:
       description: Tool available for copilot to use.
@@ -2890,8 +3180,6 @@ components:
             name:
               description: Name of the function.
               type: string
-              enum:
-                - create_project
               examples:
                 - create_project
             description:
@@ -3248,6 +3536,59 @@ components:
           type: string
           examples:
             - z0
+
+    InputText:
+      description: Text input for multimodal content.
+      type: object
+      required:
+        - type
+        - text
+      additionalProperties: false
+      properties:
+        type:
+          description: Content type identifier.
+          type: string
+          enum:
+            - inputText
+          examples:
+            - inputText
+        text:
+          description: The text content.
+          type: string
+          maxLength: 2000
+          examples:
+            - "Generate a description for a sprite named 'Tornado'."
+
+    InputImage:
+      description: Image input for multimodal content.
+      type: object
+      required:
+        - type
+        - imageUrl
+      additionalProperties: false
+      properties:
+        type:
+          description: Content type identifier.
+          type: string
+          enum:
+            - inputImage
+          examples:
+            - inputImage
+        imageUrl:
+          description: |
+            Base64-encoded PNG image data URL.
+
+            All images must be provided as PNG format. If you have images in other formats (SVG, JPEG, WebP),
+            convert them to PNG before sending.
+
+            Maximum image size: 5 MB (after decoding the base64 content).
+
+            Format: `data:image/png;base64,<base64_data>`
+          type: string
+          format: uri
+          maxLength: 7000000
+          examples:
+            - "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
     ByPage:
       description: Paginated response wrapper.

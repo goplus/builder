@@ -154,10 +154,9 @@ function remove(id: number, onHide: (modal: ModalInfo) => void) {
   onHide(modal)
   setTimeout(() => {
     // wait for hide animation to finish
-    currentModals.splice(
-      currentModals.findIndex((m) => m.id === id),
-      1
-    )
+    const modalIndex = currentModals.findIndex((m) => m.id === id)
+    if (modalIndex === -1) return
+    currentModals.splice(modalIndex, 1)
   }, 300)
 }
 

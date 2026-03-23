@@ -1,6 +1,6 @@
-import type { Widget } from '@/models/widget'
+import type { Widget } from '@/models/spx/widget'
 import monitorIcon from './monitor.svg?raw'
-import { Monitor } from '@/models/widget/monitor'
+import { Monitor } from '@/models/spx/widget/monitor'
 
 export function getIcon(widget: Widget) {
   if (widget instanceof Monitor) return monitorIcon

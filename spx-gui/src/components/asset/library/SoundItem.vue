@@ -10,8 +10,8 @@
 <script setup lang="ts">
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
-import SoundPlayer from '@/components/editor/sound/SoundPlayer.vue'
-import { asset2Sound } from '@/models/common/asset'
+import SoundPlayer from '@/components/editor/stage/sound/SoundPlayer.vue'
+import { asset2Sound } from '@/models/spx/common/asset'
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useAudioDuration } from '@/utils/audio'
 import { UISoundItem, UICornerIcon } from '@/components/ui'

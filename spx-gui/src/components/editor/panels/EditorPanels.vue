@@ -1,14 +1,16 @@
 <template>
   <div v-show="running.mode !== 'debug'" class="editor-panels">
-    <UICard
-      v-radar="{ name: 'Sprites and sounds panel', desc: 'Panel containing sprites and sounds for the project' }"
-      class="main"
-    >
-      <SpritesPanel :expanded="expandedPanel === 'sprites'" @expand="expand('sprites')" />
-      <SoundsPanel :expanded="expandedPanel === 'sounds'" @expand="expand('sounds')" />
+    <UICard v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }" class="main">
+      <SpritesPanel />
     </UICard>
-    <UICard v-radar="{ name: 'Stage panel', desc: 'Panel for stage of the project' }" class="sider">
-      <StagePanel></StagePanel>
+    <UICard
+      v-radar="{
+        name: 'Stage panel',
+        desc: 'Panel for stage of the project, with quick entries to widgets, sounds and backdrops tabs'
+      }"
+      class="sider"
+    >
+      <StagePanel />
     </UICard>
   </div>
   <ConsolePanel
@@ -23,42 +25,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { computed } from 'vue'
 import { UICard } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import SoundsPanel from './sound/SoundsPanel.vue'
 import SpritesPanel from './sprite/SpritesPanel.vue'
 import StagePanel from './stage/StagePanel.vue'
 import ConsolePanel from './ConsolePanel.vue'
 
-const expandedPanel = ref<'sprites' | 'sounds'>('sprites')
-function expand(panel: 'sprites' | 'sounds') {
-  expandedPanel.value = panel
-}
-
 const editorCtx = useEditorCtx()
 const running = computed(() => editorCtx.state.runtime.running)
-
-watch(
-  () => editorCtx.state.selected,
-  (selected) => {
-    if (selected?.type === 'sprite' && expandedPanel.value !== 'sprites') expand('sprites')
-    else if (selected?.type === 'sound' && expandedPanel.value !== 'sounds') expand('sounds')
-  },
-  { immediate: true }
-)
-
-watch(
-  () => expandedPanel.value,
-  (expanded) => {
-    const { project, state } = editorCtx
-    if (expanded === 'sprites' && state.selected?.type !== 'sprite' && project.sprites.length > 0) {
-      state.select({ type: 'sprite' })
-    } else if (expanded === 'sounds' && state.selected?.type !== 'sound' && project.sounds.length > 0) {
-      state.select({ type: 'sound' })
-    }
-  }
-)
 </script>
 
 <style scoped lang="scss">

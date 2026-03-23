@@ -6,8 +6,8 @@
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
-import { asset2Sprite } from '@/models/common/asset'
-import { Sprite } from '@/models/sprite'
+import { asset2Sprite } from '@/models/spx/common/asset'
+import { Sprite } from '@/models/spx/sprite'
 import { UIImg } from '@/components/ui'
 
 const props = defineProps<{

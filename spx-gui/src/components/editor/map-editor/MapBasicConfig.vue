@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 
 import MapSizeInput from './MapSizeInput.vue'
 import MapPhysicsInput from './MapPhysicsInput.vue'
 import MapLayerSortInput from './MapLayerSortInput.vue'
 
 defineProps<{
-  project: Project
+  project: SpxProject
 }>()
 </script>
 

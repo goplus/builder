@@ -4,7 +4,6 @@
  */
 
 import { File, fromBlob, toNativeFile } from '@/models/common/file'
-import { unicodeSafeSlice, upFirst } from '../utils'
 import { getMimeFromExt } from '../file'
 import { stripExt } from '../path'
 import { toWav } from '../audio'
@@ -22,55 +21,6 @@ import {
 } from '../color'
 
 export const packageSpx = 'github.com/goplus/spx/v2'
-
-export const keywords = [
-  'func',
-  'main',
-  'println',
-  'if',
-  'else',
-  'for',
-  'range',
-  'break',
-  'continue',
-  'return',
-  'switch',
-  'case',
-  'default',
-  'type',
-  'struct',
-  'map',
-  'chan',
-  'nil',
-  'true',
-  'false',
-  'iota',
-  'const',
-  'import',
-  'package',
-  'var',
-  'error',
-  'interface',
-  'struct',
-  'fallthrough',
-  'go',
-  'defer',
-  'select'
-]
-
-export const typeKeywords = [
-  'int',
-  'float64',
-  'string',
-  'bool',
-  'void',
-  'map',
-  'chan',
-  'error',
-  'interface',
-  'struct',
-  'nil'
-]
 
 /**
  * Audio file formats supported by spx.
@@ -116,47 +66,6 @@ export async function adaptImg(file: File): Promise<File> {
   const jpegBlob = await toJpeg(await toNativeFile(file))
   const jpegFileName = stripExt(file.name) + '.jpeg'
   return fromBlob(jpegFileName, jpegBlob)
-}
-
-// About XGo identifier:
-// ```
-// identifier     = letter { letter | unicode_digit } .
-// letter         = unicode_letter | "_" .
-// unicode_letter = /* a Unicode code point categorized as "Letter" */ .
-// unicode_digit  = /* a Unicode code point categorized as "Number, decimal digit" */ .
-// ```
-// See details in https://github.com/goplus/xgo/blob/fc370dac5207d1d1fda7a669bed5bd9508bf1b59/doc/spec-mini.md#identifiers
-
-export function validateXGoIdentifierName(name: string) {
-  const regex = /^[\p{L}_][\p{L}\p{Nd}_]*$/u
-  if (!regex.test(name)) return { en: 'Invalid name', zh: '格式不正确' }
-  if (typeKeywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
-  if (keywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
-}
-
-export function getXGoIdentifierNameTip(target?: LocaleMessage) {
-  if (target == null)
-    return {
-      en: 'The name can only contain letters, digits, and the character _.',
-      zh: '名称只能包含中文、英文字母、数字及下划线'
-    }
-  return {
-    en: `The ${target.en} name can only contain letters, digits, and the character _.`,
-    zh: `${target.zh}名称只能包含中文、英文字母、数字及下划线`
-  }
-}
-
-export function normalizeXGoIdentifierAssetName(src: string, cas: 'camel' | 'pascal') {
-  src = src
-    .replace(/[^\p{L}\p{Nd}]+/gu, '_')
-    .replace(/([A-Z])/g, '_$1')
-    .toLowerCase()
-    .replace(/^[^\p{L}]+/gu, '') // remove invalid starting such as numbers
-  const parts = src.split('_').filter((p) => !!p)
-  if (parts.length === 0) return ''
-  const [firstpart, ...otherParts] = parts
-  const result = [cas === 'pascal' ? upFirst(firstpart) : firstpart, ...otherParts.map(upFirst)].join('')
-  return unicodeSafeSlice(result, 0, 20) // 20 should be enough, it will be hard to read with too long name
 }
 
 export const specialDirections = [

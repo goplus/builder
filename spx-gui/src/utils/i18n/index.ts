@@ -4,6 +4,7 @@
 
 import {
   inject,
+  markRaw,
   type App,
   type InjectionKey,
   type ObjectPlugin,
@@ -54,6 +55,10 @@ export class I18n implements ObjectPlugin<[]> {
   constructor({ lang }: I18nConfig) {
     this.lang = ref(lang)
     this.t = this.t.bind(this)
+    // Prevent Vue from making this instance reactive. Without this, when an I18n
+    // instance is stored inside a reactive object, Vue would auto-unwrap `lang`
+    // (a Ref field), turning `this.i18n.lang` from a Ref into the raw string value.
+    markRaw(this)
   }
 
   /** Set current language */

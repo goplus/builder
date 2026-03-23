@@ -1,7 +1,11 @@
 import { z } from 'zod'
 import { defineComponent, h } from 'vue'
-import { type Range, type Position, getTextDocumentId } from '@/components/editor/code-editor/common'
-import RawCodeLink from '@/components/editor/code-editor/CodeLink.vue'
+import {
+  type Range,
+  type Position,
+  getTextDocumentId,
+  CodeLink as RawCodeLink
+} from '@/components/editor/code-editor/spx-code-editor'
 import { codeFilePathSchema } from '../common'
 
 export const tagName = 'code-link'

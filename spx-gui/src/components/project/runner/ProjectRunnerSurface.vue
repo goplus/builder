@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref, shallowRef, watch } from 'vue'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { Project } from '@/models/project'
+import { SpxProject } from '@/models/spx/project'
 import { UIButton, UITooltip } from '@/components/ui'
 import ProjectRunner from './ProjectRunner.vue'
 
@@ -10,7 +10,7 @@ type RunnerState = 'initial' | 'loading' | 'running'
 
 const props = withDefaults(
   defineProps<{
-    project: Project
+    project: SpxProject
     fullscreen?: boolean
     inlineAnchor?: () => HTMLElement | null
     onRun?: () => void | Promise<void>
@@ -420,8 +420,8 @@ defineExpose({
     >
       <div v-if="overlayActive && (overlayVisible || overlayClosing || overlayOpening)" class="header">
         <div class="header-left"></div>
-        <div class="project-name">
-          {{ project.name }}
+        <div class="display-name">
+          {{ project.displayName }}
         </div>
         <div class="header-right">
           <UIButton
@@ -636,7 +636,7 @@ defineExpose({
   flex-basis: 30%;
 }
 
-.project-name {
+.display-name {
   flex: 1;
   flex-basis: 40%;
   text-align: center;

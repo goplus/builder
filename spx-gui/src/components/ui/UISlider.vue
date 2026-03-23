@@ -8,6 +8,7 @@
       '--n-rail-color': 'rgb(245,245,245)'
     }"
     :on-dragend="handleDragEnd"
+    @update:value="handleUpdateValue"
   >
     <template #thumb>
       <div class="thumb" :style="{ boxShadow }"></div>
@@ -22,10 +23,12 @@ const props = withDefaults(
   defineProps<{
     color?: 'primary' | 'sound'
     value?: number
+    updateOn?: 'dragend' | 'input'
   }>(),
   {
     color: 'primary',
-    value: 0
+    value: 0,
+    updateOn: 'dragend'
   }
 )
 
@@ -46,7 +49,13 @@ const boxShadow = computed(() => {
 })
 
 const handleDragEnd = async () => {
+  if (props.updateOn !== 'dragend') return
   emit('update:value', value.value)
+}
+
+function handleUpdateValue(nextValue: number) {
+  if (props.updateOn !== 'input') return
+  emit('update:value', nextValue)
 }
 </script>
 <style lang="scss" scoped>

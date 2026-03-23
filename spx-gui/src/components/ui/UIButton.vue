@@ -24,7 +24,16 @@
 <script setup lang="ts">
 import { computed, ref, useSlots } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
-export type ButtonColor = 'primary' | 'secondary' | 'boring' | 'white' | 'danger' | 'success' | 'blue' | 'purple'
+export type ButtonColor =
+  | 'primary'
+  | 'secondary'
+  | 'boring'
+  | 'white'
+  | 'danger'
+  | 'success'
+  | 'blue'
+  | 'purple'
+  | 'yellow'
 export type ButtonSize = 'small' | 'medium' | 'large'
 export type ButtonHtmlType = 'button' | 'submit' | 'reset'
 export type ButtonVariant = 'shadow' | 'flat' | 'stroke'
@@ -236,6 +245,16 @@ defineExpose({
 
   &:hover:not(:active, :disabled) {
     --ui-button-bg-color: var(--ui-color-purple-400);
+  }
+}
+
+.color-yellow {
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-yellow-main);
+  --ui-button-shadow-color: var(--ui-color-yellow-700);
+
+  &:hover:not(:active, :disabled) {
+    --ui-button-bg-color: var(--ui-color-yellow-400);
   }
 }
 

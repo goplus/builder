@@ -26,24 +26,24 @@ export type Course = {
 }
 
 /** Get a course by ID */
-export async function getCourse(id: string, signal?: AbortSignal) {
+export function getCourse(id: string, signal?: AbortSignal) {
   return client.get(`/course/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<Course>
 }
 
 export type AddUpdateCourseParams = Pick<Course, 'title' | 'thumbnail' | 'entrypoint' | 'references' | 'prompt'>
 
 /** Add a new course */
-export async function addCourse(params: AddUpdateCourseParams, signal?: AbortSignal) {
+export function addCourse(params: AddUpdateCourseParams, signal?: AbortSignal) {
   return client.post('/course', params, { signal }) as Promise<Course>
 }
 
 /** Update an existing course */
-export async function updateCourse(id: string, params: AddUpdateCourseParams, signal?: AbortSignal) {
-  return client.put(`/course/${encodeURIComponent(id)}`, params, { signal }) as Promise<Course>
+export function updateCourse(id: string, params: AddUpdateCourseParams, signal?: AbortSignal) {
+  return client.patch(`/course/${encodeURIComponent(id)}`, params, { signal }) as Promise<Course>
 }
 
 /** Delete a course */
-export async function deleteCourse(id: string) {
+export function deleteCourse(id: string) {
   return client.delete(`/course/${encodeURIComponent(id)}`) as Promise<void>
 }
 
@@ -61,7 +61,7 @@ export type ListCourseParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export async function listCourse(params: ListCourseParams, signal?: AbortSignal) {
+export function listCourse(params: ListCourseParams, signal?: AbortSignal) {
   return client.get('/courses/list', params, { signal }) as Promise<ByPage<Course>>
 }
 

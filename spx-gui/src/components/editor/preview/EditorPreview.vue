@@ -169,9 +169,13 @@ import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
-import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
-import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
+import {
+  useCodeEditor,
+  DiagnosticSeverity,
+  textDocumentId2CodeFileName,
+  getInvalidMonitors
+} from '@/components/editor/code-editor/spx-code-editor'
+import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
@@ -179,7 +183,7 @@ import publishSvg from './publish.svg'
 import { getSignedInUsername } from '@/stores/user'
 
 const editorCtx = useEditorCtx()
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditor = useCodeEditor()
 const { isOnline } = useNetwork()
 
 const runtime = computed(() => editorCtx.state.runtime)
@@ -217,7 +221,7 @@ const confirm = useConfirmDialog()
 
 const lastPanicOutput = ref<RuntimeOutput | null>(null)
 
-function appendRuntimeOutput(output: RuntimeOutput) {
+function appendRuntimeOutput(output: RuntimeOutputDraft) {
   runtime.value.addOutput(output)
 }
 
@@ -282,8 +286,8 @@ function handleExit(code: number) {
   runnerState.value = shouldRestore ? 'running' : 'loading'
 }
 
-async function checkAndNotifyError() {
-  const r = await codeEditorCtx.mustEditor().diagnosticWorkspace()
+async function checkAndNotifyCodeError() {
+  const r = await codeEditor.diagnosticWorkspace()
   const codeFilesWithError: LocaleMessage[] = []
   for (const item of r.items) {
     if (!item.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
@@ -296,6 +300,24 @@ async function checkAndNotifyError() {
     content: i18n.t({
       en: `There are stills errors in the project code (${codeFileNamesWithError.en}). The project may not run correctly. Are you sure to continue?`,
       zh: `当前项目代码（${codeFileNamesWithError.zh}文件）中存在错误，项目可能无法正常运行，确定继续吗？`
+    })
+  })
+}
+
+async function checkAndNotifyMonitorError() {
+  const { sprites, stage } = editorCtx.project
+  const monitors = stage.widgets.filter((w) => w.type === 'monitor')
+  const spriteNames = new Set(sprites.map((s) => s.name))
+  const invalidMonitors = await getInvalidMonitors(monitors, spriteNames, (target, signal) =>
+    codeEditor.getProperties(target, signal)
+  )
+  if (invalidMonitors.length === 0) return
+  const monitorNames = humanizeListWithLimit(invalidMonitors.map((m) => ({ en: m.name, zh: m.name })))
+  await confirm({
+    title: i18n.t({ en: 'Invalid monitor configuration', zh: '监视器配置无效' }),
+    content: i18n.t({
+      en: `Monitor ${monitorNames.en} has no valid variable configured and will not display correctly. Are you sure to continue?`,
+      zh: `监视器 ${monitorNames.zh} 未配置有效的变量，运行时将无法正常显示，确定继续吗？`
     })
   })
 }
@@ -335,7 +357,8 @@ const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.pro
 
 const handleRun = useMessageHandle(
   async () => {
-    await checkAndNotifyError()
+    await checkAndNotifyCodeError()
+    await checkAndNotifyMonitorError()
     await executeRun('run')
   },
   { en: 'Failed to run project', zh: '运行项目失败' }
@@ -417,7 +440,8 @@ function getStageInlineAnchor() {
 
 <style scoped lang="scss">
 .editor-preview {
-  height: 419px;
+  // TODO: The fixed height here should be removed. Instead, set the StageViewer size (maintaining 4:3 aspect ratio) and let this container adapt its height accordingly.
+  height: 422px;
   display: flex;
   flex-direction: column;
   position: relative;

@@ -55,7 +55,7 @@
       </div>
       <div class="info">
         <div class="header">
-          <h5 class="name" :title="project.name">{{ project.name }}</h5>
+          <h5 class="display-name" :title="project.displayName">{{ project.displayName }}</h5>
           <template v-if="context !== 'public' && isOwner">
             <i v-if="project.visibility === Visibility.Public" class="icon" :title="$t({ en: 'Public', zh: '公开' })">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -199,8 +199,8 @@ function handleEdit() {
 const removeProject = useRemoveProject()
 const handleRemove = useMessageHandle(
   async () => {
-    const { owner, name } = props.project
-    await removeProject(owner, name)
+    const { owner, name, displayName } = props.project
+    await removeProject(owner, name, displayName)
     emit('removed')
   },
   { en: 'Failed to remove project', zh: '删除项目失败' }
@@ -305,7 +305,7 @@ const handleRemove = useMessageHandle(
     align-items: center;
     gap: 4px;
 
-    .name {
+    .display-name {
       flex: 0 1 auto;
       font-size: 15px;
       line-height: 24px;

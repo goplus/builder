@@ -56,9 +56,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { UIButton, UICheckbox, UIEmpty, UIFormModal } from '@/components/ui'
-import type { Costume } from '@/models/costume'
-import type { Sprite } from '@/models/sprite'
-import { defaultFps } from '@/models/animation'
+import type { Costume } from '@/models/spx/costume'
+import type { Sprite } from '@/models/spx/sprite'
+import { defaultFps } from '@/models/spx/animation'
 import AnimationPlayer from '@/components/editor/sprite/animation/AnimationPlayer.vue'
 import CostumeItem from '@/components/editor/sprite/CheckableCostumeItem.vue'
 

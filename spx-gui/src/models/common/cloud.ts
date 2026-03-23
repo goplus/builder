@@ -7,17 +7,34 @@ import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
-import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
+import { Visibility, addProject, getProject, type UpdateProjectParams, updateProject } from '@/apis/project'
 import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException, TimeoutException } from '@/utils/exception'
 import { getUphostsByRegion } from '@/utils/kodo'
-import type { Metadata } from '../project'
+import type { Metadata, ProjectSerialized } from '../project'
 import { File, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
 import { createAIDescriptionFiles, extractAIDescription } from './'
 import { getUniversalUrlScheme, stringifyDataUrl, stringifyKodoUrl, UniversalUrlScheme } from '@/utils/universal-url'
 
-export async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
+/** Helpers for cloud storage of project data. */
+export class CloudHelpers {
+  load(
+    owner: string,
+    name: string,
+    preferPublishedContent: boolean = false,
+    signal?: AbortSignal
+  ): Promise<ProjectSerialized> {
+    return load(owner, name, preferPublishedContent, signal)
+  }
+  save({ metadata, files }: ProjectSerialized, signal?: AbortSignal) {
+    return save(metadata, files, signal)
+  }
+}
+
+export const cloudHelpers = new CloudHelpers()
+
+async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
   let projectData = await getProject(owner, name, signal)
   if (preferPublishedContent) {
     const published = getPublishedContent(projectData)
@@ -38,10 +55,11 @@ export function getPublishedContent(project: ProjectData) {
   return null
 }
 
-export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
-  const { owner, name, id } = metadata
+async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
+  const { owner, name, displayName, id } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
+  if (!displayName) throw new DefaultException({ en: 'project display name not specified', zh: '未指定项目显示名' })
 
   const aiDescriptionFiles = createAIDescriptionFiles(metadata)
   const filesToSave = { ...files, ...aiDescriptionFiles }
@@ -58,19 +76,18 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
     thumbnail,
     ...savedMetadata
   } = await (id != null
-    ? updateProject(
-        owner,
-        name,
-        {
+    ? (() => {
+        const updateParams: UpdateProjectParams = {
           visibility,
           files: fileCollection,
+          displayName,
           description: metadata.description,
           instructions: metadata.instructions,
           thumbnail: thumbnailUniversalUrl
-        },
-        signal
-      )
-    : addProject({ name, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection }, signal))
+        }
+        return updateProject(owner, name, updateParams, signal)
+      })()
+    : addProject({ name, displayName, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection }, signal))
   signal?.throwIfAborted()
 
   metadata = { ...savedMetadata, thumbnail: metadata.thumbnail }

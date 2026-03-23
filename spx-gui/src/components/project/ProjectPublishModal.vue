@@ -5,14 +5,14 @@ import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
-import { saveFile } from '@/models/common/cloud'
-import type { Project } from '@/models/project'
+import { cloudHelpers, saveFile } from '@/models/common/cloud'
+import type { SpxProject } from '@/models/spx/project'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 import { stringifyProjectFullName } from '@/apis/project'
 
 const props = defineProps<{
-  project: Project
+  project: SpxProject
   visible: boolean
 }>()
 
@@ -22,7 +22,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
 const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 
 /** If this is the first time the project is published */
@@ -69,7 +68,9 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     if (isProjectUsingAIInteraction(project)) await project.ensureAIDescription(true) // Ensure AI description is available if needed
-    await project.saveToCloud()
+    const serialized = await project.export()
+    const saved = await cloudHelpers.save(serialized)
+    project.setMetadata(saved.metadata)
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({
       projectFullName: stringifyProjectFullName(project.owner!, project.name!),
@@ -86,7 +87,7 @@ const handleSubmit = useMessageHandle(
 <template>
   <UIFormModal
     :radar="{ name: 'Project publish modal', desc: 'Modal for publishing projects' }"
-    :title="$t({ en: `Publish ${project.name}`, zh: `发布 ${project.name}` })"
+    :title="$t({ en: `Publish ${project.displayName}`, zh: `发布 ${project.displayName}` })"
     :style="{ width: '560px' }"
     :visible="props.visible"
     @update:visible="handleCancel"

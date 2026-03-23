@@ -2,10 +2,10 @@
 import { computed } from 'vue'
 import { UIImg, UIEditorSpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
-import type { Costume } from '@/models/costume'
+import type { Costume } from '@/models/spx/costume'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { useMessageHandle } from '@/utils/exception'
-import { Sprite } from '@/models/sprite'
+import { Sprite } from '@/models/spx/sprite'
 import CornerMenu from '../common/CornerMenu.vue'
 import { useRenameCostume } from '@/components/asset'
 import { RenameMenuItem, RemoveMenuItem, DuplicateMenuItem } from '@/components/editor/common/'
@@ -53,7 +53,7 @@ const { fn: handleDuplicate } = useMessageHandle(
       throw new Error('Only costumes whose parent is Sprite can be duplicated')
     }
     const action = { name: { en: `Duplicate costume ${costume.name}`, zh: `复制造型 ${costume.name}` } }
-    await editorCtx.project.history.doAction(action, async () => {
+    await editorCtx.state.history.doAction(action, async () => {
       const newCostume = costume.clone()
       parent.addCostumeAfter(newCostume, costume.id)
       editorCtx.state.selectCostume(parent.id, newCostume.id)
@@ -69,7 +69,7 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.costume.name
     const action = { name: { en: `Remove costume ${name}`, zh: `删除造型 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => {
+    await editorCtx.state.history.doAction(action, () => {
       if (parent.value instanceof Sprite) {
         parent.value.removeCostume(props.costume.id)
         return

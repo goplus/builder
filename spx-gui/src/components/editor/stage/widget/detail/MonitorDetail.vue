@@ -5,57 +5,86 @@
       <div class="preview" v-html="monitorIcon"></div>
       <div class="controls">
         <div class="line">
-          <UITextInput
-            v-radar="{ name: 'Label input', desc: 'Input field for monitor label' }"
-            class="input"
-            :value="monitor.label"
-            @update:value="handleLabelUpdate"
-          >
-            <template #prefix>{{ $t({ en: 'Label', zh: '标签' }) }}</template>
-          </UITextInput>
-          <UITextInput
-            v-radar="{ name: 'Value input', desc: 'Input field for monitor value' }"
-            class="input"
-            :value="monitor.variableName"
-            @update:value="handleValueUpdate"
-          >
-            <template #prefix>{{ $t({ en: 'Value', zh: '值' }) }}</template>
-          </UITextInput>
-        </div>
-        <div class="divider"></div>
-        <div class="line">
-          <UINumberInput
-            v-radar="{ name: 'X position input', desc: 'Input field for monitor X position' }"
-            class="input"
-            :value="monitor.x"
-            @update:value="handleXUpdate"
-          >
-            <template #prefix>X</template>
-          </UINumberInput>
-          <UINumberInput
-            v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
-            class="input"
-            :value="monitor.y"
-            @update:value="handleYUpdate"
-          >
-            <template #prefix>Y</template>
-          </UINumberInput>
-        </div>
-        <div class="line">
-          <UINumberInput
-            v-radar="{ name: 'Size input', desc: 'Input field for monitor size' }"
-            class="input"
-            :min="0"
-            :value="sizePercent"
-            @update:value="handleSizePercentUpdate"
-          >
-            <template #prefix>{{ $t({ en: 'Size', zh: '大小' }) }}</template>
-            <template #suffix>%</template>
-          </UINumberInput>
+          <p class="with-label">
+            {{ $t({ en: 'Label', zh: '标签' }) }}
+            <UITextInput
+              v-radar="{ name: 'Label input', desc: 'Input field for monitor label' }"
+              class="input"
+              :value="monitor.label"
+              @update:value="handleLabelUpdate"
+            />
+          </p>
         </div>
         <div class="line">
           <p class="with-label">
-            {{ $t({ en: 'Show', zh: '显示' }) }}:
+            {{ $t({ en: 'Target', zh: '对象' }) }}
+            <UISelect
+              v-radar="{ name: 'Target select', desc: 'Select target for monitor value' }"
+              class="input"
+              :value="monitor.target"
+              @update:value="handleTargetUpdate"
+            >
+              <UISelectOption value="">{{ $t({ en: 'Stage', zh: '舞台' }) }}</UISelectOption>
+              <UISelectOption v-for="sprite in sprites" :key="sprite.name" :value="sprite.name">
+                {{ sprite.name }}
+              </UISelectOption>
+            </UISelect>
+          </p>
+          <p class="with-label">
+            {{ $t({ en: 'Value', zh: '值' }) }}
+            <UISelect
+              v-radar="{ name: 'Property select', desc: 'Select property for monitor value' }"
+              class="input"
+              :value="monitor.variableName || null"
+              :placeholder="$t({ en: 'Select property', zh: '选择属性' })"
+              @update:value="handlePropertyUpdate"
+            >
+              <UISelectOption v-for="prop in properties" :key="prop.name" :value="prop.name">
+                <!-- TODO: Consider showing type and documentation info -->
+                {{ prop.name }}
+              </UISelectOption>
+            </UISelect>
+          </p>
+        </div>
+        <div class="divider"></div>
+        <div class="line">
+          <p class="with-label">
+            {{ $t({ en: 'Position', zh: '位置' }) }}
+            <UINumberInput
+              v-radar="{ name: 'X position input', desc: 'Input field for monitor X position' }"
+              class="input"
+              :value="monitor.x"
+              @update:value="handleXUpdate"
+            >
+              <template #prefix>X</template>
+            </UINumberInput>
+            <UINumberInput
+              v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
+              class="input"
+              :value="monitor.y"
+              @update:value="handleYUpdate"
+            >
+              <template #prefix>Y</template>
+            </UINumberInput>
+          </p>
+        </div>
+        <div class="line">
+          <p class="with-label">
+            {{ $t({ en: 'Size', zh: '大小' }) }}
+            <UINumberInput
+              v-radar="{ name: 'Size input', desc: 'Input field for monitor size' }"
+              class="input"
+              :min="0"
+              :value="sizePercent"
+              @update:value="handleSizePercentUpdate"
+            >
+              <template #suffix>%</template>
+            </UINumberInput>
+          </p>
+        </div>
+        <div class="line">
+          <p class="with-label">
+            {{ $t({ en: 'Show', zh: '显示' }) }}
             <UIButtonGroup
               v-radar="{ name: 'Visibility control', desc: 'Control to set monitor visibility' }"
               :value="monitor.visible ? 'visible' : 'hidden'"
@@ -77,13 +106,23 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UITextInput, UINumberInput, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
-import { round } from '@/utils/utils'
+import {
+  UITextInput,
+  UINumberInput,
+  UIButtonGroup,
+  UIButtonGroupItem,
+  UIIcon,
+  UISelect,
+  UISelectOption
+} from '@/components/ui'
+import { round, useAsyncComputed } from '@/utils/utils'
+import { getCleanupSignal } from '@/utils/disposable'
 import { debounce } from 'lodash'
-import { useMessageHandle } from '@/utils/exception'
-import type { Monitor } from '@/models/widget/monitor'
+import { capture, useMessageHandle } from '@/utils/exception'
+import type { Monitor } from '@/models/spx/widget/monitor'
 import { useRenameWidget } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { useCodeEditor } from '@/components/editor/code-editor/spx-code-editor'
 import EditorItemDetail from '../../../common/EditorItemDetail.vue'
 import monitorIcon from '../monitor.svg?raw'
 
@@ -92,11 +131,25 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const codeEditor = useCodeEditor()
 const renameWidget = useRenameWidget()
 const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
   en: 'Failed to rename widget',
   zh: '重命名控件失败'
 }).fn
+
+const sprites = computed(() => editorCtx.project.sprites)
+
+const properties = useAsyncComputed(async (onCleanup) => {
+  const target = props.monitor.target
+  const signal = getCleanupSignal(onCleanup)
+  try {
+    return await codeEditor.getProperties(target, signal)
+  } catch (e) {
+    capture(e, `Failed to load properties for target: "${target}"`)
+    return []
+  }
+})
 
 // We call wrapUpdateHandler `withDebounce: false` here, because:
 // 1. Unlike `UINumberInput`, debounce for value-update causes delay of `UITextInput` UI-update
@@ -105,7 +158,16 @@ const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
 // 2. It's ok to omit the debounce for label / value update
 // TODO: we should make the behaviors of different inputs (`UINumberInput`, `UITextInput`, ...) consistent. Then remove differences here.
 const handleLabelUpdate = wrapUpdateHandler((label: string) => props.monitor.setLabel(label), false)
-const handleValueUpdate = wrapUpdateHandler((value: string) => props.monitor.setVariableName(value), false)
+
+const handleTargetUpdate = wrapUpdateHandler((target: string | null) => {
+  props.monitor.setTarget(target ?? '')
+  props.monitor.setVariableName('')
+}, false)
+
+const handlePropertyUpdate = wrapUpdateHandler(
+  (propertyName: string | null) => props.monitor.setVariableName(propertyName ?? ''),
+  false
+)
 
 // TODO: common logic may be extracted when we have more widget types
 const handleXUpdate = wrapUpdateHandler((x: number | null) => props.monitor.setX(x ?? 0))
@@ -128,7 +190,7 @@ function wrapUpdateHandler<Args extends any[]>(
 ): (...args: Args) => void {
   const name = props.monitor.name
   const action = { name: { en: `Configure widget ${name}`, zh: `修改控件 ${name} 配置` } }
-  const wrapped = (...args: Args) => editorCtx.project.history.doAction(action, () => handler(...args))
+  const wrapped = (...args: Args) => editorCtx.state.history.doAction(action, () => handler(...args))
   return withDebounce ? debounce(wrapped, 300) : wrapped
 }
 </script>
@@ -177,7 +239,7 @@ function wrapUpdateHandler<Args extends any[]>(
 
 .line {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   align-items: center;
 }
 
@@ -187,7 +249,7 @@ function wrapUpdateHandler<Args extends any[]>(
 
 .with-label {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   align-items: center;
   word-break: keep-all;
 }

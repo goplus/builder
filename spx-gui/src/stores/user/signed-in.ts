@@ -17,7 +17,8 @@ const userStateStorageKey = 'spx-user'
 const userState = reactive({
   accessToken: null as string | null,
   accessTokenExpiresAt: null as number | null,
-  refreshToken: null as string | null
+  refreshToken: null as string | null,
+  username: null as string | null
 })
 
 export function initUserState() {
@@ -34,10 +35,21 @@ interface TokenResponse {
   refresh_token: string
 }
 
+function decodeUsernameFromAccessToken(accessToken: string): string | null {
+  try {
+    const decoded = jwtDecode<{ name?: unknown }>(accessToken)
+    if (typeof decoded.name !== 'string' || decoded.name === '') return null
+    return decoded.name
+  } catch {
+    return null
+  }
+}
+
 function handleTokenResponse(resp: TokenResponse) {
   userState.accessToken = resp.access_token
   userState.accessTokenExpiresAt = resp.expires_in ? Date.now() + resp.expires_in * 1000 : null
   userState.refreshToken = resp.refresh_token
+  userState.username = decodeUsernameFromAccessToken(resp.access_token)
 }
 
 export function initiateSignIn(
@@ -60,12 +72,14 @@ export function signInWithAccessToken(accessToken: string) {
   userState.accessToken = accessToken
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
+  userState.username = decodeUsernameFromAccessToken(accessToken)
 }
 
 export function signOut() {
   userState.accessToken = null
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
+  userState.username = null
 }
 
 const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
@@ -115,9 +129,12 @@ export function isSignedIn(): boolean {
 
 export function getSignedInUsername(): string | null {
   if (!isSignedIn()) return null
-  if (!userState.accessToken) return null
-  const decoded = jwtDecode<{ name: string }>(userState.accessToken)
-  return decoded.name
+  if (userState.username != null) return userState.username
+  if (userState.accessToken == null) return null
+  const username = decodeUsernameFromAccessToken(userState.accessToken)
+  if (username == null) return null
+  userState.username = username
+  return username
 }
 
 const signedInUserStaleTime = 60 * 1000 // 1min
@@ -132,7 +149,9 @@ export function useSignedInUser() {
     queryKey: queryKey,
     async queryFn() {
       if (!isSignedIn()) return null
-      return apis.getSignedInUser()
+      const signedInUser = await apis.getSignedInUser()
+      userState.username = signedInUser.username
+      return signedInUser
     },
     failureSummaryMessage: {
       en: 'Failed to load signed-in user information',
@@ -144,12 +163,33 @@ export function useSignedInUser() {
 
 export function useUpdateSignedInUser() {
   const queryCache = useQueryCache()
+
   return useAction(
-    async function updateSignedInUser(params: apis.UpdateSignedInUserParams) {
+    async function updateSignedInUser(
+      params: Pick<apis.UpdateSignedInUserParams, 'displayName' | 'avatar' | 'description'>
+    ) {
       const updated = await apis.updateSignedInUser(params)
-      queryCache.invalidate(getUserQueryKey(getSignedInUsername()!))
+      queryCache.invalidate(getUserQueryKey(updated.username))
       return updated
     },
     { en: 'Failed to update profile', zh: '更新个人信息失败' }
+  )
+}
+
+export function useModifySignedInUsername() {
+  const queryCache = useQueryCache()
+
+  return useAction(
+    async function modifySignedInUsername(newUsername: string) {
+      const oldUsername = getSignedInUsername()
+      if (oldUsername == null) throw new Error('Signed-in username is not available')
+
+      const updated = await apis.updateSignedInUser({ username: newUsername })
+      userState.username = updated.username
+      queryCache.invalidate(getUserQueryKey(oldUsername))
+      queryCache.invalidate(getUserQueryKey(updated.username))
+      return updated
+    },
+    { en: 'Failed to modify username', zh: '修改用户名失败' }
   )
 }

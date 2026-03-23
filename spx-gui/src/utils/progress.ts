@@ -1,45 +1,62 @@
 import type { LocaleMessage } from './i18n'
+import type { PartialBy } from './types'
 
 export type Progress = {
   /** Progress percentage, number in range `[0, 1]` */
   percentage: number
   /** Description for the progress, e.g., "Loading local data..." */
   desc: LocaleMessage | null
+  /** Estimated time left in milliseconds, `null` if unknown */
+  timeLeft: number | null
 }
 
 export type ProgressHandler = (p: Progress) => void
 
+export type ProgressReportParams = PartialBy<Progress, 'timeLeft'>
+
 export class ProgressReporter {
   private percentage = 0
 
-  constructor(private handler: ProgressHandler) {}
+  constructor(
+    /** Handler to receive progress reports. */
+    private handler: ProgressHandler
+  ) {}
 
-  report(progress: Progress): void
+  report(progress: ProgressReportParams): void
   report(percentage: number, desc?: LocaleMessage | null): void
-  report(arg1: Progress | number, desc: LocaleMessage | null = null) {
-    const progress = typeof arg1 === 'number' ? { percentage: arg1, desc } : arg1
-    this.percentage = progress.percentage
-    this.handler(progress)
+  report(arg1: ProgressReportParams | number, desc: LocaleMessage | null = null) {
+    let params: ProgressReportParams
+    if (typeof arg1 === 'number') {
+      params = { percentage: arg1, desc }
+    } else {
+      params = arg1
+    }
+    this.percentage = params.percentage
+    this.handler({
+      percentage: params.percentage,
+      desc: params.desc,
+      timeLeft: params.timeLeft ?? null
+    })
   }
 
   /**
    * Start reporting progress automatically: a series of progress will be reported in given interval.
    * Reports start from `percentage: 0` and keep increasing.
-   * Reports stop when `estimatedTimeCost * 2` is reached (at `percentage: 0.99`), or `percentage: 1` is reported manually.
+   * Reports stop when `timeCost` is reached (at `percentage: 0.99`), or `percentage: 1` is reported manually.
+   *
+   * Both progress percentage and ETA use a linear algorithm so they remain consistent with each other.
+   * Percentage reaches 0.99 exactly at the estimated time cost.
    */
   startAutoReport(
     /** Estimated time cost in milliseconds */
-    estimatedTimeCost: number,
-    /** Interval in milliseconds for each report */
-    interval = 300
+    timeCost: number,
+    /** Interval in milliseconds for each report. Defaults to `timeCost / 50`. */
+    interval = Math.max(300, Math.round(timeCost / 50))
   ) {
     return new Promise<void>((resolve) => {
-      const estimatedTimes = estimatedTimeCost / interval
-      const maxTimes = estimatedTimes * 2
       const maxPercentage = 0.99
-      // Quadratic function to generate reports: y = x^2 / (x^2 + factor)
-      // when x = maxTimes, y = maxPercentage
-      const factor = (maxTimes ** 2 * (1 - maxPercentage)) / maxPercentage
+      // Report immediately at percentage: 0
+      this.report({ percentage: 0, desc: null, timeLeft: timeCost })
       let times = 0
       const timer = setInterval(() => {
         const curr = this.percentage
@@ -49,8 +66,12 @@ export class ProgressReporter {
           return
         }
         times++
-        const timesSquared = times ** 2
-        this.report(timesSquared / (timesSquared + factor))
+        const elapsed = times * interval
+        // Linear function: reaches maxPercentage exactly at estimated time cost
+        const percentage = Math.min(maxPercentage, (elapsed / timeCost) * maxPercentage)
+        // ETA derived from percentage so it stays consistent: percentage + timeLeft/timeCost = 1
+        const timeLeft = timeCost * (1 - percentage)
+        this.report({ percentage, desc: null, timeLeft })
       }, interval)
     })
   }
@@ -93,7 +114,31 @@ export class ProgressCollector {
     return this.descFn({ finishedNum, totalNum })
   }
 
-  private getProgress() {
+  private getTimeLeft(): number | null {
+    // Find the first unfinished sub-task that reports timeLeft
+    let sourceItem: CollectingItem | null = null
+    for (const item of this.collecting) {
+      if (item.progress.percentage < 1 && item.progress.timeLeft != null) {
+        sourceItem = item
+        break
+      }
+    }
+    if (sourceItem == null) return null
+    const sourceTimeLeft = sourceItem.progress.timeLeft
+    if (sourceTimeLeft == null) return null
+    const remaining = sourceItem.weight * (1 - sourceItem.progress.percentage)
+    if (remaining < 1e-9) return null
+    // Calculate total remaining weighted progress across all sub-tasks
+    let totalRemaining = 0
+    for (const item of this.collecting) {
+      totalRemaining += item.weight * (1 - item.progress.percentage)
+    }
+    // Extrapolate: if the source item takes `sourceTimeLeft` for its remaining progress,
+    // the total remaining time is proportional
+    return sourceTimeLeft * (totalRemaining / remaining)
+  }
+
+  private getProgress(): Progress {
     let totalWeight = 0
     let finishedWeight = 0
     let currentItem: CollectingItem | null = null
@@ -106,7 +151,8 @@ export class ProgressCollector {
     }
     const desc = currentItem?.progress.desc ?? currentItem?.desc ?? this.getDesc()
     const percentage = totalWeight === 0 ? 1 : finishedWeight / totalWeight
-    const ret = { percentage, desc }
+    const timeLeft = this.getTimeLeft()
+    const ret: Progress = { percentage, timeLeft, desc }
     if (process.env.NODE_ENV === 'development') {
       Object.assign(ret, { __debug__: this.collecting })
     }
@@ -119,7 +165,7 @@ export class ProgressCollector {
 
   /** Creates a sub-reporter for a sub-task with given description and weight. */
   getSubReporter(desc: LocaleMessage | null = null, weight = 1) {
-    const progress: Progress = { percentage: 0, desc: null }
+    const progress: Progress = { percentage: 0, timeLeft: null, desc: null }
     const item: CollectingItem = { progress, weight, desc }
     this.collecting.push(item)
     const reporter = new ProgressReporter((p) => {
