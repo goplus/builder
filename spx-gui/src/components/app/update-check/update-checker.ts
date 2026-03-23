@@ -18,6 +18,12 @@ export class UpdateChecker {
   private updateCheckTimer: ReturnType<typeof setInterval> | null = null
   private currentEtag: string | null = null
 
+  /** Normalizes ETag values by removing weak validator prefix and trimming whitespace */
+  private normalizeEtag(etag: string): string {
+    const trimmed = etag.trim()
+    return trimmed.startsWith('W/') ? trimmed.slice(2).trim() : trimmed
+  }
+
   /**
    * Checks if there is a new version of the application available
    *
@@ -37,9 +43,10 @@ export class UpdateChecker {
       throw new Error('ETag header not found')
     }
 
-    const hasUpdate = this.currentEtag != null && this.currentEtag !== etag
+    const normalizedEtag = this.normalizeEtag(etag)
+    const hasUpdate = this.currentEtag != null && this.currentEtag !== normalizedEtag
     // Initialize currentEtag on first check
-    if (this.currentEtag == null) this.currentEtag = etag
+    if (this.currentEtag == null) this.currentEtag = normalizedEtag
     return hasUpdate
   }
 
