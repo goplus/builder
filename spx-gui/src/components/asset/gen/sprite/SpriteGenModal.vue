@@ -16,7 +16,7 @@ const props = withDefaults(
     visible: boolean
     project: SpxProject
     gen?: SpriteGenModel
-    genCollapseHandler: (gen: AssetGenModel) => Promise<ModalTransformOrigin | null>
+    genCollapseHandler: (gen: AssetGenModel, isNewGen?: boolean) => Promise<ModalTransformOrigin | null>
   }>(),
   {
     gen: undefined
@@ -43,7 +43,7 @@ async function handleGenCollapse() {
   if (props.gen == null) {
     keepAlive(gen)
   }
-  const transformOrigin = await props.genCollapseHandler(gen)
+  const transformOrigin = await props.genCollapseHandler(gen, props.gen == null)
   if (modalRef.value != null && transformOrigin != null) {
     modalRef.value.setTransformOrigin(transformOrigin)
   }
@@ -52,14 +52,19 @@ async function handleGenCollapse() {
 
 const handleModalClose = useMessageHandle(
   async () => {
-    await confirm({
-      title: i18n.t({ zh: '退出精灵生成？', en: 'Exit sprite generation?' }),
-      content: i18n.t({
-        zh: '当前内容不会被保存，确定要退出吗？',
-        en: 'Current progress will not be saved. Are you sure to exit?'
-      }),
-      confirmText: i18n.t({ en: 'Exit', zh: '退出' })
-    })
+    // If the gen is provided by props, it means the modal is controlled by an external gen,
+    // and closing the modal will not cancel the gen. So we only show confirmation when there
+    // is no external gen, which means closing the modal will cancel the gen and lose progress.
+    if (props.gen == null) {
+      await confirm({
+        title: i18n.t({ zh: '退出精灵生成？', en: 'Exit sprite generation?' }),
+        content: i18n.t({
+          zh: '当前内容不会被保存，确定要退出吗？',
+          en: 'Current progress will not be saved. Are you sure to exit?'
+        }),
+        confirmText: i18n.t({ en: 'Exit', zh: '退出' })
+      })
+    }
     emit('cancelled')
   },
   { en: 'Failed to exit modal', zh: '退出失败' }

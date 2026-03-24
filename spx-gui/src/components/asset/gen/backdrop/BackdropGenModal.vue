@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { UIModal, UIModalClose, useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
@@ -33,8 +33,6 @@ const typeRef = computed(() => (props.gen != null ? null : AssetType.Backdrop))
 const { assetGen: internalGen } = useAssetGen(props.project, typeRef)
 const activeGen = computed(() => props.gen ?? internalGen.value)
 
-const modalRef = ref<InstanceType<typeof UIModal> | null>(null)
-
 const handleModalClose = useMessageHandle(
   async () => {
     await confirm({
@@ -53,7 +51,6 @@ const handleModalClose = useMessageHandle(
 
 <template>
   <UIModal
-    ref="modalRef"
     :radar="{ name: 'Backdrop generation modal', desc: 'Modal for backdrop generation' }"
     style="width: 1076px; height: 800px"
     :visible="visible"

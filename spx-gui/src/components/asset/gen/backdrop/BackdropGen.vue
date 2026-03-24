@@ -61,6 +61,7 @@ const isLibrarySearchEnabled = computed(
 )
 
 const {
+  keyword,
   suggestions,
   isLoading: isSuggestionsLoading,
   selected: selectedAsset,
@@ -98,20 +99,13 @@ const handleUseAsset = useMessageHandle(
           v-if="isLibrarySearchEnabled"
           :type="AssetType.Backdrop"
           :loading="isSuggestionsLoading"
+          :keyword="keyword"
           :suggestions="suggestions"
           :selected="selectedAsset"
           @toggle="toggleSelectedAsset"
         >
           <template #item="{ asset, selected, onClick }">
             <BackdropItem :asset="asset" :selected="selected" @click="onClick" />
-          </template>
-          <template #tip>
-            {{
-              $t({
-                en: `There are related backdrops in the library. You can choose the one you like or continue generating.`,
-                zh: `素材库中已有相关的背景，可以选择你喜欢的背景直接使用，或者继续生成。`
-              })
-            }}
           </template>
         </AssetSuggestions>
         <ImageSelector

@@ -67,9 +67,10 @@ const invokeSpriteGenModal = useSpriteGenModal()
 const handleGenerate = useMessageHandle(
   async () => {
     const sprite = await invokeSpriteGenModal(editorCtx.project)
-    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () =>
-      editorCtx.project.addSpriteWithAutoFit(sprite)
-    )
+    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
+      editorCtx.project.addSprite(sprite)
+      await sprite.autoFit()
+    })
     handleSpriteClick(sprite)
   },
   {

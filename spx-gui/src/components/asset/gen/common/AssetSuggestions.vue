@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { AssetType, AssetData } from '@/apis/asset'
+import { computed } from 'vue'
+import { AssetType, type AssetData } from '@/apis/asset'
 import { UILoading } from '@/components/ui'
 
 const props = defineProps<{
   type: AssetType
   loading: boolean
+  keyword: string
   suggestions: AssetData[]
   selected: AssetData | null
 }>()
@@ -16,6 +18,13 @@ const emit = defineEmits<{
 function isSelected(asset: AssetData) {
   return props.selected?.id === asset.id
 }
+
+const entityMessages = {
+  [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
+  [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
+  [AssetType.Sound]: { en: 'sound', zh: '声音' }
+}
+const entityMessage = computed(() => entityMessages[props.type])
 </script>
 
 <template>
@@ -28,9 +37,22 @@ function isSelected(asset: AssetData) {
         </template>
       </ul>
       <p class="tip">
-        <slot name="tip"></slot>
+        {{
+          $t({
+            en: `There are related ${entityMessage.en}s in the asset library. You can choose the one you like or continue generating.`,
+            zh: `素材库中已有相关的${entityMessage.zh}，可以选择你喜欢的${entityMessage.zh}直接使用，或者继续生成。`
+          })
+        }}
       </p>
     </template>
+    <p v-else-if="keyword.length > 0" class="tip" style="margin-top: 56px">
+      {{
+        $t({
+          en: `No matching ${entityMessage.en}s found in the asset library.`,
+          zh: `素材库中未找到匹配的${entityMessage.zh}`
+        })
+      }}
+    </p>
   </div>
 </template>
 

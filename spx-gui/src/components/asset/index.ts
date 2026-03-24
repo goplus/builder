@@ -35,13 +35,13 @@ import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 
 function makeGenCollapseHandler(editorCtx: EditorCtx) {
-  return async (gen: AssetGenModel) => {
-    // Add the ongoing asset generation to the editor state
+  return async (gen: AssetGenModel, isNewGen = true) => {
+    // Add the ongoing asset generation to the editor state when the generation is newly created and not yet added
     if (gen instanceof SpriteGen) {
-      editorCtx.state.genState.addSprite(gen)
+      if (isNewGen) editorCtx.state.genState.addSprite(gen)
       return editorCtx.state.genState.getSpritePos(gen)
     } else if (gen instanceof BackdropGen) {
-      editorCtx.state.genState.addBackdrop(gen)
+      if (isNewGen) editorCtx.state.genState.addBackdrop(gen)
       return editorCtx.state.genState.getBackdropPos(gen)
     }
     return null
@@ -117,7 +117,10 @@ export function useAddSpriteFromLocalFile() {
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    await editorCtx.state.history.doAction({ name: actionMessage }, () => project.addSpriteWithAutoFit(sprite))
+    await editorCtx.state.history.doAction({ name: actionMessage }, async () => {
+      project.addSprite(sprite)
+      await sprite.autoFit()
+    })
     return sprite
   }
 }

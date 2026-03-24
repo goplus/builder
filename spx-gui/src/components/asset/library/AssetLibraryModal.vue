@@ -243,13 +243,19 @@ async function handleGenCollapse() {
   emit('cancelled')
 }
 
-const handleGenFinished = useMessageHandle(
+const handleGenResolved = useMessageHandle(
   async (model: AssetModel) => {
     await editorCtx.state.history.doAction(
       { name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` } },
-      () => {
-        if (model instanceof Sprite) return props.project.addSpriteWithAutoFit(model)
-        if (model instanceof Backdrop) props.project.stage.addBackdrop(model)
+      async () => {
+        if (model instanceof Sprite) {
+          props.project.addSprite(model)
+          await model.autoFit()
+          return
+        }
+        if (model instanceof Backdrop) {
+          props.project.stage.addBackdrop(model)
+        }
       }
     )
     emit('resolved', [model])
@@ -267,7 +273,7 @@ const AssetGenComp = computed(() => {
         gen,
         descriptionPlaceholder: keyword.value.trim(),
         onCollapse: handleGenCollapse,
-        onResolved: handleGenFinished
+        onResolved: handleGenResolved
       })
   } else if (gen instanceof BackdropGen) {
     return (attrs: Record<string, unknown>) =>
@@ -275,7 +281,7 @@ const AssetGenComp = computed(() => {
         ...attrs,
         gen,
         descriptionPlaceholder: keyword.value.trim(),
-        onResolved: handleGenFinished
+        onResolved: handleGenResolved
       })
   }
   return null

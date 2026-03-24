@@ -150,7 +150,8 @@ export async function addAssetToProject(asset: AssetData, project: SpxProject) {
   switch (asset.type) {
     case AssetType.Sprite: {
       const sprite = await asset2Sprite(asset)
-      await project.addSpriteWithAutoFit(sprite)
+      project.addSprite(sprite)
+      await sprite.autoFit()
       return sprite
     }
     case AssetType.Backdrop: {

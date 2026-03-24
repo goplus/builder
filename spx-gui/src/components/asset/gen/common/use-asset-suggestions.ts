@@ -4,6 +4,7 @@ import { listAsset, Visibility, type AssetData, type AssetType } from '@/apis/as
 import { ownerAll } from '@/apis/common'
 
 export function useAssetSuggestions(type: AssetType, keyword: WatchSource<string>, enabled: WatchSource<boolean>) {
+  const _keyword = ref('')
   const suggestions = shallowRef<AssetData[]>([])
   const isLoading = ref(false)
   const selected = shallowRef<AssetData | null>(null)
@@ -26,6 +27,7 @@ export function useAssetSuggestions(type: AssetType, keyword: WatchSource<string
         },
         ctrl.signal
       )
+      _keyword.value = kw
       suggestions.value = result.data
       isLoading.value = false
     } catch {
@@ -38,6 +40,7 @@ export function useAssetSuggestions(type: AssetType, keyword: WatchSource<string
   watch(
     [keyword, enabled],
     ([kw, isEnabled]) => {
+      _keyword.value = ''
       suggestions.value = []
       selected.value = null
       if (!isEnabled || kw.trim() === '') {
@@ -56,5 +59,5 @@ export function useAssetSuggestions(type: AssetType, keyword: WatchSource<string
     selected.value = selected.value?.id === asset.id ? null : asset
   }
 
-  return { suggestions, isLoading, selected, toggle }
+  return { keyword: _keyword, suggestions, isLoading, selected, toggle }
 }

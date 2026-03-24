@@ -91,9 +91,10 @@ const handleSpriteGenClick = useMessageHandle(
     gen.dispose()
     editorCtx.state.genState.removeSprite(gen.id)
 
-    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () =>
-      editorCtx.project.addSpriteWithAutoFit(result)
-    )
+    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
+      editorCtx.project.addSprite(result)
+      await result.autoFit()
+    })
     editorCtx.state.selectSprite(result.id)
   },
   {
