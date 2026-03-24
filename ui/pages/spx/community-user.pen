@@ -325,7 +325,10 @@
                             {
                               "type": "frame",
                               "id": "78aKd",
+                              "x": 55,
+                              "y": 1,
                               "name": "arrow-right-long-outlined",
+                              "enabled": false,
                               "width": 20,
                               "height": 20,
                               "layout": "none",
@@ -341,6 +344,16 @@
                                   "height": 8.334539413452148
                                 }
                               ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "eh5wU",
+                              "fill": "$r:turquoise500",
+                              "content": "n",
+                              "lineHeight": 1,
+                              "fontFamily": "XBuilder_Icons_02",
+                              "fontSize": 20,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -472,7 +485,10 @@
                             {
                               "type": "frame",
                               "id": "h0iNu",
+                              "x": 55,
+                              "y": 1,
                               "name": "arrow-right-long-outlined",
+                              "enabled": false,
                               "width": 20,
                               "height": 20,
                               "layout": "none",
@@ -488,6 +504,16 @@
                                   "height": 8.334539413452148
                                 }
                               ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "ESQsk",
+                              "fill": "$r:turquoise500",
+                              "content": "n",
+                              "lineHeight": 1,
+                              "fontFamily": "XBuilder_Icons_02",
+                              "fontSize": 20,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -800,12 +826,17 @@
                               "ref": "j:0onmu",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content"
+                                },
                                 "j:awuls": {
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Follow"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -1339,12 +1370,17 @@
                               "ref": "j:0onmu",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content"
+                                },
                                 "j:awuls": {
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Follow"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -1871,12 +1907,17 @@
                               "ref": "j:0onmu",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content"
+                                },
                                 "j:awuls": {
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Follow"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2098,7 +2139,11 @@
                               "ref": "j:0onmu",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content"
+                                },
                                 "j:GgRS8": {
                                   "enabled": false
                                 },
@@ -2106,7 +2151,8 @@
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Follow"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2236,7 +2282,11 @@
                               "ref": "j:jNe9A",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
@@ -2244,7 +2294,8 @@
                                   "enabled": false
                                 },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2374,7 +2425,11 @@
                               "ref": "j:jNe9A",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
@@ -2382,7 +2437,8 @@
                                   "enabled": false
                                 },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2512,7 +2568,11 @@
                               "ref": "j:jNe9A",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
@@ -2520,7 +2580,8 @@
                                   "enabled": false
                                 },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2650,7 +2711,11 @@
                               "ref": "j:jNe9A",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
@@ -2658,7 +2723,8 @@
                                   "enabled": false
                                 },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2733,7 +2799,7 @@
           "type": "ref",
           "ref": "j:sKPE5",
           "x": 0,
-          "y": 5.684341886080802e-14,
+          "y": 0,
           "children": [
             {
               "id": "Q8C6O",
@@ -2946,7 +3012,8 @@
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Follow"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3181,7 +3248,8 @@
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Follow"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3311,7 +3379,11 @@
                               "ref": "j:jNe9A",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
@@ -3319,7 +3391,8 @@
                                   "enabled": false
                                 },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3449,7 +3522,11 @@
                               "ref": "j:jNe9A",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
@@ -3457,7 +3534,8 @@
                                   "enabled": false
                                 },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3587,7 +3665,11 @@
                               "ref": "j:jNe9A",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
@@ -3595,7 +3677,8 @@
                                   "enabled": false
                                 },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3725,7 +3808,11 @@
                               "ref": "j:jNe9A",
                               "x": 0,
                               "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
@@ -3733,7 +3820,8 @@
                                   "enabled": false
                                 },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3752,6 +3840,9 @@
   ],
   "themes": {
     "Theme": [
+      "Default"
+    ],
+    "r:Accent": [
       "Default"
     ]
   },
@@ -3828,6 +3919,17 @@
     "grey600": {
       "type": "color",
       "value": "#CBD2D8"
+    },
+    "r:turquoise500": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#0bc0cf",
+          "theme": {
+            "r:Accent": "Default"
+          }
+        }
+      ]
     }
   },
   "imports": {
