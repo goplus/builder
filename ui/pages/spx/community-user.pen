@@ -945,7 +945,7 @@
                           "id": "3w9Xd",
                           "type": "ref",
                           "ref": "j:XihxW",
-                          "x": 756,
+                          "x": 754,
                           "y": 0,
                           "width": "fit_content",
                           "children": [
@@ -1482,7 +1482,7 @@
                           "id": "BcPLz",
                           "type": "ref",
                           "ref": "j:XihxW",
-                          "x": 756,
+                          "x": 754,
                           "y": 0,
                           "width": "fit_content",
                           "children": [
@@ -2799,7 +2799,7 @@
           "type": "ref",
           "ref": "j:sKPE5",
           "x": 0,
-          "y": 0,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "Q8C6O",

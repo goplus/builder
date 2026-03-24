@@ -170,15 +170,34 @@
                     "m:yMz9U": {
                       "width": "fit_content(396)",
                       "height": "fit_content(28)",
-                      "textGrowth": "auto"
+                      "textGrowth": "auto",
+                      "fontFamily": "Inter"
+                    },
+                    "m:ULPaU": {
+                      "fontFamily": "Inter"
+                    },
+                    "m:Jj8bR": {
+                      "fontFamily": "Inter"
                     },
                     "m:sipvW": {
                       "x": 0,
                       "y": 74,
                       "width": "fill_container"
                     },
+                    "m:b4Zjx": {
+                      "fontFamily": "Inter"
+                    },
                     "m:uTIQU": {
-                      "x": 272
+                      "x": 270
+                    },
+                    "m:xcE7O": {
+                      "fontFamily": "Inter"
+                    },
+                    "m:RmZWa": {
+                      "fontFamily": "Inter"
+                    },
+                    "m:0oxTN": {
+                      "fontFamily": "Inter"
                     },
                     "m:65EVO": {
                       "width": "fill_container",
@@ -194,7 +213,14 @@
                       "width": 176
                     },
                     "m:GaWw7/m:wH3BG": {
-                      "width": "fill_container"
+                      "width": "fill_container",
+                      "x": 0
+                    },
+                    "m:GaWw7/m:4zALr": {
+                      "x": 61.5
+                    },
+                    "m:GaWw7/m:2su3n": {
+                      "x": 87.5
                     },
                     "m:hmZbS": {
                       "width": "fill_container",
@@ -203,6 +229,15 @@
                     "m:idkdO": {
                       "x": 0,
                       "width": 176
+                    },
+                    "m:idkdO/m:qu0Rs": {
+                      "width": "fill_container"
+                    },
+                    "m:idkdO/m:yhkaY": {
+                      "x": 49
+                    },
+                    "m:idkdO/m:28nFU": {
+                      "x": 75
                     },
                     "m:Vbjzn": {
                       "x": 376
@@ -885,11 +920,29 @@
                     "m:A6dtY": {
                       "width": "fill_container"
                     },
+                    "m:Xkdl6": {
+                      "fontFamily": "Inter"
+                    },
+                    "m:tmJpH": {
+                      "fontFamily": "Inter"
+                    },
+                    "m:yZf3E": {
+                      "fontFamily": "Inter"
+                    },
                     "m:hgeGI": {
                       "width": "fill_container"
                     },
+                    "m:1dFG0": {
+                      "fontFamily": "Inter"
+                    },
                     "m:prG88": {
-                      "x": 321
+                      "x": 322
+                    },
+                    "m:5Hmnx": {
+                      "fontFamily": "Inter"
+                    },
+                    "m:N755s": {
+                      "fontFamily": "Inter"
                     },
                     "m:KA8ee": {
                       "width": "fill_container"
@@ -901,8 +954,15 @@
                       "x": 0.3333333333333286,
                       "width": "fit_content(130)"
                     },
+                    "m:5tZUt/m:wH3BG": {
+                      "width": "fill_container"
+                    },
                     "m:5tZUt/m:4zALr": {
-                      "content": "I"
+                      "content": "I",
+                      "x": 30
+                    },
+                    "m:5tZUt/m:2su3n": {
+                      "x": 56
                     },
                     "m:Cm3ej": {
                       "width": "fill_container",
@@ -912,6 +972,15 @@
                       "x": 0.3333333333333286,
                       "width": 130
                     },
+                    "m:PJFjx/m:qu0Rs": {
+                      "width": "fill_container"
+                    },
+                    "m:PJFjx/m:yhkaY": {
+                      "x": 40
+                    },
+                    "m:PJFjx/m:28nFU": {
+                      "x": 66
+                    },
                     "m:08H0W": {
                       "width": "fill_container",
                       "x": 285.3333333333333
@@ -920,8 +989,15 @@
                       "x": 0.3333333333333286,
                       "width": 130
                     },
+                    "m:SJWn1/m:qu0Rs": {
+                      "width": "fill_container"
+                    },
                     "m:SJWn1/m:yhkaY": {
-                      "content": "b"
+                      "content": "b",
+                      "x": 31
+                    },
+                    "m:SJWn1/m:28nFU": {
+                      "x": 57
                     }
                   }
                 },
