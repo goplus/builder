@@ -245,6 +245,9 @@ async function handleGenCollapse() {
 
 const handleGenResolved = useMessageHandle(
   async (model: AssetModel) => {
+    // Consider moving asset addition outside AssetLibraryModal for better separation of concerns.
+    // However, this would introduce a delay between the modal close and assets addition, potentially degrading UX.
+    // TODO: Review this trade-off
     await editorCtx.state.history.doAction(
       { name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` } },
       async () => {

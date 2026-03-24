@@ -156,7 +156,6 @@ export class SpxProject extends Disposable implements IProject {
       this.zorder = [...this.zorder, sprite.id]
     }
   }
-
   /**
    * Add a sprite after the specified reference sprite.
    */
