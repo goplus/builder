@@ -124,6 +124,52 @@ describe('update-checker', () => {
         cache: 'no-cache'
       })
     })
+
+    it('should treat weak etag with W/ prefix as unchanged', async () => {
+      const strongEtag = '"abc123"'
+      const weakEtag = 'W/"abc123"'
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: (key: string) => (key === 'etag' ? strongEtag : null)
+        }
+      })
+      await checker.checkForUpdates()
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: (key: string) => (key === 'etag' ? weakEtag : null)
+        }
+      })
+
+      const hasUpdate = await checker.checkForUpdates()
+      expect(hasUpdate).toBe(false)
+    })
+
+    it('should detect update when weak etag value changes', async () => {
+      const oldWeakEtag = 'W/"abc123"'
+      const newWeakEtag = 'W/"def456"'
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: (key: string) => (key === 'etag' ? oldWeakEtag : null)
+        }
+      })
+      await checker.checkForUpdates()
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: (key: string) => (key === 'etag' ? newWeakEtag : null)
+        }
+      })
+
+      const hasUpdate = await checker.checkForUpdates()
+      expect(hasUpdate).toBe(true)
+    })
   })
 
   describe('start', () => {
