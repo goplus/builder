@@ -14,6 +14,8 @@ const props = withDefaults(
   defineProps<{
     visible: boolean
     project: SpxProject
+    // Currently no use case for providing an external gen, but we keep this prop
+    // for consistency with SpriteGenModal and potential future use cases.
     gen?: BackdropGenModel
   }>(),
   {
@@ -35,14 +37,16 @@ const activeGen = computed(() => props.gen ?? internalGen.value)
 
 const handleModalClose = useMessageHandle(
   async () => {
-    await confirm({
-      title: i18n.t({ zh: '退出背景生成？', en: 'Exit backdrop generation?' }),
-      content: i18n.t({
-        zh: '当前内容不会被保存，确定要退出吗？',
-        en: 'Current progress will not be saved. Are you sure to exit?'
-      }),
-      confirmText: i18n.t({ en: 'Exit', zh: '退出' })
-    })
+    if (props.gen == null) {
+      await confirm({
+        title: i18n.t({ zh: '退出背景生成？', en: 'Exit backdrop generation?' }),
+        content: i18n.t({
+          zh: '当前内容不会被保存，确定要退出吗？',
+          en: 'Current progress will not be saved. Are you sure to exit?'
+        }),
+        confirmText: i18n.t({ en: 'Exit', zh: '退出' })
+      })
+    }
     emit('cancelled')
   },
   { en: 'Failed to exit modal', zh: '退出失败' }
