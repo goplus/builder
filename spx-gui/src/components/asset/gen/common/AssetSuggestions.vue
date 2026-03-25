@@ -48,8 +48,8 @@ const entityMessage = computed(() => entityMessages[props.type])
     <p v-else-if="keyword.length > 0" class="tip" style="margin-top: 56px">
       {{
         $t({
-          en: `No matching ${entityMessage.en}s found in the asset library.`,
-          zh: `素材库中未找到匹配的${entityMessage.zh}`
+          en: `No matching ${entityMessage.en}s found in the asset library. You can continue generating.`,
+          zh: `素材库中未找到匹配的${entityMessage.zh}，你可以继续生成。`
         })
       }}
     </p>
