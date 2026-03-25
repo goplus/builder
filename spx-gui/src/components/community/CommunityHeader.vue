@@ -37,7 +37,7 @@ import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
     @include text-ellipsis;
     line-height: 26px;
     font-size: 16px;
-    color: var(--ui-color-title);
+    color: var(--ui-color-primary-main);
   }
 
   .options {

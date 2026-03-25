@@ -74,7 +74,7 @@
                       "type": "text",
                       "id": "zOVoc",
                       "name": "Results Text",
-                      "fill": "$grey1000",
+                      "fill": "$2:--primary",
                       "content": "Explore",
                       "lineHeight": 1.625,
                       "fontFamily": "Inter",
