@@ -5,7 +5,7 @@ import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import { type AssetModel } from '@/models/spx/common/asset'
+import { type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
 import { fromNativeFile } from '@/models/common/file'
 import { type SpxProject } from '@/models/spx/project'
 import { Backdrop } from '@/models/spx/backdrop'
@@ -19,7 +19,7 @@ import { Costume } from '@/models/spx/costume'
 import type { Widget } from '@/models/spx/widget'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/stage/sound/SoundRecorderModal.vue'
-import { useEditorCtx } from '../editor/EditorContextProvider.vue'
+import { useEditorCtx, type EditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditor, useRenameWarning, getResourceIdentifier } from '../editor/code-editor/spx-code-editor'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetSaveModal from './library/AssetSaveModal.vue'
@@ -28,29 +28,51 @@ import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
+import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 
+function makeGenCollapseHandler(editorCtx: EditorCtx) {
+  return async (gen: AssetGenModel, isNewGen = true) => {
+    // Add the ongoing asset generation to the editor state when the generation is newly created and not yet added
+    if (gen instanceof SpriteGen) {
+      if (isNewGen) editorCtx.state.genState.addSprite(gen)
+      return editorCtx.state.genState.getSpritePos(gen)
+    } else if (gen instanceof BackdropGen) {
+      if (isNewGen) editorCtx.state.genState.addBackdrop(gen)
+      return editorCtx.state.genState.getBackdropPos(gen)
+    }
+    return null
+  }
+}
+
+export function useSpriteGenModal() {
+  const editorCtx = useEditorCtx()
+  const genCollapseHandler = makeGenCollapseHandler(editorCtx)
+  const invokeModal = useModal(SpriteGenModal)
+  return function invokeSpriteGenModal(project: SpxProject, gen?: SpriteGen) {
+    return invokeModal({ project, gen, genCollapseHandler })
+  }
+}
+
+export function useBackdropGenModal() {
+  const invokeModal = useModal(BackdropGenModal)
+  return function invokeBackdropGenModal(project: SpxProject, gen?: BackdropGen) {
+    return invokeModal({ project, gen })
+  }
+}
+
 export function useAddAssetFromLibrary() {
   const editorCtx = useEditorCtx()
+  const genCollapseHandler = makeGenCollapseHandler(editorCtx)
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: SpxProject, type: T) {
     return (await invokeAssetLibraryModal({
       project,
       type,
-      genCollapseHandler: async (gen) => {
-        // Add the ongoing asset generation to the editor state
-        if (gen instanceof SpriteGen) {
-          editorCtx.state.genState.addSprite(gen)
-          return editorCtx.state.genState.getSpritePos(gen)
-        } else if (gen instanceof BackdropGen) {
-          editorCtx.state.genState.addBackdrop(gen)
-          return editorCtx.state.genState.getBackdropPos(gen)
-        }
-        return null
-      }
+      genCollapseHandler
     })) as Array<AssetModel<T>>
   }
 }
@@ -365,13 +387,6 @@ export function useRenameWidget() {
         warning: await getRenameWarning()
       }
     })
-  }
-}
-
-export function useSpriteGenModal() {
-  const invokeModal = useModal(SpriteGenModal)
-  return function spriteGenModal(spriteGen: SpriteGen) {
-    return invokeModal({ gen: spriteGen })
   }
 }
 

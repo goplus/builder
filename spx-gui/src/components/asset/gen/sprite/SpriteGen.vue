@@ -3,8 +3,8 @@ import { computed } from 'vue'
 import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import type { Sprite } from '@/models/spx/sprite'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { getSignedInUsername } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import { provideLocalEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -16,11 +16,12 @@ import SpriteGenPhaseContent from './SpriteGenPhaseContent.vue'
 const props = defineProps<{
   gen: SpriteGen
   descriptionPlaceholder?: string
+  librarySearchEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
   collapse: []
-  finished: [Sprite]
+  resolved: [Sprite]
 }>()
 
 const i18n = useI18n()
@@ -49,9 +50,15 @@ provideLocalEditorCtx(editorCtxInGen)
     v-if="gen.contentPreparingState.status === 'finished'"
     :gen="gen"
     @collapse="emit('collapse')"
-    @finished="emit('finished', $event)"
+    @resolved="emit('resolved', $event)"
   />
-  <SpriteGenPhaseSettings v-else :gen="gen" :description-placeholder="descriptionPlaceholder" />
+  <SpriteGenPhaseSettings
+    v-else
+    :gen="gen"
+    :description-placeholder="descriptionPlaceholder"
+    :library-search-enabled="librarySearchEnabled"
+    @resolved="emit('resolved', $event)"
+  />
 </template>
 
 <style lang="scss" scoped></style>
