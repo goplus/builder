@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { UIBlockItemTitle } from '@/components/ui'
-import type { BackdropGen } from '@/models/gen/backdrop-gen'
+import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import GenItem from '../common/GenItem.vue'
 import backdropSVG from '../common/backdrop.svg?raw'
 

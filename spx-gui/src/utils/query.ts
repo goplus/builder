@@ -56,7 +56,7 @@ export function useQuery<T>(
   const isLoading = ref(false)
   const data = shallowRef<T | null>(null)
   const error = shallowRef<ActionException | null>(null)
-  const progress = shallowRef<Progress>({ percentage: 0, desc: null })
+  const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
 
   let lastCtrl: AbortController | null = null
   onUnmounted(() => lastCtrl?.abort(new Cancelled('unmounted')))
@@ -118,7 +118,7 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
   const isLoading = ret.isLoading
   const data = computed(() => ret.data.value ?? null)
   const error = ret.error as Ref<ActionException | null>
-  const progress = shallowRef<Progress>({ percentage: 0, desc: null })
+  const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
   const refetch = () => ret.refetch()
   return { isLoading, data, error, progress, refetch }
 }

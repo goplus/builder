@@ -2,53 +2,42 @@
 import { z } from 'zod'
 import dayjs from 'dayjs'
 import { debounce } from 'lodash'
-import {
-  inject,
-  onBeforeUnmount,
-  onMounted,
-  onUnmounted,
-  provide,
-  watch,
-  type ComputedRef,
-  type InjectionKey
-} from 'vue'
+import { onBeforeUnmount, onMounted, onUnmounted, watch, type ComputedRef } from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
 import { escapeHTML, unicodeSafeSlice, until } from '@/utils/utils'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 import * as projectApis from '@/apis/project'
-import type { Sprite } from '@/models/sprite'
-import { Project } from '@/models/project'
+import type { Sprite } from '@/models/spx/sprite'
+import { SpxProject } from '@/models/spx/project'
 import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
-import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
-import { getCodeFilePath, isSelectionEmpty, textDocumentId2CodeFileName } from '../editor/code-editor/common'
-import type { TextDocument } from '../editor/code-editor/text-document'
+import {
+  useCodeEditorRef,
+  getCodeFilePath,
+  isSelectionEmpty,
+  textDocumentId2CodeFileName,
+  type TextDocument,
+  CodeEditor
+} from '../editor/code-editor/spx-code-editor'
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
-import * as toolUse from './custom-elements/ToolUse'
 import * as pageLink from './custom-elements/PageLink'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
 import { userSessionStorageRef } from '@/utils/user-storage'
-
-const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
-
-export function useCopilot(): Copilot {
-  const copilot = inject(copilotInjectionKey)
-  if (!copilot) throw new Error('Copilot not provided')
-  return copilot
-}
+import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
+import { provideCopilot } from './context'
 
 const listProjectsParamsSchema = z.object({
   owner: z
     .string()
     .describe("The owner's username. Defaults to the current-signed-in user. Use * to include projects from all users"),
-  keyword: z.string().optional().describe('Keyword in the project name'),
+  keyword: z.string().optional().describe('Keyword in the project display name or project name'),
   pageSize: z.number().describe('Number of projects to return per page'),
   pageIndex: z.number().describe('Page index, starting from 1')
 })
@@ -64,9 +53,12 @@ const listProjectsTool: ToolDefinition = {
 }
 
 class Retriever {
-  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  constructor(
+    private editorCtxRef: ComputedRef<EditorCtx | undefined>,
+    private cloudHelpers: CloudHelpers
+  ) {}
 
-  async getProject(project: string | undefined, signal?: AbortSignal): Promise<Project> {
+  async getProject(project: string | undefined, signal?: AbortSignal): Promise<SpxProject> {
     const currentProject = this.editorCtxRef.value?.project
     if (project == null) {
       if (currentProject == null) throw new Error('No project specified and no current editing project available')
@@ -76,8 +68,9 @@ class Retriever {
     if (currentProject != null && currentProject.owner === owner && currentProject.name === name) {
       return currentProject
     }
-    const p = new Project()
-    await p.loadFromCloud(owner, name, true, signal)
+    const p = new SpxProject(owner, name)
+    const serialized = await this.cloudHelpers.load(owner, name, true, signal)
+    await p.load(serialized)
     return p
   }
 }
@@ -100,7 +93,8 @@ class GetProjectMetadataTool implements ToolDefinition {
   }
 }
 
-function getProjectContent(project: Project) {
+function getProjectContent(project: SpxProject) {
+  const physics = project.stage.physics
   return `\
 ### Sprites (num: ${project.sprites.length})
 ${project.sprites.map((sprite) => `- ${sprite.name}`).join('\n')}
@@ -109,7 +103,8 @@ ${project.sounds.map((sound) => `- ${sound.name}`).join('\n')}
 ### Backdrops (num: ${project.stage.backdrops.length})
 ${project.stage.backdrops.map((backdrop) => `- ${backdrop.name}`).join('\n')}
 ### Widgets (num: ${project.stage.widgets.length})
-${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}`
+${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}
+### Physics: ${physics.enabled ? 'Enabled' : 'Disabled'}`
 }
 
 const getProjectContentParamsSchema = z.object({
@@ -220,12 +215,12 @@ class GetCodeDiagnosticsTool implements ToolDefinition {
   description = 'Get code diagnostics (errors or warnings) of current editing project.'
   parameters = getCodeDiagnosticsParamsSchema
 
-  constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
+  constructor(private codeEditorRef: ComputedRef<CodeEditor | null>) {}
 
   async implementation(_: z.infer<typeof getCodeDiagnosticsParamsSchema>, signal?: AbortSignal) {
-    const codeEditorCtx = this.codeEditorCtxRef.value
-    if (codeEditorCtx == null) throw new Error('Code editor context is not available')
-    return codeEditorCtx.mustEditor().diagnosticWorkspace(signal)
+    const codeEditor = this.codeEditorRef.value
+    if (codeEditor == null) throw new Error('Code editor is not available')
+    return codeEditor.diagnosticWorkspace(signal)
   }
 }
 
@@ -328,7 +323,7 @@ class ProjectContextProvider implements ICopilotContextProvider {
     const project = this.editorCtxRef.value?.project
     if (project == null) return ''
     return `# Current project
-The user is now working on project: ${project.owner}/${project.name}
+The user is now working on project: ${project.displayName} (${project.owner}/${project.name})
 ## Project content
 ${getProjectContent(project)}`
   }
@@ -345,7 +340,7 @@ ${JSON.stringify(getSpriteContent(sprite))}`
 }
 
 class CodeContextProvider implements ICopilotContextProvider {
-  constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
+  constructor(private codeEditorRef: ComputedRef<CodeEditor | null>) {}
 
   private sampleCode(activeTextDocument: TextDocument, line: number) {
     const threshold = 10
@@ -356,7 +351,7 @@ class CodeContextProvider implements ICopilotContextProvider {
   }
 
   provideContext(): string {
-    const codeEditorUI = this.codeEditorCtxRef.value?.getEditor()?.getAttachedUI()
+    const codeEditorUI = this.codeEditorRef.value?.getAttachedUI()
     if (codeEditorUI == null) return ''
     const { activeTextDocument, cursorPosition, selection } = codeEditorUI
     if (activeTextDocument == null) return ''
@@ -413,9 +408,8 @@ const router = useRouter()
 const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
 const editorCtxRef = useEditorCtxRef()
-const codeEditorCtxRef = useCodeEditorCtxRef()
-
-const retriever = new Retriever(editorCtxRef)
+const codeEditorRef = useCodeEditorRef()
+const retriever = new Retriever(editorCtxRef, cloudHelpers)
 const copilot = new Copilot()
 onUnmounted(() => copilot.dispose())
 
@@ -424,14 +418,7 @@ copilot.registerTool(new GetProjectMetadataTool(retriever))
 copilot.registerTool(new GetProjectContentTool(retriever))
 copilot.registerTool(new GetSpriteContentTool(retriever))
 copilot.registerTool(new GetProjectCodeTool(retriever))
-copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorCtxRef))
-copilot.registerCustomElement({
-  tagName: toolUse.tagName,
-  description: toolUse.detailedDescription,
-  attributes: toolUse.attributes,
-  isRaw: toolUse.isRaw,
-  component: toolUse.default
-})
+copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorRef))
 copilot.registerCustomElement({
   tagName: pageLink.tagName,
   description: pageLink.detailedDescription,
@@ -467,7 +454,7 @@ copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
 copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
 copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))
-copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
+copilot.registerContextProvider(new CodeContextProvider(codeEditorRef))
 copilot.registerContextProvider(new RuntimeContextProvider(editorCtxRef))
 
 const isRouteLoaded = useIsRouteLoaded()
@@ -524,7 +511,7 @@ watch(
   { immediate: true }
 )
 
-provide(copilotInjectionKey, copilot)
+provideCopilot(copilot)
 
 const sessionRef = userSessionStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
 onMounted(() => {

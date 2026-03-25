@@ -1,38 +1,79 @@
-import { Project } from '../project'
-import { Sound } from '../sound'
-import { fromText } from '../common/file'
-import { Backdrop } from '../backdrop'
-import { Monitor } from '../widget/monitor'
-import { Sprite } from '../sprite'
-import { Costume } from '../costume'
-import { Animation } from '../animation'
+import { vi } from 'vitest'
+import { shallowRef } from 'vue'
+import Mutex from '@/utils/mutex'
+import type { IProject, Metadata, ProjectSerialized } from '@/models/project'
+import { File, fromText, type Files } from '../common/file'
+import { createFileWithUniversalUrl } from './cloud'
 
 export function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
 }
 
-export function makeProject() {
-  const project = new Project()
-  const sound = new Sound('sound', mockFile())
-  project.addSound(sound)
+export class MockProject implements IProject {
+  mutex = new Mutex()
 
-  const backdrop = new Backdrop('backdrop', mockFile())
-  project.stage.addBackdrop(backdrop)
-  const widget = new Monitor('monitor', {
-    x: 10,
-    y: 20,
-    label: 'Score',
-    variableName: 'score'
+  private filesRef = shallowRef<Files>({})
+  setFile(path: string, file: File): void {
+    this.filesRef.value = { ...this.filesRef.value, [path]: file }
+  }
+
+  constructor(
+    public owner?: string,
+    public name?: string,
+    files: Files = {}
+  ) {
+    this.filesRef.value = files
+  }
+  private getMetadata(): Metadata {
+    return {
+      owner: this.owner,
+      name: this.name
+    }
+  }
+  setMetadata = vi.fn((metadata: Metadata): void => {
+    Object.assign(this, metadata)
   })
-  project.stage.addWidget(widget)
+  loadFiles = vi.fn(async (files: Files, _signal?: AbortSignal): Promise<void> => {
+    void _signal
+    this.filesRef.value = files
+  })
+  exportFiles = vi.fn((): Files => {
+    return this.filesRef.value
+  })
+  export = vi.fn(async (_signal?: AbortSignal): Promise<ProjectSerialized> => {
+    void _signal
+    return this.mutex.runExclusive(async () => {
+      return { metadata: this.getMetadata(), files: this.filesRef.value }
+    })
+  })
+  load = vi.fn(async ({ metadata, files }: ProjectSerialized, _signal?: AbortSignal): Promise<void> => {
+    void _signal
+    await this.mutex.runExclusive(async () => {
+      Object.assign(this, metadata)
+      this.filesRef.value = { ...files }
+    })
+  })
+}
 
-  const sprite = new Sprite('MySprite')
-  const costume = new Costume('default', mockFile())
-  sprite.addCostume(costume)
-  const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))
-  const animation = Animation.create('default', animationCostumes)
-  sprite.addAnimation(animation)
-  project.addSprite(sprite)
-  project.bindScreenshotTaker(async () => mockFile())
-  return project
+/** Serialize and deserialize config */
+export function sndConfig<T>(config: T): T {
+  return JSON.parse(JSON.stringify(config))
+}
+
+/** Serialize and deserialize files */
+export function sndFiles(files: Files): Files {
+  const newFiles: Files = {}
+  for (const [path, file] of Object.entries(files)) {
+    if (file == null) continue
+    if (file.meta.universalUrl != null) {
+      newFiles[path] = createFileWithUniversalUrl(file.meta.universalUrl)
+    } else {
+      newFiles[path] = new File(file.name, (signal?: AbortSignal) => file.arrayBuffer(signal), {
+        type: file.type,
+        lastModified: file.lastModified,
+        meta: { ...file.meta }
+      })
+    }
+  }
+  return newFiles
 }

@@ -17,13 +17,6 @@ func init() {
 	js.Global().Set("xbuilder_set_ai_description", js.FuncOf(setAIDescription))
 	js.Global().Set("xbuilder_set_ai_interaction_api_endpoint", js.FuncOf(setAIInteractionAPIEndpoint))
 	js.Global().Set("xbuilder_set_ai_interaction_api_token_provider", js.FuncOf(setAIInteractionAPITokenProvider))
-
-	// Deprecated: Use the "xbuilder_" prefixed versions instead.
-	//
-	// FIXME: Remove these aliases in future releases.
-	js.Global().Set("setAIDescription", js.FuncOf(setAIDescription))
-	js.Global().Set("setAIInteractionAPIEndpoint", js.FuncOf(setAIInteractionAPIEndpoint))
-	js.Global().Set("setAIInteractionAPITokenProvider", js.FuncOf(setAIInteractionAPITokenProvider))
 }
 
 // initAI initializes AI integration for the ispx interpreter.

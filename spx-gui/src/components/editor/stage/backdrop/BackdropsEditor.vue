@@ -49,14 +49,17 @@ export class BackdropsEditorState {
   /** Select a backdrop by its name */
   selectByName(name: string): void {
     const backdrop = this.getStage().backdrops.find((backdrop) => backdrop.name === name)
-    if (backdrop == null) throw new Error(`Backdrop with name "${name}" not found`)
+    if (backdrop == null) {
+      capture(new Error(`Backdrop with name "${name}" not found`))
+      return
+    }
     this.select(backdrop.id)
   }
   /** Select a backdrop (by specifying route path) */
   selectByRoute(path: PathSegments) {
     const [name] = shiftPath(path)
     if (name == null) return
-    return this.selectByName(name)
+    this.selectByName(name)
   }
   /** Get route path for the current selection */
   getRoute(): PathSegments {
@@ -69,10 +72,10 @@ export class BackdropsEditorState {
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
-import type { Stage } from '@/models/stage'
-import { Backdrop } from '@/models/backdrop'
+import type { Stage } from '@/models/spx/stage'
+import { Backdrop } from '@/models/spx/backdrop'
 import { useAddAssetFromLibrary, useAddBackdropFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
@@ -89,7 +92,7 @@ const stage = computed(() => editorCtx.project.stage)
 
 function handleSelect(backdrop: Backdrop) {
   const action = { name: { en: 'Set default backdrop', zh: '设置默认背景' } }
-  editorCtx.project.history.doAction(action, () => stage.value.setDefaultBackdrop(backdrop.id))
+  editorCtx.state.history.doAction(action, () => stage.value.setDefaultBackdrop(backdrop.id))
 }
 
 const addBackdropFromLocalFile = useAddBackdropFromLocalFile()
@@ -121,7 +124,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update backdrop order', zh: '更新背景顺序' } }
-    await editorCtx.project.history.doAction(action, () => stage.value.moveBackdrop(oldIdx, newIdx))
+    await editorCtx.state.history.doAction(action, () => stage.value.moveBackdrop(oldIdx, newIdx))
   },
   {
     en: 'Failed to update backdrop order',

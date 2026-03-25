@@ -58,6 +58,13 @@ const handleUpdateShow = (visible: boolean) => {
 const attachTo = useModalContainer()
 
 const lastClickEvent = useLastClickEvent()
+const containerRef = ref<HTMLElement | null>(null)
+const customTransformOrigin = ref<TransformOrigin>({ x: 0, y: 0 })
+
+function setTransformOrigin(transformOrigin: TransformOrigin) {
+  customTransformOrigin.value = transformOrigin
+}
+
 watch(
   () => props.visible,
   (visible) => {
@@ -70,11 +77,6 @@ watch(
     immediate: true
   }
 )
-const containerRef = ref<HTMLElement | null>(null)
-const customTransformOrigin = ref<TransformOrigin>({ x: 0, y: 0 })
-function setTransformOrigin(transformOrigin: TransformOrigin) {
-  customTransformOrigin.value = transformOrigin
-}
 
 const modalElRef = ref<HTMLElement | null>(null)
 watchEffect(() => {

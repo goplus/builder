@@ -13,7 +13,7 @@
 import { UIBackdropItem, UICornerIcon } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
-import { asset2Backdrop } from '@/models/common/asset'
+import { asset2Backdrop } from '@/models/spx/common/asset'
 import { useAsyncComputedLegacy } from '@/utils/utils'
 
 const props = defineProps<{

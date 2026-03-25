@@ -5,23 +5,22 @@ import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import { type AssetModel } from '@/models/common/asset'
+import { type AssetModel } from '@/models/spx/common/asset'
 import { fromNativeFile } from '@/models/common/file'
-import { type Project } from '@/models/project'
-import { Backdrop } from '@/models/backdrop'
-import { Sound } from '@/models/sound'
-import { Sprite } from '@/models/sprite'
-import { Animation } from '@/models/animation'
+import { type SpxProject } from '@/models/spx/project'
+import { Backdrop } from '@/models/spx/backdrop'
+import { Sound } from '@/models/spx/sound'
+import { Sprite } from '@/models/spx/sprite'
+import { Animation } from '@/models/spx/animation'
 import { selectFileWithUploadLimit, selectFilesWithUploadLimit, saveFiles } from '@/models/common/cloud'
-import { Monitor } from '@/models/widget/monitor'
-import * as assetName from '@/models/common/asset-name'
-import { Costume } from '@/models/costume'
-import type { Widget } from '@/models/widget'
+import { Monitor } from '@/models/spx/widget/monitor'
+import * as assetName from '@/models/spx/common/asset-name'
+import { Costume } from '@/models/spx/costume'
+import type { Widget } from '@/models/spx/widget'
 import RenameModal from '../common/RenameModal.vue'
-import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
+import SoundRecorderModal from '../editor/stage/sound/SoundRecorderModal.vue'
 import { useEditorCtx } from '../editor/EditorContextProvider.vue'
-import { useCodeEditorCtx, useRenameWarning } from '../editor/code-editor/context'
-import { getResourceIdentifier } from '../editor/code-editor/common'
+import { useCodeEditor, useRenameWarning, getResourceIdentifier } from '../editor/code-editor/spx-code-editor'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetSaveModal from './library/AssetSaveModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
@@ -29,26 +28,26 @@ import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
-import { SpriteGen } from '@/models/gen/sprite-gen'
-import { BackdropGen } from '@/models/gen/backdrop-gen'
-import type { CostumeGen } from '@/models/gen/costume-gen'
-import type { AnimationGen } from '@/models/gen/animation-gen'
+import { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
+import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 
 export function useAddAssetFromLibrary() {
   const editorCtx = useEditorCtx()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
-  return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
+  return async function addAssetFromLibrary<T extends AssetType>(project: SpxProject, type: T) {
     return (await invokeAssetLibraryModal({
       project,
       type,
       genCollapseHandler: async (gen) => {
         // Add the ongoing asset generation to the editor state
         if (gen instanceof SpriteGen) {
-          editorCtx.state.addSpriteGen(gen)
-          return editorCtx.state.getSpriteGenCollapsePos(gen)
+          editorCtx.state.genState.addSprite(gen)
+          return editorCtx.state.genState.getSpritePos(gen)
         } else if (gen instanceof BackdropGen) {
-          editorCtx.state.addBackdropGen(gen)
-          return editorCtx.state.getBackdropGenCollapsePos(gen)
+          editorCtx.state.genState.addBackdrop(gen)
+          return editorCtx.state.genState.getBackdropPos(gen)
         }
         return null
       }
@@ -72,7 +71,7 @@ export function useAssetLibraryManagement() {
 
 export function useLoadFromScratchModal() {
   const invokeModal = useModal(LoadFromScratchModal)
-  return async function loadFromScratchModal(project: Project) {
+  return async function loadFromScratchModal(project: SpxProject) {
     const file = await selectFile({ accept: ['sb3'] })
     const exportedScratchAssets = await parseScratchFileAssets(file)
     return invokeModal({ project, exportedScratchAssets })
@@ -80,8 +79,9 @@ export function useLoadFromScratchModal() {
 }
 
 export function useAddSpriteFromLocalFile() {
+  const editorCtx = useEditorCtx()
   const preprocess = useModal(PreprocessModal)
-  return async function addSpriteFromLocalFile(project: Project) {
+  return async function addSpriteFromLocalFile(project: SpxProject) {
     const actionMessage = { en: 'Add sprite', zh: '添加精灵' }
     const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
     const files = nativeFiles.map((f) => fromNativeFile(f))
@@ -95,7 +95,7 @@ export function useAddSpriteFromLocalFile() {
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    await project.history.doAction({ name: actionMessage }, async () => {
+    await editorCtx.state.history.doAction({ name: actionMessage }, async () => {
       project.addSprite(sprite)
       await sprite.autoFit()
     })
@@ -104,8 +104,9 @@ export function useAddSpriteFromLocalFile() {
 }
 
 export function useAddCostumeFromLocalFile() {
+  const editorCtx = useEditorCtx()
   const preprocess = useModal(PreprocessModal)
-  return async function addCostumeFromLocalFile(sprite: Sprite, project: Project) {
+  return async function addCostumeFromLocalFile(sprite: Sprite) {
     const actionMessage = { en: 'Add costume', zh: '添加造型' }
     const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
     const files = nativeFiles.map((f) => fromNativeFile(f))
@@ -114,7 +115,7 @@ export function useAddCostumeFromLocalFile() {
       title: actionMessage,
       confirmText: { en: 'Add', zh: '添加' }
     })
-    await project.history.doAction({ name: actionMessage }, async () => {
+    await editorCtx.state.history.doAction({ name: actionMessage }, async () => {
       for (const costume of costumes) sprite.addCostume(costume)
     })
     return costumes
@@ -122,10 +123,11 @@ export function useAddCostumeFromLocalFile() {
 }
 
 export function useAddSoundFromLocalFile() {
+  const editorCtx = useEditorCtx()
   const m = useMessage()
   const { t } = useI18n()
   const { isOnline } = useNetwork()
-  return async function addSoundFromLocalFile(project: Project) {
+  return async function addSoundFromLocalFile(project: SpxProject) {
     const audio = await selectFileWithUploadLimit({ accept: await getSupportedAudioExts() })
     const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
 
@@ -134,23 +136,24 @@ export function useAddSoundFromLocalFile() {
     }
 
     const action = { name: { en: 'Add sound', zh: '添加声音' } }
-    await project.history.doAction(action, () => project.addSound(sound))
+    await editorCtx.state.history.doAction(action, () => project.addSound(sound))
     return sound
   }
 }
 
 export function useAddSoundByRecording() {
   const invokeSoundRecorderModal = useModal(SoundRecorderModal)
-  return async function addSoundFromRecording(project: Project): Promise<Sound> {
+  return async function addSoundFromRecording(project: SpxProject): Promise<Sound> {
     return invokeSoundRecorderModal({ project })
   }
 }
 
 export function useAddBackdropFromLocalFile() {
+  const editorCtx = useEditorCtx()
   const m = useMessage()
   const { t } = useI18n()
   const { isOnline } = useNetwork()
-  return async function addBackdropFromLocalFile(project: Project) {
+  return async function addBackdropFromLocalFile(project: SpxProject) {
     const img = await selectFileWithUploadLimit({ accept: imgExts })
     const file = fromNativeFile(img)
     const backdrop = await Backdrop.create(stripExt(img.name), file)
@@ -161,7 +164,7 @@ export function useAddBackdropFromLocalFile() {
       await m.withLoading(saveFiles(backdropFiles), t({ en: 'Uploading files', zh: '上传文件中' }))
     }
 
-    await project.history.doAction(action, () => {
+    await editorCtx.state.history.doAction(action, () => {
       const stage = project.stage
       stage.addBackdrop(backdrop)
     })
@@ -170,11 +173,12 @@ export function useAddBackdropFromLocalFile() {
 }
 
 export function useAddAnimationByGroupingCostumes() {
+  const editorCtx = useEditorCtx()
   const invokeGroupCostumesModal = useModal(GroupCostumesModal)
-  return async function addAnimationByGroupingCostumes(project: Project, sprite: Sprite) {
+  return async function addAnimationByGroupingCostumes(project: SpxProject, sprite: Sprite) {
     const { selectedCostumes, removeCostumes } = await invokeGroupCostumesModal({ sprite })
     const action = { name: { en: 'Group costumes as animation', zh: '合并造型为动画' } }
-    return project.history.doAction(action, () => {
+    return editorCtx.state.history.doAction(action, () => {
       const costumes = selectedCostumes.map((costume) => costume.clone())
       const animation = Animation.create('', costumes)
       sprite.addAnimation(animation)
@@ -191,10 +195,11 @@ export function useAddAnimationByGroupingCostumes() {
 }
 
 export function useAddMonitor() {
-  return async function addMonitor(project: Project) {
+  const editorCtx = useEditorCtx()
+  return async function addMonitor(project: SpxProject) {
     const monitor = await Monitor.create()
     const action = { name: { en: 'Add widget', zh: '添加控件' } }
-    await project.history.doAction(action, () => {
+    await editorCtx.state.history.doAction(action, () => {
       project.stage.addWidget(monitor)
     })
     return monitor
@@ -203,7 +208,7 @@ export function useAddMonitor() {
 
 export function useRenameSprite() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameSprite(sprite: Sprite) {
@@ -215,9 +220,15 @@ export function useRenameSprite() {
         },
         async applyName(newName) {
           const action = { name: { en: 'Rename sprite', zh: '重命名精灵' } }
-          await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(sprite), newName)
+          await editorCtx.state.history.doAction(action, async () => {
+            const oldName = sprite.name
+            await codeEditor.renameResource(getResourceIdentifier(sprite), newName)
             sprite.setName(newName)
+            for (const widget of editorCtx.project.stage.widgets) {
+              if (widget instanceof Monitor && widget.target === oldName) {
+                widget.setTarget(newName)
+              }
+            }
           })
         },
         inputTip: assetName.spriteNameTip,
@@ -229,7 +240,7 @@ export function useRenameSprite() {
 
 export function useRenameSound() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameSound(sound: Sound) {
@@ -241,8 +252,8 @@ export function useRenameSound() {
         },
         async applyName(newName) {
           const action = { name: { en: 'Rename sound', zh: '重命名声音' } }
-          await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(sound), newName)
+          await editorCtx.state.history.doAction(action, async () => {
+            await codeEditor.renameResource(getResourceIdentifier(sound), newName)
             sound.setName(newName)
           })
         },
@@ -255,7 +266,7 @@ export function useRenameSound() {
 
 export function useRenameCostume() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameCostume(costume: Costume) {
@@ -267,8 +278,8 @@ export function useRenameCostume() {
         },
         async applyName(newName) {
           const action = { name: { en: 'Rename costume', zh: '重命名造型' } }
-          await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(costume), newName)
+          await editorCtx.state.history.doAction(action, async () => {
+            await codeEditor.renameResource(getResourceIdentifier(costume), newName)
             costume.setName(newName)
           })
         },
@@ -281,7 +292,7 @@ export function useRenameCostume() {
 
 export function useRenameBackdrop() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameBackdrop(backdrop: Backdrop) {
@@ -293,8 +304,8 @@ export function useRenameBackdrop() {
         },
         async applyName(newName) {
           const action = { name: { en: 'Rename backdrop', zh: '重命名背景' } }
-          await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(backdrop), newName)
+          await editorCtx.state.history.doAction(action, async () => {
+            await codeEditor.renameResource(getResourceIdentifier(backdrop), newName)
             backdrop.setName(newName)
           })
         },
@@ -307,7 +318,7 @@ export function useRenameBackdrop() {
 
 export function useRenameAnimation() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameAnimation(animation: Animation) {
@@ -319,8 +330,8 @@ export function useRenameAnimation() {
         },
         async applyName(newName) {
           const action = { name: { en: 'Rename animation', zh: '重命名动画' } }
-          await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(animation), newName)
+          await editorCtx.state.history.doAction(action, async () => {
+            await codeEditor.renameResource(getResourceIdentifier(animation), newName)
             animation.setName(newName)
           })
         },
@@ -333,7 +344,7 @@ export function useRenameAnimation() {
 
 export function useRenameWidget() {
   const editorCtx = useEditorCtx()
-  const codeEditorCtx = useCodeEditorCtx()
+  const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
   const getRenameWarning = useRenameWarning()
   return async function renameWidget(widget: Widget) {
@@ -345,8 +356,8 @@ export function useRenameWidget() {
         },
         async applyName(newName) {
           const action = { name: { en: 'Rename widget', zh: '重命名控件' } }
-          await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(widget), newName)
+          await editorCtx.state.history.doAction(action, async () => {
+            await codeEditor.renameResource(getResourceIdentifier(widget), newName)
             widget.setName(newName)
           })
         },

@@ -1,29 +1,28 @@
-import { ref, shallowReactive, watch, type Ref, type WatchSource } from 'vue'
+import { computed, ref, watch, type Ref, type WatchSource } from 'vue'
 import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } from 'vue-router'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
-import type { ResourceModel } from '@/models/common/resource-model'
-import type { Project } from '@/models/project'
-import { Stage } from '@/models/stage'
-import { Sprite } from '@/models/sprite'
-import { Sound } from '@/models/sound'
-import { Backdrop } from '@/models/backdrop'
-import { isWidget } from '@/models/widget'
-import { Costume } from '@/models/costume'
-import { Animation } from '@/models/animation'
-import { SpriteGen } from '@/models/gen/sprite-gen'
-import { BackdropGen } from '@/models/gen/backdrop-gen'
+import type { I18n } from '@/utils/i18n'
+import { CloudHelpers } from '@/models/common/cloud'
+import type { Files } from '@/models/common/file'
+import type { ResourceModel } from '@/models/spx/common/resource'
+import type { SpxProject } from '@/models/spx/project'
+import { Stage } from '@/models/spx/stage'
+import { Sprite } from '@/models/spx/sprite'
+import { Sound } from '@/models/spx/sound'
+import { Backdrop } from '@/models/spx/backdrop'
+import { isWidget } from '@/models/spx/widget'
+import { Costume } from '@/models/spx/costume'
+import { Animation } from '@/models/spx/animation'
+import type { IProject, Metadata, ProjectSerialized } from '@/models/project'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
 import * as editing from './editing'
-import { AssetType } from '@/apis/asset'
-import type { AssetGenModel } from '@/models/common/asset'
+import { History } from './history'
+import { GenState } from './gen'
 
-type GenCollapsePos = { x: number; y: number }
-type CollapsePosProvider<T extends AssetType> = (gen: AssetGenModel<T>) => Promise<GenCollapsePos | null>
-
-export type SelectedType = 'stage' | 'sprite' | 'sound'
+export type SelectedType = 'stage' | 'sprite'
 
 export type Selected =
   | {
@@ -34,10 +33,6 @@ export type Selected =
       type: 'sprite'
       sprite: Sprite | null
       spriteSelected: SpriteEditorSelected | null
-    }
-  | {
-      type: 'sound'
-      sound: Sound | null
     }
 
 export interface IRouter {
@@ -50,20 +45,73 @@ export enum EditMode {
   Map = 'map'
 }
 
+class SpxProjectWithGens implements IProject {
+  constructor(
+    private project: SpxProject,
+    private genState: GenState
+  ) {}
+  get mutex() {
+    return this.project.mutex
+  }
+  get owner() {
+    return this.project.owner
+  }
+  get name() {
+    return this.project.name
+  }
+  setMetadata(metadata: Metadata) {
+    return this.project.setMetadata(metadata)
+  }
+  private filesComputed = computed(() => {
+    const files: Files = {}
+    const projectFiles = this.project.exportFiles()
+    Object.assign(files, projectFiles)
+    const genFiles = this.genState.export()
+    Object.assign(files, genFiles)
+    return files
+  })
+  exportFiles() {
+    return this.filesComputed.value
+  }
+  async loadFiles(files: Files): Promise<void> {
+    await Promise.all([this.project.loadFiles(files), this.genState.load(files)])
+  }
+  async load({ metadata, files }: ProjectSerialized) {
+    await Promise.all([this.project.load({ metadata, files }), this.genState.load(files)])
+  }
+  async export(signal?: AbortSignal): Promise<ProjectSerialized> {
+    const files: Files = {}
+    const { metadata, files: projectFiles } = await this.project.export(signal)
+    Object.assign(files, projectFiles)
+    const genFiles = this.genState.export()
+    Object.assign(files, genFiles)
+    return { metadata, files }
+  }
+}
+
 export class EditorState extends Disposable {
   constructor(
-    private project: Project,
+    i18n: I18n,
+    readonly project: SpxProject,
     isOnline: WatchSource<boolean>,
-    signedInUsername: WatchSource<string | null>,
-    localCacheKey: string,
-    localStorage?: editing.LocalStorage
+    signedInUsername: string | null,
+    cloudHelpers: CloudHelpers,
+    localCache: editing.ILocalCache
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
+    this.history = new History(project)
+    this.addDisposable((this.genState = new GenState(i18n, project)))
+    const projectWithGens = new SpxProjectWithGens(project, this.genState)
     this.addDisposable(
-      (this.editing = new editing.Editing(project, isOnline, signedInUsername, localCacheKey, localStorage))
+      (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedInUsername))
     )
-    this.addDisposable((this.stageState = new StageEditorState(() => project.stage)))
+    this.addDisposable(
+      (this.stageState = new StageEditorState(
+        () => project.stage,
+        () => project.sounds
+      ))
+    )
 
     this.addDisposer(() => this.spriteState?.dispose())
 
@@ -74,9 +122,6 @@ export class EditorState extends Disposable {
           if (selected.type === 'sprite' && selected.sprite == null && this.project.sprites.length > 0) {
             this.select({ type: 'sprite', id: this.project.sprites[0].id })
           }
-          if (selected.type === 'sound' && selected.sound == null && this.project.sounds.length > 0) {
-            this.select({ type: 'sound', id: this.project.sounds[0].id })
-          }
         },
         { immediate: true }
       )
@@ -84,70 +129,15 @@ export class EditorState extends Disposable {
   }
 
   runtime: Runtime
+  history: History
+  genState: GenState
   editing: editing.Editing
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
 
-  spriteGens = shallowReactive<SpriteGen[]>([])
-  addSpriteGen(gen: SpriteGen) {
-    this.spriteGens.push(gen)
-  }
-  removeSpriteGen(id: string) {
-    const index = this.spriteGens.findIndex((gen) => gen.id === id)
-    if (index < 0) throw new Error('SpriteGen not found in editor state')
-    const [gen] = this.spriteGens.splice(index, 1)
-    gen.dispose()
-  }
-
-  backdropGens = shallowReactive<BackdropGen[]>([])
-  addBackdropGen(gen: BackdropGen) {
-    this.backdropGens.push(gen)
-  }
-  removeBackdropGen(id: string) {
-    const index = this.backdropGens.findIndex((gen) => gen.id === id)
-    if (index < 0) throw new Error('BackdropGen not found in editor state')
-    const [gen] = this.backdropGens.splice(index, 1)
-    gen.dispose()
-  }
-
-  private genCollapsePosProviderMap = shallowReactive(new Map<AssetType, CollapsePosProvider<AssetType>[]>())
-  private addGenCollapsePosProvider<T extends AssetType>(type: T, provider: CollapsePosProvider<T>) {
-    const providers = this.genCollapsePosProviderMap.get(type) ?? []
-    this.genCollapsePosProviderMap.set(type, [...providers, provider])
-    return () => {
-      this.genCollapsePosProviderMap.set(
-        type,
-        (this.genCollapsePosProviderMap.get(type) ?? []).filter((p) => p !== provider)
-      )
-    }
-  }
-  addSpriteGenCollapsePosProvider(provider: CollapsePosProvider<AssetType.Sprite>) {
-    return this.addGenCollapsePosProvider(AssetType.Sprite, provider)
-  }
-  addBackdropGenCollapsePosProvider(provider: CollapsePosProvider<AssetType.Backdrop>) {
-    return this.addGenCollapsePosProvider(AssetType.Backdrop, provider)
-  }
-  /**
-   * Retrieves the collapse position for the given generator.
-   * Acts as a consumer of collapse positions, returning the result from a registered provider
-   * for the generator's asset type, or null if no providers are available.
-   */
-  private async getGenCollapsePos<T extends AssetType>(assetType: T, gen: AssetGenModel<T>) {
-    const providers = this.genCollapsePosProviderMap.get(assetType) ?? []
-    const provider = providers.at(-1)
-    return provider != null ? provider(gen) : null
-  }
-  getSpriteGenCollapsePos(gen: SpriteGen) {
-    return this.getGenCollapsePos(AssetType.Sprite, gen)
-  }
-  getBackdropGenCollapsePos(gen: BackdropGen) {
-    return this.getGenCollapsePos(AssetType.Backdrop, gen)
-  }
-
   private selectedEditModeRef = ref<EditMode>(EditMode.Default)
   private selectedTypeRef = ref<SelectedType>('sprite')
   private selectedSpriteIdRef = ref<string | null>(null)
-  private selectedSoundIdRef = ref<string | null>(null)
 
   get selectedEditMode() {
     return this.selectedEditModeRef.value
@@ -168,11 +158,6 @@ export class EditorState extends Disposable {
     return this.spriteState.selectedAnimation
   }
 
-  get selectedSound() {
-    if (this.selectedTypeRef.value !== 'sound') return null
-    return this.project.sounds.find((s) => s.id === this.selectedSoundIdRef.value) ?? null
-  }
-
   get selectedWidget() {
     if (this.selectedTypeRef.value !== 'stage') return null
     return this.stageState.selectedWidget
@@ -188,8 +173,6 @@ export class EditorState extends Disposable {
     switch (this.selectedTypeRef.value) {
       case 'stage':
         return { type: 'stage', stageSelected: this.stageState.selected }
-      case 'sound':
-        return { type: 'sound', sound: this.selectedSound }
       case 'sprite': {
         const sprite = this.selectedSprite
         if (sprite == null || this.spriteState == null) return { type: 'sprite', sprite: null, spriteSelected: null }
@@ -204,7 +187,7 @@ export class EditorState extends Disposable {
     this.selectedEditModeRef.value = editMode
   }
 
-  select(target: { type: 'stage' } | { type: 'sprite'; id?: string | null } | { type: 'sound'; id?: string | null }) {
+  select(target: { type: 'stage' } | { type: 'sprite'; id?: string | null }) {
     switch (target.type) {
       case 'stage':
         this.selectedTypeRef.value = 'stage'
@@ -226,20 +209,12 @@ export class EditorState extends Disposable {
           this.spriteState = new SpriteEditorState(getSprite, prevSelected)
         }
         break
-      case 'sound':
-        this.selectedTypeRef.value = 'sound'
-        if (target.id != null && target.id !== this.selectedSoundIdRef.value) {
-          this.selectedSoundIdRef.value = target.id
-        }
-        break
       default:
         throw new Error(`Unknown target type: ${(target as any).type}`)
     }
   }
 
-  selectByName(
-    target: { type: 'stage' } | { type: 'sprite'; name?: string | null } | { type: 'sound'; name?: string | null }
-  ) {
+  selectByName(target: { type: 'stage' } | { type: 'sprite'; name?: string | null }) {
     switch (target.type) {
       case 'stage':
         this.select({ type: 'stage' })
@@ -247,11 +222,6 @@ export class EditorState extends Disposable {
       case 'sprite': {
         const id = this.project.sprites.find((s) => s.name === target.name)?.id ?? null
         this.select({ type: 'sprite', id })
-        break
-      }
-      case 'sound': {
-        const id = this.project.sounds.find((s) => s.name === target.name)?.id ?? null
-        this.select({ type: 'sound', id })
         break
       }
       default:
@@ -264,7 +234,8 @@ export class EditorState extends Disposable {
   }
 
   selectSound(soundId: string) {
-    this.select({ type: 'sound', id: soundId })
+    this.select({ type: 'stage' })
+    this.stageState.selectSound(soundId)
   }
 
   selectWidget(widgetId: string) {
@@ -291,7 +262,7 @@ export class EditorState extends Disposable {
 
   selectResource(resource: ResourceModel) {
     if (resource instanceof Sprite) return this.select({ type: 'sprite', id: resource.id })
-    if (resource instanceof Sound) return this.select({ type: 'sound', id: resource.id })
+    if (resource instanceof Sound) return this.selectSound(resource.id)
     if (resource instanceof Stage) return this.select({ type: 'stage' })
     if (resource instanceof Backdrop) return this.selectBackdrop(resource.id)
     if (isWidget(resource)) return this.selectWidget(resource.id)
@@ -312,8 +283,8 @@ export class EditorState extends Disposable {
       // Temporarily retain `sounds` and `stage` routes for `map` mode.
       // Although this deviates from the plan (where `map` mode only supports `sprites`),
       // it is done to minimize the complexity of handling additional route redirects.
-      // For instance, navigating from `Sound` to `Map` might otherwise cause the history stack to shift from `map/sound` to `map/sprites/default/code`,
-      // increasing the cost of stack maintenance.
+      // For instance, navigating from `sounds` to `map` might otherwise cause the history stack to shift from
+      // `map/sounds` to `map/sprites/default/code`, increasing the cost of stack maintenance.
       case EditMode.Map:
         this.selectEditMode(EditMode.Map)
         break
@@ -331,11 +302,11 @@ export class EditorState extends Disposable {
         this.select({ type: 'stage' })
         this.stageState.selectByRoute(extra)
         return
-      case 'sounds': {
-        const [soundName] = shiftPath(extra)
-        this.selectByName({ type: 'sound', name: soundName })
+      // Backward compat: old top-level `sounds/…` routes → `stage/sounds/…`
+      case 'sounds':
+        this.select({ type: 'stage' })
+        this.stageState.selectByRoute(['sounds', ...extra])
         return
-      }
       case 'sprites':
       default: {
         const [spriteName, inSpriteRoute] = shiftPath(extra)
@@ -364,14 +335,6 @@ export class EditorState extends Disposable {
         pathSegments.push('sprites')
         if (sprite != null && this.spriteState != null) {
           pathSegments.push(sprite.name, ...this.spriteState.getRoute())
-        }
-        break
-      }
-      case 'sound': {
-        const sound = selected.sound
-        pathSegments.push('sounds')
-        if (sound != null) {
-          pathSegments.push(sound.name)
         }
         break
       }
@@ -422,8 +385,8 @@ export class EditorState extends Disposable {
         // Why watch?
         // We can switch to map without watching, but we need the map route in the history stack.
         // This requires responding to changes in `selectedEditMode`.
-        // Scenario: Sound -> Stage -> Map -> Click Back.
-        // With watch: Back to Stage. Without watch: Back to Sound.
+        // Scenario: Sprite -> Stage -> Map -> Click Back.
+        // With watch: Back to Stage. Without watch: Back to Sprite.
         () => [this.selected, this.selectedEditMode],
         (_, __, onCleanup) => {
           // If `selected` changes, push new route

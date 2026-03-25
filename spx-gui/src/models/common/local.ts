@@ -1,11 +1,28 @@
 import localforage from 'localforage'
-import type { Metadata } from '../project'
+import type { Metadata, ProjectSerialized } from '../project'
 import { File, type Files, type Metadata as FileMetadata } from './file'
 
 const storage = localforage.createInstance({
   name: 'spx-gui',
   storeName: 'project'
 })
+
+/** Helpers for local storage (IndexedDB based) of project data. */
+export class LocalHelpers {
+  load(key: string, signal?: AbortSignal): Promise<ProjectSerialized | null> {
+    return load(key, signal)
+  }
+  save(key: string, { metadata, files }: ProjectSerialized, signal?: AbortSignal) {
+    return save(key, metadata, files, signal)
+  }
+
+  /** Clear data in local storage with given storage key. */
+  async clear(key: string) {
+    await clear(key)
+  }
+}
+
+export const localHelpers = new LocalHelpers()
 
 type MetadataEx = Omit<Metadata, 'thumbnail'> & {
   files: string[]
@@ -65,21 +82,23 @@ async function removeFile(key: string, path: string) {
   await storage.removeItem(`${key}/${path}`)
 }
 
-export async function clear(key: string) {
+async function clear(key: string) {
   const metadataEx = await getMetadataEx(key)
   if (metadataEx == null) return
   await Promise.all([removeMetadataEx(key), ...metadataEx.files.map((path) => removeFile(key, path))])
 }
 
-export async function load(key: string) {
+async function load(key: string, signal?: AbortSignal) {
   // TODO: check project owner & name
   const metadataEx = await getMetadataEx(key)
+  signal?.throwIfAborted()
   if (metadataEx == null) return null
   const { files: fileList, thumbnail: rawThumbnail, ...metadata } = metadataEx
   const files: Files = {}
   await Promise.all(
     fileList.map(async (path) => {
       files[path] = await readFile(key, path)
+      signal?.throwIfAborted()
     })
   )
   let thumbnail: File | null = null
@@ -93,7 +112,7 @@ export async function load(key: string) {
   }
 }
 
-export async function save(key: string, { thumbnail, ...metadata }: Metadata, files: Files, signal?: AbortSignal) {
+async function save(key: string, { thumbnail, ...metadata }: Metadata, files: Files, signal?: AbortSignal) {
   await clear(key)
   const fileList = Object.keys(files)
   let rawThumbnail: RawFile | null = null

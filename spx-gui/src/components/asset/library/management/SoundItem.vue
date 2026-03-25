@@ -4,9 +4,9 @@ import { useFileUrl } from '@/utils/file'
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useAudioDuration } from '@/utils/audio'
 import type { AssetData } from '@/apis/asset'
-import { asset2Sound } from '@/models/common/asset'
+import { asset2Sound } from '@/models/spx/common/asset'
 import { UISoundItem } from '@/components/ui'
-import SoundPlayer from '@/components/editor/sound/SoundPlayer.vue'
+import SoundPlayer from '@/components/editor/stage/sound/SoundPlayer.vue'
 
 const props = defineProps<{
   asset: AssetData

@@ -55,6 +55,10 @@
               <template #icon><img :src="projectPageSvg" /></template>
               {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
             </UIMenuItem>
+            <UIMenuItem v-if="canManageProject" class="modify-project-name-item" @click="handleModifyProjectName">
+              <template #icon><img :src="modifyProjectNameSvg" /></template>
+              {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
+            </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup v-if="canManageProject" :disabled="project == null">
             <UIMenuItem @click="handleRemoveProject">
@@ -88,16 +92,12 @@
     </template>
     <template #center>
       <template v-if="project != null">
-        <div v-if="ownerInfoToDisplay" class="owner-info">{{ ownerInfoToDisplay.displayName }}</div>
-        <div class="project-name">{{ project.name }}</div>
-        <div v-if="autoSaveStateIcon != null" class="auto-save-state">
-          <UITooltip placement="right">
-            <template #trigger>
-              <div :class="['icon', autoSaveStateIcon.stateClass]" v-html="autoSaveStateIcon.svg"></div>
-            </template>
-            {{ $t(autoSaveStateIcon.desc) }}
-          </UITooltip>
-        </div>
+        <EditorProjectDisplayName
+          :project="project"
+          :can-edit="canEditProjectDisplayName"
+          :owner-display-name="ownerInfoToDisplay?.displayName ?? null"
+          :auto-save-state-icon="autoSaveStateIcon"
+        />
       </template>
     </template>
     <template #right>
@@ -111,19 +111,31 @@
       >
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Default">
+            <UIButtonGroupItem
+              v-radar="{
+                name: 'Default mode',
+                desc: 'Editor for defining the behavior and resources of independent entities (Sprites, Sounds, Stage). It features code editing, internal resource (Costumes, Animations, Backdrops, Widgets) management, and game running/debugging'
+              }"
+              :value="EditMode.Default"
+            >
               <div class="icon" v-html="defaultModeSvg"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Default Mode', zh: '默认模式' }) }}
+          {{ $t({ en: 'Default mode', zh: '默认模式' }) }}
         </UITooltip>
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Map">
+            <UIButtonGroupItem
+              v-radar="{
+                name: 'Map edit mode',
+                desc: 'Map-centric editor for the game\'s spatial arrangement. It features sprite placement on the stage and global configuration (map size, physics, layer sorting, etc.)'
+              }"
+              :value="EditMode.Map"
+            >
               <div class="icon" v-html="mapEditModeSvg"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Map Edit Mode', zh: '地图编辑模式' }) }}
+          {{ $t({ en: 'Map edit mode', zh: '地图编辑模式' }) }}
         </UITooltip>
       </UIButtonGroup>
     </template>
@@ -151,23 +163,26 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
 import { convertScratchToXbp } from '@/apis/sb2xbp'
-import { type Project } from '@/models/project'
+import { type SpxProject } from '@/models/spx/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
 import { showTutorialsEntry } from '@/utils/env'
-import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
+import { useModifyProjectName, usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
+import { xbpHelpers } from '@/models/common/xbp'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
+import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
 import { SavingState, EditingMode } from '../editing'
 import { EditMode, type EditorState } from '../editor-state'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
+import modifyProjectNameSvg from './icons/modify-project-name.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import importAssetsScratchSvg from './icons/import-assets-scratch.svg'
 import publishSvg from './icons/publish.svg'
@@ -181,7 +196,7 @@ import defaultModeSvg from './icons/default-mode.svg?raw'
 import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
 
 const props = defineProps<{
-  project: Project | null
+  project: SpxProject | null
   state: EditorState | null
 }>()
 
@@ -190,18 +205,14 @@ const i18n = useI18n()
 const router = useRouter()
 const confirm = useConfirmDialog()
 const canManageProject = computed(() => {
-  if (props.project == null) return false
   const signedInUsername = getSignedInUsername()
-  if (signedInUsername == null) return false
-  if (props.project.owner !== signedInUsername) return false
-  return true
+  if (signedInUsername == null || props.project == null) return false
+  return props.project.owner === signedInUsername
 })
 
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
 
-const selectedEditMode = computed(() =>
-  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Default
-)
+const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 
 const ownerInfoToDisplay = computed(() => {
   const owner = projectOwnerRet.data.value
@@ -215,7 +226,9 @@ const importProjectFileMessage = { en: 'Import project file', zh: '导入项目�
 
 const handleImportProjectFile = useMessageHandle(
   async () => {
-    if (props.project == null) throw new Error('No project to import into')
+    const { project, state } = props
+    if (project == null) throw new Error('No project to import into')
+    if (state == null) throw new Error('Editor state expected')
     await confirm({
       title: i18n.t(importProjectFileMessage),
       content: i18n.t({
@@ -227,7 +240,10 @@ const handleImportProjectFile = useMessageHandle(
     const file = await selectFile({ accept: ['xbp', 'gbp' /** For backward compatibility */] })
     const action = { name: importProjectFileMessage }
     await m.withLoading(
-      props.project.history.doAction(action, () => props.project!.loadXbpFile(file)),
+      state.history.doAction(action, async () => {
+        const serialized = await xbpHelpers.load(file)
+        await project.load(serialized)
+      }),
       i18n.t({ en: 'Importing project file', zh: '导入项目文件中' })
     )
   },
@@ -240,9 +256,9 @@ const handleExportProjectFile = useMessageHandle(
   async () => {
     const project = props.project
     if (project == null) throw new Error('No project to export')
-    // TODO: Consider moving `project.getSignal()` into `exportXbpFile` as built-in logic
+    const signal = project.getSignal()
     const xbpFile = await m.withLoading(
-      project.exportXbpFile(project.getSignal()),
+      project.export(signal).then((serialized) => xbpHelpers.save(serialized, signal)),
       i18n.t({ en: 'Exporting project file', zh: '导出项目文件中' })
     )
     saveAs(xbpFile, xbpFile.name) // TODO: what if user cancelled download?
@@ -267,8 +283,9 @@ const handleImportAssetsFromScratch = useMessageHandle(
 const importScratchMessage = { en: 'Import Scratch project file', zh: '导入 Scratch 项目文件' }
 const handleImportFromScratch = useMessageHandle(
   async () => {
-    const { project } = props
+    const { project, state } = props
     if (project == null) throw new Error('project is not available')
+    if (state == null) throw new Error('Editor state is not available')
     // select Scratch project file (.sb2 or .sb3)
     const file = await selectFile({ accept: ['sb3', 'sb2'] })
 
@@ -286,7 +303,10 @@ const handleImportFromScratch = useMessageHandle(
 
     const action = { name: importScratchMessage }
     await m.withLoading(
-      project.history.doAction(action, () => project!.loadXbpFile(xbpFile)),
+      state.history.doAction(action, async () => {
+        const serialized = await xbpHelpers.load(xbpFile)
+        await project.load(serialized)
+      }),
       i18n.t({ en: 'Importing converted project file', zh: '导入已转换的项目文件' })
     )
   },
@@ -298,6 +318,31 @@ const handlePublishProject = useMessageHandle(() => publishProject(props.project
   en: 'Failed to publish project',
   zh: '发布项目失败'
 }).fn
+
+const modifyProjectName = useModifyProjectName()
+const handleModifyProjectName = useMessageHandle(
+  async () => {
+    const project = props.project
+    if (project == null) throw new Error('project is not available')
+    const previousName = project.name
+    const nextName = await modifyProjectName(project)
+    if (nextName == null) return
+    if (nextName !== previousName && project.owner != null) {
+      const currentRoute = router.currentRoute.value
+      router.replace({
+        params: {
+          ...currentRoute.params,
+          ownerName: project.owner,
+          projectName: nextName
+        },
+        query: currentRoute.query
+      })
+    }
+  },
+  { en: 'Failed to modify project name', zh: '修改项目名失败' }
+).fn
+
+const canEditProjectDisplayName = computed(() => canManageProject.value && isOnline.value)
 
 const unpublishProject = useUnpublishProject()
 const handleUnpublishProject = useMessageHandle(
@@ -321,32 +366,32 @@ function handleOpenProjectPage() {
 const removeProject = useRemoveProject()
 const handleRemoveProject = useMessageHandle(
   async () => {
-    await removeProject(props.project!.owner!, props.project!.name!)
+    await removeProject(props.project!.owner!, props.project!.name!, props.project!.displayName)
     router.push('/')
   },
   { en: 'Failed to remove project', zh: '删除项目失败' }
 ).fn
 
-const undoAction = computed(() => props.project?.history.getUndoAction() ?? null)
+const undoAction = computed(() => props.state?.history.getUndoAction())
 
 const undoText = computed(() => ({
   en: undoAction.value != null ? `Undo "${undoAction.value.name.en}"` : 'Undo',
   zh: undoAction.value != null ? `撤销“${undoAction.value.name.zh}”` : '撤销'
 }))
 
-const redoAction = computed(() => props.project?.history.getRedoAction() ?? null)
+const redoAction = computed(() => props.state?.history.getRedoAction())
 
 const redoText = computed(() => ({
   en: redoAction.value != null ? `Redo "${redoAction.value.name.en}"` : 'Redo',
   zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
 }))
 
-const handleUndo = useMessageHandle(() => props.project!.history.undo(), {
+const handleUndo = useMessageHandle(() => props.state?.history.undo(), {
   en: 'Failed to undo',
   zh: '撤销操作失败'
 })
 
-const handleRedo = useMessageHandle(() => props.project!.history.redo(), {
+const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
   en: 'Failed to redo',
   zh: '重做操作失败'
 })
@@ -399,17 +444,8 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   }
 }
 
-.owner-info,
-.project-name {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 16px;
-}
-
-.owner-info::after {
-  content: '/';
-  margin: 0 4px;
+.modify-project-name-item {
+  width: 100%;
 }
 
 .icon {
@@ -448,31 +484,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
     &:hover:not(:disabled) {
       background-color: var(--ui-color-primary-600);
       cursor: pointer;
-    }
-  }
-}
-
-.auto-save-state {
-  margin-left: 8px;
-  cursor: pointer;
-
-  .icon {
-    width: 24px;
-    height: 24px;
-
-    &.pending :deep(svg) path,
-    &.saving :deep(svg) path {
-      stroke-dasharray: 2;
-    }
-
-    &.saving :deep(svg) path {
-      animation: dash 1s linear infinite;
-
-      @keyframes dash {
-        to {
-          stroke-dashoffset: 24;
-        }
-      }
     }
   }
 }

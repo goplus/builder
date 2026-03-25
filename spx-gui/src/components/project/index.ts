@@ -1,12 +1,15 @@
 import { useModal, useConfirmDialog } from '@/components/ui'
+import ModificationWarningModal from '@/components/common/ModificationWarningModal.vue'
 import { Visibility, deleteProject } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
-import type { Project } from '@/models/project'
+import type { SpxProject } from '@/models/spx/project'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
 import ProjectPublishModal from './ProjectPublishModal.vue'
 import ProjectPublishedModal from './ProjectPublishedModal.vue'
+import ProjectModifyNameModal from './ProjectModifyNameModal.vue'
+
 /**
  * How to update the default project:
  * 1. Use XBuilder to create / open a project.
@@ -15,6 +18,7 @@ import ProjectPublishedModal from './ProjectPublishedModal.vue'
  * 4. Replace `./default-project.xbp` with the exported file.
  */
 import defaultProjectFileUrl from './default-project.xbp?url'
+import { cloudHelpers } from '@/models/common/cloud'
 
 /**
  * Get the default project file as a File object
@@ -46,12 +50,16 @@ export function useRemoveProject() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
 
-  return async function removeProject(owner: string, name: string) {
+  return async function removeProject(owner: string, name: string, displayName: string) {
+    const projectFullName = `${owner}/${name}`
     return withConfirm({
-      title: t({ en: `Remove project ${name}`, zh: `删除项目 ${name}` }),
+      title: t({
+        en: `Remove project ${displayName} (${projectFullName})`,
+        zh: `删除项目 ${displayName} (${projectFullName})`
+      }),
       content: t({
-        en: `Removed projects can not be recovered. Are you sure you want to remove project ${name}?`,
-        zh: `删除后的项目无法恢复，确定要删除项目 ${name} 吗？`
+        en: `Removed projects cannot be recovered. Are you sure you want to remove project ${displayName} (${projectFullName})?`,
+        zh: `删除后的项目无法恢复，确定要删除项目 ${displayName} (${projectFullName}) 吗？`
       }),
       // TODO: message for exception
       confirmHandler: () => deleteProject(owner, name)
@@ -67,11 +75,41 @@ export function useShareProject() {
   }
 }
 
+export function useModifyProjectName() {
+  const warningModal = useModal(ModificationWarningModal)
+  const modifyNameModal = useModal(ProjectModifyNameModal)
+
+  return async function modifyProjectName(project: SpxProject) {
+    await warningModal({
+      radar: { name: 'Project name warning modal', desc: 'Warning modal shown before editing project name' },
+      title: { en: 'Modify project name', zh: '修改项目名' },
+      tip: { en: 'Changing the project name may have the following impacts.', zh: '修改项目名，可能造成以下影响。' },
+      items: [
+        {
+          en: 'The project page URL will change, and existing links will no longer work.',
+          zh: '项目页面 URL 将会变更，原有链接将无法访问。'
+        },
+        {
+          en: 'Existing sharing links to this project will become invalid.',
+          zh: '已有的项目分享链接将会失效。'
+        },
+        {
+          en: 'This operation may take a moment to complete.',
+          zh: '该操作可能需要一点时间才能完成。'
+        }
+      ],
+      confirmText: { en: 'I understand, let me change the project name', zh: '我已知晓，让我更改项目名' },
+      confirmRadar: { name: 'Continue button', desc: 'Click to continue editing project name' }
+    })
+    return modifyNameModal({ project })
+  }
+}
+
 export function usePublishProject() {
   const invokePublishModal = useModal(ProjectPublishModal)
   const invokePublishedModal = useModal(ProjectPublishedModal)
 
-  return async function publishProject(project: Project) {
+  return async function publishProject(project: SpxProject) {
     await invokePublishModal({ project })
     invokePublishedModal({ project })
   }
@@ -80,14 +118,15 @@ export function usePublishProject() {
 export function useUnpublishProject() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
-
   // TODO: message for exception
-  async function makePrivate(project: Project) {
+  async function makePrivate(project: SpxProject) {
     project.setVisibility(Visibility.Private)
-    await project.saveToCloud()
+    const serialized = await project.export()
+    const saved = await cloudHelpers.save(serialized)
+    project.setMetadata(saved.metadata)
   }
 
-  return async function unpublishProject(project: Project) {
+  return async function unpublishProject(project: SpxProject) {
     return withConfirm({
       title: t({ en: 'Unpublish project', zh: '取消发布项目' }),
       content: t({

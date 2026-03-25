@@ -166,7 +166,7 @@ ${resultContent}
   cancelCurrentRound() {
     const currentRound = this.ensureCurrentRound()
     if (currentRound.state !== RoundState.Loading)
-      throw new Error(`Current round can not be cancelled, state: ${currentRound.state}`)
+      throw new Error(`Current round cannot be cancelled, state: ${currentRound.state}`)
     currentRound.ctrl.abort(new Cancelled())
   }
 

@@ -3,7 +3,7 @@ import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
-import { useCodeEditorCtxRef } from '@/components/editor/code-editor/context'
+import { useCodeEditorRef } from '@/components/editor/code-editor/spx-code-editor'
 import BlockWrapper from './common/BlockWrapper.vue'
 import BlockFooter from './common/BlockFooter.vue'
 import BlockActionBtn from './common/BlockActionBtn.vue'
@@ -13,16 +13,16 @@ defineProps<{
 }>()
 
 const editorCtxRef = useEditorCtxRef()
-const codeEditorCtxRef = useCodeEditorCtxRef()
+const codeEditorRef = useCodeEditorRef()
 const code = useSlotText()
 
 const handleInsert = useMessageHandle(
   () => {
     const editorCtx = editorCtxRef.value
     if (editorCtx == null) throw new Error('Editor context is not available')
-    const codeEditorUI = codeEditorCtxRef.value?.getEditor()?.getAttachedUI()
+    const codeEditorUI = codeEditorRef.value?.getAttachedUI()
     if (codeEditorUI == null) throw new Error('Code editor UI is not available')
-    return editorCtx.project.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+    return editorCtx.state.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
       codeEditorUI.insertBlockText(code.value)
     )
   },
