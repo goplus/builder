@@ -22,7 +22,7 @@
           "id": "FDwpF",
           "type": "ref",
           "ref": "a:sKPE5",
-          "x": 0,
+          "x": 0.0001939035412266059,
           "y": 0,
           "height": "fit_content",
           "children": [
@@ -47,7 +47,7 @@
                   "x": 12
                 },
                 "a:pVdMD": {
-                  "y": 4.046298500431835
+                  "y": 4.046298500431837
                 },
                 "a:8oWEL": {
                   "height": "fit_content"
@@ -73,7 +73,7 @@
                   "x": 42
                 },
                 "a:s9LT0": {
-                  "y": 7.069314292620738
+                  "y": 7.069314292620736
                 },
                 "a:NMpWM": {
                   "y": 0.03459041729686163
@@ -95,23 +95,8 @@
               "x": 0,
               "y": 0,
               "descendants": {
-                "a:j5aNT": {
-                  "enabled": false
-                },
-                "a:gI6KV": {
-                  "fontFamily": "Inter"
-                },
-                "a:syEGn": {
-                  "fontFamily": "Inter"
-                },
-                "a:vHolu": {
-                  "fontFamily": "Inter"
-                },
-                "a:glsUy": {
-                  "fontFamily": "Inter"
-                },
-                "a:SHcgk": {
-                  "y": 3.9675902359154804
+                "a:Bwy07/a:BBXp6": {
+                  "y": 3.966045550353831
                 }
               }
             },
@@ -177,7 +162,7 @@
           "id": "jHwy6",
           "type": "ref",
           "ref": "a:sKPE5",
-          "x": 0,
+          "x": 0.0001939035412266059,
           "y": 0,
           "height": "fit_content",
           "children": [
@@ -202,7 +187,7 @@
                   "x": 12
                 },
                 "a:pVdMD": {
-                  "y": 4.046298500431835
+                  "y": 4.046298500431837
                 },
                 "a:8oWEL": {
                   "height": "fit_content"
@@ -228,7 +213,7 @@
                   "x": 42
                 },
                 "a:s9LT0": {
-                  "y": 7.069314292620738
+                  "y": 7.069314292620736
                 },
                 "a:NMpWM": {
                   "y": 0.03459041729686163
@@ -250,12 +235,9 @@
               "x": 0,
               "y": 0,
               "descendants": {
-                "a:eBBT8": {
-                  "x": 51.985297291138906,
-                  "y": 14.01472977986502
-                },
-                "a:Xs6s9": {
-                  "fontFamily": "Inter"
+                "a:mU6Cw/a:tYlkx": {
+                  "x": 51.9852972911389,
+                  "y": 14.014729779865018
                 }
               }
             },
@@ -321,7 +303,7 @@
           "id": "rbMxP",
           "type": "ref",
           "ref": "a:sKPE5",
-          "x": 0,
+          "x": 0.0001939035412266059,
           "y": 0,
           "height": "fit_content",
           "children": [
@@ -346,7 +328,7 @@
                   "x": 12
                 },
                 "a:pVdMD": {
-                  "y": 4.046298500431835
+                  "y": 4.046298500431837
                 },
                 "a:8oWEL": {
                   "height": "fit_content"
@@ -372,7 +354,7 @@
                   "x": 42
                 },
                 "a:s9LT0": {
-                  "y": 7.069314292620738
+                  "y": 7.069314292620736
                 },
                 "a:NMpWM": {
                   "y": 0.03459041729686163
@@ -394,12 +376,9 @@
               "x": 0,
               "y": 0,
               "descendants": {
-                "a:pWBWq": {
-                  "x": 51.985297291138906,
-                  "y": 14.01472977986502
-                },
-                "a:HwSM6": {
-                  "fontFamily": "Inter"
+                "a:E2tLV/a:tYlkx": {
+                  "x": 51.9852972911389,
+                  "y": 14.014729779865018
                 }
               }
             },
@@ -475,6 +454,10 @@
     "a": "../../components/spx/builder-component.lib.pen"
   },
   "fonts": [
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
     {
       "name": "XBuilder_Icons_01",
       "url": "../../images/xbuilder-icons-01.ttf"

@@ -24,8 +24,8 @@
           "id": "Q3P0H",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001936356535040689,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "LDvZU",
@@ -623,8 +623,8 @@
           "id": "yr3Wd",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001936356535040689,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "OVOPp",
@@ -1167,8 +1167,8 @@
           "id": "d3oFy",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001936356535040689,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "90fbN",
@@ -1704,7 +1704,7 @@
           "id": "hd6l1",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
+          "x": 0.0001936356535040689,
           "y": 0,
           "children": [
             {
@@ -2798,8 +2798,8 @@
           "id": "cKVFL",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
-          "y": 5.684341886080802e-14,
+          "x": 0.0001936356535040689,
+          "y": 0,
           "children": [
             {
               "id": "Q8C6O",
@@ -3936,6 +3936,10 @@
     "j": "../../components/spx/builder-component.lib.pen"
   },
   "fonts": [
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
     {
       "name": "XBuilder_Icons_01",
       "url": "../../images/xbuilder-icons-01.ttf"

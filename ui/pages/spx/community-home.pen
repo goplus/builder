@@ -16,7 +16,7 @@
           "id": "p1spC",
           "type": "ref",
           "ref": "r:sKPE5",
-          "x": 0,
+          "x": 0.0001936356535040689,
           "y": 0,
           "children": [
             {
@@ -28,9 +28,6 @@
               "descendants": {
                 "r:W8a7k": {
                   "y": 13.046298500431835
-                },
-                "r:OE7h6/r:rgkvL": {
-                  "enabled": false
                 }
               }
             }
@@ -155,7 +152,7 @@
                                   "type": "ref",
                                   "ref": "r:IDB2y",
                                   "width": "fit_content",
-                                  "x": 24,
+                                  "x": 0,
                                   "y": 0,
                                   "descendants": {
                                     "r:wH3BG": {
@@ -8325,7 +8322,7 @@
           "id": "m1VM6",
           "type": "ref",
           "ref": "r:sKPE5",
-          "x": 0,
+          "x": 0.0001936356535040689,
           "y": 0,
           "children": [
             {
@@ -9079,6 +9076,10 @@
     "r": "../../components/spx/builder-component.lib.pen"
   },
   "fonts": [
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
     {
       "name": "XBuilder_Icons_01",
       "url": "../../images/xbuilder-icons-01.ttf"

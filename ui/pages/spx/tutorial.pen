@@ -32,7 +32,7 @@
               "id": "ftVwk",
               "type": "ref",
               "ref": "P:sKPE5",
-              "x": 0,
+              "x": 0.0001936356535040689,
               "y": 0,
               "children": [
                 {
@@ -406,8 +406,8 @@
           "id": "cehuT",
           "type": "ref",
           "ref": "P:sKPE5",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001936356535040689,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "Cbjqj",
@@ -646,6 +646,10 @@
     "P": "../../components/spx/builder-component.lib.pen"
   },
   "fonts": [
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
     {
       "name": "XBuilder_Icons_01",
       "url": "../../images/xbuilder-icons-01.ttf"
