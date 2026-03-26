@@ -43,6 +43,12 @@ export const lineHeight = {
   3: '40px'
 } as const
 
+export const button = {
+  radius: {
+    square: '4px'
+  }
+} as const
+
 export const gap = {
   middle: '16px',
   large: '24px'
