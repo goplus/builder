@@ -160,7 +160,7 @@ defineExpose({
 }
 // shape
 .shape-square {
-  --ui-button-radius: var(--ui-border-radius-2);
+  --ui-button-radius: 4px;
 }
 
 .shape-circle {
