@@ -63,7 +63,7 @@ const buttonLoading = computed(() => props.loading || (isEnrichTriggered.value &
     </template>
     {{
       $t({
-        zh: '正在自动丰富细节，请稍后...',
+        zh: '正在自动丰富细节，请稍候...',
         en: 'Enriching automatically, please wait...'
       })
     }}
