@@ -1,12 +1,12 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
       "id": "eVpiL",
       "x": -720,
       "y": -818.5,
-      "name": "Tutorial Course Series",
+      "name": "course-series",
       "width": 1440,
       "fill": "$grey100",
       "layout": "vertical",
@@ -32,13 +32,15 @@
               "id": "ftVwk",
               "type": "ref",
               "ref": "P:sKPE5",
-              "x": 0,
+              "x": 0.0001936356535040689,
               "y": 0,
               "children": [
                 {
                   "id": "kpFCr",
                   "type": "ref",
-                  "ref": "P:832Oq"
+                  "ref": "P:832Oq",
+                  "x": 0,
+                  "y": 0
                 }
               ]
             },
@@ -129,220 +131,64 @@
                       "alignItems": "center",
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "0Mqia",
-                          "name": "Course Item 1",
-                          "width": 232,
-                          "height": 214,
+                          "id": "3JDOM",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 0,
+                          "y": 0,
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/builder使用.png",
+                            "url": "../../images/builder-usage.png",
                             "mode": "fill"
                           },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "qssV4",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
+                          "descendants": {
+                            "P:lOMEl": {
                               "fill": [
                                 "#d19a60",
                                 "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "jpIs3",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "XBuilder 使用",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
                               ]
+                            },
+                            "P:sBHFN": {
+                              "content": "Builder 使用指引"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "eqS6k",
-                          "name": "Course Item 2",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "sXn6v",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "do4xV",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "rqPBg",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 252,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code kiko：初步 "
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "AEb64",
-                          "name": "Course Item 3",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "H53lt",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "ZoC3d",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "oRfhs",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 504,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：对象"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "p6gEZ",
-                          "name": "Course Item 4",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "uzT8p",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "NXQL0",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "9wCXN",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 756,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：循环"
                             }
-                          ]
+                          }
                         }
                       ]
                     },
@@ -356,220 +202,52 @@
                       "alignItems": "center",
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "f7fEC",
-                          "name": "Course Item 2",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "VNAsR",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "A2acA",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "Q2LYO",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 0,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：变量"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "FnKNT",
-                          "name": "Course Item 3",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "M6h14",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "psDFX",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "2LPqD",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 252,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：综合1"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "zvvGM",
-                          "name": "Course Item 4",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "0hnvI",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "poybQ",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "SZ6ub",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 504,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：函数调用"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "0eiaR",
-                          "name": "Course Item 2",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "JfGc2",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "xG6Xi",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "2OSKW",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 756,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：数组"
                             }
-                          ]
+                          }
                         }
                       ]
                     },
@@ -583,220 +261,52 @@
                       "alignItems": "center",
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "XK2XV",
-                          "name": "Course Item 2",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "GtSgN",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "1u4dZ",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "ZVWx1",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 0,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：条件"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "gXraz",
-                          "name": "Course Item 3",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "sJvf5",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "vlE2I",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "Lo92c",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 252,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：综合2"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "5GVpS",
-                          "name": "Course Item 4",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "yu0fY",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "MNJSv",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "KLjyT",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 504,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：事件"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "fm0O1",
-                          "name": "Course Item 2",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "PhHih",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "DwXuA",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "LH3OR",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 756,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：多精灵编程"
                             }
-                          ]
+                          }
                         }
                       ]
                     },
@@ -810,112 +320,28 @@
                       "alignItems": "center",
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "I6My4",
-                          "name": "Course Item 2",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "e1kn4",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "uuNES",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "yqyXR",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 0,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：函数定义与调用"
                             }
-                          ]
+                          }
                         },
                         {
-                          "type": "frame",
-                          "id": "RaAQ5",
-                          "name": "Course Item 3",
-                          "width": 232,
-                          "height": 214,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/codekiko.png",
-                            "mode": "fill"
-                          },
-                          "cornerRadius": 20,
-                          "layout": "vertical",
-                          "justifyContent": "end",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "T6i71",
-                              "name": "Course title container",
-                              "clip": true,
-                              "width": "fill_container",
-                              "fill": [
-                                "#7bcb69",
-                                "#24292f33"
-                              ],
-                              "cornerRadius": [
-                                0,
-                                0,
-                                20,
-                                20
-                              ],
-                              "layout": "vertical",
-                              "padding": [
-                                8,
-                                16
-                              ],
-                              "justifyContent": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "78MOt",
-                                  "name": "Course Title",
-                                  "fill": "$grey100",
-                                  "content": "Code kiko：初步 ",
-                                  "lineHeight": 1.6,
-                                  "fontFamily": "Inter",
-                                  "fontSize": 15,
-                                  "fontWeight": "normal"
-                                }
-                              ]
+                          "id": "KhsHu",
+                          "type": "ref",
+                          "ref": "P:EoQIl",
+                          "x": 252,
+                          "y": 0,
+                          "descendants": {
+                            "P:sBHFN": {
+                              "content": "Code Kiko：最终大型游戏"
                             }
-                          ]
+                          }
                         }
                       ]
                     }
@@ -940,11 +366,14 @@
                   "ref": "P:bm7Pn",
                   "x": 604,
                   "y": 16,
+                  "width": "fit_content",
                   "children": [
                     {
                       "id": "5HHGD",
                       "type": "ref",
-                      "ref": "P:X3aQ5"
+                      "ref": "P:X3aQ5",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 }
@@ -959,7 +388,7 @@
       "id": "4IqER",
       "x": -720,
       "y": 818.5,
-      "name": "Course Start Page",
+      "name": "start-page",
       "width": 1440,
       "fill": "#F5F5F5",
       "layout": "vertical",
@@ -977,13 +406,15 @@
           "id": "cehuT",
           "type": "ref",
           "ref": "P:sKPE5",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001936356535040689,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "Cbjqj",
               "type": "ref",
-              "ref": "P:832Oq"
+              "ref": "P:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -1015,7 +446,8 @@
               "type": "frame",
               "id": "GnuCa",
               "name": "Text Container",
-              "width": "fill_container",
+              "width": 758,
+              "height": 111,
               "layout": "vertical",
               "gap": 20,
               "children": [
@@ -1066,220 +498,52 @@
               "alignItems": "center",
               "children": [
                 {
-                  "type": "frame",
-                  "id": "jSVnn",
-                  "name": "Course Item 2",
-                  "width": 232,
-                  "height": 214,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/codekiko.png",
-                    "mode": "fill"
-                  },
-                  "cornerRadius": 20,
-                  "layout": "vertical",
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "U7LSn",
-                      "name": "Course title container",
-                      "clip": true,
-                      "width": "fill_container",
-                      "fill": [
-                        "#7bcb69",
-                        "#24292f33"
-                      ],
-                      "cornerRadius": [
-                        0,
-                        0,
-                        20,
-                        20
-                      ],
-                      "layout": "vertical",
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "maajy",
-                          "name": "Course Title",
-                          "fill": "$grey100",
-                          "content": "Code kiko：初步 ",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Inter",
-                          "fontSize": 15,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                  "id": "bZeba",
+                  "type": "ref",
+                  "ref": "P:EoQIl",
+                  "x": 0,
+                  "y": 0,
+                  "descendants": {
+                    "P:sBHFN": {
+                      "content": "Code kiko：初步 "
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "VNjf5",
-                  "name": "Course Item 3",
-                  "width": 232,
-                  "height": 214,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/codekiko.png",
-                    "mode": "fill"
-                  },
-                  "cornerRadius": 20,
-                  "layout": "vertical",
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "COUxx",
-                      "name": "Course title container",
-                      "clip": true,
-                      "width": "fill_container",
-                      "fill": [
-                        "#7bcb69",
-                        "#24292f33"
-                      ],
-                      "cornerRadius": [
-                        0,
-                        0,
-                        20,
-                        20
-                      ],
-                      "layout": "vertical",
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "gBj5A",
-                          "name": "Course Title",
-                          "fill": "$grey100",
-                          "content": "Code kiko：初步 ",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Inter",
-                          "fontSize": 15,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                  "id": "oYIyy",
+                  "type": "ref",
+                  "ref": "P:EoQIl",
+                  "x": 252,
+                  "y": 0,
+                  "descendants": {
+                    "P:sBHFN": {
+                      "content": "Code kiko：初步 "
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "YB4gV",
-                  "name": "Course Item 4",
-                  "width": 232,
-                  "height": 214,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/codekiko.png",
-                    "mode": "fill"
-                  },
-                  "cornerRadius": 20,
-                  "layout": "vertical",
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "zUsiG",
-                      "name": "Course title container",
-                      "clip": true,
-                      "width": "fill_container",
-                      "fill": [
-                        "#7bcb69",
-                        "#24292f33"
-                      ],
-                      "cornerRadius": [
-                        0,
-                        0,
-                        20,
-                        20
-                      ],
-                      "layout": "vertical",
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "KYu6V",
-                          "name": "Course Title",
-                          "fill": "$grey100",
-                          "content": "Code kiko：初步 ",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Inter",
-                          "fontSize": 15,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                  "id": "vPTbn",
+                  "type": "ref",
+                  "ref": "P:EoQIl",
+                  "x": 504,
+                  "y": 0,
+                  "descendants": {
+                    "P:sBHFN": {
+                      "content": "Code kiko：初步 "
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "9YHiR",
-                  "name": "Course Item 2",
-                  "width": 232,
-                  "height": 214,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/codekiko.png",
-                    "mode": "fill"
-                  },
-                  "cornerRadius": 20,
-                  "layout": "vertical",
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "NhsRa",
-                      "name": "Course title container",
-                      "clip": true,
-                      "width": "fill_container",
-                      "fill": [
-                        "#7bcb69",
-                        "#24292f33"
-                      ],
-                      "cornerRadius": [
-                        0,
-                        0,
-                        20,
-                        20
-                      ],
-                      "layout": "vertical",
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "8UQtW",
-                          "name": "Course Title",
-                          "fill": "$grey100",
-                          "content": "Code kiko：初步 ",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Inter",
-                          "fontSize": 15,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                  "id": "y8rR6",
+                  "type": "ref",
+                  "ref": "P:EoQIl",
+                  "x": 756,
+                  "y": 0,
+                  "descendants": {
+                    "P:sBHFN": {
+                      "content": "Code kiko：初步 "
                     }
-                  ]
+                  }
                 }
               ]
             },
@@ -1293,220 +557,52 @@
               "alignItems": "center",
               "children": [
                 {
-                  "type": "frame",
-                  "id": "nMR7A",
-                  "name": "Course Item 2",
-                  "width": 232,
-                  "height": 214,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/codekiko.png",
-                    "mode": "fill"
-                  },
-                  "cornerRadius": 20,
-                  "layout": "vertical",
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "HmDiC",
-                      "name": "Course title container",
-                      "clip": true,
-                      "width": "fill_container",
-                      "fill": [
-                        "#7bcb69",
-                        "#24292f33"
-                      ],
-                      "cornerRadius": [
-                        0,
-                        0,
-                        20,
-                        20
-                      ],
-                      "layout": "vertical",
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "rlJ7J",
-                          "name": "Course Title",
-                          "fill": "$grey100",
-                          "content": "Code kiko：初步 ",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Inter",
-                          "fontSize": 15,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                  "id": "p9LLi",
+                  "type": "ref",
+                  "ref": "P:EoQIl",
+                  "x": 0,
+                  "y": 0,
+                  "descendants": {
+                    "P:sBHFN": {
+                      "content": "Code kiko：初步 "
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "UV3C5",
-                  "name": "Course Item 3",
-                  "width": 232,
-                  "height": 214,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/codekiko.png",
-                    "mode": "fill"
-                  },
-                  "cornerRadius": 20,
-                  "layout": "vertical",
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "KcdxP",
-                      "name": "Course title container",
-                      "clip": true,
-                      "width": "fill_container",
-                      "fill": [
-                        "#7bcb69",
-                        "#24292f33"
-                      ],
-                      "cornerRadius": [
-                        0,
-                        0,
-                        20,
-                        20
-                      ],
-                      "layout": "vertical",
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "TlWoF",
-                          "name": "Course Title",
-                          "fill": "$grey100",
-                          "content": "Code kiko：初步 ",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Inter",
-                          "fontSize": 15,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                  "id": "MXgEu",
+                  "type": "ref",
+                  "ref": "P:EoQIl",
+                  "x": 252,
+                  "y": 0,
+                  "descendants": {
+                    "P:sBHFN": {
+                      "content": "Code kiko：初步 "
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "62dMd",
-                  "name": "Course Item 4",
-                  "width": 232,
-                  "height": 214,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/codekiko.png",
-                    "mode": "fill"
-                  },
-                  "cornerRadius": 20,
-                  "layout": "vertical",
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "GEGOz",
-                      "name": "Course title container",
-                      "clip": true,
-                      "width": "fill_container",
-                      "fill": [
-                        "#7bcb69",
-                        "#24292f33"
-                      ],
-                      "cornerRadius": [
-                        0,
-                        0,
-                        20,
-                        20
-                      ],
-                      "layout": "vertical",
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "DePia",
-                          "name": "Course Title",
-                          "fill": "$grey100",
-                          "content": "Code kiko：初步 ",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Inter",
-                          "fontSize": 15,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                  "id": "ksPP6",
+                  "type": "ref",
+                  "ref": "P:EoQIl",
+                  "x": 504,
+                  "y": 0,
+                  "descendants": {
+                    "P:sBHFN": {
+                      "content": "Code kiko：初步 "
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "jdE5t",
-                  "name": "Course Item 2",
-                  "width": 232,
-                  "height": 214,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/codekiko.png",
-                    "mode": "fill"
-                  },
-                  "cornerRadius": 20,
-                  "layout": "vertical",
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "m8Wbs",
-                      "name": "Course title container",
-                      "clip": true,
-                      "width": "fill_container",
-                      "fill": [
-                        "#7bcb69",
-                        "#24292f33"
-                      ],
-                      "cornerRadius": [
-                        0,
-                        0,
-                        20,
-                        20
-                      ],
-                      "layout": "vertical",
-                      "padding": [
-                        8,
-                        16
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "qvTEP",
-                          "name": "Course Title",
-                          "fill": "$grey100",
-                          "content": "Code kiko：初步 ",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Inter",
-                          "fontSize": 15,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                  "id": "JtDM7",
+                  "type": "ref",
+                  "ref": "P:EoQIl",
+                  "x": 756,
+                  "y": 0,
+                  "descendants": {
+                    "P:sBHFN": {
+                      "content": "Code kiko：初步 "
                     }
-                  ]
+                  }
                 }
               ]
             }
@@ -1515,6 +611,11 @@
       ]
     }
   ],
+  "themes": {
+    "Accent": [
+      "Default"
+    ]
+  },
   "variables": {
     "grey100": {
       "type": "color",
@@ -1543,5 +644,19 @@
   },
   "imports": {
     "P": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/xbuilder-icons-01.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/xbuilder-icons-02.ttf"
+    }
+  ]
 }

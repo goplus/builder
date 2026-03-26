@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPX Demos</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      height: 100vh;
+      display: flex;
+    }
+    .sidebar {
+      width: 220px;
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      padding: 16px 0;
+      flex-shrink: 0;
+    }
+    .sidebar h1 {
+      font-size: 14px;
+      color: #666;
+      padding: 0 16px 12px;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 8px;
+    }
+    .sidebar ul {
+      list-style: none;
+    }
+    .sidebar li {
+      padding: 0 8px;
+    }
+    .sidebar a {
+      display: block;
+      padding: 10px 12px;
+      color: #333;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .sidebar a:hover {
+      background: #f0f0f0;
+    }
+    .sidebar a.active {
+      background: #e3f2fd;
+      color: #1976d2;
+      font-weight: 500;
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h2 {
+      font-size: 15px;
+      font-weight: 500;
+      color: #333;
+    }
+    .header a {
+      font-size: 12px;
+      color: #1976d2;
+      text-decoration: none;
+    }
+    .header a:hover {
+      text-decoration: underline;
+    }
+    iframe {
+      flex: 1;
+      border: none;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <h1>SPX Demos</h1>
+    <ul id="nav"></ul>
+  </nav>
+  <main class="main">
+    <header class="header">
+      <h2 id="title">Select a demo</h2>
+      <a id="open-link" href="#" target="_blank" style="display:none">Open in new tab</a>
+    </header>
+    <iframe id="frame" src="about:blank"></iframe>
+  </main>
+
+  <script>
+    const demos = [
+      { id: 'notification', name: 'New Version Notification', file: '_sources/notification-demo.html' },
+      { id: 'account-name', name: 'Modal Account Name', file: '_sources/modal-account-name-demo.html' },
+      { id: 'project-name', name: 'Modify Project Name', file: '_sources/modify-project-name-and-id-demo.html' },
+      { id: 'sprite-config', name: 'Sprite Quick Config', file: '_sources/optimize-sprite-quick-config.html' }
+    ];
+
+    const nav = document.getElementById('nav');
+    const frame = document.getElementById('frame');
+    const title = document.getElementById('title');
+    const openLink = document.getElementById('open-link');
+
+    demos.forEach(demo => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + demo.id;
+      a.textContent = demo.name;
+      a.dataset.file = demo.file;
+      li.appendChild(a);
+      nav.appendChild(li);
+    });
+
+    function loadDemo(id) {
+      const demo = demos.find(d => d.id === id);
+      if (!demo) return;
+
+      document.querySelectorAll('.sidebar a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+      });
+
+      frame.src = demo.file;
+      title.textContent = demo.name;
+      openLink.href = demo.file;
+      openLink.style.display = 'inline';
+    }
+
+    window.addEventListener('hashchange', () => {
+      loadDemo(location.hash.slice(1));
+    });
+
+    if (location.hash) {
+      loadDemo(location.hash.slice(1));
+    } else {
+      location.hash = demos[0].id;
+    }
+  </script>
+</body>
+</html>
