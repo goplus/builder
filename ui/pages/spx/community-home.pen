@@ -1,12 +1,12 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
       "id": "zQsHr",
       "x": 0,
       "y": 0,
-      "name": "Community Home",
+      "name": "page",
       "width": 1440,
       "fill": "$grey300",
       "layout": "vertical",
@@ -16,7 +16,7 @@
           "id": "p1spC",
           "type": "ref",
           "ref": "r:sKPE5",
-          "x": 0,
+          "x": 0.0001936356535040689,
           "y": 0,
           "children": [
             {
@@ -24,7 +24,12 @@
               "type": "ref",
               "ref": "r:ZFyMf",
               "x": 0,
-              "y": 0
+              "y": 0,
+              "descendants": {
+                "r:W8a7k": {
+                  "y": 13.046298500431835
+                }
+              }
             }
           ]
         },
@@ -135,22 +140,30 @@
                               ]
                             },
                             {
-                              "id": "T8VtU",
+                              "id": "E1WVD",
                               "type": "ref",
-                              "ref": "r:pDTpo",
+                              "ref": "r:y9fC6",
                               "x": 0,
                               "y": 92,
+                              "width": "fit_content",
                               "children": [
                                 {
-                                  "id": "7Qvzs",
+                                  "id": "8Rmcq",
                                   "type": "ref",
                                   "ref": "r:IDB2y",
+                                  "width": "fit_content",
+                                  "x": 0,
+                                  "y": 0,
                                   "descendants": {
-                                    "r:1egfI": {
+                                    "r:wH3BG": {
+                                      "width": "fit_content"
+                                    },
+                                    "r:4zALr": {
                                       "enabled": false
                                     },
                                     "r:2su3n": {
-                                      "content": "Join now"
+                                      "content": "join now",
+                                      "x": 24
                                     }
                                   }
                                 }
@@ -6681,6 +6694,8 @@
                                         {
                                           "type": "text",
                                           "id": "3f4pb",
+                                          "x": 0,
+                                          "y": 0,
                                           "name": "X",
                                           "enabled": false,
                                           "fill": "#ffffffff",
@@ -6694,6 +6709,8 @@
                                         {
                                           "type": "text",
                                           "id": "AHVs3",
+                                          "x": 0,
+                                          "y": 0,
                                           "name": "builder",
                                           "enabled": false,
                                           "fill": "#ffffffff",
@@ -6811,6 +6828,8 @@
                                         {
                                           "type": "group",
                                           "id": "qDhQs",
+                                          "x": 0,
+                                          "y": 0,
                                           "name": "2",
                                           "enabled": false,
                                           "children": [
@@ -6948,6 +6967,8 @@
                                         {
                                           "type": "group",
                                           "id": "yNBKB",
+                                          "x": 0,
+                                          "y": 0,
                                           "name": "1",
                                           "enabled": false,
                                           "children": [
@@ -7861,7 +7882,10 @@
                         {
                           "type": "frame",
                           "id": "MA8ke",
+                          "x": 80,
+                          "y": 2,
                           "name": "arrow-right-long-outlined",
+                          "enabled": false,
                           "width": 20,
                           "height": 20,
                           "layout": "none",
@@ -7877,6 +7901,16 @@
                               "height": 8.334539413452148
                             }
                           ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "uT6ov",
+                          "fill": "$r:turquoise500",
+                          "content": "n",
+                          "lineHeight": 1,
+                          "fontFamily": "XBuilder_Icons_02",
+                          "fontSize": 20,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -7900,20 +7934,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -7929,20 +7950,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -7958,20 +7966,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -7987,20 +7982,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -8056,7 +8038,10 @@
                         {
                           "type": "frame",
                           "id": "4Gseh",
+                          "x": 84,
+                          "y": 2,
                           "name": "arrow-right-long-outlined",
+                          "enabled": false,
                           "width": 20,
                           "height": 20,
                           "layout": "none",
@@ -8072,6 +8057,16 @@
                               "height": 8.334539413452148
                             }
                           ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "wPyfd",
+                          "fill": "$r:turquoise500",
+                          "content": "n",
+                          "lineHeight": 1,
+                          "fontFamily": "XBuilder_Icons_02",
+                          "fontSize": 20,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -8095,20 +8090,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8124,20 +8106,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8153,20 +8122,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8182,20 +8138,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -8252,7 +8195,10 @@
                         {
                           "type": "frame",
                           "id": "252x1",
+                          "x": 84,
+                          "y": 2,
                           "name": "arrow-right-long-outlined",
+                          "enabled": false,
                           "width": 20,
                           "height": 20,
                           "layout": "none",
@@ -8268,6 +8214,16 @@
                               "height": 8.334539413452148
                             }
                           ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "BjFC1",
+                          "fill": "$r:turquoise500",
+                          "content": "n",
+                          "lineHeight": 1,
+                          "fontFamily": "XBuilder_Icons_02",
+                          "fontSize": 20,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -8291,20 +8247,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8320,20 +8263,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8349,20 +8279,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8378,20 +8295,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -8408,7 +8312,7 @@
       "id": "KCHa0",
       "x": 0,
       "y": 1503,
-      "name": "Community Home signin",
+      "name": "page-signin",
       "width": 1440,
       "fill": "$grey300",
       "layout": "vertical",
@@ -8418,7 +8322,7 @@
           "id": "m1VM6",
           "type": "ref",
           "ref": "r:sKPE5",
-          "x": 0,
+          "x": 0.0001936356535040689,
           "y": 0,
           "children": [
             {
@@ -8494,7 +8398,10 @@
                         {
                           "type": "frame",
                           "id": "i69uO",
+                          "x": 84,
+                          "y": 2,
                           "name": "arrow-right-long-outlined",
+                          "enabled": false,
                           "width": 20,
                           "height": 20,
                           "layout": "none",
@@ -8510,6 +8417,16 @@
                               "height": 8.334539413452148
                             }
                           ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "IG8Mh",
+                          "fill": "$r:turquoise500",
+                          "content": "n",
+                          "lineHeight": 1,
+                          "fontFamily": "XBuilder_Icons_02",
+                          "fontSize": 20,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -8638,7 +8555,10 @@
                         {
                           "type": "frame",
                           "id": "jl3s9",
+                          "x": 80,
+                          "y": 2,
                           "name": "arrow-right-long-outlined",
+                          "enabled": false,
                           "width": 20,
                           "height": 20,
                           "layout": "none",
@@ -8654,6 +8574,16 @@
                               "height": 8.334539413452148
                             }
                           ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "qcMda",
+                          "fill": "$r:turquoise500",
+                          "content": "n",
+                          "lineHeight": 1,
+                          "fontFamily": "XBuilder_Icons_02",
+                          "fontSize": 20,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -8677,20 +8607,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8706,20 +8623,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8735,20 +8639,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8764,20 +8655,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -8833,7 +8711,10 @@
                         {
                           "type": "frame",
                           "id": "5MxdX",
+                          "x": 84,
+                          "y": 2,
                           "name": "arrow-right-long-outlined",
+                          "enabled": false,
                           "width": 20,
                           "height": 20,
                           "layout": "none",
@@ -8849,6 +8730,16 @@
                               "height": 8.334539413452148
                             }
                           ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "FsY2C",
+                          "fill": "$r:turquoise500",
+                          "content": "n",
+                          "lineHeight": 1,
+                          "fontFamily": "XBuilder_Icons_02",
+                          "fontSize": 20,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -8872,20 +8763,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8901,20 +8779,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8930,20 +8795,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -8959,20 +8811,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -9029,7 +8868,10 @@
                         {
                           "type": "frame",
                           "id": "skvgy",
+                          "x": 84,
+                          "y": 2,
                           "name": "arrow-right-long-outlined",
+                          "enabled": false,
                           "width": 20,
                           "height": 20,
                           "layout": "none",
@@ -9045,6 +8887,16 @@
                               "height": 8.334539413452148
                             }
                           ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "o5UJ0",
+                          "fill": "$r:turquoise500",
+                          "content": "n",
+                          "lineHeight": 1,
+                          "fontFamily": "XBuilder_Icons_02",
+                          "fontSize": 20,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -9054,7 +8906,7 @@
                   "type": "frame",
                   "id": "KkESd",
                   "name": "Grid",
-                  "gap": 16,
+                  "gap": 20,
                   "children": [
                     {
                       "id": "8LfAP",
@@ -9068,20 +8920,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -9089,7 +8928,7 @@
                       "id": "NBruR",
                       "type": "ref",
                       "ref": "r:pwk0c",
-                      "x": 248,
+                      "x": 252,
                       "y": 0,
                       "children": [
                         {
@@ -9097,20 +8936,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -9118,7 +8944,7 @@
                       "id": "pSqS8",
                       "type": "ref",
                       "ref": "r:pwk0c",
-                      "x": 496,
+                      "x": 504,
                       "y": 0,
                       "children": [
                         {
@@ -9126,20 +8952,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     },
@@ -9147,7 +8960,7 @@
                       "id": "jk4zq",
                       "type": "ref",
                       "ref": "r:pwk0c",
-                      "x": 744,
+                      "x": 756,
                       "y": 0,
                       "children": [
                         {
@@ -9155,20 +8968,7 @@
                           "type": "ref",
                           "ref": "r:rIuyc",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "r:Ws5Y7": {
-                              "fill": [
-                                "#e9fcffff",
-                                {
-                                  "type": "image",
-                                  "enabled": true,
-                                  "url": "../../images/用户头像.png",
-                                  "mode": "fill"
-                                }
-                              ]
-                            }
-                          }
+                          "y": 0
                         }
                       ]
                     }
@@ -9181,6 +8981,11 @@
       ]
     }
   ],
+  "themes": {
+    "2:Accent": [
+      "Default"
+    ]
+  },
   "variables": {
     "grey300": {
       "type": "color",
@@ -9221,9 +9026,67 @@
     "grey400": {
       "type": "color",
       "value": "#eaeff3"
+    },
+    "2:grey100": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ffffff",
+          "theme": {
+            "2:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "2:grey300": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#f6f8fa",
+          "theme": {
+            "2:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "2:grey800": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#6e7781",
+          "theme": {
+            "2:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "2:grey700": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#a7b1bb",
+          "theme": {
+            "2:Accent": "Default"
+          }
+        }
+      ]
     }
   },
   "imports": {
     "r": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/xbuilder-icons-01.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/xbuilder-icons-02.ttf"
+    }
+  ]
 }

@@ -1,45 +1,79 @@
-# 设计 PR 模板
+# Design PR Template
 
-## 1️⃣ PR 标题规范
+## 标题规范
 
-> 使用英文
+**格式**：`[Scope] Type: Description`
 
-[UI] Feature: Modify the username and display name
-[Design-System] Update: Button disabled state
-[Template] Update: Sprite config
+| Scope         | 说明           |
+|---------------|----------------|
+| `[UI]`        | 页面级设计变更 |
+| `[Component]` | 组件级变更     |
 
-## 2️⃣ PR 描述必须包含
+| Type      | 说明               |
+|-----------|--------------------|
+| `Feature` | 新增功能/设计      |
+| `Update`  | 优化/调整现有设计  |
+| `Fix`     | 修复设计问题       |
 
-### 关联issues
+**示例**：
 
--最常用的是 update #issue编号 （代表完成大 issue 的小更新改动）
--ref #issue编号 （代表与某个 issue 有逻辑关联）
--close #issue编号 （代表关闭某个 issue ，这通常是前端用的指令）
+- `[UI] Feature: Add notification banner design`
+- `[Component] Update: Button disabled state`
 
-### 背景
+## 描述模板
 
-为什么改？
+```markdown
+### Issue
 
-### 修改内容
+- update #issue_number  <!-- 完成大 issue 的部分更新 -->
+- ref #issue_number     <!-- 与某 issue 有关联 -->
+- close #issue_number   <!-- 完全解决该 issue -->
 
-- 调整按钮 padding
-- 修改错误提示颜色
+### Background
 
-### 影响范围
+简述修改原因。
 
-- 产品登录页
-- 主要按钮
+### Changes
 
-### 是否影响设计系统
+- 变更点 1
+- 变更点 2
 
-- [x] 是（需要 design system PR）
-- [ ] 否
+### Scope
 
-## 3️⃣ PR 内容必须包含
+- 影响页面/组件 1
+- 影响页面/组件 2
 
-- [ ] Pencil 文件（含设计稿高保真 & 交互说明）
-- [ ] 演示 Demo
+### Design System Impact
 
-# 提交注意事项
+- [ ] Yes (requires Component PR)
+- [ ] No
+```
 
-- 改动中涉及到icon改动的需要单独在需求文件夹中新建一个icon文件，把svg格式的icon放进去一起提交 (待和前端商议)
+## 完整示例
+
+```markdown
+[UI] Feature: Add notification banner design
+
+### Issue
+
+update #2575
+
+### Background
+
+Remind users to refresh page for latest version.
+
+### Changes
+
+- Added notification banner component
+- Integrated with version check API
+
+### Scope
+
+- Community homepage
+- All authenticated pages
+
+### Design System Impact
+
+- [ ] Yes
+- [x] No
+```

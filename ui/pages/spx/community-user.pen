@@ -1,12 +1,12 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
       "id": "mNWuo",
       "x": 1540,
       "y": 6,
-      "name": "User Profile Page",
+      "name": "page",
       "width": 1440,
       "fill": "$grey300",
       "layout": "vertical",
@@ -24,13 +24,15 @@
           "id": "Q3P0H",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001936356535040689,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "LDvZU",
               "type": "ref",
-              "ref": "j:832Oq"
+              "ref": "j:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -58,7 +60,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -87,7 +89,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -147,7 +149,10 @@
                                     {
                                       "type": "frame",
                                       "id": "N2axU",
+                                      "x": 0.007613241036290361,
+                                      "y": 3.035618648408674,
                                       "name": "calendar",
+                                      "enabled": false,
                                       "rotation": -0.03115761437812273,
                                       "width": 14,
                                       "height": 14,
@@ -164,6 +169,17 @@
                                           "height": 11.355077266693115
                                         }
                                       ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "aGQ86",
+                                      "rotation": -0.03115761437812273,
+                                      "fill": "$grey700",
+                                      "content": "3",
+                                      "lineHeight": 1,
+                                      "fontFamily": "XBuilder_Icons_02",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
                                     },
                                     {
                                       "type": "text",
@@ -197,23 +213,32 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "j38yF",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 924.0000153775259,
-                          "y": 27.94344922670549,
+                          "name": "Button/Default",
                           "rotation": -0.03115761437812273,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "bT1kH",
                               "type": "ref",
                               "ref": "j:0onmu",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
-                                "j:GgRS8": {
+                                "j:u4Nmq": {
+                                  "fill": "$j:turquoise500",
+                                  "width": "fit_content"
+                                },
+                                "j:awuls": {
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Edit profile"
+                                  "content": "Edit profile",
+                                  "x": 16
                                 }
                               }
                             }
@@ -300,7 +325,10 @@
                             {
                               "type": "frame",
                               "id": "78aKd",
+                              "x": 55,
+                              "y": 1,
                               "name": "arrow-right-long-outlined",
+                              "enabled": false,
                               "width": 20,
                               "height": 20,
                               "layout": "none",
@@ -316,6 +344,16 @@
                                   "height": 8.334539413452148
                                 }
                               ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "eh5wU",
+                              "fill": "$r:turquoise500",
+                              "content": "n",
+                              "lineHeight": 1,
+                              "fontFamily": "XBuilder_Icons_02",
+                              "fontSize": 20,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -338,7 +376,9 @@
                             {
                               "id": "6mFe1",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -352,7 +392,9 @@
                             {
                               "id": "1lCB1",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -366,7 +408,9 @@
                             {
                               "id": "nhAkk",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -380,7 +424,9 @@
                             {
                               "id": "JxcKv",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -439,7 +485,10 @@
                             {
                               "type": "frame",
                               "id": "h0iNu",
+                              "x": 55,
+                              "y": 1,
                               "name": "arrow-right-long-outlined",
+                              "enabled": false,
                               "width": 20,
                               "height": 20,
                               "layout": "none",
@@ -455,6 +504,16 @@
                                   "height": 8.334539413452148
                                 }
                               ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "ESQsk",
+                              "fill": "$r:turquoise500",
+                              "content": "n",
+                              "lineHeight": 1,
+                              "fontFamily": "XBuilder_Icons_02",
+                              "fontSize": 20,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -477,7 +536,9 @@
                             {
                               "id": "pK6Ul",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -491,7 +552,9 @@
                             {
                               "id": "ngc2s",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -505,7 +568,9 @@
                             {
                               "id": "1gVTu",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -519,7 +584,9 @@
                             {
                               "id": "dX7hm",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -538,7 +605,7 @@
       "id": "ePWRK",
       "x": 1540,
       "y": 1244,
-      "name": "User Profile projects Page",
+      "name": "page-projects",
       "width": 1440,
       "fill": "$grey300",
       "layout": "vertical",
@@ -556,13 +623,15 @@
           "id": "yr3Wd",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001936356535040689,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "OVOPp",
               "type": "ref",
-              "ref": "j:832Oq"
+              "ref": "j:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -590,7 +659,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -619,7 +688,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -679,7 +748,10 @@
                                     {
                                       "type": "frame",
                                       "id": "oQozT",
+                                      "x": 0.00761324103627615,
+                                      "y": 3.035618648408673,
                                       "name": "calendar",
+                                      "enabled": false,
                                       "rotation": -0.03115761437812273,
                                       "width": 14,
                                       "height": 14,
@@ -696,6 +768,17 @@
                                           "height": 11.355077266693115
                                         }
                                       ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "lkdfw",
+                                      "rotation": -0.031157614378122724,
+                                      "fill": "$grey700",
+                                      "content": "3",
+                                      "lineHeight": 1,
+                                      "fontFamily": "XBuilder_Icons_02",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
                                     },
                                     {
                                       "type": "text",
@@ -729,23 +812,31 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "JGDqT",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 924.0000153775258,
-                          "y": 27.94344922670549,
+                          "name": "Button/Default",
                           "rotation": -0.031157614378122724,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "renqo",
                               "type": "ref",
                               "ref": "j:0onmu",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
-                                "j:GgRS8": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content"
+                                },
+                                "j:awuls": {
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Edit profile"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -773,9 +864,6 @@
               "x": 0,
               "y": 0,
               "descendants": {
-                "j:a7crR": {
-                  "fill": "$grey100"
-                },
                 "j:a7crR/j:gcLfR": {
                   "fill": "$grey500"
                 },
@@ -784,9 +872,6 @@
                 },
                 "j:a7crR/j:3zzfO": {
                   "fill": "$grey900"
-                },
-                "j:b55pD": {
-                  "fill": "$j:turquoise100"
                 },
                 "j:b55pD/j:67WAn": {
                   "fill": "$j:turquoise300"
@@ -860,13 +945,16 @@
                           "id": "3w9Xd",
                           "type": "ref",
                           "ref": "j:XihxW",
-                          "x": 756,
+                          "x": 754,
                           "y": 0,
+                          "width": "fit_content",
                           "children": [
                             {
                               "id": "JNkys",
                               "type": "ref",
-                              "ref": "j:b1OHc"
+                              "ref": "j:b1OHc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -889,7 +977,9 @@
                             {
                               "id": "lPIZJ",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -903,7 +993,9 @@
                             {
                               "id": "6LR0J",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -917,7 +1009,9 @@
                             {
                               "id": "nIw4N",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -931,7 +1025,9 @@
                             {
                               "id": "4C1oy",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -954,7 +1050,9 @@
                             {
                               "id": "LtSKn",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -968,7 +1066,9 @@
                             {
                               "id": "bwsKz",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -982,7 +1082,9 @@
                             {
                               "id": "5ogHY",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -996,7 +1098,9 @@
                             {
                               "id": "CrzRW",
                               "type": "ref",
-                              "ref": "j:VIdgS"
+                              "ref": "j:VIdgS",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -1019,11 +1123,14 @@
                           "ref": "j:bm7Pn",
                           "x": 272,
                           "y": 16,
+                          "width": "fit_content",
                           "children": [
                             {
                               "id": "3jCzv",
                               "type": "ref",
-                              "ref": "j:SG7PY"
+                              "ref": "j:SG7PY",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -1042,7 +1149,7 @@
       "id": "d3AQk",
       "x": 1540,
       "y": 2482,
-      "name": "User Profile likes Page",
+      "name": "page-likes",
       "width": 1440,
       "fill": "$grey300",
       "layout": "vertical",
@@ -1060,13 +1167,15 @@
           "id": "d3oFy",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001936356535040689,
+          "y": 5.684341886080802e-14,
           "children": [
             {
               "id": "90fbN",
               "type": "ref",
-              "ref": "j:832Oq"
+              "ref": "j:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -1094,7 +1203,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -1123,7 +1232,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -1183,7 +1292,10 @@
                                     {
                                       "type": "frame",
                                       "id": "bdhZ7",
+                                      "x": 0.00761324103627615,
+                                      "y": 3.035618648408674,
                                       "name": "calendar",
+                                      "enabled": false,
                                       "rotation": -0.03115761437812273,
                                       "width": 14,
                                       "height": 14,
@@ -1200,6 +1312,17 @@
                                           "height": 11.355077266693115
                                         }
                                       ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "pX4Yu",
+                                      "rotation": -0.03115761437812272,
+                                      "fill": "$grey700",
+                                      "content": "3",
+                                      "lineHeight": 1,
+                                      "fontFamily": "XBuilder_Icons_02",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
                                     },
                                     {
                                       "type": "text",
@@ -1233,23 +1356,31 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "7Ej3z",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 924.0000153775258,
-                          "y": 27.94344922670549,
+                          "name": "Button/Default",
                           "rotation": -0.031157614378122724,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "s4kZ7",
                               "type": "ref",
                               "ref": "j:0onmu",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
-                                "j:GgRS8": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content"
+                                },
+                                "j:awuls": {
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Edit profile"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -1277,9 +1408,6 @@
               "x": 0,
               "y": 0,
               "descendants": {
-                "j:a7crR": {
-                  "fill": "$grey100"
-                },
                 "j:a7crR/j:gcLfR": {
                   "fill": "$grey500"
                 },
@@ -1288,9 +1416,6 @@
                 },
                 "j:a7crR/j:3zzfO": {
                   "fill": "$grey900"
-                },
-                "j:dOfno": {
-                  "fill": "$j:turquoise100"
                 },
                 "j:dOfno/j:QMnoG": {
                   "fill": "$j:turquoise300"
@@ -1357,13 +1482,16 @@
                           "id": "BcPLz",
                           "type": "ref",
                           "ref": "j:XihxW",
-                          "x": 756,
+                          "x": 754,
                           "y": 0,
+                          "width": "fit_content",
                           "children": [
                             {
                               "id": "NdwpB",
                               "type": "ref",
-                              "ref": "j:b1OHc"
+                              "ref": "j:b1OHc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -1386,7 +1514,9 @@
                             {
                               "id": "GCxTH",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -1400,7 +1530,9 @@
                             {
                               "id": "lm78s",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -1414,7 +1546,9 @@
                             {
                               "id": "hYpw2",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -1428,7 +1562,9 @@
                             {
                               "id": "SLbB4",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -1451,7 +1587,9 @@
                             {
                               "id": "RjSSU",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -1465,7 +1603,9 @@
                             {
                               "id": "gq8NH",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -1479,7 +1619,9 @@
                             {
                               "id": "jaUrE",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         },
@@ -1493,7 +1635,9 @@
                             {
                               "id": "TjfnS",
                               "type": "ref",
-                              "ref": "j:rIuyc"
+                              "ref": "j:rIuyc",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -1516,11 +1660,14 @@
                           "ref": "j:bm7Pn",
                           "x": 272,
                           "y": 16,
+                          "width": "fit_content",
                           "children": [
                             {
                               "id": "fetZx",
                               "type": "ref",
-                              "ref": "j:SG7PY"
+                              "ref": "j:SG7PY",
+                              "x": 0,
+                              "y": 0
                             }
                           ]
                         }
@@ -1539,7 +1686,7 @@
       "id": "zgr0r",
       "x": 1540,
       "y": 3718,
-      "name": "User Profile following Page",
+      "name": "page-following",
       "width": 1440,
       "fill": "$grey300",
       "layout": "vertical",
@@ -1557,13 +1704,15 @@
           "id": "hd6l1",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
+          "x": 0.0001936356535040689,
           "y": 0,
           "children": [
             {
               "id": "Jqlgh",
               "type": "ref",
-              "ref": "j:832Oq"
+              "ref": "j:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -1591,7 +1740,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -1620,7 +1769,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -1680,7 +1829,10 @@
                                     {
                                       "type": "frame",
                                       "id": "VUOiF",
+                                      "x": 0.00761324103627615,
+                                      "y": 3.035618648408673,
                                       "name": "calendar",
+                                      "enabled": false,
                                       "rotation": -0.03115761437812273,
                                       "width": 14,
                                       "height": 14,
@@ -1697,6 +1849,17 @@
                                           "height": 11.355077266693115
                                         }
                                       ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "8CDzj",
+                                      "rotation": -0.03115761437812272,
+                                      "fill": "$grey700",
+                                      "content": "3",
+                                      "lineHeight": 1,
+                                      "fontFamily": "XBuilder_Icons_02",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
                                     },
                                     {
                                       "type": "text",
@@ -1730,23 +1893,31 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "EcM2o",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 924.0000153775258,
-                          "y": 27.94344922670549,
+                          "name": "Button/Default",
                           "rotation": -0.031157614378122724,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "c4vO4",
                               "type": "ref",
                               "ref": "j:0onmu",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
-                                "j:GgRS8": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content"
+                                },
+                                "j:awuls": {
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Edit profile"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -1774,9 +1945,6 @@
               "x": 0,
               "y": 0,
               "descendants": {
-                "j:a7crR": {
-                  "fill": "$grey100"
-                },
                 "j:a7crR/j:gcLfR": {
                   "fill": "$grey500"
                 },
@@ -1785,9 +1953,6 @@
                 },
                 "j:a7crR/j:3zzfO": {
                   "fill": "$grey900"
-                },
-                "j:gantV": {
-                  "fill": "$turquoise100"
                 },
                 "j:gantV/j:IWHPH": {
                   "fill": "$j:turquoise300"
@@ -1873,7 +2038,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -1911,12 +2076,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "Wh8X0",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "9KpbG",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -1946,23 +2125,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "e1HeL",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 901,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "qKPNU",
                               "type": "ref",
                               "ref": "j:0onmu",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content"
+                                },
                                 "j:GgRS8": {
                                   "enabled": false
                                 },
+                                "j:awuls": {
+                                  "enabled": false
+                                },
                                 "j:ynnQK": {
-                                  "content": "Follow"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -1991,7 +2181,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2029,12 +2219,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "rL0ki",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "pu8N3",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -2064,23 +2268,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "XjrBH",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 880,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "1mkHN",
                               "type": "ref",
                               "ref": "j:jNe9A",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
+                                "j:pkmAo": {
+                                  "enabled": false
+                                },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2109,7 +2324,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2147,12 +2362,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "DQsVE",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "mIi0k",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -2182,23 +2411,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "UuIs9",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 880,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "dg4z0",
                               "type": "ref",
                               "ref": "j:jNe9A",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
+                                "j:pkmAo": {
+                                  "enabled": false
+                                },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2227,7 +2467,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2265,12 +2505,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "kqGfz",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Fu6c8",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -2300,23 +2554,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "M4wOc",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 880,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "CXSL3",
                               "type": "ref",
                               "ref": "j:jNe9A",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
+                                "j:pkmAo": {
+                                  "enabled": false
+                                },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2345,7 +2610,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2383,12 +2648,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "BFsgy",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "iz3Ff",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -2418,23 +2697,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "onlQL",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 880,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "N3aDR",
                               "type": "ref",
                               "ref": "j:jNe9A",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
+                                "j:pkmAo": {
+                                  "enabled": false
+                                },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2466,11 +2756,14 @@
                       "ref": "j:bm7Pn",
                       "x": 272,
                       "y": 20,
+                      "width": "fit_content",
                       "children": [
                         {
                           "id": "5PiU9",
                           "type": "ref",
-                          "ref": "j:SG7PY"
+                          "ref": "j:SG7PY",
+                          "x": 0,
+                          "y": 0
                         }
                       ]
                     }
@@ -2487,7 +2780,7 @@
       "id": "hzpYB",
       "x": 1540,
       "y": 5093,
-      "name": "User Profile followers Page",
+      "name": "page-followers",
       "width": 1440,
       "fill": "$grey300",
       "layout": "vertical",
@@ -2505,13 +2798,15 @@
           "id": "cKVFL",
           "type": "ref",
           "ref": "j:sKPE5",
-          "x": 0,
+          "x": 0.0001936356535040689,
           "y": 0,
           "children": [
             {
               "id": "Q8C6O",
               "type": "ref",
-              "ref": "j:832Oq"
+              "ref": "j:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -2539,7 +2834,7 @@
                   "fill": {
                     "type": "image",
                     "enabled": true,
-                    "url": "../../images/user bg.png",
+                    "url": "../../images/user-bg.png",
                     "mode": "fill"
                   },
                   "layout": "none"
@@ -2568,7 +2863,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "../../images/用户头像.png",
+                        "url": "../../images/avatar.png",
                         "mode": "fill"
                       },
                       "width": 152,
@@ -2628,7 +2923,10 @@
                                     {
                                       "type": "frame",
                                       "id": "IeaIv",
+                                      "x": 0.00761324103627615,
+                                      "y": 3.035618648408674,
                                       "name": "calendar",
+                                      "enabled": false,
                                       "rotation": -0.03115761437812273,
                                       "width": 14,
                                       "height": 14,
@@ -2645,6 +2943,17 @@
                                           "height": 11.355077266693115
                                         }
                                       ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "23Esk",
+                                      "rotation": -0.03115761437812272,
+                                      "fill": "$grey700",
+                                      "content": "3",
+                                      "lineHeight": 1,
+                                      "fontFamily": "XBuilder_Icons_02",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
                                     },
                                     {
                                       "type": "text",
@@ -2678,23 +2987,33 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "UUvhv",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 924.0000153775258,
-                          "y": 27.94344922670549,
+                          "name": "Button/Default",
                           "rotation": -0.031157614378122724,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "fgWF9",
                               "type": "ref",
                               "ref": "j:0onmu",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
-                                "j:GgRS8": {
+                                "j:u4Nmq": {
+                                  "fill": "$j:turquoise500",
+                                  "width": "fit_content",
+                                  "enabled": true
+                                },
+                                "j:awuls": {
                                   "enabled": false
                                 },
                                 "j:ynnQK": {
-                                  "content": "Edit profile"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2722,9 +3041,6 @@
               "x": 0,
               "y": 0,
               "descendants": {
-                "j:a7crR": {
-                  "fill": "$grey100"
-                },
                 "j:a7crR/j:gcLfR": {
                   "fill": "$grey500"
                 },
@@ -2733,9 +3049,6 @@
                 },
                 "j:a7crR/j:3zzfO": {
                   "fill": "$grey900"
-                },
-                "j:Is2Zg": {
-                  "fill": "$turquoise100"
                 },
                 "j:Is2Zg/j:9se6a": {
                   "fill": "$turquoise300"
@@ -2821,7 +3134,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2859,12 +3172,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "i6Unq",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "EDoDH",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -2894,23 +3221,35 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "a4BtE",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 901,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "3JooO",
                               "type": "ref",
                               "ref": "j:0onmu",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:u4Nmq": {
+                                  "width": "fit_content",
+                                  "fill": "$j:turquoise500"
+                                },
                                 "j:GgRS8": {
                                   "enabled": false
                                 },
+                                "j:awuls": {
+                                  "enabled": false
+                                },
                                 "j:ynnQK": {
-                                  "content": "Follow"
+                                  "content": "Follow",
+                                  "x": 16
                                 }
                               }
                             }
@@ -2939,7 +3278,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -2977,12 +3316,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "kat3y",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "TwEhi",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -3012,23 +3365,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "z06Or",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 880,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "prglf",
                               "type": "ref",
                               "ref": "j:jNe9A",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
+                                "j:pkmAo": {
+                                  "enabled": false
+                                },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3057,7 +3421,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -3095,12 +3459,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "pRkn5",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Fu088",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -3130,23 +3508,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "YiZca",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 880,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "40QDn",
                               "type": "ref",
                               "ref": "j:jNe9A",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
+                                "j:pkmAo": {
+                                  "enabled": false
+                                },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3175,7 +3564,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -3213,12 +3602,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "sYpO0",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "RwHhU",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -3248,23 +3651,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "Hyq3u",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 880,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "vHvry",
                               "type": "ref",
                               "ref": "j:jNe9A",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
+                                "j:pkmAo": {
+                                  "enabled": false
+                                },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3293,7 +3707,7 @@
                           "fill": {
                             "type": "image",
                             "enabled": true,
-                            "url": "../../images/用户头像.png",
+                            "url": "../../images/avatar.png",
                             "mode": "fill"
                           },
                           "width": 48,
@@ -3331,12 +3745,26 @@
                                 {
                                   "type": "icon_font",
                                   "id": "w9xo2",
+                                  "x": 0,
+                                  "y": 3.0394242339010376,
                                   "name": "arrowProjects",
+                                  "enabled": false,
                                   "width": 14,
                                   "height": 14,
                                   "iconFontName": "calendar_month",
                                   "iconFontFamily": "Material Symbols Rounded",
                                   "fill": "$grey700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "KR6oc",
+                                  "rotation": -0.031157614378122707,
+                                  "fill": "$grey700",
+                                  "content": "3",
+                                  "lineHeight": 1,
+                                  "fontFamily": "XBuilder_Icons_02",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "text",
@@ -3366,23 +3794,34 @@
                           ]
                         },
                         {
+                          "type": "frame",
                           "id": "7dyjY",
-                          "type": "ref",
-                          "ref": "j:pDTpo",
-                          "x": 880,
-                          "y": 12,
+                          "name": "Button/Default",
                           "rotation": 6.212020862233431e-18,
+                          "clip": true,
+                          "justifyContent": "center",
+                          "alignItems": "center",
                           "children": [
                             {
                               "id": "8sByg",
                               "type": "ref",
                               "ref": "j:jNe9A",
+                              "x": 0,
+                              "y": 0,
+                              "width": "fit_content",
                               "descendants": {
+                                "j:MlmaP": {
+                                  "width": "fit_content"
+                                },
                                 "j:8VX7c": {
                                   "enabled": false
                                 },
+                                "j:pkmAo": {
+                                  "enabled": false
+                                },
                                 "j:XbMB2": {
-                                  "content": "Following"
+                                  "content": "Following",
+                                  "x": 16
                                 }
                               }
                             }
@@ -3401,6 +3840,9 @@
   ],
   "themes": {
     "Theme": [
+      "Default"
+    ],
+    "r:Accent": [
       "Default"
     ]
   },
@@ -3477,9 +3919,34 @@
     "grey600": {
       "type": "color",
       "value": "#CBD2D8"
+    },
+    "r:turquoise500": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#0bc0cf",
+          "theme": {
+            "r:Accent": "Default"
+          }
+        }
+      ]
     }
   },
   "imports": {
     "j": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/xbuilder-icons-01.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/xbuilder-icons-02.ttf"
+    }
+  ]
 }

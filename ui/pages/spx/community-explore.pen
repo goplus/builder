@@ -1,12 +1,12 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
       "id": "0hRWl",
       "x": -728,
       "y": 7,
-      "name": "Project Explore Page",
+      "name": "page",
       "width": 1440,
       "fill": "#FFFFFF",
       "layout": "vertical",
@@ -29,7 +29,9 @@
             {
               "id": "RKpCD",
               "type": "ref",
-              "ref": "2:832Oq"
+              "ref": "2:832Oq",
+              "x": 0,
+              "y": 0
             }
           ]
         },
@@ -91,12 +93,16 @@
                           "type": "ref",
                           "ref": "2:le3CV",
                           "x": 0,
-                          "y": 0.25239938955574104,
+                          "y": 0.2523993895557446,
+                          "width": "fit_content",
                           "children": [
                             {
                               "id": "ItBiK",
                               "type": "ref",
                               "ref": "2:HuMs3",
+                              "width": "fit_content",
+                              "x": 0,
+                              "y": 0,
                               "descendants": {
                                 "2:gYggs": {
                                   "content": "Most recently liked"
@@ -110,15 +116,23 @@
                           "type": "ref",
                           "ref": "2:le3CV",
                           "x": 164,
-                          "y": 0.015456996811806789,
+                          "y": 0.015456996811813895,
+                          "width": "fit_content",
+                          "height": "fit_content",
                           "children": [
                             {
                               "id": "VX1XK",
                               "type": "ref",
                               "ref": "2:BRO5N",
+                              "width": "fit_content",
+                              "height": "fit_content",
+                              "x": 0,
+                              "y": 0,
                               "descendants": {
                                 "2:H2pbv": {
-                                  "content": "My following created"
+                                  "content": "My following created",
+                                  "x": 16,
+                                  "y": 5.474014568895603
                                 }
                               }
                             }
@@ -130,14 +144,22 @@
                           "ref": "2:le3CV",
                           "x": 342.0747534440476,
                           "y": 0,
+                          "width": "fit_content",
+                          "height": "fit_content",
                           "children": [
                             {
                               "id": "2fAnB",
                               "type": "ref",
                               "ref": "2:BRO5N",
+                              "width": "fit_content",
+                              "height": "fit_content",
+                              "x": 0,
+                              "y": 0,
                               "descendants": {
                                 "2:H2pbv": {
-                                  "content": "Most recently remixed"
+                                  "content": "Most recently remixed",
+                                  "x": 16,
+                                  "y": 5.50492856251923
                                 }
                               }
                             }
@@ -165,7 +187,9 @@
                     {
                       "id": "vxKcN",
                       "type": "ref",
-                      "ref": "2:rIuyc"
+                      "ref": "2:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -179,7 +203,9 @@
                     {
                       "id": "aV8mO",
                       "type": "ref",
-                      "ref": "2:rIuyc"
+                      "ref": "2:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -193,7 +219,9 @@
                     {
                       "id": "HnXS3",
                       "type": "ref",
-                      "ref": "2:rIuyc"
+                      "ref": "2:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -207,7 +235,9 @@
                     {
                       "id": "45EXu",
                       "type": "ref",
-                      "ref": "2:rIuyc"
+                      "ref": "2:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 }
@@ -229,7 +259,9 @@
                     {
                       "id": "yQS6U",
                       "type": "ref",
-                      "ref": "2:rIuyc"
+                      "ref": "2:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -243,7 +275,9 @@
                     {
                       "id": "i2aI9",
                       "type": "ref",
-                      "ref": "2:rIuyc"
+                      "ref": "2:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -257,7 +291,9 @@
                     {
                       "id": "0XRwK",
                       "type": "ref",
-                      "ref": "2:rIuyc"
+                      "ref": "2:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 },
@@ -271,7 +307,9 @@
                     {
                       "id": "uHz7Z",
                       "type": "ref",
-                      "ref": "2:rIuyc"
+                      "ref": "2:rIuyc",
+                      "x": 0,
+                      "y": 0
                     }
                   ]
                 }
@@ -314,5 +352,15 @@
   },
   "imports": {
     "2": "../../components/spx/builder-component.lib.pen"
-  }
+  },
+  "fonts": [
+    {
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/xbuilder-icons-01.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/xbuilder-icons-02.ttf"
+    }
+  ]
 }
