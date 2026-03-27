@@ -9,8 +9,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getProject, updateProject } from '@/apis/project'
+import { isProjectNameTaken, updateProject } from '@/apis/project'
 import type { SpxProject } from '@/models/spx/project'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -75,11 +74,7 @@ async function validateName(name: string): Promise<FormValidationResult> {
 
   const owner = props.project.owner
   if (owner == null) throw new Error('Project owner is not loaded')
-  const existedProject = await getProject(owner, name).catch((e) => {
-    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
-    throw e
-  })
-  if (existedProject != null)
+  if (await isProjectNameTaken(owner, name))
     return t({
       en: `Project ${name} already exists`,
       zh: `项目 ${name} 已存在`

@@ -9,8 +9,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getUser } from '@/apis/user'
+import { isUsernameTaken } from '@/apis/user'
 import { useModifySignedInUsername } from '@/stores/user'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -47,11 +46,7 @@ async function validateUsername(val: string): Promise<FormValidationResult> {
       zh: '用户名长度超出限制（最多 100 个字符）'
     })
 
-  const existedUser = await getUser(trimmed).catch((e) => {
-    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
-    throw e
-  })
-  if (existedUser != null)
+  if (await isUsernameTaken(trimmed))
     return t({
       en: `Username ${trimmed} already exists`,
       zh: `用户名 ${trimmed} 已存在`

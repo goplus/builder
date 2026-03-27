@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
+import { isSameProjectIdentifier, toProjectIdentifier, type ProjectIdentifier } from '@/utils/project-route'
 import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
@@ -20,7 +21,7 @@ import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
 import { useSignedInUser, useUser, isSignedIn, initiateSignIn } from '@/stores/user'
-import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
+import { getOwnProjectEditorRoute, getProjectEditorRoute, getProjectPageRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
   UILoading,
@@ -54,6 +55,11 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
+const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
+  owner: props.ownerInput,
+  name: props.nameInput
+}))
 const {
   data: project,
   isLoading,
@@ -61,9 +67,10 @@ const {
   refetch: reloadProject
 } = useQuery(
   async (ctx) => {
+    const { owner, name } = routeProjectIdentifier.value
     const p = new SpxProject()
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    const serialized = await cloudHelpers.load(props.ownerInput, props.nameInput, true, ctx.signal)
+    const serialized = await cloudHelpers.load(owner, name, true, ctx.signal)
     await p.load(serialized)
     return p as CloudProject
   },
@@ -73,7 +80,18 @@ const {
   }
 )
 
-const { data: ownerInfo } = useUser(() => props.ownerInput)
+const currentProjectIdentifier = computed(() => toProjectIdentifier(project.value?.owner, project.value?.name))
+
+watch(currentProjectIdentifier, (currentIdentifier) => {
+  if (currentIdentifier == null || isSameProjectIdentifier(currentIdentifier, routeProjectIdentifier.value)) return
+  router.replace({
+    path: getProjectPageRoute(currentIdentifier.owner, currentIdentifier.name),
+    query: route.query,
+    hash: route.hash
+  })
+})
+
+const { data: ownerInfo } = useUser(() => routeProjectIdentifier.value.owner)
 const signedInUser = useSignedInUser()
 
 usePageTitle(() => {
@@ -91,18 +109,18 @@ usePageTitle(() => {
 })
 
 watch(
-  () => [props.ownerInput, props.nameInput],
-  () => isSignedIn() && recordProjectView(props.ownerInput, props.nameInput),
+  currentProjectIdentifier,
+  (currentIdentifier) => {
+    if (!isSignedIn() || currentIdentifier == null) return
+    recordProjectView(currentIdentifier.owner, currentIdentifier.name)
+  },
   { immediate: true }
 )
 
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
-watch(
-  () => [props.ownerInput, props.nameInput],
-  () => {
-    runnerState.value = 'initial'
-  }
-)
+watch(routeProjectIdentifier, () => {
+  runnerState.value = 'initial'
+})
 
 const isOwner = computed(() => {
   const signedInUsername = signedInUser.value?.username
@@ -110,7 +128,7 @@ const isOwner = computed(() => {
   if (signedInUsername == null || projectOwner == null) return false
   return projectOwner === signedInUsername
 })
-const { data: liking } = useIsLikingProject(() => ({ owner: props.ownerInput, name: props.nameInput }))
+const { data: liking } = useIsLikingProject(() => routeProjectIdentifier.value)
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const isFullScreenRunning = ref(false)
@@ -202,7 +220,10 @@ const handleRerun = useMessageHandle(
 
 const handleEdit = useMessageHandle(
   async () => {
-    const projectEditorRoute = getProjectEditorRoute(props.ownerInput, props.nameInput)
+    const projectEditorRoute = getProjectEditorRoute(
+      routeProjectIdentifier.value.owner,
+      routeProjectIdentifier.value.name
+    )
     await router.push(projectEditorRoute)
   },
   { en: 'Failed to open editor', zh: '打开编辑器失败' }
@@ -212,7 +233,7 @@ const likeProject = useLikeProject()
 const handleLike = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    await likeProject(props.ownerInput, props.nameInput)
+    await likeProject(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name)
     if (project.value != null) {
       // refresh project info (likeCount)
       const serialized = await cloudHelpers.load(project.value.owner!, project.value.name!, true)
@@ -226,7 +247,7 @@ const unlikeProject = useUnlikeProject()
 const handleUnlike = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    await unlikeProject(props.ownerInput, props.nameInput)
+    await unlikeProject(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name)
     if (project.value != null) {
       // refresh project info (likeCount)
       const serialized = await cloudHelpers.load(project.value.owner!, project.value.name!, true)
@@ -244,17 +265,22 @@ function handleToggleLike() {
 
 const shareProject = useShareProject()
 
-const handleShare = useMessageHandle(() => shareProject(props.ownerInput, props.nameInput), {
-  en: 'Failed to share project',
-  zh: '分享项目失败'
-})
+const handleShare = useMessageHandle(
+  () => shareProject(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name),
+  {
+    en: 'Failed to share project',
+    zh: '分享项目失败'
+  }
+)
 
 const createProject = useCreateProject()
 
 const handleRemix = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    const name = await createProject(stringifyRemixSource(props.ownerInput, props.nameInput))
+    const name = await createProject(
+      stringifyRemixSource(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name)
+    )
     router.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to remix project', zh: '改编项目失败' }
@@ -262,9 +288,8 @@ const handleRemix = useMessageHandle(
 
 const releasesRet = useQuery(
   async () => {
-    const { ownerInput, nameInput } = props
     const { data } = await listReleases({
-      projectFullName: stringifyProjectFullName(ownerInput, nameInput),
+      projectFullName: stringifyProjectFullName(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name),
       orderBy: 'createdAt',
       sortOrder: 'desc',
       pageIndex: 1,
@@ -294,14 +319,18 @@ const handleUnpublish = useMessageHandle(
 const handlePublish = useMessageHandle(
   // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
   // to ensure thumbnail for project-release, we jump to editor where we are able to generate thumbnails and then finish publishing
-  async () => router.push(getOwnProjectEditorRoute(props.nameInput, true)),
+  async () => router.push(getOwnProjectEditorRoute(routeProjectIdentifier.value.name, true)),
   { en: 'Failed to publish project', zh: '发布项目失败' }
 )
 
 const removeProject = useRemoveProject()
 const handleRemove = useMessageHandle(
   async () => {
-    await removeProject(props.ownerInput, props.nameInput, project.value!.displayName)
+    await removeProject(
+      routeProjectIdentifier.value.owner,
+      routeProjectIdentifier.value.name,
+      project.value!.displayName
+    )
     const { username } = await untilNotNull(signedInUser)
     await router.push(getUserPageRoute(username, 'projects'))
   },
@@ -318,7 +347,7 @@ const remixesRet = useQuery(
       type: ProjectType.Game,
       visibility: Visibility.Public,
       owner: ownerAll,
-      remixedFrom: stringifyRemixSource(props.ownerInput, props.nameInput),
+      remixedFrom: stringifyRemixSource(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name),
       pageIndex: 1,
       pageSize: remixNumInRow.value,
       orderBy: 'likeCount',

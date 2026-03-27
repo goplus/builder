@@ -35,11 +35,17 @@ class LocalCache implements ILocalCache {
 </script>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { getProjectEditorRoute } from '@/router'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import {
+  getProjectEditorRouteParams,
+  isSameProjectIdentifier,
+  toProjectIdentifier,
+  type ProjectIdentifier
+} from '@/utils/project-route'
 import { composeQuery, useQuery } from '@/utils/query'
 import { UIDetailedLoading, UIError, useConfirmDialogWithResult, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
@@ -66,6 +72,10 @@ const localCache = new LocalCache(localHelpers)
 const signedInStateQuery = useSignedInStateQuery()
 
 const router = useRouter()
+const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
+  owner: props.ownerNameInput,
+  name: props.projectNameInput
+}))
 
 const confirm = useConfirmDialogWithResult()
 const i18n = useI18n()
@@ -92,10 +102,10 @@ const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: str
 
 const stateQueryRet = useQuery(
   async (ctx) => {
-    // We need to access deps (`ownerNameInput`, `projectNameInput`) synchronously,
+    // We need to access route deps synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const ownerInput = props.ownerNameInput
-    const projectNameInput = props.projectNameInput
+    const ownerInput = routeProjectIdentifier.value.owner
+    const projectNameInput = routeProjectIdentifier.value.name
 
     // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause infinite loop of query fetching.
     // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
@@ -125,6 +135,9 @@ const stateQueryRet = useQuery(
 )
 
 const state = stateQueryRet.data
+const currentProjectIdentifier = computed(() =>
+  toProjectIdentifier(state.value?.project.owner, state.value?.project.name)
+)
 
 usePageTitle(() => {
   const displayName = state.value?.project.displayName ?? props.projectNameInput
@@ -136,6 +149,17 @@ usePageTitle(() => {
 
 const codeEditorQueryRet = useProvideCodeEditorCtx(stateQueryRet)
 
+watch(currentProjectIdentifier, (nextProjectIdentifier) => {
+  if (nextProjectIdentifier == null || isSameProjectIdentifier(nextProjectIdentifier, routeProjectIdentifier.value)) {
+    return
+  }
+  const currentRoute = router.currentRoute.value
+  router.replace({
+    params: getProjectEditorRouteParams(currentRoute.params, nextProjectIdentifier),
+    query: currentRoute.query,
+    hash: currentRoute.hash
+  })
+})
 const allQueryRet = useQuery(
   (ctx) =>
     Promise.all([

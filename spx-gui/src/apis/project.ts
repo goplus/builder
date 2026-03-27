@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import type { FileCollection, ByPage, PaginationParams, Perspective, ArtStyle } from './common'
 import { client, Visibility, ownerAll, timeStringify } from './common'
-import { ApiException, ApiExceptionCode } from './common/exception'
+import { ApiException, ApiExceptionCode, type MovedResourceCanonical } from './common/exception'
 import { parseProjectReleaseFullName, stringifyProjectReleaseFullName, type ProjectRelease } from './project-release'
 import type { Prettify } from '@/utils/types'
 
@@ -112,9 +112,29 @@ export type UpdateProjectParams = Prettify<
 >
 
 export function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
+  return updateProjectOnce(owner, name, params, signal).catch((err) => {
+    const movedProjectIdentifier = getMovedProjectIdentifier(err)
+    if (movedProjectIdentifier == null) throw err
+
+    const { owner: canonicalOwner, name: canonicalName } = movedProjectIdentifier
+    if (canonicalOwner === owner && canonicalName === name) throw err
+
+    return updateProjectOnce(canonicalOwner, canonicalName, params, signal)
+  })
+}
+
+function updateProjectOnce(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
   return client.patch(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
     signal
   }) as Promise<ProjectData>
+}
+
+function getMovedProjectIdentifier(err: unknown): { owner: string; name: string } | null {
+  if (!(err instanceof ApiException) || err.code !== ApiExceptionCode.errorResourceMoved) return null
+  if (err.meta == null || typeof err.meta !== 'object') return null
+  const { owner, name } = err.meta as Partial<MovedResourceCanonical>
+  if (!owner || !name) return null
+  return { owner, name }
 }
 
 export function deleteProject(owner: string, name: string) {
@@ -159,6 +179,16 @@ export function getProject(owner: string, name: string, signal?: AbortSignal) {
   return client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, undefined, {
     signal
   }) as Promise<ProjectData>
+}
+
+export async function isProjectNameTaken(owner: string, name: string, signal?: AbortSignal) {
+  try {
+    const project = await getProject(owner, name, signal)
+    return project.owner.toLowerCase() === owner.toLowerCase() && project.name.toLowerCase() === name.toLowerCase()
+  } catch (e) {
+    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return false
+    throw e
+  }
 }
 
 export enum ExploreOrder {
