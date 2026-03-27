@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"
 
 # Keep this version in sync with `VITE_SPX_VERSION` in `.env`.
-SPX_VERSION="2.0.0-pre.47.0.20260317084052-07546096faba"
+SPX_VERSION="2.0.0-pre.48"
 
 SPX_NAME="spx_${SPX_VERSION}"
 SPX_RELEASE_URL="https://github.com/goplus/spx/releases/download/v${SPX_VERSION}/spx_web.zip"
@@ -21,9 +21,10 @@ trap 'rm -rf "${SPX_STAGING_DIR}"' EXIT
 rm -rf "${SPX_STAGING_DIR}"
 mkdir -p "${SPX_STAGING_DIR}"
 
-if wget --spider --quiet "${SPX_RELEASE_URL}"; then
-  wget -O "${SPX_ZIP_PATH}" "${SPX_RELEASE_URL}"
+if wget -O "${SPX_ZIP_PATH}" "${SPX_RELEASE_URL}"; then
+  :
 else
+  rm -f "${SPX_ZIP_PATH}"
   ghcr_token="$(wget -qO- "https://ghcr.io/token?service=ghcr.io&scope=repository:goplus/spx:pull" | awk -F'"' '/"token":/{print $4}')"
   if [[ -z "${ghcr_token}" ]]; then
     echo "failed to get GHCR token for goplus/spx" >&2
