@@ -21,9 +21,7 @@ trap 'rm -rf "${SPX_STAGING_DIR}"' EXIT
 rm -rf "${SPX_STAGING_DIR}"
 mkdir -p "${SPX_STAGING_DIR}"
 
-if wget -O "${SPX_ZIP_PATH}" "${SPX_RELEASE_URL}"; then
-  :
-else
+if ! wget -O "${SPX_ZIP_PATH}" "${SPX_RELEASE_URL}"; then
   rm -f "${SPX_ZIP_PATH}"
   ghcr_token="$(wget -qO- "https://ghcr.io/token?service=ghcr.io&scope=repository:goplus/spx:pull" | awk -F'"' '/"token":/{print $4}')"
   if [[ -z "${ghcr_token}" ]]; then
