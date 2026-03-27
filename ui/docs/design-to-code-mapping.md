@@ -255,7 +255,7 @@
 - 设计库中的 `List` 目前没有找到足够稳定的 1:1 Vue 对应物。
 - 当前前端里最接近它职责的是 `PanelHeader.vue`、`EditorList.vue` 和具体列表组件，例如 `SpriteList.vue`。
 
-### 8. `editor-main-panel` / `editor-center-panel` / `editor-workspace-panel` 是页面级布局概念
+### 9. `editor-main-panel` / `editor-center-panel` / `editor-workspace-panel` 是页面级布局概念
 
 这些设计组件在当前代码里没有 1:1 同名实现。实际代码被拆成了页面级布局组件：
 
