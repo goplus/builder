@@ -371,9 +371,11 @@ export class EditorState extends Disposable {
     this.addDisposer(
       watch(
         router.currentRoute,
-        (currentRoute) => {
-          const { inEditorPath, projectName } = currentRoute.params
-          if (projectName !== this.project.name) return // if project changed, do nothing. new `EditorState` instance will be constructed
+        (currentRoute, prevRoute) => {
+          const { inEditorPath, projectNameInput } = currentRoute.params
+          // if project changed, skip selecting. A new `EditorState` instance will be constructed later.
+          // Selecting on the old instance with new route may cause unexpected behavior.
+          if (prevRoute != null && projectNameInput !== prevRoute.params.projectNameInput) return
           const inEditorSections = typeof inEditorPath === 'string' ? [inEditorPath] : inEditorPath ?? []
           this.selectByRoute(inEditorSections)
         },

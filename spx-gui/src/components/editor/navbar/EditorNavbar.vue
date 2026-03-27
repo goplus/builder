@@ -333,8 +333,8 @@ const handleModifyProjectName = useMessageHandle(
       router.replace({
         params: {
           ...currentRoute.params,
-          ownerName: project.owner,
-          projectName: nextName
+          ownerNameInput: project.owner,
+          projectNameInput: nextName
         },
         query: currentRoute.query
       })

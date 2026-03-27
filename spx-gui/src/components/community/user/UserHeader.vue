@@ -4,8 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { type User } from '@/apis/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
 import { useMessageHandle } from '@/utils/exception'
-import { useSignedInUser } from '@/stores/user'
-import { UIButton, UIImg, useModal } from '@/components/ui'
+import { useI18n } from '@/utils/i18n'
+import { timeout } from '@/utils/utils'
+import { initiateSignIn, useSignedInUser } from '@/stores/user'
+import { UIButton, UIImg, useMessage, useModal } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import TextView from '../TextView.vue'
 import FollowButton from './FollowButton.vue'
@@ -13,7 +15,6 @@ import UserJoinedAt from './UserJoinedAt.vue'
 import EditProfileModal from './EditProfileModal.vue'
 import UserUsernameInline from './UserUsernameInline.vue'
 import { getCoverImgUrl } from './cover'
-import { getUserPageRoute } from '@/router'
 
 const props = defineProps<{
   user: User
@@ -28,25 +29,38 @@ const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)
 
-function replaceCurrentUserRoute(oldUsername: string, newUsername: string) {
-  if (oldUsername === newUsername) return
-  if (route.params.name !== oldUsername) return
+const i18n = useI18n()
+const message = useMessage()
 
-  const oldBasePath = getUserPageRoute(oldUsername)
-  if (!route.path.startsWith(oldBasePath)) return
-
-  router.replace({
-    path: `${getUserPageRoute(newUsername)}${route.path.slice(oldBasePath.length)}`,
-    query: route.query,
-    hash: route.hash
-  })
-}
+const handleUsernameUpdated = useMessageHandle(
+  async (newUsername: string) => {
+    await router.replace({
+      params: {
+        nameInput: newUsername
+      },
+      query: route.query,
+      hash: route.hash
+    })
+    message.success(
+      i18n.t({
+        en: 'Username updated successfully. Redirecting to the sign-in page...',
+        zh: '用户名更新成功。正在重定向到登录页面...'
+      })
+    )
+    await timeout(2000)
+    initiateSignIn()
+  },
+  {
+    en: 'Failed to redirect after username update',
+    zh: '用户名更新后重定向失败'
+  }
+).fn
 
 const handleEditProfile = useMessageHandle(
   async () => {
     const oldUsername = props.user.username
     const updated = await invokeEditProfileModal({ user: props.user })
-    replaceCurrentUserRoute(oldUsername, updated.username)
+    if (oldUsername !== updated.username) return handleUsernameUpdated(updated.username)
   },
   {
     en: 'Failed to update profile',

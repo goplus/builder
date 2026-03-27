@@ -228,6 +228,11 @@ export function useUpdateSignedInUser() {
   )
 }
 
+/**
+ * Modify username for the signed-in user.
+ * NOTE: The signed-in user will be signed out after modifying the username.
+ * Typically the caller may want to reload the route to trigger navigation guards or initiate sign-in manually.
+ */
 export function useModifySignedInUsername() {
   const queryCache = useQueryCache()
 
@@ -239,6 +244,7 @@ export function useModifySignedInUsername() {
       const updated = await apis.updateSignedInUser({ username: newUsername })
       queryCache.invalidate(getUserQueryKey(oldUsername))
       queryCache.invalidate(getUserQueryKey(updated.username))
+      signOut()
       return updated
     },
     { en: 'Failed to modify username', zh: '修改用户名失败' }
