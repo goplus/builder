@@ -6,10 +6,10 @@ import UserHeader from '@/components/community/user/UserHeader.vue'
 import UserSidebar from '@/components/community/user/sidebar/UserSidebar.vue'
 
 const props = defineProps<{
-  name: string
+  nameInput: string
 }>()
 
-const { data: user, error, refetch } = useUser(() => props.name)
+const { data: user, error, refetch } = useUser(() => props.nameInput)
 </script>
 
 <template>
@@ -20,7 +20,7 @@ const { data: user, error, refetch } = useUser(() => props.name)
     <template v-else-if="user != null">
       <UserHeader :user="user" />
       <div class="main">
-        <UserSidebar class="sidebar" :username="name" />
+        <UserSidebar class="sidebar" :username="user.username" />
         <div class="content">
           <router-view />
         </div>

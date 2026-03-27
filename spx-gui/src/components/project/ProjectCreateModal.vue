@@ -51,8 +51,8 @@ import {
 import { getProject, addProject, Visibility, parseRemixSource } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { untilNotNull } from '@/utils/utils'
-import { getSignedInUsername } from '@/stores/user'
+import { untilLoaded } from '@/utils/query'
+import { useSignedInStateQuery } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { cloudHelpers } from '@/models/common/cloud'
 import { xbpHelpers } from '@/models/common/xbp'
@@ -70,7 +70,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const signedInUsername = computed(() => getSignedInUsername())
+const signedInStateQuery = useSignedInStateQuery()
 const title = computed(() => {
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
   return { en: `Remix ${props.remixSource}`, zh: `改编 ${props.remixSource}` }
@@ -97,9 +97,10 @@ const handleSubmit = useMessageHandle(
         remixSource: props.remixSource
       })
     } else {
-      const username = await untilNotNull(signedInUsername)
+      const signedInState = await untilLoaded(signedInStateQuery)
+      if (!signedInState.isSignedIn) throw new Error('login required')
       const defaultProjectFile = await getDefaultProjectFile()
-      const project = new SpxProject(username, projectName)
+      const project = new SpxProject(signedInState.user.username, projectName)
       const serialized = await xbpHelpers.load(defaultProjectFile)
       await project.load(serialized)
       project.setDisplayName(projectName)
@@ -136,9 +137,9 @@ async function validateName(name: string): Promise<FormValidationResult> {
     })
 
   // check naming conflict
-  if (signedInUsername.value == null) throw new Error('login required')
-  const username = signedInUsername.value
-  const existedProject = await getProject(username, name).catch((e) => {
+  const signedInState = await untilLoaded(signedInStateQuery)
+  if (!signedInState.isSignedIn) throw new Error('login required')
+  const existedProject = await getProject(signedInState.user.username, name).catch((e) => {
     if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
     throw e
   })

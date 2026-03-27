@@ -6,17 +6,17 @@ import { UIDetailedLoading, UIError } from '@/components/ui'
 import { composeQuery, useQuery } from '@/utils/query'
 
 const props = defineProps<{
-  courseSeriesId: string
-  courseId: string
+  courseSeriesIdInput: string
+  courseIdInput: string
 }>()
 
 const tutorial = useTutorial()
 
-const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesId), {
+const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesIdInput), {
   en: 'Failed to load course series',
   zh: '加载课程系列失败'
 })
-const courseQuery = useQuery(async () => await getCourse(props.courseId), {
+const courseQuery = useQuery(async () => await getCourse(props.courseIdInput), {
   en: 'Failed to load course',
   zh: '加载课程失败'
 })

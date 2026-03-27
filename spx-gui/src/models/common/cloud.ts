@@ -11,20 +11,22 @@ import { Visibility, addProject, getProject, type UpdateProjectParams, updatePro
 import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException, TimeoutException } from '@/utils/exception'
 import { getUphostsByRegion } from '@/utils/kodo'
-import type { Metadata, ProjectSerialized } from '../project'
+import type { Metadata, PartialMetadata, ProjectSerialized } from '../project'
 import { File, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
 import { createAIDescriptionFiles, extractAIDescription } from './'
 import { getUniversalUrlScheme, stringifyDataUrl, stringifyKodoUrl, UniversalUrlScheme } from '@/utils/universal-url'
+
+export type PreferPublishedContent = boolean | ((project: ProjectData) => boolean | Promise<boolean>)
 
 /** Helpers for cloud storage of project data. */
 export class CloudHelpers {
   load(
     owner: string,
     name: string,
-    preferPublishedContent: boolean = false,
+    preferPublishedContent: PreferPublishedContent = false,
     signal?: AbortSignal
-  ): Promise<ProjectSerialized> {
+  ): Promise<ProjectSerialized<Metadata>> {
     return load(owner, name, preferPublishedContent, signal)
   }
   save({ metadata, files }: ProjectSerialized, signal?: AbortSignal) {
@@ -34,9 +36,16 @@ export class CloudHelpers {
 
 export const cloudHelpers = new CloudHelpers()
 
-async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
+async function load(
+  owner: string,
+  name: string,
+  preferPublishedContent: PreferPublishedContent = false,
+  signal?: AbortSignal
+) {
   let projectData = await getProject(owner, name, signal)
-  if (preferPublishedContent) {
+  const shouldPreferPublishedContent =
+    typeof preferPublishedContent === 'function' ? await preferPublishedContent(projectData) : preferPublishedContent
+  if (shouldPreferPublishedContent) {
     const published = getPublishedContent(projectData)
     if (published != null) {
       projectData = {
@@ -55,7 +64,7 @@ export function getPublishedContent(project: ProjectData) {
   return null
 }
 
-async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
+async function save(metadata: PartialMetadata, files: Files, signal?: AbortSignal) {
   const { owner, name, displayName, id } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })

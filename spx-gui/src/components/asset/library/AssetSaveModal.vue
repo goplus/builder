@@ -39,7 +39,7 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-const { data: signedInUser } = useSignedInUser()
+const signedInUser = useSignedInUser()
 
 const user = computed(() => {
   const u = signedInUser.value

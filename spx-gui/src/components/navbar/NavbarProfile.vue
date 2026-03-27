@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div v-if="!signedInUser" class="sign-in">
+  <div v-if="!loading && signedInUser == null" class="sign-in">
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       class="sign-in-button"
@@ -86,7 +86,7 @@ import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
-import { initiateSignIn, signOut, useSignedInUser } from '@/stores/user'
+import { initiateSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
@@ -102,7 +102,9 @@ const router = useRouter()
 const { controls } = useAgentCopilotCtx()
 const i18n = useI18n()
 
-const { data: signedInUser } = useSignedInUser()
+const signedInStateQuery = useSignedInStateQuery()
+const loading = computed(() => signedInStateQuery.isLoading.value)
+const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
 const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
 
 const handleAskCopilotAgent = useMessageHandle(

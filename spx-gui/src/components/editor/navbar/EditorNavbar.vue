@@ -164,7 +164,7 @@ import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
 import { convertScratchToXbp } from '@/apis/sb2xbp'
 import { type SpxProject } from '@/models/spx/project'
-import { getSignedInUsername, useUser } from '@/stores/user'
+import { useSignedInUser, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
 import { showTutorialsEntry } from '@/utils/env'
@@ -204,8 +204,9 @@ const { isOnline } = useNetwork()
 const i18n = useI18n()
 const router = useRouter()
 const confirm = useConfirmDialog()
+const signedInUser = useSignedInUser()
 const canManageProject = computed(() => {
-  const signedInUsername = getSignedInUsername()
+  const signedInUsername = signedInUser.value?.username
   if (signedInUsername == null || props.project == null) return false
   return props.project.owner === signedInUsername
 })
@@ -217,7 +218,7 @@ const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMod
 const ownerInfoToDisplay = computed(() => {
   const owner = projectOwnerRet.data.value
   if (owner == null) return null
-  const signedInUsername = getSignedInUsername()
+  const signedInUsername = signedInUser.value?.username
   if (signedInUsername == null || signedInUsername !== owner.username) return owner
   return null
 })
@@ -332,8 +333,8 @@ const handleModifyProjectName = useMessageHandle(
       router.replace({
         params: {
           ...currentRoute.params,
-          ownerName: project.owner,
-          projectName: nextName
+          ownerNameInput: project.owner,
+          projectNameInput: nextName
         },
         query: currentRoute.query
       })

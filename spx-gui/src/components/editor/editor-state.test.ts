@@ -2,6 +2,7 @@ import { ref, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { createI18n } from '@/utils/i18n'
+import type { QueryRet } from '@/utils/query'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { Sound } from '@/models/spx/sound'
@@ -9,11 +10,12 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { Monitor } from '@/models/spx/widget/monitor'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
-import type * as editing from './editing'
-
-import { EditorState, type IRouter, type Selected } from './editor-state'
 import type { CloudHelpers } from '@/models/common/cloud'
 import { mockFile } from '@/models/common/test'
+import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
+import type { SignedInState } from '@/stores/user'
+import type * as editing from './editing'
+import { EditorState, type IRouter, type Selected } from './editor-state'
 
 function makeCloudHelpers(): CloudHelpers {
   return {
@@ -32,12 +34,16 @@ function makeLocalCache(): editing.ILocalCache {
 
 function makeEmptyProject(): SpxProject {
   const project = new SpxProject()
+  project.owner = 'test-owner'
+  project.name = 'test-project'
   project.bindScreenshotTaker(async () => mockFile())
   return project
 }
 
 function makeProjectWithResources(): SpxProject {
   const project = new SpxProject()
+  project.owner = 'test-owner'
+  project.name = 'test-project'
 
   // Add sounds
   const sound1 = new Sound('sound1', mockFile())
@@ -93,10 +99,14 @@ function makeProjectWithResources(): SpxProject {
   return project
 }
 
-function makeRouter() {
-  const currentRoute = ref({
-    fullPath: '/',
-    params: {},
+function makeRouter(ownerNameInput = 'test-owner', projectNameInput = 'test-project') {
+  const currentRoute: IRouter['currentRoute'] = ref({
+    fullPath: `/editor/${ownerNameInput}/${projectNameInput}`,
+    params: {
+      ownerNameInput,
+      projectNameInput,
+      inEditorPath: []
+    },
     query: {},
     hash: ''
   })
@@ -110,11 +120,11 @@ function makeRouter() {
 function makeEditorState(
   project: SpxProject = makeEmptyProject(),
   isOnline: WatchSource<boolean> = ref(true),
-  signedInUsername: string | null = 'user',
+  signedInStateQuery: QueryRet<SignedInState> = makeSignedInStateQuery(makeSignedInState('user')),
   cloudHelpers: CloudHelpers = makeCloudHelpers(),
   localCache: editing.ILocalCache = makeLocalCache()
 ): EditorState {
-  return new EditorState(createI18n({ lang: 'en' }), project, isOnline, signedInUsername, cloudHelpers, localCache)
+  return new EditorState(createI18n({ lang: 'en' }), project, isOnline, signedInStateQuery, cloudHelpers, localCache)
 }
 
 describe('EditorState', () => {
@@ -473,7 +483,7 @@ describe('EditorState', () => {
     it('should sync selection to router correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter()
+      const router = makeRouter(project.owner, project.name)
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -496,7 +506,7 @@ describe('EditorState', () => {
     it('should sync from router to selection correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter()
+      const router = makeRouter(project.owner, project.name)
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -505,6 +515,7 @@ describe('EditorState', () => {
       router.currentRoute.value = {
         ...router.currentRoute.value,
         params: {
+          ...router.currentRoute.value.params,
           inEditorPath: ['sounds', 'sound2']
         }
       }
@@ -524,7 +535,7 @@ describe('EditorState', () => {
     it('should handle legacy bare sounds route correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter()
+      const router = makeRouter(project.owner, project.name)
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -533,6 +544,7 @@ describe('EditorState', () => {
       router.currentRoute.value = {
         ...router.currentRoute.value,
         params: {
+          ...router.currentRoute.value.params,
           inEditorPath: ['sounds']
         }
       }
@@ -552,7 +564,7 @@ describe('EditorState', () => {
     it('should handle stage routes correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter()
+      const router = makeRouter(project.owner, project.name)
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -561,6 +573,7 @@ describe('EditorState', () => {
       router.currentRoute.value = {
         ...router.currentRoute.value,
         params: {
+          ...router.currentRoute.value.params,
           inEditorPath: ['stage']
         }
       }
@@ -574,7 +587,7 @@ describe('EditorState', () => {
     it('should handle sprite sub-routes correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter()
+      const router = makeRouter(project.owner, project.name)
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -583,6 +596,7 @@ describe('EditorState', () => {
       router.currentRoute.value = {
         ...router.currentRoute.value,
         params: {
+          ...router.currentRoute.value.params,
           inEditorPath: ['sprites', 'sprite1', 'costumes', 'costume2']
         }
       }
@@ -603,7 +617,7 @@ describe('EditorState', () => {
     it('should default to sprites route when no specific route provided', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter()
+      const router = makeRouter(project.owner, project.name)
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -612,6 +626,7 @@ describe('EditorState', () => {
       router.currentRoute.value = {
         ...router.currentRoute.value,
         params: {
+          ...router.currentRoute.value.params,
           inEditorPath: []
         }
       }
@@ -631,7 +646,7 @@ describe('EditorState', () => {
     it('should do replace instead of push when selected resource renamed', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter()
+      const router = makeRouter(project.owner, project.name)
 
       editorState.syncWithRouter(router)
       await flushPromises()

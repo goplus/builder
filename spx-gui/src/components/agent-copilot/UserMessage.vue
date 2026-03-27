@@ -7,7 +7,7 @@ const props = defineProps<{
   content: string
 }>()
 
-const { data: signedInUser } = useSignedInUser()
+const signedInUser = useSignedInUser()
 const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
 </script>
 

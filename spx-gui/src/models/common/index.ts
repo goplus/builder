@@ -1,5 +1,5 @@
 import { fromText, toText, type Files } from './file'
-import type { Metadata } from '../project'
+import type { PartialMetadata } from '../project'
 
 export type Size = {
   width: number
@@ -14,7 +14,7 @@ const aiDescriptionFileName = 'builder-ai-description.md'
 const aiDescriptionHashFileName = 'builder-ai-description.hash'
 
 /** Create AI description files from metadata */
-export function createAIDescriptionFiles(metadata: Metadata): Files {
+export function createAIDescriptionFiles(metadata: PartialMetadata): Files {
   const files: Files = {}
   if (metadata.aiDescription != null) {
     files[aiDescriptionFileName] = fromText(aiDescriptionFileName, metadata.aiDescription)

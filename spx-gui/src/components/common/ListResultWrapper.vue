@@ -13,7 +13,7 @@ import { UILoading, UIError, UIEmpty } from '@/components/ui'
 import type { ByPage } from '@/apis/common'
 
 const props = defineProps<{
-  queryRet: QueryRet<T>
+  queryRet: QueryRet<T | null>
   height?: number
   /** Type of the list content */
   contentType?: 'project'
