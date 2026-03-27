@@ -289,7 +289,7 @@
 
 ## Preprocessing Mapping
 
-### 10. `Card/Edit item/*` 对应素材预处理流程，不是单独卡片组件
+### 11. `Card/Edit item/*` 对应素材预处理流程，不是单独卡片组件
 
 设计稿中的：
 
