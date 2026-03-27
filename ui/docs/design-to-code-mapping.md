@@ -269,7 +269,7 @@
 
 这类设计节点更适合当作“布局概念图”，不要期待在代码里直接找到同名文件。
 
-### 9. `editor-tools-panel` / `editor-blocks-panel` 目前没有直接同名落地
+### 10. `editor-tools-panel` / `editor-blocks-panel` 目前没有直接同名落地
 
 `builder-component.lib.pen` 里还能看到：
 
