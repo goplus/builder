@@ -132,19 +132,7 @@ defineExpose({
 
 // variant
 .variant-shadow {
-  padding: 0 0 4px 0;
-
-  .content {
-    box-shadow: 0 4px var(--ui-button-shadow-color);
-  }
-
-  &:not(:disabled):active,
-  &.loading {
-    padding-bottom: 0;
-    .content {
-      box-shadow: none;
-    }
-  }
+  padding: 0;
 }
 
 .variant-flat {
@@ -160,7 +148,7 @@ defineExpose({
 }
 // shape
 .shape-square {
-  --ui-button-radius: var(--ui-border-radius-2);
+  --ui-button-radius: var(--ui-button-radius-square);
 }
 
 .shape-circle {
@@ -262,37 +250,67 @@ defineExpose({
 .size-large {
   --ui-button-height: var(--ui-line-height-3);
   --ui-button-icon-size: 18px;
-  --ui-button-content-padding: 0 24px;
+  --ui-button-content-padding: 8px 24px;
   --ui-button-font-size: 15px;
   --ui-button-gap: 8px;
   --ui-button-line-height: 1.6;
 
-  &.variant-flat,
+  &.variant-flat {
+    --ui-button-icon-size: 20px;
+    --ui-button-content-padding: 9px 24px;
+    --ui-button-font-size: 13px;
+    --ui-button-line-height: 1.6923076923;
+  }
+
   &.variant-stroke {
     --ui-button-icon-size: 20px;
+    --ui-button-content-padding: 9px 24px;
+    --ui-button-font-size: 13px;
+    --ui-button-line-height: 1.6923076923;
   }
 }
 
 .size-medium {
   --ui-button-height: var(--ui-line-height-2);
   --ui-button-icon-size: 14px;
-  --ui-button-content-padding: 0 16px;
+  --ui-button-content-padding: 5px 16px;
   --ui-button-font-size: 14px;
   --ui-button-gap: 4px;
-  --ui-button-line-height: 1.5;
+  --ui-button-line-height: 1.5714285714;
 
-  &.variant-flat,
+  &.variant-flat {
+    --ui-button-icon-size: 16px;
+    --ui-button-content-padding: 5px 16px;
+    --ui-button-font-size: 13px;
+    --ui-button-line-height: 1.5384615385;
+  }
+
   &.variant-stroke {
     --ui-button-icon-size: 16px;
+    --ui-button-content-padding: 6px 16px;
+    --ui-button-font-size: 13px;
+    --ui-button-line-height: 1.5384615385;
   }
 }
 
 .size-small {
   --ui-button-height: var(--ui-line-height-1);
   --ui-button-icon-size: 13px;
-  --ui-button-content-padding: 0 12px;
-  --ui-button-font-size: 13px;
+  --ui-button-content-padding: 5px 12px;
+  --ui-button-font-size: 14px;
   --ui-button-gap: 4px;
-  --ui-button-line-height: 1.5;
+  --ui-button-line-height: 1.5714285714;
+
+  &.variant-flat {
+    --ui-button-content-padding: 5px 12px;
+    --ui-button-font-size: 13px;
+    --ui-button-line-height: 1.5384615385;
+  }
+
+  &.variant-stroke {
+    --ui-button-content-padding: 6px 12px;
+    --ui-button-font-size: 13px;
+    --ui-button-line-height: 1.5384615385;
+  }
 }
 </style>
