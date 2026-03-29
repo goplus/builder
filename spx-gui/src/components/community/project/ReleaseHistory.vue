@@ -6,7 +6,7 @@ import { UITimeline, UITimelineItem, UILoading, UIError } from '@/components/ui'
 import TextView from '../TextView.vue'
 
 defineProps<{
-  queryRet: QueryRet<ProjectRelease[]>
+  queryRet: QueryRet<ProjectRelease[] | null>
 }>()
 </script>
 

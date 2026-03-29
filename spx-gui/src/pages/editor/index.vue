@@ -35,9 +35,9 @@ class LocalCache implements ILocalCache {
 </script>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
+import { onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
-import { getSignedInUsername } from '@/stores/user'
+import { useSignedInStateQuery } from '@/stores/user'
 import { getProjectEditorRoute } from '@/router'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 import { composeQuery, useQuery } from '@/utils/query'
@@ -70,12 +70,12 @@ import type { ProjectSerialized } from '@/models/project'
 import { SpxProject } from '@/models/spx/project'
 
 const props = defineProps<{
-  ownerName: string
-  projectName: string
+  ownerNameInput: string
+  projectNameInput: string
 }>()
 const localCache = new LocalCache(localHelpers)
 
-const signedInUsername = computed(() => getSignedInUsername())
+const signedInStateQuery = useSignedInStateQuery()
 const copilotCtx = useAgentCopilotCtx()
 
 const router = useRouter()
@@ -105,23 +105,24 @@ const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: str
 
 const stateQueryRet = useQuery(
   async (ctx) => {
-    // We need to access deps (`ownerName`, `projectName`, `signedInUsername`) synchronously,
+    // We need to access deps (`ownerNameInput`, `projectNameInput`) synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const ownerName = props.ownerName
-    const projectName = props.projectName
-    const username = signedInUsername.value
+    const ownerInput = props.ownerNameInput
+    const projectNameInput = props.projectNameInput
 
     // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause infinite loop of query fetching.
     // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
     await nextTick()
 
-    const project = new SpxProject(ownerName, projectName)
+    const project = new SpxProject()
     project.disposeOnSignal(ctx.signal)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     ctx.signal.throwIfAborted()
-    const state = new EditorState(i18n, project, isOnline, username, cloudHelpers, localCache)
+    const state = new EditorState(i18n, project, isOnline, signedInStateQuery, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
     await state.editing.loadProject(
+      ownerInput,
+      projectNameInput,
       {
         confirmOpenTargetWithAnotherInCache,
         openProject
@@ -139,7 +140,7 @@ const stateQueryRet = useQuery(
 const state = stateQueryRet.data
 
 usePageTitle(() => {
-  const displayName = state.value?.project.displayName ?? props.projectName
+  const displayName = state.value?.project.displayName ?? props.projectNameInput
   return {
     en: `Edit ${displayName}`,
     zh: `编辑 ${displayName}`

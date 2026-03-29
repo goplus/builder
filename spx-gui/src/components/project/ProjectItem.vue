@@ -124,7 +124,7 @@ import {
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { Visibility, type ProjectData } from '@/apis/project'
 import { createFileWithUniversalUrl, getPublishedContent } from '@/models/common/cloud'
-import { getSignedInUsername } from '@/stores/user'
+import { useSignedInUser } from '@/stores/user'
 import { useIsLikingProject } from '@/stores/liking'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import UserAvatar from '@/components/community/user/UserAvatar.vue'
@@ -154,7 +154,8 @@ const emit = defineEmits<{
   removed: []
 }>()
 
-const isOwner = computed(() => props.project.owner === getSignedInUsername())
+const signedInUser = useSignedInUser()
+const isOwner = computed(() => props.project.owner === signedInUser.value?.username)
 const operatable = computed(() => props.context === 'mine' && isOwner.value)
 
 const router = useRouter()

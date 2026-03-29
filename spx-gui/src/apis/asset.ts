@@ -93,8 +93,8 @@ export type ListAssetParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listAsset(params?: ListAssetParams) {
-  return client.get('/assets/list', params) as Promise<ByPage<AssetData>>
+export function listAsset(params?: ListAssetParams, signal?: AbortSignal) {
+  return client.get('/assets/list', params, { signal }) as Promise<ByPage<AssetData>>
 }
 
 export function getAsset(id: string) {

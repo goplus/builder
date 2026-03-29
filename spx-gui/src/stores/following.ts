@@ -2,22 +2,22 @@ import { computed, toRef, type WatchSource } from 'vue'
 import { useQueryWithCache, useQueryCache } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/user'
-import { getSignedInUsername } from './user'
+import { getUnresolvedSignedInUsername } from './user'
 
-function getFollowingQueryKey(username: string) {
-  return ['following', getSignedInUsername(), username]
+function getFollowingQueryKey(signedInUsernameInput: string | null, username: string) {
+  return ['following', signedInUsernameInput, username]
 }
 
 const staleTime = 5 * 60 * 1000 // 5min
 
 export function useIsFollowing(username: WatchSource<string>) {
   const usernameRef = toRef(username)
-  const queryKey = computed(() => getFollowingQueryKey(usernameRef.value))
+  const queryKey = computed(() => getFollowingQueryKey(getUnresolvedSignedInUsername(), usernameRef.value))
   return useQueryWithCache({
     queryKey,
     async queryFn() {
-      const signedInUsername = getSignedInUsername()
-      if (signedInUsername == null || signedInUsername === usernameRef.value) return false
+      const signedInUsernameInput = getUnresolvedSignedInUsername()
+      if (signedInUsernameInput == null || signedInUsernameInput === usernameRef.value) return false
       return apis.isFollowing(usernameRef.value)
     },
     failureSummaryMessage: { en: 'Failed to check following status', zh: '检查关注状态失败' },
@@ -30,7 +30,7 @@ export function useFollow() {
   return useAction(
     async function follow(username: string) {
       await apis.follow(username)
-      const queryKey = getFollowingQueryKey(username)
+      const queryKey = getFollowingQueryKey(getUnresolvedSignedInUsername(), username)
       queryCache.invalidateWithOptimisticValue(queryKey, true)
     },
     { en: 'Failed to follow', zh: '关注用户失败' }
@@ -42,7 +42,7 @@ export function useUnfollow() {
   return useAction(
     async function unfollow(username: string) {
       await apis.unfollow(username)
-      const queryKey = getFollowingQueryKey(username)
+      const queryKey = getFollowingQueryKey(getUnresolvedSignedInUsername(), username)
       queryCache.invalidateWithOptimisticValue(queryKey, false)
     },
     { en: 'Failed to unfollow', zh: '取消关注失败' }

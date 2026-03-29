@@ -85,7 +85,7 @@ const invokeSpriteGenModal = useSpriteGenModal()
 
 const handleSpriteGenClick = useMessageHandle(
   async (gen: SpriteGen) => {
-    const result = await invokeSpriteGenModal(gen)
+    const result = await invokeSpriteGenModal(editorCtx.project, gen)
 
     // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
     gen.dispose()

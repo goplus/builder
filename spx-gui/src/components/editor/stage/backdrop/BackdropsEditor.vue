@@ -19,13 +19,21 @@
         <UIMenuItem
           v-radar="{ name: 'Add from local file', desc: 'Click to add backdrop from local file' }"
           @click="handleAddFromLocalFile"
-          >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
         >
+          {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
+        </UIMenuItem>
         <UIMenuItem
           v-radar="{ name: 'Add from asset library', desc: 'Click to add backdrop from asset library' }"
           @click="handleAddFromAssetLibrary"
-          >{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem
         >
+          {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
+        </UIMenuItem>
+        <UIMenuItem
+          v-radar="{ name: 'Generate backdrop', desc: 'Click to generate backdrop with AI' }"
+          @click="handleGenerate"
+        >
+          {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
+        </UIMenuItem>
       </UIMenu>
     </template>
     <template #detail>
@@ -76,7 +84,7 @@ import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Stage } from '@/models/spx/stage'
 import { Backdrop } from '@/models/spx/backdrop'
-import { useAddAssetFromLibrary, useAddBackdropFromLocalFile } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddBackdropFromLocalFile, useBackdropGenModal } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import EditorList from '../../common/EditorList.vue'
@@ -118,6 +126,21 @@ const handleAddFromAssetLibrary = useMessageHandle(
   {
     en: 'Failed to add from asset library',
     zh: '从素材库添加失败'
+  }
+).fn
+
+const invokeBackdropGenModal = useBackdropGenModal()
+const handleGenerate = useMessageHandle(
+  async () => {
+    const backdrop = await invokeBackdropGenModal(editorCtx.project)
+    await editorCtx.state.history.doAction({ name: { en: 'Add backdrop', zh: '添加背景' } }, () => {
+      editorCtx.project.stage.addBackdrop(backdrop)
+    })
+    props.state.select(backdrop.id)
+  },
+  {
+    en: 'Failed to generate backdrop',
+    zh: '生成背景失败'
   }
 ).fn
 

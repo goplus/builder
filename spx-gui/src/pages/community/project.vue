@@ -12,7 +12,7 @@ import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSo
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
-import { useUser, isSignedIn, getSignedInUsername, initiateSignIn } from '@/stores/user'
+import { useSignedInUser, useUser, isSignedIn, initiateSignIn } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
@@ -42,8 +42,8 @@ import { cloudHelpers } from '@/models/common/cloud'
 import kikoWaveSvg from './kiko-wave.svg?raw'
 
 const props = defineProps<{
-  owner: string
-  name: string
+  ownerInput: string
+  nameInput: string
 }>()
 
 const router = useRouter()
@@ -54,9 +54,9 @@ const {
   refetch: reloadProject
 } = useQuery(
   async (ctx) => {
-    const p = new SpxProject(props.owner, props.name)
+    const p = new SpxProject()
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    const serialized = await cloudHelpers.load(props.owner, props.name, true, ctx.signal)
+    const serialized = await cloudHelpers.load(props.ownerInput, props.nameInput, true, ctx.signal)
     await p.load(serialized)
     return p as CloudProject
   },
@@ -66,7 +66,8 @@ const {
   }
 )
 
-const { data: ownerInfo } = useUser(() => props.owner)
+const { data: ownerInfo } = useUser(() => props.ownerInput)
+const signedInUser = useSignedInUser()
 
 usePageTitle(() => {
   if (ownerInfo.value == null || project.value == null) return null
@@ -83,21 +84,26 @@ usePageTitle(() => {
 })
 
 watch(
-  () => [props.owner, props.name],
-  () => isSignedIn() && recordProjectView(props.owner, props.name),
+  () => [props.ownerInput, props.nameInput],
+  () => isSignedIn() && recordProjectView(props.ownerInput, props.nameInput),
   { immediate: true }
 )
 
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 watch(
-  () => [props.owner, props.name],
+  () => [props.ownerInput, props.nameInput],
   () => {
     runnerState.value = 'initial'
   }
 )
 
-const isOwner = computed(() => props.owner === getSignedInUsername())
-const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: props.name }))
+const isOwner = computed(() => {
+  const signedInUsername = signedInUser.value?.username
+  const projectOwner = project.value?.owner
+  if (signedInUsername == null || projectOwner == null) return false
+  return projectOwner === signedInUsername
+})
+const { data: liking } = useIsLikingProject(() => ({ owner: props.ownerInput, name: props.nameInput }))
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const isFullScreenRunning = ref(false)
@@ -189,7 +195,7 @@ const handleRerun = useMessageHandle(
 
 const handleEdit = useMessageHandle(
   async () => {
-    const projectEditorRoute = getProjectEditorRoute(props.owner, props.name)
+    const projectEditorRoute = getProjectEditorRoute(props.ownerInput, props.nameInput)
     await router.push(projectEditorRoute)
   },
   { en: 'Failed to open editor', zh: '打开编辑器失败' }
@@ -199,7 +205,7 @@ const likeProject = useLikeProject()
 const handleLike = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    await likeProject(props.owner, props.name)
+    await likeProject(props.ownerInput, props.nameInput)
     if (project.value != null) {
       // refresh project info (likeCount)
       const serialized = await cloudHelpers.load(project.value.owner!, project.value.name!, true)
@@ -213,7 +219,7 @@ const unlikeProject = useUnlikeProject()
 const handleUnlike = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    await unlikeProject(props.owner, props.name)
+    await unlikeProject(props.ownerInput, props.nameInput)
     if (project.value != null) {
       // refresh project info (likeCount)
       const serialized = await cloudHelpers.load(project.value.owner!, project.value.name!, true)
@@ -231,7 +237,7 @@ function handleToggleLike() {
 
 const shareProject = useShareProject()
 
-const handleShare = useMessageHandle(() => shareProject(props.owner, props.name), {
+const handleShare = useMessageHandle(() => shareProject(props.ownerInput, props.nameInput), {
   en: 'Failed to share project',
   zh: '分享项目失败'
 })
@@ -241,7 +247,7 @@ const createProject = useCreateProject()
 const handleRemix = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    const name = await createProject(stringifyRemixSource(props.owner, props.name))
+    const name = await createProject(stringifyRemixSource(props.ownerInput, props.nameInput))
     router.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to remix project', zh: '改编项目失败' }
@@ -249,9 +255,9 @@ const handleRemix = useMessageHandle(
 
 const releasesRet = useQuery(
   async () => {
-    const { owner, name } = props
+    const { ownerInput, nameInput } = props
     const { data } = await listReleases({
-      projectFullName: stringifyProjectFullName(owner, name),
+      projectFullName: stringifyProjectFullName(ownerInput, nameInput),
       orderBy: 'createdAt',
       sortOrder: 'desc',
       pageIndex: 1,
@@ -281,15 +287,16 @@ const handleUnpublish = useMessageHandle(
 const handlePublish = useMessageHandle(
   // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
   // to ensure thumbnail for project-release, we jump to editor where we are able to generate thumbnails and then finish publishing
-  async () => router.push(getOwnProjectEditorRoute(props.name, true)),
+  async () => router.push(getOwnProjectEditorRoute(props.nameInput, true)),
   { en: 'Failed to publish project', zh: '发布项目失败' }
 )
 
 const removeProject = useRemoveProject()
 const handleRemove = useMessageHandle(
   async () => {
-    await removeProject(props.owner, props.name, project.value!.displayName)
-    await router.push(getUserPageRoute(getSignedInUsername()!, 'projects'))
+    await removeProject(props.ownerInput, props.nameInput, project.value!.displayName)
+    const { username } = await untilNotNull(signedInUser)
+    await router.push(getUserPageRoute(username, 'projects'))
   },
   { en: 'Failed to remove project', zh: '删除项目失败' },
   { en: 'Project removed', zh: '项目已删除' }
@@ -303,7 +310,7 @@ const remixesRet = useQuery(
     const { data: projects } = await listProject({
       visibility: Visibility.Public,
       owner: ownerAll,
-      remixedFrom: stringifyRemixSource(props.owner, props.name),
+      remixedFrom: stringifyRemixSource(props.ownerInput, props.nameInput),
       pageIndex: 1,
       pageSize: remixNumInRow.value,
       orderBy: 'likeCount',

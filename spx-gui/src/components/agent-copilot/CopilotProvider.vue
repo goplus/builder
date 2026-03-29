@@ -95,7 +95,8 @@ import { ToolRegistry } from './mcp/registry'
 import { Collector } from './mcp/collector'
 import CopilotUI from './CopilotUI.vue'
 import { z } from 'zod'
-import { getSignedInUsername } from '@/stores/user'
+import { untilLoaded } from '@/utils/query'
+import { useSignedInStateQuery } from '@/stores/user'
 import { createProjectToolDescription, CreateProjectArgsSchema } from './mcp/definitions'
 import { getProject, Visibility } from '@/apis/project'
 import { useRouter } from 'vue-router'
@@ -114,6 +115,7 @@ const visible = ref(false)
 const mcpDebuggerVisible = ref(false)
 const showEnvPanel = ref(false)
 const router = useRouter()
+const signedInStateQuery = useSignedInStateQuery()
 
 const toggleEnvPanel = () => {
   showEnvPanel.value = !showEnvPanel.value
@@ -179,18 +181,19 @@ const initBasicTools = async () => {
 async function createProject(options: CreateProjectOptions) {
   const projectName = options.projectName
 
-  // Check if user is signed in
-  const signedInUsername = getSignedInUsername()
-  if (signedInUsername == null) {
+  const signedInState = await untilLoaded(signedInStateQuery)
+  if (!signedInState.isSignedIn) {
     return {
       success: false,
       message: 'Please sign in to create a project'
     }
   }
 
+  const { username } = signedInState.user
+
   try {
     // Check if project already exists
-    const project = await getProject(signedInUsername, options.projectName)
+    const project = await getProject(username, options.projectName)
     if (project != null) {
       return {
         success: false,
@@ -201,7 +204,7 @@ async function createProject(options: CreateProjectOptions) {
     // Handle error checking project existence
   }
 
-  const project = new SpxProject(signedInUsername, projectName)
+  const project = new SpxProject(username, projectName)
   project.setVisibility(Visibility.Private)
 
   try {

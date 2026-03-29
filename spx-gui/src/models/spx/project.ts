@@ -22,13 +22,13 @@ import { DumbTilemap as Tilemap } from './tilemap'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { RawWidgetConfig } from './widget'
-import type { CloudMetadata, IProject, Metadata, ProjectSerialized } from '@/models/project'
+import type { Metadata, IProject, PartialMetadata, ProjectSerialized } from '@/models/project'
 
 /**
  * A Project loaded from cloud.
  * TODO: better organization & type derivation
  */
-export type CloudProject = SpxProject & CloudMetadata
+export type CloudProject = SpxProject & Metadata
 
 const projectConfigFileName = 'index.json'
 const assetsDir = 'assets'
@@ -376,11 +376,11 @@ export class SpxProject extends Disposable implements IProject {
     return reactiveThis
   }
 
-  setMetadata(metadata: Metadata) {
+  setMetadata(metadata: PartialMetadata) {
     assign<SpxProject>(this, metadata)
   }
 
-  private exportMetadata(): Metadata {
+  private exportMetadata(): PartialMetadata {
     return {
       id: this.id,
       createdAt: this.createdAt,

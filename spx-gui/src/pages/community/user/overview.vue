@@ -4,7 +4,7 @@ import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { Visibility, listProject, ownerAll } from '@/apis/project'
-import { getSignedInUsername, useUser } from '@/stores/user'
+import { useSignedInUser, useUser } from '@/stores/user'
 import { useResponsive } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
@@ -12,14 +12,15 @@ import ProjectItem from '@/components/project/ProjectItem.vue'
 import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
 
 const props = defineProps<{
-  name: string
+  nameInput: string
 }>()
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
-const isSignedInUser = computed(() => props.name === getSignedInUsername())
+const { data: user } = useUser(() => props.nameInput)
+const signedInUser = useSignedInUser()
+const isSignedInUser = computed(() => user.value != null && user.value.username === signedInUser.value?.username)
 
-const { data: user } = useUser(() => props.name)
 usePageTitle(() => {
   if (user.value == null) return null
   return {
@@ -31,13 +32,13 @@ usePageTitle(() => {
 const projectsRoute = computed(() => {
   const projectsNum = projectsRet.data.value?.length ?? 0
   if (projectsNum === 0) return null
-  return getUserPageRoute(props.name, 'projects')
+  return getUserPageRoute(props.nameInput, 'projects')
 })
 
 const projectsRet = useQuery(
   async () => {
     const { data: projects } = await listProject({
-      owner: props.name,
+      owner: props.nameInput,
       pageIndex: 1,
       pageSize: numInRow.value,
       orderBy: 'updatedAt',
@@ -49,7 +50,7 @@ const projectsRet = useQuery(
 )
 
 const likesRoute = computed(() => {
-  return getUserPageRoute(props.name, 'likes')
+  return getUserPageRoute(props.nameInput, 'likes')
 })
 
 const likesRet = useQuery(
@@ -57,7 +58,7 @@ const likesRet = useQuery(
     const { data: likes } = await listProject({
       visibility: Visibility.Public,
       owner: ownerAll,
-      liker: props.name,
+      liker: props.nameInput,
       orderBy: 'likedAt',
       sortOrder: 'desc',
       pageIndex: 1,

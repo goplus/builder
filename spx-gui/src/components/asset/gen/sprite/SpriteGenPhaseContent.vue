@@ -29,7 +29,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   collapse: []
-  finished: [Sprite]
+  resolved: [Sprite]
 }>()
 
 const selected = computed(() => {
@@ -179,7 +179,7 @@ const handleSubmit = useMessageHandle(
     props.gen.recordAdoption().catch((err) => {
       capture(err, 'failed to record sprite asset adoption')
     })
-    emit('finished', sprite)
+    emit('resolved', sprite)
   },
   {
     en: 'Failed to create sprite',

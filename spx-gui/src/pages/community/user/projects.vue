@@ -8,7 +8,7 @@ import { usePageTitle } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
 import { Visibility, listProject, type ListProjectParams } from '@/apis/project'
 import { getOwnProjectEditorRoute } from '@/router'
-import { getSignedInUsername, useUser } from '@/stores/user'
+import { useSignedInUser, useUser } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
 import { useCreateProject } from '@/components/project'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -16,12 +16,13 @@ import UserContent from '@/components/community/user/content/UserContent.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 
 const props = defineProps<{
-  name: string
+  nameInput: string
 }>()
 
-const isSignedInUser = computed(() => props.name === getSignedInUsername())
+const { data: user } = useUser(() => props.nameInput)
+const signedInUser = useSignedInUser()
+const isSignedInUser = computed(() => user.value != null && user.value.username === signedInUser.value?.username)
 
-const { data: user } = useUser(() => props.name)
 usePageTitle(() => {
   if (user.value == null) return null
   return {
@@ -47,7 +48,7 @@ const order = useRouteQueryParamStrEnum('o', Order, Order.RecentlyUpdated, (kvs)
 
 const listParams = computed<ListProjectParams>(() => {
   const p: ListProjectParams = {
-    owner: props.name,
+    owner: props.nameInput,
     pageSize: pageSize.value,
     pageIndex: page.value
   }

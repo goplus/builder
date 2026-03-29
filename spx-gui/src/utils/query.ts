@@ -159,6 +159,13 @@ function getCollector(reporter: ProgressReporter) {
 
 export type SubReporterParams = Parameters<ProgressCollector['getSubReporter']>
 
+/** Wait until a query is loaded, then return its data or throw its error. */
+export async function untilLoaded<T>(queryRet: QueryRet<T>, signal?: AbortSignal): Promise<T> {
+  await until(() => !queryRet.isLoading.value, signal)
+  if (queryRet.error.value != null) throw queryRet.error.value
+  return queryRet.data.value!
+}
+
 /**
  * Compose query in another query.
  * - If the query is loading, wait until it's done.
@@ -184,7 +191,5 @@ export async function composeQuery<T>(
   const stopWatch = watch(queryRet.progress, (p) => subReporter.report(p), { immediate: true })
   ctx.signal.addEventListener('abort', () => stopWatch())
 
-  await until(() => !queryRet.isLoading.value, ctx.signal)
-  if (queryRet.error.value != null) throw queryRet.error.value
-  return queryRet.data.value!
+  return untilLoaded(queryRet, ctx.signal)
 }

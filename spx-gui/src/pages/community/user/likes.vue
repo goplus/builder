@@ -11,10 +11,10 @@ import UserContent from '@/components/community/user/content/UserContent.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 
 const props = defineProps<{
-  name: string
+  nameInput: string
 }>()
 
-const { data: user } = useUser(() => props.name)
+const { data: user } = useUser(() => props.nameInput)
 usePageTitle(() => {
   if (user.value == null) return null
   return {
@@ -34,7 +34,7 @@ const queryRet = useQuery(
     listProject({
       visibility: Visibility.Public,
       owner: ownerAll,
-      liker: props.name,
+      liker: props.nameInput,
       orderBy: 'likedAt',
       sortOrder: 'desc',
       pageSize: pageSize.value,

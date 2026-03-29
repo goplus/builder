@@ -2,6 +2,11 @@ import { useModal } from '@/components/ui'
 import ModificationWarningModal from '@/components/common/ModificationWarningModal.vue'
 import ModifyUsernameModal from './ModifyUsernameModal.vue'
 
+/**
+ * Modify username for the signed-in user.
+ * NOTE: The signed-in user will be signed out after modifying the username.
+ * Typically the caller may want to reload the route to trigger navigation guards or initiate sign-in manually.
+ */
 export function useModifyUsername() {
   const warningModal = useModal(ModificationWarningModal)
   const modifyUsernameModal = useModal(ModifyUsernameModal)
@@ -12,6 +17,10 @@ export function useModifyUsername() {
       title: { en: 'Modify username', zh: '修改用户名' },
       tip: { en: 'Modifying the username may have the following impacts.', zh: '修改用户名可能造成以下影响。' },
       items: [
+        {
+          en: 'You will be signed out and need to sign in again to continue your work.',
+          zh: '您将会被登出，需要重新登录才能继续使用。'
+        },
         {
           en: 'Your profile page URL will change, and existing links to your profile may no longer work.',
           zh: '您的个人主页 URL 将会变更，原有主页链接可能无法继续访问。'

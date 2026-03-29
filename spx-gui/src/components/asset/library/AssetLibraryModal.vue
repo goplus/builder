@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, h, ref, shallowReactive, shallowRef, watch, type Component, type CSSProperties } from 'vue'
+import { computed, ref, shallowReactive, shallowRef, watch, type Component, h } from 'vue'
 import {
   UITextInput,
   UIPagination,
@@ -18,13 +18,9 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type SpxProject } from '@/models/spx/project'
-import {
-  asset2Backdrop,
-  asset2Sound,
-  asset2Sprite,
-  type AssetGenModel,
-  type AssetModel
-} from '@/models/spx/common/asset'
+import { Sprite } from '@/models/spx/sprite'
+import { Backdrop } from '@/models/spx/backdrop'
+import { addAssetToProject, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import { getAssetCategories } from './category'
@@ -38,6 +34,7 @@ import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
+import { useAssetGen } from '../gen/use-asset-gen'
 
 import genAssetIcon from './gen-asset.svg?raw'
 import spriteBanner from './asset-library-sprite-banner.png'
@@ -91,36 +88,15 @@ const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | nul
     })[props.type]
 )
 
-const assetGen = shallowRef<AssetGenModel | null>(null)
-function createAssetGen(type: AssetType) {
-  return {
-    [AssetType.Sound]: null,
-    [AssetType.Sprite]: new SpriteGen(i18n, props.project),
-    [AssetType.Backdrop]: new BackdropGen(i18n, props.project)
-  }[type]
-}
-watch(
-  () => props.type,
-  (type, _, onCleanup) => {
-    assetGen.value = createAssetGen(type)
-    onCleanup(() => {
-      assetGen.value?.cancel()
-      assetGen.value?.dispose()
-    })
-  },
-  { immediate: true }
-)
+const typeRef = computed(() => props.type)
+const { assetGen, keepAlive, reset: resetAssetGen } = useAssetGen(props.project, typeRef)
 
-// Recreate assetGen when keyword changes to ensure fresh state for new searches.
+// When search results are empty, SettingsInput is shown inline and may modify assetGen state.
+// Reset assetGen on keyword change to avoid stale state if the user searches again without entering gen phase.
 // TODO: Recreating assetGen on every keyword change might be too frequent. Consider constructing it only when needed.
-watch(
-  () => keyword.value,
-  () => {
-    assetGen.value?.cancel()
-    assetGen.value?.dispose()
-    assetGen.value = createAssetGen(props.type)
-  }
-)
+watch(keyword, () => resetAssetGen(props.type))
+
+const backButtonVisible = computed(() => (assetGen.value != null ? assetGen.value.isPreparePhase : false))
 
 const headerStyle = computed(() => {
   const banner = {
@@ -131,40 +107,6 @@ const headerStyle = computed(() => {
   return {
     backgroundImage: `url(${banner})`
   }
-})
-
-/**
- * Prevent assetGen from being cancelled & disposed automatically.
- * This is useful when the user chooses to collapse the generation process
- * and we need to keep the assetGen instance alive and related tasks running.
- */
-function keepAssetGenAlive(gen: AssetGenModel) {
-  if (assetGen.value !== gen) return
-  assetGen.value = null
-}
-
-const AssetGenComp = computed(() => {
-  const gen = assetGen.value
-  if (gen == null) return null
-  if (gen instanceof SpriteGen) {
-    return (props: CSSProperties) =>
-      h(SpriteGenComp, {
-        ...props,
-        gen,
-        descriptionPlaceholder: keyword.value.trim(),
-        onCollapse: handleGenCollapse,
-        onFinished: handleGenFinished
-      })
-  } else if (gen instanceof BackdropGen) {
-    return (props: CSSProperties) =>
-      h(BackdropGenComp, {
-        ...props,
-        gen: gen as BackdropGen,
-        descriptionPlaceholder: keyword.value.trim(),
-        onFinished: handleGenFinished
-      })
-  }
-  return null
 })
 
 const entityMessages = {
@@ -236,36 +178,13 @@ const genSuggestionMessage = computed(() => {
 
 const selected = shallowReactive<AssetData[]>([])
 
-async function addAssetToProject(asset: AssetData) {
-  switch (asset.type) {
-    case AssetType.Sprite: {
-      const sprite = await asset2Sprite(asset)
-      props.project.addSprite(sprite)
-      await sprite.autoFit()
-      return sprite
-    }
-    case AssetType.Backdrop: {
-      const backdrop = await asset2Backdrop(asset)
-      props.project.stage.addBackdrop(backdrop)
-      return backdrop
-    }
-    case AssetType.Sound: {
-      const sound = await asset2Sound(asset)
-      props.project.addSound(sound)
-      return sound
-    }
-    default:
-      throw new Error('unknown asset type')
-  }
-}
-
 const handleConfirm = useMessageHandle(
   async () => {
     const action = {
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
     const assetModels = await editorCtx.state.history.doAction(action, () =>
-      Promise.all(selected.map(addAssetToProject))
+      Promise.all(selected.map((asset) => addAssetToProject(asset, props.project)))
     )
     emit('resolved', assetModels)
   },
@@ -289,8 +208,6 @@ function handleGenStart() {
   isGenPhase.value = true
 }
 
-const backButtonVisible = computed(() => (assetGen.value != null ? assetGen.value.isPreparePhase : false))
-
 // Handle returning to the asset library: reset search criteria and recreate assetGen to prevent unexpected intermediate states.
 const handleBackToAssetLibrary = useMessageHandle(
   async () => {
@@ -306,9 +223,7 @@ const handleBackToAssetLibrary = useMessageHandle(
     searchInput.value = ''
     keyword.value = ''
     isGenPhase.value = false
-    assetGen.value?.cancel()
-    assetGen.value?.dispose()
-    assetGen.value = createAssetGen(props.type)
+    resetAssetGen(props.type)
   },
   {
     en: 'Failed to return to asset library',
@@ -320,7 +235,7 @@ const modalRef = ref<InstanceType<typeof UIModal> | null>()
 async function handleGenCollapse() {
   const gen = assetGen.value
   if (gen == null) throw new Error('asset gen expected')
-  keepAssetGenAlive(gen)
+  keepAlive(gen)
   const transformOrigin = await props.genCollapseHandler(gen)
   if (modalRef.value != null && transformOrigin != null) {
     modalRef.value.setTransformOrigin(transformOrigin)
@@ -328,40 +243,52 @@ async function handleGenCollapse() {
   emit('cancelled')
 }
 
-const handleGenFinished = useMessageHandle(
-  async () => {
-    const gen = assetGen.value
-    if (gen == null) throw new Error('asset gen expected')
+const handleGenResolved = useMessageHandle(
+  async (model: AssetModel) => {
     // Consider moving asset addition outside AssetLibraryModal for better separation of concerns.
     // However, this would introduce a delay between the modal close and assets addition, potentially degrading UX.
     // TODO: Review this trade-off
-    const added = await editorCtx.state.history.doAction(
-      {
-        name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
-      },
+    await editorCtx.state.history.doAction(
+      { name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` } },
       async () => {
-        if (gen instanceof SpriteGen) {
-          const sprite = gen.result
-          if (sprite == null) throw new Error('sprite generation not finished')
-          props.project.addSprite(sprite)
-          await sprite.autoFit()
-          return sprite
-        } else if (gen instanceof BackdropGen) {
-          const backdrop = gen.result
-          if (backdrop == null) throw new Error('backdrop generation not finished')
-          props.project.stage.addBackdrop(backdrop)
-          return backdrop
+        if (model instanceof Sprite) {
+          props.project.addSprite(model)
+          await model.autoFit()
+          return
         }
-        throw new Error('unknown asset type')
+        if (model instanceof Backdrop) {
+          props.project.stage.addBackdrop(model)
+        }
       }
     )
-    emit('resolved', [added])
+    emit('resolved', [model])
   },
-  {
-    en: 'Failed to generate asset',
-    zh: '素材生成失败'
-  }
+  { en: 'Failed to add asset', zh: '素材添加失败' }
 ).fn
+
+const AssetGenComp = computed(() => {
+  const gen = assetGen.value
+  if (gen == null) return null
+  if (gen instanceof SpriteGen) {
+    return (attrs: Record<string, unknown>) =>
+      h(SpriteGenComp, {
+        ...attrs,
+        gen,
+        descriptionPlaceholder: keyword.value.trim(),
+        onCollapse: handleGenCollapse,
+        onResolved: handleGenResolved
+      })
+  } else if (gen instanceof BackdropGen) {
+    return (attrs: Record<string, unknown>) =>
+      h(BackdropGenComp, {
+        ...attrs,
+        gen,
+        descriptionPlaceholder: keyword.value.trim(),
+        onResolved: handleGenResolved
+      })
+  }
+  return null
+})
 
 const confirm = useConfirmDialog()
 
@@ -431,8 +358,9 @@ const title = computed(() => {
               size="large"
               clearable
               :placeholder="$t({ zh: '搜索', en: 'Search' })"
-              ><template #prefix><UIIcon type="search" /></template
-            ></UITextInput>
+            >
+              <template #prefix><UIIcon type="search" /></template>
+            </UITextInput>
 
             <div class="recommended-buttons">
               <UIButton
@@ -442,8 +370,9 @@ const title = computed(() => {
                 color="white"
                 size="small"
                 @click="searchInput = [searchInput, $t(r.message)].filter(Boolean).join(' ')"
-                >{{ $t(r.message) }}</UIButton
               >
+                {{ $t(r.message) }}
+              </UIButton>
             </div>
           </header>
 
@@ -467,9 +396,14 @@ const title = computed(() => {
                     <div class="empty-tip">
                       <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>
                       <span class="highlight">{{ $t({ zh: `“${keyword}”`, en: `"${keyword}"` }) }}</span>
-                      <span>{{
-                        $t({ zh: '相关的素材，不如让 AI 帮你生成一个？', en: '. Why not let AI generate one for you?' })
-                      }}</span>
+                      <span>
+                        {{
+                          $t({
+                            zh: '相关的素材，不如让 AI 帮你生成一个？',
+                            en: '. Why not let AI generate one for you?'
+                          })
+                        }}
+                      </span>
                     </div>
                     <SettingsInput
                       class="settings-input"

@@ -3,24 +3,23 @@ import type Mutex from '@/utils/mutex'
 import type { ProjectData } from '@/apis/project'
 import type { File, Files } from './common/file'
 
-export type CloudMetadata = Prettify<
+export type Metadata = Prettify<
   Omit<ProjectData, 'latestRelease' | 'files' | 'thumbnail'> & {
     thumbnail: File | null
+    // The ai-description related fields are specific for spx projects.
+    // We retain them in the project metadata for easier access and management,
+    // and they will be saved to the cloud or xbp as separate files.
+    // TODO: Consider relocating them from project metadata (to project files?) if they are not applicable to other project types.
+    // Refer to https://github.com/goplus/builder/pull/1932#discussion_r2266234375 before implementing this change.
+    aiDescription: string | null
+    aiDescriptionHash: string | null
   }
 >
 
-export type Metadata = Partial<CloudMetadata> & {
-  // The ai-description related fields are specific for spx projects.
-  // We retain them in the project metadata for easier access and management,
-  // and they will be saved to the cloud or xbp as separate files.
-  // TODO: Consider relocating them from project metadata (to project files?) if they are not applicable to other project types.
-  // Refer to https://github.com/goplus/builder/pull/1932#discussion_r2266234375 before implementing this change.
-  aiDescription?: string | null
-  aiDescriptionHash?: string | null
-}
+export type PartialMetadata = Partial<Metadata>
 
-export type ProjectSerialized = {
-  metadata: Metadata
+export type ProjectSerialized<M extends PartialMetadata = PartialMetadata> = {
+  metadata: M
   files: Files
 }
 
@@ -42,7 +41,7 @@ export interface IProject {
   name?: string
 
   /** Set metadata fields of the project. */
-  setMetadata(metadata: Metadata): void
+  setMetadata(metadata: PartialMetadata): void
 
   /** Load project content from files. */
   loadFiles(files: Files, signal?: AbortSignal): Promise<void>
