@@ -33,7 +33,7 @@
 |----------|------------|
 | `Primary / Secondary / Boring / White / Danger / Success / Blue / Purple / Yellow` | `color` |
 | `Large / Medium / Small` | `size` |
-| `Shadow / Flat / Flat-Stroke` | `variant` |
+| `Shadow / Flat / Stroke` | `variant` |
 | `Square / Circle` | `shape` |
 | `Loading / Disabled` | `loading` / `disabled` |
 | `Button-only icon/*` | 只传 `icon`，不传默认 slot 文本 |
@@ -44,6 +44,30 @@
   - `\<UIButton color="primary" size="large" variant="shadow" shape="square" \>`
 - `Button-only icon/Large/Primary/Shadow/Circle/Default`
   - `\<UIButton color="primary" size="large" variant="shadow" shape="circle" icon="..." \>`
+
+补充说明：
+
+- 当前 `builder-component.lib.pen` 里的 button 叶子组件命名，已经按 `UIButton.vue` 的词表对齐：
+  - `Solid` -> `Shadow`
+  - `Flat-Stroke / Flat-stroke` -> `Stroke`
+  - `Neutral` -> `Boring`
+- 这里只统一了命名兼容性，不代表视觉一定与 `UIButton` 当前实现逐像素一致。
+- 例如设计库里一部分 filled family 虽然名字已经回到 `Shadow`，但视觉上仍然是“40px 内容本体 + 无阴影”的规范。
+- 真正同步到代码时，需要额外判断是直接复用现有 `shadow` 视觉，还是继续调整 `UIButton.vue` 的实现。
+
+当前按钮库的实务基线有两点需要特别注意：
+
+1. Button 叶子命名优先跟代码词表保持一致
+- 本地 `builder-component.lib.pen` 中，button 叶子组件已经统一使用 `Shadow / Flat / Stroke`
+- 后续如果继续扩 button family，优先沿用这套词表，不要再新增 `Solid` 或 `Flat-Stroke` 这样的平行命名
+
+2. Page-level 引用通常经过聚合入口
+- 页面通常不会直接依赖某个底层叶子 button 组件 ID
+- 更常见的是引用聚合入口，例如：
+  - `8dhVn` -> `Button-only icon/Default`
+  - `bI2fk` -> `Button-only icon-flat`
+  - `hZ2GE` -> `Button-only icon-flat-stroke`
+- 所以如果设计库里发生“叶子组件删重 / 合并”，先检查聚合入口的 `slot` 是否同步更新，再判断页面是否需要改
 
 ### 2. `Card/* item*` 先看 `UIBlockItem` 这一层
 
@@ -156,7 +180,43 @@
 
 因此如果设计稿变的是 tab 样式，优先改 `UITab.vue`；如果变的是编辑器头部布局，改 `EditorHeader.vue`；如果变的是具体 tab 数量或切换逻辑，改 `SpriteEditor.vue` / `StageEditor.vue`。
 
-### 7. `left-panel-*` 对应 `EditorList` 这一类“左侧列表 + 右侧详情”布局
+### 7. `Segmented/*` 对应表单里的分段选择控件，而不是顶部导航 Tab
+
+设计库里这类组件过去有一部分沿用 `Tab/*` 命名，但从设计语义看，它们更接近“分段选择 / segmented control”，不是编辑器顶部那种页面级导航 tab。
+
+当前命名规范建议如下：
+
+- 页面级导航继续使用 `tab` 语义：
+  - `editor-nav-panel`
+  - `editor-panel-*`
+- 表单里用于二选一、多选一、模式切换的这类控件，统一使用 `Segmented/*` 命名，不再新增 `Tab/*`：
+  - `Segmented/Text only/*`
+  - `Segmented/Visibility/*`
+  - `Segmented/Rotation/*`
+  - `Segmented/Animation/*`
+  - `Segmented/Code modal/*`
+
+代码里这组设计更接近的实现是：
+
+- `spx-gui/src/components/ui/radio/UITabRadioGroup.vue`
+- `spx-gui/src/components/ui/radio/UITabRadio.vue`
+
+目前最明确的落点是：
+
+- `spx-gui/src/components/editor/code-editor/xgo-code-editor/ui/input-helper/InputHelper.vue`
+
+也就是说：
+
+- 如果设计稿改的是编辑器顶部页签切换，优先看 `UITabs.vue` / `UITab.vue`
+- 如果设计稿改的是表单里的模式切换、选项切换、左右切换，优先看 `UITabRadioGroup.vue` / `UITabRadio.vue`
+
+命名上的具体规则是：
+
+- 设计库名称优先表达交互语义，不直接照搬 Vue 文件名
+- 设计层使用 `Segmented/*`，代码映射文档再说明它对应 `UITabRadio*`
+- 后续如果继续扩这类组件，不再新增 `Tab/Boring/*`、`Tab/Code modal/*` 这类旧命名
+
+### 8. `left-panel-*` 对应 `EditorList` 这一类“左侧列表 + 右侧详情”布局
 
 设计库里的：
 
@@ -195,7 +255,7 @@
 - 设计库中的 `List` 目前没有找到足够稳定的 1:1 Vue 对应物。
 - 当前前端里最接近它职责的是 `PanelHeader.vue`、`EditorList.vue` 和具体列表组件，例如 `SpriteList.vue`。
 
-### 8. `editor-main-panel` / `editor-center-panel` / `editor-workspace-panel` 是页面级布局概念
+### 9. `editor-main-panel` / `editor-center-panel` / `editor-workspace-panel` 是页面级布局概念
 
 这些设计组件在当前代码里没有 1:1 同名实现。实际代码被拆成了页面级布局组件：
 
@@ -209,7 +269,7 @@
 
 这类设计节点更适合当作“布局概念图”，不要期待在代码里直接找到同名文件。
 
-### 9. `editor-tools-panel` / `editor-blocks-panel` 目前没有直接同名落地
+### 10. `editor-tools-panel` / `editor-blocks-panel` 目前没有直接同名落地
 
 `builder-component.lib.pen` 里还能看到：
 
@@ -229,7 +289,7 @@
 
 ## Preprocessing Mapping
 
-### 10. `Card/Edit item/*` 对应素材预处理流程，不是单独卡片组件
+### 11. `Card/Edit item/*` 对应素材预处理流程，不是单独卡片组件
 
 设计稿中的：
 
@@ -268,11 +328,12 @@
 
 以后同步 `builder-component.lib.pen` 到前端代码，建议按下面顺序定位：
 
-1. 先看设计变更属于哪一类：按钮、资源卡片、tab 导航、左侧列表、页面布局、预处理流程。
+1. 先看设计变更属于哪一类：按钮、资源卡片、tab 导航、segmented 表单控件、左侧列表、页面布局、预处理流程。
 2. 先找基础组件：
    - `UIButton.vue`
    - `UIBlockItem.vue`
    - `UITab.vue`
+   - `UITabRadio.vue`
    - `EditorList.vue`
    - `UICard.vue`
 3. 再找业务组合组件：
@@ -303,6 +364,7 @@
 - `Card/* item*` / `Card/Asset` -> `UIBlockItem.vue` + `UIEditor*Item.vue` + 对应业务 `*Item.vue`
 - `Corner marker/*` -> `UICornerIcon.vue` + `CornerMenu.vue`
 - `editor-nav-panel` / `editor-panel-*` -> `EditorHeader.vue` + `UITabs.vue` + `SpriteEditor.vue` / `StageEditor.vue`
+- `Segmented/*` -> `UITabRadioGroup.vue` + `UITabRadio.vue`
 - `left-panel-*` -> `EditorList.vue` + 各类 `*Editor.vue`
 - `Card/Edit item/*` -> `PreprocessModal.vue` 及其子流程组件
 
