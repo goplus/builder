@@ -6,6 +6,7 @@ export type SnippetVariablesContext = {
 
 export interface ISnippetVariablesProvider {
   provideSnippetVariables(ctx: SnippetVariablesContext): Record<string, string | null>
+  refreshForTextDocument?(ctx: SnippetVariablesContext, signal?: AbortSignal): Promise<void>
 }
 
 export class SnippetVariablesProvider implements ISnippetVariablesProvider {

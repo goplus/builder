@@ -2670,8 +2670,7 @@ export const gameShowVar: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.showVar'
   },
-  // TODO: provide a snippet variable like `$BUILDER_FIRST_PROPERTY_NAME`
-  insertSnippet: 'showVar ${1:""}',
+  insertSnippet: 'showVar ${1:"${BUILDER_FIRST_PROPERTY_NAME}"}',
   insertSnippetParameterHints: ['name'],
   overview: 'showVar name',
   detail: makeBasicMarkdownString({
@@ -2687,8 +2686,7 @@ export const gameHideVar: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.hideVar'
   },
-  // TODO: provide a snippet variable like `$BUILDER_FIRST_PROPERTY_NAME`
-  insertSnippet: 'hideVar ${1:""}',
+  insertSnippet: 'hideVar ${1:"${BUILDER_FIRST_PROPERTY_NAME}"}',
   insertSnippetParameterHints: ['name'],
   overview: 'hideVar name',
   detail: makeBasicMarkdownString({

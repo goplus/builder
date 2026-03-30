@@ -25,6 +25,11 @@ export class SnippetParser {
     return this.variablesProviderRef.value?.provideSnippetVariables({ textDocument }) ?? {}
   })
 
+  async refreshVariables(signal?: AbortSignal) {
+    const textDocument = toValue(this.activeTextDocumentSource)
+    await this.variablesProviderRef.value?.refreshForTextDocument?.({ textDocument }, signal)
+  }
+
   private getVariableDefaultValue(variable: Variable) {
     if (variable.children.length === 0) return undefined
     const child = variable.children[0]
