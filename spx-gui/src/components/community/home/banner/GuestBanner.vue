@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { initiateSignIn } from '@/stores/user'
+import { goToSignIn } from '@/stores/user'
 import { UIButton } from '@/components/ui'
 import CommunityCard from '../../CommunityCard.vue'
 
 function handleJoin() {
-  initiateSignIn()
+  goToSignIn()
 }
 </script>
 

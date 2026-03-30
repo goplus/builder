@@ -6,18 +6,15 @@
 <script setup lang="ts">
 import { usePageTitle } from '@/utils/utils'
 import { completeSignIn } from '@/stores/user'
+import { getCallbackReturnTo } from './callback-utils'
 
 const title = { en: 'Signing in...', zh: '登录中...' }
 
 usePageTitle(title)
 
 try {
-  const params = new URLSearchParams(location.search)
-
   await completeSignIn()
-
-  const returnTo = params.get('returnTo')
-  window.location.replace(returnTo != null ? returnTo : '/')
+  window.location.replace(getCallbackReturnTo(location.search))
 } catch (e) {
   console.error('failed to complete sign-in', e)
   window.location.replace('/')

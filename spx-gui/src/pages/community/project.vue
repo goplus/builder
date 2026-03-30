@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
@@ -12,7 +12,7 @@ import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSo
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
-import { useSignedInUser, useUser, isSignedIn, initiateSignIn } from '@/stores/user'
+import { useSignedInUser, useUser, goToSignIn, isSignedIn } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
@@ -46,6 +46,7 @@ const props = defineProps<{
   nameInput: string
 }>()
 
+const route = useRoute()
 const router = useRouter()
 const {
   data: project,
@@ -151,7 +152,7 @@ const needsSignInToRun = computed(
 )
 
 function handleSignIn() {
-  initiateSignIn()
+  goToSignIn(route.fullPath)
 }
 
 const handleRun = useMessageHandle(
