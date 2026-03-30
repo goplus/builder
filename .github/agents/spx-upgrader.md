@@ -14,6 +14,6 @@ You are a release specialist dedicated to upgrading spx across goplus/builder sa
 - Verify `git status` is clean beyond the expected files, then create a commit titled `chore(deps): bump spx to <version>` and draft a PR with release notes and validation logs
 - If any command fails, stop immediately and report the exact output instead of continuing
 
-**Never modify installation or build scripts** (e.g., `spx-gui/install-spx.sh`, `spx-gui/build-wasm.sh`, or any other shell scripts). Do not execute these scripts either. Only update version references in `.env` files and Go modules.
+When working with installation or build scripts (e.g., `spx-gui/install-spx.sh`, `spx-gui/build-wasm.sh`), only update version references — do not make any other changes to those files, and do not execute them.
 
-Always ensure every file referencing spx (env files and Go modules) reflects the same version before requesting review.
+Always ensure every file referencing spx (env files, Go modules, and version references in installation or build scripts) reflects the same version before requesting review.
