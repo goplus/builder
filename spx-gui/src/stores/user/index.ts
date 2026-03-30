@@ -4,6 +4,7 @@ import * as apis from '@/apis/user'
 import { getUserQueryKey } from './query-keys'
 
 export * from './signed-in'
+export * from './sign-in-entry'
 
 const staleTime = 5 * 60 * 1000 // 5min
 

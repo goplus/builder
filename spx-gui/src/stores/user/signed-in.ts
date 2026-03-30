@@ -6,6 +6,7 @@ import { useQueryWithCache, useQueryCache, useQuery, composeQuery } from '@/util
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/user'
 import { getUserQueryKey } from './query-keys'
+import { getDefaultReturnTo, getQQProviderParams, getSignInRoute, getWeChatProviderParams } from './sign-in-entry'
 
 export type SignedInUser = apis.SignedInUser
 
@@ -58,15 +59,25 @@ function handleTokenResponse(resp: TokenResponse) {
   userState.username = decodeUsernameFromAccessToken(resp.access_token)
 }
 
-export function initiateSignIn(
-  returnTo: string = window.location.pathname + window.location.search + window.location.hash
-) {
+export function goToSignIn(returnTo: string = getDefaultReturnTo()) {
+  window.location.assign(getSignInRoute(returnTo))
+}
+
+export function initiateSignIn(returnTo: string = getDefaultReturnTo(), additionalParams?: Record<string, string>) {
   // Workaround for casdoor-js-sdk not supporting override of `redirectPath` in `signin_redirect`.
   const casdoorSdk = new Sdk({
     ...casdoorConfig,
     redirectPath: `${casdoorAuthRedirectPath}?returnTo=${encodeURIComponent(returnTo)}`
   })
-  casdoorSdk.signin_redirect()
+  casdoorSdk.signin_redirect(additionalParams)
+}
+
+export function initiateWeChatSignIn(returnTo: string = getDefaultReturnTo()) {
+  initiateSignIn(returnTo, getWeChatProviderParams() ?? undefined)
+}
+
+export function initiateQQSignIn(returnTo: string = getDefaultReturnTo()) {
+  initiateSignIn(returnTo, getQQProviderParams() ?? undefined)
 }
 
 export async function completeSignIn() {
