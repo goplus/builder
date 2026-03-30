@@ -620,6 +620,8 @@ export type Property = {
   kind: 'field' | 'method'
   /** Optional documentation for the property */
   doc?: string
+  /** The definition identifier for the property */
+  definition: DefinitionIdentifier
 }
 
 export function positionEq(a: Position | null, b: Position | null) {

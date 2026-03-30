@@ -122,7 +122,7 @@ import { capture, useMessageHandle } from '@/utils/exception'
 import type { Monitor } from '@/models/spx/widget/monitor'
 import { useRenameWidget } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { useCodeEditor } from '@/components/editor/code-editor/spx-code-editor'
+import { isStageDefinition, useCodeEditor } from '@/components/editor/code-editor/spx-code-editor'
 import EditorItemDetail from '../../../common/EditorItemDetail.vue'
 import monitorIcon from '../monitor.svg?raw'
 
@@ -140,11 +140,17 @@ const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
 
 const sprites = computed(() => editorCtx.project.sprites)
 
+async function getOwnProperties(target: string, signal: AbortSignal) {
+  const properties = await codeEditor.getProperties(target, signal)
+  if (target === '') return properties
+  return properties.filter((item) => !isStageDefinition(item.definition))
+}
+
 const properties = useAsyncComputed(async (onCleanup) => {
   const target = props.monitor.target
   const signal = getCleanupSignal(onCleanup)
   try {
-    return await codeEditor.getProperties(target, signal)
+    return await getOwnProperties(target, signal)
   } catch (e) {
     capture(e, `Failed to load properties for target: "${target}"`)
     return []

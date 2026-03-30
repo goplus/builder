@@ -24,7 +24,8 @@ import {
   type ResourceIdentifier,
   type TextDocumentIdentifier,
   getCodeFilePath,
-  type Property
+  type Property,
+  type DefinitionIdentifier
 } from '../xgo-code-editor'
 
 export type { ResourceModel }
@@ -182,6 +183,24 @@ export function textDocumentId2CodeFileName(id: TextDocumentIdentifier) {
   }
 }
 
+/**
+ * Parse receiver & method in `DefinitionIdentifier.name`.
+ * For example:
+ *  - 'Game.timer' => ['Game', 'timer']
+ *  - 'Sprite.heading' => ['Sprite', 'heading']
+ *  - 'hour' => [null, 'hour']
+ */
+export function parseDefinitionName(name: string | undefined): [receiver: string | null, method: string] {
+  const parts = (name ?? '').split('.')
+  if (parts.length > 1) return [parts[0], parts[1]]
+  return [null, parts[0]]
+}
+
+export function isStageDefinition(definition: DefinitionIdentifier) {
+  const [receiver] = parseDefinitionName(definition.name)
+  return receiver === 'Game'
+}
+
 export type { ColorValue }
 
 export enum SpxInputType {
@@ -273,18 +292,20 @@ export async function getInvalidMonitors(
       invalidMonitors.push(monitor)
       continue
     }
-    let propertyNames = propertyNamesMap.get(monitor.target)
-    if (propertyNames == null) {
+    let ownPropertyNames = propertyNamesMap.get(monitor.target)
+    if (ownPropertyNames == null) {
       try {
         const properties = await getProperties(monitor.target, signal)
-        propertyNames = new Set(properties.map((p) => p.name))
-        propertyNamesMap.set(monitor.target, propertyNames)
+        const ownProperties =
+          monitor.target === '' ? properties : properties.filter((item) => !isStageDefinition(item.definition))
+        ownPropertyNames = new Set(ownProperties.map((p) => p.name))
+        propertyNamesMap.set(monitor.target, ownPropertyNames)
       } catch (e) {
         capture(e, `Failed to load properties for target: "${monitor.target}"`)
         continue
       }
     }
-    if (!propertyNames.has(monitor.variableName)) {
+    if (!ownPropertyNames.has(monitor.variableName)) {
       invalidMonitors.push(monitor)
     }
   }

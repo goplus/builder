@@ -41,19 +41,14 @@ const codeEditor = useCodeEditor()
 
 const properties = ref<Property[]>([])
 
-async function getProperties(textDocument: TextDocument, signal?: AbortSignal) {
+function getProperties(textDocument: TextDocument, signal?: AbortSignal) {
   const codeFilePath = getCodeFilePath(textDocument.id.uri)
   const isStage = stageCodeFilePaths.includes(codeFilePath)
   if (isStage) {
-    return await codeEditor.getProperties('', signal)
+    return codeEditor.getProperties('', signal)
   }
   const spriteName = codeFilePath.replace(/\.spx$/, '')
-  const [stageProperties, spriteProperties] = await Promise.all([
-    codeEditor.getProperties('', signal),
-    codeEditor.getProperties(spriteName, signal)
-  ])
-  const spritePropertyNames = new Set(spriteProperties.map((p) => p.name))
-  return [...spriteProperties, ...stageProperties.filter((p) => !spritePropertyNames.has(p.name))]
+  return codeEditor.getProperties(spriteName, signal)
 }
 
 watchEffect(async (onCleanup) => {
