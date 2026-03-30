@@ -80,6 +80,32 @@ When working with backend unique string identifiers such as `username`, project 
 
 * Generate accessibility info for interactive elements using `v-radar` directive.
 
+## Styling Preferences
+
+* For business code outside `src/components/ui/`, prefer Tailwind as the default way to implement local layout and surface styling.
+* If business code still needs local authored styles, prefer plain CSS over SCSS.
+* Do not add or keep business-code imports of SCSS helpers from `src/components/ui/`.
+* For `src/components/ui/`, the long-term direction is the same, but this phase still allows local SCSS where it remains the clearest implementation.
+* Keep [src/app.css](src/app.css) limited to Tailwind entry setup, the theme bridge, and rare project-wide utilities.
+* Do not move page-local or feature-local styles into `src/app.css` just because they are written with Tailwind.
+* Keep page-specific dimensions, transforms, colors, and card/banner styling local to the relevant page or component.
+* Keep the existing `--ui-*` design token system as the source of truth.
+* In Tailwind utility classes, prefer the bridged semantic tokens such as `text-text`, `text-title`, and `bg-primary-100`.
+* In local CSS or SCSS rules, prefer using the original `--ui-*` variables directly instead of routing those rules back through Tailwind bridge variables.
+* For theme namespaces already covered by the design system, such as color, shadow, font, font-size, radius, and line-height, reset Tailwind's default values in `src/app.css` and expose only the project-specific values intended for use in this repo.
+* Keep the project breakpoint mapping in `src/app.css` aligned with `src/components/ui/responsive.ts`.
+* Reset Tailwind's default breakpoint names in `src/app.css` and use only the project-specific names `tablet`, `desktop`, and `desktop-large` in responsive classes.
+* For responsive styling, prefer Tailwind responsive variants over runtime `useResponsive()` checks.
+* Keep `useResponsive()` for non-style logic only, such as changing fetched counts or other runtime behavior that CSS cannot express.
+* Prefer Tailwind for straightforward layout and surface styling: flex, grid, spacing, sizing, alignment, overflow, simple typography, and simple hover states.
+* When Tailwind classes stay readable, write them directly in the template and remove the local style block after verification.
+* Keep local CSS or SCSS for deep selectors, generated content, third-party DOM overrides, and complex stateful widgets.
+* Do not force a file to become fully Tailwind if a small amount of local CSS or SCSS remains the clearest expression.
+* Use `:style` for one-off values that are clearer inline than as Tailwind arbitrary values or custom utilities.
+* For important or non-obvious background assets, prefer TypeScript imports plus inline `backgroundImage` binding over Tailwind `bg-[url(...)]` classes.
+* Do not introduce setup variables for single-use style values unless they are reused, computed, or materially improve readability.
+* When a non-token visual value needs to remain exact and local, keep it local instead of forcing it into the global token bridge. Add a nearby comment such as `TODO: review this ... value` so it is visible in later design cleanup or tokenization work.
+
 ### Menu Item Text Guidelines
 
 When creating or modifying menu items, follow these UI guidelines for ellipses:

@@ -56,7 +56,3 @@ const config = computed<Config>(() => ({
 
 useInstallRouteLoading()
 </script>
-
-<style lang="scss">
-@import '@/components/ui/global.scss';
-</style>

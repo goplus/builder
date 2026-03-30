@@ -1,0 +1,243 @@
+@import "./components/ui/global.css";
+@import "tailwindcss";
+
+@source "./**/*.{vue,ts,tsx,js,jsx,html}";
+
+/*
+ * Shared link interaction utilities.
+ *
+ * These utilities mirror the public link variants used by src/components/ui/UILink.vue.
+ * Keep the interaction states aligned, but do not treat this file as the source of truth
+ * for the component implementation under src/components/ui/.
+ */
+@layer components {
+	.link-primary {
+		transition: color 0.1s;
+		color: var(--ui-color-primary-main);
+		text-decoration: none;
+
+		&:hover {
+			color: var(--ui-color-primary-400);
+		}
+
+		&:active {
+			color: var(--ui-color-primary-600);
+		}
+	}
+
+	.link-boring {
+		transition: color 0.1s;
+		color: inherit;
+
+		&:hover {
+			color: var(--ui-color-primary-main);
+		}
+
+		&:active {
+			color: var(--ui-color-primary-600);
+		}
+	}
+}
+
+/*
+ * Tailwind theme bridge for the existing UI token system.
+ *
+ * Source of truth:
+ * - token definitions live in src/components/ui/tokens/
+ * - UIConfigProvider exposes them as global --ui-* CSS variables
+ *
+ * This file maps those --ui-* variables into Tailwind theme tokens so template
+ * utilities can use semantic classes such as text-text and bg-primary-100.
+ */
+@theme {
+	/* Keep only the project's breakpoint names to avoid a parallel default scale. */
+	--breakpoint-*: initial;
+	--color-*: initial;
+	--shadow-*: initial;
+	--font-*: initial;
+	--text-*: initial;
+	--radius-*: initial;
+	--leading-*: initial;
+
+	/* Mirrors src/components/ui/responsive.ts. */
+	--breakpoint-tablet: 48rem;
+	--breakpoint-desktop: 80rem;
+	--breakpoint-desktop-large: 105rem;
+
+	/* Product palette and semantic color tokens bridged from global --ui-color-* vars. */
+	--color-turquoise-100: var(--ui-color-turquoise-100, #f3fcfd);
+	--color-turquoise-200: var(--ui-color-turquoise-200, #e7f9fa);
+	--color-turquoise-300: var(--ui-color-turquoise-300, #b5ebf0);
+	--color-turquoise-400: var(--ui-color-turquoise-400, #3fcdd9);
+	--color-turquoise-500: var(--ui-color-turquoise-500, #0bc0cf);
+	--color-turquoise-600: var(--ui-color-turquoise-600, #0eafbc);
+	--color-turquoise-700: var(--ui-color-turquoise-700, #0b8893);
+	--color-turquoise-main: var(--ui-color-turquoise-main, #0bc0cf);
+
+	--color-yellow-100: var(--ui-color-yellow-100, #fffaf5);
+	--color-yellow-200: var(--ui-color-yellow-200, #fff6eb);
+	--color-yellow-300: var(--ui-color-yellow-300, #fde2c0);
+	--color-yellow-400: var(--ui-color-yellow-400, #fbb45d);
+	--color-yellow-500: var(--ui-color-yellow-500, #faa135);
+	--color-yellow-600: var(--ui-color-yellow-600, #e49330);
+	--color-yellow-700: var(--ui-color-yellow-700, #b27226);
+	--color-yellow-main: var(--ui-color-yellow-main, #faa135);
+
+	--color-purple-100: var(--ui-color-purple-100, #faf8ff);
+	--color-purple-200: var(--ui-color-purple-200, #f6f1ff);
+	--color-purple-300: var(--ui-color-purple-300, #e2d4ff);
+	--color-purple-400: var(--ui-color-purple-400, #b390ff);
+	--color-purple-500: var(--ui-color-purple-500, #a074ff);
+	--color-purple-600: var(--ui-color-purple-600, #926ae8);
+	--color-purple-700: var(--ui-color-purple-700, #7252b5);
+	--color-purple-main: var(--ui-color-purple-main, #a074ff);
+
+	--color-blue-100: var(--ui-color-blue-100, #f4faff);
+	--color-blue-200: var(--ui-color-blue-200, #e9f5ff);
+	--color-blue-300: var(--ui-color-blue-300, #bae1fe);
+	--color-blue-400: var(--ui-color-blue-400, #4db2fd);
+	--color-blue-500: var(--ui-color-blue-500, #219ffc);
+	--color-blue-600: var(--ui-color-blue-600, #1e91e5);
+	--color-blue-700: var(--ui-color-blue-700, #1771b3);
+	--color-blue-main: var(--ui-color-blue-main, #219ffc);
+
+	--color-red-100: var(--ui-color-red-100, #feefef);
+	--color-red-200: var(--ui-color-red-200, #fdc7c7);
+	--color-red-300: var(--ui-color-red-300, #ff97a0);
+	--color-red-400: var(--ui-color-red-400, #f15d64);
+	--color-red-500: var(--ui-color-red-500, #ef4149);
+	--color-red-600: var(--ui-color-red-600, #bc292e);
+	--color-red-main: var(--ui-color-red-main, #ef4149);
+
+	--color-green-100: var(--ui-color-green-100, #e0f8e3);
+	--color-green-200: var(--ui-color-green-200, #cbf1cd);
+	--color-green-300: var(--ui-color-green-300, #b0ea90);
+	--color-green-400: var(--ui-color-green-400, #90e05a);
+	--color-green-500: var(--ui-color-green-500, #63ce29);
+	--color-green-600: var(--ui-color-green-600, #3ca80c);
+	--color-green-main: var(--ui-color-green-main, #63ce29);
+
+	--color-grey-100: var(--ui-color-grey-100, #ffffff);
+	--color-grey-200: var(--ui-color-grey-200, #fbfcfd);
+	--color-grey-300: var(--ui-color-grey-300, #f6f8fa);
+	--color-grey-400: var(--ui-color-grey-400, #eaeff3);
+	--color-grey-500: var(--ui-color-grey-500, #d9dfe5);
+	--color-grey-600: var(--ui-color-grey-600, #cbd2d8);
+	--color-grey-700: var(--ui-color-grey-700, #a7b1bb);
+	--color-grey-800: var(--ui-color-grey-800, #6e7781);
+	--color-grey-900: var(--ui-color-grey-900, #57606a);
+	--color-grey-1000: var(--ui-color-grey-1000, #24292f);
+
+	--color-primary-100: var(--ui-color-primary-100, #f3fcfd);
+	--color-primary-200: var(--ui-color-primary-200, #e7f9fa);
+	--color-primary-300: var(--ui-color-primary-300, #b5ebf0);
+	--color-primary-400: var(--ui-color-primary-400, #3fcdd9);
+	--color-primary-500: var(--ui-color-primary-500, #0bc0cf);
+	--color-primary-600: var(--ui-color-primary-600, #0eafbc);
+	--color-primary-700: var(--ui-color-primary-700, #0b8893);
+	--color-primary-main: var(--ui-color-primary-main, #0bc0cf);
+
+	--color-sprite-100: var(--ui-color-sprite-100, #fffaf5);
+	--color-sprite-200: var(--ui-color-sprite-200, #fff6eb);
+	--color-sprite-300: var(--ui-color-sprite-300, #fde2c0);
+	--color-sprite-400: var(--ui-color-sprite-400, #fbb45d);
+	--color-sprite-500: var(--ui-color-sprite-500, #faa135);
+	--color-sprite-600: var(--ui-color-sprite-600, #e49330);
+	--color-sprite-700: var(--ui-color-sprite-700, #b27226);
+	--color-sprite-main: var(--ui-color-sprite-main, #faa135);
+	--color-sprite-bg-selected: var(--ui-color-sprite-bg-selected, #fff6eb);
+
+	--color-sound-100: var(--ui-color-sound-100, #f4faff);
+	--color-sound-200: var(--ui-color-sound-200, #e9f5ff);
+	--color-sound-300: var(--ui-color-sound-300, #bae1fe);
+	--color-sound-400: var(--ui-color-sound-400, #4db2fd);
+	--color-sound-500: var(--ui-color-sound-500, #219ffc);
+	--color-sound-600: var(--ui-color-sound-600, #1e91e5);
+	--color-sound-700: var(--ui-color-sound-700, #1771b3);
+	--color-sound-main: var(--ui-color-sound-main, #219ffc);
+	--color-sound-bg-selected: var(--ui-color-sound-bg-selected, #e9f5ff);
+
+	--color-stage-100: var(--ui-color-stage-100, #f4faff);
+	--color-stage-200: var(--ui-color-stage-200, #e9f5ff);
+	--color-stage-300: var(--ui-color-stage-300, #bae1fe);
+	--color-stage-400: var(--ui-color-stage-400, #4db2fd);
+	--color-stage-500: var(--ui-color-stage-500, #219ffc);
+	--color-stage-600: var(--ui-color-stage-600, #1e91e5);
+	--color-stage-700: var(--ui-color-stage-700, #1771b3);
+	--color-stage-main: var(--ui-color-stage-main, #219ffc);
+	--color-stage-bg-selected: var(--ui-color-stage-bg-selected, #e9f5ff);
+
+	--color-danger-100: var(--ui-color-danger-100, #feefef);
+	--color-danger-200: var(--ui-color-danger-200, #fdc7c7);
+	--color-danger-300: var(--ui-color-danger-300, #ff97a0);
+	--color-danger-400: var(--ui-color-danger-400, #f15d64);
+	--color-danger-500: var(--ui-color-danger-500, #ef4149);
+	--color-danger-600: var(--ui-color-danger-600, #bc292e);
+	--color-danger-main: var(--ui-color-danger-main, #ef4149);
+
+	--color-success-100: var(--ui-color-success-100, #e0f8e3);
+	--color-success-200: var(--ui-color-success-200, #cbf1cd);
+	--color-success-300: var(--ui-color-success-300, #b0ea90);
+	--color-success-400: var(--ui-color-success-400, #90e05a);
+	--color-success-500: var(--ui-color-success-500, #63ce29);
+	--color-success-600: var(--ui-color-success-600, #3ca80c);
+	--color-success-main: var(--ui-color-success-main, #63ce29);
+
+	--color-disabled-bg: var(--ui-color-disabled-bg, #f6f8fa);
+	--color-disabled-text: var(--ui-color-disabled-text, #cbd2d8);
+	--color-title: var(--ui-color-title, #24292f);
+	--color-text: var(--ui-color-text, #57606a);
+	--color-hint-1: var(--ui-color-hint-1, #6e7781);
+	--color-hint-2: var(--ui-color-hint-2, #a7b1bb);
+	--color-dividing-line-1: var(--ui-color-dividing-line-1, #d9dfe5);
+	--color-dividing-line-2: var(--ui-color-dividing-line-2, #eaeff3);
+	--color-border: var(--ui-color-border, #cbd2d8);
+
+	/* Typography tokens bridged from the UI token layer. */
+	--font-sans: var(
+		--ui-font-family-main,
+		AlibabaHealthB,
+		-apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		Roboto,
+		'Helvetica Neue',
+		Arial,
+		'Noto Sans',
+		sans-serif,
+		'Apple Color Emoji',
+		'Segoe UI Emoji',
+		'Segoe UI Symbol',
+		'Noto Color Emoji'
+	);
+	--font-mono: var(--ui-font-family-code, Menlo, Monaco, 'Courier New', monospace);
+	--font-main: var(--font-sans);
+	--font-code: var(--font-mono);
+
+	/* Radius and shadow tokens bridged from the UI token layer. */
+	--radius-none: 0px;
+	--radius-full: 9999px;
+	--radius-1: var(--ui-border-radius-1, 8px);
+	--radius-2: var(--ui-border-radius-2, 12px);
+	--radius-3: var(--ui-border-radius-3, 20px);
+
+	--shadow-none: 0 0 #0000;
+	--shadow-small: var(--ui-box-shadow-small, 0px 2px 8px 0px rgba(51, 51, 51, 0.08));
+	--shadow-big: var(--ui-box-shadow-big, 0px 4px 24px 0px rgba(36, 41, 47, 0.08));
+	--shadow-diffusion: var(--ui-box-shadow-diffusion, 0px 4px 12px 0px #d0f2f8);
+
+	/* Shared spacing and text-size helpers bridged for utility-class authoring. */
+	--leading-1: var(--ui-line-height-1, 26px);
+	--leading-2: var(--ui-line-height-2, 32px);
+	--leading-3: var(--ui-line-height-3, 40px);
+
+	--spacing-middle: var(--ui-gap-middle, 16px);
+	--spacing-large: var(--ui-gap-large, 24px);
+
+	--text-body: var(--ui-font-size-text, 14px);
+	--text-body--line-height: 1.57143;
+	--text-15: 15px;
+	--text-15--line-height: 1.5;
+	--text-20: 20px;
+	--text-20--line-height: 1.5;
+}

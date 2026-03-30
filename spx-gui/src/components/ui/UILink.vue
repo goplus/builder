@@ -18,14 +18,32 @@ withDefaults(
 </template>
 
 <style lang="scss" scoped>
-@import './link.scss';
-
 .ui-link {
+  transition: color 0.1s;
+
   &.type-primary {
-    @include link(primary);
+    color: var(--ui-color-primary-main);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--ui-color-primary-400);
+    }
+
+    &:active {
+      color: var(--ui-color-primary-600);
+    }
   }
+
   &.type-boring {
-    @include link(boring);
+    color: inherit;
+
+    &:hover {
+      color: var(--ui-color-primary-main);
+    }
+
+    &:active {
+      color: var(--ui-color-primary-600);
+    }
   }
 }
 </style>

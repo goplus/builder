@@ -1,5 +1,5 @@
 <template>
-  <div class="tutorials-wrapper">
+  <div class="bg-grey-300 flex h-full w-full flex-col overflow-y-auto">
     <!-- TODO: Temporarily import the community component -->
     <CommunityNavbar />
 
@@ -7,7 +7,7 @@
 
     <CenteredWrapper
       v-radar="{ name: 'Course series list', desc: 'Scroll to view the course series' }"
-      class="centered-wrapper"
+      class="my-8 flex flex-1 flex-col items-center"
       :style="{ '--num-in-row': numInRow }"
     >
       <ListResultWrapper :query-ret="courseSeriesQuery" :height="height">
@@ -17,13 +17,13 @@
           </UIEmpty>
         </template>
         <template #default="{ data }">
-          <ul class="course-series-list">
+          <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-middle">
             <CourseSeriesItem v-for="courseSeries in data.data" :key="courseSeries.id" :course-series="courseSeries" />
           </ul>
         </template>
       </ListResultWrapper>
 
-      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 self-center" :total="pageTotal" />
     </CenteredWrapper>
 
     <CommunityFooter />
@@ -81,33 +81,3 @@ const courseSeriesQuery = useQuery(
   }
 )
 </script>
-
-<style lang="scss" scoped>
-.tutorials-wrapper {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  width: 100%;
-  height: 100%;
-  background-color: var(--ui-color-grey-300);
-
-  .centered-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 32px auto;
-    flex: 1;
-
-    .course-series-list {
-      display: grid;
-      grid-template-columns: repeat(var(--num-in-row), 1fr);
-      gap: var(--ui-gap-middle);
-    }
-
-    .pagination {
-      align-self: center;
-      margin-top: 36px;
-    }
-  }
-}
-</style>
