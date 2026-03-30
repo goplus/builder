@@ -71,8 +71,7 @@ function handlePassword() {
   justify-content: center;
   padding: 32px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 16% 15%, rgba(134, 168, 228, 0.26) 0%, transparent 34%),
+  background: radial-gradient(circle at 16% 15%, rgba(134, 168, 228, 0.26) 0%, transparent 34%),
     radial-gradient(circle at 81% 82%, rgba(111, 214, 221, 0.2) 0%, transparent 32%),
     linear-gradient(135deg, #f4f7ff 0%, #eff3fd 42%, #e8f7fb 100%);
 
@@ -85,15 +84,13 @@ function handlePassword() {
   }
 
   &::before {
-    background:
-      repeating-radial-gradient(circle at 16% 15%, rgba(133, 163, 220, 0.22) 0 1px, transparent 1px 12px),
+    background: repeating-radial-gradient(circle at 16% 15%, rgba(133, 163, 220, 0.22) 0 1px, transparent 1px 12px),
       repeating-radial-gradient(circle at 82% 83%, rgba(86, 194, 202, 0.18) 0 1px, transparent 1px 12px);
     opacity: 0.36;
   }
 
   &::after {
-    background:
-      radial-gradient(circle at 52% 52%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 58%);
+    background: radial-gradient(circle at 52% 52%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 58%);
     opacity: 0.9;
   }
 }

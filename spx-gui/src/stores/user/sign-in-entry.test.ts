@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  buildProviderParams,
-  getDefaultReturnTo,
-  getSignInRoute,
-  normalizeSafeReturnTo
-} from './sign-in-entry'
+import { buildProviderParams, getDefaultReturnTo, getSignInRoute, normalizeSafeReturnTo } from './sign-in-entry'
 
 describe('sign-in-entry', () => {
   const originalLocation = window.location
