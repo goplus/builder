@@ -89,4 +89,22 @@ describe('sign-in page shell', () => {
     await flushPromises()
     expect(replace).toHaveBeenCalledWith('/project/alice/demo')
   })
+
+  it('calls provider-specific helpers with the normalized return target', async () => {
+    const wrapper = mount(SignInPage, {
+      global: {
+        mocks: {
+          $t: (value: { en?: string; zh?: string }) => value.zh ?? value.en ?? ''
+        }
+      }
+    })
+
+    await wrapper.find('[data-testid="sign-in-wechat"]').trigger('click')
+    await wrapper.find('[data-testid="sign-in-qq"]').trigger('click')
+    await wrapper.find('[data-testid="sign-in-password"]').trigger('click')
+
+    expect(initiateWeChatSignIn).toHaveBeenCalledWith('/project/alice/demo')
+    expect(initiateQQSignIn).toHaveBeenCalledWith('/project/alice/demo')
+    expect(initiateSignIn).toHaveBeenCalledWith('/project/alice/demo')
+  })
 })
