@@ -29,7 +29,7 @@ import {
   useSignedInStateQuery
 } from '@/stores/user'
 import { usePageTitle } from '@/utils/utils'
-import heroSrc from './assets/sign-in-hero.svg'
+import heroSrc from './assets/sign-in-hero.png'
 import qqIconSrc from './assets/icon-qq.svg'
 import wechatIconSrc from './assets/icon-wechat.svg'
 
