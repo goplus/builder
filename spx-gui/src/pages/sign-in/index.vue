@@ -18,7 +18,6 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import logoSrc from '@/assets/logo.svg'
 import SignInHero from '@/components/sign-in/SignInHero.vue'
 import SignInPanel from '@/components/sign-in/SignInPanel.vue'
 import {
@@ -31,6 +30,7 @@ import {
 import { usePageTitle } from '@/utils/utils'
 import heroSrc from './assets/sign-in-hero.png'
 import qqIconSrc from './assets/icon-qq.svg'
+import logoSrc from './assets/sign-in-logo.svg'
 import wechatIconSrc from './assets/icon-wechat.svg'
 
 const route = useRoute()

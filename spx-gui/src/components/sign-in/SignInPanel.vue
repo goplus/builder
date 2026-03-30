@@ -100,8 +100,8 @@ defineEmits<{
 }
 
 .logo {
-  width: 39px;
-  height: 38px;
+  width: 23px;
+  height: 22px;
 }
 
 .brand-name {

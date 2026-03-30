@@ -1,6 +1,7 @@
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import expectedLogoSrc from './assets/sign-in-logo.svg'
 
 const { replace, initiateWeChatSignIn, initiateQQSignIn, initiateSignIn } = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -73,6 +74,7 @@ describe('sign-in page shell', () => {
     expect(wrapper.text()).toContain('使用微信登录')
     expect(wrapper.text()).toContain('使用 QQ 登录')
     expect(wrapper.text()).toContain('用户名密码登录')
+    expect(wrapper.get('.logo').attributes('src')).toBe(expectedLogoSrc)
   })
 
   it('redirects signed-in visitors away from /sign-in', async () => {
