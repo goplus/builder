@@ -397,6 +397,12 @@ Token usage preference:
 - in Tailwind utility classes, prefer the bridged semantic tokens such as `text-text`, `text-title`, and `bg-primary-100`
 - in local CSS or SCSS rules, prefer using the original `--ui-*` variables directly, because `--ui-*` remains the source of truth and the Tailwind bridge exists primarily for utility-class authoring
 
+Bridge naming and text-token preference:
+
+- choose bridge names that do not collide with Tailwind defaults or existing UI-library class names; avoid introducing helpers such as `leading-1` that look like built-in Tailwind utilities but mean something project-specific
+- define text-size tokens in `@theme` before using named utilities such as `text-12`, `text-13`, `text-24`, or `text-36`
+- when a named text utility should carry a default line-height, define it through the paired `--text-*-line-height` token instead of introducing a parallel custom leading scale
+
 ### 3. Prefer Tailwind For Straightforward Layout And Surface Styling
 
 The pilot confirmed that Tailwind works well for the following kinds of changes:
@@ -471,7 +477,58 @@ The pilot reinforced the original migration strategy:
 
 The goal is clearer and more maintainable code, not maximizing utility-class usage.
 
-### 8. Keep Exact Local Values Local, With A Visible TODO
+### 8. Preserve Styling Hook Classes Across Component Boundaries
+
+Recent migrations exposed a failure mode that is easy to miss in review: some business components rely on semantic classes exported by child components as part of a styling contract.
+
+Examples from the pilot:
+
+- `CourseItem.vue` and `CourseSeriesItem.vue` reveal slotted menus through parent `:deep(.corner-menu)` rules
+- `CourseSelector.vue` adjusts a child action icon through selectors that depend on `.course-item-mini` and `.action-icon`
+
+Preferred style:
+
+- treat these semantic classes as styling API surfaces, not incidental markup
+- do not remove them just because the element's own spacing, color, or border styles moved into Tailwind utilities
+- when a parent or sibling component still depends on one of these classes, preserve it and migrate only the visual declarations around it
+
+Rule of thumb:
+
+- if a class name is referenced outside the current component file, keep it unless the dependent selector is removed in the same change
+
+### 9. Keep Cross-Component Descendant Styling In Local CSS
+
+The pilot also showed that Tailwind arbitrary descendant selectors become hard to read once they cross component boundaries, target slot content, or mix with `:deep(...)`.
+
+Examples:
+
+- hover-reveal logic for slotted corner menus
+- parent selectors that style child internals through `:deep(...)`
+- slot-content targeting where the child controls the rendered class names
+
+Preferred style:
+
+- keep authored layout, spacing, and simple surfaces in Tailwind
+- keep cross-component descendant styling in a small local CSS block, preferably plain CSS when SCSS features are not needed
+
+This split is usually clearer than packing selectors such as `[&:hover_.corner-menu]...` into the template.
+
+### 10. Respect Internal Root Styles Of Wrapper Components
+
+Wrapper components in `src/components/ui/` sometimes style their own root elements in ways that external utilities cannot safely replace.
+
+Two concrete cases from the pilot:
+
+- `UIImg` keeps `position: relative` on its root so loading overlays and background-image behavior work correctly
+- `UIIcon` fixes its root width and height, so `h-*` / `w-*` classes on the component instance may not win
+
+Preferred style:
+
+- before applying root-level positioning or sizing utilities to a wrapped UI component, inspect the component implementation
+- if the wrapper already owns the root layout semantics, use an outer wrapper for positioning concerns such as `absolute`, `top`, `left`, and `z-index`
+- for one-off width/height overrides on wrapper roots such as `UIIcon`, prefer inline `style` when that is the shortest and clearest way to win the cascade
+
+### 11. Keep Exact Local Values Local, With A Visible TODO
 
 Some migrated components still need exact local visual values that are not part of the current token system.
 

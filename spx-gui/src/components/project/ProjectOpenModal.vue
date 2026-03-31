@@ -43,7 +43,7 @@ const queryRet = useQuery(
     @update:visible="emit('cancelled')"
   >
     <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
-      <ul class="project-list">
+      <ul class="flex flex-wrap content-start gap-middle">
         <ProjectItem
           v-for="project in slotProps.data.data"
           :key="project.id"
@@ -53,19 +53,6 @@ const queryRet = useQuery(
         />
       </ul>
     </ListResultWrapper>
-    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-8 mb-4 justify-center" :total="pageTotal" />
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.project-list {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: var(--ui-gap-middle);
-}
-.pagination {
-  justify-content: center;
-  margin: 32px 0 16px;
-}
-</style>

@@ -16,12 +16,33 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 </script>
 
 <template>
-  <li class="course-series-item">
-    <UIImg v-if="thumbnailUrl != null" class="thumbnail" :src="thumbnailUrl" size="cover" />
-    <div class="content" :class="{ 'has-thumbnail': thumbnailUrl != null }">
-      <div class="order">{{ courseSeries.order }}</div>
-      <h3 class="title" :title="courseSeries.title">{{ courseSeries.title }}</h3>
-      <div class="course-count">
+  <li
+    class="course-series-item relative h-40 w-58 cursor-pointer overflow-hidden rounded-3 border-2 border-grey-300 bg-grey-50 transition-all duration-200 hover:-translate-y-0.5 hover:border-grey-400 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+  >
+    <div v-if="thumbnailUrl != null" class="absolute inset-0">
+      <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
+    </div>
+    <div
+      class="relative flex h-full flex-col items-center justify-center p-5 text-center"
+      :class="{ 'has-thumbnail': thumbnailUrl != null }"
+    >
+      <div
+        class="absolute top-3 left-3 h-7 w-7 [text-shadow:0_1px_3px_rgba(0,0,0,0.3)]"
+        :class="thumbnailUrl != null ? 'text-grey-100' : 'text-grey-900'"
+      >
+        {{ courseSeries.order }}
+      </div>
+      <h3
+        class="m-0 w-full overflow-hidden text-16/[1.4] text-ellipsis wrap-break-word line-clamp-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.3)]"
+        :class="thumbnailUrl != null ? 'text-grey-100' : 'text-grey-900'"
+        :title="courseSeries.title"
+      >
+        {{ courseSeries.title }}
+      </h3>
+      <div
+        class="mt-2"
+        :class="thumbnailUrl != null ? 'text-grey-400 [text-shadow:0_1px_2px_rgba(0,0,0,0.3)]' : 'text-grey-600'"
+      >
         {{
           $t({
             en: `${courseSeries.courseIDs.length} course${courseSeries.courseIDs.length !== 1 ? 's' : ''}`,
@@ -31,110 +52,21 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
       </div>
     </div>
 
-    <div class="action-section">
+    <div class="action-section absolute top-2 right-2">
       <slot />
     </div>
   </li>
 </template>
 
-<style lang="scss" scoped>
-.course-series-item {
-  position: relative;
-  width: 232px;
-  height: 160px;
-  border-radius: var(--ui-border-radius-3);
-  background: var(--ui-color-grey-50);
-  border: 2px solid var(--ui-color-grey-300);
-  cursor: pointer;
-  transition: all 0.2s;
-  overflow: hidden;
-
-  &:hover {
-    border-color: var(--ui-color-grey-400);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-
-    .action-section :deep(.corner-menu) {
-      visibility: visible;
-      opacity: 1;
-    }
-  }
+<style scoped>
+.action-section :deep(.corner-menu) {
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.1s;
 }
 
-.thumbnail {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.content {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 20px;
-  text-align: center;
-
-  &.has-thumbnail {
-    .title {
-      color: var(--ui-color-grey-100);
-    }
-
-    .order {
-      color: var(--ui-color-grey-100);
-    }
-
-    .course-count {
-      color: var(--ui-color-grey-400);
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    }
-  }
-}
-
-.order {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  width: 28px;
-  height: 28px;
-  color: var(--ui-color-grey-900);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.title {
-  margin: 0 0 8px;
-  font-size: 16px;
-  color: var(--ui-color-grey-900);
-  overflow: hidden;
-  display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  text-overflow: ellipsis;
-  line-height: 1.4;
-  width: 100%;
-  word-break: break-word;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.course-count {
-  color: var(--ui-color-grey-600);
-}
-
-.action-section {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-
-  :deep(.corner-menu) {
-    opacity: 0;
-    visibility: hidden;
-    transition: 0.1s;
-  }
+.course-series-item:hover .action-section :deep(.corner-menu) {
+  visibility: visible;
+  opacity: 1;
 }
 </style>

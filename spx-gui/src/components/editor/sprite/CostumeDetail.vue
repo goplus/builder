@@ -1,8 +1,8 @@
 <template>
   <EditorItemDetail :name="costume.name" @rename="emit('rename')">
-    <div class="img-wrapper">
-      <CheckerboardBackground class="background" />
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+    <div class="relative flex-1 overflow-hidden rounded-1 w-full">
+      <CheckerboardBackground class="absolute inset-0" />
+      <UIImg class="h-full w-full" :src="imgSrc" :loading="imgLoading" />
     </div>
   </EditorItemDetail>
 </template>
@@ -24,26 +24,3 @@ const emit = defineEmits<{
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 </script>
-
-<style lang="scss" scoped>
-.img-wrapper {
-  width: 100%;
-  flex: 1 1 0;
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
-
-.img {
-  width: 100%;
-  height: 100%;
-}
-</style>

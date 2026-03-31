@@ -26,9 +26,11 @@ const { fn: handleExitTutorial } = useMessageHandle(
 <template>
   <UIDropdownWithTooltip placement="top">
     <template #trigger>
-      <div class="tutorial-state-indicator">
-        <UIIcon class="icon-tutorial" type="tutorial" />
-        <UIIcon class="icon-arrow" type="arrowAlt" />
+      <div
+        class="flex h-7 w-13 cursor-pointer items-center justify-center gap-1 rounded-full bg-primary-200 hover:bg-primary-300"
+      >
+        <UIIcon class="text-primary-main" style="width: 16px; height: 16px" type="tutorial" />
+        <UIIcon class="rotate-180 text-primary-main" style="width: 10px; height: 10px" type="arrowAlt" />
       </div>
     </template>
 
@@ -50,33 +52,3 @@ const { fn: handleExitTutorial } = useMessageHandle(
     </template>
   </UIDropdownWithTooltip>
 </template>
-
-<style lang="scss" scoped>
-.tutorial-state-indicator {
-  display: flex;
-  gap: 4px;
-  width: 52px;
-  height: 28px;
-  border-radius: 100px;
-  background: var(--ui-color-primary-200);
-  align-items: center;
-  justify-content: center;
-
-  .icon-tutorial {
-    width: 16px;
-    height: 16px;
-    color: var(--ui-color-primary-main);
-  }
-  .icon-arrow {
-    width: 10px;
-    height: 10px;
-    transform: rotate(180deg);
-    color: var(--ui-color-primary-main);
-  }
-
-  &:hover {
-    cursor: pointer;
-    background: var(--ui-color-primary-300);
-  }
-}
-</style>

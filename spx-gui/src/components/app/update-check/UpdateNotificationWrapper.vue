@@ -1,8 +1,13 @@
 <template>
-  <div class="update-notification-wrapper">
-    <div v-if="visible" class="notification" role="status" aria-live="polite">
-      <div class="message">
-        <DotLottieVue class="icon" autoplay loop :src="notificationIconUrl" />
+  <div class="flex h-full min-h-0 flex-col">
+    <div
+      v-if="visible"
+      class="flex flex-none items-center justify-center gap-6 bg-yellow-200 px-6 py-2.75 text-grey-900"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="flex items-center gap-3 text-body text-grey-900">
+        <DotLottieVue class="h-6 w-6" autoplay loop :src="notificationIconUrl" />
         {{
           $t({
             en: 'A new version of XBuilder is available. Reload to get the latest features and improvements.',
@@ -20,7 +25,7 @@
         {{ $t({ en: 'Reload now', zh: '立即刷新' }) }}
       </UIButton>
     </div>
-    <div class="content">
+    <div class="min-h-0 flex-1">
       <slot></slot>
     </div>
   </div>
@@ -54,41 +59,3 @@ onUnmounted(() => {
   checker.stop()
 })
 </script>
-
-<style lang="scss" scoped>
-.update-notification-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
-
-.notification {
-  flex: 0 0 auto;
-  padding: 11px 24px;
-  background-color: var(--ui-color-yellow-200);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  color: var(--ui-color-grey-900);
-
-  .message {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    line-height: 22px;
-
-    .icon {
-      width: 24px;
-      height: 24px;
-    }
-  }
-}
-
-.content {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-</style>

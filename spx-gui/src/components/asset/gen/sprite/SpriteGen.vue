@@ -59,5 +59,3 @@ provideLocalEditorCtx(editorCtxInGen)
     @resolved="emit('resolved', $event)"
   />
 </template>
-
-<style lang="scss" scoped></style>

@@ -19,5 +19,3 @@ const resourceIdentifier = computed<ResourceIdentifier>(() => ({
   <!-- TODO: Design specially for `ResourcePreview`, instead of using the same `ResourceItem` as `ResourceSelector` -->
   <component :is="provider?.provideResourceItemRenderer()" :resource="resourceIdentifier" autoplay />
 </template>
-
-<style lang="scss" scoped></style>

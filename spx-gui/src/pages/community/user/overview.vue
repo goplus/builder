@@ -71,8 +71,8 @@ const likesRet = useQuery(
 </script>
 
 <template>
-  <div class="user-overview">
-    <CommunityCard class="card">
+  <div class="flex flex-col gap-5">
+    <CommunityCard class="px-middle">
       <ProjectsSection
         v-radar="{ name: 'User projects', desc: 'Section showing user\'s projects' }"
         context="user"
@@ -108,7 +108,7 @@ const likesRet = useQuery(
         />
       </ProjectsSection>
     </CommunityCard>
-    <CommunityCard class="card">
+    <CommunityCard class="px-middle">
       <ProjectsSection
         v-radar="{ name: 'User liked projects', desc: 'Section showing projects liked by this user' }"
         context="user"
@@ -137,15 +137,3 @@ const likesRet = useQuery(
     </CommunityCard>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.user-overview {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.card {
-  padding: 0 var(--ui-gap-middle);
-}
-</style>

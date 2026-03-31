@@ -19,7 +19,7 @@
               class="invisible absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-grey-100 text-grey-800 opacity-0 transition-all duration-100 group-hover:visible group-hover:opacity-100 hover:bg-primary-main hover:text-grey-100"
               @click.stop.prevent
             >
-              <UIIcon class="h-5.25 w-5.25" type="more" />
+              <UIIcon style="width: 21px; height: 21px" type="more" />
             </div>
           </template>
           <UIMenu>
@@ -104,7 +104,7 @@
         </div>
         <p class="mt-1 flex h-5 gap-3 text-13/5 text-grey-700">
           <span class="flex flex-none items-center gap-1" :class="{ 'text-red-main': liking }" :title="$t(likesTitle)">
-            <UIIcon class="h-3.5 w-3.5" type="heart" />
+            <UIIcon style="width: 14px; height: 14px" type="heart" />
             {{ $t(humanizeCount(project.likeCount)) }}
           </span>
           <span class="min-w-0 flex-1 truncate" :title="$t(timeTitle)">

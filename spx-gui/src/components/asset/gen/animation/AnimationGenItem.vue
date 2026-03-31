@@ -68,12 +68,12 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
     <template v-if="gen.result != null" #preview>
       <CostumesAutoPlayer
         v-if="hovered"
-        class="preview"
+        class="h-full w-full"
         :costumes="gen.result.costumes"
         :duration="gen.result.duration"
         :placeholder-img="imgSrc"
       />
-      <UIImg v-else class="preview" :src="imgSrc" :loading="imgLoading" />
+      <UIImg v-else class="h-full w-full" :src="imgSrc" :loading="imgLoading" />
     </template>
     <UIBlockItemTitle size="medium">{{ gen.name }}</UIBlockItemTitle>
     <CornerMenu v-if="active" color="primary">
@@ -82,10 +82,3 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
     </CornerMenu>
   </GenItem>
 </template>
-
-<style lang="scss" scoped>
-.preview {
-  width: 100%;
-  height: 100%;
-}
-</style>

@@ -101,11 +101,16 @@ When working with backend unique string identifiers such as `username`, project 
 * Prefer Tailwind for straightforward layout and surface styling: flex, grid, spacing, sizing, alignment, overflow, simple typography, and simple hover states.
 * When Tailwind classes stay readable, write them directly in the template and remove the local style block after verification.
 * Keep local CSS or SCSS for deep selectors, generated content, third-party DOM overrides, and complex stateful widgets.
+* Preserve semantic hook classes that are consumed by parent selectors, slot content, or `:deep(...)` rules. Do not remove classes such as `.corner-menu` or `.course-item-mini` just because the element's own visual styles moved to Tailwind.
+* Prefer plain local CSS over Tailwind arbitrary descendant selectors for cross-component styling, slot-content targeting, and `:deep(...)` behavior. Keep Tailwind for the authored layout, but keep these cross-component hooks easy to read and audit.
 * Do not force a file to become fully Tailwind if a small amount of local CSS or SCSS remains the clearest expression.
 * Use `:style` for one-off values that are clearer inline than as Tailwind arbitrary values or custom utilities.
 * For important or non-obvious background assets, prefer TypeScript imports plus inline `backgroundImage` binding over Tailwind `bg-[url(...)]` classes.
+* Before styling `UIImg`, `UIIcon`, or similar wrappers with root-level positioning or sizing utilities, check whether the component already styles its own root element. If those internal root styles conflict, prefer an outer wrapper for layout and inline `style` for one-off width/height overrides.
 * Do not introduce setup variables for single-use style values unless they are reused, computed, or materially improve readability.
 * When a non-token visual value needs to remain exact and local, keep it local instead of forcing it into the global token bridge. Add a nearby comment such as `TODO: review this ... value` so it is visible in later design cleanup or tokenization work.
+* When extending the Tailwind theme bridge in `src/app.css`, choose token names that do not collide with Tailwind defaults or existing UI-library class names. Define text-size tokens before using named utilities like `text-24`, and use `--text-*-line-height` when a named text utility should carry a default line-height.
+* Preserve existing comments and TODOs during style migration when they still explain a real styling constraint or follow-up.
 
 ### Menu Item Text Guidelines
 

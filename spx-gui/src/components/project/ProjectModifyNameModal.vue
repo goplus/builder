@@ -103,7 +103,7 @@ async function validateName(name: string): Promise<FormValidationResult> {
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-large flex justify-end gap-middle pb-1">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel updating project name' }"
           color="boring"
@@ -123,13 +123,3 @@ async function validateName(name: string): Promise<FormValidationResult> {
     </UIForm>
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ui-gap-middle);
-  margin-top: var(--ui-gap-large);
-  padding-bottom: 4px;
-}
-</style>

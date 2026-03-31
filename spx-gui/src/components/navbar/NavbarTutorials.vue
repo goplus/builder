@@ -3,10 +3,10 @@
     <template #trigger>
       <router-link
         v-radar="{ name: 'Navbar tutorials link', desc: 'Click to open the tutorials page' }"
-        class="navbar-tutorials"
+        class="flex h-full cursor-pointer items-center px-5 hover:bg-primary-600"
         to="/tutorials"
       >
-        <UIIcon class="icon" type="tutorial" />
+        <UIIcon type="tutorial" class="text-grey-100" style="width: 24px; height: 24px" />
       </router-link>
     </template>
     <div class="text">{{ $t({ en: 'Tutorials', zh: '教程' }) }}</div>
@@ -16,23 +16,3 @@
 <script setup lang="ts">
 import { UIIcon, UITooltip } from '@/components/ui'
 </script>
-
-<style lang="scss" scoped>
-.navbar-tutorials {
-  height: 100%;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-
-  .icon {
-    width: 24px;
-    height: 24px;
-    color: white;
-  }
-
-  &:hover {
-    background-color: var(--ui-color-primary-600);
-  }
-}
-</style>

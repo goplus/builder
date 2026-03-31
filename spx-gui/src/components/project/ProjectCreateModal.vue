@@ -7,7 +7,7 @@
     @update:visible="handleCancel"
   >
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <div class="alert">
+      <div class="h-7.5 text-grey-900">
         {{
           $t({
             en: 'The project name will also be used in project URLs.',
@@ -22,7 +22,7 @@
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-10 flex justify-center">
         <UIButton
           v-radar="{ name: 'Create button', desc: 'Click to create the project' }"
           class="create-button"
@@ -150,16 +150,3 @@ async function validateName(name: string): Promise<FormValidationResult> {
     })
 }
 </script>
-
-<style scoped lang="scss">
-.alert {
-  height: 30px;
-  color: var(--ui-color-grey-900);
-}
-
-.footer {
-  margin-top: 40px;
-  display: flex;
-  justify-content: center;
-}
-</style>
