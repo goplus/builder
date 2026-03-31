@@ -87,6 +87,7 @@ When working with backend unique string identifiers such as `username`, project 
 * Do not add or keep business-code imports of SCSS helpers from `src/components/ui/`.
 * For `src/components/ui/`, the long-term direction is the same, but this phase still allows local SCSS where it remains the clearest implementation.
 * Keep [src/app.css](src/app.css) limited to Tailwind entry setup, the theme bridge, and rare project-wide utilities.
+* Tailwind preflight is intentionally disabled in `src/app.css`. Keep [src/components/ui/global.css](src/components/ui/global.css) and [src/components/ui/reset.css](src/components/ui/reset.css) as the project's base layer for reset and foundation styles.
 * Do not move page-local or feature-local styles into `src/app.css` just because they are written with Tailwind.
 * Keep page-specific dimensions, transforms, colors, and card/banner styling local to the relevant page or component.
 * Keep the existing `--ui-*` design token system as the source of truth.
