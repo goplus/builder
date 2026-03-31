@@ -29,50 +29,18 @@ watch(user, (currentUser) => {
 </script>
 
 <template>
-  <CenteredWrapper class="user-page" size="large">
-    <UIError v-if="error != null" class="error" :retry="refetch">
+  <CenteredWrapper class="flex flex-[1_0_auto] flex-col gap-5 pt-6 pb-10" size="large">
+    <UIError v-if="error != null" class="flex flex-1 rounded-2 bg-grey-100" :retry="refetch">
       {{ $t(error.userMessage) }}
     </UIError>
     <template v-else-if="user != null">
       <UserHeader :user="user" />
-      <div class="main">
-        <UserSidebar class="sidebar" :username="user.username" />
-        <div class="content">
+      <div class="flex items-start gap-5">
+        <UserSidebar class="shrink-0" :username="user.username" />
+        <div class="min-w-0 flex-1">
           <router-view />
         </div>
       </div>
     </template>
   </CenteredWrapper>
 </template>
-
-<style lang="scss" scoped>
-.user-page {
-  flex: 1 0 auto;
-  padding: 24px 0 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.error {
-  flex: 1 1 0;
-  display: flex;
-
-  border-radius: var(--ui-border-radius-2);
-  background: var(--ui-color-grey-100);
-}
-
-.main {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-
-  .sidebar {
-    flex: 0 0 auto;
-  }
-  .content {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-}
-</style>

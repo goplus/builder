@@ -18,6 +18,8 @@ import { useRouteQueryParamInt } from '@/utils/route'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
+// TODO: Temporary background, replace with the latest assets
+import stageBg from '@/assets/images/stage-bg.svg'
 
 const coursePadding = 20
 const numInColumn = 2
@@ -96,29 +98,34 @@ const { fn: handleCourseClick } = useMessageHandle(
 </script>
 
 <template>
-  <div class="course-series-page">
+  <div class="flex h-full w-full flex-col overflow-y-auto bg-grey-300">
     <!-- TODO: Temporarily import the community component -->
     <CommunityNavbar />
 
-    <CenteredWrapper size="medium" class="content-wrapper">
-      <CommunityCard class="header">
+    <CenteredWrapper size="medium" class="my-6">
+      <CommunityCard class="relative flex gap-10 bg-grey-100 p-5">
         <UILoading v-if="courseSeriesIsLoading" cover mask="solid" />
         <UIError v-else-if="courseSeriesError != null" :retry="courseSeriesRefetch">
           {{ $t(courseSeriesError.userMessage) }}
         </UIError>
-        <div class="left">
-          <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
+        <div
+          class="aspect-[1.08] flex-[1_1_200px] overflow-hidden rounded-3 bg-center bg-cover"
+          :style="{ backgroundImage: `url(${stageBg})` }"
+        >
+          <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
         </div>
-        <div class="right">
+        <div class="mr-5 flex flex-[1_1_1000px] flex-col gap-5 overflow-hidden">
           <template v-if="courseSeries != null">
-            <h2 class="title">{{ courseSeries.title }}</h2>
+            <h2 class="overflow-hidden text-20/7 whitespace-nowrap text-ellipsis text-grey-1000">
+              {{ courseSeries.title }}
+            </h2>
 
             <div
               v-radar="{
                 name: 'Course series details',
                 desc: 'Course series description'
               }"
-              class="description"
+              class="flex-1 overflow-auto"
             >
               <TextView
                 :text="courseSeries.description"
@@ -129,7 +136,7 @@ const { fn: handleCourseClick } = useMessageHandle(
         </div>
       </CommunityCard>
 
-      <div class="courses-wrapper">
+      <div class="mt-7 flex flex-col">
         <div v-if="courseSeries" :style="{ '--num-in-row': numInRow }">
           <ListResultWrapper :query-ret="courseQuery" :height="height">
             <template #empty="{ style }">
@@ -143,7 +150,7 @@ const { fn: handleCourseClick } = useMessageHandle(
               </UIEmpty>
             </template>
             <template #default="{ data }">
-              <ul class="course-list">
+              <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-5">
                 <!-- a tag are used for: link preview on hover, context menu support, and better accessibility -->
                 <a
                   v-for="course in data.data"
@@ -157,87 +164,10 @@ const { fn: handleCourseClick } = useMessageHandle(
             </template>
           </ListResultWrapper>
         </div>
-        <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+        <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 self-center" :total="pageTotal" />
       </div>
     </CenteredWrapper>
 
     <CommunityFooter />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.course-series-page {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  width: 100%;
-  height: 100%;
-  background-color: var(--ui-color-grey-300);
-}
-
-.content-wrapper {
-  margin: 24px auto;
-}
-
-.header {
-  position: relative;
-  padding: 20px;
-  display: flex;
-  gap: 40px;
-  background: var(--ui-color-grey-100);
-
-  .left {
-    flex: 1 1 200px;
-    aspect-ratio: 1.08;
-    overflow: hidden;
-    border-radius: var(--ui-border-radius-3);
-    // TODO: Temporary background, replace with the latest assets
-    background-image: url(@/assets/images/stage-bg.svg);
-
-    .thumbnail {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  .right {
-    flex: 1 1 1000px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    margin-right: 20px;
-    gap: 20px;
-
-    .title {
-      line-height: 28px;
-      font-size: 20px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
-      color: var(--ui-color-grey-1000);
-    }
-
-    .description {
-      flex: 1 1 0;
-      overflow: auto;
-    }
-  }
-}
-
-.courses-wrapper {
-  display: flex;
-  margin-top: 28px;
-  flex-direction: column;
-
-  .course-list {
-    display: grid;
-    grid-template-columns: repeat(var(--num-in-row), 1fr);
-    gap: 20px;
-  }
-
-  .pagination {
-    align-self: center;
-    margin-top: 36px;
-  }
-}
-</style>

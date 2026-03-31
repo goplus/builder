@@ -94,8 +94,8 @@ const handleSubmit = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <UIForm :form="form" @submit="handleSubmit.fn">
-      <div class="form-row">
-        <UIFormItem path="title" :label="$t({ en: 'Title', zh: '标题' })">
+      <div class="mb-6 grid grid-cols-2 gap-8">
+        <UIFormItem class="mt-0!" path="title" :label="$t({ en: 'Title', zh: '标题' })">
           <UITextInput
             v-model:value="form.value.title"
             :placeholder="
@@ -107,7 +107,7 @@ const handleSubmit = useMessageHandle(
           />
         </UIFormItem>
 
-        <UIFormItem path="entrypoint" :label="$t({ en: 'Entrypoint', zh: '起始地址' })">
+        <UIFormItem class="mt-0!" path="entrypoint" :label="$t({ en: 'Entrypoint', zh: '起始地址' })">
           <UITextInput
             v-model:value="form.value.entrypoint"
             :placeholder="
@@ -120,17 +120,17 @@ const handleSubmit = useMessageHandle(
         </UIFormItem>
       </div>
 
-      <div class="form-row">
-        <UIFormItem path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
-          <ThumbnailUploader v-model:thumbnail="form.value.thumbnail" class="thumbnail-uploader" />
+      <div class="mb-6 grid grid-cols-2 gap-8">
+        <UIFormItem class="mt-0!" path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
+          <ThumbnailUploader v-model:thumbnail="form.value.thumbnail" class="h-50 w-full" />
         </UIFormItem>
 
-        <UIFormItem path="references" :label="$t({ en: 'Reference projects', zh: '参考项目' })">
-          <ProjectReferencesInput v-model:references="form.value.references" class="project-references" />
+        <UIFormItem class="mt-0!" path="references" :label="$t({ en: 'Reference projects', zh: '参考项目' })">
+          <ProjectReferencesInput v-model:references="form.value.references" class="h-50 w-full" />
         </UIFormItem>
       </div>
 
-      <UIFormItem class="full-width" path="prompt" :label="$t({ en: 'Prompt for Copilot', zh: 'Copilot 提示词' })">
+      <UIFormItem class="mb-6" path="prompt" :label="$t({ en: 'Prompt for Copilot', zh: 'Copilot 提示词' })">
         <UITextInput
           v-model:value="form.value.prompt"
           type="textarea"
@@ -144,7 +144,7 @@ const handleSubmit = useMessageHandle(
         />
       </UIFormItem>
 
-      <footer class="footer">
+      <footer class="mt-5 flex justify-end gap-3 border-t border-dividing-line-2 pt-5">
         <UIButton color="boring" @click="emit('cancelled')">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
@@ -155,39 +155,3 @@ const handleSubmit = useMessageHandle(
     </UIForm>
   </UIFormModal>
 </template>
-
-<style lang="scss" scoped>
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  margin-bottom: 24px;
-
-  > :deep(.ui-form-item) {
-    margin-top: 0 !important;
-  }
-}
-
-.thumbnail-uploader {
-  width: 100%;
-  height: 200px;
-}
-
-.project-references {
-  width: 100%;
-  height: 200px;
-}
-
-.full-width {
-  margin-bottom: 24px;
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-  margin-top: 20px;
-  border-top: 1px solid var(--ui-color-divider-subtle);
-}
-</style>

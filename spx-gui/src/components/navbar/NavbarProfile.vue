@@ -1,9 +1,8 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div v-if="!loading && signedInUser == null" class="sign-in">
+  <div v-if="!loading && signedInUser == null" class="mr-2 flex h-full items-center px-5 whitespace-nowrap">
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
-      class="sign-in-button"
       color="secondary"
       :disabled="!isOnline"
       @click="initiateSignIn()"
@@ -12,11 +11,11 @@
   </div>
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
-      <div class="avatar">
-        <img class="avatar-img" :src="avatarUrl ?? undefined" />
+      <div class="mr-2 flex h-full items-center justify-center px-5 hover:bg-primary-600">
+        <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
       </div>
     </template>
-    <UIMenu class="user-menu">
+    <UIMenu class="min-w-30">
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
           <div class="user-info-wrapper">
@@ -27,11 +26,11 @@
           <template #trigger>
             <UIMenuItem
               v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
-              class="lang-item"
+              class="justify-between p-2"
               @click="toggleLang"
             >
               {{ $t({ en: 'Language', zh: '语言' }) }}
-              <div class="icon" v-html="langContent"></div>
+              <div class="lang-switch-icon h-4.5 w-4.5 text-turquoise-600" v-html="langContent"></div>
             </UIMenuItem>
           </template>
           {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
@@ -124,55 +123,9 @@ function handleSignOut() {
 }
 </script>
 
-<style lang="scss" scoped>
-.sign-in,
-.avatar {
-  padding: 0 20px;
-  margin-right: 8px;
+<style scoped>
+.lang-switch-icon :deep(svg) {
+  width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-}
-
-.sign-in-button {
-  font: inherit;
-}
-
-.sign-in {
-  white-space: nowrap;
-}
-
-.avatar {
-  justify-content: center;
-
-  &:hover {
-    background-color: var(--ui-color-primary-600);
-  }
-
-  .avatar-img {
-    width: 32px;
-    height: 32px;
-    border-radius: 16px;
-  }
-}
-
-.lang-item {
-  padding: 8px;
-  justify-content: space-between;
-
-  .icon {
-    width: 18px;
-    height: 18px;
-    color: var(--ui-color-turquoise-600);
-
-    :deep(svg) {
-      width: 100%;
-      height: 100%;
-    }
-  }
-}
-
-.user-menu {
-  min-width: 120px;
 }
 </style>

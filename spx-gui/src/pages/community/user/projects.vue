@@ -91,7 +91,7 @@ const handleNewProject = useMessageHandle(
       {{ $t({ en: 'My projects', zh: '我的项目' }) }}
     </template>
     <template #extra>
-      <label class="sort">
+      <label class="flex items-center gap-2">
         {{
           $t({
             en: 'Sort by',
@@ -123,9 +123,9 @@ const handleNewProject = useMessageHandle(
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>
-    <div class="projects-wrapper">
+    <div class="mt-2">
       <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
-        <ul class="projects">
+        <ul class="grid grid-cols-[repeat(var(--project-num-in-row),minmax(0,1fr))] gap-middle">
           <ProjectItem
             v-for="project in slotProps.data.data"
             :key="project.id"
@@ -136,30 +136,7 @@ const handleNewProject = useMessageHandle(
           />
         </ul>
       </ListResultWrapper>
-      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 mb-5 justify-center" :total="pageTotal" />
     </div>
   </UserContent>
 </template>
-
-<style lang="scss" scoped>
-.sort {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.projects-wrapper {
-  margin-top: 8px;
-}
-
-.projects {
-  display: grid;
-  grid-template-columns: repeat(var(--project-num-in-row), 1fr);
-  gap: var(--ui-gap-middle);
-}
-
-.pagination {
-  margin: 36px 0 20px;
-  justify-content: center;
-}
-</style>

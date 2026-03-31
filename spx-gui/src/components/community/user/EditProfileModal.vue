@@ -117,19 +117,25 @@ const handleSubmit = useMessageHandle(async () => {
     :visible="props.visible"
     @update:visible="handleCancel"
   >
-    <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
-    <div class="account-section">
+    <div
+      class="-mx-6 -mt-5 h-42 bg-center bg-cover bg-no-repeat"
+      :style="{ backgroundImage: `url(${coverImgUrl})` }"
+    ></div>
+    <div class="-mt-11 mb-large flex items-start gap-5">
       <button
         v-radar="{ name: 'Edit avatar button', desc: 'Click to choose a new avatar image' }"
-        class="avatar-button"
+        class="group relative h-30 w-30 flex-none cursor-pointer border-none bg-transparent p-0 outline-none shadow-none"
         type="button"
         @click="handleChooseAvatar.fn"
       >
-        <UIImg class="avatar" :src="avatarUrl" size="cover" />
-        <UIIcon class="avatar-trigger" type="camera" />
+        <UIImg class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100" :src="avatarUrl" size="cover" />
+        <UIIcon
+          class="absolute right-0 bottom-0 h-8 w-8 text-turquoise-200 transition-[color,transform] duration-200 group-hover:text-turquoise-300 group-focus-visible:text-turquoise-300 group-active:scale-[0.96]"
+          type="camera"
+        />
       </button>
       <UserUsernameInline
-        class="account-username"
+        class="mt-16 min-w-0"
         :username="props.user.username"
         show-modify
         @modified="handleUsernameModified"
@@ -150,7 +156,7 @@ const handleSubmit = useMessageHandle(async () => {
           :placeholder="$t({ en: 'Tell us something about you', zh: '介绍一下自己' })"
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-5 flex justify-end gap-3">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel editing profile' }"
           color="boring"
@@ -170,74 +176,3 @@ const handleSubmit = useMessageHandle(async () => {
     </UIForm>
   </UIFormModal>
 </template>
-
-<style lang="scss" scoped>
-.cover {
-  margin: -20px -24px 0;
-  height: 168px;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-}
-
-.account-section {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  margin: -44px 0 var(--ui-gap-large);
-}
-
-.avatar-button {
-  position: relative;
-  flex: 0 0 auto;
-  width: 120px;
-  height: 120px;
-  padding: 0;
-  border: none;
-  background: none;
-  outline: none;
-  box-shadow: none;
-  cursor: pointer;
-
-  &:hover .avatar-trigger,
-  &:focus-visible .avatar-trigger {
-    color: var(--ui-color-turquoise-300);
-  }
-
-  &:active .avatar-trigger {
-    transform: scale(0.96);
-  }
-}
-
-.avatar {
-  width: 100%;
-  height: 100%;
-  border: 2px solid var(--ui-color-grey-100);
-  border-radius: 50%;
-  background-color: var(--ui-color-grey-100);
-}
-
-.avatar-trigger {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 32px;
-  height: 32px;
-  color: var(--ui-color-turquoise-200);
-  transition:
-    color 0.2s,
-    transform 0.2s;
-}
-
-.account-username {
-  min-width: 0;
-  margin-top: 64px;
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
-}
-</style>

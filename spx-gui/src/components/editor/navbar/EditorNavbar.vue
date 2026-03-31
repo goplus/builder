@@ -9,7 +9,7 @@
         }"
       >
         <template #trigger>
-          <UIIcon type="file" />
+          <UIIcon type="file" style="width: 24px; height: 24px" />
         </template>
         <UIMenu>
           <UIMenuGroup :disabled="!isOnline">

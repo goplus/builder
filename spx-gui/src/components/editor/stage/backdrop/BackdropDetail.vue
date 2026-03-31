@@ -1,7 +1,7 @@
 <template>
   <EditorItemDetail :name="backdrop.name" @rename="handleRename">
-    <div class="img-wrapper">
-      <img v-if="imgSrc != null" class="img" :src="imgSrc" />
+    <div class="flex min-h-0 flex-1 items-center justify-center w-full">
+      <img v-if="imgSrc != null" class="max-h-full max-w-full rounded-1" :src="imgSrc" />
       <UILoading :visible="imgLoading" cover />
     </div>
   </EditorItemDetail>
@@ -27,19 +27,3 @@ const handleRename = useMessageHandle(() => renameBackdrop(props.backdrop), {
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
 </script>
-
-<style lang="scss" scoped>
-.img-wrapper {
-  width: 100%;
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.img {
-  max-width: 100%;
-  max-height: 100%;
-  border-radius: 8px;
-}
-</style>

@@ -28,5 +28,3 @@ defineProps<{
     </UITimelineItem>
   </UITimeline>
 </template>
-
-<style lang="scss" scoped></style>

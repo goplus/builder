@@ -1,7 +1,7 @@
 <!-- Sound / video play control (only UI) -->
 
 <template>
-  <div class="play-control" :class="[`size-${props.size}`]" :style="colorCssVars">
+  <div class="play-control" :class="[`container-size-${props.size}`]" :style="colorCssVars">
     <div v-show="!playing" class="play" @click.stop="handlePlay.fn">
       <UIIcon class="icon" type="play" />
     </div>
@@ -79,12 +79,12 @@ const colorCssVars = computed(() => {
 .play-control {
   position: relative;
 
-  &.size-medium {
+  &.container-size-medium {
     width: 36px;
     height: 36px;
   }
 
-  &.size-large {
+  &.container-size-large {
     width: 48px;
     height: 48px;
     .icon {

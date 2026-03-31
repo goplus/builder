@@ -90,7 +90,7 @@ const handleSubmit = useMessageHandle(async () => {
           autofocus
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-large flex justify-end gap-middle pb-1">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel modifying username' }"
           color="boring"
@@ -110,13 +110,3 @@ const handleSubmit = useMessageHandle(async () => {
     </UIForm>
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ui-gap-middle);
-  margin-top: var(--ui-gap-large);
-  padding-bottom: 4px;
-}
-</style>

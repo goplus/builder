@@ -4,7 +4,7 @@
     <template #trigger>
       <div
         v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
-        class="lang"
+        class="flex h-full cursor-pointer items-center px-5 hover:bg-primary-600"
         @click="toggleLang"
         v-html="langContent"
       ></div>
@@ -27,17 +27,3 @@ function toggleLang() {
   i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
 }
 </script>
-
-<style lang="scss" scoped>
-.lang {
-  height: 100%;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--ui-color-primary-600);
-  }
-}
-</style>

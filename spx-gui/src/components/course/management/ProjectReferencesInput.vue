@@ -79,7 +79,7 @@ function handleRemove(index: number) {
 </script>
 
 <template>
-  <div class="project-references-input">
+  <div class="flex flex-col gap-3">
     <UITextInput
       v-model:value="projectInput"
       class="project-input"
@@ -95,62 +95,24 @@ function handleRemove(index: number) {
       </template>
     </UITextInput>
 
-    <div class="references-list">
+    <div class="flex flex-1 flex-col gap-2 overflow-y-auto rounded-2 border border-grey-400 p-2">
       <template v-if="references.length > 0">
-        <div v-for="(reference, index) in references" :key="reference.fullName" class="reference-item">
+        <div
+          v-for="(reference, index) in references"
+          :key="reference.fullName"
+          class="flex items-center justify-between rounded-1 border border-grey-400 px-3 py-2"
+        >
           <span class="reference-name">{{ reference.fullName }}</span>
-          <UIIcon type="close" class="remove-icon" @click="handleRemove(index)" />
+          <UIIcon
+            type="close"
+            class="cursor-pointer text-grey-500 transition-colors duration-200 hover:text-danger-600"
+            @click="handleRemove(index)"
+          />
         </div>
       </template>
-      <div v-else class="empty-hint">
+      <div v-else class="flex flex-1 items-center justify-center text-grey-700">
         {{ $t({ en: 'No reference projects added yet', zh: '尚未添加参考项目' }) }}
       </div>
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.project-references-input {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.references-list {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-2);
-  overflow-y: auto;
-}
-
-.reference-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border: 1px solid var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-1);
-
-  .remove-icon {
-    cursor: pointer;
-    color: var(--ui-color-grey-500);
-    transition: 0.2s;
-
-    &:hover {
-      color: var(--ui-color-error);
-    }
-  }
-}
-
-.empty-hint {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ui-color-grey-700);
-}
-</style>

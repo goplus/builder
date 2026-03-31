@@ -51,5 +51,3 @@ watchEffect(() => {
     />
   </UIDropdown>
 </template>
-
-<style lang="scss" scoped></style>

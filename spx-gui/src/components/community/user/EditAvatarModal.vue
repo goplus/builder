@@ -392,21 +392,15 @@ async function handleImageLoad() {
   >
     <div
       ref="cropperHostRef"
-      class="cropper-host"
+      class="cropper-host mx-auto aspect-square w-91.5 overflow-hidden bg-grey-300"
       :class="{ disabled: handleConfirm.isLoading.value }"
       @wheel.prevent="handleWheelZoom"
     >
-      <img
-        ref="imageRef"
-        class="source-image"
-        :src="sourceUrlRef"
-        @load="handleImageLoad"
-        @error="handleImageLoadError.fn"
-      />
+      <img ref="imageRef" class="hidden" :src="sourceUrlRef" @load="handleImageLoad" @error="handleImageLoadError.fn" />
     </div>
 
     <AvatarZoomSlider
-      class="zoom-slider"
+      class="mx-auto mt-2.5"
       :value="zoomValueRef"
       :min="zoomMin"
       :max="zoomMax"
@@ -416,8 +410,8 @@ async function handleImageLoad() {
       @update:value="setZoomValue"
     />
 
-    <footer class="footer">
-      <div class="actions">
+    <footer class="mt-10 flex justify-end">
+      <div class="flex items-center gap-5">
         <UIButton
           v-radar="{ name: 'Cancel edit avatar button', desc: 'Click to cancel editing avatar' }"
           color="boring"
@@ -440,38 +434,13 @@ async function handleImageLoad() {
   </UIFormModal>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .cropper-host {
-  width: 366px;
-  aspect-ratio: 1 / 1;
-  margin: 0 auto;
-  overflow: hidden;
-  background: var(--ui-color-grey-300);
-
-  &.disabled {
-    pointer-events: none;
-    opacity: 0.9;
-  }
 }
 
-.source-image {
-  display: none;
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 40px;
-}
-
-.zoom-slider {
-  margin: 10px auto 0;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+.cropper-host.disabled {
+  pointer-events: none;
+  opacity: 0.9;
 }
 
 .cropper-host:deep(cropper-canvas) {

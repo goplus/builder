@@ -1,5 +1,9 @@
 <template>
-  <router-link v-radar="{ name: 'Logo link', desc: 'Logo image as link to the homepage' }" class="logo" to="/">
+  <router-link
+    v-radar="{ name: 'Logo link', desc: 'Logo image as link to the homepage' }"
+    class="logo relative mx-6 flex h-full items-center"
+    to="/"
+  >
     <img :src="logoSvg" />
   </router-link>
 </template>
@@ -8,22 +12,14 @@
 import logoSvg from './logo.svg'
 </script>
 
-<style lang="scss" scoped>
-.logo {
-  position: relative;
-  height: 100%;
-  margin: 0 24px 0 24px;
-  display: flex;
-  align-items: center;
-
-  &::after {
-    content: '';
-    position: absolute;
-    right: -24px;
-    display: block;
-    width: 1px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.3);
-  }
+<style scoped>
+.logo::after {
+  content: '';
+  position: absolute;
+  right: -24px;
+  display: block;
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>

@@ -12,46 +12,15 @@ const avatarUrl = useAvatarUrl(() => user.value?.avatar)
 </script>
 
 <template>
-  <UserLink class="owner-info" :user="user?.username ?? null">
-    <i class="avatar" :style="user != null ? { backgroundImage: `url(${avatarUrl})` } : null"></i>
+  <!-- TODO: extract to `@/components/ui/`? -->
+  <UserLink
+    class="link-boring group inline-flex items-center gap-1 text-title underline"
+    :user="user?.username ?? null"
+  >
+    <i
+      class="block h-6 w-6 rounded-full border-2 border-grey-100 bg-grey-100 bg-center bg-contain transition-[border-color] duration-100 group-hover:border-primary-400 group-active:border-primary-600"
+      :style="user != null ? { backgroundImage: `url(${avatarUrl})` } : null"
+    ></i>
     {{ user?.displayName }}
   </UserLink>
 </template>
-
-<style lang="scss" scoped>
-.owner-info {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  color: var(--ui-color-title);
-  // TODO: extract to `@/components/ui/`?
-  text-decoration: underline;
-  transition: 0.1s;
-
-  &:hover {
-    color: var(--ui-color-primary-main);
-    .avatar {
-      border-color: var(--ui-color-primary-400);
-    }
-  }
-  &:active {
-    color: var(--ui-color-primary-600);
-    .avatar {
-      border-color: var(--ui-color-primary-600);
-    }
-  }
-}
-
-.avatar {
-  display: block;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid var(--ui-color-grey-100);
-  background-color: var(--ui-color-grey-100);
-  background-position: center;
-  background-size: contain;
-  transition: 0.1s;
-}
-</style>

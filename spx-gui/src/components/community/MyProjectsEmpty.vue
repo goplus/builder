@@ -40,5 +40,3 @@ const handleNewProject = useMessageHandle(
     </template>
   </UIEmpty>
 </template>
-
-<style lang="scss" scoped></style>

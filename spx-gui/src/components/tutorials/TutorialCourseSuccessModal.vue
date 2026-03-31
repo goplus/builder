@@ -85,19 +85,19 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     mask-closable
     @update:visible="handleCancel"
   >
-    <div class="tutorial-course-success-modal">
-      <div class="header">
+    <div class="px-5 pt-4 pb-6">
+      <div class="flex justify-end">
         <UIModalClose class="close" @click="handleCancel" />
       </div>
 
-      <div class="content">
+      <div class="flex flex-col items-center justify-center text-center">
         <!-- eslint-disable vue/no-v-html -->
-        <div class="success" v-html="success"></div>
+        <div class="h-fit w-fit" v-html="success"></div>
 
         <div>{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
         <div>{{ courseCompleteMessage }}</div>
 
-        <div class="actions">
+        <div class="mt-6 flex w-full flex-col gap-5">
           <UIButton color="boring" size="large" @click="handleBrowseTutorials">
             {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
           </UIButton>
@@ -110,35 +110,3 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     </div>
   </UIModal>
 </template>
-
-<style lang="scss" scoped>
-.tutorial-course-success-modal {
-  padding: 16px 20px 24px 20px;
-
-  .header {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-
-    .success {
-      width: fit-content;
-      height: fit-content;
-    }
-
-    .actions {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      margin-top: 24px;
-      width: 100%;
-    }
-  }
-}
-</style>
