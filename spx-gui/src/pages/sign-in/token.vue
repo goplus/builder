@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full w-full items-center justify-center">
     <UIForm class="flex w-80 flex-col" :form="form" @submit="handleSubmit.fn">
-      <h1 class="mb-4 text-center text-body">{{ $t(title) }}</h1>
+      <h1 class="mb-4 text-center text-16">{{ $t(title) }}</h1>
       <UIFormItem path="token">
         <UITextInput
           v-model:value="form.value.token"

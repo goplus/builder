@@ -12,7 +12,7 @@
     <div
       ref="containerRef"
       v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
-      :class="['container', `size-${size || 'medium'}`]"
+      :class="['container', `ui-modal-size-${size || 'medium'}`]"
     >
       <slot></slot>
     </div>
@@ -116,19 +116,19 @@ useModalEsc(
   overflow: hidden;
 }
 
-.size-small {
+.ui-modal-size-small {
   width: 480px;
 }
 
-.size-medium {
+.ui-modal-size-medium {
   width: 640px;
 }
 
-.size-large {
+.ui-modal-size-large {
   width: 960px;
 }
 
-.size-full {
+.ui-modal-size-full {
   width: 100%;
   margin: 16px;
 }

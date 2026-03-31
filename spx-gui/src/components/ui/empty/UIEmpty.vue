@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-empty" :class="[`size-${size}`]">
+  <div class="ui-empty" :class="[`ui-empty-size-${size}`]">
     <template v-if="size === 'large'">
       <img :src="img" />
       <slot></slot>
@@ -84,7 +84,7 @@ const slots = useSlots()
   justify-content: center;
 }
 
-.size-large {
+.ui-empty-size-large {
   width: 100%;
   flex-direction: column;
   gap: 12px;
@@ -94,7 +94,7 @@ const slots = useSlots()
   color: var(--ui-color-grey-1000);
 }
 
-.size-extra-large {
+.ui-empty-size-extra-large {
   flex-direction: column;
 
   .text {
@@ -118,8 +118,8 @@ const slots = useSlots()
   }
 }
 
-.size-small,
-.size-medium {
+.ui-empty-size-small,
+.ui-empty-size-medium {
   color: var(--ui-color-grey-600);
   gap: 8px;
 }

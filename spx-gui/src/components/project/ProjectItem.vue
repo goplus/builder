@@ -7,10 +7,7 @@
     class="group w-58 flex-none overflow-hidden rounded-2 border border-grey-400 bg-grey-100 transition-all duration-100 hover:shadow-[0px_4px_12px_0px_rgba(36,41,47,0.08)]"
   >
     <RouterLink class="flex flex-col no-underline" :to="to" @click="emit('selected')">
-      <div
-        class="relative h-43 w-full bg-center bg-contain"
-        :style="{ backgroundImage: `url(${stageBgUrl})` }"
-      >
+      <div class="relative h-43 w-full bg-center bg-contain" :style="{ backgroundImage: `url(${stageBgUrl})` }">
         <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
         <UIDropdown v-if="operatable" trigger="click" placement="bottom-end">
           <template #trigger>
@@ -58,7 +55,7 @@
       </div>
       <div class="p-middle">
         <div class="flex items-center gap-1">
-          <h5 class="min-w-0 shrink truncate text-15 leading-6 text-title" :title="project.displayName">
+          <h5 class="min-w-0 shrink truncate text-15/6 text-title" :title="project.displayName">
             {{ project.displayName }}
           </h5>
           <template v-if="context !== 'public' && isOwner">
@@ -105,7 +102,7 @@
             </i>
           </template>
         </div>
-        <p class="mt-1 flex h-5 gap-3 text-[13px] leading-5 text-grey-700">
+        <p class="mt-1 flex h-5 gap-3 text-13/5 text-grey-700">
           <span class="flex flex-none items-center gap-1" :class="{ 'text-red-main': liking }" :title="$t(likesTitle)">
             <UIIcon class="h-3.5 w-3.5" type="heart" />
             {{ $t(humanizeCount(project.likeCount)) }}

@@ -1,5 +1,8 @@
 <template>
-  <div v-radar="{ name: 'Close button', desc: 'Click to close the modal' }" :class="['ui-modal-close', `size-${size}`]">
+  <div
+    v-radar="{ name: 'Close button', desc: 'Click to close the modal' }"
+    :class="['ui-modal-close', `ui-modal-close-size-${size}`]"
+  >
     <UIIcon type="close" class="icon" />
   </div>
 </template>
@@ -34,7 +37,7 @@ withDefaults(
     background-color: var(--ui-color-grey-500);
   }
 
-  &.size-medium {
+  &.ui-modal-close-size-medium {
     width: 28px;
     height: 28px;
 
@@ -44,7 +47,7 @@ withDefaults(
     }
   }
 
-  &.size-large {
+  &.ui-modal-close-size-large {
     width: 32px;
     height: 32px;
 

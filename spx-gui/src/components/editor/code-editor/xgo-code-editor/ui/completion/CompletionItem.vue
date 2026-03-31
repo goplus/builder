@@ -46,8 +46,10 @@ watchEffect(() => {
     :class="active ? 'bg-grey-400' : ''"
     :title="item.label"
   >
-    <code class="min-w-0 flex-1 truncate font-code"
-      ><span v-for="(part, i) in parts" :key="i" :class="part.isMatched ? 'text-primary-main' : ''">{{ part.content }}</span></code
-    >
+    <code class="min-w-0 flex-1 truncate font-code">
+      <span v-for="(part, i) in parts" :key="i" :class="part.isMatched ? 'text-primary-main' : ''">
+        {{ part.content }}
+      </span>
+    </code>
   </li>
 </template>

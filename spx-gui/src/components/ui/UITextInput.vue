@@ -2,7 +2,7 @@
   <NInput
     ref="nInput"
     class="ui-text-input"
-    :class="[`color-${color}`, `size-${size}`]"
+    :class="[`color-${color}`, `ui-input-size-${size}`]"
     :placeholder="placeholder || ''"
     :value="value"
     :type="type"
@@ -105,10 +105,10 @@ onMounted(() => {
 }
 
 // size
-.size-medium {
+.ui-input-size-medium {
   --ui-text-input-height: 32px;
 }
-.size-large {
+.ui-input-size-large {
   --ui-text-input-height: 40px;
 }
 

@@ -6,7 +6,7 @@
       `variant-${variant}`,
       `shape-${shape}`,
       `color-${color}`,
-      `size-${size}`,
+      `ui-button-size-${size}`,
       loading && 'loading',
       iconOnly && 'icon-only'
     ]"
@@ -259,7 +259,7 @@ defineExpose({
 }
 
 // size
-.size-large {
+.ui-button-size-large {
   --ui-button-height: var(--ui-line-height-3);
   --ui-button-icon-size: 18px;
   --ui-button-content-padding: 0 24px;
@@ -273,7 +273,7 @@ defineExpose({
   }
 }
 
-.size-medium {
+.ui-button-size-medium {
   --ui-button-height: var(--ui-line-height-2);
   --ui-button-icon-size: 14px;
   --ui-button-content-padding: 0 16px;
@@ -287,7 +287,7 @@ defineExpose({
   }
 }
 
-.size-small {
+.ui-button-size-small {
   --ui-button-height: var(--ui-line-height-1);
   --ui-button-icon-size: 13px;
   --ui-button-content-padding: 0 12px;

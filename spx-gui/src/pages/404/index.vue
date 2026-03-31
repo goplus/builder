@@ -23,7 +23,7 @@ const router = useRouter()
       </p>
       <UIButton
         v-radar="{ name: '404 go home button', desc: 'Button to go back to home page' }"
-        class="mt-4 h-9 text-[15px]"
+        class="mt-4 h-9 text-15"
         @click="router.push('/')"
         >{{ $t({ en: 'Return to home page', zh: '回到首页' }) }}</UIButton
       >

@@ -178,39 +178,42 @@ const cssVariables = getCssVars('--ui-', uiVariables)
 </style>
 
 <style lang="scss">
-/* Special title */
-h1 {
-  font-size: 20px;
-  line-height: 1.4;
-}
+// TODO: should move these styles to global.css ?
+@layer base {
+  /* Special title */
+  h1 {
+    font-size: 20px;
+    line-height: 1.4;
+  }
 
-/* Standard title */
-h2 {
-  font-size: 16px;
-  line-height: 1.5;
-}
+  /* Standard title */
+  h2 {
+    font-size: 16px;
+    line-height: 1.5;
+  }
 
-/* Text in navigation bar */
-h3,
-/* Text */
-h4 {
-  font-size: 14px;
-  line-height: 1.57143;
-}
+  /* Text in navigation bar */
+  h3,
+  /* Text */
+  h4 {
+    font-size: 14px;
+    line-height: 1.57143;
+  }
 
-/* More information */
-h5 {
-  font-size: 12px;
-  line-height: 1.5;
-}
+  /* More information */
+  h5 {
+    font-size: 12px;
+    line-height: 1.5;
+  }
 
-h6 {
-  font-size: 10px;
-  line-height: 1.6;
-}
+  h6 {
+    font-size: 10px;
+    line-height: 1.6;
+  }
 
-button:focus {
-  outline: 2px solid var(--ui-color-primary-700);
+  button:focus {
+    outline: 2px solid var(--ui-color-primary-700);
+  }
 }
 
 // vueuc (dep of naive-ui) uses `pointer-events: all` on children of `v-binder-follower-content`, which wraps `Popover` content in naive-ui.

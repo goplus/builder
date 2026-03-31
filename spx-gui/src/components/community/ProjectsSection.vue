@@ -3,7 +3,7 @@
 <template>
   <section :style="{ '--project-num-in-row': numInRow }">
     <header class="flex items-center justify-between" :class="isUserContext ? 'h-15 pt-5 pb-2' : 'h-13'">
-      <h2 class="text-title" :class="isUserContext ? 'text-body leading-1' : 'text-20 leading-7'">
+      <h2 class="text-title" :class="isUserContext ? 'text-16/6.5' : 'text-20/7'">
         <slot name="title"></slot>
       </h2>
       <RouterUILink
@@ -16,7 +16,10 @@
         <UIIcon class="ml-2 h-5 w-5" type="arrowRightSmall" />
       </RouterUILink>
     </header>
-    <div class="projects-wrapper relative mt-2" :class="isUserContext ? 'mb-4' : 'mb-8'">
+    <div
+      class="relative mt-2"
+      :class="[isUserContext ? 'mb-4' : 'mb-8', !queryRet.data.value?.length ? 'bg-grey-100 rounded-2' : '']"
+    >
       <ListResultWrapper content-type="project" :query-ret="queryRet" :height="254">
         <template v-if="!!slots.empty" #empty="emptyProps">
           <slot name="empty" v-bind="emptyProps"></slot>
@@ -57,10 +60,3 @@ const props = defineProps<{
 const slots = useSlots()
 const isUserContext = computed(() => props.context === 'user')
 </script>
-
-<style scoped>
-.projects-wrapper:not(:has(.projects)) {
-  background-color: var(--ui-color-grey-100);
-  border-radius: var(--ui-border-radius-2);
-}
-</style>

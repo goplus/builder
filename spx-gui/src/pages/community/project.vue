@@ -602,7 +602,7 @@ const remixesRet = useQuery(
               name: 'Project details',
               desc: 'Collapsible sections showing project description, instructions and release history'
             }"
-            class="collapse"
+            class="collapse-container"
             :default-expanded-names="['description', 'instructions', 'releases']"
           >
             <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
@@ -841,7 +841,7 @@ const remixesRet = useQuery(
     margin: 24px 0 16px;
   }
 
-  .collapse {
+  .collapse-container {
     margin-bottom: 8px;
     flex: 1 1 0;
     overflow-y: auto;
