@@ -40,7 +40,7 @@ This means the project is pursuing two related but different directions:
 The current frontend styling model is centered around Vue SFC local styles plus shared CSS variables, with Tailwind now added as an optional utility layer.
 
 - `spx-gui` uses Vite + Vue 3, includes both Tailwind and Sass tooling in [spx-gui/package.json](../../spx-gui/package.json)
-- the app loads global styling through [spx-gui/src/main.ts](../../spx-gui/src/main.ts) and [spx-gui/src/app.css](../../spx-gui/src/app.css), which imports [spx-gui/src/components/ui/global.css](../../spx-gui/src/components/ui/global.css)
+- the app loads global styling through [spx-gui/src/main.ts](../../spx-gui/src/main.ts) and [spx-gui/src/app.css](../../spx-gui/src/app.css), which keeps [spx-gui/src/components/ui/global.css](../../spx-gui/src/components/ui/global.css) as the base layer; Tailwind preflight is intentionally disabled, and the app imports only Tailwind theme and utilities layers
 - design tokens are defined in TypeScript under [spx-gui/src/components/ui/tokens/index.ts](../../spx-gui/src/components/ui/tokens/index.ts) and related files
 - the token objects are converted into `--ui-*` CSS variables and injected globally by [spx-gui/src/components/ui/UIConfigProvider.vue](../../spx-gui/src/components/ui/UIConfigProvider.vue)
 - Naive UI theme overrides are also defined in [spx-gui/src/components/ui/UIConfigProvider.vue](../../spx-gui/src/components/ui/UIConfigProvider.vue), so the token system serves both custom CSS and third-party components
@@ -333,9 +333,9 @@ These files are not long-term migration targets themselves. They should be remov
 
 Global foundation styling should remain even in a Tailwind-based hybrid model.
 
-- [spx-gui/src/components/ui/global.css](../../spx-gui/src/components/ui/global.css) should not be deleted as part of Tailwind adoption
-- reset rules, `box-sizing`, and `@font-face` declarations are still needed
-- this file may later be converted from SCSS to plain CSS, but it should remain as a base layer stylesheet
+- [spx-gui/src/components/ui/global.css](../../spx-gui/src/components/ui/global.css) and its imported [spx-gui/src/components/ui/reset.css](../../spx-gui/src/components/ui/reset.css) should not be deleted as part of Tailwind adoption
+- Tailwind preflight is intentionally disabled, so these files remain the project base layer for reset rules, `box-sizing`, button font inheritance, `@font-face`, and other shared foundation styles
+- this base layer may evolve over time, but it should continue to live in project-owned CSS rather than being replaced implicitly by Tailwind preflight
 
 ### Recommended Execution Order
 
@@ -357,7 +357,7 @@ The global entry file [spx-gui/src/app.css](../../spx-gui/src/app.css) should st
 
 It is the right place for:
 
-- Tailwind entry setup such as `@import "tailwindcss"` and `@source`
+- Tailwind entry setup such as importing `tailwindcss/theme.css`, `tailwindcss/utilities.css`, and `@source`
 - the theme bridge from existing `--ui-*` variables to Tailwind tokens
 - rare project-wide utilities that are truly cross-feature and not page-specific
 

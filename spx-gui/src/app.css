@@ -1,5 +1,8 @@
+@layer theme, base, components, utilities;
+
 @import "./components/ui/global.css";
-@import "tailwindcss";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 
 @source "./**/*.{vue,ts,tsx,js,jsx,html}";
 
