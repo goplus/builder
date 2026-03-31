@@ -4,9 +4,9 @@
 @source "./**/*.{vue,ts,tsx,js,jsx,html}";
 
 /*
- * Shared link interaction utilities.
+ * Shared UILink component variants.
  *
- * These utilities mirror the public link variants used by src/components/ui/UILink.vue.
+ * These classes mirror the public variants used by src/components/ui/UILink.vue.
  * Keep the interaction states aligned, but do not treat this file as the source of truth
  * for the component implementation under src/components/ui/.
  */
