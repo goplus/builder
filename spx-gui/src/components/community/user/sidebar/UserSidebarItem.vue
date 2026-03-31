@@ -14,7 +14,7 @@ defineProps<{
   >
     <i class="icon-bg absolute left-3 top-3.5 h-4.25 w-4.25 rounded-full transition-all duration-100" />
     <span
-      class="relative flex-1 pl-6.5 text-[13px] leading-5 [&_svg]:absolute [&_svg]:left-0 [&_svg]:top-1/2 [&_svg]:z-1 [&_svg]:-translate-y-1/2"
+      class="relative flex-1 pl-6.5 text-13/5 [&_svg]:absolute [&_svg]:left-0 [&_svg]:top-1/2 [&_svg]:z-1 [&_svg]:-translate-y-1/2"
     >
       <slot></slot>
     </span>

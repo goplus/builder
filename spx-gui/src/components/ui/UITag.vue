@@ -41,7 +41,7 @@ const slots = useSlots()
     :class="[
       `variant-${variant}`,
       `color-${color}`,
-      `size-${size}`,
+      `ui-tag-size-${size}`,
       { checkable: !!checkable, checked: checkable ? checkable.checked : false }
     ]"
     :disabled="disabled"
@@ -174,7 +174,7 @@ const slots = useSlots()
 }
 
 // size
-.size-small {
+.ui-tag-size-small {
   --ui-tag-padding: 0 8px;
   --ui-tag-height: 20px;
   --ui-tag-font-size: 12px;

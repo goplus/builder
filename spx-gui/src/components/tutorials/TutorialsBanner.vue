@@ -19,9 +19,9 @@ const bannerTextClass = computed(() =>
       />
     </div>
     <div class="absolute left-1/2 top-1/2 whitespace-nowrap text-[#006375]" :class="bannerTextClass">
-      <div class="text-[36px]">{{ $t({ en: 'Explore the User Tutorial', zh: '探索用户教程' }) }}</div>
-      <div class="mt-2 text-[18px]">
-      {{ $t({ en: 'Learn XBuilder and improve programming skills', zh: '学习 XBuilder，提高编程技能' }) }}
+      <div class="text-36">{{ $t({ en: 'Explore the User Tutorial', zh: '探索用户教程' }) }}</div>
+      <div class="mt-2 text-18">
+        {{ $t({ en: 'Learn XBuilder and improve programming skills', zh: '学习 XBuilder，提高编程技能' }) }}
       </div>
     </div>
   </div>
