@@ -7,71 +7,36 @@ defineProps<{
 </script>
 
 <template>
-  <RouterLink class="user-sidebar-item" exact-active-class="active" :to="to">
-    <i class="icon-bg" />
-    <span class="content">
+  <RouterLink
+    class="user-sidebar-item relative flex items-center rounded-2 p-3 no-underline transition-all duration-100"
+    exact-active-class="active"
+    :to="to"
+  >
+    <i class="icon-bg absolute left-3 top-3.5 h-4.25 w-4.25 rounded-full transition-all duration-100" />
+    <span
+      class="relative flex-1 pl-6.5 text-[13px] leading-5 [&_svg]:absolute [&_svg]:left-0 [&_svg]:top-1/2 [&_svg]:z-1 [&_svg]:-translate-y-1/2"
+    >
       <slot></slot>
     </span>
-    <UIIcon class="arrow" type="arrowAlt" />
+    <UIIcon class="h-3 w-3 flex-none rotate-90 text-grey-800" type="arrowAlt" />
   </RouterLink>
 </template>
 
-<style lang="scss" scoped>
-@import '@/utils/utils';
-
+<style scoped>
 .user-sidebar-item {
-  padding: 12px;
-  position: relative;
-  display: flex;
-  align-items: center;
-
-  border-radius: 12px;
   color: var(--ui-color-text);
-  text-decoration: none;
-  transition: 0.1s;
-
-  .icon-bg {
-    position: absolute;
-    left: 12px;
-    top: 14px;
-    width: 17px;
-    height: 17px;
-    border-radius: 50%;
-    background: var(--ui-color-grey-500);
-    transition: 0.1s;
-  }
-
-  &.active {
-    color: var(--ui-color-primary-main);
-    background: var(--ui-color-primary-100);
-
-    .icon-bg {
-      background: var(--ui-color-primary-300);
-    }
-  }
 }
 
-.content {
-  position: relative;
-  padding-left: 26px;
-  flex: 1 1 0;
-  font-size: 13px;
-  line-height: 20px;
-
-  :deep(svg) {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-  }
+.icon-bg {
+  background: var(--ui-color-grey-500);
 }
 
-.arrow {
-  flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  transform: rotate(90deg);
-  color: var(--ui-color-grey-800);
+.user-sidebar-item.active {
+  color: var(--ui-color-primary-main);
+  background: var(--ui-color-primary-100);
+}
+
+.user-sidebar-item.active .icon-bg {
+  background: var(--ui-color-primary-300);
 }
 </style>
