@@ -1,6 +1,6 @@
 <template>
-  <CenteredWrapper class="home-page">
-    <GuestBanner v-if="!isSignedIn()" class="guest-banner" />
+  <CenteredWrapper class="mt-5">
+    <GuestBanner v-if="!isSignedIn()" class="my-3 mb-8" />
     <ProjectsSection
       v-else
       v-radar="{ name: 'Your projects', desc: 'Section showing user\'s own projects' }"
@@ -178,13 +178,3 @@ const followingCreatedProjects = useQuery(
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 </script>
-
-<style lang="scss" scoped>
-.home-page {
-  margin-top: 20px;
-}
-
-.guest-banner {
-  margin: 12px 0 32px;
-}
-</style>

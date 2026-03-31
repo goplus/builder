@@ -1,27 +1,30 @@
 <!-- Project list as a section -->
 
 <template>
-  <section :class="`context-${context}`" :style="{ '--project-num-in-row': numInRow }">
-    <header class="header">
-      <h2 class="title">
+  <section :style="{ '--project-num-in-row': numInRow }">
+    <header class="flex items-center justify-between" :class="isUserContext ? 'h-15 pt-5 pb-2' : 'h-13'">
+      <h2 class="text-title" :class="isUserContext ? 'text-body leading-1' : 'text-20 leading-7'">
         <slot name="title"></slot>
       </h2>
       <RouterUILink
         v-if="linkTo != null"
         v-radar="{ name: 'Link to more', desc: 'Link to more similar projects' }"
-        class="link"
+        class="flex items-center text-15"
         :to="linkTo"
       >
         <slot name="link"></slot>
-        <UIIcon class="link-icon" type="arrowRightSmall" />
+        <UIIcon class="ml-2 h-5 w-5" type="arrowRightSmall" />
       </RouterUILink>
     </header>
-    <div class="projects-wrapper">
+    <div class="projects-wrapper relative mt-2" :class="isUserContext ? 'mb-4' : 'mb-8'">
       <ListResultWrapper content-type="project" :query-ret="queryRet" :height="254">
         <template v-if="!!slots.empty" #empty="emptyProps">
           <slot name="empty" v-bind="emptyProps"></slot>
         </template>
-        <ul class="projects">
+        <ul
+          class="grid grid-cols-[repeat(var(--project-num-in-row),minmax(0,1fr))]"
+          :class="isUserContext ? 'gap-4' : 'gap-5'"
+        >
           <slot></slot>
         </ul>
       </ListResultWrapper>
@@ -30,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { useSlots } from 'vue'
+import { computed, useSlots } from 'vue'
 import type { QueryRet } from '@/utils/query'
 import { UIIcon } from '@/components/ui'
 import ListResultWrapper from '../common/ListResultWrapper.vue'
@@ -44,7 +47,7 @@ import RouterUILink from '../common/RouterUILink.vue'
  */
 type Context = 'home' | 'user' | 'project'
 
-defineProps<{
+const props = defineProps<{
   linkTo?: string | null
   queryRet: QueryRet<unknown[] | null>
   context: Context
@@ -52,64 +55,12 @@ defineProps<{
 }>()
 
 const slots = useSlots()
+const isUserContext = computed(() => props.context === 'user')
 </script>
 
-<style lang="scss" scoped>
-.header {
-  height: 52px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  .title {
-    line-height: 28px;
-    font-size: 20px;
-    color: var(--ui-color-title);
-  }
-
-  .link {
-    display: flex;
-    align-items: center;
-    font-size: 15px;
-  }
-
-  .link-icon {
-    margin-left: 8px;
-    width: 20px;
-    height: 20px;
-  }
-}
-
-.projects-wrapper {
-  margin: 8px 0 32px;
-  position: relative;
-
-  &:not(:has(.projects)) {
-    background-color: var(--ui-color-grey-100);
-    border-radius: var(--ui-border-radius-2);
-  }
-}
-
-.projects {
-  display: grid;
-  grid-template-columns: repeat(var(--project-num-in-row), 1fr);
-  gap: 20px;
-}
-
-.context-user {
-  .header {
-    height: 60px;
-    padding: 20px 0 8px;
-  }
-  .title {
-    font-size: 16px;
-    line-height: 26px;
-  }
-  .projects-wrapper {
-    margin: 8px 0 16px;
-  }
-  .projects {
-    gap: 16px;
-  }
+<style scoped>
+.projects-wrapper:not(:has(.projects)) {
+  background-color: var(--ui-color-grey-100);
+  border-radius: var(--ui-border-radius-2);
 }
 </style>

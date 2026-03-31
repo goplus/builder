@@ -40,45 +40,14 @@ watchEffect(() => {
 </script>
 
 <template>
-  <li ref="wrapperRef" class="completion-item" :class="{ active }" :title="item.label">
-    <code class="code"
-      ><span v-for="(part, i) in parts" :key="i" :class="{ matched: part.isMatched }">{{ part.content }}</span></code
+  <li
+    ref="wrapperRef"
+    class="flex min-w-24 max-w-42 cursor-pointer items-center rounded-1 p-1.75 text-xs text-grey-1000 hover:bg-grey-300"
+    :class="active ? 'bg-grey-400' : ''"
+    :title="item.label"
+  >
+    <code class="min-w-0 flex-1 truncate font-code"
+      ><span v-for="(part, i) in parts" :key="i" :class="part.isMatched ? 'text-primary-main' : ''">{{ part.content }}</span></code
     >
   </li>
 </template>
-
-<style lang="scss" scoped>
-@import '@/utils/utils';
-
-.completion-item {
-  min-width: 8em;
-  max-width: 14em;
-  display: flex;
-  align-items: center;
-  padding: 7px;
-  border-radius: var(--ui-border-radius-1);
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--ui-color-grey-1000);
-  &:hover {
-    background: var(--ui-color-grey-300);
-  }
-  &.active {
-    background: var(--ui-color-grey-400);
-  }
-}
-
-.icon {
-  margin-right: 8px;
-}
-
-.code {
-  flex: 1 1 0;
-  font-family: var(--ui-font-family-code);
-  @include text-ellipsis;
-}
-
-.matched {
-  color: var(--ui-color-primary-main);
-}
-</style>

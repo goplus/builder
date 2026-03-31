@@ -1,6 +1,7 @@
 <!-- RouterLink + UILink -->
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink, type RouterLinkProps } from 'vue-router'
 
 const props = withDefaults(
@@ -13,23 +14,12 @@ const props = withDefaults(
     type: 'primary'
   }
 )
+
+const linkClass = computed(() => (props.type === 'primary' ? 'link-primary' : 'link-boring'))
 </script>
 
 <template>
-  <RouterLink v-bind="props" class="router-ui-link" :class="`type-${type}`">
+  <RouterLink v-bind="props" :class="linkClass">
     <slot />
   </RouterLink>
 </template>
-
-<style lang="scss" scoped>
-@import '@/components/ui/link.scss';
-
-.router-ui-link {
-  &.type-primary {
-    @include link(primary);
-  }
-  &.type-boring {
-    @include link(boring);
-  }
-}
-</style>

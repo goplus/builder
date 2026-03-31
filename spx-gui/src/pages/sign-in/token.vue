@@ -1,17 +1,17 @@
 <template>
-  <div class="page">
-    <UIForm class="form" :form="form" @submit="handleSubmit.fn">
-      <h1 class="title">{{ $t(title) }}</h1>
+  <div class="flex h-full w-full items-center justify-center">
+    <UIForm class="flex w-80 flex-col" :form="form" @submit="handleSubmit.fn">
+      <h1 class="mb-4 text-center text-body">{{ $t(title) }}</h1>
       <UIFormItem path="token">
         <UITextInput
           v-model:value="form.value.token"
           v-radar="{ name: 'Token input', desc: 'Input field for authentication token' }"
-          class="input"
+          class="h-40 justify-self-stretch"
           type="textarea"
           :placeholder="$t({ en: 'Paste token here', zh: '在此粘贴 Token' })"
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-4 flex justify-center gap-4">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel token sign-in' }"
           color="boring"
@@ -99,36 +99,3 @@ const handleSubmit = useMessageHandle(
   }
 )
 </script>
-<style scoped lang="scss">
-.page {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.form {
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-}
-
-.title {
-  margin-bottom: 1em;
-  font-size: 16px;
-  text-align: center;
-}
-
-.input {
-  justify-self: stretch;
-  height: 160px;
-}
-
-.footer {
-  margin-top: 1em;
-  display: flex;
-  justify-content: center;
-  gap: 1em;
-}
-</style>
