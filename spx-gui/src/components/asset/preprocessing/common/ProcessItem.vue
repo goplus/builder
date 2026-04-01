@@ -1,10 +1,17 @@
 <template>
-  <li class="process-item" :class="{ active, applied }">
-    <UIImg class="img" :src="imgSrc" />
-    <div class="applied-icon">
+  <li class="relative flex h-fit w-22 cursor-pointer flex-col items-center">
+    <UIImg
+      class="h-16.5 w-22 rounded-1"
+      :style="active ? { boxShadow: 'inset 0 0 0 2px var(--ui-color-primary-main)' } : null"
+      :src="imgSrc"
+    />
+    <div
+      class="absolute top-5.25 left-8 flex h-6 w-6 items-center justify-center rounded-full bg-green-main text-grey-100 transition-opacity duration-200"
+      :class="applied ? 'opacity-100' : 'opacity-0'"
+    >
       <UIIcon color="sprite" type="check" />
     </div>
-    <p class="name">{{ name }}</p>
+    <p class="w-full px-[1em] py-0.5 text-center text-10/[1.4] text-title">{{ name }}</p>
   </li>
 </template>
 
@@ -19,56 +26,3 @@ defineProps<{
   active: boolean
 }>()
 </script>
-
-<style lang="scss" scoped>
-.process-item {
-  display: flex;
-  flex-direction: column;
-  width: 88px;
-  height: fit-content;
-  position: relative;
-  align-items: center;
-  cursor: pointer;
-
-  &.active .img {
-    box-shadow: inset 0 0 0 2px var(--ui-color-primary-main);
-  }
-
-  &.applied .applied-icon {
-    opacity: 1;
-  }
-}
-
-.img {
-  border-radius: var(--ui-border-radius-1);
-  width: 88px;
-  height: 66px;
-}
-
-.applied-icon {
-  position: absolute;
-  top: 21px;
-  left: 32px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  transition: 0.2s;
-  opacity: 0;
-  color: var(--ui-color-grey-100);
-  border-radius: 50%;
-  background-color: var(--ui-color-green-main);
-}
-
-.name {
-  width: 100%;
-  padding: 2px 1em;
-  font-size: 10px;
-  line-height: 1.4;
-
-  text-align: center;
-  color: var(--ui-color-title);
-}
-</style>

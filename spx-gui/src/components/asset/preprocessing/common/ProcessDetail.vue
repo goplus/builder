@@ -1,7 +1,7 @@
 <template>
-  <section class="process-detail">
-    <header>
-      <div class="title">
+  <section class="relative flex h-full flex-col gap-2.5 px-5 py-2.5">
+    <header class="flex">
+      <div class="flex h-8 flex-1 items-center gap-3">
         <slot name="header"></slot>
       </div>
       <UIButton
@@ -10,17 +10,19 @@
         color="success"
         :loading="handleApply.isLoading.value"
         @click="handleApply.fn"
-        >{{ $t({ en: 'Apply', zh: '应用' }) }}</UIButton
       >
+        {{ $t({ en: 'Apply', zh: '应用' }) }}
+      </UIButton>
       <UIButton
         v-show="cancelFn && applied"
         color="boring"
         :loading="handleCancel.isLoading.value"
         @click="handleCancel.fn"
-        >{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton
       >
+        {{ $t({ en: 'Cancel', zh: '取消' }) }}
+      </UIButton>
     </header>
-    <main>
+    <main class="flex-1 overflow-y-auto rounded-1 bg-grey-300">
       <slot></slot>
     </main>
   </section>
@@ -46,32 +48,3 @@ const handleCancel = useMessageHandle(() => props.cancelFn!(), {
   zh: '取消失败'
 })
 </script>
-
-<style lang="scss" scoped>
-.process-detail {
-  position: relative;
-  padding: 10px 20px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-header {
-  display: flex;
-
-  .title {
-    flex: 1 1 0;
-    height: var(--ui-line-height-2);
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-}
-main {
-  flex: 1 1 0;
-  overflow-y: auto;
-
-  border-radius: var(--ui-border-radius-1);
-  background-color: var(--ui-color-grey-300);
-}
-</style>

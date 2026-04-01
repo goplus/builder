@@ -80,14 +80,14 @@ const handleModalClose = useMessageHandle(
     mask-closable
     @update:visible="handleModalClose"
   >
-    <header class="header">
-      <h2 class="title">{{ $t({ zh: '生成精灵', en: 'Sprite Generator' }) }}</h2>
+    <header class="flex h-14 items-center justify-between border-b border-grey-400 px-6">
+      <h2 class="text-16 text-title">{{ $t({ zh: '生成精灵', en: 'Sprite Generator' }) }}</h2>
       <UIModalClose class="close" @click="handleModalClose" />
     </header>
 
     <SpriteGenComp
       v-if="activeGen != null"
-      class="sprite-gen"
+      class="min-h-0 flex-[1_1_0]"
       :gen="activeGen"
       library-search-enabled
       @collapse="handleGenCollapse"
@@ -95,24 +95,3 @@ const handleModalClose = useMessageHandle(
     />
   </UIModal>
 </template>
-
-<style lang="scss" scoped>
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 56px;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-
-  .title {
-    font-size: 16px;
-    color: var(--ui-color-title);
-  }
-}
-
-.sprite-gen {
-  flex: 1 1 0;
-  min-height: 0;
-}
-</style>

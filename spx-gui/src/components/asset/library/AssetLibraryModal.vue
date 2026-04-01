@@ -346,41 +346,45 @@ const title = computed(() => {
     mask-closable
     @update:visible="handleModalClose"
   >
-    <header class="header">
-      <div class="header-left">
+    <header class="flex h-14 items-center justify-between border-b border-grey-400 px-6">
+      <div class="flex items-center gap-middle">
         <UIButton
           v-if="isGenPhase && backButtonVisible"
-          class="back-asset"
+          class="-rotate-90"
           color="white"
           icon="arrowAlt"
           variant="stroke"
           @click="handleBackToAssetLibrary"
         ></UIButton>
-        <h2 class="title">{{ $t(title) }}</h2>
+        <h2 class="text-16 text-title">{{ $t(title) }}</h2>
       </div>
 
-      <UIModalClose class="close" @click="handleModalClose" />
+      <UIModalClose @click="handleModalClose" />
     </header>
 
     <template v-if="isGenPhase && AssetGenComp != null">
-      <AssetGenComp class="asset-gen" />
+      <AssetGenComp class="min-h-0 flex-[1_1_0]" />
     </template>
     <template v-else>
-      <div class="asset-library">
-        <div class="scroller-wrapper">
-          <header class="header" :style="headerStyle">
+      <div class="min-h-0 flex-[1_1_0] flex flex-col">
+        <div class="flex-1 overflow-y-auto">
+          <header
+            class="flex h-45 w-full flex-col items-center justify-center gap-5 bg-center bg-cover bg-no-repeat px-62.5"
+            :style="headerStyle"
+          >
             <UITextInput
               v-model:value="searchInput"
-              class="search-input"
+              class="w-full"
               color="white"
               size="large"
               clearable
               :placeholder="$t({ zh: '搜索', en: 'Search' })"
+              :style="{ boxShadow: '0 4px 12px 0 rgba(from var(--ui-color-turquoise-300) r g b / 65%)' }"
             >
               <template #prefix><UIIcon type="search" /></template>
             </UITextInput>
 
-            <div class="recommended-buttons">
+            <div class="flex gap-4">
               <UIButton
                 v-for="(r, i) in recommended"
                 :key="i"
@@ -394,15 +398,16 @@ const title = computed(() => {
             </div>
           </header>
 
-          <main class="main">
+          <main class="flex-[1_1_0] flex flex-col justify-stretch">
+            <!-- No right padding here to allow the optional scrollbar. -->
             <div
               v-radar="{
                 name: 'Asset list',
                 desc: `List of ${entityMessage.en}s containing keyword ${keyword}`
               }"
-              class="content"
+              class="flex-[1_1_0] flex flex-col gap-5 pt-5 pl-6"
             >
-              <div class="filter">
+              <div class="flex justify-between">
                 <UIChipRadioGroup v-model:value="owner">
                   <UIChipRadio value="all">{{ $t({ zh: '公开素材库', en: 'Public library' }) }}</UIChipRadio>
                   <UIChipRadio value="personal">{{ $t({ zh: '我的素材库', en: 'My library' }) }}</UIChipRadio>
@@ -410,10 +415,10 @@ const title = computed(() => {
               </div>
               <ListResultWrapper :query-ret="queryRet" :height="436">
                 <template v-if="SettingsInput != null && assetGen != null && owner === 'all'" #empty>
-                  <div class="empty">
-                    <div class="empty-tip">
+                  <div class="mx-auto flex h-109 flex-col items-center gap-6 pt-10">
+                    <div class="text-grey-700">
                       <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>
-                      <span class="highlight">{{ $t({ zh: `“${keyword}”`, en: `"${keyword}"` }) }}</span>
+                      <span class="text-grey-1000">{{ $t({ zh: `“${keyword}”`, en: `"${keyword}"` }) }}</span>
                       <span>
                         {{
                           $t({
@@ -424,7 +429,7 @@ const title = computed(() => {
                       </span>
                     </div>
                     <SettingsInput
-                      class="settings-input"
+                      class="w-146"
                       :gen="assetGen"
                       :description-placeholder="keyword"
                       @submit="handleGenStart"
@@ -432,8 +437,8 @@ const title = computed(() => {
                   </div>
                 </template>
                 <template #default="slotProps">
-                  <div class="asset-list-container">
-                    <ul class="asset-list">
+                  <div class="h-109">
+                    <ul class="flex flex-wrap content-start gap-2">
                       <ItemComponent
                         v-for="asset in slotProps.data.data"
                         :key="asset.id"
@@ -442,15 +447,20 @@ const title = computed(() => {
                         @click="handleAssetClick(asset)"
                       />
                     </ul>
-                    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
-                    <div v-if="shouldShowGenSuggestion" class="gen-suggestion">
-                      <div class="message">
+                    <UIPagination
+                      v-show="pageTotal > 1"
+                      v-model:current="page"
+                      class="mt-9 mb-3 justify-center"
+                      :total="pageTotal"
+                    />
+                    <div v-if="shouldShowGenSuggestion" class="flex flex-col items-center gap-5 py-11">
+                      <div class="text-16 text-grey-700">
                         {{ $t(genSuggestionMessage) }}
                       </div>
                       <UIButton size="large" @click="handleGenStart">
                         <template #icon>
                           <!-- eslint-disable-next-line vue/no-v-html -->
-                          <div class="icon" v-html="genAssetIcon"></div>
+                          <div class="h-4.5 w-4.5" v-html="genAssetIcon"></div>
                         </template>
                         {{ $t({ en: 'Generate asset', zh: '生成素材' }) }}
                       </UIButton>
@@ -461,7 +471,7 @@ const title = computed(() => {
             </div>
           </main>
         </div>
-        <footer class="footer">
+        <footer class="flex items-center justify-end gap-middle px-6 py-5">
           <span v-show="selected.length > 0">
             {{
               $t({
@@ -484,144 +494,3 @@ const title = computed(() => {
     </template>
   </UIModal>
 </template>
-
-<style lang="scss" scoped>
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 56px;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: var(--ui-gap-middle);
-
-    .back-asset {
-      transform: rotate(-90deg);
-    }
-
-    .title {
-      font-size: 16px;
-      color: var(--ui-color-title);
-    }
-  }
-}
-
-.asset-gen,
-.asset-library {
-  flex: 1 1 0;
-  min-height: 0;
-}
-
-.asset-library {
-  display: flex;
-  flex-direction: column;
-  .scroller-wrapper {
-    flex: 1;
-    overflow-y: auto;
-  }
-
-  .header {
-    display: flex;
-    flex-direction: column;
-    height: 180px;
-    width: 100%;
-    padding: 0 250px;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
-
-    .search-input {
-      width: 100%;
-      box-shadow: 0 4px 12px 0 rgba(from var(--ui-color-turquoise-300) r g b / 65%);
-    }
-
-    .recommended-buttons {
-      display: flex;
-      gap: 16px;
-    }
-  }
-  .main {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: stretch;
-  }
-  .content {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px 0 0 24px; // no right padding to allow optional scrollbar
-  }
-  .filter {
-    display: flex;
-    justify-content: space-between;
-  }
-  .empty {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    padding-top: 40px;
-    margin: 0 auto;
-    gap: 24px;
-
-    .empty-tip {
-      color: var(--ui-color-grey-700);
-
-      .highlight {
-        color: var(--ui-color-grey-1000);
-      }
-    }
-
-    .settings-input {
-      width: 584px;
-    }
-  }
-  .empty,
-  .asset-list-container {
-    height: 436px;
-  }
-  .asset-list {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-content: flex-start;
-  }
-  .pagination {
-    justify-content: center;
-    margin: 36px 0 12px;
-  }
-  .gen-suggestion {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    padding: 44px 0;
-
-    .message {
-      font-size: 16px;
-      color: var(--ui-color-grey-700);
-    }
-
-    .icon {
-      width: 18px;
-      height: 18px;
-    }
-  }
-
-  .footer {
-    padding: 20px 24px;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: var(--ui-gap-middle);
-  }
-}
-</style>

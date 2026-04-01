@@ -31,69 +31,16 @@ const loading = computed(() => props.loading || fileLoading.value)
       name: 'Backdrop image item',
       desc: 'Click to select this image as the backdrop'
     }"
-    class="backdrop-image-item"
-    :class="{ active, compact, loading, disabled }"
+    class="flex items-center justify-center overflow-hidden border-2 border-transparent bg-grey-300 p-1 transition-[width,height,border-radius] duration-200 ease-in-out"
+    :class="[
+      compact ? 'h-17 w-22 rounded-1' : 'h-27 w-35 rounded-2',
+      active ? 'border-turquoise-500 bg-turquoise-200 cursor-default' : '',
+      disabled ? 'cursor-not-allowed opacity-50' : '',
+      loading ? 'cursor-default pointer-events-none' : '',
+      !active && !disabled && !loading ? 'cursor-pointer' : ''
+    ]"
   >
     <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" />
-    <UIImg v-else class="img" :src="url" size="cover" />
+    <UIImg v-else :class="compact ? 'h-15 w-20 rounded-[4px]' : 'h-25 w-33 rounded-1'" :src="url" size="cover" />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.backdrop-image-item {
-  display: flex;
-  width: 140px;
-  height: 108px;
-  padding: 4px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 2px solid transparent;
-  background-color: var(--ui-color-grey-300);
-  cursor: pointer;
-  overflow: hidden;
-
-  transition:
-    width 0.2s ease,
-    height 0.2s ease,
-    border-radius 0.2s ease;
-
-  &.active {
-    background-color: var(--ui-color-turquoise-200);
-    border-color: var(--ui-color-turquoise-500);
-    cursor: default;
-  }
-
-  &.disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  &.loading {
-    cursor: default;
-    pointer-events: none;
-  }
-
-  &.compact {
-    width: 88px;
-    height: 68px;
-    border-radius: 8px;
-  }
-}
-
-.img {
-  width: 132px;
-  height: 100px;
-  border-radius: 8px;
-  transition:
-    width 0.2s ease,
-    height 0.2s ease,
-    border-radius 0.2s ease;
-}
-
-.backdrop-image-item.compact .img {
-  width: 80px;
-  height: 60px;
-  border-radius: 4px;
-}
-</style>

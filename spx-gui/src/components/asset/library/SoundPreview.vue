@@ -1,6 +1,6 @@
 <template>
-  <div class="sound-preview">
-    <SoundPlayer class="player" :src="audioSrc" color="primary" />
+  <div class="flex items-center justify-center">
+    <SoundPlayer :src="audioSrc" color="primary" />
   </div>
 </template>
 
@@ -22,16 +22,3 @@ const sound = useAsyncComputedLegacy(async () => {
 })
 const [audioSrc] = useFileUrl(() => sound.value?.file)
 </script>
-
-<style scoped lang="scss">
-.sound-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.player {
-  width: 36px;
-  height: 36px;
-}
-</style>

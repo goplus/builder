@@ -12,7 +12,7 @@
     <div
       ref="containerRef"
       v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
-      :class="['container', `ui-modal-size-${size || 'medium'}`]"
+      :class="['ui-modal-container', `ui-modal-size-${size || 'medium'}`]"
     >
       <slot></slot>
     </div>
@@ -107,7 +107,7 @@ useModalEsc(
 </script>
 
 <style lang="scss" scoped>
-.container {
+.ui-modal-container {
   display: flex;
   flex-direction: column;
   box-shadow: var(--ui-box-shadow-big);

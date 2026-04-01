@@ -321,7 +321,7 @@ function formatTime(timeInMs: number) {
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 @keyframes leftMarker {
   0%,
   100% {
@@ -410,48 +410,45 @@ function formatTime(timeInMs: number) {
   width: 100%;
   height: 100%;
   isolation: isolate;
+}
 
-  &.nudge {
-    .segment-marker {
-      &::after {
-        content: '';
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        position: absolute;
-        background-color: var(--ui-color-turquoise-300);
-        mask-image: url('@/components/asset/gen/animation/marker-arrow.svg');
-        mask-size: contain;
-        mask-repeat: no-repeat;
-      }
+.track-inner.nudge .segment-marker::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  background-color: var(--ui-color-turquoise-300);
+  mask-image: url('@/components/asset/gen/animation/marker-arrow.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
 
-      &.left {
-        animation: leftMarker 1.8s infinite ease-in-out;
+.track-inner.nudge .segment-marker.left {
+  animation: leftMarker 1.8s infinite ease-in-out;
+}
 
-        &::after {
-          right: -24px;
-          animation: markerArrow 1.8s infinite ease-in-out;
-        }
-      }
+.track-inner.nudge .segment-marker.left::after {
+  right: -24px;
+  animation: markerArrow 1.8s infinite ease-in-out;
+}
 
-      &.right {
-        animation: rightMarker 1.8s infinite ease-in-out;
-        &::after {
-          left: -24px;
-          transform: rotateY(180deg);
-          animation: markerArrow 1.8s infinite ease-in-out;
-        }
-      }
-    }
+.track-inner.nudge .segment-marker.right {
+  animation: rightMarker 1.8s infinite ease-in-out;
+}
 
-    .track-tips {
-      display: block;
-    }
+.track-inner.nudge .segment-marker.right::after {
+  left: -24px;
+  transform: rotateY(180deg);
+  animation: markerArrow 1.8s infinite ease-in-out;
+}
 
-    .current-time {
-      display: none;
-    }
-  }
+.track-inner.nudge .track-tips {
+  display: block;
+}
+
+.track-inner.nudge .current-time {
+  display: none;
 }
 
 .segment {
@@ -482,15 +479,16 @@ function formatTime(timeInMs: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1; // Ensure it stays above .current-time to prioritize .segment-marker as it is interactive
+  /* Ensure it stays above .current-time to prioritize .segment-marker as it is interactive. */
+  z-index: 1;
+}
 
-  &::before {
-    content: '';
-    display: block;
-    width: 1px;
-    height: 12px;
-    background: var(--ui-color-grey-100);
-  }
+.segment-marker::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 12px;
+  background: var(--ui-color-grey-100);
 }
 
 .track-tips {

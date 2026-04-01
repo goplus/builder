@@ -1,6 +1,6 @@
 <template>
-  <section ref="wrapperRef" class="img-preview" :style="wrapperStyle">
-    <canvas ref="canvasRef" class="canvas"></canvas>
+  <section ref="wrapperRef" class="img-preview flex w-full items-center justify-center" :style="wrapperStyle">
+    <canvas ref="canvasRef" class="bg-bottom-left bg-repeat bg-[url('./img-bg.svg')]"></canvas>
   </section>
 </template>
 
@@ -67,19 +67,8 @@ defineExpose({
 })
 </script>
 
-<style lang="scss" scoped>
-.img-preview {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  & + .img-preview {
-    margin-top: 20px;
-  }
-}
-
-.canvas {
-  background: left bottom repeat url('./img-bg.svg');
+<style scoped>
+.img-preview + .img-preview {
+  margin-top: 20px;
 }
 </style>

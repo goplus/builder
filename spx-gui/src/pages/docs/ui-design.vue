@@ -1,11 +1,11 @@
 <template>
-  <div class="ui-design-wrapper">
+  <div class="flex h-full w-full flex-col overflow-y-auto bg-grey-500">
     <CommunityNavbar />
 
-    <CenteredWrapper class="wrapper">
-      <div class="component-wrapper">
+    <CenteredWrapper class="my-7.5 flex flex-col gap-8">
+      <div class="flex flex-col gap-middle">
         <h3>UIButton</h3>
-        <div class="setting-wrapper">
+        <div class="flex items-center gap-3">
           <div>
             variant:
             <UISelect v-model:value="buttonVariant">
@@ -30,8 +30,8 @@
             </UISelect>
           </div>
         </div>
-        <div class="content-wrapper">
-          <div class="item">
+        <div class="flex flex-col gap-3">
+          <div class="flex gap-2">
             <UIButton :variant="buttonVariant" :shape="buttonShape" :size="buttonSize" color="primary"
               >primary</UIButton
             >
@@ -47,7 +47,7 @@
             <UIButton :variant="buttonVariant" :shape="buttonShape" :size="buttonSize" color="blue">blue</UIButton>
             <UIButton :variant="buttonVariant" :shape="buttonShape" :size="buttonSize" color="purple">purple</UIButton>
           </div>
-          <div class="item">
+          <div class="flex gap-2">
             <UIButton :variant="buttonVariant" :shape="buttonShape" :size="buttonSize" color="primary" icon="play"
               >primary</UIButton
             >
@@ -74,7 +74,7 @@
             >
           </div>
 
-          <div class="item">
+          <div class="flex gap-2">
             <UIButton
               :variant="buttonVariant"
               :shape="buttonShape"
@@ -142,7 +142,7 @@
               >purple</UIButton
             >
           </div>
-          <div class="item">
+          <div class="flex gap-2">
             <UIButton
               :variant="buttonVariant"
               :shape="buttonShape"
@@ -204,7 +204,7 @@
               >purple</UIButton
             >
           </div>
-          <div class="item">
+          <div class="flex gap-2">
             <UIButton
               :variant="buttonVariant"
               :shape="buttonShape"
@@ -264,9 +264,9 @@
           </div>
         </div>
       </div>
-      <div class="component-wrapper">
+      <div class="flex flex-col gap-middle">
         <h3>UITag</h3>
-        <div class="setting-wrapper">
+        <div class="flex items-center gap-3">
           <div>
             variant:
             <UISelect v-model:value="tagVariant">
@@ -275,20 +275,20 @@
             </UISelect>
           </div>
         </div>
-        <div class="content-wrapper">
-          <div class="item">
+        <div class="flex flex-col gap-3">
+          <div class="flex gap-2">
             <UITag :variant="tagVariant" color="default">default</UITag>
             <UITag :variant="tagVariant" color="primary">primary</UITag>
             <UITag :variant="tagVariant" color="warning">warning</UITag>
             <UITag :variant="tagVariant" color="error">error</UITag>
           </div>
-          <div class="item">
+          <div class="flex gap-2">
             <UITag :variant="tagVariant" color="default" closable @close="message.success('default')">default</UITag>
             <UITag :variant="tagVariant" color="primary" closable @close="message.info('primary')">primary</UITag>
             <UITag :variant="tagVariant" color="warning" closable @close="message.warning('warning')">warning</UITag>
             <UITag :variant="tagVariant" color="error" closable @close="message.error('error')">error</UITag>
           </div>
-          <div class="item">
+          <div class="flex gap-2">
             <UITag
               v-for="value in ['up', 'right', 'down', 'left']"
               :key="value"
@@ -299,7 +299,7 @@
               >{{ value }}</UITag
             >
           </div>
-          <div class="item">
+          <div class="flex gap-2">
             <UITag
               v-for="value in ['up', 'right', 'down', 'left']"
               :key="value"
@@ -312,7 +312,7 @@
               >{{ value }}</UITag
             >
           </div>
-          <div class="item">
+          <div class="flex gap-2">
             <UITag :variant="tagVariant" color="default" disabled>default</UITag>
             <UITag :variant="tagVariant" color="primary" disabled>primary</UITag>
             <UITag :variant="tagVariant" color="warning" disabled>warning</UITag>
@@ -348,44 +348,3 @@ const message = useMessage()
 const tagValue = ref('up')
 const tagsValue = ref(new Set())
 </script>
-
-<style lang="scss" scoped>
-.ui-design-wrapper {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  width: 100%;
-  height: 100%;
-  background-color: var(--ui-color-grey-500);
-}
-
-.wrapper {
-  display: flex;
-  flex-direction: column;
-  margin: 30px auto;
-  gap: 32px;
-}
-
-.component-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.setting-wrapper {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.content-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-
-  .item {
-    display: flex;
-    gap: 8px;
-  }
-}
-</style>

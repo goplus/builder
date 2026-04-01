@@ -241,6 +241,8 @@
 
   --text-body: var(--ui-font-size-text, 14px);
   --text-body--line-height: 1.57143;
+  --text-10: 10px;
+  --text-10--line-height: 1.5;
   --text-12: 12px;
   --text-12--line-height: 1.5;
   --text-13: 13px;

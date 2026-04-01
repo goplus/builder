@@ -26,14 +26,14 @@ function handleSpriteSelect(sprite: Sprite | null) {
 </script>
 
 <template>
-  <div class="flex flex-1 flex-row gap-middle">
+  <div class="flex-[1_1_0] flex flex-row gap-middle">
     <div class="flex w-0 min-w-0 flex-1 items-center justify-center">
       <MapViewer :project="project" :selected-sprite="selectedSprite" @update:selected-sprite="handleSpriteSelect" />
     </div>
-    <div class="flex basis-100 grow-0 shrink-0 flex-col gap-middle desktop-large:basis-124">
+    <div class="flex-[0_0_400px] flex flex-col gap-middle desktop-large:basis-124">
       <UICard>
         <UICardHeader>
-          <div class="flex w-full items-center justify-between">
+          <div class="w-full flex items-center justify-between">
             {{
               $t({
                 en: 'Global Config',
@@ -56,7 +56,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
         <MapBasicConfig v-if="!collapsed" class="p-4" :project="project" />
       </UICard>
       <SpritesPanel
-        class="min-h-0 flex-1 basis-0"
+        class="min-h-0 flex-[1_1_0]"
         :project="project"
         :selected-sprite="selectedSprite"
         @update:selected-sprite="handleSpriteSelect"

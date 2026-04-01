@@ -79,7 +79,7 @@ const handleEditProfile = useMessageHandle(
       <UIImg class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100" :src="avatarUrl" />
     </div>
     <div class="flex items-end gap-25 px-5 pt-5 pb-5 pl-48">
-      <div class="flex flex-1 flex-col gap-3">
+      <div class="flex-[1_1_0] flex flex-col gap-3">
         <div class="flex flex-wrap items-center gap-middle">
           <h2 class="m-0 text-20/7 text-title">{{ user.displayName }}</h2>
           <UserUsernameInline :username="user.username" />
@@ -87,7 +87,7 @@ const handleEditProfile = useMessageHandle(
         </div>
         <TextView style="max-height: 66px" :text="user.description" />
       </div>
-      <div class="flex shrink-0 basis-27.5 justify-end">
+      <div class="flex-[0_0_110px] flex justify-end">
         <UIButton
           v-if="isSignedInUser"
           v-radar="{ name: 'Edit profile button', desc: 'Click to edit user profile' }"

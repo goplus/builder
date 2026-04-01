@@ -7,8 +7,8 @@ defineProps<{
 </script>
 
 <template>
-  <div class="visibility-icon">
-    <i v-if="visibility === Visibility.Public" class="icon" :title="$t({ en: 'Public', zh: '公开' })">
+  <div class="absolute top-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-grey-100">
+    <i v-if="visibility === Visibility.Public" class="h-4 w-4" :title="$t({ en: 'Public', zh: '公开' })">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           fill-rule="evenodd"
@@ -31,7 +31,7 @@ defineProps<{
         </defs>
       </svg>
     </i>
-    <i v-else class="icon" :title="$t({ en: 'Private', zh: '私有' })">
+    <i v-else class="h-4 w-4" :title="$t({ en: 'Private', zh: '私有' })">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           fill-rule="evenodd"
@@ -47,22 +47,3 @@ defineProps<{
     </i>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.visibility-icon {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  left: 6px;
-  top: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--ui-color-grey-100);
-  border-radius: 50%;
-}
-.icon {
-  width: 16px;
-  height: 16px;
-}
-</style>

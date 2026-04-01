@@ -63,13 +63,13 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
           name: $t(name),
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
         }"
-        class="param-button"
-        :class="[{ 'icon-only': iconOnly }]"
+        class="flex h-8 items-center justify-center gap-1 rounded-2 border border-grey-400 bg-grey-100 pr-2 pl-1 text-13/5 text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
+        :class="[{ 'aspect-square px-0': iconOnly }]"
         :disabled="disabled"
       >
         <UIImg
           v-if="selectedItem.image != null"
-          :class="['button-image', { disabled, placeholder: showPlaceholder }]"
+          :class="['h-6 w-6 rounded-[10px]', { 'opacity-40': disabled, 'disabled-like': disabled && showPlaceholder }]"
           :src="selectedItem.image"
           size="cover"
         />
@@ -82,9 +82,9 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
       {{ $t(tooltipText) }}
     </template>
     <template #dropdown-content>
-      <div class="dropdown-content">
+      <div class="flex max-w-102 flex-col gap-3 p-4">
         <div>{{ $t(tips) }}</div>
-        <ul class="options">
+        <ul class="flex flex-row flex-wrap gap-2">
           <UIBlockItem
             v-for="(item, index) in options"
             :key="index"
@@ -92,11 +92,10 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
               name: `Option '${$t(item.label)}'`,
               desc: `Select '${$t(item.label)}' as the '${$t(name)}'`
             }"
-            class="option"
             :active="value === item.value"
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"
           >
-            <UIImg v-if="item.image != null" class="block-image" :src="item.image" />
+            <UIImg v-if="item.image != null" class="mt-0.5 mb-1 h-15 w-20 rounded-1" :src="item.image" />
             <UIBlockItemTitle size="medium">
               {{ $t(item.label) }}
             </UIBlockItemTitle>
@@ -112,74 +111,10 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
   </UIDropdownWithTooltip>
 </template>
 
-<style lang="scss" scoped>
-.param-button {
-  height: 32px;
-  padding: 0 8px 0 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 13px;
-  line-height: 20px;
-
-  color: var(--ui-color-grey-900);
-  border-radius: var(--ui-border-radius-2);
-  border: 1px solid var(--ui-color-grey-400);
-  background: var(--ui-color-grey-100);
-
-  &.icon-only {
-    aspect-ratio: 1;
-    padding: 0;
-  }
-
-  &:hover:not(:active, :disabled) {
-    cursor: pointer;
-    background: var(--ui-color-grey-300);
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    background: var(--ui-color-grey-300);
-    color: var(--ui-color-grey-600);
-  }
-}
-
-.button-image {
-  width: 24px;
-  height: 24px;
-  border-radius: 10px;
-
-  &.disabled {
-    opacity: 0.4;
-  }
-  &.placeholder.disabled {
-    // TODO: Temporarily simulate the color value of --ui-color-grey-600 via filter,
-    // because the placeholder's background-image is an SVG and its color cannot be set directly.
-    filter: invert(96%) sepia(11%) saturate(163%) hue-rotate(169deg) brightness(91%) contrast(88%);
-  }
-}
-
-.block-image {
-  width: 80px;
-  height: 60px;
-  border-radius: 8px;
-  margin-top: 2px;
-  margin-bottom: 4px;
-}
-
-.dropdown-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  max-width: 408px;
-
-  .options {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+<style scoped>
+.disabled-like {
+  /* TODO: Temporarily simulate the color value of --ui-color-grey-600 via filter,
+     because the placeholder's background-image is an SVG and its color cannot be set directly. */
+  filter: invert(96%) sepia(11%) saturate(163%) hue-rotate(169deg) brightness(91%) contrast(88%);
 }
 </style>
