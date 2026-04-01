@@ -4,7 +4,7 @@
       :costumes="animation.costumes"
       :sound="sound"
       :duration="animation.duration"
-      class="animation-player"
+      class="w-full flex-[1_1_0]"
     />
     <AnimationSettings :animation="animation" :sound-editable="soundEditable" />
   </EditorItemDetail>
@@ -36,17 +36,3 @@ const emit = defineEmits<{
 const editorCtx = useEditorCtx()
 const sound = computed(() => editorCtx.project.sounds.find((sound) => sound.id === props.animation.sound) ?? null)
 </script>
-
-<style lang="scss" scoped>
-.animation-player {
-  width: 100%;
-  flex: 1 1 0;
-}
-
-.mute-switch {
-  position: absolute;
-  z-index: 20;
-  top: 12px;
-  right: 12px;
-}
-</style>

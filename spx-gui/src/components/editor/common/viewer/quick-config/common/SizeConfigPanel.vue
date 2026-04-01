@@ -27,10 +27,10 @@ onBeforeUnmount(() => handleSizePercentUpdate.cancel())
 
 <template>
   <ConfigPanel>
-    <div class="size-config-wrapper">
+    <div class="flex items-center gap-1">
       <UINumberInput
         v-radar="{ name: 'Size input', desc: `Input to set ${name} size percentage` }"
-        class="size-input"
+        class="w-25.5"
         :min="0"
         :value="round(localConfig.size * 100)"
         @update:value="handleSizePercentUpdate"
@@ -48,15 +48,3 @@ onBeforeUnmount(() => handleSizePercentUpdate.cancel())
     </div>
   </ConfigPanel>
 </template>
-
-<style lang="scss" scoped>
-.size-config-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.size-input {
-  width: 102px;
-}
-</style>

@@ -396,6 +396,7 @@ Token usage preference:
 
 - in Tailwind utility classes, prefer the bridged semantic tokens such as `text-text`, `text-title`, and `bg-primary-100`
 - in local CSS or SCSS rules, prefer using the original `--ui-*` variables directly, because `--ui-*` remains the source of truth and the Tailwind bridge exists primarily for utility-class authoring
+- when a Tailwind utility needs to reference a CSS custom property directly, prefer the Tailwind v4 shorthand such as `text-(--token)`, `bg-(--token)`, `border-(--token)`, or `shadow-(--token)` over older forms like `text-[var(--token)]` or `bg-[var(--token)]`
 
 Bridge naming and text-token preference:
 
@@ -528,6 +529,30 @@ Preferred style:
 - before applying root-level positioning or sizing utilities to a wrapped UI component, inspect the component implementation
 - if the wrapper already owns the root layout semantics, use an outer wrapper for positioning concerns such as `absolute`, `top`, `left`, and `z-index`
 - for one-off width/height overrides on wrapper roots such as `UIIcon`, prefer inline `style` when that is the shortest and clearest way to win the cascade
+
+### 10.5. Keep Scrollbar-Reserve Padding And Its Comments In Local CSS
+
+Some scroll containers use asymmetric padding together with `scrollbar-width: thin` so optional scrollbars do not overlap content.
+
+Preferred style:
+
+- when the original local CSS includes a comment that explains scrollbar-reserve padding, keep that padding in local CSS instead of moving it fully into Tailwind utilities
+- preserve comments such as "no right padding to allow optional scrollbar" when they still describe a real layout constraint
+- this applies especially to scroll wrappers like list panels or sidebars where `padding-right: 0` is intentional rather than a generic spacing choice
+
+Rule of thumb:
+
+- if `scrollbar-width: thin` and asymmetric padding belong to the same layout constraint, keep them together in the local CSS block
+
+### 10.6. Flatten `:deep(...)` Selectors In Plain Scoped CSS
+
+When a file is migrated from SCSS to plain scoped CSS, nested `:deep(...)` forms should not be carried over mechanically.
+
+Preferred style:
+
+- in plain `<style scoped>`, write explicit flat selectors such as `.preview :deep(svg)` instead of nested forms like `.preview { :deep(svg) { ... } }`
+- be especially careful in `v-html` or raw-SVG cases, where the descendant content does not receive the component's scoped attribute and depends on the `:deep(...)` selector being compiled correctly
+- keep SCSS-style nesting only in files that still explicitly use SCSS
 
 ### 11. Keep Exact Local Values Local, With A Visible TODO
 

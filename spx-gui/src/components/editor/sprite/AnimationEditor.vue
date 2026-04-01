@@ -157,9 +157,3 @@ const handleRename = useMessageHandle(renameAnimation, {
   zh: '重命名动画失败'
 }).fn
 </script>
-<style scoped lang="scss">
-.background {
-  width: 100%;
-  height: 100%;
-}
-</style>

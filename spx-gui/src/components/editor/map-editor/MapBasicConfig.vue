@@ -11,36 +11,18 @@ defineProps<{
 </script>
 
 <template>
-  <div class="map-basic-config">
-    <div class="config-item">
-      <div class="label">{{ $t({ en: 'Map size', zh: '地图尺寸' }) }}</div>
+  <div class="flex flex-col gap-middle">
+    <div class="flex items-center">
+      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Map size', zh: '地图尺寸' }) }}</div>
       <MapSizeInput :project="project" />
     </div>
-    <div class="config-item">
-      <div class="label">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
+    <div class="flex items-center">
+      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
       <MapPhysicsInput :project="project" />
     </div>
-    <div v-if="project.stage.physics.enabled" class="config-item">
-      <div class="label">{{ $t({ en: 'Layer Sorting', zh: '层级排序' }) }}</div>
+    <div v-if="project.stage.physics.enabled" class="flex items-center">
+      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Layer Sorting', zh: '层级排序' }) }}</div>
       <MapLayerSortInput :project="project" />
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.map-basic-config {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-middle);
-}
-
-.config-item {
-  display: flex;
-  align-items: center;
-
-  .label {
-    white-space: nowrap;
-    margin-right: 16px;
-  }
-}
-</style>

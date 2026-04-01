@@ -20,7 +20,7 @@ const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
 
 <template>
   <div
-    class="course-item-mini flex items-center rounded-1 border-2 border-transparent bg-grey-50 p-2 transition-all duration-200"
+    class="flex items-center rounded-1 border-2 border-transparent bg-grey-50 p-2 transition-all duration-200"
     :class="{
       'cursor-pointer hover:bg-primary-100': interactive,
       'border-grey-400 bg-grey-100': highlighted,

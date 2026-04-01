@@ -195,6 +195,9 @@
   --color-dividing-line-2: var(--ui-color-dividing-line-2, #eaeff3);
   --color-border: var(--ui-color-border, #cbd2d8);
 
+  --color-black: #000;
+  --color-white: #fff;
+
   /* Typography tokens bridged from the UI token layer. */
   --font-sans: var(
     --ui-font-family-main,

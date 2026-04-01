@@ -1,6 +1,9 @@
 <template>
-  <div class="sprites-panel" :style="cssVars">
-    <section v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }" class="details">
+  <div class="h-full w-full overflow-hidden" :style="cssVars">
+    <section
+      v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }"
+      class="flex h-full flex-col overflow-hidden"
+    >
       <PanelHeader :active="selectedSprite != null">
         {{ $t({ en: 'Sprites', zh: '精灵' }) }}
         <template #add-options>
@@ -89,18 +92,3 @@ const handleGenerate = useMessageHandle(
   }
 ).fn
 </script>
-
-<style scoped lang="scss">
-.sprites-panel {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.details {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-</style>

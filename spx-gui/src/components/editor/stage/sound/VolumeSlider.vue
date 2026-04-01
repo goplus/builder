@@ -1,8 +1,7 @@
 <template>
-  <div class="volume-slider">
-    <UIIcon type="volumeOff" class="volume-icon" />
+  <div class="volume-slider flex items-center gap-2">
+    <UIIcon type="volumeOff" class="text-grey-800" style="width: 24px; height: 24px" />
     <UISlider
-      class="slider"
       color="sound"
       :min="0"
       :max="2"
@@ -11,7 +10,7 @@
       :tooltip="false"
       @update:value="(v) => emit('update:value', v)"
     />
-    <UIIcon type="volumeUp" class="volume-icon" />
+    <UIIcon type="volumeUp" class="text-grey-800" style="width: 24px; height: 24px" />
   </div>
 </template>
 <script setup lang="ts">
@@ -25,16 +24,3 @@ const emit = defineEmits<{
   'update:value': [number]
 }>()
 </script>
-<style scoped lang="scss">
-.volume-slider {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.volume-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--ui-color-grey-800);
-}
-</style>

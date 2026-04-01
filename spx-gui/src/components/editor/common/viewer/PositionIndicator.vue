@@ -26,26 +26,10 @@ watch(
 </script>
 
 <template>
-  <div class="position-indicator" :class="{ visible }">{{ position?.x ?? 0 }}, {{ position?.y ?? 0 }}</div>
+  <div
+    class="pointer-events-none absolute top-2 left-1/2 rounded-[4px] bg-black/30 px-1.5 py-0.5 text-12 text-white transition-opacity -translate-x-1/2"
+    :class="visible ? 'opacity-100' : 'opacity-0'"
+  >
+    {{ position?.x ?? 0 }}, {{ position?.y ?? 0 }}
+  </div>
 </template>
-
-<style lang="scss" scoped>
-.position-indicator {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.3);
-  color: white;
-  font-size: 12px;
-  border-radius: 4px;
-  pointer-events: none;
-
-  transition: opacity 0.2s;
-  opacity: 0;
-  &.visible {
-    opacity: 1;
-  }
-}
-</style>

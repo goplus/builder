@@ -5,6 +5,7 @@ import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
 
+import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
@@ -525,7 +526,8 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       name: 'Map viewer',
       desc: 'View and manipulate the map and sprites on the map. Click on sprite to select it.'
     }"
-    class="map-viewer"
+    class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-3 bg-center bg-repeat bg-contain"
+    :style="{ backgroundImage: `url(${stageBgUrl})` }"
     @mousemove="updateMousePos"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
@@ -563,36 +565,14 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         />
       </v-layer>
     </v-stage>
-    <QuickConfigWrapper v-if="!loading && localConfigRef != null" ref="quickConfigRef" class="quick-config">
-      <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
-    </QuickConfigWrapper>
+    <div v-if="!loading && localConfigRef != null" class="absolute left-0 top-0">
+      <QuickConfigWrapper ref="quickConfigRef">
+        <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
+      </QuickConfigWrapper>
+    </div>
 
     <PositionIndicator :position="mousePos" />
 
     <UILoading :visible="loading" cover />
   </div>
 </template>
-
-<style scoped>
-.map-viewer {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: var(--ui-border-radius-3);
-  overflow: hidden;
-  background-image: url(@/assets/images/stage-bg.svg);
-  background-position: center;
-  background-repeat: repeat;
-  background-size: contain;
-  position: relative;
-}
-
-.quick-config {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-</style>

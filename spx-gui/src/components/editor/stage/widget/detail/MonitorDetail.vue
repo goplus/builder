@@ -1,26 +1,26 @@
 <template>
-  <EditorItemDetail class="wrapper" :name="monitor.name" @rename="handleRename">
-    <div class="content">
+  <EditorItemDetail style="background-color: var(--ui-color-grey-100)" :name="monitor.name" @rename="handleRename">
+    <div class="flex justify-center gap-8 py-5">
       <!-- eslint-disable-next-line vue/no-v-html -->
-      <div class="preview" v-html="monitorIcon"></div>
-      <div class="controls">
-        <div class="line">
-          <p class="with-label">
+      <div class="monitor-icon flex h-24 w-24 items-center justify-center rounded-1 bg-grey-300" v-html="mntIcon"></div>
+      <div class="flex flex-col gap-middle">
+        <div class="flex items-center gap-middle">
+          <p class="flex items-center gap-2 break-keep">
             {{ $t({ en: 'Label', zh: '标签' }) }}
             <UITextInput
               v-radar="{ name: 'Label input', desc: 'Input field for monitor label' }"
-              class="input"
+              style="width: 180px"
               :value="monitor.label"
               @update:value="handleLabelUpdate"
             />
           </p>
         </div>
-        <div class="line">
-          <p class="with-label">
+        <div class="flex items-center gap-middle">
+          <p class="flex items-center gap-2 break-keep">
             {{ $t({ en: 'Target', zh: '对象' }) }}
             <UISelect
               v-radar="{ name: 'Target select', desc: 'Select target for monitor value' }"
-              class="input"
+              style="width: 180px"
               :value="monitor.target"
               @update:value="handleTargetUpdate"
             >
@@ -30,11 +30,11 @@
               </UISelectOption>
             </UISelect>
           </p>
-          <p class="with-label">
+          <p class="flex items-center gap-2 break-keep">
             {{ $t({ en: 'Value', zh: '值' }) }}
             <UISelect
               v-radar="{ name: 'Property select', desc: 'Select property for monitor value' }"
-              class="input"
+              style="width: 180px"
               :value="monitor.variableName || null"
               :placeholder="$t({ en: 'Select property', zh: '选择属性' })"
               @update:value="handlePropertyUpdate"
@@ -47,12 +47,12 @@
           </p>
         </div>
         <div class="divider"></div>
-        <div class="line">
-          <p class="with-label">
+        <div class="flex items-center gap-middle">
+          <p class="flex items-center gap-2 break-keep">
             {{ $t({ en: 'Position', zh: '位置' }) }}
             <UINumberInput
               v-radar="{ name: 'X position input', desc: 'Input field for monitor X position' }"
-              class="input"
+              style="width: 180px"
               :value="monitor.x"
               @update:value="handleXUpdate"
             >
@@ -60,7 +60,7 @@
             </UINumberInput>
             <UINumberInput
               v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
-              class="input"
+              style="width: 180px"
               :value="monitor.y"
               @update:value="handleYUpdate"
             >
@@ -68,12 +68,12 @@
             </UINumberInput>
           </p>
         </div>
-        <div class="line">
-          <p class="with-label">
+        <div class="flex items-center gap-middle">
+          <p class="flex items-center gap-2 break-keep">
             {{ $t({ en: 'Size', zh: '大小' }) }}
             <UINumberInput
               v-radar="{ name: 'Size input', desc: 'Input field for monitor size' }"
-              class="input"
+              style="width: 180px"
               :min="0"
               :value="sizePercent"
               @update:value="handleSizePercentUpdate"
@@ -82,8 +82,8 @@
             </UINumberInput>
           </p>
         </div>
-        <div class="line">
-          <p class="with-label">
+        <div class="flex items-center gap-middle">
+          <p class="flex items-center gap-2 break-keep">
             {{ $t({ en: 'Show', zh: '显示' }) }}
             <UIButtonGroup
               v-radar="{ name: 'Visibility control', desc: 'Control to set monitor visibility' }"
@@ -124,7 +124,7 @@ import { useRenameWidget } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { filterOwnProperties, useCodeEditor } from '@/components/editor/code-editor/spx-code-editor'
 import EditorItemDetail from '../../../common/EditorItemDetail.vue'
-import monitorIcon from '../monitor.svg?raw'
+import mntIcon from '../monitor.svg?raw'
 
 const props = defineProps<{
   monitor: Monitor
@@ -200,39 +200,10 @@ function wrapUpdateHandler<Args extends any[]>(
 }
 </script>
 
-<style lang="scss" scoped>
-.wrapper {
-  background-color: var(--ui-color-grey-100);
-}
-
-.content {
-  padding: 20px 0;
-  display: flex;
-  gap: 32px;
-  justify-content: center;
-}
-
-.preview {
-  flex: 0 0 auto;
-  width: 96px;
-  height: 96px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  border-radius: 8px;
-  background: var(--ui-color-grey-300);
-
-  :deep(svg) {
-    width: 44px;
-    height: 44px;
-  }
-}
-
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+<style scoped>
+.monitor-icon :deep(svg) {
+  width: 44px;
+  height: 44px;
 }
 
 .divider {
@@ -240,22 +211,5 @@ function wrapUpdateHandler<Args extends any[]>(
   width: 100%;
   height: 1px;
   background: repeating-linear-gradient(90deg, var(--ui-color-grey-500) 0 4px, #0000 0 7px);
-}
-
-.line {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-.input {
-  width: 180px;
-}
-
-.with-label {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  word-break: keep-all;
 }
 </style>

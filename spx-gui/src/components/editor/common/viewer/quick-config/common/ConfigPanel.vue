@@ -1,18 +1,7 @@
 <script lang="ts" setup></script>
 
 <template>
-  <div class="config-panel">
+  <div class="h-9 w-fit rounded-2 border-2 border-grey-100 bg-grey-100 shadow-big">
     <slot></slot>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.config-panel {
-  width: fit-content;
-  height: 36px;
-  border: 2px solid var(--ui-color-grey-100);
-  border-radius: var(--ui-border-radius-2);
-  background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-big);
-}
-</style>
