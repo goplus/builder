@@ -6,7 +6,7 @@
     :mask-closable="maskClosable"
     @update:visible="handleUpdateShow"
   >
-    <div class="container">
+    <div class="ui-form-modal-container">
       <div class="header">
         <div :class="['title', { center: centerTitle }]">
           {{ title }}
@@ -64,7 +64,7 @@ const handleCloseButton = () => {
 </script>
 
 <style scoped lang="scss">
-.container {
+.ui-form-modal-container {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;

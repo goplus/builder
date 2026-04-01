@@ -50,7 +50,7 @@ useModalEsc(
       <div v-if="visible" class="ui-full-screen-modal" :style="modalTransformStyle">
         <div
           v-radar="{ name: 'Full screen modal', desc: 'A full screen modal dialog for specific purpose' }"
-          class="container"
+          class="ui-full-screen-modal-container"
         >
           <slot></slot>
         </div>
@@ -82,7 +82,7 @@ useModalEsc(
   }
 }
 
-.container {
+.ui-full-screen-modal-container {
   display: flex;
   flex-direction: column;
   height: 100vh;

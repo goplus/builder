@@ -13,49 +13,18 @@ const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
 </script>
 
 <template>
-  <section class="user-message" :class="`type-${message.type}`">
-    <img class="avatar" :src="avatarUrl ?? undefined" />
-    <MarkdownView v-if="message.type === 'text'" class="content" :value="message.content" />
-    <div v-else-if="message.type === 'event'" class="content">
+  <section
+    class="self-stretch px-4 py-5"
+    :class="message.type === 'text' ? 'flex flex-col items-start gap-2' : 'flex flex-row items-center gap-2'"
+  >
+    <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
+    <MarkdownView
+      v-if="message.type === 'text'"
+      class="self-stretch rounded-r-1 rounded-b-1 rounded-tl-none bg-[#e9ecf7] p-2"
+      :value="message.content"
+    />
+    <div v-else-if="message.type === 'event'" class="flex-[1_1_0]">
       {{ $t(message.name) }}
     </div>
   </section>
 </template>
-
-<style lang="scss" scoped>
-.user-message {
-  padding: 20px 16px;
-  display: flex;
-  align-self: stretch;
-}
-
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-}
-
-.type-text {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-
-  .content {
-    padding: 8px;
-    align-self: stretch;
-
-    border-radius: 0px var(--ui-border-radius-1) var(--ui-border-radius-1) var(--ui-border-radius-1);
-    background: #e9ecf7;
-  }
-}
-
-.type-event {
-  flex-direction: row;
-  gap: 8px;
-  align-items: center;
-
-  .content {
-    flex: 1 1 0;
-  }
-}
-</style>

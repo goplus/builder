@@ -47,7 +47,7 @@ const components = computed(() => getComponents(copilot))
   <MarkdownView class="markdown-view" :value="value" :components="components" />
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .markdown-view {
   display: flex;
   flex-direction: column;
@@ -56,92 +56,99 @@ const components = computed(() => getComponents(copilot))
   font-size: 13px;
   line-height: 1.7;
   color: inherit;
+}
 
-  :deep(h1, h2, h3, h4, h5, h6) {
-    margin: 1em 0;
-    color: var(--ui-color-title);
-  }
+.markdown-view :deep(h1, h2, h3, h4, h5, h6) {
+  margin: 1em 0;
+  color: var(--ui-color-title);
+}
 
-  :deep(h1) {
-    font-size: 20px;
-    line-height: 1.4;
-  }
+.markdown-view :deep(h1) {
+  font-size: 20px;
+  line-height: 1.4;
+}
 
-  :deep(h2) {
-    font-size: 16px;
-    line-height: 1.625;
-  }
+.markdown-view :deep(h2) {
+  font-size: 16px;
+  line-height: 1.625;
+}
 
-  :deep(h3) {
-    font-size: 14px;
-    line-height: 1.57143;
-  }
+.markdown-view :deep(h3) {
+  font-size: 14px;
+  line-height: 1.57143;
+}
 
-  :deep(h4, h5, h6) {
-    font-size: 13px;
-    line-height: 1.53846;
-  }
+.markdown-view :deep(h4, h5, h6) {
+  font-size: 13px;
+  line-height: 1.53846;
+}
 
-  :deep(ul),
-  :deep(ol) {
-    display: flex;
-    flex-direction: column;
-    padding-left: 1.5em;
-    gap: 8px;
-  }
-  :deep(ul) {
-    list-style: square;
-  }
-  :deep(ol) {
-    list-style: decimal;
-  }
-  :deep(li > *:not(:last-child)) {
-    margin-bottom: 8px;
-  }
+.markdown-view :deep(ul),
+.markdown-view :deep(ol) {
+  display: flex;
+  flex-direction: column;
+  padding-left: 1.5em;
+  gap: 8px;
+}
 
-  :deep(a) {
-    color: var(--ui-color-turquoise-500);
-    text-decoration: underline;
-    &:hover {
-      color: var(--ui-color-turquoise-400);
-    }
-    &:active {
-      color: var(--ui-color-turquoise-600);
-    }
-  }
+.markdown-view :deep(ul) {
+  list-style: square;
+}
 
-  :deep(blockquote) {
-    position: relative;
-    padding-left: 20px;
-    &:before {
-      content: '';
-      position: absolute;
-      left: 9px;
-      top: 0;
-      width: 2px;
-      height: 100%;
-      border-radius: 1px;
-      background-color: var(--ui-color-grey-800);
-    }
-  }
+.markdown-view :deep(ol) {
+  list-style: decimal;
+}
 
-  :deep(code) {
-    font-family: var(--ui-font-family-code);
-  }
-  :deep(:not(pre) > code) {
-    // TODO: keep consistent with component `UICode`
-    font-size: 0.92em;
-    line-height: 2;
-    padding: 2px 4px;
-    border-radius: 4px;
-    border: 1px solid var(--ui-color-grey-500);
-    background: var(--ui-color-grey-300);
-    word-break: break-word;
-    overflow-wrap: break-word;
-  }
+.markdown-view :deep(li > *:not(:last-child)) {
+  margin-bottom: 8px;
+}
 
-  :deep(strong) {
-    font-weight: bold;
-  }
+.markdown-view :deep(a) {
+  color: var(--ui-color-turquoise-500);
+  text-decoration: underline;
+}
+
+.markdown-view :deep(a:hover) {
+  color: var(--ui-color-turquoise-400);
+}
+
+.markdown-view :deep(a:active) {
+  color: var(--ui-color-turquoise-600);
+}
+
+.markdown-view :deep(blockquote) {
+  position: relative;
+  padding-left: 20px;
+}
+
+.markdown-view :deep(blockquote::before) {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background-color: var(--ui-color-grey-800);
+}
+
+.markdown-view :deep(code) {
+  font-family: var(--ui-font-family-code);
+}
+
+.markdown-view :deep(:not(pre) > code) {
+  /* TODO: keep consistent with component `UICode` */
+  font-size: 0.92em;
+  line-height: 2;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-color-grey-500);
+  background: var(--ui-color-grey-300);
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.markdown-view :deep(strong) {
+  font-weight: bold;
 }
 </style>
