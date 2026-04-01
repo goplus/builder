@@ -60,7 +60,6 @@ export function useProvideCodeEditorCtx(editorStateRet: QueryRet<SpxEditorState>
       const resourceProvider = new SpxResourceProvider(lspClient, spxProject)
       const codeEditor = new CodeEditor({
         project,
-        history,
         monaco,
         lspClient,
         documentBase,
