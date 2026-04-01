@@ -8,7 +8,14 @@ import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
 import { isSignInRequiredForProject } from '@/utils/project'
 import { usePageTitle } from '@/utils/utils'
-import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSource, Visibility } from '@/apis/project'
+import {
+  ProjectType,
+  ownerAll,
+  recordProjectView,
+  stringifyProjectFullName,
+  stringifyRemixSource,
+  Visibility
+} from '@/apis/project'
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
@@ -308,6 +315,7 @@ const remixNumInRow = computed(() => (isDesktopLarge.value ? 6 : 5))
 const remixesRet = useQuery(
   async () => {
     const { data: projects } = await listProject({
+      type: ProjectType.Game,
       visibility: Visibility.Public,
       owner: ownerAll,
       remixedFrom: stringifyRemixSource(props.ownerInput, props.nameInput),

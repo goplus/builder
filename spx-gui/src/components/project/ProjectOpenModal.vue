@@ -4,7 +4,7 @@ import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import { computed, shallowRef } from 'vue'
 import { useQuery } from '@/utils/query'
-import { listProject } from '@/apis/project'
+import { listProject, ProjectType } from '@/apis/project'
 
 const props = defineProps<{
   visible: boolean
@@ -22,6 +22,8 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 const queryRet = useQuery(
   () =>
     listProject({
+      // This modal will list projects across types in a later design.
+      type: ProjectType.Game,
       orderBy: 'updatedAt',
       sortOrder: 'desc',
       pageIndex: page.value,

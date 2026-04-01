@@ -65,7 +65,7 @@ export const searchKeywordQueryParamName = 'q'
 import { computed } from 'vue'
 import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
 import { useQuery } from '@/utils/query'
-import { Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
+import { ProjectType, Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
 import { usePageTitle } from '@/utils/utils'
 import { UISelect, UISelectOption, UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -99,6 +99,7 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 
 const listParams = computed<ListProjectParams>(() => {
   const p: ListProjectParams = {
+    type: ProjectType.Game,
     visibility: Visibility.Public,
     owner: ownerAll,
     pageSize: pageSize.value,

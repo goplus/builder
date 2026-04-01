@@ -5,6 +5,7 @@ import { Sound } from '../spx/sound'
 import { Costume } from '../spx/costume'
 import { fromText, toText } from './file'
 import { SpxProject } from '../spx/project'
+import { ProjectType } from '@/apis/project'
 import { load, save } from './xbp'
 
 vi.mock('@/apis/ai-description', () => ({
@@ -64,6 +65,7 @@ describe('save & load', () => {
     const project2 = new SpxProject(undefined, 'test2')
     await project2.load(loaded)
     expect(project2.name).toBe('test2')
+    expect(project2.type).toBe(ProjectType.Game)
     expect(project2.displayName).toBe('Test Project')
     expect(project2.description).toBe('test description')
     expect(project2.instructions).toBe('test instructions')

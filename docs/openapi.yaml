@@ -207,6 +207,12 @@ paths:
                 displayName:
                   description: Defaults to `name` if not provided.
                   $ref: "#/components/schemas/Project/properties/displayName"
+                type:
+                  description: |
+                    Project type.
+
+                    If omitted, the request defaults to `game` for backward compatibility.
+                  $ref: "#/components/schemas/Project/properties/type"
                 files:
                   description: |
                     File paths and their corresponding universal URLs associated with the project.
@@ -287,6 +293,11 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Project/properties/visibility"
+        - name: type
+          description: Filter projects by project type.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Project/properties/type"
         - name: liker
           description: Filter projects liked by the specified user.
           in: query
@@ -2607,6 +2618,14 @@ components:
           type: string
           examples:
             - NiuXiaoQi
+        type:
+          description: |
+            Type of the project.
+
+            When omitted in legacy data, it should be interpreted as `game` for backward compatibility.
+          type: string
+          examples:
+            - game
         displayName:
           description: Display name of the project.
           type: string

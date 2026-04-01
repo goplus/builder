@@ -48,7 +48,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { getProject, addProject, Visibility, parseRemixSource } from '@/apis/project'
+import { getProject, addProject, ProjectType, Visibility, parseRemixSource } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { untilLoaded } from '@/utils/query'
@@ -93,6 +93,8 @@ const handleSubmit = useMessageHandle(
       await addProject({
         name: projectName,
         displayName: projectName,
+        // This modal will own project type selection in a later design.
+        type: ProjectType.Game,
         visibility: Visibility.Private,
         remixSource: props.remixSource
       })

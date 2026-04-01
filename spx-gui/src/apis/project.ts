@@ -13,6 +13,15 @@ export enum ProjectDataType {
   Sound = 2
 }
 
+export enum ProjectType {
+  /** 2D game project based on spx. */
+  Game = 'game'
+}
+
+export function isSupportedProjectType(type: string | null | undefined): type is ProjectType.Game {
+  return type == null || type === ProjectType.Game
+}
+
 /** Source of extra settings of the project. */
 export const enum ProjectExtraSettingsSource {
   /** Settings generated automatically by the system (e.g., via AI analysis). */
@@ -49,6 +58,8 @@ export type ProjectData = {
   latestRelease: ProjectRelease | null
   /** Unique name of the project */
   name: string
+  /** Type of the project */
+  type: ProjectType
   /** Display name of the project */
   displayName: string
   /** Version number of the project */
@@ -76,7 +87,7 @@ export type ProjectData = {
 }
 
 export type AddProjectByRemixParams = Prettify<
-  Pick<ProjectData, 'name' | 'visibility'> &
+  Pick<ProjectData, 'name' | 'visibility' | 'type'> &
     Partial<Pick<ProjectData, 'displayName'>> & {
       /** Full name of the project or project release to remix from. */
       remixSource: string
@@ -84,7 +95,7 @@ export type AddProjectByRemixParams = Prettify<
 >
 
 export type AddProjectParams = Prettify<
-  Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'> & Partial<Pick<ProjectData, 'displayName'>>
+  Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail' | 'type'> & Partial<Pick<ProjectData, 'displayName'>>
 >
 
 export function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
@@ -122,6 +133,8 @@ export type ListProjectParams = PaginationParams & {
   keyword?: string
   /** Filter projects by visibility */
   visibility?: Visibility
+  /** Filter projects by type */
+  type?: ProjectType
   /** Filter projects liked by the specified user */
   liker?: string
   /** Filter projects that were created after this timestamp */
@@ -157,15 +170,17 @@ export enum ExploreOrder {
 export type ExploreParams = {
   order: ExploreOrder
   count: number
+  type: ProjectType
 }
 
 /** Get project list for explore purpose */
-export async function exploreProjects({ order, count }: ExploreParams) {
+export async function exploreProjects({ order, count, type }: ExploreParams) {
   // count within the last 6 months
   const countAfter = timeStringify(dayjs().subtract(6, 'month').valueOf())
   const p: ListProjectParams = {
     visibility: Visibility.Public,
     owner: ownerAll,
+    type,
     pageSize: count,
     pageIndex: 1
   }

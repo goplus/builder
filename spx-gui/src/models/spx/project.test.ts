@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { ProjectType } from '@/apis/project'
 import { Sprite } from './sprite'
 import { Animation } from './animation'
 import { Sound } from './sound'
@@ -110,6 +111,7 @@ describe('Project', () => {
     unbindScreenshotTaker()
 
     const { metadata } = await project.export()
+    expect(metadata.type).toBe(ProjectType.Game)
     expect(metadata.thumbnail).toBe(thumbnail)
   })
 
