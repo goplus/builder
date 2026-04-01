@@ -64,14 +64,6 @@
           {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="isDeveloperMode">
-        <UIMenuItem @click="handleUseMcpDebuggerUtils">
-          {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="handleAskCopilotAgent">
-          {{ $t({ en: 'Ask Copilot Agent', zh: '向 Copilot Agent 提问' }) }}
-        </UIMenuItem>
-      </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
@@ -91,33 +83,18 @@ import { useAvatarUrl } from '@/stores/user/avatar'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
-import { isDeveloperMode } from '@/utils/developer-mode'
-import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 import { useI18n } from '@/utils/i18n'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
 
 const { isOnline } = useNetwork()
 const router = useRouter()
-const { controls } = useAgentCopilotCtx()
 const i18n = useI18n()
 
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
 const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
-
-const handleAskCopilotAgent = useMessageHandle(
-  async () => {
-    const isVisible = controls.toggle()
-    return isVisible
-  },
-  undefined,
-  (isVisible) => ({
-    en: isVisible ? 'Copilot Agent opened' : 'Copilot Agent closed',
-    zh: isVisible ? 'Copilot Agent 已打开' : 'Copilot Agent 已关闭'
-  })
-).fn
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 function toggleLang() {
@@ -140,18 +117,6 @@ const manageCourses = useMessageHandle(manageCoursesFn).fn
 
 const manageCourseSeriesFn = useCourseSeriesManagement()
 const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
-
-const handleUseMcpDebuggerUtils = useMessageHandle(
-  async () => {
-    const isVisible = controls.mcpDebugger.toggle()
-    return isVisible
-  },
-  undefined,
-  (isVisible) => ({
-    en: `MCP Debugger Utils ${isVisible ? 'enabled' : 'disabled'}`,
-    zh: `MCP 调试工具${isVisible ? '已启用' : '已禁用'}`
-  })
-).fn
 
 function handleSignOut() {
   signOut()
