@@ -2624,6 +2624,8 @@ components:
 
             When omitted in legacy data, it should be interpreted as `game` for backward compatibility.
           type: string
+          enum:
+            - game
           examples:
             - game
         displayName:
