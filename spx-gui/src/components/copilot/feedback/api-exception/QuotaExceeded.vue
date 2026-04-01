@@ -72,7 +72,7 @@ onMounted(updateRetryAfterTime)
 </script>
 
 <template>
-  <RetryableWrapper class="quota-exceeded" :round="round" :is-last-round="isLastRound">
+  <RetryableWrapper class="text-yellow-main" :round="round" :is-last-round="isLastRound">
     <UIIcon type="warning" />
     {{
       $t({
@@ -87,9 +87,3 @@ onMounted(updateRetryAfterTime)
     </template>
   </RetryableWrapper>
 </template>
-
-<style lang="scss" scoped>
-.quota-exceeded {
-  color: var(--ui-color-yellow-main);
-}
-</style>

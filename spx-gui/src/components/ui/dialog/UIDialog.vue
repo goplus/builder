@@ -1,6 +1,6 @@
 <template>
   <UIModal>
-    <div class="container">
+    <div class="ui-dialog-container">
       <UIIcon class="icon" :type="type" />
       <div class="main">
         <div class="title">
@@ -43,7 +43,7 @@ defineProps<{
   flex-direction: column;
 }
 
-.container {
+.ui-dialog-container {
   padding: 20px 24px 24px;
   display: flex;
   gap: 12px;

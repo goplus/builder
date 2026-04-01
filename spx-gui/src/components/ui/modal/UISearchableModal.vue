@@ -4,7 +4,7 @@
 
 <template>
   <UIModal :radar="radar" :visible="visible" :auto-focus="false" mask-closable @update:visible="handleUpdateShow">
-    <div class="container">
+    <div class="ui-searchable-modal-container">
       <div class="header">
         <h4 class="title">
           {{ title }}
@@ -43,7 +43,7 @@ const handleCloseButton = () => {
 </script>
 
 <style scoped lang="scss">
-.container {
+.ui-searchable-modal-container {
   display: flex;
   flex-direction: column;
 }

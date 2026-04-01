@@ -562,14 +562,7 @@ onMounted(async () => {
   </div>
 </template>
 
-<style lang="scss" scoped>
-$fromColor: #72bbff;
-$toColor: #c390ff;
-
-@mixin copilotBaseLinearBackground($from: $fromColor, $to: $toColor) {
-  background: linear-gradient(90deg, $from 0%, $to 100%);
-}
-
+<style scoped>
 .copilot-trigger {
   position: absolute;
   width: fit-content;
@@ -585,71 +578,76 @@ $toColor: #c390ff;
   transition:
     transform ease 0.4s,
     opacity ease 0.4s;
+}
 
-  .stop-start {
-    stop-color: #9a77ff;
-  }
-  .stop-end {
-    stop-color: #735ffa;
-  }
+.copilot-trigger .stop-start {
+  stop-color: #9a77ff;
+}
 
-  &:hover {
-    .stop-start {
-      stop-color: #ae92ff;
-    }
-    .stop-end {
-      stop-color: #9181fb;
-    }
-  }
+.copilot-trigger .stop-end {
+  stop-color: #735ffa;
+}
 
-  &.visible {
-    pointer-events: all;
-    opacity: 1;
-  }
+.copilot-trigger:hover .stop-start {
+  stop-color: #ae92ff;
+}
 
-  &.left {
-    @include copilotBaseLinearBackground($toColor, $fromColor);
-    padding-left: 0px;
-    right: 1px;
-    border-top-left-radius: 0px;
-    border-bottom-left-radius: 0px;
-    &.visible {
-      transform: translate(100%, -50%);
-    }
-    .copilot-trigger-content {
-      padding: 0 5px 0 10px;
-      border-top-left-radius: 0px;
-      border-bottom-left-radius: 0px;
-    }
-  }
-  &.right {
-    @include copilotBaseLinearBackground($toColor, $fromColor);
-    padding-right: 0px;
-    left: 1px;
-    border-top-right-radius: 0px;
-    border-bottom-right-radius: 0px;
-    &.visible {
-      transform: translate(-100%, -50%);
-    }
-    .copilot-trigger-content {
-      padding: 0 10px 0 5px;
-      border-top-right-radius: 0px;
-      border-bottom-right-radius: 0px;
-    }
-  }
+.copilot-trigger:hover .stop-end {
+  stop-color: #9181fb;
+}
 
-  .copilot-trigger-content {
-    display: flex;
-    border-radius: 16px;
-    height: 100%;
-    align-items: center;
-    background: var(--ui-color-grey-100);
-  }
+.copilot-trigger.visible {
+  pointer-events: all;
+  opacity: 1;
+}
+
+.copilot-trigger.left {
+  background: linear-gradient(90deg, #c390ff 0%, #72bbff 100%);
+  padding-left: 0;
+  right: 1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.copilot-trigger.left.visible {
+  transform: translate(100%, -50%);
+}
+
+.copilot-trigger.left .copilot-trigger-content {
+  padding: 0 5px 0 10px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.copilot-trigger.right {
+  background: linear-gradient(90deg, #c390ff 0%, #72bbff 100%);
+  padding-right: 0;
+  left: 1px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.copilot-trigger.right.visible {
+  transform: translate(-100%, -50%);
+}
+
+.copilot-trigger.right .copilot-trigger-content {
+  padding: 0 10px 0 5px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.copilot-trigger .copilot-trigger-content {
+  display: flex;
+  border-radius: 16px;
+  height: 100%;
+  align-items: center;
+  background: var(--ui-color-grey-100);
 }
 
 .copilot-panel {
   position: fixed;
-  z-index: 9999; // TODO
+  z-index: 9999;
   right: 10px;
   bottom: 20px;
   width: 340px;
@@ -658,31 +656,30 @@ $toColor: #c390ff;
   justify-content: center;
   align-items: stretch;
   gap: 8px;
+}
 
-  &.animated {
-    transition:
-      right ease 0.4s,
-      bottom ease 0.4s;
-  }
+.copilot-panel.animated {
+  transition:
+    right ease 0.4s,
+    bottom ease 0.4s;
 }
 
 .body {
   position: relative;
   border-radius: 16px;
-  box-shadow: 0px 16px 32px 0px rgba(36, 41, 47, 0.1);
+  box-shadow: 0 16px 32px 0 rgba(36, 41, 47, 0.1);
   padding: 1px;
-  @include copilotBaseLinearBackground();
+  background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
+}
 
-  &:has(.only-input):has(.visible) {
-    &.left,
-    &.left .body-wrapper {
-      border-radius: 16px 0 0 16px;
-    }
-    &.right,
-    &.right .body-wrapper {
-      border-radius: 0 16px 16px 0;
-    }
-  }
+.body:has(.only-input):has(.visible).left,
+.body:has(.only-input):has(.visible).left .body-wrapper {
+  border-radius: 16px 0 0 16px;
+}
+
+.body:has(.only-input):has(.visible).right,
+.body:has(.only-input):has(.visible).right .body-wrapper {
+  border-radius: 0 16px 16px 0;
 }
 
 .body-wrapper {
@@ -691,165 +688,171 @@ $toColor: #c390ff;
   transition: opacity ease 0.4s;
   border-radius: 16px;
   z-index: 2;
+}
 
-  &.out-of-bounds::after {
-    content: '';
-    position: absolute;
-    top: 14px;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    backdrop-filter: blur(1px);
-  }
+.body-wrapper.out-of-bounds::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  backdrop-filter: blur(1px);
+}
 
-  .dragger {
-    position: absolute;
-    height: 14px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: move;
-    background-color: var(--ui-color-grey-100);
-    transition: background-color ease-in-out 0.3s;
-    z-index: 1;
+.body-wrapper .dragger {
+  position: absolute;
+  height: 14px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: move;
+  background-color: var(--ui-color-grey-100);
+  transition: background-color ease-in-out 0.3s;
+  z-index: 1;
+}
 
-    &:hover {
-      background-color: var(--ui-color-grey-300);
-    }
-  }
+.body-wrapper .dragger:hover {
+  background-color: var(--ui-color-grey-300);
+}
 
-  .output {
-    background: var(--ui-color-grey-100);
-    max-height: 300px;
-    font-size: 13px;
-    overflow-y: auto;
-    scrollbar-width: thin;
+.body-wrapper .output {
+  background: var(--ui-color-grey-100);
+  max-height: 300px;
+  font-size: 13px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
 
-    &:not(:empty) {
-      margin-top: 14px;
-      padding: 12px 16px 24px 16px;
-    }
+.body-wrapper .output:not(:empty) {
+  margin-top: 14px;
+  padding: 12px 16px 24px 16px;
+}
 
-    .hi {
-      font-size: 20px;
-      color: var(--ui-color-grey-1000);
-    }
-    .tips {
-      margin-top: 4px;
-      color: var(--ui-color-grey-700);
-    }
-    .suggested-questions-wrapper {
-      width: 100%;
-      margin-top: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+.body-wrapper .output .hi {
+  font-size: 20px;
+  color: var(--ui-color-grey-1000);
+}
 
-      .suggested-question {
-        width: 100%;
-        padding: 9px 12px;
-      }
-    }
+.body-wrapper .output .tips {
+  margin-top: 4px;
+  color: var(--ui-color-grey-700);
+}
 
-    .quick-inputs {
-      padding-top: 20px;
-      display: flex;
-      flex-direction: row;
-      gap: 8px;
-      background: var(--ui-color-grey-100);
-    }
+.body-wrapper .output .suggested-questions-wrapper {
+  width: 100%;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-    .flat-button {
-      --bg-color: var(--ui-color-grey-300);
-      border-radius: var(--ui-border-radius-2);
-      background: var(--bg-color);
-      border: 1px solid var(--bg-color);
-      color: var(--ui-color-grey-900);
-      font-size: 13px;
-      line-height: inherit;
-      white-space: normal;
-      text-align: left;
-      transition: 0.3s;
-      cursor: pointer;
+.body-wrapper .output .suggested-questions-wrapper .suggested-question {
+  width: 100%;
+  padding: 9px 12px;
+}
 
-      &:hover {
-        --bg-color: var(--ui-color-grey-200);
-      }
-      &:active {
-        --bg-color: var(--ui-color-grey-400);
-      }
-      &:focus {
-        --bg-color: var(--ui-color-grey-500);
-      }
-    }
-  }
+.body-wrapper .output .quick-inputs {
+  padding-top: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  background: var(--ui-color-grey-100);
+}
 
-  .divider {
-    @include copilotBaseLinearBackground();
-    height: 1px;
-  }
+.body-wrapper .output .flat-button {
+  --bg-color: var(--ui-color-grey-300);
+  border-radius: var(--ui-border-radius-2);
+  background: var(--bg-color);
+  border: 1px solid var(--bg-color);
+  color: var(--ui-color-grey-900);
+  font-size: 13px;
+  line-height: inherit;
+  white-space: normal;
+  text-align: left;
+  transition: 0.3s;
+  cursor: pointer;
+}
 
-  .input {
-    height: 62px;
-    overflow: hidden;
-  }
+.body-wrapper .output .flat-button:hover {
+  --bg-color: var(--ui-color-grey-200);
+}
+
+.body-wrapper .output .flat-button:active {
+  --bg-color: var(--ui-color-grey-400);
+}
+
+.body-wrapper .output .flat-button:focus {
+  --bg-color: var(--ui-color-grey-500);
+}
+
+.body-wrapper .divider {
+  background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
+  height: 1px;
+}
+
+.body-wrapper .input {
+  height: 62px;
+  overflow: hidden;
 }
 
 .footer {
   display: flex;
   justify-content: center;
-  .footer-wrapper {
-    z-index: 1;
-    display: flex;
-    gap: 4px;
-    align-items: center;
-    height: 36px;
-    padding: 0 3px;
-    border-radius: 100px;
-    border: 1px solid var(--ui-color-grey-400);
-    background: var(--ui-color-grey-100);
-    box-shadow: 0px 1px 8px 0px rgba(10, 13, 20, 0.05);
+}
+
+.footer .footer-wrapper {
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  height: 36px;
+  padding: 0 3px;
+  border-radius: 100px;
+  border: 1px solid var(--ui-color-grey-400);
+  background: var(--ui-color-grey-100);
+  box-shadow: 0 1px 8px 0 rgba(10, 13, 20, 0.05);
+}
+
+.footer .v-line {
+  border-right: 1px solid var(--ui-color-grey-400);
+  height: 12px;
+}
+
+.footer .fold {
+  width: 28px;
+  height: 28px;
+  border-radius: 28px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease-in;
+  stroke: var(--ui-color-grey-800);
+  cursor: pointer;
+}
+
+@keyframes nudge {
+  from {
+    transform: translateX(-3px);
   }
 
-  .v-line {
-    border-right: 1px solid var(--ui-color-grey-400);
-    height: 12px;
+  to {
+    transform: translateX(1px);
   }
+}
 
-  .fold {
-    width: 28px;
-    height: 28px;
-    border-radius: 28px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: transform 0.3s ease-in;
-    stroke: var(--ui-color-grey-800);
-    cursor: pointer;
+.footer .fold .animating {
+  animation: nudge 0.5s ease-in-out infinite alternate;
+}
 
-    @keyframes nudge {
-      from {
-        transform: translateX(-3px);
-      }
-      to {
-        transform: translateX(1px);
-      }
-    }
+.footer .fold.left {
+  transform: rotate(180deg);
+}
 
-    .animating {
-      animation: nudge 0.5s ease-in-out infinite alternate;
-    }
-
-    &.left {
-      transform: rotate(180deg);
-    }
-
-    &:hover {
-      cursor: pointer;
-      stroke: var(--ui-color-primary-500);
-      background: var(--ui-color-primary-200);
-    }
-  }
+.footer .fold:hover {
+  cursor: pointer;
+  stroke: var(--ui-color-primary-500);
+  background: var(--ui-color-primary-200);
 }
 </style>
