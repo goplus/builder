@@ -150,7 +150,7 @@ provide(settingsInputCtxKey, ctx)
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .description-input {
   width: 100%;
   min-height: 172px;
@@ -163,141 +163,137 @@ provide(settingsInputCtxKey, ctx)
   flex-direction: column;
   gap: 24px;
   transition: border-color 0.2s ease;
+}
 
-  &:has(.description:focus),
-  &.enriching {
-    border-color: var(--ui-color-turquoise-500);
-  }
+.description-input:has(.description:focus),
+.description-input.enriching {
+  border-color: var(--ui-color-turquoise-500);
+}
 
-  &.disabled,
-  &.readonly {
-    &:has(.description:focus) {
-      border-color: var(--ui-color-grey-400);
-    }
-  }
+.description-input.disabled:has(.description:focus),
+.description-input.readonly:has(.description:focus) {
+  border-color: var(--ui-color-grey-400);
+}
 
-  &.disabled {
-    .main {
-      overflow: hidden;
+.description-input.disabled .main {
+  overflow: hidden;
+}
 
-      .description {
-        cursor: not-allowed;
-        color: var(--ui-color-grey-600);
-      }
-    }
-  }
+.description-input.disabled .main .description {
+  cursor: not-allowed;
+  color: var(--ui-color-grey-600);
+}
 
-  .main {
-    position: relative;
-    flex: 1;
-    padding: 4px 0;
-    display: grid;
-    overflow-y: auto;
+.description-input .main {
+  position: relative;
+  flex: 1;
+  padding: 4px 0;
+  display: grid;
+  overflow-y: auto;
+}
 
-    .description,
-    .mirror {
-      grid-area: 1 / 1 / 2 / 2;
-      padding: 0;
-      margin: 0;
-      font: inherit;
-      font-size: 14px;
-      line-height: 1.6;
-      width: 100%;
-      box-sizing: border-box;
-      white-space: pre-wrap;
-      word-break: break-all;
-      overflow-wrap: anywhere;
-    }
+.description-input .main .description,
+.description-input .main .mirror {
+  grid-area: 1 / 1 / 2 / 2;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
 
-    .description {
-      border: none;
-      resize: none;
-      background: transparent;
-      color: var(--ui-color-grey-900);
-      caret-color: var(--ui-color-turquoise-500);
+.description-input .main .description {
+  border: none;
+  resize: none;
+  background: transparent;
+  color: var(--ui-color-grey-900);
+  caret-color: var(--ui-color-turquoise-500);
+}
 
-      &:read-only {
-        color: var(--ui-color-grey-1000);
-      }
+.description-input .main .description:read-only {
+  color: var(--ui-color-grey-1000);
+}
 
-      &::placeholder {
-        color: var(--ui-color-grey-700);
-      }
+.description-input .main .description::placeholder {
+  color: var(--ui-color-grey-700);
+}
 
-      &:focus {
-        outline: none;
-      }
-    }
+.description-input .main .description:focus {
+  outline: none;
+}
 
-    .mirror-text {
-      visibility: hidden;
-      pointer-events: none;
-      display: inline;
-    }
+.description-input .main .mirror-text {
+  visibility: hidden;
+  pointer-events: none;
+  display: inline;
+}
 
-    .mirror-actions {
-      display: inline-flex;
-      margin-left: 12px;
-      pointer-events: auto;
-    }
+.description-input .main .mirror-actions {
+  display: inline-flex;
+  margin-left: 12px;
+  pointer-events: auto;
+}
 
-    .enriching {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      height: fit-content;
-      font-size: 12px;
-      color: var(--ui-color-turquoise-500);
+.description-input .main .enriching {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: fit-content;
+  font-size: 12px;
+  color: var(--ui-color-turquoise-500);
+}
 
-      .animation {
-        width: 16px;
-        height: 16px;
-      }
-    }
+.description-input .main .enriching .animation {
+  width: 16px;
+  height: 16px;
+}
 
-    .enrich-btn {
-      border: 1px solid var(--ui-color-turquoise-300);
-      border-radius: 4px;
-      background-color: var(--ui-color-turquoise-200);
-      color: var(--ui-color-turquoise-500);
-      padding: 0 8px;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      vertical-align: middle;
-      height: 22px;
-      cursor: pointer;
-      position: relative;
+.description-input .main .enrich-btn {
+  border: 1px solid var(--ui-color-turquoise-300);
+  border-radius: 4px;
+  background-color: var(--ui-color-turquoise-200);
+  color: var(--ui-color-turquoise-500);
+  padding: 0 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  vertical-align: middle;
+  height: 22px;
+  cursor: pointer;
+  position: relative;
+}
 
-      .icon {
-        width: 14px;
-        height: 14px;
-      }
+.description-input .main .enrich-btn .icon {
+  width: 14px;
+  height: 14px;
+}
 
-      &:hover {
-        background-color: var(--ui-color-turquoise-100);
-      }
-    }
-  }
+.description-input .main .enrich-btn:hover {
+  background-color: var(--ui-color-turquoise-100);
+}
 
-  .footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+.description-input .footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 
-    .extra {
-      display: flex;
-      padding: 4px;
-      gap: 8px;
-      flex: 1 1 0;
-      width: max-content;
-      overflow: hidden;
+.description-input .footer .extra {
+  display: flex;
+  padding: 4px;
+  gap: 8px;
+  flex: 1 1 0;
+  width: max-content;
+  overflow: hidden;
+}
 
-      & > * {
-        flex-shrink: 0;
-      }
-    }
-  }
+.description-input .footer .extra > * {
+  flex-shrink: 0;
 }
 </style>

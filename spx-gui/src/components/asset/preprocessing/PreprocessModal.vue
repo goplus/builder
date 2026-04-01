@@ -10,13 +10,13 @@
     :body-style="{ padding: '0' }"
     @update:visible="emit('cancelled')"
   >
-    <main class="main">
+    <main class="flex items-stretch" style="height: 475px">
       <div
         v-radar="{
           name: 'Preprocessing method entries',
           desc: 'Sidebar which contains entries for preprocessing methods'
         }"
-        class="sider"
+        class="flex flex-none flex-col gap-3 border-r border-dividing-line-2 px-4 py-3"
       >
         <ProcessItem
           v-radar="{
@@ -43,7 +43,7 @@
           @click="handleMethodClick(method.value)"
         />
       </div>
-      <div class="detail">
+      <div class="min-w-0 flex-1">
         <!-- Use `v-show` instead of `v-if` to avoid exception. See details in https://github.com/goplus/builder/issues/2022 -->
         <ProcessDetail
           v-show="activeMethod == null"
@@ -73,11 +73,14 @@
         />
       </div>
     </main>
-    <footer class="footer">
+    <footer
+      class="flex items-end gap-5 border-r border-dividing-line-2 p-4"
+      :style="{ boxShadow: '0px -2px 12px 0px rgba(51, 51, 51, 0.08)' }"
+    >
       <div class="footer-main">
-        <h4 class="footer-title">{{ $t({ en: 'Costumes', zh: '造型' }) }}</h4>
+        <h4 class="text-title">{{ $t({ en: 'Costumes', zh: '造型' }) }}</h4>
         <div class="costume-wrapper">
-          <ul class="costume-list">
+          <ul class="flex gap-2">
             <CostumeItem
               v-for="costume in costumes"
               :key="costume.id"
@@ -297,51 +300,20 @@ watch(
 )
 </script>
 
-<style lang="scss" scoped>
-.main {
-  height: 475px;
-  display: flex;
-  align-items: stretch;
-}
-.footer {
-  padding: 16px;
-  display: flex;
-  gap: 20px;
-  align-items: flex-end;
-  border-right: 1px solid var(--ui-color-dividing-line-2);
-  box-shadow: 0px -2px 12px 0px rgba(51, 51, 51, 0.08);
-}
+<style scoped>
 .footer-main {
   flex: 1 1 0;
   min-width: 0;
 
-  // negative margin & fixed height to allow optional scrollbar of .costume-wrapper
+  /* negative margin & fixed height to allow optional scrollbar of .costume-wrapper */
   height: 135px;
   margin-bottom: -16px;
 }
-.footer-title {
-  color: var(--ui-color-title);
-}
+
 .costume-wrapper {
   width: 100%;
   padding-top: 9px;
   overflow-x: auto;
   scrollbar-width: thin;
-}
-.costume-list {
-  display: flex;
-  gap: 8px;
-}
-.sider {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  padding: 12px 16px;
-  gap: 12px;
-  border-right: 1px solid var(--ui-color-dividing-line-2);
-}
-.detail {
-  flex: 1 1 0;
-  min-width: 0;
 }
 </style>

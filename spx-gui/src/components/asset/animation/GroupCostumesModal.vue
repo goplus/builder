@@ -12,8 +12,8 @@
     :body-style="{ padding: '0' }"
     @update:visible="emit('cancelled')"
   >
-    <div class="container">
-      <ul class="costume-list">
+    <div class="flex min-h-119 max-h-150">
+      <ul class="flex flex-1 flex-wrap content-start gap-2 overflow-y-auto pt-5 pr-0 pb-5 pl-6">
         <CostumeItem
           v-for="costume in props.sprite.costumes"
           :key="costume.id"
@@ -22,16 +22,16 @@
           @click="handleCostumeClick(costume)"
         />
       </ul>
-      <div class="sep"></div>
-      <div class="preview">
+      <div class="my-5 w-px self-stretch bg-dividing-line-2"></div>
+      <div class="w-[402px] flex-none self-stretch px-6 py-5">
         <UIEmpty v-if="selectedCostumes.length === 0" size="medium">
           {{ $t({ en: 'Select costumes to continue', zh: '请选择造型' }) }}
         </UIEmpty>
-        <AnimationPlayer v-else class="player" :costumes="selectedCostumes" :duration="duration" :sound="null" />
+        <AnimationPlayer v-else class="h-full w-full" :costumes="selectedCostumes" :duration="duration" :sound="null" />
       </div>
     </div>
-    <div class="footer">
-      <div class="spacer" />
+    <div class="flex items-center gap-2 px-6 py-5">
+      <div class="flex-1" />
       <UICheckbox v-model:checked="removeCostumes">
         <span>
           {{
@@ -107,49 +107,3 @@ const handleConfirm = () => {
   })
 }
 </script>
-<style lang="scss" scoped>
-.container {
-  min-height: 476px;
-  max-height: 600px;
-  display: flex;
-}
-
-.costume-list {
-  padding: 20px 0 20px 24px;
-  flex: 1 1 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-content: flex-start;
-  overflow-y: auto;
-}
-
-.sep {
-  margin: 20px 0;
-  width: 1px;
-  align-self: stretch;
-  background-color: var(--ui-color-dividing-line-2);
-}
-
-.preview {
-  padding: 20px 24px;
-  flex: 0 0 402px;
-  align-self: stretch;
-
-  .player {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-.footer {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 20px 24px;
-}
-
-.spacer {
-  flex: 1;
-}
-</style>

@@ -7,49 +7,20 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="list-item-wrapper">
-    <header class="header">
+  <div class="flex w-full flex-col gap-3">
+    <header class="text-16/6.5 font-semibold text-grey-1000">
       <slot name="title"></slot>
     </header>
 
-    <div class="list">
+    <div class="flex w-94 flex-row flex-wrap gap-2">
       <slot></slot>
-      <UIBlockItem v-radar="{ name: 'Add', desc: 'Click to add a new item' }" class="add-item" @click="$emit('add')">
-        <UIIcon class="icon" type="plus" />
+      <UIBlockItem
+        v-radar="{ name: 'Add', desc: 'Click to add a new item' }"
+        class="justify-center text-primary-main"
+        @click="$emit('add')"
+      >
+        <UIIcon style="width: 24px; height: 24px" type="plus" />
       </UIBlockItem>
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.list-item-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-}
-
-.header {
-  font-size: 16px;
-  line-height: 26px;
-  font-weight: 600;
-  color: var(--ui-color-grey-1000);
-}
-
-.list {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
-  width: 376px;
-}
-
-.add-item {
-  justify-content: center;
-  color: var(--ui-color-primary-main);
-  .icon {
-    width: 24px;
-    height: 24px;
-  }
-}
-</style>

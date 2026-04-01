@@ -19,75 +19,26 @@ const emit = defineEmits<{
       name: `Preview for '${name}'`,
       desc: `Preview for the generation item '${name}'`
     }"
-    class="gen-preview"
+    class="flex flex-1 flex-col gap-5 px-5 py-6"
   >
-    <header class="header">
-      <div class="name">
+    <header class="relative flex flex-none items-center justify-center">
+      <div class="flex items-center justify-center gap-1">
         <!-- TODO: confirm style details with @qingqing-ux here -->
         <AssetName>{{ name }}</AssetName>
         <UIIcon
           v-radar="{ name: 'Rename', desc: 'Click to rename the generation item' }"
-          class="edit-icon"
+          class="cursor-pointer text-grey-900 hover:text-grey-800 active:text-grey-1000"
           :title="$t({ en: 'Rename', zh: '重命名' })"
           type="edit"
           @click="emit('rename')"
         />
       </div>
-      <div class="ops">
+      <div class="absolute top-0 right-0">
         <slot name="ops"></slot>
       </div>
     </header>
-    <main class="body">
+    <main class="relative flex flex-1 overflow-hidden">
       <slot></slot>
     </main>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.gen-preview {
-  flex: 1 1 0;
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.header {
-  position: relative;
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.name {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.edit-icon {
-  cursor: pointer;
-  color: var(--ui-color-grey-900);
-  &:hover {
-    color: var(--ui-color-grey-800);
-  }
-  &:active {
-    color: var(--ui-color-grey-1000);
-  }
-}
-
-.ops {
-  position: absolute;
-  top: 0;
-  right: 0;
-}
-
-.body {
-  flex: 1 1 0;
-  display: flex;
-  position: relative;
-  overflow: hidden;
-}
-</style>

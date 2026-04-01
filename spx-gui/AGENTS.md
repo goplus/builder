@@ -99,6 +99,7 @@ When working with backend unique string identifiers such as `username`, project 
 * For responsive styling, prefer Tailwind responsive variants over runtime `useResponsive()` checks.
 * Keep `useResponsive()` for non-style logic only, such as changing fetched counts or other runtime behavior that CSS cannot express.
 * Prefer Tailwind for straightforward layout and surface styling: flex, grid, spacing, sizing, alignment, overflow, simple typography, and simple hover states.
+* When original CSS uses `flex: <grow> <shrink> <basis>`, preserve it with `flex-[<grow>_<shrink>_<basis>]` instead of decomposing it into partial utilities such as `shrink-0`.
 * When Tailwind classes stay readable, write them directly in the template and remove the local style block after verification.
 * Keep local CSS or SCSS for deep selectors, generated content, third-party DOM overrides, and complex stateful widgets.
 * Preserve semantic hook classes that are consumed by parent selectors, slot content, or `:deep(...)` rules. Do not remove classes such as `.corner-menu` or `.course-item-mini` just because the element's own visual styles moved to Tailwind.

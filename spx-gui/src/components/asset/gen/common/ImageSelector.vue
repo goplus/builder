@@ -67,9 +67,9 @@ function handleSelect(index: number) {
     v-if="state.status !== 'initial'"
     ref="wrapperRef"
     v-radar="{ name: 'Image selector', desc: 'Selector for choosing from generated images' }"
-    class="image-selector"
+    class="flex flex-col items-center gap-3"
   >
-    <ul class="list">
+    <ul class="m-0 flex list-none flex-nowrap items-center content-center justify-center gap-2 p-0">
       <template v-if="state.status === 'running'">
         <template v-for="idx in 4" :key="idx">
           <slot name="loading-item" :index="idx"></slot>
@@ -83,35 +83,8 @@ function handleSelect(index: number) {
       </template>
     </ul>
 
-    <p class="tip">
+    <p class="text-center text-12 text-hint-2">
       <slot name="tip"></slot>
     </p>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.image-selector {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.list {
-  display: flex;
-  align-items: center;
-  align-content: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-  justify-content: center;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.tip {
-  text-align: center;
-  font-size: 12px;
-  color: var(--ui-color-hint-2);
-}
-</style>

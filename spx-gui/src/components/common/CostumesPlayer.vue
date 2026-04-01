@@ -129,7 +129,7 @@ defineExpose({ load, play })
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .frames-player {
   position: relative;
 }

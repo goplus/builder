@@ -41,7 +41,7 @@ const slots = useSlots()
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 @property --bg-angle {
   syntax: '<angle>';
   inherits: false;
@@ -59,63 +59,65 @@ const slots = useSlots()
   transition:
     visibility 0.2s,
     opacity 0.2s;
+}
 
-  &.cover {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    overflow: hidden;
-    background-color: var(--ui-color-grey-100);
+.gen-loading.cover {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background-color: var(--ui-color-grey-100);
+}
+
+.gen-loading.variant-bg-spin {
+  border-radius: 8px;
+  /* CSS Progressive Enhancement: Browsers that do not support @property will skip its definition.
+     We can ensure compatibility by setting an initial value here. */
+  --bg-angle: 0deg;
+
+  /* Use cos/sin to calculate the rotation position of each gradient center.
+     100% is the rotation radius, 50% is the center offset. */
+  background-image: radial-gradient(
+      circle at calc(50% + cos(var(--bg-angle) + 0deg) * 100%) calc(50% + sin(var(--bg-angle) + 0deg) * 100%),
+      var(--ui-color-turquoise-200) 20%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at calc(50% + cos(var(--bg-angle) + 90deg) * 100%) calc(50% + sin(var(--bg-angle) + 90deg) * 100%),
+      var(--ui-color-blue-200) 20%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at calc(50% + cos(var(--bg-angle) + 180deg) * 100%) calc(50% + sin(var(--bg-angle) + 180deg) * 100%),
+      var(--ui-color-blue-100) 20%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at calc(50% + cos(var(--bg-angle) + 270deg) * 100%) calc(50% + sin(var(--bg-angle) + 270deg) * 100%),
+      var(--ui-color-grey-100) 20%,
+      transparent 70%
+    );
+
+  animation: spin-gradient 4s linear infinite;
+}
+
+@keyframes spin-gradient {
+  to {
+    --bg-angle: 360deg;
   }
+}
 
-  &.variant-bg-spin {
-    border-radius: 8px;
-    // CSS Progressive Enhancement: Browsers that do not support @property will skip its definition.
-    // We can ensure compatibility by setting an initial value here.
-    --bg-angle: 0deg;
+.gen-loading.variant-bg-spin .content {
+  z-index: 1;
+}
 
-    // Use cos/sin to calculate the rotation position of each gradient center
-    // 100% is the rotation radius, 50% is the center offset
-    background-image: radial-gradient(
-        circle at calc(50% + cos(var(--bg-angle) + 0deg) * 100%) calc(50% + sin(var(--bg-angle) + 0deg) * 100%),
-        var(--ui-color-turquoise-200) 20%,
-        transparent 70%
-      ),
-      radial-gradient(
-        circle at calc(50% + cos(var(--bg-angle) + 90deg) * 100%) calc(50% + sin(var(--bg-angle) + 90deg) * 100%),
-        var(--ui-color-blue-200) 20%,
-        transparent 70%
-      ),
-      radial-gradient(
-        circle at calc(50% + cos(var(--bg-angle) + 180deg) * 100%) calc(50% + sin(var(--bg-angle) + 180deg) * 100%),
-        var(--ui-color-blue-100) 20%,
-        transparent 70%
-      ),
-      radial-gradient(
-        circle at calc(50% + cos(var(--bg-angle) + 270deg) * 100%) calc(50% + sin(var(--bg-angle) + 270deg) * 100%),
-        var(--ui-color-grey-100) 20%,
-        transparent 70%
-      );
+.gen-loading.visible {
+  visibility: visible;
+  opacity: 1;
+}
 
-    animation: spin-gradient 4s linear infinite;
-    @keyframes spin-gradient {
-      to {
-        --bg-angle: 360deg;
-      }
-    }
-
-    .content {
-      z-index: 1;
-    }
-  }
-
-  &.visible {
-    visibility: visible;
-    opacity: 1;
-    &.cover {
-      opacity: 0.97;
-    }
-  }
+.gen-loading.visible.cover {
+  opacity: 0.97;
 }
 
 .content {

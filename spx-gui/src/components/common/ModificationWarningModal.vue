@@ -39,76 +39,25 @@ function handleCancel() {
     :mask-closable="false"
     @update:visible="handleCancel"
   >
-    <div class="warn-content">
-      <div class="warn-tip">
-        <span class="warn-tip-icon">!</span>
+    <div class="flex flex-col gap-2 text-body/[1.6] text-grey-800">
+      <div class="flex items-center gap-2 font-semibold text-yellow-500">
+        <span
+          class="inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-yellow-500 text-14 font-bold leading-none text-grey-100"
+        >
+          !
+        </span>
         <span>{{ $t(props.tip) }}</span>
       </div>
-      <ul class="warn-lines">
+      <ul class="m-0 flex list-none flex-col gap-0.5 pl-0 text-grey-800">
         <li v-for="(item, index) in props.items" :key="index">
           {{ $t(item) }}
         </li>
       </ul>
     </div>
-    <footer class="footer center">
+    <footer class="mt-large flex justify-center gap-middle pb-1">
       <UIButton v-radar="props.confirmRadar" color="danger" @click="emit('resolved')">
         {{ $t(props.confirmText) }}
       </UIButton>
     </footer>
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.warn-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  color: var(--ui-color-grey-800);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.warn-tip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ui-color-yellow-500);
-  font-weight: 600;
-}
-
-.warn-tip-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--ui-color-yellow-500);
-  color: var(--ui-color-grey-100);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  font-size: 14px;
-  font-weight: 700;
-  flex: 0 0 auto;
-}
-
-.warn-lines {
-  margin: 0;
-  padding-left: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  color: var(--ui-color-grey-800);
-}
-
-.footer {
-  display: flex;
-  gap: var(--ui-gap-middle);
-  margin-top: var(--ui-gap-large);
-  padding-bottom: 4px;
-}
-
-.center {
-  justify-content: center;
-}
-</style>

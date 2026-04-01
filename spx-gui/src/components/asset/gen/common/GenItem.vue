@@ -62,76 +62,71 @@ const style = computed(() => {
   </UIBlockItem>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 @property --angle {
   syntax: '<angle>';
   initial-value: 0deg;
   inherits: false;
 }
 
-.gen-item {
-  &.loading {
-    // Force override UIBlockItem's border-color when active
-    border-color: transparent !important;
-
-    &.active {
-      &::before {
-        background: conic-gradient(
-          from var(--angle) at 50% 50%,
-          var(--loading-active-trace-color) 0deg,
-          var(--loading-head-color) 40deg,
-          var(--loading-tail-color) 110deg,
-          var(--loading-active-trace-color)
-        );
-      }
-    }
-
-    &::before {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      padding: 2px;
-      border-radius: inherit;
-      mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      pointer-events: none;
-      background: conic-gradient(
-        from var(--angle) at 50% 50%,
-        var(--loading-trace-color) 0deg,
-        var(--loading-head-color) 40deg,
-        var(--loading-tail-color) 110deg,
-        var(--loading-trace-color) 160deg
-      );
-      animation: rotate-gradient 3s linear infinite;
-    }
-
-    @keyframes rotate-gradient {
-      to {
-        --angle: 360deg;
-      }
-    }
+@keyframes rotate-gradient {
+  to {
+    --angle: 360deg;
   }
+}
 
-  &.highlight {
-    .placeholder {
-      color: var(--highlight-color);
-    }
-  }
+.gen-item.loading {
+  /* Force override UIBlockItem's border-color when active */
+  border-color: transparent !important;
+}
 
-  .preview-wrapper {
-    margin-bottom: 5px;
-    height: 60px;
-    width: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .placeholder {
-    width: 24px;
-    height: 24px;
-    color: var(--ui-color-grey-700);
-  }
+.gen-item.loading.active::before {
+  background: conic-gradient(
+    from var(--angle) at 50% 50%,
+    var(--loading-active-trace-color) 0deg,
+    var(--loading-head-color) 40deg,
+    var(--loading-tail-color) 110deg,
+    var(--loading-active-trace-color)
+  );
+}
+
+.gen-item.loading::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  padding: 2px;
+  border-radius: inherit;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--angle) at 50% 50%,
+    var(--loading-trace-color) 0deg,
+    var(--loading-head-color) 40deg,
+    var(--loading-tail-color) 110deg,
+    var(--loading-trace-color) 160deg
+  );
+  animation: rotate-gradient 3s linear infinite;
+}
+
+.gen-item.highlight .placeholder {
+  color: var(--highlight-color);
+}
+
+.gen-item .preview-wrapper {
+  margin-bottom: 5px;
+  height: 60px;
+  width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gen-item .placeholder {
+  width: 24px;
+  height: 24px;
+  color: var(--ui-color-grey-700);
 }
 </style>

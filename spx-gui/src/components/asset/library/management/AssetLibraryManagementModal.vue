@@ -186,16 +186,16 @@ const handleRemove = useMessageHandle(
       <UITextInput
         v-model:value="searchInput"
         v-radar="{ name: 'Search input', desc: 'Input to search library assets' }"
-        class="search-input"
+        class="w-80"
         clearable
         :placeholder="$t({ en: 'Search', zh: '搜索' })"
         @keypress.enter="handleSearch"
       >
-        <template #prefix><UIIcon class="search-icon" type="search" /></template>
+        <template #prefix><UIIcon class="text-grey-700" type="search" /></template>
       </UITextInput>
     </template>
-    <section class="body">
-      <div class="sider">
+    <section class="flex">
+      <div class="min-w-0 w-42 flex-none flex-col gap-3 border-r border-grey-400 p-middle flex">
         <UIChip
           v-for="c in categories"
           :key="c.value"
@@ -205,12 +205,12 @@ const handleRemove = useMessageHandle(
           {{ $t(c.message) }}
         </UIChip>
       </div>
-      <main class="main">
-        <h3 class="title">{{ $t(category.message) }}</h3>
-        <div class="content">
+      <main class="flex flex-1 flex-col">
+        <h3 class="px-6 pt-5 text-grey-900">{{ $t(category.message) }}</h3>
+        <div class="px-6 pt-2 pb-5">
           <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="584">
             <!-- fixed asset-list height to keep the layout stable -->
-            <ul class="asset-list" style="height: 584px">
+            <ul class="flex flex-wrap content-start gap-2" style="height: 584px">
               <ItemComponent
                 v-for="asset in slotProps.data.data"
                 :key="asset.id"
@@ -230,55 +230,9 @@ const handleRemove = useMessageHandle(
               </ItemComponent>
             </ul>
           </ListResultWrapper>
-          <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+          <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 justify-center" :total="pageTotal" />
         </div>
       </main>
     </section>
   </UISearchableModal>
 </template>
-
-<style lang="scss" scoped>
-.search-input {
-  width: 320px;
-}
-.search-icon {
-  color: var(--ui-color-grey-700);
-}
-.body {
-  display: flex;
-  justify-content: stretch;
-}
-.sider {
-  flex: 0 0 168px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding: var(--ui-gap-middle);
-  gap: 12px;
-
-  border-right: 1px solid var(--ui-color-grey-400);
-}
-.main {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: stretch;
-}
-.title {
-  padding: 20px 24px 0;
-  color: var(--ui-color-grey-900);
-}
-.content {
-  padding: 8px 24px 20px;
-}
-.asset-list {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-content: flex-start;
-}
-.pagination {
-  justify-content: center;
-  margin: 36px 0 0;
-}
-</style>

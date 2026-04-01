@@ -29,14 +29,14 @@ const entityMessage = computed(() => entityMessages[props.type])
 
 <template>
   <UILoading v-if="loading" />
-  <div v-else class="asset-suggestions">
+  <div v-else class="flex flex-col items-center gap-3">
     <template v-if="suggestions.length > 0">
-      <ul class="list">
+      <ul class="m-0 flex list-none flex-nowrap items-center justify-center gap-2 p-0">
         <template v-for="asset in suggestions" :key="asset.id">
           <slot name="item" :asset="asset" :selected="isSelected(asset)" :on-click="() => emit('toggle', asset)"></slot>
         </template>
       </ul>
-      <p class="tip">
+      <p class="text-center text-12 text-hint-2">
         {{
           $t({
             en: `There are related ${entityMessage.en}s in the asset library. You can choose the one you like or continue generating.`,
@@ -45,7 +45,7 @@ const entityMessage = computed(() => entityMessages[props.type])
         }}
       </p>
     </template>
-    <p v-else-if="keyword.length > 0" class="tip" style="margin-top: 56px">
+    <p v-else-if="keyword.length > 0" class="mt-14 text-center text-12 text-hint-2">
       {{
         $t({
           en: `No matching ${entityMessage.en}s found in the asset library. You can continue generating.`,
@@ -55,29 +55,3 @@ const entityMessage = computed(() => entityMessages[props.type])
     </p>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.asset-suggestions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.list {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-  justify-content: center;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.tip {
-  text-align: center;
-  font-size: 12px;
-  color: var(--ui-color-hint-2);
-}
-</style>

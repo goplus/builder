@@ -421,6 +421,7 @@ Representative examples from the pilot:
 Preferred style in this category:
 
 - write the style directly in the template when the utilities remain readable
+- when original CSS uses `flex: <grow> <shrink> <basis>`, preserve that shorthand with `flex-[<grow>_<shrink>_<basis>]` instead of decomposing it into partial utilities such as `shrink-0`, so grow, shrink, and basis stay coupled during migration
 - remove the local style block after the result is verified
 
 Responsive styling preference:
