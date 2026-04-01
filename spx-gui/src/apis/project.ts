@@ -18,8 +18,8 @@ export enum ProjectType {
   Game = 'game'
 }
 
-export function isSupportedProjectType(type: string | null | undefined): type is ProjectType.Game {
-  return type == null || type === ProjectType.Game
+export function isSupportedProjectType(type: string | null | undefined): boolean {
+  return type === ProjectType.Game
 }
 
 /** Source of extra settings of the project. */

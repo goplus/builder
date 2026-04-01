@@ -1,4 +1,5 @@
 import localforage from 'localforage'
+import { ProjectType } from '@/apis/project'
 import type { PartialMetadata, ProjectSerialized } from '../project'
 import { File, type Files, type Metadata as FileMetadata } from './file'
 
@@ -94,6 +95,7 @@ async function load(key: string, signal?: AbortSignal) {
   signal?.throwIfAborted()
   if (metadataEx == null) return null
   const { files: fileList, thumbnail: rawThumbnail, ...metadata } = metadataEx
+  if (metadata.type == null) metadata.type = ProjectType.Game // Default to Game type for backward compatibility
   const files: Files = {}
   await Promise.all(
     fileList.map(async (path) => {
