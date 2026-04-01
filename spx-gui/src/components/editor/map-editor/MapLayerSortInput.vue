@@ -45,5 +45,3 @@ const handleLayerSortModeChange = (v: string | null) => {
     </UITooltip>
   </UIRadioGroup>
 </template>
-
-<style lang="scss" scoped></style>

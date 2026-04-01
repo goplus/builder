@@ -51,16 +51,20 @@ const availableCourses = computed(() => {
             : $t({ en: 'All courses have been selected', zh: '所有课程都已选择' })
         "
       />
-      <div v-else class="flex flex-col gap-2 [&_.course-item-mini:hover_.action-icon]:text-primary-600">
+      <div v-else class="flex flex-col gap-2">
         <CourseItemMini
           v-for="course in availableCourses"
           :key="course.id"
           :course="course"
           interactive
+          class="group"
           @click="emit('select', course.id)"
         >
           <template #suffix>
-            <UIIcon class="action-icon shrink-0 text-grey-400 transition-colors duration-200" type="plus" />
+            <UIIcon
+              class="shrink-0 text-grey-400 transition-colors duration-200 group-hover:text-primary-600"
+              type="plus"
+            />
           </template>
         </CourseItemMini>
       </div>

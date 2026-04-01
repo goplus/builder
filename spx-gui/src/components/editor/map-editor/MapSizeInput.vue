@@ -26,7 +26,7 @@ const handleHeightChange = debounce((v: number | null) => {
 </script>
 
 <template>
-  <div class="inputs">
+  <div class="flex gap-2">
     <UINumberInput
       v-radar="{ name: 'width input', desc: 'Input to set map width' }"
       :value="project.stage.mapWidth"
@@ -43,11 +43,3 @@ const handleHeightChange = debounce((v: number | null) => {
     </UINumberInput>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.inputs {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-}
-</style>

@@ -86,7 +86,7 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
       desc: 'Quick config for sprite rotation style and values'
     }"
   >
-    <div class="rotation-config-wrapper">
+    <div class="flex items-center gap-1">
       <UIButtonGroup
         v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }"
         :value="localConfig.rotationStyle"
@@ -111,7 +111,7 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
         <template #trigger>
           <UINumberInput
             v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
-            class="heading-input"
+            class="w-30"
             :min="-180"
             :max="180"
             :value="localConfig.heading"
@@ -121,7 +121,7 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
             <template #prefix>{{ $t({ en: 'Heading', zh: '朝向' }) }}</template>
           </UINumberInput>
         </template>
-        <div class="heading-picker-container">
+        <div class="w-max p-3">
           <AnglePicker
             :model-value="localConfig.heading"
             @update:model-value="handleUpdateHeadingDebounced($event ?? 0)"
@@ -152,20 +152,3 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
     </div>
   </ConfigPanel>
 </template>
-
-<style lang="scss" scoped>
-.rotation-config-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.heading-input {
-  width: 120px;
-}
-
-.heading-picker-container {
-  padding: 12px;
-  width: max-content;
-}
-</style>

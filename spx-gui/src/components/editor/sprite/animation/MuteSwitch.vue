@@ -2,7 +2,9 @@
   <div>
     <UITooltip>
       <template #trigger>
-        <div class="mute-switch-button">
+        <div
+          class="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border border-grey-500 bg-white transition-colors hover:bg-grey-300"
+        >
           <UIIcon :type="muted ? 'volumeOff' : 'volumeUp'" />
         </div>
       </template>
@@ -21,21 +23,3 @@ defineProps<{
   muted: boolean
 }>()
 </script>
-<style scoped lang="scss">
-.mute-switch-button {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  border: 1px solid var(--ui-color-grey-500);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #fff;
-
-  &:hover {
-    background-color: var(--ui-color-grey-300);
-  }
-}
-</style>

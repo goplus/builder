@@ -46,21 +46,21 @@ const handleEditCollision = useMessageHandle(
 </script>
 
 <template>
-  <div class="header">
+  <div class="flex h-7 items-center text-title">
     <AssetName>{{ sprite.name }}</AssetName>
     <UIIcon
       v-radar="{ name: 'Rename button', desc: 'Button to rename the sprite' }"
-      class="icon"
+      class="cursor-pointer text-grey-900 transition-colors hover:text-grey-800 active:text-grey-1000"
       :title="$t({ en: 'Rename', zh: '重命名' })"
       type="edit"
       @click="handleNameEdit"
     />
-    <div class="spacer" />
+    <div class="flex-1" />
     <UITooltip>
       <template #trigger>
         <UIIcon
           v-radar="{ name: 'Collapse button', desc: 'Button to collapse the sprite basic configuration panel' }"
-          class="icon"
+          class="cursor-pointer text-grey-900 transition-colors hover:text-grey-800 active:text-grey-1000"
           type="doubleArrowDown"
           @click="emit('collapse')"
         />
@@ -73,63 +73,23 @@ const handleEditCollision = useMessageHandle(
       }}
     </UITooltip>
   </div>
-  <div class="config-wrapper">
+  <div class="flex flex-col gap-middle">
     <SpritePositionSize :sprite="sprite" :project="project" />
-    <div class="config-item">
-      <div class="label">{{ $t({ en: 'Rotation', zh: '旋转' }) }}</div>
+    <div class="flex items-center">
+      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Rotation', zh: '旋转' }) }}</div>
       <SpriteDirection :sprite="sprite" :project="project" />
     </div>
-    <div class="config-item">
-      <div class="label">{{ $t({ en: 'Show', zh: '显示' }) }}</div>
+    <div class="flex items-center">
+      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Show', zh: '显示' }) }}</div>
       <SpriteVisible :sprite="sprite" :project="project" />
     </div>
-    <div v-if="project.stage.physics.enabled" class="config-item">
-      <div class="label">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
+    <div v-if="project.stage.physics.enabled" class="flex items-center">
+      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
       <SpritePhysics :sprite="sprite" :project="project" />
     </div>
-    <div v-if="isCollisionSettingsEnabled" class="config-item">
-      <div class="label">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
+    <div v-if="isCollisionSettingsEnabled" class="flex items-center">
+      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
       <UIButton icon="setting" color="secondary" variant="flat" @click="handleEditCollision"></UIButton>
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.header {
-  height: 28px;
-  color: var(--ui-color-title);
-  display: flex;
-  align-items: center;
-}
-
-.icon {
-  cursor: pointer;
-  color: var(--ui-color-grey-900);
-  &:hover {
-    color: var(--ui-color-grey-800);
-  }
-  &:active {
-    color: var(--ui-color-grey-1000);
-  }
-}
-
-.spacer {
-  flex: 1;
-}
-
-.config-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-middle);
-
-  .config-item {
-    display: flex;
-    align-items: center;
-
-    .label {
-      white-space: nowrap;
-      margin-right: 16px;
-    }
-  }
-}
-</style>

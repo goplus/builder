@@ -29,15 +29,6 @@ const emit = defineEmits<{
     :visible="visible"
     @update:visible="emit('cancelled')"
   >
-    <SpriteCollisionEditor class="editor" :sprite="sprite" :project="project" @update-success="emit('resolved')" />
+    <SpriteCollisionEditor class="h-114" :sprite="sprite" :project="project" @update-success="emit('resolved')" />
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.checkbox {
-  margin-top: 20px;
-}
-.editor {
-  height: 456px;
-}
-</style>

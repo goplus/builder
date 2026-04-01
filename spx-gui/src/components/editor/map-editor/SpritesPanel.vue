@@ -83,7 +83,7 @@ const handleGenerate = useMessageHandle(
 <template>
   <UICard
     v-radar="{ name: 'Map Editor\'s Sprite List', desc: 'List of all sprites in the Map Editor' }"
-    class="sprite-list-card"
+    class="relative flex flex-col"
     :style="cssVars"
   >
     <PanelHeader :active="selectedSprite != null">
@@ -112,7 +112,7 @@ const handleGenerate = useMessageHandle(
       </template>
     </PanelHeader>
 
-    <SpriteList class="list-wrapper" />
+    <SpriteList class="flex-1" />
 
     <PanelFooter
       v-if="footerExpanded && selectedSprite != null"
@@ -120,7 +120,7 @@ const handleGenerate = useMessageHandle(
         name: `Basic configuration for selected sprite`,
         desc: 'Panel for configuring sprite basic settings'
       }"
-      class="footer"
+      class="p-middle"
     >
       <SpriteBasicConfig :sprite="selectedSprite" :project="project" @collapse="footerExpanded = false" />
     </PanelFooter>
@@ -132,47 +132,13 @@ const handleGenerate = useMessageHandle(
             name: 'Expand button',
             desc: 'Button to expand the basic configuration panel for selected sprite'
           }"
-          class="footer-expand-button"
+          class="absolute right-3 bottom-0 flex h-6 w-6 cursor-pointer items-center justify-center bg-grey-300 shadow-small"
           @click="footerExpanded = true"
         >
-          <UIIcon class="footer-expand-icon" type="doubleArrowDown" />
+          <UIIcon class="rotate-180" type="doubleArrowDown" />
         </div>
       </template>
       {{ $t({ en: 'Expand', zh: '展开' }) }}
     </UITooltip>
   </UICard>
 </template>
-
-<style lang="scss" scoped>
-.sprite-list-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-
-  .list-wrapper {
-    flex: 1;
-  }
-}
-
-.footer {
-  padding: 16px;
-}
-
-.footer-expand-button {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  right: 12px;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0px -2px 8px 0px rgba(51, 51, 51, 0.08);
-  background-color: var(--ui-color-grey-300);
-  cursor: pointer;
-}
-
-.footer-expand-icon {
-  transform: rotate(180deg);
-}
-</style>

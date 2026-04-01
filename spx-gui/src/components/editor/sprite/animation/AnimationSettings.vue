@@ -1,5 +1,5 @@
 <template>
-  <section class="wrapper">
+  <section class="flex justify-center">
     <UIDropdown
       trigger="manual"
       :visible="activeSetting != null"
@@ -8,37 +8,50 @@
       @update:visible="handleDropdownVisibleUpdate"
     >
       <template #trigger>
-        <ul class="settings">
+        <ul class="flex items-center gap-1 rounded-1 bg-grey-100 p-1 shadow-small">
           <li
             v-radar="{ name: 'Edit duration', desc: 'Click to edit animation duraion' }"
-            class="setting"
-            :class="{ active: activeSetting === 'duration' }"
+            class="flex h-8 cursor-pointer items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
+            :class="activeSetting === 'duration' ? 'bg-primary-200 text-primary-main' : ''"
             @click="handleSummaryClick('duration')"
           >
             <UIIcon type="timer" />
             {{ $t({ en: 'Duration', zh: '时长' }) }}
-            <span class="value">{{ formatDuration(animation.duration, 2) }}</span>
+            <span
+              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-10/[1.6] whitespace-nowrap text-ellipsis text-grey-800"
+            >
+              {{ formatDuration(animation.duration, 2) }}
+            </span>
           </li>
           <li
             v-radar="{ name: 'Edit bound state', desc: 'Click to edit animation bound state' }"
-            class="setting"
-            :class="{ active: activeSetting === 'bound-state' }"
+            class="flex h-8 cursor-pointer items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
+            :class="activeSetting === 'bound-state' ? 'bg-primary-200 text-primary-main' : ''"
             @click="handleSummaryClick('bound-state')"
           >
             <UIIcon type="status" />
             {{ $t({ en: 'Binding', zh: '绑定' }) }}
-            <span v-if="boundStateNum > 0" class="value">{{ boundStateNum }}</span>
+            <span
+              v-if="boundStateNum > 0"
+              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-10/[1.6] whitespace-nowrap text-ellipsis text-grey-800"
+            >
+              {{ boundStateNum }}
+            </span>
           </li>
           <li
             v-if="soundEditable"
             v-radar="{ name: 'Edit sound', desc: 'Click to edit animation sound' }"
-            class="setting"
-            :class="{ active: activeSetting === 'sound' }"
+            class="flex h-8 cursor-pointer items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
+            :class="activeSetting === 'sound' ? 'bg-primary-200 text-primary-main' : ''"
             @click="handleSummaryClick('sound')"
           >
             <UIIcon type="sound" />
             {{ $t({ en: 'Sound', zh: '声音' }) }}
-            <span class="value">{{ soundName }}</span>
+            <span
+              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-10/[1.6] whitespace-nowrap text-ellipsis text-grey-800"
+            >
+              {{ soundName }}
+            </span>
           </li>
         </ul>
       </template>
@@ -97,55 +110,3 @@ function handleDropdownVisibleUpdate(visible: boolean) {
   if (!visible) activeSetting.value = null
 }
 </script>
-
-<style lang="scss" scoped>
-.wrapper {
-  display: flex;
-  justify-content: center;
-}
-
-.settings {
-  display: flex;
-  align-items: center;
-
-  padding: 4px;
-  gap: 4px;
-  border-radius: var(--ui-border-radius-1);
-  box-shadow: var(--ui-box-shadow-small);
-  background-color: var(--ui-color-grey-100);
-}
-
-.setting {
-  display: flex;
-  height: 32px;
-  padding: 4px 12px;
-  align-items: center;
-  gap: 4px;
-
-  border-radius: var(--ui-border-radius-1);
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--ui-color-text-main);
-  cursor: pointer;
-  transition: 0.2s;
-
-  &.active {
-    color: var(--ui-color-primary-main);
-    background: var(--ui-color-primary-200);
-  }
-}
-
-.value {
-  padding: 0px 5px;
-  border-radius: 8px;
-  max-width: 5em;
-  overflow-x: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  font-size: 10px;
-  line-height: 1.6;
-  color: var(--ui-color-grey-800);
-  background-color: var(--ui-color-grey-400);
-}
-</style>
