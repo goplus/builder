@@ -1,11 +1,10 @@
-import { debounce, uniqueId } from 'lodash'
+import { uniqueId } from 'lodash'
 import { ref, shallowReactive, shallowRef, watch } from 'vue'
-import { Disposable, getCleanupSignal } from '@/utils/disposable'
+import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
 import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import type { Copilot } from '@/components/copilot/copilot'
-import { capture } from '@/utils/exception'
 import {
   type Command,
   type CommandInfo,
@@ -147,13 +146,6 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
   registerSnippetVariablesProvider(provider: ISnippetVariablesProvider): void {
     this.snippetParser.registerVariablesProvider(provider)
-    // `init()` already starts the `activeTextDocument` watcher with `{ immediate: true }`,
-    // but that first run happens before `CodeEditor.attachUI()` registers this provider.
-    // Refresh once here so the current document gets its initial snippet-variable cache
-    // immediately, instead of waiting for the next document switch / content change.
-    this.snippetParser.refreshVariables().catch((e) => {
-      capture(e, 'Failed to refresh snippet variables after provider registration')
-    })
   }
 
   private commands = new Map<Command<any, any>, CommandInfo<any, any>>()
@@ -481,7 +473,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   async insertDefinition(ddi: DefinitionDocumentationItem, range: Range = this.getSelectionRange()) {
-    const parsed = this.parseSnippet(ddi.insertSnippet)
+    const parsed = await this.parseSnippet(ddi.insertSnippet)
     // Now we have feature InputHelper for APIReferenceItem insertion.
     // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
     // so we transform snippet to text and insert it directly.
@@ -519,8 +511,8 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   private snippetParser: SnippetParser
 
   /** Parse given snippet string & resolve Builder built-in variables */
-  parseSnippet(snippet: string) {
-    return this.snippetParser.parse(snippet)
+  async parseSnippet(snippet: string, signal?: AbortSignal) {
+    return this.snippetParser.parse(snippet, signal)
   }
 
   init(editor: MonacoEditor) {
@@ -730,27 +722,10 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       watch(
         () => this.activeTextDocument,
         (td, _, onCleanup) => {
-          const signal = getCleanupSignal(onCleanup)
-          const refreshSnippetVariables = async () => {
-            try {
-              await this.snippetParser.refreshVariables(signal)
-            } catch (e) {
-              capture(e, 'Failed to refresh snippet variables for active text document')
-            }
-          }
-          refreshSnippetVariables()
-
           if (td == null) return
-
-          const refreshSnippetVariablesDebounced = debounce(() => {
-            refreshSnippetVariables()
-          }, 200)
-          onCleanup(() => refreshSnippetVariablesDebounced.cancel())
-
           onCleanup(
             td.on('didChangeContent', () => {
               startCodeUpdatedTransaction()
-              refreshSnippetVariablesDebounced()
             })
           )
         },

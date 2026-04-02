@@ -13,8 +13,8 @@ import type {
   IAPIReferenceProvider,
   APIReferenceContext
 } from '../../xgo-code-editor'
-import { mainCategories, subCategories } from '../../xgo-code-editor/common'
-import { isTextDocumentStageCode, parseDefinitionName } from '../common'
+import { mainCategories, subCategories, parseDefinitionName } from '../../xgo-code-editor/common'
+import { isTextDocumentStageCode } from '../common'
 import iconEvent from './icons/event.svg?raw'
 import iconLook from './icons/look.svg?raw'
 import iconMotion from './icons/motion.svg?raw'

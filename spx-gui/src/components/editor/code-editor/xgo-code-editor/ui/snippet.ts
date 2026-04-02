@@ -2,7 +2,7 @@
  * @desc This class is responsible for parsing snippets and resolving built-in variables.
  */
 
-import { computed, shallowRef, toValue, type WatchSource } from 'vue'
+import { shallowRef, toValue, type WatchSource } from 'vue'
 import { SnippetParser as BaseSnippetParser, Text, Variable } from '@/utils/snippet-parser'
 import type { ITextDocument } from '../common'
 import type { ISnippetVariablesProvider } from '../snippet-variables'
@@ -19,17 +19,6 @@ export class SnippetParser {
     this.variablesProviderRef.value = provider
   }
 
-  /** Built-in variables */
-  private builtInVariables = computed<Record<string, string | null>>(() => {
-    const textDocument = toValue(this.activeTextDocumentSource)
-    return this.variablesProviderRef.value?.provideSnippetVariables({ textDocument }) ?? {}
-  })
-
-  async refreshVariables(signal?: AbortSignal) {
-    const textDocument = toValue(this.activeTextDocumentSource)
-    await this.variablesProviderRef.value?.refreshForTextDocument?.({ textDocument }, signal)
-  }
-
   private getVariableDefaultValue(variable: Variable) {
     if (variable.children.length === 0) return undefined
     const child = variable.children[0]
@@ -38,10 +27,23 @@ export class SnippetParser {
   }
 
   /** Parse given snippet string & resolve built-in variables */
-  parse(snippet: string) {
+  async parse(snippet: string, signal?: AbortSignal) {
     const parsed = this.parser.parse(snippet)
+    const textDocument = toValue(this.activeTextDocumentSource)
+
+    const requestedVariables = new Set<string>()
+    parsed.walk((marker) => {
+      if (marker instanceof Variable && marker.name !== '') requestedVariables.add(marker.name)
+      return true
+    })
+
+    const builtInVariables = await this.variablesProviderRef.value?.provideSnippetVariables(
+      { textDocument },
+      [...requestedVariables],
+      signal
+    )
     parsed.resolveVariables({
-      resolve: (variable) => this.builtInVariables.value[variable.name] ?? this.getVariableDefaultValue(variable)
+      resolve: (variable) => builtInVariables?.[variable.name] ?? this.getVariableDefaultValue(variable)
     })
     return parsed
   }

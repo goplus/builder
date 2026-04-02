@@ -162,6 +162,19 @@ export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifi
 }
 
 /**
+ * Parse receiver & method in `DefinitionIdentifier.name`.
+ * For example:
+ *  - 'Game.timer' => ['Game', 'timer']
+ *  - 'Sprite.heading' => ['Sprite', 'heading']
+ *  - 'hour' => [null, 'hour']
+ */
+export function parseDefinitionName(name: string | undefined): [receiver: string | null, method: string] {
+  const parts = (name ?? '').split('.')
+  if (parts.length > 1) return [parts[0], parts[1]]
+  return [null, parts[0]]
+}
+
+/**
  * Definition kinds that are considered as block content.
  * See details in https://github.com/goplus/builder/issues/1258.
  */

@@ -25,7 +25,7 @@ import {
   type TextDocumentIdentifier,
   getCodeFilePath,
   type Property,
-  type DefinitionIdentifier
+  parseDefinitionName
 } from '../xgo-code-editor'
 
 export type { ResourceModel }
@@ -183,22 +183,14 @@ export function textDocumentId2CodeFileName(id: TextDocumentIdentifier) {
   }
 }
 
-/**
- * Parse receiver & method in `DefinitionIdentifier.name`.
- * For example:
- *  - 'Game.timer' => ['Game', 'timer']
- *  - 'Sprite.heading' => ['Sprite', 'heading']
- *  - 'hour' => [null, 'hour']
- */
-export function parseDefinitionName(name: string | undefined): [receiver: string | null, method: string] {
-  const parts = (name ?? '').split('.')
-  if (parts.length > 1) return [parts[0], parts[1]]
-  return [null, parts[0]]
-}
-
-export function isStageDefinition(definition: DefinitionIdentifier) {
-  const [receiver] = parseDefinitionName(definition.name)
-  return receiver === 'Game'
+export function filterOwnProperties(target: string, properties: Property[]) {
+  // target is stage, no need to filter
+  if (target === '') return properties
+  // target is sprite, filter out properties inherited from stage
+  return properties.filter((p) => {
+    const [receiver] = parseDefinitionName(p.definition.name)
+    return receiver !== 'Game'
+  })
 }
 
 export type { ColorValue }
@@ -296,8 +288,7 @@ export async function getInvalidMonitors(
     if (ownPropertyNames == null) {
       try {
         const properties = await getProperties(monitor.target, signal)
-        const ownProperties =
-          monitor.target === '' ? properties : properties.filter((item) => !isStageDefinition(item.definition))
+        const ownProperties = filterOwnProperties(monitor.target, properties)
         ownPropertyNames = new Set(ownProperties.map((p) => p.name))
         propertyNamesMap.set(monitor.target, ownPropertyNames)
       } catch (e) {

@@ -5,12 +5,18 @@ export type SnippetVariablesContext = {
 }
 
 export interface ISnippetVariablesProvider {
-  provideSnippetVariables(ctx: SnippetVariablesContext): Record<string, string | null>
-  refreshForTextDocument?(ctx: SnippetVariablesContext, signal?: AbortSignal): Promise<void>
+  provideSnippetVariables(
+    ctx: SnippetVariablesContext,
+    requestedVariables: readonly string[],
+    signal?: AbortSignal
+  ): Promise<Record<string, string | null>>
 }
 
 export class SnippetVariablesProvider implements ISnippetVariablesProvider {
-  provideSnippetVariables(_ctx: SnippetVariablesContext): Record<string, string | null> {
+  async provideSnippetVariables(
+    _ctx: SnippetVariablesContext,
+    _requestedVariables: readonly string[]
+  ): Promise<Record<string, string | null>> {
     return {}
   }
 }
