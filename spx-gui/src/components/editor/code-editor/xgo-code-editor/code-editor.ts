@@ -19,7 +19,6 @@ import {
   toLSPPosition,
   type TextDocumentIdentifier,
   type ResourceIdentifier,
-  DefinitionKind,
   fromLSPTextEdit,
   type Position,
   getTextDocumentId,
@@ -29,6 +28,7 @@ import {
   fromLSPDiagnostic,
   type Property
 } from './common'
+import { filterPropertiesByDocumentation } from './utils'
 import { TextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import { HoverProvider } from './hover'
@@ -191,22 +191,7 @@ export class CodeEditor extends Disposable {
   /** Get properties for a given target */
   async getProperties(target: string, signal?: AbortSignal): Promise<Property[]> {
     const properties = await this.lspClient.getProperties({ signal }, target)
-
-    const classFrameworkPkg = this.project.classFramework.pkgPaths[0]
-    const maybeProperties = await Promise.all(
-      properties.map(async (item) => {
-        const documentation = await this.documentBase.getDocumentation(item.definition)
-        // Skip APIs from framework packages without documentation — assumed not recommended
-        if (item.definition.package === classFrameworkPkg && documentation == null) return null
-        if (documentation != null) {
-          if (documentation.hiddenFromList) return null
-          if (![DefinitionKind.Read, DefinitionKind.Variable, DefinitionKind.Constant].includes(documentation.kind))
-            return null
-        }
-        return item
-      })
-    )
-    return maybeProperties.filter((item) => item != null)
+    return filterPropertiesByDocumentation(properties, this.documentBase, this.project.classFramework.pkgPaths[0])
   }
 
   private uis: ICodeEditorUIController[] = []

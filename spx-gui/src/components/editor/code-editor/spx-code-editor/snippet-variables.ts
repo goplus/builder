@@ -6,19 +6,23 @@ import type { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { Stage } from '@/models/spx/stage'
 import { packageSpx } from '@/utils/spx'
-import type { ISnippetVariablesProvider, Property, SnippetVariablesContext } from '../xgo-code-editor'
+import type {
+  IDocumentBase,
+  ILSPClient,
+  ISnippetVariablesProvider,
+  Property,
+  SnippetVariablesContext
+} from '../xgo-code-editor'
+import { filterPropertiesByDocumentation } from '../xgo-code-editor'
 import { getResourceModel, textDocumentId2ResourceId } from './common'
 
-type PropertyLoader = (target: string, signal?: AbortSignal) => Promise<Property[]>
-
 export class SpxSnippetVariablesProvider implements ISnippetVariablesProvider {
-  constructor(private project: SpxProject) {}
-
-  private loadProperties: PropertyLoader | null = null
-
-  setPropertiesLoader(loader: PropertyLoader) {
-    this.loadProperties = loader
-  }
+  constructor(
+    private project: SpxProject,
+    private lspClient: ILSPClient,
+    private documentBase: IDocumentBase,
+    private readonly classFrameworkPkg: string
+  ) {}
 
   private adaptWidgetType(type: string | null | undefined): string | null {
     if (type == null) return null
@@ -40,6 +44,11 @@ export class SpxSnippetVariablesProvider implements ISnippetVariablesProvider {
     if (currentResourceModel instanceof Stage) return ''
     if (currentResourceModel instanceof Sprite) return currentResourceModel.name
     return null
+  }
+
+  private async loadProperties(target: string, signal?: AbortSignal): Promise<Property[]> {
+    const properties = await this.lspClient.getProperties({ signal }, target)
+    return filterPropertiesByDocumentation(properties, this.documentBase, this.classFrameworkPkg)
   }
 
   private getPropertyPriority(property: Property): number {
