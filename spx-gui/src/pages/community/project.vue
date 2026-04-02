@@ -358,7 +358,7 @@ const remixesRet = useQuery(
                     <template v-if="runnerState === 'initial'">
                       <div v-if="needsSignInToRun" class="flex h-full w-full items-center justify-center p-6">
                         <div
-                          class="relative flex w-85 flex-col items-center overflow-visible rounded-[16px] bg-white px-6 pt-17 pb-6 text-center"
+                          class="relative flex w-85 flex-col items-center overflow-visible rounded-[16px] bg-grey-100 px-6 pt-17 pb-6 text-center"
                           style="box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1)"
                         >
                           <!-- eslint-disable-next-line vue/no-v-html -->

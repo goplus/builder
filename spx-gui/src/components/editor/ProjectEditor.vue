@@ -4,7 +4,7 @@
   <UICard
     v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
-    class="relative flex min-w-0 flex-[1_1_0] flex-col overflow-visible!"
+    class="relative min-w-0 flex-[1_1_0] flex flex-col overflow-visible!"
   >
     <!--
       TODO: optimize performance for switching between editors, which corresponds to selection change.
@@ -22,7 +22,7 @@
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
   </UICard>
-  <div v-show="isPreviewMode" class="flex min-w-0 shrink-0 grow-0 basis-[496px] flex-col gap-middle">
+  <div v-show="isPreviewMode" class="min-w-0 flex-[0_0_496px] flex flex-col gap-middle">
     <EditorPreview />
     <EditorPanels />
   </div>

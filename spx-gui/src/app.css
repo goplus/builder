@@ -4,7 +4,7 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
-@source "./**/*.{vue,ts,tsx,js,jsx,html}";
+/* @tailwindcss/vite performs automatic source detection; re-add @source if specific files are missed */
 
 /*
  * Shared UILink component variants.
@@ -199,7 +199,7 @@
   --color-white: #fff;
 
   /* Typography tokens bridged from the UI token layer. */
-  --font-sans: var(
+  --font-main: var(
     --ui-font-family-main,
     AlibabaHealthB,
     -apple-system,
@@ -215,9 +215,7 @@
     'Segoe UI Symbol',
     'Noto Color Emoji'
   );
-  --font-mono: var(--ui-font-family-code, Menlo, Monaco, 'Courier New', monospace);
-  --font-main: var(--font-sans);
-  --font-code: var(--font-mono);
+  --font-code: var(--ui-font-family-code, Menlo, Monaco, 'Courier New', monospace);
 
   /* Radius and shadow tokens bridged from the UI token layer. */
   --radius-none: 0px;

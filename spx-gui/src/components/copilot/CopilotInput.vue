@@ -40,7 +40,7 @@ defineExpose({ focus })
 </script>
 
 <template>
-  <div class="group" :class="{ loading }" @click="focus">
+  <div class="group/loading" :class="{ loading }" @click="focus">
     <div class="content flex h-full items-center gap-2.5 bg-grey-100 px-3.5 py-3">
       <div v-if="loading" class="dot-loading flex items-center justify-between gap-0.5">
         <div class="dot"></div>
@@ -57,7 +57,7 @@ defineExpose({ focus })
         ></textarea>
       </div>
       <button
-        class="submit-btn flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border-none p-1.5 outline-none group-[.loading]:hidden"
+        class="submit-btn flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border-none p-1.5 outline-none group-[.loading]/loading:hidden"
         :class="{ disabled: inputStr.length === 0 }"
         @click="handleSubmit"
       >
@@ -71,7 +71,7 @@ defineExpose({ focus })
         </svg>
       </button>
       <button
-        class="hidden h-8 w-8 flex-none cursor-pointer rounded-full border-none bg-transparent p-0 outline-none group-[.loading]:flex"
+        class="hidden h-8 w-8 flex-none cursor-pointer rounded-full border-none bg-transparent p-0 outline-none group-[.loading]/loading:flex"
         @click="handleAbort"
       >
         <svg

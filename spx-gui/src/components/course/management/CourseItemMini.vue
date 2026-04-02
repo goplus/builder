@@ -19,6 +19,7 @@ const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
 </script>
 
 <template>
+  <!-- FIXME: `bg-grey-50` is not taking effect -->
   <div
     class="flex items-center rounded-1 border-2 border-transparent bg-grey-50 p-2 transition-all duration-200"
     :class="{
