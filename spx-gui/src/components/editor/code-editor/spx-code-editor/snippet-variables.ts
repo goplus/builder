@@ -64,22 +64,15 @@ export class SpxSnippetVariablesProvider implements ISnippetVariablesProvider {
     return candidate
   }
 
-  private async getPreferredPropertyName(ctx: SnippetVariablesContext, signal?: AbortSignal): Promise<string | null> {
+  private async getPreferredPropertyName(ctx: SnippetVariablesContext): Promise<string | null> {
     const target = this.getPropertiesTarget(ctx.textDocument)
     if (target == null || this.loadProperties == null) return null
-    const properties = await this.loadProperties(target, signal)
-    signal?.throwIfAborted()
+    const properties = await this.loadProperties(target, ctx.signal)
+    ctx.signal?.throwIfAborted()
     return this.pickPreferredProperty(properties)?.name ?? null
   }
 
-  async provideSnippetVariables(
-    ctx: SnippetVariablesContext,
-    requestedVariables: readonly string[],
-    signal?: AbortSignal
-  ): Promise<Record<string, string | null>> {
-    if (requestedVariables.length === 0) return {}
-    const requested = new Set(requestedVariables)
-
+  async provideSnippetVariables(ctx: SnippetVariablesContext): Promise<Record<string, string | null>> {
     const project = this.project
     const stage = project.stage
     const currentResourceId = ctx.textDocument != null ? textDocumentId2ResourceId(ctx.textDocument.id, project) : null
@@ -87,33 +80,16 @@ export class SpxSnippetVariablesProvider implements ISnippetVariablesProvider {
     const currentSprite = currentResourceModel instanceof Sprite ? currentResourceModel : null
     const otherSprite = project.sprites.find((sprite) => sprite !== currentSprite)
     const firstWidget = stage.widgets[0]
-    const result: Record<string, string | null> = {}
-
-    if (requested.has('BUILDER_OTHER_SPRITE_NAME')) {
-      result.BUILDER_OTHER_SPRITE_NAME = this.escapeString(otherSprite?.name)
+    const preferredPropertyName = await this.getPreferredPropertyName(ctx)
+    return {
+      BUILDER_OTHER_SPRITE_NAME: this.escapeString(otherSprite?.name),
+      BUILDER_FIRST_COSTUME_NAME: this.escapeString(currentSprite?.costumes[0]?.name),
+      BUILDER_FIRST_ANIMATION_NAME: this.escapeString(currentSprite?.animations[0]?.name),
+      BUILDER_FIRST_BACKDROP_NAME: this.escapeString(stage.backdrops[0]?.name),
+      BUILDER_FIRST_SOUND_NAME: this.escapeString(project.sounds[0]?.name),
+      BUILDER_FIRST_WIDGET_TYPE: this.adaptWidgetType(firstWidget?.type),
+      BUILDER_FIRST_WIDGET_NAME: this.escapeString(firstWidget?.name),
+      BUILDER_FIRST_PROPERTY_NAME: this.escapeString(preferredPropertyName)
     }
-    if (requested.has('BUILDER_FIRST_COSTUME_NAME')) {
-      result.BUILDER_FIRST_COSTUME_NAME = this.escapeString(currentSprite?.costumes[0]?.name)
-    }
-    if (requested.has('BUILDER_FIRST_ANIMATION_NAME')) {
-      result.BUILDER_FIRST_ANIMATION_NAME = this.escapeString(currentSprite?.animations[0]?.name)
-    }
-    if (requested.has('BUILDER_FIRST_BACKDROP_NAME')) {
-      result.BUILDER_FIRST_BACKDROP_NAME = this.escapeString(stage.backdrops[0]?.name)
-    }
-    if (requested.has('BUILDER_FIRST_SOUND_NAME')) {
-      result.BUILDER_FIRST_SOUND_NAME = this.escapeString(project.sounds[0]?.name)
-    }
-    if (requested.has('BUILDER_FIRST_WIDGET_TYPE')) {
-      result.BUILDER_FIRST_WIDGET_TYPE = this.adaptWidgetType(firstWidget?.type)
-    }
-    if (requested.has('BUILDER_FIRST_WIDGET_NAME')) {
-      result.BUILDER_FIRST_WIDGET_NAME = this.escapeString(firstWidget?.name)
-    }
-    if (requested.has('BUILDER_FIRST_PROPERTY_NAME')) {
-      const firstPropertyName = await this.getPreferredPropertyName(ctx, signal)
-      result.BUILDER_FIRST_PROPERTY_NAME = this.escapeString(firstPropertyName)
-    }
-    return result
   }
 }

@@ -1,22 +1,15 @@
-import type { ITextDocument } from './common'
+import type { ITextDocument, BaseContext } from './common'
 
-export type SnippetVariablesContext = {
+export type SnippetVariablesContext = BaseContext & {
   textDocument: ITextDocument | null
 }
 
 export interface ISnippetVariablesProvider {
-  provideSnippetVariables(
-    ctx: SnippetVariablesContext,
-    requestedVariables: readonly string[],
-    signal?: AbortSignal
-  ): Promise<Record<string, string | null>>
+  provideSnippetVariables(ctx: SnippetVariablesContext): Promise<Record<string, string | null>>
 }
 
 export class SnippetVariablesProvider implements ISnippetVariablesProvider {
-  async provideSnippetVariables(
-    _ctx: SnippetVariablesContext,
-    _requestedVariables: readonly string[]
-  ): Promise<Record<string, string | null>> {
+  async provideSnippetVariables(_ctx: SnippetVariablesContext): Promise<Record<string, string | null>> {
     return {}
   }
 }

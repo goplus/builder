@@ -131,7 +131,7 @@ export class CompletionController extends Emitter<{
         await this.ui.insertText(item.insertText, range)
         break
       case InsertTextFormat.Snippet: {
-        const parsed = await this.ui.parseSnippet(item.insertText)
+        const parsed = this.ui.parseSnippet(item.insertText)
         await this.ui.insertSnippet(parsed.toTextmateString(), range)
         break
       }

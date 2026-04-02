@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
-import { getCleanupSignal } from '@/utils/disposable'
-import { capture, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown } from '@/components/ui'
 import { type Action, setDdiDragData } from '../../common'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -34,36 +33,21 @@ const handleInsert = useMessageHandle(
   }
 ).fn
 
-const parsed = ref<{ overview: string; inlayHints: string }>({ overview: props.item.overview, inlayHints: '[]' })
-
-watchEffect(async (onCleanup) => {
-  const activeTextDocument = codeEditorUICtx.ui.activeTextDocument
-  const insertSnippetParameterHints = props.item.insertSnippetParameterHints ?? []
-
-  if (activeTextDocument == null || insertSnippetParameterHints.length === 0) {
-    parsed.value = { overview: props.item.overview, inlayHints: '[]' }
-    return
-  }
-
-  const signal = getCleanupSignal(onCleanup)
-  try {
-    const parsedSnippet = await codeEditorUICtx.ui.parseSnippet(props.item.insertSnippet, signal)
-    const overview = parsedSnippet.toString().replace(/{\n\s*\n}/g, '{}') // compress lambda expression
-    const inlayHints: lsp.InlayHint[] = []
-    insertSnippetParameterHints.forEach((label, i) => {
-      const placeholder = parsedSnippet.placeholders[i]
-      if (placeholder == null) return
-      const offset = parsedSnippet.offset(placeholder)
-      inlayHints.push({
-        label,
-        position: { line: 0, character: offset },
-        kind: lsp.InlayHintKind.Parameter
-      })
+const parsed = computed(() => {
+  const parsed = codeEditorUICtx.ui.parseSnippet(props.item.insertSnippet)
+  const overview = parsed.toString().replace(/{\n\s*\n}/g, '{}') // compress lambda expression
+  const inlayHints: lsp.InlayHint[] = []
+  ;(props.item.insertSnippetParameterHints ?? []).forEach((label, i) => {
+    const placeholder = parsed.placeholders[i]
+    const offset = parsed.offset(placeholder)
+    inlayHints.push({
+      label,
+      position: { line: 0, character: offset },
+      kind: lsp.InlayHintKind.Parameter
     })
-    parsed.value = { overview, inlayHints: JSON.stringify(inlayHints) }
-  } catch (e) {
-    capture(e, 'Failed to parse insert snippet')
-  }
+  })
+  const inlayHintsStr = JSON.stringify(inlayHints)
+  return { overview, inlayHints: inlayHintsStr }
 })
 
 const hoverDropdown = ref<InstanceType<typeof UIDropdown> | null>(null)

@@ -34,7 +34,7 @@ import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPositio
 import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
 import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
 import { DropIndicatorController } from './drop-indicator'
-import { SnippetParser, type ISnippetVariablesProvider } from './snippet'
+import { SnippetVariablesController, type ISnippetVariablesProvider } from './snippet'
 import {
   CopilotExplainKind,
   makeCodeBlock,
@@ -141,11 +141,11 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void {
     this.apiReferenceController.registerProvider(provider)
   }
+  registerSnippetVariablesProvider(provider: ISnippetVariablesProvider): void {
+    this.snippetVariablesController.registerProvider(provider)
+  }
   registerDocumentBase(documentBase: IDocumentBase): void {
     this.documentBase = documentBase
-  }
-  registerSnippetVariablesProvider(provider: ISnippetVariablesProvider): void {
-    this.snippetParser.registerVariablesProvider(provider)
   }
 
   private commands = new Map<Command<any, any>, CommandInfo<any, any>>()
@@ -202,7 +202,6 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     private goToResourceHandler: (resource: ResourceIdentifier) => Promise<void>
   ) {
     super()
-    this.snippetParser = new SnippetParser(() => this.activeTextDocument)
   }
 
   id = uniqueId('code-editor-ui-')
@@ -219,6 +218,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   inputHelperController = new InputHelperController(this)
   inlayHintController = new InlayHintController(this)
   dropIndicatorController = new DropIndicatorController(this)
+  snippetVariablesController = new SnippetVariablesController(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -473,7 +473,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   async insertDefinition(ddi: DefinitionDocumentationItem, range: Range = this.getSelectionRange()) {
-    const parsed = await this.parseSnippet(ddi.insertSnippet)
+    const parsed = this.parseSnippet(ddi.insertSnippet)
     // Now we have feature InputHelper for APIReferenceItem insertion.
     // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
     // so we transform snippet to text and insert it directly.
@@ -508,11 +508,9 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.isCopilotActiveRef.value = active
   }
 
-  private snippetParser: SnippetParser
-
   /** Parse given snippet string & resolve Builder built-in variables */
-  async parseSnippet(snippet: string, signal?: AbortSignal) {
-    return this.snippetParser.parse(snippet, signal)
+  parseSnippet(snippet: string) {
+    return this.snippetVariablesController.parse(snippet)
   }
 
   init(editor: MonacoEditor) {
@@ -742,9 +740,12 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.inputHelperController.init()
     this.inlayHintController.init()
     this.dropIndicatorController.init()
+    this.snippetVariablesController.init()
   }
 
   dispose() {
+    this.snippetVariablesController.dispose()
+    this.dropIndicatorController.dispose()
     this.inlayHintController.dispose()
     this.inputHelperController.dispose()
     this.resourceReferenceController.dispose()

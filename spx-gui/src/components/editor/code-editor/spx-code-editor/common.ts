@@ -5,7 +5,7 @@
  * generic (xgo) layer + spx-specific variants.
  */
 
-import type { ColorValue } from '@/utils/spx'
+import { type ColorValue, packageSpx } from '@/utils/spx'
 import { capture } from '@/utils/exception'
 import type { SpxProject } from '@/models/spx/project'
 import { type ResourceModel, type ResourceType } from '@/models/spx/common/resource'
@@ -186,10 +186,13 @@ export function textDocumentId2CodeFileName(id: TextDocumentIdentifier) {
 export function filterOwnProperties(target: string, properties: Property[]) {
   // target is stage, no need to filter
   if (target === '') return properties
-  // target is sprite, filter out properties inherited from stage
+  // target is sprite, filter out properties inherited from stage ("Game" in spx)
   return properties.filter((p) => {
     const [receiver] = parseDefinitionName(p.definition.name)
-    return receiver !== 'Game'
+    if (receiver !== 'Game') return true
+    // keep properties from other packages
+    const pkg = p.definition.package
+    return pkg !== 'main' && pkg !== packageSpx
   })
 }
 
