@@ -19,17 +19,5 @@ function getIcon(kind: DefinitionKind) {
 
 <template>
   <!-- eslint-disable-next-line vue/no-v-html -->
-  <div class="definition-icon" v-html="getIcon(kind)"></div>
+  <div class="h-4 w-4 [&_svg]:h-full [&_svg]:w-full" v-html="getIcon(kind)"></div>
 </template>
-
-<style lang="scss" scoped>
-.definition-icon {
-  width: 16px;
-  height: 16px;
-
-  &:deep(svg) {
-    width: 100%;
-    height: 100%;
-  }
-}
-</style>

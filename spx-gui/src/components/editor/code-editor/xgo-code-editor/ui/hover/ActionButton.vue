@@ -1,7 +1,7 @@
 <template>
   <UIButton variant="stroke" color="white">
-    <div class="action-content">
-      <CommandIcon class="icon" :type="icon" />
+    <div class="-mx-2 flex items-center justify-center gap-1">
+      <CommandIcon :type="icon" />
       <slot></slot>
     </div>
   </UIButton>
@@ -16,13 +16,3 @@ defineProps<{
   icon: CommandIconType
 }>()
 </script>
-
-<style lang="scss" scoped>
-.action-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 4px;
-  margin: 0 -8px;
-}
-</style>

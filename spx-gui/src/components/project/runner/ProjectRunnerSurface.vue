@@ -398,7 +398,7 @@ defineExpose({
 
 <template>
   <div ref="rootRef" class="project-runner-surface" :class="{ fullscreen: overlayActive }">
-    <div v-if="overlayActive" class="placeholder"></div>
+    <div v-if="overlayActive" class="h-full w-full"></div>
     <div
       ref="wrapperRef"
       v-radar="{ name: 'Project runner surface', desc: 'Container hosting project runner' }"
@@ -419,15 +419,14 @@ defineExpose({
       }"
     >
       <div v-if="overlayActive && (overlayVisible || overlayClosing || overlayOpening)" class="header">
-        <div class="header-left"></div>
-        <div class="display-name">
+        <div class="flex-[1_1_30%]"></div>
+        <div class="flex-[1_1_40%] truncate text-center">
           {{ project.displayName }}
         </div>
-        <div class="header-right">
+        <div class="flex-[1_1_30%] grid grid-flow-col items-center justify-end justify-items-end gap-5">
           <UIButton
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Run button', desc: 'Click to run the project in overlay' }"
-            class="button"
             color="primary"
             icon="playHollow"
             :loading="runButtonLoading"
@@ -438,7 +437,6 @@ defineExpose({
           <UIButton
             v-else
             v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in overlay' }"
-            class="button"
             icon="rotate"
             :disabled="runnerState !== 'running' || stopButtonLoading"
             :loading="rerunButtonLoading && !stopButtonLoading"
@@ -449,7 +447,6 @@ defineExpose({
           <UIButton
             v-if="runnerState !== 'initial'"
             v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
-            class="button"
             color="boring"
             icon="end"
             :loading="stopButtonLoading"
@@ -464,7 +461,6 @@ defineExpose({
                   name: 'Exit full screen button',
                   desc: 'Click to exit full screen for the running project'
                 }"
-                class="button"
                 color="boring"
                 icon="exitFullScreen"
                 @click="closeFullscreen"
@@ -489,14 +485,9 @@ defineExpose({
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .project-runner-surface {
   position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.placeholder {
   width: 100%;
   height: 100%;
 }
@@ -510,111 +501,104 @@ defineExpose({
   transform: translate3d(var(--overlay-translate-x, 0px), var(--overlay-translate-y, 0px), 0)
     scale(var(--overlay-scale-x, 1), var(--overlay-scale-y, 1));
   opacity: 1;
+}
 
-  &.no-transition {
-    transition: none !important;
-  }
+.runner-wrapper.no-transition {
+  transition: none !important;
+}
 
-  &.fullscreen {
-    position: fixed;
-    z-index: 100;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    background-color: #fff;
-    opacity: 1;
-    pointer-events: none;
-    transition:
-      transform 0.4s ease-in-out,
-      background-color 0.2s ease;
+.runner-wrapper.fullscreen {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  opacity: 1;
+  pointer-events: none;
+  transition:
+    transform 0.4s ease-in-out,
+    background-color 0.2s ease;
+}
 
-    .header {
-      opacity: 1;
-      pointer-events: auto;
-      transition:
-        opacity 0.2s ease,
-        height 0.2s ease,
-        padding 0.2s ease,
-        border-bottom-color 0.2s ease;
-      transition-delay: 0s;
-    }
+.runner-wrapper.fullscreen .header {
+  opacity: 1;
+  pointer-events: auto;
+  transition:
+    opacity 0.2s ease,
+    height 0.2s ease,
+    padding 0.2s ease,
+    border-bottom-color 0.2s ease;
+  transition-delay: 0s;
+}
 
-    .runner-area {
-      padding: 20px;
-      background-color: var(--ui-color-grey-300);
-      transition:
-        padding 0.2s ease,
-        background-color 0.2s ease;
-    }
+.runner-wrapper.fullscreen .runner-area {
+  padding: 20px;
+  background-color: var(--ui-color-grey-300);
+  transition:
+    padding 0.2s ease,
+    background-color 0.2s ease;
+}
 
-    &.visible {
-      pointer-events: auto;
-    }
+.runner-wrapper.fullscreen.visible {
+  pointer-events: auto;
+}
 
-    &.opening {
-      background-color: transparent;
+.runner-wrapper.fullscreen.opening {
+  background-color: transparent;
+}
 
-      .header {
-        opacity: 0;
-        visibility: hidden;
-        height: 56px;
-        padding: 0 20px;
-        border-bottom-color: transparent;
-      }
+.runner-wrapper.fullscreen.opening .header {
+  opacity: 0;
+  visibility: hidden;
+  height: 56px;
+  padding: 0 20px;
+  border-bottom-color: transparent;
+}
 
-      .runner-area {
-        padding: 20px;
-        background-color: transparent;
-      }
-    }
+.runner-wrapper.fullscreen.opening .runner-area {
+  padding: 20px;
+  background-color: transparent;
+}
 
-    &.opening.visible {
-      background-color: #fff;
+.runner-wrapper.fullscreen.opening.visible {
+  background-color: #fff;
+}
 
-      .header {
-        opacity: 1;
-        visibility: visible;
-        height: 56px;
-        padding: 0 20px;
-        border-bottom-color: var(--ui-color-grey-400);
-        transition-delay: 0.15s;
-      }
+.runner-wrapper.fullscreen.opening.visible .header {
+  opacity: 1;
+  visibility: visible;
+  height: 56px;
+  padding: 0 20px;
+  border-bottom-color: var(--ui-color-grey-400);
+  transition-delay: 0.15s;
+}
 
-      .runner-area {
-        padding: 20px;
-        background-color: var(--ui-color-grey-300);
-        transition-delay: 0.15s;
-      }
-    }
+.runner-wrapper.fullscreen.opening.visible .runner-area {
+  padding: 20px;
+  background-color: var(--ui-color-grey-300);
+  transition-delay: 0.15s;
+}
 
-    &.closing {
-      background-color: transparent;
-    }
+.runner-wrapper.fullscreen.closing {
+  background-color: transparent;
+}
 
-    &.closing:not(.visible) {
-      .header {
-        opacity: 0;
-      }
+.runner-wrapper.fullscreen.closing:not(.visible) .header {
+  opacity: 0;
+}
 
-      .runner-area {
-        background-color: transparent;
-      }
-    }
+.runner-wrapper.fullscreen.closing:not(.visible) .runner-area {
+  background-color: transparent;
+}
 
-    &:not(.visible):not(.closing):not(.opening) {
-      .header {
-        display: none;
-      }
+.runner-wrapper.fullscreen:not(.visible):not(.closing):not(.opening) .header {
+  display: none;
+}
 
-      .runner-area {
-        padding: 0;
-        background-color: transparent;
-      }
-    }
-  }
+.runner-wrapper.fullscreen:not(.visible):not(.closing):not(.opening) .runner-area {
+  padding: 0;
+  background-color: transparent;
 }
 
 .header {
@@ -631,42 +615,17 @@ defineExpose({
   overflow: hidden;
 }
 
-.header-left {
-  flex: 1;
-  flex-basis: 30%;
-}
-
-.display-name {
-  flex: 1;
-  flex-basis: 40%;
-  text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.header-right {
-  flex: 1;
-  flex-basis: 30%;
-  justify-content: flex-end;
-  align-items: center;
-  display: grid;
-  grid-auto-flow: column;
-  gap: 20px;
-  justify-items: end;
-}
-
 .runner-area {
   position: relative;
   width: 100%;
   height: 100%;
+}
 
-  .runner {
-    width: 100%;
-    height: 100%;
-    border-radius: var(--ui-border-radius-2);
-    overflow: hidden;
-  }
+.runner-area .runner {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--ui-border-radius-2);
+  overflow: hidden;
 }
 
 .project-runner-surface.fullscreen .runner-area {
@@ -677,23 +636,20 @@ defineExpose({
   min-height: 0;
   padding: 20px;
   background-color: var(--ui-color-grey-300);
+}
 
-  .runner {
-    width: auto;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-  }
+.project-runner-surface.fullscreen .runner-area .runner {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
 }
 
 .overlay-loading {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.1);
 }
 </style>

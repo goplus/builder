@@ -1,13 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="definition-detail-wrapper">
+  <div class="mt-0.5">
     <slot></slot>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.definition-detail-wrapper {
-  margin-top: 2px;
-}
-</style>

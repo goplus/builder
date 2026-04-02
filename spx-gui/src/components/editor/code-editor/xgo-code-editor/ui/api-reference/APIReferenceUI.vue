@@ -1,4 +1,7 @@
 <script lang="ts">
+import { type LocaleMessage } from '@/utils/i18n'
+import type { APIReferenceItem } from '.'
+
 type SubCategory = {
   id: string
   label: LocaleMessage
@@ -21,13 +24,12 @@ function belongs(item: APIReferenceItem, mcid: string, scid: string) {
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
-import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilTaskScheduled } from '@/utils/utils'
 import { UIError } from '@/components/ui'
 import { stringifyDefinitionId, type DefinitionDocumentationItem } from '../../common'
-import type { APIReferenceController, APIReferenceItem } from '.'
+import type { APIReferenceController } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
@@ -162,7 +164,7 @@ function handleCategoryClick(id: string) {
           v-for="c in categoriesComputed"
           :key="c.id"
           class="category"
-          :class="{ active: c.id === activeCategoryIdRef }"
+          :data-active="c.id === activeCategoryIdRef || null"
           :style="{ '--category-color': c.color }"
           @click="handleCategoryClick(c.id)"
         >
@@ -190,7 +192,7 @@ function handleCategoryClick(id: string) {
   </section>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .api-reference-ui {
   display: flex;
   justify-content: stretch;
@@ -217,23 +219,23 @@ function handleCategoryClick(id: string) {
   color: var(--category-color);
   cursor: pointer;
   transition: 0.1s;
+}
 
-  &.active {
-    color: var(--ui-color-grey-100);
-    background-color: var(--category-color);
-  }
+.category[data-active='true'] {
+  color: var(--ui-color-grey-100);
+  background-color: var(--category-color);
+}
 
-  .icon {
-    width: 24px;
-    height: 24px;
-  }
+.category .icon {
+  width: 24px;
+  height: 24px;
+}
 
-  .label {
-    margin-top: 2px;
-    text-align: center;
-    font-size: 10px;
-    line-height: 1.6;
-  }
+.category .label {
+  margin-top: 2px;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.6;
 }
 
 .items-wrapper {
@@ -241,32 +243,32 @@ function handleCategoryClick(id: string) {
   padding: 0 16px 12px;
   overflow-y: auto;
   scrollbar-width: thin;
+}
 
-  .subcategory-wrapper {
-    border-bottom: 1px dashed var(--ui-color-grey-500);
-  }
+.items-wrapper .subcategory-wrapper {
+  border-bottom: 1px dashed var(--ui-color-grey-500);
+}
 
-  .category-wrapper:last-child .subcategory-wrapper:last-child {
-    padding-bottom: 0;
-    border-bottom: none;
-  }
+.items-wrapper .category-wrapper:last-child .subcategory-wrapper:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
 
-  .title {
-    position: sticky;
-    z-index: 10;
-    top: 0;
-    padding: 12px 0;
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--ui-color-hint-2);
-    background-color: var(--ui-color-grey-100);
-  }
+.items-wrapper .title {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  padding: 12px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ui-color-hint-2);
+  background-color: var(--ui-color-grey-100);
+}
 
-  .items {
-    padding-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--ui-gap-middle);
-  }
+.items-wrapper .items {
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-middle);
 }
 </style>

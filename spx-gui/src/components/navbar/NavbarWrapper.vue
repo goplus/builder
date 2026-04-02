@@ -5,7 +5,7 @@
     :style="{ backgroundImage: `url(${bgUrl})` }"
   >
     <div
-      class="flex h-12.5 w-full items-stretch justify-between gap-3"
+      class="flex h-12.5 items-stretch justify-between gap-3"
       :class="centered ? 'w-305 desktop-large:w-370' : 'w-full'"
     >
       <div class="flex basis-[30%]">

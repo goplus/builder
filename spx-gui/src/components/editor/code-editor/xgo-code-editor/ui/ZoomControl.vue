@@ -11,7 +11,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="zoomer">
+  <div class="flex flex-col items-center gap-1">
     <!-- eslint-disable vue/no-v-html -->
     <button
       v-radar="{ name: 'Zoom in', desc: 'Zoom in the code editor' }"
@@ -37,33 +37,10 @@ const emit = defineEmits<{
   </div>
 </template>
 
-<style lang="scss" scoped>
-.zoomer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
+<style scoped>
+@reference "../../../../../app.css";
 
 .zoom-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  border-radius: 12px;
-  color: var(--ui-color-text);
-  background: none;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: var(--ui-color-grey-300);
-  }
-  &:active {
-    background-color: var(--ui-color-grey-400);
-  }
+  @apply flex h-10 w-10 cursor-pointer items-center justify-center rounded-2 border-0 bg-transparent p-0 text-text transition-colors hover:bg-grey-300 active:bg-grey-400;
 }
 </style>

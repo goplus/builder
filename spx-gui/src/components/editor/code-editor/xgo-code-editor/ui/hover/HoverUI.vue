@@ -82,8 +82,8 @@ useDecorations(() => {
   </UIDropdown>
 </template>
 
-<style lang="scss">
-// TODO: special style for hovered text?
+<style>
+/* TODO: special style for hovered text? */
 .code-editor-hovered-text {
   border-radius: 2px;
   background-color: var(--ui-color-grey-600);

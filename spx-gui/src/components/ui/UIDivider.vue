@@ -1,5 +1,5 @@
 <template>
-  <NDivider class="divider" :vertical="vertical" />
+  <NDivider class="ui-divider" :vertical="vertical" />
 </template>
 
 <script lang="ts" setup>
@@ -16,7 +16,7 @@ withDefaults(
 </script>
 
 <style lang="scss" scoped>
-.divider {
+.ui-divider {
   margin: 0;
 }
 </style>

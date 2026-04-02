@@ -54,7 +54,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <ul v-if="provider != null && selector != null" class="items">
+  <ul
+    v-if="provider != null && selector != null"
+    class="flex w-94 max-h-70 flex-none flex-wrap content-start gap-2 overflow-y-auto"
+  >
     <component
       :is="provider.provideResourceItemRenderer()"
       v-for="item in selector.items"
@@ -65,8 +68,8 @@ onMounted(() => {
     />
     <UIDropdown trigger="click" placement="top">
       <template #trigger>
-        <UIBlockItem class="add">
-          <UIIcon class="icon" type="plus" />
+        <UIBlockItem class="justify-center text-primary-main">
+          <UIIcon type="plus" style="width: 24px; height: 24px" />
         </UIBlockItem>
       </template>
       <UIMenu>
@@ -77,25 +80,3 @@ onMounted(() => {
     </UIDropdown>
   </ul>
 </template>
-
-<style lang="scss" scoped>
-.items {
-  width: 376px;
-  max-height: 280px;
-  overflow-y: auto;
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 8px;
-}
-
-.add {
-  justify-content: center;
-  color: var(--ui-color-primary-main);
-  .icon {
-    width: 24px;
-    height: 24px;
-  }
-}
-</style>

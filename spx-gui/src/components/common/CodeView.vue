@@ -132,89 +132,97 @@ function stringifyElCnt(el: ElementContent): string {
   <code v-if="mode === 'inline'" class="code-view" :style="{ tabSize }" v-html="codeHtml"></code>
   <div
     v-else
-    class="code-view block"
+    class="code-view is-block"
     :class="{ 'has-line-numbers': hasLineNumbers, addition, deletion }"
     :style="{ tabSize }"
     v-html="codeHtml"
   ></div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .code-view {
   font-family: var(--ui-font-family-code);
   font-size: 1em;
-
-  :deep(.param-inlay-hint) {
-    color: var(--ui-color-hint-2) !important;
-    &::after {
-      content: ':';
-    }
-  }
 }
 
-.block :deep(pre) {
+.code-view :deep(.param-inlay-hint) {
+  color: var(--ui-color-hint-2) !important;
+}
+
+.code-view :deep(.param-inlay-hint)::after {
+  content: ':';
+}
+
+.is-block :deep(pre) {
   min-width: fit-content;
 }
 
 .has-line-numbers {
   container-type: inline-size;
+}
 
-  :deep(pre) {
-    position: relative;
-    padding-left: 26px;
-    counter-reset: step;
-    counter-increment: step 0;
+.has-line-numbers :deep(pre) {
+  position: relative;
+  padding-left: 26px;
+  counter-reset: step;
+  counter-increment: step 0;
+}
+
+.has-line-numbers :deep(.line::before) {
+  content: counter(step);
+  counter-increment: step;
+  position: absolute;
+  left: 0;
+  width: 18px;
+  display: inline-block;
+  text-align: right;
+  color: #34819b;
+}
+
+/* If the container is too narrow, hide line numbers. */
+@container (width < 15em) {
+  .has-line-numbers :deep(pre) {
+    padding-left: 0;
   }
 
-  :deep(.line::before) {
-    content: counter(step);
-    counter-increment: step;
-    position: absolute;
-    left: 0;
-    width: 18px;
-    display: inline-block;
-    text-align: right;
-    color: #34819b;
-  }
-
-  // If the container is too narrow, hide line numbers
-  @container (width < 15em) {
-    :deep(pre) {
-      padding-left: 0;
-    }
-    :deep(.line::before) {
-      content: none;
-    }
+  .has-line-numbers :deep(.line::before) {
+    content: none;
   }
 }
 
 .addition,
 .deletion {
-  :deep(> pre) {
-    position: relative;
-    padding-left: 24px;
-    // Disable default background and show background from parent (addition/deletion)
-    background-color: transparent !important;
-  }
-  :deep(.line::before) {
-    position: absolute;
-    left: 8px;
-    width: 1em;
-    display: inline-block;
-  }
+}
+
+.addition :deep(> pre),
+.deletion :deep(> pre) {
+  position: relative;
+  padding-left: 24px;
+  /* Disable default background and show background from parent (addition/deletion). */
+  background-color: transparent !important;
+}
+
+.addition :deep(.line::before),
+.deletion :deep(.line::before) {
+  position: absolute;
+  left: 8px;
+  width: 1em;
+  display: inline-block;
 }
 
 .addition {
   background: var(--ui-color-green-100);
-  :deep(code .line::before) {
-    content: '+';
-  }
+}
+
+.addition :deep(code .line::before) {
+  content: '+';
 }
 
 .deletion {
   background: var(--ui-color-red-100);
-  :deep(code .line::before) {
-    content: '-';
-  }
+}
+
+.deletion :deep(code .line::before) {
+  content: '-';
 }
 </style>

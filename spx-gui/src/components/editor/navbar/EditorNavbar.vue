@@ -21,9 +21,9 @@
               <template #icon><img :src="importProjectSvg" /></template>
               {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
             </UIMenuItem>
-            <UIMenuItem class="import-scratch" @click="handleImportFromScratch">
+            <UIMenuItem class="p-2" @click="handleImportFromScratch">
               <template #icon><img :src="importScratchSvg" /></template>
-              <span class="item-text">
+              <span class="mr-2 flex-1">
                 {{ $t({ en: 'Import Scratch project file...', zh: '导入 Scratch 项目文件...' }) }}
               </span>
               <UITag>Beta</UITag>
@@ -55,7 +55,7 @@
               <template #icon><img :src="projectPageSvg" /></template>
               {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
             </UIMenuItem>
-            <UIMenuItem v-if="canManageProject" class="modify-project-name-item" @click="handleModifyProjectName">
+            <UIMenuItem v-if="canManageProject" class="w-full" @click="handleModifyProjectName">
               <template #icon><img :src="modifyProjectNameSvg" /></template>
               {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
             </UIMenuItem>
@@ -71,22 +71,22 @@
 
       <NavbarTutorials v-if="showTutorialsEntry" />
 
-      <div class="history-button-wrapper">
+      <div class="flex">
         <UITooltip :disabled="undoAction == null">
           <template #trigger>
             <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
-              <UIIcon class="icon" type="undo" />
+              <UIIcon type="undo" style="width: 24px; height: 24px" />
             </button>
           </template>
-          <span class="history-menu-text">{{ $t(undoText) }}</span>
+          <span>{{ $t(undoText) }}</span>
         </UITooltip>
         <UITooltip :disabled="redoAction == null">
           <template #trigger>
             <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
-              <UIIcon class="icon" type="redo" />
+              <UIIcon type="redo" style="width: 24px; height: 24px" />
             </button>
           </template>
-          <span class="history-menu-text">{{ $t(redoText) }}</span>
+          <span>{{ $t(redoText) }}</span>
         </UITooltip>
       </div>
     </template>
@@ -103,7 +103,7 @@
     <template #right>
       <UIButtonGroup
         v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
-        class="editor-mode-wrapper"
+        class="mx-3 items-center"
         type="text"
         variant="secondary"
         :value="selectedEditMode"
@@ -118,7 +118,7 @@
               }"
               :value="EditMode.Default"
             >
-              <div class="icon" v-html="defaultModeSvg"></div>
+              <div class="w-4.5 flex [&_svg]:block [&_svg]:h-auto [&_svg]:w-full" v-html="defaultModeSvg"></div>
             </UIButtonGroupItem>
           </template>
           {{ $t({ en: 'Default mode', zh: '默认模式' }) }}
@@ -132,7 +132,7 @@
               }"
               :value="EditMode.Map"
             >
-              <div class="icon" v-html="mapEditModeSvg"></div>
+              <div class="w-4.5 flex [&_svg]:block [&_svg]:h-auto [&_svg]:w-full" v-html="mapEditModeSvg"></div>
             </UIButtonGroupItem>
           </template>
           {{ $t({ en: 'Map edit mode', zh: '地图编辑模式' }) }}
@@ -432,66 +432,18 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 })
 </script>
 
-<style lang="scss" scoped>
-.import-scratch {
-  padding: 8px;
+<style scoped>
+@reference "../../../app.css";
 
-  .item-text {
-    flex: 1;
-    margin-right: 8px;
-  }
+.history-button {
+  @apply flex h-full items-center justify-center border-none bg-transparent px-5 text-white outline-none;
 }
 
-.modify-project-name-item {
-  width: 100%;
+.history-button:disabled {
+  @apply cursor-not-allowed text-[#9de6ec];
 }
 
-.icon {
-  display: flex;
-
-  :deep(svg) {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-.history-button-wrapper {
-  display: flex;
-
-  .history-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    background: none;
-    outline: none;
-    border: none;
-    padding: 0 20px;
-    color: white;
-
-    .icon {
-      width: 24px;
-      height: 24px;
-    }
-
-    &:disabled {
-      color: #9de6ec;
-      cursor: not-allowed;
-    }
-
-    &:hover:not(:disabled) {
-      background-color: var(--ui-color-primary-600);
-      cursor: pointer;
-    }
-  }
-}
-
-.editor-mode-wrapper {
-  margin: 0 12px;
-  align-items: center;
-
-  .icon {
-    width: 18px;
-  }
+.history-button:enabled:hover {
+  @apply cursor-pointer bg-primary-600;
 }
 </style>

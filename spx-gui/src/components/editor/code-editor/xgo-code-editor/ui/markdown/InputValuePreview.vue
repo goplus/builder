@@ -58,54 +58,20 @@ const expr = computed(() => {
       autoplay
     />
     <component :is="() => inputPreview?.vnode" v-else-if="inputPreview?.vnode != null" />
-    <div v-else-if="inputPreview?.key != null" class="key">{{ $t(inputPreview.key) }}</div>
-    <div v-else-if="inputPreview?.color != null" class="color">
-      <i class="color-preview" :style="{ backgroundColor: inputPreview.color }"></i>
-      <span class="expr">{{ expr }}</span>
+    <div
+      v-else-if="inputPreview?.key != null"
+      class="inline-flex h-12.5 min-w-12.5 flex-col items-center justify-center rounded-[4px] border border-grey-500 bg-grey-200 px-2 py-1.25"
+      style="box-shadow: 0 1px 0 0 var(--ui-color-grey-500)"
+    >
+      {{ $t(inputPreview.key) }}
+    </div>
+    <div v-else-if="inputPreview?.color != null" class="flex items-center gap-2 py-2.75">
+      <i class="block h-5 w-5 rounded-[4px]" :style="{ backgroundColor: inputPreview.color }"></i>
+      <span class="font-code text-12 text-title">{{ expr }}</span>
     </div>
     <div v-else-if="inputPreview?.text != null" class="text">{{ $t(inputPreview.text) }}</div>
-    <span v-else class="expr">{{ expr }}</span>
+    <!-- We are not using inline `CodeView` here because it does not properly highlight short expressions. -->
+    <!-- TODO: optimize `CodeView` to support short expressions. -->
+    <span v-else class="font-code">{{ expr }}</span>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.key {
-  display: inline-flex;
-  height: 50px;
-  min-width: 50px;
-  padding: 5px 8px;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: 4px;
-  border: 1px solid var(--ui-color-grey-500);
-  background: var(--ui-color-grey-200);
-  box-shadow: 0px 1px 0px 0px var(--ui-color-grey-500);
-}
-
-.color {
-  display: flex;
-  padding: 11px 0px;
-  align-items: center;
-  gap: 8px;
-
-  .color-preview {
-    display: block;
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-  }
-
-  .expr {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--ui-color-title);
-  }
-}
-
-.expr {
-  // we are not using inline `CodeView` here because it does not properly highlight short expressions
-  // TODO: optimize `CodeView` to support short expressions
-  font-family: var(--ui-font-family-code);
-}
-</style>

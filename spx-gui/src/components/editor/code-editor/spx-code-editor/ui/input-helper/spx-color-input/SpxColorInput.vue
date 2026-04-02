@@ -98,11 +98,11 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div class="spx-color-input">
-    <section class="sliders">
+  <div class="flex w-78 flex-col gap-3">
+    <section class="flex flex-col gap-2">
       <div class="slider-wrapper">
-        <h5 class="slider-title">
-          {{ $t({ en: 'Hue: ', zh: '色相：' }) }}<span class="slider-value">{{ hue }}</span>
+        <h5 class="text-12">
+          {{ $t({ en: 'Hue: ', zh: '色相：' }) }}<span class="text-title">{{ hue }}</span>
         </h5>
         <ColorSlider
           v-model:value="hue"
@@ -110,8 +110,8 @@ function handleSubmit() {
         />
       </div>
       <div class="slider-wrapper">
-        <h5 class="slider-title">
-          {{ $t({ en: 'Saturation: ', zh: '饱和度：' }) }}<span class="slider-value">{{ saturation }}</span>
+        <h5 class="text-12">
+          {{ $t({ en: 'Saturation: ', zh: '饱和度：' }) }}<span class="text-title">{{ saturation }}</span>
         </h5>
         <ColorSlider
           v-model:value="saturation"
@@ -119,8 +119,8 @@ function handleSubmit() {
         />
       </div>
       <div class="slider-wrapper">
-        <h5 class="slider-title">
-          {{ $t({ en: 'Brightness: ', zh: '亮度：' }) }}<span class="slider-value">{{ brightness }}</span>
+        <h5 class="text-12">
+          {{ $t({ en: 'Brightness: ', zh: '亮度：' }) }}<span class="text-title">{{ brightness }}</span>
         </h5>
         <ColorSlider
           v-model:value="brightness"
@@ -129,52 +129,35 @@ function handleSubmit() {
       </div>
     </section>
     <UIDivider />
-    <section class="inputs">
+    <section class="flex gap-2">
       <UIButton v-if="isEyeDropperSupported" variant="stroke" color="boring" @click="handleOpenEyeDropper">
         <template #icon>
           <UIIcon type="eyedrop" />
         </template>
       </UIButton>
-      <UINumberInput v-model:value="hue" class="input" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
+      <UINumberInput v-model:value="hue" class="flex-[1_1_0]" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
         <template #prefix>H</template>
       </UINumberInput>
-      <UINumberInput v-model:value="saturation" class="input" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
+      <UINumberInput
+        v-model:value="saturation"
+        class="flex-[1_1_0]"
+        :min="0"
+        :max="100"
+        :step="1"
+        @keyup.enter="handleSubmit"
+      >
         <template #prefix>S</template>
       </UINumberInput>
-      <UINumberInput v-model:value="brightness" class="input" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
+      <UINumberInput
+        v-model:value="brightness"
+        class="flex-[1_1_0]"
+        :min="0"
+        :max="100"
+        :step="1"
+        @keyup.enter="handleSubmit"
+      >
         <template #prefix>B</template>
       </UINumberInput>
     </section>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.spx-color-input {
-  width: 312px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sliders {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.slider-title {
-  font-size: 12px;
-  .slider-value {
-    color: var(--ui-color-title);
-  }
-}
-
-.inputs {
-  display: flex;
-  gap: 8px;
-}
-
-.input {
-  flex: 1 1 0;
-}
-</style>

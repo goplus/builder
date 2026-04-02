@@ -99,8 +99,8 @@ function handlePredefinedNameUpdate(name: string | null) {
 </script>
 
 <template>
-  <div class="input-helper">
-    <UITabRadioGroup class="kind-select" :value="kind" @update:value="(v) => handleKindUpdate(v as InputKind)">
+  <div class="flex min-w-86 flex-col items-center gap-5 px-4 pt-5 pb-6">
+    <UITabRadioGroup class="w-78" :value="kind" @update:value="(v) => handleKindUpdate(v as InputKind)">
       <UITabRadio :value="InputKind.InPlace">
         {{ $t(inPlaceValueTitle) }}
       </UITabRadio>
@@ -117,13 +117,13 @@ function handlePredefinedNameUpdate(name: string | null) {
         @update:value="handleInPlaceValueUpdate"
         @submit="emit('submit')"
       />
-      <div v-else class="unknown-type">
+      <div v-else class="text-center leading-8 text-hint-2">
         {{ $t({ en: 'Value not supported', zh: '不支持输入值' }) }}
       </div>
     </template>
     <UISelect
       v-if="kind === InputKind.Predefined"
-      class="predefined-select"
+      class="self-stretch"
       :placeholder="$t({ en: 'Choose a variable', zh: '选择变量' })"
       :value="predefinedName"
       @update:value="handlePredefinedNameUpdate"
@@ -134,28 +134,3 @@ function handlePredefinedNameUpdate(name: string | null) {
     </UISelect>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.input-helper {
-  min-width: 344px;
-  padding: 20px 16px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.kind-select {
-  width: 312px;
-}
-
-.predefined-select {
-  align-self: stretch;
-}
-
-.unknown-type {
-  line-height: 32px;
-  text-align: center;
-  color: var(--ui-color-hint-2);
-}
-</style>

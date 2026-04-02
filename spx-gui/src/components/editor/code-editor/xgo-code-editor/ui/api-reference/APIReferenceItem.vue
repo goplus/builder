@@ -113,16 +113,16 @@ function handleMouseUp(e: MouseEvent) {
         @mouseup.passive="handleMouseUp"
         @click="handleInsert"
       >
-        <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">{{
-          parsed.overview
-        }}</DefinitionOverviewWrapper>
+        <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">
+          {{ parsed.overview }}
+        </DefinitionOverviewWrapper>
       </li>
     </template>
     <HoverCard :actions="hoverCardActions" @action="hideDropdown">
       <HoverCardContent>
-        <DefinitionOverviewWrapper :kind="item.kind" :inlay-hints="parsed.inlayHints">{{
-          parsed.overview
-        }}</DefinitionOverviewWrapper>
+        <DefinitionOverviewWrapper :kind="item.kind" :inlay-hints="parsed.inlayHints">
+          {{ parsed.overview }}
+        </DefinitionOverviewWrapper>
         <DefinitionDetailWrapper>
           <MarkdownView v-bind="item.detail" />
         </DefinitionDetailWrapper>
@@ -131,46 +131,49 @@ function handleMouseUp(e: MouseEvent) {
   </UIDropdown>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .api-reference-item {
-  padding: 1px 7px;
   align-self: flex-start;
   max-width: 100%;
+  padding: 1px 7px;
   border-radius: var(--ui-border-radius-1);
   border: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-100);
-  box-shadow: 0px 1px 8px 0px rgba(10, 13, 20, 0.05);
-  transition: 0.2s;
+  box-shadow: 0 1px 8px 0 rgba(10, 13, 20, 0.05);
+  transition: all 0.2s;
   cursor: pointer;
-  scroll-margin-top: 42px; // 42px for sticky title, to ensure the item correctly scrolled-into-view
-  scroll-margin-bottom: 16px; // with 16px offset it is easier to be found when scrolled into view
-
-  // Preserve `border-radius` when dragging, see details: https://github.com/react-dnd/react-dnd/issues/788
+  /* 42px for sticky title, to ensure the item correctly scrolled into view. */
+  scroll-margin-top: 42px;
+  /* With 16px offset it is easier to find when scrolled into view. */
+  scroll-margin-bottom: 16px;
+  /* Preserve `border-radius` when dragging, see details: https://github.com/react-dnd/react-dnd/issues/788 */
   transform: translate(0, 0);
+}
 
-  &:hover {
-    background: var(--ui-color-grey-300);
-    box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
-  }
+.api-reference-item:hover {
+  background: var(--ui-color-grey-300);
+  box-shadow: 0 1px 2px 0 rgba(10, 13, 20, 0.03);
+}
 
-  &.before-dragging {
-    // Adjust transparency for dragging to avoid visual obstruction
-    background-color: rgba(from var(--ui-color-grey-300) r g b / 0.6);
-    .overview {
-      opacity: 0.6;
-    }
-  }
+.api-reference-item.before-dragging {
+  /* Adjust transparency for dragging to avoid visual obstruction */
+  background-color: rgba(from var(--ui-color-grey-300) r g b / 0.6);
+}
+
+.api-reference-item.before-dragging .overview {
+  opacity: 0.6;
 }
 
 .overview {
+  padding-top: 2px;
+  padding-bottom: 1px;
   word-break: break-all;
-  padding: 2px 0 1px;
+}
 
-  :deep(> code) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--ui-color-hint-2);
-  }
+.overview :deep(> code) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ui-color-hint-2);
 }
 </style>
