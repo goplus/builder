@@ -29,6 +29,11 @@ const emit = defineEmits<{
     :visible="visible"
     @update:visible="emit('cancelled')"
   >
-    <SpriteCollisionEditor class="h-114" :sprite="sprite" :project="project" @update-success="emit('resolved')" />
+    <SpriteCollisionEditor
+      style="height: 456px"
+      :sprite="sprite"
+      :project="project"
+      @update-success="emit('resolved')"
+    />
   </UIFormModal>
 </template>

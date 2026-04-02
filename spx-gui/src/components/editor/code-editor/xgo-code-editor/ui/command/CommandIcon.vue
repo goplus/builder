@@ -25,17 +25,5 @@ const typeIconMap = {
 
 <template>
   <!-- eslint-disable-next-line vue/no-v-html -->
-  <div class="command-icon" v-html="typeIconMap[type]"></div>
+  <div class="h-4 w-4 [&_svg]:h-full [&_svg]:w-full" v-html="typeIconMap[type]"></div>
 </template>
-
-<style lang="scss" scoped>
-.command-icon {
-  width: 16px;
-  height: 16px;
-
-  &:deep(svg) {
-    width: 100%;
-    height: 100%;
-  }
-}
-</style>

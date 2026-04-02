@@ -170,7 +170,7 @@ function handleSubmitProjectDisplayName() {
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .project-wrap {
   width: 370px;
   min-width: 320px;
@@ -250,11 +250,11 @@ function handleSubmitProjectDisplayName() {
   background: transparent;
   cursor: pointer;
   border-radius: 6px;
+}
 
-  &:hover,
-  &:focus-visible {
-    background: var(--ui-color-primary-400);
-  }
+.edit-icon:hover,
+.edit-icon:focus-visible {
+  background: var(--ui-color-primary-400);
 }
 
 .edit-display-name-icon {
@@ -293,34 +293,34 @@ function handleSubmitProjectDisplayName() {
 
 .icon {
   display: flex;
+}
 
-  :deep(svg) {
-    width: 100%;
-    height: 100%;
-  }
+.icon :deep(svg) {
+  width: 100%;
+  height: 100%;
 }
 
 .auto-save-state {
   cursor: default;
+}
 
-  .icon {
-    width: 24px;
-    height: 24px;
+.auto-save-state .icon {
+  width: 24px;
+  height: 24px;
+}
 
-    &.pending :deep(svg) path,
-    &.saving :deep(svg) path {
-      stroke-dasharray: 2;
-    }
+.auto-save-state .icon.pending :deep(svg) path,
+.auto-save-state .icon.saving :deep(svg) path {
+  stroke-dasharray: 2;
+}
 
-    &.saving :deep(svg) path {
-      animation: dash 1s linear infinite;
+.auto-save-state .icon.saving :deep(svg) path {
+  animation: dash 1s linear infinite;
+}
 
-      @keyframes dash {
-        to {
-          stroke-dashoffset: 24;
-        }
-      }
-    }
+@keyframes dash {
+  to {
+    stroke-dashoffset: 24;
   }
 }
 

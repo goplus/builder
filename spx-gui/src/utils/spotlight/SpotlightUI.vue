@@ -277,26 +277,20 @@ watch(
   </div>
 </template>
 
-<style lang="scss" scoped>
-$anchor-size: 26px;
-$anchor-offset-x: 6px;
-$anchor-offset-y: 4px;
-$transform-transition-property: transform 0.4s cubic-bezier(0.8, -0.3, 0.265, 1.2);
-$z-index: 10000; // TODO: Adjust as needed
-
+<style scoped>
 :global(.spotlight-attach-element-highlight) {
-  box-shadow: 0px 4px 16px 0px rgba(0, 0, 0, 0.17);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.17);
 }
 
 .v-enter-active {
   transition:
     opacity 0.4s ease-in,
-    $transform-transition-property;
+    var(--spotlight-transform-transition);
 }
 .v-leave-active {
   transition:
     opacity 0.4s ease-out,
-    $transform-transition-property;
+    var(--spotlight-transform-transition);
 }
 .v-enter-from,
 .v-leave-to {
@@ -304,81 +298,93 @@ $z-index: 10000; // TODO: Adjust as needed
 }
 
 .spotlight-ui {
+  --spotlight-anchor-size: 26px;
+  --spotlight-anchor-offset-x: 6px;
+  --spotlight-anchor-offset-y: 4px;
+  --spotlight-transform-transition: transform 0.4s cubic-bezier(0.8, -0.3, 0.265, 1.2);
+  --spotlight-z-index: 10000; /* TODO: Adjust as needed */
+
   position: absolute;
   overflow: hidden;
   inset: 0;
   pointer-events: none;
-  z-index: $z-index;
+  z-index: var(--spotlight-z-index);
 
-  .spotlight-item {
+  & .spotlight-item {
     position: absolute;
 
     &.animated {
-      transition: $transform-transition-property;
+      transition: var(--spotlight-transform-transition);
     }
 
     &.bottom-right {
-      .anchor {
+      & .anchor {
         transform: rotate(0deg);
       }
-      .tips {
-        transform: translate(calc($anchor-size - $anchor-offset-x), -$anchor-offset-y);
+      & .tips {
+        transform: translate(
+          calc(var(--spotlight-anchor-size) - var(--spotlight-anchor-offset-x)),
+          calc(-1 * var(--spotlight-anchor-offset-y))
+        );
         border-top-left-radius: 2px;
-        .content {
+        & .content {
           border-top-left-radius: 2px;
         }
       }
     }
     &.bottom-left {
-      .anchor {
+      & .anchor {
         transform: rotate(90deg);
       }
-      .tips {
-        transform: translate(calc(-100% - $anchor-size + $anchor-offset-x), -$anchor-offset-y);
+      & .tips {
+        transform: translate(
+          calc(-100% - var(--spotlight-anchor-size) + var(--spotlight-anchor-offset-x)),
+          calc(-1 * var(--spotlight-anchor-offset-y))
+        );
         border-top-right-radius: 2px;
-        .content {
+        & .content {
           border-top-right-radius: 2px;
         }
       }
     }
     &.top-right {
-      .anchor {
+      & .anchor {
         transform: rotate(270deg);
       }
-      .tips {
+      & .tips {
         transform: translate(
-          calc($anchor-size - $anchor-offset-x / 2),
-          calc(-100% - 2 * $anchor-size + $anchor-offset-y / 2)
+          calc(var(--spotlight-anchor-size) - var(--spotlight-anchor-offset-x) / 2),
+          calc(-100% - 2 * var(--spotlight-anchor-size) + var(--spotlight-anchor-offset-y) / 2)
         );
         border-bottom-left-radius: 2px;
-        .content {
+        & .content {
           border-bottom-left-radius: 2px;
         }
       }
     }
     &.top-left {
-      .anchor {
+      & .anchor {
         transform: rotate(180deg);
       }
-      .tips {
+      & .tips {
         transform: translate(
-          calc(-100% - $anchor-size + $anchor-offset-x / 2),
-          calc(-100% - 2 * $anchor-size + $anchor-offset-y / 2)
+          calc(-100% - var(--spotlight-anchor-size) + var(--spotlight-anchor-offset-x) / 2),
+          calc(-100% - 2 * var(--spotlight-anchor-size) + var(--spotlight-anchor-offset-y) / 2)
         );
         border-bottom-right-radius: 2px;
-        .content {
+        & .content {
           border-bottom-right-radius: 2px;
         }
       }
     }
 
-    .anchor {
-      width: $anchor-size;
-      height: $anchor-size;
+    & .anchor {
+      width: var(--spotlight-anchor-size);
+      height: var(--spotlight-anchor-size);
       transform-origin: left top;
     }
 
-    .tips {
+    & .tips {
       border-radius: 14px;
       padding: 2px;
       font-size: 12px;
@@ -386,9 +392,9 @@ $z-index: 10000; // TODO: Adjust as needed
       background: var(--ui-color-grey-100);
       word-wrap: break-word;
       max-width: 300px;
-      box-shadow: 0px 4px 16px 0px rgba(0, 0, 0, 0.17);
+      box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.17);
 
-      .content {
+      & .content {
         border-radius: 12px;
         padding: 5px 8px;
         background: #7e66fc;

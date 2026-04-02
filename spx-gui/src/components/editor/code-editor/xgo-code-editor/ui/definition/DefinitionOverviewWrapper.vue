@@ -15,7 +15,7 @@ defineProps<{
 </template>
 
 <style scoped>
-.def-overview-code {
+.def-overview-code.code-view {
   flex: 1 1 0;
   word-break: break-word;
 

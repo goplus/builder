@@ -44,7 +44,7 @@ useDecorations(() => {
   <div></div>
 </template>
 
-<style lang="scss">
+<style>
 .code-editor-inlay-hint-label {
   color: var(--ui-color-hint-2) !important;
 }

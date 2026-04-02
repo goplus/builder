@@ -1,6 +1,6 @@
 <template>
-  <section ref="wrapperRef" class="img-preview flex w-full items-center justify-center" :style="wrapperStyle">
-    <canvas ref="canvasRef" class="bg-bottom-left bg-repeat bg-[url('./img-bg.svg')]"></canvas>
+  <section ref="wrapperRef" class="flex w-full items-center justify-center [&+&]:mt-5" :style="wrapperStyle">
+    <canvas ref="canvasRef" class="bg-bottom-left bg-repeat" :style="{ backgroundImage: `url(${imgBgUrl})` }"></canvas>
   </section>
 </template>
 
@@ -10,6 +10,7 @@ import { useFileImg } from '@/utils/file'
 import { useContentSize } from '@/utils/dom'
 import { getImgDrawingCtx } from '@/utils/canvas'
 import type { File } from '@/models/common/file'
+import imgBgUrl from './img-bg.svg'
 
 const props = defineProps<{
   file: File
@@ -66,9 +67,3 @@ defineExpose({
   }
 })
 </script>
-
-<style scoped>
-.img-preview + .img-preview {
-  margin-top: 20px;
-}
-</style>

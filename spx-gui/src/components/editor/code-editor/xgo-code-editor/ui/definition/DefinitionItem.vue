@@ -9,19 +9,8 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div class="definition-item">
+  <div class="flex flex-col [&+&]:mt-2">
     <DefinitionOverviewWrapper>{{ props.overview }}</DefinitionOverviewWrapper>
     <DefinitionDetail :def-id="props.defId"><slot></slot></DefinitionDetail>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.definition-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.definition-item + .definition-item {
-  margin-top: 8px;
-}
-</style>

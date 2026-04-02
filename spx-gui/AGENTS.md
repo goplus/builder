@@ -82,38 +82,50 @@ When working with backend unique string identifiers such as `username`, project 
 
 ## Styling Preferences
 
-* For business code outside `src/components/ui/`, prefer Tailwind as the default way to implement local layout and surface styling.
-* If business code still needs local authored styles, prefer plain CSS over SCSS.
+### Defaults
+
+* Outside `src/components/ui/`, use Tailwind as the default for local layout and surface styling.
+* Keep styles local to the page/feature/component. Do not move local styles into `src/app.css`.
+* Prefer readable template utilities and remove redundant local style blocks after migration.
+* If local authored styles are still needed, prefer plain CSS over SCSS.
+
+### Boundaries and Source of Truth
+
+* Keep `src/app.css` limited to Tailwind entry setup, theme bridge, and rare project-wide utilities.
+* Keep `src/components/ui/global.css` and `src/components/ui/reset.css` as the base reset/foundation layer (Tailwind preflight stays disabled).
+* Keep `--ui-*` tokens as the source of truth.
+* In Tailwind classes, prefer bridged semantic tokens (for example `text-text`, `text-title`, `bg-primary-100`).
+* In local CSS/SCSS, prefer direct `--ui-*` variables instead of bridged Tailwind variables.
+
+### Responsive and Theme Rules
+
+* Keep breakpoints in `src/app.css` aligned with `src/components/ui/responsive.ts`.
+* Use only `tablet`, `desktop`, and `desktop-large` responsive names.
+* Prefer responsive CSS/Tailwind variants over `useResponsive()`; keep `useResponsive()` for non-style runtime logic.
+* Keep Tailwind theme namespaces reset to project tokens only (color, shadow, font, text, radius, etc.).
+
+### When Local CSS/SCSS Is Better
+
+* Keep local CSS/SCSS for `:deep(...)`, generated content, third-party DOM overrides, and complex stateful widgets.
+* Prefer plain local CSS over complex Tailwind descendant/arbitrary selectors for cross-component or slot-content styling.
+* Preserve semantic hook classes used by parent selectors or slots (for example `.corner-menu`, `.course-item-mini`).
+* For newly added components, avoid introducing `:deep(...)` selectors and cross-file hook classes when possible, since they increase maintenance cost.
+* Do not force full Tailwind conversion when a small local style block is clearer.
+
+### Practical Migration Notes
+
+* Preserve exact `flex: <grow> <shrink> <basis>` semantics with `flex-[<grow>_<shrink>_<basis>]`.
+* Prefer `:style` for one-off values when clearer than Tailwind arbitrary utilities.
+* For important/non-obvious background assets, prefer TS imports and inline `backgroundImage` binding.
+* For `UIImg`, `UIIcon`, and similar wrappers, verify root-style conflicts; use an outer layout wrapper if needed.
+* In plain `<style scoped>`, flatten `:deep(...)` selectors (for example `.preview :deep(svg)`).
+* Keep single-use values local; only add setup variables when reused/computed or clearly improving readability.
+* Preserve meaningful existing comments/TODOs. For exact local non-token values, keep them local and add a nearby `TODO` for later tokenization review.
+
+### UI Package Transitional Rule
+
+* In `src/components/ui/`, the long-term direction is still Tailwind/plain CSS, but local SCSS is allowed temporarily when it is clearly the most readable option.
 * Do not add or keep business-code imports of SCSS helpers from `src/components/ui/`.
-* For `src/components/ui/`, the long-term direction is the same, but this phase still allows local SCSS where it remains the clearest implementation.
-* Keep [src/app.css](src/app.css) limited to Tailwind entry setup, the theme bridge, and rare project-wide utilities.
-* Tailwind preflight is intentionally disabled in `src/app.css`. Keep [src/components/ui/global.css](src/components/ui/global.css) and [src/components/ui/reset.css](src/components/ui/reset.css) as the project's base layer for reset and foundation styles.
-* Do not move page-local or feature-local styles into `src/app.css` just because they are written with Tailwind.
-* Keep page-specific dimensions, transforms, colors, and card/banner styling local to the relevant page or component.
-* Keep the existing `--ui-*` design token system as the source of truth.
-* In Tailwind utility classes, prefer the bridged semantic tokens such as `text-text`, `text-title`, and `bg-primary-100`.
-* In local CSS or SCSS rules, prefer using the original `--ui-*` variables directly instead of routing those rules back through Tailwind bridge variables.
-* For theme namespaces already covered by the design system, such as color, shadow, font, font-size, radius, and line-height, reset Tailwind's default values in `src/app.css` and expose only the project-specific values intended for use in this repo.
-* Keep the project breakpoint mapping in `src/app.css` aligned with `src/components/ui/responsive.ts`.
-* Reset Tailwind's default breakpoint names in `src/app.css` and use only the project-specific names `tablet`, `desktop`, and `desktop-large` in responsive classes.
-* For responsive styling, prefer Tailwind responsive variants over runtime `useResponsive()` checks.
-* Keep `useResponsive()` for non-style logic only, such as changing fetched counts or other runtime behavior that CSS cannot express.
-* Prefer Tailwind for straightforward layout and surface styling: flex, grid, spacing, sizing, alignment, overflow, simple typography, and simple hover states.
-* When original CSS uses `flex: <grow> <shrink> <basis>`, preserve it with `flex-[<grow>_<shrink>_<basis>]` instead of decomposing it into partial utilities such as `shrink-0`.
-* When Tailwind classes stay readable, write them directly in the template and remove the local style block after verification.
-* Keep local CSS or SCSS for deep selectors, generated content, third-party DOM overrides, and complex stateful widgets.
-* Preserve semantic hook classes that are consumed by parent selectors, slot content, or `:deep(...)` rules. Do not remove classes such as `.corner-menu` or `.course-item-mini` just because the element's own visual styles moved to Tailwind.
-* Prefer plain local CSS over Tailwind arbitrary descendant selectors for cross-component styling, slot-content targeting, and `:deep(...)` behavior. Keep Tailwind for the authored layout, but keep these cross-component hooks easy to read and audit.
-* Do not force a file to become fully Tailwind if a small amount of local CSS or SCSS remains the clearest expression.
-* Use `:style` for one-off values that are clearer inline than as Tailwind arbitrary values or custom utilities.
-* For important or non-obvious background assets, prefer TypeScript imports plus inline `backgroundImage` binding over Tailwind `bg-[url(...)]` classes.
-* Before styling `UIImg`, `UIIcon`, or similar wrappers with root-level positioning or sizing utilities, check whether the component already styles its own root element. If those internal root styles conflict, prefer an outer wrapper for layout and inline `style` for one-off width/height overrides.
-* If a scroll container keeps `scrollbar-width: thin` together with asymmetric padding to reserve optional scrollbar space, keep that padding in local CSS and preserve any existing explanatory comment instead of forcing the padding into template utilities.
-* In plain `<style scoped>`, flatten `:deep(...)` selectors such as `.preview :deep(svg)` instead of carrying over nested SCSS-style forms like `.preview { :deep(svg) { ... } }`, especially for `v-html` or injected SVG content.
-* Do not introduce setup variables for single-use style values unless they are reused, computed, or materially improve readability.
-* When a non-token visual value needs to remain exact and local, keep it local instead of forcing it into the global token bridge. Add a nearby comment such as `TODO: review this ... value` so it is visible in later design cleanup or tokenization work.
-* When extending the Tailwind theme bridge in `src/app.css`, choose token names that do not collide with Tailwind defaults or existing UI-library class names. Define text-size tokens before using named utilities like `text-24`, and use `--text-*-line-height` when a named text utility should carry a default line-height.
-* Preserve existing comments and TODOs during style migration when they still explain a real styling constraint or follow-up.
 
 ### Menu Item Text Guidelines
 

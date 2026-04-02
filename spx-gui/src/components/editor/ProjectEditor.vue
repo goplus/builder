@@ -1,6 +1,6 @@
 <template>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
-  <!-- overflow-visible: avoid cutting dropdown menu of CodeTextEditor (monaco) -->
+  <!-- Using overflow-visible class to avoid cutting dropdown menu of CodeTextEditor (monaco) -->
   <UICard
     v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"

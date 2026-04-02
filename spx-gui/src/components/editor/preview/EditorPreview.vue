@@ -1,16 +1,18 @@
 <template>
+  <!-- TODO: The fixed height here should be removed. Instead, set the StageViewer size (maintaining 4:3 aspect ratio) and let this container adapt its height accordingly. -->
   <UICard
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
-    class="editor-preview"
+    class="editor-preview relative flex flex-col overflow-hidden"
+    style="height: 422px"
   >
     <UICardHeader>
-      <div class="header">
+      <div class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
           v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-          class="button"
+          class="mx-2"
           color="primary"
           icon="playHollow"
           :loading="handleRun.isLoading.value"
@@ -33,7 +35,7 @@
       <template v-else>
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
-          class="button"
+          class="mx-2"
           color="primary"
           icon="rotate"
           :disabled="runnerState !== 'running' || handleStop.isLoading.value"
@@ -44,7 +46,7 @@
         </UIButton>
         <UIButton
           v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
-          class="button"
+          class="mx-2"
           color="boring"
           icon="end"
           :loading="handleStop.isLoading.value"
@@ -56,7 +58,7 @@
           <template #trigger>
             <UIButton
               v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
-              class="button"
+              class="mx-2"
               color="boring"
               icon="enterFullScreen"
               :disabled="handleStop.isLoading.value"
@@ -68,14 +70,17 @@
       </template>
     </UICardHeader>
 
-    <div class="main">
+    <div class="flex h-full justify-center overflow-hidden p-3">
       <div
         ref="stageContainerRef"
-        class="stage-viewer-container"
+        class="stage-viewer-container relative h-full w-full overflow-hidden rounded-1 bg-grey-200"
         :class="{ 'stage-viewer-container--running': runnerState !== 'initial' }"
       >
         <StageViewer />
-        <div v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky" class="runner-host">
+        <div
+          v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
+          class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
+        >
           <ProjectRunnerSurface
             ref="projectRunnerSurfaceRef"
             v-model:fullscreen="fullscreen"
@@ -439,75 +444,29 @@ function getStageInlineAnchor() {
 }
 </script>
 
-<style scoped lang="scss">
-.editor-preview {
-  // TODO: The fixed height here should be removed. Instead, set the StageViewer size (maintaining 4:3 aspect ratio) and let this container adapt its height accordingly.
-  height: 422px;
+<style scoped>
+.stage-viewer-container--running :deep(.stage-viewer) {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.runner-host :deep(.project-runner-surface) {
+  width: 100%;
+  height: 100%;
   display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
+}
 
-  .header {
-    flex: 1;
-    color: var(--ui-color-title);
-  }
+.runner-host :deep(.project-runner-surface:not(.fullscreen)) {
+  align-items: center;
+  justify-content: center;
+}
 
-  .button {
-    margin: 0 8px;
-  }
-
-  .main {
-    display: flex;
-    overflow: hidden;
-    justify-content: center;
-    padding: 12px;
-    height: 100%;
-  }
-
-  .stage-viewer-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: var(--ui-border-radius-1);
-    overflow: hidden;
-    background-color: var(--ui-color-grey-200);
-
-    &--running {
-      :deep(.stage-viewer) {
-        filter: blur(4px);
-        pointer-events: none;
-        user-select: none;
-      }
-    }
-
-    .runner-host {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--ui-color-grey-300);
-
-      :deep(.project-runner-surface) {
-        width: 100%;
-        height: 100%;
-        display: flex;
-      }
-
-      :deep(.project-runner-surface:not(.fullscreen)) {
-        align-items: center;
-        justify-content: center;
-      }
-
-      :deep(.project-runner-surface:not(.fullscreen) .runner) {
-        width: 100%;
-        max-width: 100%;
-        max-height: 100%;
-        aspect-ratio: 4 / 3;
-        height: auto;
-      }
-    }
-  }
+.runner-host :deep(.project-runner-surface:not(.fullscreen) .runner) {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto;
 }
 </style>
