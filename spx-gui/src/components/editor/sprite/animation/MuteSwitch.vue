@@ -3,7 +3,7 @@
     <UITooltip>
       <template #trigger>
         <div
-          class="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border border-grey-500 bg-white transition-colors hover:bg-grey-300"
+          class="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full border border-grey-500 bg-grey-100 transition-colors hover:bg-grey-300"
         >
           <UIIcon :type="muted ? 'volumeOff' : 'volumeUp'" />
         </div>

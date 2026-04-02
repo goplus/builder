@@ -219,6 +219,7 @@ const handleSubmit = useMessageHandle(
         </label>
         <div class="grid h-100 grid-cols-2 gap-6">
           <div class="flex flex-col overflow-hidden rounded-2 border border-dividing-line-2">
+            <!-- FIXME: `bg-grey-50` is not taking effect -->
             <label class="border-b border-dividing-line-2 bg-grey-50 px-4 py-3 text-grey-800">
               {{ $t({ en: 'Available courses', zh: '可选课程' }) }}
             </label>
@@ -231,6 +232,7 @@ const handleSubmit = useMessageHandle(
             />
           </div>
           <div class="flex flex-col overflow-hidden rounded-2 border border-dividing-line-2">
+            <!-- FIXME: `bg-grey-50` is not taking effect -->
             <label class="border-b border-dividing-line-2 bg-grey-50 px-4 py-3 text-grey-800">
               {{ $t({ en: 'Selected courses', zh: '已选课程' }) }}
             </label>
