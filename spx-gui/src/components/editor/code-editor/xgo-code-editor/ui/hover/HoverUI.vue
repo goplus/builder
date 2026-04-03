@@ -70,7 +70,6 @@ useDecorations(() => {
   >
     <HoverCard
       v-if="controller.hover != null"
-      :contents="controller.hover.contents"
       :actions="controller.hover.actions"
       @mouseenter="controller.emit('cardMouseEnter')"
       @mouseleave="controller.emit('cardMouseLeave')"

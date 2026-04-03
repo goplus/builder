@@ -64,8 +64,6 @@ export class HoverController extends Emitter<{
     if (textDocument == null) return null
 
     const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
-    if (diagnosticsHover != null) return diagnosticsHover
-
     const providedHover = await this.provider.provideHover({ textDocument, signal }, position)
     let providedInternalHover: InternalHover | null = null
     if (providedHover != null) {
@@ -76,15 +74,15 @@ export class HoverController extends Emitter<{
     const inputHelperHover = this.getInputHelperHover(position)
 
     let hover: InternalHover | null = null
-    ;[
+    for (const hoverItem of [
       // These three items from high priority to low priority are checked in order:
       // * Contents from higher-priority item will be used
       // * Actions from all items (with the same range) will be merged
       inputHelperHover,
       resourceReferenceHover,
       providedInternalHover
-    ].forEach((hoverItem) => {
-      if (hoverItem == null) return
+    ]) {
+      if (hoverItem == null) continue
       if (hover == null) {
         hover = {
           contents: [],
@@ -92,10 +90,17 @@ export class HoverController extends Emitter<{
           actions: []
         }
       }
-      if (!rangeEq(hoverItem.range, hover.range)) return
-      if (hover.contents.length === 0) hover.contents = hoverItem.contents
+      if (!rangeEq(hoverItem.range, hover.range)) continue
+      if (hover.contents.length === 0) hover.contents = [...hoverItem.contents]
       hover.actions.push(...hoverItem.actions)
-    })
+    }
+
+    if (diagnosticsHover != null) {
+      if (hover == null) return diagnosticsHover
+      // Show diagnostics after the main hover content, but keep its action first as it is usually higher priority.
+      hover.contents.push(...diagnosticsHover.contents)
+      hover.actions.unshift(...diagnosticsHover.actions)
+    }
 
     return hover
   })

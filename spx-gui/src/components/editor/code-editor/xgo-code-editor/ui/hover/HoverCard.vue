@@ -59,7 +59,6 @@ const handleAction = useMessageHandle(
 .body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   min-width: 250px;
   max-width: 328px;
   min-height: 0;
