@@ -13,7 +13,7 @@ import type {
   IAPIReferenceProvider,
   APIReferenceContext
 } from '../../xgo-code-editor'
-import { mainCategories, subCategories } from '../../xgo-code-editor/common'
+import { mainCategories, subCategories, parseDefinitionName } from '../../xgo-code-editor/common'
 import { isTextDocumentStageCode } from '../common'
 import iconEvent from './icons/event.svg?raw'
 import iconLook from './icons/look.svg?raw'
@@ -201,6 +201,12 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Camera.ypos`,
   `xgo:${packageSpx}?Camera.setXYpos`,
   `xgo:${packageSpx}?Camera.follow#0`
+
+  // TODO: Decide whether to include these var-related APIs in the reference list. They are currently excluded because they are less commonly used and may require additional explanation on variable scopes, which could be complex for beginners.
+  // `xgo:${packageSpx}?Game.showVar`,
+  // `xgo:${packageSpx}?Game.hideVar`,
+  // `xgo:${packageSpx}?Sprite.showVar`,
+  // `xgo:${packageSpx}?Sprite.hideVar`
 ]
 
 const categoryViewInfos: APICategoryViewInfo[] = [
@@ -296,18 +302,12 @@ const categoryViewInfos: APICategoryViewInfo[] = [
 export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
   constructor(private documentBase: DocumentBase) {}
 
-  private parseName(name: string | undefined): [receiver: string | null, method: string] {
-    const parts = (name ?? '').split('.')
-    if (parts.length > 1) return [parts[0], parts[1]]
-    return [null, parts[0]]
-  }
-
   private getStageAPIReferenceItems = once(async () => {
     const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
     const allItems = maybeItems.filter((i) => i != null) as DefinitionDocumentationItem[]
     return allItems.filter((item) => {
       if (item.definition.package !== packageSpx) return true
-      const [receiver] = this.parseName(item.definition.name)
+      const [receiver] = parseDefinitionName(item.definition.name)
       return receiver !== 'Sprite'
     })
   })
@@ -316,13 +316,13 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
     const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
     const allItems = maybeItems.filter((i) => i != null) as DefinitionDocumentationItem[]
     const spriteMethods = allItems.reduce((set, item) => {
-      const [receiver, method] = this.parseName(item.definition.name)
+      const [receiver, method] = parseDefinitionName(item.definition.name)
       if (receiver === 'Sprite') set.add(method)
       return set
     }, new Set<string>())
     return allItems.filter((item) => {
       if (item.definition.package !== packageSpx) return true
-      const [receiver, method] = this.parseName(item.definition.name)
+      const [receiver, method] = parseDefinitionName(item.definition.name)
       if (receiver === 'Game' && spriteMethods.has(method)) return false
       return true
     })

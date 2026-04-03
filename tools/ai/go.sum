@@ -1,7 +1,7 @@
 github.com/goplus/spbase v0.1.0 h1:JNZ0D/65DerYyv9/9IfrXHZZbd0WNK0jHiVvgCtZhwY=
 github.com/goplus/spbase v0.1.0/go.mod h1:brnD3OJnHtipqob2IsJ3/QzGBf+eOnqXNnHGKpv1irQ=
-github.com/goplus/spx/v2 v2.0.0-pre.47 h1:VzGuN++kfLrNUbn6lxmNKI8Mn1UgBEsOfFfV1PrP7eQ=
-github.com/goplus/spx/v2 v2.0.0-pre.47/go.mod h1:oP0YVzWNrczCyyO8qjYyni5sV4wJ3sqVkjCmc+P6jBo=
+github.com/goplus/spx/v2 v2.0.0-pre.48 h1:7SOl5inDxCuKsvwWteWjIaB5csqZtlvt7lQ1Lxhwo0k=
+github.com/goplus/spx/v2 v2.0.0-pre.48/go.mod h1:oP0YVzWNrczCyyO8qjYyni5sV4wJ3sqVkjCmc+P6jBo=
 github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e h1:D0bJD+4O3G4izvrQUmzCL80zazlN7EwJ0PPDhpJWC/I=
 github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e/go.mod h1:pxMtw7cyUw6B2bRH0ZBANSPg+AoSud1I1iyJHI69jH4=
 golang.org/x/image v0.23.0 h1:HseQ7c2OpPKTPVzNjG5fwJsOTCiiwS4QdsYi5XU6H68=

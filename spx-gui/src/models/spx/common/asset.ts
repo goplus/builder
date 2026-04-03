@@ -8,6 +8,7 @@ import type { SpriteGen } from '../gen/sprite-gen'
 import type { BackdropGen } from '../gen/backdrop-gen'
 import { fromBlob, fromConfig, toConfig } from '../../common/file'
 import { getFiles, saveFiles } from '../../common/cloud'
+import type { SpxProject } from '@/models/spx/project'
 
 export type AssetMetadata = Partial<Omit<AssetData, 'files'>>
 
@@ -143,4 +144,27 @@ export async function genAssetFromCanvas(name: string, width: number, height: nu
   // Create file from Blob
   const file = fromBlob(filename, blob)
   return file
+}
+
+export async function addAssetToProject(asset: AssetData, project: SpxProject) {
+  switch (asset.type) {
+    case AssetType.Sprite: {
+      const sprite = await asset2Sprite(asset)
+      project.addSprite(sprite)
+      await sprite.autoFit()
+      return sprite
+    }
+    case AssetType.Backdrop: {
+      const backdrop = await asset2Backdrop(asset)
+      project.stage.addBackdrop(backdrop)
+      return backdrop
+    }
+    case AssetType.Sound: {
+      const sound = await asset2Sound(asset)
+      project.addSound(sound)
+      return sound
+    }
+    default:
+      throw new Error('unknown asset type')
+  }
 }

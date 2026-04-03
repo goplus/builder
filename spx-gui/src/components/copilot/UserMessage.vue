@@ -9,7 +9,7 @@ defineProps<{
 }>()
 
 const signedInUser = useSignedInUser()
-const avatarUrl = useAvatarUrl(() => signedInUser.data.value?.avatar)
+const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
 </script>
 
 <template>

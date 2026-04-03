@@ -2,10 +2,10 @@ import { computed, toRef, type WatchSource } from 'vue'
 import { useQueryWithCache, useQueryCache } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/project'
-import { isSignedIn, getSignedInUsername } from './user'
+import { getUnresolvedSignedInUsername, isSignedIn } from './user'
 
-function getLikingQueryKey(owner: string, name: string) {
-  return ['liking', getSignedInUsername(), owner, name]
+function getLikingQueryKey(signedInUsernameInput: string | null, owner: string, name: string) {
+  return ['liking', signedInUsernameInput, owner, name]
 }
 
 const staleTime = 5 * 60 * 1000 // 5min
@@ -14,7 +14,7 @@ export function useIsLikingProject(project: WatchSource<{ owner: string; name: s
   const projectRef = toRef(project)
   const queryKey = computed(() => {
     const { owner, name } = projectRef.value
-    return getLikingQueryKey(owner, name)
+    return getLikingQueryKey(getUnresolvedSignedInUsername(), owner, name)
   })
   return useQueryWithCache({
     queryKey,
@@ -32,7 +32,7 @@ export function useLikeProject() {
   return useAction(
     async function likeProject(owner: string, name: string) {
       await apis.likeProject(owner, name)
-      const queryKey = getLikingQueryKey(owner, name)
+      const queryKey = getLikingQueryKey(getUnresolvedSignedInUsername(), owner, name)
       queryCache.invalidateWithOptimisticValue(queryKey, true)
     },
     { en: 'Failed to like', zh: '标记喜欢失败' }
@@ -44,7 +44,7 @@ export function useUnlikeProject() {
   return useAction(
     async function unlikeProject(owner: string, name: string) {
       await apis.unlikeProject(owner, name)
-      const queryKey = getLikingQueryKey(owner, name)
+      const queryKey = getLikingQueryKey(getUnresolvedSignedInUsername(), owner, name)
       queryCache.invalidateWithOptimisticValue(queryKey, false)
     },
     { en: 'Failed to unlike', zh: '取消喜欢失败' }

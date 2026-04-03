@@ -1,7 +1,6 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable } from '@/utils/disposable'
 import type { IXGoProject } from './project'
-import type { History } from '@/components/editor/history'
 import { type IDocumentBase, DocumentBase } from './document-base'
 import type { ILSPClient } from './lsp/types'
 import {
@@ -29,6 +28,7 @@ import {
   fromLSPDiagnostic,
   type Property
 } from './common'
+import { filterPropertiesByDocumentation } from './utils'
 import { TextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import { HoverProvider } from './hover'
@@ -45,7 +45,6 @@ const formatInsertSpaces = false
 
 export type CodeEditorParams = {
   project: IXGoProject
-  history: History
   monaco: Monaco
   lspClient: ILSPClient
   apiReferenceProvider: IAPIReferenceProvider
@@ -63,7 +62,6 @@ export type CodeEditorParams = {
 export class CodeEditor extends Disposable {
   readonly monaco: Monaco
   readonly project: IXGoProject
-  private history: History
   private lspClient: ILSPClient
   private documentBase: IDocumentBase
   private hoverProvider: IHoverProvider
@@ -79,7 +77,6 @@ export class CodeEditor extends Disposable {
   constructor(params: CodeEditorParams) {
     super()
     this.project = params.project
-    this.history = params.history
     this.monaco = params.monaco
     this.lspClient = params.lspClient
     this.documentBase = params.documentBase ?? new DocumentBase()
@@ -96,148 +93,6 @@ export class CodeEditor extends Disposable {
       new CompletionProvider(params.lspClient, this.documentBase, params.project.classFramework)
     this.diagnosticsProvider = params.diagnosticsProvider ?? new DiagnosticsProvider(params.lspClient, params.project)
     this.snippetVariablesProvider = params.snippetVariablesProvider ?? new SnippetVariablesProvider()
-  }
-
-  async getFileCode(args: { file: string }) {
-    const file = this.getTextDocument({ uri: args.file })
-    if (file == null) return null
-    const content = file.getValue()
-    return {
-      success: true,
-      message: `Successfully get code from ${args.file} <file-content file="${args.file}">${content}</file-content>`
-    }
-  }
-
-  async getDiagnostics(args?: { file?: string }) {
-    try {
-      const files = args?.file
-        ? [{ name: args.file.split('/').pop() || args.file, uri: args.file }]
-        : (await this.listFiles()).data
-
-      const diagnosticsPromises = files.map(async (file) => {
-        try {
-          const textDocument = this.getTextDocument({ uri: file.uri })
-          if (!textDocument) {
-            console.warn(`File not found: ${file.uri}`)
-            return { file: file.uri, name: file.name, diagnostics: [] }
-          }
-
-          const diagnostics = await this.diagnosticsProvider.provideDiagnostics({
-            textDocument,
-            signal: new AbortController().signal
-          })
-
-          return {
-            file: file.uri,
-            name: file.name,
-            diagnostics: diagnostics.map((diag) => ({
-              line: diag.range.start.line,
-              column: diag.range.start.column,
-              message: diag.message
-            }))
-          }
-        } catch (error) {
-          console.error(`Error getting diagnostics for ${file.uri}:`, error)
-          return {
-            file: file.uri,
-            name: file.name,
-            diagnostics: [
-              {
-                line: 0,
-                column: 0,
-                message: `Error analyzing file: ${error instanceof Error ? error.message : String(error)}`
-              }
-            ]
-          }
-        }
-      })
-
-      const allDiagnostics = await Promise.all(diagnosticsPromises)
-
-      const formattedDiagnostics = allDiagnostics
-        .map((fileResult) => {
-          const diagnosticMessages = fileResult.diagnostics
-            .map((diag) => `- ${diag.message} ${fileResult.name} [${diag.line},${diag.column}]`)
-            .join('\n')
-
-          return `<pre is="file-diagnostics" file="${fileResult.file}">\n${
-            fileResult.diagnostics.length > 0 ? diagnosticMessages : '- No diagnostics'
-          }\n</pre>`
-        })
-        .join('\n\n')
-
-      return {
-        success: true,
-        message: formattedDiagnostics,
-        data: allDiagnostics
-      }
-    } catch (error) {
-      console.error('Failed to get diagnostics:', error)
-      return {
-        success: false,
-        message: `Failed to get diagnostics: ${error instanceof Error ? error.message : String(error)}`
-      }
-    }
-  }
-
-  async listFiles() {
-    const files = this.project.getCodeFiles().map((path) => ({
-      name: path.split('/').pop() ?? path,
-      uri: getTextDocumentId(path).uri
-    }))
-    const formattedList = files.map((file) => `- ${file.uri}`).join('\n')
-    const message = `<file-list>\n${formattedList}\n</file-list>`
-    return {
-      success: true,
-      message: message,
-      data: files
-    }
-  }
-
-  async writeToFile(args: { file: string; content: string }) {
-    const code = args.content
-    const file = args.file
-
-    try {
-      const targetDoc = this.getTextDocument({ uri: file })
-      if (!targetDoc) {
-        throw new Error(`File not found: ${file}`)
-      }
-
-      this.getAttachedUI()?.open(targetDoc.id)
-
-      await this.history.doAction({ name: { en: 'Write code file', zh: '写入代码文件' } }, () =>
-        targetDoc.setValue(code)
-      )
-
-      const diagnostics = await this.getDiagnostics({ file })
-      const files = await this.listFiles()
-      const finallyCode = targetDoc.getValue()
-      const finallyFileContent = `<pre is="final-file-content" file="${file}">${finallyCode}</pre>`
-      let message = `Code successfully inserted into ${file}.
-        
-      Here is the full, updated content of the file that was saved:\n
-       ${finallyFileContent}
-      \n\nIMPORTANT: For any future changes to this file, use the final-file-content shown above as your reference. This content reflects the current state of the file, including any auto-formatting (e.g., if you used single quotes but the formatter converted them to double quotes). Always base your SEARCH/REPLACE operations on this final version to ensure accuracy.`
-
-      if (files.data && files.data.length > 0) {
-        message += `\n\nHere is the list of files in the project:\n${files.message}`
-      }
-
-      if (diagnostics.data && diagnostics.data.length > 0) {
-        message += `\n\nNew problems detected after saving the file, If you have defined a function, please make sure to place the function definition before all event handlers (such as onStart, onClick):\n${diagnostics.message}`
-      }
-      return {
-        success: true,
-        message: message
-      }
-    } catch (error) {
-      console.error('Error inserting code:', error)
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Unknown error occurred during code insertion'
-      }
-    }
   }
 
   /**
@@ -335,7 +190,8 @@ export class CodeEditor extends Disposable {
 
   /** Get properties for a given target */
   async getProperties(target: string, signal?: AbortSignal): Promise<Property[]> {
-    return this.lspClient.getProperties({ signal }, target)
+    const properties = await this.lspClient.getProperties({ signal }, target)
+    return filterPropertiesByDocumentation(properties, this.documentBase, this.project.classFramework.pkgPaths[0])
   }
 
   private uis: ICodeEditorUIController[] = []

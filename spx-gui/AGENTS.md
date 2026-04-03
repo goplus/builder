@@ -35,6 +35,28 @@ Keep import statements in order:
 	- Enum names and enum members
 	- Vue component names
 
+### Identifier Resolution
+
+When working with backend unique string identifiers such as `username`, project owner, and project name, distinguish unresolved identifiers from canonical identifiers.
+
+* Route params, query params, manual user input, and JWT-derived identifiers are unresolved unless the current task establishes a stronger guarantee.
+
+* Backend-issued values from HTTP API responses are canonical.
+
+* Prefer explicit unresolved names with an `Input` suffix.
+
+* In models and resolved state, names like `owner`, `name`, and `username` should refer to canonical values.
+
+* Keep normal strict and case-sensitive equality (`===` / `!==`) for consuming identifiers. Do not spread ad hoc case-normalization logic across comparison sites.
+
+* Resolve unresolved identifiers at clear boundaries before consuming them. Typical resolution boundaries include project loading, user loading, and other backend-backed fetches.
+
+* Avoid storing unresolved identifiers on long-lived models as if they were already canonical. Prefer passing unresolved identifiers as load or resolve parameters, then writing canonical values onto the model after resolution.
+
+* Downstream logic should consume canonical values for behavior-sensitive checks such as ownership checks, permission checks, project reuse checks, and local-cache decisions.
+
+* Cache keys and similar identity-scoping data may intentionally use unresolved identifiers when that preserves stable session scoping.
+
 ## TypeScript Testing
 
 * Use `describe` to group related tests.

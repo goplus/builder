@@ -2,9 +2,12 @@ import { watchEffect, type WatchSource, watch, ref, shallowRef } from 'vue'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { timeout, until } from '@/utils/utils'
+import { untilLoaded, type QueryRet } from '@/utils/query'
 import { Cancelled, capture } from '@/utils/exception'
+import type { ProjectData } from '@/apis/project'
 import type { IProject, ProjectSerialized } from '@/models/project'
 import type { CloudHelpers } from '@/models/common/cloud'
+import type { SignedInState } from '@/stores/user'
 
 export enum SavingState {
   Pending,
@@ -110,19 +113,21 @@ export type UIHelpersForLoadingProject = {
  * renaming it with a more accurate name.
  */
 export class Editing extends Disposable {
-  mode: EditingMode
   constructor(
     private project: IProject,
     private cloudHelpers: CloudHelpers,
     private localCacheHelper: ILocalCache,
     private isOnline: WatchSource<boolean>,
-    private signedInUsername: string | null
+    private signedInStateQuery: QueryRet<SignedInState>
   ) {
     super()
-    this.mode = EditingMode.AutoSave
-    if (signedInUsername == null || signedInUsername !== this.project.owner) {
-      this.mode = EditingMode.EffectFree
-    }
+  }
+
+  get mode() {
+    const signedInState = this.signedInStateQuery.data.value
+    if (signedInState == null || !signedInState.isSignedIn) return EditingMode.EffectFree
+    if (this.project.owner == null || signedInState.user.username !== this.project.owner) return EditingMode.EffectFree
+    return EditingMode.AutoSave
   }
 
   private startAutoPreload() {
@@ -173,22 +178,25 @@ export class Editing extends Disposable {
 
   private startAutoSave() {
     this.addDisposer(
-      watch(
-        () => this.project.exportFiles(),
-        (_, __, onCleanup) => {
-          if (this.mode === EditingMode.EffectFree) return
+      watch([() => this.project.exportFiles(), () => this.mode], ([, mode], __, onCleanup) => {
+        if (mode === EditingMode.EffectFree || !this.dirty) return
 
-          const signal = getCleanupSignal(onCleanup)
-          const saving = new Saving(this.project, this.cloudHelpers, this.localCacheHelper, this.isOnline, signal)
+        const signal = getCleanupSignal(onCleanup)
+        const saving = new Saving(this.project, this.cloudHelpers, this.localCacheHelper, this.isOnline, signal)
 
-          this.savingRef.value = saving
-          signal.addEventListener('abort', () => (this.savingRef.value = null))
-        }
-      )
+        this.savingRef.value = saving
+        signal.addEventListener('abort', () => (this.savingRef.value = null))
+      })
     )
   }
 
-  async loadProject(helpers: UIHelpersForLoadingProject, reporter: ProgressReporter, signal: AbortSignal) {
+  async loadProject(
+    ownerInput: string,
+    projectNameInput: string,
+    helpers: UIHelpersForLoadingProject,
+    reporter: ProgressReporter,
+    signal: AbortSignal
+  ) {
     const collector = ProgressCollector.collectorFor(reporter)
     const loadFromLocalCacheReporter = collector.getSubReporter(
       { en: 'Reading local cache...', zh: '读取本地缓存中...' },
@@ -200,8 +208,14 @@ export class Editing extends Disposable {
     )
     const projectLoadReporter = collector.getSubReporter({ en: 'Loading project...', zh: '加载项目中...' }, 5)
 
-    const { owner: ownerName, name: projectName } = this.project
-    if (ownerName == null || projectName == null) throw new Error('Project owner and name expected')
+    const preferPublished = async (projectData: ProjectData) => {
+      const signedInState = await untilLoaded(this.signedInStateQuery, signal)
+      const ownedBySignedInUser = signedInState.isSignedIn && signedInState.user.username === projectData.owner
+      return !ownedBySignedInUser
+    }
+    const cloudData = await this.cloudHelpers.load(ownerInput, projectNameInput, preferPublished, signal)
+    signal.throwIfAborted()
+    loadFromCloudReporter.report(1)
 
     // For details about local-cache saving & restoring
     // https://github.com/goplus/builder/issues/259
@@ -215,25 +229,21 @@ export class Editing extends Disposable {
       this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
     }
     if (localData != null) {
-      const localMetadata = localData.metadata
-      // If owner mismatch, ignore & clear the cached data
-      if (localMetadata.owner !== ownerName) {
+      const { owner: localOwner, name: localName } = localData.metadata
+      const { owner: cloudOwner, name: cloudName } = cloudData.metadata
+      // If no owner/name info or owner mismatch, ignore & clear the cached data
+      if (localOwner == null || localName == null || localOwner !== cloudOwner) {
         localData = null
         this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
-      }
-      if (
-        localMetadata.owner === ownerName &&
-        localMetadata.name != null &&
-        localMetadata.name.toLowerCase() !== projectName.toLowerCase()
-      ) {
+      } else if (localName !== cloudName) {
         // If project name mismatch, ask user whether to open the cached project or not, to avoid potential data loss by clearing cache
-        const stillOpenTarget = await helpers.confirmOpenTargetWithAnotherInCache(projectName, localMetadata.name)
+        const stillOpenTarget = await helpers.confirmOpenTargetWithAnotherInCache(cloudName, localName)
         signal.throwIfAborted()
         if (stillOpenTarget) {
           localData = null
           this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
         } else {
-          helpers.openProject(localMetadata.owner, localMetadata.name)
+          helpers.openProject(localOwner, localName)
           throw new Cancelled('Open another project')
         }
       }
@@ -241,13 +251,7 @@ export class Editing extends Disposable {
     signal.throwIfAborted()
     loadFromLocalCacheReporter.report(1)
 
-    // For projects not owned by the signed-in user, we prefer to load the published version.
-    const preferPublishedContent = this.signedInUsername !== ownerName
-    const cloudData = await this.cloudHelpers.load(ownerName, projectName, preferPublishedContent, signal)
-    signal.throwIfAborted()
-    loadFromCloudReporter.report(1)
-
-    let finalData = cloudData
+    let finalData: ProjectSerialized = cloudData
     if (localData != null) {
       const cloudVersion = cloudData?.metadata.version ?? -1
       const localVersion = localData.metadata.version ?? -1

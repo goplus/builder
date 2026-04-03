@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { getSignedInUsername } from '@/stores/user'
+import { getUnresolvedSignedInUsername } from '@/stores/user'
 import { isObject, isString } from 'lodash'
 
 type IStorage = {
@@ -31,7 +31,10 @@ function createUserScopeValue<T>(user: string, value: T): UserScopeValue<T> {
 
 // private
 function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
-  const scope = computed(() => getSignedInUsername() ?? unauthorized)
+  // Ideally user-scoped storage would use a canonical signed-in username. We currently use the
+  // unresolved signed-in username as a temporary fallback because this scope needs to be computed
+  // synchronously from locally available session state.
+  const scope = computed(() => getUnresolvedSignedInUsername() ?? unauthorized)
   const counter = ref(0)
   return computed<T>({
     get() {

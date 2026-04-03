@@ -4,10 +4,14 @@ import { flushPromises } from '@vue/test-utils'
 import { timeout } from '@/utils/utils'
 import { Cancelled } from '@/utils/exception'
 import { ProgressReporter } from '@/utils/progress'
+import type { QueryRet } from '@/utils/query'
+import { Visibility, type ProjectData } from '@/apis/project'
 import { type Files } from '@/models/common/file'
-import type { CloudHelpers } from '@/models/common/cloud'
+import type { CloudHelpers, PreferPublishedContent } from '@/models/common/cloud'
 import { mockFile, MockProject } from '@/models/common/test'
-import type { IProject, ProjectSerialized } from '@/models/project'
+import type { IProject, Metadata, ProjectSerialized } from '@/models/project'
+import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
+import type { SignedInState } from '@/stores/user'
 import { Editing, SavingState, EditingMode, type ILocalCache, type UIHelpersForLoadingProject } from './editing'
 
 function makeFiles() {
@@ -30,9 +34,43 @@ function makeProject({
   return new MockProject(owner, name, files)
 }
 
+function makeCloudSerialized(owner: string, name: string, version: number = 1): ProjectSerialized<Metadata> {
+  return {
+    metadata: {
+      id: 'project-id',
+      createdAt: '2025-01-01T00:00:00Z',
+      updatedAt: '2025-01-01T00:00:00Z',
+      owner,
+      remixedFrom: null,
+      name,
+      displayName: name,
+      version,
+      visibility: Visibility.Private,
+      description: '',
+      instructions: '',
+      extraSettings: {},
+      thumbnail: null,
+      viewCount: 0,
+      likeCount: 0,
+      releaseCount: 0,
+      remixCount: 0,
+      aiDescription: null,
+      aiDescriptionHash: null
+    },
+    files: { 'main.spx': mockFile('main.spx') }
+  }
+}
+
+function makeLocalSerialized(owner: string, name: string, version?: number): ProjectSerialized {
+  return {
+    metadata: { owner, name, version },
+    files: { 'main.spx': mockFile('main.spx') }
+  }
+}
+
 function makeCloudHelper(): CloudHelpers {
   return {
-    load: vi.fn().mockResolvedValue({ metadata: {}, files: {} }),
+    load: vi.fn().mockResolvedValue(makeCloudSerialized('owner', 'project')),
     save: vi.fn().mockResolvedValue({ metadata: {}, files: {} })
   }
 }
@@ -54,15 +92,26 @@ function makeEditing({
   isOnline = () => true,
   cloudHelper = makeCloudHelper(),
   localCacheHelper = makeLocalCache(),
-  signedInUsername = project.owner ?? null
+  signedInStateQuery = makeSignedInStateQuery(makeSignedInState(project.owner ?? null))
 }: Partial<{
   project: IProject
   isOnline: WatchSource<boolean>
   cloudHelper: CloudHelpers
   localCacheHelper: ILocalCache
-  signedInUsername: string | null
+  signedInStateQuery: QueryRet<SignedInState>
 }>) {
-  return new Editing(project, cloudHelper, localCacheHelper, isOnline, signedInUsername)
+  return new Editing(project, cloudHelper, localCacheHelper, isOnline, signedInStateQuery)
+}
+
+// Extract the latest preferPublishedContent argument passed to cloudHelper.load.
+function getLatestPreferPublishedContent(
+  load: CloudHelpers['load']
+): Exclude<NonNullable<Parameters<CloudHelpers['load']>[2]>, boolean> {
+  const preferPublishedContent = vi.mocked(load).mock.lastCall?.[2]
+  if (typeof preferPublishedContent !== 'function') {
+    throw new Error('preferPublishedContent function expected')
+  }
+  return preferPublishedContent
 }
 
 describe('Editing', () => {
@@ -196,7 +245,7 @@ describe('Editing', () => {
       project,
       localCacheHelper,
       cloudHelper,
-      signedInUsername: 'different-user' // Not the owner
+      signedInStateQuery: makeSignedInStateQuery(makeSignedInState('different-user')) // Not the owner
     })
     editing.startEditing()
 
@@ -218,6 +267,67 @@ describe('Editing', () => {
     expect(localCacheHelper.save).toHaveBeenCalledTimes(0)
     expect(cloudHelper.save).toHaveBeenCalledTimes(0)
     expect(editing.dirty).toBe(true) // Files are dirty, but no saving is triggered
+    expect(editing.saving).toBeNull()
+  })
+
+  it('should update mode and trigger auto-save when signed-in username changes to owner', async () => {
+    const project = makeProject({ owner: 'project-owner' })
+    const cloudHelper = makeCloudHelper()
+    const localCacheHelper = makeLocalCache()
+    const signedInStateQuery = makeSignedInStateQuery(makeSignedInState('different-user'))
+    const editing = makeEditing({
+      project,
+      localCacheHelper,
+      cloudHelper,
+      signedInStateQuery
+    })
+    editing.startEditing()
+
+    expect(editing.mode).toBe(EditingMode.EffectFree)
+
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
+    await flushPromises()
+    vi.advanceTimersByTime(autoSaveToCloudDelay)
+    await flushPromises()
+    expect(cloudHelper.save).toHaveBeenCalledTimes(0)
+
+    signedInStateQuery.data.value = makeSignedInState('project-owner')
+    await flushPromises()
+    expect(editing.mode).toBe(EditingMode.AutoSave)
+
+    vi.advanceTimersByTime(autoSaveToLocalCacheDelay)
+    await flushPromises()
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(1)
+
+    vi.advanceTimersByTime(autoSaveToCloudDelay - autoSaveToLocalCacheDelay + 1)
+    await flushPromises()
+    expect(cloudHelper.save).toHaveBeenCalledTimes(1)
+  })
+
+  it('should not trigger auto-save when mode changes without dirty files', async () => {
+    const project = makeProject({ owner: 'project-owner' })
+    const cloudHelper = makeCloudHelper()
+    const localCacheHelper = makeLocalCache()
+    const signedInStateQuery = makeSignedInStateQuery(makeSignedInState('different-user'))
+    const editing = makeEditing({
+      project,
+      localCacheHelper,
+      cloudHelper,
+      signedInStateQuery
+    })
+    editing.startEditing()
+
+    expect(editing.mode).toBe(EditingMode.EffectFree)
+
+    signedInStateQuery.data.value = makeSignedInState('project-owner')
+    await flushPromises()
+
+    expect(editing.mode).toBe(EditingMode.AutoSave)
+
+    vi.advanceTimersByTime(autoSaveToCloudDelay)
+    await flushPromises()
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(0)
+    expect(cloudHelper.save).toHaveBeenCalledTimes(0)
     expect(editing.saving).toBeNull()
   })
 
@@ -284,15 +394,8 @@ describe('Editing.loadProject', () => {
     }
   }
 
-  function makeSerialized(owner: string, name: string, version?: number): ProjectSerialized {
-    return {
-      metadata: { owner, name, version },
-      files: { 'main.spx': mockFile('main.spx') }
-    }
-  }
-
   it('should load project from cloud when no local cache exists', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache()
@@ -301,14 +404,14 @@ describe('Editing.loadProject', () => {
     const editing = makeEditing({ project, cloudHelper, localCacheHelper })
 
     const ac = new AbortController()
-    await editing.loadProject(makeUIHelpers(), makeReporter(), ac.signal)
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), ac.signal)
 
-    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', false, ac.signal)
+    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', expect.any(Function), ac.signal)
     expect(project.load).toHaveBeenCalledWith(cloudData, ac.signal)
   })
 
   it('should load project from cloud and clear local cache when local cache loading fails', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache()
@@ -318,16 +421,16 @@ describe('Editing.loadProject', () => {
     const editing = makeEditing({ project, cloudHelper, localCacheHelper })
 
     const ac = new AbortController()
-    await editing.loadProject(makeUIHelpers(), makeReporter(), ac.signal)
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), ac.signal)
 
-    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', false, ac.signal)
+    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', expect.any(Function), ac.signal)
     expect(project.load).toHaveBeenCalledWith(cloudData, ac.signal)
     expect(localCacheHelper.clear).toHaveBeenCalled()
   })
 
   it('should prefer local cache when local version is newer than cloud version', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
-    const localData = makeSerialized('alice', 'my-project', 2)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const localData = makeLocalSerialized('alice', 'my-project', 2)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache(localData)
@@ -335,14 +438,14 @@ describe('Editing.loadProject', () => {
     const project = makeProject({ owner: 'alice', name: 'my-project' })
     const editing = makeEditing({ project, cloudHelper, localCacheHelper })
 
-    await editing.loadProject(makeUIHelpers(), makeReporter(), new AbortController().signal)
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), new AbortController().signal)
 
     expect(project.load).toHaveBeenCalledWith(localData, expect.anything())
   })
 
   it('should prefer cloud data and clear cache when cloud version is newer', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 3)
-    const localData = makeSerialized('alice', 'my-project', 1)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 3)
+    const localData = makeLocalSerialized('alice', 'my-project', 1)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache(localData)
@@ -350,15 +453,15 @@ describe('Editing.loadProject', () => {
     const project = makeProject({ owner: 'alice', name: 'my-project' })
     const editing = makeEditing({ project, cloudHelper, localCacheHelper })
 
-    await editing.loadProject(makeUIHelpers(), makeReporter(), new AbortController().signal)
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), new AbortController().signal)
 
     expect(project.load).toHaveBeenCalledWith(cloudData, expect.anything())
     expect(localCacheHelper.clear).toHaveBeenCalled()
   })
 
   it('should clear cache and load from cloud when cache owner mismatches', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
-    const localData = makeSerialized('bob', 'my-project', 2)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const localData = makeLocalSerialized('bob', 'my-project', 2)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache(localData)
@@ -366,15 +469,15 @@ describe('Editing.loadProject', () => {
     const project = makeProject({ owner: 'alice', name: 'my-project' })
     const editing = makeEditing({ project, cloudHelper, localCacheHelper })
 
-    await editing.loadProject(makeUIHelpers(), makeReporter(), new AbortController().signal)
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), new AbortController().signal)
 
     expect(localCacheHelper.clear).toHaveBeenCalled()
     expect(project.load).toHaveBeenCalledWith(cloudData, expect.anything())
   })
 
   it('should clear cache and load from cloud when cache name mismatches', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
-    const localData = makeSerialized('alice', 'other-project', 2)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const localData = makeLocalSerialized('alice', 'other-project', 2)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache(localData)
@@ -385,16 +488,16 @@ describe('Editing.loadProject', () => {
     const helpers = makeUIHelpers()
     vi.mocked(helpers.confirmOpenTargetWithAnotherInCache).mockResolvedValue(true)
 
-    await editing.loadProject(helpers, makeReporter(), new AbortController().signal)
+    await editing.loadProject('alice', 'my-project', helpers, makeReporter(), new AbortController().signal)
 
     expect(helpers.confirmOpenTargetWithAnotherInCache).toHaveBeenCalledWith('my-project', 'other-project')
     expect(localCacheHelper.clear).toHaveBeenCalled()
     expect(project.load).toHaveBeenCalledWith(cloudData, expect.anything())
   })
 
-  it('should treat cache name with different casing as the same project', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
-    const localData = makeSerialized('alice', 'My-Project', 2)
+  it('should treat project name input with different casing as the same project after cloud resolution', async () => {
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const localData = makeLocalSerialized('alice', 'my-project', 2)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache(localData)
@@ -404,7 +507,7 @@ describe('Editing.loadProject', () => {
 
     const helpers = makeUIHelpers()
 
-    await editing.loadProject(helpers, makeReporter(), new AbortController().signal)
+    await editing.loadProject('alice', 'My-Project', helpers, makeReporter(), new AbortController().signal)
 
     expect(helpers.confirmOpenTargetWithAnotherInCache).not.toHaveBeenCalled()
     expect(localCacheHelper.clear).not.toHaveBeenCalled()
@@ -412,8 +515,8 @@ describe('Editing.loadProject', () => {
   })
 
   it('should open cached project and throw Cancelled when user chooses cached project over target', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
-    const localData = makeSerialized('alice', 'cached-project', 2)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const localData = makeLocalSerialized('alice', 'cached-project', 2)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache(localData)
@@ -424,54 +527,135 @@ describe('Editing.loadProject', () => {
     const helpers = makeUIHelpers()
     vi.mocked(helpers.confirmOpenTargetWithAnotherInCache).mockResolvedValue(false)
 
-    await expect(editing.loadProject(helpers, makeReporter(), new AbortController().signal)).rejects.toThrow(Cancelled)
+    await expect(
+      editing.loadProject('alice', 'my-project', helpers, makeReporter(), new AbortController().signal)
+    ).rejects.toThrow(Cancelled)
     expect(localCacheHelper.clear).not.toHaveBeenCalled()
     expect(helpers.openProject).toHaveBeenCalledWith('alice', 'cached-project')
     expect(project.load).not.toHaveBeenCalled()
   })
 
-  it('should throw when project has no owner or name', async () => {
+  it('should load project when the model starts without owner or name', async () => {
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const cloudHelper = makeCloudHelper()
+    vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const project = new MockProject(undefined, undefined, makeFiles())
-    const editing = makeEditing({ project })
+    const editing = makeEditing({
+      project,
+      cloudHelper,
+      signedInStateQuery: makeSignedInStateQuery(makeSignedInState('alice'))
+    })
 
-    await expect(editing.loadProject(makeUIHelpers(), makeReporter(), new AbortController().signal)).rejects.toThrow(
-      'Project owner and name expected'
-    )
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), new AbortController().signal)
+
+    expect(project.load).toHaveBeenCalledWith(cloudData, expect.anything())
+    expect(editing.mode).toBe(EditingMode.AutoSave)
   })
 
   it('should set preferPublishedContent to false when signed-in user is the owner', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache()
 
     const project = makeProject({ owner: 'alice', name: 'my-project' })
-    const editing = new Editing(project, cloudHelper, localCacheHelper, () => true, 'alice')
+    const editing = new Editing(
+      project,
+      cloudHelper,
+      localCacheHelper,
+      () => true,
+      makeSignedInStateQuery(makeSignedInState('alice'))
+    )
 
     const ac = new AbortController()
-    await editing.loadProject(makeUIHelpers(), makeReporter(), ac.signal)
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), ac.signal)
 
-    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', false, ac.signal)
+    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', expect.any(Function), ac.signal)
+    const preferPublishedContent = getLatestPreferPublishedContent(cloudHelper.load)
+    await expect(preferPublishedContent({ owner: 'alice' } as ProjectData)).resolves.toBe(false)
   })
 
   it('should set preferPublishedContent to true when signed-in user is not the owner', async () => {
-    const cloudData = makeSerialized('alice', 'my-project', 1)
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache()
 
     const project = makeProject({ owner: 'alice', name: 'my-project' })
-    const editing = new Editing(project, cloudHelper, localCacheHelper, () => true, 'bob')
+    const editing = new Editing(
+      project,
+      cloudHelper,
+      localCacheHelper,
+      () => true,
+      makeSignedInStateQuery(makeSignedInState('bob'))
+    )
 
     const ac = new AbortController()
-    await editing.loadProject(makeUIHelpers(), makeReporter(), ac.signal)
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), ac.signal)
 
-    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', true, ac.signal)
+    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', expect.any(Function), ac.signal)
+    const preferPublishedContent = getLatestPreferPublishedContent(cloudHelper.load)
+    await expect(preferPublishedContent({ owner: 'alice' } as ProjectData)).resolves.toBe(true)
   })
 
-  it('should prefer local cache when cloud version is undefined and local version is undefined', async () => {
-    const cloudData = makeSerialized('alice', 'my-project')
-    const localData = makeSerialized('alice', 'my-project')
+  it('should start loading from cloud before signed-in state resolves', async () => {
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const cloudHelper = makeCloudHelper()
+    vi.mocked(cloudHelper.load).mockImplementation(async (_owner, _name, preferPublishedContent) => {
+      expect(preferPublishedContent).toBeTypeOf('function')
+      await (preferPublishedContent as Exclude<PreferPublishedContent, boolean>)({ owner: 'alice' } as ProjectData)
+      return cloudData
+    })
+    const localCacheHelper = makeLocalCache()
+    const signedInStateQuery = makeSignedInStateQuery(null)
+    const project = makeProject({ owner: 'alice', name: 'my-project' })
+    const editing = new Editing(project, cloudHelper, localCacheHelper, () => true, signedInStateQuery)
+
+    const ac = new AbortController()
+    const loadPromise = editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), ac.signal)
+    await flushPromises()
+
+    expect(cloudHelper.load).toHaveBeenCalledWith('alice', 'my-project', expect.any(Function), ac.signal)
+    expect(project.load).not.toHaveBeenCalled()
+
+    signedInStateQuery.data.value = makeSignedInState('alice')
+    signedInStateQuery.isLoading.value = false
+
+    await loadPromise
+
+    const preferPublishedContent = getLatestPreferPublishedContent(cloudHelper.load)
+    await expect(preferPublishedContent({ owner: 'alice' } as ProjectData)).resolves.toBe(false)
+  })
+
+  it('should treat owner input with different casing as the same owner', async () => {
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const localData = makeLocalSerialized('alice', 'my-project', 2)
+    const cloudHelper = makeCloudHelper()
+    vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
+    const localCacheHelper = makeLocalCache(localData)
+
+    const project = new MockProject(undefined, undefined, makeFiles())
+    const editing = makeEditing({
+      project,
+      cloudHelper,
+      localCacheHelper,
+      signedInStateQuery: makeSignedInStateQuery(makeSignedInState('alice'))
+    })
+
+    const ac = new AbortController()
+    await editing.loadProject('Alice', 'my-project', makeUIHelpers(), makeReporter(), ac.signal)
+
+    expect(cloudHelper.load).toHaveBeenCalledWith('Alice', 'my-project', expect.any(Function), ac.signal)
+    const preferPublishedContent = getLatestPreferPublishedContent(cloudHelper.load)
+    await expect(preferPublishedContent({ owner: 'alice' } as ProjectData)).resolves.toBe(false)
+    expect(localCacheHelper.clear).not.toHaveBeenCalled()
+    expect(project.load).toHaveBeenCalledWith(localData, expect.anything())
+    expect(editing.mode).toBe(EditingMode.AutoSave)
+  })
+
+  it('should prefer local cache when cloud and local versions are equal', async () => {
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const localData = makeLocalSerialized('alice', 'my-project', 1)
     const cloudHelper = makeCloudHelper()
     vi.mocked(cloudHelper.load).mockResolvedValue(cloudData)
     const localCacheHelper = makeLocalCache(localData)
@@ -479,9 +663,9 @@ describe('Editing.loadProject', () => {
     const project = makeProject({ owner: 'alice', name: 'my-project' })
     const editing = makeEditing({ project, cloudHelper, localCacheHelper })
 
-    await editing.loadProject(makeUIHelpers(), makeReporter(), new AbortController().signal)
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), new AbortController().signal)
 
-    // Both versions are undefined (-1 == -1), so cloudVersion > localVersion is false, local data wins
+    // Equal versions keep the local cache to preserve unsaved local work.
     expect(project.load).toHaveBeenCalledWith(localData, expect.anything())
   })
 })

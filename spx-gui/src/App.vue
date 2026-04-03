@@ -7,11 +7,9 @@
         <UpdateNotificationWrapper>
           <CopilotRoot>
             <TutorialRoot>
-              <AgentCopilotProvider>
-                <RouterView />
-                <SpotlightUI />
-                <CopilotUI />
-              </AgentCopilotProvider>
+              <RouterView />
+              <SpotlightUI />
+              <CopilotUI />
             </TutorialRoot>
           </CopilotRoot>
         </UpdateNotificationWrapper>
@@ -25,7 +23,6 @@ import { computed, defineAsyncComponent } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import BrowserVersionReminder from '@/components/app/browser-check/BrowserVersionReminder.vue'
 import UpdateNotificationWrapper from '@/components/app/update-check/UpdateNotificationWrapper.vue'
-import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
 import CopilotRoot from '@/components/copilot/CopilotRoot.vue'
 import CopilotUI from '@/components/copilot/CopilotUI.vue'
 import TutorialRoot from '@/components/tutorials/TutorialRoot.vue'

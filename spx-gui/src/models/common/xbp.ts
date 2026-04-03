@@ -10,7 +10,7 @@ import { zip, unzip, type Zippable } from '@/utils/zip'
 import { filename, stripExt } from '@/utils/path'
 import { getExtFromMime } from '@/utils/file'
 import { File as LazyFile, toConfig, type Files as LazyFiles } from './file'
-import type { Metadata, ProjectSerialized } from '../project'
+import type { PartialMetadata, ProjectSerialized } from '../project'
 import { createAIDescriptionFiles, extractAIDescription } from './'
 
 const metadataFileName = 'builder-meta.json'
@@ -29,7 +29,7 @@ export class XbpHelpers {
 export const xbpHelpers = new XbpHelpers()
 
 export async function load(xbpFile: File) {
-  const metadata: Metadata = {}
+  const metadata: PartialMetadata = {}
   const arrayBuffer = await xbpFile.arrayBuffer()
   const unzipped = await unzip(new Uint8Array(arrayBuffer))
   const files: LazyFiles = {}
@@ -57,7 +57,7 @@ export async function load(xbpFile: File) {
   return { metadata, files }
 }
 
-export async function save(metadata: Metadata, files: LazyFiles, signal?: AbortSignal) {
+export async function save(metadata: PartialMetadata, files: LazyFiles, signal?: AbortSignal) {
   const zippable: Zippable = {}
 
   const metadataJson = JSON.stringify({
@@ -65,7 +65,7 @@ export async function save(metadata: Metadata, files: LazyFiles, signal?: AbortS
     description: metadata.description,
     instructions: metadata.instructions,
     extraSettings: metadata.extraSettings
-  } satisfies Metadata)
+  } satisfies PartialMetadata)
   zippable[metadataFileName] = new TextEncoder().encode(metadataJson)
 
   if (metadata.thumbnail != null) {

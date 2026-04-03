@@ -2,28 +2,61 @@
  * @desc This class is responsible for parsing snippets and resolving built-in variables.
  */
 
-import { computed, shallowRef, toValue, type WatchSource } from 'vue'
+import { debounce } from 'lodash'
+import { shallowRef, watch } from 'vue'
+import { Disposable } from '@/utils/disposable'
+import { TaskManager } from '@/utils/task'
 import { SnippetParser as BaseSnippetParser, Text, Variable } from '@/utils/snippet-parser'
-import type { ITextDocument } from '../common'
+import type { CodeEditorUIController } from './code-editor-ui'
 import type { ISnippetVariablesProvider } from '../snippet-variables'
 
 export type * from '../snippet-variables'
 
-export class SnippetParser {
-  constructor(private activeTextDocumentSource: WatchSource<ITextDocument | null>) {}
+export class SnippetParser extends Disposable {
+  constructor(private ui: CodeEditorUIController) {
+    super()
+  }
 
   private parser = new BaseSnippetParser()
 
-  private variablesProviderRef = shallowRef<ISnippetVariablesProvider | null>(null)
-  registerVariablesProvider(provider: ISnippetVariablesProvider) {
-    this.variablesProviderRef.value = provider
+  private providerRef = shallowRef<ISnippetVariablesProvider | null>(null)
+  registerProvider(provider: ISnippetVariablesProvider) {
+    this.providerRef.value = provider
   }
 
-  /** Built-in variables */
-  private builtInVariables = computed<Record<string, string | null>>(() => {
-    const textDocument = toValue(this.activeTextDocumentSource)
-    return this.variablesProviderRef.value?.provideSnippetVariables({ textDocument }) ?? {}
-  })
+  private variablesMgr = new TaskManager(async (signal) => {
+    const provider = this.providerRef.value
+    if (provider == null) return {}
+    const textDocument = this.ui.activeTextDocument
+    if (textDocument == null) return {}
+    return provider.provideSnippetVariables({ textDocument, signal })
+  }, true)
+
+  private get builtInVariables() {
+    return this.variablesMgr.result.data ?? {}
+  }
+
+  init() {
+    const refreshVariables = debounce(() => this.variablesMgr.start(), 100)
+
+    this.addDisposer(
+      watch(
+        this.providerRef,
+        () => {
+          refreshVariables()
+        },
+        { immediate: true }
+      )
+    )
+
+    this.addDisposer(
+      watch(
+        () => [this.ui.project.exportFiles(), this.ui.activeTextDocument],
+        () => refreshVariables(),
+        { immediate: true }
+      )
+    )
+  }
 
   private getVariableDefaultValue(variable: Variable) {
     if (variable.children.length === 0) return undefined
@@ -36,7 +69,7 @@ export class SnippetParser {
   parse(snippet: string) {
     const parsed = this.parser.parse(snippet)
     parsed.resolveVariables({
-      resolve: (variable) => this.builtInVariables.value[variable.name] ?? this.getVariableDefaultValue(variable)
+      resolve: (variable) => this.builtInVariables[variable.name] ?? this.getVariableDefaultValue(variable)
     })
     return parsed
   }

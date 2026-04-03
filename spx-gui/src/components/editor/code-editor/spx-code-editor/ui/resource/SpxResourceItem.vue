@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { capture } from '@/utils/exception'
 import { Animation } from '@/models/spx/animation'
 import { Backdrop } from '@/models/spx/backdrop'
 import { Costume } from '@/models/spx/costume'
@@ -14,7 +15,7 @@ import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import BackdropItem from '@/components/editor/stage/backdrop/BackdropItem.vue'
 import WidgetItem from '@/components/editor/stage/widget/WidgetItem.vue'
 import type { ResourceIdentifier } from '../../../xgo-code-editor'
-import { getResourceModel } from '../../common'
+import { getResourceModel, getResourceNameWithType } from '../../common'
 
 const props = withDefaults(
   defineProps<{
@@ -30,6 +31,14 @@ const props = withDefaults(
 
 const editorCtx = useEditorCtx()
 const model = computed(() => getResourceModel(editorCtx.project, props.resource))
+const name = computed(() => {
+  try {
+    return getResourceNameWithType(props.resource.uri).name
+  } catch (err) {
+    capture(err, `Failed to resolve resource URI: ${props.resource.uri}`)
+    return props.resource.uri
+  }
+})
 </script>
 
 <template>
@@ -51,6 +60,7 @@ const model = computed(() => getResourceModel(editorCtx.project, props.resource)
     :autoplay="autoplay"
   />
   <WidgetItem v-else-if="model != null && isWidget(model)" :widget="model" :selectable="selectable" color="primary" />
+  <div v-else>{{ $t({ zh: `未知资源（${name}）`, en: `Unknown resource (${name})` }) }}</div>
 </template>
 
 <style lang="scss" scoped></style>

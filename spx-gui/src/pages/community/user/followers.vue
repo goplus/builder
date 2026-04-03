@@ -11,10 +11,10 @@ import UserContent from '@/components/community/user/content/UserContent.vue'
 import UserItem from '@/components/community/user/UserItem.vue'
 
 const props = defineProps<{
-  name: string
+  nameInput: string
 }>()
 
-const { data: user } = useUser(() => props.name)
+const { data: user } = useUser(() => props.nameInput)
 usePageTitle(() => {
   if (user.value == null) return null
   return {
@@ -30,7 +30,7 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 const queryRet = useQuery(
   () =>
     listUsers({
-      followee: props.name,
+      followee: props.nameInput,
       orderBy: 'followedAt',
       sortOrder: 'desc',
       pageSize,

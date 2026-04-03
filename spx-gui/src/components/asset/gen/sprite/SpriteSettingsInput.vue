@@ -73,8 +73,9 @@ const submitText = computed(() => {
         :loading="imageGenerating"
         @enrich="handleEnrich"
         @submit="handleSubmit"
-        >{{ $t(submitText) }}</EnrichableSubmitButton
       >
+        {{ $t(submitText) }}
+      </EnrichableSubmitButton>
     </template>
   </SettingsInput>
 </template>

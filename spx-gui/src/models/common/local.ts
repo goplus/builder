@@ -1,5 +1,5 @@
 import localforage from 'localforage'
-import type { Metadata, ProjectSerialized } from '../project'
+import type { PartialMetadata, ProjectSerialized } from '../project'
 import { File, type Files, type Metadata as FileMetadata } from './file'
 
 const storage = localforage.createInstance({
@@ -24,7 +24,7 @@ export class LocalHelpers {
 
 export const localHelpers = new LocalHelpers()
 
-type MetadataEx = Omit<Metadata, 'thumbnail'> & {
+type MetadataEx = Omit<PartialMetadata, 'thumbnail'> & {
   files: string[]
   // `?`(`undefined`) for compatibility with legacy data
   thumbnail?: RawFile | null
@@ -112,7 +112,7 @@ async function load(key: string, signal?: AbortSignal) {
   }
 }
 
-async function save(key: string, { thumbnail, ...metadata }: Metadata, files: Files, signal?: AbortSignal) {
+async function save(key: string, { thumbnail, ...metadata }: PartialMetadata, files: Files, signal?: AbortSignal) {
   await clear(key)
   const fileList = Object.keys(files)
   let rawThumbnail: RawFile | null = null
