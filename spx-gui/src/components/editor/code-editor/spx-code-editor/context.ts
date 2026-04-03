@@ -67,7 +67,12 @@ export function useProvideCodeEditorCtx(editorStateRet: QueryRet<SpxEditorState>
         inputHelperProvider: new SpxInputHelperProvider(lspClient, resourceProvider),
         apiReferenceProvider: new SpxAPIReferenceProvider(documentBase),
         diagnosticsProvider: new SpxDiagnosticsProvider(runtime, lspClient, project),
-        snippetVariablesProvider: new SpxSnippetVariablesProvider(spxProject)
+        snippetVariablesProvider: new SpxSnippetVariablesProvider(
+          spxProject,
+          lspClient,
+          documentBase,
+          project.classFramework.pkgPaths[0]
+        )
       })
       codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor

@@ -141,11 +141,11 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void {
     this.apiReferenceController.registerProvider(provider)
   }
+  registerSnippetVariablesProvider(provider: ISnippetVariablesProvider): void {
+    this.snippetParser.registerProvider(provider)
+  }
   registerDocumentBase(documentBase: IDocumentBase): void {
     this.documentBase = documentBase
-  }
-  registerSnippetVariablesProvider(provider: ISnippetVariablesProvider): void {
-    this.snippetParser.registerVariablesProvider(provider)
   }
 
   private commands = new Map<Command<any, any>, CommandInfo<any, any>>()
@@ -202,7 +202,6 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     private goToResourceHandler: (resource: ResourceIdentifier) => Promise<void>
   ) {
     super()
-    this.snippetParser = new SnippetParser(() => this.activeTextDocument)
   }
 
   id = uniqueId('code-editor-ui-')
@@ -219,6 +218,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   inputHelperController = new InputHelperController(this)
   inlayHintController = new InlayHintController(this)
   dropIndicatorController = new DropIndicatorController(this)
+  snippetParser = new SnippetParser(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -508,8 +508,6 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.isCopilotActiveRef.value = active
   }
 
-  private snippetParser: SnippetParser
-
   /** Parse given snippet string & resolve Builder built-in variables */
   parseSnippet(snippet: string) {
     return this.snippetParser.parse(snippet)
@@ -742,9 +740,12 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.inputHelperController.init()
     this.inlayHintController.init()
     this.dropIndicatorController.init()
+    this.snippetParser.init()
   }
 
   dispose() {
+    this.snippetParser.dispose()
+    this.dropIndicatorController.dispose()
     this.inlayHintController.dispose()
     this.inputHelperController.dispose()
     this.resourceReferenceController.dispose()

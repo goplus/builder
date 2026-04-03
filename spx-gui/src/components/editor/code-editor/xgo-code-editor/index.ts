@@ -21,9 +21,10 @@ export * from './inlay-hint'
 export * from './input-helper'
 export * from './resource'
 export * from './snippet-variables'
+export * from './utils'
 
 // Vue components
-export { default as CodeEditorUI } from './ui/CodeEditorUI.vue'
+export { default as CodeEditorUI, useCodeEditorUICtx } from './ui/CodeEditorUI.vue'
 export { default as CodeEditorCard } from './ui/CodeEditorCard.vue'
 export { default as ResourceInput } from './ui/input-helper/ResourceInput.vue'
 

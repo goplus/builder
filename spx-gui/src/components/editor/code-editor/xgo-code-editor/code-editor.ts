@@ -28,6 +28,7 @@ import {
   fromLSPDiagnostic,
   type Property
 } from './common'
+import { filterPropertiesByDocumentation } from './utils'
 import { TextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import { HoverProvider } from './hover'
@@ -189,7 +190,8 @@ export class CodeEditor extends Disposable {
 
   /** Get properties for a given target */
   async getProperties(target: string, signal?: AbortSignal): Promise<Property[]> {
-    return this.lspClient.getProperties({ signal }, target)
+    const properties = await this.lspClient.getProperties({ signal }, target)
+    return filterPropertiesByDocumentation(properties, this.documentBase, this.project.classFramework.pkgPaths[0])
   }
 
   private uis: ICodeEditorUIController[] = []

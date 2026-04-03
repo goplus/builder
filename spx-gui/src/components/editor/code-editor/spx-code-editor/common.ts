@@ -5,7 +5,7 @@
  * generic (xgo) layer + spx-specific variants.
  */
 
-import type { ColorValue } from '@/utils/spx'
+import { type ColorValue, packageSpx } from '@/utils/spx'
 import { capture } from '@/utils/exception'
 import type { SpxProject } from '@/models/spx/project'
 import { type ResourceModel, type ResourceType } from '@/models/spx/common/resource'
@@ -24,7 +24,8 @@ import {
   type ResourceIdentifier,
   type TextDocumentIdentifier,
   getCodeFilePath,
-  type Property
+  type Property,
+  parseDefinitionName
 } from '../xgo-code-editor'
 
 export type { ResourceModel }
@@ -182,6 +183,19 @@ export function textDocumentId2CodeFileName(id: TextDocumentIdentifier) {
   }
 }
 
+export function filterOwnProperties(target: string, properties: Property[]) {
+  // target is stage, no need to filter
+  if (target === '') return properties
+  // target is sprite, filter out properties inherited from stage ("Game" in spx)
+  return properties.filter((p) => {
+    const [receiver] = parseDefinitionName(p.definition.name)
+    if (receiver !== 'Game') return true
+    // keep properties from other packages
+    const pkg = p.definition.package
+    return pkg !== 'main' && pkg !== packageSpx
+  })
+}
+
 export type { ColorValue }
 
 export enum SpxInputType {
@@ -203,6 +217,8 @@ export enum SpxInputType {
   SpxSpecialObj = 'spx-special-obj',
   /** `RotationStyle` in spx */
   SpxRotationStyle = 'spx-rotation-style',
+  /** Property name values in spx */
+  SpxPropertyName = 'spx-property-name',
   /** Unknown type */
   Unknown = XGoBuiltInInputType.Unknown
 }
@@ -240,6 +256,11 @@ export type SpxInputTypedValue =
       /** Name of `RotationStyle` in spx, e.g., `Normal` */
       value: string
     }
+  | {
+      type: SpxInputType.SpxPropertyName
+      /** Property name of spx stage/sprite */
+      value: string
+    }
 
 export type InputValueForSpxType<T> = (SpxInputTypedValue & { type: T })['value']
 
@@ -266,18 +287,19 @@ export async function getInvalidMonitors(
       invalidMonitors.push(monitor)
       continue
     }
-    let propertyNames = propertyNamesMap.get(monitor.target)
-    if (propertyNames == null) {
+    let ownPropertyNames = propertyNamesMap.get(monitor.target)
+    if (ownPropertyNames == null) {
       try {
         const properties = await getProperties(monitor.target, signal)
-        propertyNames = new Set(properties.map((p) => p.name))
-        propertyNamesMap.set(monitor.target, propertyNames)
+        const ownProperties = filterOwnProperties(monitor.target, properties)
+        ownPropertyNames = new Set(ownProperties.map((p) => p.name))
+        propertyNamesMap.set(monitor.target, ownPropertyNames)
       } catch (e) {
         capture(e, `Failed to load properties for target: "${monitor.target}"`)
         continue
       }
     }
-    if (!propertyNames.has(monitor.variableName)) {
+    if (!ownPropertyNames.has(monitor.variableName)) {
       invalidMonitors.push(monitor)
     }
   }
