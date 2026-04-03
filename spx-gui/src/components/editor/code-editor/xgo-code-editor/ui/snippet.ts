@@ -1,5 +1,5 @@
 /**
- * @desc Snippet variables controller: keeps provider variables in sync and parses snippets with cached built-ins.
+ * @desc This class is responsible for parsing snippets and resolving built-in variables.
  */
 
 import { debounce } from 'lodash'
@@ -12,7 +12,7 @@ import type { ISnippetVariablesProvider } from '../snippet-variables'
 
 export type * from '../snippet-variables'
 
-export class SnippetVariablesController extends Disposable {
+export class SnippetParser extends Disposable {
   constructor(private ui: CodeEditorUIController) {
     super()
   }

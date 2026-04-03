@@ -1,7 +1,8 @@
-import type { ITextDocument, BaseContext } from './common'
+import type { ITextDocument } from './common'
 
-export type SnippetVariablesContext = BaseContext & {
+export type SnippetVariablesContext = {
   textDocument: ITextDocument | null
+  signal: AbortSignal
 }
 
 export interface ISnippetVariablesProvider {

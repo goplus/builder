@@ -75,7 +75,7 @@ export class SpxSnippetVariablesProvider implements ISnippetVariablesProvider {
 
   private async getPreferredPropertyName(ctx: SnippetVariablesContext): Promise<string | null> {
     const target = this.getPropertiesTarget(ctx.textDocument)
-    if (target == null || this.loadProperties == null) return null
+    if (target == null) return null
     const properties = await this.loadProperties(target, ctx.signal)
     ctx.signal?.throwIfAborted()
     return this.pickPreferredProperty(properties)?.name ?? null

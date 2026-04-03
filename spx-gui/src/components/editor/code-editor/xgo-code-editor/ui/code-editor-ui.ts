@@ -34,7 +34,7 @@ import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPositio
 import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
 import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
 import { DropIndicatorController } from './drop-indicator'
-import { SnippetVariablesController, type ISnippetVariablesProvider } from './snippet'
+import { SnippetParser, type ISnippetVariablesProvider } from './snippet'
 import {
   CopilotExplainKind,
   makeCodeBlock,
@@ -142,7 +142,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.apiReferenceController.registerProvider(provider)
   }
   registerSnippetVariablesProvider(provider: ISnippetVariablesProvider): void {
-    this.snippetVariablesController.registerProvider(provider)
+    this.snippetParser.registerProvider(provider)
   }
   registerDocumentBase(documentBase: IDocumentBase): void {
     this.documentBase = documentBase
@@ -218,7 +218,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   inputHelperController = new InputHelperController(this)
   inlayHintController = new InlayHintController(this)
   dropIndicatorController = new DropIndicatorController(this)
-  snippetVariablesController = new SnippetVariablesController(this)
+  snippetParser = new SnippetParser(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -510,7 +510,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
 
   /** Parse given snippet string & resolve Builder built-in variables */
   parseSnippet(snippet: string) {
-    return this.snippetVariablesController.parse(snippet)
+    return this.snippetParser.parse(snippet)
   }
 
   init(editor: MonacoEditor) {
@@ -740,11 +740,11 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.inputHelperController.init()
     this.inlayHintController.init()
     this.dropIndicatorController.init()
-    this.snippetVariablesController.init()
+    this.snippetParser.init()
   }
 
   dispose() {
-    this.snippetVariablesController.dispose()
+    this.snippetParser.dispose()
     this.dropIndicatorController.dispose()
     this.inlayHintController.dispose()
     this.inputHelperController.dispose()

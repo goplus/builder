@@ -58,12 +58,6 @@ export function useProvideCodeEditorCtx(editorStateRet: QueryRet<SpxEditorState>
       lspClient.init()
       const documentBase = new DocumentBase([...Object.values(spxDefinitionsByName), ...spxKeyDefinitions])
       const resourceProvider = new SpxResourceProvider(lspClient, spxProject)
-      const snippetVariablesProvider = new SpxSnippetVariablesProvider(
-        spxProject,
-        lspClient,
-        documentBase,
-        project.classFramework.pkgPaths[0]
-      )
       const codeEditor = new CodeEditor({
         project,
         monaco,
@@ -73,7 +67,12 @@ export function useProvideCodeEditorCtx(editorStateRet: QueryRet<SpxEditorState>
         inputHelperProvider: new SpxInputHelperProvider(lspClient, resourceProvider),
         apiReferenceProvider: new SpxAPIReferenceProvider(documentBase),
         diagnosticsProvider: new SpxDiagnosticsProvider(runtime, lspClient, project),
-        snippetVariablesProvider
+        snippetVariablesProvider: new SpxSnippetVariablesProvider(
+          spxProject,
+          lspClient,
+          documentBase,
+          project.classFramework.pkgPaths[0]
+        )
       })
       codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor
