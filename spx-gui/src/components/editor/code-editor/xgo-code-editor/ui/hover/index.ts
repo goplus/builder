@@ -222,8 +222,8 @@ export class HoverController extends Emitter<{
           handleMouseEnter({ type: 'other' })
           return
         }
-        if (e.target.range.isEmpty()) {
-          // target with type `CONTENT_TEXT` & empty range stands for special contents, like decorations
+        if (e.target.detail.mightBeForeignElement) {
+          // `mightBeForeignElement` indicates injected or foreign content like inlay hint decorations.
           handleMouseEnter({ type: 'other' })
           return
         }
