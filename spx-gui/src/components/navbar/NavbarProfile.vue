@@ -11,8 +11,8 @@
   </div>
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
-      <div class="mr-2 flex h-full items-center justify-center px-5 hover:bg-primary-600">
-        <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
+      <div class="mr-2 flex h-full items-center justify-center px-5">
+        <img class="h-8 w-8 rounded-full border-2 border-grey-100" :src="avatarUrl ?? undefined" />
       </div>
     </template>
     <UIMenu class="min-w-30">

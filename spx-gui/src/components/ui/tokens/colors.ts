@@ -82,16 +82,16 @@ export const grey = {
 export const primary = turquoise
 
 export const sprite = {
-  ...yellow,
-  bgSelected: yellow[200]
+  ...turquoise,
+  bgSelected: turquoise[200]
 }
 export const sound = {
-  ...blue,
-  bgSelected: blue[200]
+  ...turquoise,
+  bgSelected: turquoise[200]
 }
 export const stage = {
-  ...blue,
-  bgSelected: blue[200]
+  ...turquoise,
+  bgSelected: turquoise[200]
 }
 
 export const danger = red

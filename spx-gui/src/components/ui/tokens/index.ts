@@ -9,8 +9,7 @@ export const fontSize = {
 
 export const fontFamily = {
   // see definition for `AlibabaHealthB` in global.scss
-  main: `AlibabaHealthB,
-  -apple-system,
+  main: `-apple-system,
   BlinkMacSystemFont,
   'Segoe UI',
   Roboto,
@@ -27,14 +26,14 @@ export const fontFamily = {
 
 export const borderRadius = {
   1: '8px',
-  2: '12px',
-  3: '20px'
+  2: '8px',
+  3: '8px'
 } as const
 
 export const boxShadow = {
   small: '0px 2px 8px 0px rgba(51, 51, 51, 0.08)',
   big: '0px 4px 24px 0px rgba(36, 41, 47, 0.08)',
-  diffusion: '0px 4px 12px 0px #D0F2F8'
+  diffusion: '0 2px 12px 0 rgba(36, 41, 47, 0.05)'
 } as const
 
 export const lineHeight = {

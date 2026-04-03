@@ -26,7 +26,7 @@ const [thumbnailUrl] = useFileUrl(() => props.textDocument.thumbnailFile)
       <div
         v-radar="{ name: 'Code document tab', desc: `Click to open code of ${textDocument.id.uri}` }"
         class="document-tab flex h-10 w-10 flex-none items-center rounded-1 border-2 transition-all"
-        :class="isActive ? 'border-yellow-500 bg-yellow-200' : 'border-transparent bg-grey-300 cursor-pointer'"
+        :class="isActive ? 'border-primary-500 bg-primary-200' : 'border-transparent bg-grey-300 cursor-pointer'"
         @click="emit('click')"
       >
         <UIImg v-if="thumbnailUrl != null" class="h-full w-full rounded-[4px]" :src="thumbnailUrl" />

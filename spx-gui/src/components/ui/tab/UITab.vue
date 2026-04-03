@@ -30,25 +30,17 @@ function handleClick() {
 
 <style lang="scss" scoped>
 .ui-tab {
-  padding: 9px var(--ui-gap-middle);
+  padding: 9px 0;
   display: flex;
   align-items: center;
   font-size: 16px;
-  color: var(--ui-color-grey-100);
-  opacity: 0.7;
-  background-color: var(--ui-tab-color-main);
+  color: var(--ui-color-grey-800);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: color 0.2s;
 
   &.active {
-    opacity: 1;
-  }
-
-  &:first-child {
-    border-top-left-radius: var(--ui-border-radius-3);
-  }
-  &:last-child {
-    border-top-right-radius: var(--ui-border-radius-3);
+    color: var(--ui-color-grey-1000);
+    border-bottom: 2px solid var(--ui-color-grey-1000);
   }
 }
 </style>

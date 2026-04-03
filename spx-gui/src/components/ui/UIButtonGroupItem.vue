@@ -36,7 +36,7 @@ const handleClick = () => {
 
 <style scoped lang="scss">
 .ui-button-group-item {
-  height: var(--ui-line-height-2);
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -44,20 +44,20 @@ const handleClick = () => {
 
   &.variant {
     &-primary {
-      background: var(--ui-color-grey-300);
+      background-color: var(--ui-color-grey-400);
       color: var(--ui-color-grey-1000);
       &.active {
-        background: var(--ui-color-primary-200);
-        color: var(--ui-color-primary-400);
+        background-color: var(--ui-color-grey-100);
+        color: var(--ui-color-grey-1000);
       }
     }
 
     &-secondary {
-      background-color: #47d8e4;
-      color: var(--ui-color-grey-200);
+      background-color: var(--ui-color-grey-400);
+      color: var(--ui-color-grey-1000);
       &.active {
-        background-color: var(--ui-color-grey-200);
-        color: var(--ui-color-turquoise-600);
+        background-color: var(--ui-color-grey-100);
+        color: var(--ui-color-grey-1000);
       }
     }
   }
@@ -66,19 +66,20 @@ const handleClick = () => {
     min-width: 32px;
   }
   &.type-text {
-    padding: 0 12px;
+    padding: 0 5px;
   }
 
   &.active {
     cursor: default;
+    border-radius: 4px;
   }
 
-  &:first-child {
-    border-radius: 12px 0px 0px 12px;
-  }
+  // &:first-child {
+  //   border-radius: 12px 0px 0px 12px;
+  // }
 
-  &:last-child {
-    border-radius: 0px 12px 12px 0px;
-  }
+  // &:last-child {
+  //   border-radius: 0px 12px 12px 0px;
+  // }
 }
 </style>

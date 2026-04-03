@@ -18,7 +18,8 @@
         <template #trigger>
           <button
             v-radar="addButtonRadarInfo"
-            class="relative z-1 h-11 flex-[0_0_auto] cursor-pointer flex items-center justify-center rounded-bl-3 border-none bg-(--editor-list-color-main) text-grey-100 hover:bg-(--editor-list-color-400) active:bg-(--editor-list-color-600)"
+            class="relative z-1 h-11 flex-[0_0_auto] cursor-pointer flex items-center justify-center rounded-bl-1 bg-grey-100 border-none border-grey-400 text-grey-700 hover:text-grey-900 active:text-grey-1000"
+            style="border-top: 1px solid var(--ui-color-grey-400);"
           >
             <UIIcon type="plus" />
           </button>

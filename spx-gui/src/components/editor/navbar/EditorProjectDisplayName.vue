@@ -208,8 +208,7 @@ function handleSubmitProjectDisplayName() {
 
 .name-text {
   max-width: 220px;
-  color: var(--ui-color-grey-100);
-  font-weight: 600;
+  color: var(--ui-color-grey-1000);
 }
 
 .name-input {
@@ -240,7 +239,7 @@ function handleSubmitProjectDisplayName() {
   justify-content: center;
   flex: 0 0 auto;
   line-height: 0;
-  color: var(--ui-color-grey-100);
+  color: var(--ui-color-grey-1000);
 }
 
 .edit-icon {
@@ -254,17 +253,17 @@ function handleSubmitProjectDisplayName() {
 
 .edit-icon:hover,
 .edit-icon:focus-visible {
-  background: var(--ui-color-primary-400);
+  background: var(--ui-color-grey-200);
 }
 
 .edit-display-name-icon {
   width: 16px;
   height: 16px;
-  color: var(--ui-color-grey-100);
+  color: var(--ui-color-grey-1000);
 }
 
 .project-pill.editable:hover {
-  background: var(--ui-color-primary-400);
+  background: var(--ui-color-grey-200);
   cursor: pointer;
 }
 
@@ -277,7 +276,7 @@ function handleSubmitProjectDisplayName() {
 }
 
 .project-wrap.editing .project-pill {
-  background: var(--ui-color-grey-100);
+  background: var(--ui-color-grey-200);
   cursor: text;
   border-color: var(--ui-color-grey-400);
   gap: 1px;

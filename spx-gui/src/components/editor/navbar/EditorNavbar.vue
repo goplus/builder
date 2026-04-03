@@ -9,7 +9,7 @@
         }"
       >
         <template #trigger>
-          <UIIcon type="file" style="width: 24px; height: 24px" />
+          <UIIcon type="file" style="width: 20px; height: 20px" />
         </template>
         <UIMenu>
           <UIMenuGroup :disabled="!isOnline">
@@ -75,7 +75,7 @@
         <UITooltip :disabled="undoAction == null">
           <template #trigger>
             <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
-              <UIIcon type="undo" style="width: 24px; height: 24px" />
+              <UIIcon type="undo" style="width: 20px; height: 20px" />
             </button>
           </template>
           <span>{{ $t(undoText) }}</span>
@@ -83,7 +83,7 @@
         <UITooltip :disabled="redoAction == null">
           <template #trigger>
             <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
-              <UIIcon type="redo" style="width: 24px; height: 24px" />
+              <UIIcon type="redo" style="width: 20px; height: 20px" />
             </button>
           </template>
           <span>{{ $t(redoText) }}</span>
@@ -439,14 +439,14 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 @reference "../../../app.css";
 
 .history-button {
-  @apply flex h-full items-center justify-center border-none bg-transparent px-5 text-white outline-none;
+  @apply flex h-full items-center justify-center border-none bg-transparent px-5 outline-none;
 }
 
 .history-button:disabled {
-  @apply cursor-not-allowed text-[#9de6ec];
+  @apply cursor-not-allowed;
 }
 
 .history-button:enabled:hover {
-  @apply cursor-pointer bg-primary-600;
+  @apply cursor-pointer;
 }
 </style>

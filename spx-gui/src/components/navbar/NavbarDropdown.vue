@@ -1,7 +1,7 @@
 <template>
   <UIDropdown placement="bottom-start">
     <template #trigger>
-      <div v-radar="triggerRadar" class="flex h-full cursor-pointer items-center px-5 hover:bg-primary-600">
+      <div v-radar="triggerRadar" class="flex h-full cursor-pointer items-center px-5">
         <slot name="trigger"></slot>
         <UIIcon style="width: 16px; height: 16px" type="arrowDown" />
       </div>

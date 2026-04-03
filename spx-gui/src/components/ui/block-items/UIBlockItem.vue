@@ -94,16 +94,18 @@ const style = computed(() => ({
   }
 
   &.block-item-standard {
-    border-color: var(--ui-color-grey-300);
-    background-color: var(--ui-color-grey-300);
+    border-width: 1px;
+    border-color: var(--ui-color-grey-400);
+    background-color: var(--ui-color-grey-100);
 
     // About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts`
     &.block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(.block-item-active) {
       border-color: var(--ui-color-grey-400);
-      background-color: var(--ui-color-grey-400);
+      background-color: var(--ui-color-grey-200);
     }
 
     &.block-item-active {
+      border-width: 2px;
       border-color: var(--color-outline);
       background-color: var(--color-background);
     }

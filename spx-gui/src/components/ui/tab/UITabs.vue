@@ -51,6 +51,8 @@ provide(
 
 <style lang="scss" scoped>
 .ui-tabs {
+  padding: 0 8px;
   display: flex;
+  gap: 24px;
 }
 </style>

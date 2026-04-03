@@ -1,8 +1,7 @@
 <template>
   <nav
     v-radar="{ name: 'Navbar', desc: 'Top navigation bar' }"
-    class="flex w-full justify-center bg-primary-main bg-center bg-repeat text-grey-100 shadow-diffusion"
-    :style="{ backgroundImage: `url(${bgUrl})` }"
+    class="flex w-full justify-center text-grey-1000"
   >
     <div
       class="flex h-12.5 items-stretch justify-between gap-3"
@@ -15,7 +14,7 @@
       <div class="flex basis-[40%] items-center justify-center overflow-hidden">
         <slot name="center"></slot>
       </div>
-      <div class="flex basis-[30%] justify-end">
+      <div class="flex basis-[30%] justify-end items-center">
         <slot name="right"></slot>
         <NavbarProfile />
       </div>
@@ -24,7 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import bgUrl from './bg.svg'
 import NavbarLogo from './NavbarLogo.vue'
 import NavbarProfile from './NavbarProfile.vue'
 

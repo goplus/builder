@@ -139,7 +139,7 @@ function handleMouseUp(e: MouseEvent) {
   border-radius: var(--ui-border-radius-1);
   border: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-100);
-  box-shadow: 0 1px 8px 0 rgba(10, 13, 20, 0.05);
+  /* box-shadow: 0 1px 8px 0 rgba(10, 13, 20, 0.05); */
   transition: all 0.2s;
   cursor: pointer;
   /* 42px for sticky title, to ensure the item correctly scrolled into view. */
@@ -152,7 +152,7 @@ function handleMouseUp(e: MouseEvent) {
 
 .api-reference-item:hover {
   background: var(--ui-color-grey-300);
-  box-shadow: 0 1px 2px 0 rgba(10, 13, 20, 0.03);
+  /* box-shadow: 0 1px 2px 0 rgba(10, 13, 20, 0.03); */
 }
 
 .api-reference-item.before-dragging {

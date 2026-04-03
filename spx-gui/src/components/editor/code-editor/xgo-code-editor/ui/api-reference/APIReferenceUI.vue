@@ -215,15 +215,15 @@ function handleCategoryClick(id: string) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: var(--ui-border-radius-1);
-  color: var(--category-color);
+  border-radius: 8px;
+  color: var(--ui-color-grey-800);
   cursor: pointer;
   transition: 0.1s;
 }
 
 .category[data-active='true'] {
-  color: var(--ui-color-grey-100);
-  background-color: var(--category-color);
+  color: var(--ui-color-grey-1000);
+  background-color: var(--ui-color-grey-400);
 }
 
 .category .icon {

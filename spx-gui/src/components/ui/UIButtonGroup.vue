@@ -46,5 +46,9 @@ provide(variantInjectionKey, () => props.variant)
 <style scoped lang="scss">
 .ui-button-group-container {
   display: flex;
+  padding: 2px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: var(--ui-color-grey-400);
 }
 </style>

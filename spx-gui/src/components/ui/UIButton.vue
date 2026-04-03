@@ -132,19 +132,19 @@ defineExpose({
 
 // variant
 .variant-shadow {
-  padding: 0 0 4px 0;
+  padding: 0;
 
-  .content {
-    box-shadow: 0 4px var(--ui-button-shadow-color);
-  }
+  // .content {
+  //   box-shadow: 0 4px var(--ui-button-shadow-color);
+  // }
 
-  &:not(:disabled):active,
-  &.loading {
-    padding-bottom: 0;
-    .content {
-      box-shadow: none;
-    }
-  }
+  // &:not(:disabled):active,
+  // &.loading {
+  //   padding-bottom: 0;
+  //   .content {
+  //     box-shadow: none;
+  //   }
+  // }
 }
 
 .variant-flat {
@@ -190,7 +190,7 @@ defineExpose({
 
 .color-boring {
   --ui-button-color: var(--ui-color-text);
-  --ui-button-bg-color: var(--ui-color-grey-300);
+  --ui-button-bg-color: var(--ui-color-grey-100);
   --ui-button-shadow-color: var(--ui-color-grey-600);
 
   &:hover:not(:active, :disabled) {

@@ -2,8 +2,7 @@
   <section class="flex h-full flex-col overflow-hidden" :style="cssVars">
     <!-- TODO: use UICardHeader? -->
     <h4
-      class="flex h-11 w-20 items-center justify-center border-b border-grey-400 text-16"
-      :class="active ? 'border-stage-main bg-stage-main text-grey-100' : 'text-title'"
+      class="flex h-11 w-20 items-center justify-center border-b border-grey-400 text-16 text-title"
     >
       {{ $t({ en: 'Stage', zh: '舞台' }) }}
     </h4>
@@ -12,7 +11,7 @@
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
           class="relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-1 bg-grey-300"
-          :class="active ? 'border-2 border-stage-main bg-blue-200 p-0' : 'p-0.5 hover:bg-grey-400'"
+          :class="active ? 'border-2 border-primary-main bg-blue-200 p-0' : 'p-0.5 hover:bg-grey-400'"
           @click="activate"
         >
           <UIImg class="h-11 w-11 rounded-[4px] object-cover" :src="imgSrc" size="cover" :loading="imgLoading" />
