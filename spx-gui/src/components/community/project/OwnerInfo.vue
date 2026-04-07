@@ -11,8 +11,8 @@ const { data: user } = useUser(() => props.owner)
 const avatarUrl = useAvatarUrl(() => user.value?.avatar)
 </script>
 
+<!-- TODO: extract to `@/components/ui/`? -->
 <template>
-  <!-- TODO: extract to `@/components/ui/`? -->
   <UserLink
     class="group flex items-center gap-1 text-title underline transition-colors duration-100 hover:text-primary-main active:text-primary-600"
     :user="user?.username ?? null"

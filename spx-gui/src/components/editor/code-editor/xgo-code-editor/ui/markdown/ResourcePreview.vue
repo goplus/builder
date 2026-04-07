@@ -15,7 +15,7 @@ const resourceIdentifier = computed<ResourceIdentifier>(() => ({
 }))
 </script>
 
+<!-- TODO: Design specially for `ResourcePreview`, instead of using the same `ResourceItem` as `ResourceSelector` -->
 <template>
-  <!-- TODO: Design specially for `ResourcePreview`, instead of using the same `ResourceItem` as `ResourceSelector` -->
   <component :is="provider?.provideResourceItemRenderer()" :resource="resourceIdentifier" autoplay />
 </template>

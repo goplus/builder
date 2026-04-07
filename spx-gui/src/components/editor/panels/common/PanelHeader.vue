@@ -1,7 +1,7 @@
 <!-- Header for Sprite Panel -->
 
+<!-- TODO: use UICardHeader? -->
 <template>
-  <!-- TODO: use UICardHeader? -->
   <div
     class="flex h-11 items-center justify-between border-b border-grey-400 pr-2.5"
     :class="active ? 'border-(--panel-color-main) bg-(--panel-color-main) text-grey-100' : 'text-title'"
