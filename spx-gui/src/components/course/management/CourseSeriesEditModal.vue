@@ -160,7 +160,7 @@ const handleSubmit = useMessageHandle(
   >
     <UIForm :form="form" @submit="handleSubmit.fn">
       <div class="mb-6 grid grid-cols-[350px_1fr] gap-6">
-        <UIFormItem class="thumbnail-wrapper mt-0!" path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
+        <UIFormItem class="thumbnail-wrapper mt-0" path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
           <ThumbnailUploader
             class="h-65"
             :thumbnail="form.value.thumbnail"
@@ -169,7 +169,7 @@ const handleSubmit = useMessageHandle(
         </UIFormItem>
 
         <div>
-          <UIFormItem class="mt-0!" path="title" :label="$t({ en: 'Title', zh: '标题' })">
+          <UIFormItem class="mt-0" path="title" :label="$t({ en: 'Title', zh: '标题' })">
             <UITextInput
               v-model:value="form.value.title"
               :placeholder="
@@ -181,7 +181,7 @@ const handleSubmit = useMessageHandle(
             />
           </UIFormItem>
 
-          <UIFormItem class="mt-0!" path="description" :label="$t({ en: 'Description', zh: '描述' })">
+          <UIFormItem class="mt-0" path="description" :label="$t({ en: 'Description', zh: '描述' })">
             <UITextInput
               v-model:value="form.value.description"
               type="textarea"
@@ -195,7 +195,7 @@ const handleSubmit = useMessageHandle(
             />
           </UIFormItem>
 
-          <UIFormItem class="mt-0!" path="order" :label="$t({ en: 'Sort order', zh: '排序优先级' })">
+          <UIFormItem class="mt-0" path="order" :label="$t({ en: 'Sort order', zh: '排序优先级' })">
             <UINumberInput
               v-model:value="form.value.order"
               :placeholder="

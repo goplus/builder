@@ -27,24 +27,26 @@ provide(
 )
 </script>
 
-<style lang="scss" scoped>
-.ui-menu-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+<style lang="scss">
+@layer components {
+  .ui-menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
-.ui-menu-group + .ui-menu-group {
-  margin-top: 13px;
-  position: relative;
-  &::before {
-    content: '';
-    position: absolute;
-    top: -7px;
-    left: 0;
-    width: 100%;
-    height: 0;
-    border-top: 1px solid var(--ui-color-dividing-line-2);
+  .ui-menu-group + .ui-menu-group {
+    margin-top: 13px;
+    position: relative;
+    &::before {
+      content: '';
+      position: absolute;
+      top: -7px;
+      left: 0;
+      width: 100%;
+      height: 0;
+      border-top: 1px solid var(--ui-color-dividing-line-2);
+    }
   }
 }
 </style>

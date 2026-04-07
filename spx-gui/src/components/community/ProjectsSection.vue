@@ -13,7 +13,7 @@
         :to="linkTo"
       >
         <slot name="link"></slot>
-        <UIIcon class="ml-2" style="width: 20px; height: 20px" type="arrowRightSmall" />
+        <UIIcon class="ml-2 w-5 h-5" type="arrowRightSmall" />
       </RouterUILink>
     </header>
     <div

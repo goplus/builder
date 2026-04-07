@@ -31,33 +31,37 @@ const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--ui-corner-icon-color-', uiVariables.color[props.color]))
 </script>
 
+<style lang="scss">
+@layer components {
+  .ui-corner-icon {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+
+    display: flex;
+    width: 24px;
+    height: 24px;
+    justify-content: center;
+    align-items: center;
+
+    color: var(--ui-color-grey-100);
+    border-radius: 50%;
+    background: var(--ui-corner-icon-color-main);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--ui-corner-icon-color-400);
+    }
+    &:active {
+      background-color: var(--ui-corner-icon-color-600);
+    }
+  }
+}
+</style>
+
 <style scoped lang="scss">
-.ui-corner-icon {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-
-  display: flex;
-  width: 24px;
-  height: 24px;
-  justify-content: center;
-  align-items: center;
-
-  color: var(--ui-color-grey-100);
-  border-radius: 50%;
-  background: var(--ui-corner-icon-color-main);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--ui-corner-icon-color-400);
-  }
-  &:active {
-    background-color: var(--ui-corner-icon-color-600);
-  }
-
-  .icon {
-    width: 16px;
-    height: 16px;
-  }
+.ui-corner-icon .icon {
+  width: 16px;
+  height: 16px;
 }
 </style>

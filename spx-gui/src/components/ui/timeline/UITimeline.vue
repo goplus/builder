@@ -7,5 +7,3 @@ import { NTimeline } from 'naive-ui'
     <slot></slot>
   </NTimeline>
 </template>
-
-<style lang="scss" scoped></style>

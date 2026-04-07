@@ -495,19 +495,19 @@ const remixesRet = useQuery(
             <OwnerInfo :owner="project.owner!" />
             <p class="flex items-center gap-2">
               <span class="flex items-center gap-1 text-hint-2" :title="$t(viewCount!.title)">
-                <UIIcon type="eye" style="width: 14px; height: 14px" />
+                <UIIcon class="w-3.5 h-3.5" type="eye" />
                 {{ $t(viewCount!.text) }}
               </span>
               <template v-if="isOwner">
                 <i class="h-3 w-px bg-dividing-line-1"></i>
                 <span class="flex items-center gap-1 text-hint-2" :title="$t(likeCount!.title)">
-                  <UIIcon type="heart" style="width: 14px; height: 14px" />
+                  <UIIcon class="w-3.5 h-3.5" type="heart" />
                   {{ $t(likeCount!.text) }}
                 </span>
               </template>
               <i class="h-3 w-px bg-dividing-line-1"></i>
               <span class="flex items-center gap-1 text-hint-2" :title="$t(remixCount!.title)">
-                <UIIcon type="remix" style="width: 14px; height: 14px" />
+                <UIIcon class="w-3.5 h-3.5" type="remix" />
                 {{ $t(remixCount!.text) }}
               </span>
             </p>

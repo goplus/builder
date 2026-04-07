@@ -29,8 +29,11 @@ const imgStyle = {
   width: '99px'
 }
 </script>
-<style scoped lang="scss">
-.ui-sprite-item {
-  padding: 2px;
+
+<style lang="scss">
+@layer components {
+  .ui-block-item.ui-sprite-item {
+    padding: 2px;
+  }
 }
 </style>

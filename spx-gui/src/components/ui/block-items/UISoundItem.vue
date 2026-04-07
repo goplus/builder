@@ -30,10 +30,17 @@ const props = withDefaults(
 
 const selected = computed(() => props.selectable && props.selectable.selected)
 </script>
+
+<style lang="scss">
+@layer components {
+  .ui-block-item.ui-sound-item {
+    padding: 2px;
+  }
+}
+</style>
+
 <style scoped lang="scss">
 .ui-sound-item {
-  padding: 2px;
-
   .name {
     height: 20px;
   }

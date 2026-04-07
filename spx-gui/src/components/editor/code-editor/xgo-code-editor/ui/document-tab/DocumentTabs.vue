@@ -49,7 +49,7 @@ function handleClose() {
             class="mt-2 flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-1 border-0 bg-transparent text-inherit hover:bg-grey-300"
             @click="handleClose"
           >
-            <UIIcon type="closeCircle" style="width: 20px; height: 20px" />
+            <UIIcon class="w-5 h-5" type="closeCircle" />
           </button>
         </template>
       </UITooltip>

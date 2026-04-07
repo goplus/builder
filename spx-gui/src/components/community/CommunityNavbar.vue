@@ -5,7 +5,7 @@
         :trigger-radar="{ name: 'Project menu', desc: 'Hover to see project options (create/open project)' }"
       >
         <template #trigger>
-          <UIIcon type="plus" style="width: 24px; height: 24px" />
+          <UIIcon class="w-6 h-6" type="plus" />
         </template>
         <UIMenu>
           <NavbarNewProjectItem />

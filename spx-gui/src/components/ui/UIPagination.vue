@@ -116,11 +116,16 @@ const pages = computed(() => {
 })
 </script>
 
-<style lang="scss" scoped>
-.ui-pagination-container {
-  display: flex;
-  gap: 8px;
+<style lang="scss">
+@layer components {
+  .ui-pagination-container {
+    display: flex;
+    gap: 8px;
+  }
 }
+</style>
+
+<style lang="scss" scoped>
 .ui-pagination-button {
   display: flex;
   align-items: center;

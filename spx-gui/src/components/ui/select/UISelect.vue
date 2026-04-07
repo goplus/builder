@@ -76,36 +76,40 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style lang="scss" scoped>
-.ui-select {
-  height: var(--ui-line-height-2);
-  padding: 0px var(--ui-gap-middle);
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2px;
+<style lang="scss">
+@layer components {
+  .ui-select {
+    height: var(--ui-line-height-2);
+    padding: 0px var(--ui-gap-middle);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
 
-  border-radius: var(--ui-border-radius-2);
-  color: var(--ui-color-grey-1000);
-  background: var(--ui-color-grey-300);
-  transition: 0.3s;
+    border-radius: var(--ui-border-radius-2);
+    color: var(--ui-color-grey-1000);
+    background: var(--ui-color-grey-300);
+    transition: 0.3s;
 
-  &:hover {
-    color: var(--ui-color-grey-800);
-    background: var(--ui-color-grey-400);
-  }
-  &:has(:focus) {
-    color: var(--ui-color-grey-1000);
-    background: var(--ui-color-grey-400);
-    box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
-  }
-  &:has(:active) {
-    color: var(--ui-color-grey-1000);
-    background: var(--ui-color-grey-500);
+    &:hover {
+      color: var(--ui-color-grey-800);
+      background: var(--ui-color-grey-400);
+    }
+    &:has(:focus) {
+      color: var(--ui-color-grey-1000);
+      background: var(--ui-color-grey-400);
+      box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
+    }
+    &:has(:active) {
+      color: var(--ui-color-grey-1000);
+      background: var(--ui-color-grey-500);
+    }
   }
 }
+</style>
 
+<style lang="scss" scoped>
 .label {
   flex: 1 1 auto;
   overflow-x: hidden;

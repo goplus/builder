@@ -15,32 +15,37 @@ defineProps<{
 
 const slots = useSlots()
 </script>
+
+<style lang="scss">
+@layer components {
+  .ui-title-container {
+    display: flex;
+    align-items: center;
+    color: var(--ui-color-title);
+    width: 100%;
+    text-align: center;
+    gap: 8px;
+    padding: 0 6px;
+
+    &.medium {
+      font-size: 10px;
+      line-height: 16px;
+    }
+
+    &.large {
+      font-size: 13px;
+      line-height: 20px;
+      height: 32px;
+    }
+  }
+}
+</style>
+
 <style scoped lang="scss">
-.ui-title-container {
-  display: flex;
-  align-items: center;
-  color: var(--ui-color-title);
-  width: 100%;
-  text-align: center;
-  gap: 8px;
-  padding: 0 6px;
-
-  &.medium {
-    font-size: 10px;
-    line-height: 16px;
-  }
-
-  &.large {
-    font-size: 13px;
-    line-height: 20px;
-    height: 32px;
-  }
-
-  & > span {
-    overflow: hidden;
-    flex: 1;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
+.ui-title-container > span {
+  overflow: hidden;
+  flex: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>

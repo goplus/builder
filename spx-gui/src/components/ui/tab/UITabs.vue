@@ -49,8 +49,10 @@ provide(
 )
 </script>
 
-<style lang="scss" scoped>
-.ui-tabs {
-  display: flex;
+<style lang="scss">
+@layer components {
+  .ui-tabs {
+    display: flex;
+  }
 }
 </style>

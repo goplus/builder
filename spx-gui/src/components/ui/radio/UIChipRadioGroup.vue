@@ -30,9 +30,11 @@ provide(
 provide(updateRadioValueKey, updateValue)
 </script>
 
-<style scoped lang="scss">
-.ui-tag-radio-group {
-  display: flex;
-  gap: 12px;
+<style lang="scss">
+@layer components {
+  .ui-tag-radio-group {
+    display: flex;
+    gap: 12px;
+  }
 }
 </style>

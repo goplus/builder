@@ -31,14 +31,16 @@ provide(
 provide(updateRadioValueKey, updateValue)
 </script>
 
-<style scoped lang="scss">
-.ui-tab-radio-group {
-  display: flex;
-  padding: 2px;
-  justify-content: center;
-  align-items: center;
+<style lang="scss">
+@layer components {
+  .ui-tab-radio-group {
+    display: flex;
+    padding: 2px;
+    justify-content: center;
+    align-items: center;
 
-  border-radius: 8px;
-  background: var(--ui-color-grey-400);
+    border-radius: 8px;
+    background: var(--ui-color-grey-400);
+  }
 }
 </style>

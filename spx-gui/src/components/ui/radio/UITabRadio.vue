@@ -22,25 +22,27 @@ const handleClick = () => {
 }
 </script>
 
-<style scoped lang="scss">
-.ui-tab-radio {
-  display: flex;
-  flex: 1 1 0;
-  padding: 5px 8px;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
+<style lang="scss">
+@layer components {
+  .ui-tab-radio {
+    display: flex;
+    flex: 1 1 0;
+    padding: 5px 8px;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
 
-  color: var(--ui-color-hint-1);
-  transition: 0.2s; // TODO: animation for background slide?
+    color: var(--ui-color-hint-1);
+    transition: 0.2s; // TODO: animation for background slide?
 
-  &.active {
-    border-radius: 8px;
-    color: var(--ui-color-title);
-    background: var(--ui-color-grey-100);
-    box-shadow:
-      0px 6px 10px 0px rgba(14, 18, 27, 0.06),
-      0px 2px 4px 0px rgba(14, 18, 27, 0.03);
+    &.active {
+      border-radius: 8px;
+      color: var(--ui-color-title);
+      background: var(--ui-color-grey-100);
+      box-shadow:
+        0 6px 10px 0 rgba(14, 18, 27, 0.06),
+        0 2px 4px 0 rgba(14, 18, 27, 0.03);
+    }
   }
 }
 </style>

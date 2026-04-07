@@ -43,8 +43,10 @@ provide(typeInjectionKey, () => props.type)
 provide(variantInjectionKey, () => props.variant)
 </script>
 
-<style scoped lang="scss">
-.ui-button-group-container {
-  display: flex;
+<style lang="scss">
+@layer components {
+  .ui-button-group-container {
+    display: flex;
+  }
 }
 </style>

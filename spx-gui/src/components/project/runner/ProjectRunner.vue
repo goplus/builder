@@ -378,7 +378,7 @@ defineExpose({
     <iframe ref="runnerIframeRef" class="h-full w-full" frameborder="0" :src="runnerUrl" />
     <UIImg
       v-show="state.type !== 'running'"
-      class="absolute! inset-0"
+      class="absolute inset-0"
       :src="thumbnailUrl"
       :loading="thumbnailUrlLoading"
     />

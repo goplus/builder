@@ -154,12 +154,18 @@ defineProps<{
 }>()
 </script>
 
+<style lang="scss">
+@layer components {
+  .ui-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+  }
+}
+</style>
+
 <style scoped lang="scss">
 .ui-icon {
-  width: 16px;
-  height: 16px;
-  display: flex;
-
   :deep(svg) {
     width: 100%;
     height: 100%;

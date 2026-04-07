@@ -6,7 +6,7 @@
         class="flex h-full cursor-pointer items-center px-5 hover:bg-primary-600"
         to="/tutorials"
       >
-        <UIIcon type="tutorial" class="text-grey-100" style="width: 24px; height: 24px" />
+        <UIIcon class="w-6 h-6 text-grey-100" type="tutorial" />
       </router-link>
     </template>
     <div class="text">{{ $t({ en: 'Tutorials', zh: '教程' }) }}</div>

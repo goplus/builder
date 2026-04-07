@@ -1,6 +1,6 @@
 <template>
   <div class="volume-slider flex items-center gap-2">
-    <UIIcon type="volumeOff" class="text-grey-800" style="width: 24px; height: 24px" />
+    <UIIcon class="w-6 h-6 text-grey-800" type="volumeOff" />
     <UISlider
       color="sound"
       :min="0"
@@ -10,7 +10,7 @@
       :tooltip="false"
       @update:value="(v) => emit('update:value', v)"
     />
-    <UIIcon type="volumeUp" class="text-grey-800" style="width: 24px; height: 24px" />
+    <UIIcon class="w-6 h-6 text-grey-800" type="volumeUp" />
   </div>
 </template>
 <script setup lang="ts">

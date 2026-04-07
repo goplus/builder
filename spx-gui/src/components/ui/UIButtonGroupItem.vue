@@ -34,51 +34,53 @@ const handleClick = () => {
 }
 </script>
 
-<style scoped lang="scss">
-.ui-button-group-item {
-  height: var(--ui-line-height-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+<style lang="scss">
+@layer components {
+  .ui-button-group-item {
+    height: var(--ui-line-height-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 
-  &.variant {
-    &-primary {
-      background: var(--ui-color-grey-300);
-      color: var(--ui-color-grey-1000);
-      &.active {
-        background: var(--ui-color-primary-200);
-        color: var(--ui-color-primary-400);
+    &.variant {
+      &-primary {
+        background: var(--ui-color-grey-300);
+        color: var(--ui-color-grey-1000);
+        &.active {
+          background: var(--ui-color-primary-200);
+          color: var(--ui-color-primary-400);
+        }
+      }
+
+      &-secondary {
+        background-color: #47d8e4;
+        color: var(--ui-color-grey-200);
+        &.active {
+          background-color: var(--ui-color-grey-200);
+          color: var(--ui-color-turquoise-600);
+        }
       }
     }
 
-    &-secondary {
-      background-color: #47d8e4;
-      color: var(--ui-color-grey-200);
-      &.active {
-        background-color: var(--ui-color-grey-200);
-        color: var(--ui-color-turquoise-600);
-      }
+    &.type-icon {
+      min-width: 32px;
     }
-  }
+    &.type-text {
+      padding: 0 12px;
+    }
 
-  &.type-icon {
-    min-width: 32px;
-  }
-  &.type-text {
-    padding: 0 12px;
-  }
+    &.active {
+      cursor: default;
+    }
 
-  &.active {
-    cursor: default;
-  }
+    &:first-child {
+      border-radius: 12px 0 0 12px;
+    }
 
-  &:first-child {
-    border-radius: 12px 0px 0px 12px;
-  }
-
-  &:last-child {
-    border-radius: 0px 12px 12px 0px;
+    &:last-child {
+      border-radius: 0 12px 12px 0;
+    }
   }
 }
 </style>

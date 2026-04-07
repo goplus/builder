@@ -15,7 +15,7 @@ defineProps<{
       'bg-red-100': severity === 'error'
     }"
   >
-    <UIIcon :type="severity" style="margin-top: 3px" />
+    <UIIcon class="mt-0.75" :type="severity" />
     <div class="flex-1">
       <slot></slot>
     </div>

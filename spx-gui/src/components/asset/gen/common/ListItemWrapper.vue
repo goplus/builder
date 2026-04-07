@@ -19,7 +19,7 @@ defineEmits<{
         class="justify-center text-primary-main"
         @click="$emit('add')"
       >
-        <UIIcon style="width: 24px; height: 24px" type="plus" />
+        <UIIcon class="w-6 h-6" type="plus" />
       </UIBlockItem>
     </div>
   </div>

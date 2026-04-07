@@ -69,7 +69,7 @@ onMounted(() => {
     <UIDropdown trigger="click" placement="top">
       <template #trigger>
         <UIBlockItem class="justify-center text-primary-main">
-          <UIIcon type="plus" style="width: 24px; height: 24px" />
+          <UIIcon class="w-6 h-6" type="plus" />
         </UIBlockItem>
       </template>
       <UIMenu>

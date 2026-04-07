@@ -95,7 +95,7 @@ const handleSubmit = useMessageHandle(
   >
     <UIForm :form="form" @submit="handleSubmit.fn">
       <div class="mb-6 grid grid-cols-2 gap-8">
-        <UIFormItem class="mt-0!" path="title" :label="$t({ en: 'Title', zh: '标题' })">
+        <UIFormItem class="mt-0" path="title" :label="$t({ en: 'Title', zh: '标题' })">
           <UITextInput
             v-model:value="form.value.title"
             :placeholder="
@@ -107,7 +107,7 @@ const handleSubmit = useMessageHandle(
           />
         </UIFormItem>
 
-        <UIFormItem class="mt-0!" path="entrypoint" :label="$t({ en: 'Entrypoint', zh: '起始地址' })">
+        <UIFormItem class="mt-0" path="entrypoint" :label="$t({ en: 'Entrypoint', zh: '起始地址' })">
           <UITextInput
             v-model:value="form.value.entrypoint"
             :placeholder="
@@ -121,11 +121,11 @@ const handleSubmit = useMessageHandle(
       </div>
 
       <div class="mb-6 grid grid-cols-2 gap-8">
-        <UIFormItem class="mt-0!" path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
+        <UIFormItem class="mt-0" path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
           <ThumbnailUploader v-model:thumbnail="form.value.thumbnail" class="h-50 w-full" />
         </UIFormItem>
 
-        <UIFormItem class="mt-0!" path="references" :label="$t({ en: 'Reference projects', zh: '参考项目' })">
+        <UIFormItem class="mt-0" path="references" :label="$t({ en: 'Reference projects', zh: '参考项目' })">
           <ProjectReferencesInput v-model:references="form.value.references" class="h-50 w-full" />
         </UIFormItem>
       </div>

@@ -20,40 +20,42 @@ withDefaults(
 )
 </script>
 
-<style scoped lang="scss">
-.ui-modal-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: var(--ui-color-grey-700);
-  cursor: pointer;
-  transition: background-color 0.2s;
+<style lang="scss">
+@layer components {
+  .ui-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--ui-color-grey-700);
+    cursor: pointer;
+    transition: background-color 0.2s;
 
-  &:hover {
-    background-color: var(--ui-color-grey-400);
-  }
-  &:active {
-    background-color: var(--ui-color-grey-500);
-  }
-
-  &.ui-modal-close-size-medium {
-    width: 28px;
-    height: 28px;
-
-    .icon {
-      width: 20px;
-      height: 20px;
+    &:hover {
+      background-color: var(--ui-color-grey-400);
     }
-  }
+    &:active {
+      background-color: var(--ui-color-grey-500);
+    }
 
-  &.ui-modal-close-size-large {
-    width: 32px;
-    height: 32px;
+    &.ui-modal-close-size-medium {
+      width: 28px;
+      height: 28px;
 
-    .icon {
-      width: 24px;
-      height: 24px;
+      .icon {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &.ui-modal-close-size-large {
+      width: 32px;
+      height: 32px;
+
+      .icon {
+        width: 24px;
+        height: 24px;
+      }
     }
   }
 }

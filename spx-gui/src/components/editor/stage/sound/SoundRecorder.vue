@@ -71,7 +71,7 @@
             @click="waveformRecorderRef?.startPlayback()"
           >
             <template #icon>
-              <UIIcon type="play" style="width: 28px; height: 28px" />
+              <UIIcon class="w-7 h-7" type="play" />
             </template>
           </UIButton>
           <span>

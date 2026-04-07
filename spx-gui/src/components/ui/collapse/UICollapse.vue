@@ -34,12 +34,14 @@ provide(collapseCtxKey, { expandedNames })
   </ul>
 </template>
 
-<style lang="scss" scoped>
-.ui-collapse {
-  display: flex;
-  flex-direction: column;
-  list-style: none;
-  padding: 0;
-  margin: 0;
+<style lang="scss">
+@layer components {
+  .ui-collapse {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
 }
 </style>

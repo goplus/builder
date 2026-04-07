@@ -53,44 +53,48 @@ watch(
   </div>
 </template>
 
-<style lang="scss" scoped>
-.ui-detailed-loading {
-  width: 100%;
-  height: 80%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  visibility: hidden;
-  opacity: 0;
-  transition:
-    visibility 0.3s,
-    opacity 0.3s;
-
-  &.cover {
-    position: absolute;
-    left: 0;
-    top: 0;
+<style lang="scss">
+@layer components {
+  .ui-detailed-loading {
     width: 100%;
-    height: 100%;
+    height: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      visibility 0.3s,
+      opacity 0.3s;
 
-    &.mask-semi-transparent {
-      background-color: rgba(36, 41, 47, 0.6);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
+    &.cover {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
 
-      .text {
-        color: var(--ui-color-grey-100);
+      &.mask-semi-transparent {
+        background-color: rgba(36, 41, 47, 0.6);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+
+        .text {
+          color: var(--ui-color-grey-100);
+        }
       }
     }
-  }
 
-  &.visible {
-    visibility: visible;
-    opacity: 1;
+    &.visible {
+      visibility: visible;
+      opacity: 1;
+    }
   }
 }
+</style>
 
+<style lang="scss" scoped>
 .animation {
   flex: 0 0 auto;
   width: 90px;

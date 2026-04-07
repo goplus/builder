@@ -71,7 +71,7 @@ function validateName(name: string) {
         <template #tip>{{ $t(target.inputTip) }}</template>
       </UIFormItem>
       <p v-if="target.warning != null" class="mt-3 flex items-start gap-2 text-yellow-500">
-        <UIIcon style="height: 22px; flex: 0 0 auto" type="warning" />
+        <UIIcon class="h-5.5 flex-none" type="warning" />
         {{ $t(target.warning) }}
       </p>
       <footer class="mt-10 flex justify-end gap-middle">

@@ -51,8 +51,6 @@ const emit = defineEmits<{
 const attachTo = usePopupContainer()
 </script>
 
-<style lang="scss" scoped></style>
-
 <style lang="scss">
 /*
   Now the style is broken with scoped <style>, the `data-v-xxx` is not correctly applied on `NTooltip` element

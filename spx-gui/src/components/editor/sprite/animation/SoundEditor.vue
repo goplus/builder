@@ -19,10 +19,9 @@
         <template #trigger>
           <UIBlockItem
             v-radar="{ name: 'Add sound button', desc: 'Click to add a new sound' }"
-            class="text-primary-main"
-            style="justify-content: center"
+            class="text-primary-main justify-center"
           >
-            <UIIcon type="plus" style="width: 24px; height: 24px" />
+            <UIIcon class="w-6 h-6" type="plus" />
           </UIBlockItem>
         </template>
         <UIMenu>

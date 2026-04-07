@@ -29,8 +29,8 @@ const { fn: handleExitTutorial } = useMessageHandle(
       <div
         class="flex h-7 w-13 cursor-pointer items-center justify-center gap-1 rounded-full bg-primary-200 hover:bg-primary-300"
       >
-        <UIIcon class="text-primary-main" style="width: 16px; height: 16px" type="tutorial" />
-        <UIIcon class="rotate-180 text-primary-main" style="width: 10px; height: 10px" type="arrowAlt" />
+        <UIIcon class="text-primary-main" type="tutorial" />
+        <UIIcon class="w-2.5 h-2.5 rotate-180 text-primary-main" type="arrowAlt" />
       </div>
     </template>
 

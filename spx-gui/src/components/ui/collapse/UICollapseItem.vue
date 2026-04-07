@@ -31,22 +31,26 @@ function handleToggle() {
   </li>
 </template>
 
-<style lang="scss" scoped>
-.ui-collapse-item {
-  display: flex;
-  flex-direction: column;
+<style lang="scss">
+@layer components {
+  .ui-collapse-item {
+    display: flex;
+    flex-direction: column;
 
-  + .ui-collapse-item {
-    &::before {
-      content: '';
-      display: block;
-      height: 1px;
-      background: var(--ui-color-grey-400);
-      margin: 16px 0;
+    + .ui-collapse-item {
+      &::before {
+        content: '';
+        display: block;
+        height: 1px;
+        background: var(--ui-color-grey-400);
+        margin: 16px 0;
+      }
     }
   }
 }
+</style>
 
+<style lang="scss" scoped>
 .header {
   display: flex;
   justify-content: space-between;

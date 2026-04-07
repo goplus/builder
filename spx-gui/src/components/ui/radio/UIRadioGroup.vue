@@ -16,5 +16,3 @@ const emit = defineEmits<{
   'update:value': [string | null]
 }>()
 </script>
-
-<style lang="scss" scoped></style>

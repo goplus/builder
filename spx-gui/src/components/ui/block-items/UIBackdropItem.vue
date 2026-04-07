@@ -29,11 +29,17 @@ withDefaults(
   }
 )
 </script>
-<style scoped lang="scss">
-.ui-backdrop-item {
-  padding: 2px;
-  gap: 2px;
+
+<style lang="scss">
+@layer components {
+  .ui-block-item.ui-backdrop-item {
+    padding: 2px;
+    gap: 2px;
+  }
 }
+</style>
+
+<style scoped lang="scss">
 .img {
   height: 98px;
   width: 132px;

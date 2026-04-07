@@ -20,6 +20,6 @@ defineProps<{
     >
       <slot></slot>
     </span>
-    <UIIcon class="flex-none rotate-90 text-grey-800" style="width: 12px; height: 12px" type="arrowAlt" />
+    <UIIcon type="arrowAlt" class="h-3 w-3 flex-none rotate-90 text-grey-800" />
   </RouterLink>
 </template>

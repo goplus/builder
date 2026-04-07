@@ -60,25 +60,29 @@ const retry = computed(() =>
 )
 </script>
 
-<style scoped lang="scss">
-.ui-error {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+<style lang="scss">
+@layer components {
+  .ui-error {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 
-  &.cover {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    overflow: hidden;
-    opacity: 0.97;
-    background-color: var(--ui-color-grey-100);
+    &.cover {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      opacity: 0.97;
+      background-color: var(--ui-color-grey-100);
+    }
   }
 }
+</style>
 
+<style scoped lang="scss">
 .message {
   margin-top: 12px;
   font-size: 16px;

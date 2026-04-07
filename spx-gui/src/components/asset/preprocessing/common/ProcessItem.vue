@@ -9,7 +9,7 @@
       class="absolute top-5.25 left-8 flex h-6 w-6 items-center justify-center rounded-full bg-green-main text-grey-100 transition-opacity duration-200"
       :class="applied ? 'opacity-100' : 'opacity-0'"
     >
-      <UIIcon color="sprite" type="check" />
+      <UIIcon type="check" />
     </div>
     <p class="w-full px-[1em] py-0.5 text-center text-10/[1.4] text-title">{{ name }}</p>
   </li>

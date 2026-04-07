@@ -71,16 +71,20 @@ const handleContentInput = debounce(() => {
 }, 300)
 </script>
 
+<style lang="scss">
+@layer components {
+  .ui-form-item + .ui-form-item {
+    margin-top: 24px;
+  }
+}
+</style>
+
 <style lang="scss" scoped>
 .ui-form-item :deep(.n-form-item-feedback-wrapper) {
   line-height: 1.57143;
   &:empty {
     display: none;
   }
-}
-
-.ui-form-item + .ui-form-item {
-  margin-top: 24px;
 }
 
 .tip {

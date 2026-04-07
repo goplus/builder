@@ -16,6 +16,7 @@ withDefaults(
 </script>
 
 <style lang="scss" scoped>
+// When the root element is a naive-ui component, this cannot be placed in @layer components; otherwise, its styles will be overridden by naive-ui.
 .ui-divider {
   margin: 0;
 }

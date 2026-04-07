@@ -76,17 +76,23 @@ defineExpose({
 })
 </script>
 
+<style lang="scss">
+@layer components {
+  .ui-button {
+    display: flex;
+    align-items: stretch;
+    background: none;
+    border: none;
+    border-radius: var(--ui-button-radius);
+    height: var(--ui-button-height);
+    cursor: pointer;
+  }
+}
+</style>
+
 <style lang="scss" scoped>
 // base
 .ui-button {
-  display: flex;
-  align-items: stretch;
-  background: none;
-  border: none;
-  border-radius: var(--ui-button-radius);
-  height: var(--ui-button-height);
-  cursor: pointer;
-
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-primary-main);
   --ui-button-shadow-color: var(--ui-color-primary-700);

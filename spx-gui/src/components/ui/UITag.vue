@@ -57,34 +57,39 @@ const slots = useSlots()
   </button>
 </template>
 
+<style lang="scss">
+@layer components {
+  .ui-tag {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    height: var(--ui-tag-height);
+    padding: var(--ui-tag-padding);
+    color: var(--ui-tag-color);
+    border-radius: var(--ui-tag-border-radius);
+    font-size: var(--ui-tag-font-size);
+    line-height: var(--ui-tag-line-height);
+    gap: var(--ui-tag-gap);
+    white-space: nowrap;
+    transition:
+      background-color 0.3s,
+      border-color 0.3s,
+      color 0.3s;
+
+    &:active,
+    &:focus {
+      outline: none;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      --ui-tag-color: var(--ui-color-grey-600);
+    }
+  }
+}
+</style>
 <style lang="scss" scoped>
 .ui-tag {
-  display: flex;
-  width: fit-content;
-  align-items: center;
-  height: var(--ui-tag-height);
-  padding: var(--ui-tag-padding);
-  color: var(--ui-tag-color);
-  border-radius: var(--ui-tag-border-radius);
-  font-size: var(--ui-tag-font-size);
-  line-height: var(--ui-tag-line-height);
-  gap: var(--ui-tag-gap);
-  white-space: nowrap;
-  transition:
-    background-color 0.3s,
-    border-color 0.3s,
-    color 0.3s;
-
-  &:active,
-  &:focus {
-    outline: none;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    --ui-tag-color: var(--ui-color-grey-600);
-  }
-
   .close-icon {
     cursor: pointer;
     width: var(--ui-tag-close-icon-size);

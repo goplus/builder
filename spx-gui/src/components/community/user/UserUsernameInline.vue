@@ -66,7 +66,7 @@ const handleModifyUsername = useMessageHandle(
             <span class="absolute -m-px h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]">
               {{ $t({ en: 'Copy username', zh: '复制用户名' }) }}
             </span>
-            <UIIcon style="width: 14px; height: 14px" type="copyAltFilled" />
+            <UIIcon class="w-3.5 h-3.5" type="copyAltFilled" />
           </button>
         </template>
       </UITooltip>
@@ -82,7 +82,7 @@ const handleModifyUsername = useMessageHandle(
             <span class="absolute -m-px h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]">
               {{ $t({ en: 'Modify username', zh: '修改用户名' }) }}
             </span>
-            <UIIcon style="width: 14px; height: 14px" type="edit" />
+            <UIIcon class="w-3.5 h-3.5" type="edit" />
           </button>
         </template>
       </UITooltip>

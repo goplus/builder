@@ -19,7 +19,7 @@ const emit = defineEmits<{
         class="corner-menu flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-grey-100 text-grey-800 transition-all duration-100 hover:bg-primary-main hover:text-grey-100"
         @click.stop.prevent
       >
-        <UIIcon style="width: 21px; height: 21px" type="more" />
+        <UIIcon class="w-5.25 h-5.25" type="more" />
       </div>
     </template>
     <UIMenu>

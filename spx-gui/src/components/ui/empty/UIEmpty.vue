@@ -75,28 +75,40 @@ const slots = useSlots()
 // TODO: support button for size:large ?
 </script>
 
+<style lang="scss">
+@layer components {
+  .ui-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ui-empty-size-large {
+    width: 100%;
+    flex-direction: column;
+    gap: 12px;
+
+    font-size: 16px;
+    line-height: 26px;
+    color: var(--ui-color-grey-1000);
+  }
+
+  .ui-empty-size-extra-large {
+    flex-direction: column;
+  }
+
+  .ui-empty-size-small,
+  .ui-empty-size-medium {
+    color: var(--ui-color-grey-600);
+    gap: 8px;
+  }
+}
+</style>
+
 <style scoped lang="scss">
-.ui-empty {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ui-empty-size-large {
-  width: 100%;
-  flex-direction: column;
-  gap: 12px;
-
-  font-size: 16px;
-  line-height: 26px;
-  color: var(--ui-color-grey-1000);
-}
-
 .ui-empty-size-extra-large {
-  flex-direction: column;
-
   .text {
     margin-top: 12px;
     color: var(--ui-color-grey-700);
@@ -116,11 +128,5 @@ const slots = useSlots()
       height: 18px;
     }
   }
-}
-
-.ui-empty-size-small,
-.ui-empty-size-medium {
-  color: var(--ui-color-grey-600);
-  gap: 8px;
 }
 </style>

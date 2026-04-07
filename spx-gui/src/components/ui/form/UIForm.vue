@@ -46,5 +46,3 @@ async function handleSubmit() {
   emit('submit')
 }
 </script>
-
-<style lang="scss" scoped></style>

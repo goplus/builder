@@ -30,16 +30,18 @@ const imgStyle = computed(() =>
 )
 </script>
 
-<style lang="scss" scoped>
-.ui-img {
-  position: relative;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  // Disable image smoothing to keep pixelated look, so it looks good for pixel art assets
-  // See details in https://github.com/goplus/builder/issues/2214
-  image-rendering: pixelated;
+<style lang="scss">
+@layer components {
+  .ui-img {
+    position: relative;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // Disable image smoothing to keep pixelated look, so it looks good for pixel art assets
+    // See details in https://github.com/goplus/builder/issues/2214
+    image-rendering: pixelated;
+  }
 }
 </style>

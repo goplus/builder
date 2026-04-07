@@ -9,7 +9,7 @@
         }"
       >
         <template #trigger>
-          <UIIcon type="file" style="width: 24px; height: 24px" />
+          <UIIcon class="w-6 h-6" type="file" />
         </template>
         <UIMenu>
           <UIMenuGroup :disabled="!isOnline">
@@ -75,7 +75,7 @@
         <UITooltip :disabled="undoAction == null">
           <template #trigger>
             <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
-              <UIIcon type="undo" style="width: 24px; height: 24px" />
+              <UIIcon class="w-6 h-6" type="undo" />
             </button>
           </template>
           <span>{{ $t(undoText) }}</span>
@@ -83,7 +83,7 @@
         <UITooltip :disabled="redoAction == null">
           <template #trigger>
             <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
-              <UIIcon type="redo" style="width: 24px; height: 24px" />
+              <UIIcon class="w-6 h-6" type="redo" />
             </button>
           </template>
           <span>{{ $t(redoText) }}</span>

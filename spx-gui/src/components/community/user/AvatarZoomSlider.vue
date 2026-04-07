@@ -39,7 +39,7 @@ function handleValueUpdate(value: number) {
       :disabled="props.disabled || props.value <= props.min"
       @click="handleValueUpdate(props.value - props.buttonStep)"
     >
-      <UIIcon style="width: 20px; height: 20px" type="minus" />
+      <UIIcon class="w-5 h-5" type="minus" />
     </button>
 
     <UISlider
@@ -61,7 +61,7 @@ function handleValueUpdate(value: number) {
       :disabled="props.disabled || props.value >= props.max"
       @click="handleValueUpdate(props.value + props.buttonStep)"
     >
-      <UIIcon style="width: 20px; height: 20px" type="plus" />
+      <UIIcon class="w-5 h-5" type="plus" />
     </button>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem class="ui-editor-sprite-item" :color="color" :active="selected" :interactive="!!selectable">
+  <UIBlockItem :color="color" :active="selected" :interactive="!!selectable">
     <slot name="img" :style="imgStyle"></slot>
     <UIBlockItemTitle size="medium">
       {{ name }}
