@@ -1,7 +1,7 @@
 <template>
   <router-link
     v-radar="{ name: 'Logo link', desc: 'Logo image as link to the homepage' }"
-    class="logo relative mx-6 flex h-full items-center"
+    class="logo relative mx-6 h-full flex items-center"
     to="/"
   >
     <img :src="logoSvg" />

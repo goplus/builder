@@ -98,7 +98,7 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div class="flex w-78 flex-col gap-3">
+  <div class="w-78 flex flex-col gap-3">
     <section class="flex flex-col gap-2">
       <div class="slider-wrapper">
         <h5 class="text-12">

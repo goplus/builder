@@ -1,5 +1,5 @@
 <template>
-  <section ref="wrapperRef" class="flex w-full items-center justify-center [&+&]:mt-5" :style="wrapperStyle">
+  <section ref="wrapperRef" class="w-full flex items-center justify-center [&+&]:mt-5" :style="wrapperStyle">
     <canvas ref="canvasRef" class="bg-bottom-left bg-repeat" :style="{ backgroundImage: `url(${imgBgUrl})` }"></canvas>
   </section>
 </template>

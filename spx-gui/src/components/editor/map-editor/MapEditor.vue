@@ -27,7 +27,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
 
 <template>
   <div class="flex-[1_1_0] flex flex-row gap-middle">
-    <div class="flex w-0 min-w-0 flex-1 items-center justify-center">
+    <div class="flex-1 w-0 min-w-0 flex items-center justify-center">
       <MapViewer :project="project" :selected-sprite="selectedSprite" @update:selected-sprite="handleSpriteSelect" />
     </div>
     <div class="flex-[0_0_400px] flex flex-col gap-middle desktop-large:basis-124">

@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <button
-    class="flex h-4.5 cursor-pointer items-center gap-1 rounded border-none bg-transparent p-0 text-12 text-text hover:text-grey-700"
+    class="h-4.5 cursor-pointer flex items-center gap-1 rounded border-none bg-transparent p-0 text-12 text-text hover:text-grey-700"
   >
     <UIIcon :type="icon" />
     <slot></slot>

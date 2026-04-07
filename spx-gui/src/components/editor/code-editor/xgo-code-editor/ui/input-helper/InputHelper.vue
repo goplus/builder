@@ -99,7 +99,7 @@ function handlePredefinedNameUpdate(name: string | null) {
 </script>
 
 <template>
-  <div class="flex min-w-86 flex-col items-center gap-5 px-4 pt-5 pb-6">
+  <div class="min-w-86 flex flex-col items-center gap-5 px-4 pt-5 pb-6">
     <UITabRadioGroup class="w-78" :value="kind" @update:value="(v) => handleKindUpdate(v as InputKind)">
       <UITabRadio :value="InputKind.InPlace">
         {{ $t(inPlaceValueTitle) }}

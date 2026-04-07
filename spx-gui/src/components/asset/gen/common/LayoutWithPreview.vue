@@ -11,10 +11,10 @@ defineProps<{
 
 <template>
   <div
-    class="layout-with-preview flex min-w-0 flex-1 items-stretch justify-center"
+    class="layout-with-preview flex-[1_1_0] min-w-0 flex items-stretch justify-center"
     :class="{ 'has-preview': hasPreview }"
   >
-    <section class="main-panel flex min-w-0 flex-col gap-6">
+    <section class="main-panel flex flex-col min-w-0 gap-6">
       <slot></slot>
     </section>
 

@@ -291,7 +291,7 @@ const { fn: handleConfirm } = useMessageHandle(
 </script>
 
 <template>
-  <div class="flex h-full w-full flex-col items-center gap-middle">
+  <div class="h-full w-full flex flex-col items-center gap-middle">
     <div ref="wrapper" class="relative h-full w-full flex-1 overflow-hidden rounded-2">
       <CheckerboardBackground class="absolute inset-0" />
       <v-stage v-if="stageConfig != null" :config="stageConfig">

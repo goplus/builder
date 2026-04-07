@@ -1,6 +1,6 @@
 <template>
   <EditorItemDetail :name="backdrop.name" @rename="handleRename">
-    <div class="flex min-h-0 flex-1 items-center justify-center w-full">
+    <div class="w-full flex-[1_1_0] min-h-0 flex items-center justify-center">
       <img v-if="imgSrc != null" class="max-h-full max-w-full rounded-1" :src="imgSrc" />
       <UILoading :visible="imgLoading" cover />
     </div>

@@ -52,7 +52,7 @@
     </ListResultWrapper>
     <footer
       v-show="pageTotal > 1"
-      class="flex flex-[0_0_56px] w-full items-center justify-center rounded-2 border border-grey-400 bg-grey-100"
+      class="flex-[0_0_56px] w-full flex items-center justify-center rounded-2 border border-grey-400 bg-grey-100"
     >
       <UIPagination v-model:current="page" :total="pageTotal" />
     </footer>

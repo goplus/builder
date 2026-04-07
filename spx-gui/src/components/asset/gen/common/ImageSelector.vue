@@ -69,7 +69,7 @@ function handleSelect(index: number) {
     v-radar="{ name: 'Image selector', desc: 'Selector for choosing from generated images' }"
     class="flex flex-col items-center gap-3"
   >
-    <ul class="m-0 flex list-none flex-nowrap items-center content-center justify-center gap-2 p-0">
+    <ul class="m-0 list-none flex flex-nowrap items-center content-center justify-center gap-2 p-0">
       <template v-if="state.status === 'running'">
         <template v-for="idx in 4" :key="idx">
           <slot name="loading-item" :index="idx"></slot>

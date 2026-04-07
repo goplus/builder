@@ -27,7 +27,7 @@ const { fn: handleExitTutorial } = useMessageHandle(
   <UIDropdownWithTooltip placement="top">
     <template #trigger>
       <div
-        class="flex h-7 w-13 cursor-pointer items-center justify-center gap-1 rounded-full bg-primary-200 hover:bg-primary-300"
+        class="h-7 w-13 cursor-pointer flex items-center justify-center gap-1 rounded-full bg-primary-200 hover:bg-primary-300"
       >
         <UIIcon class="text-primary-main" type="tutorial" />
         <UIIcon class="w-2.5 h-2.5 rotate-180 text-primary-main" type="arrowAlt" />

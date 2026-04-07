@@ -4,7 +4,7 @@
   <UICard
     v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
-    class="relative min-w-0 flex-[1_1_0] flex flex-col overflow-visible!"
+    class="relative flex-[1_1_0] min-w-0 flex flex-col overflow-visible!"
   >
     <!--
       TODO: optimize performance for switching between editors, which corresponds to selection change.

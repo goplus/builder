@@ -386,7 +386,7 @@ defineExpose({
       <span>{{ $t(startingProgress?.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
     </UIDetailedLoading>
     <div v-show="state.type === 'failed'" class="absolute inset-0" :style="{ backgroundImage: `url(${errorBgUrl})` }">
-      <div class="flex h-full w-full flex-col items-center justify-center gap-1 bg-black/65 text-grey-100">
+      <div class="h-full w-full flex flex-col items-center justify-center gap-1 bg-black/65 text-grey-100">
         <svg width="81" height="80" viewBox="0 0 81 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
             d="M10.3422 18.9098C10.3422 19.3332 10.5103 19.7392 10.8097 20.0386C11.1091 20.3379 11.5151 20.5061 11.9385 20.5061C12.3619 20.5061 12.7679 20.3379 13.0673 20.0386C13.3666 19.7392 13.5348 19.3332 13.5348 18.9098C13.5348 18.4864 13.3666 18.0804 13.0673 17.781C12.7679 17.4817 12.3619 17.3135 11.9385 17.3135C11.5151 17.3135 11.1091 17.4817 10.8097 17.781C10.5103 18.0804 10.3422 18.4864 10.3422 18.9098Z"

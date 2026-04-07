@@ -16,7 +16,7 @@ const emit = defineEmits<{
   <UIDropdown trigger="click" placement="bottom-end">
     <template #trigger>
       <div
-        class="corner-menu flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-grey-100 text-grey-800 transition-all duration-100 hover:bg-primary-main hover:text-grey-100"
+        class="corner-menu h-8 w-8 cursor-pointer flex items-center justify-center rounded-full bg-grey-100 text-grey-800 transition-all duration-100 hover:bg-primary-main hover:text-grey-100"
         @click.stop.prevent
       >
         <UIIcon class="w-5.25 h-5.25" type="more" />

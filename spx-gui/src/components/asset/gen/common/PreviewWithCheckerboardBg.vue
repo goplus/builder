@@ -8,10 +8,10 @@ import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackg
 </script>
 
 <template>
-  <div class="relative flex-1 overflow-hidden rounded-1 w-full">
+  <div class="relative flex-[1_1_0] overflow-hidden rounded-1 w-full">
     <CheckerboardBackground class="absolute inset-0" />
     <slot>
-      <div class="relative flex h-full w-full items-center justify-center text-hint-2">
+      <div class="relative h-full w-full flex items-center justify-center text-hint-2">
         {{
           $t({
             en: 'Enter details in the lower-left box and click "Generate".',

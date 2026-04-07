@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-grey-300 flex h-full w-full flex-col overflow-y-auto">
+  <div class="bg-grey-300 h-full w-full flex flex-col overflow-y-auto">
     <CommunityNavbar />
     <router-view />
     <CommunityFooter />

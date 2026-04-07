@@ -117,7 +117,7 @@ const handleRemove = useMessageHandle(
         <div class="flex flex-col">
           <div
             v-if="slotProps.data.data.length === 0"
-            class="flex flex-1 flex-col items-center justify-center text-grey-700"
+            class="flex-1 flex flex-col items-center justify-center text-grey-700"
           >
             <p>{{ $t({ en: 'No course series yet', zh: '还没有课程系列' }) }}</p>
             <p class="mt-2 text-body text-grey-600">

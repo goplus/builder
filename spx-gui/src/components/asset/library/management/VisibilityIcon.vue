@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="absolute top-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-grey-100">
+  <div class="absolute top-1.5 left-1.5 h-6 w-6 flex items-center justify-center rounded-full bg-grey-100">
     <i v-if="visibility === Visibility.Public" class="h-4 w-4" :title="$t({ en: 'Public', zh: '公开' })">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path

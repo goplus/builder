@@ -1,5 +1,5 @@
 <template>
-  <div class="flex w-full flex-col gap-large px-5 py-6">
+  <div class="w-full flex flex-col gap-large px-5 py-6">
     <div class="flex flex-col items-center">
       <div class="flex items-center gap-2 text-title">
         <AssetName>{{ sound.name }}</AssetName>
@@ -37,7 +37,7 @@
       />
       <VolumeSlider class="mx-6 flex-[0_1_438px]" :value="gain" @update:value="handleGainUpdate" />
       <div class="flex-[1_1_0]" />
-      <div v-if="editing" class="flex flex-none items-center gap-2">
+      <div v-if="editing" class="flex-none flex items-center gap-2">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
           color="boring"

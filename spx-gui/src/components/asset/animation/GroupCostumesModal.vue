@@ -12,8 +12,8 @@
     :body-style="{ padding: '0' }"
     @update:visible="emit('cancelled')"
   >
-    <div class="flex min-h-119 max-h-150">
-      <ul class="flex flex-1 flex-wrap content-start gap-2 overflow-y-auto pt-5 pr-0 pb-5 pl-6">
+    <div class="min-h-119 max-h-150 flex">
+      <ul class="flex-[1_1_0] flex flex-wrap content-start gap-2 overflow-y-auto pt-5 pr-0 pb-5 pl-6">
         <CostumeItem
           v-for="costume in props.sprite.costumes"
           :key="costume.id"

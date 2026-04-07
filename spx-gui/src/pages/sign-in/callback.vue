@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen items-center justify-center">
+  <div class="h-screen flex items-center justify-center">
     <h4>{{ $t(title) }}</h4>
   </div>
 </template>

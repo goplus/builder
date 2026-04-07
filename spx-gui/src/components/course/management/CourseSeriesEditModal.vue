@@ -223,25 +223,27 @@ const handleSubmit = useMessageHandle(
             <label class="border-b border-dividing-line-2 bg-grey-50 px-4 py-3 text-grey-800">
               {{ $t({ en: 'Available courses', zh: '可选课程' }) }}
             </label>
-            <CourseSelector
-              class="min-h-0 flex-1"
-              :courses="allCourses"
-              :selected-ids="form.value.courseIDs"
-              :loading="coursesLoading"
-              @select="(id) => (form.value.courseIDs = [...form.value.courseIDs, id])"
-            />
+            <div class="flex-1 min-h-0">
+              <CourseSelector
+                :courses="allCourses"
+                :selected-ids="form.value.courseIDs"
+                :loading="coursesLoading"
+                @select="(id) => (form.value.courseIDs = [...form.value.courseIDs, id])"
+              />
+            </div>
           </div>
           <div class="flex flex-col overflow-hidden rounded-2 border border-dividing-line-2">
             <!-- FIXME: `bg-grey-50` is not taking effect -->
             <label class="border-b border-dividing-line-2 bg-grey-50 px-4 py-3 text-grey-800">
               {{ $t({ en: 'Selected courses', zh: '已选课程' }) }}
             </label>
-            <SelectedCoursesList
-              class="min-h-0 flex-1"
-              :course-ids="form.value.courseIDs"
-              :all-courses="allCourses"
-              @update:course-ids="(ids) => (form.value.courseIDs = ids)"
-            />
+            <div class="flex-1 min-h-0">
+              <SelectedCoursesList
+                :course-ids="form.value.courseIDs"
+                :all-courses="allCourses"
+                @update:course-ids="(ids) => (form.value.courseIDs = ids)"
+              />
+            </div>
           </div>
         </div>
         <div v-if="form.validated.courseIDs?.hasError" class="mt-2 text-danger-500">

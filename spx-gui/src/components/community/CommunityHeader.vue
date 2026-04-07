@@ -2,8 +2,8 @@
 
 <template>
   <section class="flex-none bg-grey-100">
-    <CenteredWrapper class="flex h-16 items-center justify-between gap-5">
-      <h1 class="min-w-0 flex-[1_1_0] truncate text-16/6.5 text-title">
+    <CenteredWrapper class="h-16 flex items-center justify-between gap-5">
+      <h1 class="flex-[1_1_0] min-w-0 truncate text-16/6.5 text-title">
         <slot></slot>
       </h1>
       <label class="flex-none">

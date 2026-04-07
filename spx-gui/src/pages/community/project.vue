@@ -363,7 +363,7 @@ const remixesRet = useQuery(
   <CenteredWrapper size="large">
     <CommunityCard
       v-radar="{ name: 'Project content', desc: 'Main content area for project details and runner' }"
-      class="relative mt-6 flex flex-none gap-10 bg-grey-100 p-5"
+      class="relative mt-6 flex-none flex gap-10 bg-grey-100 p-5"
     >
       <UILoading v-if="isLoading" cover mask="solid" />
       <UIError v-else-if="error != null" class="error" :retry="reloadProject">
@@ -393,9 +393,9 @@ const remixesRet = useQuery(
                     class="absolute inset-0 z-2 flex items-center justify-center rounded-2 bg-[rgba(36,41,47,0.6)] backdrop-blur-[5px]"
                   >
                     <template v-if="runnerState === 'initial'">
-                      <div v-if="needsSignInToRun" class="flex h-full w-full items-center justify-center p-6">
+                      <div v-if="needsSignInToRun" class="h-full w-full flex items-center justify-center p-6">
                         <div
-                          class="relative flex w-85 flex-col items-center overflow-visible rounded-[16px] bg-grey-100 px-6 pt-17 pb-6 text-center"
+                          class="relative w-85 flex flex-col items-center overflow-visible rounded-[16px] bg-grey-100 px-6 pt-17 pb-6 text-center"
                           style="box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1)"
                         >
                           <!-- eslint-disable-next-line vue/no-v-html -->
@@ -487,7 +487,7 @@ const remixesRet = useQuery(
           </UITooltip>
         </div>
       </div>
-      <div class="right flex min-w-0 flex-[1_1_456px] flex-col pr-5">
+      <div class="right flex-[1_1_456px] min-w-0 flex flex-col pr-5">
         <template v-if="project != null">
           <h2 class="text-20/[1.4] text-title break-all">{{ project.displayName }}</h2>
           <RemixedFrom v-if="project.remixedFrom != null" class="mt-2" :remixed-from="project.remixedFrom" />

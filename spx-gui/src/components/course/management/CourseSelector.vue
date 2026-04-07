@@ -31,7 +31,7 @@ const availableCourses = computed(() => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <div class="h-full flex flex-col">
     <div class="border-b border-dividing-line-2 p-3">
       <UITextInput v-model:value="searchKeyword" :placeholder="$t({ en: 'Search courses...', zh: '搜索课程...' })">
         <template #prefix>

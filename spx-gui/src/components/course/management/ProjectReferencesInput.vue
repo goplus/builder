@@ -95,7 +95,7 @@ function handleRemove(index: number) {
       </template>
     </UITextInput>
 
-    <div class="flex flex-1 flex-col gap-2 overflow-y-auto rounded-2 border border-grey-400 p-2">
+    <div class="flex-[1_1_0] flex flex-col gap-2 overflow-y-auto rounded-2 border border-grey-400 p-2">
       <template v-if="references.length > 0">
         <div
           v-for="(reference, index) in references"
@@ -110,7 +110,7 @@ function handleRemove(index: number) {
           />
         </div>
       </template>
-      <div v-else class="flex flex-1 items-center justify-center text-grey-700">
+      <div v-else class="flex-1 flex items-center justify-center text-grey-700">
         {{ $t({ en: 'No reference projects added yet', zh: '尚未添加参考项目' }) }}
       </div>
     </div>

@@ -6,7 +6,7 @@ import { UILink } from '@/components/ui'
 <template>
   <footer
     v-if="showLicense"
-    class="flex h-12.5 w-full flex-none items-center justify-center gap-6 text-12 text-grey-700"
+    class="h-12.5 w-full flex-none flex items-center justify-center gap-6 text-12 text-grey-700"
   >
     <span class="flex items-center justify-center">{{ $t({ en: '© 2025 Qiniu Cloud.', zh: '© 2025 七牛云' }) }}</span>
     <UILink

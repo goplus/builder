@@ -31,7 +31,7 @@ const entityMessage = computed(() => entityMessages[props.type])
   <UILoading v-if="loading" />
   <div v-else class="flex flex-col items-center gap-3">
     <template v-if="suggestions.length > 0">
-      <ul class="m-0 flex list-none flex-nowrap items-center justify-center gap-2 p-0">
+      <ul class="m-0 list-none flex flex-nowrap items-center justify-center gap-2 p-0">
         <template v-for="asset in suggestions" :key="asset.id">
           <slot name="item" :asset="asset" :selected="isSelected(asset)" :on-click="() => emit('toggle', asset)"></slot>
         </template>

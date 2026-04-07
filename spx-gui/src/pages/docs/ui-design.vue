@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full w-full flex-col overflow-y-auto bg-grey-500">
+  <div class="h-full w-full flex flex-col overflow-y-auto bg-grey-500">
     <CommunityNavbar />
 
     <CenteredWrapper class="my-7.5 flex flex-col gap-8">

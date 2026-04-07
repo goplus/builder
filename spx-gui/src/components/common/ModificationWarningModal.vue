@@ -48,7 +48,7 @@ function handleCancel() {
         </span>
         <span>{{ $t(props.tip) }}</span>
       </div>
-      <ul class="m-0 flex list-none flex-col gap-0.5 pl-0 text-grey-800">
+      <ul class="m-0 list-none flex flex-col gap-0.5 pl-0 text-grey-800">
         <li v-for="(item, index) in props.items" :key="index">
           {{ $t(item) }}
         </li>

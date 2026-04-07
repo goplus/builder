@@ -98,7 +98,7 @@ const { fn: handleCourseClick } = useMessageHandle(
 </script>
 
 <template>
-  <div class="flex h-full w-full flex-col overflow-y-auto bg-grey-300">
+  <div class="h-full w-full flex flex-col overflow-y-auto bg-grey-300">
     <!-- TODO: Temporarily import the community component -->
     <CommunityNavbar />
 
@@ -109,12 +109,12 @@ const { fn: handleCourseClick } = useMessageHandle(
           {{ $t(courseSeriesError.userMessage) }}
         </UIError>
         <div
-          class="aspect-[1.08] flex-[1_1_200px] overflow-hidden rounded-3 bg-center bg-cover"
+          class="flex-[1_1_200px] aspect-[1.08] overflow-hidden rounded-3 bg-center bg-cover"
           :style="{ backgroundImage: `url(${stageBg})` }"
         >
           <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
         </div>
-        <div class="mr-5 flex flex-[1_1_1000px] flex-col gap-5 overflow-hidden">
+        <div class="flex-[1_1_1000px] mr-5 flex flex-col gap-5 overflow-hidden">
           <template v-if="courseSeries != null">
             <h2 class="overflow-hidden text-20/7 whitespace-nowrap text-ellipsis text-grey-1000">
               {{ courseSeries.title }}
@@ -125,7 +125,7 @@ const { fn: handleCourseClick } = useMessageHandle(
                 name: 'Course series details',
                 desc: 'Course series description'
               }"
-              class="flex-1 overflow-auto"
+              class="flex-[1_1_0] overflow-auto"
             >
               <TextView
                 :text="courseSeries.description"

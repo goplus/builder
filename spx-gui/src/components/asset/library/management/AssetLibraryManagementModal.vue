@@ -195,7 +195,7 @@ const handleRemove = useMessageHandle(
       </UITextInput>
     </template>
     <section class="flex">
-      <div class="min-w-0 w-42 flex-none flex-col gap-3 border-r border-grey-400 p-middle flex">
+      <div class="flex-[0_0_168px] min-w-0 flex-col gap-3 border-r border-grey-400 p-middle flex">
         <UIChip
           v-for="c in categories"
           :key="c.value"
@@ -205,7 +205,7 @@ const handleRemove = useMessageHandle(
           {{ $t(c.message) }}
         </UIChip>
       </div>
-      <main class="flex flex-1 flex-col">
+      <main class="flex-[1_1_0] flex flex-col">
         <h3 class="px-6 pt-5 text-grey-900">{{ $t(category.message) }}</h3>
         <div class="px-6 pt-2 pb-5">
           <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="584">

@@ -2,7 +2,7 @@
   <div class="h-full w-full overflow-hidden" :style="cssVars">
     <section
       v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }"
-      class="flex h-full flex-col overflow-hidden"
+      class="h-full flex flex-col overflow-hidden"
     >
       <PanelHeader :active="selectedSprite != null">
         {{ $t({ en: 'Sprites', zh: '精灵' }) }}

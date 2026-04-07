@@ -24,7 +24,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
       <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
     </div>
     <div
-      class="relative flex h-full flex-col items-center justify-center p-5 text-center"
+      class="relative h-full flex flex-col items-center justify-center p-5 text-center"
       :class="{ 'has-thumbnail': thumbnailUrl != null }"
     >
       <div

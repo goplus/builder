@@ -9,7 +9,7 @@ import CommunityCard from '../../CommunityCard.vue'
     v-radar="{ name: 'User content', desc: 'Main content area for user pages' }"
     class="flex flex-col px-middle py-5"
   >
-    <header class="mb-2 flex h-8 items-center justify-between gap-5">
+    <header class="mb-2 h-8 flex items-center justify-between gap-5">
       <!-- TODO: Layout here shifts when jumping from `/user/:name` to `/user/:name/projects`, which is not ideal -->
       <h2 class="text-16/6.5 text-title">
         <slot name="title"></slot>

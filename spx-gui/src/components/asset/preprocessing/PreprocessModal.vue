@@ -16,7 +16,7 @@
           name: 'Preprocessing method entries',
           desc: 'Sidebar which contains entries for preprocessing methods'
         }"
-        class="flex flex-none flex-col gap-3 border-r border-dividing-line-2 px-4 py-3"
+        class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-4 py-3"
       >
         <ProcessItem
           v-radar="{
@@ -43,7 +43,7 @@
           @click="handleMethodClick(method.value)"
         />
       </div>
-      <div class="min-w-0 flex-1">
+      <div class="flex-[1_1_0] min-w-0">
         <!-- Use `v-show` instead of `v-if` to avoid exception. See details in https://github.com/goplus/builder/issues/2022 -->
         <ProcessDetail
           v-show="activeMethod == null"

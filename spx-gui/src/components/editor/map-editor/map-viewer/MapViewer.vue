@@ -526,7 +526,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       name: 'Map viewer',
       desc: 'View and manipulate the map and sprites on the map. Click on sprite to select it.'
     }"
-    class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-3 bg-center bg-repeat bg-contain"
+    class="relative h-full w-full flex items-center justify-center overflow-hidden rounded-3 bg-center bg-repeat bg-contain"
     :style="{ backgroundImage: `url(${stageBgUrl})` }"
     @mousemove="updateMousePos"
   >

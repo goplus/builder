@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-grey-300 flex h-full w-full flex-col overflow-y-auto">
+  <div class="bg-grey-300 h-full w-full flex flex-col overflow-y-auto">
     <!-- TODO: Temporarily import the community component -->
     <CommunityNavbar />
 
@@ -7,7 +7,7 @@
 
     <CenteredWrapper
       v-radar="{ name: 'Course series list', desc: 'Scroll to view the course series' }"
-      class="my-8 flex flex-1 flex-col items-center"
+      class="my-8 flex-1 flex flex-col items-center"
       :style="{ '--num-in-row': numInRow }"
     >
       <ListResultWrapper :query-ret="courseSeriesQuery" :height="height">

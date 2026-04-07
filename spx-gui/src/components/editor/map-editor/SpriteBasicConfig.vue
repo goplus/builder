@@ -46,7 +46,7 @@ const handleEditCollision = useMessageHandle(
 </script>
 
 <template>
-  <div class="flex h-7 items-center text-title">
+  <div class="h-7 flex items-center text-title">
     <AssetName>{{ sprite.name }}</AssetName>
     <UIIcon
       v-radar="{ name: 'Rename button', desc: 'Button to rename the sprite' }"

@@ -132,7 +132,7 @@ const handleGenerate = useMessageHandle(
             name: 'Expand button',
             desc: 'Button to expand the basic configuration panel for selected sprite'
           }"
-          class="absolute right-3 bottom-0 flex h-6 w-6 cursor-pointer items-center justify-center bg-grey-300 shadow-small"
+          class="absolute right-3 bottom-0 h-6 w-6 cursor-pointer flex items-center justify-center bg-grey-300 shadow-small"
           @click="footerExpanded = true"
         >
           <UIIcon class="rotate-180" type="doubleArrowDown" />

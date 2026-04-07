@@ -41,11 +41,11 @@ defineExpose({ focus })
 
 <template>
   <div class="group/loading" :class="{ loading }" @click="focus">
-    <div class="content flex h-full items-center gap-2.5 bg-grey-100 px-3.5 py-3">
+    <div class="content h-full flex items-center gap-2.5 bg-grey-100 px-3.5 py-3">
       <div v-if="loading" class="dot-loading flex items-center justify-between gap-0.5">
         <div class="dot"></div>
       </div>
-      <div class="input-wrapper relative min-h-5 min-w-0 flex-[1_1_0] text-13/5" :data-value="inputStr">
+      <div class="input-wrapper relative flex-[1_1_0] min-w-0 min-h-5 text-13/5" :data-value="inputStr">
         <textarea
           ref="textareaRef"
           v-model="inputStr"
@@ -57,7 +57,7 @@ defineExpose({ focus })
         ></textarea>
       </div>
       <button
-        class="submit-btn flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border-none p-1.5 outline-none group-[.loading]/loading:hidden"
+        class="submit-btn h-8 w-8 flex-none cursor-pointer flex items-center justify-center rounded-full border-none p-1.5 outline-none group-[.loading]/loading:hidden"
         :class="{ disabled: inputStr.length === 0 }"
         @click="handleSubmit"
       >

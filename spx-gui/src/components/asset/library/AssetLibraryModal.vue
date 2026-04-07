@@ -346,7 +346,7 @@ const title = computed(() => {
     mask-closable
     @update:visible="handleModalClose"
   >
-    <header class="flex h-14 items-center justify-between border-b border-grey-400 px-6">
+    <header class="h-14 flex items-center justify-between border-b border-grey-400 px-6">
       <div class="flex items-center gap-middle">
         <UIButton
           v-if="isGenPhase && backButtonVisible"
@@ -369,7 +369,7 @@ const title = computed(() => {
       <div class="min-h-0 flex-[1_1_0] flex flex-col">
         <div class="flex-1 overflow-y-auto">
           <header
-            class="flex h-45 w-full flex-col items-center justify-center gap-5 bg-center bg-cover bg-no-repeat px-62.5"
+            class="h-45 w-full flex flex-col items-center justify-center gap-5 bg-center bg-cover bg-no-repeat px-62.5"
             :style="headerStyle"
           >
             <UITextInput
@@ -415,7 +415,7 @@ const title = computed(() => {
               </div>
               <ListResultWrapper :query-ret="queryRet" :height="436">
                 <template v-if="SettingsInput != null && assetGen != null && owner === 'all'" #empty>
-                  <div class="mx-auto flex h-109 flex-col items-center gap-6 pt-10">
+                  <div class="mx-auto h-109 flex flex-col items-center gap-6 pt-10">
                     <div class="text-grey-700">
                       <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>
                       <span class="text-grey-1000">{{ $t({ zh: `“${keyword}”`, en: `"${keyword}"` }) }}</span>

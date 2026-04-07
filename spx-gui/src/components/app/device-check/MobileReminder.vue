@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen flex-col items-center justify-center px-15 py-10">
+  <div class="min-h-screen flex flex-col items-center justify-center px-15 py-10">
     <div class="mb-12">
       <img class="h-auto w-60" :src="imgDesktopRequired" alt="Desktop Required Image" />
     </div>

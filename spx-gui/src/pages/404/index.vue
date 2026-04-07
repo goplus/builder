@@ -12,10 +12,10 @@ const router = useRouter()
 <template>
   <div
     v-radar="{ name: '404 page', desc: 'Displayed when a page is not found' }"
-    class="bg-grey-200 flex h-full flex-col"
+    class="bg-grey-200 h-full flex flex-col"
   >
     <CommunityNavbar />
-    <div class="flex w-full flex-1 flex-col items-center justify-center gap-4">
+    <div class="w-full flex-1 flex flex-col items-center justify-center gap-4">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-html="errorSvg"></div>
       <p class="text-20 text-grey-1000 font-semibold">

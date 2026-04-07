@@ -15,7 +15,7 @@
       </UIChipRadioGroup>
     </template>
   </CommunityHeader>
-  <CenteredWrapper class="flex flex-1 flex-col gap-5 py-5">
+  <CenteredWrapper class="flex-[1_1_0] flex flex-col gap-5 py-5">
     <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet">
       <ul class="flex flex-wrap content-start gap-5">
         <ProjectItem v-for="project in slotProps.data" :key="project.id" :project="project" />

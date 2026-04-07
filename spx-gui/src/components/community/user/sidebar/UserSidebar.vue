@@ -11,7 +11,7 @@ defineProps<{
 <template>
   <CommunityCard
     v-radar="{ name: 'User sidebar', desc: 'Sidebar navigation for user pages' }"
-    class="flex w-53 flex-col gap-1 p-2 desktop-large:w-54"
+    class="w-53 flex flex-col gap-1 p-2 desktop-large:w-54"
   >
     <!-- TODO: check text here -->
     <UserSidebarItem

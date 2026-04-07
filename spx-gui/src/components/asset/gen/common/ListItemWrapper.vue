@@ -7,12 +7,12 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="flex w-full flex-col gap-3">
+  <div class="w-full flex flex-col gap-3">
     <header class="text-16/6.5 font-semibold text-grey-1000">
       <slot name="title"></slot>
     </header>
 
-    <div class="flex w-94 flex-row flex-wrap gap-2">
+    <div class="w-94 flex flex-row flex-wrap gap-2">
       <slot></slot>
       <UIBlockItem
         v-radar="{ name: 'Add', desc: 'Click to add a new item' }"

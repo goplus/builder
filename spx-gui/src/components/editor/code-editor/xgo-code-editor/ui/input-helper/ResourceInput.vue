@@ -56,7 +56,7 @@ onMounted(() => {
 <template>
   <ul
     v-if="provider != null && selector != null"
-    class="flex w-94 max-h-70 flex-none flex-wrap content-start gap-2 overflow-y-auto"
+    class="w-94 max-h-70 flex-none flex flex-wrap content-start gap-2 overflow-y-auto"
   >
     <component
       :is="provider.provideResourceItemRenderer()"

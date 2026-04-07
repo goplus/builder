@@ -11,7 +11,7 @@
         <ul class="flex items-center gap-1 rounded-1 bg-grey-100 p-1 shadow-small">
           <li
             v-radar="{ name: 'Edit duration', desc: 'Click to edit animation duraion' }"
-            class="flex h-8 cursor-pointer items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
+            class="h-8 cursor-pointer flex items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
             :class="activeSetting === 'duration' ? 'bg-primary-200 text-primary-main' : ''"
             @click="handleSummaryClick('duration')"
           >
@@ -25,7 +25,7 @@
           </li>
           <li
             v-radar="{ name: 'Edit bound state', desc: 'Click to edit animation bound state' }"
-            class="flex h-8 cursor-pointer items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
+            class="h-8 cursor-pointer flex items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
             :class="activeSetting === 'bound-state' ? 'bg-primary-200 text-primary-main' : ''"
             @click="handleSummaryClick('bound-state')"
           >
@@ -41,7 +41,7 @@
           <li
             v-if="soundEditable"
             v-radar="{ name: 'Edit sound', desc: 'Click to edit animation sound' }"
-            class="flex h-8 cursor-pointer items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
+            class="h-8 cursor-pointer flex items-center gap-1 rounded-1 px-3 text-12 text-text transition-all"
             :class="activeSetting === 'sound' ? 'bg-primary-200 text-primary-main' : ''"
             @click="handleSummaryClick('sound')"
           >

@@ -1,8 +1,8 @@
 <template>
-  <div class="flex h-full min-h-0 flex-col">
+  <div class="h-full min-h-0 flex flex-col">
     <div
       v-if="visible"
-      class="flex flex-none items-center justify-center gap-6 bg-yellow-200 px-6 py-2.75 text-grey-900"
+      class="flex-none flex items-center justify-center gap-6 bg-yellow-200 px-6 py-2.75 text-grey-900"
       role="status"
       aria-live="polite"
     >
@@ -25,7 +25,7 @@
         {{ $t({ en: 'Reload now', zh: '立即刷新' }) }}
       </UIButton>
     </div>
-    <div class="min-h-0 flex-1">
+    <div class="min-h-0 flex-auto">
       <slot></slot>
     </div>
   </div>

@@ -19,9 +19,9 @@ const emit = defineEmits<{
       name: `Preview for '${name}'`,
       desc: `Preview for the generation item '${name}'`
     }"
-    class="flex flex-1 flex-col gap-5 px-5 py-6"
+    class="flex-[1_1_0] flex flex-col gap-5 px-5 py-6"
   >
-    <header class="relative flex flex-none items-center justify-center">
+    <header class="relative flex-none flex items-center justify-center">
       <div class="flex items-center justify-center gap-1">
         <!-- TODO: confirm style details with @qingqing-ux here -->
         <AssetName>{{ name }}</AssetName>
@@ -37,7 +37,7 @@ const emit = defineEmits<{
         <slot name="ops"></slot>
       </div>
     </header>
-    <main class="relative flex flex-1 overflow-hidden">
+    <main class="relative flex-[1_1_0] flex overflow-hidden">
       <slot></slot>
     </main>
   </div>

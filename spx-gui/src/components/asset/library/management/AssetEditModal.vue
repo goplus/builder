@@ -67,7 +67,7 @@ const handleSubmit = useMessageHandle(
           />
           <SoundPreview v-if="assetType === AssetType.Sound" class="h-21 w-28 rounded-1 bg-grey-300" :sound="asset" />
         </div>
-        <div class="flex-1 px-6 pt-5 pb-10">
+        <div class="flex-[1_1_0] px-6 pt-5 pb-10">
           <UIFormItem path="name">
             <UITextInput
               v-model:value="form.value.name"

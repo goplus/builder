@@ -24,7 +24,7 @@ function handleRetry() {
     </div>
     <button
       v-if="retryable"
-      class="ml-6 flex w-fit items-center gap-1 rounded border-none bg-transparent px-0 py-0.75 text-grey-800 transition-colors duration-200 hover:text-grey-700 active:text-grey-900"
+      class="ml-6 w-fit flex items-center gap-1 rounded border-none bg-transparent px-0 py-0.75 text-grey-800 transition-colors duration-200 hover:text-grey-700 active:text-grey-900"
       @click="handleRetry"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">

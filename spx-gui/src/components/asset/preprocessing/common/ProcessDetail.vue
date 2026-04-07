@@ -1,7 +1,7 @@
 <template>
-  <section class="relative flex h-full flex-col gap-2.5 px-5 py-2.5">
+  <section class="relative h-full flex flex-col gap-2.5 px-5 py-2.5">
     <header class="flex">
-      <div class="flex h-8 flex-1 items-center gap-3">
+      <div class="flex-[1_1_0] h-8 flex items-center gap-3">
         <slot name="header"></slot>
       </div>
       <UIButton
@@ -22,7 +22,7 @@
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
     </header>
-    <main class="flex-1 overflow-y-auto rounded-1 bg-grey-300">
+    <main class="flex-[1_1_0] overflow-y-auto rounded-1 bg-grey-300">
       <slot></slot>
     </main>
   </section>

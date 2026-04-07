@@ -85,7 +85,7 @@ const handleUseAsset = useMessageHandle(
       name: 'Sprite generation settings phase',
       desc: 'Generate default costume for the sprite based on settings'
     }"
-    class="phase-settings flex h-full flex-col items-stretch"
+    class="phase-settings h-full flex flex-col items-stretch"
   >
     <LayoutWithPreview :has-preview="hasPreview">
       <SpriteSettingsInput

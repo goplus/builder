@@ -50,7 +50,7 @@
       </div>
       <template v-else>
         <div class="flex flex-col items-center gap-2 text-body">
-          <div class="flex h-14 items-center">
+          <div class="h-14 flex items-center">
             <UIButton shape="circle" size="large" icon="reload" color="boring" @click="resetRecording" />
           </div>
           <span>
@@ -84,7 +84,7 @@
           </span>
         </div>
         <div class="flex flex-col items-center gap-2 text-body">
-          <div class="flex h-14 items-center">
+          <div class="h-14 flex items-center">
             <UIButton shape="circle" size="large" icon="check" color="success" @click="saveRecording" />
           </div>
           <span>

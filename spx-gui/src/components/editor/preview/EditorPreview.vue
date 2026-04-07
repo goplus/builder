@@ -70,7 +70,7 @@
       </template>
     </UICardHeader>
 
-    <div class="flex h-full justify-center overflow-hidden p-3">
+    <div class="h-full flex justify-center overflow-hidden p-3">
       <div
         ref="stageContainerRef"
         class="stage-viewer-container relative h-full w-full overflow-hidden rounded-1 bg-grey-200"

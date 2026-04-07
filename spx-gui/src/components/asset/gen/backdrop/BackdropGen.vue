@@ -84,7 +84,7 @@ const handleUseAsset = useMessageHandle(
 <template>
   <main
     v-radar="{ name: 'Backdrop generation', desc: 'Interface for generating and selecting backdrops' }"
-    class="backdrop-gen flex h-full flex-col items-stretch"
+    class="backdrop-gen h-full flex flex-col items-stretch"
   >
     <LayoutWithPreview :has-preview="hasPreview">
       <BackdropSettingInput
@@ -141,7 +141,7 @@ const handleUseAsset = useMessageHandle(
         <ImagePreview :file="gen.image" />
       </template>
     </LayoutWithPreview>
-    <footer class="flex w-full flex-none justify-end gap-4 px-6 py-5">
+    <footer class="w-full flex-none flex justify-end gap-4 px-6 py-5">
       <UIButton
         v-if="selectedAsset != null"
         v-radar="{

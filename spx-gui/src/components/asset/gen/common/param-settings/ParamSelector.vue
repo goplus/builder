@@ -63,7 +63,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
           name: $t(name),
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
         }"
-        class="flex h-8 items-center justify-center gap-1 rounded-2 border border-grey-400 bg-grey-100 pr-2 pl-1 text-13/5 text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
+        class="h-8 flex items-center justify-center gap-1 rounded-2 border border-grey-400 bg-grey-100 pr-2 pl-1 text-13/5 text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
         :class="[{ 'aspect-square px-0': iconOnly }]"
         :disabled="disabled"
       >
@@ -82,7 +82,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
       {{ $t(tooltipText) }}
     </template>
     <template #dropdown-content>
-      <div class="flex max-w-102 flex-col gap-3 p-4">
+      <div class="max-w-102 flex flex-col gap-3 p-4">
         <div>{{ $t(tips) }}</div>
         <ul class="flex flex-row flex-wrap gap-2">
           <UIBlockItem

@@ -1,17 +1,17 @@
 <template>
-  <section class="flex h-full flex-col overflow-hidden" :style="cssVars">
+  <section class="h-full flex flex-col overflow-hidden" :style="cssVars">
     <!-- TODO: use UICardHeader? -->
     <h4
-      class="flex h-11 w-20 items-center justify-center border-b border-grey-400 text-16"
+      class="h-11 w-20 flex items-center justify-center border-b border-grey-400 text-16"
       :class="active ? 'border-stage-main bg-stage-main text-grey-100' : 'text-title'"
     >
       {{ $t({ en: 'Stage', zh: '舞台' }) }}
     </h4>
-    <main class="flex flex-[1_1_0] flex-col items-center">
+    <main class="flex-[1_1_0] flex flex-col items-center">
       <div class="flex-none p-3">
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
-          class="relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-1 bg-grey-300"
+          class="relative h-14 w-14 cursor-pointer flex items-center justify-center rounded-1 bg-grey-300"
           :class="active ? 'border-2 border-stage-main bg-blue-200 p-0' : 'p-0.5 hover:bg-grey-400'"
           @click="activate"
         >
@@ -26,7 +26,7 @@
               name: 'Backdrops quick entry',
               desc: 'Quick entry to open backdrops management tab in stage editor'
             }"
-            class="flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
             type="button"
             @click="openTab('backdrops')"
           >
@@ -36,7 +36,7 @@
           </button>
           <button
             v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
-            class="flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
             type="button"
             @click="openTab('sounds')"
           >
@@ -49,7 +49,7 @@
               name: 'Widgets quick entry',
               desc: 'Quick entry to open widgets management tab in stage editor'
             }"
-            class="flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
             type="button"
             @click="openTab('widgets')"
           >

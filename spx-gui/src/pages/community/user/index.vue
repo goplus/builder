@@ -29,15 +29,15 @@ watch(user, (currentUser) => {
 </script>
 
 <template>
-  <CenteredWrapper class="flex flex-[1_0_auto] flex-col gap-5 pt-6 pb-10" size="large">
-    <UIError v-if="error != null" class="flex flex-[1_1_0] rounded-2 bg-grey-100" :retry="refetch">
+  <CenteredWrapper class="flex-[1_0_auto] flex flex-col gap-5 pt-6 pb-10" size="large">
+    <UIError v-if="error != null" class="flex-[1_1_0] flex rounded-2 bg-grey-100" :retry="refetch">
       {{ $t(error.userMessage) }}
     </UIError>
     <template v-else-if="user != null">
       <UserHeader :user="user" />
       <div class="flex items-start gap-5">
         <UserSidebar class="flex-none" :username="user.username" />
-        <div class="min-w-0 flex-[1_1_0]">
+        <div class="flex-[1_1_0] min-w-0">
           <router-view />
         </div>
       </div>

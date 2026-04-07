@@ -97,7 +97,7 @@ const { fn: handleStartNextCourse } = useMessageHandle(
         <div>{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
         <div>{{ courseCompleteMessage }}</div>
 
-        <div class="mt-6 flex w-full flex-col gap-5">
+        <div class="mt-6 w-full flex flex-col gap-5">
           <UIButton color="boring" size="large" @click="handleBrowseTutorials">
             {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
           </UIButton>

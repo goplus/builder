@@ -157,11 +157,11 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex flex-none flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
+      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
-          class="flex h-13 w-13 cursor-pointer flex-col items-center justify-center rounded-1 transition-[color,background-color] duration-100"
+          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-1 transition-[color,background-color] duration-100"
           :class="c.id === activeCategoryIdRef ? 'bg-(--category-color) text-grey-100' : 'text-(--category-color)'"
           :style="{ '--category-color': c.color }"
           @click="handleCategoryClick(c.id)"
@@ -171,7 +171,7 @@ function handleCategoryClick(id: string) {
           <p class="mt-0.5 text-center text-10/[1.6]">{{ $t(c.label) }}</p>
         </li>
       </ul>
-      <ul ref="itemsWrapperRef" class="min-w-0 flex-[1_1_0] overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
+      <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
         <li v-for="c in categoriesForItems" :key="c.id" :data-category-id="c.id" class="category-wrapper">
           <section
             v-for="sc in c.subCategories"

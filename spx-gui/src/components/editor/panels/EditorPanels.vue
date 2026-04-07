@@ -1,8 +1,8 @@
 <template>
-  <div v-show="running.mode !== 'debug'" class="flex flex-[1_1_0] gap-middle">
+  <div v-show="running.mode !== 'debug'" class="flex-[1_1_0] flex gap-middle">
     <UICard
       v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
-      class="flex min-w-0 flex-[1_1_0]"
+      class="flex-[1_1_0] min-w-0 flex"
     >
       <SpritesPanel />
     </UICard>

@@ -191,7 +191,7 @@ const handleSubmit = useMessageHandle(
 <template>
   <main
     v-radar="{ name: 'Sprite generation content phase', desc: 'Sprite costume and animation generation' }"
-    class="flex h-full flex-col items-stretch"
+    class="h-full flex flex-col items-stretch"
   >
     <div class="flex-[1_1_0] flex flex-row items-stretch">
       <aside class="w-102 flex-none bg-grey-100 pt-4 border-r border-grey-400 flex flex-col justify-between">

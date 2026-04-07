@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div v-if="!loading && signedInUser == null" class="mr-2 flex h-full items-center px-5 whitespace-nowrap">
+  <div v-if="!loading && signedInUser == null" class="mr-2 h-full flex items-center px-5 whitespace-nowrap">
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       color="secondary"
@@ -11,7 +11,7 @@
   </div>
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
-      <div class="mr-2 flex h-full items-center justify-center px-5 hover:bg-primary-600">
+      <div class="mr-2 h-full flex items-center justify-center px-5 hover:bg-primary-600">
         <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
       </div>
     </template>
