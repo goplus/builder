@@ -9,11 +9,11 @@ const slots = useSlots()
 
 <template>
   <div
-    class="group flex h-8 w-8 cursor-pointer items-center justify-center rounded-[10px] text-center hover:bg-turquoise-200 [&.active]:bg-turquoise-200"
+    class="group flex h-8 w-8 cursor-pointer items-center justify-center rounded-[10px] text-center hover:bg-turquoise-200"
   >
     <UIIcon
       v-if="slots.default == null && icon != null"
-      class="text-grey-1000 group-hover:text-turquoise-500 group-[.active]:text-turquoise-500"
+      class="text-grey-1000 group-hover:text-turquoise-500"
       :type="icon"
     />
     <slot v-else></slot>

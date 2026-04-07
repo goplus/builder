@@ -74,7 +74,7 @@
       <div class="flex">
         <UITooltip :disabled="undoAction == null">
           <template #trigger>
-            <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
+            <button :class="historyBtnClz" :disabled="undoAction == null" @click="handleUndo.fn">
               <UIIcon class="w-6 h-6" type="undo" />
             </button>
           </template>
@@ -82,7 +82,7 @@
         </UITooltip>
         <UITooltip :disabled="redoAction == null">
           <template #trigger>
-            <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
+            <button :class="historyBtnClz" :disabled="redoAction == null" @click="handleRedo.fn">
               <UIIcon class="w-6 h-6" type="redo" />
             </button>
           </template>
@@ -430,20 +430,7 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
       throw new Error(`Unknown editing mode: ${editing.mode}`)
   }
 })
+
+const historyBtnClz =
+  'flex h-full items-center justify-center border-none bg-transparent px-5 text-white outline-none disabled:cursor-not-allowed disabled:text-[#9de6ec] enabled:hover:cursor-pointer enabled:hover:bg-primary-600'
 </script>
-
-<style scoped>
-@reference "../../../app.css";
-
-.history-button {
-  @apply flex h-full items-center justify-center border-none bg-transparent px-5 text-white outline-none;
-}
-
-.history-button:disabled {
-  @apply cursor-not-allowed text-[#9de6ec];
-}
-
-.history-button:enabled:hover {
-  @apply cursor-pointer bg-primary-600;
-}
-</style>

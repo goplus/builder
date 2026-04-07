@@ -135,13 +135,12 @@ const handleSpriteGenClick = useMessageHandle(
   scrollbar-width: thin;
 }
 
+/* Shadow-like effect */
+/* TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem` */
 :deep(.sortable-ghost-item) {
-  /* Shadow-like effect */
-  /* TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem` */
   border-color: var(--ui-color-grey-400) !important;
   background-color: var(--ui-color-grey-400) !important;
 }
-
 :deep(.sortable-ghost-item *) {
   visibility: hidden;
 }

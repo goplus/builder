@@ -1,7 +1,4 @@
 <script lang="ts">
-import { type LocaleMessage } from '@/utils/i18n'
-import type { APIReferenceItem } from '.'
-
 type SubCategory = {
   id: string
   label: LocaleMessage
@@ -24,12 +21,13 @@ function belongs(item: APIReferenceItem, mcid: string, scid: string) {
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
+import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilTaskScheduled } from '@/utils/utils'
 import { UIError } from '@/components/ui'
 import { stringifyDefinitionId, type DefinitionDocumentationItem } from '../../common'
-import type { APIReferenceController } from '.'
+import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
@@ -153,31 +151,35 @@ function handleCategoryClick(id: string) {
       name: 'API References',
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
-    class="api-reference-ui"
+    class="flex min-h-0"
   >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="categories-wrapper">
+      <ul class="flex flex-none flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
-          class="category"
-          :data-active="c.id === activeCategoryIdRef || null"
+          class="flex h-13 w-13 cursor-pointer flex-col items-center justify-center rounded-1 transition-[color,background-color] duration-100"
+          :class="c.id === activeCategoryIdRef ? 'bg-(--category-color) text-grey-100' : 'text-(--category-color)'"
           :style="{ '--category-color': c.color }"
           @click="handleCategoryClick(c.id)"
         >
           <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="icon" v-html="c.icon"></div>
-          <p class="label">{{ $t(c.label) }}</p>
+          <div class="h-6 w-6" v-html="c.icon"></div>
+          <p class="mt-0.5 text-center text-10/[1.6]">{{ $t(c.label) }}</p>
         </li>
       </ul>
-      <ul ref="itemsWrapperRef" class="items-wrapper">
+      <ul ref="itemsWrapperRef" class="min-w-0 flex-[1_1_0] overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
         <li v-for="c in categoriesForItems" :key="c.id" :data-category-id="c.id" class="category-wrapper">
-          <section v-for="sc in c.subCategories" :key="sc.id" class="subcategory-wrapper">
-            <h5 class="title">{{ $t(sc.label) }}</h5>
-            <ul class="items">
+          <section
+            v-for="sc in c.subCategories"
+            :key="sc.id"
+            class="subcategory-wrapper border-b border-dashed border-grey-500"
+          >
+            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-12/1.5 text-hint-2">{{ $t(sc.label) }}</h5>
+            <ul class="flex flex-col gap-middle pb-5">
               <APIReferenceItemComp
                 v-for="item in sc.items"
                 :key="stringifyDefinitionId(item.definition)"
@@ -193,82 +195,7 @@ function handleCategoryClick(id: string) {
 </template>
 
 <style scoped>
-.api-reference-ui {
-  display: flex;
-  justify-content: stretch;
-  min-height: 0;
-}
-
-.categories-wrapper {
-  flex: 0 0 auto;
-  padding: 12px 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border-right: 1px solid var(--ui-color-dividing-line-2);
-}
-
-.category {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--ui-border-radius-1);
-  color: var(--category-color);
-  cursor: pointer;
-  transition: 0.1s;
-}
-
-.category[data-active='true'] {
-  color: var(--ui-color-grey-100);
-  background-color: var(--category-color);
-}
-
-.category .icon {
-  width: 24px;
-  height: 24px;
-}
-
-.category .label {
-  margin-top: 2px;
-  text-align: center;
-  font-size: 10px;
-  line-height: 1.6;
-}
-
-.items-wrapper {
-  flex: 1 1 0;
-  padding: 0 16px 12px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.items-wrapper .subcategory-wrapper {
-  border-bottom: 1px dashed var(--ui-color-grey-500);
-}
-
-.items-wrapper .category-wrapper:last-child .subcategory-wrapper:last-child {
-  padding-bottom: 0;
+.category-wrapper:last-child .subcategory-wrapper:last-child {
   border-bottom: none;
-}
-
-.items-wrapper .title {
-  position: sticky;
-  z-index: 10;
-  top: 0;
-  padding: 12px 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--ui-color-hint-2);
-  background-color: var(--ui-color-grey-100);
-}
-
-.items-wrapper .items {
-  padding-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-middle);
 }
 </style>
