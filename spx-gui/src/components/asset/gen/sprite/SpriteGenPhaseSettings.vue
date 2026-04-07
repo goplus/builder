@@ -141,7 +141,7 @@ const handleUseAsset = useMessageHandle(
         <ImagePreview :file="gen.image" />
       </template>
     </LayoutWithPreview>
-    <footer class="w-full flex-[0_0_auto] px-6 py-5 flex justify-end gap-4">
+    <footer class="w-full flex-none px-6 py-5 flex justify-end gap-4">
       <UIButton
         v-if="selectedAsset != null"
         v-radar="{

@@ -363,7 +363,7 @@ const remixesRet = useQuery(
   <CenteredWrapper size="large">
     <CommunityCard
       v-radar="{ name: 'Project content', desc: 'Main content area for project details and runner' }"
-      class="relative mt-6 flex flex-[0_0_auto] gap-10 bg-grey-100 p-5"
+      class="relative mt-6 flex flex-none gap-10 bg-grey-100 p-5"
     >
       <UILoading v-if="isLoading" cover mask="solid" />
       <UIError v-else-if="error != null" class="error" :retry="reloadProject">

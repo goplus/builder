@@ -8,7 +8,7 @@
       {{ $t({ en: 'Stage', zh: '舞台' }) }}
     </h4>
     <main class="flex flex-[1_1_0] flex-col items-center">
-      <div class="flex-[0_0_auto] p-3">
+      <div class="flex-none p-3">
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
           class="relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-1 bg-grey-300"

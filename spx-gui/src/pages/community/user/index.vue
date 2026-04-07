@@ -36,7 +36,7 @@ watch(user, (currentUser) => {
     <template v-else-if="user != null">
       <UserHeader :user="user" />
       <div class="flex items-start gap-5">
-        <UserSidebar class="flex-[0_0_auto]" :username="user.username" />
+        <UserSidebar class="flex-none" :username="user.username" />
         <div class="min-w-0 flex-[1_1_0]">
           <router-view />
         </div>

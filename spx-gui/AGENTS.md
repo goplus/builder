@@ -87,6 +87,7 @@ When working with backend unique string identifiers such as `username`, project 
 * Outside `src/components/ui/`, use Tailwind as the default for local layout and surface styling.
 * Keep styles local to the page/feature/component. Do not move local styles into `src/app.css`.
 * Prefer readable template utilities and remove redundant local style blocks after migration.
+* Prefer direct template utilities over local `@apply` blocks when the styles are only used by one or two template nodes.
 * If local authored styles are still needed, prefer plain CSS over SCSS.
 
 ### Boundaries and Source of Truth
@@ -107,6 +108,7 @@ When working with backend unique string identifiers such as `username`, project 
 ### When Local CSS/SCSS Is Better
 
 * Keep local CSS/SCSS for `:deep(...)`, generated content, third-party DOM overrides, and complex stateful widgets.
+* Keep a small local CSS rule for structural selectors that are awkward in template logic (for example nested `:last-child` rules) instead of encoding them with hard-to-read dynamic class expressions.
 * Prefer plain local CSS over complex Tailwind descendant/arbitrary selectors for cross-component or slot-content styling.
 * Preserve semantic hook classes used by parent selectors or slots (for example `.corner-menu`, `.course-item-mini`).
 * For newly added components, avoid introducing `:deep(...)` selectors and cross-file hook classes when possible, since they increase maintenance cost.
@@ -114,11 +116,14 @@ When working with backend unique string identifiers such as `username`, project 
 
 ### Practical Migration Notes
 
-* Preserve exact `flex: <grow> <shrink> <basis>` semantics with `flex-[<grow>_<shrink>_<basis>]`.
-* Prefer `:style` for one-off values when clearer than Tailwind arbitrary utilities.
+* Avoid non-equivalent Tailwind simplifications for flex values. In particular, `flex: 1 1 0` is not equivalent to Tailwind `flex-1` (`flex: 1 1 0%`), so do not simplify between them unless the layout behavior has been verified. Likewise, do not simplify `flex: 0 0 auto` to `shrink-0`; use the equivalent `flex-none` when that shorthand is desired.
+* Prefer `style` / `:style` for one-off values when clearer than Tailwind arbitrary utilities. For example, prefer `style="box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1)"` over a long arbitrary utility such as `shadow-[0_24px_32px_-16px_rgba(0,0,0,0.1)]`.
 * For important/non-obvious background assets, prefer TS imports and inline `backgroundImage` binding.
-* For `UIImg`, `UIIcon`, and similar wrappers, verify root-style conflicts; use an outer layout wrapper if needed.
-* In plain `<style scoped>`, flatten `:deep(...)` selectors (for example `.preview :deep(svg)`).
+* For `UIImg`, `UIIcon`, and similar wrappers, verify whether the intended classes/styles should apply to the wrapper root or to an outer layout container. If the wrapper's default root styles would interfere with layout or sizing, prefer an outer wrapper.
+* When extending a base UI component class from another component in the same `@layer components`, prefer a combined selector such as `.ui-block-item.ui-backdrop-item` instead of relying on output order between separate selectors.
+* Keep fixed utility classes in `class`; reserve `:class` for stateful/dynamic parts only.
+* In plain `<style scoped>`, flatten `:deep(...)` selectors (for example `.preview :deep(svg)`) so the final selector structure and specificity stay obvious.
+* Do not use native CSS nesting in plain `<style>` / `<style scoped>` blocks; use flat selectors to avoid browser compatibility issues.
 * Keep single-use values local; only add setup variables when reused/computed or clearly improving readability.
 * Preserve meaningful existing comments/TODOs. For exact local non-token values, keep them local and add a nearby `TODO` for later tokenization review.
 

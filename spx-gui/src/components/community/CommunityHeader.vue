@@ -6,7 +6,7 @@
       <h1 class="min-w-0 flex-[1_1_0] truncate text-16/6.5 text-title">
         <slot></slot>
       </h1>
-      <label class="flex-[0_0_auto]">
+      <label class="flex-none">
         <slot name="options"></slot>
       </label>
     </CenteredWrapper>

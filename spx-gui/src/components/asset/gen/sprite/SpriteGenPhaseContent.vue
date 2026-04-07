@@ -194,7 +194,7 @@ const handleSubmit = useMessageHandle(
     class="flex h-full flex-col items-stretch"
   >
     <div class="flex-[1_1_0] flex flex-row items-stretch">
-      <aside class="w-102 flex-[0_0_auto] bg-grey-100 pt-4 border-r border-grey-400 flex flex-col justify-between">
+      <aside class="w-102 flex-none bg-grey-100 pt-4 border-r border-grey-400 flex flex-col justify-between">
         <div class="flex-[1_1_0] overflow-y-auto px-4 flex flex-col gap-6">
           <ListItemWrapper v-radar="{ name: 'Costume list', desc: 'List of costumes' }" @add="handleAddCostume">
             <template #title>{{ $t({ zh: '造型', en: 'Costume' }) }}</template>
@@ -235,7 +235,7 @@ const handleSubmit = useMessageHandle(
         <AnimationGenPreview v-else-if="selectedAnimation != null" :gen="selectedAnimation" />
       </div>
     </div>
-    <footer class="w-full flex-[0_0_auto] px-6 py-5 flex justify-end gap-4">
+    <footer class="w-full flex-none px-6 py-5 flex justify-end gap-4">
       <UITooltip>
         {{
           $t({

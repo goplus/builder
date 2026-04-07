@@ -1,6 +1,6 @@
 <template>
   <div class="flex-[1_1_0] flex" :style="cssVars">
-    <div class="flex-[0_0_auto] flex flex-col border-r border-dividing-line-2">
+    <div class="flex-none flex flex-col border-r border-dividing-line-2">
       <div
         ref="itemsWrapper"
         v-radar="listRadarInfo"
@@ -18,7 +18,7 @@
         <template #trigger>
           <button
             v-radar="addButtonRadarInfo"
-            class="relative z-1 h-11 flex-[0_0_auto] cursor-pointer flex items-center justify-center rounded-bl-3 border-none bg-(--editor-list-color-main) text-grey-100 hover:bg-(--editor-list-color-400) active:bg-(--editor-list-color-600)"
+            class="relative z-1 h-11 flex-none cursor-pointer flex items-center justify-center rounded-bl-3 border-none bg-(--editor-list-color-main) text-grey-100 hover:bg-(--editor-list-color-400) active:bg-(--editor-list-color-600)"
           >
             <UIIcon type="plus" />
           </button>

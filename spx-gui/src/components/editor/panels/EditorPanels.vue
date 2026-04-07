@@ -11,7 +11,7 @@
         name: 'Stage panel',
         desc: 'Panel for stage of the project, with quick entries to widgets, sounds and backdrops tabs'
       }"
-      class="flex-[0_0_auto]"
+      class="flex-none"
     >
       <StagePanel />
     </UICard>
