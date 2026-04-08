@@ -1,5 +1,6 @@
 import localforage from 'localforage'
-import { ProjectType } from '@/apis/project'
+import { isSupportedProjectType, ProjectType } from '@/apis/project'
+import { DefaultException } from '@/utils/exception'
 import type { PartialMetadata, ProjectSerialized } from '../project'
 import { File, type Files, type Metadata as FileMetadata } from './file'
 
@@ -96,6 +97,12 @@ async function load(key: string, signal?: AbortSignal) {
   if (metadataEx == null) return null
   const { files: fileList, thumbnail: rawThumbnail, ...metadata } = metadataEx
   if (metadata.type == null) metadata.type = ProjectType.Game // Default to Game type for backward compatibility
+  if (!isSupportedProjectType(metadata.type)) {
+    throw new DefaultException({
+      en: `The project type "${metadata.type}" is not supported.`,
+      zh: `该项目类型暂不支持：${metadata.type}。`
+    })
+  }
   const files: Files = {}
   await Promise.all(
     fileList.map(async (path) => {
