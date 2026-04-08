@@ -21,12 +21,18 @@ paths:
       security: []
       parameters:
         - name: follower
-          description: Filter users who are being followed by the specified user.
+          description: |
+            Filter users who are being followed by the specified user.
+
+            Historical usernames are accepted and transparently normalized to the canonical username.
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
         - name: followee
-          description: Filter users who are following the specified user.
+          description: |
+            Filter users who are following the specified user.
+
+            Historical usernames are accepted and transparently normalized to the canonical username.
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
@@ -82,6 +88,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
 
   /user:
     get:
@@ -142,6 +150,8 @@ paths:
       responses:
         "204":
           description: Successfully followed the user.
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
     get:
       tags:
         - Users
@@ -159,6 +169,8 @@ paths:
           description: The user is followed by the authenticated user.
         "404":
           description: The user is not followed by the authenticated user.
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
     delete:
       tags:
         - Users
@@ -174,6 +186,8 @@ paths:
       responses:
         "204":
           description: Successfully unfollowed the user.
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
 
   /project:
     post:
@@ -199,6 +213,8 @@ paths:
                     Full name of the project or project release to remix from.
 
                     **Using the project's full name means remixing the latest release sourced from that project.**
+
+                    Historical project or project release routes return `40901` with a `canonical` payload.
                   oneOf:
                     - $ref: "#/components/schemas/ProjectFullName"
                     - $ref: "#/components/schemas/ProjectReleaseFullName"
@@ -234,6 +250,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
+        "409":
+          description: |
+            Returned when `remixSource` references a historical project or project release route.
+
+            The response includes a `canonical` payload for the route-derived fields in `remixSource`.
+
+            Clients may update the request and resubmit it explicitly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovedResourceError"
 
   /projects/list:
     get:
@@ -271,11 +298,16 @@ paths:
             Filter projects by the owner's username.
 
             Defaults to the authenticated user if not specified. Use `*` to include projects from all users.
+            Historical usernames are accepted and transparently normalized to the canonical username.
           in: query
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
         - name: remixedFrom
-          description: Filter remixed projects by the full name of the source project or project release.
+          description: |
+            Filter remixed projects by the full name of the source project or project release.
+
+            Historical project or project release routes are accepted and transparently normalized to the canonical
+            route.
           in: query
           schema:
             oneOf:
@@ -299,7 +331,10 @@ paths:
           schema:
             $ref: "#/components/schemas/Project/properties/type"
         - name: liker
-          description: Filter projects liked by the specified user.
+          description: |
+            Filter projects liked by the specified user.
+
+            Historical usernames are accepted and transparently normalized to the canonical username.
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
@@ -390,6 +425,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
     patch:
       tags:
         - Projects
@@ -440,6 +477,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
     delete:
       tags:
         - Projects
@@ -461,6 +500,8 @@ paths:
       responses:
         "204":
           description: Successfully deleted the project.
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
 
   /project/{owner}/{name}/view:
     post:
@@ -484,6 +525,8 @@ paths:
       responses:
         "204":
           description: Successfully recorded the project view.
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
 
   /project/{owner}/{name}/liking:
     post:
@@ -507,6 +550,8 @@ paths:
       responses:
         "204":
           description: Successfully liked the project.
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
     get:
       tags:
         - Projects
@@ -530,6 +575,8 @@ paths:
           description: The project is liked by the authenticated user.
         "404":
           description: The project is not liked by the authenticated user.
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
     delete:
       tags:
         - Projects
@@ -551,6 +598,8 @@ paths:
       responses:
         "204":
           description: Successfully unliked the project.
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
 
   /project-release:
     post:
@@ -569,6 +618,8 @@ paths:
                 - description
               properties:
                 projectFullName:
+                  description: |
+                    Historical project routes return `40901` with a `canonical` payload.
                   $ref: "#/components/schemas/ProjectRelease/properties/projectFullName"
                 name:
                   $ref: "#/components/schemas/ProjectRelease/properties/name"
@@ -583,6 +634,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProjectRelease"
+        "409":
+          description: |
+            Returned when `projectFullName` references a historical project route.
+
+            The response includes a `canonical` payload for `projectFullName`.
+
+            Clients may update the request and resubmit it explicitly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovedResourceError"
 
   /project-releases/list:
     get:
@@ -593,7 +655,10 @@ paths:
       security: []
       parameters:
         - name: projectFullName
-          description: Filter releases by the full name of the associated project.
+          description: |
+            Filter releases by the full name of the associated project.
+
+            Historical project routes are accepted and transparently normalized to the canonical route.
           in: query
           schema:
             $ref: "#/components/schemas/ProjectRelease/properties/projectFullName"
@@ -661,6 +726,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProjectRelease"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
 
   /asset:
     post:
@@ -757,6 +824,7 @@ paths:
             Filter assets by owner's username.
 
             Defaults to the authenticated user if not specified. Use `*` to include assets from all users.
+            Historical usernames are accepted and transparently normalized to the canonical username.
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
@@ -1052,6 +1120,7 @@ paths:
             Filter courses by the owner's username.
 
             Defaults to the authenticated user if not specified. Use `*` to include courses from all users.
+            Historical usernames are accepted and transparently normalized to the canonical username.
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
@@ -1245,6 +1314,7 @@ paths:
             Filter course serieses by the owner's username.
 
             Defaults to the authenticated user if not specified. Use `*` to include course series from all users.
+            Historical usernames are accepted and transparently normalized to the canonical username.
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
@@ -2455,6 +2525,37 @@ components:
       bearerFormat: JWT
       description: Access token, in the format `Bearer {token}`.
 
+  responses:
+    MovedPermanently:
+      description: Requested resource moved to its canonical route.
+      headers:
+        Location:
+          description: Canonical route of the requested resource.
+          schema:
+            type: string
+        Cache-Control:
+          description: |
+            Cache policy for canonical redirects.
+
+            `no-cache` requires revalidation before reuse because historical routes may later be reused by different
+            resources.
+          schema:
+            type: string
+            example: no-cache
+    ResourceMoved:
+      description: |
+        Requested resource moved to its canonical route.
+
+        Returned on non-`GET` and non-`HEAD` requests.
+
+        The response includes a `canonical` payload with the canonical route.
+
+        Clients may update the request and resubmit it explicitly.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MovedResourceError"
+
   schemas:
     Model:
       type: object
@@ -2478,6 +2579,67 @@ components:
           format: date-time
           examples:
             - 2006-01-02T15:04:05Z07:00
+
+    MovedResourceCanonical:
+      description: |
+        Canonical route information for a moved resource.
+
+        User routes include `path` and `username`.
+
+        Project routes include `path`, `owner`, and `name`.
+
+        Project release routes include `path`, `owner`, `name`, and `release`.
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          description: Canonical route path of the requested resource.
+          type: string
+          examples:
+            - /project/john/NiuXiaoQi
+        username:
+          description: Canonical username of the moved user route.
+          type: string
+          examples:
+            - john
+        owner:
+          description: Canonical owner username of the moved project or project release route.
+          type: string
+          examples:
+            - john
+        name:
+          description: Canonical project name of the moved project or project release route.
+          type: string
+          examples:
+            - NiuXiaoQi
+        release:
+          description: Canonical release name of the moved project release route.
+          type: string
+          examples:
+            - v1.2.3
+
+    MovedResourceError:
+      description: Error payload for a moved resource route.
+      type: object
+      required:
+        - code
+        - msg
+        - canonical
+      properties:
+        code:
+          description: Stable error code for moved resources.
+          type: integer
+          format: int32
+          enum:
+            - 40901
+        msg:
+          description: Human-readable moved resource error message.
+          type: string
+          enum:
+            - Resource moved
+        canonical:
+          $ref: "#/components/schemas/MovedResourceCanonical"
 
     Visibility:
       description: Visibility setting for resources.
