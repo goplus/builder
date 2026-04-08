@@ -28,7 +28,7 @@
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
-import { exploreProjects, ExploreOrder as Order } from '@/apis/project'
+import { exploreProjects, ExploreOrder as Order, ProjectType } from '@/apis/project'
 import { UIChipRadioGroup, UIChipRadio } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
@@ -55,7 +55,8 @@ const queryRet = useQuery(
     if (order.value === Order.FollowingCreated) await ensureSignedIn()
     return exploreProjects({
       order: order.value,
-      count: maxCount
+      count: maxCount,
+      type: ProjectType.Game
     })
   },
   {

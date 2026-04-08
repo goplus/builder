@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { Visibility, listProject, ownerAll } from '@/apis/project'
+import { ProjectType, Visibility, listProject, ownerAll } from '@/apis/project'
 import { useUser } from '@/stores/user'
 import { UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -32,6 +32,7 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 const queryRet = useQuery(
   () =>
     listProject({
+      type: ProjectType.Game,
       visibility: Visibility.Public,
       owner: ownerAll,
       liker: props.nameInput,

@@ -9,6 +9,8 @@
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { filename, stripExt } from '@/utils/path'
 import { getExtFromMime } from '@/utils/file'
+import { DefaultException } from '@/utils/exception'
+import { isSupportedProjectType, ProjectType } from '@/apis/project'
 import { File as LazyFile, toConfig, type Files as LazyFiles } from './file'
 import type { PartialMetadata, ProjectSerialized } from '../project'
 import { createAIDescriptionFiles, extractAIDescription } from './'
@@ -38,7 +40,14 @@ export async function load(xbpFile: File) {
       const uint8Array = unzipped[path]
       const file = new LazyFile(filename(path), () => Promise.resolve(uint8Array.buffer))
       if (path === metadataFileName) {
-        const m = await toConfig(file)
+        const m = (await toConfig(file)) as PartialMetadata
+        if (m.type == null) m.type = ProjectType.Game // Default to Game type for backward compatibility
+        if (!isSupportedProjectType(m.type)) {
+          throw new DefaultException({
+            en: `The project type "${m.type}" is not supported.`,
+            zh: `该项目类型暂不支持：${m.type}。`
+          })
+        }
         Object.assign(metadata, m)
         return
       }
@@ -61,6 +70,7 @@ export async function save(metadata: PartialMetadata, files: LazyFiles, signal?:
   const zippable: Zippable = {}
 
   const metadataJson = JSON.stringify({
+    type: metadata.type,
     displayName: metadata.displayName,
     description: metadata.description,
     instructions: metadata.instructions,

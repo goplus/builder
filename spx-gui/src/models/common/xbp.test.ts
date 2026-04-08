@@ -1,11 +1,14 @@
 import { describe, it, expect, vi } from 'vitest'
+import { DefaultException } from '@/utils/exception'
 import { Sprite } from '../spx/sprite'
 import { Animation } from '../spx/animation'
 import { Sound } from '../spx/sound'
 import { Costume } from '../spx/costume'
 import { fromText, toText } from './file'
 import { SpxProject } from '../spx/project'
+import { ProjectType } from '@/apis/project'
 import { load, save } from './xbp'
+import { unzip, zip } from '@/utils/zip'
 
 vi.mock('@/apis/ai-description', () => ({
   generateAIDescription: vi.fn().mockResolvedValue('Mocked AI description for testing')
@@ -29,6 +32,21 @@ function makeProject(name?: string, screenshotTaker = async () => mockFile()) {
   project.addSprite(sprite)
   project.bindScreenshotTaker(screenshotTaker)
   return project
+}
+
+async function rewriteBuilderMetadata(
+  projectFile: File,
+  rewrite: (metadata: Record<string, unknown>) => Record<string, unknown>
+) {
+  const arrayBuffer = await projectFile.arrayBuffer()
+  const unzipped = await unzip(new Uint8Array(arrayBuffer))
+  const metadataFileName = 'builder-meta.json'
+  const metadataBytes = unzipped[metadataFileName]
+  expect(metadataBytes).toBeDefined()
+  const metadata = JSON.parse(new TextDecoder().decode(metadataBytes)) as Record<string, unknown>
+  unzipped[metadataFileName] = new TextEncoder().encode(JSON.stringify(rewrite(metadata)))
+  const zipped = await zip(unzipped)
+  return new File([zipped], projectFile.name, { type: projectFile.type })
 }
 
 describe('save', () => {
@@ -64,9 +82,44 @@ describe('save & load', () => {
     const project2 = new SpxProject(undefined, 'test2')
     await project2.load(loaded)
     expect(project2.name).toBe('test2')
+    expect(project2.type).toBe(ProjectType.Game)
     expect(project2.displayName).toBe('Test Project')
     expect(project2.description).toBe('test description')
     expect(project2.instructions).toBe('test instructions')
+  })
+
+  it('should default missing metadata type to game when loading', async () => {
+    const project = makeProject('test')
+    const { metadata, files } = await project.export()
+    const projectFile = await save(metadata, files)
+    const legacyProjectFile = await rewriteBuilderMetadata(projectFile, (builderMetadata) => {
+      const { type: _type, ...rest } = builderMetadata
+      return rest
+    })
+
+    const loaded = await load(legacyProjectFile)
+    const project2 = new SpxProject(undefined, 'test2')
+    await project2.load(loaded)
+
+    expect(project2.type).toBe(ProjectType.Game)
+  })
+
+  it('should reject unsupported metadata type when loading', async () => {
+    const project = makeProject('test')
+    const { metadata, files } = await project.export()
+    const projectFile = await save(metadata, files)
+    const invalidProjectFile = await rewriteBuilderMetadata(projectFile, (builderMetadata) => ({
+      ...builderMetadata,
+      type: 'unknown'
+    }))
+
+    await expect(load(invalidProjectFile)).rejects.toBeInstanceOf(DefaultException)
+    await expect(load(invalidProjectFile)).rejects.toMatchObject({
+      userMessage: {
+        en: 'The project type "unknown" is not supported.',
+        zh: '该项目类型暂不支持：unknown。'
+      }
+    })
   })
 
   it('should save & load project with thumbnail correctly', async () => {
