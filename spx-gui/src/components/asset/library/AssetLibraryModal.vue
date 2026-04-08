@@ -1,3 +1,23 @@
+<script lang="ts">
+const searchRecommendations: Record<AssetType, LocaleMessage[]> = {
+  [AssetType.Sprite]: [
+    { en: 'People', zh: '人物' },
+    { en: 'Animals', zh: '动物' },
+    { en: 'Fantasy', zh: '幻想' },
+    { en: 'UI', zh: '界面' }
+  ],
+  [AssetType.Backdrop]: [
+    { en: 'Grassland', zh: '草地' },
+    { en: 'Desert', zh: '沙漠' },
+    { en: 'Street', zh: '街道' },
+    { en: 'UI', zh: '界面' }
+  ],
+  [AssetType.Sound]: [
+    // TODO: discussion needed
+  ]
+}
+</script>
+
 <script lang="ts" setup>
 import { computed, ref, shallowReactive, shallowRef, watch, type Component, h } from 'vue'
 import {
@@ -14,7 +34,7 @@ import {
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
-import { useI18n } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type SpxProject } from '@/models/spx/project'
@@ -23,7 +43,6 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { addAssetToProject, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
-import { getAssetCategories } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
@@ -116,8 +135,7 @@ const entityMessages = {
 }
 const entityMessage = computed(() => entityMessages[props.type])
 
-// temporary
-const recommended = computed(() => getAssetCategories(props.type))
+const recommended = computed(() => searchRecommendations[props.type])
 const ownerOptions = {
   all: ownerAll,
   personal: undefined
@@ -364,14 +382,14 @@ const title = computed(() => {
 
             <div class="recommended-buttons">
               <UIButton
-                v-for="r in recommended"
-                :key="r.value"
+                v-for="(r, i) in recommended"
+                :key="i"
                 variant="stroke"
                 color="white"
                 size="small"
-                @click="searchInput = [searchInput, $t(r.message)].filter(Boolean).join(' ')"
+                @click="searchInput = $t(r)"
               >
-                {{ $t(r.message) }}
+                {{ $t(r) }}
               </UIButton>
             </div>
           </header>
