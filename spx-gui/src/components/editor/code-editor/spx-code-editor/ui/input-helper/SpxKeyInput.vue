@@ -52,7 +52,7 @@ function handleKeyDown(e: KeyboardEvent) {
   <div class="flex self-stretch flex-col gap-1">
     <UITextInput
       v-radar="{ name: 'Key input', desc: 'Input field for detecting key press' }"
-      class="text-center"
+      style="text-align: center"
       :value="text"
       autofocus
       @keydown="handleKeyDown"

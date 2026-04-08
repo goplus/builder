@@ -82,7 +82,6 @@ function handleRemove(index: number) {
   <div class="flex flex-col gap-3">
     <UITextInput
       v-model:value="projectInput"
-      class="project-input"
       :placeholder="$t({ en: 'e.g., owner/project', zh: '例如：owner/project' })"
       :disabled="handleAdd.isLoading.value"
       @keypress.enter="handleAdd.fn"

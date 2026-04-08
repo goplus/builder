@@ -4,4 +4,3 @@
  * a chunk that first introduces `@layer components` can make later `@layer base` rules win.
  */
 @layer theme, base, components, utilities;
-

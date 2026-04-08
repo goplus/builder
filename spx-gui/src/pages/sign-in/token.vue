@@ -6,7 +6,7 @@
         <UITextInput
           v-model:value="form.value.token"
           v-radar="{ name: 'Token input', desc: 'Input field for authentication token' }"
-          class="h-40 justify-self-stretch"
+          style="justify-self: stretch; height: 160px"
           type="textarea"
           :placeholder="$t({ en: 'Paste token here', zh: '在此粘贴 Token' })"
         />

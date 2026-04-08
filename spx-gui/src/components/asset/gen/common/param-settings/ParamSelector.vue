@@ -64,12 +64,13 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
         }"
         class="h-8 flex items-center justify-center gap-1 rounded-2 border border-grey-400 bg-grey-100 pr-2 pl-1 text-13/5 text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
-        :class="[{ 'aspect-square px-0': iconOnly }]"
+        :class="{ 'aspect-square px-0': iconOnly }"
         :disabled="disabled"
       >
         <UIImg
           v-if="selectedItem.image != null"
-          :class="['h-6 w-6 rounded-[10px]', { 'opacity-40': disabled, 'disabled-like': disabled && showPlaceholder }]"
+          class="h-6 w-6 rounded-[10px]"
+          :class="{ 'opacity-40': disabled, 'disabled-like': disabled && showPlaceholder }"
           :src="selectedItem.image"
           size="cover"
         />

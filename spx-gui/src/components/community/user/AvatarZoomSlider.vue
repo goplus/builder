@@ -43,7 +43,7 @@ function handleValueUpdate(value: number) {
     </button>
 
     <UISlider
-      class="slider min-w-0 flex-[1_1_auto]"
+      class="slider flex-auto min-w-0"
       update-on="input"
       :min="props.min"
       :max="props.max"

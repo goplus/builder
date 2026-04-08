@@ -612,7 +612,7 @@ const remixesRet = useQuery(
               </UIButton>
             </template>
           </div>
-          <UIDivider style="margin: 24px 0 16px" />
+          <UIDivider class="mt-6 mb-4" />
           <UICollapse
             v-radar="{
               name: 'Project details',

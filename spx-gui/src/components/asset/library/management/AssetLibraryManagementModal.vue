@@ -186,7 +186,7 @@ const handleRemove = useMessageHandle(
       <UITextInput
         v-model:value="searchInput"
         v-radar="{ name: 'Search input', desc: 'Input to search library assets' }"
-        class="w-80"
+        style="width: 320px"
         clearable
         :placeholder="$t({ en: 'Search', zh: '搜索' })"
         @keypress.enter="handleSearch"

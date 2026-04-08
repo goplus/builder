@@ -86,7 +86,7 @@ const handleGenerate = useMessageHandle(
     class="relative flex flex-col"
     :style="cssVars"
   >
-    <PanelHeader :active="selectedSprite != null">
+    <PanelHeader class="flex-none" :active="selectedSprite != null">
       {{ $t({ en: 'Sprites', zh: '精灵' }) }}
       <template #add-options>
         <UIMenu>

@@ -8,7 +8,6 @@
     @update:visible="visible = $event"
   >
     <div>{{ $t(content) }}</div>
-
     <footer class="mt-6 flex justify-end gap-3">
       <UIButton
         v-radar="{

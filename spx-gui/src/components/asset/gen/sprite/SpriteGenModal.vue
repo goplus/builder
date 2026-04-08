@@ -87,7 +87,7 @@ const handleModalClose = useMessageHandle(
 
     <SpriteGenComp
       v-if="activeGen != null"
-      class="min-h-0 flex-[1_1_0]"
+      class="flex-[1_1_0] min-h-0"
       :gen="activeGen"
       library-search-enabled
       @collapse="handleGenCollapse"

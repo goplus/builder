@@ -10,11 +10,8 @@ defineProps<{
 </script>
 
 <template>
-  <div
-    class="layout-with-preview flex-[1_1_0] min-w-0 flex items-stretch justify-center"
-    :class="{ 'has-preview': hasPreview }"
-  >
-    <section class="main-panel flex flex-col min-w-0 gap-6">
+  <div class="layout-with-preview" :class="{ 'has-preview': hasPreview }">
+    <section class="main-panel">
       <slot></slot>
     </section>
 
@@ -26,12 +23,21 @@ defineProps<{
 
 <style scoped>
 .layout-with-preview {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
   transition: gap 0.2s ease;
 }
 
 .main-panel {
   width: 584px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
+  gap: 24px;
   transition-property: flex, width, padding;
   transition-duration: 0.2s;
   transition-timing-function: ease;

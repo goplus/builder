@@ -1,5 +1,7 @@
 <template>
-  <NDivider class="ui-divider" :vertical="vertical" />
+  <div>
+    <NDivider style="margin: 0" :vertical="vertical" />
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -14,10 +16,3 @@ withDefaults(
   }
 )
 </script>
-
-<style lang="scss" scoped>
-// When the root element is a naive-ui component, this cannot be placed in @layer components; otherwise, its styles will be overridden by naive-ui.
-.ui-divider {
-  margin: 0;
-}
-</style>

@@ -56,7 +56,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
         <MapBasicConfig v-if="!collapsed" class="p-4" :project="project" />
       </UICard>
       <SpritesPanel
-        class="min-h-0 flex-[1_1_0]"
+        class="flex-auto min-h-0"
         :project="project"
         :selected-sprite="selectedSprite"
         @update:selected-sprite="handleSpriteSelect"

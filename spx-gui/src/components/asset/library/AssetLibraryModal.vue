@@ -374,7 +374,6 @@ const title = computed(() => {
           >
             <UITextInput
               v-model:value="searchInput"
-              class="w-full"
               color="white"
               size="large"
               clearable

@@ -25,7 +25,7 @@
         {{ $t({ en: 'Reload now', zh: '立即刷新' }) }}
       </UIButton>
     </div>
-    <div class="min-h-0 flex-auto">
+    <div class="flex-auto min-h-0">
       <slot></slot>
     </div>
   </div>

@@ -4,7 +4,7 @@
       v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }"
       class="h-full flex flex-col overflow-hidden"
     >
-      <PanelHeader :active="selectedSprite != null">
+      <PanelHeader class="flex-none" :active="selectedSprite != null">
         {{ $t({ en: 'Sprites', zh: '精灵' }) }}
         <template #add-options>
           <UIMenu>
