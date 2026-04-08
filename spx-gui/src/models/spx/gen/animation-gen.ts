@@ -37,6 +37,7 @@ export type AnimationGenInits = {
   id?: string
   settings?: Partial<Omit<AnimationSettings, 'referenceFrameUrl'>>
   referenceCostumeId?: string | null
+  referenceImage?: File | null
   video?: File
   framesConfig?: FramesConfig
   enrichPhase?: Phase<AnimationSettings>
@@ -49,9 +50,16 @@ export type AnimationGenInits = {
 export type RawAnimationGenConfig = Prettify<
   Omit<
     AnimationGenInits,
-    'enrichPhase' | 'generateVideoTask' | 'generateVideoPhase' | 'extractFramesTask' | 'finishPhase' | 'video'
+    | 'enrichPhase'
+    | 'generateVideoTask'
+    | 'generateVideoPhase'
+    | 'extractFramesTask'
+    | 'finishPhase'
+    | 'video'
+    | 'referenceImage'
   > & {
     videoPath?: string
+    referenceImagePath?: string
     enrichPhaseSerialized?: PhaseSerialized<AnimationSettings>
     generateVideoTaskSerialized?: TaskSerialized<TaskType.GenerateAnimationVideo>
     generateVideoPhaseSerialized?: PhaseSerialized<string>
@@ -99,6 +107,7 @@ export class AnimationGen extends Disposable {
       ...inits.settings
     }
     this.referenceCostumeId = inits.referenceCostumeId ?? null
+    this.referenceImage = inits.referenceImage ?? null
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich animation settings', zh: '丰富动画设置' })
     this.generateVideoTask = inits.generateVideoTask ?? null
     this.generateVideoPhase =
@@ -165,6 +174,13 @@ export class AnimationGen extends Disposable {
   }
   setReferenceCostume(costumeId: string | null) {
     this.referenceCostumeId = costumeId
+    if (costumeId != null) this.referenceImage = null
+  }
+
+  referenceImage: File | null = null
+  setReferenceImage(file: File | null) {
+    this.referenceImage = file
+    if (file != null) this.referenceCostumeId = null
   }
 
   get generateVideoState() {
@@ -174,9 +190,9 @@ export class AnimationGen extends Disposable {
     this.setVideo(null)
     this.setFramesConfig(null)
     const video = await this.generateVideoPhase.run(async (reporter) => {
-      const costume = this.referenceCostume
-      if (costume == null) throw new Error('reference costume expected')
-      const referenceFrameUrl = await saveFile(costume.img)
+      const refImg = this.referenceImage ?? this.referenceCostume?.img ?? null
+      if (refImg == null) throw new Error('reference image expected')
+      const referenceFrameUrl = await saveFile(refImg)
       const settings = { ...this.settings, referenceFrameUrl }
       this.generateVideoTask?.tryCancel()
       this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
@@ -293,6 +309,12 @@ export class AnimationGen extends Disposable {
       config.videoPath = videoPath
     }
 
+    if (this.referenceImage != null) {
+      const refPath = `${assetsPath}/referenceImage${extname(this.referenceImage.name)}`
+      files[refPath] = this.referenceImage
+      config.referenceImagePath = refPath
+    }
+
     return [config, files]
   }
 
@@ -308,6 +330,7 @@ export class AnimationGen extends Disposable {
       id,
       settings,
       referenceCostumeId,
+      referenceImagePath,
       framesConfig,
       videoPath,
       enrichPhaseSerialized,
@@ -325,6 +348,10 @@ export class AnimationGen extends Disposable {
     const inits: AnimationGenInits = { id: genId }
     inits.settings = settings
     if (referenceCostumeId != null) inits.referenceCostumeId = referenceCostumeId
+    if (referenceImagePath != null) {
+      const refFile = files[referenceImagePath]
+      if (refFile != null) inits.referenceImage = refFile
+    }
     if (framesConfig != null) inits.framesConfig = framesConfig
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (generateVideoTaskSerialized != null) inits.generateVideoTask = Task.load(generateVideoTaskSerialized)
