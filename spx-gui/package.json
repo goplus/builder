@@ -67,6 +67,7 @@
     "shiki": "^3.2.2",
     "sortablejs": "^1.15.6",
     "tailwindcss": "^4.2.2",
+    "tailwind-merge": "^3.5.0",
     "typescript": "^5.9.3",
     "vite": "^8.0.0",
     "vite-plugin-ejs": "^1.7.0",
