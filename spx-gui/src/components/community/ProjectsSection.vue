@@ -18,7 +18,7 @@
     </header>
     <div
       class="relative mt-2"
-      :class="[isUserContext ? 'mb-4' : 'mb-8', !queryRet.data.value?.length ? 'bg-grey-100 rounded-2' : '']"
+      :class="[isUserContext ? 'mb-4' : 'mb-8', !queryRet.data.value?.length ? 'bg-grey-100 rounded-md' : '']"
     >
       <ListResultWrapper content-type="project" :query-ret="queryRet" :height="254">
         <template v-if="!!slots.empty" #empty="emptyProps">

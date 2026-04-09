@@ -4,7 +4,7 @@
       name: `Project item \u0022${project.owner}/${project.name}\u0022`,
       desc: `Click to ${props.context === 'edit' ? 'edit' : 'view'} the project${operatable ? ', hover for more operations' : ''}`
     }"
-    class="group w-58 flex-none overflow-hidden rounded-2 border border-grey-400 bg-grey-100 transition-all duration-100 hover:shadow-[0px_4px_12px_0px_rgba(36,41,47,0.08)]"
+    class="group w-58 flex-none overflow-hidden rounded-md border border-grey-400 bg-grey-100 transition-all duration-100 hover:shadow-[0px_4px_12px_0px_rgba(36,41,47,0.08)]"
   >
     <RouterLink class="flex flex-col no-underline" :to="to" @click="emit('selected')">
       <div class="relative h-43 w-full bg-center bg-contain" :style="{ backgroundImage: `url(${stageBgUrl})` }">

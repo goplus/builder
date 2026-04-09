@@ -109,7 +109,7 @@ const { fn: handleCourseClick } = useMessageHandle(
           {{ $t(courseSeriesError.userMessage) }}
         </UIError>
         <div
-          class="flex-[1_1_200px] aspect-[1.08] overflow-hidden rounded-3"
+          class="flex-[1_1_200px] aspect-[1.08] overflow-hidden rounded-lg"
           :style="{ backgroundImage: `url(${stageBg})` }"
         >
           <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />

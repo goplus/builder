@@ -22,7 +22,7 @@
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
     </header>
-    <main class="flex-[1_1_0] overflow-y-auto rounded-1 bg-grey-300">
+    <main class="flex-[1_1_0] overflow-y-auto rounded-sm bg-grey-300">
       <slot></slot>
     </main>
   </section>

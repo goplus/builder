@@ -11,7 +11,7 @@
       <div class="flex-none p-3">
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
-          class="relative h-14 w-14 cursor-pointer flex items-center justify-center rounded-1 bg-grey-300"
+          class="relative h-14 w-14 cursor-pointer flex items-center justify-center rounded-sm bg-grey-300"
           :class="active ? 'border-2 border-stage-main bg-blue-200 p-0' : 'p-0.5 hover:bg-grey-400'"
           @click="activate"
         >
@@ -26,7 +26,7 @@
               name: 'Backdrops quick entry',
               desc: 'Quick entry to open backdrops management tab in stage editor'
             }"
-            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-sm border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
             type="button"
             @click="openTab('backdrops')"
           >
@@ -36,7 +36,7 @@
           </button>
           <button
             v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
-            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-sm border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
             type="button"
             @click="openTab('sounds')"
           >
@@ -49,7 +49,7 @@
               name: 'Widgets quick entry',
               desc: 'Quick entry to open widgets management tab in stage editor'
             }"
-            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-1 border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-sm border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
             type="button"
             @click="openTab('widgets')"
           >

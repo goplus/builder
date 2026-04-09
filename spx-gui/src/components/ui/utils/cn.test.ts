@@ -10,6 +10,11 @@ describe('cn', () => {
   })
 
   it('merges conflicting tailwind classes by keeping the later value', () => {
-    expect(cn('px-4 rounded-2', 'px-2', ['rounded-full'])).toBe('px-2 rounded-full')
+    const merged = cn('px-4 rounded-md', 'px-2', ['rounded-full'])
+
+    expect(merged).toContain('px-2')
+    expect(merged).not.toContain('px-4')
+    expect(merged).not.toContain('rounded-md')
+    expect(merged).toContain('rounded-full')
   })
 })

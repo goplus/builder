@@ -18,7 +18,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 <!-- FIXME: `bg-grey-50` is not taking effect (migrated from legacy code `background: var(--ui-color-grey-50)`) -->
 <template>
   <li
-    class="course-series-item relative h-40 w-58 cursor-pointer overflow-hidden rounded-3 border-2 border-grey-300 bg-grey-50 transition-all duration-200 hover:-translate-y-0.5 hover:border-grey-400 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+    class="course-series-item relative h-40 w-58 cursor-pointer overflow-hidden rounded-lg border-2 border-grey-300 bg-grey-50 transition-all duration-200 hover:-translate-y-0.5 hover:border-grey-400 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
   >
     <div v-if="thumbnailUrl != null" class="absolute inset-0">
       <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />

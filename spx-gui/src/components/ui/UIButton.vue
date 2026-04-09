@@ -114,10 +114,14 @@ export function resolveButtonCssVars({ color, disabled, loading }: ButtonCssVarS
   return disabled && !loading ? buttonDisabledVars : buttonColorVars[color]
 }
 
+// Keep text size and text color in different utility groups.
+// `text-15` and `text-(color:...)` can be treated as conflicting `text-*`
+// utilities by `twMerge`, so color/background stay on raw CSS properties.
+// TODO: Remove this special-case once app.css migrates numeric text tokens to semantic text-size tokens.
 const buttonSlots = {
   root: 'group/ui-button flex cursor-pointer items-stretch border-none bg-transparent p-0 disabled:cursor-not-allowed',
   content:
-    'flex h-full flex-[1_1_0] items-center justify-center text-(color:--ui-button-color) bg-(--ui-button-bg-color)',
+    'flex h-full flex-[1_1_0] items-center justify-center [color:var(--ui-button-color)] [background-color:var(--ui-button-bg-color)]',
   icon: 'shrink-0'
 } as const
 
@@ -139,8 +143,8 @@ export const buttonRecipe = createRecipe({
     },
     shape: {
       square: {
-        root: 'rounded-2',
-        content: 'rounded-2'
+        root: 'rounded-md',
+        content: 'rounded-md'
       },
       circle: {
         root: 'rounded-full',

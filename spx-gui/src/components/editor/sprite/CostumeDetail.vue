@@ -1,6 +1,6 @@
 <template>
   <EditorItemDetail :name="costume.name" @rename="emit('rename')">
-    <div class="relative flex-1 overflow-hidden rounded-1 w-full">
+    <div class="relative flex-1 overflow-hidden rounded-sm w-full">
       <CheckerboardBackground class="absolute inset-0" />
       <UIImg class="h-full w-full" :src="imgSrc" :loading="imgLoading" />
     </div>

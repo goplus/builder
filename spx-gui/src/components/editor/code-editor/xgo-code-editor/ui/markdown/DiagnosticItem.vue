@@ -9,7 +9,7 @@ defineProps<{
 
 <template>
   <div
-    class="flex items-start gap-2 self-stretch px-2 py-1.5 rounded-1"
+    class="flex items-start gap-2 self-stretch px-2 py-1.5 rounded-sm"
     :class="{
       'bg-yellow-200': severity === 'warning',
       'bg-red-100': severity === 'error'

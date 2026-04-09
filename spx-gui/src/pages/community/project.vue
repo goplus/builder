@@ -390,7 +390,7 @@ const remixesRet = useQuery(
                   <div
                     v-if="runnerState !== 'running'"
                     :class="runnerState === 'initial' ? 'pointer-events-auto' : 'pointer-events-none'"
-                    class="absolute inset-0 z-2 flex items-center justify-center rounded-2 bg-[rgba(36,41,47,0.6)] backdrop-blur-[5px]"
+                    class="absolute inset-0 z-2 flex items-center justify-center rounded-md bg-[rgba(36,41,47,0.6)]"
                   >
                     <template v-if="runnerState === 'initial'">
                       <div v-if="needsSignInToRun" class="h-full w-full flex items-center justify-center p-6">
@@ -428,8 +428,9 @@ const remixesRet = useQuery(
                         :disabled="projectRunnerRef == null"
                         :loading="handleRun.isLoading.value"
                         @click="handleRun.fn"
-                        >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
                       >
+                        {{ $t({ en: 'Run', zh: '运行' }) }}
+                      </UIButton>
                     </template>
                   </div>
                 </Transition>

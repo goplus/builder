@@ -60,6 +60,14 @@
   --text-*: initial;
   --radius-*: initial;
 
+  /*
+   * Naming note for Tailwind utility authoring:
+   * - Prefer standard Tailwind token names when possible (for example `rounded-md` instead of old project-local names like `rounded-2`).
+   * - `tailwind-merge` understands standard utility groups much better than project-private aliases, so keeping token names aligned here makes class overrides more predictable.
+   * - For values that still need custom CSS variables, prefer staying inside the original utility namespace when practical.
+   *   Example: use `rounded-md` bridged to `--ui-border-radius-2`, or `h-(--ui-line-height-2)` for height.
+   */
+
   /* Mirrors src/components/ui/responsive.ts. */
   --breakpoint-tablet: 48rem;
   --breakpoint-desktop: 80rem;
@@ -219,9 +227,14 @@
   /* Radius and shadow tokens bridged from the UI token layer. */
   --radius-none: 0px;
   --radius-full: 9999px;
-  --radius-1: var(--ui-border-radius-1, 8px);
-  --radius-2: var(--ui-border-radius-2, 12px);
-  --radius-3: var(--ui-border-radius-3, 20px);
+  --radius-sm: var(--ui-border-radius-1, 8px);
+  --radius-md: var(--ui-border-radius-2, 12px);
+  --radius-lg: var(--ui-border-radius-3, 20px);
+
+  /*
+   * The radius aliases above intentionally use Tailwind's standard names (`sm` / `md` / `lg`).
+   * This keeps component classes readable and also lets `tailwind-merge` treat radius overrides as a single conflict group.
+   */
 
   --shadow-none: 0 0 #0000;
   --shadow-small: var(--ui-box-shadow-small, 0px 2px 8px 0px rgba(51, 51, 51, 0.08));
@@ -239,6 +252,8 @@
   --spacing-middle: var(--ui-gap-middle, 16px);
   --spacing-large: var(--ui-gap-large, 24px);
 
+  /* TODO: Replace the numeric `text-*` aliases below with semantic text tokens (for example `text-button`, `text-body`, `text-heading`). */
+  /* TODO: After the semantic migration, audit components that currently avoid `text-*` color utilities because of `tailwind-merge` conflicts. */
   --text-body: var(--ui-font-size-text, 14px);
   --text-body--line-height: 1.57143;
   --text-10: 10px;

@@ -161,7 +161,7 @@ function handleCategoryClick(id: string) {
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
-          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-1 transition-[color,background-color] duration-100"
+          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-sm transition-[color,background-color] duration-100"
           :class="c.id === activeCategoryIdRef ? 'bg-(--category-color) text-grey-100' : 'text-(--category-color)'"
           :style="{ '--category-color': c.color }"
           @click="handleCategoryClick(c.id)"

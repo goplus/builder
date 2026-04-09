@@ -292,7 +292,7 @@ const { fn: handleConfirm } = useMessageHandle(
 
 <template>
   <div class="h-full w-full flex flex-col items-center gap-middle">
-    <div ref="wrapper" class="relative h-full w-full flex-1 overflow-hidden rounded-2">
+    <div ref="wrapper" class="relative h-full w-full flex-1 overflow-hidden rounded-md">
       <CheckerboardBackground class="absolute inset-0" />
       <v-stage v-if="stageConfig != null" :config="stageConfig">
         <v-layer v-if="layerConfig != null" :config="layerConfig">

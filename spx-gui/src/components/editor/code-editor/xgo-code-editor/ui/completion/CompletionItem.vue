@@ -42,7 +42,7 @@ watchEffect(() => {
 <template>
   <li
     ref="wrapperRef"
-    class="min-w-24 max-w-42 cursor-pointer flex items-center rounded-1 p-1.75 text-xs text-grey-1000 hover:bg-grey-300"
+    class="min-w-24 max-w-42 cursor-pointer flex items-center rounded-sm p-1.75 text-xs text-grey-1000 hover:bg-grey-300"
     :class="active ? 'bg-grey-400' : ''"
     :title="item.label"
   >

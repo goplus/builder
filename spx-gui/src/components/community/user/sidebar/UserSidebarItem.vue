@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <RouterLink
-    class="group relative flex items-center rounded-2 p-3 text-text no-underline transition-all duration-100 [&.active]:bg-primary-100 [&.active]:text-primary-main"
+    class="group relative flex items-center rounded-md p-3 text-text no-underline transition-all duration-100 [&.active]:bg-primary-100 [&.active]:text-primary-main"
     exact-active-class="active"
     :to="to"
   >

@@ -1,5 +1,5 @@
 <template>
-  <div class="relative h-full w-full overflow-hidden rounded-2 bg-grey-300">
+  <div class="relative h-full w-full overflow-hidden rounded-md bg-grey-300">
     <WaveformDisplay
       class="h-full w-full"
       :points="waveformData"

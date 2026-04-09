@@ -14,7 +14,7 @@ const [fileUrl, fileUrlLoading] = useFileUrl(() => props.file)
 <template>
   <div
     v-radar="{ name: 'Image preview', desc: 'Preview of the selected generated image' }"
-    class="relative h-full w-full overflow-hidden rounded-1"
+    class="relative h-full w-full overflow-hidden rounded-sm"
   >
     <CheckerboardBackground class="absolute inset-0" />
     <UIImg class="h-full w-full" :src="fileUrl" :loading="fileUrlLoading" size="contain" />

@@ -21,7 +21,7 @@ const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
 <!-- FIXME: `bg-grey-50` is not taking effect -->
 <template>
   <div
-    class="flex items-center rounded-1 border-2 border-transparent bg-grey-50 p-2 transition-all duration-200"
+    class="flex items-center rounded-sm border-2 border-transparent bg-grey-50 p-2 transition-all duration-200"
     :class="{
       'cursor-pointer hover:bg-primary-100': interactive,
       'border-grey-400 bg-grey-100': highlighted,
@@ -29,7 +29,7 @@ const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
     }"
   >
     <slot name="prefix" />
-    <UIImg class="h-9 w-12 shrink-0 rounded-1" :src="thumbnailUrl" size="cover" />
+    <UIImg class="h-9 w-12 shrink-0 rounded-sm" :src="thumbnailUrl" size="cover" />
     <div class="mx-3 flex-1 overflow-hidden">
       <div class="overflow-hidden text-body font-medium text-grey-900 text-ellipsis whitespace-nowrap">
         {{ course.title }}

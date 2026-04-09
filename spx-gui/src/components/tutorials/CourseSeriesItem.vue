@@ -27,7 +27,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
       name: `Course series item \u0022${props.courseSeries.title}\u0022`,
       desc: 'Click to view the course series'
     }"
-    class="relative w-58 overflow-hidden rounded-3 transition-all duration-200 hover:cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+    class="relative w-58 overflow-hidden rounded-lg transition-all duration-200 hover:cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
     :style="{ height: `${courseSeriesItemHeight}px`, backgroundImage: `url(${stageBgUrl})` }"
   >
     <RouterLink :to="`/course-series/${props.courseSeries.id}`">

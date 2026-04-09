@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col">
-    <div class="relative h-40 overflow-hidden rounded-2 bg-grey-300">
+    <div class="relative h-40 overflow-hidden rounded-md bg-grey-300">
       <WaveformRecorder
         v-if="recordingState === 'recording' || recordingState === 'recorded'"
         ref="waveformRecorderRef"

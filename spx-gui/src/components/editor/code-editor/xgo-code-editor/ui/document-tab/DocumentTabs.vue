@@ -46,7 +46,7 @@ function handleClose() {
         {{ $t({ en: 'Close all', zh: '全部关闭' }) }}
         <template #trigger>
           <button
-            class="mt-2 h-10 w-10 flex-none cursor-pointer flex items-center justify-center rounded-1 border-0 bg-transparent text-inherit hover:bg-grey-300"
+            class="mt-2 h-10 w-10 flex-none cursor-pointer flex items-center justify-center rounded-sm border-0 bg-transparent text-inherit hover:bg-grey-300"
             @click="handleClose"
           >
             <UIIcon class="w-5 h-5" type="closeCircle" />

@@ -8,7 +8,7 @@ import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackg
 </script>
 
 <template>
-  <div class="relative flex-[1_1_0] overflow-hidden rounded-1 w-full">
+  <div class="relative flex-[1_1_0] overflow-hidden rounded-sm w-full">
     <CheckerboardBackground class="absolute inset-0" />
     <slot>
       <div class="relative h-full w-full flex items-center justify-center text-hint-2">

@@ -10,7 +10,7 @@ const emit = defineEmits<{
 }>()
 
 const zoomBtnClz =
-  'flex h-10 w-10 cursor-pointer items-center justify-center rounded-2 border-0 bg-transparent p-0 text-text transition-colors hover:bg-grey-300 active:bg-grey-400'
+  'flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-text transition-colors hover:bg-grey-300 active:bg-grey-400'
 </script>
 
 <template>

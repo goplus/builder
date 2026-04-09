@@ -35,7 +35,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 
 <template>
   <div
-    class="cursor-pointer flex items-center justify-center overflow-hidden rounded-2 border border-dashed border-grey-400 transition-[border-color,background-color] duration-300 hover:border-primary-main hover:bg-grey-400"
+    class="cursor-pointer flex items-center justify-center overflow-hidden rounded-md border border-dashed border-grey-400 transition-[border-color,background-color] duration-300 hover:border-primary-main hover:bg-grey-400"
     @click="handleUpload.fn"
   >
     <UILoading v-if="handleUpload.isLoading.value" />

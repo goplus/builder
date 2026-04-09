@@ -7,8 +7,8 @@ describe('buttonRecipe', () => {
     const classes = buttonRecipe()
 
     expect(classes.root()).toContain('pb-1')
-    expect(classes.content()).toContain('bg-(--ui-button-bg-color)')
-    expect(classes.content()).toContain('text-(color:--ui-button-color)')
+    expect(classes.content()).toContain('[color:var(--ui-button-color)]')
+    expect(classes.content()).toContain('[background-color:var(--ui-button-bg-color)]')
     expect(classes.icon()).toContain('size-[14px]')
   })
 
@@ -24,7 +24,9 @@ describe('buttonRecipe', () => {
     expect(loadingClasses.root()).toContain('pb-0')
     expect(loadingClasses.content()).toContain('shadow-none')
     expect(disabledClasses.root()).toContain('enabled:active:pb-0')
-    expect(disabledClasses.content()).toContain('bg-(--ui-button-bg-color)')
+    expect(resolveButtonCssVars({ color: 'primary', disabled: true, loading: false })['--ui-button-bg-color']).toBe(
+      'var(--ui-color-disabled-bg)'
+    )
   })
 
   it('lets root extras stay at the layout layer', () => {
@@ -44,7 +46,7 @@ describe('buttonRecipe', () => {
     expect(merged).toContain('h-9')
     expect(merged).toContain('rounded-full')
     expect(merged).not.toContain('h-(--ui-line-height-2)')
-    expect(merged).not.toContain('rounded-2')
+    expect(merged).not.toContain('rounded-md')
   })
 
   it('accepts booleans for boolean-like variants', () => {

@@ -12,7 +12,7 @@ function handleJoin() {
 <template>
   <CommunityCard class="p-3">
     <div
-      class="relative rounded-2 bg-[#f0faff] bg-no-repeat px-13 pt-12 pb-12.5 text-[#073156]"
+      class="relative rounded-md bg-[#f0faff] bg-no-repeat px-13 pt-12 pb-12.5 text-[#073156]"
       :style="{ backgroundImage: `url(${bgSvg})`, backgroundPosition: 'center right 54px' }"
     >
       <h1 class="text-24">

@@ -23,7 +23,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 <template>
   <li
     v-radar="{ name: `Course item \u0022${props.course.title}\u0022`, desc: 'Click to start the course' }"
-    class="relative w-58 overflow-hidden rounded-3 transition-all hover:cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+    class="relative w-58 overflow-hidden rounded-lg transition-all hover:cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
     :style="{ height: `${courseItemHeight}px` }"
   >
     <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />

@@ -209,9 +209,13 @@ async function addAssetWithPartialData({
     <UIForm v-else :form="form" @submit="handleSubmit.fn">
       <main class="flex">
         <div class="flex-none px-6 py-5">
-          <BackdropPreview v-if="model instanceof Backdrop" class="h-21 w-28 rounded-1 bg-grey-300" :backdrop="model" />
-          <SpritePreview v-if="model instanceof Sprite" class="h-21 w-28 rounded-1 bg-grey-300" :sprite="model" />
-          <SoundPreview v-if="model instanceof Sound" class="h-21 w-28 rounded-1 bg-grey-300" :sound="model" />
+          <BackdropPreview
+            v-if="model instanceof Backdrop"
+            class="h-21 w-28 rounded-sm bg-grey-300"
+            :backdrop="model"
+          />
+          <SpritePreview v-if="model instanceof Sprite" class="h-21 w-28 rounded-sm bg-grey-300" :sprite="model" />
+          <SoundPreview v-if="model instanceof Sound" class="h-21 w-28 rounded-sm bg-grey-300" :sound="model" />
         </div>
         <div class="flex-[1_1_0] px-6 pt-5 pb-10">
           <UIFormItem path="name">

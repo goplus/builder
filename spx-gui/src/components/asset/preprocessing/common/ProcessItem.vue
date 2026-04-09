@@ -1,7 +1,7 @@
 <template>
   <li class="relative h-fit w-22 cursor-pointer flex flex-col items-center">
     <UIImg
-      class="h-16.5 w-22 rounded-1"
+      class="h-16.5 w-22 rounded-sm"
       :style="active ? { boxShadow: 'inset 0 0 0 2px var(--ui-color-primary-main)' } : null"
       :src="imgSrc"
     />

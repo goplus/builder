@@ -30,7 +30,7 @@ watch(user, (currentUser) => {
 
 <template>
   <CenteredWrapper class="flex-[1_0_auto] flex flex-col gap-5 pt-6 pb-10" size="large">
-    <UIError v-if="error != null" class="flex-[1_1_0] flex rounded-2 bg-grey-100" :retry="refetch">
+    <UIError v-if="error != null" class="flex-[1_1_0] flex rounded-md bg-grey-100" :retry="refetch">
       {{ $t(error.userMessage) }}
     </UIError>
     <template v-else-if="user != null">

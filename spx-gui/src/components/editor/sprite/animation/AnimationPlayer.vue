@@ -1,7 +1,7 @@
 <template>
   <div
     v-radar="{ name: 'Animation player', desc: 'Provides preview for animation' }"
-    class="relative overflow-hidden rounded-1"
+    class="relative overflow-hidden rounded-sm"
   >
     <CheckerboardBackground class="absolute inset-0" />
     <CostumesPlayer ref="costumesPlayerRef" class="absolute h-full w-full" />

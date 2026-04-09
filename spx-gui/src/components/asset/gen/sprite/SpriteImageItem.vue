@@ -33,7 +33,7 @@ const loading = computed(() => props.loading || fileLoading.value)
     }"
     class="flex items-center justify-center overflow-hidden border-2 border-transparent bg-grey-300 p-1 transition-[transform,border-radius] duration-200 ease-in-out"
     :class="[
-      compact ? 'h-22 w-22 rounded-1' : 'h-35 w-35 rounded-2',
+      compact ? 'h-22 w-22 rounded-sm' : 'h-35 w-35 rounded-md',
       active ? 'border-turquoise-500 bg-turquoise-200 cursor-default' : '',
       disabled ? 'cursor-not-allowed opacity-50' : '',
       loading ? 'cursor-default pointer-events-none' : '',

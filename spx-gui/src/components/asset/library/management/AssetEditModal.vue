@@ -57,15 +57,15 @@ const handleSubmit = useMessageHandle(
         <div class="flex-none px-6 py-5">
           <BackdropPreview
             v-if="assetType === AssetType.Backdrop"
-            class="h-21 w-28 rounded-1 bg-grey-300"
+            class="h-21 w-28 rounded-sm bg-grey-300"
             :backdrop="asset"
           />
           <SpritePreview
             v-if="assetType === AssetType.Sprite"
-            class="h-21 w-28 rounded-1 bg-grey-300"
+            class="h-21 w-28 rounded-sm bg-grey-300"
             :sprite="asset"
           />
-          <SoundPreview v-if="assetType === AssetType.Sound" class="h-21 w-28 rounded-1 bg-grey-300" :sound="asset" />
+          <SoundPreview v-if="assetType === AssetType.Sound" class="h-21 w-28 rounded-sm bg-grey-300" :sound="asset" />
         </div>
         <div class="flex-[1_1_0] px-6 pt-5 pb-10">
           <UIFormItem path="name">

@@ -94,12 +94,12 @@ function handleRemove(index: number) {
       </template>
     </UITextInput>
 
-    <div class="flex-[1_1_0] flex flex-col gap-2 overflow-y-auto rounded-2 border border-grey-400 p-2">
+    <div class="flex-[1_1_0] flex flex-col gap-2 overflow-y-auto rounded-md border border-grey-400 p-2">
       <template v-if="references.length > 0">
         <div
           v-for="(reference, index) in references"
           :key="reference.fullName"
-          class="flex items-center justify-between rounded-1 border border-grey-400 px-3 py-2"
+          class="flex items-center justify-between rounded-sm border border-grey-400 px-3 py-2"
         >
           <span class="reference-name">{{ reference.fullName }}</span>
           <UIIcon

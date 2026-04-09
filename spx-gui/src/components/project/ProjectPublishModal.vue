@@ -103,7 +103,7 @@ const handleSubmit = useMessageHandle(
         }}
       </p>
       <div
-        class="mb-6 h-56 w-full overflow-hidden rounded-1 bg-center bg-cover bg-no-repeat"
+        class="mb-6 h-56 w-full overflow-hidden rounded-sm bg-center bg-cover bg-no-repeat"
         :style="{ backgroundImage: `url(${stageBg})` }"
       >
         <UIImg class="h-full w-full" :src="thumbnailUrl" :loading="thumbnailUrlLoading" size="contain" />
