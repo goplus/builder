@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { Visibility, listProject, ownerAll } from '@/apis/project'
+import { ProjectType, Visibility, listProject, ownerAll } from '@/apis/project'
 import { useSignedInUser, useUser } from '@/stores/user'
 import { useResponsive } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
@@ -38,6 +38,7 @@ const projectsRoute = computed(() => {
 const projectsRet = useQuery(
   async () => {
     const { data: projects } = await listProject({
+      type: ProjectType.Game,
       owner: props.nameInput,
       pageIndex: 1,
       pageSize: numInRow.value,
@@ -56,6 +57,7 @@ const likesRoute = computed(() => {
 const likesRet = useQuery(
   async () => {
     const { data: likes } = await listProject({
+      type: ProjectType.Game,
       visibility: Visibility.Public,
       owner: ownerAll,
       liker: props.nameInput,

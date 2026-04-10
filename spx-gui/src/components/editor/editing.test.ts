@@ -5,7 +5,7 @@ import { timeout } from '@/utils/utils'
 import { Cancelled } from '@/utils/exception'
 import { ProgressReporter } from '@/utils/progress'
 import type { QueryRet } from '@/utils/query'
-import { Visibility, type ProjectData } from '@/apis/project'
+import { ProjectType, Visibility, type ProjectData } from '@/apis/project'
 import { type Files } from '@/models/common/file'
 import type { CloudHelpers, PreferPublishedContent } from '@/models/common/cloud'
 import { mockFile, MockProject } from '@/models/common/test'
@@ -43,6 +43,7 @@ function makeCloudSerialized(owner: string, name: string, version: number = 1): 
       owner,
       remixedFrom: null,
       name,
+      type: ProjectType.Game,
       displayName: name,
       version,
       visibility: Visibility.Private,

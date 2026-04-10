@@ -6,7 +6,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
-import { Visibility, listProject, type ListProjectParams } from '@/apis/project'
+import { ProjectType, Visibility, listProject, type ListProjectParams } from '@/apis/project'
 import { getOwnProjectEditorRoute } from '@/router'
 import { useSignedInUser, useUser } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
@@ -48,6 +48,7 @@ const order = useRouteQueryParamStrEnum('o', Order, Order.RecentlyUpdated, (kvs)
 
 const listParams = computed<ListProjectParams>(() => {
   const p: ListProjectParams = {
+    type: ProjectType.Game,
     owner: props.nameInput,
     pageSize: pageSize.value,
     pageIndex: page.value

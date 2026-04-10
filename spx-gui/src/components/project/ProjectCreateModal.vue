@@ -48,12 +48,11 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { getProject, addProject, Visibility, parseRemixSource } from '@/apis/project'
+import { addProject, isProjectNameTaken, ProjectType, Visibility, parseRemixSource } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { untilLoaded } from '@/utils/query'
 import { useSignedInStateQuery } from '@/stores/user'
-import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { cloudHelpers } from '@/models/common/cloud'
 import { xbpHelpers } from '@/models/common/xbp'
 import { SpxProject } from '@/models/spx/project'
@@ -93,6 +92,8 @@ const handleSubmit = useMessageHandle(
       await addProject({
         name: projectName,
         displayName: projectName,
+        // This modal will own project type selection in a later design.
+        type: ProjectType.Game,
         visibility: Visibility.Private,
         remixSource: props.remixSource
       })
@@ -139,11 +140,7 @@ async function validateName(name: string): Promise<FormValidationResult> {
   // check naming conflict
   const signedInState = await untilLoaded(signedInStateQuery)
   if (!signedInState.isSignedIn) throw new Error('login required')
-  const existedProject = await getProject(signedInState.user.username, name).catch((e) => {
-    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
-    throw e
-  })
-  if (existedProject != null)
+  if (await isProjectNameTaken(signedInState.user.username, name))
     return t({
       en: `Project ${name} already exists`,
       zh: `项目 ${name} 已存在`

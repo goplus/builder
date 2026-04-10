@@ -161,6 +161,7 @@ import {
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
+import { getProjectEditorRouteParams } from '@/utils/project-route'
 import { selectFile } from '@/utils/file'
 import { convertScratchToXbp } from '@/apis/sb2xbp'
 import { type SpxProject } from '@/models/spx/project'
@@ -331,11 +332,7 @@ const handleModifyProjectName = useMessageHandle(
     if (nextName !== previousName && project.owner != null) {
       const currentRoute = router.currentRoute.value
       router.replace({
-        params: {
-          ...currentRoute.params,
-          ownerNameInput: project.owner,
-          projectNameInput: nextName
-        },
+        params: getProjectEditorRouteParams(currentRoute.params, { owner: project.owner, name: nextName }),
         query: currentRoute.query
       })
     }

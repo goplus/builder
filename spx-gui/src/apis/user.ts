@@ -38,6 +38,16 @@ export function getUser(name: string): Promise<User> {
   return client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>
 }
 
+export async function isUsernameTaken(username: string) {
+  try {
+    const user = await getUser(username)
+    return user.username.toLowerCase() === username.toLowerCase()
+  } catch (e) {
+    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return false
+    throw e
+  }
+}
+
 export function getSignedInUser(): Promise<SignedInUser> {
   return client.get(`/user`) as Promise<SignedInUser>
 }
