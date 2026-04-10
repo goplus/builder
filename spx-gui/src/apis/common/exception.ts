@@ -4,7 +4,6 @@
 
 import type { LocaleMessage } from '@/utils/i18n'
 import { Exception } from '@/utils/exception'
-import dayjs from 'dayjs'
 
 export class ApiException extends Exception {
   name = 'ApiException'
@@ -14,11 +13,11 @@ export class ApiException extends Exception {
   constructor(
     public code: number,
     message: string,
-    { req, resp }: { req: Request; resp: Response }
+    { req, meta }: { req: Request; meta?: unknown }
   ) {
     super(`[${code}] ${message} (${req.method} ${req.url.slice(0, 200)})`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
-    this.meta = codeMetas[this.code as ApiExceptionCode]?.(resp.headers) ?? null
+    this.meta = meta ?? null
   }
 }
 
@@ -28,29 +27,26 @@ export enum ApiExceptionCode {
   errorForbidden = 40300,
   errorQuotaExceeded = 40301,
   errorNotFound = 40400,
+  errorResourceMoved = 40901,
   errorTooManyRequests = 42900,
   errorRateLimitExceeded = 42901,
   errorScratchFeatureNotSupported = 50101,
   errorUnknown = 50000
 }
 
+export type MovedResourceCanonical = {
+  path: string
+  username?: string
+  owner?: string
+  name?: string
+  release?: string
+}
+
 export type QuotaExceededMeta = {
   // milliseconds or null
   retryAfter: number | null
 }
-const codeMetas: { [key in ApiExceptionCode]?: (headers: Headers) => unknown } = {
-  [ApiExceptionCode.errorQuotaExceeded]: (headers): QuotaExceededMeta => {
-    const retryAfter = headers.get('Retry-After')
-    let date
-    if (retryAfter != null) {
-      const seconds = Number(retryAfter)
-      date = Number.isFinite(seconds) ? dayjs().add(seconds, 's') : dayjs(retryAfter)
-    }
-    return {
-      retryAfter: date?.isValid() ? date.valueOf() : null
-    }
-  }
-}
+
 export function isQuotaExceededMeta(code: number, meta: unknown): meta is QuotaExceededMeta {
   return code === ApiExceptionCode.errorQuotaExceeded && meta != null
 }
@@ -72,6 +68,14 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
     en: 'quota exceeded',
     zh: '超出配额'
   },
+  [ApiExceptionCode.errorNotFound]: {
+    en: 'resource not exist',
+    zh: '资源不存在'
+  },
+  [ApiExceptionCode.errorResourceMoved]: {
+    en: 'resource moved',
+    zh: '资源已迁移'
+  },
   [ApiExceptionCode.errorTooManyRequests]: {
     en: 'too many requests',
     zh: '请求太频繁了'
@@ -79,10 +83,6 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorRateLimitExceeded]: {
     en: 'rate limit exceeded, please retry later',
     zh: '触发频率限制，请稍后重试'
-  },
-  [ApiExceptionCode.errorNotFound]: {
-    en: 'resource not exist',
-    zh: '资源不存在'
   },
   [ApiExceptionCode.errorScratchFeatureNotSupported]: {
     en: 'Some Scratch features are not supported yet',

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUser } from '@/stores/user'
 import { UIError } from '@/components/ui'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
@@ -9,7 +11,21 @@ const props = defineProps<{
   nameInput: string
 }>()
 
+const router = useRouter()
 const { data: user, error, refetch } = useUser(() => props.nameInput)
+
+watch(user, (currentUser) => {
+  if (currentUser == null || currentUser.username === props.nameInput) return
+  const route = router.currentRoute.value
+  router.replace({
+    params: {
+      ...route.params,
+      nameInput: currentUser.username
+    },
+    query: route.query,
+    hash: route.hash
+  })
+})
 </script>
 
 <template>
