@@ -25,8 +25,7 @@ const twMerge = extendTailwindMerge({
   extend: {
     theme: {
       // `text` is the key of the namespace `--text-*`
-      // `body` is the variable name without the namespace prefix
-      text: [validators.isNumber, 'body']
+      text: [validators.isNumber]
     }
   }
 })
@@ -41,8 +40,8 @@ const twMerge = extendTailwindMerge({
  * Important boundary:
  * - merge quality depends on class naming. Standard Tailwind utility names (for example `rounded-md`, `px-2`, `text-15`)
  *   are much more likely to merge predictably than project-private aliases such as old `rounded-2` style names.
- * - this project extends `tailwind-merge` so numeric `text-<number>` utilities such as `text-15`, plus the shared
- *   semantic size alias `text-body`, are treated as font-size classes instead of text colors.
+ * - this project extends `tailwind-merge` so numeric `text-<number>` utilities such as `text-15` are treated as font-size classes
+ *   instead of text colors. `text-base` is standard Tailwind utility that work out of the box and do not need extra merge config.
  * - additional semantic `text-*` size aliases would still share the namespace with text colors. If those are
  *   introduced later, extend this merge config first so names like `text-heading` do not collide with `text-title`.
  */

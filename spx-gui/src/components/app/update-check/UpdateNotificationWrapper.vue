@@ -6,7 +6,7 @@
       role="status"
       aria-live="polite"
     >
-      <div class="flex items-center gap-3 text-body text-grey-900">
+      <div class="flex items-center gap-3 text-base text-grey-900">
         <DotLottieVue class="h-6 w-6" autoplay loop :src="notificationIconUrl" />
         {{
           $t({

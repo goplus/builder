@@ -26,7 +26,7 @@
       <VolumeSlider :value="gain" @update:value="handleGainUpdate" />
     </div>
     <div class="mb-2 mt-8 flex justify-center gap-10">
-      <div v-if="recordingState === 'yetStarted'" class="flex flex-col items-center gap-2 text-body">
+      <div v-if="recordingState === 'yetStarted'" class="flex flex-col items-center gap-2 text-base">
         <UIButton shape="circle" size="large" icon="microphone" color="danger" @click="recordingState = 'recording'" />
         <span>
           {{
@@ -37,7 +37,7 @@
           }}
         </span>
       </div>
-      <div v-else-if="recordingState === 'recording'" class="flex flex-col items-center gap-2 text-body">
+      <div v-else-if="recordingState === 'recording'" class="flex flex-col items-center gap-2 text-base">
         <UIButton shape="circle" size="large" icon="stop" color="danger" @click="stopRecording" />
         <span>
           {{
@@ -49,7 +49,7 @@
         </span>
       </div>
       <template v-else>
-        <div class="flex flex-col items-center gap-2 text-body">
+        <div class="flex flex-col items-center gap-2 text-base">
           <div class="h-14 flex items-center">
             <UIButton shape="circle" size="large" icon="reload" color="boring" @click="resetRecording" />
           </div>
@@ -62,7 +62,7 @@
             }}
           </span>
         </div>
-        <div class="flex flex-col items-center gap-2 text-body">
+        <div class="flex flex-col items-center gap-2 text-base">
           <UIButton
             style="width: 56px; height: 56px"
             shape="circle"
@@ -83,7 +83,7 @@
             }}
           </span>
         </div>
-        <div class="flex flex-col items-center gap-2 text-body">
+        <div class="flex flex-col items-center gap-2 text-base">
           <div class="h-14 flex items-center">
             <UIButton shape="circle" size="large" icon="check" color="success" @click="saveRecording" />
           </div>

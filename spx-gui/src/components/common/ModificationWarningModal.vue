@@ -39,7 +39,7 @@ function handleCancel() {
     :mask-closable="false"
     @update:visible="handleCancel"
   >
-    <div class="flex flex-col gap-2 text-body/[1.6] text-grey-800">
+    <div class="flex flex-col gap-2 text-base/[1.6] text-grey-800">
       <div class="flex items-center gap-2 font-semibold text-yellow-500">
         <span
           class="inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-yellow-500 text-14 font-bold leading-none text-grey-100"

@@ -154,7 +154,7 @@ export const buttonRecipe = createRecipe({
       },
       medium: {
         root: 'h-(--ui-line-height-2)',
-        content: 'gap-1 px-4 text-body/[1.5]',
+        content: 'gap-1 px-4 text-base/[1.5]',
         icon: 'size-[14px]'
       },
       small: {

@@ -14,7 +14,7 @@ defineProps<{
       </svg>
     </template>
     <p class="text-12 text-hint-2">{{ time }}</p>
-    <p class="text-body">
+    <p class="text-base">
       <slot></slot>
     </p>
   </NTimelineItem>

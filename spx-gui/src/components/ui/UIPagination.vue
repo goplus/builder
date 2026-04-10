@@ -64,7 +64,7 @@ const rootAttrs = computed(() => {
 })
 const buttonClass = (active = false) =>
   cn(
-    'h-8 w-8 flex items-center justify-center rounded-sm border-none bg-grey-300 text-body font-semibold text-grey-900',
+    'h-8 w-8 flex items-center justify-center rounded-sm border-none bg-grey-300 text-base font-semibold text-grey-900',
     'focus:outline-none enabled:hover:bg-grey-400 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-700',
     active ? 'bg-primary-500 text-grey-100 enabled:hover:bg-primary-500' : null
   )

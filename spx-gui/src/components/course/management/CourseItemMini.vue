@@ -31,7 +31,7 @@ const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
     <slot name="prefix" />
     <UIImg class="h-9 w-12 shrink-0 rounded-sm" :src="thumbnailUrl" size="cover" />
     <div class="mx-3 flex-1 overflow-hidden">
-      <div class="overflow-hidden text-body font-medium text-grey-900 text-ellipsis whitespace-nowrap">
+      <div class="overflow-hidden text-base font-medium text-grey-900 text-ellipsis whitespace-nowrap">
         {{ course.title }}
       </div>
     </div>

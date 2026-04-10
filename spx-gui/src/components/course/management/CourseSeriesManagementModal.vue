@@ -120,7 +120,7 @@ const handleRemove = useMessageHandle(
             class="flex-1 flex flex-col items-center justify-center text-grey-700"
           >
             <p>{{ $t({ en: 'No course series yet', zh: '还没有课程系列' }) }}</p>
-            <p class="mt-2 text-body text-grey-600">
+            <p class="mt-2 text-base text-grey-600">
               {{
                 $t({
                   en: 'Click "Create course series" to add your first series',

@@ -22,8 +22,6 @@
   - For most non-Naive UI components, prefer Tailwind utilities for local structure, layout, and surface styling
   - Local authored style blocks in the UI package use plain CSS; do not reintroduce SCSS
   - Keep complex selectors, animations, third-party/global overrides, and other readability-sensitive rules in plain CSS
-  - Preserve component structure and visual behavior; do not add new visual states or remove existing hook classes unless confirmed unused
-  - Preserve existing comments/TODOs; when moving styles, keep still-relevant comments near the migrated logic
 
 - Root class handling
 

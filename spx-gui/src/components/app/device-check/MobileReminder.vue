@@ -7,7 +7,7 @@
       <h1 class="mb-3 text-20 font-semibold text-grey-1000">
         {{ t({ en: 'Please visit on desktop', zh: '请在电脑上访问' }) }}
       </h1>
-      <p class="text-body text-grey-900">
+      <p class="text-base text-grey-900">
         {{
           t({
             en: 'XBuilder is designed for desktop devices. Please visit this page on your computer for the full experience.',

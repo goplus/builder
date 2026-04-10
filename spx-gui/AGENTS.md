@@ -116,7 +116,6 @@ When working with backend unique string identifiers such as `username`, project 
 
 ### Practical Styling Notes
 
-* Prefer standard Tailwind utility names when practical. For example, use `rounded-md` instead of a project-local alias like `rounded-2`; this keeps overrides more predictable because `tailwind-merge` understands standard utility groups better.
 * For root-class overrides and utility conflicts:
 	- For business components, external root `class` overrides are allowed by default. If utility conflicts need an explicit winner, prefer adding Tailwind's important modifier at the usage site (for example `rounded-md!`, `w-32!`) instead of expanding the component API. This keeps intent explicit, usage concise, and matches the fact that business components rarely need nested override chains.
 	- For most UI components, `twMerge` and `@layer components` are set up so external utilities or custom classes can override root classes in the common case without special handling, though edge cases can still exist.

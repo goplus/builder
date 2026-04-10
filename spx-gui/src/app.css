@@ -242,20 +242,14 @@
   --shadow-diffusion: var(--ui-box-shadow-diffusion, 0px 4px 12px 0px #d0f2f8);
 
   /* Shared spacing and text-size helpers bridged for utility-class authoring. */
-  /* TODO: The `leading-<number>` variables conflict with Tailwind's default syntax. These styles are not very generic either, confirm whether can be removed. */
-  /* --leading-*: initial; */
-  /* --leading-1: var(--ui-line-height-1, 26px); */
-  /* --leading-2: var(--ui-line-height-2, 32px); */
-  /* --leading-3: var(--ui-line-height-3, 40px); */
-
-  /* Shared spacing and text-size helpers bridged for utility-class authoring. */
   --spacing-middle: var(--ui-gap-middle, 16px);
   --spacing-large: var(--ui-gap-large, 24px);
 
-  /* Numeric `text-<number>` utilities and the shared `text-body` alias are recognized as font sizes by the shared `cn()` twMerge config. */
+  /* `text-base` is Tailwind standard name, recognized by twMerge naturally. */
+  --text-base: var(--ui-font-size-text, 14px);
+  --text-base--line-height: 1.57143;
+  /* Numeric `text-<number>` utilities are recognized as font sizes by the shared `cn()` twMerge config. */
   /* TODO: If additional semantic `text-*` size names such as `text-button` / `text-heading` are introduced later, extend `tailwind-merge` first so they do not collide with color utilities like `text-title`. */
-  --text-body: var(--ui-font-size-text, 14px);
-  --text-body--line-height: 1.57143;
   --text-10: 10px;
   --text-10--line-height: 1.5;
   --text-12: 12px;
@@ -265,7 +259,7 @@
   --text-15: 15px;
   --text-15--line-height: 1.5;
   --text-16: 16px;
-  --text-16--line-height: 26px; /* 通常一起出现的, 设为默认值 */
+  --text-16--line-height: 26px;
   --text-18: 18px;
   --text-18--line-height: 1.5;
   --text-20: 20px;
