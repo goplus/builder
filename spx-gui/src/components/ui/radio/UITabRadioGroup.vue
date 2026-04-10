@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="rootAttrs" :class="rootClass">
+  <div :class="rootClass">
     <slot />
   </div>
 </template>
@@ -12,30 +12,22 @@ export const updateRadioValueKey: InjectionKey<(value: string) => void> = Symbol
 </script>
 
 <script setup lang="ts">
-import { computed, provide, useAttrs } from 'vue'
+import { computed, provide } from 'vue'
 
 import { cn, type ClassValue } from '../utils'
 
-defineOptions({
-  inheritAttrs: false
-})
-
 const props = defineProps<{
   value?: string
+  class?: ClassValue
 }>()
 
 const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const attrs = useAttrs()
 const rootClass = computed(() =>
-  cn('flex items-center justify-center rounded-sm bg-grey-400 p-[2px]', attrs.class as ClassValue)
+  cn('flex items-center justify-center rounded-sm bg-grey-400 p-[2px]', props.class ?? null)
 )
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 
 const updateValue = (newValue: string) => {
   emit('update:value', newValue)

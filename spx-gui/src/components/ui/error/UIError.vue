@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="rootAttrs" :class="rootClass">
+  <div :class="rootClass">
     <img :src="defaultErrorImg" alt="" />
     <h5 class="mt-3 text-16 text-grey-1000">
       <slot></slot>
@@ -21,15 +21,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs } from 'vue'
+import { computed, ref } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import { useConfig } from '../UIConfigProvider.vue'
 import UIIcon from '../icons/UIIcon.vue'
 import defaultErrorImg from './default-error.svg'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 // TODO: support more error types
 const props = withDefaults(
@@ -37,34 +33,30 @@ const props = withDefaults(
     retry?: () => unknown
     back?: () => unknown
     cover?: boolean
+    class?: ClassValue
   }>(),
   {
     retry: undefined,
     back: undefined,
-    cover: false
+    cover: false,
+    class: undefined
   }
 )
 
 const config = useConfig()
-const attrs = useAttrs()
 const retryText = computed(() => config.error?.retryText ?? 'Retry')
 const backText = computed(() => config.error?.backText ?? 'Back')
 const rootClass = computed(() =>
   cn(
     'h-full w-full flex flex-col items-center justify-center',
     props.cover ? 'absolute inset-0 overflow-hidden bg-grey-100 opacity-[0.97] [border-radius:inherit]' : null,
-    attrs.class as ClassValue
+    props.class ?? null
   )
 )
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 
-const opBtnClass = [
-  'px-3 cursor-pointer border-none outline-none bg-transparent flex items-center gap-1 text-13/5',
-  'text-primary-main transition-colors duration-200 hover:text-primary-400 active:text-primary-600'
-].join(' ')
+const opBtnClass =
+  'px-3 cursor-pointer border-none outline-none bg-transparent flex items-center gap-1 text-13/5 \
+text-primary-main transition-colors duration-200 hover:text-primary-400 active:text-primary-600'
 
 const loading = ref(false)
 

@@ -223,13 +223,9 @@ export const buttonRecipe = createRecipe({
 </script>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs, useSlots } from 'vue'
+import { computed, ref, useSlots } from 'vue'
 
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 const props = withDefaults(
   defineProps<{
@@ -241,6 +237,7 @@ const props = withDefaults(
     disabled?: boolean
     loading?: boolean
     htmlType?: ButtonHtmlType
+    class?: ClassValue
   }>(),
   {
     variant: 'shadow',
@@ -250,12 +247,12 @@ const props = withDefaults(
     icon: undefined,
     disabled: false,
     loading: false,
-    htmlType: 'button'
+    htmlType: 'button',
+    class: undefined
   }
 )
 
 const btnRef = ref<HTMLButtonElement | null>(null)
-const attrs = useAttrs()
 const slots = useSlots()
 const isDisabled = computed(() => props.disabled || props.loading)
 const resolvedIcon = computed(() => (props.loading ? 'loading' : props.icon))
@@ -278,13 +275,9 @@ const classes = computed(() =>
     iconOnly: iconOnly.value
   })
 )
-const rootClass = computed(() => classes.value.root(attrs.class as ClassValue))
+const rootClass = computed(() => classes.value.root(props.class ?? null))
 const contentClass = computed(() => classes.value.content())
 const iconClass = computed(() => classes.value.icon())
-const buttonAttrs = computed(() => {
-  const { class: _class, disabled: _disabled, type: _type, ...rest } = attrs
-  return rest
-})
 
 defineExpose({
   focus() {
@@ -296,7 +289,6 @@ defineExpose({
 <template>
   <button
     ref="btnRef"
-    v-bind="buttonAttrs"
     class="ui-button-root"
     :class="rootClass"
     :data-loading="loading || null"

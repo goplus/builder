@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, useAttrs } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { DotLottieVue, type DotLottieVueInstance } from '@lottiefiles/dotlottie-vue'
 import { cn, type ClassValue } from '../utils'
 import animationFileUrl from './animation.lottie?url'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 export type MaskType = 'none' | 'semi-transparent'
 
@@ -16,11 +12,13 @@ const props = withDefaults(
     cover?: boolean
     visible?: boolean
     mask?: boolean | MaskType
+    class?: ClassValue
   }>(),
   {
     cover: false,
     visible: true,
-    mask: true
+    mask: true,
+    class: undefined
   }
 )
 
@@ -30,7 +28,6 @@ const mask = computed(() => {
   return props.mask
 })
 
-const attrs = useAttrs()
 const rootClass = computed(() =>
   cn(
     'h-4/5 w-full flex flex-col items-center justify-center [transition:visibility_0.3s,opacity_0.3s]',
@@ -39,13 +36,9 @@ const rootClass = computed(() =>
       ? 'bg-[#24292f99] [backdrop-filter:blur(5px)] [-webkit-backdrop-filter:blur(5px)]'
       : null,
     props.visible ? 'visible opacity-100' : 'invisible opacity-0',
-    attrs.class as ClassValue
+    props.class ?? null
   )
 )
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 const textClass = computed(() =>
   cn(
     'flex items-center gap-2 text-13/5 text-title',
@@ -69,7 +62,7 @@ watch(
 </script>
 
 <template>
-  <div v-bind="rootAttrs" :class="rootClass">
+  <div :class="rootClass">
     <DotLottieVue ref="dotLottieRef" class="h-[150px] w-[90px] flex-none" autoplay loop :src="animationFileUrl" />
     <div class="mb-1 h-[5px] w-45 rounded-full bg-grey-600">
       <div

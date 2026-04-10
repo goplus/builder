@@ -1,34 +1,27 @@
 <template>
-  <div v-bind="rootAttrs" class="ui-menu-group" :class="rootClass">
+  <div class="ui-menu-group" :class="rootClass">
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, provide, useAttrs } from 'vue'
+import { computed, provide } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import { cn, type ClassValue } from '../utils'
 import { ctxKey } from './UIMenu.vue'
 
-defineOptions({
-  inheritAttrs: false
-})
-
 const props = withDefaults(
   defineProps<{
     disabled?: boolean
+    class?: ClassValue
   }>(),
   {
-    disabled: false
+    disabled: false,
+    class: undefined
   }
 )
 
-const attrs = useAttrs()
-const rootClass = computed(() => cn('flex flex-col gap-1', attrs.class as ClassValue))
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
+const rootClass = computed(() => cn('flex flex-col gap-1', props.class ?? null))
 
 provide(
   ctxKey,

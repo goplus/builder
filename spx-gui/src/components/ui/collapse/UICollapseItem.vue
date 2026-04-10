@@ -1,27 +1,19 @@
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import UIIcon from '../icons/UIIcon.vue'
 import { useCollapseCtx } from './UICollapse.vue'
 
-defineOptions({
-  inheritAttrs: false
-})
-
 const props = defineProps<{
   title: string
   name: string
+  class?: ClassValue
 }>()
 
 const collapseCtx = useCollapseCtx()
-const attrs = useAttrs()
 
 const expanded = computed(() => collapseCtx.expandedNames.value.includes(props.name))
-const rootClass = computed(() => cn('flex flex-col', attrs.class as ClassValue))
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
+const rootClass = computed(() => cn('flex flex-col', props.class ?? null))
 
 function handleToggle() {
   collapseCtx.expandedNames.value = expanded.value
@@ -31,7 +23,7 @@ function handleToggle() {
 </script>
 
 <template>
-  <li v-bind="rootAttrs" class="ui-collapse-item" :class="rootClass">
+  <li class="ui-collapse-item" :class="rootClass">
     <header
       class="flex cursor-pointer items-center justify-between [transition:margin-bottom_0.3s]"
       :class="expanded ? 'mb-2' : null"

@@ -1,5 +1,5 @@
 <template>
-  <ul v-bind="rootAttrs" :class="rootClass">
+  <ul :class="rootClass">
     <slot></slot>
   </ul>
 </template>
@@ -21,22 +21,20 @@ export function useTabsCtx() {
 </script>
 
 <script setup lang="ts">
-import { computed, provide, useAttrs } from 'vue'
+import { computed, provide } from 'vue'
 import { type Color } from '../tokens/colors'
 import { computedShallowReactive } from '@/utils/utils'
 import { cn, type ClassValue } from '../utils'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 const props = withDefaults(
   defineProps<{
     color?: Color
     value: string
+    class?: ClassValue
   }>(),
   {
-    color: 'primary'
+    color: 'primary',
+    class: undefined
   }
 )
 
@@ -44,12 +42,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const attrs = useAttrs()
-const rootClass = computed(() => cn('flex', attrs.class as ClassValue))
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
+const rootClass = computed(() => cn('flex', props.class ?? null))
 
 provide(
   tabsCtxInjectionKey,

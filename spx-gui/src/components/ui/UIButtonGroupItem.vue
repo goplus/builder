@@ -1,11 +1,11 @@
 <template>
-  <div v-bind="rootAttrs" :class="rootClass" @click="handleClick">
+  <div :class="rootClass" @click="handleClick">
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, useAttrs } from 'vue'
+import { computed, inject } from 'vue'
 
 import { cn, type ClassValue } from './utils'
 import {
@@ -15,12 +15,9 @@ import {
   variantInjectionKey
 } from './UIButtonGroup.vue'
 
-defineOptions({
-  inheritAttrs: false
-})
-
 const props = defineProps<{
   value: string
+  class?: ClassValue
 }>()
 
 const selectedValue = inject(selectedValueInjectionKey)
@@ -28,7 +25,6 @@ const updateValue = inject(updateValueInjectionKey)
 const type = inject(typeInjectionKey, () => 'icon')
 const variant = inject(variantInjectionKey, () => 'primary')
 
-const attrs = useAttrs()
 const isActive = computed(() => selectedValue?.() === props.value)
 const rootClass = computed(() =>
   cn(
@@ -43,13 +39,9 @@ const rootClass = computed(() =>
         ? 'bg-grey-200 text-turquoise-600'
         : 'bg-[#47d8e4] text-grey-200',
     isActive.value ? 'cursor-default' : 'cursor-pointer',
-    attrs.class as ClassValue
+    props.class ?? null
   )
 )
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 
 const handleClick = () => {
   if (!isActive.value) {

@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="rootAttrs" :class="rootClass">
+  <div :class="rootClass">
     <template v-if="size === 'large'">
       <img :src="img" />
       <slot></slot>
@@ -51,19 +51,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs, useSlots } from 'vue'
+import { computed, useSlots } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import { useConfig } from '../UIConfigProvider.vue'
 import searchImg from './search.svg'
 import gameImg from './game.svg'
 
-defineOptions({
-  inheritAttrs: false
-})
-
 const props = defineProps<{
   size: 'small' | 'medium' | 'large' | 'extra-large'
   img?: 'search' | 'game'
+  class?: ClassValue
 }>()
 
 const img = computed(() => {
@@ -76,7 +73,6 @@ const img = computed(() => {
 const config = useConfig()
 const defaultText = computed(() => config.empty?.text ?? 'No data')
 const slots = useSlots()
-const attrs = useAttrs()
 const rootClass = computed(() =>
   cn(
     'h-full w-full flex items-center justify-center',
@@ -85,13 +81,9 @@ const rootClass = computed(() =>
       'flex-col': props.size === 'extra-large',
       'gap-2 text-grey-600': props.size === 'small' || props.size === 'medium'
     },
-    attrs.class as ClassValue
+    props.class ?? null
   )
 )
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 
 // TODO: support button for size:large ?
 </script>

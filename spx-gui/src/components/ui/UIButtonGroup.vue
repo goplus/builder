@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="rootAttrs" :class="rootClass">
+  <div :class="rootClass">
     <slot></slot>
   </div>
 </template>
@@ -17,13 +17,9 @@ export const variantInjectionKey: InjectionKey<() => Variant> = Symbol('variant'
 </script>
 
 <script setup lang="ts">
-import { computed, provide, useAttrs } from 'vue'
+import { computed, provide } from 'vue'
 
 import { cn, type ClassValue } from './utils'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 const props = withDefaults(
   defineProps<{
@@ -31,11 +27,13 @@ const props = withDefaults(
     /** Type of group-item content. */
     type?: Type
     variant?: Variant
+    class?: ClassValue
   }>(),
   {
     value: undefined,
     type: 'icon',
-    variant: 'primary'
+    variant: 'primary',
+    class: undefined
   }
 )
 
@@ -43,12 +41,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const attrs = useAttrs()
-const rootClass = computed(() => cn('flex', attrs.class as ClassValue))
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
+const rootClass = computed(() => cn('flex', props.class ?? null))
 
 provide(selectedValueInjectionKey, () => props.value)
 provide(updateValueInjectionKey, (value: string) => {

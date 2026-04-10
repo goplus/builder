@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="rootAttrs" class="ui-select" :class="rootClass">
+  <div class="ui-select" :class="rootClass">
     <span
       class="min-w-0 flex-1 overflow-x-hidden text-ellipsis whitespace-nowrap"
       :class="selectedRef == null ? 'text-grey-700' : null"
@@ -20,22 +20,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed, useAttrs } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import { untilNotNull } from '@/utils/utils'
 import { cn, type ClassValue } from '../utils'
 import UIIcon from '../icons/UIIcon.vue'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 const props = withDefaults(
   defineProps<{
     value: string | null
     placeholder?: string
+    class?: ClassValue
   }>(),
   {
-    placeholder: ''
+    placeholder: '',
+    class: undefined
   }
 )
 
@@ -52,19 +50,14 @@ type Selected = {
 // Uses a NUL character so it cannot collide with any real option value.
 const placeholderValue = '\0'
 
-const attrs = useAttrs()
 const selectedRef = ref<Selected>(null)
 const selectRef = ref<HTMLSelectElement | null>(null)
 const rootClass = computed(() =>
   cn(
     'relative h-(--ui-line-height-2) inline-flex items-center justify-between gap-0.5 rounded-md px-middle text-grey-1000 bg-grey-300 [transition:0.3s]',
-    attrs.class as ClassValue
+    props.class ?? null
   )
 )
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 
 async function syncSelected() {
   const select = await untilNotNull(() => selectRef.value)

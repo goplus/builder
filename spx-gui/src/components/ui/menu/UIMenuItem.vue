@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="rootAttrs" class="ui-menu-item" :class="rootClass" @click="handleClick">
+  <div class="ui-menu-item" :class="rootClass" @click="handleClick">
     <div v-if="hasSlotIcon" class="h-6 w-6 shrink-0 *:h-full *:w-full" :class="disabled ? 'opacity-50' : null">
       <slot name="icon"></slot>
     </div>
@@ -8,23 +8,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, useAttrs, useSlots } from 'vue'
+import { computed, inject, useSlots } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import { useDropdown } from '../UIDropdown'
 import { ctxKey } from './UIMenu.vue'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 const props = withDefaults(
   defineProps<{
     interactive?: boolean
     disabled?: boolean
+    class?: ClassValue
   }>(),
   {
     interactive: true,
-    disabled: false
+    disabled: false,
+    class: undefined
   }
 )
 
@@ -36,7 +34,6 @@ const slots = useSlots()
 const hasSlotIcon = !!slots['icon']
 const ctx = inject(ctxKey)
 const dropdownCtrl = useDropdown()
-const attrs = useAttrs()
 
 const disabled = computed(() => props.disabled || !!ctx?.disabled)
 const rootClass = computed(() => {
@@ -45,12 +42,8 @@ const rootClass = computed(() => {
     disabled.value ? 'cursor-not-allowed text-grey-600' : null,
     !disabled.value && props.interactive ? 'cursor-pointer hover:bg-grey-300' : null,
     ctx?.inGroup ? 'in-group' : null,
-    attrs.class as ClassValue
+    props.class ?? null
   )
-})
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
 })
 
 function handleClick(e: MouseEvent) {

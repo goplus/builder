@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="rootAttrs" :class="rootClass">
+  <div :class="rootClass">
     <button :class="buttonClass()" :disabled="current === 1" @click="prevPage">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
@@ -39,29 +39,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed } from 'vue'
 import { cn, type ClassValue } from './utils'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 const props = defineProps<{
   /** Total page num */
   total: number
   /** Current page index, start from `1` */
   current: number
+  class?: ClassValue
 }>()
 const emit = defineEmits<{
   'update:current': [number]
 }>()
 
-const attrs = useAttrs()
-const rootClass = computed(() => cn('flex gap-2', attrs.class as ClassValue))
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
+const rootClass = computed(() => cn('flex gap-2', props.class ?? null))
 const buttonClass = (active = false) =>
   cn(
     'h-8 w-8 flex items-center justify-center rounded-sm border-none bg-grey-300 text-base font-semibold text-grey-900',

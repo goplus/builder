@@ -1,6 +1,7 @@
+import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
-import { buttonRecipe, resolveButtonCssVars } from './UIButton.vue'
+import UIButton, { buttonRecipe, resolveButtonCssVars } from './UIButton.vue'
 
 describe('buttonRecipe', () => {
   it('uses the documented defaults', () => {
@@ -79,5 +80,28 @@ describe('buttonRecipe', () => {
       '--ui-button-shadow-color': 'var(--ui-color-danger-600)',
       '--ui-button-stroke-color': 'var(--ui-color-grey-400)'
     })
+  })
+
+  it('keeps root attrs on the native button while merging external classes with twMerge semantics', () => {
+    const wrapper = mount(UIButton, {
+      props: {
+        class: 'mt-4 h-9 rounded-full'
+      },
+      attrs: {
+        'data-test-id': 'ui-button',
+        tabindex: '-1'
+      },
+      slots: {
+        default: 'Click'
+      }
+    })
+
+    expect(wrapper.classes()).toContain('mt-4')
+    expect(wrapper.classes()).toContain('h-9')
+    expect(wrapper.classes()).toContain('rounded-full')
+    expect(wrapper.classes()).not.toContain('h-(--ui-line-height-2)')
+    expect(wrapper.classes()).not.toContain('rounded-md')
+    expect(wrapper.attributes('data-test-id')).toBe('ui-button')
+    expect(wrapper.attributes('tabindex')).toBe('-1')
   })
 })

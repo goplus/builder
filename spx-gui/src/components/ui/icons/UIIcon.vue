@@ -1,11 +1,11 @@
 <template>
   <!-- TODO: is there any way to avoid the wrapper `<div>`? -->
   <!-- eslint-disable-next-line vue/no-v-html -->
-  <div v-bind="rootAttrs" :class="rootClass" v-html="typeIconMap[type]"></div>
+  <div :class="rootClass" v-html="typeIconMap[type]"></div>
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import file from './file.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
@@ -151,22 +151,14 @@ const typeIconMap = {
 
 export type Type = keyof typeof typeIconMap
 
-defineOptions({
-  inheritAttrs: false
-})
-
 const props = defineProps<{
   type: Type
+  class?: ClassValue
 }>()
 
-const attrs = useAttrs()
 const rootClass = computed(() =>
-  cn('ui-icon flex h-4 w-4', props.type === 'loading' ? 'spinning' : null, attrs.class as ClassValue)
+  cn('ui-icon flex h-4 w-4', props.type === 'loading' ? 'spinning' : null, props.class ?? null)
 )
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 </script>
 
 <style scoped>

@@ -5,14 +5,10 @@ export type TagSize = 'small'
 </script>
 
 <script setup lang="ts">
-import { computed, useAttrs, useSlots } from 'vue'
+import { computed, useSlots } from 'vue'
 import { cn, type ClassValue } from './utils'
 
 import UIIcon from './icons/UIIcon.vue'
-
-defineOptions({
-  inheritAttrs: false
-})
 
 const props = withDefaults(
   defineProps<{
@@ -22,6 +18,7 @@ const props = withDefaults(
     disabled?: boolean
     closable?: boolean
     checkable?: false | { checked: boolean }
+    class?: ClassValue
   }>(),
   {
     variant: 'stroke',
@@ -29,7 +26,8 @@ const props = withDefaults(
     size: 'small',
     disabled: false,
     closable: false,
-    checkable: false
+    checkable: false,
+    class: undefined
   }
 )
 
@@ -38,7 +36,6 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
-const attrs = useAttrs()
 const rootClass = computed(() =>
   cn(
     'ui-tag',
@@ -49,17 +46,13 @@ const rootClass = computed(() =>
       'ui-tag-checkable': !!props.checkable,
       'ui-tag-checked': props.checkable ? props.checkable.checked : false
     },
-    attrs.class as ClassValue
+    props.class ?? null
   )
 )
-const rootAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 </script>
 
 <template>
-  <button v-bind="rootAttrs" :class="rootClass" :disabled="disabled">
+  <button :class="rootClass" :disabled="disabled">
     <slot></slot>
     <UIIcon
       v-if="slots.suffix == null && closable && !disabled"

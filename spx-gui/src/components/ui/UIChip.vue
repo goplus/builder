@@ -1,25 +1,21 @@
 <template>
-  <button v-bind="buttonAttrs" :class="rootClass">
+  <button :class="rootClass">
     <slot></slot>
   </button>
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed } from 'vue'
 
 import { cn, type ClassValue } from './utils'
 
 export type ChipType = 'primary' | 'boring'
 
-defineOptions({
-  inheritAttrs: false
-})
-
 const props = defineProps<{
   type: ChipType
+  class?: ClassValue
 }>()
 
-const attrs = useAttrs()
 const rootClass = computed(() =>
   cn(
     // TODO: support different sizes
@@ -28,11 +24,7 @@ const rootClass = computed(() =>
       'text-grey-100 bg-primary-main border-primary-main': props.type === 'primary',
       'text-grey-900 bg-grey-300 border-grey-300': props.type === 'boring'
     },
-    attrs.class as ClassValue
+    props.class ?? null
   )
 )
-const buttonAttrs = computed(() => {
-  const { class: _class, ...rest } = attrs
-  return rest
-})
 </script>
