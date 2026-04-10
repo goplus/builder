@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="main">
+    <div class="flex h-[43px] items-center px-4 text-16">
       <slot></slot>
     </div>
     <UIDivider />
@@ -9,12 +9,3 @@
 <script setup lang="ts">
 import { UIDivider } from '@/components/ui'
 </script>
-<style scoped lang="scss">
-.main {
-  display: flex;
-  align-items: center;
-  height: 43px;
-  padding: 0 16px;
-  font-size: 16px;
-}
-</style>

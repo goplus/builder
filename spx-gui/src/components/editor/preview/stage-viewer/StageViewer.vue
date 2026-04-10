@@ -5,7 +5,8 @@
       name: 'Stage viewer',
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
-    class="stage-viewer"
+    class="stage-viewer relative h-full w-full flex items-center justify-center bg-center bg-repeat bg-contain"
+    :style="{ backgroundImage: `url(${stageBgUrl})` }"
     @mousemove="updateMousePos"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
@@ -61,18 +62,21 @@
         />
       </v-layer>
     </v-stage>
-    <QuickConfigWrapper v-if="localConfigRef != null" ref="quickConfigRef" class="quick-config">
-      <SpriteQuickConfig
-        v-if="localConfigRef instanceof SpriteLocalConfig"
-        :local-config="localConfigRef"
-        :project="editorCtx.project"
-      />
-      <WidgetQuickConfig
-        v-else-if="localConfigRef instanceof WidgetLocalConfig"
-        :local-config="localConfigRef"
-        :project="editorCtx.project"
-      />
-    </QuickConfigWrapper>
+    <div v-if="localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
+      <QuickConfigWrapper ref="quickConfigRef">
+        <SpriteQuickConfig
+          v-if="localConfigRef instanceof SpriteLocalConfig"
+          :local-config="localConfigRef"
+          :project="editorCtx.project"
+        />
+        <WidgetQuickConfig
+          v-else-if="localConfigRef instanceof WidgetLocalConfig"
+          :local-config="localConfigRef"
+          :project="editorCtx.project"
+        />
+      </QuickConfigWrapper>
+    </div>
+
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
@@ -85,6 +89,8 @@ import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { StageConfig } from 'konva/lib/Stage'
 import type { LayerConfig } from 'konva/lib/Layer'
+
+import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
@@ -501,24 +507,3 @@ watchEffect((onCleanup) => {
   onCleanup(unbind)
 })
 </script>
-<style scoped>
-.stage-viewer {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background-image: url(@/assets/images/stage-bg.svg);
-  background-position: center;
-  background-repeat: repeat;
-  background-size: contain;
-  position: relative;
-}
-
-.quick-config {
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-</style>

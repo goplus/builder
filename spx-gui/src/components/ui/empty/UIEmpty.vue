@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-empty" :class="[`size-${size}`]">
+  <div :class="rootClass">
     <template v-if="size === 'large'">
       <img :src="img" />
       <slot></slot>
@@ -9,13 +9,13 @@
     </template>
     <template v-else-if="size === 'extra-large'">
       <img :src="img" />
-      <p class="text">
+      <p class="mt-3 text-16 text-grey-700">
         <slot></slot>
         <template v-if="!slots.default">
           {{ defaultText }}
         </template>
       </p>
-      <div class="op"><slot name="op"></slot></div>
+      <div class="ui-empty-op mt-6 flex gap-large"><slot name="op"></slot></div>
     </template>
     <template v-else>
       <svg
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
+import { cn, type ClassValue } from '../utils'
 import { useConfig } from '../UIConfigProvider.vue'
 import searchImg from './search.svg'
 import gameImg from './game.svg'
@@ -59,6 +60,7 @@ import gameImg from './game.svg'
 const props = defineProps<{
   size: 'small' | 'medium' | 'large' | 'extra-large'
   img?: 'search' | 'game'
+  class?: ClassValue
 }>()
 
 const img = computed(() => {
@@ -71,56 +73,28 @@ const img = computed(() => {
 const config = useConfig()
 const defaultText = computed(() => config.empty?.text ?? 'No data')
 const slots = useSlots()
+const rootClass = computed(() =>
+  cn(
+    'h-full w-full flex items-center justify-center',
+    {
+      'flex-col gap-3 text-16 text-grey-1000': props.size === 'large',
+      'flex-col': props.size === 'extra-large',
+      'gap-2 text-grey-600': props.size === 'small' || props.size === 'medium'
+    },
+    props.class ?? null
+  )
+)
 
 // TODO: support button for size:large ?
 </script>
 
-<style scoped lang="scss">
-.ui-empty {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.size-large {
-  width: 100%;
-  flex-direction: column;
-  gap: 12px;
-
-  font-size: 16px;
-  line-height: 26px;
-  color: var(--ui-color-grey-1000);
-}
-
-.size-extra-large {
-  flex-direction: column;
-
-  .text {
-    margin-top: 12px;
-    color: var(--ui-color-grey-700);
-    font-size: 16px;
-    line-height: 26px;
+<style scoped>
+.ui-empty-op {
+  /* TODO: more reliable approach? */
+  :deep(.ui-button svg),
+  :deep(.ui-button img) {
+    width: 18px;
+    height: 18px;
   }
-
-  .op {
-    margin-top: 24px;
-    display: flex;
-    gap: var(--ui-gap-large);
-
-    // TODO: more reliable approach?
-    :deep(.ui-button svg),
-    :deep(.ui-button img) {
-      width: 18px;
-      height: 18px;
-    }
-  }
-}
-
-.size-small,
-.size-medium {
-  color: var(--ui-color-grey-600);
-  gap: 8px;
 }
 </style>

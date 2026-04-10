@@ -17,5 +17,3 @@ const emit = defineEmits<{
   'update:checked': [boolean]
 }>()
 </script>
-
-<style lang="scss" scoped></style>

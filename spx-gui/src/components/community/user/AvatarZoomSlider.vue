@@ -31,19 +31,19 @@ function handleValueUpdate(value: number) {
 </script>
 
 <template>
-  <div class="avatar-zoom-slider">
+  <div class="h-12 w-91.5 flex items-center justify-center gap-2.5">
     <button
       v-radar="{ name: 'Zoom out avatar button', desc: 'Click to zoom out the avatar image' }"
-      class="zoom-button"
+      class="h-6 w-6 flex-none flex items-center justify-center border-none bg-transparent p-0 text-grey-900 enabled:cursor-pointer enabled:hover:text-grey-1000 disabled:cursor-not-allowed disabled:text-grey-700"
       type="button"
       :disabled="props.disabled || props.value <= props.min"
       @click="handleValueUpdate(props.value - props.buttonStep)"
     >
-      <UIIcon class="zoom-icon" type="minus" />
+      <UIIcon class="w-5 h-5" type="minus" />
     </button>
 
     <UISlider
-      class="slider"
+      class="slider flex-auto min-w-0"
       update-on="input"
       :min="props.min"
       :max="props.max"
@@ -56,74 +56,35 @@ function handleValueUpdate(value: number) {
 
     <button
       v-radar="{ name: 'Zoom in avatar button', desc: 'Click to zoom in the avatar image' }"
-      class="zoom-button"
+      class="h-6 w-6 flex-none flex items-center justify-center border-none bg-transparent p-0 text-grey-900 enabled:cursor-pointer enabled:hover:text-grey-1000 disabled:cursor-not-allowed disabled:text-grey-700"
       type="button"
       :disabled="props.disabled || props.value >= props.max"
       @click="handleValueUpdate(props.value + props.buttonStep)"
     >
-      <UIIcon class="zoom-icon" type="plus" />
+      <UIIcon class="w-5 h-5" type="plus" />
     </button>
   </div>
 </template>
 
-<style scoped lang="scss">
-.avatar-zoom-slider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 366px;
-  height: 48px;
-}
-
+<style scoped>
 .slider {
-  flex: 1 1 auto;
-  min-width: 0;
-
-  &:deep(.n-slider-handle) {
-    background: transparent;
-    box-shadow: none;
-  }
-
-  &:deep(.n-slider-rail),
-  &:deep(.n-slider-rail__fill) {
-    height: 6px;
-    border-radius: 999px;
-  }
 }
 
-.slider:deep(.thumb) {
+.slider:deep(.n-slider-handle) {
+  background: transparent;
+  box-shadow: none;
+}
+
+.slider:deep(.n-slider-rail),
+.slider:deep(.n-slider-rail__fill) {
+  height: 6px;
+  border-radius: 999px;
+}
+
+.slider:deep(.ui-slider-thumb) {
   box-sizing: border-box;
   box-shadow:
     inset 0 0 0 2px var(--ui-color-primary-400),
     0 1px 2px rgb(36 41 47 / 10%);
-}
-
-.zoom-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--ui-color-grey-900);
-  cursor: pointer;
-
-  &:not(:disabled):hover {
-    color: var(--ui-color-grey-1000);
-  }
-
-  &:disabled {
-    color: var(--ui-color-grey-700);
-    cursor: not-allowed;
-  }
-}
-
-.zoom-icon {
-  width: 20px;
-  height: 20px;
 }
 </style>

@@ -39,5 +39,3 @@ const handleVisibleUpdate = wrapUpdateHandler(
     </UIButtonGroupItem>
   </UIButtonGroup>
 </template>
-
-<style lang="scss" scoped></style>

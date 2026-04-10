@@ -68,8 +68,8 @@ function applyItem(item: InternalCompletionItem) {
 </script>
 
 <template>
-  <CodeEditorCard class="completion-card">
-    <ul class="list">
+  <CodeEditorCard class="max-h-56.75 w-111.75 flex items-stretch py-3 pr-0 pl-3 text-12">
+    <ul class="flex-none min-h-0 flex flex-col gap-2 overflow-y-auto pr-3 [scrollbar-width:thin]">
       <CompletionItemComp
         v-for="(item, i) in items"
         :key="i"
@@ -78,39 +78,8 @@ function applyItem(item: InternalCompletionItem) {
         @click="applyItem(item)"
       />
     </ul>
-    <div class="completion-item-detail">
+    <div class="flex-[1_1_0] overflow-y-auto border-l border-dividing-line-2 px-3 py-1.5 [scrollbar-width:thin]">
       <MarkdownView v-if="activeItem?.documentation != null" v-bind="activeItem.documentation" />
     </div>
   </CodeEditorCard>
 </template>
-
-<style lang="scss" scoped>
-.completion-card {
-  width: 447px;
-  max-height: 227px;
-  padding: 12px 0 12px 12px;
-  display: flex;
-  align-items: stretch;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.list {
-  padding-right: 12px;
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.completion-item-detail {
-  flex: 1 1 0;
-  padding: 6px 12px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  border-left: 1px solid var(--ui-color-dividing-line-2);
-}
-</style>

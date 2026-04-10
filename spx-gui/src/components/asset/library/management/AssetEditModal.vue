@@ -53,13 +53,21 @@ const handleSubmit = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <UIForm :form="form" @submit="handleSubmit.fn">
-      <main class="main">
-        <div class="sider">
-          <BackdropPreview v-if="assetType === AssetType.Backdrop" class="preview" :backdrop="asset" />
-          <SpritePreview v-if="assetType === AssetType.Sprite" class="preview" :sprite="asset" />
-          <SoundPreview v-if="assetType === AssetType.Sound" class="preview" :sound="asset" />
+      <main class="flex">
+        <div class="flex-none px-6 py-5">
+          <BackdropPreview
+            v-if="assetType === AssetType.Backdrop"
+            class="h-21 w-28 rounded-sm bg-grey-300"
+            :backdrop="asset"
+          />
+          <SpritePreview
+            v-if="assetType === AssetType.Sprite"
+            class="h-21 w-28 rounded-sm bg-grey-300"
+            :sprite="asset"
+          />
+          <SoundPreview v-if="assetType === AssetType.Sound" class="h-21 w-28 rounded-sm bg-grey-300" :sound="asset" />
         </div>
-        <div class="inputs">
+        <div class="flex-[1_1_0] px-6 pt-5 pb-10">
           <UIFormItem path="name">
             <UITextInput
               v-model:value="form.value.name"
@@ -73,7 +81,7 @@ const handleSubmit = useMessageHandle(
           </UIFormItem>
         </div>
       </main>
-      <footer class="footer">
+      <footer class="flex justify-center">
         <UIButton
           v-radar="{ name: 'Save button', desc: 'Click to save asset changes' }"
           color="primary"
@@ -86,31 +94,3 @@ const handleSubmit = useMessageHandle(
     </UIForm>
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.main {
-  display: flex;
-}
-
-.sider {
-  flex: 0 0 auto;
-  padding: 20px 24px;
-
-  .preview {
-    width: 112px;
-    height: 84px;
-    border-radius: 8px;
-    background-color: var(--ui-color-grey-300);
-  }
-}
-
-.inputs {
-  flex: 1 1 0;
-  padding: 20px 24px 40px;
-}
-
-.footer {
-  display: flex;
-  justify-content: center;
-}
-</style>

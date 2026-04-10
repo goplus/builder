@@ -12,7 +12,7 @@
     <div
       ref="containerRef"
       v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
-      :class="['container', `size-${size || 'medium'}`]"
+      :class="['ui-modal-container', `ui-modal-size-${size || 'medium'}`]"
     >
       <slot></slot>
     </div>
@@ -106,44 +106,44 @@ useModalEsc(
 )
 </script>
 
-<style lang="scss" scoped>
-.container {
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--ui-box-shadow-big);
-  border-radius: var(--ui-border-radius-2);
-  background-color: white;
-  overflow: hidden;
-}
-
-.size-small {
-  width: 480px;
-}
-
-.size-medium {
-  width: 640px;
-}
-
-.size-large {
-  width: 960px;
-}
-
-.size-full {
-  width: 100%;
-  margin: 16px;
-}
-</style>
-
-<style lang="scss">
-.ui-modal.has-custom-origin {
-  // Override NaiveUI's transform-origin to support custom animation origins
-  transform-origin: var(--ui-modal-custom-origin, center) !important;
-
-  &.fade-in-scale-up-transition-enter-active,
-  &.fade-in-scale-up-transition-leave-active,
-  &.fade-in-scale-up-transition-enter-to,
-  &.fade-in-scale-up-transition-leave-to {
+<style>
+@layer components {
+  .ui-modal.has-custom-origin {
+    /* Override NaiveUI's transform-origin to support custom animation origins */
     transform-origin: var(--ui-modal-custom-origin, center) !important;
+  }
+
+  .ui-modal.has-custom-origin.fade-in-scale-up-transition-enter-active,
+  .ui-modal.has-custom-origin.fade-in-scale-up-transition-leave-active,
+  .ui-modal.has-custom-origin.fade-in-scale-up-transition-enter-to,
+  .ui-modal.has-custom-origin.fade-in-scale-up-transition-leave-to {
+    transform-origin: var(--ui-modal-custom-origin, center) !important;
+  }
+
+  .ui-modal-container {
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--ui-box-shadow-big);
+    border-radius: var(--ui-border-radius-2);
+    background-color: white;
+    overflow: hidden;
+  }
+
+  .ui-modal-size-small {
+    width: 480px;
+  }
+
+  .ui-modal-size-medium {
+    width: 640px;
+  }
+
+  .ui-modal-size-large {
+    width: 960px;
+  }
+
+  .ui-modal-size-full {
+    width: 100%;
+    margin: 16px;
   }
 }
 </style>

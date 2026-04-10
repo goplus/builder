@@ -16,71 +16,31 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 </script>
 
 <template>
-  <li class="course-item">
-    <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
-    <div class="title" :title="course.title">{{ course.title }}</div>
-    <div class="action-section">
+  <li
+    class="course-item relative box-border h-53.5 w-58 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 border-grey-300 transition-all duration-200 hover:-translate-y-0.5 hover:border-grey-400 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+  >
+    <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
+    <div
+      class="absolute bottom-0 w-full box-border overflow-hidden bg-grey-1000/30 px-4 text-15/10 font-semibold text-grey-100 text-ellipsis whitespace-nowrap"
+      :title="course.title"
+    >
+      {{ course.title }}
+    </div>
+    <div class="action-section absolute top-2 right-2">
       <slot />
     </div>
   </li>
 </template>
 
-<style lang="scss" scoped>
-.course-item {
-  width: 232px;
-  height: 214px;
-  border-radius: var(--ui-border-radius-3);
-  overflow: hidden;
-  position: relative;
-  cursor: pointer;
-  transition: 0.2s;
-  border: 2px solid var(--ui-color-grey-300);
-  flex-shrink: 0;
-  box-sizing: border-box;
+<style scoped>
+.action-section :deep(.corner-menu) {
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.1s;
+}
 
-  &:hover {
-    border-color: var(--ui-color-grey-400);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-
-    .action-section :deep(.corner-menu) {
-      visibility: visible;
-      opacity: 1;
-    }
-  }
-
-  .title {
-    padding: 0 16px;
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 40px;
-    line-height: 40px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--ui-color-grey-100);
-    background: rgb(from var(--ui-color-grey-1000) r g b / 0.3);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    box-sizing: border-box;
-  }
-
-  .thumbnail {
-    width: 100%;
-    height: 100%;
-  }
-
-  .action-section {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-
-    :deep(.corner-menu) {
-      opacity: 0;
-      visibility: hidden;
-      transition: 0.1s;
-    }
-  }
+.course-item:hover .action-section :deep(.corner-menu) {
+  visibility: visible;
+  opacity: 1;
 }
 </style>

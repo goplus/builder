@@ -1,13 +1,13 @@
 <template>
   <main
     v-radar="{ name: `Detail for \u0022${name}\u0022`, desc: `Detail view of the selected item \u0022${name}\u0022` }"
-    class="editor-item-detail"
+    class="flex-[1_1_0] flex flex-col gap-5 rounded-br-lg bg-grey-200 px-5 py-6"
   >
-    <h4 class="name">
+    <h4 class="flex items-center justify-center gap-1">
       <AssetName>{{ name }}</AssetName>
       <UIIcon
         v-radar="{ name: 'Rename button', desc: 'Click to rename the selected item' }"
-        class="edit-icon"
+        class="cursor-pointer text-grey-900 transition-colors hover:text-grey-800 active:text-grey-1000"
         :title="$t({ en: 'Rename', zh: '重命名' })"
         type="edit"
         @click="emit('rename')"
@@ -29,33 +29,3 @@ const emit = defineEmits<{
   rename: []
 }>()
 </script>
-
-<style lang="scss" scoped>
-.editor-item-detail {
-  flex: 1 1 0;
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  background-color: var(--ui-color-grey-200);
-  border-bottom-right-radius: var(--ui-border-radius-3);
-}
-
-.name {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.edit-icon {
-  cursor: pointer;
-  color: var(--ui-color-grey-900);
-  &:hover {
-    color: var(--ui-color-grey-800);
-  }
-  &:active {
-    color: var(--ui-color-grey-1000);
-  }
-}
-</style>

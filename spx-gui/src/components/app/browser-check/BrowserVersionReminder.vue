@@ -8,7 +8,7 @@
     @update:visible="visible = $event"
   >
     <div>{{ $t(content) }}</div>
-    <footer class="footer">
+    <footer class="mt-6 flex justify-end gap-3">
       <UIButton
         v-radar="{
           name: 'Do not show again button',
@@ -87,12 +87,3 @@ onMounted(() => {
   visible.value = true
 })
 </script>
-
-<style scoped lang="scss">
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-}
-</style>

@@ -15,9 +15,9 @@
       </UIChipRadioGroup>
     </template>
   </CommunityHeader>
-  <CenteredWrapper class="main">
+  <CenteredWrapper class="flex-[1_1_0] flex flex-col gap-5 py-5">
     <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet">
-      <ul class="projects">
+      <ul class="flex flex-wrap content-start gap-5">
         <ProjectItem v-for="project in slotProps.data" :key="project.id" :project="project" />
       </ul>
     </ListResultWrapper>
@@ -65,20 +65,3 @@ const queryRet = useQuery(
   }
 )
 </script>
-
-<style lang="scss" scoped>
-.main {
-  flex: 1 1 0;
-  padding: 20px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.projects {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 20px;
-}
-</style>

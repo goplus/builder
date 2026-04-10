@@ -34,45 +34,17 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 </script>
 
 <template>
-  <div class="thumbnail-uploader" @click="handleUpload.fn">
+  <div
+    class="cursor-pointer flex items-center justify-center overflow-hidden rounded-md border border-dashed border-grey-400 transition-[border-color,background-color] duration-300 hover:border-primary-main hover:bg-grey-400"
+    @click="handleUpload.fn"
+  >
     <UILoading v-if="handleUpload.isLoading.value" />
     <template v-else>
-      <UIImg v-if="thumbnailUrl != null" :src="thumbnailUrl" class="preview" size="contain" />
-      <div v-else class="placeholder">
+      <UIImg v-if="thumbnailUrl != null" :src="thumbnailUrl" class="h-full w-full" size="contain" />
+      <div v-else class="flex flex-col items-center gap-2 text-grey-700">
         <UIIcon type="plus" />
         {{ $t({ en: 'Click to upload', zh: '点击上传' }) }}
       </div>
     </template>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.thumbnail-uploader {
-  border: 1px dashed var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-2);
-  cursor: pointer;
-  overflow: hidden;
-  transition: 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    border-color: var(--ui-color-primary-main);
-    background: var(--ui-color-grey-400);
-  }
-
-  .preview {
-    width: 100%;
-    height: 100%;
-  }
-
-  .placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: var(--ui-color-grey-700);
-  }
-}
-</style>

@@ -31,11 +31,11 @@ const handleAction = useMessageHandle(
 </script>
 
 <template>
-  <CodeEditorCard class="hover-card">
-    <ul class="body">
+  <CodeEditorCard class="flex flex-col items-stretch p-2">
+    <ul class="min-h-0 max-h-75 min-w-62.5 max-w-82 flex flex-col overflow-y-auto [scrollbar-width:thin]">
       <slot></slot>
     </ul>
-    <footer v-if="actions.length > 0" class="footer">
+    <footer v-if="actions.length > 0" class="mt-1.5 flex gap-3 border-t border-dividing-line-2 px-2 pt-3.5 pb-2">
       <ActionButton
         v-for="(action, i) in actions"
         :key="i"
@@ -47,31 +47,3 @@ const handleAction = useMessageHandle(
     </footer>
   </CodeEditorCard>
 </template>
-
-<style lang="scss" scoped>
-.hover-card {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 8px;
-}
-
-.body {
-  display: flex;
-  flex-direction: column;
-  min-width: 250px;
-  max-width: 328px;
-  min-height: 0;
-  max-height: 300px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.footer {
-  margin-top: 6px;
-  padding: 14px 8px 8px;
-  display: flex;
-  gap: 12px;
-  border-top: 1px solid var(--ui-color-dividing-line-2);
-}
-</style>

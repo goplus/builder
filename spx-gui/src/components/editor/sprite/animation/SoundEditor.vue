@@ -6,7 +6,7 @@
     @cancel="emit('close')"
     @confirm="handleConfirm"
   >
-    <ul class="sound-items">
+    <ul class="flex-[1_1_0] flex flex-wrap content-start gap-3">
       <SoundItem
         v-for="sound in editorCtx.project.sounds"
         :key="sound.id"
@@ -17,24 +17,29 @@
       />
       <UIDropdown trigger="click" placement="top">
         <template #trigger>
-          <UIBlockItem v-radar="{ name: 'Add sound button', desc: 'Click to add a new sound' }" class="add-sound">
-            <UIIcon class="icon" type="plus" />
+          <UIBlockItem
+            v-radar="{ name: 'Add sound button', desc: 'Click to add a new sound' }"
+            class="text-primary-main justify-center"
+          >
+            <UIIcon class="w-6 h-6" type="plus" />
           </UIBlockItem>
         </template>
         <UIMenu>
           <UIMenuItem
             v-radar="{ name: 'Add from local file', desc: 'Click to add sound from local file' }"
             @click="handleAddFromLocalFile"
-            >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
           >
+            {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
+          </UIMenuItem>
           <UIMenuItem
             v-radar="{ name: 'Add from asset library', desc: 'Click to add sound from asset library' }"
             @click="handleAddFromAssetLibrary"
-            >{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem
           >
-          <UIMenuItem v-radar="{ name: 'Record sound', desc: 'Click to record a new sound' }" @click="handleRecord">{{
-            $t({ en: 'Record', zh: '录音' })
-          }}</UIMenuItem>
+            {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
+          </UIMenuItem>
+          <UIMenuItem v-radar="{ name: 'Record sound', desc: 'Click to record a new sound' }" @click="handleRecord">
+            {{ $t({ en: 'Record', zh: '录音' }) }}
+          </UIMenuItem>
         </UIMenu>
       </UIDropdown>
     </ul>
@@ -102,22 +107,3 @@ async function handleConfirm() {
   emit('close')
 }
 </script>
-
-<style lang="scss" scoped>
-.sound-items {
-  flex: 1 1 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 12px;
-}
-
-.add-sound {
-  justify-content: center;
-  color: var(--ui-color-primary-main);
-  .icon {
-    width: 24px;
-    height: 24px;
-  }
-}
-</style>

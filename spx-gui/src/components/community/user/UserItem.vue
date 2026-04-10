@@ -16,60 +16,19 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
 </script>
 
 <template>
-  <li class="user-item">
-    <UserAvatar class="avatar" :user="user.username" />
+  <li class="relative flex flex-col py-3 pl-14">
+    <UserAvatar class="absolute top-3 left-0" :user="user.username" />
+    <!-- TODO: should no-underline be one type of `UILink` / `RouterUILink`? -->
     <RouterUILink
       v-radar="{ name: 'User link', desc: 'Click to view user profile' }"
-      class="name"
+      class="w-fit text-15/6 text-title no-underline"
       type="boring"
       :to="userRoute"
-      >{{ user.displayName }}</RouterUILink
     >
-    <UserJoinedAt class="joined-at" :time="user.createdAt" />
-    <TextView v-if="!!user.description" class="description" :text="user.description" />
-    <FollowButton class="follow" :name="user.username" />
+      {{ user.displayName }}
+    </RouterUILink>
+    <UserJoinedAt class="w-fit" :time="user.createdAt" />
+    <TextView v-if="!!user.description" class="mt-1.5 max-h-15 w-fit text-13/5 text-text" :text="user.description" />
+    <FollowButton class="absolute top-3 right-0" :name="user.username" />
   </li>
 </template>
-
-<style lang="scss" scoped>
-.user-item {
-  position: relative;
-  padding: 12px 0 12px 56px;
-  display: flex;
-  flex-direction: column;
-}
-
-.avatar {
-  position: absolute;
-  left: 0;
-  top: 12px;
-}
-
-.name,
-.joined-at,
-.description {
-  width: fit-content;
-}
-
-.name {
-  font-size: 15px;
-  line-height: 24px;
-  color: var(--ui-color-title);
-  // TODO: should this style be one type of `UILink` / `RouterUILink`?
-  text-decoration: none;
-}
-
-.description {
-  margin-top: 6px;
-  max-height: 60px;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--ui-color-text);
-}
-
-.follow {
-  position: absolute;
-  top: 12px;
-  right: 0;
-}
-</style>

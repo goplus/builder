@@ -40,5 +40,3 @@ const handleClick = useMessageHandle(async () => {
     {{ $t(following ? { en: 'Unfollow', zh: '取消关注' } : { en: 'Follow', zh: '关注' }) }}
   </UIButton>
 </template>
-
-<style lang="scss" scoped></style>

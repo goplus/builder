@@ -8,34 +8,14 @@ const slots = useSlots()
 </script>
 
 <template>
-  <div class="config-item">
-    <UIIcon v-if="slots.default == null && icon != null" class="icon" :type="icon" />
+  <div
+    class="group h-8 w-8 cursor-pointer flex items-center justify-center rounded-[10px] text-center hover:bg-turquoise-200"
+  >
+    <UIIcon
+      v-if="slots.default == null && icon != null"
+      class="text-grey-1000 group-hover:text-turquoise-500"
+      :type="icon"
+    />
     <slot v-else></slot>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.config-item {
-  width: 32px;
-  height: 32px;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  cursor: pointer;
-
-  .icon {
-    color: var(--ui-color-grey-1000);
-  }
-
-  &:hover,
-  &.active {
-    background: var(--ui-color-turquoise-200);
-
-    .icon {
-      color: var(--ui-color-turquoise-500);
-    }
-  }
-}
-</style>

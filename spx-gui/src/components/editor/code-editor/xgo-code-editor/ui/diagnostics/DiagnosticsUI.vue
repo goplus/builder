@@ -68,7 +68,7 @@ useDecorations(() => {
   <div></div>
 </template>
 
-<style lang="scss">
+<style>
 .code-editor-diagnostic-error-line-header,
 .code-editor-diagnostic-warning-line-header {
   width: 100% !important;

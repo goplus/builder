@@ -28,8 +28,8 @@ const modelValue = computed({
 })
 </script>
 
+<!-- TODO: Update UI for this component -->
 <template>
-  <!-- TODO: Update UI for this component -->
   <UISelect v-model:value="modelValue" :style="{ alignSelf: 'stretch' }">
     <UISelectOption v-for="kind in layerActions" :key="kind.name" :value="kind.name">
       {{ $t(kind.text) }}

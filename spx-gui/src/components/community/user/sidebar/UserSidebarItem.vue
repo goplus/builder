@@ -7,71 +7,19 @@ defineProps<{
 </script>
 
 <template>
-  <RouterLink class="user-sidebar-item" exact-active-class="active" :to="to">
-    <i class="icon-bg" />
-    <span class="content">
+  <RouterLink
+    class="group relative flex items-center rounded-md p-3 text-text no-underline transition-all duration-100 [&.active]:bg-primary-100 [&.active]:text-primary-main"
+    exact-active-class="active"
+    :to="to"
+  >
+    <i
+      class="absolute left-3 top-3.5 h-4.25 w-4.25 rounded-full bg-grey-500 transition-all duration-100 group-[.active]:bg-primary-300"
+    />
+    <span
+      class="relative flex-[1_1_0] pl-6.5 text-13/5 [&_svg]:absolute [&_svg]:left-0 [&_svg]:top-1/2 [&_svg]:z-1 [&_svg]:-translate-y-1/2"
+    >
       <slot></slot>
     </span>
-    <UIIcon class="arrow" type="arrowAlt" />
+    <UIIcon type="arrowAlt" class="flex-none h-3 w-3 rotate-90 text-grey-800" />
   </RouterLink>
 </template>
-
-<style lang="scss" scoped>
-@import '@/utils/utils';
-
-.user-sidebar-item {
-  padding: 12px;
-  position: relative;
-  display: flex;
-  align-items: center;
-
-  border-radius: 12px;
-  color: var(--ui-color-text);
-  text-decoration: none;
-  transition: 0.1s;
-
-  .icon-bg {
-    position: absolute;
-    left: 12px;
-    top: 14px;
-    width: 17px;
-    height: 17px;
-    border-radius: 50%;
-    background: var(--ui-color-grey-500);
-    transition: 0.1s;
-  }
-
-  &.active {
-    color: var(--ui-color-primary-main);
-    background: var(--ui-color-primary-100);
-
-    .icon-bg {
-      background: var(--ui-color-primary-300);
-    }
-  }
-}
-
-.content {
-  position: relative;
-  padding-left: 26px;
-  flex: 1 1 0;
-  font-size: 13px;
-  line-height: 20px;
-
-  :deep(svg) {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-  }
-}
-
-.arrow {
-  flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  transform: rotate(90deg);
-  color: var(--ui-color-grey-800);
-}
-</style>

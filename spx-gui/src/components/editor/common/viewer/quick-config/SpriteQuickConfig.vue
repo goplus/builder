@@ -37,5 +37,3 @@ function backToDefault() {
   />
   <DefaultConfigPanel v-else-if="configType === 'default'" :local-config="localConfig" :project="project" />
 </template>
-
-<style lang="scss" scoped></style>

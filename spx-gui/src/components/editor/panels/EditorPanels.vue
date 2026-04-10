@@ -1,6 +1,9 @@
 <template>
-  <div v-show="running.mode !== 'debug'" class="editor-panels">
-    <UICard v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }" class="main">
+  <div v-show="running.mode !== 'debug'" class="flex-[1_1_0] flex gap-middle">
+    <UICard
+      v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
+      class="flex-[1_1_0] min-w-0 flex"
+    >
       <SpritesPanel />
     </UICard>
     <UICard
@@ -8,7 +11,7 @@
         name: 'Stage panel',
         desc: 'Panel for stage of the project, with quick entries to widgets, sounds and backdrops tabs'
       }"
-      class="sider"
+      class="flex-none"
     >
       <StagePanel />
     </UICard>
@@ -20,7 +23,7 @@
       desc: 'Console panel showing runtime output and errors',
       visible: running.mode === 'debug'
     }"
-    class="console-panel"
+    class="flex-[1_1_0]"
   />
 </template>
 
@@ -35,26 +38,3 @@ import ConsolePanel from './ConsolePanel.vue'
 const editorCtx = useEditorCtx()
 const running = computed(() => editorCtx.state.runtime.running)
 </script>
-
-<style scoped lang="scss">
-.editor-panels {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: row;
-  gap: var(--ui-gap-middle);
-}
-
-.console-panel {
-  flex: 1 1 0;
-}
-
-.main {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-}
-
-.sider {
-  flex: 0 0 auto;
-}
-</style>

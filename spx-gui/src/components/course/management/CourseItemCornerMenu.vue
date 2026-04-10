@@ -15,8 +15,11 @@ const emit = defineEmits<{
 <template>
   <UIDropdown trigger="click" placement="bottom-end">
     <template #trigger>
-      <div class="corner-menu" @click.stop.prevent>
-        <UIIcon class="icon" type="more" />
+      <div
+        class="corner-menu h-8 w-8 cursor-pointer flex items-center justify-center rounded-full bg-grey-100 text-grey-800 transition-all duration-100 hover:bg-primary-main hover:text-grey-100"
+        @click.stop.prevent
+      >
+        <UIIcon class="w-5.25 h-5.25" type="more" />
       </div>
     </template>
     <UIMenu>
@@ -34,28 +37,3 @@ const emit = defineEmits<{
     </UIMenu>
   </UIDropdown>
 </template>
-
-<style lang="scss" scoped>
-.corner-menu {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  color: var(--ui-color-grey-800);
-  background-color: var(--ui-color-grey-100);
-  cursor: pointer;
-  transition: 0.1s;
-
-  &:hover {
-    color: var(--ui-color-grey-100);
-    background-color: var(--ui-color-primary-main);
-  }
-
-  .icon {
-    width: 21px;
-    height: 21px;
-  }
-}
-</style>

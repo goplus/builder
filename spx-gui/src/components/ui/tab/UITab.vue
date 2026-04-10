@@ -1,17 +1,19 @@
 <template>
-  <li class="ui-tab" :class="{ active }" :style="cssVars" @click="handleClick">
+  <li :class="rootClass" :style="cssVars" @click="handleClick">
     <slot></slot>
   </li>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { cn, type ClassValue } from '../utils'
 import { getCssVars } from '../tokens/utils'
 import { useUIVariables } from '../UIConfigProvider.vue'
 import { useTabsCtx } from './UITabs.vue'
 
 const props = defineProps<{
   value: string
+  class?: ClassValue
 }>()
 
 const tabsCtx = useTabsCtx()
@@ -22,33 +24,15 @@ const cssVars = computed(() =>
     main: uiVariables.color[tabsCtx.color].main
   })
 )
+const rootClass = computed(() =>
+  cn(
+    'cursor-pointer flex items-center bg-(--ui-tab-color-main) px-middle py-[9px] text-16 text-grey-100 transition-opacity duration-200 first:rounded-tl-lg last:rounded-tr-lg',
+    active.value ? 'opacity-100' : 'opacity-70',
+    props.class ?? null
+  )
+)
 
 function handleClick() {
   tabsCtx.setValue(props.value)
 }
 </script>
-
-<style lang="scss" scoped>
-.ui-tab {
-  padding: 9px var(--ui-gap-middle);
-  display: flex;
-  align-items: center;
-  font-size: 16px;
-  color: var(--ui-color-grey-100);
-  opacity: 0.7;
-  background-color: var(--ui-tab-color-main);
-  cursor: pointer;
-  transition: opacity 0.2s;
-
-  &.active {
-    opacity: 1;
-  }
-
-  &:first-child {
-    border-top-left-radius: var(--ui-border-radius-3);
-  }
-  &:last-child {
-    border-top-right-radius: var(--ui-border-radius-3);
-  }
-}
-</style>

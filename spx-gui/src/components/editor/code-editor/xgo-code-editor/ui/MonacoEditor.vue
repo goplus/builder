@@ -98,9 +98,9 @@ watchEffect(async (onClenaup) => {
   <div ref="editorElRef" class="monaco-editor-conflict-free"></div>
 </template>
 
-<style lang="scss">
+<style>
 .monaco-editor-conflict-free > .monaco-editor {
-  // remove the default outline of monaco editor
+  /* Remove the default outline of Monaco editor. */
   outline: none;
 }
 </style>

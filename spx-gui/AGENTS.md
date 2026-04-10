@@ -80,6 +80,56 @@ When working with backend unique string identifiers such as `username`, project 
 
 * Generate accessibility info for interactive elements using `v-radar` directive.
 
+## Styling Preferences
+
+### Defaults
+
+* Use Tailwind as the default for local layout and surface styling.
+* Keep styles local to the page/feature/component. Do not move local styles into `src/app.css`.
+* Prefer readable template utilities and remove redundant local style blocks when they no longer improve clarity.
+* Prefer direct template utilities over local `@apply` blocks when the styles are only used by one or two template nodes.
+* If local authored styles are still needed, use plain CSS.
+
+### Boundaries and Source of Truth
+
+* Keep `src/app.css` limited to Tailwind entry setup, theme bridge, and rare project-wide utilities.
+* Keep `src/components/ui/global.css` and `src/components/ui/reset.css` as the base reset/foundation layer (Tailwind preflight stays disabled).
+* The global CSS layer order is `theme, base, naive-ui, components, utilities`, declared in `index.html`.
+* Keep `--ui-*` tokens as the source of truth.
+* In Tailwind classes, prefer bridged semantic tokens (for example `text-text`, `text-title`, `bg-primary-100`).
+* In local CSS, prefer direct `--ui-*` variables instead of bridged Tailwind variables.
+
+### Responsive and Theme Rules
+
+* Keep breakpoints in `src/app.css` aligned with `src/components/ui/responsive.ts`.
+* Use only `tablet`, `desktop`, and `desktop-large` responsive names.
+* Prefer responsive CSS/Tailwind variants over `useResponsive()`; keep `useResponsive()` for non-style runtime logic.
+* Keep Tailwind theme namespaces reset to project tokens only (color, shadow, font, text, radius, etc.).
+
+### When Local CSS Is Better
+
+* Keep local CSS for `:deep(...)`, generated content, third-party DOM overrides, and complex stateful widgets.
+* Keep a small local CSS rule for structural selectors that are awkward in template logic (for example nested `:last-child` rules) instead of encoding them with hard-to-read dynamic class expressions.
+* Prefer plain local CSS over complex Tailwind descendant/arbitrary selectors for cross-component or slot-content styling.
+* Preserve semantic hook classes used by parent selectors or slots (for example `.corner-menu`, `.course-item-mini`).
+* For newly added components, avoid introducing `:deep(...)` selectors and cross-file hook classes when possible, since they increase maintenance cost.
+* Do not force full Tailwind conversion when a small local style block is clearer.
+
+### Practical Styling Notes
+
+* For root-class overrides and utility conflicts:
+	- For business components, external root `class` overrides are allowed by default. If utility conflicts need an explicit winner, prefer adding Tailwind's important modifier at the usage site (for example `rounded-md!`, `w-32!`) instead of expanding the component API. This keeps intent explicit, usage concise, and matches the fact that business components rarely need nested override chains.
+	- For most UI components, `twMerge` and `@layer components` are set up so external utilities or custom classes can override root classes in the common case without special handling, though edge cases can still exist.
+	- For the Naive UI-root components listed in `src/components/ui/README.md`, Naive UI defaults live in the `naive-ui` layer and our authored UI styles live in the `components` layer, so component-layer rules have higher cascade priority on the same element/property pair.
+	- Even so, those Naive UI-root components still are not identical to DOM-root utility wrappers. Treat them as component-specific: simple root overrides are often fine, while deeper visual changes may still need wrapper layout control, explicit props, or Naive UI theme overrides.
+* Avoid non-equivalent Tailwind simplifications for flex values. In particular, `flex: 1 1 0` is not equivalent to Tailwind `flex-1` (`flex: 1 1 0%`), so do not simplify between them unless the layout behavior has been verified. Likewise, do not simplify `flex: 0 0 auto` to `shrink-0`; use the equivalent `flex-none` when that shorthand is desired.
+* Prefer `style` / `:style` for one-off values when clearer than Tailwind arbitrary utilities. For example, prefer `style="box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1)"` over a long arbitrary utility such as `shadow-[0_24px_32px_-16px_rgba(0,0,0,0.1)]`.
+* For important/non-obvious background assets, prefer TS imports and inline `backgroundImage` binding.
+* Keep fixed utility classes in `class`; reserve `:class` for stateful/dynamic parts only.
+* In plain `<style scoped>`, flatten `:deep(...)` selectors (for example `.preview :deep(svg)`) so the final selector structure and specificity stay obvious.
+* Do not use native CSS nesting in plain `<style>` / `<style scoped>` blocks; use flat selectors to avoid browser compatibility issues.
+* Keep single-use values local; only add setup variables when reused/computed or clearly improving readability.
+
 ### Menu Item Text Guidelines
 
 When creating or modifying menu items, follow these UI guidelines for ellipses:

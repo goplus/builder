@@ -159,13 +159,17 @@ const handleSubmit = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <UIForm :form="form" @submit="handleSubmit.fn">
-      <div class="form-row">
-        <UIFormItem class="thumbnail-wrapper" path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
-          <ThumbnailUploader :thumbnail="form.value.thumbnail" @update:thumbnail="(v) => (form.value.thumbnail = v)" />
+      <div class="mb-6 grid grid-cols-[350px_1fr] gap-6">
+        <UIFormItem class="thumbnail-wrapper mt-0" path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
+          <ThumbnailUploader
+            class="h-65"
+            :thumbnail="form.value.thumbnail"
+            @update:thumbnail="(v) => (form.value.thumbnail = v)"
+          />
         </UIFormItem>
 
         <div>
-          <UIFormItem path="title" :label="$t({ en: 'Title', zh: '标题' })">
+          <UIFormItem class="mt-0" path="title" :label="$t({ en: 'Title', zh: '标题' })">
             <UITextInput
               v-model:value="form.value.title"
               :placeholder="
@@ -177,7 +181,7 @@ const handleSubmit = useMessageHandle(
             />
           </UIFormItem>
 
-          <UIFormItem path="description" :label="$t({ en: 'Description', zh: '描述' })">
+          <UIFormItem class="mt-0" path="description" :label="$t({ en: 'Description', zh: '描述' })">
             <UITextInput
               v-model:value="form.value.description"
               type="textarea"
@@ -191,7 +195,7 @@ const handleSubmit = useMessageHandle(
             />
           </UIFormItem>
 
-          <UIFormItem path="order" :label="$t({ en: 'Sort order', zh: '排序优先级' })">
+          <UIFormItem class="mt-0" path="order" :label="$t({ en: 'Sort order', zh: '排序优先级' })">
             <UINumberInput
               v-model:value="form.value.order"
               :placeholder="
@@ -209,35 +213,45 @@ const handleSubmit = useMessageHandle(
         <span />
       </UIFormItem>
 
-      <div class="courses-section">
-        <label class="section-label">
+      <div class="mb-6">
+        <label class="mb-3 block font-medium text-grey-800">
           {{ $t({ en: 'Courses', zh: '课程' }) }}
         </label>
-        <div class="course-selection">
-          <div class="selection-panel">
-            <label class="course-label">{{ $t({ en: 'Available courses', zh: '可选课程' }) }}</label>
-            <CourseSelector
-              :courses="allCourses"
-              :selected-ids="form.value.courseIDs"
-              :loading="coursesLoading"
-              @select="(id) => (form.value.courseIDs = [...form.value.courseIDs, id])"
-            />
+        <div class="grid h-100 grid-cols-2 gap-6">
+          <div class="flex flex-col overflow-hidden rounded-md border border-dividing-line-2">
+            <!-- FIXME: `bg-grey-50` is not taking effect -->
+            <label class="border-b border-dividing-line-2 bg-grey-50 px-4 py-3 text-grey-800">
+              {{ $t({ en: 'Available courses', zh: '可选课程' }) }}
+            </label>
+            <div class="flex-1 min-h-0">
+              <CourseSelector
+                :courses="allCourses"
+                :selected-ids="form.value.courseIDs"
+                :loading="coursesLoading"
+                @select="(id) => (form.value.courseIDs = [...form.value.courseIDs, id])"
+              />
+            </div>
           </div>
-          <div class="selection-panel">
-            <label class="course-label">{{ $t({ en: 'Selected courses', zh: '已选课程' }) }}</label>
-            <SelectedCoursesList
-              :course-ids="form.value.courseIDs"
-              :all-courses="allCourses"
-              @update:course-ids="(ids) => (form.value.courseIDs = ids)"
-            />
+          <div class="flex flex-col overflow-hidden rounded-md border border-dividing-line-2">
+            <!-- FIXME: `bg-grey-50` is not taking effect -->
+            <label class="border-b border-dividing-line-2 bg-grey-50 px-4 py-3 text-grey-800">
+              {{ $t({ en: 'Selected courses', zh: '已选课程' }) }}
+            </label>
+            <div class="flex-1 min-h-0">
+              <SelectedCoursesList
+                :course-ids="form.value.courseIDs"
+                :all-courses="allCourses"
+                @update:course-ids="(ids) => (form.value.courseIDs = ids)"
+              />
+            </div>
           </div>
         </div>
-        <div v-if="form.validated.courseIDs?.hasError" class="error-message">
+        <div v-if="form.validated.courseIDs?.hasError" class="mt-2 text-danger-500">
           {{ form.validated.courseIDs.error }}
         </div>
       </div>
 
-      <footer class="footer">
+      <footer class="mt-5 flex justify-end gap-3 border-t border-dividing-line-2 pt-5">
         <UIButton color="boring" @click="emit('cancelled')">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
@@ -248,76 +262,3 @@ const handleSubmit = useMessageHandle(
     </UIForm>
   </UIFormModal>
 </template>
-
-<style lang="scss" scoped>
-.form-row {
-  display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
-
-  > :deep(.ui-form-item) {
-    margin-top: 0 !important;
-  }
-
-  :deep(.thumbnail-wrapper) > div {
-    height: 260px;
-  }
-}
-
-.thumbnail-uploader {
-  width: 100%;
-  height: 100%;
-}
-
-.courses-section {
-  margin-bottom: 24px;
-}
-
-.section-label {
-  font-weight: 500;
-  color: var(--ui-color-grey-800);
-  margin-bottom: 12px;
-}
-
-.error-message {
-  margin-top: 8px;
-  color: var(--ui-color-danger-500);
-}
-
-.course-selection {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  height: 400px;
-}
-
-.selection-panel {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--ui-color-divider-subtle);
-  border-radius: var(--ui-border-radius-2);
-  overflow: hidden;
-
-  .course-label {
-    padding: 12px 16px;
-    color: var(--ui-color-grey-800);
-    background: var(--ui-color-grey-50);
-    border-bottom: 1px solid var(--ui-color-divider-subtle);
-  }
-
-  > div {
-    flex: 1;
-    min-height: 0;
-  }
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-  margin-top: 20px;
-  border-top: 1px solid var(--ui-color-divider-subtle);
-}
-</style>

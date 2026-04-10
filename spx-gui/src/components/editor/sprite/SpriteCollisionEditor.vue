@@ -291,9 +291,9 @@ const { fn: handleConfirm } = useMessageHandle(
 </script>
 
 <template>
-  <div class="sprite-collision-editor">
-    <div ref="wrapper" class="wrapper">
-      <CheckerboardBackground class="background" />
+  <div class="h-full w-full flex flex-col items-center gap-middle">
+    <div ref="wrapper" class="relative h-full w-full flex-1 overflow-hidden rounded-md">
+      <CheckerboardBackground class="absolute inset-0" />
       <v-stage v-if="stageConfig != null" :config="stageConfig">
         <v-layer v-if="layerConfig != null" :config="layerConfig">
           <v-image v-if="imgConfig != null" :config="imgConfig" />
@@ -324,29 +324,3 @@ const { fn: handleConfirm } = useMessageHandle(
     </UIButton>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.sprite-collision-editor {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-  height: 100%;
-}
-.wrapper {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  border-radius: var(--ui-border-radius-2);
-  position: relative;
-  overflow: hidden;
-}
-.background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
-</style>

@@ -66,9 +66,9 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
     @click="emit('click')"
   >
     <template v-if="gen.result != null" #preview>
-      <UIImg class="preview" :src="url" :loading="imageLoading" />
+      <UIImg class="h-full w-full" :src="url" :loading="imageLoading" />
     </template>
-    <UIBlockItemTitle size="medium" :class="{ 'is-default': isDefault }">{{ gen.name }}</UIBlockItemTitle>
+    <UIBlockItemTitle size="medium" :class="{ 'text-turquoise-500': isDefault }">{{ gen.name }}</UIBlockItemTitle>
     <CornerMenu v-if="operable && active" color="primary">
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="emit('rename')" />
       <RemoveMenuItem
@@ -79,14 +79,3 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
     </CornerMenu>
   </GenItem>
 </template>
-
-<style lang="scss" scoped>
-.preview {
-  width: 100%;
-  height: 100%;
-}
-
-.is-default {
-  color: var(--ui-color-turquoise-500);
-}
-</style>

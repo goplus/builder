@@ -1,8 +1,18 @@
 <template>
-  <div class="ui-select">
-    <span class="label" :class="{ placeholder: selectedRef == null }">{{ selectedRef?.label ?? placeholder }}</span>
-    <UIIcon class="arrow" type="arrowDown" />
-    <select ref="selectRef" class="select" :value="value" @change="handleSelectChange">
+  <div class="ui-select" :class="rootClass">
+    <span
+      class="min-w-0 flex-1 overflow-x-hidden text-ellipsis whitespace-nowrap"
+      :class="selectedRef == null ? 'text-grey-700' : null"
+    >
+      {{ selectedRef?.label ?? placeholder }}
+    </span>
+    <UIIcon class="shrink-0" type="arrowDown" />
+    <select
+      ref="selectRef"
+      class="absolute inset-0 h-full w-full opacity-0"
+      :value="value"
+      @change="handleSelectChange"
+    >
       <option v-if="selectedRef == null" disabled :value="placeholderValue">{{ placeholder }}</option>
       <slot></slot>
     </select>
@@ -10,17 +20,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import { untilNotNull } from '@/utils/utils'
+import { cn, type ClassValue } from '../utils'
 import UIIcon from '../icons/UIIcon.vue'
 
 const props = withDefaults(
   defineProps<{
     value: string | null
     placeholder?: string
+    class?: ClassValue
   }>(),
   {
-    placeholder: ''
+    placeholder: '',
+    class: undefined
   }
 )
 
@@ -39,6 +52,12 @@ const placeholderValue = '\0'
 
 const selectedRef = ref<Selected>(null)
 const selectRef = ref<HTMLSelectElement | null>(null)
+const rootClass = computed(() =>
+  cn(
+    'relative h-(--ui-line-height-2) inline-flex items-center justify-between gap-0.5 rounded-md px-middle text-grey-1000 bg-grey-300 [transition:0.3s]',
+    props.class ?? null
+  )
+)
 
 async function syncSelected() {
   const select = await untilNotNull(() => selectRef.value)
@@ -76,57 +95,22 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style lang="scss" scoped>
-.ui-select {
-  height: var(--ui-line-height-2);
-  padding: 0px var(--ui-gap-middle);
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2px;
-
-  border-radius: var(--ui-border-radius-2);
-  color: var(--ui-color-grey-1000);
-  background: var(--ui-color-grey-300);
-  transition: 0.3s;
-
-  &:hover {
+<style>
+@layer components {
+  .ui-select:hover {
     color: var(--ui-color-grey-800);
     background: var(--ui-color-grey-400);
   }
-  &:has(:focus) {
+
+  .ui-select:has(:focus) {
     color: var(--ui-color-grey-1000);
     background: var(--ui-color-grey-400);
     box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
   }
-  &:has(:active) {
+
+  .ui-select:has(:active) {
     color: var(--ui-color-grey-1000);
     background: var(--ui-color-grey-500);
   }
-}
-
-.label {
-  flex: 1 1 auto;
-  overflow-x: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  &.placeholder {
-    color: var(--ui-color-grey-700);
-  }
-}
-
-.arrow {
-  flex: 0 0 auto;
-}
-
-.select {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
-  opacity: 0;
 }
 </style>

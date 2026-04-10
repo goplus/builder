@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem class="ui-sprite-item" size="large" :active="selected" :interactive="!!selectable">
+  <UIBlockItem class="p-0.5" size="large" :active="selected" :interactive="!!selectable">
     <slot name="img" :style="imgStyle"></slot>
     <UIBlockItemTitle size="large">
       {{ name }}
@@ -29,8 +29,3 @@ const imgStyle = {
   width: '99px'
 }
 </script>
-<style scoped lang="scss">
-.ui-sprite-item {
-  padding: 2px;
-}
-</style>

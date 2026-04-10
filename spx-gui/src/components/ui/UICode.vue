@@ -1,17 +1,19 @@
 <template>
-  <code class="ui-code">
+  <code :class="rootClass">
     <slot></slot>
   </code>
 </template>
 
-<style lang="scss" scoped>
-.ui-code {
-  padding: 2px 4px;
-  font-size: 10px;
-  font-family: var(--ui-font-family-code);
-  line-height: 1.6;
-  color: var(--ui-color-primary-main);
-  background-color: var(--ui-color-primary-200);
-  border-radius: 4px;
-}
-</style>
+<script setup lang="ts">
+import { computed } from 'vue'
+
+import { cn, type ClassValue } from './utils'
+
+const props = defineProps<{
+  class?: ClassValue
+}>()
+
+const rootClass = computed(() =>
+  cn('rounded-[4px] bg-primary-200 px-1 py-[2px] font-code text-10/[1.6] text-primary-main', props.class ?? null)
+)
+</script>

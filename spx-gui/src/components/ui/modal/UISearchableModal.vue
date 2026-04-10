@@ -4,13 +4,13 @@
 
 <template>
   <UIModal :radar="radar" :visible="visible" :auto-focus="false" mask-closable @update:visible="handleUpdateShow">
-    <div class="container">
-      <div class="header">
-        <h4 class="title">
+    <div class="flex flex-col">
+      <div class="h-16 flex items-center py-middle px-6">
+        <h4 class="flex-1 flex text-16 text-title">
           {{ title }}
         </h4>
         <slot name="input"></slot>
-        <UIModalClose class="close" @click="handleCloseButton" />
+        <UIModalClose class="ml-2 -mr-1" @click="handleCloseButton" />
       </div>
       <UIDivider />
       <slot></slot>
@@ -41,30 +41,3 @@ const handleCloseButton = () => {
   handleUpdateShow(false)
 }
 </script>
-
-<style scoped lang="scss">
-.container {
-  display: flex;
-  flex-direction: column;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  padding: var(--ui-gap-middle) 24px;
-  height: 64px;
-}
-
-.title {
-  font-size: 16px;
-  line-height: 26px;
-  flex: 1;
-  display: flex;
-  color: var(--ui-color-title);
-}
-
-.close {
-  margin-left: 8px;
-  margin-right: -4px;
-}
-</style>

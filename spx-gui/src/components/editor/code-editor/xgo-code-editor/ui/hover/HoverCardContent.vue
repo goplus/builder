@@ -1,13 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <li class="hover-card-content">
+  <li class="px-2 py-1.5">
     <slot></slot>
   </li>
 </template>
-
-<style lang="scss" scoped>
-.hover-card-content {
-  padding: 6px 8px;
-}
-</style>

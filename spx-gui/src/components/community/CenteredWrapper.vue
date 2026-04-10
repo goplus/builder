@@ -1,14 +1,10 @@
-<template>
-  <section class="centered" :class="`size-${size}`">
-    <slot></slot>
-  </section>
-</template>
-
 <script setup lang="ts">
+import { computed } from 'vue'
+
 // different size of centered-content for different pages
 type Size = 'medium' | 'large'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     size?: Size
   }>(),
@@ -16,28 +12,12 @@ withDefaults(
     size: 'medium'
   }
 )
+
+const widthClass = computed(() => (props.size === 'large' ? 'w-310 desktop-large:w-373' : 'w-247 desktop-large:w-310'))
 </script>
 
-<style scoped lang="scss">
-@import '@/components/ui/responsive';
-
-.centered {
-  position: relative;
-  margin-left: auto;
-  margin-right: auto;
-
-  &.size-medium {
-    width: 988px;
-    @include responsive(desktop-large) {
-      width: 1240px;
-    }
-  }
-
-  &.size-large {
-    width: 1240px;
-    @include responsive(desktop-large) {
-      width: 1492px;
-    }
-  }
-}
-</style>
+<template>
+  <section class="relative mx-auto self-center" :class="widthClass">
+    <slot></slot>
+  </section>
+</template>

@@ -37,7 +37,7 @@ const allQueryRet = useQuery(
 </script>
 
 <template>
-  <section class="course-start-page">
+  <section class="h-full w-full flex items-center justify-center">
     <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
       <span>{{ $t(allQueryRet.progress.value.desc ?? { zh: '跳转中...', en: 'Redirecting...' }) }}</span>
     </UIDetailedLoading>
@@ -46,13 +46,3 @@ const allQueryRet = useQuery(
     </UIError>
   </section>
 </template>
-
-<style lang="scss" scoped>
-.course-start-page {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-</style>

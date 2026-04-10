@@ -118,25 +118,13 @@ defineExpose({ load, play })
 </script>
 
 <template>
-  <div class="frames-player">
-    <canvas ref="canvasRef" class="canvas"></canvas>
+  <div class="relative">
+    <canvas ref="canvasRef" class="absolute w-full h-full"></canvas>
     <UIImg
       v-show="props.placeholderImg != null && loadedRef == null"
-      class="placeholder"
+      class="absolute w-full h-full"
       :src="props.placeholderImg ?? null"
       loading
     />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.frames-player {
-  position: relative;
-}
-.canvas,
-.placeholder {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-</style>

@@ -1,14 +1,17 @@
 <template>
-  <div class="ui-card">
+  <div :class="rootClass">
     <slot></slot>
   </div>
 </template>
 
-<style lang="scss" scoped>
-.ui-card {
-  box-shadow: var(--ui-box-shadow-diffusion);
-  border-radius: var(--ui-border-radius-3);
-  background-color: var(--ui-color-grey-100);
-  overflow: hidden;
-}
-</style>
+<script setup lang="ts">
+import { computed } from 'vue'
+
+import { cn, type ClassValue } from './utils'
+
+const props = defineProps<{
+  class?: ClassValue
+}>()
+
+const rootClass = computed(() => cn('overflow-hidden rounded-lg bg-grey-100 shadow-diffusion', props.class ?? null))
+</script>

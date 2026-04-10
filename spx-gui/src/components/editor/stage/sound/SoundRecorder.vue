@@ -1,6 +1,6 @@
 <template>
-  <div class="container">
-    <div class="recorder-waveform-container">
+  <div class="flex flex-col">
+    <div class="relative h-40 overflow-hidden rounded-md bg-grey-300">
       <WaveformRecorder
         v-if="recordingState === 'recording' || recordingState === 'recorded'"
         ref="waveformRecorderRef"
@@ -10,7 +10,10 @@
         @record-started="handleRecordStarted"
         @record-stopped="recordingState = 'recorded'"
       />
-      <div v-if="recordingState === 'yetStarted'" class="recorder-waveform-overlay">
+      <div
+        v-if="recordingState === 'yetStarted'"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-grey-800"
+      >
         {{
           $t({
             en: 'Begin recording by clicking the button below',
@@ -19,11 +22,11 @@
         }}
       </div>
     </div>
-    <div v-if="recordingState === 'recorded'" class="volume-slider-container">
+    <div v-if="recordingState === 'recorded'" class="-mb-2 pt-6">
       <VolumeSlider :value="gain" @update:value="handleGainUpdate" />
     </div>
-    <div class="button-container">
-      <div v-if="recordingState === 'yetStarted'" class="icon-button">
+    <div class="mb-2 mt-8 flex justify-center gap-10">
+      <div v-if="recordingState === 'yetStarted'" class="flex flex-col items-center gap-2 text-base">
         <UIButton shape="circle" size="large" icon="microphone" color="danger" @click="recordingState = 'recording'" />
         <span>
           {{
@@ -34,7 +37,7 @@
           }}
         </span>
       </div>
-      <div v-else-if="recordingState === 'recording'" class="icon-button">
+      <div v-else-if="recordingState === 'recording'" class="flex flex-col items-center gap-2 text-base">
         <UIButton shape="circle" size="large" icon="stop" color="danger" @click="stopRecording" />
         <span>
           {{
@@ -46,8 +49,8 @@
         </span>
       </div>
       <template v-else>
-        <div class="icon-button">
-          <div class="icon-button-wrapper">
+        <div class="flex flex-col items-center gap-2 text-base">
+          <div class="h-14 flex items-center">
             <UIButton shape="circle" size="large" icon="reload" color="boring" @click="resetRecording" />
           </div>
           <span>
@@ -59,7 +62,7 @@
             }}
           </span>
         </div>
-        <div class="icon-button">
+        <div class="flex flex-col items-center gap-2 text-base">
           <UIButton
             style="width: 56px; height: 56px"
             shape="circle"
@@ -68,7 +71,7 @@
             @click="waveformRecorderRef?.startPlayback()"
           >
             <template #icon>
-              <UIIcon type="play" style="width: 28px; height: 28px" />
+              <UIIcon class="w-7 h-7" type="play" />
             </template>
           </UIButton>
           <span>
@@ -80,8 +83,8 @@
             }}
           </span>
         </div>
-        <div class="icon-button">
-          <div class="icon-button-wrapper">
+        <div class="flex flex-col items-center gap-2 text-base">
+          <div class="h-14 flex items-center">
             <UIButton shape="circle" size="large" icon="check" color="success" @click="saveRecording" />
           </div>
           <span>
@@ -158,63 +161,3 @@ const resetRecording = () => {
   audioRange.value = { left: 0, right: 1 }
 }
 </script>
-
-<style lang="scss" scoped>
-.container {
-  display: flex;
-  flex-direction: column;
-}
-
-.recorder-waveform-container {
-  background-color: var(--ui-color-grey-300);
-  border-radius: var(--ui-border-radius-2);
-  height: 160px;
-  position: relative;
-  overflow: hidden;
-}
-
-.recorder-waveform-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: var(--ui-color-grey-800);
-  white-space: nowrap;
-}
-
-.recorder-waveform {
-  height: 160px;
-  padding: 0 16px;
-}
-
-.hidden {
-  opacity: 0;
-}
-
-.icon-button-wrapper {
-  display: flex;
-  align-items: center;
-  height: 56px;
-}
-
-.button-container {
-  display: flex;
-  margin-top: 32px;
-  margin-bottom: 8px;
-  gap: 40px;
-  justify-content: center;
-}
-
-.icon-button {
-  display: flex;
-  gap: 8px;
-  flex-direction: column;
-  font-size: 14px;
-  align-items: center;
-}
-
-.volume-slider-container {
-  padding-top: 24px;
-  margin-bottom: -8px;
-}
-</style>

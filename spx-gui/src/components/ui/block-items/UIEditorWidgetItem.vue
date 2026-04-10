@@ -1,12 +1,12 @@
 <template>
   <UIBlockItem :color="color" :active="selectable && selectable.selected" :interactive="!!selectable">
-    <div class="icon-container">
+    <div class="icon-container mt-3 mb-3.5 h-10 w-10">
       <slot name="icon"></slot>
     </div>
     <UIBlockItemTitle size="medium">
       {{ name }}
       <template v-if="visible === false" #suffix>
-        <UIIcon class="eye-off" type="eyeOff" />
+        <UIIcon class="cursor-auto text-grey-700" type="eyeOff" />
       </template>
     </UIBlockItemTitle>
     <slot></slot>
@@ -31,20 +31,9 @@ withDefaults(
   }
 )
 </script>
-<style scoped lang="scss">
-.icon-container {
-  margin: 12px 0 14px;
-  width: 40px;
-  height: 40px;
-
-  :deep(> *) {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-.eye-off {
-  color: var(--ui-color-grey-700);
-  cursor: auto;
+<style scoped>
+.icon-container :deep(> *) {
+  width: 100%;
+  height: 100%;
 }
 </style>

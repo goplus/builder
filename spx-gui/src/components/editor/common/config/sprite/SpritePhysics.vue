@@ -90,7 +90,7 @@ function getCheckedPhysicsFlags(physicsMode: PhysicsMode): PhysicsFlag[] {
 </script>
 
 <template>
-  <UICheckboxGroup class="check-group" :value="checkedPhysicsFlags" @update:value="handlePhysicsFlagsChange">
+  <UICheckboxGroup class="whitespace-nowrap" :value="checkedPhysicsFlags" @update:value="handlePhysicsFlagsChange">
     <UITooltip>
       <template #trigger>
         <UICheckbox
@@ -139,9 +139,3 @@ function getCheckedPhysicsFlags(physicsMode: PhysicsMode): PhysicsFlag[] {
     </UITooltip>
   </UICheckboxGroup>
 </template>
-
-<style lang="scss" scoped>
-.check-group {
-  white-space: nowrap;
-}
-</style>

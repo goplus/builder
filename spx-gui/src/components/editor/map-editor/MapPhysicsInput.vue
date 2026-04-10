@@ -31,5 +31,3 @@ const handlePhysicsEnabledChange = (v: boolean) => {
     @update:value="handlePhysicsEnabledChange"
   />
 </template>
-
-<style lang="scss" scoped></style>

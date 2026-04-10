@@ -1,6 +1,6 @@
 <template>
-  <div class="container">
-    <div class="gap-4">
+  <div class="flex items-center gap-middle text-grey-800">
+    <div class="flex items-center gap-1">
       <div>
         {{ $t({ en: 'Backdrop Mode', zh: '背景模式' }) }}
       </div>
@@ -50,17 +50,3 @@ const handleUpdateMapMode = (mode: MapMode) => {
 
 const editorCtx = useEditorCtx()
 </script>
-<style scoped lang="scss">
-.container {
-  display: flex;
-  align-items: center;
-  color: var(--ui-color-grey-800);
-  gap: 16px;
-}
-
-.gap-4 {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-</style>

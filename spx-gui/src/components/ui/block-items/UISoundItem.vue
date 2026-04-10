@@ -1,14 +1,14 @@
 <template>
-  <UIBlockItem size="large" class="ui-sound-item" :active="selected" :interactive="!!selectable">
-    <div class="sound-container">
-      <div class="sound-player">
+  <UIBlockItem size="large" class="p-0.5" :active="selected" :interactive="!!selectable">
+    <div class="h-23 flex items-center justify-center">
+      <div class="h-12 w-12">
         <slot name="player"></slot>
       </div>
     </div>
-    <UIBlockItemTitle size="large" class="name">
+    <UIBlockItemTitle size="large" class="h-5">
       {{ name }}
     </UIBlockItemTitle>
-    <div class="duration">{{ duration }}</div>
+    <div class="text-center text-10/[1.6] font-semibold text-hint-1">{{ duration }}</div>
     <slot></slot>
   </UIBlockItem>
 </template>
@@ -30,29 +30,3 @@ const props = withDefaults(
 
 const selected = computed(() => props.selectable && props.selectable.selected)
 </script>
-<style scoped lang="scss">
-.ui-sound-item {
-  padding: 2px;
-
-  .name {
-    height: 20px;
-  }
-}
-.sound-container {
-  height: 92px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.sound-player {
-  height: 48px;
-  width: 48px;
-}
-.duration {
-  color: var(--ui-color-hint-1);
-  text-align: center;
-  font-size: 10px;
-  line-height: 16px;
-  font-weight: 600;
-}
-</style>

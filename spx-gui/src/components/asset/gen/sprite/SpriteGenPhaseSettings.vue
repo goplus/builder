@@ -85,16 +85,16 @@ const handleUseAsset = useMessageHandle(
       name: 'Sprite generation settings phase',
       desc: 'Generate default costume for the sprite based on settings'
     }"
-    class="phase-settings"
+    class="phase-settings h-full flex flex-col items-stretch"
   >
     <LayoutWithPreview :has-preview="hasPreview">
       <SpriteSettingsInput
-        class="settings-input"
-        :class="{ 'has-preview': hasPreview }"
+        :class="{ 'h-75': hasPreview }"
         :gen="gen"
         :description-placeholder="descriptionPlaceholder"
       />
-      <div class="select-area">
+      <!-- Fixed height to prevent layout shift when suggestions appear/disappear -->
+      <div class="min-h-42.5">
         <AssetSuggestions
           v-if="isLibrarySearchEnabled"
           :type="AssetType.Sprite"
@@ -141,7 +141,7 @@ const handleUseAsset = useMessageHandle(
         <ImagePreview :file="gen.image" />
       </template>
     </LayoutWithPreview>
-    <footer class="footer">
+    <footer class="w-full flex-none px-6 py-5 flex justify-end gap-4">
       <UIButton
         v-if="selectedAsset != null"
         v-radar="{
@@ -172,13 +172,8 @@ const handleUseAsset = useMessageHandle(
   </main>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .phase-settings {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  height: 100%;
-
   background-image: url('../common/phase-settings-left-bottom-bg.png'), url('../common/phase-settings-right-top-bg.png');
   background-position:
     left bottom,
@@ -187,23 +182,5 @@ const handleUseAsset = useMessageHandle(
   background-size:
     520px auto,
     180px auto;
-
-  .settings-input {
-    &.has-preview {
-      height: 300px;
-    }
-  }
-
-  .select-area {
-    min-height: 170px; // Fixed height to prevent layout shift when suggestions appear/disappear
-  }
-}
-.footer {
-  width: 100%;
-  flex: 0 0 auto;
-  padding: 20px 24px;
-  display: flex;
-  justify-content: end;
-  gap: 16px;
 }
 </style>

@@ -2,10 +2,10 @@
   <ProcessDetail v-show="active" :applied="applied && !dirty" :apply-fn="apply" :cancel-fn="cancel">
     <template #header>
       {{ $t({ en: 'Split sprite sheet', zh: '切分精灵表' }) }}
-      <UINumberInput v-model:value="rowNum" class="num-input" :min="1" :max="maxGridSize">
+      <UINumberInput v-model:value="rowNum" class="w-30" :min="1" :max="maxGridSize">
         <template #prefix>{{ $t({ en: 'Rows', zh: '行数' }) }}</template>
       </UINumberInput>
-      <UINumberInput v-model:value="colNum" class="num-input" :min="1" :max="maxGridSize">
+      <UINumberInput v-model:value="colNum" class="w-30" :min="1" :max="maxGridSize">
         <template #prefix>{{ $t({ en: 'Columns', zh: '列数' }) }}</template>
       </UINumberInput>
     </template>
@@ -137,9 +137,3 @@ async function cancel() {
   emit('cancel')
 }
 </script>
-
-<style lang="scss" scoped>
-.num-input {
-  width: 120px;
-}
-</style>

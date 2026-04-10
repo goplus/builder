@@ -1,5 +1,15 @@
 import { type InjectionKey, provide, type Ref, inject, ref, watchEffect } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
+export { cn, type ClassDictionary, type ClassValue } from './cn'
+export {
+  createRecipe,
+  type SlotClasses,
+  type VariantDefinitions,
+  type RecipeSelection,
+  type RecipeCondition,
+  type RecipeConfig,
+  type RecipeResult
+} from './create-recipe'
 
 const rootContainerInjectionKey: InjectionKey<Ref<HTMLElement | undefined>> = Symbol('root-container')
 

@@ -75,16 +75,17 @@ function removeCourse(index: number) {
 </script>
 
 <template>
-  <div class="selected-courses-list">
+  <div class="h-full overflow-y-auto p-3">
     <UIEmpty
       v-if="selectedCourses.length === 0"
       size="small"
       :description="$t({ en: 'No courses selected', zh: '未选择任何课程' })"
     />
-    <div v-else class="course-items">
+    <div v-else class="flex flex-col gap-2">
       <div
         v-for="(course, index) in selectedCourses"
         :key="course.id"
+        class="cursor-move"
         draggable="true"
         @dragstart="handleDragStart($event, index)"
         @dragend="handleDragEnd"
@@ -94,51 +95,17 @@ function removeCourse(index: number) {
       >
         <CourseItemMini :course="course" :dimmed="draggedIndex === index" :highlighted="dragOverIndex === index">
           <template #prefix>
-            <UIIcon class="drag-handle" type="exchange" />
+            <UIIcon class="mr-2 cursor-grab text-grey-400 active:cursor-grabbing" type="exchange" />
           </template>
           <template #suffix>
-            <UIIcon class="remove-icon" type="close" @click="removeCourse(index)" />
+            <UIIcon
+              class="cursor-pointer text-grey-400 transition-colors duration-200 hover:text-danger-600"
+              type="close"
+              @click="removeCourse(index)"
+            />
           </template>
         </CourseItemMini>
       </div>
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.selected-courses-list {
-  height: 100%;
-  overflow-y: auto;
-  padding: 12px;
-}
-
-.course-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  > div {
-    cursor: move;
-  }
-}
-
-.drag-handle {
-  color: var(--ui-color-grey-400);
-  margin-right: 8px;
-  cursor: grab;
-
-  &:active {
-    cursor: grabbing;
-  }
-}
-
-.remove-icon {
-  color: var(--ui-color-grey-400);
-  cursor: pointer;
-  transition: color 0.2s;
-
-  &:hover {
-    color: var(--ui-color-danger-600);
-  }
-}
-</style>

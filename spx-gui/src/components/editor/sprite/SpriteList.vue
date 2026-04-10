@@ -105,7 +105,7 @@ const handleSpriteGenClick = useMessageHandle(
 </script>
 
 <template>
-  <div ref="listWrapper" class="sprite-list">
+  <div ref="listWrapper" class="sprite-list overflow-y-auto m-0 flex flex-wrap content-start gap-2">
     <UIEmpty v-if="list.length === 0" size="medium">
       {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
     </UIEmpty>
@@ -128,26 +128,20 @@ const handleSpriteGenClick = useMessageHandle(
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .sprite-list {
-  flex: 1 0 112px; // 112px: 1 row of sprite items height
-  overflow-y: auto;
-  margin: 0;
-  padding: 12px 0 12px 12px; // no right padding to allow optional scrollbar
+  flex: 1 0 112px; /* 112px: 1 row of sprite items height */
+  padding: 12px 0 12px 12px; /* no right padding to allow optional scrollbar */
   scrollbar-width: thin;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 8px;
+}
 
-  :deep(.sortable-ghost-item) {
-    // Shadow-like effect
-    // TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem`
-    border-color: var(--ui-color-grey-400) !important;
-    background-color: var(--ui-color-grey-400) !important;
-    * {
-      visibility: hidden;
-    }
-  }
+/* Shadow-like effect */
+/* TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem` */
+:deep(.sortable-ghost-item) {
+  border-color: var(--ui-color-grey-400) !important;
+  background-color: var(--ui-color-grey-400) !important;
+}
+:deep(.sortable-ghost-item *) {
+  visibility: hidden;
 }
 </style>

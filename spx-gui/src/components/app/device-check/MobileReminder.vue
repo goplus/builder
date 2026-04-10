@@ -1,11 +1,13 @@
 <template>
-  <div class="mobile-reminder">
-    <div class="guide-img">
-      <img :src="imgDesktopRequired" alt="Desktop Required Image" />
+  <div class="min-h-screen flex flex-col items-center justify-center px-15 py-10">
+    <div class="mb-12">
+      <img class="h-auto w-60" :src="imgDesktopRequired" alt="Desktop Required Image" />
     </div>
-    <div class="guide-text">
-      <h1>{{ t({ en: 'Please visit on desktop', zh: '请在电脑上访问' }) }}</h1>
-      <p>
+    <div class="mb-10 text-center">
+      <h1 class="mb-3 text-20 font-semibold text-grey-1000">
+        {{ t({ en: 'Please visit on desktop', zh: '请在电脑上访问' }) }}
+      </h1>
+      <p class="text-base text-grey-900">
         {{
           t({
             en: 'XBuilder is designed for desktop devices. Please visit this page on your computer for the full experience.',
@@ -42,40 +44,3 @@ const handleCopy = useMessageHandle(
   { en: 'Copied to clipboard', zh: '已复制到剪贴板' }
 ).fn
 </script>
-
-<style lang="scss" scoped>
-.mobile-reminder {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 60px;
-
-  .guide-img {
-    margin-bottom: 48px;
-    img {
-      width: 240px;
-      height: auto;
-    }
-  }
-
-  .guide-text {
-    margin-bottom: 40px;
-    text-align: center;
-
-    h1 {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--ui-color-grey-1000);
-      margin-bottom: 12px;
-    }
-
-    p {
-      font-size: 14px;
-      line-height: 22px;
-      color: var(--ui-color-grey-900);
-    }
-  }
-}
-</style>

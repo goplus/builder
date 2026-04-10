@@ -1,9 +1,10 @@
 <template>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
+  <!-- Using overflow-visible class to avoid cutting dropdown menu of CodeTextEditor (monaco) -->
   <UICard
     v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
-    class="main"
+    class="relative flex-[1_1_0] min-w-0 flex flex-col overflow-visible!"
   >
     <!--
       TODO: optimize performance for switching between editors, which corresponds to selection change.
@@ -21,7 +22,7 @@
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
   </UICard>
-  <div v-show="isPreviewMode" class="sider">
+  <div v-show="isPreviewMode" class="min-w-0 flex-[0_0_496px] flex flex-col gap-middle">
     <EditorPreview />
     <EditorPanels />
   </div>
@@ -55,21 +56,3 @@ function handleSpriteSelect(spriteId: string | null) {
   editorCtx.state.selectSprite(spriteId)
 }
 </script>
-
-<style scoped lang="scss">
-.main {
-  position: relative;
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: visible; // avoid cutting dropdown menu of CodeTextEditor (monaco)
-}
-.sider {
-  flex: 0 0 496px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-middle);
-}
-</style>

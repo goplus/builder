@@ -29,5 +29,5 @@ function handleSubmit() {
 </script>
 
 <template>
-  <UINumberInput v-model:value="modelValue" :style="{ alignSelf: 'stretch' }" autofocus @keyup.enter="handleSubmit" />
+  <UINumberInput v-model:value="modelValue" class="self-stretch" autofocus @keyup.enter="handleSubmit" />
 </template>

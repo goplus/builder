@@ -26,14 +26,14 @@ function handleSpriteSelect(sprite: Sprite | null) {
 </script>
 
 <template>
-  <div class="body">
-    <div class="main">
+  <div class="flex-[1_1_0] flex flex-row gap-middle">
+    <div class="flex-1 w-0 min-w-0 flex items-center justify-center">
       <MapViewer :project="project" :selected-sprite="selectedSprite" @update:selected-sprite="handleSpriteSelect" />
     </div>
-    <div class="sider">
+    <div class="flex-[0_0_400px] flex flex-col gap-middle desktop-large:basis-124">
       <UICard>
         <UICardHeader>
-          <div class="collapse-header">
+          <div class="w-full flex items-center justify-between">
             {{
               $t({
                 en: 'Global Config',
@@ -43,8 +43,8 @@ function handleSpriteSelect(sprite: Sprite | null) {
             <UITooltip>
               <template #trigger>
                 <UIIcon
-                  class="collapse-icon"
-                  :class="{ collapsed }"
+                  class="ml-2 cursor-pointer transition-transform duration-300"
+                  :class="collapsed ? '-rotate-180' : ''"
                   type="doubleArrowDown"
                   @click="collapsed = !collapsed"
                 />
@@ -53,10 +53,10 @@ function handleSpriteSelect(sprite: Sprite | null) {
             </UITooltip>
           </div>
         </UICardHeader>
-        <MapBasicConfig v-if="!collapsed" class="map-config" :project="project" />
+        <MapBasicConfig v-if="!collapsed" class="p-4" :project="project" />
       </UICard>
       <SpritesPanel
-        class="sprite-list"
+        class="flex-auto min-h-0"
         :project="project"
         :selected-sprite="selectedSprite"
         @update:selected-sprite="handleSpriteSelect"
@@ -64,56 +64,3 @@ function handleSpriteSelect(sprite: Sprite | null) {
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-@import '@/components/ui/responsive';
-
-.body {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: row;
-  gap: var(--ui-gap-middle);
-}
-.main {
-  flex: 1;
-  width: 0;
-  min-width: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.sider {
-  flex: 0 0 400px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-middle);
-
-  @include responsive(desktop-large) {
-    flex-basis: 496px;
-  }
-
-  .collapse-header {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .collapse-icon {
-    transition: transform 0.3s;
-    margin-left: 8px;
-    cursor: pointer;
-
-    &.collapsed {
-      transform: rotate(-180deg);
-    }
-  }
-
-  .map-config {
-    padding: 16px;
-  }
-}
-.sprite-list {
-  flex: 1 1 0;
-}
-</style>

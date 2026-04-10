@@ -28,7 +28,7 @@ const modelValue = computed({
 </script>
 
 <template>
-  <UIRadioGroup v-model:value="modelValue" class="boolean-input" :style="{ alignSelf: 'stretch' }">
+  <UIRadioGroup v-model:value="modelValue" class="boolean-input">
     <UIRadio class="option" value="true">
       <code>true</code>
     </UIRadio>
@@ -38,11 +38,12 @@ const modelValue = computed({
   </UIRadioGroup>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .boolean-input {
+  padding: 5px 0;
   display: flex;
-  padding: 5px 0px;
   align-items: center;
+  align-self: stretch;
   gap: 12px;
 }
 
@@ -56,9 +57,8 @@ const modelValue = computed({
   border-radius: 12px;
   transition: 0.2s;
   border: 1px solid var(--ui-color-grey-400);
-
-  &.n-radio--checked {
-    border: 1px solid var(--ui-color-primary-500);
-  }
+}
+.option.n-radio--checked {
+  border: 1px solid var(--ui-color-primary-500);
 }
 </style>

@@ -39,8 +39,8 @@ const handleModifyUsername = useMessageHandle(
 </script>
 
 <template>
-  <span class="username-inline">
-    <span class="text-group">
+  <span class="inline-flex min-w-0 items-center gap-1 font-main text-12 text-hint-2">
+    <span class="min-w-0 flex-[0_1_auto]">
       <UITooltip placement="top">
         {{
           $t({
@@ -49,22 +49,24 @@ const handleModifyUsername = useMessageHandle(
           })
         }}
         <template #trigger>
-          <span class="username">{{ props.username }}</span>
+          <span class="block overflow-hidden text-ellipsis whitespace-nowrap">{{ props.username }}</span>
         </template>
       </UITooltip>
     </span>
-    <span class="actions">
+    <span class="inline-flex flex-none items-center gap-1">
       <UITooltip placement="top">
         {{ $t({ en: 'Copy username', zh: '复制用户名' }) }}
         <template #trigger>
           <button
             v-radar="{ name: 'Copy username button', desc: 'Click to copy username to clipboard' }"
-            class="action-button"
+            class="inline-flex h-3.5 w-3.5 flex-none cursor-pointer items-center justify-center border-none bg-transparent p-0 text-inherit transition-colors duration-200 hover:text-primary-main"
             type="button"
             @click="handleCopyUsername"
           >
-            <span class="sr-only">{{ $t({ en: 'Copy username', zh: '复制用户名' }) }}</span>
-            <UIIcon class="action-icon" type="copyAltFilled" />
+            <span class="absolute -m-px h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]">
+              {{ $t({ en: 'Copy username', zh: '复制用户名' }) }}
+            </span>
+            <UIIcon class="w-3.5 h-3.5" type="copyAltFilled" />
           </button>
         </template>
       </UITooltip>
@@ -73,83 +75,17 @@ const handleModifyUsername = useMessageHandle(
         <template #trigger>
           <button
             v-radar="{ name: 'Modify username button', desc: 'Click to modify username' }"
-            class="action-button"
+            class="inline-flex h-3.5 w-3.5 flex-none cursor-pointer items-center justify-center border-none bg-transparent p-0 text-inherit transition-colors duration-200 hover:text-primary-main"
             type="button"
             @click="handleModifyUsername"
           >
-            <span class="sr-only">{{ $t({ en: 'Modify username', zh: '修改用户名' }) }}</span>
-            <UIIcon class="action-icon" type="edit" />
+            <span class="absolute -m-px h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]">
+              {{ $t({ en: 'Modify username', zh: '修改用户名' }) }}
+            </span>
+            <UIIcon class="w-3.5 h-3.5" type="edit" />
           </button>
         </template>
       </UITooltip>
     </span>
   </span>
 </template>
-
-<style scoped lang="scss">
-.username-inline {
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--ui-color-hint-2);
-  font-size: 12px;
-  font-family: var(--ui-font-family-main);
-  line-height: 18px;
-}
-
-.text-group {
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.username {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.actions {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.action-button {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: var(--ui-color-primary-main);
-  }
-}
-
-.action-icon {
-  width: 14px;
-  height: 14px;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-</style>

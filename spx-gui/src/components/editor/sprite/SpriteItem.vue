@@ -135,11 +135,11 @@ const duplicateAnimation = useMessageHandle(
 ).fn
 
 useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
-  // Now styles for `block-item-droppable-accept` & `block-item-droppable-over` are implemented in `UIBlockItem`.
+  // Now styles for `ui-block-item-droppable-accept` & `ui-block-item-droppable-over` are implemented in `UIBlockItem`.
   // While the ideal way to control `UIBlockItem` is passing prop `droppable`, instead of using its internal classes directly.
   // TODO: Update API `useDragDroppable` (& `useDragSortable`) to control props instead of classes.
-  acceptClass: 'block-item-droppable-accept',
-  overClass: 'block-item-droppable-over',
+  acceptClass: 'ui-block-item-droppable-accept',
+  overClass: 'ui-block-item-droppable-over',
   accept: (item) => {
     if (item instanceof Costume) return !props.sprite.costumes.includes(item)
     if (item instanceof Animation) return !props.sprite.animations.includes(item)

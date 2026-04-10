@@ -154,7 +154,7 @@ const handleInputUpdate = useMessageHandle(
   </UIDropdown>
 </template>
 
-<style lang="scss">
+<style>
 .code-editor-input-helper-icon {
   position: relative;
   display: inline-block;
@@ -164,17 +164,19 @@ const handleInputUpdate = useMessageHandle(
   cursor: pointer;
   background-color: var(--ui-color-grey-400);
   transition: background-color 0.2s;
-  &:hover {
-    background-color: var(--ui-color-grey-500);
-  }
-  &::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: url(./pen.svg) no-repeat center center;
-    background-size: 80% 80%;
-  }
+}
+
+.code-editor-input-helper-icon:hover {
+  background-color: var(--ui-color-grey-500);
+}
+
+.code-editor-input-helper-icon::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: url(./pen.svg) no-repeat center center;
+  background-size: 80% 80%;
 }
 
 .code-editor-input-helper-inputing-bg {

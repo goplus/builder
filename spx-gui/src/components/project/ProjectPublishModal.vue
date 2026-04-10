@@ -10,6 +10,7 @@ import type { SpxProject } from '@/models/spx/project'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 import { stringifyProjectFullName } from '@/apis/project'
+import stageBg from '@/assets/images/stage-bg.svg'
 
 const props = defineProps<{
   project: SpxProject
@@ -93,7 +94,7 @@ const handleSubmit = useMessageHandle(
     @update:visible="handleCancel"
   >
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <p v-if="project.visibility === Visibility.Private" class="tip">
+      <p v-if="project.visibility === Visibility.Private" class="mb-6">
         {{
           $t({
             en: 'Published projects will be visible to all XBuilder users.',
@@ -101,8 +102,11 @@ const handleSubmit = useMessageHandle(
           })
         }}
       </p>
-      <div class="thumbnail-wrapper">
-        <UIImg class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" size="contain" />
+      <div
+        class="mb-6 h-56 w-full overflow-hidden rounded-sm bg-center bg-cover bg-no-repeat"
+        :style="{ backgroundImage: `url(${stageBg})` }"
+      >
+        <UIImg class="h-full w-full" :src="thumbnailUrl" :loading="thumbnailUrlLoading" size="contain" />
       </div>
       <UIFormItem :label="$t({ en: 'Release description', zh: '发布内容' })" path="releaseDescription">
         <UITextInput
@@ -139,7 +143,7 @@ const handleSubmit = useMessageHandle(
           "
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-5 flex justify-end gap-3">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel project publishing' }"
           color="boring"
@@ -159,28 +163,3 @@ const handleSubmit = useMessageHandle(
     </UIForm>
   </UIFormModal>
 </template>
-
-<style lang="scss" scoped>
-.tip {
-  margin-bottom: 24px;
-}
-.thumbnail-wrapper {
-  margin-bottom: 24px;
-  width: 100%;
-  height: 224px;
-  background: url(@/assets/images/stage-bg.svg) center / cover no-repeat;
-  border-radius: var(--ui-border-radius-1);
-  overflow: hidden;
-
-  .thumbnail {
-    width: 100%;
-    height: 100%;
-  }
-}
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
-}
-</style>

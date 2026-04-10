@@ -1,44 +1,43 @@
 <template>
-  <div class="main">
-    <div class="header">
-      <div class="name">
+  <div class="w-full flex flex-col gap-large px-5 py-6">
+    <div class="flex flex-col items-center">
+      <div class="flex items-center gap-2 text-title">
         <AssetName>{{ sound.name }}</AssetName>
         <UIIcon
           v-radar="{ name: 'Rename sound', desc: 'Click to rename the sound' }"
-          class="edit-icon"
+          class="cursor-pointer text-grey-900 hover:text-grey-800 active:text-grey-1000"
           :title="$t({ en: 'Rename', zh: '重命名' })"
           type="edit"
           @click="handleNameEdit"
         />
       </div>
-      <div class="duration">
+      <div class="text-grey-700 leading-4.5">
         {{ formattedTrimmedDuration || '&nbsp;' }}
       </div>
     </div>
     <WaveformPlayer
       ref="waveformPlayerRef"
       v-model:range="audioRange"
-      class="waveform-player"
+      style="height: 222px"
       :audio-src="audioUrl || undefined"
       :gain="gain"
       @progress="handleProgress"
       @stop="handleStop"
       @play="handlePlay"
     />
-    <div class="operations">
-      <div class="play-btn">
-        <PlayControl
-          color="sound"
-          :playing="playing != null"
-          :progress="playing?.progress ?? 0"
-          :play-handler="handlePlayClick"
-          :loading="audioLoading"
-          @stop="handleStopClick"
-        />
-      </div>
-      <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
-      <div class="spacer" />
-      <div v-if="editing" class="editing-buttons">
+    <div class="flex">
+      <PlayControl
+        class="flex-none"
+        color="sound"
+        :playing="playing != null"
+        :progress="playing?.progress ?? 0"
+        :play-handler="handlePlayClick"
+        :loading="audioLoading"
+        @stop="handleStopClick"
+      />
+      <VolumeSlider class="mx-6 flex-[0_1_438px]" :value="gain" @update:value="handleGainUpdate" />
+      <div class="flex-[1_1_0]" />
+      <div v-if="editing" class="flex-none flex items-center gap-2">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
           color="boring"
@@ -167,70 +166,3 @@ const handleSave = useMessageHandle(
   }
 )
 </script>
-
-<style scoped lang="scss">
-.main {
-  width: 100%;
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.duration {
-  color: var(--ui-color-grey-700);
-  line-height: 18px;
-}
-
-.name {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ui-color-title);
-
-  .edit-icon {
-    cursor: pointer;
-    color: var(--ui-color-grey-900);
-    &:hover {
-      color: var(--ui-color-grey-800);
-    }
-    &:active {
-      color: var(--ui-color-grey-1000);
-    }
-  }
-}
-
-.operations {
-  display: flex;
-
-  .play-btn {
-    flex: 0 0 auto;
-  }
-
-  .volume-slider {
-    flex: 0 1 438px;
-    margin: 0 24px;
-  }
-
-  .spacer {
-    flex: 1 1 0;
-  }
-
-  .editing-buttons {
-    flex: 0 0 auto;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-}
-
-.waveform-player {
-  height: 222px;
-}
-</style>

@@ -1,7 +1,7 @@
 <template>
-  <div class="container">
+  <div class="flex flex-col gap-5 text-grey-1000">
     <div v-if="scratchAssets.sprites.length">
-      <h4 class="title">{{ $t({ en: 'Sprites', zh: '精灵' }) }}</h4>
+      <h4 class="mb-2">{{ $t({ en: 'Sprites', zh: '精灵' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem v-for="asset in scratchAssets.sprites" :key="asset.name" @click="selectSprite(asset)">
           <SpriteItem :asset="asset" :selected="selected.sprites.has(asset)" />
@@ -9,7 +9,7 @@
       </NGrid>
     </div>
     <div v-if="scratchAssets.sounds.length">
-      <h4 class="title">{{ $t({ en: 'Sounds', zh: '声音' }) }}</h4>
+      <h4 class="mb-2">{{ $t({ en: 'Sounds', zh: '声音' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem v-for="asset in scratchAssets.sounds" :key="asset.name" @click="selectSound(asset)">
           <SoundItem :asset="asset" :selected="selected.sounds.has(asset)" />
@@ -18,7 +18,7 @@
     </div>
 
     <div v-if="scratchAssets.backdrops.length">
-      <h4 class="title">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</h4>
+      <h4 class="mb-2">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem v-for="asset in scratchAssets.backdrops" :key="asset.name" @click="selectBackdrop(asset)">
           <BackdropItem :asset="asset" :selected="selected.backdrops.has(asset)" />
@@ -28,7 +28,7 @@
     <UIButton
       v-radar="{ name: 'Import button', desc: 'Click to import selected assets from Scratch' }"
       size="large"
-      class="import-button"
+      class="self-end"
       :loading="importSelected.isLoading.value"
       @click="importSelected.fn"
     >
@@ -169,20 +169,3 @@ const importSelected = useMessageHandle(
   { en: 'Assets imported', zh: '素材导入成功' }
 )
 </script>
-
-<style lang="scss" scoped>
-.container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  color: var(--ui-color-grey-1000);
-}
-
-.title {
-  margin-bottom: 8px;
-}
-
-.import-button {
-  align-self: flex-end;
-}
-</style>

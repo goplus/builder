@@ -47,5 +47,3 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
     <UIBlockItemTitle size="medium">{{ gen.settings.name }}</UIBlockItemTitle>
   </GenItem>
 </template>
-
-<style lang="scss" scoped></style>

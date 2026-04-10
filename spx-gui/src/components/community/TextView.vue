@@ -8,16 +8,8 @@ defineProps<{
 </script>
 
 <template>
-  <div class="text-view">
+  <div class="overflow-y-auto wrap-break-word whitespace-pre-wrap">
     <template v-if="!!text">{{ text }}</template>
     <template v-else>{{ placeholder ?? '&nbsp;' }}</template>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.text-view {
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-</style>

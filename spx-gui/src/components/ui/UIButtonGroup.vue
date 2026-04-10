@@ -1,10 +1,15 @@
 <template>
-  <div class="ui-button-group-container">
+  <div :class="rootClass">
     <slot></slot>
   </div>
 </template>
 
 <script lang="ts">
+import type { InjectionKey } from 'vue'
+
+export type Type = 'icon' | 'text'
+export type Variant = 'primary' | 'secondary'
+
 export const selectedValueInjectionKey: InjectionKey<() => string | undefined> = Symbol('selectedValue')
 export const updateValueInjectionKey: InjectionKey<(value: string) => void> = Symbol('updateValue')
 export const typeInjectionKey: InjectionKey<() => Type> = Symbol('type')
@@ -12,10 +17,9 @@ export const variantInjectionKey: InjectionKey<() => Variant> = Symbol('variant'
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey } from 'vue'
+import { computed, provide } from 'vue'
 
-export type Type = 'icon' | 'text'
-export type Variant = 'primary' | 'secondary'
+import { cn, type ClassValue } from './utils'
 
 const props = withDefaults(
   defineProps<{
@@ -23,17 +27,21 @@ const props = withDefaults(
     /** Type of group-item content. */
     type?: Type
     variant?: Variant
+    class?: ClassValue
   }>(),
   {
     value: undefined,
     type: 'icon',
-    variant: 'primary'
+    variant: 'primary',
+    class: undefined
   }
 )
 
 const emit = defineEmits<{
   'update:value': [string]
 }>()
+
+const rootClass = computed(() => cn('flex', props.class ?? null))
 
 provide(selectedValueInjectionKey, () => props.value)
 provide(updateValueInjectionKey, (value: string) => {
@@ -42,9 +50,3 @@ provide(updateValueInjectionKey, (value: string) => {
 provide(typeInjectionKey, () => props.type)
 provide(variantInjectionKey, () => props.variant)
 </script>
-
-<style scoped lang="scss">
-.ui-button-group-container {
-  display: flex;
-}
-</style>

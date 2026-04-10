@@ -112,12 +112,15 @@ const handleRemove = useMessageHandle(
         <span>{{ $t({ en: 'Create course series', zh: '创建课程系列' }) }}</span>
       </UIButton>
     </template>
-    <section class="body">
+    <section class="flex flex-col px-6 pt-5 pb-6">
       <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="352">
-        <div class="content">
-          <div v-if="slotProps.data.data.length === 0" class="empty">
+        <div class="flex flex-col">
+          <div
+            v-if="slotProps.data.data.length === 0"
+            class="flex-1 flex flex-col items-center justify-center text-grey-700"
+          >
             <p>{{ $t({ en: 'No course series yet', zh: '还没有课程系列' }) }}</p>
-            <p class="hint">
+            <p class="mt-2 text-base text-grey-600">
               {{
                 $t({
                   en: 'Click "Create course series" to add your first series',
@@ -126,7 +129,7 @@ const handleRemove = useMessageHandle(
               }}
             </p>
           </div>
-          <ul v-else class="course-series-list">
+          <ul v-else class="flex flex-wrap content-start gap-middle">
             <CourseSeriesItem
               v-for="courseSeries in slotProps.data.data"
               :key="courseSeries.id"
@@ -141,53 +144,7 @@ const handleRemove = useMessageHandle(
           </ul>
         </div>
       </ListResultWrapper>
-      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-8 mb-4 justify-center" :total="pageTotal" />
     </section>
   </UISearchableModal>
 </template>
-
-<style lang="scss" scoped>
-.body {
-  display: flex;
-  flex-direction: column;
-  padding: 20px 24px 24px;
-}
-
-.content {
-  display: flex;
-  flex-direction: column;
-}
-
-.empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--ui-color-grey-700);
-
-  .hint {
-    font-size: 14px;
-    color: var(--ui-color-grey-600);
-    margin-top: 8px;
-  }
-}
-
-.course-series-list {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: var(--ui-gap-middle);
-}
-
-.pagination {
-  justify-content: center;
-  margin: 32px 0 16px;
-}
-
-.create-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-</style>

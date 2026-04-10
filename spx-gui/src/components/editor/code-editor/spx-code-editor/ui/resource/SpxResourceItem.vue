@@ -62,5 +62,3 @@ const name = computed(() => {
   <WidgetItem v-else-if="model != null && isWidget(model)" :widget="model" :selectable="selectable" color="primary" />
   <div v-else>{{ $t({ zh: `未知资源（${name}）`, en: `Unknown resource (${name})` }) }}</div>
 </template>
-
-<style lang="scss" scoped></style>

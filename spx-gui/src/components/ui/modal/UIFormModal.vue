@@ -6,17 +6,18 @@
     :mask-closable="maskClosable"
     @update:visible="handleUpdateShow"
   >
-    <div class="container">
-      <div class="header">
-        <div :class="['title', { center: centerTitle }]">
+    <div class="flex-[1_1_0] flex flex-col">
+      <div class="h-14 flex items-center px-6 py-2">
+        <!--  pl-6: take a offset of the same size with close btn, to make the title content correctly centered -->
+        <div class="flex-1 text-16 text-title" :class="{ 'pl-6 text-center': centerTitle }">
           {{ title }}
         </div>
-        <UIModalClose class="close" @click="handleCloseButton" />
+        <UIModalClose class="-mr-1" @click="handleCloseButton" />
       </div>
 
       <UIDivider />
 
-      <div class="body" :style="bodyStyle">
+      <div class="px-6 pt-5 pb-6" :style="bodyStyle">
         <slot></slot>
       </div>
     </div>
@@ -62,38 +63,3 @@ const handleCloseButton = () => {
   handleUpdateShow(false)
 }
 </script>
-
-<style scoped lang="scss">
-.container {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  padding: 8px 24px;
-  height: 56px;
-}
-
-.title {
-  font-size: 16px;
-  line-height: 26px;
-  flex: 1;
-  color: var(--ui-color-title);
-}
-
-.center {
-  text-align: center;
-  padding-left: 24px; // take a offset of the same size with close btn, to make the title content correctly centered
-}
-
-.body {
-  padding: 20px 24px 24px;
-}
-
-.close {
-  margin-right: -4px;
-}
-</style>

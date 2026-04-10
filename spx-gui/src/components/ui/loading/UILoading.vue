@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-loading" :class="{ cover, visible, [`mask-${mask}`]: true }">
+  <div :class="rootClass">
     <NSpin />
   </div>
 </template>
@@ -7,6 +7,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { NSpin } from 'naive-ui'
+import { cn, type ClassValue } from '../utils'
 
 export type MaskType = 'none' | 'semi-transparent' | 'solid'
 
@@ -15,11 +16,13 @@ const props = withDefaults(
     cover?: boolean
     visible?: boolean
     mask?: boolean | MaskType
+    class?: ClassValue
   }>(),
   {
     cover: false,
     visible: true,
-    mask: true
+    mask: true,
+    class: undefined
   }
 )
 
@@ -28,39 +31,15 @@ const mask = computed(() => {
   if (props.mask === true) return 'semi-transparent'
   return props.mask
 })
+
+const rootClass = computed(() =>
+  cn(
+    'h-4/5 w-full flex justify-center invisible opacity-0 [transition:visibility_0.3s,opacity_0.3s]',
+    props.cover ? 'absolute left-0 top-0 h-full' : null,
+    props.cover && mask.value === 'semi-transparent' ? 'bg-white/50' : null,
+    props.cover && mask.value === 'solid' ? 'bg-grey-100' : null,
+    props.visible ? 'visible opacity-100' : null,
+    props.class ?? null
+  )
+)
 </script>
-
-<style lang="scss" scoped>
-// TODO: loading style not designed yet
-.ui-loading {
-  width: 100%;
-  height: 80%;
-  display: flex;
-  justify-content: center;
-  visibility: hidden;
-  opacity: 0;
-  transition:
-    visibility 0.3s,
-    opacity 0.3s;
-
-  &.cover {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-
-    &.mask-semi-transparent {
-      background-color: rgba(255, 255, 255, 0.5);
-    }
-    &.mask-solid {
-      background-color: var(--ui-color-grey-100);
-    }
-  }
-
-  &.visible {
-    visibility: visible;
-    opacity: 1;
-  }
-}
-</style>

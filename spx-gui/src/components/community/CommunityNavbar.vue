@@ -5,7 +5,7 @@
         :trigger-radar="{ name: 'Project menu', desc: 'Hover to see project options (create/open project)' }"
       >
         <template #trigger>
-          <UIIcon type="plus" />
+          <UIIcon class="w-6 h-6" type="plus" />
         </template>
         <UIMenu>
           <NavbarNewProjectItem />
@@ -16,7 +16,7 @@
       <NavbarTutorials v-if="showTutorialsEntry" />
     </template>
     <template #right>
-      <div class="search">
+      <div class="w-85 flex items-center px-3">
         <UITextInput
           v-model:value="searchInput"
           v-radar="{ name: 'Search input', desc: 'Input and press enter to search projects' }"
@@ -76,12 +76,3 @@ watch(
   { immediate: true }
 )
 </script>
-
-<style lang="scss" scoped>
-.search {
-  padding: 0 12px;
-  width: 340px;
-  display: flex;
-  align-items: center;
-}
-</style>

@@ -4,11 +4,11 @@
       name: `Project item \u0022${project.owner}/${project.name}\u0022`,
       desc: `Click to ${props.context === 'edit' ? 'edit' : 'view'} the project${operatable ? ', hover for more operations' : ''}`
     }"
-    class="project-item"
+    class="group w-58 flex-none overflow-hidden rounded-md border border-grey-400 bg-grey-100 transition-all duration-100 hover:shadow-[0px_4px_12px_0px_rgba(36,41,47,0.08)]"
   >
-    <RouterLink class="link" :to="to" @click="emit('selected')">
-      <div class="thumbnail-wrapper">
-        <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
+    <RouterLink class="flex flex-col no-underline" :to="to" @click="emit('selected')">
+      <div class="relative h-43 w-full bg-center bg-contain" :style="{ backgroundImage: `url(${stageBgUrl})` }">
+        <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
         <UIDropdown v-if="operatable" trigger="click" placement="bottom-end">
           <template #trigger>
             <div
@@ -16,10 +16,10 @@
                 name: 'Project item operations',
                 desc: 'More operations (edit, remove) for project item, click to open the menu'
               }"
-              class="options"
+              class="invisible absolute top-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-grey-100 text-grey-800 opacity-0 transition-all duration-100 group-hover:visible group-hover:opacity-100 hover:bg-primary-main hover:text-grey-100"
               @click.stop.prevent
             >
-              <UIIcon class="icon" type="more" />
+              <UIIcon class="w-5.25 h-5.25" type="more" />
             </div>
           </template>
           <UIMenu>
@@ -31,9 +31,9 @@
             </UIMenuItem>
           </UIMenu>
         </UIDropdown>
-        <div v-if="context === 'public'" class="owner-avatar-wrapper">
+        <div v-if="context === 'public'" class="absolute -bottom-2.25 left-0 h-3.25 w-full bg-grey-100">
           <svg
-            class="avatar-bg"
+            class="absolute bottom-0 left-0"
             xmlns="http://www.w3.org/2000/svg"
             width="67"
             height="31"
@@ -47,17 +47,23 @@
           </svg>
           <UserAvatar
             v-radar="{ name: 'Project owner avatar', desc: 'Click to view profile of project owner' }"
-            class="owner-avatar"
+            class="absolute -bottom-0.5 left-3.5"
             size="small"
             :user="project.owner"
           />
         </div>
       </div>
-      <div class="info">
-        <div class="header">
-          <h5 class="display-name" :title="project.displayName">{{ project.displayName }}</h5>
+      <div class="p-middle">
+        <div class="flex items-center gap-1">
+          <h5 class="min-w-0 shrink truncate text-15/6 text-title" :title="project.displayName">
+            {{ project.displayName }}
+          </h5>
           <template v-if="context !== 'public' && isOwner">
-            <i v-if="project.visibility === Visibility.Public" class="icon" :title="$t({ en: 'Public', zh: '公开' })">
+            <i
+              v-if="project.visibility === Visibility.Public"
+              class="h-4 w-4 flex-none"
+              :title="$t({ en: 'Public', zh: '公开' })"
+            >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   fill-rule="evenodd"
@@ -80,7 +86,7 @@
                 </defs>
               </svg>
             </i>
-            <i v-else class="icon" :title="$t({ en: 'Private', zh: '私有' })">
+            <i v-else class="h-4 w-4 flex-none" :title="$t({ en: 'Private', zh: '私有' })">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   fill-rule="evenodd"
@@ -96,12 +102,12 @@
             </i>
           </template>
         </div>
-        <p class="others">
-          <span class="part" :class="{ liking }" :title="$t(likesTitle)">
-            <UIIcon class="icon" type="heart" />
+        <p class="mt-1 h-5 flex gap-3 text-13/5 text-grey-700">
+          <span class="flex-none flex items-center gap-1" :class="{ 'text-red-main': liking }" :title="$t(likesTitle)">
+            <UIIcon class="w-3.5 h-3.5" type="heart" />
             {{ $t(humanizeCount(project.likeCount)) }}
           </span>
-          <span class="part time" :title="$t(timeTitle)">
+          <span class="flex-auto block truncate" :title="$t(timeTitle)">
             {{ $t(humanizeTime(project.updatedAt)) }}
           </span>
         </p>
@@ -123,6 +129,7 @@ import {
 } from '@/utils/utils'
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { Visibility, type ProjectData } from '@/apis/project'
+import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { createFileWithUniversalUrl, getPublishedContent } from '@/models/common/cloud'
 import { useSignedInUser } from '@/stores/user'
 import { useIsLikingProject } from '@/stores/liking'
@@ -207,149 +214,3 @@ const handleRemove = useMessageHandle(
   { en: 'Failed to remove project', zh: '删除项目失败' }
 ).fn
 </script>
-
-<style lang="scss" scoped>
-@import '@/utils/utils';
-
-.project-item {
-  width: 232px;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: var(--ui-border-radius-2);
-  border: 1px solid var(--ui-color-grey-400);
-  background-color: var(--ui-color-grey-100);
-  transition: 0.1s;
-}
-
-.link {
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-}
-
-.thumbnail-wrapper {
-  position: relative;
-  width: 100%;
-  height: 172px;
-  background-position: center;
-  background-size: contain;
-  background-image: url(@/assets/images/stage-bg.svg);
-
-  .thumbnail {
-    width: 100%;
-    height: 100%;
-  }
-
-  .options {
-    opacity: 0;
-    visibility: hidden;
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    color: var(--ui-color-grey-800);
-    background-color: var(--ui-color-grey-100);
-    cursor: pointer;
-    transition: 0.1s;
-
-    &:hover {
-      color: var(--ui-color-grey-100);
-      background-color: var(--ui-color-primary-main);
-    }
-
-    .icon {
-      width: 21px;
-      height: 21px;
-    }
-  }
-
-  .owner-avatar-wrapper {
-    position: absolute;
-    bottom: -9px;
-    left: 0;
-    width: 100%;
-    height: 13px;
-    background-color: var(--ui-color-grey-100);
-
-    .avatar-bg {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
-
-    .owner-avatar {
-      position: absolute;
-      bottom: -2px;
-      left: 14px;
-    }
-  }
-}
-
-.project-item:hover {
-  box-shadow: 0px 4px 12px 0px rgba(36, 41, 47, 0.08);
-  .options {
-    visibility: visible;
-    opacity: 1;
-  }
-}
-
-.info {
-  padding: var(--ui-gap-middle);
-
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-
-    .display-name {
-      flex: 0 1 auto;
-      font-size: 15px;
-      line-height: 24px;
-      color: var(--ui-color-title);
-      @include text-ellipsis;
-    }
-
-    .icon {
-      width: 16px;
-      height: 16px;
-    }
-  }
-
-  .others {
-    margin-top: 4px;
-    display: flex;
-    height: 20px;
-    gap: 12px;
-    font-size: 13px;
-    line-height: 20px;
-    color: var(--ui-color-grey-700);
-
-    .part {
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-
-      .icon {
-        width: 14px;
-        height: 14px;
-      }
-
-      &.liking {
-        color: var(--ui-color-red-main);
-      }
-
-      &.time {
-        flex: 1 1 auto;
-        display: block; // text-ellipsis does not work on `display: flex` elements
-        @include text-ellipsis;
-      }
-    }
-  }
-}
-</style>

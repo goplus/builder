@@ -18,71 +18,23 @@ const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
 })
 </script>
 
+<!-- FIXME: `bg-grey-50` is not taking effect -->
 <template>
   <div
-    class="course-item-mini"
+    class="flex items-center rounded-sm border-2 border-transparent bg-grey-50 p-2 transition-all duration-200"
     :class="{
-      interactive,
-      highlighted,
-      dimmed
+      'cursor-pointer hover:bg-primary-100': interactive,
+      'border-grey-400 bg-grey-100': highlighted,
+      'opacity-50': dimmed
     }"
   >
     <slot name="prefix" />
-    <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
-    <div class="info">
-      <div class="title">{{ course.title }}</div>
+    <UIImg class="h-9 w-12 shrink-0 rounded-sm" :src="thumbnailUrl" size="cover" />
+    <div class="mx-3 flex-1 overflow-hidden">
+      <div class="overflow-hidden text-base font-medium text-grey-900 text-ellipsis whitespace-nowrap">
+        {{ course.title }}
+      </div>
     </div>
     <slot name="suffix" />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.course-item-mini {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-radius: var(--ui-border-radius-1);
-  background: var(--ui-color-grey-50);
-  border: 2px solid transparent;
-  transition: all 0.2s;
-
-  &.interactive {
-    cursor: pointer;
-
-    &:hover {
-      background: var(--ui-color-primary-100);
-    }
-  }
-
-  &.highlighted {
-    border-color: var(--ui-color-grey-400);
-    background: var(--ui-color-grey-100);
-  }
-
-  &.dimmed {
-    opacity: 0.5;
-  }
-}
-
-.thumbnail {
-  width: 48px;
-  height: 36px;
-  border-radius: var(--ui-border-radius-1);
-  flex-shrink: 0;
-}
-
-.info {
-  flex: 1;
-  margin: 0 12px;
-  overflow: hidden;
-}
-
-.title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ui-color-grey-900);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-</style>

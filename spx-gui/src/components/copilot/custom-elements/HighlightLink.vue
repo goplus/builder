@@ -59,30 +59,11 @@ const { fn: handleClick } = useMessageHandle(
 </script>
 
 <template>
-  <button type="button" class="highlight-link" @click="handleClick">
+  <button
+    type="button"
+    class="inline-block w-fit cursor-pointer rounded-[4px] border-none bg-turquoise-main px-1.25 py-0.5 text-13/[normal] font-semibold text-grey-100 outline-none hover:bg-turquoise-400 active:bg-turquoise-600"
+    @click="handleClick"
+  >
     <slot></slot>
   </button>
 </template>
-
-<style lang="scss" scoped>
-.highlight-link {
-  border-radius: 4px;
-  border: none;
-  width: fit-content;
-  display: inline-block;
-  padding: 2px 5px;
-  color: var(--ui-color-grey-100);
-  font-size: 13px;
-  font-weight: 600;
-  outline: none;
-  background-color: var(--ui-color-turquoise-main);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--ui-color-turquoise-400);
-  }
-  &:active {
-    background-color: var(--ui-color-turquoise-600);
-  }
-}
-</style>

@@ -43,7 +43,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
 </script>
 
 <template>
-  <GenPreview v-if="gen.result == null" class="costume-gen-preview" :name="gen.name" @rename="handleRenameCostume">
+  <GenPreview v-if="gen.result == null" class="absolute inset-0" :name="gen.name" @rename="handleRenameCostume">
     <template v-if="canSaveCostume" #ops>
       <UIButton color="success" :loading="savingCostume" @click="handleSaveCostume">{{
         $t({ en: 'Save costume', zh: '保存造型' })
@@ -58,7 +58,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
       {{ $t({ en: 'Loading image...', zh: '正在加载图片...' }) }}
     </GenLoading>
     <PreviewWithCheckerboardBg v-else>
-      <UIImg v-if="gen.image != null" class="img" :src="imgSrc" :loading="imgLoading" />
+      <UIImg v-if="gen.image != null" class="h-full w-full" :src="imgSrc" :loading="imgLoading" />
       <GenLoading v-if="gen.finishState.status === 'running'" variant="bg-spin" cover>
         {{ $t({ en: 'Saving costume...', zh: '正在保存造型...' }) }}
       </GenLoading>
@@ -72,21 +72,5 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
       </UIError>
     </PreviewWithCheckerboardBg>
   </GenPreview>
-  <CostumeDetail v-else class="costume-detail" :costume="gen.result" @rename="handleRenameCostume" />
+  <CostumeDetail v-else :style="{ background: 'transparent' }" :costume="gen.result" @rename="handleRenameCostume" />
 </template>
-
-<style lang="scss" scoped>
-.costume-gen-preview {
-  position: absolute;
-  inset: 0;
-}
-
-.img {
-  width: 100%;
-  height: 100%;
-}
-
-.costume-detail {
-  background: transparent;
-}
-</style>

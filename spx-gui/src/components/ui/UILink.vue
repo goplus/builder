@@ -1,5 +1,7 @@
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue'
+
+const props = withDefaults(
   defineProps<{
     href?: string
     type?: 'primary' | 'boring'
@@ -9,23 +11,12 @@ withDefaults(
     type: 'primary'
   }
 )
+
+const linkClass = computed(() => (props.type === 'primary' ? 'link-primary' : 'link-boring'))
 </script>
 
 <template>
-  <a class="ui-link" :class="`type-${type}`" :href="href">
+  <a :class="linkClass" :href="href">
     <slot></slot>
   </a>
 </template>
-
-<style lang="scss" scoped>
-@import './link.scss';
-
-.ui-link {
-  &.type-primary {
-    @include link(primary);
-  }
-  &.type-boring {
-    @include link(boring);
-  }
-}
-</style>

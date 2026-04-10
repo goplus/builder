@@ -12,7 +12,7 @@
         <slot></slot>
       </UIFormItemInternal>
     </NFormItem>
-    <p v-if="!!slots.tip" class="tip"><slot name="tip"></slot></p>
+    <p v-if="!!slots.tip" class="mt-1 text-hint-1"><slot name="tip"></slot></p>
   </div>
 </template>
 
@@ -71,20 +71,18 @@ const handleContentInput = debounce(() => {
 }, 300)
 </script>
 
-<style lang="scss" scoped>
-.ui-form-item :deep(.n-form-item-feedback-wrapper) {
-  line-height: 1.57143;
-  &:empty {
+<style>
+@layer components {
+  .ui-form-item + .ui-form-item {
+    margin-top: 24px;
+  }
+
+  .ui-form-item :deep(.n-form-item-feedback-wrapper) {
+    line-height: 1.57143;
+  }
+
+  .ui-form-item :deep(.n-form-item-feedback-wrapper):empty {
     display: none;
   }
-}
-
-.ui-form-item + .ui-form-item {
-  margin-top: 24px;
-}
-
-.tip {
-  margin-top: 4px;
-  color: var(--ui-color-hint-1);
 }
 </style>

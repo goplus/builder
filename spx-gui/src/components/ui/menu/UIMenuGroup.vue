@@ -1,22 +1,27 @@
 <template>
-  <div class="ui-menu-group">
+  <div class="ui-menu-group" :class="rootClass">
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { provide } from 'vue'
+import { computed, provide } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
+import { cn, type ClassValue } from '../utils'
 import { ctxKey } from './UIMenu.vue'
 
 const props = withDefaults(
   defineProps<{
     disabled?: boolean
+    class?: ClassValue
   }>(),
   {
-    disabled: false
+    disabled: false,
+    class: undefined
   }
 )
+
+const rootClass = computed(() => cn('flex flex-col gap-1', props.class ?? null))
 
 provide(
   ctxKey,
@@ -27,17 +32,14 @@ provide(
 )
 </script>
 
-<style lang="scss" scoped>
-.ui-menu-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+<style>
+@layer components {
+  .ui-menu-group + .ui-menu-group {
+    margin-top: 13px;
+    position: relative;
+  }
 
-.ui-menu-group + .ui-menu-group {
-  margin-top: 13px;
-  position: relative;
-  &::before {
+  .ui-menu-group + .ui-menu-group::before {
     content: '';
     position: absolute;
     top: -7px;

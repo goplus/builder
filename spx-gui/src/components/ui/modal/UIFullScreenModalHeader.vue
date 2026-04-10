@@ -1,57 +1,33 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { cn, type ClassValue } from '../utils'
 import UIModalClose from './UIModalClose.vue'
+
+const props = defineProps<{
+  class?: ClassValue
+}>()
 
 const emit = defineEmits<{
   close: []
 }>()
+
+const rootClass = computed(() =>
+  cn('h-14 flex items-center gap-8 border-b border-grey-400 text-16 text-title', props.class ?? null)
+)
 </script>
 
 <template>
-  <div class="header">
-    <div class="left"></div>
-    <div class="center">
+  <div :class="rootClass">
+    <div class="basis-[30%] flex-1"></div>
+    <div class="basis-[40%] flex-1 min-w-0 overflow-hidden">
       <slot></slot>
     </div>
-    <div class="right">
+    <div class="basis-[30%] flex-1 flex items-center justify-end gap-5 pr-5">
       <slot name="right"></slot>
       <UIModalClose
         v-radar="{ name: 'Close button', desc: 'Click to close the full screen modal' }"
-        class="close"
         @click="emit('close')"
       />
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.header {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  font-size: 16px;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-  height: 56px;
-  color: var(--ui-color-title);
-}
-
-.left {
-  flex: 1;
-  flex-basis: 30%;
-}
-
-.center {
-  flex: 1;
-  flex-basis: 40%;
-  overflow: hidden;
-}
-
-.right {
-  flex: 1;
-  flex-basis: 30%;
-  display: flex;
-  gap: 20px;
-  justify-content: flex-end;
-  align-items: center;
-  padding-right: 20px;
-}
-</style>

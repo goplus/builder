@@ -108,14 +108,14 @@ const handleApply = useMessageHandle(
 <template>
   <BlockWrapper>
     <template v-if="target != null">
-      <div class="header">
-        <CodeLink class="link" :file="target.textDocument.id" :range="target.range" />
+      <div class="p-2">
+        <CodeLink :file="target.textDocument.id" :range="target.range" />
       </div>
-      <div class="body">
-        <div class="code-wrapper">
+      <div class="min-w-0 overflow-x-auto pb-2 pl-2">
+        <div class="min-w-fit">
           <!-- TODO: Consider using [transformerNotationDiff](https://shiki.style/packages/transformers#transformernotationdiff) instead -->
-          <CodeView class="code" mode="block" deletion>{{ codeToDelete }}</CodeView>
-          <CodeView class="code" mode="block" addition>{{ codeToAdd }}</CodeView>
+          <CodeView class="pr-2" mode="block" deletion>{{ codeToDelete }}</CodeView>
+          <CodeView class="pr-2" mode="block" addition>{{ codeToAdd }}</CodeView>
         </div>
       </div>
       <BlockFooter>
@@ -124,30 +124,8 @@ const handleApply = useMessageHandle(
         </BlockActionBtn>
       </BlockFooter>
     </template>
-    <div v-else class="invalid">
+    <div v-else class="p-2 text-center text-hint-2">
       <p>{{ $t({ en: 'Invalid code change', zh: '无效的代码变更' }) }}</p>
     </div>
   </BlockWrapper>
 </template>
-
-<style lang="scss" scoped>
-.header {
-  padding: 8px;
-}
-.body {
-  padding: 0 0 8px 8px;
-  min-width: 0;
-  overflow-x: auto;
-}
-.code-wrapper {
-  min-width: fit-content;
-}
-.code {
-  padding-right: 8px;
-}
-.invalid {
-  padding: 8px;
-  text-align: center;
-  color: var(--ui-color-hint-2);
-}
-</style>

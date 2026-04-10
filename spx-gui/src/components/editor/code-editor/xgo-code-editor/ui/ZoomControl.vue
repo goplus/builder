@@ -8,62 +8,34 @@ const emit = defineEmits<{
   out: []
   reset: []
 }>()
+
+const zoomBtnClz =
+  'flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-text transition-colors hover:bg-grey-300 active:bg-grey-400'
 </script>
 
 <template>
-  <div class="zoomer">
+  <div class="flex flex-col items-center gap-1">
     <!-- eslint-disable vue/no-v-html -->
     <button
       v-radar="{ name: 'Zoom in', desc: 'Zoom in the code editor' }"
-      class="zoom-btn"
+      :class="zoomBtnClz"
       title="Zoom in"
       @click="emit('in')"
       v-html="iconZoomIn"
     />
     <button
       v-radar="{ name: 'Zoom out', desc: 'Zoom out the code editor' }"
-      class="zoom-btn"
+      :class="zoomBtnClz"
       title="Zoom out"
       @click="emit('out')"
       v-html="iconZoomOut"
     />
     <button
       v-radar="{ name: 'Reset zoom', desc: 'Reset code editor zoom to default' }"
-      class="zoom-btn"
+      :class="zoomBtnClz"
       title="Reset"
       @click="emit('reset')"
       v-html="iconZoomReset"
     />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.zoomer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.zoom-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  border-radius: 12px;
-  color: var(--ui-color-text);
-  background: none;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: var(--ui-color-grey-300);
-  }
-  &:active {
-    background-color: var(--ui-color-grey-400);
-  }
-}
-</style>

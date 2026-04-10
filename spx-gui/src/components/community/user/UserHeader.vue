@@ -70,19 +70,24 @@ const handleEditProfile = useMessageHandle(
 </script>
 
 <template>
-  <CommunityCard class="user-header">
-    <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
-    <UIImg class="avatar" :src="avatarUrl" />
-    <div class="content">
-      <div class="info">
-        <div class="title-row">
-          <h2 class="name">{{ user.displayName }}</h2>
+  <CommunityCard class="relative">
+    <div
+      class="h-[21.74vh] max-h-50 w-full bg-center bg-cover bg-no-repeat"
+      :style="{ backgroundImage: `url(${coverImgUrl})` }"
+    ></div>
+    <div class="absolute bottom-5 left-5 h-38 w-38">
+      <UIImg class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100" :src="avatarUrl" />
+    </div>
+    <div class="flex items-end gap-25 px-5 pt-5 pb-5 pl-48">
+      <div class="flex-[1_1_0] flex flex-col gap-3">
+        <div class="flex flex-wrap items-center gap-middle">
+          <h2 class="m-0 text-20/7 text-title">{{ user.displayName }}</h2>
           <UserUsernameInline :username="user.username" />
           <UserJoinedAt class="joined-at" :time="user.createdAt" />
         </div>
         <TextView style="max-height: 66px" :text="user.description" />
       </div>
-      <div class="op">
+      <div class="flex-[0_0_110px] flex justify-end">
         <UIButton
           v-if="isSignedInUser"
           v-radar="{ name: 'Edit profile button', desc: 'Click to edit user profile' }"
@@ -95,69 +100,3 @@ const handleEditProfile = useMessageHandle(
     </div>
   </CommunityCard>
 </template>
-
-<style lang="scss" scoped>
-.user-header {
-  position: relative;
-}
-
-.cover {
-  width: 100%;
-  height: 21.74vh;
-  max-height: 200px;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-}
-
-.avatar {
-  position: absolute;
-  left: 20px;
-  bottom: 20px;
-  width: 152px;
-  height: 152px;
-  border: 2px solid var(--ui-color-grey-100);
-  border-radius: 50%;
-  background-color: var(--ui-color-grey-100);
-}
-
-.content {
-  padding: 20px 20px 20px 192px;
-  display: flex;
-  align-items: end;
-  gap: 100px;
-}
-
-.info {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-
-  .title-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--ui-gap-middle);
-  }
-
-  .name {
-    font-size: 20px;
-    line-height: 28px;
-    color: var(--ui-color-title);
-    margin: 0;
-  }
-
-  .description {
-    font-size: 13px;
-    line-height: 20px;
-    color: var(--ui-color-text);
-  }
-}
-
-.op {
-  flex: 0 0 110px;
-  display: flex;
-  justify-content: flex-end;
-}
-</style>

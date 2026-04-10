@@ -25,44 +25,12 @@ const [thumbnailUrl] = useFileUrl(() => props.textDocument.thumbnailFile)
     <template #trigger>
       <div
         v-radar="{ name: 'Code document tab', desc: `Click to open code of ${textDocument.id.uri}` }"
-        class="document-tab"
-        :class="{ active: isActive }"
+        class="document-tab h-10 w-10 flex-none flex items-center rounded-sm border-2 transition-all"
+        :class="isActive ? 'border-yellow-500 bg-yellow-200' : 'border-transparent bg-grey-300 cursor-pointer'"
         @click="emit('click')"
       >
-        <UIImg v-if="thumbnailUrl != null" class="thumbnail-img" :src="thumbnailUrl" />
+        <UIImg v-if="thumbnailUrl != null" class="h-full w-full rounded-[4px]" :src="thumbnailUrl" />
       </div>
     </template>
   </UITooltip>
 </template>
-
-<style lang="scss" scoped>
-.document-tab {
-  flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  border-radius: var(--ui-border-radius-1);
-  border: 2px solid transparent;
-  transition: 0.2s;
-  background-color: var(--ui-color-grey-300);
-
-  &.active {
-    border: 2px solid var(--ui-color-yellow-500);
-    background-color: var(--ui-color-yellow-200);
-  }
-
-  &:not(.active) {
-    cursor: pointer;
-    &:hover {
-      background-color: var(--ui-color-grey-300);
-    }
-  }
-}
-
-.thumbnail-img {
-  border-radius: 4px;
-  width: 100%;
-  height: 100%;
-}
-</style>

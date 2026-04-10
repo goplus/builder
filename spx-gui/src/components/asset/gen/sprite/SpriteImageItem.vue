@@ -31,70 +31,16 @@ const loading = computed(() => props.loading || fileLoading.value)
       name: 'Sprite image item',
       desc: 'Click to select this image as the default costume for the sprite'
     }"
-    class="sprite-image-item"
-    :class="{ active, compact, loading, disabled }"
+    class="flex items-center justify-center overflow-hidden border-2 border-transparent bg-grey-300 p-1 transition-[transform,border-radius] duration-200 ease-in-out"
+    :class="[
+      compact ? 'h-22 w-22 rounded-sm' : 'h-35 w-35 rounded-md',
+      active ? 'border-turquoise-500 bg-turquoise-200 cursor-default' : '',
+      disabled ? 'cursor-not-allowed opacity-50' : '',
+      loading ? 'cursor-default pointer-events-none' : '',
+      !active && !disabled && !loading ? 'cursor-pointer hover:bg-grey-400' : ''
+    ]"
   >
     <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" />
-    <UIImg v-else class="img" :src="url" :alt="file?.name" />
+    <UIImg v-else :class="compact ? 'h-15 w-15' : 'h-25 w-25'" :src="url" :alt="file?.name" />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.sprite-image-item {
-  display: flex;
-  width: 140px;
-  height: 140px;
-  padding: 4px;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  background-color: var(--ui-color-grey-300);
-  cursor: pointer;
-  overflow: hidden;
-
-  transition:
-    width 0.2s ease,
-    height 0.2s ease,
-    border-radius 0.2s ease;
-
-  &:hover:not(.disabled, .active) {
-    background: var(--ui-color-grey-400);
-  }
-
-  &.active {
-    border: 2px solid var(--ui-color-turquoise-500);
-    background: var(--ui-color-turquoise-200);
-    cursor: default;
-  }
-
-  &.disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  &.loading {
-    cursor: default;
-    pointer-events: none;
-  }
-
-  &.compact {
-    width: 88px;
-    height: 88px;
-    border-radius: 8px;
-  }
-}
-
-.img {
-  width: 100px;
-  height: 100px;
-  transition:
-    width 0.2s ease,
-    height 0.2s ease;
-}
-
-.sprite-image-item.compact .img {
-  width: 60px;
-  height: 60px;
-}
-</style>

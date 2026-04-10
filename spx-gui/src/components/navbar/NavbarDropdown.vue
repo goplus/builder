@@ -1,9 +1,9 @@
 <template>
   <UIDropdown placement="bottom-start">
     <template #trigger>
-      <div v-radar="triggerRadar" class="dropdown">
+      <div v-radar="triggerRadar" class="h-full cursor-pointer flex items-center px-5 hover:bg-primary-600">
         <slot name="trigger"></slot>
-        <UIIcon class="icon-arrow" type="arrowDown" />
+        <UIIcon type="arrowDown" />
       </div>
     </template>
     <slot></slot>
@@ -18,26 +18,3 @@ defineProps<{
   triggerRadar: RadarNodeMeta
 }>()
 </script>
-
-<style lang="scss" scoped>
-.dropdown {
-  // TODO: common style with NavbarLang
-  height: 100%;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-
-  &:hover {
-    background-color: var(--ui-color-primary-600);
-  }
-
-  :deep(.ui-icon) {
-    width: 24px;
-    height: 24px;
-  }
-  .icon-arrow {
-    width: 16px;
-    height: 16px;
-  }
-}
-</style>

@@ -191,11 +191,11 @@ const handleSubmit = useMessageHandle(
 <template>
   <main
     v-radar="{ name: 'Sprite generation content phase', desc: 'Sprite costume and animation generation' }"
-    class="phase-content"
+    class="h-full flex flex-col items-stretch"
   >
-    <div class="body">
-      <aside class="left">
-        <div class="gen-list">
+    <div class="flex-[1_1_0] flex flex-row items-stretch">
+      <aside class="w-102 flex-none bg-grey-100 pt-4 border-r border-grey-400 flex flex-col justify-between">
+        <div class="flex-[1_1_0] overflow-y-auto px-4 flex flex-col gap-6">
           <ListItemWrapper v-radar="{ name: 'Costume list', desc: 'List of costumes' }" @add="handleAddCostume">
             <template #title>{{ $t({ zh: '造型', en: 'Costume' }) }}</template>
             <CostumeGenItem
@@ -225,17 +225,17 @@ const handleSubmit = useMessageHandle(
           </ListItemWrapper>
         </div>
 
-        <div class="gen-settings">
+        <div class="px-4 py-5 mt-0">
           <CostumeSettingInput v-if="selectedCostume != null" :gen="selectedCostume" />
           <AnimationSettingInput v-if="selectedAnimation != null" :gen="selectedAnimation" />
         </div>
       </aside>
-      <div class="preview">
+      <div class="relative flex-[1_1_0] overflow-hidden flex">
         <CostumeGenPreview v-if="selectedCostume != null" :gen="selectedCostume" />
         <AnimationGenPreview v-else-if="selectedAnimation != null" :gen="selectedAnimation" />
       </div>
     </div>
-    <footer class="footer">
+    <footer class="w-full flex-none px-6 py-5 flex justify-end gap-4">
       <UITooltip>
         {{
           $t({
@@ -270,60 +270,3 @@ const handleSubmit = useMessageHandle(
     </footer>
   </main>
 </template>
-
-<style lang="scss" scoped>
-.phase-content {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  height: 100%;
-}
-
-.body {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-}
-
-.left {
-  flex: 0 0 auto;
-  width: 408px;
-  padding-top: 16px;
-  background: var(--ui-color-grey-100);
-  border-right: 1px solid var(--ui-color-grey-400);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.preview {
-  flex: 1 1 0;
-  display: flex;
-  position: relative;
-  overflow: hidden;
-}
-
-.footer {
-  width: 100%;
-  flex: 0 0 auto;
-  padding: 20px 24px;
-  display: flex;
-  justify-content: end;
-  gap: 16px;
-}
-
-.gen-list {
-  flex: 1 1 0;
-  padding: 0 16px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.gen-settings {
-  padding: 20px 16px;
-  margin-top: 0;
-}
-</style>

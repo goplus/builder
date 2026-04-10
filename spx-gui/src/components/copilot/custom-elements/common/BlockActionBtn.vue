@@ -7,33 +7,10 @@ defineProps<{
 </script>
 
 <template>
-  <button class="block-action-btn">
-    <UIIcon class="icon" :type="icon" />
+  <button
+    class="h-4.5 cursor-pointer flex items-center gap-1 rounded border-none bg-transparent p-0 text-12 text-text hover:text-grey-700"
+  >
+    <UIIcon :type="icon" />
     <slot></slot>
   </button>
 </template>
-
-<style lang="scss" scoped>
-.block-action-btn {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  border: none;
-  background: none;
-  padding: 0;
-  height: 18px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--ui-color-text);
-  cursor: pointer;
-
-  &:hover {
-    color: var(--ui-color-grey-700);
-  }
-
-  .icon {
-    width: 16px;
-    height: 16px;
-  }
-}
-</style>

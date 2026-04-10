@@ -1,19 +1,19 @@
 <!-- Sound / video play control (only UI) -->
 
 <template>
-  <div class="play-control" :class="[`size-${props.size}`]" :style="colorCssVars">
-    <div v-show="!playing" class="play" @click.stop="handlePlay.fn">
-      <UIIcon class="icon" type="play" />
+  <div class="play-control" :class="[`play-control--${props.size}`]" :style="colorCssVars">
+    <div v-show="!playing" class="play-control-play" @click.stop="handlePlay.fn">
+      <UIIcon type="play" class="play-control-icon" />
     </div>
-    <div v-show="playing" class="stop" @click.stop="emit('stop')">
+    <div v-show="playing" class="play-control-stop" @click.stop="emit('stop')">
       <svg viewBox="0 0 36 36" class="progress" :style="playCssVars">
         <circle class="bg"></circle>
         <circle class="fg"></circle>
       </svg>
-      <UIIcon class="icon" type="stop" />
+      <UIIcon type="stop" class="play-control-icon" />
     </div>
     <!-- TODO: style optimization for play control -->
-    <UILoading :visible="loading" cover class="loading" />
+    <UILoading :visible="loading" cover class="play-control-loading" />
   </div>
 </template>
 
@@ -75,56 +75,63 @@ const colorCssVars = computed(() => {
 })
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .play-control {
   position: relative;
-
-  &.size-medium {
-    width: 36px;
-    height: 36px;
-  }
-
-  &.size-large {
-    width: 48px;
-    height: 48px;
-    .icon {
-      width: 20px;
-      height: 20px;
-    }
-  }
 }
 
-.play,
-.stop {
+.play-control--medium {
+  width: 36px;
+  height: 36px;
+}
+
+.play-control--large {
+  width: 48px;
+  height: 48px;
+}
+
+.play-control-play,
+.play-control-stop {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 50%;
   cursor: pointer;
-
   transition: transform 0.2s;
   --color: var(--color-main);
-  &:hover {
-    transform: scale(1.15);
-    --color: var(--color-400);
-  }
-  &:active {
-    transform: scale(1.15);
-    --color: var(--color-600);
-  }
 }
 
-.play {
+.play-control-play:hover,
+.play-control-stop:hover {
+  transform: scale(1.15);
+  --color: var(--color-400);
+}
+
+.play-control-play:active,
+.play-control-stop:active {
+  transform: scale(1.15);
+  --color: var(--color-600);
+}
+
+.play-control-play {
   color: var(--ui-color-grey-100);
   background-color: var(--color);
 }
 
-.stop {
-  position: relative;
+.play-control-stop {
   color: var(--color);
+}
+
+.play-control-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.play-control--large .play-control-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .progress {
@@ -137,30 +144,30 @@ const colorCssVars = computed(() => {
   --radius: calc((var(--size) - var(--stroke-width)) / 2);
   --circumference: calc(var(--radius) * pi * 2);
   --dash: calc((var(--progress) * var(--circumference)));
-
-  circle {
-    cx: var(--half-size);
-    cy: var(--half-size);
-    r: var(--radius);
-    stroke-width: var(--stroke-width);
-    fill: none;
-    stroke-linecap: round;
-
-    &.bg {
-      stroke: var(--color-300);
-    }
-
-    &.fg {
-      transform: rotate(-90deg);
-      transform-origin: var(--half-size) var(--half-size);
-      stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
-      transition: stroke-dasharray var(--progress-interval) linear 0s;
-      stroke: var(--color);
-    }
-  }
 }
 
-.loading {
+.progress circle {
+  cx: var(--half-size);
+  cy: var(--half-size);
+  r: var(--radius);
+  stroke-width: var(--stroke-width);
+  fill: none;
+  stroke-linecap: round;
+}
+
+.progress circle.bg {
+  stroke: var(--color-300);
+}
+
+.progress circle.fg {
+  transform: rotate(-90deg);
+  transform-origin: var(--half-size) var(--half-size);
+  stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
+  transition: stroke-dasharray var(--progress-interval) linear 0s;
+  stroke: var(--color);
+}
+
+.play-control-loading {
   border-radius: 50%;
 }
 </style>

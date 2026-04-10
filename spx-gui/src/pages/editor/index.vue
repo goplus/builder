@@ -1,9 +1,10 @@
+<!-- TODO: review root background color and promote it to a shared UI token if it becomes reused. -->
 <template>
-  <section class="editor-home">
-    <header class="editor-header">
+  <section class="min-h-full w-full flex flex-col bg-[#e9fcff]">
+    <header class="flex-none">
       <EditorNavbar :project="state?.project ?? null" :state="state" />
     </header>
-    <main class="editor-main">
+    <main class="flex-[1_1_0] flex gap-middle p-middle">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
         <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
       </UIDetailedLoading>
@@ -268,25 +269,3 @@ function openProject(owner: string, name: string) {
   router.push(getProjectEditorRoute(owner, name))
 }
 </script>
-
-<style scoped lang="scss">
-.editor-home {
-  width: 100%;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  background-color: #e9fcff; // TODO: define as UI vars
-}
-
-.editor-header {
-  flex: 0 0 auto;
-}
-
-.editor-main {
-  flex: 1 1 0;
-  display: flex;
-  gap: var(--ui-gap-middle);
-  padding: 16px;
-}
-</style>

@@ -23,47 +23,15 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 <template>
   <li
     v-radar="{ name: `Course item \u0022${props.course.title}\u0022`, desc: 'Click to start the course' }"
-    class="course-item"
+    class="relative w-58 overflow-hidden rounded-lg transition-all hover:cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
     :style="{ height: `${courseItemHeight}px` }"
   >
-    <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
+    <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
 
-    <div class="title">{{ course.title }}</div>
+    <div
+      class="absolute bottom-0 h-10 w-full overflow-hidden bg-grey-1000/30 px-4 text-15/10 whitespace-nowrap text-ellipsis text-grey-100"
+    >
+      {{ course.title }}
+    </div>
   </li>
 </template>
-
-<style lang="scss" scoped>
-.course-item {
-  width: 232px;
-  border-radius: var(--ui-border-radius-3);
-  overflow: hidden;
-  transition: all 0.2s;
-  position: relative;
-
-  &:hover {
-    cursor: pointer;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-
-  .thumbnail {
-    width: 100%;
-    height: 100%;
-  }
-
-  .title {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 40px;
-    font-size: 15px;
-    line-height: 40px;
-    padding: 0 16px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    color: var(--ui-color-grey-100);
-    background: rgb(from var(--ui-color-grey-1000) r g b / 0.3);
-  }
-}
-</style>

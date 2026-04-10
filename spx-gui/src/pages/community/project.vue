@@ -363,13 +363,13 @@ const remixesRet = useQuery(
   <CenteredWrapper size="large">
     <CommunityCard
       v-radar="{ name: 'Project content', desc: 'Main content area for project details and runner' }"
-      class="main"
+      class="relative mt-6 flex-none flex gap-10 bg-grey-100 p-5"
     >
       <UILoading v-if="isLoading" cover mask="solid" />
       <UIError v-else-if="error != null" class="error" :retry="reloadProject">
         {{ $t(error.userMessage) }}
       </UIError>
-      <div class="left">
+      <div class="left flex-[1_1_744px]">
         <div class="project-wrapper">
           <template v-if="project != null">
             <ProjectRunnerSurface
@@ -389,14 +389,18 @@ const remixesRet = useQuery(
                 <Transition name="runner-mask-fade" appear>
                   <div
                     v-if="runnerState !== 'running'"
-                    :class="['runner-mask', { initial: runnerState === 'initial' }]"
+                    :class="runnerState === 'initial' ? 'pointer-events-auto' : 'pointer-events-none'"
+                    class="absolute inset-0 z-2 flex items-center justify-center rounded-md bg-[rgba(36,41,47,0.6)]"
                   >
                     <template v-if="runnerState === 'initial'">
-                      <div v-if="needsSignInToRun" class="sign-in-prompt">
-                        <div class="sign-in-card">
+                      <div v-if="needsSignInToRun" class="h-full w-full flex items-center justify-center p-6">
+                        <div
+                          class="relative w-85 flex flex-col items-center overflow-visible rounded-[16px] bg-grey-100 px-6 pt-17 pb-6 text-center"
+                          style="box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1)"
+                        >
                           <!-- eslint-disable-next-line vue/no-v-html -->
                           <div class="kiko-wave" aria-hidden="true" v-html="kikoWaveSvg"></div>
-                          <p class="message">
+                          <p class="mb-11 leading-6 text-grey-800">
                             {{
                               $t({
                                 en: 'This game requires sign-in before playing',
@@ -406,7 +410,7 @@ const remixesRet = useQuery(
                           </p>
                           <UIButton
                             v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
-                            class="sign-in-button"
+                            class="w-full"
                             size="large"
                             color="primary"
                             @click="handleSignIn"
@@ -424,8 +428,9 @@ const remixesRet = useQuery(
                         :disabled="projectRunnerRef == null"
                         :loading="handleRun.isLoading.value"
                         @click="handleRun.fn"
-                        >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
                       >
+                        {{ $t({ en: 'Run', zh: '运行' }) }}
+                      </UIButton>
                     </template>
                   </div>
                 </Transition>
@@ -433,7 +438,7 @@ const remixesRet = useQuery(
             </ProjectRunnerSurface>
           </template>
         </div>
-        <div class="ops">
+        <div class="mt-3 flex justify-end gap-middle">
           <UIButton
             v-if="runnerState !== 'initial'"
             v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
@@ -483,61 +488,67 @@ const remixesRet = useQuery(
           </UITooltip>
         </div>
       </div>
-      <div class="right">
+      <div class="right flex-[1_1_456px] min-w-0 flex flex-col pr-5">
         <template v-if="project != null">
-          <h2 class="title">{{ project.displayName }}</h2>
-          <RemixedFrom v-if="project.remixedFrom != null" class="remixed-from" :remixed-from="project.remixedFrom" />
-          <div class="info">
+          <h2 class="text-20/[1.4] text-title break-all">{{ project.displayName }}</h2>
+          <RemixedFrom v-if="project.remixedFrom != null" class="mt-2" :remixed-from="project.remixedFrom" />
+          <div class="mt-4 flex items-center justify-between">
             <OwnerInfo :owner="project.owner!" />
-            <p class="extra">
-              <span class="part" :title="$t(viewCount!.title)">
-                <UIIcon class="icon" type="eye" />
+            <p class="flex items-center gap-2">
+              <span class="flex items-center gap-1 text-hint-2" :title="$t(viewCount!.title)">
+                <UIIcon class="w-3.5 h-3.5" type="eye" />
                 {{ $t(viewCount!.text) }}
               </span>
               <template v-if="isOwner">
-                <i class="sep"></i>
-                <span class="part" :title="$t(likeCount!.title)">
-                  <UIIcon class="icon" type="heart" />
+                <i class="h-3 w-px bg-dividing-line-1"></i>
+                <span class="flex items-center gap-1 text-hint-2" :title="$t(likeCount!.title)">
+                  <UIIcon class="w-3.5 h-3.5" type="heart" />
                   {{ $t(likeCount!.text) }}
                 </span>
               </template>
-              <i class="sep"></i>
-              <span class="part" :title="$t(remixCount!.title)">
-                <UIIcon class="icon" type="remix" />
+              <i class="h-3 w-px bg-dividing-line-1"></i>
+              <span class="flex items-center gap-1 text-hint-2" :title="$t(remixCount!.title)">
+                <UIIcon class="w-3.5 h-3.5" type="remix" />
                 {{ $t(remixCount!.text) }}
               </span>
             </p>
           </div>
-          <div class="ops">
+          <div class="ops mt-4 flex gap-3">
             <template v-if="isOwner">
               <UIButton
                 v-radar="{ name: 'Edit button', desc: 'Click to edit the project' }"
+                style="flex: 1 1 0"
                 color="primary"
                 size="large"
                 icon="edit"
                 :loading="handleEdit.isLoading.value"
                 @click="handleEdit.fn"
-                >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
               >
+                {{ $t({ en: 'Edit', zh: '编辑' }) }}
+              </UIButton>
               <UIButton
                 v-if="project.visibility === Visibility.Public"
                 v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
+                style="flex: 1 1 0"
                 color="boring"
                 size="large"
                 icon="share"
                 @click="handleShare.fn"
-                >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
               >
+                {{ $t({ en: 'Share', zh: '分享' }) }}
+              </UIButton>
               <UIButton
                 v-else
                 v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+                style="flex: 1 1 0"
                 color="boring"
                 size="large"
                 icon="share"
                 :loading="handlePublish.isLoading.value"
                 @click="handlePublish.fn"
-                >{{ $t({ en: 'Publish', zh: '发布' }) }}</UIButton
               >
+                {{ $t({ en: 'Publish', zh: '发布' }) }}
+              </UIButton>
               <UIDropdown placement="bottom-end" trigger="click">
                 <template #trigger>
                   <UIButton
@@ -553,13 +564,15 @@ const remixesRet = useQuery(
                     v-if="project.visibility === Visibility.Public"
                     v-radar="{ name: 'Unpublish option', desc: 'Click to unpublish the project' }"
                     @click="handleUnpublish.fn"
-                    >{{ $t({ en: 'Unpublish', zh: '取消发布' }) }}</UIMenuItem
                   >
+                    {{ $t({ en: 'Unpublish', zh: '取消发布' }) }}
+                  </UIMenuItem>
                   <UIMenuItem
                     v-radar="{ name: 'Remove option', desc: 'Click to remove the project' }"
                     @click="handleRemove.fn"
-                    >{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem
                   >
+                    {{ $t({ en: 'Remove', zh: '删除' }) }}
+                  </UIMenuItem>
                 </UIMenu>
               </UIDropdown>
             </template>
@@ -567,16 +580,18 @@ const remixesRet = useQuery(
               <UIButton
                 v-if="hasRelease"
                 v-radar="{ name: 'Remix button', desc: 'Click to remix this project' }"
+                class="flex-[1_1_0]"
                 color="primary"
                 size="large"
                 icon="remix"
                 :loading="handleRemix.isLoading.value"
                 @click="handleRemix.fn"
-                >{{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
               >
+                {{ $t({ en: 'Remix', zh: '改编' }) }}
+              </UIButton>
               <UIButton
                 v-radar="{ name: 'Like button', desc: 'Click to like or unlike the project' }"
-                :class="{ liking }"
+                :class="['flex-[1_1_0]', { liking }]"
                 color="boring"
                 size="large"
                 :title="$t(likeCount!.title)"
@@ -588,21 +603,23 @@ const remixesRet = useQuery(
               </UIButton>
               <UIButton
                 v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
+                class="flex-[1_1_0]"
                 color="boring"
                 size="large"
                 icon="share"
                 @click="handleShare.fn"
-                >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
               >
+                {{ $t({ en: 'Share', zh: '分享' }) }}
+              </UIButton>
             </template>
           </div>
-          <UIDivider class="divider" />
+          <UIDivider class="mt-6 mb-4" />
           <UICollapse
             v-radar="{
               name: 'Project details',
               desc: 'Collapsible sections showing project description, instructions and release history'
             }"
-            class="collapse"
+            class="mb-2 flex-[1_1_0] overflow-y-auto"
             :default-expanded-names="['description', 'instructions', 'releases']"
           >
             <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
@@ -623,7 +640,7 @@ const remixesRet = useQuery(
     </CommunityCard>
     <ProjectsSection
       v-radar="{ name: 'Popular remixes section', desc: 'Section showing popular remixes of this project' }"
-      class="remixes"
+      class="mt-5"
       context="project"
       :num-in-row="remixNumInRow"
       :query-ret="remixesRet"
@@ -641,7 +658,7 @@ const remixesRet = useQuery(
   </CenteredWrapper>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .error {
   position: absolute;
   width: 100%;
@@ -650,205 +667,58 @@ const remixesRet = useQuery(
   background: var(--ui-color-grey-100);
 }
 
-.main {
+.runner-mask-fade-enter-from,
+.runner-mask-fade-leave-to {
+  opacity: 0;
+}
+
+.runner-mask-fade-enter-active,
+.runner-mask-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.project-wrapper {
   position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+/* TODO: replace these UIDetailedLoading deep overrides with an explicit loading styling API. */
+.project-wrapper :deep(.ui-detailed-loading.cover.mask-semi-transparent .text) {
+  color: var(--ui-color-grey-100);
+}
+.project-wrapper :deep(.project-runner-surface:not(.fullscreen) .ui-detailed-loading.cover) {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  z-index: 3;
+}
+
+.kiko-wave {
+  position: absolute;
+  top: -56px;
+  width: 340px;
+  line-height: 0;
+}
+
+.kiko-wave > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ops > *.more {
   flex: 0 0 auto;
-  margin-top: 24px;
-  padding: 20px;
-  display: flex;
-  gap: 40px;
-  background: var(--ui-color-grey-100);
+  width: 40px;
 }
 
-.left {
-  flex: 1 1 744px;
-
-  .runner-mask-fade-enter-from,
-  .runner-mask-fade-leave-to {
-    opacity: 0;
-  }
-
-  .runner-mask-fade-enter-active,
-  .runner-mask-fade-leave-active {
-    transition: opacity 0.2s ease;
-  }
-
-  .project-wrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-
-    .runner-mask {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: var(--ui-border-radius-2);
-      background: rgba(36, 41, 47, 0.6);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .runner-mask.initial {
-      pointer-events: auto;
-    }
-
-    .sign-in-prompt {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-      padding: 24px;
-
-      .sign-in-card {
-        position: relative;
-        width: 340px;
-        padding: 68px 24px 24px;
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        overflow: visible;
-      }
-
-      .kiko-wave {
-        position: absolute;
-        top: -56px;
-        width: 340px;
-        line-height: 0;
-
-        :deep(svg) {
-          display: block;
-          width: 100%;
-          height: auto;
-        }
-      }
-
-      .message {
-        margin-bottom: 44px;
-        line-height: 24px;
-        color: var(--ui-color-grey-800);
-      }
-
-      .sign-in-button {
-        width: 100%;
-      }
-    }
-
-    :deep(.ui-detailed-loading.cover.mask-semi-transparent .text) {
-      color: var(--ui-color-grey-100);
-    }
-
-    :deep(.project-runner-surface:not(.fullscreen) .ui-detailed-loading.cover) {
-      background: transparent;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      z-index: 3;
-    }
-  }
-
-  .ops {
-    margin-top: 12px;
-    display: flex;
-    gap: var(--ui-gap-middle);
-    justify-content: flex-end;
-  }
+/* TODO: replace these UIButton deep overrides with a more explicit styling API or stable override hook. */
+.ops > *.more :deep(.ui-button-content) {
+  padding: 0;
 }
 
-.right {
-  flex: 1 1 456px;
-  min-width: 0;
-  padding-right: 20px;
-  display: flex;
-  flex-direction: column;
-
-  .title {
-    font-size: 20px;
-    line-height: 1.4;
-    color: var(--ui-color-title);
-    word-break: break-all;
-  }
-
-  .remixed-from {
-    margin-top: 8px;
-  }
-
-  .info {
-    margin-top: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .extra {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      .part {
-        display: flex;
-        gap: 4px;
-        align-items: center;
-        color: var(--ui-color-hint-2);
-      }
-
-      .icon {
-        width: 14px;
-        height: 14px;
-      }
-
-      .sep {
-        width: 1px;
-        height: 12px;
-        background-color: var(--ui-color-dividing-line-1);
-      }
-    }
-  }
-
-  .ops {
-    margin-top: 16px;
-    display: flex;
-    gap: 12px;
-
-    & > * {
-      flex: 1 1 0;
-
-      &.more {
-        flex: 0 0 auto;
-        width: 40px;
-        :deep(.content) {
-          padding: 0;
-        }
-      }
-    }
-
-    .liking :deep(.content) {
-      color: var(--ui-color-red-main);
-    }
-  }
-
-  .divider {
-    margin: 24px 0 16px;
-  }
-
-  .collapse {
-    margin-bottom: 8px;
-    flex: 1 1 0;
-    overflow-y: auto;
-  }
-}
-
-.remixes {
-  margin-top: 20px;
+.ops .liking :deep(.ui-button-content) {
+  color: var(--ui-color-red-main);
 }
 </style>

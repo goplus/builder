@@ -49,34 +49,16 @@ function handleKeyDown(e: KeyboardEvent) {
 </script>
 
 <template>
-  <div class="spx-key-input">
+  <div class="flex self-stretch flex-col gap-1">
     <UITextInput
       v-radar="{ name: 'Key input', desc: 'Input field for detecting key press' }"
-      class="input"
+      class="text-center"
       :value="text"
       autofocus
       @keydown="handleKeyDown"
     />
-    <p class="tip">
+    <p class="text-center text-hint-1">
       {{ $t({ en: 'Press desired key', zh: '按下你想输入的按键' }) }}
     </p>
   </div>
 </template>
-
-<style scoped lang="scss">
-.spx-key-input {
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.tip {
-  text-align: center;
-  color: var(--ui-color-hint-1);
-}
-
-.input {
-  text-align: center;
-}
-</style>

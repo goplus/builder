@@ -45,19 +45,16 @@ onMounted(() => {
 })
 </script>
 
-<style lang="scss" scoped>
-.ui-number-input :deep(> .n-input) {
-  // it's not possible to control input's hovered-bg-color with themeOverrides,
-  // so we do background color control here
-  &:not(.n-input--focus, .n-input--error-status, .n-input--disabled) {
-    background-color: var(--ui-color-grey-300);
-    &:hover {
-      background-color: var(--ui-color-grey-400);
-    }
-  }
-
-  .n-input__prefix {
-    margin-right: 8px;
-  }
+<style scoped>
+/* it's not possible to control input's hovered-bg-color with themeOverrides, */
+/* so we do background color control here */
+.ui-number-input :deep(> .n-input):not(.n-input--focus, .n-input--error-status, .n-input--disabled) {
+  background-color: var(--ui-color-grey-300);
+}
+.ui-number-input :deep(> .n-input):not(.n-input--focus, .n-input--error-status, .n-input--disabled):hover {
+  background-color: var(--ui-color-grey-400);
+}
+.ui-number-input :deep(> .n-input .n-input__prefix) {
+  margin-right: 8px;
 }
 </style>

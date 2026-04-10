@@ -14,32 +14,28 @@ export function useCollapseCtx() {
 </script>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { cn, type ClassValue } from '../utils'
+
 const props = withDefaults(
   defineProps<{
     defaultExpandedNames?: string[]
+    class?: ClassValue
   }>(),
   {
-    defaultExpandedNames: () => []
+    defaultExpandedNames: () => [],
+    class: undefined
   }
 )
 
 const expandedNames = ref(props.defaultExpandedNames)
+const rootClass = computed(() => cn('m-0 flex list-none flex-col p-0', props.class ?? null))
 
 provide(collapseCtxKey, { expandedNames })
 </script>
 
 <template>
-  <ul class="ui-collapse">
+  <ul :class="rootClass">
     <slot></slot>
   </ul>
 </template>
-
-<style lang="scss" scoped>
-.ui-collapse {
-  display: flex;
-  flex-direction: column;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-</style>
