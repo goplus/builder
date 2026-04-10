@@ -43,7 +43,7 @@ const rootClass = computed(() =>
         ? 'bg-grey-200 text-turquoise-600'
         : 'bg-[#47d8e4] text-grey-200',
     isActive.value ? 'cursor-default' : 'cursor-pointer',
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const rootAttrs = computed(() => {

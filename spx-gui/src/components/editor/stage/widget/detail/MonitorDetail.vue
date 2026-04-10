@@ -13,7 +13,7 @@
             {{ $t({ en: 'Label', zh: '标签' }) }}
             <UITextInput
               v-radar="{ name: 'Label input', desc: 'Input field for monitor label' }"
-              style="width: 180px"
+              class="w-45"
               :value="monitor.label"
               @update:value="handleLabelUpdate"
             />
@@ -56,7 +56,7 @@
             {{ $t({ en: 'Position', zh: '位置' }) }}
             <UINumberInput
               v-radar="{ name: 'X position input', desc: 'Input field for monitor X position' }"
-              style="width: 180px"
+              class="w-45"
               :value="monitor.x"
               @update:value="handleXUpdate"
             >
@@ -64,7 +64,7 @@
             </UINumberInput>
             <UINumberInput
               v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
-              style="width: 180px"
+              class="w-45"
               :value="monitor.y"
               @update:value="handleYUpdate"
             >
@@ -77,7 +77,7 @@
             {{ $t({ en: 'Size', zh: '大小' }) }}
             <UINumberInput
               v-radar="{ name: 'Size input', desc: 'Input field for monitor size' }"
-              style="width: 180px"
+              class="w-45"
               :min="0"
               :value="sizePercent"
               @update:value="handleSizePercentUpdate"

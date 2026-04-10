@@ -30,7 +30,7 @@ const emit = defineEmits<{
 
 const attrs = useAttrs()
 const rootClass = computed(() =>
-  cn('flex items-center justify-center rounded-sm bg-grey-400 p-[2px]', attrs.class as ClassValue | null)
+  cn('flex items-center justify-center rounded-sm bg-grey-400 p-[2px]', attrs.class as ClassValue)
 )
 const rootAttrs = computed(() => {
   const { class: _class, ...rest } = attrs

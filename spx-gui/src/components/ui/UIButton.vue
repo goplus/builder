@@ -278,7 +278,7 @@ const classes = computed(() =>
     iconOnly: iconOnly.value
   })
 )
-const rootClass = computed(() => classes.value.root(attrs.class as ClassValue | null))
+const rootClass = computed(() => classes.value.root(attrs.class as ClassValue))
 const contentClass = computed(() => classes.value.content())
 const iconClass = computed(() => classes.value.icon())
 const buttonAttrs = computed(() => {

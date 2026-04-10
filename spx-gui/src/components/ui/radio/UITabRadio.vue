@@ -30,7 +30,7 @@ const rootClass = computed(() =>
     isActive.value
       ? 'rounded-sm bg-grey-100 text-title [box-shadow:0_6px_10px_0_rgba(14,18,27,0.06),0_2px_4px_0_rgba(14,18,27,0.03)]'
       : 'cursor-pointer text-hint-1',
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const rootAttrs = computed(() => {

@@ -45,7 +45,7 @@ const rootClass = computed(() => {
     disabled.value ? 'cursor-not-allowed text-grey-600' : null,
     !disabled.value && props.interactive ? 'cursor-pointer hover:bg-grey-300' : null,
     ctx?.inGroup ? 'in-group' : null,
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 })
 const rootAttrs = computed(() => {

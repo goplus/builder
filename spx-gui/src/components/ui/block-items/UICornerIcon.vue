@@ -39,7 +39,7 @@ const rootClass = computed(() =>
   cn(
     'absolute -top-1.5 -right-1.5 h-6 w-6 flex items-center justify-center rounded-full cursor-pointer',
     'text-grey-100 bg-(--ui-corner-icon-color-main) hover:bg-(--ui-corner-icon-color-400) active:bg-(--ui-corner-icon-color-600)',
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const rootAttrs = computed(() => {

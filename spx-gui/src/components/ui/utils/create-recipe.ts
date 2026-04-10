@@ -79,7 +79,7 @@ export type RecipeConfig<SlotName extends string, TVariants extends VariantDefin
   }>
 }
 
-export type RecipeResult<SlotName extends string> = Record<SlotName, (extra?: ClassValue | null) => string>
+export type RecipeResult<SlotName extends string> = Record<SlotName, (extra?: ClassValue) => string>
 
 function normalizeVariantValue(value: string | boolean | null) {
   if (typeof value === 'boolean') return String(value) as BooleanVariantKeys
@@ -169,7 +169,7 @@ export function createRecipe<const SlotName extends string, const TVariants exte
         // The caller can pass extra classes here (commonly attrs.class for root).
         // `cn()` applies `twMerge`, so conflicting Tailwind utilities collapse in
         // a predictable way.
-        (extra: ClassValue | null = null) => cn(resolvedClasses[slotName], extra)
+        (extra: ClassValue = null) => cn(resolvedClasses[slotName], extra)
       ])
     ) as RecipeResult<SlotName>
   }

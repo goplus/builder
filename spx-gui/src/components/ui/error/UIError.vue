@@ -53,7 +53,7 @@ const rootClass = computed(() =>
   cn(
     'h-full w-full flex flex-col items-center justify-center',
     props.cover ? 'absolute inset-0 overflow-hidden bg-grey-100 opacity-[0.97] [border-radius:inherit]' : null,
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const rootAttrs = computed(() => {

@@ -22,7 +22,7 @@ defineOptions({
 })
 
 const attrs = useAttrs()
-const rootClass = computed(() => cn('p-2', attrs.class as ClassValue | null))
+const rootClass = computed(() => cn('p-2', attrs.class as ClassValue))
 const rootAttrs = computed(() => {
   const { class: _class, ...rest } = attrs
   return rest

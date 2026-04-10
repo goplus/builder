@@ -32,7 +32,7 @@ const props = withDefaults(
 
 const expandedNames = ref(props.defaultExpandedNames)
 const attrs = useAttrs()
-const rootClass = computed(() => cn('m-0 flex list-none flex-col p-0', attrs.class as ClassValue | null))
+const rootClass = computed(() => cn('m-0 flex list-none flex-col p-0', attrs.class as ClassValue))
 const rootAttrs = computed(() => {
   const { class: _class, ...rest } = attrs
   return rest

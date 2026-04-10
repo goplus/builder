@@ -1,27 +1,36 @@
 <template>
-  <NInputNumber
-    ref="nInput"
-    class="ui-number-input"
-    :placeholder="placeholder || ''"
-    :show-button="false"
-    :value="value"
-    :disabled="disabled"
-    :min="min"
-    :max="max"
-    @update:value="(v) => emit('update:value', v)"
-  >
-    <template v-if="!!slots.prefix" #prefix>
-      <slot name="prefix"></slot>
-    </template>
-    <template v-if="!!slots.suffix" #suffix>
-      <slot name="suffix"></slot>
-    </template>
-  </NInputNumber>
+  <div :class="rootClass" :style="rootStyle">
+    <NInputNumber
+      ref="nInput"
+      v-bind="inputAttrs"
+      class="ui-number-input w-full min-w-0"
+      :placeholder="placeholder || ''"
+      :show-button="false"
+      :value="value"
+      :disabled="disabled"
+      :min="min"
+      :max="max"
+      @update:value="(v) => emit('update:value', v)"
+    >
+      <template v-if="slots.prefix != null" #prefix>
+        <slot name="prefix"></slot>
+      </template>
+      <template v-if="slots.suffix != null" #suffix>
+        <slot name="suffix"></slot>
+      </template>
+    </NInputNumber>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, useSlots } from 'vue'
+import { computed, onMounted, ref, type StyleValue, useAttrs, useSlots } from 'vue'
 import { NInputNumber } from 'naive-ui'
+
+import { cn, type ClassValue } from './utils'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = defineProps<{
   value: number | null
@@ -36,7 +45,14 @@ const emit = defineEmits<{
   'update:value': [number | null]
 }>()
 
+const attrs = useAttrs()
 const slots = useSlots()
+const rootClass = computed(() => cn('w-full min-w-0 rounded-md', attrs.class as ClassValue))
+const rootStyle = computed(() => attrs.style as StyleValue)
+const inputAttrs = computed(() => {
+  const { class: _class, style: _style, ...rest } = attrs
+  return rest
+})
 
 // It's wierd that the prop `autofocus` of `NInput` does not work as expected, so we handle it manually.
 const nInput = ref<InstanceType<typeof NInputNumber> | null>(null)

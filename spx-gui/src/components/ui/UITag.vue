@@ -49,7 +49,7 @@ const rootClass = computed(() =>
       'ui-tag-checkable': !!props.checkable,
       'ui-tag-checked': props.checkable ? props.checkable.checked : false
     },
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const rootAttrs = computed(() => {

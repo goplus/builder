@@ -17,7 +17,7 @@ const collapseCtx = useCollapseCtx()
 const attrs = useAttrs()
 
 const expanded = computed(() => collapseCtx.expandedNames.value.includes(props.name))
-const rootClass = computed(() => cn('flex flex-col', attrs.class as ClassValue | null))
+const rootClass = computed(() => cn('flex flex-col', attrs.class as ClassValue))
 const rootAttrs = computed(() => {
   const { class: _class, ...rest } = attrs
   return rest

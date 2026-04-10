@@ -15,10 +15,7 @@ defineOptions({
 
 const attrs = useAttrs()
 const rootClass = computed(() =>
-  cn(
-    'rounded-[4px] bg-primary-200 px-1 py-[2px] font-code text-10/[1.6] text-primary-main',
-    attrs.class as ClassValue | null
-  )
+  cn('rounded-[4px] bg-primary-200 px-1 py-[2px] font-code text-10/[1.6] text-primary-main', attrs.class as ClassValue)
 )
 const codeAttrs = computed(() => {
   const { class: _class, ...rest } = attrs

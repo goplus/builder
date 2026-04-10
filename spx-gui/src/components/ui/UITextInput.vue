@@ -1,41 +1,49 @@
-<!-- TODO: Wrap it with a native node ? -->
 <template>
-  <NInput
-    ref="nInput"
-    class="ui-text-input"
-    :class="[`color-${color}`, `ui-input-size-${size}`]"
-    :placeholder="placeholder || ''"
-    :value="value"
-    :type="type"
-    :disabled="disabled"
-    :readonly="readonly"
-    :resizable="false"
-    @update:value="(v) => emit('update:value', v)"
-  >
-    <template v-if="!!slots.prefix" #prefix>
-      <slot name="prefix"></slot>
-    </template>
-    <template v-if="(value && clearable) || !!slots.suffix" #suffix>
-      <div
-        v-if="value && clearable"
-        class="-mr-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500"
-        @click="emit('update:value', '')"
-      >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M6.70713 5.99999L9.35363 3.35347C9.54913 3.15847 9.54913 2.8415 9.35363 2.6465C9.15813 2.451 8.84212 2.451 8.64663 2.6465L6.00013 5.29299L3.35363 2.6465C3.15813 2.451 2.84212 2.451 2.64662 2.6465C2.45112 2.8415 2.45112 3.15847 2.64662 3.35347L5.29312 5.99999L2.64662 8.6465C2.45112 8.8415 2.45112 9.15847 2.64662 9.35347C2.74412 9.45097 2.87213 9.49999 3.00013 9.49999C3.12813 9.49999 3.25613 9.45097 3.35363 9.35347L6.00013 6.70699L8.64663 9.35347C8.74412 9.45097 8.87213 9.49999 9.00013 9.49999C9.12813 9.49999 9.25613 9.45097 9.35363 9.35347C9.54913 9.15847 9.54913 8.8415 9.35363 8.6465L6.70713 5.99999Z"
-            fill="currentColor"
-          />
-        </svg>
-      </div>
-      <slot name="suffix"></slot>
-    </template>
-  </NInput>
+  <div :class="rootClass" :style="rootStyle">
+    <NInput
+      ref="nInput"
+      v-bind="inputAttrs"
+      class="ui-text-input w-full min-w-0"
+      :class="[`color-${color}`, `ui-input-size-${size}`]"
+      :placeholder="placeholder || ''"
+      :value="value"
+      :type="type"
+      :disabled="disabled"
+      :readonly="readonly"
+      :resizable="false"
+      @update:value="(v) => emit('update:value', v)"
+    >
+      <template v-if="slots.prefix != null" #prefix>
+        <slot name="prefix"></slot>
+      </template>
+      <template v-if="(value && clearable) || slots.suffix != null" #suffix>
+        <div
+          v-if="value && clearable"
+          class="-mr-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500"
+          @click="emit('update:value', '')"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M6.70713 5.99999L9.35363 3.35347C9.54913 3.15847 9.54913 2.8415 9.35363 2.6465C9.15813 2.451 8.84212 2.451 8.64663 2.6465L6.00013 5.29299L3.35363 2.6465C3.15813 2.451 2.84212 2.451 2.64662 2.6465C2.45112 2.8415 2.45112 3.15847 2.64662 3.35347L5.29312 5.99999L2.64662 8.6465C2.45112 8.8415 2.45112 9.15847 2.64662 9.35347C2.74412 9.45097 2.87213 9.49999 3.00013 9.49999C3.12813 9.49999 3.25613 9.45097 3.35363 9.35347L6.00013 6.70699L8.64663 9.35347C8.74412 9.45097 8.87213 9.49999 9.00013 9.49999C9.12813 9.49999 9.25613 9.45097 9.35363 9.35347C9.54913 9.15847 9.54913 8.8415 9.35363 8.6465L6.70713 5.99999Z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+        <slot name="suffix"></slot>
+      </template>
+    </NInput>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, useSlots } from 'vue'
+import { computed, onMounted, ref, type StyleValue, useAttrs, useSlots } from 'vue'
 import { NInput } from 'naive-ui'
+
+import { cn, type ClassValue } from './utils'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 type Type = 'textarea' | 'text' | 'password'
 type Color = 'default' | 'white'
@@ -65,7 +73,14 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
+const attrs = useAttrs()
 const slots = useSlots()
+const rootClass = computed(() => cn('w-full min-w-0 rounded-md', attrs.class as ClassValue))
+const rootStyle = computed(() => attrs.style as StyleValue)
+const inputAttrs = computed(() => {
+  const { class: _class, style: _style, ...rest } = attrs
+  return rest
+})
 
 // It's weird that the prop `autofocus` of `NInput` does not work as expected, so we handle it manually.
 const nInput = ref<InstanceType<typeof NInput> | null>(null)

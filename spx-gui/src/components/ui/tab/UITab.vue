@@ -32,7 +32,7 @@ const rootClass = computed(() =>
   cn(
     'cursor-pointer flex items-center bg-(--ui-tab-color-main) px-middle py-[9px] text-16 text-grey-100 transition-opacity duration-200 first:rounded-tl-lg last:rounded-tr-lg',
     active.value ? 'opacity-100' : 'opacity-70',
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const rootAttrs = computed(() => {

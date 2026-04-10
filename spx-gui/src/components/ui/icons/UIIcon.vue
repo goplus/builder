@@ -161,7 +161,7 @@ const props = defineProps<{
 
 const attrs = useAttrs()
 const rootClass = computed(() =>
-  cn('ui-icon flex h-4 w-4', props.type === 'loading' ? 'spinning' : null, attrs.class as ClassValue | null)
+  cn('ui-icon flex h-4 w-4', props.type === 'loading' ? 'spinning' : null, attrs.class as ClassValue)
 )
 const rootAttrs = computed(() => {
   const { class: _class, ...rest } = attrs

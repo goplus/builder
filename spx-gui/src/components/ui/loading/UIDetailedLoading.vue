@@ -39,7 +39,7 @@ const rootClass = computed(() =>
       ? 'bg-[#24292f99] [backdrop-filter:blur(5px)] [-webkit-backdrop-filter:blur(5px)]'
       : null,
     props.visible ? 'visible opacity-100' : 'invisible opacity-0',
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const rootAttrs = computed(() => {

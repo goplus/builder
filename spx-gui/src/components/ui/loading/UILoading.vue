@@ -41,7 +41,7 @@ const rootClass = computed(() =>
     props.cover && mask.value === 'semi-transparent' ? 'bg-white/50' : null,
     props.cover && mask.value === 'solid' ? 'bg-grey-100' : null,
     props.visible ? 'visible opacity-100' : null,
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const rootAttrs = computed(() => {

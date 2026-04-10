@@ -44,7 +44,7 @@ const emit = defineEmits<{
 }>()
 
 const attrs = useAttrs()
-const rootClass = computed(() => cn('flex', attrs.class as ClassValue | null))
+const rootClass = computed(() => cn('flex', attrs.class as ClassValue))
 const rootAttrs = computed(() => {
   const { class: _class, ...rest } = attrs
   return rest

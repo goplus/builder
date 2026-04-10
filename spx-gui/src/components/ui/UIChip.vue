@@ -28,7 +28,7 @@ const rootClass = computed(() =>
       'text-grey-100 bg-primary-main border-primary-main': props.type === 'primary',
       'text-grey-900 bg-grey-300 border-grey-300': props.type === 'boring'
     },
-    attrs.class as ClassValue | null
+    attrs.class as ClassValue
   )
 )
 const buttonAttrs = computed(() => {

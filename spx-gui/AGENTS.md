@@ -116,16 +116,18 @@ When working with backend unique string identifiers such as `username`, project 
 
 ### Practical Styling Notes
 
+* Prefer standard Tailwind utility names when practical. For example, use `rounded-md` instead of a project-local alias like `rounded-2`; this keeps overrides more predictable because `tailwind-merge` understands standard utility groups better.
+* For root-class overrides and utility conflicts:
+	- For business components, external root `class` overrides are allowed by default. If utility conflicts need an explicit winner, prefer adding Tailwind's important modifier at the usage site (for example `rounded-md!`, `w-32!`) instead of expanding the component API. This keeps intent explicit, usage concise, and matches the fact that business components rarely need nested override chains.
+	- For most UI components, `twMerge` and `@layer components` are set up so external utilities or custom classes can override root classes in the common case without special handling, though edge cases can still exist.
+	- For the Naive UI-root components listed in `src/components/ui/README.md`, avoid relying on external `class` for styling-critical overrides when possible; the final result is often hard to predict.
 * Avoid non-equivalent Tailwind simplifications for flex values. In particular, `flex: 1 1 0` is not equivalent to Tailwind `flex-1` (`flex: 1 1 0%`), so do not simplify between them unless the layout behavior has been verified. Likewise, do not simplify `flex: 0 0 auto` to `shrink-0`; use the equivalent `flex-none` when that shorthand is desired.
 * Prefer `style` / `:style` for one-off values when clearer than Tailwind arbitrary utilities. For example, prefer `style="box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1)"` over a long arbitrary utility such as `shadow-[0_24px_32px_-16px_rgba(0,0,0,0.1)]`.
 * For important/non-obvious background assets, prefer TS imports and inline `backgroundImage` binding.
-* For `UIImg`, `UIIcon`, and similar wrappers, verify whether the intended classes/styles should apply to the wrapper root or to an outer layout container. If the wrapper's default root styles would interfere with layout or sizing, prefer an outer wrapper.
-* When extending a base UI component class from another component in the same `@layer components`, prefer a combined selector such as `.ui-block-item.ui-backdrop-item` instead of relying on output order between separate selectors.
 * Keep fixed utility classes in `class`; reserve `:class` for stateful/dynamic parts only.
 * In plain `<style scoped>`, flatten `:deep(...)` selectors (for example `.preview :deep(svg)`) so the final selector structure and specificity stay obvious.
 * Do not use native CSS nesting in plain `<style>` / `<style scoped>` blocks; use flat selectors to avoid browser compatibility issues.
 * Keep single-use values local; only add setup variables when reused/computed or clearly improving readability.
-* Prefer standard Tailwind utility names when practical. For example, use `rounded-md` instead of a project-local alias like `rounded-2`; this keeps overrides more predictable because `tailwind-merge` understands standard utility groups better.
 
 ### Menu Item Text Guidelines
 

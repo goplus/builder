@@ -15,7 +15,7 @@ defineOptions({
 
 const attrs = useAttrs()
 const rootClass = computed(() =>
-  cn('overflow-hidden rounded-lg bg-grey-100 shadow-diffusion', attrs.class as ClassValue | null)
+  cn('overflow-hidden rounded-lg bg-grey-100 shadow-diffusion', attrs.class as ClassValue)
 )
 const rootAttrs = computed(() => {
   const { class: _class, ...rest } = attrs
