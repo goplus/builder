@@ -22,8 +22,7 @@ const slots = useSlots()
 const attrs = useAttrs()
 const rootClass = computed(() =>
   cn(
-    // FIXME: `[color:var(--color-title)]` switch back to semantic `text-title` once `text-*` token merging no longer conflicts with text-size utilities.
-    'w-full flex items-center gap-2 px-1.5 text-center [color:var(--color-title)]',
+    'w-full flex items-center gap-2 px-1.5 text-center text-title',
     props.size === 'large' ? 'h-8 text-13/5' : 'text-10/[1.6]',
     attrs.class as ClassValue | null
   )

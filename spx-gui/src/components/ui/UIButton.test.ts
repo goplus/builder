@@ -7,8 +7,8 @@ describe('buttonRecipe', () => {
     const classes = buttonRecipe()
 
     expect(classes.root()).toContain('pb-1')
-    expect(classes.content()).toContain('[color:var(--ui-button-color)]')
-    expect(classes.content()).toContain('[background-color:var(--ui-button-bg-color)]')
+    expect(classes.content()).toContain('text-(--ui-button-color)')
+    expect(classes.content()).toContain('bg-(--ui-button-bg-color)')
     expect(classes.icon()).toContain('size-[14px]')
   })
 

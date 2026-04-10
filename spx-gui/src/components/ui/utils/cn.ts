@@ -1,22 +1,8 @@
-import { twMerge } from 'tailwind-merge'
+import { extendTailwindMerge, validators } from 'tailwind-merge'
 
 export type ClassDictionary = Record<string, boolean | null>
 export type ClassValue = string | ClassDictionary | null | false | ClassValue[]
 
-/**
- * Small class-name helper used by UI components.
- *
- * Responsibilities:
- * - flatten nested arrays / dictionaries / falsey values into a plain class list
- * - pass the final class string through `tailwind-merge` so later utilities can override earlier ones
- *
- * Important boundary:
- * - merge quality depends on class naming. Standard Tailwind utility names (for example `rounded-md`, `px-2`, `text-15`)
- *   are much more likely to merge predictably than project-private aliases such as old `rounded-2` style names.
- * - when two concerns share the same utility namespace, `tailwind-merge` may collapse them together. For example,
- *   font-size utilities like `text-15` and color shorthands like `text-(color:...)` can conflict. In those cases,
- *   prefer raw CSS property utilities such as `[color:var(--...)]`.
- */
 function flattenClassValue(value: ClassValue, tokens: string[]) {
   if (value == null || value === false) return
 
@@ -35,6 +21,31 @@ function flattenClassValue(value: ClassValue, tokens: string[]) {
   }
 }
 
+const twMerge = extendTailwindMerge({
+  extend: {
+    theme: {
+      // `text` is the key of the namespace `--text-*`
+      // `body` is the variable name without the namespace prefix
+      text: [validators.isNumber, 'body']
+    }
+  }
+})
+
+/**
+ * Small class-name helper used by UI components.
+ *
+ * Responsibilities:
+ * - flatten nested arrays / dictionaries / falsey values into a plain class list
+ * - pass the final class string through `tailwind-merge` so later utilities can override earlier ones
+ *
+ * Important boundary:
+ * - merge quality depends on class naming. Standard Tailwind utility names (for example `rounded-md`, `px-2`, `text-15`)
+ *   are much more likely to merge predictably than project-private aliases such as old `rounded-2` style names.
+ * - this project extends `tailwind-merge` so numeric `text-<number>` utilities such as `text-15`, plus the shared
+ *   semantic size alias `text-body`, are treated as font-size classes instead of text colors.
+ * - additional semantic `text-*` size aliases would still share the namespace with text colors. If those are
+ *   introduced later, extend this merge config first so names like `text-heading` do not collide with `text-title`.
+ */
 export function cn(...values: ClassValue[]) {
   const tokens: string[] = []
   for (const value of values) flattenClassValue(value, tokens)

@@ -252,8 +252,8 @@
   --spacing-middle: var(--ui-gap-middle, 16px);
   --spacing-large: var(--ui-gap-large, 24px);
 
-  /* TODO: Replace the numeric `text-*` aliases below with standard Tailwind size names when practical (for example `text-sm`, `text-base`, `text-lg`). */
-  /* TODO: If semantic `text-*` size names such as `text-button` / `text-body` / `text-heading` are introduced later, extend `tailwind-merge` first so they do not collide with color utilities like `text-title`. */
+  /* Numeric `text-<number>` utilities and the shared `text-body` alias are recognized as font sizes by the shared `cn()` twMerge config. */
+  /* TODO: If additional semantic `text-*` size names such as `text-button` / `text-heading` are introduced later, extend `tailwind-merge` first so they do not collide with color utilities like `text-title`. */
   --text-body: var(--ui-font-size-text, 14px);
   --text-body--line-height: 1.57143;
   --text-10: 10px;

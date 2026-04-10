@@ -54,12 +54,6 @@
   - For the Naive UI-root wrappers listed above, an external `class` can still be passed, but its root-level visual override is not guaranteed to apply as expected. Do not rely on it for styling-critical behavior; prefer an outer layout wrapper, explicit component props, Naive UI theme overrides, or a dedicated API extension when finer control is needed
   - This is primarily a component authoring/maintenance concern. The long-term goal is to keep these wrappers easy to consume so business code does not need to carry much Naive UI-specific styling knowledge
 
-- Known `tailwind-merge` limitations
-
-  - Some root color utilities and text-size utilities can still conflict under `tailwind-merge`
-  - When needed, prefer raw CSS property utilities like `[color:var(--color-title)]` as a targeted workaround
-  - Add a `FIXME` when doing so, so the usage can be revisited after the utility/token setup improves
-
 ### Usage
 
 - Import from `@/components/ui`
