@@ -1,16 +1,24 @@
 <template>
-  <div class="ui-card">
+  <div v-bind="rootAttrs" :class="rootClass">
     <slot></slot>
   </div>
 </template>
 
-<style lang="scss">
-@layer components {
-  .ui-card {
-    box-shadow: var(--ui-box-shadow-diffusion);
-    border-radius: var(--ui-border-radius-3);
-    background-color: var(--ui-color-grey-100);
-    overflow: hidden;
-  }
-}
-</style>
+<script setup lang="ts">
+import { computed, useAttrs } from 'vue'
+
+import { cn, type ClassValue } from './utils'
+
+defineOptions({
+  inheritAttrs: false
+})
+
+const attrs = useAttrs()
+const rootClass = computed(() =>
+  cn('overflow-hidden rounded-lg bg-grey-100 shadow-diffusion', attrs.class as ClassValue | null)
+)
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
+</script>

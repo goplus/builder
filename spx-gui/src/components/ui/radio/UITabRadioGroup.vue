@@ -1,16 +1,24 @@
 <template>
-  <div class="ui-tab-radio-group">
+  <div v-bind="rootAttrs" :class="rootClass">
     <slot />
   </div>
 </template>
 
 <script lang="ts">
+import type { ComputedRef, InjectionKey } from 'vue'
+
 export const radioGroupValueKey: InjectionKey<ComputedRef<string | undefined>> = Symbol('radioGroupValue')
 export const updateRadioValueKey: InjectionKey<(value: string) => void> = Symbol('updateRadioValue')
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey, computed, type ComputedRef } from 'vue'
+import { computed, provide, useAttrs } from 'vue'
+
+import { cn, type ClassValue } from '../utils'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = defineProps<{
   value?: string
@@ -19,6 +27,15 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:value': [string]
 }>()
+
+const attrs = useAttrs()
+const rootClass = computed(() =>
+  cn('flex items-center justify-center rounded-sm bg-grey-400 p-[2px]', attrs.class as ClassValue | null)
+)
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
 
 const updateValue = (newValue: string) => {
   emit('update:value', newValue)
@@ -30,17 +47,3 @@ provide(
 )
 provide(updateRadioValueKey, updateValue)
 </script>
-
-<style lang="scss">
-@layer components {
-  .ui-tab-radio-group {
-    display: flex;
-    padding: 2px;
-    justify-content: center;
-    align-items: center;
-
-    border-radius: 8px;
-    background: var(--ui-color-grey-400);
-  }
-}
-</style>

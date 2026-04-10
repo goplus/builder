@@ -50,20 +50,14 @@ const style = computed(() => ({
 }))
 </script>
 
-<style lang="scss">
+<style>
 @layer components {
   .ui-block-item {
     width: var(--block-item-size);
     height: var(--block-item-size);
-    // it may shrink without min-width / min-height
+    /* it may shrink without min-width / min-height */
     min-width: var(--block-item-size);
     min-height: var(--block-item-size);
-    &.ui-block-item-medium {
-      --block-item-size: 88px;
-    }
-    &.ui-block-item-large {
-      --block-item-size: 140px;
-    }
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -71,77 +65,89 @@ const style = computed(() => ({
     border-radius: var(--ui-border-radius-2);
     border: 2px solid var(--ui-color-grey-300);
     background-color: var(--ui-color-grey-300);
+  }
 
-    &.ui-block-item-interactive {
-      cursor: pointer;
-    }
+  .ui-block-item.ui-block-item-medium {
+    --block-item-size: 88px;
+  }
 
-    &.ui-block-item-colorful {
-      border-color: var(--color-background-faint);
-      background-color: var(--color-background-faint);
+  .ui-block-item.ui-block-item-large {
+    --block-item-size: 140px;
+  }
 
-      // About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts`
-      &.ui-block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(.ui-block-item-active) {
-        border-color: var(--color-background);
-        background-color: var(--color-background);
-      }
+  .ui-block-item.ui-block-item-interactive {
+    cursor: pointer;
+  }
 
-      &.ui-block-item-active {
-        border-color: var(--color-outline);
-        background-color: var(--color-background);
-      }
+  .ui-block-item.ui-block-item-colorful {
+    border-color: var(--color-background-faint);
+    background-color: var(--color-background-faint);
+  }
 
-      // TODO: droppable-related styles for colorful variant
-    }
+  /* About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts` */
+  .ui-block-item.ui-block-item-colorful.ui-block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(
+      .ui-block-item-active
+    ) {
+    border-color: var(--color-background);
+    background-color: var(--color-background);
+  }
 
-    &.ui-block-item-standard {
-      border-color: var(--ui-color-grey-300);
-      background-color: var(--ui-color-grey-300);
+  .ui-block-item.ui-block-item-colorful.ui-block-item-active {
+    border-color: var(--color-outline);
+    background-color: var(--color-background);
+  }
 
-      // About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts`
-      &.ui-block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(.ui-block-item-active) {
-        border-color: var(--ui-color-grey-400);
-        background-color: var(--ui-color-grey-400);
-      }
+  /* TODO: droppable-related styles for colorful variant */
 
-      &.ui-block-item-active {
-        border-color: var(--color-outline);
-        background-color: var(--color-background);
-      }
+  .ui-block-item.ui-block-item-standard {
+    border-color: var(--ui-color-grey-300);
+    background-color: var(--ui-color-grey-300);
+  }
 
-      &.ui-block-item-active.ui-block-item-draggable {
-        cursor: grab;
-      }
+  /* About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts` */
+  .ui-block-item.ui-block-item-standard.ui-block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(
+      .ui-block-item-active
+    ) {
+    border-color: var(--ui-color-grey-400);
+    background-color: var(--ui-color-grey-400);
+  }
 
-      &.ui-block-item-droppable-accept {
-        border-color: var(--ui-color-grey-400);
-        background-color: var(--ui-color-grey-400);
-      }
+  .ui-block-item.ui-block-item-standard.ui-block-item-active {
+    border-color: var(--color-outline);
+    background-color: var(--color-background);
+  }
 
-      &.ui-block-item-droppable-over {
-        animation: droppable-shaking 0.2s ease-in-out 2;
-        border-color: var(--color-outline);
-        background-color: var(--ui-color-grey-400);
+  .ui-block-item.ui-block-item-standard.ui-block-item-active.ui-block-item-draggable {
+    cursor: grab;
+  }
 
-        @keyframes droppable-shaking {
-          0% {
-            transform: scale(1.07) rotate(0deg);
-          }
-          25% {
-            transform: scale(1.07) rotate(5deg);
-          }
-          50% {
-            transform: scale(1.07) rotate(0deg);
-          }
-          75% {
-            transform: scale(1.07) rotate(-5deg);
-          }
-          100% {
-            transform: scale(1.07) rotate(0deg);
-          }
-        }
-      }
-    }
+  .ui-block-item.ui-block-item-standard.ui-block-item-droppable-accept {
+    border-color: var(--ui-color-grey-400);
+    background-color: var(--ui-color-grey-400);
+  }
+
+  .ui-block-item.ui-block-item-standard.ui-block-item-droppable-over {
+    animation: droppable-shaking 0.2s ease-in-out 2;
+    border-color: var(--color-outline);
+    background-color: var(--ui-color-grey-400);
+  }
+}
+
+@keyframes droppable-shaking {
+  0% {
+    transform: scale(1.07) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.07) rotate(5deg);
+  }
+  50% {
+    transform: scale(1.07) rotate(0deg);
+  }
+  75% {
+    transform: scale(1.07) rotate(-5deg);
+  }
+  100% {
+    transform: scale(1.07) rotate(0deg);
   }
 }
 </style>

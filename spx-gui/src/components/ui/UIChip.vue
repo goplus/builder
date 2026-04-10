@@ -1,44 +1,38 @@
 <template>
-  <button class="ui-chip" :class="`type-${type}`">
+  <button v-bind="buttonAttrs" :class="rootClass">
     <slot></slot>
   </button>
 </template>
 
 <script setup lang="ts">
+import { computed, useAttrs } from 'vue'
+
+import { cn, type ClassValue } from './utils'
+
 export type ChipType = 'primary' | 'boring'
 
-defineProps<{
+defineOptions({
+  inheritAttrs: false
+})
+
+const props = defineProps<{
   type: ChipType
 }>()
+
+const attrs = useAttrs()
+const rootClass = computed(() =>
+  cn(
+    // TODO: support different sizes
+    'h-8 w-fit flex items-center whitespace-nowrap border rounded-md px-4 cursor-pointer [transition:0.3s]',
+    {
+      'text-grey-100 bg-primary-main border-primary-main': props.type === 'primary',
+      'text-grey-900 bg-grey-300 border-grey-300': props.type === 'boring'
+    },
+    attrs.class as ClassValue | null
+  )
+)
+const buttonAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
 </script>
-
-<style lang="scss">
-@layer components {
-  .ui-chip {
-    display: flex;
-    width: fit-content;
-    align-items: center;
-    height: 32px; // TODO: support different sizes
-    padding: 0 16px;
-    color: var(--ui-color-grey-100);
-    background: var(--ui-color-grey-600);
-    border: 1px solid var(--ui-color-grey-600);
-    border-radius: var(--ui-border-radius-2);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: 0.3s;
-
-    &.type-primary {
-      color: var(--ui-color-grey-100);
-      background: var(--ui-color-primary-main);
-      border-color: var(--ui-color-primary-main);
-    }
-
-    &.type-boring {
-      color: var(--ui-color-grey-900);
-      background: var(--ui-color-grey-300);
-      border-color: var(--ui-color-grey-300);
-    }
-  }
-}
-</style>

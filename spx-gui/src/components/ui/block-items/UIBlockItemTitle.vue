@@ -1,51 +1,35 @@
 <template>
-  <div :class="['ui-title-container', size]">
-    <span>
+  <div v-bind="rootAttrs" :class="rootClass">
+    <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
       <slot></slot>
     </span>
     <slot v-if="slots.suffix != null" name="suffix"></slot>
   </div>
 </template>
 <script setup lang="ts">
-import { useSlots } from 'vue'
+import { computed, useAttrs, useSlots } from 'vue'
+import { cn, type ClassValue } from '../utils'
 
-defineProps<{
+defineOptions({
+  inheritAttrs: false
+})
+
+const props = defineProps<{
   size: 'medium' | 'large'
 }>()
 
 const slots = useSlots()
+const attrs = useAttrs()
+const rootClass = computed(() =>
+  cn(
+    // FIXME: `[color:var(--color-title)]` switch back to semantic `text-title` once `text-*` token merging no longer conflicts with text-size utilities.
+    'w-full flex items-center gap-2 px-1.5 text-center [color:var(--color-title)]',
+    props.size === 'large' ? 'h-8 text-13/5' : 'text-10/[1.6]',
+    attrs.class as ClassValue | null
+  )
+)
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
 </script>
-
-<style lang="scss">
-@layer components {
-  .ui-title-container {
-    display: flex;
-    align-items: center;
-    color: var(--ui-color-title);
-    width: 100%;
-    text-align: center;
-    gap: 8px;
-    padding: 0 6px;
-
-    &.medium {
-      font-size: 10px;
-      line-height: 16px;
-    }
-
-    &.large {
-      font-size: 13px;
-      line-height: 20px;
-      height: 32px;
-    }
-  }
-}
-</style>
-
-<style scoped lang="scss">
-.ui-title-container > span {
-  overflow: hidden;
-  flex: 1;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-</style>

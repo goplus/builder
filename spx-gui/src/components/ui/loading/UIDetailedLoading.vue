@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, ref, watch, nextTick, useAttrs } from 'vue'
 import { DotLottieVue, type DotLottieVueInstance } from '@lottiefiles/dotlottie-vue'
+import { cn, type ClassValue } from '../utils'
 import animationFileUrl from './animation.lottie?url'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 export type MaskType = 'none' | 'semi-transparent'
 
@@ -25,6 +30,29 @@ const mask = computed(() => {
   return props.mask
 })
 
+const attrs = useAttrs()
+const rootClass = computed(() =>
+  cn(
+    'h-4/5 w-full flex flex-col items-center justify-center [transition:visibility_0.3s,opacity_0.3s]',
+    props.cover ? 'absolute left-0 top-0 h-full' : null,
+    props.cover && mask.value === 'semi-transparent'
+      ? 'bg-[#24292f99] [backdrop-filter:blur(5px)] [-webkit-backdrop-filter:blur(5px)]'
+      : null,
+    props.visible ? 'visible opacity-100' : 'invisible opacity-0',
+    attrs.class as ClassValue | null
+  )
+)
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
+const textClass = computed(() =>
+  cn(
+    'flex items-center gap-2 text-13/5 text-title',
+    props.cover && mask.value === 'semi-transparent' ? 'text-grey-100' : null
+  )
+)
+
 const dotLottieRef = ref<DotLottieVueInstance>()
 
 watch(
@@ -41,91 +69,18 @@ watch(
 </script>
 
 <template>
-  <div class="ui-detailed-loading" :class="{ cover, visible, [`mask-${mask}`]: true }">
-    <DotLottieVue ref="dotLottieRef" class="animation" autoplay loop :src="animationFileUrl" />
-    <div class="progress-bar">
-      <div v-show="percentage > 0" class="progress" :style="{ width: `${percentage * 100}%` }"></div>
+  <div v-bind="rootAttrs" :class="rootClass">
+    <DotLottieVue ref="dotLottieRef" class="h-[150px] w-[90px] flex-none" autoplay loop :src="animationFileUrl" />
+    <div class="mb-1 h-[5px] w-45 rounded-full bg-grey-600">
+      <div
+        v-show="percentage > 0"
+        class="h-full rounded-full bg-primary-main"
+        :style="{ width: `${percentage * 100}%` }"
+      ></div>
     </div>
-    <div class="text">
+    <div :class="textClass">
       <slot></slot>
       <span>{{ Math.floor(percentage * 100) }}%</span>
     </div>
   </div>
 </template>
-
-<style lang="scss">
-@layer components {
-  .ui-detailed-loading {
-    width: 100%;
-    height: 80%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    visibility: hidden;
-    opacity: 0;
-    transition:
-      visibility 0.3s,
-      opacity 0.3s;
-
-    &.cover {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-
-      &.mask-semi-transparent {
-        background-color: rgba(36, 41, 47, 0.6);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
-
-        .text {
-          color: var(--ui-color-grey-100);
-        }
-      }
-    }
-
-    &.visible {
-      visibility: visible;
-      opacity: 1;
-    }
-  }
-}
-</style>
-
-<style lang="scss" scoped>
-.animation {
-  flex: 0 0 auto;
-  width: 90px;
-  height: 150px;
-}
-
-.progress-bar {
-  margin-bottom: 4px;
-  width: 180px;
-  height: 5px;
-  border-radius: 2.5px;
-  background-color: var(--ui-color-grey-600);
-
-  .progress {
-    height: 100%;
-    background-color: var(--ui-color-primary-main);
-    border-radius: 2.5px;
-    /**
-     * Temporarily disable transition as it causes UI inconsistency when game engine (spx) blocks.
-     * TODO: re-enable this when it is supported to run spx in worker thread.
-     */
-    /* transition: width 0.3s ease; */
-  }
-}
-
-.text {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--ui-color-title);
-}
-</style>

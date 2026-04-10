@@ -1,10 +1,6 @@
 <template>
-  <div
-    class="ui-menu-item"
-    :class="{ disabled, 'in-group': ctx?.inGroup, interactive: interactive }"
-    @click="handleClick"
-  >
-    <div v-if="hasSlotIcon" class="icon">
+  <div v-bind="rootAttrs" class="ui-menu-item" :class="rootClass" @click="handleClick">
+    <div v-if="hasSlotIcon" class="h-6 w-6 shrink-0 *:h-full *:w-full" :class="disabled ? 'opacity-50' : null">
       <slot name="icon"></slot>
     </div>
     <slot></slot>
@@ -12,9 +8,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, useSlots } from 'vue'
+import { computed, inject, useAttrs, useSlots } from 'vue'
+import { cn, type ClassValue } from '../utils'
 import { useDropdown } from '../UIDropdown'
 import { ctxKey } from './UIMenu.vue'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = withDefaults(
   defineProps<{
@@ -35,8 +36,22 @@ const slots = useSlots()
 const hasSlotIcon = !!slots['icon']
 const ctx = inject(ctxKey)
 const dropdownCtrl = useDropdown()
+const attrs = useAttrs()
 
 const disabled = computed(() => props.disabled || !!ctx?.disabled)
+const rootClass = computed(() => {
+  return cn(
+    'flex items-center gap-2 rounded-sm px-2 py-2 pr-10 text-grey-1000',
+    disabled.value ? 'cursor-not-allowed text-grey-600' : null,
+    !disabled.value && props.interactive ? 'cursor-pointer hover:bg-grey-300' : null,
+    ctx?.inGroup ? 'in-group' : null,
+    attrs.class as ClassValue | null
+  )
+})
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
 
 function handleClick(e: MouseEvent) {
   if (disabled.value) return
@@ -47,59 +62,29 @@ function handleClick(e: MouseEvent) {
 }
 </script>
 
-<style lang="scss">
+<style>
 @layer components {
-  .ui-menu-item {
-    padding: 8px 40px 8px 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: var(--ui-border-radius-1);
-    color: var(--ui-color-grey-1000);
-
-    &.disabled {
-      cursor: not-allowed;
-      color: var(--ui-color-grey-600);
-      .icon {
-        opacity: 0.5;
-      }
-    }
-
-    &.interactive:not(.disabled) {
-      cursor: pointer;
-
-      &:hover {
-        background-color: var(--ui-color-grey-300);
-      }
-    }
-
-    &:not(.in-group) {
-      & + .ui-menu-item {
-        margin-top: 13px;
-        position: relative;
-        &:before {
-          content: '';
-          position: absolute;
-          top: -7px;
-          left: 0;
-          width: 100%;
-          height: 0;
-          border-top: 1px solid var(--ui-color-dividing-line-2);
-        }
-      }
-    }
+  .ui-menu-item + .ui-menu-item {
+    position: relative;
+    margin-top: 13px;
   }
-}
-</style>
 
-<style lang="scss" scoped>
-.icon {
-  width: 24px;
-  height: 24px;
-
-  :deep(*) {
+  .ui-menu-item + .ui-menu-item::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: 0;
     width: 100%;
-    height: 100%;
+    height: 0;
+    border-top: 1px solid var(--ui-color-dividing-line-2);
+  }
+
+  .ui-menu-item.in-group + .ui-menu-item.in-group {
+    margin-top: 0;
+  }
+
+  .ui-menu-item.in-group + .ui-menu-item.in-group::before {
+    display: none;
   }
 }
 </style>

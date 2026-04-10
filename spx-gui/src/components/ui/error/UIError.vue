@@ -1,19 +1,19 @@
 <template>
-  <div class="ui-error" :class="{ cover }">
-    <img :src="defaultErrorImg" />
-    <h5 class="message">
+  <div v-bind="rootAttrs" :class="rootClass">
+    <img :src="defaultErrorImg" alt="" />
+    <h5 class="mt-3 text-16 text-grey-1000">
       <slot></slot>
     </h5>
-    <p v-if="$slots['sub-message'] != null" class="sub-message">
+    <p v-if="$slots['sub-message'] != null" class="mt-1 text-13/5 text-grey-900">
       <slot name="sub-message"></slot>
     </p>
-    <div class="ops">
+    <div class="mt-1 flex items-center justify-center gap-3">
       <!-- TODO: consider using slot to support more custom operations -->
-      <button v-if="retry != null" class="op-btn" @click="retry">
+      <button v-if="retry != null" :class="opBtnClass" @click="retry">
         <UIIcon v-show="loading" type="loading" />
         {{ retryText }}
       </button>
-      <button v-if="back != null" class="op-btn" @click="back">
+      <button v-if="back != null" :class="opBtnClass" @click="back">
         {{ backText }}
       </button>
     </div>
@@ -21,10 +21,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useAttrs } from 'vue'
+import { cn, type ClassValue } from '../utils'
 import { useConfig } from '../UIConfigProvider.vue'
 import UIIcon from '../icons/UIIcon.vue'
 import defaultErrorImg from './default-error.svg'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 // TODO: support more error types
 const props = withDefaults(
@@ -41,8 +46,25 @@ const props = withDefaults(
 )
 
 const config = useConfig()
+const attrs = useAttrs()
 const retryText = computed(() => config.error?.retryText ?? 'Retry')
 const backText = computed(() => config.error?.backText ?? 'Back')
+const rootClass = computed(() =>
+  cn(
+    'h-full w-full flex flex-col items-center justify-center',
+    props.cover ? 'absolute inset-0 overflow-hidden bg-grey-100 opacity-[0.97] [border-radius:inherit]' : null,
+    attrs.class as ClassValue | null
+  )
+)
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
+
+const opBtnClass = [
+  'px-3 cursor-pointer border-none outline-none bg-transparent flex items-center gap-1 text-13/5',
+  'text-primary-main transition-colors duration-200 hover:text-primary-400 active:text-primary-600'
+].join(' ')
 
 const loading = ref(false)
 
@@ -59,71 +81,3 @@ const retry = computed(() =>
       }
 )
 </script>
-
-<style lang="scss">
-@layer components {
-  .ui-error {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    &.cover {
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      overflow: hidden;
-      opacity: 0.97;
-      background-color: var(--ui-color-grey-100);
-    }
-  }
-}
-</style>
-
-<style scoped lang="scss">
-.message {
-  margin-top: 12px;
-  font-size: 16px;
-  line-height: 26px;
-  color: var(--ui-color-grey-1000);
-}
-
-.sub-message {
-  font-size: 13px;
-  margin-top: 4px;
-  color: var(--ui-color-grey-900);
-}
-
-.ops {
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  // TODO(@UI): update style here when design finished
-  gap: 12px;
-}
-
-.op-btn {
-  // TODO: should this be one type of UIButton?
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border: none;
-  background: none;
-  font-size: 13px;
-  line-height: 20px;
-  outline: none;
-  color: var(--ui-color-primary-main);
-  cursor: pointer;
-  transition: color 0.2s;
-  &:hover {
-    color: var(--ui-color-primary-400);
-  }
-  &:active {
-    color: var(--ui-color-primary-600);
-  }
-}
-</style>

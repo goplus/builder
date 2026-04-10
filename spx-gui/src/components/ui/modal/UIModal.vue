@@ -106,7 +106,7 @@ useModalEsc(
 )
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .ui-modal-container {
   display: flex;
   flex-direction: column;
@@ -134,16 +134,16 @@ useModalEsc(
 }
 </style>
 
-<style lang="scss">
+<style>
 .ui-modal.has-custom-origin {
-  // Override NaiveUI's transform-origin to support custom animation origins
+  /* Override NaiveUI's transform-origin to support custom animation origins */
   transform-origin: var(--ui-modal-custom-origin, center) !important;
+}
 
-  &.fade-in-scale-up-transition-enter-active,
-  &.fade-in-scale-up-transition-leave-active,
-  &.fade-in-scale-up-transition-enter-to,
-  &.fade-in-scale-up-transition-leave-to {
-    transform-origin: var(--ui-modal-custom-origin, center) !important;
-  }
+.ui-modal.has-custom-origin.fade-in-scale-up-transition-enter-active,
+.ui-modal.has-custom-origin.fade-in-scale-up-transition-leave-active,
+.ui-modal.has-custom-origin.fade-in-scale-up-transition-enter-to,
+.ui-modal.has-custom-origin.fade-in-scale-up-transition-leave-to {
+  transform-origin: var(--ui-modal-custom-origin, center) !important;
 }
 </style>

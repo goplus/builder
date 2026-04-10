@@ -3,7 +3,7 @@
 <template>
   <section :style="{ '--project-num-in-row': numInRow }">
     <header class="flex items-center justify-between" :class="isUserContext ? 'h-15 pt-5 pb-2' : 'h-13'">
-      <h2 class="text-title" :class="isUserContext ? 'text-16/6.5' : 'text-20/7'">
+      <h2 class="text-title" :class="isUserContext ? 'text-16' : 'text-20/7'">
         <slot name="title"></slot>
       </h2>
       <RouterUILink

@@ -1,10 +1,12 @@
 <template>
-  <ul class="ui-tabs">
+  <ul v-bind="rootAttrs" :class="rootClass">
     <slot></slot>
   </ul>
 </template>
 
 <script lang="ts">
+import { inject, type InjectionKey } from 'vue'
+
 export type TabsCtx = {
   color: Color
   value: string
@@ -19,9 +21,14 @@ export function useTabsCtx() {
 </script>
 
 <script setup lang="ts">
-import { type InjectionKey, inject, provide } from 'vue'
+import { computed, provide, useAttrs } from 'vue'
 import { type Color } from '../tokens/colors'
 import { computedShallowReactive } from '@/utils/utils'
+import { cn, type ClassValue } from '../utils'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = withDefaults(
   defineProps<{
@@ -37,6 +44,13 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
+const attrs = useAttrs()
+const rootClass = computed(() => cn('flex', attrs.class as ClassValue | null))
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
+
 provide(
   tabsCtxInjectionKey,
   computedShallowReactive(() => ({
@@ -48,11 +62,3 @@ provide(
   }))
 )
 </script>
-
-<style lang="scss">
-@layer components {
-  .ui-tabs {
-    display: flex;
-  }
-}
-</style>

@@ -1,20 +1,23 @@
 <template>
-  <div
-    :class="['ui-button-group-item', { active: isActive }, `variant-${variant()}`, `type-${type()}`]"
-    @click="handleClick"
-  >
+  <div v-bind="rootAttrs" :class="rootClass" @click="handleClick">
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, useAttrs } from 'vue'
+
+import { cn, type ClassValue } from './utils'
 import {
   selectedValueInjectionKey,
   typeInjectionKey,
   updateValueInjectionKey,
   variantInjectionKey
 } from './UIButtonGroup.vue'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = defineProps<{
   value: string
@@ -25,7 +28,28 @@ const updateValue = inject(updateValueInjectionKey)
 const type = inject(typeInjectionKey, () => 'icon')
 const variant = inject(variantInjectionKey, () => 'primary')
 
+const attrs = useAttrs()
 const isActive = computed(() => selectedValue?.() === props.value)
+const rootClass = computed(() =>
+  cn(
+    'h-(--ui-line-height-2) flex items-center justify-center first:rounded-l-md first:rounded-r-none last:rounded-r-md last:rounded-l-none',
+    type() === 'icon' ? 'min-w-8' : 'px-3',
+    // TODO: Revisit color #47d8e4 together with the rest of the UI library when the visual style is unified.
+    variant() === 'primary'
+      ? isActive.value
+        ? 'bg-primary-200 text-primary-400'
+        : 'bg-grey-300 text-grey-1000'
+      : isActive.value
+        ? 'bg-grey-200 text-turquoise-600'
+        : 'bg-[#47d8e4] text-grey-200',
+    isActive.value ? 'cursor-default' : 'cursor-pointer',
+    attrs.class as ClassValue | null
+  )
+)
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
 
 const handleClick = () => {
   if (!isActive.value) {
@@ -33,54 +57,3 @@ const handleClick = () => {
   }
 }
 </script>
-
-<style lang="scss">
-@layer components {
-  .ui-button-group-item {
-    height: var(--ui-line-height-2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-
-    &.variant {
-      &-primary {
-        background: var(--ui-color-grey-300);
-        color: var(--ui-color-grey-1000);
-        &.active {
-          background: var(--ui-color-primary-200);
-          color: var(--ui-color-primary-400);
-        }
-      }
-
-      &-secondary {
-        background-color: #47d8e4;
-        color: var(--ui-color-grey-200);
-        &.active {
-          background-color: var(--ui-color-grey-200);
-          color: var(--ui-color-turquoise-600);
-        }
-      }
-    }
-
-    &.type-icon {
-      min-width: 32px;
-    }
-    &.type-text {
-      padding: 0 12px;
-    }
-
-    &.active {
-      cursor: default;
-    }
-
-    &:first-child {
-      border-radius: 12px 0 0 12px;
-    }
-
-    &:last-child {
-      border-radius: 0 12px 12px 0;
-    }
-  }
-}
-</style>

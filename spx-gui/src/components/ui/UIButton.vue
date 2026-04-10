@@ -119,9 +119,9 @@ export function resolveButtonCssVars({ color, disabled, loading }: ButtonCssVarS
 // utilities by `twMerge`, so color/background stay on raw CSS properties.
 // TODO: Remove this special-case once app.css migrates numeric text tokens to semantic text-size tokens.
 const buttonSlots = {
-  root: 'group/ui-button flex cursor-pointer items-stretch border-none bg-transparent p-0 disabled:cursor-not-allowed',
+  root: 'group/ui-button cursor-pointer flex items-stretch border-none bg-transparent p-0 disabled:cursor-not-allowed',
   content:
-    'flex h-full flex-[1_1_0] items-center justify-center [color:var(--ui-button-color)] [background-color:var(--ui-button-bg-color)]',
+    'flex-[1_1_0] h-full flex items-center justify-center [color:var(--ui-button-color)] [background-color:var(--ui-button-bg-color)]',
   icon: 'shrink-0'
 } as const
 
@@ -154,17 +154,17 @@ export const buttonRecipe = createRecipe({
     size: {
       large: {
         root: 'h-(--ui-line-height-3)',
-        content: 'gap-2 px-6 text-15 leading-[1.6]',
+        content: 'gap-2 px-6 text-15/[1.6]',
         icon: 'size-[18px]'
       },
       medium: {
         root: 'h-(--ui-line-height-2)',
-        content: 'gap-1 px-4 text-[14px] leading-[1.5]',
+        content: 'gap-1 px-4 text-body/[1.5]',
         icon: 'size-[14px]'
       },
       small: {
         root: 'h-(--ui-line-height-1)',
-        content: 'gap-1 px-3 text-13 leading-[1.5]',
+        content: 'gap-1 px-3 text-13/[1.5]',
         icon: 'size-[13px]'
       }
     },
@@ -310,7 +310,7 @@ defineExpose({
     :type="htmlType"
   >
     <span class="ui-button-content" :class="contentClass" :style="contentStyle">
-      <UIIcon v-if="resolvedIcon != null" class="ui-button-icon" :class="iconClass" :type="resolvedIcon" />
+      <UIIcon v-if="resolvedIcon != null" :class="iconClass" :type="resolvedIcon" />
       <slot v-else name="icon"></slot>
       <slot v-if="hasDefaultSlot"></slot>
     </span>

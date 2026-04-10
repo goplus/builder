@@ -1,14 +1,14 @@
 <template>
-  <form class="wrapper" @submit.prevent="emit('confirm')">
-    <header class="header">
-      <h4 class="title">{{ title }}</h4>
-      <UIModalClose class="close" @click="emit('cancel')" />
+  <form class="flex flex-col items-stretch" @submit.prevent="emit('confirm')">
+    <header class="h-11 flex flex-none items-center px-4">
+      <h4 class="flex-1 text-16 text-title">{{ title }}</h4>
+      <UIModalClose class="-mr-1" @click="emit('cancel')" />
     </header>
     <UIDivider />
-    <main class="body">
+    <main class="flex-auto min-h-0 overflow-y-auto px-4 py-3">
       <slot></slot>
     </main>
-    <footer class="footer">
+    <footer class="flex-none flex justify-end gap-3 p-4">
       <UIButton
         v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in modal' }"
         color="boring"
@@ -39,45 +39,3 @@ const emit = defineEmits<{
   confirm: []
 }>()
 </script>
-
-<style scoped lang="scss">
-.wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.header {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  height: 44px;
-}
-
-.title {
-  font-size: 16px;
-  line-height: 26px;
-  flex: 1;
-  color: var(--ui-color-title);
-}
-
-.close {
-  margin-right: -4px;
-}
-
-.body {
-  padding: 12px 16px;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.footer {
-  flex: 0 0 auto;
-  padding: 16px;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-</style>

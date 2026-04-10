@@ -1,8 +1,18 @@
 <template>
-  <div class="ui-select">
-    <span class="label" :class="{ placeholder: selectedRef == null }">{{ selectedRef?.label ?? placeholder }}</span>
-    <UIIcon class="arrow" type="arrowDown" />
-    <select ref="selectRef" class="select" :value="value" @change="handleSelectChange">
+  <div v-bind="rootAttrs" class="ui-select" :class="rootClass">
+    <span
+      class="min-w-0 flex-1 overflow-x-hidden text-ellipsis whitespace-nowrap"
+      :class="selectedRef == null ? 'text-grey-700' : null"
+    >
+      {{ selectedRef?.label ?? placeholder }}
+    </span>
+    <UIIcon class="shrink-0" type="arrowDown" />
+    <select
+      ref="selectRef"
+      class="absolute inset-0 h-full w-full opacity-0"
+      :value="value"
+      @change="handleSelectChange"
+    >
       <option v-if="selectedRef == null" disabled :value="placeholderValue">{{ placeholder }}</option>
       <slot></slot>
     </select>
@@ -10,9 +20,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed, useAttrs } from 'vue'
 import { untilNotNull } from '@/utils/utils'
+import { cn, type ClassValue } from '../utils'
 import UIIcon from '../icons/UIIcon.vue'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = withDefaults(
   defineProps<{
@@ -37,8 +52,19 @@ type Selected = {
 // Uses a NUL character so it cannot collide with any real option value.
 const placeholderValue = '\0'
 
+const attrs = useAttrs()
 const selectedRef = ref<Selected>(null)
 const selectRef = ref<HTMLSelectElement | null>(null)
+const rootClass = computed(() =>
+  cn(
+    'relative h-(--ui-line-height-2) inline-flex items-center justify-between gap-0.5 rounded-md px-middle text-grey-1000 bg-grey-300 [transition:0.3s]',
+    attrs.class as ClassValue | null
+  )
+)
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
 
 async function syncSelected() {
   const select = await untilNotNull(() => selectRef.value)
@@ -76,61 +102,22 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style lang="scss">
+<style>
 @layer components {
-  .ui-select {
-    height: var(--ui-line-height-2);
-    padding: 0px var(--ui-gap-middle);
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2px;
+  .ui-select:hover {
+    color: var(--ui-color-grey-800);
+    background: var(--ui-color-grey-400);
+  }
 
-    border-radius: var(--ui-border-radius-2);
+  .ui-select:has(:focus) {
     color: var(--ui-color-grey-1000);
-    background: var(--ui-color-grey-300);
-    transition: 0.3s;
-
-    &:hover {
-      color: var(--ui-color-grey-800);
-      background: var(--ui-color-grey-400);
-    }
-    &:has(:focus) {
-      color: var(--ui-color-grey-1000);
-      background: var(--ui-color-grey-400);
-      box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
-    }
-    &:has(:active) {
-      color: var(--ui-color-grey-1000);
-      background: var(--ui-color-grey-500);
-    }
+    background: var(--ui-color-grey-400);
+    box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
   }
-}
-</style>
 
-<style lang="scss" scoped>
-.label {
-  flex: 1 1 auto;
-  overflow-x: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  &.placeholder {
-    color: var(--ui-color-grey-700);
+  .ui-select:has(:active) {
+    color: var(--ui-color-grey-1000);
+    background: var(--ui-color-grey-500);
   }
-}
-
-.arrow {
-  flex: 0 0 auto;
-}
-
-.select {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
-  opacity: 0;
 }
 </style>

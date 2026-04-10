@@ -1,7 +1,7 @@
 <template>
   <main
     v-radar="{ name: `Detail for \u0022${name}\u0022`, desc: `Detail view of the selected item \u0022${name}\u0022` }"
-    class="flex-[1_1_0] flex flex-col gap-5 rounded-br-3 bg-grey-200 px-5 py-6"
+    class="flex-[1_1_0] flex flex-col gap-5 rounded-br-lg bg-grey-200 px-5 py-6"
   >
     <h4 class="flex items-center justify-center gap-1">
       <AssetName>{{ name }}</AssetName>

@@ -432,5 +432,5 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 })
 
 const historyBtnClz =
-  'flex h-full items-center justify-center border-none bg-transparent px-5 text-white outline-none disabled:cursor-not-allowed disabled:text-[#9de6ec] enabled:hover:cursor-pointer enabled:hover:bg-primary-600'
+  'h-full flex items-center justify-center border-none bg-transparent px-5 text-white outline-none disabled:cursor-not-allowed disabled:text-[#9de6ec] enabled:hover:cursor-pointer enabled:hover:bg-primary-600'
 </script>

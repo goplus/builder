@@ -16,7 +16,3 @@ const emit = defineEmits<{
   'update:value': [boolean]
 }>()
 </script>
-
-<style lang="scss" scoped>
-// TODO: switch style not designed yet
-</style>

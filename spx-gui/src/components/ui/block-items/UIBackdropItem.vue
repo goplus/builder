@@ -1,11 +1,11 @@
 <template>
   <UIBlockItem
-    class="ui-backdrop-item"
+    class="gap-0.5 p-0.5"
     size="large"
     :active="selectable && selectable.selected"
     :interactive="!!selectable"
   >
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+    <UIImg class="h-[98px] w-[132px] overflow-hidden rounded-[9px]" :src="imgSrc" :loading="imgLoading" />
     <UIBlockItemTitle size="large">
       {{ name }}
     </UIBlockItemTitle>
@@ -29,21 +29,3 @@ withDefaults(
   }
 )
 </script>
-
-<style lang="scss">
-@layer components {
-  .ui-block-item.ui-backdrop-item {
-    padding: 2px;
-    gap: 2px;
-  }
-}
-</style>
-
-<style scoped lang="scss">
-.img {
-  height: 98px;
-  width: 132px;
-  overflow: hidden;
-  border-radius: 9px;
-}
-</style>

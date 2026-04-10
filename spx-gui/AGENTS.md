@@ -84,11 +84,11 @@ When working with backend unique string identifiers such as `username`, project 
 
 ### Defaults
 
-* Outside `src/components/ui/`, use Tailwind as the default for local layout and surface styling.
+* Use Tailwind as the default for local layout and surface styling.
 * Keep styles local to the page/feature/component. Do not move local styles into `src/app.css`.
-* Prefer readable template utilities and remove redundant local style blocks after migration.
+* Prefer readable template utilities and remove redundant local style blocks when they no longer improve clarity.
 * Prefer direct template utilities over local `@apply` blocks when the styles are only used by one or two template nodes.
-* If local authored styles are still needed, prefer plain CSS over SCSS.
+* If local authored styles are still needed, use plain CSS.
 
 ### Boundaries and Source of Truth
 
@@ -96,7 +96,7 @@ When working with backend unique string identifiers such as `username`, project 
 * Keep `src/components/ui/global.css` and `src/components/ui/reset.css` as the base reset/foundation layer (Tailwind preflight stays disabled).
 * Keep `--ui-*` tokens as the source of truth.
 * In Tailwind classes, prefer bridged semantic tokens (for example `text-text`, `text-title`, `bg-primary-100`).
-* In local CSS/SCSS, prefer direct `--ui-*` variables instead of bridged Tailwind variables.
+* In local CSS, prefer direct `--ui-*` variables instead of bridged Tailwind variables.
 
 ### Responsive and Theme Rules
 
@@ -105,16 +105,16 @@ When working with backend unique string identifiers such as `username`, project 
 * Prefer responsive CSS/Tailwind variants over `useResponsive()`; keep `useResponsive()` for non-style runtime logic.
 * Keep Tailwind theme namespaces reset to project tokens only (color, shadow, font, text, radius, etc.).
 
-### When Local CSS/SCSS Is Better
+### When Local CSS Is Better
 
-* Keep local CSS/SCSS for `:deep(...)`, generated content, third-party DOM overrides, and complex stateful widgets.
+* Keep local CSS for `:deep(...)`, generated content, third-party DOM overrides, and complex stateful widgets.
 * Keep a small local CSS rule for structural selectors that are awkward in template logic (for example nested `:last-child` rules) instead of encoding them with hard-to-read dynamic class expressions.
 * Prefer plain local CSS over complex Tailwind descendant/arbitrary selectors for cross-component or slot-content styling.
 * Preserve semantic hook classes used by parent selectors or slots (for example `.corner-menu`, `.course-item-mini`).
 * For newly added components, avoid introducing `:deep(...)` selectors and cross-file hook classes when possible, since they increase maintenance cost.
 * Do not force full Tailwind conversion when a small local style block is clearer.
 
-### Practical Migration Notes
+### Practical Styling Notes
 
 * Avoid non-equivalent Tailwind simplifications for flex values. In particular, `flex: 1 1 0` is not equivalent to Tailwind `flex-1` (`flex: 1 1 0%`), so do not simplify between them unless the layout behavior has been verified. Likewise, do not simplify `flex: 0 0 auto` to `shrink-0`; use the equivalent `flex-none` when that shorthand is desired.
 * Prefer `style` / `:style` for one-off values when clearer than Tailwind arbitrary utilities. For example, prefer `style="box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1)"` over a long arbitrary utility such as `shadow-[0_24px_32px_-16px_rgba(0,0,0,0.1)]`.
@@ -125,12 +125,7 @@ When working with backend unique string identifiers such as `username`, project 
 * In plain `<style scoped>`, flatten `:deep(...)` selectors (for example `.preview :deep(svg)`) so the final selector structure and specificity stay obvious.
 * Do not use native CSS nesting in plain `<style>` / `<style scoped>` blocks; use flat selectors to avoid browser compatibility issues.
 * Keep single-use values local; only add setup variables when reused/computed or clearly improving readability.
-* Preserve meaningful existing comments/TODOs. For exact local non-token values, keep them local and add a nearby `TODO` for later tokenization review.
-
-### UI Package Transitional Rule
-
-* In `src/components/ui/`, the long-term direction is still Tailwind/plain CSS, but local SCSS is allowed temporarily when it is clearly the most readable option.
-* Do not add or keep business-code imports of SCSS helpers from `src/components/ui/`.
+* Prefer standard Tailwind utility names when practical. For example, use `rounded-md` instead of a project-local alias like `rounded-2`; this keeps overrides more predictable because `tailwind-merge` understands standard utility groups better.
 
 ### Menu Item Text Guidelines
 

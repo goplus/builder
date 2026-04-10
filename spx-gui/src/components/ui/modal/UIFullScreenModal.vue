@@ -47,10 +47,10 @@ useModalEsc(
 <template>
   <Teleport :to="attachTo">
     <Transition>
-      <div v-if="visible" class="ui-full-screen-modal" :style="modalTransformStyle">
+      <div v-if="visible" class="ui-full-screen-modal fixed inset-0 z-100" :style="modalTransformStyle">
         <div
           v-radar="{ name: 'Full screen modal', desc: 'A full screen modal dialog for specific purpose' }"
-          class="ui-full-screen-modal-container"
+          class="h-screen w-screen flex flex-col bg-grey-100"
         >
           <slot></slot>
         </div>
@@ -59,34 +59,17 @@ useModalEsc(
   </Teleport>
 </template>
 
-<style lang="scss" scoped>
-.ui-full-screen-modal {
-  position: fixed;
-  z-index: 100;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-
-  &.v-enter-active,
-  &.v-leave-active {
-    transition:
-      transform 0.4s ease-in-out,
-      opacity 0.2s ease-in-out 0.1s;
-  }
-
-  &.v-enter-from,
-  &.v-leave-to {
-    transform: scale(0);
-    opacity: 0;
-  }
+<style scoped>
+.ui-full-screen-modal.v-enter-active,
+.ui-full-screen-modal.v-leave-active {
+  transition:
+    transform 0.4s ease-in-out,
+    opacity 0.2s ease-in-out 0.1s;
 }
 
-.ui-full-screen-modal-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100vw;
-  background-color: var(--ui-color-grey-100);
+.ui-full-screen-modal.v-enter-from,
+.ui-full-screen-modal.v-leave-to {
+  transform: scale(0);
+  opacity: 0;
 }
 </style>

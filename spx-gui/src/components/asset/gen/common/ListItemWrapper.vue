@@ -8,7 +8,7 @@ defineEmits<{
 
 <template>
   <div class="w-full flex flex-col gap-3">
-    <header class="text-16/6.5 font-semibold text-grey-1000">
+    <header class="text-16 font-semibold text-grey-1000">
       <slot name="title"></slot>
     </header>
 

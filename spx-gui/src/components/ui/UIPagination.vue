@@ -1,6 +1,6 @@
 <template>
-  <div class="ui-pagination-container">
-    <button class="ui-pagination-button" :disabled="current === 1" @click="prevPage">
+  <div v-bind="rootAttrs" :class="rootClass">
+    <button :class="buttonClass()" :disabled="current === 1" @click="prevPage">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M8.74984 11.6667C8.6005 11.6667 8.45115 11.6096 8.3374 11.4959L4.25407 7.41252C4.02599 7.18443 4.02599 6.81573 4.25407 6.58765L8.3374 2.50431C8.56549 2.27623 8.93419 2.27623 9.16227 2.50431C9.39036 2.7324 9.39036 3.1011 9.16227 3.32918L5.49137 7.00008L9.16227 10.671C9.39036 10.8991 9.39036 11.2678 9.16227 11.4959C9.04852 11.6096 8.89917 11.6667 8.74984 11.6667Z"
@@ -22,12 +22,12 @@
         <circle cx="16" cy="16" r="2" fill="#CBD2D8" />
         <circle cx="24" cy="16" r="2" fill="#CBD2D8" />
       </svg>
-      <button v-else :class="['ui-pagination-button', { active: page === current }]" @click="goToPage(page)">
+      <button v-else :class="buttonClass(page === current)" @click="goToPage(page)">
         {{ page }}
       </button>
     </template>
 
-    <button class="ui-pagination-button" :disabled="current === total" @click="nextPage">
+    <button :class="buttonClass()" :disabled="current === total" @click="nextPage">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M5.25 11.6667C5.10067 11.6667 4.95132 11.6096 4.83757 11.4959C4.60948 11.2678 4.60948 10.8991 4.83757 10.671L8.50847 7.00008L4.83757 3.32918C4.60948 3.1011 4.60948 2.7324 4.83757 2.50431C5.06565 2.27623 5.43435 2.27623 5.66244 2.50431L9.74577 6.58765C9.97385 6.81573 9.97385 7.18443 9.74577 7.41252L5.66244 11.4959C5.54869 11.6096 5.39933 11.6667 5.25 11.6667Z"
@@ -39,7 +39,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useAttrs } from 'vue'
+import { cn, type ClassValue } from './utils'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = defineProps<{
   /** Total page num */
@@ -50,6 +55,19 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:current': [number]
 }>()
+
+const attrs = useAttrs()
+const rootClass = computed(() => cn('flex gap-2', attrs.class as ClassValue | null))
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
+const buttonClass = (active = false) =>
+  cn(
+    'h-8 w-8 flex items-center justify-center rounded-sm border-none bg-grey-300 text-body font-semibold text-grey-900',
+    'focus:outline-none enabled:hover:bg-grey-400 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-700',
+    active ? 'bg-primary-500 text-grey-100 enabled:hover:bg-primary-500' : null
+  )
 
 const prevPage = () => {
   if (props.current > 1) {
@@ -115,49 +133,3 @@ const pages = computed(() => {
   return result
 })
 </script>
-
-<style lang="scss">
-@layer components {
-  .ui-pagination-container {
-    display: flex;
-    gap: 8px;
-  }
-}
-</style>
-
-<style lang="scss" scoped>
-.ui-pagination-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background-color: var(--ui-color-grey-300);
-  color: var(--ui-color-grey-900);
-  font-size: 14px;
-  line-height: 22px;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--ui-color-grey-400);
-  }
-
-  &.active {
-    background-color: var(--ui-color-primary-500);
-    color: var(--ui-color-grey-100);
-  }
-
-  &:focus {
-    outline: none;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    background-color: var(--ui-color-grey-300);
-    color: var(--ui-color-grey-700);
-  }
-}
-</style>

@@ -11,7 +11,7 @@ import CommunityCard from '../../CommunityCard.vue'
   >
     <header class="mb-2 h-8 flex items-center justify-between gap-5">
       <!-- TODO: Layout here shifts when jumping from `/user/:name` to `/user/:name/projects`, which is not ideal -->
-      <h2 class="text-16/6.5 text-title">
+      <h2 class="text-16 text-title">
         <slot name="title"></slot>
       </h2>
       <div class="flex gap-6">

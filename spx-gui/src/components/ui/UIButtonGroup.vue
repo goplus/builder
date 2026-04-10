@@ -1,5 +1,5 @@
 <template>
-  <div :class="rootClass">
+  <div v-bind="rootAttrs" :class="rootClass">
     <slot></slot>
   </div>
 </template>
@@ -45,6 +45,10 @@ const emit = defineEmits<{
 
 const attrs = useAttrs()
 const rootClass = computed(() => cn('flex', attrs.class as ClassValue | null))
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
 
 provide(selectedValueInjectionKey, () => props.value)
 provide(updateValueInjectionKey, (value: string) => {

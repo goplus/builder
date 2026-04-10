@@ -20,7 +20,7 @@ const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
     <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
     <MarkdownView
       v-if="message.type === 'text'"
-      class="self-stretch rounded-r-1 rounded-b-1 rounded-tl-none bg-[#e9ecf7] p-2"
+      class="self-stretch rounded-sm rounded-tl-none bg-[#e9ecf7] p-2"
       :value="message.content"
     />
     <div v-else-if="message.type === 'event'" class="flex-[1_1_0]">

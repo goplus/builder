@@ -1,7 +1,7 @@
 <template>
   <UIBlockItem :color="color" :active="selectable && selectable.selected" :interactive="!!selectable">
-    <div class="img-container">
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+    <div class="mt-3 mb-3.5">
+      <UIImg class="h-[39px] w-[52px] rounded-[4px]" :src="imgSrc" :loading="imgLoading" />
     </div>
     <UIBlockItemTitle size="medium">
       {{ name }}
@@ -28,13 +28,3 @@ withDefaults(
   }
 )
 </script>
-<style scoped lang="scss">
-.img-container {
-  margin: 12px 0 14px;
-}
-.img {
-  width: 52px;
-  height: 39px;
-  border-radius: 4px;
-}
-</style>

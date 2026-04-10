@@ -1,9 +1,9 @@
 <template>
   <UIModal>
-    <div class="ui-dialog-container">
-      <UIIcon class="icon" :type="type" />
-      <div class="main">
-        <div class="title">
+    <div class="flex gap-3 px-6 pt-5 pb-6">
+      <UIIcon class="h-6 w-6" :type="type" />
+      <div class="flex-[1_1_0] flex flex-col">
+        <div class="mb-2 text-16 text-title">
           {{ title }}
         </div>
         <slot></slot>
@@ -21,31 +21,3 @@ defineProps<{
   type: 'info' | 'warning' | 'error' | 'success'
 }>()
 </script>
-<style scoped lang="scss">
-.icon {
-  width: 24px;
-  height: 24px;
-}
-
-.main {
-  flex: 1 1 0;
-}
-
-.title {
-  font-size: 16px;
-  line-height: 26px;
-  color: var(--ui-color-title);
-  margin-bottom: 8px;
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-}
-
-.ui-dialog-container {
-  padding: 20px 24px 24px;
-  display: flex;
-  gap: 12px;
-}
-</style>

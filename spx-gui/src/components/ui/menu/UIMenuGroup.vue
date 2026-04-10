@@ -1,13 +1,18 @@
 <template>
-  <div class="ui-menu-group">
+  <div v-bind="rootAttrs" class="ui-menu-group" :class="rootClass">
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { provide } from 'vue'
+import { computed, provide, useAttrs } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
+import { cn, type ClassValue } from '../utils'
 import { ctxKey } from './UIMenu.vue'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = withDefaults(
   defineProps<{
@@ -18,6 +23,13 @@ const props = withDefaults(
   }
 )
 
+const attrs = useAttrs()
+const rootClass = computed(() => cn('flex flex-col gap-1', attrs.class as ClassValue | null))
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
+
 provide(
   ctxKey,
   computedShallowReactive(() => ({
@@ -27,26 +39,21 @@ provide(
 )
 </script>
 
-<style lang="scss">
+<style>
 @layer components {
-  .ui-menu-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
   .ui-menu-group + .ui-menu-group {
     margin-top: 13px;
     position: relative;
-    &::before {
-      content: '';
-      position: absolute;
-      top: -7px;
-      left: 0;
-      width: 100%;
-      height: 0;
-      border-top: 1px solid var(--ui-color-dividing-line-2);
-    }
+  }
+
+  .ui-menu-group + .ui-menu-group::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: 0;
+    width: 100%;
+    height: 0;
+    border-top: 1px solid var(--ui-color-dividing-line-2);
   }
 }
 </style>

@@ -11,7 +11,10 @@
     @update:value="handleUpdateValue"
   >
     <template #thumb>
-      <div class="thumb" :style="{ boxShadow }"></div>
+      <div
+        class="h-5 w-5 rounded-full bg-white transition-transform duration-200 hover:scale-120"
+        :style="{ boxShadow }"
+      ></div>
     </template>
   </NSlider>
 </template>
@@ -58,15 +61,3 @@ function handleUpdateValue(nextValue: number) {
   emit('update:value', nextValue)
 }
 </script>
-<style lang="scss" scoped>
-.thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: #fff;
-  transition: transform 0.2s;
-  &:hover {
-    transform: scale(1.2);
-  }
-}
-</style>

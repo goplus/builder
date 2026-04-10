@@ -1,11 +1,12 @@
 <template>
   <EditorItemDetail style="background-color: var(--ui-color-grey-100)" :name="monitor.name" @rename="handleRename">
     <div class="flex justify-center gap-8 py-5">
-      <!-- eslint-disable-next-line vue/no-v-html -->
+      <!-- eslint-disable vue/no-v-html -->
       <div
         class="monitor-icon h-24 w-24 flex items-center justify-center rounded-sm bg-grey-300"
         v-html="mntIcon"
       ></div>
+      <!-- eslint-enable vue/no-v-html -->
       <div class="flex flex-col gap-middle">
         <div class="flex items-center gap-middle">
           <p class="flex items-center gap-2 break-keep">

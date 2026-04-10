@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useAttrs } from 'vue'
+import { cn, type ClassValue } from '../utils'
 import UIIcon from '../icons/UIIcon.vue'
 import { useCollapseCtx } from './UICollapse.vue'
+
+defineOptions({
+  inheritAttrs: false
+})
 
 const props = defineProps<{
   title: string
@@ -9,8 +14,14 @@ const props = defineProps<{
 }>()
 
 const collapseCtx = useCollapseCtx()
+const attrs = useAttrs()
 
 const expanded = computed(() => collapseCtx.expandedNames.value.includes(props.name))
+const rootClass = computed(() => cn('flex flex-col', attrs.class as ClassValue | null))
+const rootAttrs = computed(() => {
+  const { class: _class, ...rest } = attrs
+  return rest
+})
 
 function handleToggle() {
   collapseCtx.expandedNames.value = expanded.value
@@ -20,83 +31,36 @@ function handleToggle() {
 </script>
 
 <template>
-  <li class="ui-collapse-item" :class="{ expanded }">
-    <header class="header" @click="handleToggle">
-      <h5 class="title">{{ title }}</h5>
-      <UIIcon class="arrow" type="arrowAlt" />
+  <li v-bind="rootAttrs" class="ui-collapse-item" :class="rootClass">
+    <header
+      class="flex cursor-pointer items-center justify-between [transition:margin-bottom_0.3s]"
+      :class="expanded ? 'mb-2' : null"
+      @click="handleToggle"
+    >
+      <h5 class="text-16 text-title">{{ title }}</h5>
+      <UIIcon
+        class="h-4 w-4 text-hint-1 transition-transform duration-300"
+        :class="expanded ? 'rotate-0' : 'rotate-180'"
+        type="arrowAlt"
+      />
     </header>
-    <main class="main">
+    <main
+      class="h-0 flex-none overflow-hidden opacity-0 invisible [transition:visibility_0s,opacity_0.2s,height_0.3s]"
+      :class="expanded ? 'visible h-fit opacity-100' : null"
+    >
       <slot></slot>
     </main>
   </li>
 </template>
 
-<style lang="scss">
+<style>
 @layer components {
-  .ui-collapse-item {
-    display: flex;
-    flex-direction: column;
-
-    + .ui-collapse-item {
-      &::before {
-        content: '';
-        display: block;
-        height: 1px;
-        background: var(--ui-color-grey-400);
-        margin: 16px 0;
-      }
-    }
-  }
-}
-</style>
-
-<style lang="scss" scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: margin-bottom 0.3s;
-
-  .title {
-    font-size: 16px;
-    line-height: 26px;
-    color: var(--ui-color-title);
-  }
-
-  .arrow {
-    width: 16px;
-    height: 16px;
-    transform: rotate(180deg);
-    color: var(--ui-color-hint-1);
-    transition: transform 0.3s;
-  }
-}
-
-.main {
-  flex: 0 0 auto;
-  visibility: hidden;
-  opacity: 0;
-  height: 0;
-  overflow: hidden;
-  // TODO: optimize height transition
-  transition:
-    visibility 0s,
-    opacity 0.2s,
-    height 0.3s;
-}
-
-.expanded {
-  .header {
-    margin-bottom: 8px;
-  }
-  .arrow {
-    transform: rotate(0deg);
-  }
-  .main {
-    visibility: visible;
-    opacity: 1;
-    height: fit-content;
+  .ui-collapse-item + .ui-collapse-item::before {
+    content: '';
+    display: block;
+    height: 1px;
+    background: var(--ui-color-grey-400);
+    margin: 16px 0;
   }
 }
 </style>
