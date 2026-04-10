@@ -21,7 +21,13 @@
         width: 100%;
         height: 100%;
       }
+
+      @layer theme, base, naive-ui, components, utilities;
     </style>
+    <!-- naive-ui's style will be inserted here -->
+    <meta name="naive-ui-style" />
+    <!-- vueuc's style will be inserted here -->
+    <meta name="vueuc-style" />
   </head>
 
   <body>
