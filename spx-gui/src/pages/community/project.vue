@@ -684,10 +684,10 @@ const remixesRet = useQuery(
   overflow: hidden;
 }
 
+/* TODO: replace these UIDetailedLoading deep overrides with an explicit loading styling API. */
 .project-wrapper :deep(.ui-detailed-loading.cover.mask-semi-transparent .text) {
   color: var(--ui-color-grey-100);
 }
-
 .project-wrapper :deep(.project-runner-surface:not(.fullscreen) .ui-detailed-loading.cover) {
   background: transparent;
   backdrop-filter: none;
@@ -713,11 +713,12 @@ const remixesRet = useQuery(
   width: 40px;
 }
 
-.ops > *.more :deep(.content) {
+/* TODO: replace these UIButton deep overrides with a more explicit styling API or stable override hook. */
+.ops > *.more :deep(.ui-button-content) {
   padding: 0;
 }
 
-.ops .liking :deep(.content) {
+.ops .liking :deep(.ui-button-content) {
   color: var(--ui-color-red-main);
 }
 </style>

@@ -28,10 +28,14 @@ const mask = computed(() => {
   return props.mask
 })
 
+// Keep these semantic class hooks `ui-detailed-loading` `cover` `mask-${mask.value}` `text` for compatibility with existing page-level :deep(...) overrides.
+// Some pages still rely on them to adjust runner loading layering/mask behavior until we replace those overrides with explicit component APIs.
 const rootClass = computed(() =>
   cn(
+    'ui-detailed-loading',
     'h-4/5 w-full flex flex-col items-center justify-center [transition:visibility_0.3s,opacity_0.3s]',
-    props.cover ? 'absolute left-0 top-0 h-full' : null,
+    props.cover ? 'cover absolute left-0 top-0 h-full' : null,
+    `mask-${mask.value}`,
     props.cover && mask.value === 'semi-transparent'
       ? 'bg-[#24292f99] [backdrop-filter:blur(5px)] [-webkit-backdrop-filter:blur(5px)]'
       : null,
@@ -41,6 +45,7 @@ const rootClass = computed(() =>
 )
 const textClass = computed(() =>
   cn(
+    'text',
     'flex items-center gap-2 text-13/5 text-title',
     props.cover && mask.value === 'semi-transparent' ? 'text-grey-100' : null
   )

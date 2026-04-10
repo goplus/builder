@@ -296,6 +296,7 @@ defineExpose({
     :disabled="isDisabled"
     :type="htmlType"
   >
+    <!-- keep `ui-button-content` for existing :deep(...) overrides -->
     <span class="ui-button-content" :class="contentClass" :style="contentStyle">
       <UIIcon v-if="resolvedIcon != null" :class="iconClass" :type="resolvedIcon" />
       <slot v-else name="icon"></slot>

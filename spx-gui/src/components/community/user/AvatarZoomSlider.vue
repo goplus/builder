@@ -81,7 +81,7 @@ function handleValueUpdate(value: number) {
   border-radius: 999px;
 }
 
-.slider:deep(.thumb) {
+.slider:deep(.ui-slider-thumb) {
   box-sizing: border-box;
   box-shadow:
     inset 0 0 0 2px var(--ui-color-primary-400),

@@ -11,8 +11,9 @@
     @update:value="handleUpdateValue"
   >
     <template #thumb>
+      <!-- keep `ui-slider-thumb` for existing :deep(...) overrides -->
       <div
-        class="h-5 w-5 rounded-full bg-white transition-transform duration-200 hover:scale-120"
+        class="ui-slider-thumb h-5 w-5 rounded-full bg-white transition-transform duration-200 hover:scale-120"
         :style="{ boxShadow }"
       ></div>
     </template>
