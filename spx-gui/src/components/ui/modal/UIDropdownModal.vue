@@ -1,5 +1,5 @@
 <template>
-  <form class="flex flex-col items-stretch" @submit.prevent="emit('confirm')">
+  <form :class="rootClass" @submit.prevent="emit('confirm')">
     <header class="h-11 flex flex-none items-center px-4">
       <h4 class="flex-1 text-16 text-title">{{ title }}</h4>
       <UIModalClose class="-mr-1" @click="emit('cancel')" />
@@ -27,15 +27,20 @@
   </form>
 </template>
 <script setup lang="ts">
+import { computed } from 'vue'
 import { UIButton, UIDivider } from '@/components/ui'
+import { cn, type ClassValue } from '../utils'
 import UIModalClose from './UIModalClose.vue'
 
-defineProps<{
+const props = defineProps<{
   title: string
+  class?: ClassValue
 }>()
 
 const emit = defineEmits<{
   cancel: []
   confirm: []
 }>()
+
+const rootClass = computed(() => cn('flex flex-col items-stretch', props.class ?? null))
 </script>

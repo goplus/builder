@@ -305,13 +305,15 @@ defineExpose({
   </button>
 </template>
 
-<style scoped>
-.ui-button-root:hover:enabled:not(:active) .ui-button-content {
-  background-color: var(--ui-button-hover-bg-color);
-}
+<style>
+@layer components {
+  .ui-button-root:hover:enabled:not(:active) .ui-button-content {
+    background-color: var(--ui-button-hover-bg-color);
+  }
 
-.ui-button-root[data-variant='shadow']:enabled:active .ui-button-content,
-.ui-button-root[data-variant='shadow'][data-loading='true'] .ui-button-content {
-  box-shadow: none;
+  .ui-button-root[data-variant='shadow']:enabled:active .ui-button-content,
+  .ui-button-root[data-variant='shadow'][data-loading='true'] .ui-button-content {
+    box-shadow: none;
+  }
 }
 </style>

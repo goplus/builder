@@ -59,17 +59,19 @@ useModalEsc(
   </Teleport>
 </template>
 
-<style scoped>
-.ui-full-screen-modal.v-enter-active,
-.ui-full-screen-modal.v-leave-active {
-  transition:
-    transform 0.4s ease-in-out,
-    opacity 0.2s ease-in-out 0.1s;
-}
+<style>
+@layer components {
+  .ui-full-screen-modal.v-enter-active,
+  .ui-full-screen-modal.v-leave-active {
+    transition:
+      transform 0.4s ease-in-out,
+      opacity 0.2s ease-in-out 0.1s;
+  }
 
-.ui-full-screen-modal.v-enter-from,
-.ui-full-screen-modal.v-leave-to {
-  transform: scale(0);
-  opacity: 0;
+  .ui-full-screen-modal.v-enter-from,
+  .ui-full-screen-modal.v-leave-to {
+    transform: scale(0);
+    opacity: 0;
+  }
 }
 </style>

@@ -94,6 +94,7 @@ When working with backend unique string identifiers such as `username`, project 
 
 * Keep `src/app.css` limited to Tailwind entry setup, theme bridge, and rare project-wide utilities.
 * Keep `src/components/ui/global.css` and `src/components/ui/reset.css` as the base reset/foundation layer (Tailwind preflight stays disabled).
+* The global CSS layer order is `theme, base, naive-ui, components, utilities`, declared in `index.html`.
 * Keep `--ui-*` tokens as the source of truth.
 * In Tailwind classes, prefer bridged semantic tokens (for example `text-text`, `text-title`, `bg-primary-100`).
 * In local CSS, prefer direct `--ui-*` variables instead of bridged Tailwind variables.
@@ -119,7 +120,8 @@ When working with backend unique string identifiers such as `username`, project 
 * For root-class overrides and utility conflicts:
 	- For business components, external root `class` overrides are allowed by default. If utility conflicts need an explicit winner, prefer adding Tailwind's important modifier at the usage site (for example `rounded-md!`, `w-32!`) instead of expanding the component API. This keeps intent explicit, usage concise, and matches the fact that business components rarely need nested override chains.
 	- For most UI components, `twMerge` and `@layer components` are set up so external utilities or custom classes can override root classes in the common case without special handling, though edge cases can still exist.
-	- For the Naive UI-root components listed in `src/components/ui/README.md`, avoid relying on external `class` for styling-critical overrides when possible; the final result is often hard to predict.
+	- For the Naive UI-root components listed in `src/components/ui/README.md`, Naive UI defaults live in the `naive-ui` layer and our authored UI styles live in the `components` layer, so component-layer rules have higher cascade priority on the same element/property pair.
+	- Even so, those Naive UI-root components still are not identical to DOM-root utility wrappers. Treat them as component-specific: simple root overrides are often fine, while deeper visual changes may still need wrapper layout control, explicit props, or Naive UI theme overrides.
 * Avoid non-equivalent Tailwind simplifications for flex values. In particular, `flex: 1 1 0` is not equivalent to Tailwind `flex-1` (`flex: 1 1 0%`), so do not simplify between them unless the layout behavior has been verified. Likewise, do not simplify `flex: 0 0 auto` to `shrink-0`; use the equivalent `flex-none` when that shorthand is desired.
 * Prefer `style` / `:style` for one-off values when clearer than Tailwind arbitrary utilities. For example, prefer `style="box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1)"` over a long arbitrary utility such as `shadow-[0_24px_32px_-16px_rgba(0,0,0,0.1)]`.
 * For important/non-obvious background assets, prefer TS imports and inline `backgroundImage` binding.
