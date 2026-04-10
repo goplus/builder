@@ -1,6 +1,0 @@
-/*
- * Declare the canonical cascade layer order in every entry that can emit a split CSS chunk.
- * In production, the UI library styles may be extracted before `app.css`; without this,
- * a chunk that first introduces `@layer components` can make later `@layer base` rules win.
- */
-@layer theme, base, components, utilities;

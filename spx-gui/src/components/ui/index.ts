@@ -1,9 +1,3 @@
-// Keep the canonical layer order in this UI entry as well, because after a production
-// build these component styles are emitted into a split CSS chunk. Importing it here
-// ensures that chunk registers the layer order before any `@layer components` rules,
-// so `base` does not accidentally outrank `components` due to cross-chunk load order.
-import './layer-order.css'
-
 export { default as UIConfigProvider, useUIVariables, type Config } from './UIConfigProvider.vue'
 export { default as UICard } from './UICard.vue'
 export { default as UICardHeader } from './UICardHeader.vue'
