@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { createI18n } from '@/utils/i18n'
 import { makeSpxProject } from '@/models/spx/common/test'
+import { sndFiles } from '@/models/common/test'
+import { Phase } from '@/models/spx/gen/common'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { GenState } from './gen'
@@ -125,6 +127,38 @@ describe('GenState', () => {
       expect(backdropGens[0].settings.name).toBe('castle')
       expect(backdropGens[1].settings.name).toBe('castle2')
       expect(backdropGens[2].settings.name).toBe('castle3')
+    })
+  })
+
+  describe('save and reload', () => {
+    it('should persist sprite gen that entered content phase without Minimize', async () => {
+      const i18n = createI18n({ lang: 'en' })
+      const project = makeSpxProject()
+      const genState = new GenState(i18n, project)
+
+      // Create a gen that has entered the content phase.
+      // This simulates the auto-persist watcher in SpriteGenModal firing when
+      // contentPreparingState.status becomes 'finished', without the user clicking Minimize.
+      const gen = new SpriteGen(i18n, project, {
+        settings: { name: 'Knight' },
+        prepareContentPhase: Phase.load<void>({
+          state: { status: 'finished' } as any,
+          actionName: { en: 'prepare sprite content', zh: '准备角色内容' }
+        })
+      })
+      genState.addSprite(gen)
+
+      // Export and reload GenState (simulating project save/load).
+      const exportedFiles = genState.export()
+      const files = sndFiles(exportedFiles)
+
+      const newProject = makeSpxProject()
+      const newGenState = new GenState(i18n, newProject)
+      await newGenState.load(files)
+
+      expect(newGenState.sprites.length).toBe(1)
+      expect(newGenState.sprites[0].settings.name).toBe('Knight')
+      expect(newGenState.sprites[0].contentPreparingState.status).toBe('finished')
     })
   })
 })

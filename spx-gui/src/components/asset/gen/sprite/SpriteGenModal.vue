@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { UIModal, UIModalClose, useConfirmDialog, type ModalTransformOrigin } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
@@ -37,13 +37,33 @@ const activeGen = computed(() => props.gen ?? internalGen.value)
 
 const modalRef = ref<InstanceType<typeof UIModal> | null>(null)
 
+// Track whether the gen has been added to the editor's genState already.
+const hasBeenAddedToGenState = ref(false)
+
+// Auto-register the gen into editor genState when it enters content phase,
+// so it is persisted with the project without requiring a Minimize action.
+watch(
+  () => activeGen.value?.contentPreparingState.status,
+  (status) => {
+    if (status !== 'finished' || props.gen != null || hasBeenAddedToGenState.value) return
+    const gen = activeGen.value
+    if (gen == null) return
+    hasBeenAddedToGenState.value = true
+    props.genCollapseHandler(gen, true)
+  }
+)
+
 async function handleGenCollapse() {
   const gen = activeGen.value
   if (gen == null) throw new Error('sprite gen expected')
   if (props.gen == null) {
     keepAlive(gen)
   }
-  const transformOrigin = await props.genCollapseHandler(gen, props.gen == null)
+  const isNewGen = props.gen == null && !hasBeenAddedToGenState.value
+  if (isNewGen) {
+    hasBeenAddedToGenState.value = true
+  }
+  const transformOrigin = await props.genCollapseHandler(gen, isNewGen)
   if (modalRef.value != null && transformOrigin != null) {
     modalRef.value.setTransformOrigin(transformOrigin)
   }
