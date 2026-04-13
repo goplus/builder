@@ -56,7 +56,7 @@ const rootClass = computed(() =>
     <slot></slot>
     <UIIcon
       v-if="slots.suffix == null && closable && !disabled"
-      class="ui-tag-close-icon"
+      class="ui-tag-close-icon w-3.5 h-3.5"
       type="close"
       @click.stop="emit('close')"
     />
@@ -91,12 +91,10 @@ const rootClass = computed(() =>
 
   .ui-tag:disabled {
     cursor: not-allowed;
-    --ui-tag-color: var(--ui-color-grey-600);
+    --ui-tag-color: var(--ui-color-grey-600) !important;
   }
   .ui-tag .ui-tag-close-icon {
     cursor: pointer;
-    width: var(--ui-tag-close-icon-size);
-    height: var(--ui-tag-close-icon-size);
     color: var(--ui-tag-color);
   }
 
@@ -189,7 +187,6 @@ const rootClass = computed(() =>
     --ui-tag-line-height: 1.5;
     --ui-tag-border-radius: 4px;
     --ui-tag-gap: 4px;
-    --ui-tag-close-icon-size: 14px;
   }
 }
 </style>

@@ -116,7 +116,8 @@ export function resolveButtonCssVars({ color, disabled, loading }: ButtonCssVarS
 
 const buttonSlots = {
   root: 'group/ui-button cursor-pointer flex items-stretch border-none bg-transparent p-0 disabled:cursor-not-allowed',
-  content: 'flex-[1_1_0] h-full flex items-center justify-center text-(--ui-button-color) bg-(--ui-button-bg-color)',
+  content:
+    'flex-[1_1_0] h-full flex items-center justify-center text-(--ui-button-color) bg-(--ui-button-bg-color) group-enabled/ui-button:group-hover/ui-button:bg-(--ui-button-hover-bg-color) transition-colors',
   icon: 'shrink-0'
 } as const
 
@@ -126,7 +127,8 @@ export const buttonRecipe = createRecipe({
     variant: {
       shadow: {
         root: 'pb-1 enabled:active:pb-0',
-        content: 'shadow-[0_4px_var(--ui-button-shadow-color)]'
+        content:
+          'shadow-[0_4px_var(--ui-button-shadow-color)] group-enabled/ui-button:group-active/ui-button:shadow-none'
       },
       flat: {
         root: 'pb-0'
@@ -287,33 +289,11 @@ defineExpose({
 </script>
 
 <template>
-  <button
-    ref="btnRef"
-    class="ui-button-root"
-    :class="rootClass"
-    :data-loading="loading || null"
-    :data-variant="variant"
-    :disabled="isDisabled"
-    :type="htmlType"
-  >
-    <!-- keep `ui-button-content` for existing :deep(...) overrides -->
-    <span class="ui-button-content" :class="contentClass" :style="contentStyle">
+  <button ref="btnRef" :class="rootClass" :disabled="isDisabled" :type="htmlType">
+    <span :class="contentClass" :style="contentStyle">
       <UIIcon v-if="resolvedIcon != null" :class="iconClass" :type="resolvedIcon" />
       <slot v-else name="icon"></slot>
       <slot v-if="hasDefaultSlot"></slot>
     </span>
   </button>
 </template>
-
-<style>
-@layer components {
-  .ui-button-root:hover:enabled:not(:active) .ui-button-content {
-    background-color: var(--ui-button-hover-bg-color);
-  }
-
-  .ui-button-root[data-variant='shadow']:enabled:active .ui-button-content,
-  .ui-button-root[data-variant='shadow'][data-loading='true'] .ui-button-content {
-    box-shadow: none;
-  }
-}
-</style>
