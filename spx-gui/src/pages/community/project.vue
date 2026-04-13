@@ -714,11 +714,11 @@ const remixesRet = useQuery(
 }
 
 /* TODO: replace these UIButton deep overrides with a more explicit styling API or stable override hook. */
-.ops > *.more :deep(.ui-button-content) {
+.ops > *.more :deep(> *) {
   padding: 0;
 }
 
-.ops .liking :deep(.ui-button-content) {
+.ops .liking :deep(> *) {
   color: var(--ui-color-red-main);
 }
 </style>
