@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { computed, inject, useSlots } from 'vue'
 import { cn, type ClassValue } from '../utils'
-import { useDropdown } from '../UIDropdown'
+import { useDropdown } from '../UIDropdown.vue'
 import { ctxKey } from './UIMenu.vue'
 
 const props = withDefaults(
@@ -42,7 +42,7 @@ const rootClass = computed(() => {
     disabled.value ? 'cursor-not-allowed text-grey-600' : null,
     !disabled.value && props.interactive ? 'cursor-pointer hover:bg-grey-300' : null,
     ctx?.inGroup ? 'in-group' : null,
-    props.class ?? null
+    props.class
   )
 })
 

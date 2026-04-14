@@ -1,7 +1,7 @@
 import { extendTailwindMerge, validators } from 'tailwind-merge'
 
 export type ClassDictionary = Record<string, boolean | null>
-export type ClassValue = string | ClassDictionary | null | false | ClassValue[]
+export type ClassValue = string | ClassDictionary | null | undefined | false | ClassValue[]
 
 function flattenClassValue(value: ClassValue, tokens: string[]) {
   if (value == null || value === false) return

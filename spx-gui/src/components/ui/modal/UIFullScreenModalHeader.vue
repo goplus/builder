@@ -12,7 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const rootClass = computed(() =>
-  cn('h-14 flex items-center gap-8 border-b border-grey-400 text-16 text-title', props.class ?? null)
+  cn('h-14 flex items-center gap-8 border-b border-grey-400 text-16 text-title', props.class)
 )
 </script>
 

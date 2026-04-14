@@ -13,7 +13,7 @@ const props = defineProps<{
 const collapseCtx = useCollapseCtx()
 
 const expanded = computed(() => collapseCtx.expandedNames.value.includes(props.name))
-const rootClass = computed(() => cn('flex flex-col', props.class ?? null))
+const rootClass = computed(() => cn('flex flex-col', props.class))
 
 function handleToggle() {
   collapseCtx.expandedNames.value = expanded.value

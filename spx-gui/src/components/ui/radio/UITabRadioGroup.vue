@@ -25,9 +25,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const rootClass = computed(() =>
-  cn('flex items-center justify-center rounded-sm bg-grey-400 p-[2px]', props.class ?? null)
-)
+const rootClass = computed(() => cn('flex items-center justify-center rounded-sm bg-grey-400 p-[2px]', props.class))
 
 const updateValue = (newValue: string) => {
   emit('update:value', newValue)
