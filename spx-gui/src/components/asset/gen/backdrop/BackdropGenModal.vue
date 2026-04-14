@@ -1,27 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { UIModal, UIModalClose, useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { AssetType } from '@/apis/asset'
-import type { Backdrop } from '@/models/spx/backdrop'
-import type { BackdropGen as BackdropGenModel } from '@/models/spx/gen/backdrop-gen'
+import { Backdrop } from '@/models/spx/backdrop'
 import type { SpxProject } from '@/models/spx/project'
-import { useAssetGen } from '../use-asset-gen'
 import BackdropGenComp from './BackdropGen.vue'
+import { useWatchResult } from '@/utils/utils'
+import { initBackdropGen } from '../modal'
 
-const props = withDefaults(
-  defineProps<{
-    visible: boolean
-    project: SpxProject
-    // Currently no use case for providing an external gen, but we keep this prop
-    // for consistency with SpriteGenModal and potential future use cases.
-    gen?: BackdropGenModel
-  }>(),
-  {
-    gen: undefined
-  }
-)
+const props = defineProps<{
+  visible: boolean
+  project: SpxProject
+}>()
 
 const emit = defineEmits<{
   resolved: [Backdrop]
@@ -31,22 +21,21 @@ const emit = defineEmits<{
 const i18n = useI18n()
 const confirm = useConfirmDialog()
 
-const typeRef = computed(() => (props.gen != null ? null : AssetType.Backdrop))
-const { assetGen: internalGen } = useAssetGen(props.project, typeRef)
-const activeGen = computed(() => props.gen ?? internalGen.value)
+const gen = useWatchResult(
+  () => props.project,
+  (project, onCleanup) => initBackdropGen(i18n, project, onCleanup)
+)
 
 const handleModalClose = useMessageHandle(
   async () => {
-    if (props.gen == null) {
-      await confirm({
-        title: i18n.t({ zh: '退出背景生成？', en: 'Exit backdrop generation?' }),
-        content: i18n.t({
-          zh: '当前内容不会被保存，确定要退出吗？',
-          en: 'Current progress will not be saved. Are you sure to exit?'
-        }),
-        confirmText: i18n.t({ en: 'Exit', zh: '退出' })
-      })
-    }
+    await confirm({
+      title: i18n.t({ zh: '退出背景生成？', en: 'Exit backdrop generation?' }),
+      content: i18n.t({
+        zh: '当前内容不会被保存，确定要退出吗？',
+        en: 'Current progress will not be saved. Are you sure to exit?'
+      }),
+      confirmText: i18n.t({ en: 'Exit', zh: '退出' })
+    })
     emit('cancelled')
   },
   { en: 'Failed to exit modal', zh: '退出失败' }
@@ -67,9 +56,9 @@ const handleModalClose = useMessageHandle(
     </header>
 
     <BackdropGenComp
-      v-if="activeGen != null"
+      v-if="gen != null"
       class="flex-[1_1_0] min-h-0"
-      :gen="activeGen"
+      :gen="gen"
       library-search-enabled
       @resolved="emit('resolved', $event)"
     />

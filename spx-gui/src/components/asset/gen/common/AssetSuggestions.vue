@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { AssetType, type AssetData } from '@/apis/asset'
 import { UILoading } from '@/components/ui'
+import { humanizeAssetType } from '@/models/spx/common/asset'
 
 const props = defineProps<{
   type: AssetType
@@ -19,12 +20,7 @@ function isSelected(asset: AssetData) {
   return props.selected?.id === asset.id
 }
 
-const entityMessages = {
-  [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
-  [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
-  [AssetType.Sound]: { en: 'sound', zh: '声音' }
-}
-const entityMessage = computed(() => entityMessages[props.type])
+const entityMessage = computed(() => humanizeAssetType(props.type))
 </script>
 
 <template>

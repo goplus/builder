@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { UIModal, UIModalClose, useConfirmDialog, type ModalTransformOrigin } from '@/components/ui'
+import { ref } from 'vue'
+import { UIModal, UIModalClose, useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { useWatchResult } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { AssetType } from '@/apis/asset'
 import type { Sprite } from '@/models/spx/sprite'
-import type { SpriteGen as SpriteGenModel } from '@/models/spx/gen/sprite-gen'
+import { SpriteGen as SpriteGenModel } from '@/models/spx/gen/sprite-gen'
 import type { SpxProject } from '@/models/spx/project'
-import type { AssetGenModel } from '@/models/spx/common/asset'
-import { useAssetGen } from '../use-asset-gen'
+import { initSpriteGen, type GenHelpers } from '../modal'
 import SpriteGenComp from './SpriteGen.vue'
 
 const props = withDefaults(
@@ -16,7 +15,7 @@ const props = withDefaults(
     visible: boolean
     project: SpxProject
     gen?: SpriteGenModel
-    genCollapseHandler: (gen: AssetGenModel, isNewGen?: boolean) => Promise<ModalTransformOrigin | null>
+    helpers: GenHelpers
   }>(),
   {
     gen: undefined
@@ -31,19 +30,18 @@ const emit = defineEmits<{
 const i18n = useI18n()
 const confirm = useConfirmDialog()
 
-const typeRef = computed(() => (props.gen != null ? null : AssetType.Sprite))
-const { assetGen: internalGen, keepAlive } = useAssetGen(props.project, typeRef)
-const activeGen = computed(() => props.gen ?? internalGen.value)
+const gen = useWatchResult(
+  () => [props.gen, props.project, props.helpers] as const,
+  ([gen, project, helpers], onCleanup) => {
+    if (gen != null) return gen
+    return initSpriteGen(i18n, project, helpers, onCleanup)
+  }
+)
 
 const modalRef = ref<InstanceType<typeof UIModal> | null>(null)
 
-async function handleGenCollapse() {
-  const gen = activeGen.value
-  if (gen == null) throw new Error('sprite gen expected')
-  if (props.gen == null) {
-    keepAlive(gen)
-  }
-  const transformOrigin = await props.genCollapseHandler(gen, props.gen == null)
+async function collapseGen() {
+  const transformOrigin = await props.helpers.getPos(gen.value)
   if (modalRef.value != null && transformOrigin != null) {
     modalRef.value.setTransformOrigin(transformOrigin)
   }
@@ -52,10 +50,9 @@ async function handleGenCollapse() {
 
 const handleModalClose = useMessageHandle(
   async () => {
-    // If the gen is provided by props, it means the modal is controlled by an external gen,
-    // and closing the modal will not cancel the gen. So we only show confirmation when there
-    // is no external gen, which means closing the modal will cancel the gen and lose progress.
-    if (props.gen == null) {
+    if (!props.helpers.isPersisted(gen.value)) {
+      // If the gen is not persisted, closing the modal means dropping the current gen,
+      // which may cause data loss, so we should confirm with the user.
       await confirm({
         title: i18n.t({ zh: '退出精灵生成？', en: 'Exit sprite generation?' }),
         content: i18n.t({
@@ -64,8 +61,11 @@ const handleModalClose = useMessageHandle(
         }),
         confirmText: i18n.t({ en: 'Exit', zh: '退出' })
       })
+      emit('cancelled')
+    } else {
+      // If the gen is already persisted, we can simply collapse the modal without worrying about data loss.
+      return collapseGen()
     }
-    emit('cancelled')
   },
   { en: 'Failed to exit modal', zh: '退出失败' }
 ).fn
@@ -86,11 +86,11 @@ const handleModalClose = useMessageHandle(
     </header>
 
     <SpriteGenComp
-      v-if="activeGen != null"
+      v-if="gen != null"
       class="flex-[1_1_0] min-h-0"
-      :gen="activeGen"
+      :gen="gen"
       library-search-enabled
-      @collapse="handleGenCollapse"
+      @collapse="collapseGen"
       @resolved="emit('resolved', $event)"
     />
   </UIModal>
