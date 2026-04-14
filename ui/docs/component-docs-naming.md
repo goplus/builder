@@ -246,7 +246,7 @@ AI 批量补全时：
 - 目录名是否等于 `component_id`
 - `component_id` 是否为 `kebab-case`
 - `component_name` 是否为 `PascalCase`
-- `slug` 是否与 `component_id` 一致
+- slug 是否与 component_id 路径保持一致
 - `index.md` 是否包含完整 frontmatter
 - 是否出现多个别名同时充当主引用名
 - 是否创建了未在规范中登记的文件名
