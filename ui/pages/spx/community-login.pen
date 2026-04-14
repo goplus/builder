@@ -1,0 +1,460 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "type": "frame",
+      "id": "ROyt9",
+      "x": 6978,
+      "y": 3547,
+      "name": "Login/pc",
+      "clip": true,
+      "width": 1440,
+      "height": 1016,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "../../images/Login:background:pc.png",
+        "mode": "fill"
+      },
+      "layout": "vertical",
+      "gap": 10,
+      "padding": [
+        208,
+        220
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "OHdeB",
+          "name": "login-container-pc",
+          "width": 1000,
+          "fill": "$r:grey100",
+          "cornerRadius": 16,
+          "layout": "vertical",
+          "padding": [
+            0,
+            0,
+            72,
+            0
+          ],
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "0SPCV",
+              "name": "login-top-area",
+              "width": "fill_container",
+              "gap": 10,
+              "padding": [
+                36,
+                0,
+                0,
+                50
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "cgp06",
+                  "name": "text",
+                  "fill": "$r:grey1000",
+                  "content": "登录",
+                  "fontFamily": "Inter",
+                  "fontSize": 26,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hXdrd",
+              "name": "login-middle-area",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Uxg4s",
+                  "name": "login-illustration-pc-container",
+                  "width": 500,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "1wWNR",
+                      "type": "ref",
+                      "ref": "r:F1FG5",
+                      "x": 14,
+                      "y": 0
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vGtql",
+                  "name": "login-signin-pc-container",
+                  "clip": true,
+                  "width": 500,
+                  "height": 460,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": {
+                      "left": 1
+                    },
+                    "fill": "$r:grey500"
+                  },
+                  "layout": "vertical",
+                  "gap": 64,
+                  "padding": [
+                    0,
+                    20
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "TFQc4",
+                      "name": "login-logo-pc-container",
+                      "clip": true,
+                      "layout": "vertical",
+                      "gap": 12,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "gUKoh",
+                          "type": "ref",
+                          "ref": "r:rDyIo",
+                          "x": 15.5,
+                          "y": 0
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WxNZJ",
+                          "name": "login-logo-name",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1
+                          },
+                          "layout": "vertical",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Jbve6",
+                              "name": "App Name",
+                              "fill": "$r:grey1000",
+                              "content": "XBuilder",
+                              "fontFamily": "HarmonyOS Sans",
+                              "fontSize": 24,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "1xRFU",
+                      "type": "ref",
+                      "ref": "r:PjHLr",
+                      "x": 85,
+                      "y": 238.5
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "CF3U2",
+      "x": 8497,
+      "y": 3719,
+      "name": "Login/app",
+      "clip": true,
+      "width": 390,
+      "height": 844,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "../../images/Login:background:app.png",
+        "mode": "fill"
+      },
+      "layout": "vertical",
+      "padding": [
+        220,
+        48,
+        336,
+        47
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "EMvsJ",
+          "name": "login-container-app",
+          "width": 295,
+          "layout": "vertical",
+          "gap": 64,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "5s6ZN",
+              "name": "login-signin-app-container",
+              "clip": true,
+              "layout": "vertical",
+              "gap": 12,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "iMxuc",
+                  "type": "ref",
+                  "ref": "r:rDyIo",
+                  "x": 15.5,
+                  "y": 0
+                },
+                {
+                  "type": "frame",
+                  "id": "4QZN0",
+                  "name": "login-logo-name",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "2v7iK",
+                      "name": "App Name",
+                      "fill": "$r:grey1000",
+                      "content": "XBuilder",
+                      "fontFamily": "HarmonyOS Sans",
+                      "fontSize": 24,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "40Vtt",
+              "type": "ref",
+              "ref": "r:sH3wB",
+              "x": 0,
+              "y": 181,
+              "descendants": {
+                "r:2ZR1K": {
+                  "enabled": false
+                },
+                "r:RaNPU": {
+                  "enabled": false
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "themes": {
+    "Accent": [
+      "Default",
+      "Red",
+      "Rose",
+      "Orange",
+      "Green",
+      "Blue",
+      "Yellow",
+      "Violet"
+    ]
+  },
+  "variables": {
+    "grey1000": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#24292f",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "grey100": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ffffff",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "turquoise500": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#0bc0cf",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "grey800": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#6e7781",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "blue400": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#4db2fd",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "code-black": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#000000",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "code-red": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#db1c2b",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "green600": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#3ca80c",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "grey400": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#eaeff3",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "grey500": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#d9dfe5",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "red500": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ef4149",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "yellow500": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FAA135",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    }
+  },
+  "imports": {
+    "r": "../../components/spx/builder-component.lib.pen"
+  },
+  "fonts": [
+    {
+      "name": "Alibaba Health Font 2.0 CN",
+      "url": "../../images/AlibabaHealthFont2.0CN-85B.ttf",
+      "weight": 600
+    },
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
+    {
+      "name": "SourceHanSansSC-VF",
+      "url": "../../images/SourceHanSansSC-VF.ttf",
+      "weight": [
+        250,
+        900
+      ],
+      "axes": [
+        {
+          "tag": "wght",
+          "start": 250,
+          "end": 900
+        }
+      ]
+    },
+    {
+      "name": "XBuilder_Icons_01",
+      "url": "../../images/xbuilder-icons-01.ttf"
+    },
+    {
+      "name": "XBuilder_Icons_02",
+      "url": "../../images/xbuilder-icons-02.ttf"
+    }
+  ]
+}
