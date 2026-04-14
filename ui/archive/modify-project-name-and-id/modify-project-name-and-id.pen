@@ -374,7 +374,7 @@
                   "fill": "$grey100",
                   "content": "my-test-gameccc",
                   "lineHeight": 1.625,
-                  "fontFamily": "Inter",
+                  "fontFamily": "Alibaba Health Font 2.0 CN",
                   "fontSize": 16,
                   "fontWeight": "600"
                 },
