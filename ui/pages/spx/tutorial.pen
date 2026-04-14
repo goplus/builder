@@ -79,7 +79,7 @@
                       "height": 49,
                       "content": "Explore the User Tutorial",
                       "lineHeight": 1.5,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 36,
                       "fontWeight": "bold"
                     },
@@ -90,7 +90,7 @@
                       "fill": "#006375",
                       "content": "Build coding skills and develop a programming mindset",
                       "lineHeight": 1.5,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 18,
                       "fontWeight": "normal"
                     }
@@ -352,7 +352,7 @@
             {
               "type": "frame",
               "id": "4q1lx",
-              "name": "Pagination",
+              "name": "pagination",
               "width": "fill_container",
               "cornerRadius": 8,
               "gap": 8,
@@ -445,7 +445,7 @@
             {
               "type": "frame",
               "id": "GnuCa",
-              "name": "Text Container",
+              "name": "text-container",
               "width": 758,
               "height": 111,
               "layout": "vertical",
@@ -458,7 +458,7 @@
                   "fill": "$grey1000",
                   "content": "Code kiko: 初步",
                   "lineHeight": 1.1833333333333333,
-                  "fontFamily": "Inter",
+                  "fontFamily": "Alibaba Health Font 2.0 CN",
                   "fontSize": 20,
                   "fontWeight": "bold"
                 },
@@ -471,7 +471,7 @@
                   "width": "fill_container",
                   "content": "A complete solution for adventure games that focus on storytelling and puzzles - the perfect genre for newcomers to game development.A complete solution for adventure games that focus on storytelling and puzzles - the perfect genre for newcomers to game development.",
                   "lineHeight": 1.5714285714285714,
-                  "fontFamily": "Inter",
+                  "fontFamily": "Alibaba Health Font 2.0 CN",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -648,7 +648,7 @@
   "fonts": [
     {
       "name": "Menlo",
-      "url": "../../images/Menlo-Regular-1.ttf"
+      "url": "../../images/Menlo.ttf"
     },
     {
       "name": "XBuilder_Icons_01",
