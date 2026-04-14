@@ -6,7 +6,7 @@
       class="sign-in-button"
       color="secondary"
       :disabled="!isOnline"
-      @click="initiateSignIn()"
+      @click="goToSignIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
@@ -86,7 +86,7 @@ import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
-import { initiateSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
+import { goToSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'

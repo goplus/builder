@@ -3,7 +3,7 @@ import { onMounted } from 'vue'
 
 import type { Round } from '@/components/copilot/copilot'
 
-import { initiateSignIn, isSignedIn } from '@/stores/user'
+import { goToSignIn, isSignedIn } from '@/stores/user'
 import { UIButton } from '@/components/ui'
 
 const props = defineProps<{
@@ -19,7 +19,7 @@ onMounted(() => {
 <template>
   <div class="sign-in-container">
     <div class="message">{{ $t({ en: 'Please sign in to continue.', zh: '请先登录并继续' }) }}</div>
-    <UIButton variant="flat" class="sign-in-btn" @click="initiateSignIn()">
+    <UIButton variant="flat" class="sign-in-btn" @click="goToSignIn()">
       {{ $t({ en: 'Sign in', zh: '登录' }) }}
     </UIButton>
   </div>

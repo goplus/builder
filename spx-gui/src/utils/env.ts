@@ -20,6 +20,9 @@ export const casdoorConfig = {
   organizationName: import.meta.env.VITE_CASDOOR_ORGANIZATION_NAME as string,
   appName: import.meta.env.VITE_CASDOOR_APP_NAME as string
 }
+export const casdoorProviderParamName = (import.meta.env.VITE_CASDOOR_PROVIDER_PARAM_NAME as string) || 'provider'
+export const casdoorWeChatProvider = (import.meta.env.VITE_CASDOOR_WECHAT_PROVIDER as string) || ''
+export const casdoorQqProvider = (import.meta.env.VITE_CASDOOR_QQ_PROVIDER as string) || ''
 
 /**
  * If we should disable features that rely on AIGC service.

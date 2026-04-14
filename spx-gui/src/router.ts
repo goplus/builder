@@ -2,7 +2,7 @@ import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import type { ExploreOrder } from './apis/project'
-import { initiateSignIn, isSignedIn, getUnresolvedSignedInUsername } from './stores/user'
+import { getDefaultReturnTo, getSignInRoute, isSignedIn, getUnresolvedSignedInUsername } from './stores/user'
 
 export function getProjectEditorRoute(ownerName: string, projectName: string, publish = false) {
   ownerName = encodeURIComponent(ownerName)
@@ -140,11 +140,14 @@ const routes: Array<RouteRecordRaw> = [
       // Route with `redirect` will not trigger the global `beforeEach` guard,
       // so we need to check sign-in status here.
       if (username == null) {
-        initiateSignIn()
-        throw new Error('User not signed in') // prevent router from redirecting
+        return getSignInRoute(to.fullPath || `/editor/${encodeURIComponent(projectNameInput as string)}`)
       }
       return getProjectEditorRoute(username, projectNameInput as string)
     }
+  },
+  {
+    path: '/sign-in',
+    component: () => import('@/pages/sign-in/index.vue')
   },
   {
     path: '/sign-in/callback',
@@ -185,7 +188,7 @@ const router = createRouter({
 export const initRouter = (app: App) => {
   router.beforeEach((to, _, next) => {
     if (to.meta.requiresSignIn && !isSignedIn()) {
-      initiateSignIn()
+      next(getSignInRoute(to.fullPath || getDefaultReturnTo()))
     } else {
       next()
     }

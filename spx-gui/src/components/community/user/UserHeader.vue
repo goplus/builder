@@ -6,7 +6,7 @@ import { useAvatarUrl } from '@/stores/user/avatar'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { timeout } from '@/utils/utils'
-import { initiateSignIn, useSignedInUser } from '@/stores/user'
+import { goToSignIn, useSignedInUser } from '@/stores/user'
 import { UIButton, UIImg, useMessage, useModal } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import TextView from '../TextView.vue'
@@ -48,7 +48,7 @@ const handleUsernameUpdated = useMessageHandle(
       })
     )
     await timeout(2000)
-    initiateSignIn()
+    goToSignIn()
   },
   {
     en: 'Failed to redirect after username update',
