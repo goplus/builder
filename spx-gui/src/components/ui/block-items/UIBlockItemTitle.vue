@@ -20,7 +20,7 @@ const rootClass = computed(() =>
   cn(
     'w-full flex items-center gap-2 px-1.5 text-center text-title',
     props.size === 'large' ? 'h-5 text-sm font-medium' : 'h-5.5 text-2xs text-grey-800',
-    props.class ?? null
+    props.class
   )
 )
 </script>

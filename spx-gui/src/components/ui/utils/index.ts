@@ -1,5 +1,6 @@
 import { type InjectionKey, provide, type Ref, inject, ref, watchEffect } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
+import { findPopupRoot } from '../popup'
 export { cn, type ClassDictionary, type ClassValue } from './cn'
 export {
   createRecipe,
@@ -55,9 +56,11 @@ export function useModalContainer() {
 
 /** If given target in any popup content */
 export function isInPopup(target: HTMLElement | null) {
+  if (findPopupRoot(target) != null) return true
+
   let el = target
   while (el != null) {
-    if (el.classList.contains('n-popover') || el.classList.contains('n-modal')) return true
+    if (el.classList.contains('n-modal')) return true
     el = el.parentElement
   }
   return false

@@ -21,7 +21,7 @@ const props = withDefaults(
   }
 )
 
-const rootClass = computed(() => cn('flex flex-col gap-1', props.class ?? null))
+const rootClass = computed(() => cn('flex flex-col gap-1', props.class))
 
 provide(
   ctxKey,

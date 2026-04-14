@@ -46,7 +46,7 @@ const rootClass = computed(() =>
     'inline-flex h-8 rounded-md',
     props.variant === 'primary' && 'bg-grey-300 overflow-hidden',
     props.variant === 'secondary' && 'bg-grey-400 p-0.5',
-    props.class ?? null
+    props.class
   )
 )
 

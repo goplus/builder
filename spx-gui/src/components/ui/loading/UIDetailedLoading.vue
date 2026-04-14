@@ -35,7 +35,7 @@ const rootClass = computed(() =>
     `mask-${mask.value}`,
     props.cover && mask.value === 'semi-transparent' ? 'bg-overlay-loading' : null,
     props.visible ? 'visible opacity-100' : 'invisible opacity-0',
-    props.class ?? null
+    props.class
   )
 )
 const textClass = computed(() =>

@@ -38,7 +38,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const rootClass = computed(() => cn('flex gap-6 px-2', props.class ?? null))
+const rootClass = computed(() => cn('flex gap-6 px-2', props.class))
 
 provide(
   tabsCtxInjectionKey,

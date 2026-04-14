@@ -20,10 +20,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect, watch } from 'vue'
+import { computed, ref, watchEffect, watch } from 'vue'
 import { NModal } from 'naive-ui'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { useLastClickEvent, useModalContainer } from '../utils'
+import { providePopupContainer, useLastClickEvent, useModalContainer } from '../utils'
 import { useModalEsc } from './UIModalProvider.vue'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
@@ -79,6 +79,9 @@ watch(
 )
 
 const modalElRef = ref<HTMLElement | null>(null)
+const modalPopupContainer = computed(() => modalElRef.value ?? attachTo.value)
+providePopupContainer(modalPopupContainer)
+
 watchEffect(() => {
   if (containerRef.value == null) return
   let modalEl = modalElRef.value

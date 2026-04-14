@@ -53,7 +53,7 @@ const emit = defineEmits<{
   'update:current': [number]
 }>()
 
-const rootClass = computed(() => cn('flex gap-2', props.class ?? null))
+const rootClass = computed(() => cn('flex gap-2', props.class))
 const buttonClass = (active = false) =>
   cn(
     'h-8 w-8 flex items-center justify-center rounded-sm border-none bg-grey-300 text-base font-semibold text-grey-900',

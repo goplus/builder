@@ -42,5 +42,5 @@ const emit = defineEmits<{
   confirm: []
 }>()
 
-const rootClass = computed(() => cn('flex flex-col items-stretch', props.class ?? null))
+const rootClass = computed(() => cn('flex flex-col items-stretch', props.class))
 </script>

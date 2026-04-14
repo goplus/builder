@@ -51,7 +51,7 @@ const rootClass = computed(() =>
     styles[variant()][isActive.value ? 'active' : 'default'],
     styles[variant()][type()],
     isActive.value ? 'cursor-default' : 'cursor-pointer',
-    props.class ?? null
+    props.class
   )
 )
 

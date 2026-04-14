@@ -24,7 +24,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const rootClass = computed(() => cn('flex gap-3', props.class ?? null))
+const rootClass = computed(() => cn('flex gap-3', props.class))
 
 const updateValue = (newValue: string) => {
   emit('update:value', newValue)

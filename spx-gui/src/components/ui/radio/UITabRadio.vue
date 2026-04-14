@@ -26,7 +26,7 @@ const rootClass = computed(() =>
     isActive.value
       ? 'rounded-[calc(var(--ui-border-radius-md)-2px)] bg-grey-100 text-title shadow-control'
       : 'cursor-pointer text-hint-1',
-    props.class ?? null
+    props.class
   )
 )
 
