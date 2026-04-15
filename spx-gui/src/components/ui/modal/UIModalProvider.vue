@@ -30,6 +30,7 @@ import type { ComponentDefinition, PruneProps } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
 import Emitter from '@/utils/emitter'
 import { provideModalContainer, useModalContainer } from '../utils'
+import { findPopupRoot } from '../popup/stack'
 
 // The Modal Component should provide Props as following:
 export type ModalComponentProps = {
@@ -93,6 +94,22 @@ export function useModalEvents(): ModalEvents {
   return ctx.events
 }
 
+/**
+ * Close the current topmost modal with ESC when the key event originates from the
+ * modal subtree (or from `document.body`).
+ *
+ * Why `active` is required:
+ * - multiple modals can coexist in the provider stack
+ * - only the topmost one should react to ESC
+ *
+ * Why we filter event targets:
+ * - this modal implementation intentionally does not trap focus
+ * - focus may temporarily live outside the modal subtree
+ * - in that case, pressing ESC should be handled by the focused context instead of
+ *   force-closing the modal stack
+ * - nested popup content inside a modal (for example dropdowns) should consume ESC first,
+ *   so the parent modal must ignore those events
+ */
 export function useModalEsc(source: WatchSource<boolean>, handler: () => void) {
   const modalContainerRef = useModalContainer()
 
@@ -101,22 +118,13 @@ export function useModalEsc(source: WatchSource<boolean>, handler: () => void) {
     ([modalContainer, active], _, onCleanUp) => {
       if (modalContainer == null || !active) return
 
-      // naive-ui does not adequately support simultaneously having "focus outside the modal" and allowing the modal to be "closed by the ESC key."
-      // Refer to: https://github.com/goplus/builder/pull/1874#discussion_r2220769290
+      // Our modal implementation intentionally does not trap focus. In that setup, we only
+      // want ESC to close the active modal when the key event comes from the document body or
+      // from an element inside the modal container subtree.
       const handleKeydown = (e: KeyboardEvent) => {
         if (e.key !== 'Escape') return
 
-        const target = e.target
-        if (
-          // Non-focusable DOM elements cannot trigger keydown events,so the target is either the body or a focusable DOM element.
-          // If the target is the body, the modal should be closed normally.
-          target != document.body &&
-          target instanceof HTMLElement &&
-          // ignore events if the focused element is outside the modal container subtree.
-          !modalContainer.contains(target)
-        ) {
-          return
-        }
+        if (!isEscTargetWithinModalScope(modalContainer, e.target)) return
         handler()
       }
 
@@ -130,6 +138,15 @@ export function useModalEsc(source: WatchSource<boolean>, handler: () => void) {
     }
   )
 }
+
+function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventTarget | null) {
+  // Non-focusable DOM elements cannot trigger keydown events, so the target is either the
+  // body or a focusable DOM element. If the target is the body, the modal should close.
+  if (target === document.body) return true
+  if (!(target instanceof HTMLElement)) return true
+  if (findPopupRoot(target) != null) return false
+  return modalContainer.contains(target)
+}
 </script>
 
 <script setup lang="ts">
@@ -140,8 +157,9 @@ const emitter: ModalEvents = new Emitter()
 async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
   const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
   currentModals.push(currentModal)
-  // delay visible-setting, so there will be animation for modal-show
-  // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
+  // The modal entry needs to exist in the tree before it can transition from hidden to visible.
+  // Wait one render turn before toggling `visible` so teleported modals enter through
+  // their transition instead of appearing in the final state immediately.
   await nextTick()
   currentModal.visible = true
   emitter.emit('open')
@@ -153,7 +171,11 @@ function remove(id: number, onHide: (modal: ModalInfo) => void) {
   modal.visible = false
   onHide(modal)
   setTimeout(() => {
-    // wait for hide animation to finish
+    // Keep the entry mounted until the leave transition completes.
+    // The provider hosts different modal wrappers, so keep this slightly more relaxed than
+    // any single modal's transition timing instead of coupling it to one implementation.
+    // TODO: consider replacing this timeout with an `after-leave` driven removal flow if
+    // modal wrappers eventually share a consistent leave lifecycle contract.
     const modalIndex = currentModals.findIndex((m) => m.id === id)
     if (modalIndex === -1) return
     currentModals.splice(modalIndex, 1)

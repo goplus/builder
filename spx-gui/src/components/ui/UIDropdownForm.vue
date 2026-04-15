@@ -10,14 +10,14 @@
     </main>
     <footer class="flex-none flex justify-end gap-3 p-4">
       <UIButton
-        v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in modal' }"
+        v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in dropdown form' }"
         color="boring"
         @click="emit('cancel')"
       >
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton
-        v-radar="{ name: 'Confirm button', desc: 'Click to submit the modal' }"
+        v-radar="{ name: 'Confirm button', desc: 'Click to submit the dropdown form' }"
         color="primary"
         html-type="submit"
       >
@@ -29,8 +29,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIButton, UIDivider } from '@/components/ui'
-import { cn, type ClassValue } from '../utils'
-import UIModalClose from './UIModalClose.vue'
+import { cn, type ClassValue } from './utils'
+import UIModalClose from './modal/UIModalClose.vue'
 
 const props = defineProps<{
   title: string

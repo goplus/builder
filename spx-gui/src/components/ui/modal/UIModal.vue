@@ -1,51 +1,75 @@
 <template>
-  <NModal
-    class="ui-modal"
-    :to="attachTo"
-    :show="visible"
-    :auto-focus="autoFocus"
-    :trap-focus="false"
-    :mask-closable="maskClosable"
-    :class="{ 'has-custom-origin': !!customTransformOrigin }"
-    @update:show="handleUpdateShow"
-  >
-    <div
-      ref="containerRef"
-      v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
-      :class="['ui-modal-container', `ui-modal-size-${size || 'medium'}`]"
-    >
-      <slot></slot>
-    </div>
-  </NModal>
+  <Teleport v-if="attachTo != null" :to="attachTo">
+    <Transition name="ui-modal">
+      <div
+        v-if="visible"
+        class="ui-modal fixed inset-0 z-1100 flex items-center justify-center p-4"
+        @click="handleMaskClick"
+      >
+        <div
+          v-bind="surfaceAttrs"
+          :ref="setContentRef"
+          v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
+          role="dialog"
+          aria-modal="true"
+          tabindex="-1"
+          class="ui-modal-surface"
+          :class="surfaceClass"
+          :style="surfaceStyle"
+          @click.stop
+        >
+          <slot></slot>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect, watch } from 'vue'
-import { NModal } from 'naive-ui'
+import { computed, mergeProps, nextTick, useAttrs, watch } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { providePopupContainer, useLastClickEvent, useModalContainer } from '../utils'
+import { cn, type ClassValue, useModalContainer } from '../utils'
 import { useModalEsc } from './UIModalProvider.vue'
+import { useModalSurface } from './use-modal-surface'
+
+defineOptions({
+  // The teleported backdrop is an implementation detail. Keep fallthrough attrs on the
+  // dialog surface so external class/style semantics stay compatible with the old modal.
+  inheritAttrs: false
+})
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 export type TransformOrigin = { x: number; y: number }
 
-const props = defineProps<{
-  size?: ModalSize
-  visible?: boolean
-  autoFocus?: boolean
-  maskClosable?: boolean
-  /**
-   * Metadata for radar, like `v-radar`.
-   * There's issue with using `v-radar` directly on `NModal`, so we pass it by property instead and set it on the root element.
-   * TODO: Update implementation of `UIModal` to support using `v-radar` directly.
-   */
-  radar?: RadarNodeMeta
-  /**
-   * This prop should not be passed manually. It is reserved for `UIModalProvider`
-   * to indicate whether the current `UIModal` is at the top layer.
-   */
-  active?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    size?: ModalSize
+    visible?: boolean
+    autoFocus?: boolean
+    maskClosable?: boolean
+    class?: ClassValue
+    /**
+     * Metadata for radar, equivalent to applying `v-radar` on the dialog surface.
+     */
+    radar?: RadarNodeMeta
+    /**
+     * This prop should not be passed manually. It is reserved for `UIModalProvider`
+     * to indicate whether the current `UIModal` is at the top layer.
+     */
+    active?: boolean
+  }>(),
+  {
+    size: 'medium',
+    visible: false,
+    autoFocus: true,
+    maskClosable: true,
+    active: true,
+    class: undefined,
+    radar: undefined
+  }
+)
+
+const attrs = useAttrs()
 
 const emit = defineEmits<{
   'update:visible': [visible: boolean]
@@ -55,98 +79,102 @@ const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
 }
 
+function handleMaskClick() {
+  if (!props.maskClosable) return
+  handleUpdateShow(false)
+}
+
 const attachTo = useModalContainer()
 
-const lastClickEvent = useLastClickEvent()
-const containerRef = ref<HTMLElement | null>(null)
-const customTransformOrigin = ref<TransformOrigin>({ x: 0, y: 0 })
+const {
+  contentRef: containerRef,
+  surfaceRootAttrs,
+  setContentRef,
+  setTransformOrigin: updateTransformOrigin,
+  transformStyle
+} = useModalSurface({ visible: computed(() => props.visible) })
+
+// Modal stack attrs and fallthrough attrs should both live on the surface element:
+// - surfaceRootAttrs marks the actual modal root for stack/popup lookup
+// - attrs preserves external style/data-* on the dialog container
+const surfaceAttrs = computed(() => mergeProps(surfaceRootAttrs, attrs))
+const surfaceClass = computed(() =>
+  cn(
+    'flex flex-col overflow-hidden bg-white outline-none max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)]',
+    'shadow-[var(--ui-box-shadow-big)] rounded-[var(--ui-border-radius-2)]',
+    {
+      'w-[480px]': props.size === 'small',
+      'w-[640px]': props.size === 'medium',
+      'w-[960px]': props.size === 'large',
+      'w-full': props.size === 'full'
+    },
+    props.class
+  )
+)
+const surfaceStyle = computed(() => transformStyle.value ?? undefined)
 
 function setTransformOrigin(transformOrigin: TransformOrigin) {
-  customTransformOrigin.value = transformOrigin
+  updateTransformOrigin(transformOrigin)
 }
 
 watch(
-  () => props.visible,
-  (visible) => {
-    // For unknown reasons, naive-ui's `transform-origin: mouse` is not working.
-    // We implement this feature internally, which aligns with our goal to reduce dependency on naive-ui.
-    if (visible && lastClickEvent.value != null)
-      setTransformOrigin({ x: lastClickEvent.value.x, y: lastClickEvent.value.y })
+  [() => props.visible, containerRef, () => props.autoFocus],
+  async ([visible, container, autoFocus]) => {
+    if (!visible || !autoFocus || container == null) return
+    // First tick: let `visible` propagate through the transition/teleport render.
+    // Second tick: let the teleported surface ref settle before focusing.
+    await nextTick()
+    await nextTick()
+    if (!container.isConnected) return
+    container.focus()
   },
-  {
-    immediate: true
-  }
+  { immediate: true }
 )
-
-const modalElRef = ref<HTMLElement | null>(null)
-const modalPopupContainer = computed(() => modalElRef.value ?? attachTo.value)
-providePopupContainer(modalPopupContainer)
-
-watchEffect(() => {
-  if (containerRef.value == null) return
-  let modalEl = modalElRef.value
-  // Cannot get the modal element directly through ref, temporarily obtained via selector
-  if (modalEl == null) {
-    modalEl = modalElRef.value = containerRef.value.closest('.ui-modal')
-  }
-
-  if (modalEl != null) {
-    const { offsetLeft, offsetTop } = containerRef.value
-    const { x, y } = customTransformOrigin.value
-    // Internal handling of NModal in naive-ui prevents us from passing customTransformOrigin via style props.
-    // Since a better solution is currently unavailable, we manually set the property on the .ui-modal element.
-    modalEl.style.setProperty('--ui-modal-custom-origin', `${x - offsetLeft}px ${y - offsetTop}px`)
-  }
-})
 
 defineExpose({
   setTransformOrigin
 })
 
 useModalEsc(
-  () => props.active ?? true,
+  () => props.active,
   () => emit('update:visible', false)
 )
 </script>
 
 <style>
 @layer components {
-  .ui-modal.has-custom-origin {
-    /* Override NaiveUI's transform-origin to support custom animation origins */
-    transform-origin: var(--ui-modal-custom-origin, center) !important;
+  .ui-modal {
+    background-color: rgb(0 0 0 / 40%);
   }
 
-  .ui-modal.has-custom-origin.fade-in-scale-up-transition-enter-active,
-  .ui-modal.has-custom-origin.fade-in-scale-up-transition-leave-active,
-  .ui-modal.has-custom-origin.fade-in-scale-up-transition-enter-to,
-  .ui-modal.has-custom-origin.fade-in-scale-up-transition-leave-to {
-    transform-origin: var(--ui-modal-custom-origin, center) !important;
+  .ui-modal-enter-active,
+  .ui-modal-leave-active {
+    transition: background-color 0.25s cubic-bezier(0, 0, 0.2, 1);
   }
 
-  .ui-modal-container {
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--ui-box-shadow-big);
-    border-radius: var(--ui-border-radius-2);
-    background-color: white;
-    overflow: hidden;
+  .ui-modal-enter-from,
+  .ui-modal-leave-to {
+    background-color: rgb(0 0 0 / 0%);
   }
 
-  .ui-modal-size-small {
-    width: 480px;
+  .ui-modal-enter-active .ui-modal-surface {
+    /* Match the old Naive UI modal enter easing so the scale-up feels more obvious. */
+    transition:
+      transform 0.25s cubic-bezier(0, 0, 0.2, 1),
+      opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
   }
 
-  .ui-modal-size-medium {
-    width: 640px;
+  .ui-modal-leave-active .ui-modal-surface {
+    /* Leave uses the old ease-in curve so the modal collapses back more decisively. */
+    transition:
+      transform 0.25s cubic-bezier(0.4, 0, 1, 1),
+      opacity 0.25s cubic-bezier(0.4, 0, 1, 1);
   }
 
-  .ui-modal-size-large {
-    width: 960px;
-  }
-
-  .ui-modal-size-full {
-    width: 100%;
-    margin: 16px;
+  .ui-modal-enter-from .ui-modal-surface,
+  .ui-modal-leave-to .ui-modal-surface {
+    transform: scale(0.5);
+    opacity: 0;
   }
 }
 </style>

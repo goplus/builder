@@ -14,6 +14,7 @@ import { type GlobalThemeOverrides } from 'naive-ui'
 import { inject, type InjectionKey } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import * as uiVariables from './tokens'
+import { provideModalStack } from './modal/stack'
 import { providePopupStack } from './popup'
 import { getCssVars } from './tokens/utils'
 import { useProvideLastClickEvent } from './utils'
@@ -145,6 +146,7 @@ const nConfigProviderEl = computed(() => nConfigProvider.value?.$el)
 provideRootContainer(nConfigProviderEl)
 providePopupContainer(nConfigProviderEl)
 provideModalContainer(nConfigProviderEl)
+provideModalStack()
 providePopupStack()
 
 useProvideLastClickEvent()

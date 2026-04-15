@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { shallowRef, watch, type CSSProperties } from 'vue'
-import { useLastClickEvent, useModalContainer } from '../utils'
+import { computed } from 'vue'
+import { useModalContainer } from '../utils'
 import { useModalEsc } from './UIModalProvider.vue'
-
-// Note:
-// We are not using NaiveUI's modal because it causes issue when components inside the modal mount/unmount dynamically.
-// You can find more information about the issue in https://github.com/goplus/builder/pull/2029#discussion_r2300530412 .
+import { useModalSurface } from './use-modal-surface'
 
 const props = defineProps<{
   visible?: boolean
@@ -20,23 +17,14 @@ const emit = defineEmits<{
   'update:visible': [visible: boolean]
 }>()
 
-const lastClickEvent = useLastClickEvent()
-const modalTransformStyle = shallowRef<CSSProperties | null>(null)
-// Use the position of last click event as the transform origin of Modal, so that the modal appears from & disappears to the clicked position.
-function updateModalTransformStyle() {
-  modalTransformStyle.value =
-    lastClickEvent.value == null ? null : { transformOrigin: `${lastClickEvent.value.x}px ${lastClickEvent.value.y}px` }
-}
-
-watch(
-  () => props.visible,
-  async (visible) => {
-    if (visible) updateModalTransformStyle()
-  },
-  { immediate: true }
-)
-
 const attachTo = useModalContainer()
+const { surfaceRootAttrs, setContentRef, transformStyle } = useModalSurface({
+  visible: computed(() => props.visible ?? false)
+})
+
+function getModalTransformStyle() {
+  return transformStyle.value
+}
 
 useModalEsc(
   () => props.active ?? true,
@@ -47,7 +35,13 @@ useModalEsc(
 <template>
   <Teleport :to="attachTo">
     <Transition>
-      <div v-if="visible" class="ui-full-screen-modal fixed inset-0 z-100" :style="modalTransformStyle">
+      <div
+        v-if="visible"
+        v-bind="surfaceRootAttrs"
+        :ref="setContentRef"
+        class="ui-full-screen-modal fixed inset-0 z-1100"
+        :style="getModalTransformStyle()"
+      >
         <div
           v-radar="{ name: 'Full screen modal', desc: 'A full screen modal dialog for specific purpose' }"
           class="h-screen w-screen flex flex-col bg-grey-100"
