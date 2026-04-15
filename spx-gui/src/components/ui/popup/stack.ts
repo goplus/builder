@@ -28,10 +28,9 @@ export type PopupStack = {
   getTopmostOpenEntry(): PopupStackEntry | null
 }
 
-let nextPopupId = 0
-
 export function createPopupStack(): PopupStack {
   const entries = shallowReactive<PopupStackEntry[]>([])
+  let nextPopupId = 0
 
   function getEntry(id: number) {
     return entries.find((entry) => entry.id === id) ?? null

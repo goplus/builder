@@ -1,6 +1,6 @@
 import { type InjectionKey, provide, type Ref, inject, ref, watchEffect } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
-import { findPopupRoot } from '../popup'
+import { findPopupRoot } from '../popup/stack'
 export { cn, type ClassDictionary, type ClassValue } from './cn'
 export {
   createRecipe,

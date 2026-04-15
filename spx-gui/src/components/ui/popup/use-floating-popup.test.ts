@@ -112,7 +112,7 @@ describe('useFloatingPopup', () => {
     await flushFloatingEffects()
 
     expect(floatingMocks.autoUpdate).toHaveBeenCalledTimes(1)
-    expect(floatingMocks.computePosition).toHaveBeenCalledTimes(2)
+    expect(floatingMocks.computePosition).toHaveBeenCalledTimes(1)
     expect(popup.floatingStyle.value).toEqual({
       position: 'fixed',
       left: '12px',
@@ -155,7 +155,10 @@ describe('useFloatingPopup', () => {
     const cleanup = vi.fn()
     let resolvePosition: ((value: MockPositionResult) => void) | null = null
 
-    floatingMocks.autoUpdate.mockReturnValue(cleanup)
+    floatingMocks.autoUpdate.mockImplementation((_reference, _floating, update) => {
+      void update()
+      return cleanup
+    })
     floatingMocks.computePosition.mockImplementation(
       () =>
         new Promise<MockPositionResult>((resolve) => {

@@ -3,7 +3,7 @@ import { cloneVNode, Comment, Fragment, h, mergeProps, Text, type VNode } from '
 export function renderPopupTrigger(triggerNodes: VNode[] | undefined, triggerProps: Record<string, unknown>) {
   const nodes = flattenRenderableTriggerNodes(triggerNodes ?? [])
   if (nodes.length === 0) return null
-  if (nodes.length === 1) return cloneVNode(nodes[0], mergeProps(triggerProps, nodes[0].props ?? {}), true)
+  if (nodes.length === 1) return cloneVNode(nodes[0], mergeProps(nodes[0].props ?? {}, triggerProps), true)
   return h('span', triggerProps, nodes)
 }
 

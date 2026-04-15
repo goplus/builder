@@ -176,6 +176,49 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).not.toContain('Dropdown content')
   })
 
+  it('keeps the internal trigger ref working even when the trigger slot node also defines a ref', async () => {
+    let userTriggerRef: HTMLElement | null = null
+
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () =>
+                h(
+                  UIDropdown,
+                  { trigger: 'click' },
+                  {
+                    trigger: () =>
+                      h(
+                        'button',
+                        {
+                          ref: ((el: Element | null) => {
+                            userTriggerRef = el instanceof HTMLElement ? el : null
+                          }) as any,
+                          'data-test-id': 'trigger'
+                        },
+                        'Open'
+                      ),
+                    default: () => h('div', 'Dropdown content')
+                  }
+                )
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const triggerEl = wrapper.get('[data-test-id="trigger"]').element as HTMLElement
+
+    await wrapper.get('[data-test-id="trigger"]').trigger('click')
+    await flushDropdown()
+
+    expect(userTriggerRef).toBe(triggerEl)
+    expect(floatingMocks.computePosition).toHaveBeenCalled()
+    expect(floatingMocks.computePosition.mock.calls[0]?.[0]).toBe(triggerEl)
+  })
+
   it('only closes the topmost nested dropdown on outside click within the parent dropdown', async () => {
     const wrapper = mount(
       defineComponent({

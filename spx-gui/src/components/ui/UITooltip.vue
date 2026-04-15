@@ -14,6 +14,7 @@ import {
   mergeProps,
   onScopeDispose,
   ref,
+  watch,
   useAttrs,
   useSlots,
   type CSSProperties,
@@ -53,12 +54,14 @@ const props = withDefaults(
     placement?: Placement
     visible?: boolean
     delay?: number
+    disabled?: boolean
     class?: ClassValue
   }>(),
   {
     placement: 'top',
     visible: undefined,
     delay: 600,
+    disabled: false,
     class: undefined
   }
 )
@@ -99,6 +102,7 @@ const popupStyle = computed(
 const arrowInlineStyle = computed(() => ({ ...arrowStyle.value }) satisfies CSSProperties)
 
 function updateVisible(visible: boolean) {
+  if (props.disabled && visible) return
   if (visible === visibleComputed.value) return
   emit('update:visible', visible)
   internalVisibleRef.value = visible
@@ -126,6 +130,12 @@ function clearTimer(timerRef: typeof openTimerRef) {
 }
 
 function scheduleOpen() {
+  if (props.disabled) {
+    clearTimer(openTimerRef)
+    clearTimer(closeTimerRef)
+    updateVisible(false)
+    return
+  }
   clearTimer(closeTimerRef)
   clearTimer(openTimerRef)
   openTimerRef.value = window.setTimeout(() => {
@@ -150,6 +160,7 @@ function handleTriggerMouseleave() {
 }
 
 function handleContentMouseenter() {
+  if (props.disabled) return
   clearTimer(closeTimerRef)
   updateVisible(true)
 }
@@ -164,6 +175,17 @@ onScopeDispose(() => {
   clearTimer(openTimerRef)
   clearTimer(closeTimerRef)
 })
+
+watch(
+  () => props.disabled,
+  (disabled) => {
+    if (!disabled) return
+    clearTimer(openTimerRef)
+    clearTimer(closeTimerRef)
+    updateVisible(false)
+  },
+  { immediate: true }
+)
 
 const triggerProps = computed(() =>
   mergeProps(attrs, {
