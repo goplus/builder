@@ -77,11 +77,11 @@ const handleContentInput = debounce(() => {
     margin-top: 24px;
   }
 
-  .ui-form-item :deep(.n-form-item-feedback-wrapper) {
+  .ui-form-item .n-form-item-feedback-wrapper {
     line-height: 1.57143;
   }
 
-  .ui-form-item :deep(.n-form-item-feedback-wrapper):empty {
+  .ui-form-item .n-form-item-feedback-wrapper:empty {
     display: none;
   }
 }
