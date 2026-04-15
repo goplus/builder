@@ -86,6 +86,8 @@ export function useFloatingPopup(options: UseFloatingPopupOptions) {
     const floatingEl = floatingRef.value
     const virtualAnchor = resolveMaybeRef(options.virtualAnchor)
     const reference = resolveReferenceElement(referenceRef.value, virtualAnchor)
+    // Read reactive deps here so watchEffect re-runs when they change,
+    // even though updatePosition consumes them asynchronously.
     if (options.showArrow != null) void resolveMaybeRef(options.showArrow, false)
     if (options.placement != null) void resolveMaybeRef(options.placement, 'bottom')
     if (options.offset != null) void resolveMaybeRef(options.offset, { x: 0, y: 0 })
@@ -99,7 +101,6 @@ export function useFloatingPopup(options: UseFloatingPopupOptions) {
     const cleanup = autoUpdate(reference, floatingEl, () => {
       void updatePosition(signal)
     })
-    void updatePosition(signal)
 
     onCleanup(() => {
       cleanup()
