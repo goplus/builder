@@ -67,7 +67,6 @@ const emit = defineEmits<{
   'update:visible': [boolean]
 }>()
 
-const hoverCloseDelay = 100
 const attrs = useAttrs()
 const slots = useSlots()
 const attachTo = usePopupContainer()
@@ -85,7 +84,7 @@ const transformOrigin = computed(() =>
 )
 const rootClass = computed(() =>
   cn(
-    'ui-tooltip ui-popup-scale-fade-in fixed z-[1000] rounded-sm bg-grey-1000 px-2 py-[7px] text-xs text-grey-100 shadow-sm',
+    'fixed z-1000 rounded-sm bg-grey-1000 px-2 py-[7px] text-xs text-grey-100 shadow-sm',
     props.class
   )
 )
@@ -142,7 +141,7 @@ function scheduleClose() {
   clearTimer(closeTimerRef)
   closeTimerRef.value = window.setTimeout(() => {
     updateVisible(false)
-  }, hoverCloseDelay)
+  }, 100)
 }
 
 function handleTriggerMouseenter() {
@@ -184,17 +183,20 @@ function renderTriggerNode() {
 <template>
   <RenderTrigger :render-node="renderTriggerNode" />
 
-  <Teleport v-if="visibleComputed && attachTo != null" :to="attachTo">
-    <div
-      v-bind="popup.rootAttrs"
-      :ref="setContentRef"
-      :class="rootClass"
-      :style="popupStyle"
-      @mouseenter="handleContentMouseenter"
-      @mouseleave="handleContentMouseleave"
-    >
-      <div ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
-      <slot></slot>
-    </div>
+  <Teleport v-if="attachTo != null" :to="attachTo">
+    <Transition name="ui-popup-scale-fade">
+      <div
+        v-if="visibleComputed"
+        v-bind="popup.rootAttrs"
+        :ref="setContentRef"
+        :class="rootClass"
+        :style="popupStyle"
+        @mouseenter="handleContentMouseenter"
+        @mouseleave="handleContentMouseleave"
+      >
+        <div ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
+        <slot></slot>
+      </div>
+    </Transition>
   </Teleport>
 </template>

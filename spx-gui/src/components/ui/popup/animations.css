@@ -4,6 +4,20 @@
     animation: ui-popup-scale-fade-in 0.15s cubic-bezier(0, 0, 0.2, 1);
   }
 
+  .ui-popup-scale-fade-enter-active,
+  .ui-popup-scale-fade-leave-active {
+    transform-origin: var(--ui-popup-transform-origin, center);
+    transition:
+      opacity 0.15s cubic-bezier(0, 0, 0.2, 1),
+      transform 0.15s cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  .ui-popup-scale-fade-enter-from,
+  .ui-popup-scale-fade-leave-to {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
   @keyframes ui-popup-scale-fade-in {
     from {
       opacity: 0;
