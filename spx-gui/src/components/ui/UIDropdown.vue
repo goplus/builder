@@ -117,7 +117,7 @@ const transformOrigin = computed(() =>
 )
 const rootClass = computed(() =>
   cn(
-    'ui-popup-scale-fade-in fixed z-[1000] rounded-sm bg-grey-100 shadow-big',
+    'fixed z-1000 rounded-sm bg-grey-100 shadow-big',
     props.showArrow ? 'overflow-visible' : 'overflow-hidden',
     props.class
   )
@@ -284,17 +284,20 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: HTMLElement 
 <template>
   <RenderTrigger :render-node="renderTriggerNode" />
 
-  <Teleport v-if="visibleComputed && attachTo != null" :to="attachTo">
-    <div
-      v-bind="popup.rootAttrs"
-      :ref="setContentRef"
-      :class="rootClass"
-      :style="popupStyle"
-      @mouseenter="handleContentMouseenter"
-      @mouseleave="handleContentMouseleave"
-    >
-      <div v-if="props.showArrow" ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
-      <slot></slot>
-    </div>
+  <Teleport v-if="attachTo != null" :to="attachTo">
+    <Transition name="ui-popup-scale-fade">
+      <div
+        v-if="visibleComputed"
+        v-bind="popup.rootAttrs"
+        :ref="setContentRef"
+        :class="rootClass"
+        :style="popupStyle"
+        @mouseenter="handleContentMouseenter"
+        @mouseleave="handleContentMouseleave"
+      >
+        <div v-if="props.showArrow" ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
+        <slot></slot>
+      </div>
+    </Transition>
   </Teleport>
 </template>

@@ -67,7 +67,6 @@ const emit = defineEmits<{
   'update:visible': [boolean]
 }>()
 
-const hoverCloseDelay = 100
 const attrs = useAttrs()
 const slots = useSlots()
 const attachTo = usePopupContainer()
@@ -84,10 +83,7 @@ const transformOrigin = computed(() =>
   resolvePopupTransformOrigin(props.placement, arrowStyle.value, { showArrow: true, arrowSize: 8 })
 )
 const rootClass = computed(() =>
-  cn(
-    'ui-tooltip ui-popup-scale-fade-in fixed z-[1000] rounded-sm bg-grey-1000 px-2 py-[7px] text-12/[1.5] text-grey-100 shadow-small',
-    props.class
-  )
+  cn('fixed z-1000 rounded-sm bg-grey-1000 px-2 py-[7px] text-12/[1.5] text-grey-100 shadow-small', props.class)
 )
 const arrowClass = 'absolute size-2 rotate-45 pointer-events-none bg-grey-1000'
 const popupStyle = computed(
@@ -142,7 +138,7 @@ function scheduleClose() {
   clearTimer(closeTimerRef)
   closeTimerRef.value = window.setTimeout(() => {
     updateVisible(false)
-  }, hoverCloseDelay)
+  }, 100)
 }
 
 function handleTriggerMouseenter() {
@@ -184,17 +180,20 @@ function renderTriggerNode() {
 <template>
   <RenderTrigger :render-node="renderTriggerNode" />
 
-  <Teleport v-if="visibleComputed && attachTo != null" :to="attachTo">
-    <div
-      v-bind="popup.rootAttrs"
-      :ref="setContentRef"
-      :class="rootClass"
-      :style="popupStyle"
-      @mouseenter="handleContentMouseenter"
-      @mouseleave="handleContentMouseleave"
-    >
-      <div ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
-      <slot></slot>
-    </div>
+  <Teleport v-if="attachTo != null" :to="attachTo">
+    <Transition name="ui-popup-scale-fade">
+      <div
+        v-if="visibleComputed"
+        v-bind="popup.rootAttrs"
+        :ref="setContentRef"
+        :class="rootClass"
+        :style="popupStyle"
+        @mouseenter="handleContentMouseenter"
+        @mouseleave="handleContentMouseleave"
+      >
+        <div ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
+        <slot></slot>
+      </div>
+    </Transition>
   </Teleport>
 </template>
