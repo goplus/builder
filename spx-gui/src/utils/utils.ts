@@ -66,6 +66,19 @@ export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>
   return r
 }
 
+/** Like (immediate) `watch`, but the effect function can return a value, which will be exposed as "result". */
+export function useWatchResult<T, P>(source: WatchSource<T>, getterWithEffect: (value: T, onCleanup: OnCleanup) => P) {
+  const r = shallowRef<P | null>(null)
+  watch(
+    source,
+    (value, _, onCleanup) => {
+      r.value = getterWithEffect(value, onCleanup)
+    },
+    { immediate: true }
+  )
+  return r as ShallowRef<P>
+}
+
 /** Do math round with given decimal places */
 export function round(num: number, decimalPlaceNum = 0) {
   const factor = 10 ** decimalPlaceNum

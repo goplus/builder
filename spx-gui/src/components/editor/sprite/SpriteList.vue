@@ -87,10 +87,6 @@ const handleSpriteGenClick = useMessageHandle(
   async (gen: SpriteGen) => {
     const result = await invokeSpriteGenModal(editorCtx.project, gen)
 
-    // TODO: should disposal of gen be implemented in `useSpriteGenModal`?
-    gen.dispose()
-    editorCtx.state.genState.removeSprite(gen.id)
-
     await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
       editorCtx.project.addSprite(result)
       await result.autoFit()

@@ -157,10 +157,6 @@ export class BackdropGen extends Disposable {
     this.imageIndex = index
   }
 
-  get isPreparePhase() {
-    return this.result == null
-  }
-
   result: Backdrop | null
 
   async finish() {

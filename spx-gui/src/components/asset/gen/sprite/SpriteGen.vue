@@ -45,17 +45,12 @@ provideLocalEditorCtx(editorCtxInGen)
 </script>
 
 <template>
-  <SpriteGenPhaseContent
-    v-if="gen.contentPreparingState.status === 'finished'"
-    :gen="gen"
-    @collapse="emit('collapse')"
-    @resolved="emit('resolved', $event)"
-  />
   <SpriteGenPhaseSettings
-    v-else
+    v-if="gen.isPreparePhase"
     :gen="gen"
     :description-placeholder="descriptionPlaceholder"
     :library-search-enabled="librarySearchEnabled"
     @resolved="emit('resolved', $event)"
   />
+  <SpriteGenPhaseContent v-else :gen="gen" @collapse="emit('collapse')" @resolved="emit('resolved', $event)" />
 </template>

@@ -20,7 +20,7 @@ import { Sound } from '@/models/spx/sound'
 import { Sprite } from '@/models/spx/sprite'
 import { validateAssetDisplayName, getAssetDisplayNameTip } from '@/models/spx/common/asset-name'
 import type { AssetModel, PartialAssetData } from '@/models/spx/common/asset'
-import { backdrop2Asset, sound2Asset, sprite2Asset } from '@/models/spx/common/asset'
+import { backdrop2Asset, humanizeAssetType, sound2Asset, sprite2Asset } from '@/models/spx/common/asset'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { useSignedInUser } from '@/stores/user'
@@ -157,18 +157,7 @@ async function addAssetWithPartialData({
     sortOrder: 'desc'
   })
   if (assets.length) {
-    let assetTypeName = t({ en: 'asset', zh: '素材' })
-    switch (type) {
-      case AssetType.Sprite:
-        assetTypeName = t({ en: 'sprite', zh: '精灵' })
-        break
-      case AssetType.Backdrop:
-        assetTypeName = t({ en: 'backdrop', zh: '背景' })
-        break
-      case AssetType.Sound:
-        assetTypeName = t({ en: 'sound', zh: '声音' })
-        break
-    }
+    const assetTypeName = humanizeAssetType(type)
     await confirm({
       type: 'warning',
       title: t({

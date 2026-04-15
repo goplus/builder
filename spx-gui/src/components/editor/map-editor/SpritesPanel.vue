@@ -35,7 +35,7 @@ watch(
 const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--panel-color-', uiVariables.color.sprite))
 
-function handleSpriteClick(sprite: Sprite) {
+function selectSprite(sprite: Sprite) {
   emit('update:selectedSprite', sprite)
 }
 
@@ -43,7 +43,7 @@ const addFromLocalFile = useAddSpriteFromLocalFile()
 const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const sprite = await addFromLocalFile(props.project)
-    handleSpriteClick(sprite)
+    selectSprite(sprite)
   },
   {
     en: 'Failed to add sprite from local file',
@@ -55,7 +55,7 @@ const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sprites = await addAssetFromLibrary(props.project, AssetType.Sprite)
-    handleSpriteClick(sprites[0])
+    selectSprite(sprites[0])
   },
   {
     en: 'Failed to add sprite from asset library',
@@ -71,7 +71,7 @@ const handleGenerate = useMessageHandle(
       editorCtx.project.addSprite(sprite)
       await sprite.autoFit()
     })
-    handleSpriteClick(sprite)
+    selectSprite(sprite)
   },
   {
     en: 'Failed to generate sprite',

@@ -29,19 +29,22 @@ import {
   UIIcon,
   UIModal,
   UIModalClose,
-  useConfirmDialog,
-  type ModalTransformOrigin
+  useConfirmDialog
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
+import { useWatchResult } from '@/utils/utils'
 import { useQuery } from '@/utils/query'
 import { type SpxProject } from '@/models/spx/project'
-import { Sprite } from '@/models/spx/sprite'
-import { Backdrop } from '@/models/spx/backdrop'
-import { addAssetToProject, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import {
+  asset2Backdrop,
+  asset2Sound,
+  asset2Sprite,
+  humanizeAssetType,
+  type AssetModel
+} from '@/models/spx/common/asset'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
@@ -53,7 +56,7 @@ import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { ownerAll } from '@/apis/common'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
-import { useAssetGen } from '../gen/use-asset-gen'
+import { initBackdropGen, initSpriteGen, type GenHelpers } from '../gen/modal'
 
 import genAssetIcon from './gen-asset.svg?raw'
 import spriteBanner from './asset-library-sprite-banner.png'
@@ -64,21 +67,13 @@ const props = defineProps<{
   type: AssetType
   visible: boolean
   project: SpxProject
-  /**
-   * When collapse is triggered, we first need to use genCollapseHandler to implement
-   * the logic for collapsing generation (e.g., adding it to the editor-state context),
-   * then return the target position for UIModal's closing animation.
-   * Finally, the UIModal's cancelled event will be triggered.
-   */
-  genCollapseHandler: (gen: AssetGenModel) => Promise<ModalTransformOrigin | null>
+  genHelpers: GenHelpers
 }>()
 
 const emit = defineEmits<{
   cancelled: []
   resolved: [AssetModel[]]
 }>()
-
-const editorCtx = useEditorCtx()
 
 const i18n = useI18n()
 const searchInput = ref('')
@@ -107,15 +102,30 @@ const SettingsInput = computed<Component<{ gen: SpriteGen | BackdropGen }> | nul
     })[props.type]
 )
 
-const typeRef = computed(() => props.type)
-const { assetGen, keepAlive, reset: resetAssetGen } = useAssetGen(props.project, typeRef)
+const genVersion = ref(0)
+function resetGen() {
+  genVersion.value++
+}
 
-// When search results are empty, SettingsInput is shown inline and may modify assetGen state.
-// Reset assetGen on keyword change to avoid stale state if the user searches again without entering gen phase.
-// TODO: Recreating assetGen on every keyword change might be too frequent. Consider constructing it only when needed.
-watch(keyword, () => resetAssetGen(props.type))
+const gen = useWatchResult(
+  () => [props.type, props.project, props.genHelpers, genVersion.value] as const, // depend on genVersion so that it resets when genVersion changes
+  ([type, project, genHelpers], onCleanup) => {
+    if (type === AssetType.Sprite) return initSpriteGen(i18n, project, genHelpers, onCleanup)
+    if (type === AssetType.Backdrop) return initBackdropGen(i18n, project, onCleanup)
+    if (type === AssetType.Sound) return null
+    throw new Error(`Unsupported asset type: ${type}`)
+  }
+)
 
-const backButtonVisible = computed(() => (assetGen.value != null ? assetGen.value.isPreparePhase : false))
+// When search results are empty, SettingsInput is shown inline and may modify gen state.
+// Reset gen on keyword change to avoid stale state if the user searches again without entering gen phase.
+// TODO: Recreating gen on every keyword change might be too frequent. Consider constructing it only when needed.
+watch(keyword, resetGen)
+
+const allowBackFromGen = computed(() => {
+  if (gen.value instanceof SpriteGen) return gen.value.isPreparePhase
+  return true
+})
 
 const headerStyle = computed(() => {
   const banner = {
@@ -128,12 +138,7 @@ const headerStyle = computed(() => {
   }
 })
 
-const entityMessages = {
-  [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
-  [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
-  [AssetType.Sound]: { en: 'sound', zh: '声音' }
-}
-const entityMessage = computed(() => entityMessages[props.type])
+const entityMessage = computed(() => humanizeAssetType(props.type))
 
 const recommended = computed(() => searchRecommendations[props.type])
 const ownerOptions = {
@@ -179,7 +184,7 @@ const isLastPage = computed(() => {
   return page.value === pageTotal.value
 })
 const shouldShowGenSuggestion = computed(() => {
-  return (resultTooFew.value || isLastPage.value) && assetGen.value != null && owner.value === 'all'
+  return (resultTooFew.value || isLastPage.value) && gen.value != null && owner.value === 'all'
 })
 const genSuggestionMessage = computed(() => {
   if (resultTooFew.value) {
@@ -198,15 +203,17 @@ const selected = shallowReactive<AssetData[]>([])
 
 const handleConfirm = useMessageHandle(
   async () => {
-    const action = {
-      name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
-    }
-    const assetModels = await editorCtx.state.history.doAction(action, () =>
-      Promise.all(selected.map((asset) => addAssetToProject(asset, props.project)))
+    const assetModels = await Promise.all(
+      selected.map((data) => {
+        if (data.type === AssetType.Sprite) return asset2Sprite(data)
+        if (data.type === AssetType.Backdrop) return asset2Backdrop(data)
+        if (data.type === AssetType.Sound) return asset2Sound(data)
+        throw new Error(`Unsupported asset type: ${data.type}`)
+      })
     )
     emit('resolved', assetModels)
   },
-  { en: 'Failed to add asset', zh: '素材添加失败' }
+  { en: 'Failed to parse asset', zh: '素材解析失败' }
 )
 
 function isSelected(asset: AssetData) {
@@ -219,15 +226,16 @@ async function handleAssetClick(asset: AssetData) {
   else selected.splice(index, 1)
 }
 
-/** If in generation phase */
-const isGenPhase = ref(false)
+/** If the user is generating an asset. */
+const isGenerating = ref(false)
 
 function handleGenStart() {
-  isGenPhase.value = true
+  isGenerating.value = true
 }
 
-// Handle returning to the asset library: reset search criteria and recreate assetGen to prevent unexpected intermediate states.
-const handleBackToAssetLibrary = useMessageHandle(
+// Handle returning from generation to asset library:
+// reset search criteria and recreate gen to prevent unexpected intermediate states.
+const handleBackFromGen = useMessageHandle(
   async () => {
     await confirm({
       title: i18n.t({ zh: '返回素材库', en: 'Return to asset library' }),
@@ -240,8 +248,8 @@ const handleBackToAssetLibrary = useMessageHandle(
 
     searchInput.value = ''
     keyword.value = ''
-    isGenPhase.value = false
-    resetAssetGen(props.type)
+    isGenerating.value = false
+    resetGen()
   },
   {
     en: 'Failed to return to asset library',
@@ -250,57 +258,35 @@ const handleBackToAssetLibrary = useMessageHandle(
 ).fn
 
 const modalRef = ref<InstanceType<typeof UIModal> | null>()
-async function handleGenCollapse() {
-  const gen = assetGen.value
-  if (gen == null) throw new Error('asset gen expected')
-  keepAlive(gen)
-  const transformOrigin = await props.genCollapseHandler(gen)
-  if (modalRef.value != null && transformOrigin != null) {
-    modalRef.value.setTransformOrigin(transformOrigin)
+async function collapseGen() {
+  if (gen.value == null) throw new Error('asset gen expected')
+  const genPos = await props.genHelpers.getPos(gen.value)
+  if (modalRef.value != null && genPos != null) {
+    modalRef.value.setTransformOrigin(genPos)
   }
   emit('cancelled')
 }
 
-const handleGenResolved = useMessageHandle(
-  async (model: AssetModel) => {
-    // Consider moving asset addition outside AssetLibraryModal for better separation of concerns.
-    // However, this would introduce a delay between the modal close and assets addition, potentially degrading UX.
-    // TODO: Review this trade-off
-    await editorCtx.state.history.doAction(
-      { name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` } },
-      async () => {
-        if (model instanceof Sprite) {
-          props.project.addSprite(model)
-          await model.autoFit()
-          return
-        }
-        if (model instanceof Backdrop) {
-          props.project.stage.addBackdrop(model)
-        }
-      }
-    )
-    emit('resolved', [model])
-  },
-  { en: 'Failed to add asset', zh: '素材添加失败' }
-).fn
+function handleGenResolved(model: AssetModel) {
+  emit('resolved', [model])
+}
 
-const AssetGenComp = computed(() => {
-  const gen = assetGen.value
-  if (gen == null) return null
-  if (gen instanceof SpriteGen) {
+const GenComp = computed(() => {
+  const g = gen.value
+  if (g instanceof SpriteGen) {
     return (attrs: Record<string, unknown>) =>
       h(SpriteGenComp, {
         ...attrs,
-        gen,
+        gen: g,
         descriptionPlaceholder: keyword.value.trim(),
-        onCollapse: handleGenCollapse,
+        onCollapse: collapseGen,
         onResolved: handleGenResolved
       })
-  } else if (gen instanceof BackdropGen) {
+  } else if (g instanceof BackdropGen) {
     return (attrs: Record<string, unknown>) =>
       h(BackdropGenComp, {
         ...attrs,
-        gen,
+        gen: g,
         descriptionPlaceholder: keyword.value.trim(),
         onResolved: handleGenResolved
       })
@@ -312,9 +298,13 @@ const confirm = useConfirmDialog()
 
 const handleModalClose = useMessageHandle(
   async () => {
-    if (isGenPhase.value) {
-      // It may be more user-friendly to do collapse automatically, or notify user about collapsing
-      // TODO: Review strategy here later
+    if (gen.value == null || !isGenerating.value) {
+      emit('cancelled')
+      return
+    }
+    if (!props.genHelpers.isPersisted(gen.value)) {
+      // If the gen is not persisted, closing the modal means dropping the current gen,
+      // which may cause data loss, so we should confirm with the user.
       const em = entityMessage.value
       await confirm({
         title: i18n.t({ zh: `退出${em.zh}生成？`, en: `Exit ${em.en} generation?` }),
@@ -324,15 +314,18 @@ const handleModalClose = useMessageHandle(
         }),
         confirmText: i18n.t({ en: 'Exit', zh: '退出' })
       })
+      emit('cancelled')
+    } else {
+      // If the gen is already persisted, we can simply collapse the modal without worrying about data loss.
+      return collapseGen()
     }
-    emit('cancelled')
   },
   { en: 'Failed to exit modal', zh: '退出失败' }
 ).fn
 
 const title = computed(() => {
   const em = entityMessage.value
-  if (isGenPhase.value) return { en: `Generate ${em.en}`, zh: `生成${em.zh}` }
+  if (isGenerating.value) return { en: `Generate ${em.en}`, zh: `生成${em.zh}` }
   return { en: `Choose a ${em.en}`, zh: `选择${em.zh}` }
 })
 </script>
@@ -349,12 +342,12 @@ const title = computed(() => {
     <header class="h-14 flex items-center justify-between border-b border-grey-400 px-6">
       <div class="flex items-center gap-middle">
         <UIButton
-          v-if="isGenPhase && backButtonVisible"
+          v-if="isGenerating && allowBackFromGen"
           class="-rotate-90"
           color="white"
           icon="arrowAlt"
           variant="stroke"
-          @click="handleBackToAssetLibrary"
+          @click="handleBackFromGen"
         ></UIButton>
         <h2 class="text-16 text-title">{{ $t(title) }}</h2>
       </div>
@@ -362,8 +355,8 @@ const title = computed(() => {
       <UIModalClose @click="handleModalClose" />
     </header>
 
-    <template v-if="isGenPhase && AssetGenComp != null">
-      <AssetGenComp class="min-h-0 flex-[1_1_0]" />
+    <template v-if="isGenerating && GenComp != null">
+      <GenComp class="min-h-0 flex-[1_1_0]" />
     </template>
     <template v-else>
       <div class="min-h-0 flex-[1_1_0] flex flex-col">
@@ -413,7 +406,7 @@ const title = computed(() => {
                 </UIChipRadioGroup>
               </div>
               <ListResultWrapper :query-ret="queryRet" :height="436">
-                <template v-if="SettingsInput != null && assetGen != null && owner === 'all'" #empty>
+                <template v-if="SettingsInput != null && gen != null && owner === 'all'" #empty>
                   <div class="mx-auto h-109 flex flex-col items-center gap-6 pt-10">
                     <div class="text-grey-700">
                       <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>
@@ -428,8 +421,8 @@ const title = computed(() => {
                       </span>
                     </div>
                     <SettingsInput
-                      class="w-146"
-                      :gen="assetGen"
+                      class="w-146!"
+                      :gen="gen"
                       :description-placeholder="keyword"
                       @submit="handleGenStart"
                     />

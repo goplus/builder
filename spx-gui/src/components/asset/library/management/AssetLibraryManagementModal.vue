@@ -5,6 +5,7 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { listAsset, AssetType, type AssetData, Visibility, updateAsset, deleteAsset } from '@/apis/asset'
+import { humanizeAssetType } from '@/models/spx/common/asset'
 import {
   UITextInput,
   UIIcon,
@@ -48,13 +49,7 @@ const ItemComponent = computed(
     })[props.type]
 )
 
-const entityMessages = {
-  [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
-  [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
-  [AssetType.Sound]: { en: 'sound', zh: '声音' }
-}
-
-const entityMessage = computed(() => entityMessages[props.type])
+const entityMessage = computed(() => humanizeAssetType(props.type))
 
 const searchInput = ref('')
 const keyword = ref('')
