@@ -27,15 +27,13 @@
 - Root class handling
 
   - Current cases fall into three buckets: DOM-root components with merged utilities, single-root semantic wrappers that rely on inherited classes, and Naive UI-root wrappers whose root-level styling behavior still needs component-specific judgment
-  - If the root is a normal DOM element and the component already owns root utility classes, prefer an explicit `class?: ClassValue` prop and merge it with `cn(..., props.class ?? null)` so external root classes participate in `tailwind-merge`
+  - If the root is a normal DOM element and the component already owns root utility classes, prefer an explicit `class?: ClassValue` prop and merge it with `cn(..., props.class)` so external root classes participate in `tailwind-merge`
+  - Current modal wrappers such as `UIModal` and `UIFullScreenModal` follow this DOM-root pattern: external `class/style/data-*` land on the surface element, while backdrop behavior stays internal
   - If the component is a single-root wrapper whose styling still depends on semantic hook classes in `@layer components`, prefer Vue's default root attr/class/style inheritance unless explicit root attr control is needed
   - If the rendered root is primarily a Naive UI component, remember that Naive UI styles live in the `naive-ui` layer while our authored UI styles live in `@layer components`, so component-layer rules have higher cascade priority than Naive UI defaults on the same element/property pair
   - Even so, Naive UI-root components still do not behave exactly like DOM-root utility wrappers: some visual details live on internal child nodes, teleported content, or Naive UI theme tokens instead of the exposed root element
   - Current Naive UI-root components that need extra care are:
 
-    - `UIDropdown` → `NPopover`
-    - `UITooltip` → `NTooltip`
-    - `UIModal` → `NModal`
     - `UIMessageProvider` → `NMessageProvider`
     - `UISlider` → `NSlider`
     - `UISwitch` → `NSwitch`

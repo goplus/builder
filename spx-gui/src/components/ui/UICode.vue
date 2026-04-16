@@ -14,6 +14,6 @@ const props = defineProps<{
 }>()
 
 const rootClass = computed(() =>
-  cn('rounded-[4px] bg-primary-200 px-1 py-[2px] font-code text-10/[1.6] text-primary-main', props.class ?? null)
+  cn('rounded-[4px] bg-primary-200 px-1 py-[2px] font-code text-10/[1.6] text-primary-main', props.class)
 )
 </script>

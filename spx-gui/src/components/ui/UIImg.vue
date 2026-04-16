@@ -30,7 +30,7 @@ const rootClass = computed(() =>
     // Disable image smoothing to keep pixelated look, so it looks good for pixel art assets.
     // See details in https://github.com/goplus/builder/issues/2214.
     'relative flex items-center justify-center bg-center bg-no-repeat [image-rendering:pixelated]',
-    props.class ?? null
+    props.class
   )
 )
 

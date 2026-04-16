@@ -1,6 +1,6 @@
 <template>
-  <UIDropdownModal
-    v-radar="{ name: 'Sound editor modal', desc: 'Modal for selecting animation sound' }"
+  <UIDropdownForm
+    v-radar="{ name: 'Sound editor dropdown form', desc: 'Dropdown form for selecting animation sound' }"
     :title="$t(actionName)"
     style="width: 320px; max-height: 400px"
     @cancel="emit('close')"
@@ -43,13 +43,13 @@
         </UIMenu>
       </UIDropdown>
     </ul>
-  </UIDropdownModal>
+  </UIDropdownForm>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Animation } from '@/models/spx/animation'
-import { UIDropdownModal, UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
+import { UIDropdownForm, UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from '@/components/editor/stage/sound/SoundItem.vue'
 import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'

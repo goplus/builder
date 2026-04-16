@@ -14,6 +14,8 @@ import { type GlobalThemeOverrides } from 'naive-ui'
 import { inject, type InjectionKey } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import * as uiVariables from './tokens'
+import { provideModalStack } from './modal/stack'
+import { providePopupStack } from './popup'
 import { getCssVars } from './tokens/utils'
 import { useProvideLastClickEvent } from './utils'
 import { providePopupContainer, provideModalContainer, provideRootContainer } from '.'
@@ -84,22 +86,6 @@ const themeOverrides: GlobalThemeOverrides = {
     heightMedium: uiVariables.lineHeight[2],
     heightLarge: uiVariables.lineHeight[3]
   },
-  Popover: {
-    space: '8px', // TODO: some var like gap?
-    arrowOffset: '30px'
-  },
-  Tooltip: {
-    borderRadius: uiVariables.borderRadius[1],
-    boxShadow: uiVariables.boxShadow.small,
-    color: uiVariables.color.grey[1000],
-    textColor: uiVariables.color.grey[100],
-    padding: '7px 8px',
-    peers: {
-      Popover: {
-        arrowOffset: '12px' // TODO: `UITooltip` should be smart enough to use a smaller `arrowOffset` when the trigger element size is small
-      }
-    }
-  },
   Input: {
     border: 'none',
     borderHover: 'none',
@@ -160,6 +146,8 @@ const nConfigProviderEl = computed(() => nConfigProvider.value?.$el)
 provideRootContainer(nConfigProviderEl)
 providePopupContainer(nConfigProviderEl)
 provideModalContainer(nConfigProviderEl)
+provideModalStack()
+providePopupStack()
 
 useProvideLastClickEvent()
 
@@ -174,14 +162,5 @@ const cssVariables = getCssVars('--ui-', uiVariables)
   font-size: var(--ui-font-size-text);
   font-family: var(--ui-font-family-main);
   line-height: 1.57143;
-}
-</style>
-
-<style>
-/* vueuc (dep of naive-ui) uses `pointer-events: all` on children of `v-binder-follower-content`, which wraps `Popover` content in naive-ui. */
-/* It causes pointer behavior issues in popup content. For example, a svg in a `visibility: hidden` element will still be clickable. */
-/* So we override it here to fix the issue. See details in https://github.com/07akioni/vueuc/issues/314 */
-.v-binder-follower-content > * {
-  pointer-events: initial;
 }
 </style>

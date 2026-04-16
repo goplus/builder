@@ -1,46 +1,68 @@
-<template>
-  <NTooltip
-    class="ui-tooltip"
-    trigger="hover"
-    :delay="delay"
-    :to="attachTo"
-    :placement="placement"
-    :show="visible"
-    @update:show="(v) => emit('update:visible', v)"
-  >
-    <template #trigger>
-      <slot name="trigger"></slot>
-    </template>
-    <slot></slot>
-  </NTooltip>
-</template>
+<script lang="ts">
+import type { PopupPlacement } from './popup'
+
+export type Placement = Extract<
+  PopupPlacement,
+  'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'right' | 'left'
+>
+</script>
 
 <script setup lang="ts">
-import { NTooltip } from 'naive-ui'
-
+import {
+  computed,
+  defineComponent,
+  mergeProps,
+  onScopeDispose,
+  ref,
+  useAttrs,
+  useSlots,
+  watch,
+  type CSSProperties,
+  type PropType,
+  type VNode
+} from 'vue'
+import {
+  renderPopupTrigger,
+  resolvePopupElement,
+  resolvePopupTransformOrigin,
+  useFloatingPopup,
+  usePopupRegistration
+} from './popup'
+import { cn, type ClassValue } from './utils'
 import { usePopupContainer } from './utils'
 
-export type Placement = 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'right' | 'left'
-
-// Use defineOptions to add the __popover__ flag to the component instance.
-// In the Naive UI source code (see: https://github.com/tusen-ai/naive-ui/blob/e5323d1dae0ca75b7100296df9695bf78cd81303/src/popover/src/Popover.tsx#L509),
-// the framework also sets `__popover__ = true` internally to mark a component as a Popover-related component.
-// This allows other logic (such as Tooltip, Dropdown, etc.) to check whether __popover__ exists on the instance
-// in order to handle nesting and trigger behaviors correctly.
 defineOptions({
-  __popover__: true
+  name: 'UITooltip',
+  inheritAttrs: false
 })
 
-withDefaults(
+const RenderTrigger = defineComponent({
+  name: 'UITooltipRenderTrigger',
+  props: {
+    renderNode: {
+      type: Function as PropType<() => VNode | null>,
+      required: true
+    }
+  },
+  setup(props) {
+    return () => props.renderNode()
+  }
+})
+
+const props = withDefaults(
   defineProps<{
     placement?: Placement
     visible?: boolean
     delay?: number
+    disabled?: boolean
+    class?: ClassValue
   }>(),
   {
     placement: 'top',
     visible: undefined,
-    delay: 600
+    delay: 600,
+    disabled: false,
+    class: undefined
   }
 )
 
@@ -48,14 +70,153 @@ const emit = defineEmits<{
   'update:visible': [boolean]
 }>()
 
+const attrs = useAttrs()
+const slots = useSlots()
 const attachTo = usePopupContainer()
+const internalVisibleRef = ref(false)
+const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
+const popup = usePopupRegistration(visibleComputed)
+const {
+  referenceRef: triggerRef,
+  floatingRef: contentRef,
+  arrowRef,
+  floatingStyle,
+  arrowStyle
+} = useFloatingPopup({
+  visible: visibleComputed,
+  placement: computed(() => props.placement),
+  offset: computed(() => ({ x: 0, y: 8 })),
+  showArrow: true
+})
+const transformOrigin = computed(() =>
+  resolvePopupTransformOrigin(props.placement, arrowStyle.value, { showArrow: true, arrowSize: 8 })
+)
+const rootClass = computed(() =>
+  cn('fixed z-1000 rounded-sm bg-grey-1000 px-2 py-[7px] text-12/[1.5] text-grey-100 shadow-small', props.class)
+)
+const arrowClass = 'absolute size-2 rotate-45 pointer-events-none bg-grey-1000'
+const popupStyle = computed(
+  () =>
+    ({
+      left: '0px',
+      top: '0px',
+      visibility: floatingStyle.value == null ? 'hidden' : 'visible',
+      '--ui-popup-transform-origin': transformOrigin.value,
+      ...floatingStyle.value
+    }) satisfies CSSProperties
+)
+const arrowInlineStyle = computed(() => ({ ...arrowStyle.value }) satisfies CSSProperties)
+
+function updateVisible(visible: boolean) {
+  if (props.disabled && visible) return
+  if (visible === visibleComputed.value) return
+  emit('update:visible', visible)
+  internalVisibleRef.value = visible
+}
+
+function setTriggerRef(target: Element | { $el?: Element } | null) {
+  triggerRef.value = resolvePopupElement(target)
+}
+function setContentRef(target: Element | { $el?: Element } | null) {
+  contentRef.value = resolvePopupElement(target)
+}
+
+const openTimerRef = ref<number | null>(null)
+const closeTimerRef = ref<number | null>(null)
+
+function clearTimer(timerRef: typeof openTimerRef) {
+  if (timerRef.value == null) return
+  window.clearTimeout(timerRef.value)
+  timerRef.value = null
+}
+
+function scheduleOpen() {
+  if (props.disabled) {
+    clearTimer(openTimerRef)
+    clearTimer(closeTimerRef)
+    updateVisible(false)
+    return
+  }
+  clearTimer(closeTimerRef)
+  clearTimer(openTimerRef)
+  openTimerRef.value = window.setTimeout(() => {
+    updateVisible(true)
+  }, props.delay)
+}
+
+function scheduleClose() {
+  clearTimer(openTimerRef)
+  clearTimer(closeTimerRef)
+  closeTimerRef.value = window.setTimeout(() => {
+    updateVisible(false)
+  }, 100)
+}
+
+function handleTriggerMouseenter() {
+  scheduleOpen()
+}
+
+function handleTriggerMouseleave() {
+  scheduleClose()
+}
+
+function handleContentMouseenter() {
+  if (props.disabled) return
+  clearTimer(closeTimerRef)
+  updateVisible(true)
+}
+
+function handleContentMouseleave() {
+  scheduleClose()
+}
+
+defineExpose({ triggerEl: triggerRef })
+
+onScopeDispose(() => {
+  clearTimer(openTimerRef)
+  clearTimer(closeTimerRef)
+})
+
+watch(
+  () => props.disabled,
+  (disabled) => {
+    if (!disabled) return
+    clearTimer(openTimerRef)
+    clearTimer(closeTimerRef)
+    updateVisible(false)
+  },
+  { immediate: true }
+)
+
+const triggerProps = computed(() =>
+  mergeProps(attrs, {
+    ref: setTriggerRef,
+    onMouseenter: handleTriggerMouseenter,
+    onMouseleave: handleTriggerMouseleave
+  })
+)
+function renderTriggerNode() {
+  return renderPopupTrigger(slots.trigger?.(), triggerProps.value)
+}
 </script>
 
-<style>
-@layer components {
-  .ui-tooltip {
-    font-size: 12px; /* TODO: some text-size related var? */
-    line-height: 1.5;
-  }
-}
-</style>
+<template>
+  <RenderTrigger :render-node="renderTriggerNode" />
+
+  <Teleport v-if="attachTo != null" :to="attachTo">
+    <Transition name="ui-popup-scale-fade">
+      <div
+        v-if="visibleComputed"
+        v-bind="popup.rootAttrs"
+        :ref="setContentRef"
+        :class="rootClass"
+        :style="popupStyle"
+        @mouseenter="handleContentMouseenter"
+        @mouseleave="handleContentMouseleave"
+      >
+        <div ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
+        <slot></slot>
+      </div>
+    </Transition>
+  </Teleport>
+</template>

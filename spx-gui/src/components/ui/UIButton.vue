@@ -277,7 +277,7 @@ const classes = computed(() =>
     iconOnly: iconOnly.value
   })
 )
-const rootClass = computed(() => classes.value.root(props.class ?? null))
+const rootClass = computed(() => classes.value.root(props.class))
 const contentClass = computed(() => classes.value.content())
 const iconClass = computed(() => classes.value.icon())
 

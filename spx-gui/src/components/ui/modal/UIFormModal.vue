@@ -37,9 +37,8 @@ withDefaults(
     autoFocus?: boolean
     maskClosable?: boolean
     centerTitle?: boolean
-    // maybe it is better to let caller specify the body class instead of body style,
-    // but it is now not possible with scoped style & naive-ui `Modal`, which is similar to the issue we encountered in `UIDropdown.vue`
-    // Or maybe we need a modal which has header while no body padding by default?
+    // Callers can tweak the body layout inline here without coupling to the internal
+    // surface/header structure of `UIFormModal`.
     bodyStyle?: CSSProperties
     radar?: RadarNodeMeta
   }>(),

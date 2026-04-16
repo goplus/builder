@@ -21,7 +21,7 @@ const props = defineProps<{
   class?: ClassValue
 }>()
 
-const rootClass = computed(() => cn('p-2', props.class ?? null))
+const rootClass = computed(() => cn('p-2', props.class))
 
 provide(ctxKey, { disabled: false, inGroup: false })
 </script>
