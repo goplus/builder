@@ -25,7 +25,7 @@ import { cn, type ClassValue } from './utils'
 import {
   renderPopupTrigger,
   resolvePopupTransformOrigin,
-  resolvePopupTriggerElement,
+  resolvePopupElement,
   useFloatingPopup,
   usePopupRegistration
 } from './popup'
@@ -108,14 +108,20 @@ function updateVisible(visible: boolean) {
   internalVisibleRef.value = visible
 }
 
+/*
+ * These ref callbacks complete the DOM wiring after popup stack registration.
+ * - `setTriggerRef` runs when the trigger slot/root ref resolves.
+ * - `setContentRef` runs when the teleported popup root mounts or updates.
+ * Together they keep Floating UI state and the popup stack aligned with the
+ * live trigger/content DOM elements.
+ */
 function setTriggerRef(target: Element | { $el?: Element } | null) {
-  const el = resolvePopupTriggerElement(target)
+  const el = resolvePopupElement(target)
   referenceRef.value = el
   popup.triggerEl.value = el
 }
-
 function setContentRef(target: Element | { $el?: Element } | null) {
-  const el = resolvePopupTriggerElement(target)
+  const el = resolvePopupElement(target)
   floatingRef.value = el
   popup.contentEl.value = el
 }

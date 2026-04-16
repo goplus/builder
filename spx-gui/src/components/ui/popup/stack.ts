@@ -1,11 +1,14 @@
 import { computed, inject, onScopeDispose, provide, ref, shallowReactive, type InjectionKey, type Ref } from 'vue'
 
+// Internal data attrs used to mark the popup content root element so stack and
+// event-scope helpers can find teleported popup DOM reliably.
 export const UI_POPUP_ROOT_ATTR = 'data-ui-popup-root'
 export const UI_POPUP_ID_ATTR = 'data-ui-popup-id'
 export const UI_POPUP_KIND_ATTR = 'data-ui-popup-kind'
 
-export type PopupKind = 'dropdown' | 'tooltip' | 'modal' | 'custom'
+export type PopupKind = 'dropdown' | 'tooltip'
 
+// One runtime record for a popup instance tracked by the popup stack.
 export type PopupStackEntry = {
   id: number
   parentId: number | null
@@ -29,6 +32,8 @@ export type PopupStack = {
 }
 
 export function createPopupStack(): PopupStack {
+  // Keep popup identity local to each provided stack so separate app roots and
+  // tests do not leak registration state into one another.
   const entries = shallowReactive<PopupStackEntry[]>([])
   let nextPopupId = 0
 
@@ -55,8 +60,13 @@ export function createPopupStack(): PopupStack {
   }): PopupRegistration {
     nextPopupId += 1
     const id = nextPopupId
+    // These refs are created during registration, then assigned later by the
+    // popup component itself: `triggerEl` when the trigger slot/root ref resolves,
+    // and `contentEl` when the teleported popup content root mounts.
     const triggerEl = ref<HTMLElement | null>(null)
     const contentEl = ref<HTMLElement | null>(null)
+    // Each entry records both trigger/content elements so outside-click and
+    // nesting logic can reason about teleported popup DOM correctly.
     const entry = shallowReactive<PopupStackEntry>({ id, parentId, kind, open, triggerEl, contentEl })
     entries.push(entry)
 
@@ -87,6 +97,8 @@ const parentPopupIdKey: InjectionKey<number | null> = Symbol('parent-popup-id')
 
 export function providePopupStack(stack: PopupStack = createPopupStack()) {
   provide(popupStackKey, stack)
+  // Root-level popups start without a parent; nested popups override this with
+  // their own registration id inside usePopupRegistration.
   provide(parentPopupIdKey, null)
   return stack
 }
@@ -101,6 +113,8 @@ export function usePopupRegistration(kind: PopupKind, open: Readonly<Ref<boolean
   const stack = usePopupStack()
   const parentId = inject(parentPopupIdKey, null)
   const registration = stack.register({ kind, parentId, open })
+  // Child popups opened from this popup inherit the current popup id so the
+  // stack can preserve nesting relationships across teleports.
   provide(parentPopupIdKey, registration.id)
   onScopeDispose(registration.unregister)
   return registration
@@ -117,6 +131,8 @@ export function getPopupRootAttrs(id: number, kind: PopupKind): Record<string, s
 export function findPopupRoot(target: EventTarget | Node | null) {
   let current: Node | null = target instanceof Node ? target : null
   while (current != null) {
+    // Popup content can be teleported, so DOM ancestry is the reliable way to
+    // detect whether an event originated from within any registered popup root.
     if (current instanceof HTMLElement && current.hasAttribute(UI_POPUP_ROOT_ATTR)) return current
     current = current.parentNode
   }
