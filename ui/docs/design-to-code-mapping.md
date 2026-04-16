@@ -20,12 +20,27 @@
 
 ## Mapping Rules
 
-### 1. `Button/*` 先看 `UIButton.vue`
+### 1. `button-*` 先看 `UIButton.vue`
 
 设计库中的按钮族基本都落在同一个基础组件：
 
 - 代码入口：`spx-gui/src/components/ui/UIButton.vue`
 - 预览页：`spx-gui/src/pages/docs/ui-design.vue`
+
+按钮在 Pencil 中统一使用两套路径式模板：
+
+- 文本按钮：`Button/{Size}/{Color}/{Variant}/{Shape}/{State}`
+- 纯图标按钮：`Button-only icon/{Size}/{Color}/{Variant}/{Shape}/{State}`
+
+其中各字段含义如下：
+
+| 字段 | 含义 | 建议值 | 代码 props |
+|------|------|--------|------------|
+| `Size` | 尺寸档位 | `Small` / `Medium` / `Large` | `size` |
+| `Color` | 颜色语义、按钮层级 | `Primary` / `Secondary` / `Boring` / `White` / `Danger` / `Success` / `Blue` / `Purple` / `Yellow` | `color` |
+| `Variant` | 视觉样式 | `Shadow` / `Flat` / `Stroke` | `variant` |
+| `Shape` | 外形 | `Square` / `Circle` | `shape` |
+| `State` | 交互状态 | `Default` / `Hover` / `Click` / `Focus` / `Disabled` / `Loading` | `loading` / `disabled` / 其他交互态 |
 
 设计名里的几个维度，对应 `UIButton` 的 props：
 
@@ -36,14 +51,33 @@
 | `Shadow / Flat / Stroke` | `variant` |
 | `Square / Circle` | `shape` |
 | `Loading / Disabled` | `loading` / `disabled` |
-| `Button-only icon/*` | 只传 `icon`，不传默认 slot 文本 |
+| `button-only-icon-*` | 只传 `icon`，不传默认 slot 文本 |
 
 例如：
 
-- `Button/Large/Primary/Shadow/Square/Default`
-  - `\<UIButton color="primary" size="large" variant="shadow" shape="square" \>`
-- `Button-only icon/Large/Primary/Shadow/Circle/Default`
-  - `\<UIButton color="primary" size="large" variant="shadow" shape="circle" icon="..." \>`
+- `Button/Medium/Primary/Shadow/Square/Default`
+  - `\<UIButton color="primary" size="medium" variant="shadow" shape="square" \>`
+- `Button/Large/White/Stroke/Square/Hover`
+  - `\<UIButton color="white" size="large" variant="stroke" shape="square" \>`
+- `Button-only icon/Medium/Primary/Stroke/Circle/Default`
+  - `\<UIButton color="primary" size="medium" variant="stroke" shape="circle" icon="..." \>`
+- `Button-only icon/Large/Danger/Shadow/Circle/Disabled`
+  - `\<UIButton color="danger" size="large" variant="shadow" shape="circle" icon="..." disabled \>`
+
+从 Figma 迁移到 Pencil 时，按钮命名按下面规则收口：
+
+- 不再使用 `state=...`、`type=...` 这种属性串命名，统一改成路径式模板
+- `type` 统一并入 `Color`
+- `Shape=default` 统一写成 `Square`
+- `size=medium（32）` 这类名称只保留档位，写成 `Medium`，不要把像素写进名称
+- 状态统一使用 `Click`，不要在按钮族里混用 `Active`
+- 有文字内容的按钮使用 `Button/...`
+- 只有图标、没有默认文本 slot 的按钮使用 `Button-only icon/...`
+
+迁移示例：
+
+- `state=default, type=primary, size=medium（32）, Shape=default`
+  - `Button/Medium/Primary/Shadow/Square/Default`
 
 补充说明：
 
@@ -64,12 +98,12 @@
 2. Page-level 引用通常经过聚合入口
 - 页面通常不会直接依赖某个底层叶子 button 组件 ID
 - 更常见的是引用聚合入口，例如：
-  - `8dhVn` -> `Button-only icon/Default`
-  - `bI2fk` -> `Button-only icon-flat`
-  - `hZ2GE` -> `Button-only icon-flat-stroke`
+  - `8dhVn` -> `button-only-icon-default`
+  - `bI2fk` -> `button-only-icon-flat`
+  - `hZ2GE` -> `button-only-icon-flat-stroke`
 - 所以如果设计库里发生“叶子组件删重 / 合并”，先检查聚合入口的 `slot` 是否同步更新，再判断页面是否需要改
 
-### 2. `Card/* item*` 先看 `UIBlockItem` 这一层
+### 2. `card-*-item*` 先看 `UIBlockItem` 这一层
 
 设计库里的资源卡片并没有分别实现成一堆独立基础组件，而是统一落在 `UIBlockItem` 家族上：
 
@@ -80,11 +114,11 @@
 
 | 设计组件族 | 基础/中层组件 | 业务组件入口 |
 |------------|---------------|--------------|
-| `Card/Sprite item/*` | `UIEditorSpriteItem.vue` | `SpriteItem.vue`、`CostumeItem.vue`、`AnimationItem.vue`、`CheckableCostumeItem.vue` |
-| `Card/Sound item/*` | `UIEditorSoundItem.vue` | `stage/sound/SoundItem.vue` |
-| `Card/Backdrop item/*` | `UIEditorBackdropItem.vue` | `stage/backdrop/BackdropItem.vue` |
-| `Card/Widget item/*` | `UIEditorWidgetItem.vue` | `stage/widget/WidgetItem.vue` |
-| `Card/Asset` | `UIBlockItem.vue` 作为统一抽象 | 被上面几类中层组件复用 |
+| `card-sprite-item-*` | `UIEditorSpriteItem.vue` | `SpriteItem.vue`、`CostumeItem.vue`、`AnimationItem.vue`、`CheckableCostumeItem.vue` |
+| `card-sound-item-*` | `UIEditorSoundItem.vue` | `stage/sound/SoundItem.vue` |
+| `card-backdrop-item-*` | `UIEditorBackdropItem.vue` | `stage/backdrop/BackdropItem.vue` |
+| `card-widget-item-*` | `UIEditorWidgetItem.vue` | `stage/widget/WidgetItem.vue` |
+| `card-asset` | `UIBlockItem.vue` 作为统一抽象 | 被上面几类中层组件复用 |
 
 大卡片版本也有对应实现：
 
@@ -99,7 +133,7 @@
 
 如果只影响某一种资源卡片，优先改对应的 `UIEditor*Item.vue` 或业务组件。
 
-### 3. 右上角 `Corner marker/*/More/*` 对应角标菜单
+### 3. 右上角 `corner-marker-*-more-*` 对应角标菜单
 
 设计库里的精灵/背景卡片右上角更多按钮，对应的是下面这组组件：
 
@@ -117,9 +151,9 @@
 
 所以如果设计稿只改“更多”按钮的尺寸、位置、颜色，改 `UICornerIcon.vue`；如果改菜单交互，改 `CornerMenu.vue` 或具体业务组件里的菜单项。
 
-### 4. `Card/State item/*` 对应动画状态绑定弹窗
+### 4. `card-state-item-*` 对应动画状态绑定弹窗
 
-设计库里的 `Card/State item/Default|Step|Die/*`，代码里最接近的落地实现是：
+设计库里的 `card-state-item-default|step|die-*`，代码里最接近的落地实现是：
 
 - `spx-gui/src/components/editor/sprite/animation/state/BoundStateEditor.vue`
 
@@ -130,13 +164,13 @@
 
 也就是说，这一类不是单独的 `StateCard.vue`，而是基于通用卡片抽象组合出来的。
 
-### 5. `Card/Entry` / `Card/Entry item/*` 对应 Stage 快捷入口
+### 5. `card-entry` / `card-entry-item-*` 对应 Stage 快捷入口
 
-设计库里的 `Card/Entry` 和其中的：
+设计库里的 `card-entry` 和其中的：
 
-- `Card/Entry item/Backgrounds/*`
-- `Card/Entry item/Sounds/*`
-- `Card/Entry item/Widgets/*`
+- `card-entry-item-backgrounds-*`
+- `card-entry-item-sounds-*`
+- `card-entry-item-widgets-*`
 
 代码里最接近的实现不是资源卡片列表，而是 Stage 侧边面板里的快捷入口：
 
@@ -180,7 +214,7 @@
 
 因此如果设计稿变的是 tab 样式，优先改 `UITab.vue`；如果变的是编辑器头部布局，改 `EditorHeader.vue`；如果变的是具体 tab 数量或切换逻辑，改 `SpriteEditor.vue` / `StageEditor.vue`。
 
-### 7. `Segmented/*` 对应表单里的分段选择控件，而不是顶部导航 Tab
+### 7. `segmented-*` 对应表单里的分段选择控件，而不是顶部导航 Tab
 
 设计库里这类组件过去有一部分沿用 `Tab/*` 命名，但从设计语义看，它们更接近“分段选择 / segmented control”，不是编辑器顶部那种页面级导航 tab。
 
@@ -189,12 +223,12 @@
 - 页面级导航继续使用 `tab` 语义：
   - `editor-nav-panel`
   - `editor-panel-*`
-- 表单里用于二选一、多选一、模式切换的这类控件，统一使用 `Segmented/*` 命名，不再新增 `Tab/*`：
-  - `Segmented/Text only/*`
-  - `Segmented/Visibility/*`
-  - `Segmented/Rotation/*`
-  - `Segmented/Animation/*`
-  - `Segmented/Code modal/*`
+- 表单里用于二选一、多选一、模式切换的这类控件，统一使用 `segmented-*` 命名，不再新增 `Tab/*`：
+  - `segmented-text-only-*`
+  - `segmented-visibility-*`
+  - `segmented-rotation-*`
+  - `segmented-animation-*`
+  - `segmented-code-modal-*`
 
 代码里这组设计更接近的实现是：
 
@@ -213,7 +247,7 @@
 命名上的具体规则是：
 
 - 设计库名称优先表达交互语义，不直接照搬 Vue 文件名
-- 设计层使用 `Segmented/*`，代码映射文档再说明它对应 `UITabRadio*`
+- 设计层使用 `segmented-*`，代码映射文档再说明它对应 `UITabRadio*`
 - 后续如果继续扩这类组件，不再新增 `Tab/Boring/*`、`Tab/Code modal/*` 这类旧命名
 
 ### 8. `left-panel-*` 对应 `EditorList` 这一类“左侧列表 + 右侧详情”布局
@@ -289,13 +323,13 @@
 
 ## Preprocessing Mapping
 
-### 11. `Card/Edit item/*` 对应素材预处理流程，不是单独卡片组件
+### 11. `card-edit-item-*` 对应素材预处理流程，不是单独卡片组件
 
 设计稿中的：
 
-- `Card/Edit item`
-- `Card/Edit item/Remove background/*`
-- `Card/Edit item/Split sprite sheet/*`
+- `card-edit-item`
+- `card-edit-item-remove-background-*`
+- `card-edit-item-split-sprite-sheet-*`
 
 当前前端的实际落地是素材预处理弹窗这一整套流程：
 
@@ -360,12 +394,12 @@
 
 对于 `builder-component.lib.pen`，当前最稳定的设计到代码映射主线是：
 
-- `Button/*` -> `UIButton.vue`
-- `Card/* item*` / `Card/Asset` -> `UIBlockItem.vue` + `UIEditor*Item.vue` + 对应业务 `*Item.vue`
-- `Corner marker/*` -> `UICornerIcon.vue` + `CornerMenu.vue`
+- `button-*` -> `UIButton.vue`
+- `card-*-item*` / `card-asset` -> `UIBlockItem.vue` + `UIEditor*Item.vue` + 对应业务 `*Item.vue`
+- `corner-marker-*` -> `UICornerIcon.vue` + `CornerMenu.vue`
 - `editor-nav-panel` / `editor-panel-*` -> `EditorHeader.vue` + `UITabs.vue` + `SpriteEditor.vue` / `StageEditor.vue`
-- `Segmented/*` -> `UITabRadioGroup.vue` + `UITabRadio.vue`
+- `segmented-*` -> `UITabRadioGroup.vue` + `UITabRadio.vue`
 - `left-panel-*` -> `EditorList.vue` + 各类 `*Editor.vue`
-- `Card/Edit item/*` -> `PreprocessModal.vue` 及其子流程组件
+- `card-edit-item-*` -> `PreprocessModal.vue` 及其子流程组件
 
 以后开发者同步设计稿时，优先按“基础组件 -> 业务组合 -> 页面布局”的顺序去定位实现，而不是按设计名字硬找同名文件。
