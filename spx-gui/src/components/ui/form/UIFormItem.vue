@@ -125,6 +125,9 @@ function onCompositionStart() {
 
 function onCompositionEnd() {
   isComposing = false
+  // The final composed value may not have been validated yet, so re-enter the
+  // normal input path after IME composition finishes.
+  onInput()
 }
 
 onBeforeUnmount(() => {
