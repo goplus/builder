@@ -4,13 +4,17 @@
     ref="nInput"
     class="ui-text-input"
     :class="[`ui-text-input-color-${color}`, `ui-text-input-size-${size}`]"
+    v-bind="controlBindings"
     :placeholder="placeholder || ''"
     :value="value"
     :type="type"
     :disabled="disabled"
     :readonly="readonly"
     :resizable="false"
-    @update:value="(v) => emit('update:value', v)"
+    @update:value="handleUpdateValue"
+    @blur="onBlur"
+    @compositionstart="onCompositionStart"
+    @compositionend="onCompositionEnd"
   >
     <template v-if="!!slots.prefix" #prefix>
       <slot name="prefix"></slot>
@@ -19,7 +23,7 @@
       <div
         v-if="value && clearable"
         class="-mr-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500"
-        @click="emit('update:value', '')"
+        @click="handleUpdateValue('')"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -36,6 +40,7 @@
 <script setup lang="ts">
 import { onMounted, ref, useSlots } from 'vue'
 import { NInput } from 'naive-ui'
+import { useFormControl } from './form/useFormControl'
 
 type Type = 'textarea' | 'text' | 'password'
 type Color = 'default' | 'white'
@@ -66,6 +71,12 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
+const { controlBindings, onBlur, onCompositionStart, onCompositionEnd, onInput } = useFormControl()
+
+function handleUpdateValue(v: string) {
+  emit('update:value', v)
+  onInput()
+}
 
 // It's weird that the prop `autofocus` of `NInput` does not work as expected, so we handle it manually.
 const nInput = ref<InstanceType<typeof NInput> | null>(null)
@@ -100,16 +111,21 @@ onMounted(() => {
 <style scoped>
 /* it's not possible to control input's hovered-bg-color with themeOverrides, */
 /* so we do background color control here */
-.ui-text-input:not(.n-input--focus, .n-input--error-status, .n-input--success-status) {
+.ui-text-input:not(.n-input--focus):not([data-ui-state='error']):not([data-ui-state='success']) {
   background: var(--ui-text-input-bg-color);
 }
-.ui-text-input:not(.n-input--focus, .n-input--disabled):hover {
+.ui-text-input:not(.n-input--focus, .n-input--disabled):not([data-ui-state='error']):not(
+    [data-ui-state='success']
+  ):hover {
   background: var(--ui-text-input-bg-color-hover);
 }
 .ui-text-input :deep(.n-input__input-el) {
   height: var(--ui-text-input-height);
 }
-.ui-text-input.n-input--success-status :deep(.n-input__state-border) {
+.ui-text-input[data-ui-state='error'] :deep(.n-input__state-border) {
+  border: 1px solid var(--ui-color-danger-main);
+}
+.ui-text-input[data-ui-state='success'] :deep(.n-input__state-border) {
   border: 1px solid var(--ui-color-success-main);
 }
 .ui-text-input :deep(.n-input__prefix) {
