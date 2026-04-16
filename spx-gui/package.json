@@ -16,6 +16,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.7.6",
     "@jridgewell/resolve-uri": "^3.1.2",
     "@lottiefiles/dotlottie-vue": "^0.5.8",
     "@nighca/fflate": "^0.8.3",

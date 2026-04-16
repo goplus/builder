@@ -41,7 +41,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const rootClass = computed(() => cn('flex', props.class ?? null))
+const rootClass = computed(() => cn('flex', props.class))
 
 provide(selectedValueInjectionKey, () => props.value)
 provide(updateValueInjectionKey, (value: string) => {

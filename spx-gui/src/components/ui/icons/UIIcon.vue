@@ -156,9 +156,7 @@ const props = defineProps<{
   class?: ClassValue
 }>()
 
-const rootClass = computed(() =>
-  cn('ui-icon flex h-4 w-4', props.type === 'loading' ? 'spinning' : null, props.class ?? null)
-)
+const rootClass = computed(() => cn('ui-icon flex h-4 w-4', props.type === 'loading' ? 'spinning' : null, props.class))
 </script>
 
 <style scoped>

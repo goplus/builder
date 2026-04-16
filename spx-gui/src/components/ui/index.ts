@@ -2,7 +2,7 @@ export { default as UIConfigProvider, useUIVariables, type Config } from './UICo
 export { default as UICard } from './UICard.vue'
 export { default as UICardHeader } from './UICardHeader.vue'
 export { default as UIButton } from './UIButton.vue'
-export { default as UIDropdown, type Pos as DropdownPos } from './UIDropdown'
+export { default as UIDropdown, type Pos as DropdownPos } from './UIDropdown.vue'
 export { default as UITooltip } from './UITooltip.vue'
 export { UIMenu, UIMenuGroup, UIMenuItem } from './menu'
 export { default as UIIcon, type Type as IconType } from './icons/UIIcon.vue'
