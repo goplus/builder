@@ -111,7 +111,7 @@ const attachTo = usePopupContainer()
 const internalVisibleRef = ref(false)
 const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
 // Register the dropdown in the shared popup stack so ESC/outside-click logic can
-// reason about the topmost popup and nested popup relationships.
+// reason about the current topmost popup and its live DOM anchors.
 const popup = usePopupRegistration('dropdown', visibleComputed)
 const { referenceRef, floatingRef, arrowRef, floatingStyle, arrowStyle } = useFloatingPopup({
   visible: visibleComputed,
