@@ -1,88 +1,149 @@
 <template>
-  <div class="ui-form-item">
-    <NFormItem
-      :show-label="!!label"
-      :label="label"
-      :path="path"
-      v-bind="nFormItemProps"
-      @compositionstart="handleCompositionStart"
-      @compositionend="handleCompositionEnd"
-    >
-      <UIFormItemInternal :handle-content-blur="handleContentBlur" :handle-content-input="handleContentInput">
-        <slot></slot>
-      </UIFormItemInternal>
-    </NFormItem>
-    <p v-if="!!slots.tip" class="mt-1 text-hint-1"><slot name="tip"></slot></p>
+  <div :class="rootClass" :data-ui-state="validationState">
+    <div v-if="props.label != null" :id="ids.labelId" class="mb-1 text-hint-1">
+      {{ props.label }}
+    </div>
+    <div class="flex flex-col">
+      <slot></slot>
+    </div>
+    <p v-if="feedback != null" :id="ids.errorId" class="mt-1 text-danger-500">
+      {{ feedback }}
+    </p>
+    <p v-if="slots.tip != null" :id="ids.tipId" class="mt-1 text-hint-1">
+      <slot name="tip"></slot>
+    </p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useSlots, computed } from 'vue'
-import { NFormItem } from 'naive-ui'
 import { debounce } from 'lodash'
-import UIFormItemInternal from './UIFormItemInternal.vue'
-import { useForm } from './UIForm.vue'
+import { computed, onBeforeUnmount, provide, useId, useSlots } from 'vue'
+import {
+  defaultFormFieldConfig,
+  formFieldContextKey,
+  useFormContext,
+  type FormFieldConfig,
+  type FormFieldIds,
+  type FormFieldValidationState
+} from './context'
+import { cn, type ClassValue } from '../utils'
 
-const props = defineProps<{
-  label?: string
-  path?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    label?: string
+    path?: string
+    class?: ClassValue
+    config?: Partial<FormFieldConfig>
+  }>(),
+  {
+    label: undefined,
+    path: undefined,
+    class: undefined,
+    config: undefined
+  }
+)
+
+const rootClass = computed(() => cn('flex flex-col [&+&]:mt-6', props.class ?? null))
 
 const slots = useSlots()
-const form = useForm()
+const formCtx = useFormContext()
+const baseId = useId()
 
-const validated = computed(() => (props.path != null ? form.form.validated[props.path] : null))
-const nFormItemProps = computed(() => {
-  if (validated.value == null) return undefined
-  if (validated.value.hasError) return { validationStatus: 'error' as const, feedback: validated.value.error }
-  return form.hasSuccessFeedback ? { validationStatus: 'success' as const } : undefined
+const ids: FormFieldIds = {
+  labelId: `${baseId}-label`,
+  controlId: `${baseId}-control`,
+  tipId: `${baseId}-tip`,
+  errorId: `${baseId}-error`
+}
+
+const mergedConfig: FormFieldConfig = {
+  ...defaultFormFieldConfig,
+  ...props.config
+}
+
+const validated = computed(() => {
+  const path = props.path
+  if (path == null) return null
+  return formCtx.form.validated[path]
 })
 
-/**
- * See: https://github.com/goplus/builder/issues/2089
- *
- * When using IME (Input Method Editor), input characters may be lost due to component updates during composition.
- *
- * Introduce the `isComposing` flag to track IME composition status.
- * Prevent `handleContentInput` from triggering validation while composing.
- * Debounce is used to reduce validation frequency in normal scenarios.
- * Effectively avoids unexpected updates and character loss during rapid IME input.
- */
+const feedback = computed(() => {
+  const result = validated.value
+  return result?.hasError ? result.error : null
+})
+
+const invalid = computed(() => feedback.value != null)
+const validationState = computed<FormFieldValidationState>(() => {
+  const result = validated.value
+  if (result == null) return 'default'
+  if (result.hasError) return 'error'
+  return formCtx.hasSuccessFeedback ? 'success' : 'default'
+})
+
+const describedBy = computed(() => {
+  const idsList = [] as string[]
+  if (slots.tip != null) idsList.push(ids.tipId)
+  if (invalid.value) idsList.push(ids.errorId)
+  return idsList.length > 0 ? idsList.join(' ') : undefined
+})
+
+const labelledBy = computed(() => (props.label != null ? ids.labelId : undefined))
+
 let isComposing = false
-function handleCompositionStart() {
+let blurTimer: ReturnType<typeof setTimeout> | null = null
+
+function validateCurrentField() {
+  const path = props.path
+  if (path == null) return
+  // We intentionally ignore the returned promise here: UI feedback reacts to
+  // `form.validated[path]`, which `validateField()` updates as a side effect.
+  void formCtx.form.validateField(path)
+}
+
+const onInput = debounce(() => {
+  if (isComposing || !mergedConfig.validateOn.includes('input')) return
+  validateCurrentField()
+}, mergedConfig.inputDebounce)
+
+function onChange() {
+  if (!mergedConfig.validateOn.includes('change')) return
+  validateCurrentField()
+}
+
+function onBlur() {
+  if (!mergedConfig.validateOn.includes('blur')) return
+  if (blurTimer != null) clearTimeout(blurTimer)
+  blurTimer = setTimeout(() => {
+    validateCurrentField()
+    blurTimer = null
+  }, mergedConfig.blurDelay)
+}
+
+function onCompositionStart() {
   isComposing = true
 }
-function handleCompositionEnd() {
+
+function onCompositionEnd() {
   isComposing = false
 }
 
-function handleContentBlur() {
-  const path = props.path
-  if (path == null) return
-  setTimeout(() => {
-    form.form.validateWithPath(path)
-  }, 200)
-}
+onBeforeUnmount(() => {
+  onInput.cancel()
+  if (blurTimer != null) clearTimeout(blurTimer)
+})
 
-const handleContentInput = debounce(() => {
-  const path = props.path
-  if (path == null || isComposing) return
-  form.form.validateWithPath(path)
-}, 300)
+provide(formFieldContextKey, {
+  path: props.path,
+  ids,
+  validationState,
+  feedback,
+  invalid,
+  describedBy,
+  labelledBy,
+  onInput,
+  onChange,
+  onBlur,
+  onCompositionStart,
+  onCompositionEnd
+})
 </script>
-
-<style>
-@layer components {
-  .ui-form-item + .ui-form-item {
-    margin-top: 24px;
-  }
-
-  .ui-form-item .n-form-item-feedback-wrapper {
-    line-height: 1.57143;
-  }
-
-  .ui-form-item .n-form-item-feedback-wrapper:empty {
-    display: none;
-  }
-}
-</style>
