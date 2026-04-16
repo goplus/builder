@@ -11,7 +11,6 @@ export type PopupKind = 'dropdown' | 'tooltip'
 // One runtime record for a popup instance tracked by the popup stack.
 export type PopupStackEntry = {
   id: number
-  parentId: number | null
   kind: PopupKind
   open: Readonly<Ref<boolean>>
   triggerEl: Ref<HTMLElement | null>
@@ -26,7 +25,7 @@ export type PopupRegistration = PopupStackEntry & {
 
 export type PopupStack = {
   entries: PopupStackEntry[]
-  register(input: { kind: PopupKind; parentId: number | null; open: Readonly<Ref<boolean>> }): PopupRegistration
+  register(input: { kind: PopupKind; open: Readonly<Ref<boolean>> }): PopupRegistration
   getEntry(id: number): PopupStackEntry | null
   getTopmostOpenEntry(): PopupStackEntry | null
 }
@@ -42,6 +41,8 @@ export function createPopupStack(): PopupStack {
   }
 
   function getTopmostOpenEntry() {
+    // Later registrations visually/behaviorally sit above earlier ones, so scan
+    // backward to find the current topmost open popup.
     for (let i = entries.length - 1; i >= 0; i--) {
       const entry = entries[i]
       if (entry != null && entry.open.value) return entry
@@ -49,15 +50,7 @@ export function createPopupStack(): PopupStack {
     return null
   }
 
-  function register({
-    kind,
-    parentId,
-    open
-  }: {
-    kind: PopupKind
-    parentId: number | null
-    open: Readonly<Ref<boolean>>
-  }): PopupRegistration {
+  function register({ kind, open }: { kind: PopupKind; open: Readonly<Ref<boolean>> }): PopupRegistration {
     nextPopupId += 1
     const id = nextPopupId
     // These refs are created during registration, then assigned later by the
@@ -65,9 +58,9 @@ export function createPopupStack(): PopupStack {
     // and `contentEl` when the teleported popup content root mounts.
     const triggerEl = ref<HTMLElement | null>(null)
     const contentEl = ref<HTMLElement | null>(null)
-    // Each entry records both trigger/content elements so outside-click and
-    // nesting logic can reason about teleported popup DOM correctly.
-    const entry = shallowReactive<PopupStackEntry>({ id, parentId, kind, open, triggerEl, contentEl })
+    // Each entry records both trigger/content elements so topmost checks,
+    // outside-click handling, and popup DOM scope checks stay aligned.
+    const entry = shallowReactive<PopupStackEntry>({ id, kind, open, triggerEl, contentEl })
     entries.push(entry)
 
     function unregister() {
@@ -93,13 +86,9 @@ export function createPopupStack(): PopupStack {
 }
 
 const popupStackKey: InjectionKey<PopupStack> = Symbol('popup-stack')
-const parentPopupIdKey: InjectionKey<number | null> = Symbol('parent-popup-id')
 
 export function providePopupStack(stack: PopupStack = createPopupStack()) {
   provide(popupStackKey, stack)
-  // Root-level popups start without a parent; nested popups override this with
-  // their own registration id inside usePopupRegistration.
-  provide(parentPopupIdKey, null)
   return stack
 }
 
@@ -111,11 +100,9 @@ export function usePopupStack() {
 
 export function usePopupRegistration(kind: PopupKind, open: Readonly<Ref<boolean>>) {
   const stack = usePopupStack()
-  const parentId = inject(parentPopupIdKey, null)
-  const registration = stack.register({ kind, parentId, open })
-  // Child popups opened from this popup inherit the current popup id so the
-  // stack can preserve nesting relationships across teleports.
-  provide(parentPopupIdKey, registration.id)
+  // Components register once per scope and hand their live trigger/content refs
+  // back into the returned registration later.
+  const registration = stack.register({ kind, open })
   onScopeDispose(registration.unregister)
   return registration
 }

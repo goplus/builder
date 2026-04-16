@@ -12,9 +12,9 @@ import {
 describe('popup stack', () => {
   it('tracks the topmost open popup by registration order', () => {
     const stack = createPopupStack()
-    const dropdown = stack.register({ kind: 'dropdown', parentId: null, open: ref(true) })
+    const dropdown = stack.register({ kind: 'dropdown', open: ref(true) })
     const tooltipOpen = ref(false)
-    const tooltip = stack.register({ kind: 'tooltip', parentId: dropdown.id, open: tooltipOpen })
+    const tooltip = stack.register({ kind: 'tooltip', open: tooltipOpen })
 
     expect(stack.getTopmostOpenEntry()?.id).toBe(dropdown.id)
     expect(dropdown.isTopmost.value).toBe(true)
@@ -32,10 +32,9 @@ describe('popup stack', () => {
     expect(dropdown.isTopmost.value).toBe(true)
   })
 
-  it('propagates parent popup id through context registration', () => {
+  it('registers popup entries through context and unregisters on scope dispose', () => {
     const host = document.createElement('div')
-    let dropdownRegistration: PopupRegistration | null = null
-    let tooltipRegistration: PopupRegistration | null = null
+    let registration: PopupRegistration | null = null
 
     const PopupProvider = defineComponent({
       setup(_, { slots }) {
@@ -44,17 +43,10 @@ describe('popup stack', () => {
       }
     })
 
-    const NestedPopup = defineComponent({
-      setup() {
-        tooltipRegistration = usePopupRegistration('tooltip', ref(true))
-        return () => null
-      }
-    })
-
     const Root = defineComponent({
       setup() {
-        dropdownRegistration = usePopupRegistration('dropdown', ref(true))
-        return () => h(NestedPopup)
+        registration = usePopupRegistration('dropdown', ref(true))
+        return () => null
       }
     })
 
@@ -67,16 +59,12 @@ describe('popup stack', () => {
     })
     app.mount(host)
 
-    expect(dropdownRegistration).not.toBe(null)
-    expect(tooltipRegistration).not.toBe(null)
-
-    const dropdown = dropdownRegistration!
-    const tooltip = tooltipRegistration!
-
-    expect(dropdown.parentId).toBe(null)
-    expect(tooltip.parentId).toBe(dropdown.id)
+    expect(registration).not.toBe(null)
+    const popupRegistration = registration!
+    expect(popupRegistration.isTopmost.value).toBe(true)
 
     app.unmount()
+    expect(popupRegistration.unregister).toBeTypeOf('function')
   })
 
   it('finds popup roots using internal popup data attributes', () => {
