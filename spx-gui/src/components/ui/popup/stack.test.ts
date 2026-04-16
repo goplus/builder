@@ -12,9 +12,9 @@ import {
 describe('popup stack', () => {
   it('tracks the topmost open popup by registration order', () => {
     const stack = createPopupStack()
-    const dropdown = stack.register({ kind: 'dropdown', open: ref(true) })
+    const dropdown = stack.register({ open: ref(true) })
     const tooltipOpen = ref(false)
-    const tooltip = stack.register({ kind: 'tooltip', open: tooltipOpen })
+    const tooltip = stack.register({ open: tooltipOpen })
 
     expect(stack.getTopmostOpenEntry()?.id).toBe(dropdown.id)
     expect(dropdown.isTopmost.value).toBe(true)
@@ -45,7 +45,7 @@ describe('popup stack', () => {
 
     const Root = defineComponent({
       setup() {
-        registration = usePopupRegistration('dropdown', ref(true))
+        registration = usePopupRegistration(ref(true))
         return () => null
       }
     })
@@ -69,7 +69,7 @@ describe('popup stack', () => {
 
   it('finds popup roots using internal popup data attributes', () => {
     const popupRoot = document.createElement('div')
-    const attrs = getPopupRootAttrs(7, 'dropdown')
+    const attrs = getPopupRootAttrs(7)
     for (const [name, value] of Object.entries(attrs)) {
       popupRoot.setAttribute(name, value)
     }

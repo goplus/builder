@@ -14,21 +14,21 @@ import {
   mergeProps,
   onScopeDispose,
   ref,
-  watch,
   useAttrs,
   useSlots,
+  watch,
   type CSSProperties,
   type PropType,
   type VNode
 } from 'vue'
-import { cn, type ClassValue } from './utils'
 import {
   renderPopupTrigger,
-  resolvePopupTransformOrigin,
   resolvePopupElement,
+  resolvePopupTransformOrigin,
   useFloatingPopup,
   usePopupRegistration
 } from './popup'
+import { cn, type ClassValue } from './utils'
 import { usePopupContainer } from './utils'
 
 defineOptions({
@@ -75,8 +75,14 @@ const slots = useSlots()
 const attachTo = usePopupContainer()
 const internalVisibleRef = ref(false)
 const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
-const popup = usePopupRegistration('tooltip', visibleComputed)
-const { referenceRef, floatingRef, arrowRef, floatingStyle, arrowStyle } = useFloatingPopup({
+const popup = usePopupRegistration(visibleComputed)
+const {
+  referenceRef: triggerRef,
+  floatingRef: contentRef,
+  arrowRef,
+  floatingStyle,
+  arrowStyle
+} = useFloatingPopup({
   visible: visibleComputed,
   placement: computed(() => props.placement),
   offset: computed(() => ({ x: 0, y: 8 })),
@@ -108,22 +114,11 @@ function updateVisible(visible: boolean) {
   internalVisibleRef.value = visible
 }
 
-/*
- * These ref callbacks complete the DOM wiring after popup stack registration.
- * - `setTriggerRef` runs when the trigger slot/root ref resolves.
- * - `setContentRef` runs when the teleported popup root mounts or updates.
- * Together they keep Floating UI state and the popup stack aligned with the
- * live trigger/content DOM elements.
- */
 function setTriggerRef(target: Element | { $el?: Element } | null) {
-  const el = resolvePopupElement(target)
-  referenceRef.value = el
-  popup.triggerEl.value = el
+  triggerRef.value = resolvePopupElement(target)
 }
 function setContentRef(target: Element | { $el?: Element } | null) {
-  const el = resolvePopupElement(target)
-  floatingRef.value = el
-  popup.contentEl.value = el
+  contentRef.value = resolvePopupElement(target)
 }
 
 const openTimerRef = ref<number | null>(null)
@@ -175,7 +170,7 @@ function handleContentMouseleave() {
   scheduleClose()
 }
 
-defineExpose({ triggerEl: referenceRef })
+defineExpose({ triggerEl: triggerRef })
 
 onScopeDispose(() => {
   clearTimer(openTimerRef)

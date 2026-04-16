@@ -200,7 +200,7 @@ describe('UITooltip', () => {
     await flushTooltip()
     expect(popupContainer.text()).toContain('Tooltip content')
 
-    const tooltipContent = popupContainer.get('[data-ui-popup-kind="tooltip"]')
+    const tooltipContent = popupContainer.get('[data-ui-popup-root]')
     await wrapper.get('[data-test-id="trigger"]').trigger('mouseleave')
     await tooltipContent.trigger('mouseenter')
     await vi.advanceTimersByTimeAsync(100)

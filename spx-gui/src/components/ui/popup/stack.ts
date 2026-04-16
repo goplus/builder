@@ -1,20 +1,14 @@
-import { computed, inject, onScopeDispose, provide, ref, shallowReactive, type InjectionKey, type Ref } from 'vue'
+import { computed, inject, onScopeDispose, provide, shallowReactive, type InjectionKey, type Ref } from 'vue'
 
 // Internal data attrs used to mark the popup content root element so stack and
 // event-scope helpers can find teleported popup DOM reliably.
 export const UI_POPUP_ROOT_ATTR = 'data-ui-popup-root'
 export const UI_POPUP_ID_ATTR = 'data-ui-popup-id'
-export const UI_POPUP_KIND_ATTR = 'data-ui-popup-kind'
-
-export type PopupKind = 'dropdown' | 'tooltip'
 
 // One runtime record for a popup instance tracked by the popup stack.
 export type PopupStackEntry = {
   id: number
-  kind: PopupKind
   open: Readonly<Ref<boolean>>
-  triggerEl: Ref<HTMLElement | null>
-  contentEl: Ref<HTMLElement | null>
 }
 
 export type PopupRegistration = PopupStackEntry & {
@@ -25,7 +19,7 @@ export type PopupRegistration = PopupStackEntry & {
 
 export type PopupStack = {
   entries: PopupStackEntry[]
-  register(input: { kind: PopupKind; open: Readonly<Ref<boolean>> }): PopupRegistration
+  register(input: { open: Readonly<Ref<boolean>> }): PopupRegistration
   getEntry(id: number): PopupStackEntry | null
   getTopmostOpenEntry(): PopupStackEntry | null
 }
@@ -50,17 +44,10 @@ export function createPopupStack(): PopupStack {
     return null
   }
 
-  function register({ kind, open }: { kind: PopupKind; open: Readonly<Ref<boolean>> }): PopupRegistration {
+  function register({ open }: { open: Readonly<Ref<boolean>> }): PopupRegistration {
     nextPopupId += 1
     const id = nextPopupId
-    // These refs are created during registration, then assigned later by the
-    // popup component itself: `triggerEl` when the trigger slot/root ref resolves,
-    // and `contentEl` when the teleported popup content root mounts.
-    const triggerEl = ref<HTMLElement | null>(null)
-    const contentEl = ref<HTMLElement | null>(null)
-    // Each entry records both trigger/content elements so topmost checks,
-    // outside-click handling, and popup DOM scope checks stay aligned.
-    const entry = shallowReactive<PopupStackEntry>({ id, kind, open, triggerEl, contentEl })
+    const entry = shallowReactive<PopupStackEntry>({ id, open })
     entries.push(entry)
 
     function unregister() {
@@ -71,7 +58,7 @@ export function createPopupStack(): PopupStack {
 
     return {
       ...entry,
-      rootAttrs: getPopupRootAttrs(id, kind),
+      rootAttrs: getPopupRootAttrs(id),
       isTopmost: computed(() => getTopmostOpenEntry()?.id === id),
       unregister
     }
@@ -98,20 +85,21 @@ export function usePopupStack() {
   return stack
 }
 
-export function usePopupRegistration(kind: PopupKind, open: Readonly<Ref<boolean>>) {
+export function usePopupRegistration(open: Readonly<Ref<boolean>>) {
   const stack = usePopupStack()
-  // Components register once per scope and hand their live trigger/content refs
-  // back into the returned registration later.
-  const registration = stack.register({ kind, open })
+  // Components register their open state with the shared stack and receive a
+  // small registration handle back for root attrs, topmost status, and cleanup.
+  const registration = stack.register({ open })
   onScopeDispose(registration.unregister)
   return registration
 }
 
-export function getPopupRootAttrs(id: number, kind: PopupKind): Record<string, string> {
+export function getPopupRootAttrs(id: number): Record<string, string> {
+  // Mark the popup content root with a stable DOM identity so document-level
+  // event handling can recover popup scope from any nested target node.
   return {
     [UI_POPUP_ROOT_ATTR]: '',
-    [UI_POPUP_ID_ATTR]: String(id),
-    [UI_POPUP_KIND_ATTR]: kind
+    [UI_POPUP_ID_ATTR]: String(id)
   }
 }
 

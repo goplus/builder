@@ -112,8 +112,14 @@ const internalVisibleRef = ref(false)
 const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
 // Register the dropdown in the shared popup stack so ESC/outside-click logic can
 // reason about the current topmost popup and its live DOM anchors.
-const popup = usePopupRegistration('dropdown', visibleComputed)
-const { referenceRef, floatingRef, arrowRef, floatingStyle, arrowStyle } = useFloatingPopup({
+const popup = usePopupRegistration(visibleComputed)
+const {
+  referenceRef: triggerRef,
+  floatingRef: contentRef,
+  arrowRef,
+  floatingStyle,
+  arrowStyle
+} = useFloatingPopup({
   visible: visibleComputed,
   placement: computed(() => props.placement),
   offset: computed(() => props.offset),
@@ -160,22 +166,11 @@ function setVisible(visible: boolean) {
 
 provide(dropdownCtrlKey, { setVisible })
 
-/*
- * These ref callbacks complete the DOM wiring after popup stack registration.
- * - `setTriggerRef` runs when the trigger slot/root ref resolves.
- * - `setContentRef` runs when the teleported popup root mounts or updates.
- * Together they keep Floating UI state and the popup stack aligned with the
- * live trigger/content DOM elements.
- */
 function setTriggerRef(target: Element | { $el?: Element } | null) {
-  const el = resolvePopupElement(target)
-  referenceRef.value = el
-  popup.triggerEl.value = el
+  triggerRef.value = resolvePopupElement(target)
 }
 function setContentRef(target: Element | { $el?: Element } | null) {
-  const el = resolvePopupElement(target)
-  floatingRef.value = el
-  popup.contentEl.value = el
+  contentRef.value = resolvePopupElement(target)
 }
 
 const hoverOpenTimerRef = ref<number | null>(null)
@@ -254,7 +249,7 @@ watchEffect((onCleanup) => {
   function handleDocumentClick(e: MouseEvent) {
     // Ignore clicks that belong to the current trigger/content pair. Nested
     // dropdowns register separately, so their own stack entry handles itself.
-    if (isEventInsideCurrentDropdown(e, popup.triggerEl.value, popup.contentEl.value)) return
+    if (isEventInsideCurrentDropdown(e, triggerRef.value, contentRef.value)) return
     setVisible(false)
     emit('clickOutside', e)
   }
@@ -274,7 +269,7 @@ watchEffect((onCleanup) => {
   })
 })
 
-defineExpose({ setVisible, triggerEl: referenceRef })
+defineExpose({ setVisible, triggerEl: triggerRef })
 
 const triggerProps = computed(() => {
   const common = {

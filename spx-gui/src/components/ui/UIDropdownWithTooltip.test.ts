@@ -5,7 +5,6 @@ import UIDropdownWithTooltip from './UIDropdownWithTooltip.vue'
 import UIConfigProvider from './UIConfigProvider.vue'
 import UIModal from './modal/UIModal.vue'
 import { providePopupStack } from './popup'
-import { UI_POPUP_KIND_ATTR } from './popup/stack'
 import { providePopupContainer } from './utils'
 
 const floatingMocks = vi.hoisted(() => {
@@ -99,7 +98,9 @@ describe('UIDropdownWithTooltip', () => {
     expect(popupContainer.text()).toContain('Dropdown content')
     expect(popupContainer.text()).not.toContain('Tooltip content')
 
-    const dropdownRoot = document.body.querySelector(`[${UI_POPUP_KIND_ATTR}="dropdown"]`)
+    const dropdownRoot = Array.from(document.body.querySelectorAll('[data-ui-popup-root]')).find((el) =>
+      el.textContent?.includes('Dropdown content')
+    )
     expect(dropdownRoot).toBeInstanceOf(HTMLElement)
     expect((dropdownRoot as HTMLElement).style.visibility).toBe('visible')
   })
@@ -142,13 +143,17 @@ describe('UIDropdownWithTooltip', () => {
     await vi.advanceTimersByTimeAsync(600)
     await flushPopup()
 
-    const tooltipRoot = document.body.querySelector(`[${UI_POPUP_KIND_ATTR}="tooltip"]`)
+    const tooltipRoot = Array.from(document.body.querySelectorAll('[data-ui-popup-root]')).find((el) =>
+      el.textContent?.includes('Tooltip content')
+    )
     expect(tooltipRoot).toBeInstanceOf(HTMLElement)
     expect((tooltipRoot as HTMLElement).style.visibility).toBe('visible')
     ;(trigger as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await flushPopup()
 
-    const dropdownRoot = document.body.querySelector(`[${UI_POPUP_KIND_ATTR}="dropdown"]`)
+    const dropdownRoot = Array.from(document.body.querySelectorAll('[data-ui-popup-root]')).find((el) =>
+      el.textContent?.includes('Dropdown content')
+    )
     expect(dropdownRoot).toBeInstanceOf(HTMLElement)
     expect((dropdownRoot as HTMLElement).style.visibility).toBe('visible')
   })
