@@ -44,6 +44,8 @@ export function useFloatingPopup(options: UseFloatingPopupOptions) {
   async function updatePosition(signal?: AbortSignal) {
     const floatingEl = floatingRef.value
     const virtualAnchor = resolveMaybeRef(options.virtualAnchor)
+    // Dropdowns can be anchored either to a real trigger element or to an
+    // explicit screen coordinate for context-menu style positioning.
     const reference = resolveReferenceElement(referenceRef.value, virtualAnchor)
     if (floatingEl == null || reference == null) return
 
@@ -98,6 +100,9 @@ export function useFloatingPopup(options: UseFloatingPopupOptions) {
       return
     }
 
+    // Floating UI's autoUpdate callback fires immediately on registration and
+    // then on every relevant layout/input change, so one subscription keeps the
+    // popup positioned without an extra manual initial computePosition call.
     const cleanup = autoUpdate(reference, floatingEl, () => {
       void updatePosition(signal)
     })
@@ -125,6 +130,8 @@ function resolveMaybeRef<T>(value: MaybeRefOrGetter<T> | null | undefined, fallb
 
 export function resolveFloatingOffset(placement: PopupPlacement, offset: PopupOffset) {
   const side = placement.split('-')[0]
+  // Consumers pass offsets in popup-friendly x/y terms. Floating UI expects
+  // mainAxis/crossAxis, which swap meaning for left/right placements.
   if (side === 'left' || side === 'right') {
     return {
       mainAxis: offset.x,
@@ -157,6 +164,9 @@ export function resolvePopupTransformOrigin(
   arrowStyle: CSSProperties | null,
   options: { showArrow?: boolean; arrowSize?: number } = {}
 ) {
+  // When there is no arrow, fall back to a placement-based origin. With an
+  // arrow, bias the animation origin toward the arrow center so the popup feels
+  // attached to the trigger point.
   if (!options.showArrow) return placementTransformOrigins[placement]
 
   const arrowSize = options.arrowSize ?? 8
@@ -181,6 +191,8 @@ export function createVirtualAnchor(anchor: PopupVirtualAnchor): VirtualElement 
   const width = anchor.width ?? 0
   const height = anchor.height ?? 0
   return {
+    // Floating UI only needs a DOMRect-like measurement surface, so a virtual
+    // anchor can emulate a trigger element for manual popup positioning.
     getBoundingClientRect() {
       return {
         x: anchor.x,

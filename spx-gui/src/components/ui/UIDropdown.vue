@@ -58,9 +58,13 @@ import {
   type VNode
 } from 'vue'
 import { cn } from './utils'
-import { useFloatingPopup, resolvePopupTransformOrigin } from './popup/use-floating-popup'
-import { usePopupRegistration } from './popup/stack'
-import { renderPopupTrigger, resolvePopupTriggerElement } from './popup/trigger'
+import {
+  renderPopupTrigger,
+  resolvePopupElement,
+  resolvePopupTransformOrigin,
+  useFloatingPopup,
+  usePopupRegistration
+} from './popup'
 import { usePopupContainer } from './utils'
 
 const HOVER_OPEN_DELAY = 100
@@ -102,8 +106,12 @@ const emit = defineEmits<{
 const slots = useSlots()
 const attachTo = usePopupContainer()
 
+// Uncontrolled dropdowns keep their own visible state, while controlled callers
+// can still drive visibility through `v-model:visible`.
 const internalVisibleRef = ref(false)
 const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
+// Register the dropdown in the shared popup stack so ESC/outside-click logic can
+// reason about the topmost popup and nested popup relationships.
 const popup = usePopupRegistration('dropdown', visibleComputed)
 const { referenceRef, floatingRef, arrowRef, floatingStyle, arrowStyle } = useFloatingPopup({
   visible: visibleComputed,
@@ -112,6 +120,8 @@ const { referenceRef, floatingRef, arrowRef, floatingStyle, arrowStyle } = useFl
   virtualAnchor: computed(() => props.pos ?? null),
   showArrow: computed(() => props.showArrow)
 })
+// Keep the scale animation origin aligned with the resolved placement/arrow so
+// the popup expands from the visual attachment point instead of the center.
 const transformOrigin = computed(() =>
   resolvePopupTransformOrigin(props.placement, arrowStyle.value, { showArrow: props.showArrow, arrowSize: 8 })
 )
@@ -142,20 +152,28 @@ function handleUpdateVisible(show: boolean) {
 }
 
 function setVisible(visible: boolean) {
+  // Disabled dropdowns should not re-open themselves, but we still allow forced
+  // closing so callers and internal handlers can collapse an already-open popup.
   if (visible && props.disabled) return
   handleUpdateVisible(visible)
 }
 
 provide(dropdownCtrlKey, { setVisible })
 
+/*
+ * These ref callbacks complete the DOM wiring after popup stack registration.
+ * - `setTriggerRef` runs when the trigger slot/root ref resolves.
+ * - `setContentRef` runs when the teleported popup root mounts or updates.
+ * Together they keep Floating UI state and the popup stack aligned with the
+ * live trigger/content DOM elements.
+ */
 function setTriggerRef(target: Element | { $el?: Element } | null) {
-  const el = resolvePopupTriggerElement(target)
+  const el = resolvePopupElement(target)
   referenceRef.value = el
   popup.triggerEl.value = el
 }
-
 function setContentRef(target: Element | { $el?: Element } | null) {
-  const el = resolvePopupTriggerElement(target)
+  const el = resolvePopupElement(target)
   floatingRef.value = el
   popup.contentEl.value = el
 }
@@ -172,6 +190,8 @@ function clearTimer(timerRef: typeof hoverOpenTimerRef) {
 function scheduleOpen() {
   clearTimer(hoverCloseTimerRef)
   clearTimer(hoverOpenTimerRef)
+  // Hover-triggered dropdowns intentionally open a little later to avoid flicker
+  // while the pointer is just passing across the trigger.
   hoverOpenTimerRef.value = window.setTimeout(() => {
     setVisible(true)
   }, HOVER_OPEN_DELAY)
@@ -180,6 +200,8 @@ function scheduleOpen() {
 function scheduleClose() {
   clearTimer(hoverOpenTimerRef)
   clearTimer(hoverCloseTimerRef)
+  // Mirror the delayed close so the user can move from trigger into content
+  // without the dropdown collapsing in between.
   hoverCloseTimerRef.value = window.setTimeout(() => {
     setVisible(false)
   }, HOVER_CLOSE_DELAY)
@@ -219,6 +241,8 @@ onScopeDispose(() => {
 watch(
   () => props.disabled,
   (disabled) => {
+    // In uncontrolled mode, disabling the dropdown should collapse it right away.
+    // Controlled mode stays source-of-truth driven by the parent component.
     if (disabled && props.visible == null) internalVisibleRef.value = false
   },
   { immediate: true }
@@ -228,6 +252,8 @@ watchEffect((onCleanup) => {
   if (!visibleComputed.value || !popup.isTopmost.value) return
 
   function handleDocumentClick(e: MouseEvent) {
+    // Ignore clicks that belong to the current trigger/content pair. Nested
+    // dropdowns register separately, so their own stack entry handles itself.
     if (isEventInsideCurrentDropdown(e, popup.triggerEl.value, popup.contentEl.value)) return
     setVisible(false)
     emit('clickOutside', e)
@@ -235,6 +261,8 @@ watchEffect((onCleanup) => {
 
   function handleDocumentKeydown(e: KeyboardEvent) {
     if (e.key !== 'Escape') return
+    // Only the topmost open dropdown installs this listener, so ESC peels off
+    // the current popup layer instead of closing every dropdown at once.
     setVisible(false)
   }
 
@@ -267,6 +295,9 @@ const triggerProps = computed(() => {
   }
   return common
 })
+
+// Normalize the trigger slot into a single renderable node so internal trigger
+// listeners/ref wiring can be attached consistently across native and component triggers.
 function renderTriggerNode() {
   return renderPopupTrigger(slots.trigger?.(), triggerProps.value)
 }
