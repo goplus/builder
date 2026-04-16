@@ -3,6 +3,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { findModalRoot } from '../modal/stack'
 import { findPopupRoot } from '../popup/stack'
 export { cn, type ClassDictionary, type ClassValue } from './cn'
+export * from './layer-stack'
 export {
   createRecipe,
   type SlotClasses,

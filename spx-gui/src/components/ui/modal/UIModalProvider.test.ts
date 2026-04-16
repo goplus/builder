@@ -2,7 +2,7 @@ import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, nextTick, onUnmounted } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Cancelled } from '@/utils/exception'
-import { getPopupRootAttrs } from '../popup'
+import { makePopupRootAttrs } from '../popup'
 import UIModalProvider, { useModal, useModalEvents, useModalEsc } from './UIModalProvider.vue'
 
 async function flushModalProvider() {
@@ -125,7 +125,7 @@ const EscAwareModalWithNestedPopup = defineComponent({
       () => emit('cancelled', `${props.label}-esc`)
     )
 
-    const nestedPopupAttrs = getPopupRootAttrs(9999, 'dropdown')
+    const nestedPopupAttrs = makePopupRootAttrs(9999)
 
     return () =>
       props.visible

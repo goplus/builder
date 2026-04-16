@@ -1,3 +1,12 @@
+/**
+ * Shared modal-surface wiring.
+ *
+ * This composable connects a modal surface to the modal stack, keeps the
+ * surface root attrs and topmost state in sync, computes the transform origin
+ * used by open/close animations, and re-provides popup content into the modal
+ * surface so dropdowns/tooltips opened inside a modal stay within that modal layer.
+ */
+
 import {
   computed,
   nextTick,
@@ -50,9 +59,7 @@ export function useModalSurface(options: UseModalSurfaceOptions): UseModalSurfac
   })
 
   function setContentRef(target: Element | { $el?: Element } | null) {
-    const el = resolveModalSurfaceElement(target)
-    contentRef.value = el
-    registration.contentEl.value = el
+    contentRef.value = resolveModalSurfaceElement(target)
   }
 
   function setTransformOrigin(origin: ModalTransformOrigin | null) {
