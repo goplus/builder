@@ -85,8 +85,13 @@ function parseNumberish(value: number | string | undefined) {
 
 /** Count fractional digits so stepping can avoid common floating-point drift. */
 function getPrecision(value: number) {
-  const fraction = String(value).split('.')[1]
-  return fraction ? fraction.length : 0
+  const normalizedValue = String(value).toLowerCase()
+  const [mantissa, exponentText] = normalizedValue.split('e')
+  const fractionLength = mantissa.split('.')[1]?.length ?? 0
+  if (exponentText == null) return fractionLength
+
+  const exponent = Number(exponentText)
+  return Math.max(0, fractionLength - exponent)
 }
 
 /**
@@ -174,7 +179,9 @@ function deriveValueFromDisplayedValue(options: {
 
   let nextValue = parsed
   if (options.fixPrecision || options.offset !== 0) {
-    nextValue = parseFloat((parsed + options.offset).toFixed(getMaxPrecision(parsed)))
+    const precision = getMaxPrecision(parsed)
+    const offsetValue = parsed + options.offset
+    nextValue = precision > 100 ? offsetValue : parseFloat(offsetValue.toFixed(precision))
   }
 
   if (!options.fixPrecision && options.offset === 0) {
@@ -198,10 +205,15 @@ function deriveValueFromDisplayedValue(options: {
   return nextValue
 }
 
-function createValidValue() {
-  if (minValue.value != null) return Math.max(0, minValue.value)
-  if (maxValue.value != null) return Math.min(0, maxValue.value)
-  return 0
+function createNextValue() {
+  let nextValue = 0
+  if (minValue.value != null && nextValue < minValue.value) {
+    nextValue = minValue.value
+  }
+  if (maxValue.value != null && nextValue > maxValue.value) {
+    nextValue = maxValue.value
+  }
+  return nextValue
 }
 
 const displayedValueInvalid = computed(
@@ -246,7 +258,7 @@ function doStep(offset: number) {
   })
   if (parsedValue === false) return
 
-  const nextValue = parsedValue === null ? createValidValue() : parsedValue
+  const nextValue = parsedValue === null ? createNextValue() : parsedValue
   deriveDisplayedValueFromValue(nextValue)
   doUpdateValue(nextValue)
 }
