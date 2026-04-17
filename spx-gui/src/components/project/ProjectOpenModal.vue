@@ -45,7 +45,7 @@ const queryRet = useQuery(
     @update:visible="emit('cancelled')"
   >
     <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
-      <ul class="flex flex-wrap content-start gap-middle">
+      <ul class="flex flex-wrap content-start gap-xl">
         <ProjectItem
           v-for="project in slotProps.data.data"
           :key="project.id"

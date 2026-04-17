@@ -423,11 +423,11 @@ defineExpose({
         <div class="flex-[1_1_40%] truncate text-center">
           {{ project.displayName }}
         </div>
-        <div class="flex-[1_1_30%] grid grid-flow-col items-center justify-end justify-items-end gap-5">
+        <div class="flex-[1_1_30%] grid grid-flow-col items-center justify-end justify-items-end gap-3">
           <UIButton
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Run button', desc: 'Click to run the project in overlay' }"
-            color="primary"
+            type="primary"
             icon="playHollow"
             :loading="runButtonLoading"
             @click="handleRunClick"
@@ -447,7 +447,7 @@ defineExpose({
           <UIButton
             v-if="runnerState !== 'initial'"
             v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
-            color="boring"
+            type="neutral"
             icon="end"
             :loading="stopButtonLoading"
             @click="handleStopClick"
@@ -461,7 +461,8 @@ defineExpose({
                   name: 'Exit full screen button',
                   desc: 'Click to exit full screen for the running project'
                 }"
-                color="boring"
+                type="neutral"
+                shape="square"
                 icon="exitFullScreen"
                 @click="closeFullscreen"
               ></UIButton>
@@ -551,8 +552,6 @@ defineExpose({
 .runner-wrapper.fullscreen.opening .header {
   opacity: 0;
   visibility: hidden;
-  height: 56px;
-  padding: 0 20px;
   border-bottom-color: transparent;
 }
 
@@ -602,15 +601,16 @@ defineExpose({
 }
 
 .header {
+  flex: 0 0 auto;
+  height: 48px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   gap: 32px;
   font-size: 16px;
   border-bottom: 1px solid var(--ui-color-grey-400);
-  height: 56px;
   color: var(--ui-color-title);
   background-color: #fff;
-  padding: 0 20px;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -624,7 +624,7 @@ defineExpose({
 .runner-area .runner {
   width: 100%;
   height: 100%;
-  border-radius: var(--ui-border-radius-2);
+  border-radius: var(--ui-border-radius-md);
   overflow: hidden;
 }
 

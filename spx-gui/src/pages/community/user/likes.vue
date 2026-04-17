@@ -55,7 +55,7 @@ const queryRet = useQuery(
     </template>
     <div class="mt-2">
       <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
-        <ul class="grid grid-cols-[repeat(var(--project-num-in-row),minmax(0,1fr))] gap-middle">
+        <ul class="grid grid-cols-[repeat(var(--project-num-in-row),minmax(0,1fr))] gap-xl">
           <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
         </ul>
       </ListResultWrapper>

@@ -6,12 +6,11 @@ import { listCourse, type Course } from '@/apis/course'
 import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
-import CommunityCard from '@/components/community/CommunityCard.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/community/TextView.vue'
 import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
 import { useTutorial } from '@/components/tutorials/tutorial'
-import { UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
+import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt } from '@/utils/route'
@@ -103,7 +102,7 @@ const { fn: handleCourseClick } = useMessageHandle(
     <CommunityNavbar />
 
     <CenteredWrapper size="medium" class="my-6">
-      <CommunityCard class="relative flex gap-10 bg-grey-100 p-5">
+      <UICard class="relative flex gap-10 bg-grey-100 p-5">
         <UILoading v-if="courseSeriesIsLoading" cover mask="solid" />
         <UIError v-else-if="courseSeriesError != null" :retry="courseSeriesRefetch">
           {{ $t(courseSeriesError.userMessage) }}
@@ -116,7 +115,7 @@ const { fn: handleCourseClick } = useMessageHandle(
         </div>
         <div class="flex-[1_1_1000px] mr-5 flex flex-col gap-5 overflow-hidden">
           <template v-if="courseSeries != null">
-            <h2 class="overflow-hidden text-20/7 whitespace-nowrap text-ellipsis text-grey-1000">
+            <h2 class="overflow-hidden text-2xl whitespace-nowrap text-ellipsis text-grey-1000">
               {{ courseSeries.title }}
             </h2>
 
@@ -134,7 +133,7 @@ const { fn: handleCourseClick } = useMessageHandle(
             </div>
           </template>
         </div>
-      </CommunityCard>
+      </UICard>
 
       <div class="mt-7 flex flex-col">
         <div v-if="courseSeries" :style="{ '--num-in-row': numInRow }">

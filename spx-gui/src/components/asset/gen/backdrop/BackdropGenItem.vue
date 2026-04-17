@@ -19,16 +19,6 @@ const highlight = computed(() => props.gen.imagesGenState.status === 'finished')
       name: `Backdrop generation item '${gen.settings.name}'`,
       desc: `Click to view generation settings and preview for backdrop '${gen.settings.name}'`
     }"
-    :color="{
-      main: 'stage',
-      loading: {
-        headColor: 'var(--ui-color-stage-main)',
-        tailColor: '#D6EDFF',
-        traceColor: '#F3FCFD1A',
-        activeTraceColor: '#82C9FE'
-      },
-      highlightColor: 'var(--ui-color-stage-main)'
-    }"
     :loading="isLoading"
     :highlight="highlight"
     :placeholder="backdropSVG"

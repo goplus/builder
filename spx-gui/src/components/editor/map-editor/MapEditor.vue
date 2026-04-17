@@ -26,11 +26,11 @@ function handleSpriteSelect(sprite: Sprite | null) {
 </script>
 
 <template>
-  <div class="flex-[1_1_0] flex flex-row gap-middle">
+  <div class="flex-[1_1_0] flex flex-row gap-xl">
     <div class="flex-1 w-0 min-w-0 flex items-center justify-center">
       <MapViewer :project="project" :selected-sprite="selectedSprite" @update:selected-sprite="handleSpriteSelect" />
     </div>
-    <div class="flex-[0_0_400px] flex flex-col gap-middle desktop-large:basis-124">
+    <div class="flex-[0_0_400px] flex flex-col gap-xl desktop-large:basis-124">
       <UICard>
         <UICardHeader>
           <div class="w-full flex items-center justify-between">

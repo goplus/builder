@@ -80,7 +80,7 @@ const components = computed(() => getComponents(copilot))
 
 .markdown-view :deep(h4, h5, h6) {
   font-size: 13px;
-  line-height: 1.53846;
+  line-height: 1.69231;
 }
 
 .markdown-view :deep(ul),

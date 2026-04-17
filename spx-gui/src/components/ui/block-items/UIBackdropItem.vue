@@ -1,12 +1,7 @@
 <template>
-  <UIBlockItem
-    class="gap-0.5 p-0.5"
-    size="large"
-    :active="selectable && selectable.selected"
-    :interactive="!!selectable"
-  >
-    <UIImg class="h-[98px] w-[132px] overflow-hidden rounded-[9px]" :src="imgSrc" :loading="imgLoading" />
-    <UIBlockItemTitle size="large">
+  <UIBlockItem class="p-1" size="large" :active="selectable && selectable.selected" :interactive="!!selectable">
+    <UIImg class="h-24.5 w-33 overflow-hidden rounded-sm" size="cover" :src="imgSrc" :loading="imgLoading" />
+    <UIBlockItemTitle class="mt-2" size="large">
       {{ name }}
     </UIBlockItemTitle>
     <slot></slot>

@@ -52,7 +52,7 @@ const initializingError = computed(() => {
     class="flex flex-col"
     style="--console-panel-text-color: var(--ui-color-grey-1000); --console-panel-tip-color: var(--ui-color-grey-700)"
   >
-    <UICardHeader>
+    <UICardHeader class="h-11">
       {{ $t({ en: 'Console', zh: '控制台' }) }}
     </UICardHeader>
     <ul ref="outputContainerRef" class="flex-[1_1_0] flex flex-col gap-1 overflow-y-auto p-3">
@@ -64,7 +64,7 @@ const initializingError = computed(() => {
       </UIEmpty>
       <li
         v-else-if="initializingError != null"
-        class="relative font-code text-12"
+        class="relative font-code text-xs"
         style="--console-panel-text-color: var(--ui-color-red-500); --console-panel-tip-color: var(--ui-color-red-300)"
       >
         <!-- TODO: Optimize initializing-error displaying here -->
@@ -82,7 +82,7 @@ const initializingError = computed(() => {
         v-for="output in outputs"
         v-else
         :key="output.id"
-        class="relative font-code text-12"
+        class="relative font-code text-xs"
         :style="
           output.kind === 'error'
             ? {

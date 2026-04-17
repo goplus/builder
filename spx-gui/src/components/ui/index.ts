@@ -24,7 +24,6 @@ export { default as UIChip } from './UIChip.vue'
 // UITag is suitable for display-focused scenarios, such as displaying tags, categories, etc.
 export { default as UITag } from './UITag.vue'
 export { getCssVars } from './tokens/utils'
-export type { Color } from './tokens/colors'
 export { default as UIDivider } from './UIDivider.vue'
 export { default as UISlider } from './UISlider.vue'
 export { default as UIEmpty } from './empty/UIEmpty.vue'

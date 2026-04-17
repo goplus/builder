@@ -5,7 +5,6 @@
       active && 'ui-block-item-active',
       interactive && 'ui-block-item-interactive',
       droppable && `ui-block-item-droppable-${droppable}`,
-      `ui-block-item-${variant}`,
       `ui-block-item-${size}`
     ]"
     :style="style"
@@ -15,9 +14,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Color } from '..'
-
 /**
  * State for UIBlockItem as a droppable target.
  * - `accept`: the item of current dragging is acceptable
@@ -25,46 +21,54 @@ import type { Color } from '..'
  */
 export type DroppableState = 'accept' | 'over'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     active?: boolean
-    color?: Color
-    variant?: 'standard' | 'colorful'
     size?: 'medium' | 'large'
     interactive?: boolean
     droppable?: DroppableState | false
   }>(),
   {
-    variant: 'standard',
     size: 'medium',
-    color: 'primary',
     interactive: true,
     droppable: false
   }
 )
 
-const style = computed(() => ({
-  '--color-outline': `var(--ui-color-${props.color}-main)`,
-  '--color-background': `var(--ui-color-${props.color}-200)`,
-  '--color-background-faint': `var(--ui-color-${props.color}-100)`
-}))
+const style = {
+  '--color-outline': 'var(--ui-color-primary-main)',
+  '--color-background-active': 'var(--ui-color-primary-200)',
+  '--color-background-default': 'var(--ui-color-primary-100)',
+  '--color-background-hover': 'var(--ui-color-primary-200)'
+}
 </script>
 
 <style>
 @layer components {
   .ui-block-item {
+    box-sizing: border-box;
     width: var(--block-item-size);
     height: var(--block-item-size);
-    /* it may shrink without min-width / min-height */
-    min-width: var(--block-item-size);
-    min-height: var(--block-item-size);
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative;
-    border-radius: var(--ui-border-radius-2);
-    border: 2px solid var(--ui-color-grey-300);
-    background-color: var(--ui-color-grey-300);
+    border-radius: var(--ui-border-radius-md);
+    padding: 2px;
+    background-color: var(--ui-color-grey-100);
+  }
+
+  /*
+   * Reserve 2px padding space for stable content layout;
+   * draw the visible border with a pseudo element cuz its width changes on active state.
+   */
+  .ui-block-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--ui-color-grey-400);
+    border-radius: inherit;
+    pointer-events: none;
   }
 
   .ui-block-item.ui-block-item-medium {
@@ -79,57 +83,41 @@ const style = computed(() => ({
     cursor: pointer;
   }
 
-  .ui-block-item.ui-block-item-colorful {
-    border-color: var(--color-background-faint);
-    background-color: var(--color-background-faint);
-  }
-
   /* About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts` */
-  .ui-block-item.ui-block-item-colorful.ui-block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(
-      .ui-block-item-active
-    ) {
-    border-color: var(--color-background);
-    background-color: var(--color-background);
-  }
-
-  .ui-block-item.ui-block-item-colorful.ui-block-item-active {
-    border-color: var(--color-outline);
-    background-color: var(--color-background);
-  }
-
-  /* TODO: droppable-related styles for colorful variant */
-
-  .ui-block-item.ui-block-item-standard {
-    border-color: var(--ui-color-grey-300);
+  .ui-block-item.ui-block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(.ui-block-item-active) {
     background-color: var(--ui-color-grey-300);
   }
 
-  /* About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts` */
-  .ui-block-item.ui-block-item-standard.ui-block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(
-      .ui-block-item-active
-    ) {
-    border-color: var(--ui-color-grey-400);
-    background-color: var(--ui-color-grey-400);
+  .ui-block-item.ui-block-item-active {
+    background-color: var(--color-background-active);
   }
 
-  .ui-block-item.ui-block-item-standard.ui-block-item-active {
+  .ui-block-item.ui-block-item-active::before {
+    border-width: 2px;
     border-color: var(--color-outline);
-    background-color: var(--color-background);
   }
 
-  .ui-block-item.ui-block-item-standard.ui-block-item-active.ui-block-item-draggable {
+  .ui-block-item.ui-block-item-active.ui-block-item-draggable {
     cursor: grab;
   }
 
-  .ui-block-item.ui-block-item-standard.ui-block-item-droppable-accept {
-    border-color: var(--ui-color-grey-400);
+  .ui-block-item.ui-block-item-droppable-accept {
     background-color: var(--ui-color-grey-400);
   }
 
-  .ui-block-item.ui-block-item-standard.ui-block-item-droppable-over {
+  .ui-block-item.ui-block-item-droppable-accept::before {
+    border-width: 2px;
+    border-color: var(--ui-color-grey-400);
+  }
+
+  .ui-block-item.ui-block-item-droppable-over {
     animation: droppable-shaking 0.2s ease-in-out 2;
+    background-color: var(--color-background-active);
+  }
+
+  .ui-block-item.ui-block-item-droppable-over::before {
+    border-width: 2px;
     border-color: var(--color-outline);
-    background-color: var(--ui-color-grey-400);
   }
 }
 

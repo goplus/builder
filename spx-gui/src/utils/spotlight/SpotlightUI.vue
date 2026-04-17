@@ -279,7 +279,7 @@ watch(
 
 <style scoped>
 :global(.spotlight-attach-element-highlight) {
-  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.17);
+  box-shadow: var(--ui-box-shadow-sm);
 }
 
 .v-enter-active {
@@ -397,7 +397,7 @@ watch(
   background: var(--ui-color-grey-100);
   word-wrap: break-word;
   max-width: 300px;
-  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.17);
+  box-shadow: var(--ui-box-shadow-sm);
 }
 
 .spotlight-ui .spotlight-item .tips .content {

@@ -15,13 +15,11 @@ import { RenameMenuItem, RemoveMenuItem, DuplicateMenuItem } from '@/components/
 const props = withDefaults(
   defineProps<{
     animation: Animation
-    color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
     autoplay?: boolean
     operable?: boolean
   }>(),
   {
-    color: 'sprite',
     selectable: false,
     autoplay: false,
     operable: false
@@ -81,13 +79,7 @@ const { fn: handleRename } = useMessageHandle(() => renameAnimation(props.animat
 </script>
 
 <template>
-  <UIEditorSpriteItem
-    ref="wrapperRef"
-    v-radar="radarNodeMeta"
-    :selectable="selectable"
-    :name="animation.name"
-    :color="color"
-  >
+  <UIEditorSpriteItem ref="wrapperRef" v-radar="radarNodeMeta" :selectable="selectable" :name="animation.name">
     <template #img="{ style }">
       <CostumesAutoPlayer
         v-if="autoplay || hovered"
@@ -98,7 +90,7 @@ const { fn: handleRename } = useMessageHandle(() => renameAnimation(props.animat
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+    <CornerMenu v-if="operable && selectable && selectable.selected">
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the animation' }"
         @click="handleDuplicate"

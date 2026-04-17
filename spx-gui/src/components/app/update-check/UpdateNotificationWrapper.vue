@@ -2,7 +2,7 @@
   <div class="h-full min-h-0 flex flex-col">
     <div
       v-if="visible"
-      class="flex-none flex items-center justify-center gap-6 bg-yellow-200 px-6 py-2.75 text-grey-900"
+      class="flex-none flex items-center justify-center gap-6 bg-yellow-200 px-6 py-md text-grey-900"
       role="status"
       aria-live="polite"
     >
@@ -17,8 +17,7 @@
       </div>
       <UIButton
         v-radar="{ name: 'Reload now', desc: 'Reload the page to use the latest version' }"
-        variant="flat"
-        color="yellow"
+        type="yellow"
         size="small"
         @click="handleReload"
       >

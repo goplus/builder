@@ -190,7 +190,7 @@ const handleRemove = useMessageHandle(
       </UITextInput>
     </template>
     <section class="flex">
-      <div class="flex-[0_0_168px] min-w-0 flex-col gap-3 border-r border-grey-400 p-middle flex">
+      <div class="flex-[0_0_168px] min-w-0 flex-col gap-3 border-r border-grey-400 p-4 flex">
         <UIChip
           v-for="c in categories"
           :key="c.value"

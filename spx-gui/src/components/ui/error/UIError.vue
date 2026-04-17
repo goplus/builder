@@ -1,10 +1,10 @@
 <template>
   <div :class="rootClass">
     <img :src="defaultErrorImg" alt="" />
-    <h5 class="mt-3 text-16 text-grey-1000">
+    <h5 class="mt-3 text-xl text-grey-1000">
       <slot></slot>
     </h5>
-    <p v-if="$slots['sub-message'] != null" class="mt-1 text-13/5 text-grey-900">
+    <p v-if="$slots['sub-message'] != null" class="mt-1 text-sm text-grey-900">
       <slot name="sub-message"></slot>
     </p>
     <div class="mt-1 flex items-center justify-center gap-3">
@@ -55,7 +55,7 @@ const rootClass = computed(() =>
 )
 
 const opBtnClass =
-  'px-3 cursor-pointer border-none outline-none bg-transparent flex items-center gap-1 text-13/5 \
+  'px-3 cursor-pointer border-none outline-none bg-transparent flex items-center gap-1 text-sm \
 text-primary-main transition-colors duration-200 hover:text-primary-400 active:text-primary-600'
 
 const loading = ref(false)

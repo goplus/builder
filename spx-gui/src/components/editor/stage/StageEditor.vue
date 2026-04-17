@@ -1,12 +1,11 @@
 <template>
-  <EditorHeader color="stage">
+  <EditorHeader>
     <UITabs
       v-radar="{
         name: 'Stage editor tabs',
         desc: 'Navigation tabs for switching between different stage editing views'
       }"
       :value="state.selected.type"
-      color="stage"
       @update:value="(type) => state.select(type as SelectedType)"
     >
       <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">

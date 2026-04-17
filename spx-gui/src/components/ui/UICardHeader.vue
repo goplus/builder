@@ -1,11 +1,19 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+
+import { cn } from './utils'
+
+const props = defineProps<{
+  class?: string
+}>()
+
+const rootClass = computed(() =>
+  cn('flex h-12 items-center px-3 text-xl border-b border-grey-400 text-title', props.class ?? null)
+)
+</script>
+
 <template>
-  <div>
-    <div class="flex h-[43px] items-center px-4 text-16">
-      <slot></slot>
-    </div>
-    <UIDivider />
+  <div :class="rootClass">
+    <slot></slot>
   </div>
 </template>
-<script setup lang="ts">
-import { UIDivider } from '@/components/ui'
-</script>

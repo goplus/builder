@@ -26,18 +26,30 @@ const type = inject(typeInjectionKey, () => 'icon')
 const variant = inject(variantInjectionKey, () => 'primary')
 
 const isActive = computed(() => selectedValue?.() === props.value)
+
+const styles = {
+  primary: {
+    base: 'h-full',
+    default: 'bg-grey-300 text-grey-1000',
+    active: 'bg-primary-200 text-primary-400',
+    text: 'px-3',
+    icon: 'w-8'
+  },
+  secondary: {
+    base: 'h-7',
+    default: 'text-grey-800 hover:text-grey-1000',
+    active: 'rounded-[calc(var(--ui-border-radius-md)-2px)] bg-grey-100 text-grey-1000',
+    text: 'px-3',
+    icon: 'w-9'
+  }
+}
+
 const rootClass = computed(() =>
   cn(
-    'h-(--ui-line-height-2) flex items-center justify-center first:rounded-l-md first:rounded-r-none last:rounded-r-md last:rounded-l-none',
-    type() === 'icon' ? 'min-w-8' : 'px-3',
-    // TODO: Revisit color #47d8e4 together with the rest of the UI library when the visual style is unified.
-    variant() === 'primary'
-      ? isActive.value
-        ? 'bg-primary-200 text-primary-400'
-        : 'bg-grey-300 text-grey-1000'
-      : isActive.value
-        ? 'bg-grey-200 text-turquoise-600'
-        : 'bg-[#47d8e4] text-grey-200',
+    'flex items-center justify-center transition-colors',
+    styles[variant()].base,
+    styles[variant()][isActive.value ? 'active' : 'default'],
+    styles[variant()][type()],
     isActive.value ? 'cursor-default' : 'cursor-pointer',
     props.class ?? null
   )

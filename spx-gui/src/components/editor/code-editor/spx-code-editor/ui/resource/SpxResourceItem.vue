@@ -42,23 +42,11 @@ const name = computed(() => {
 </script>
 
 <template>
-  <AnimationItem
-    v-if="model instanceof Animation"
-    :animation="model"
-    :selectable="selectable"
-    color="primary"
-    :autoplay="autoplay"
-  />
-  <BackdropItem v-else-if="model instanceof Backdrop" :backdrop="model" :selectable="selectable" color="primary" />
-  <CostumeItem v-else-if="model instanceof Costume" :costume="model" :selectable="selectable" color="primary" />
-  <SoundItem v-else-if="model instanceof Sound" :sound="model" :selectable="selectable" color="primary" />
-  <SpriteItem
-    v-else-if="model instanceof Sprite"
-    :sprite="model"
-    :selectable="selectable"
-    color="primary"
-    :autoplay="autoplay"
-  />
-  <WidgetItem v-else-if="model != null && isWidget(model)" :widget="model" :selectable="selectable" color="primary" />
+  <AnimationItem v-if="model instanceof Animation" :animation="model" :selectable="selectable" :autoplay="autoplay" />
+  <BackdropItem v-else-if="model instanceof Backdrop" :backdrop="model" :selectable="selectable" />
+  <CostumeItem v-else-if="model instanceof Costume" :costume="model" :selectable="selectable" />
+  <SoundItem v-else-if="model instanceof Sound" :sound="model" :selectable="selectable" />
+  <SpriteItem v-else-if="model instanceof Sprite" :sprite="model" :selectable="selectable" :autoplay="autoplay" />
+  <WidgetItem v-else-if="model != null && isWidget(model)" :widget="model" :selectable="selectable" />
   <div v-else>{{ $t({ zh: `未知资源（${name}）`, en: `Unknown resource (${name})` }) }}</div>
 </template>

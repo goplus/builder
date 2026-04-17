@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center justify-center">
-    <SoundPlayer :src="audioSrc" color="primary" />
+    <SoundPlayer :src="audioSrc" />
   </div>
 </template>
 

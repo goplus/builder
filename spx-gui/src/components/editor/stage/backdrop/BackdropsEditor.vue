@@ -1,7 +1,6 @@
 <template>
   <EditorList
     v-radar="{ name: 'Backdrops management', desc: 'Managing backdrops of stage' }"
-    color="stage"
     resource-type="backdrop"
     :sortable="{ list: stage.backdrops }"
     @sorted="handleSorted"

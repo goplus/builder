@@ -26,7 +26,7 @@ const emit = defineEmits<{
 }>()
 
 const rootClass = computed(() =>
-  cn('flex items-center justify-center rounded-sm bg-grey-400 p-[2px]', props.class ?? null)
+  cn('flex items-center justify-center rounded-md bg-grey-400 p-[2px]', props.class ?? null)
 )
 
 const updateValue = (newValue: string) => {

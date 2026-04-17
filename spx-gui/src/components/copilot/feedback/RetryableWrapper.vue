@@ -18,7 +18,7 @@ function handleRetry() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 text-12/4.5">
+  <div class="flex flex-col gap-2 text-xs">
     <div class="flex items-center gap-2">
       <slot />
     </div>

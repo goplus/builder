@@ -83,7 +83,7 @@ function handleSelect(index: number) {
       </template>
     </ul>
 
-    <p class="text-center text-12 text-hint-2">
+    <p class="text-center text-xs text-hint-2">
       <slot name="tip"></slot>
     </p>
   </div>

@@ -340,16 +340,16 @@ const title = computed(() => {
     @update:visible="handleModalClose"
   >
     <header class="h-14 flex items-center justify-between border-b border-grey-400 px-6">
-      <div class="flex items-center gap-middle">
+      <div class="flex items-center gap-xl">
         <UIButton
           v-if="isGenerating && allowBackFromGen"
           class="-rotate-90"
-          color="white"
+          type="white"
+          shape="square"
           icon="arrowAlt"
-          variant="stroke"
           @click="handleBackFromGen"
         ></UIButton>
-        <h2 class="text-16 text-title">{{ $t(title) }}</h2>
+        <h2 class="text-xl text-title">{{ $t(title) }}</h2>
       </div>
 
       <UIModalClose @click="handleModalClose" />
@@ -371,20 +371,13 @@ const title = computed(() => {
               size="large"
               clearable
               :placeholder="$t({ zh: '搜索', en: 'Search' })"
-              :style="{ boxShadow: '0 4px 12px 0 rgba(from var(--ui-color-turquoise-300) r g b / 65%)' }"
+              :style="{ boxShadow: 'var(--ui-box-shadow-brand)' }"
             >
               <template #prefix><UIIcon type="search" /></template>
             </UITextInput>
 
             <div class="flex gap-4">
-              <UIButton
-                v-for="(r, i) in recommended"
-                :key="i"
-                variant="stroke"
-                color="white"
-                size="small"
-                @click="searchInput = $t(r)"
-              >
+              <UIButton v-for="(r, i) in recommended" :key="i" type="white" size="small" @click="searchInput = $t(r)">
                 {{ $t(r) }}
               </UIButton>
             </div>
@@ -446,7 +439,7 @@ const title = computed(() => {
                       :total="pageTotal"
                     />
                     <div v-if="shouldShowGenSuggestion" class="flex flex-col items-center gap-5 py-11">
-                      <div class="text-16 text-grey-700">
+                      <div class="text-xl text-grey-700">
                         {{ $t(genSuggestionMessage) }}
                       </div>
                       <UIButton size="large" @click="handleGenStart">
@@ -463,7 +456,7 @@ const title = computed(() => {
             </div>
           </main>
         </div>
-        <footer class="flex items-center justify-end gap-middle px-6 py-5">
+        <footer class="flex items-center justify-end gap-xl px-6 py-5">
           <span v-show="selected.length > 0">
             {{
               $t({

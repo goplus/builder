@@ -1,9 +1,9 @@
 <template>
-  <UIEditorSpriteItem :name="costume.name" :selectable="{ selected: checked }" color="primary">
+  <UIEditorSpriteItem :name="costume.name" :selectable="{ selected: checked }">
     <template #img="{ style }">
       <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <UICornerIcon v-show="checked" type="check" color="primary" />
+    <UICornerIcon v-show="checked" type="check" />
   </UIEditorSpriteItem>
 </template>
 

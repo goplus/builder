@@ -17,13 +17,11 @@ import {
 const props = withDefaults(
   defineProps<{
     backdrop: Backdrop
-    color?: 'stage' | 'primary'
     selectable?: false | { selected: boolean }
     /** `operable: true` means the backdrop can be published & removed */
     operable?: boolean
   }>(),
   {
-    color: 'stage',
     selectable: false,
     operable: false
   }
@@ -88,9 +86,8 @@ const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdro
     :img-loading="imgLoading"
     :name="backdrop.name"
     :selectable="selectable"
-    :color="color"
   >
-    <CornerMenu v-if="operable && selectable && selectable.selected" color="stage">
+    <CornerMenu v-if="operable && selectable && selectable.selected">
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the backdrop' }"
         @click="handleDuplicate"

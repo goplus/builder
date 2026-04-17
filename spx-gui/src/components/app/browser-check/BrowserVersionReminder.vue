@@ -14,14 +14,14 @@
           name: 'Do not show again button',
           desc: 'Click to close browser version reminder modal and suppress it show again.'
         }"
-        color="boring"
+        type="neutral"
         @click="handleDoNotShowAgain"
       >
         {{ $t({ en: 'Do not show again', zh: '不再提示' }) }}
       </UIButton>
       <UIButton
         v-radar="{ name: 'Confirm button', desc: 'Click to close browser version reminder modal' }"
-        color="primary"
+        type="primary"
         @click="handleConfirm"
       >
         {{ $t({ en: 'Got it', zh: '我知道了' }) }}

@@ -45,7 +45,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.gen.image)
 <template>
   <GenPreview v-if="gen.result == null" class="absolute inset-0" :name="gen.name" @rename="handleRenameCostume">
     <template v-if="canSaveCostume" #ops>
-      <UIButton color="success" :loading="savingCostume" @click="handleSaveCostume">{{
+      <UIButton type="green" :loading="savingCostume" @click="handleSaveCostume">{{
         $t({ en: 'Save costume', zh: '保存造型' })
       }}</UIButton>
     </template>

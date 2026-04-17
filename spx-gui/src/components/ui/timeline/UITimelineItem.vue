@@ -13,7 +13,7 @@ defineProps<{
         <circle cx="4" cy="4" r="4" fill="#D9DFE5" />
       </svg>
     </template>
-    <p class="text-12 text-hint-2">{{ time }}</p>
+    <p class="text-xs text-hint-2">{{ time }}</p>
     <p class="text-base">
       <slot></slot>
     </p>

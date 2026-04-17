@@ -16,7 +16,7 @@
       >
         <div class="mt-1 h-14 w-14" v-html="iconStateDefault"></div>
         <p
-          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-10/[1.6] whitespace-nowrap text-ellipsis text-title"
+          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title"
         >
           {{ $t({ en: 'Default', zh: '默认' }) }}
         </p>
@@ -29,7 +29,7 @@
       >
         <div class="mt-1 h-14 w-14" v-html="iconStateStep"></div>
         <p
-          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-10/[1.6] whitespace-nowrap text-ellipsis text-title"
+          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title"
         >
           {{ $t({ en: 'Step', zh: '行走' }) }}
         </p>
@@ -42,7 +42,7 @@
       >
         <div class="mt-1 h-14 w-14" v-html="iconStateDie"></div>
         <p
-          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-10/[1.6] whitespace-nowrap text-ellipsis text-title"
+          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title"
         >
           {{ $t({ en: 'Die', zh: '死亡' }) }}
         </p>

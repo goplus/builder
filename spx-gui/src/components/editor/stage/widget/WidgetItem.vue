@@ -12,12 +12,10 @@ import { RenameMenuItem, RemoveMenuItem, DuplicateMenuItem } from '@/components/
 const props = withDefaults(
   defineProps<{
     widget: Widget
-    color?: 'stage' | 'primary'
     selectable?: false | { selected: boolean }
     operable?: boolean
   }>(),
   {
-    color: 'stage',
     selectable: false,
     operable: false
   }
@@ -77,18 +75,12 @@ const { fn: handleRename } = useMessageHandle(() => renameWidget(props.widget), 
 </script>
 
 <template>
-  <UIEditorWidgetItem
-    v-radar="radarNodeMeta"
-    :name="widget.name"
-    :selectable="selectable"
-    :color="color"
-    :visible="widget.visible"
-  >
+  <UIEditorWidgetItem v-radar="radarNodeMeta" :name="widget.name" :selectable="selectable" :visible="widget.visible">
     <template #icon>
       <!-- eslint-disable-next-line vue/no-v-html -->
-      <div v-html="getIcon(widget)"></div>
+      <div class="[&_svg]:block [&_svg]:h-full [&_svg]:w-full" v-html="getIcon(widget)"></div>
     </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+    <CornerMenu v-if="operable && selectable && selectable.selected">
       <UIMenuItem
         v-radar="{ name: 'Visibility control', desc: 'Control to toggle widget visibility' }"
         @click="toggleWidgetVisible"

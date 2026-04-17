@@ -80,11 +80,13 @@ onMounted(() => {
   .ui-text-input-color-default {
     --ui-text-input-bg-color: var(--ui-color-grey-300);
     --ui-text-input-bg-color-hover: var(--ui-color-grey-400);
+    --ui-text-input-border-color: var(--ui-color-grey-300);
   }
 
   .ui-text-input-color-white {
     --ui-text-input-bg-color: var(--ui-color-grey-100);
-    --ui-text-input-bg-color-hover: var(--ui-color-grey-100);
+    --ui-text-input-bg-color-hover: var(--ui-color-grey-200);
+    --ui-text-input-border-color: var(--ui-color-grey-400);
   }
 
   /* size */
@@ -102,6 +104,9 @@ onMounted(() => {
 /* so we do background color control here */
 .ui-text-input:not(.n-input--focus, .n-input--error-status, .n-input--success-status) {
   background: var(--ui-text-input-bg-color);
+}
+.ui-text-input:not(.n-input--focus, .n-input--error-status, .n-input--success-status):deep(.n-input__state-border) {
+  border: 1px solid var(--ui-text-input-border-color);
 }
 .ui-text-input:not(.n-input--focus, .n-input--disabled):hover {
   background: var(--ui-text-input-bg-color-hover);

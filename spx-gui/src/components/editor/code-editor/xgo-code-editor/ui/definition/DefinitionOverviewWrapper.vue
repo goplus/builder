@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="flex text-12/[1.75] text-title">
+  <div class="flex text-xs/[1.75] text-title">
     <CodeView class="def-overview-code" mode="inline" :inlay-hints="inlayHints"><slot></slot></CodeView>
   </div>
 </template>

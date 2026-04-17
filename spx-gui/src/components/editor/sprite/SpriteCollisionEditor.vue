@@ -291,7 +291,7 @@ const { fn: handleConfirm } = useMessageHandle(
 </script>
 
 <template>
-  <div class="h-full w-full flex flex-col items-center gap-middle">
+  <div class="h-full w-full flex flex-col items-center gap-xl">
     <div ref="wrapper" class="relative h-full w-full flex-1 overflow-hidden rounded-md">
       <CheckerboardBackground class="absolute inset-0" />
       <v-stage v-if="stageConfig != null" :config="stageConfig">
@@ -316,7 +316,7 @@ const { fn: handleConfirm } = useMessageHandle(
     </div>
     <UIButton
       v-radar="{ name: 'Save button', desc: 'Click to save sprite collision' }"
-      color="success"
+      type="green"
       :disabled="!dirty"
       @click="handleConfirm"
     >

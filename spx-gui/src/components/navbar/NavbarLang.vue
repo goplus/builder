@@ -4,7 +4,7 @@
     <template #trigger>
       <div
         v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
-        class="h-full cursor-pointer flex items-center px-5 hover:bg-primary-600"
+        class="h-full cursor-pointer flex items-center px-3 hover:bg-grey-400"
         @click="toggleLang"
         v-html="langContent"
       ></div>

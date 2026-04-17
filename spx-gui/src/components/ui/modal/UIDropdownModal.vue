@@ -1,7 +1,7 @@
 <template>
   <form :class="rootClass" @submit.prevent="emit('confirm')">
     <header class="h-11 flex flex-none items-center px-4">
-      <h4 class="flex-1 text-16 text-title">{{ title }}</h4>
+      <h4 class="flex-1 text-xl text-title">{{ title }}</h4>
       <UIModalClose class="-mr-1" @click="emit('cancel')" />
     </header>
     <UIDivider />
@@ -11,14 +11,14 @@
     <footer class="flex-none flex justify-end gap-3 p-4">
       <UIButton
         v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in modal' }"
-        color="boring"
+        type="neutral"
         @click="emit('cancel')"
       >
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton
         v-radar="{ name: 'Confirm button', desc: 'Click to submit the modal' }"
-        color="primary"
+        type="primary"
         html-type="submit"
       >
         {{ $t({ en: 'Confirm', zh: '确认' }) }}

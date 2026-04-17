@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-middle text-grey-800">
+  <div class="flex items-center gap-xl text-grey-800">
     <div class="flex items-center gap-1">
       <div>
         {{ $t({ en: 'Backdrop Mode', zh: '背景模式' }) }}
