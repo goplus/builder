@@ -221,6 +221,7 @@ function handleRootClick(event: MouseEvent) {
     caret-color: var(--ui-color-primary-main);
     font: inherit;
     line-height: inherit;
+    text-align: inherit;
     outline: none;
   }
 

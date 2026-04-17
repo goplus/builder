@@ -37,7 +37,6 @@
     - `UITooltip` → `NTooltip`
     - `UIModal` → `NModal`
     - `UIMessageProvider` → `NMessageProvider`
-    - `UISlider` → `NSlider`
     - `UISwitch` → `NSwitch`
     - `UICheckbox` → `NCheckbox`
     - `UICheckboxGroup` → `NCheckboxGroup`

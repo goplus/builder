@@ -10,8 +10,8 @@ The current form/input layer is mid-migration away from `naive-ui`:
 
 - `UIForm` and `UIFormItem` now own native/internal form orchestration instead of wrapping `NForm` / `NFormItem`
 - `UIFormItemInternal` has been removed
-- `UITextInput`, `UINumberInput`, `UISlider`, `UISwitch`, `UICheckbox`, `UICheckboxGroup`, `UIRadio`, and `UIRadioGroup` still wrap `naive-ui` primitives
-- several components and call sites still style against `naive-ui` DOM/class details such as `.n-input-*`, `.n-form-item-*`, and `.n-slider-*`
+- `UISwitch`, `UICheckbox`, `UICheckboxGroup`, `UIRadio`, and `UIRadioGroup` still wrap `naive-ui` primitives
+- some remaining choice-control and business-side code still relies on third-party or legacy DOM/class details (for example `UISwitch`, `UICheckbox`, `UICheckboxGroup`, `UIRadio`, `UIRadioGroup`, and business-side selectors such as `.n-radio--checked` in `xgo-code-editor/ui/input-helper/BooleanInput.vue`)
 
 The long-term goal is not only to remove those imports, but to establish an internal form/control contract that future UI components can build on without depending on third-party DOM or implementation details.
 
@@ -644,7 +644,7 @@ This lets us remove styling dependencies on:
 - `.n-input--error-status`
 - `.n-input--success-status`
 - `.n-form-item-*`
-- `.n-slider-*`
+- older slider hook classes
 
 and replace them with internal, stable styling contracts.
 
@@ -709,7 +709,7 @@ Use this as the implementation checklist for the next phase.
 
 - [x] migrate `UITextInput.vue` to the internal form-control contract
 - [x] migrate `UINumberInput.vue` to the internal form-control contract
-- [ ] migrate `UISlider.vue` to the internal form-control contract
+- [x] migrate `UISlider.vue` to the internal form-control contract
 - [x] migrate `UISwitch.vue` to the internal form-control contract
 - [ ] migrate `UICheckbox.vue` to the internal form-control contract
 - [x] migrate `UICheckboxGroup.vue` to the internal form-control contract
@@ -718,8 +718,6 @@ Use this as the implementation checklist for the next phase.
 
 The unchecked items above are not all blocked for the same reason:
 
-- `UISlider.vue` has not been integrated yet mainly because its field semantics are still less settled
-  than the current text/number/switch controls (for example, real-time drag updates vs commit-on-drag-end).
 - `UICheckbox.vue` and `UIRadio.vue` are often used as individual options inside
   `UICheckboxGroup.vue` / `UIRadioGroup.vue`, so form-field integration usually belongs on the group root
   rather than on each option component.
@@ -728,15 +726,15 @@ The unchecked items above are not all blocked for the same reason:
 
 In the current codebase specifically:
 
-- `UISlider.vue` and `UICheckbox.vue` do not currently appear as direct children of `UIFormItem`.
+- `UICheckbox.vue` does not currently appear as a direct child of `UIFormItem`.
 - `UIRadio.vue` does appear in form flows, but only as an option rendered inside `UIRadioGroup.vue`,
   not as a standalone field root.
 
 ### Control `naive-ui` removal
 
-- [ ] remove `naive-ui` from `UITextInput.vue`
-- [ ] remove `naive-ui` from `UINumberInput.vue`
-- [ ] remove `naive-ui` from `UISlider.vue`
+- [x] remove `naive-ui` from `UITextInput.vue`
+- [x] remove `naive-ui` from `UINumberInput.vue`
+- [x] remove `naive-ui` from `UISlider.vue`
 - [ ] remove `naive-ui` from `UISwitch.vue`
 - [ ] remove `naive-ui` from `UICheckbox.vue`
 - [ ] remove `naive-ui` from `UICheckboxGroup.vue`
@@ -746,8 +744,8 @@ In the current codebase specifically:
 ### Cleanup
 
 - [x] remove `UIFormItemInternal.vue`
-- [ ] remove `.n-*` style dependencies from form/input components
-- [ ] remove business-side `.n-*` assumptions where present
+- [ ] remove remaining `naive-ui` choice-control wrappers from `UISwitch.vue`, `UICheckbox.vue`, `UICheckboxGroup.vue`, `UIRadio.vue`, and `UIRadioGroup.vue`
+- [ ] remove remaining business-side state-class assumptions such as `.n-radio--checked` in `xgo-code-editor/ui/input-helper/BooleanInput.vue`
 - [ ] update `README.md` after implementation lands
 
 ---

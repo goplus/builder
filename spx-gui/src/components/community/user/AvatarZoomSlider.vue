@@ -43,14 +43,14 @@ function handleValueUpdate(value: number) {
     </button>
 
     <UISlider
-      class="slider flex-auto min-w-0"
+      class="flex-auto min-w-0"
+      rail-class="h-1.5"
       update-on="input"
       :min="props.min"
       :max="props.max"
       :step="props.step"
       :value="props.value"
       :disabled="props.disabled"
-      :tooltip="false"
       @update:value="handleValueUpdate"
     />
 
@@ -65,26 +65,3 @@ function handleValueUpdate(value: number) {
     </button>
   </div>
 </template>
-
-<style scoped>
-.slider {
-}
-
-.slider:deep(.n-slider-handle) {
-  background: transparent;
-  box-shadow: none;
-}
-
-.slider:deep(.n-slider-rail),
-.slider:deep(.n-slider-rail__fill) {
-  height: 6px;
-  border-radius: 999px;
-}
-
-.slider:deep(.ui-slider-thumb) {
-  box-sizing: border-box;
-  box-shadow:
-    inset 0 0 0 2px var(--ui-color-primary-400),
-    0 1px 2px rgb(36 41 47 / 10%);
-}
-</style>
