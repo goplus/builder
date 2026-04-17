@@ -18,34 +18,36 @@ describe('cn', () => {
     expect(merged).toContain('rounded-full')
   })
 
-  it('treats numeric text utilities as font sizes without colliding with text colors', () => {
-    expect(cn('text-12', 'text-15')).toBe('text-15')
-    expect(cn('text-title', 'text-15')).toBe('text-title text-15')
-    expect(cn('text-15', 'text-grey-1000')).toBe('text-15 text-grey-1000')
+  it('treats standard text utilities as font sizes without colliding with text colors', () => {
+    expect(cn('text-xs', 'text-lg')).toBe('text-lg')
+    expect(cn('text-title', 'text-lg')).toBe('text-title text-lg')
+    expect(cn('text-lg', 'text-grey-1000')).toBe('text-lg text-grey-1000')
   })
 
-  it('treats text-base as a font-size utility without colliding with text colors', () => {
-    expect(cn('text-base', 'text-15')).toBe('text-15')
-    expect(cn('text-15', 'text-base')).toBe('text-base')
+  it('merges conflicting standard text utilities in the same font-size group', () => {
+    expect(cn('text-base', 'text-lg')).toBe('text-lg')
+    expect(cn('text-lg', 'text-base')).toBe('text-base')
     expect(cn('text-title', 'text-base')).toBe('text-title text-base')
     expect(cn('text-base', 'text-grey-1000')).toBe('text-base text-grey-1000')
   })
 
   it('lets arbitrary variable text colors coexist with configured text-size utilities', () => {
     expect(cn('text-(--ui-button-color)', 'text-base')).toBe('text-(--ui-button-color) text-base')
-    expect(cn('text-(--ui-button-color)', 'text-15')).toBe('text-(--ui-button-color) text-15')
+    expect(cn('text-(--ui-button-color)', 'text-lg')).toBe('text-(--ui-button-color) text-lg')
     expect(cn('text-(--ui-button-color)', 'text-title')).toBe('text-title')
     expect(cn('text-title', 'text-(--ui-button-color)')).toBe('text-(--ui-button-color)')
   })
 
-  it('keeps font-size and line-height conflict behavior for numeric text utilities', () => {
-    expect(cn('text-15 leading-6', 'text-12')).toBe('text-12')
-    expect(cn('text-12/6', 'text-15')).toBe('text-15')
+  it('keeps font-size and line-height conflict behavior for standard text utilities', () => {
+    expect(cn('text-lg leading-6', 'text-xs')).toBe('text-xs')
+    expect(cn('text-xs/6', 'text-lg')).toBe('text-lg')
   })
 
-  it('keeps font-size and line-height conflict behavior for text-base', () => {
-    expect(cn('text-base/[1.6]', 'text-15')).toBe('text-15')
-    expect(cn('text-base leading-6', 'text-15')).toBe('text-15')
+  it('keeps font-size and line-height conflict behavior with arbitrary text sizes', () => {
+    expect(cn('text-base/[1.6]', 'text-lg')).toBe('text-lg')
+    expect(cn('text-base leading-6', 'text-lg')).toBe('text-lg')
     expect(cn('text-base', 'text-base/[1.6]')).toBe('text-base/[1.6]')
+    expect(cn('text-2xs', 'text-base')).toBe('text-base')
+    expect(cn('text-2xs/[1.4]', 'text-base')).toBe('text-base')
   })
 })

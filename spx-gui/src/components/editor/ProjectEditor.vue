@@ -22,7 +22,7 @@
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
   </UICard>
-  <div v-show="isPreviewMode" class="min-w-0 flex-[0_0_496px] flex flex-col gap-middle">
+  <div v-show="isPreviewMode" class="min-w-0 flex-[0_0_496px] flex flex-col gap-xl">
     <EditorPreview />
     <EditorPanels />
   </div>

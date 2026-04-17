@@ -4,7 +4,7 @@
     <template #op>
       <UIButton
         v-radar="{ name: 'Add monitor button', desc: 'Click to add a monitor widget' }"
-        color="boring"
+        type="neutral"
         size="large"
         @click="handleAddMonitor"
       >
@@ -18,7 +18,6 @@
   <EditorList
     v-else
     v-radar="{ name: 'Widgets management', desc: 'Managing widgets' }"
-    color="stage"
     resource-type="widget"
     :sortable="{ list: stage.widgets }"
     @sorted="handleSorted"

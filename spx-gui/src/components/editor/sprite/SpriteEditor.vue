@@ -6,7 +6,6 @@
         desc: 'Navigation tabs for switching between different sprite editing views'
       }"
       :value="state.selected.type"
-      color="sprite"
       @update:value="(type) => state.select(type as SelectedType)"
     >
       <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">{{

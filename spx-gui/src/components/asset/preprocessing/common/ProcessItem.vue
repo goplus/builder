@@ -11,7 +11,7 @@
     >
       <UIIcon type="check" />
     </div>
-    <p class="w-full px-[1em] py-0.5 text-center text-10/[1.4] text-title">{{ name }}</p>
+    <p class="w-full px-[1em] py-0.5 text-center text-2xs/[1.4] text-title">{{ name }}</p>
   </li>
 </template>
 

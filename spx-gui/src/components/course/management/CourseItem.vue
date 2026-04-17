@@ -17,11 +17,11 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 
 <template>
   <li
-    class="course-item relative box-border h-53.5 w-58 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 border-grey-300 transition-all duration-200 hover:-translate-y-0.5 hover:border-grey-400 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+    class="course-item relative box-border h-53.5 w-58 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 border-grey-300 transition-all duration-200 hover:-translate-y-0.5 hover:border-grey-400 hover:shadow-sm"
   >
     <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
     <div
-      class="absolute bottom-0 w-full box-border overflow-hidden bg-grey-1000/30 px-4 text-15/10 font-semibold text-grey-100 text-ellipsis whitespace-nowrap"
+      class="absolute bottom-0 w-full box-border overflow-hidden bg-grey-1000/30 px-4 text-lg/10 font-semibold text-grey-100 text-ellipsis whitespace-nowrap"
       :title="course.title"
     >
       {{ course.title }}

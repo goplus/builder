@@ -3,13 +3,13 @@
 <template>
   <section :style="{ '--project-num-in-row': numInRow }">
     <header class="flex items-center justify-between" :class="isUserContext ? 'h-15 pt-5 pb-2' : 'h-13'">
-      <h2 class="text-title" :class="isUserContext ? 'text-16' : 'text-20/7'">
+      <h2 class="text-title" :class="isUserContext ? 'text-xl' : 'text-2xl'">
         <slot name="title"></slot>
       </h2>
       <RouterUILink
         v-if="linkTo != null"
         v-radar="{ name: 'Link to more', desc: 'Link to more similar projects' }"
-        class="flex items-center text-15"
+        class="flex items-center text-lg"
         :to="linkTo"
       >
         <slot name="link"></slot>
@@ -18,7 +18,7 @@
     </header>
     <div
       class="relative mt-2"
-      :class="[isUserContext ? 'mb-4' : 'mb-8', !queryRet.data.value?.length ? 'bg-grey-100 rounded-md' : '']"
+      :class="[isUserContext ? 'mb-4' : 'mb-8', isFailedOrEmpty ? 'bg-grey-100 rounded-md' : '']"
     >
       <ListResultWrapper content-type="project" :query-ret="queryRet" :height="254">
         <template v-if="!!slots.empty" #empty="emptyProps">
@@ -59,4 +59,9 @@ const props = defineProps<{
 
 const slots = useSlots()
 const isUserContext = computed(() => props.context === 'user')
+const isFailedOrEmpty = computed(() => {
+  const { data, isLoading } = props.queryRet
+  if (isLoading.value) return false
+  return data.value == null || data.value.length === 0
+})
 </script>

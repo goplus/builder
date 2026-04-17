@@ -63,8 +63,8 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
           name: $t(name),
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
         }"
-        class="h-8 flex items-center justify-center gap-1 rounded-md border border-grey-400 bg-grey-100 pr-2 pl-1 text-13/5 text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
-        :class="{ 'aspect-square px-0': iconOnly }"
+        class="h-8 flex items-center justify-center gap-1 rounded-md border border-grey-400 bg-grey-100 pr-2 pl-1 text-sm text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
+        :class="{ 'aspect-square px-0!': iconOnly }"
         :disabled="disabled"
       >
         <UIImg
@@ -96,7 +96,9 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             :active="value === item.value"
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"
           >
-            <UIImg v-if="item.image != null" class="mt-0.5 mb-1 h-15 w-20 rounded-sm" :src="item.image" />
+            <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
+              <UIImg class="h-15 w-20 rounded-[4px]" :src="item.image ?? null" />
+            </div>
             <UIBlockItemTitle size="medium">
               {{ $t(item.label) }}
             </UIBlockItemTitle>

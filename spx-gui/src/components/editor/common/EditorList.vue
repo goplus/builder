@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-[1_1_0] flex" :style="cssVars">
+  <div class="flex-[1_1_0] flex">
     <div class="flex-none flex flex-col border-r border-dividing-line-2">
       <div
         ref="itemsWrapper"
@@ -18,7 +18,8 @@
         <template #trigger>
           <button
             v-radar="addButtonRadarInfo"
-            class="relative z-1 h-11 flex-none cursor-pointer flex items-center justify-center rounded-bl-lg border-none bg-(--editor-list-color-main) text-grey-100 hover:bg-(--editor-list-color-400) active:bg-(--editor-list-color-600)"
+            type="button"
+            class="h-11 w-full flex-none cursor-pointer appearance-none flex items-center justify-center rounded-none rounded-bl-md border-x-0 border-t border-b-0 border-grey-400 bg-grey-100 p-3 text-grey-800 outline-none transition-colors hover:bg-grey-300 active:bg-grey-400"
           >
             <UIIcon type="plus" />
           </button>
@@ -34,11 +35,10 @@ import { computed, ref } from 'vue'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { humanizeResourceType, type ResourceType } from '@/models/spx/common/resource'
-import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
+import { UIIcon, UIDropdownWithTooltip } from '@/components/ui'
 
 const props = withDefaults(
   defineProps<{
-    color: Color
     resourceType: ResourceType
     sortable?: { list: unknown[] } | false
   }>(),
@@ -70,9 +70,6 @@ const addButtonRadarInfo = computed<RadarNodeMeta>(() => ({
   name: `Add ${resourceTypeName.value.en}`,
   desc: `Button for adding new ${resourceTypeName.value.en} to the list`
 }))
-
-const uiVariables = useUIVariables()
-const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.color[props.color]))
 
 const itemsWrapper = ref<HTMLElement | null>(null)
 const sortableList = computed(() => (props.sortable ? props.sortable.list : null))

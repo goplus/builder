@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full w-full overflow-hidden" :style="cssVars">
+  <div class="h-full w-full overflow-hidden">
     <section
       v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }"
       class="h-full flex flex-col overflow-hidden"
@@ -40,12 +40,10 @@ import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { UIMenu, UIMenuItem, useUIVariables, getCssVars } from '@/components/ui'
+import { UIMenu, UIMenuItem } from '@/components/ui'
+import type { Sprite } from '@/models/spx/sprite'
 import SpriteList from '@/components/editor/sprite/SpriteList.vue'
 import PanelHeader from '../common/PanelHeader.vue'
-
-const uiVariables = useUIVariables()
-const cssVars = getCssVars('--panel-color-', uiVariables.color.sprite)
 
 const editorCtx = useEditorCtx()
 
@@ -79,7 +77,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
 const invokeSpriteGenModal = useSpriteGenModal()
 const handleGenerate = useMessageHandle(
   async () => {
-    const sprite = await invokeSpriteGenModal(editorCtx.project)
+    const sprite: Sprite = await invokeSpriteGenModal(editorCtx.project)
     await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
       editorCtx.project.addSprite(sprite)
       await sprite.autoFit()

@@ -74,17 +74,17 @@ function validateName(name: string) {
         <UIIcon class="h-5.5 flex-none" type="warning" />
         {{ $t(target.warning) }}
       </p>
-      <footer class="mt-10 flex justify-end gap-middle">
+      <footer class="mt-10 flex justify-end gap-xl">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel renaming' }"
-          color="boring"
+          type="neutral"
           @click="emit('cancelled')"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Confirm button', desc: 'Click to confirm renaming' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >

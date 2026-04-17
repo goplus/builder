@@ -414,7 +414,7 @@ async function handleImageLoad() {
       <div class="flex items-center gap-5">
         <UIButton
           v-radar="{ name: 'Cancel edit avatar button', desc: 'Click to cancel editing avatar' }"
-          color="boring"
+          type="neutral"
           :disabled="handleConfirm.isLoading.value"
           @click="handleCancel"
         >
@@ -422,7 +422,7 @@ async function handleImageLoad() {
         </UIButton>
         <UIButton
           v-radar="{ name: 'Confirm edit avatar button', desc: 'Click to save avatar changes' }"
-          color="primary"
+          type="primary"
           :disabled="!isReady"
           :loading="handleConfirm.isLoading.value"
           @click="handleConfirm.fn"

@@ -5,8 +5,8 @@
 <template>
   <UIModal :radar="radar" :visible="visible" :auto-focus="false" mask-closable @update:visible="handleUpdateShow">
     <div class="flex flex-col">
-      <div class="h-16 flex items-center py-middle px-6">
-        <h4 class="flex-1 flex text-16 text-title">
+      <div class="h-16 flex items-center py-4 px-6">
+        <h4 class="flex-1 flex text-xl text-title">
           {{ title }}
         </h4>
         <slot name="input"></slot>

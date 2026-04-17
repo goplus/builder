@@ -156,7 +156,7 @@ provide(settingsInputCtxKey, ctx)
   min-height: 172px;
   max-height: 300px;
   border: 1px solid var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-2);
+  border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-grey-100);
   padding: 12px;
   display: flex;

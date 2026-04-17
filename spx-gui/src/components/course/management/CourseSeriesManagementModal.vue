@@ -105,7 +105,7 @@ const handleRemove = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <template #input>
-      <UIButton variant="stroke" color="boring" @click="handleCreate">
+      <UIButton type="neutral" @click="handleCreate">
         <template #icon>
           <UIIcon type="plus" />
         </template>
@@ -129,7 +129,7 @@ const handleRemove = useMessageHandle(
               }}
             </p>
           </div>
-          <ul v-else class="flex flex-wrap content-start gap-middle">
+          <ul v-else class="flex flex-wrap content-start gap-xl">
             <CourseSeriesItem
               v-for="courseSeries in slotProps.data.data"
               :key="courseSeries.id"

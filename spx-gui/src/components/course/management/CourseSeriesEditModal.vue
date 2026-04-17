@@ -252,10 +252,10 @@ const handleSubmit = useMessageHandle(
       </div>
 
       <footer class="mt-5 flex justify-end gap-3 border-t border-dividing-line-2 pt-5">
-        <UIButton color="boring" @click="emit('cancelled')">
+        <UIButton type="neutral" @click="emit('cancelled')">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
-        <UIButton color="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+        <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
           {{ isEditMode ? $t({ en: 'Update', zh: '更新' }) : $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
       </footer>

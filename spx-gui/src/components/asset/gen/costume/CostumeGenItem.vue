@@ -49,16 +49,6 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
       name: `Costume generation item '${gen.name}'`,
       desc: `Click to view generation settings and preview for costume '${gen.name}'`
     }"
-    :color="{
-      main: 'primary',
-      loading: {
-        headColor: 'var(--ui-color-primary-main)',
-        tailColor: '#DCF7FA',
-        traceColor: '#F3FCFD1A',
-        activeTraceColor: '#77DCE5'
-      },
-      highlightColor: 'var(--ui-color-primary-main)'
-    }"
     :placeholder="costumeSVG"
     :active="active"
     :loading="isLoading"
@@ -69,7 +59,7 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
       <UIImg class="h-full w-full" :src="url" :loading="imageLoading" />
     </template>
     <UIBlockItemTitle size="medium" :class="{ 'text-turquoise-500': isDefault }">{{ gen.name }}</UIBlockItemTitle>
-    <CornerMenu v-if="operable && active" color="primary">
+    <CornerMenu v-if="operable && active">
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="emit('rename')" />
       <RemoveMenuItem
         v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"

@@ -24,7 +24,7 @@ const rootClass = computed(() =>
     // TODO: animation for background slide?
     'flex-[1_1_0] flex items-center justify-center px-2 py-[5px] [transition:0.2s]',
     isActive.value
-      ? 'rounded-sm bg-grey-100 text-title [box-shadow:0_6px_10px_0_rgba(14,18,27,0.06),0_2px_4px_0_rgba(14,18,27,0.03)]'
+      ? 'rounded-[calc(var(--ui-border-radius-md)-2px)] bg-grey-100 text-title shadow-control'
       : 'cursor-pointer text-hint-1',
     props.class ?? null
   )

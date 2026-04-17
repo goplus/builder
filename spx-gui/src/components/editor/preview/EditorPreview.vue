@@ -3,17 +3,15 @@
   <UICard
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
-    style="height: 422px"
   >
-    <UICardHeader>
+    <UICardHeader class="gap-3">
       <div class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
           v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-          class="mx-2"
-          color="primary"
+          type="primary"
           icon="playHollow"
           :loading="handleRun.isLoading.value"
           @click="handleRun.fn"
@@ -24,19 +22,18 @@
         <UIButton
           v-show="canManageProject"
           v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-          color="secondary"
+          type="secondary"
+          icon="publish"
           :disabled="!isOnline"
           @click="handlePublishProject"
         >
-          <img :src="publishSvg" style="width: 14px" />
           {{ $t({ en: 'Publish', zh: '发布' }) }}
         </UIButton>
       </template>
       <template v-else>
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
-          class="mx-2"
-          color="primary"
+          type="primary"
           icon="rotate"
           :disabled="runnerState !== 'running' || handleStop.isLoading.value"
           :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
@@ -46,8 +43,7 @@
         </UIButton>
         <UIButton
           v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
-          class="mx-2"
-          color="boring"
+          type="neutral"
           icon="end"
           :loading="handleStop.isLoading.value"
           @click="handleStop.fn"
@@ -58,8 +54,8 @@
           <template #trigger>
             <UIButton
               v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
-              class="mx-2"
-              color="boring"
+              type="neutral"
+              shape="square"
               icon="enterFullScreen"
               :disabled="handleStop.isLoading.value"
               @click="handleEnterFullscreen"
@@ -70,13 +66,13 @@
       </template>
     </UICardHeader>
 
-    <div class="h-full flex justify-center overflow-hidden p-3">
+    <div class="flex grow justify-center overflow-hidden p-3">
       <div
         ref="stageContainerRef"
-        class="stage-viewer-container relative h-full w-full overflow-hidden rounded-sm bg-grey-200"
-        :class="{ 'stage-viewer-container--running': runnerState !== 'initial' }"
+        class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
+        :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
       >
-        <StageViewer />
+        <StageViewer class="stage-viewer" />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
           class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
@@ -185,7 +181,6 @@ import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
-import publishSvg from './publish.svg'
 
 const editorCtx = useEditorCtx()
 const codeEditor = useCodeEditor()
@@ -445,7 +440,7 @@ function getStageInlineAnchor() {
 </script>
 
 <style scoped>
-.stage-viewer-container--running :deep(.stage-viewer) {
+.stage-viewer-container-running .stage-viewer {
   filter: blur(4px);
   pointer-events: none;
   user-select: none;

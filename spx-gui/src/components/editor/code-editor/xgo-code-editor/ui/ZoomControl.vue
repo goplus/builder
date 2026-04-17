@@ -1,41 +1,41 @@
 <script setup lang="ts">
-import iconZoomIn from './icons/zoom-in.svg?raw'
-import iconZoomOut from './icons/zoom-out.svg?raw'
-import iconZoomReset from './icons/zoom-reset.svg?raw'
+import { UIButton } from '@/components/ui'
 
 const emit = defineEmits<{
   in: []
   out: []
   reset: []
 }>()
-
-const zoomBtnClz =
-  'flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-text transition-colors hover:bg-grey-300 active:bg-grey-400'
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-1">
-    <!-- eslint-disable vue/no-v-html -->
-    <button
+    <UIButton
       v-radar="{ name: 'Zoom in', desc: 'Zoom in the code editor' }"
-      :class="zoomBtnClz"
+      type="white"
+      icon="zoomIn"
+      shape="square"
+      size="large"
       title="Zoom in"
       @click="emit('in')"
-      v-html="iconZoomIn"
     />
-    <button
+    <UIButton
       v-radar="{ name: 'Zoom out', desc: 'Zoom out the code editor' }"
-      :class="zoomBtnClz"
+      type="white"
+      icon="zoomOut"
+      shape="square"
+      size="large"
       title="Zoom out"
       @click="emit('out')"
-      v-html="iconZoomOut"
     />
-    <button
+    <UIButton
       v-radar="{ name: 'Reset zoom', desc: 'Reset code editor zoom to default' }"
-      :class="zoomBtnClz"
+      type="white"
+      icon="zoomReset"
+      shape="square"
+      size="large"
       title="Reset"
       @click="emit('reset')"
-      v-html="iconZoomReset"
     />
   </div>
 </template>

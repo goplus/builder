@@ -16,7 +16,7 @@ const joinedAtText = computed(() => {
 </script>
 
 <template>
-  <span class="text-12 text-hint-2" :title="$t(humanizeExactTime(props.time))">
+  <span class="text-xs text-hint-2" :title="$t(humanizeExactTime(props.time))">
     {{ $t(joinedAtText) }}
   </span>
 </template>

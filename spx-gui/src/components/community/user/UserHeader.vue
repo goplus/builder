@@ -7,8 +7,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { timeout } from '@/utils/utils'
 import { initiateSignIn, useSignedInUser } from '@/stores/user'
-import { UIButton, UIImg, useMessage, useModal } from '@/components/ui'
-import CommunityCard from '@/components/community/CommunityCard.vue'
+import { UIButton, UICard, UIImg, useMessage, useModal } from '@/components/ui'
 import TextView from '../TextView.vue'
 import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
@@ -70,7 +69,7 @@ const handleEditProfile = useMessageHandle(
 </script>
 
 <template>
-  <CommunityCard class="relative">
+  <UICard class="relative">
     <div
       class="h-[21.74vh] max-h-50 w-full bg-center bg-cover bg-no-repeat"
       :style="{ backgroundImage: `url(${coverImgUrl})` }"
@@ -80,8 +79,8 @@ const handleEditProfile = useMessageHandle(
     </div>
     <div class="flex items-end gap-25 px-5 pt-5 pb-5 pl-48">
       <div class="flex-[1_1_0] flex flex-col gap-3">
-        <div class="flex flex-wrap items-center gap-middle">
-          <h2 class="m-0 text-20/7 text-title">{{ user.displayName }}</h2>
+        <div class="flex flex-wrap items-center gap-xl">
+          <h2 class="m-0 text-2xl text-title">{{ user.displayName }}</h2>
           <UserUsernameInline :username="user.username" />
           <UserJoinedAt class="joined-at" :time="user.createdAt" />
         </div>
@@ -98,5 +97,5 @@ const handleEditProfile = useMessageHandle(
         <FollowButton v-else :name="user.username" />
       </div>
     </div>
-  </CommunityCard>
+  </UICard>
 </template>

@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import { UIDropdown, UICornerIcon, UIMenu, type Color } from '@/components/ui'
-
-defineProps<{
-  color: Color
-}>()
+import { UIDropdown, UICornerIcon, UIMenu } from '@/components/ui'
 </script>
 
 <template>
@@ -11,7 +7,6 @@ defineProps<{
     <template #trigger>
       <UICornerIcon
         v-radar="{ name: 'Options button', desc: 'Click to view more options (save to asset library, remove, etc.)' }"
-        :color="color"
         type="more"
       />
     </template>

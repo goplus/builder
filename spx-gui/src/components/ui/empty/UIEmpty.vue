@@ -9,13 +9,13 @@
     </template>
     <template v-else-if="size === 'extra-large'">
       <img :src="img" />
-      <p class="mt-3 text-16 text-grey-700">
+      <p class="mt-3 text-xl text-grey-700">
         <slot></slot>
         <template v-if="!slots.default">
           {{ defaultText }}
         </template>
       </p>
-      <div class="ui-empty-op mt-6 flex gap-large"><slot name="op"></slot></div>
+      <div class="ui-empty-op mt-6 flex gap-6"><slot name="op"></slot></div>
     </template>
     <template v-else>
       <svg
@@ -77,7 +77,7 @@ const rootClass = computed(() =>
   cn(
     'h-full w-full flex items-center justify-center',
     {
-      'flex-col gap-3 text-16 text-grey-1000': props.size === 'large',
+      'flex-col gap-3 text-xl text-grey-1000': props.size === 'large',
       'flex-col': props.size === 'extra-large',
       'gap-2 text-grey-600': props.size === 'small' || props.size === 'medium'
     },

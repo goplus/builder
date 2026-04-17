@@ -1,25 +1,25 @@
 // Base colors
 
 export const turquoise = {
-  100: '#f3fcfd',
-  200: '#e7f9fa',
-  300: '#b5ebf0',
+  100: '#f3fbfc',
+  200: '#eaf9fa',
+  300: '#afe7ec',
   400: '#3fcdd9',
-  500: '#0bc0cf',
-  600: '#0eafbc',
-  700: '#0b8893',
-  main: '#0bc0cf'
+  500: '#36c2cf',
+  600: '#2b9ba5',
+  700: '#20747c',
+  main: '#36c2cf'
 } as const
 
 export const yellow = {
-  100: '#fffaf5',
-  200: '#fff6eb',
-  300: '#fde2c0',
-  400: '#fbb45d',
-  500: '#faa135',
-  600: '#e49330',
-  700: '#b27226',
-  main: '#faa135'
+  100: '#fff8f1',
+  200: '#fff1e2',
+  300: '#ffe2c2',
+  400: '#ffc584',
+  500: '#ff9f33',
+  600: '#ce8029',
+  700: '#9d611f',
+  main: '#ff9f33'
 } as const
 
 export const purple = {
@@ -34,14 +34,14 @@ export const purple = {
 } as const
 
 export const blue = {
-  100: '#f4faff',
-  200: '#e9f5ff',
-  300: '#bae1fe',
-  400: '#4db2fd',
-  500: '#219ffc',
-  600: '#1e91e5',
-  700: '#1771b3',
-  main: '#219ffc'
+  100: '#eff7ff',
+  200: '#dfefff',
+  300: '#b8e0ff',
+  400: '#78c7ff',
+  500: '#4cb8ff',
+  600: '#0693f1',
+  700: '#0076ce',
+  main: '#4cb8ff'
 } as const
 
 export const red = {
@@ -81,25 +81,19 @@ export const grey = {
 
 export const primary = turquoise
 
-export const sprite = {
-  ...yellow,
-  bgSelected: yellow[200]
-}
-export const sound = {
-  ...blue,
-  bgSelected: blue[200]
-}
-export const stage = {
-  ...blue,
-  bgSelected: blue[200]
-}
-
 export const danger = red
 export const success = green
 export const disabled = {
   bg: grey[300],
   text: grey[600]
 }
+
+export const overlay = {
+  // Used by full-screen loading and running-state cover layers.
+  loading: 'rgba(36, 41, 47, 0.6)',
+  // Used by modal backdrops, which need a heavier page dim.
+  modal: 'rgba(36, 41, 47, 0.75)'
+} as const
 
 export const title = grey[1000]
 export const text = grey[900]
@@ -121,5 +115,3 @@ export const dividingLine = {
 } as const
 
 export const border = grey[600]
-
-export type Color = 'primary' | 'sprite' | 'sound' | 'stage'

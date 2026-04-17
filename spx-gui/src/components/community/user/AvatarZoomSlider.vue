@@ -85,6 +85,6 @@ function handleValueUpdate(value: number) {
   box-sizing: border-box;
   box-shadow:
     inset 0 0 0 2px var(--ui-color-primary-400),
-    0 1px 2px rgb(36 41 47 / 10%);
+    var(--ui-box-shadow-control);
 }
 </style>

@@ -21,7 +21,6 @@
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIIcon, UILoading, useUIVariables } from '@/components/ui'
-import type { Color } from '@/components/ui/tokens/colors'
 
 export type Size = 'medium' | 'large'
 
@@ -37,7 +36,6 @@ const props = withDefaults(
      * TODO: consider removing this prop (& transition) and ensure smooth progress update in parent component.
      */
     progressInterval?: number
-    color: Color
     playHandler: () => Promise<void>
     loading?: boolean
     size?: Size
@@ -64,7 +62,7 @@ const playCssVars = computed(() => ({
 
 const uiVariables = useUIVariables()
 const colorCssVars = computed(() => {
-  const color = uiVariables.color[props.color]
+  const color = uiVariables.color.primary
   return {
     '--color-main': color.main,
     '--color-100': color[100],

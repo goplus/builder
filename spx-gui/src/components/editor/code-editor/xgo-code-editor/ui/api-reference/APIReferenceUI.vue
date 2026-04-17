@@ -9,7 +9,6 @@ type MainCategory = {
   id: string
   label: LocaleMessage
   icon: string
-  color: string
   subCategories: SubCategory[]
 }
 
@@ -161,14 +160,13 @@ function handleCategoryClick(id: string) {
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
-          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-sm transition-[color,background-color] duration-100"
-          :class="c.id === activeCategoryIdRef ? 'bg-(--category-color) text-grey-100' : 'text-(--category-color)'"
-          :style="{ '--category-color': c.color }"
+          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-sm transition-colors duration-100"
+          :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
           @click="handleCategoryClick(c.id)"
         >
           <!-- eslint-disable-next-line vue/no-v-html -->
           <div class="h-6 w-6" v-html="c.icon"></div>
-          <p class="mt-0.5 text-center text-10/[1.6]">{{ $t(c.label) }}</p>
+          <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
         </li>
       </ul>
       <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
@@ -178,8 +176,8 @@ function handleCategoryClick(id: string) {
             :key="sc.id"
             class="subcategory-wrapper border-b border-dashed border-grey-500"
           >
-            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-12/1.5 text-hint-2">{{ $t(sc.label) }}</h5>
-            <ul class="flex flex-col gap-middle pb-5">
+            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+            <ul class="flex flex-col gap-md pb-5">
               <APIReferenceItemComp
                 v-for="item in sc.items"
                 :key="stringifyDefinitionId(item.definition)"

@@ -37,7 +37,7 @@ const rootClass = computed(() =>
     props.cover ? 'cover absolute left-0 top-0 h-full' : null,
     `mask-${mask.value}`,
     props.cover && mask.value === 'semi-transparent'
-      ? 'bg-[#24292f99] [backdrop-filter:blur(5px)] [-webkit-backdrop-filter:blur(5px)]'
+      ? 'bg-[color:var(--ui-color-overlay-loading)] [backdrop-filter:blur(5px)] [-webkit-backdrop-filter:blur(5px)]'
       : null,
     props.visible ? 'visible opacity-100' : 'invisible opacity-0',
     props.class ?? null
@@ -46,7 +46,7 @@ const rootClass = computed(() =>
 const textClass = computed(() =>
   cn(
     'text',
-    'flex items-center gap-2 text-13/5 text-title',
+    'flex items-center gap-2 text-sm text-title',
     props.cover && mask.value === 'semi-transparent' ? 'text-grey-100' : null
   )
 )

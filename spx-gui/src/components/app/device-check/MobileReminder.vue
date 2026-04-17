@@ -4,7 +4,7 @@
       <img class="h-auto w-60" :src="imgDesktopRequired" alt="Desktop Required Image" />
     </div>
     <div class="mb-10 text-center">
-      <h1 class="mb-3 text-20 font-semibold text-grey-1000">
+      <h1 class="mb-3 text-2xl font-semibold text-grey-1000">
         {{ t({ en: 'Please visit on desktop', zh: '请在电脑上访问' }) }}
       </h1>
       <p class="text-base text-grey-900">
