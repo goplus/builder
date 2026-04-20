@@ -28,37 +28,20 @@ const modelValue = computed({
 </script>
 
 <template>
-  <UIRadioGroup v-model:value="modelValue" class="boolean-input">
-    <UIRadio class="option" value="true">
+  <UIRadioGroup v-model:value="modelValue" class="py-[5px] self-stretch gap-3">
+    <UIRadio
+      class="flex-auto h-8 rounded-md border justify-center gap-0.5"
+      :class="modelValue === 'true' ? 'border-primary-500' : 'border-grey-400'"
+      value="true"
+    >
       <code>true</code>
     </UIRadio>
-    <UIRadio class="option" value="false">
+    <UIRadio
+      class="flex-auto h-8 rounded-md border justify-center gap-0.5"
+      :class="modelValue === 'false' ? 'border-primary-500' : 'border-grey-400'"
+      value="false"
+    >
       <code>false</code>
     </UIRadio>
   </UIRadioGroup>
 </template>
-
-<style scoped>
-.boolean-input {
-  padding: 5px 0;
-  display: flex;
-  align-items: center;
-  align-self: stretch;
-  gap: 12px;
-}
-
-.option {
-  flex: 1 1 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 2px;
-  height: 32px;
-  border-radius: 12px;
-  transition: 0.2s;
-  border: 1px solid var(--ui-color-grey-400);
-}
-.option.n-radio--checked {
-  border: 1px solid var(--ui-color-primary-500);
-}
-</style>

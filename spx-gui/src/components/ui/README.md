@@ -34,11 +34,6 @@
   - Current Naive UI-root components that need extra care are:
 
     - `UIModal` → `NModal`
-    - `UISwitch` → `NSwitch`
-    - `UICheckbox` → `NCheckbox`
-    - `UICheckboxGroup` → `NCheckboxGroup`
-    - `UIRadio` → `NRadio`
-    - `UIRadioGroup` → `NRadioGroup`
 
   - For all UI components, an external `class` can still be passed, but prefer explicit component props or a dedicated API extension for styling-critical behavior
   - For the Naive UI-root components listed above, simple root-level overrides are generally workable because the `components` layer sits above `naive-ui`, but do not assume every visual change should come from the root `class`. For deeper visual changes, prefer an outer layout wrapper, explicit props, or Naive UI theme overrides
