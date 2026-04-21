@@ -11,22 +11,30 @@ export type ResourceModel = Stage | Sound | Sprite | Backdrop | Widget | Animati
 
 export type ResourceType = 'stage' | 'sound' | 'sprite' | 'backdrop' | 'widget' | 'animation' | 'costume'
 
+export const resourceStageName = { en: 'stage', zh: '舞台' }
+export const resourceSoundName = { en: 'sound', zh: '声音' }
+export const resourceSpriteName = { en: 'sprite', zh: '精灵' }
+export const resourceBackdropName = { en: 'backdrop', zh: '背景' }
+export const resourceWidgetName = { en: 'widget', zh: '控件' }
+export const resourceAnimationName = { en: 'animation', zh: '动画' }
+export const resourceCostumeName = { en: 'costume', zh: '造型' }
+
 export function humanizeResourceType(type: ResourceType): LocaleMessage {
   switch (type) {
     case 'stage':
-      return { en: 'stage', zh: '舞台' }
+      return resourceStageName
     case 'sound':
-      return { en: 'sound', zh: '声音' }
+      return resourceSoundName
     case 'sprite':
-      return { en: 'sprite', zh: '精灵' }
+      return resourceSpriteName
     case 'backdrop':
-      return { en: 'backdrop', zh: '背景' }
+      return resourceBackdropName
     case 'widget':
-      return { en: 'widget', zh: '控件' }
+      return resourceWidgetName
     case 'animation':
-      return { en: 'animation', zh: '动画' }
+      return resourceAnimationName
     case 'costume':
-      return { en: 'costume', zh: '造型' }
+      return resourceCostumeName
     default:
       throw new Error(`Invalid resource type: ${type}`)
   }

@@ -6,6 +6,7 @@ import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { humanizeAssetType, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
+import { resourceAnimationName, resourceSpriteName, resourceWidgetName } from '@/models/spx/common/resource'
 import { fromNativeFile } from '@/models/common/file'
 import { type SpxProject } from '@/models/spx/project'
 import { Backdrop } from '@/models/spx/backdrop'
@@ -98,13 +99,14 @@ export function useLoadFromScratchModal() {
 
 export function useAddSpriteFromLocalFile() {
   const editorCtx = useEditorCtx()
+  const i18n = useI18n()
   const preprocess = useModal(PreprocessModal)
   return async function addSpriteFromLocalFile(project: SpxProject) {
     const actionMessage = { en: 'Add sprite', zh: '添加精灵' }
     const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
     const files = nativeFiles.map((f) => fromNativeFile(f))
-    const spriteName = files.length > 1 ? '' : stripExt(files[0].name)
-    const sprite = Sprite.create(spriteName)
+    const spriteNameBase = files.length > 1 ? i18n.t(resourceSpriteName) + '1' : stripExt(files[0].name)
+    const sprite = Sprite.create(spriteNameBase)
     const costumes = await preprocess({
       files,
       title: actionMessage,
@@ -192,13 +194,14 @@ export function useAddBackdropFromLocalFile() {
 
 export function useAddAnimationByGroupingCostumes() {
   const editorCtx = useEditorCtx()
+  const i18n = useI18n()
   const invokeGroupCostumesModal = useModal(GroupCostumesModal)
   return async function addAnimationByGroupingCostumes(project: SpxProject, sprite: Sprite) {
     const { selectedCostumes, removeCostumes } = await invokeGroupCostumesModal({ sprite })
     const action = { name: { en: 'Group costumes as animation', zh: '合并造型为动画' } }
     return editorCtx.state.history.doAction(action, () => {
       const costumes = selectedCostumes.map((costume) => costume.clone())
-      const animation = Animation.create('', costumes)
+      const animation = Animation.create(i18n.t(resourceAnimationName) + '1', costumes)
       sprite.addAnimation(animation)
       if (removeCostumes) {
         for (let i = selectedCostumes.length - 1; i >= 0; i--) {
@@ -214,8 +217,9 @@ export function useAddAnimationByGroupingCostumes() {
 
 export function useAddMonitor() {
   const editorCtx = useEditorCtx()
+  const i18n = useI18n()
   return async function addMonitor(project: SpxProject) {
-    const monitor = await Monitor.create()
+    const monitor = await Monitor.create(i18n.t(resourceWidgetName) + '1')
     const action = { name: { en: 'Add widget', zh: '添加控件' } }
     await editorCtx.state.history.doAction(action, () => {
       project.stage.addWidget(monitor)
