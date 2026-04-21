@@ -50,14 +50,30 @@ function collectNullLayoutFields(node: unknown, issues: string[] = []) {
   return issues
 }
 
-describe('builder-component.lib.pen', () => {
-  it('keeps Button/Medium/Primary/Default/Default at 32px height', () => {
-    const library = readPen(LibraryPath)
-    const nodesById = collectNodesById(library)
-    const mediumPrimaryDefaultButton = nodesById.get('BeWL7')
+function collectNodesByNamePrefix(node: unknown, prefix: string, nodes: PenNode[] = []) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectNodesByNamePrefix(item, prefix, nodes)
+    return nodes
+  }
+  if (node == null || typeof node !== 'object') return nodes
 
-    expect(mediumPrimaryDefaultButton?.name).toBe('Button/Medium/Primary/Default/Default')
-    expect(mediumPrimaryDefaultButton?.height).toBe(32)
+  const penNode = node as PenNode
+  if (typeof penNode.name === 'string' && penNode.name.startsWith(prefix)) nodes.push(penNode)
+
+  for (const value of Object.values(penNode)) collectNodesByNamePrefix(value, prefix, nodes)
+  return nodes
+}
+
+describe('builder-component.lib.pen', () => {
+  it('keeps every Button/Medium/... asset at 32px height', () => {
+    const library = readPen(LibraryPath)
+    const mediumButtons = collectNodesByNamePrefix(library, 'Button/Medium/')
+    const invalidHeights = mediumButtons
+      .filter((node) => node.height !== 32)
+      .map((node) => `${node.id ?? '<no-id>'} ${node.name}=${String(node.height)}`)
+
+    expect(mediumButtons.length).toBeGreaterThan(0)
+    expect(invalidHeights).toEqual([])
   })
 
   it('keeps the segmented control slots resolvable for community explore', () => {
