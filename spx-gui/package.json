@@ -13,7 +13,11 @@
     "format-check": "prettier --check ./src",
     "format": "prettier --write ./src",
     "lint": "eslint --max-warnings 0",
-    "test": "vitest"
+    "test": "vitest",
+    "snapshot:pen": "node ../scripts/create-pen-snapshot.mjs",
+    "watch:pen-snapshot": "node ../scripts/watch-pen-snapshot.mjs",
+    "validate:pen": "node ../scripts/validate-staged-pen-changes.mjs",
+    "setup:githooks": "node ../scripts/setup-git-hooks.mjs"
   },
   "dependencies": {
     "@jridgewell/resolve-uri": "^3.1.2",

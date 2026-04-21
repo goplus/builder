@@ -64,6 +64,49 @@ function collectNodesByNamePrefix(node: unknown, prefix: string, nodes: PenNode[
   return nodes
 }
 
+function collectNodeNames(node: unknown, names = new Set<string>()) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectNodeNames(item, names)
+    return names
+  }
+  if (node == null || typeof node !== 'object') return names
+
+  const penNode = node as PenNode
+  if (typeof penNode.name === 'string') names.add(penNode.name)
+
+  for (const value of Object.values(penNode)) collectNodeNames(value, names)
+  return names
+}
+
+function collectDanglingGeneratedSlotIds(
+  node: unknown,
+  nodeIds: Set<string>,
+  nodeNames: Set<string>,
+  issues: string[] = []
+) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectDanglingGeneratedSlotIds(item, nodeIds, nodeNames, issues)
+    return issues
+  }
+  if (node == null || typeof node !== 'object') return issues
+
+  const penNode = node as PenNode
+  if (Array.isArray(penNode.slot)) {
+    for (const slotId of penNode.slot) {
+      if (typeof slotId !== 'string') continue
+      if (!/^[A-Za-z0-9]{5}$/.test(slotId)) continue
+      if (nodeNames.has(slotId)) continue
+      if (!nodeIds.has(slotId)) {
+        const label = [penNode.id ?? '<no-id>', penNode.name].filter((value) => value != null).join(' ')
+        issues.push(`${label} -> ${slotId}`)
+      }
+    }
+  }
+
+  for (const value of Object.values(penNode)) collectDanglingGeneratedSlotIds(value, nodeIds, nodeNames, issues)
+  return issues
+}
+
 describe('builder-component.lib.pen', () => {
   it('keeps every Button/Medium/... asset at 32px height', () => {
     const library = readPen(LibraryPath)
@@ -74,6 +117,14 @@ describe('builder-component.lib.pen', () => {
 
     expect(mediumButtons.length).toBeGreaterThan(0)
     expect(invalidHeights).toEqual([])
+  })
+
+  it('does not keep dangling generated slot ids', () => {
+    const library = readPen(LibraryPath)
+    const nodeIds = new Set(collectNodesById(library).keys())
+    const nodeNames = collectNodeNames(library)
+
+    expect(collectDanglingGeneratedSlotIds(library, nodeIds, nodeNames)).toEqual([])
   })
 
   it('keeps the segmented control slots resolvable for community explore', () => {

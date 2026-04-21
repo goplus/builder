@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+node "$REPO_ROOT/scripts/validate-staged-pen-changes.mjs"
