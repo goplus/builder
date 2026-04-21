@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect, watch } from 'vue'
+import { ref, watchEffect, watch } from 'vue'
 import { NModal } from 'naive-ui'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { providePopupContainer, useLastClickEvent, useModalContainer } from '../utils'
@@ -58,9 +58,9 @@ const handleUpdateShow = (visible: boolean) => {
 const attachTo = useModalContainer()
 
 const lastClickEvent = useLastClickEvent()
-const containerRef = ref<HTMLElement | null>(null)
+const containerRef = ref<HTMLElement | undefined>(undefined)
 
-providePopupContainer(computed(() => containerRef.value ?? undefined))
+providePopupContainer(containerRef)
 
 const customTransformOrigin = ref<TransformOrigin>({ x: 0, y: 0 })
 

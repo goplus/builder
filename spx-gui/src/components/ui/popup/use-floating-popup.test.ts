@@ -67,10 +67,8 @@ describe('resolvePopupTransformOrigin', () => {
   })
 
   it('uses arrow position to align the expansion origin more closely to the trigger point', () => {
-    expect(resolvePopupTransformOrigin('bottom', { left: '12px' })).toBe(`calc(12px + ${POPUP_ARROW_SIZE / 2}px) top`)
-    expect(resolvePopupTransformOrigin('right-start', { top: '6px' })).toBe(
-      `left calc(6px + ${POPUP_ARROW_SIZE / 2}px)`
-    )
+    expect(resolvePopupTransformOrigin('bottom', { x: 12 })).toBe(`${12 + POPUP_ARROW_SIZE / 2}px top`)
+    expect(resolvePopupTransformOrigin('right-start', { y: 6 })).toBe(`left ${6 + POPUP_ARROW_SIZE / 2}px`)
   })
 })
 
@@ -104,7 +102,7 @@ describe('useFloatingPopup', () => {
         visible,
         placement: ref<'bottom'>('bottom'),
         offset: ref({ x: 4, y: 8 }),
-        showArrow: ref(true)
+        showArrow: true
       })
     )
 
@@ -119,7 +117,8 @@ describe('useFloatingPopup', () => {
     expect(popup.floatingStyle.value).toEqual({
       position: 'fixed',
       left: '12px',
-      top: '34px'
+      top: '34px',
+      '--ui-popup-transform-origin': `${5 + POPUP_ARROW_SIZE / 2}px top`
     })
     expect(popup.arrowStyle.value).toMatchObject({
       width: `${POPUP_ARROW_SIZE}px`,
@@ -127,7 +126,9 @@ describe('useFloatingPopup', () => {
       left: '5px',
       top: `-${POPUP_ARROW_SIZE / 2}px`
     })
-    expect(popup.transformOrigin.value).toBe(`calc(5px + ${POPUP_ARROW_SIZE / 2}px) top`)
+    expect(popup.floatingStyle.value).toMatchObject({
+      '--ui-popup-transform-origin': `${5 + POPUP_ARROW_SIZE / 2}px top`
+    })
 
     visible.value = false
     await flushFloatingEffects()
@@ -145,7 +146,7 @@ describe('useFloatingPopup', () => {
       useFloatingPopup({
         visible: ref(true),
         placement: ref<'bottom'>('bottom'),
-        showArrow: ref(true)
+        showArrow: true
       })
     )
 
@@ -160,7 +161,9 @@ describe('useFloatingPopup', () => {
       left: '5px',
       top: `-${POPUP_ARROW_SIZE / 2}px`
     })
-    expect(popup.transformOrigin.value).toBe(`calc(5px + ${POPUP_ARROW_SIZE / 2}px) top`)
+    expect(popup.floatingStyle.value).toMatchObject({
+      '--ui-popup-transform-origin': `${5 + POPUP_ARROW_SIZE / 2}px top`
+    })
   })
 
   it('uses a virtual anchor when manual popup coordinates are provided', async () => {
@@ -229,14 +232,14 @@ describe('useFloatingPopup', () => {
     popup.floatingRef.value = document.createElement('div')
     await flushFloatingEffects()
 
-    expect(popup.transformOrigin.value).toBe('top center')
+    expect(popup.floatingStyle.value).toMatchObject({ '--ui-popup-transform-origin': 'top center' })
     expect(floatingMocks.computePosition.mock.calls[0]?.[2]).toMatchObject({ placement: 'bottom' })
 
     placement.value = 'top'
     await flushFloatingEffects()
 
     expect(cleanup).toHaveBeenCalledTimes(1)
-    expect(popup.transformOrigin.value).toBe('bottom center')
+    expect(popup.floatingStyle.value).toMatchObject({ '--ui-popup-transform-origin': 'bottom center' })
     expect(floatingMocks.computePosition.mock.calls.at(-1)?.[2]).toMatchObject({ placement: 'top' })
   })
 
@@ -259,7 +262,7 @@ describe('useFloatingPopup', () => {
     const popup = withSetup(() =>
       useFloatingPopup({
         visible,
-        showArrow: ref(true)
+        showArrow: true
       })
     )
 

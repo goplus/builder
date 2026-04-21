@@ -90,8 +90,7 @@ const popup = usePopupRegistration(visibleComputed)
 const {
   referenceRef: triggerRef,
   floatingRef: contentRef,
-  floatingStyle,
-  transformOrigin
+  floatingStyle
 } = useFloatingPopup({
   visible: visibleComputed,
   placement: computed(() => props.placement),
@@ -105,7 +104,6 @@ const popupStyle = computed(
       left: '0px',
       top: '0px',
       visibility: floatingStyle.value == null ? 'hidden' : 'visible',
-      '--ui-popup-transform-origin': transformOrigin.value,
       ...floatingStyle.value
     }) satisfies CSSProperties
 )

@@ -20,7 +20,7 @@ export function useTabsCtx() {
 </script>
 
 <script setup lang="ts">
-import { computed, provide } from 'vue'
+import { provide } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import { cn, type ClassValue } from '../utils'
 
@@ -37,8 +37,6 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:value': [string]
 }>()
-
-const rootClass = computed(() => cn('flex', props.class))
 
 provide(
   tabsCtxInjectionKey,
