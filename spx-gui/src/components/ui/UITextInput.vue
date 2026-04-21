@@ -4,13 +4,18 @@
     ref="nInput"
     class="ui-text-input"
     :class="[`ui-text-input-color-${color}`, `ui-text-input-size-${size}`]"
+    v-bind="controlBindings"
+    :status="status"
     :placeholder="placeholder || ''"
     :value="value"
     :type="type"
     :disabled="disabled"
     :readonly="readonly"
     :resizable="false"
-    @update:value="(v) => emit('update:value', v)"
+    @update:value="handleUpdateValue"
+    @blur="onBlur"
+    @compositionstart="onCompositionStart"
+    @compositionend="onCompositionEnd"
   >
     <template v-if="!!slots.prefix" #prefix>
       <slot name="prefix"></slot>
@@ -19,7 +24,7 @@
       <div
         v-if="value && clearable"
         class="-mr-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500"
-        @click="emit('update:value', '')"
+        @click="handleUpdateValue('')"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -34,8 +39,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, useSlots } from 'vue'
+import { computed, onMounted, ref, useSlots } from 'vue'
 import { NInput } from 'naive-ui'
+import { useFieldControlBindings } from './form/field-control-bindings'
 
 type Type = 'textarea' | 'text' | 'password'
 type Color = 'default' | 'white'
@@ -66,6 +72,28 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
+const { controlBindings, onBlur, onCompositionStart, onCompositionEnd, onInput, validationState } =
+  useFieldControlBindings()
+
+// Temporary bridge while this component still wraps `NInput`.
+// Passing `status` through lets Naive UI render its built-in validation visuals,
+// so we don't need to keep patching all error/success styling through `.n-*` selectors
+// before the next PR replaces `NInput` with our native implementation.
+const status = computed(() => {
+  if (validationState.value === 'error') return 'error'
+  if (validationState.value === 'success') return 'success'
+  return undefined
+})
+
+function handleUpdateValue(v: string) {
+  emit('update:value', v)
+  // For the current `NInput` wrapper, `update:value` is the most reliable field-level
+  // "input-like" signal we receive from Naive UI. It covers normal typing as well as
+  // value updates initiated through wrapper-owned UI (for example the custom clear action),
+  // so we trigger the form layer's `onInput()` here instead of depending on a lower-level
+  // native `input` event from the wrapped component.
+  onInput()
+}
 
 // It's weird that the prop `autofocus` of `NInput` does not work as expected, so we handle it manually.
 const nInput = ref<InstanceType<typeof NInput> | null>(null)
