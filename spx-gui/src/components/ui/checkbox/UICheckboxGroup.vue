@@ -3,7 +3,7 @@
     ref="rootRef"
     role="group"
     v-bind="controlBindings"
-    :class="rootClass"
+    :class="cn('inline-flex items-center', props.class)"
     :aria-disabled="props.disabled || undefined"
     @focusout="handleFocusOut"
   >
@@ -47,7 +47,6 @@ const emit = defineEmits<{
 
 const { controlBindings, onBlur, onChange } = useFieldControlBindings()
 const rootRef = ref<HTMLElement | null>(null)
-const rootClass = computed(() => cn('inline-flex items-center', props.class ?? null))
 
 provide(checkboxGroupContextKey, {
   value: computed(() => props.value),

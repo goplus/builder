@@ -1,6 +1,6 @@
 <template>
-  <div class="group" :class="rootClass">
-    <div :class="railClass">
+  <div class="group" :class="cn('relative h-5 w-full min-w-0 inline-flex items-center', props.class)">
+    <div class="relative" :class="railClass">
       <div class="absolute inset-y-0 left-0 rounded-full bg-primary-500" :style="{ width: `${fillPercent}%` }"></div>
       <div
         class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center bg-transparent shadow-none"
@@ -68,10 +68,9 @@ const emit = defineEmits<{
   'update:value': [number]
 }>()
 
-const rootClass = computed(() => cn('relative h-5 w-full min-w-0 inline-flex items-center', props.class ?? null))
 const railClass = computed(() =>
   cn(
-    'relative h-1 w-full rounded-full bg-[rgb(245,245,245)] transition-colors duration-200',
+    'h-1 w-full rounded-full bg-[rgb(245,245,245)] transition-colors duration-200',
     props.disabled ? null : 'group-hover:bg-[rgb(219,219,223)] group-focus-within:bg-[rgb(219,219,223)]',
     props.railClass ?? null
   )
@@ -113,11 +112,9 @@ function handleNativeInput(event: Event) {
 function handleNativeChange(event: Event) {
   const nextValue = clampValue(Number((event.target as HTMLInputElement).value))
   localValue.value = nextValue
-
   if (props.updateOn === 'dragend') {
     emit('update:value', nextValue)
   }
-
   onChange()
 }
 </script>

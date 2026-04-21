@@ -1,19 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 import { cn } from './utils'
 
 const props = defineProps<{
   class?: string
 }>()
-
-const rootClass = computed(() =>
-  cn('flex h-12 items-center px-3 text-xl border-b border-grey-400 text-title', props.class ?? null)
-)
 </script>
 
 <template>
-  <div :class="rootClass">
+  <div :class="cn('h-12 flex items-center px-3 text-xl border-b border-grey-400 text-title', props.class)">
     <slot></slot>
   </div>
 </template>

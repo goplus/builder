@@ -1,5 +1,5 @@
 <template>
-  <div :class="rootClass">
+  <div :class="cn('flex gap-3', props.class)">
     <slot />
   </div>
 </template>
@@ -23,8 +23,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:value': [string]
 }>()
-
-const rootClass = computed(() => cn('flex gap-3', props.class))
 
 const updateValue = (newValue: string) => {
   emit('update:value', newValue)

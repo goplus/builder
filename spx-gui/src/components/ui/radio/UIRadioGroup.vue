@@ -3,7 +3,7 @@
     ref="rootRef"
     role="radiogroup"
     v-bind="controlBindings"
-    :class="rootClass"
+    :class="cn('inline-flex items-center', props.class)"
     :aria-disabled="props.disabled || undefined"
     @focusout="handleFocusOut"
   >
@@ -45,8 +45,6 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:value': [string | null]
 }>()
-
-const rootClass = computed(() => cn('inline-flex items-center', props.class ?? null))
 
 const { controlBindings, onBlur, onChange } = useFieldControlBindings()
 const rootRef = ref<HTMLElement | null>(null)

@@ -1,5 +1,13 @@
 <template>
-  <div class="ui-select" :class="rootClass">
+  <div
+    class="ui-select"
+    :class="
+      cn(
+        'relative h-(--ui-line-height-md) inline-flex items-center justify-between gap-0.5 rounded-md px-4 text-grey-1000 bg-grey-300 [transition:0.3s]',
+        props.class
+      )
+    "
+  >
     <span
       class="min-w-0 flex-1 overflow-x-hidden text-ellipsis whitespace-nowrap"
       :class="selectedRef == null ? 'text-grey-700' : null"
@@ -20,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { untilNotNull } from '@/utils/utils'
 import { cn, type ClassValue } from '../utils'
 import UIIcon from '../icons/UIIcon.vue'
@@ -52,12 +60,6 @@ const placeholderValue = '\0'
 
 const selectedRef = ref<Selected>(null)
 const selectRef = ref<HTMLSelectElement | null>(null)
-const rootClass = computed(() =>
-  cn(
-    'relative h-(--ui-line-height-md) inline-flex items-center justify-between gap-0.5 rounded-md px-4 text-grey-1000 bg-grey-300 [transition:0.3s]',
-    props.class
-  )
-)
 
 async function syncSelected() {
   const select = await untilNotNull(() => selectRef.value)
