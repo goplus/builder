@@ -33,6 +33,20 @@ ui/
 2. 在 `pages/spx/` 中创建页面设计
 3. 通过 PR 提交更改
 
+### 组件库保护
+
+为降低 `builder-component.lib.pen` 本地误操作或异常退出导致的数据丢失风险，仓库内提供了两层保护：
+
+1. 保存即备份：在 `spx-gui/` 目录运行 `npm run watch:pen-snapshot`，监听组件库文件变更，并把快照写入 `ui/components/spx/.snapshots/`
+2. 提交前校验：在 `spx-gui/` 目录先运行一次 `npm run setup:githooks`，之后每次 `git commit` 都会自动为组件库创建一次快照，并执行 `builder-component-lib.test.ts`
+
+常用命令：
+
+- 手动创建一次快照：`npm run snapshot:pen`
+- 启动持续监听：`npm run watch:pen-snapshot`
+- 手动执行一次提交前检查：`npm run validate:pen`
+- 安装仓库内 Git hooks：`npm run setup:githooks`
+
 ### 开发者
 
 页面设计位于 `pages/spx/`。每个 `.pen` 文件对应一个功能或页面。
