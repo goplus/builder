@@ -31,7 +31,35 @@ function collectNodesById(node: unknown, nodes = new Map<string, PenNode>()) {
   return nodes
 }
 
+function collectNullLayoutFields(node: unknown, issues: string[] = []) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectNullLayoutFields(item, issues)
+    return issues
+  }
+  if (node == null || typeof node !== 'object') return issues
+
+  const penNode = node as PenNode
+  for (const field of ['width', 'height', 'x', 'y'] as const) {
+    if (field in penNode && penNode[field] === null) {
+      const label = [penNode.id ?? '<no-id>', penNode.name].filter((value) => value != null).join(' ')
+      issues.push(`${label} ${field}`)
+    }
+  }
+
+  for (const value of Object.values(penNode)) collectNullLayoutFields(value, issues)
+  return issues
+}
+
 describe('builder-component.lib.pen', () => {
+  it('keeps Button/Medium/Primary/Default/Default at 32px height', () => {
+    const library = readPen(LibraryPath)
+    const nodesById = collectNodesById(library)
+    const mediumPrimaryDefaultButton = nodesById.get('BeWL7')
+
+    expect(mediumPrimaryDefaultButton?.name).toBe('Button/Medium/Primary/Default/Default')
+    expect(mediumPrimaryDefaultButton?.height).toBe(32)
+  })
+
   it('keeps the segmented control slots resolvable for community explore', () => {
     const library = readPen(LibraryPath)
     const nodesById = collectNodesById(library)
@@ -50,5 +78,11 @@ describe('builder-component.lib.pen', () => {
 
     expect(segmentedControl?.name).toBe('Segmented control')
     expect(segmentedControl?.slot).toEqual(expect.arrayContaining(['BRO5N', 'HuMs3', '3Jeg5', 'dGMX8', 'EO5cL']))
+  })
+
+  it('does not store null layout values that break the pen loader', () => {
+    const library = readPen(LibraryPath)
+
+    expect(collectNullLayoutFields(library)).toEqual([])
   })
 })
