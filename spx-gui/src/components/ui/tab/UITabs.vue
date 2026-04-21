@@ -1,5 +1,5 @@
 <template>
-  <ul :class="rootClass">
+  <ul :class="cn('flex gap-6 px-2', props.class)">
     <slot></slot>
   </ul>
 </template>
@@ -20,7 +20,7 @@ export function useTabsCtx() {
 </script>
 
 <script setup lang="ts">
-import { computed, provide } from 'vue'
+import { provide } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import { cn, type ClassValue } from '../utils'
 
@@ -37,8 +37,6 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:value': [string]
 }>()
-
-const rootClass = computed(() => cn('flex gap-6 px-2', props.class ?? null))
 
 provide(
   tabsCtxInjectionKey,

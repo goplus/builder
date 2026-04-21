@@ -24,7 +24,7 @@ const rootClass = computed(() =>
   cn(
     'flex items-center justify-center rounded-full text-grey-700 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500',
     props.size === 'large' ? 'h-8 w-8' : 'h-7 w-7',
-    props.class ?? null
+    props.class
   )
 )
 const iconClass = computed(() => (props.size === 'large' ? 'h-6 w-6' : 'h-5 w-5'))

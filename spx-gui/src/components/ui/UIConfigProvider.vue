@@ -14,6 +14,7 @@ import { type GlobalThemeOverrides } from 'naive-ui'
 import { inject, type InjectionKey } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import * as uiVariables from './tokens'
+import { providePopupStack } from './popup'
 import { getCssVars } from './tokens/utils'
 import { useProvideLastClickEvent } from './utils'
 import { providePopupContainer, provideModalContainer, provideRootContainer } from '.'
@@ -54,7 +55,7 @@ const themeOverrides: GlobalThemeOverrides = {
     // TODO: review text color mapping
     primaryColor: uiVariables.color.primary.main,
     primaryColorHover: uiVariables.color.primary[400],
-    primaryColorPressed: uiVariables.color.primary[600],
+    primaryColorPressed: uiVariables.color.primary.main,
     textColorBase: uiVariables.color.text,
     textColor1: uiVariables.color.title,
     textColor2: uiVariables.color.text,
@@ -161,6 +162,7 @@ const nConfigProviderEl = computed(() => nConfigProvider.value?.$el)
 provideRootContainer(nConfigProviderEl)
 providePopupContainer(nConfigProviderEl)
 provideModalContainer(nConfigProviderEl)
+providePopupStack()
 
 useProvideLastClickEvent()
 
@@ -175,14 +177,5 @@ const cssVariables = getCssVars('--ui-', uiVariables)
   font-size: var(--ui-font-size-base);
   font-family: var(--ui-font-family-main);
   line-height: 22px;
-}
-</style>
-
-<style>
-/* vueuc (dep of naive-ui) uses `pointer-events: all` on children of `v-binder-follower-content`, which wraps `Popover` content in naive-ui. */
-/* It causes pointer behavior issues in popup content. For example, a svg in a `visibility: hidden` element will still be clickable. */
-/* So we override it here to fix the issue. See details in https://github.com/07akioni/vueuc/issues/314 */
-.v-binder-follower-content > * {
-  pointer-events: initial;
 }
 </style>

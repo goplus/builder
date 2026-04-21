@@ -24,7 +24,7 @@ const rootClass = computed(() =>
       'text-grey-100 bg-primary-main border-primary-main': props.type === 'primary',
       'text-grey-900 bg-grey-300 border-grey-300': props.type === 'boring'
     },
-    props.class ?? null
+    props.class
   )
 )
 </script>

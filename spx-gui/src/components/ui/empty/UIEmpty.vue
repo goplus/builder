@@ -81,7 +81,7 @@ const rootClass = computed(() =>
       'flex-col': props.size === 'extra-large',
       'gap-2 text-grey-600': props.size === 'small' || props.size === 'medium'
     },
-    props.class ?? null
+    props.class
   )
 )
 

@@ -55,7 +55,7 @@ const selectRef = ref<HTMLSelectElement | null>(null)
 const rootClass = computed(() =>
   cn(
     'relative h-(--ui-line-height-md) inline-flex items-center justify-between gap-0.5 rounded-md px-4 text-grey-1000 bg-grey-300 [transition:0.3s]',
-    props.class ?? null
+    props.class
   )
 )
 

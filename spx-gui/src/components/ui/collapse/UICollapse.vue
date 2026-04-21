@@ -29,7 +29,7 @@ const props = withDefaults(
 )
 
 const expandedNames = ref(props.defaultExpandedNames)
-const rootClass = computed(() => cn('m-0 flex list-none flex-col p-0', props.class ?? null))
+const rootClass = computed(() => cn('m-0 flex list-none flex-col p-0', props.class))
 
 provide(collapseCtxKey, { expandedNames })
 </script>

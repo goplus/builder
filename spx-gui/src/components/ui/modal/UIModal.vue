@@ -23,7 +23,7 @@
 import { ref, watchEffect, watch } from 'vue'
 import { NModal } from 'naive-ui'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { useLastClickEvent, useModalContainer } from '../utils'
+import { providePopupContainer, useLastClickEvent, useModalContainer } from '../utils'
 import { useModalEsc } from './UIModalProvider.vue'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
@@ -58,7 +58,10 @@ const handleUpdateShow = (visible: boolean) => {
 const attachTo = useModalContainer()
 
 const lastClickEvent = useLastClickEvent()
-const containerRef = ref<HTMLElement | null>(null)
+const containerRef = ref<HTMLElement | undefined>(undefined)
+
+providePopupContainer(containerRef)
+
 const customTransformOrigin = ref<TransformOrigin>({ x: 0, y: 0 })
 
 function setTransformOrigin(transformOrigin: TransformOrigin) {
@@ -79,6 +82,7 @@ watch(
 )
 
 const modalElRef = ref<HTMLElement | null>(null)
+
 watchEffect(() => {
   if (containerRef.value == null) return
   let modalEl = modalElRef.value
