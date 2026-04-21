@@ -34,7 +34,6 @@
   - Current Naive UI-root components that need extra care are:
 
     - `UIModal` → `NModal`
-    - `UISlider` → `NSlider`
     - `UISwitch` → `NSwitch`
     - `UICheckbox` → `NCheckbox`
     - `UICheckboxGroup` → `NCheckboxGroup`
