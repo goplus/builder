@@ -33,7 +33,7 @@ function handleSubmit() {
   <div class="flex items-center">
     <UINumberInput
       :value="value"
-      class="input w-15.5 self-stretch text-center"
+      class="w-15.5 self-stretch text-center"
       :min="-180"
       :max="180"
       autofocus
@@ -42,12 +42,3 @@ function handleSubmit() {
     />
   </div>
 </template>
-
-<style scoped>
-.input :deep(.n-input .n-input-wrapper) {
-  /* Correcting uneven left/right padding in UINumberInput. */
-  /* TODO: Dig and fix padding inconsistency in UINumberInput component. */
-  padding-left: 8px;
-  padding-right: 8px;
-}
-</style>
