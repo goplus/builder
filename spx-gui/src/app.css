@@ -240,12 +240,4 @@
   --text-xl--line-height: 26px;
   --text-2xl: var(--ui-font-size-2xl, 20px);
   --text-2xl--line-height: 28px;
-
-  /* Numeric `text-<number>` utilities below are kept only for non-token cases. */
-  --text-18: 18px;
-  --text-18--line-height: 1.5;
-  --text-24: 24px;
-  --text-24--line-height: 1.5;
-  --text-36: 36px;
-  --text-36--line-height: 1.5;
 }

@@ -14,7 +14,7 @@ function handleJoin() {
       class="relative rounded-md bg-[#f0faff] bg-no-repeat px-13 pt-12 pb-12.5 text-[#073156]"
       :style="{ backgroundImage: `url(${bgSvg})`, backgroundPosition: 'center right 54px' }"
     >
-      <h1 class="text-24">
+      <h1 class="text-[24px]/[1.5]">
         {{ $t({ en: 'Join XBuilder', zh: '加入 XBuilder' }) }}
       </h1>
       <h4 class="mt-2 text-sm">

@@ -367,11 +367,11 @@ const title = computed(() => {
           >
             <UITextInput
               v-model:value="searchInput"
+              class="shadow-brand"
               color="white"
               size="large"
               clearable
               :placeholder="$t({ zh: '搜索', en: 'Search' })"
-              :style="{ boxShadow: 'var(--ui-box-shadow-brand)' }"
             >
               <template #prefix><UIIcon type="search" /></template>
             </UITextInput>

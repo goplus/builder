@@ -1,4 +1,3 @@
-<!-- TODO: The root fixed height should be removed. Instead, set the StageViewer size (maintaining 4:3 aspect ratio) and let this container adapt its height accordingly. -->
 <template>
   <UICard
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
