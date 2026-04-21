@@ -3,7 +3,7 @@ import { computed, inject, onScopeDispose, provide, shallowReactive, type Inject
 // Internal data attrs used to mark the popup content root element so stack and
 // event-scope helpers can find teleported popup DOM reliably.
 export const UI_POPUP_ROOT_ATTR = 'data-ui-popup-root'
-export const UI_POPUP_ID_ATTR = 'data-ui-popup-id'
+const popupRootAttrs = Object.freeze({ [UI_POPUP_ROOT_ATTR]: '' })
 
 // One runtime record for a popup instance tracked by the popup stack.
 export type PopupStackEntry = {
@@ -58,7 +58,7 @@ export function createPopupStack(): PopupStack {
 
     return {
       ...entry,
-      rootAttrs: getPopupRootAttrs(id),
+      rootAttrs: popupRootAttrs,
       isTopmost: computed(() => getTopmostOpenEntry()?.id === id),
       unregister
     }
@@ -92,15 +92,6 @@ export function usePopupRegistration(open: Readonly<Ref<boolean>>) {
   const registration = stack.register({ open })
   onScopeDispose(registration.unregister)
   return registration
-}
-
-export function getPopupRootAttrs(id: number): Record<string, string> {
-  // Mark the popup content root with a stable DOM identity so document-level
-  // event handling can recover popup scope from any nested target node.
-  return {
-    [UI_POPUP_ROOT_ATTR]: '',
-    [UI_POPUP_ID_ATTR]: String(id)
-  }
 }
 
 export function findPopupRoot(target: EventTarget | Node | null) {

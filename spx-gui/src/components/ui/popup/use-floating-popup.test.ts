@@ -18,7 +18,12 @@ vi.mock('@floating-ui/dom', () => ({
   arrow: (value: unknown) => ({ name: 'arrow', value })
 }))
 
-import { resolveFloatingOffset, resolvePopupTransformOrigin, useFloatingPopup } from './use-floating-popup'
+import {
+  POPUP_ARROW_SIZE,
+  resolveFloatingOffset,
+  resolvePopupTransformOrigin,
+  useFloatingPopup
+} from './use-floating-popup'
 
 type MockPositionResult = {
   x: number
@@ -57,16 +62,14 @@ describe('resolveFloatingOffset', () => {
 
 describe('resolvePopupTransformOrigin', () => {
   it('falls back to Naive UI-like placement origins when there is no arrow data', () => {
-    expect(resolvePopupTransformOrigin('bottom-start', null, { showArrow: true })).toBe('top left')
-    expect(resolvePopupTransformOrigin('left', null, { showArrow: false })).toBe('center right')
+    expect(resolvePopupTransformOrigin('bottom-start', null)).toBe('top left')
+    expect(resolvePopupTransformOrigin('left', null)).toBe('center right')
   })
 
   it('uses arrow position to align the expansion origin more closely to the trigger point', () => {
-    expect(resolvePopupTransformOrigin('bottom', { left: '12px' }, { showArrow: true, arrowSize: 8 })).toBe(
-      'calc(12px + 4px) top'
-    )
-    expect(resolvePopupTransformOrigin('right-start', { top: '6px' }, { showArrow: true, arrowSize: 8 })).toBe(
-      'left calc(6px + 4px)'
+    expect(resolvePopupTransformOrigin('bottom', { left: '12px' })).toBe(`calc(12px + ${POPUP_ARROW_SIZE / 2}px) top`)
+    expect(resolvePopupTransformOrigin('right-start', { top: '6px' })).toBe(
+      `left calc(6px + ${POPUP_ARROW_SIZE / 2}px)`
     )
   })
 })
@@ -99,7 +102,7 @@ describe('useFloatingPopup', () => {
     const popup = withSetup(() =>
       useFloatingPopup({
         visible,
-        placement: ref('bottom'),
+        placement: ref<'bottom'>('bottom'),
         offset: ref({ x: 4, y: 8 }),
         showArrow: ref(true)
       })
@@ -119,14 +122,45 @@ describe('useFloatingPopup', () => {
       top: '34px'
     })
     expect(popup.arrowStyle.value).toMatchObject({
+      width: `${POPUP_ARROW_SIZE}px`,
+      height: `${POPUP_ARROW_SIZE}px`,
       left: '5px',
-      top: '-4px'
+      top: `-${POPUP_ARROW_SIZE / 2}px`
     })
+    expect(popup.transformOrigin.value).toBe(`calc(5px + ${POPUP_ARROW_SIZE / 2}px) top`)
 
     visible.value = false
     await flushFloatingEffects()
 
     expect(cleanup).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses the shared popup arrow size when positioning the arrow and computing transform origin', async () => {
+    floatingMocks.autoUpdate.mockImplementation((_reference, _floating, update) => {
+      void update()
+      return vi.fn()
+    })
+
+    const popup = withSetup(() =>
+      useFloatingPopup({
+        visible: ref(true),
+        placement: ref<'bottom'>('bottom'),
+        showArrow: ref(true)
+      })
+    )
+
+    popup.referenceRef.value = document.createElement('button')
+    popup.floatingRef.value = document.createElement('div')
+    popup.arrowRef.value = document.createElement('div')
+    await flushFloatingEffects()
+
+    expect(popup.arrowStyle.value).toMatchObject({
+      width: `${POPUP_ARROW_SIZE}px`,
+      height: `${POPUP_ARROW_SIZE}px`,
+      left: '5px',
+      top: `-${POPUP_ARROW_SIZE / 2}px`
+    })
+    expect(popup.transformOrigin.value).toBe(`calc(5px + ${POPUP_ARROW_SIZE / 2}px) top`)
   })
 
   it('uses a virtual anchor when manual popup coordinates are provided', async () => {
@@ -149,6 +183,61 @@ describe('useFloatingPopup', () => {
     expect(virtualReference).toBeTruthy()
     expect(typeof virtualReference.getBoundingClientRect).toBe('function')
     expect(floatingMocks.computePosition).toHaveBeenCalled()
+  })
+
+  it('re-subscribes and repositions when reactive placement changes', async () => {
+    const cleanup = vi.fn()
+    const placement = ref<'bottom' | 'top'>('bottom')
+    floatingMocks.computePosition
+      .mockResolvedValueOnce({
+        x: 12,
+        y: 34,
+        strategy: 'fixed',
+        placement: 'bottom',
+        middlewareData: {
+          arrow: {
+            x: 5,
+            y: 7
+          }
+        }
+      })
+      .mockResolvedValueOnce({
+        x: 12,
+        y: 34,
+        strategy: 'fixed',
+        placement: 'top',
+        middlewareData: {
+          arrow: {
+            x: 5,
+            y: 7
+          }
+        }
+      })
+    floatingMocks.autoUpdate.mockImplementation((_reference, _floating, update) => {
+      void update()
+      return cleanup
+    })
+
+    const popup = withSetup(() =>
+      useFloatingPopup({
+        visible: ref(true),
+        placement
+      })
+    )
+
+    popup.referenceRef.value = document.createElement('button')
+    popup.floatingRef.value = document.createElement('div')
+    await flushFloatingEffects()
+
+    expect(popup.transformOrigin.value).toBe('top center')
+    expect(floatingMocks.computePosition.mock.calls[0]?.[2]).toMatchObject({ placement: 'bottom' })
+
+    placement.value = 'top'
+    await flushFloatingEffects()
+
+    expect(cleanup).toHaveBeenCalledTimes(1)
+    expect(popup.transformOrigin.value).toBe('bottom center')
+    expect(floatingMocks.computePosition.mock.calls.at(-1)?.[2]).toMatchObject({ placement: 'top' })
   })
 
   it('ignores stale async positioning results after the popup is hidden', async () => {

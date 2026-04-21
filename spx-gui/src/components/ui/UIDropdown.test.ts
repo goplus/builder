@@ -102,6 +102,44 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).toContain('Dropdown content')
   })
 
+  it('cancels a pending hover open when it becomes disabled before the delay elapses', async () => {
+    const wrapper = mount(
+      defineComponent({
+        data() {
+          return {
+            disabled: false
+          }
+        },
+        render() {
+          return h(PopupProvider, null, {
+            default: () =>
+              h(
+                UIDropdown,
+                { trigger: 'hover', disabled: this.disabled },
+                {
+                  trigger: () => h('button', { 'data-test-id': 'trigger' }, 'Hover me'),
+                  default: () => h('div', 'Dropdown content')
+                }
+              )
+          })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const dropdown = wrapper.getComponent(UIDropdown)
+    const popupContainer = wrapper.get('[data-test-id="popup-container"]')
+
+    await wrapper.get('[data-test-id="trigger"]').trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(50)
+    await wrapper.setData({ disabled: true })
+    await vi.advanceTimersByTimeAsync(100)
+    await flushDropdown()
+
+    expect(dropdown.emitted('update:visible')).toBeUndefined()
+    expect(popupContainer.text()).not.toContain('Dropdown content')
+  })
+
   it('stays open when clicking the trigger again without emitting clickOutside', async () => {
     const wrapper = mount(
       defineComponent({
@@ -136,6 +174,37 @@ describe('UIDropdown', () => {
     expect(dropdown.emitted('update:visible')).toEqual([[true]])
     expect(dropdown.emitted('clickOutside')).toBeUndefined()
     expect(popupContainer.text()).toContain('Dropdown content')
+  })
+
+  it('does not open while disabled', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () =>
+                h(
+                  UIDropdown,
+                  { trigger: 'click', disabled: true },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger' }, 'Open'),
+                    default: () => h('div', 'Dropdown content')
+                  }
+                )
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const dropdown = wrapper.getComponent(UIDropdown)
+    const popupContainer = wrapper.get('[data-test-id="popup-container"]')
+
+    await wrapper.get('[data-test-id="trigger"]').trigger('click')
+    await flushDropdown()
+
+    expect(dropdown.emitted('update:visible')).toBeUndefined()
+    expect(popupContainer.text()).not.toContain('Dropdown content')
   })
 
   it('closes and emits clickOutside when clicking outside the dropdown', async () => {

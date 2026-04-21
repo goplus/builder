@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   createPopupStack,
   findPopupRoot,
-  getPopupRootAttrs,
   providePopupStack,
+  UI_POPUP_ROOT_ATTR,
   usePopupRegistration,
   type PopupRegistration
 } from './stack'
@@ -69,10 +69,7 @@ describe('popup stack', () => {
 
   it('finds popup roots using internal popup data attributes', () => {
     const popupRoot = document.createElement('div')
-    const attrs = getPopupRootAttrs(7)
-    for (const [name, value] of Object.entries(attrs)) {
-      popupRoot.setAttribute(name, value)
-    }
+    popupRoot.setAttribute(UI_POPUP_ROOT_ATTR, '')
     const child = document.createElement('span')
     const text = document.createTextNode('nested')
     popupRoot.appendChild(child)

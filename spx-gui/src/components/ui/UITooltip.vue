@@ -8,23 +8,12 @@ export type Placement = Extract<
 </script>
 
 <script setup lang="ts">
+import { computed, mergeProps, onScopeDispose, ref, useAttrs, useSlots, watch, type CSSProperties } from 'vue'
 import {
-  computed,
-  defineComponent,
-  mergeProps,
-  onScopeDispose,
-  ref,
-  useAttrs,
-  useSlots,
-  watch,
-  type CSSProperties,
-  type PropType,
-  type VNode
-} from 'vue'
-import {
+  PopupRenderTrigger,
+  type PopupTriggerHandle,
   renderPopupTrigger,
-  resolvePopupElement,
-  resolvePopupTransformOrigin,
+  resolveTriggerElement,
   useFloatingPopup,
   usePopupRegistration
 } from './popup'
@@ -34,19 +23,6 @@ import { usePopupContainer } from './utils'
 defineOptions({
   name: 'UITooltip',
   inheritAttrs: false
-})
-
-const RenderTrigger = defineComponent({
-  name: 'UITooltipRenderTrigger',
-  props: {
-    renderNode: {
-      type: Function as PropType<() => VNode | null>,
-      required: true
-    }
-  },
-  setup(props) {
-    return () => props.renderNode()
-  }
 })
 
 const props = withDefaults(
@@ -70,7 +46,6 @@ const emit = defineEmits<{
   'update:visible': [boolean]
 }>()
 
-const attrs = useAttrs()
 const slots = useSlots()
 const attachTo = usePopupContainer()
 const internalVisibleRef = ref(false)
@@ -81,23 +56,14 @@ const {
   floatingRef: contentRef,
   arrowRef,
   floatingStyle,
-  arrowStyle
+  arrowStyle,
+  transformOrigin
 } = useFloatingPopup({
   visible: visibleComputed,
   placement: computed(() => props.placement),
   offset: computed(() => ({ x: 0, y: 8 })),
   showArrow: true
 })
-const transformOrigin = computed(() =>
-  resolvePopupTransformOrigin(props.placement, arrowStyle.value, { showArrow: true, arrowSize: 8 })
-)
-const rootClass = computed(() =>
-  cn(
-    'fixed z-1000 rounded-sm bg-grey-1000 px-2 py-[7px] text-xs text-grey-100 shadow-sm',
-    props.class
-  )
-)
-const arrowClass = 'absolute size-2 rotate-45 pointer-events-none bg-grey-1000'
 const popupStyle = computed(
   () =>
     ({
@@ -108,7 +74,6 @@ const popupStyle = computed(
       ...floatingStyle.value
     }) satisfies CSSProperties
 )
-const arrowInlineStyle = computed(() => ({ ...arrowStyle.value }) satisfies CSSProperties)
 
 function updateVisible(visible: boolean) {
   if (props.disabled && visible) return
@@ -118,10 +83,7 @@ function updateVisible(visible: boolean) {
 }
 
 function setTriggerRef(target: Element | { $el?: Element } | null) {
-  triggerRef.value = resolvePopupElement(target)
-}
-function setContentRef(target: Element | { $el?: Element } | null) {
-  contentRef.value = resolvePopupElement(target)
+  triggerRef.value = resolveTriggerElement(target)
 }
 
 const openTimerRef = ref<number | null>(null)
@@ -134,12 +96,6 @@ function clearTimer(timerRef: typeof openTimerRef) {
 }
 
 function scheduleOpen() {
-  if (props.disabled) {
-    clearTimer(openTimerRef)
-    clearTimer(closeTimerRef)
-    updateVisible(false)
-    return
-  }
   clearTimer(closeTimerRef)
   clearTimer(openTimerRef)
   openTimerRef.value = window.setTimeout(() => {
@@ -156,6 +112,7 @@ function scheduleClose() {
 }
 
 function handleTriggerMouseenter() {
+  if (props.disabled) return
   scheduleOpen()
 }
 
@@ -173,7 +130,11 @@ function handleContentMouseleave() {
   scheduleClose()
 }
 
-defineExpose({ triggerEl: triggerRef })
+const exposed: PopupTriggerHandle = {
+  triggerEl: triggerRef
+}
+
+defineExpose(exposed)
 
 onScopeDispose(() => {
   clearTimer(openTimerRef)
@@ -191,6 +152,12 @@ watch(
   { immediate: true }
 )
 
+// Tooltips behave like a transparent trigger decorator, so arbitrary attrs and
+// listeners applied on <UITooltip> should still land on the caller's actual
+// trigger node. This is useful for generic trigger wrappers, including nested
+// compositions such as UIDropdownWithTooltip.
+const attrs = useAttrs()
+
 const triggerProps = computed(() =>
   mergeProps(attrs, {
     ref: setTriggerRef,
@@ -198,26 +165,27 @@ const triggerProps = computed(() =>
     onMouseleave: handleTriggerMouseleave
   })
 )
+
 function renderTriggerNode() {
   return renderPopupTrigger(slots.trigger?.(), triggerProps.value)
 }
 </script>
 
 <template>
-  <RenderTrigger :render-node="renderTriggerNode" />
+  <PopupRenderTrigger :render-node="renderTriggerNode" />
 
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-popup-scale-fade">
       <div
         v-if="visibleComputed"
         v-bind="popup.rootAttrs"
-        :ref="setContentRef"
-        :class="rootClass"
+        ref="contentRef"
+        :class="cn('fixed z-1000 rounded-md bg-grey-1000 px-2 py-1.75 text-xs text-grey-100 shadow-sm', props.class)"
         :style="popupStyle"
         @mouseenter="handleContentMouseenter"
         @mouseleave="handleContentMouseleave"
       >
-        <div ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
+        <div ref="arrowRef" class="absolute rotate-45 pointer-events-none bg-grey-1000" :style="arrowStyle"></div>
         <slot></slot>
       </div>
     </Transition>

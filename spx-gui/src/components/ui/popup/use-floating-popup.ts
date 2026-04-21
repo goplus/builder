@@ -8,10 +8,27 @@ import {
   type Placement as FloatingPlacement,
   type VirtualElement
 } from '@floating-ui/dom'
-import { ref, toValue, watchEffect, type CSSProperties, type MaybeRefOrGetter } from 'vue'
+import { ref, toValue, watch, type CSSProperties, type WatchSource } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
 
+type PopupValueSource<T> = WatchSource<T> | T
+
+type ResolvedPopupState = {
+  visible: boolean
+  reference: HTMLElement | VirtualElement | null
+  floatingEl: HTMLElement | null
+  arrowEl: HTMLElement | null
+  placement: PopupPlacement
+  popupOffset: PopupOffset
+  showArrow: boolean
+}
+
 export type PopupPlacement = FloatingPlacement
+
+// Popup arrows currently use the same size everywhere in the project, so keep
+// a single fixed constant here instead of threading a configurable value.
+export const POPUP_ARROW_SIZE = 8
+const POPUP_ARROW_HALF_SIZE = `${POPUP_ARROW_SIZE / 2}px`
 
 export type PopupOffset = {
   x: number
@@ -26,11 +43,11 @@ export type PopupVirtualAnchor = {
 }
 
 export type UseFloatingPopupOptions = {
-  visible: MaybeRefOrGetter<boolean>
-  placement?: MaybeRefOrGetter<PopupPlacement>
-  offset?: MaybeRefOrGetter<PopupOffset>
-  virtualAnchor?: MaybeRefOrGetter<PopupVirtualAnchor | null>
-  showArrow?: MaybeRefOrGetter<boolean>
+  visible: PopupValueSource<boolean>
+  placement?: PopupValueSource<PopupPlacement>
+  offset?: PopupValueSource<PopupOffset>
+  virtualAnchor?: PopupValueSource<PopupVirtualAnchor | null>
+  showArrow?: PopupValueSource<boolean>
   shiftPadding?: number
 }
 
@@ -40,19 +57,12 @@ export function useFloatingPopup(options: UseFloatingPopupOptions) {
   const arrowRef = ref<HTMLElement | null>(null)
   const floatingStyle = ref<CSSProperties | null>(null)
   const arrowStyle = ref<CSSProperties | null>(null)
+  const transformOrigin = ref('top center')
 
-  async function updatePosition(signal?: AbortSignal) {
-    const floatingEl = floatingRef.value
-    const virtualAnchor = resolveMaybeRef(options.virtualAnchor)
-    // Dropdowns can be anchored either to a real trigger element or to an
-    // explicit screen coordinate for context-menu style positioning.
-    const reference = resolveReferenceElement(referenceRef.value, virtualAnchor)
+  async function updatePosition(state: ResolvedPopupState, signal?: AbortSignal) {
+    const { arrowEl, floatingEl, placement, popupOffset, reference, showArrow } = state
     if (floatingEl == null || reference == null) return
 
-    const placement = resolveMaybeRef(options.placement, 'bottom')
-    const popupOffset = resolveMaybeRef(options.offset, { x: 0, y: 0 })
-    const shouldShowArrow = resolveMaybeRef(options.showArrow, false)
-    const arrowEl = shouldShowArrow ? arrowRef.value : null
     const middleware = [
       floatingOffset(resolveFloatingOffset(placement, popupOffset)),
       flip(),
@@ -79,51 +89,67 @@ export function useFloatingPopup(options: UseFloatingPopupOptions) {
       left: `${x}px`,
       top: `${y}px`
     }
-    arrowStyle.value = shouldShowArrow ? resolveArrowStyle(resolvedPlacement, middlewareData.arrow ?? null) : null
+    arrowStyle.value = showArrow ? resolveArrowStyle(resolvedPlacement, middlewareData.arrow ?? null) : null
+    transformOrigin.value = resolvePopupTransformOrigin(resolvedPlacement, arrowStyle.value)
   }
 
-  watchEffect((onCleanup) => {
-    const signal = getCleanupSignal(onCleanup)
-    const visible = toValue(options.visible)
-    const floatingEl = floatingRef.value
-    const virtualAnchor = resolveMaybeRef(options.virtualAnchor)
-    const reference = resolveReferenceElement(referenceRef.value, virtualAnchor)
-    // Read reactive deps here so watchEffect re-runs when they change,
-    // even though updatePosition consumes them asynchronously.
-    if (options.showArrow != null) void resolveMaybeRef(options.showArrow, false)
-    if (options.placement != null) void resolveMaybeRef(options.placement, 'bottom')
-    if (options.offset != null) void resolveMaybeRef(options.offset, { x: 0, y: 0 })
+  watch(
+    () => resolvePopupState(options, referenceRef.value, floatingRef.value, arrowRef.value),
+    (state, _, onCleanup) => {
+      const signal = getCleanupSignal(onCleanup)
+      transformOrigin.value = resolvePopupTransformOrigin(state.placement, null)
 
-    if (!visible || floatingEl == null || reference == null) {
-      floatingStyle.value = null
-      arrowStyle.value = null
-      return
-    }
+      if (!state.visible || state.floatingEl == null || state.reference == null) {
+        floatingStyle.value = null
+        arrowStyle.value = null
+        return
+      }
 
-    // Floating UI's autoUpdate callback fires immediately on registration and
-    // then on every relevant layout/input change, so one subscription keeps the
-    // popup positioned without an extra manual initial computePosition call.
-    const cleanup = autoUpdate(reference, floatingEl, () => {
-      void updatePosition(signal)
-    })
+      const cleanup = autoUpdate(state.reference, state.floatingEl, () => {
+        void updatePosition(state, signal)
+      })
 
-    onCleanup(() => {
-      cleanup()
-    })
-  })
+      onCleanup(() => {
+        cleanup()
+      })
+    },
+    { immediate: true }
+  )
 
   return {
     referenceRef,
     floatingRef,
     arrowRef,
     floatingStyle,
-    arrowStyle
+    arrowStyle,
+    transformOrigin
   }
 }
 
-function resolveMaybeRef<T>(value: MaybeRefOrGetter<T> | null | undefined): T | null
-function resolveMaybeRef<T>(value: MaybeRefOrGetter<T> | null | undefined, fallback: T): T
-function resolveMaybeRef<T>(value: MaybeRefOrGetter<T> | null | undefined, fallback?: T) {
+function resolvePopupState(
+  options: UseFloatingPopupOptions,
+  referenceEl: HTMLElement | null,
+  floatingEl: HTMLElement | null,
+  arrowEl: HTMLElement | null
+): ResolvedPopupState {
+  const virtualAnchor = resolvePopupValue(options.virtualAnchor)
+  const showArrow = resolvePopupValue(options.showArrow, false)
+  return {
+    visible: toValue(options.visible),
+    // Dropdowns can be anchored either to a real trigger element or to an
+    // explicit screen coordinate for context-menu style positioning.
+    reference: resolveReferenceElement(referenceEl, virtualAnchor),
+    floatingEl,
+    arrowEl: showArrow ? arrowEl : null,
+    placement: resolvePopupValue(options.placement, 'bottom'),
+    popupOffset: resolvePopupValue(options.offset, { x: 0, y: 0 }),
+    showArrow
+  }
+}
+
+function resolvePopupValue<T>(value: PopupValueSource<T> | null | undefined): T | null
+function resolvePopupValue<T>(value: PopupValueSource<T> | null | undefined, fallback: T): T
+function resolvePopupValue<T>(value: PopupValueSource<T> | null | undefined, fallback?: T) {
   const resolved = value == null ? undefined : toValue(value)
   return resolved ?? fallback ?? null
 }
@@ -159,31 +185,33 @@ const placementTransformOrigins: Record<PopupPlacement, string> = {
   'left-end': 'bottom right'
 }
 
-export function resolvePopupTransformOrigin(
-  placement: PopupPlacement,
-  arrowStyle: CSSProperties | null,
-  options: { showArrow?: boolean; arrowSize?: number } = {}
-) {
-  // When there is no arrow, fall back to a placement-based origin. With an
-  // arrow, bias the animation origin toward the arrow center so the popup feels
-  // attached to the trigger point.
-  if (!options.showArrow) return placementTransformOrigins[placement]
+export function resolvePopupTransformOrigin(placement: PopupPlacement, arrowStyle: CSSProperties | null) {
+  // Without arrow coordinates, fall back to a placement-based origin. When the
+  // arrow is present, bias the animation origin toward the arrow center so the
+  // popup feels attached to the trigger point.
+  if (arrowStyle == null) return placementTransformOrigins[placement]
 
-  const arrowSize = options.arrowSize ?? 8
   const side = placement.split('-')[0]
   const arrowLeft = readPx(arrowStyle?.left)
   const arrowTop = readPx(arrowStyle?.top)
-  const halfArrow = `${arrowSize / 2}px`
 
   switch (side) {
     case 'bottom':
-      return arrowLeft == null ? placementTransformOrigins[placement] : `calc(${arrowLeft}px + ${halfArrow}) top`
+      return arrowLeft == null
+        ? placementTransformOrigins[placement]
+        : `calc(${arrowLeft}px + ${POPUP_ARROW_HALF_SIZE}) top`
     case 'top':
-      return arrowLeft == null ? placementTransformOrigins[placement] : `calc(${arrowLeft}px + ${halfArrow}) bottom`
+      return arrowLeft == null
+        ? placementTransformOrigins[placement]
+        : `calc(${arrowLeft}px + ${POPUP_ARROW_HALF_SIZE}) bottom`
     case 'right':
-      return arrowTop == null ? placementTransformOrigins[placement] : `left calc(${arrowTop}px + ${halfArrow})`
+      return arrowTop == null
+        ? placementTransformOrigins[placement]
+        : `left calc(${arrowTop}px + ${POPUP_ARROW_HALF_SIZE})`
     default:
-      return arrowTop == null ? placementTransformOrigins[placement] : `right calc(${arrowTop}px + ${halfArrow})`
+      return arrowTop == null
+        ? placementTransformOrigins[placement]
+        : `right calc(${arrowTop}px + ${POPUP_ARROW_HALF_SIZE})`
   }
 }
 
@@ -218,11 +246,13 @@ function resolveArrowStyle(placement: PopupPlacement, coords: { x?: number; y?: 
   const oppositeSide = getOppositeSide(side)
   const isVerticalPlacement = side === 'top' || side === 'bottom'
   return {
+    width: `${POPUP_ARROW_SIZE}px`,
+    height: `${POPUP_ARROW_SIZE}px`,
     left: isVerticalPlacement ? (coords?.x == null ? '' : `${coords.x}px`) : '',
     top: !isVerticalPlacement ? (coords?.y == null ? '' : `${coords.y}px`) : '',
     right: '',
     bottom: '',
-    [oppositeSide]: '-4px'
+    [oppositeSide]: `-${POPUP_ARROW_HALF_SIZE}`
   }
 }
 

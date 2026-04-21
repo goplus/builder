@@ -1,5 +1,5 @@
 <template>
-  <ul :class="rootClass">
+  <ul :class="cn('flex gap-6 px-2', props.class)">
     <slot></slot>
   </ul>
 </template>
@@ -38,7 +38,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const rootClass = computed(() => cn('flex gap-6 px-2', props.class))
+const rootClass = computed(() => cn('flex', props.class))
 
 provide(
   tabsCtxInjectionKey,

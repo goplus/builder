@@ -59,6 +59,9 @@ const attachTo = useModalContainer()
 
 const lastClickEvent = useLastClickEvent()
 const containerRef = ref<HTMLElement | null>(null)
+
+providePopupContainer(computed(() => containerRef.value ?? undefined))
+
 const customTransformOrigin = ref<TransformOrigin>({ x: 0, y: 0 })
 
 function setTransformOrigin(transformOrigin: TransformOrigin) {
@@ -79,8 +82,6 @@ watch(
 )
 
 const modalElRef = ref<HTMLElement | null>(null)
-const modalPopupContainer = computed(() => modalElRef.value ?? attachTo.value)
-providePopupContainer(modalPopupContainer)
 
 watchEffect(() => {
   if (containerRef.value == null) return

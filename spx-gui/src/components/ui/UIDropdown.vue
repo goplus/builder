@@ -37,31 +37,19 @@ export type Props = {
   visible?: boolean
   pos?: Pos
   offset?: Offset
-  showArrow?: boolean
   disabled?: boolean
   class?: ClassValue
 }
 </script>
 
 <script setup lang="ts">
-import {
-  computed,
-  defineComponent,
-  onScopeDispose,
-  provide,
-  ref,
-  useSlots,
-  watch,
-  watchEffect,
-  type CSSProperties,
-  type PropType,
-  type VNode
-} from 'vue'
+import { computed, onScopeDispose, provide, ref, useSlots, watch, watchEffect, type CSSProperties } from 'vue'
 import { cn } from './utils'
 import {
+  PopupRenderTrigger,
+  type PopupTriggerHandle,
   renderPopupTrigger,
-  resolvePopupElement,
-  resolvePopupTransformOrigin,
+  resolveTriggerElement,
   useFloatingPopup,
   usePopupRegistration
 } from './popup'
@@ -75,26 +63,12 @@ defineOptions({
   inheritAttrs: false
 })
 
-const RenderTrigger = defineComponent({
-  name: 'UIDropdownRenderTrigger',
-  props: {
-    renderNode: {
-      type: Function as PropType<() => VNode | null>,
-      required: true
-    }
-  },
-  setup(props) {
-    return () => props.renderNode()
-  }
-})
-
 const props = withDefaults(defineProps<Props>(), {
   placement: 'bottom',
   trigger: 'hover',
   visible: undefined,
   pos: undefined,
   offset: () => ({ x: 0, y: 8 }),
-  showArrow: false,
   disabled: false,
   class: undefined
 })
@@ -116,29 +90,15 @@ const popup = usePopupRegistration(visibleComputed)
 const {
   referenceRef: triggerRef,
   floatingRef: contentRef,
-  arrowRef,
   floatingStyle,
-  arrowStyle
+  transformOrigin
 } = useFloatingPopup({
   visible: visibleComputed,
   placement: computed(() => props.placement),
   offset: computed(() => props.offset),
-  virtualAnchor: computed(() => props.pos ?? null),
-  showArrow: computed(() => props.showArrow)
+  virtualAnchor: computed(() => props.pos ?? null)
 })
-// Keep the scale animation origin aligned with the resolved placement/arrow so
-// the popup expands from the visual attachment point instead of the center.
-const transformOrigin = computed(() =>
-  resolvePopupTransformOrigin(props.placement, arrowStyle.value, { showArrow: props.showArrow, arrowSize: 8 })
-)
-const rootClass = computed(() =>
-  cn(
-    'fixed z-1000 rounded-md bg-grey-100 shadow-sm',
-    props.showArrow ? 'overflow-visible' : 'overflow-hidden',
-    props.class
-  )
-)
-const arrowClass = 'absolute size-2 rotate-45 pointer-events-none bg-grey-100 shadow-sm'
+const rootClass = computed(() => cn('fixed z-1000 overflow-hidden rounded-md bg-grey-100 shadow-sm', props.class))
 const popupStyle = computed(
   () =>
     ({
@@ -149,7 +109,6 @@ const popupStyle = computed(
       ...floatingStyle.value
     }) satisfies CSSProperties
 )
-const arrowInlineStyle = computed(() => ({ ...arrowStyle.value }) satisfies CSSProperties)
 
 function handleUpdateVisible(show: boolean) {
   if (show === visibleComputed.value) return
@@ -158,6 +117,8 @@ function handleUpdateVisible(show: boolean) {
 }
 
 function setVisible(visible: boolean) {
+  // Keep this as the last safety net for delayed/programmatic openings (for
+  // example a queued hover-open timer or an injected dropdown controller call).
   // Disabled dropdowns should not re-open themselves, but we still allow forced
   // closing so callers and internal handlers can collapse an already-open popup.
   if (visible && props.disabled) return
@@ -167,10 +128,7 @@ function setVisible(visible: boolean) {
 provide(dropdownCtrlKey, { setVisible })
 
 function setTriggerRef(target: Element | { $el?: Element } | null) {
-  triggerRef.value = resolvePopupElement(target)
-}
-function setContentRef(target: Element | { $el?: Element } | null) {
-  contentRef.value = resolvePopupElement(target)
+  triggerRef.value = resolveTriggerElement(target)
 }
 
 const hoverOpenTimerRef = ref<number | null>(null)
@@ -203,7 +161,7 @@ function scheduleClose() {
 }
 
 function handleTriggerClick() {
-  if (props.trigger !== 'click') return
+  if (props.trigger !== 'click' || props.disabled) return
   setVisible(true)
 }
 
@@ -236,9 +194,12 @@ onScopeDispose(() => {
 watch(
   () => props.disabled,
   (disabled) => {
+    if (!disabled) return
+    clearTimer(hoverOpenTimerRef)
+    clearTimer(hoverCloseTimerRef)
     // In uncontrolled mode, disabling the dropdown should collapse it right away.
     // Controlled mode stays source-of-truth driven by the parent component.
-    if (disabled && props.visible == null) internalVisibleRef.value = false
+    if (props.visible == null) internalVisibleRef.value = false
   },
   { immediate: true }
 )
@@ -269,8 +230,17 @@ watchEffect((onCleanup) => {
   })
 })
 
-defineExpose({ setVisible, triggerEl: triggerRef })
+const exposed: PopupTriggerHandle & { setVisible(visible: boolean): void } = {
+  setVisible,
+  triggerEl: triggerRef
+}
 
+defineExpose(exposed)
+
+// Unlike UITooltip, dropdown is not meant to be a transparent trigger
+// decorator. It owns explicit trigger modes (click / hover / manual), so we
+// only attach the internal trigger handlers/ref here instead of forwarding all
+// arbitrary attrs/listeners from <UIDropdown> onto the trigger slot node.
 const triggerProps = computed(() => {
   const common = {
     ref: setTriggerRef
@@ -308,20 +278,19 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: HTMLElement 
 </script>
 
 <template>
-  <RenderTrigger :render-node="renderTriggerNode" />
+  <PopupRenderTrigger :render-node="renderTriggerNode" />
 
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-popup-scale-fade">
       <div
         v-if="visibleComputed"
         v-bind="popup.rootAttrs"
-        :ref="setContentRef"
+        ref="contentRef"
         :class="rootClass"
         :style="popupStyle"
         @mouseenter="handleContentMouseenter"
         @mouseleave="handleContentMouseleave"
       >
-        <div v-if="props.showArrow" ref="arrowRef" :class="arrowClass" :style="arrowInlineStyle"></div>
         <slot></slot>
       </div>
     </Transition>
