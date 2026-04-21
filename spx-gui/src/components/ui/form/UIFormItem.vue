@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { debounce } from 'lodash'
-import { computed, nextTick, onBeforeUnmount, provide, useId, useSlots, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, provide, toRef, useId, useSlots, watch } from 'vue'
 import { formFieldContextKey, useFormContext, type FormFieldIds, type FormFieldValidationState } from './context'
 import { cn, type ClassValue } from '../utils'
 
@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
 })
 
 provide(formFieldContextKey, {
-  path: props.path,
+  path: toRef(props, 'path'),
   ids,
   validationState,
   feedback,

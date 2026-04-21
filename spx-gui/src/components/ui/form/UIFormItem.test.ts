@@ -66,7 +66,7 @@ function createHarness(validateName: ReturnType<typeof vi.fn>, options?: { chang
     },
     template: `
       <UIForm :form="form">
-        <UIFormItem path="name" :config="{ validateOn: ['change'] }">
+        <UIFormItem path="name">
           <ChangeControl v-if="${options?.changeControl === true}" v-model:value="form.value.name" />
           <PassiveControl v-else v-model:value="form.value.name" />
         </UIFormItem>

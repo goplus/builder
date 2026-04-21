@@ -1,4 +1,4 @@
-import { inject, type ComputedRef, type InjectionKey } from 'vue'
+import { inject, type ComputedRef, type InjectionKey, type Ref } from 'vue'
 import type { FormCtrl } from './ctrl'
 
 /** Shared context provided by `UIForm` to every descendant form field. */
@@ -39,7 +39,7 @@ export type FormFieldIds = {
  * `v-model:value="form.value.xxx"`, while the field layer owns validation state and timing.
  */
 export type FormFieldContext = {
-  path?: string
+  path: Ref<string | undefined>
   ids: FormFieldIds
   validationState: ComputedRef<FormFieldValidationState>
   feedback: ComputedRef<string | null>

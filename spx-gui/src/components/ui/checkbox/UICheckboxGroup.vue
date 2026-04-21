@@ -18,11 +18,24 @@ const emit = defineEmits<{
   'update:value': [string[]]
 }>()
 
-const { controlBindings, onChange } = useFieldControlBindings()
-const rootBindings = computed(() => ({ ...props, ...controlBindings.value }))
+const { controlBindings, onBlur, onChange } = useFieldControlBindings()
+const rootBindings = computed(() => ({
+  ...props,
+  ...controlBindings.value,
+  onFocusoutCapture: handleRootFocusout
+}))
 
 function handleUpdateValue(v: Array<string | number>) {
   emit('update:value', v as string[])
   onChange()
+}
+
+function handleRootFocusout(event: FocusEvent) {
+  const currentTarget = event.currentTarget
+  if (!(currentTarget instanceof HTMLElement)) return
+  // Moving focus between checkboxes inside the same group should not count as a
+  // field blur. Only trigger form blur handling once focus actually leaves the group.
+  if (event.relatedTarget instanceof Node && currentTarget.contains(event.relatedTarget)) return
+  onBlur()
 }
 </script>

@@ -18,11 +18,22 @@ const emit = defineEmits<{
   'update:value': [boolean]
 }>()
 
-const { controlBindings, onChange } = useFieldControlBindings()
-const rootBindings = computed(() => ({ ...props, ...controlBindings.value }))
+const { controlBindings, onBlur, onChange } = useFieldControlBindings()
+const rootBindings = computed(() => ({
+  ...props,
+  ...controlBindings.value,
+  onFocusoutCapture: handleRootFocusout
+}))
 
 function handleUpdateValue(v: boolean) {
   emit('update:value', v)
   onChange()
+}
+
+function handleRootFocusout(event: FocusEvent) {
+  const currentTarget = event.currentTarget
+  if (!(currentTarget instanceof HTMLElement)) return
+  if (event.relatedTarget instanceof Node && currentTarget.contains(event.relatedTarget)) return
+  onBlur()
 }
 </script>
