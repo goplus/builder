@@ -431,7 +431,7 @@
     },
     "W:--ui-color-primary-main": {
       "type": "color",
-      "value": "#0bc0cf"
+      "value": "#36C2CF"
     },
     "W:grey200": {
       "type": "color",

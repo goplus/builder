@@ -1678,7 +1678,7 @@
                       "type": "rectangle",
                       "id": "f1h5l",
                       "name": "Rectangle 132",
-                      "fill": "#0bc0cfff",
+                      "fill": "$turquoise500",
                       "width": 1,
                       "height": 24,
                       "stroke": {
@@ -2381,7 +2381,7 @@
                       "type": "rectangle",
                       "id": "N8nKi",
                       "name": "Rectangle 132",
-                      "fill": "#0bc0cfff",
+                      "fill": "$turquoise500",
                       "width": 1,
                       "height": 24,
                       "stroke": {
@@ -4335,7 +4335,7 @@
                   "type": "frame",
                   "id": "rvxjz",
                   "name": "Frame 162689",
-                  "fill": "#0bc0cfff",
+                  "fill": "$turquoise500",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
@@ -4435,7 +4435,7 @@
     },
     "--ui-color-primary-main": {
       "type": "color",
-      "value": "#0bc0cf"
+      "value": "#36C2CF"
     },
     "grey200": {
       "type": "color",
@@ -4531,7 +4531,7 @@
     },
     "turquoise500": {
       "type": "color",
-      "value": "#0bc0cf"
+      "value": "#36C2CF"
     },
     "turquoise700": {
       "type": "color",

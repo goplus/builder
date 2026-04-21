@@ -1470,7 +1470,7 @@
     },
     "turquoise500": {
       "type": "color",
-      "value": "#0bc0cf"
+      "value": "#36C2CF"
     },
     "turquoise700": {
       "type": "color",
@@ -1529,7 +1529,7 @@
       "type": "color",
       "value": [
         {
-          "value": "#0bc0cf",
+          "value": "#36C2CF",
           "theme": {
             "r:Accent": "Default"
           }

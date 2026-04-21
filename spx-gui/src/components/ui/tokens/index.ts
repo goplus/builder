@@ -25,6 +25,14 @@ export const fontFamily = {
   code: 'Menlo, Monaco, "Courier New", monospace'
 }
 
+export const radius = {
+  1: '4px',
+  2: '8px',
+  3: '10px',
+  4: '12px',
+  full: '100px'
+} as const
+
 export const borderRadius = {
   1: '8px',
   2: '12px',
@@ -32,9 +40,14 @@ export const borderRadius = {
 } as const
 
 export const boxShadow = {
-  small: '0px 2px 8px 0px rgba(51, 51, 51, 0.08)',
-  big: '0px 4px 24px 0px rgba(36, 41, 47, 0.08)',
-  diffusion: '0px 4px 12px 0px #D0F2F8'
+  panel: '0px 6px 16px 0px rgba(36, 41, 47, 0.05)',
+  surface: '0px 4px 12px 0px rgba(36, 41, 47, 0.08)',
+  surfaceStrong: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
+  accent: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)',
+  subtle: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)',
+  small: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)',
+  big: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
+  diffusion: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)'
 } as const
 
 export const lineHeight = {
@@ -45,12 +58,21 @@ export const lineHeight = {
 
 export const button = {
   radius: {
-    square: '4px'
+    square: radius[1]
   }
 } as const
 
+export const space = {
+  1: '4px',
+  2: '8px',
+  3: '12px',
+  4: '16px',
+  5: '20px',
+  6: '24px'
+} as const
+
 export const gap = {
-  middle: '16px',
-  large: '24px'
+  middle: space[4],
+  large: space[6]
   // TODO: other gap defs
 } as const

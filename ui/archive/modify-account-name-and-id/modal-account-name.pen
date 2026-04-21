@@ -2155,7 +2155,7 @@
                       "height": 50,
                       "fill": {
                         "type": "color",
-                        "color": "#0bc0cfff",
+                        "color": "$turquoise500",
                         "enabled": false
                       },
                       "stroke": {
@@ -4634,7 +4634,7 @@
     },
     "turquoise500": {
       "type": "color",
-      "value": "#0bc0cf"
+      "value": "#36C2CF"
     },
     "turquoise700": {
       "type": "color",

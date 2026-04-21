@@ -291,7 +291,7 @@ const handleRemove = useMessageHandle(
 }
 
 .project-item:hover {
-  box-shadow: 0px 4px 12px 0px rgba(36, 41, 47, 0.08);
+  box-shadow: var(--ui-box-shadow-surface);
   .options {
     visibility: visible;
     opacity: 1;
