@@ -9,7 +9,7 @@
     <div class="flex-[1_1_0] flex flex-col">
       <div class="h-14 flex items-center px-6 py-2">
         <!--  pl-6: take a offset of the same size with close btn, to make the title content correctly centered -->
-        <div class="flex-1 text-16 text-title" :class="{ 'pl-6 text-center': centerTitle }">
+        <div class="flex-1 text-xl text-title" :class="{ 'pl-6 text-center': centerTitle }">
           {{ title }}
         </div>
         <UIModalClose class="-mr-1" @click="handleCloseButton" />

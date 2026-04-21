@@ -14,7 +14,6 @@ export type APICategoryViewInfo = {
   label: LocaleMessage
   /** Raw SVG string for the category icon */
   icon: string
-  color: string
   subCategories: Array<{
     id: string
     label: LocaleMessage
@@ -23,6 +22,6 @@ export type APICategoryViewInfo = {
 
 export interface IAPIReferenceProvider {
   provideAPIReference(ctx: APIReferenceContext): Promise<APIReferenceItem[]>
-  /** Provide view info (labels, icons, colors) for categories. Returns null if not available. */
+  /** Provide view info (labels and icons) for categories. Returns null if not available. */
   provideCategoryViewInfos(): APICategoryViewInfo[] | null
 }

@@ -103,6 +103,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
       <template #trigger>
         <UINumberInput
           v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
+          class="flex-1 basis-30"
           :disabled="sprite.rotationStyle === RotationStyle.None"
           :min="-180"
           :max="180"

@@ -26,7 +26,7 @@
         <UIButton
           v-radar="{ name: 'Create button', desc: 'Click to create the project' }"
           class="create-button"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >

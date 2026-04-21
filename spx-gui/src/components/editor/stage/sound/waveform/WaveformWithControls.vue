@@ -12,7 +12,7 @@
       @stop-drag="emit('requestPlay')"
     />
     <div class="absolute top-0 right-4 bottom-0 left-4">
-      <div v-if="progress" class="absolute top-0 bottom-0 left-0 w-px bg-grey-800" :style="progressStyle" />
+      <div v-if="progress" class="absolute top-0 bottom-0 left-0 w-px bg-primary-main" :style="progressStyle" />
     </div>
   </div>
 </template>

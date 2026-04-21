@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem :color="color" :active="selected" :interactive="!!selectable">
+  <UIBlockItem :active="selected" :interactive="!!selectable">
     <slot name="img" :style="imgStyle"></slot>
     <UIBlockItemTitle size="medium">
       {{ name }}
@@ -20,13 +20,11 @@ const props = withDefaults(
   defineProps<{
     name: string
     selectable?: false | { selected: boolean }
-    color?: 'sprite' | 'primary'
     droppable?: DroppableState | false
     visible?: boolean | null
   }>(),
   {
     selectable: false,
-    color: 'sprite',
     droppable: false,
     visible: null
   }

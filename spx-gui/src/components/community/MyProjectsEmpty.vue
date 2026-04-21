@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { getOwnProjectEditorRoute } from '@/router'
 import { UIEmpty, UIButton } from '@/components/ui'
-import newProjectIcon from '@/components/navbar/icons/new.svg'
 import { useCreateProject } from '@/components/project'
 
 const router = useRouter()
@@ -28,13 +27,11 @@ const handleNewProject = useMessageHandle(
     <template #op>
       <UIButton
         v-radar="{ name: 'New project button', desc: 'Click to create a new project' }"
-        color="boring"
+        type="neutral"
+        icon="folder"
         size="large"
         @click="handleNewProject"
       >
-        <template #icon>
-          <img :src="newProjectIcon" />
-        </template>
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>

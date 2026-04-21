@@ -51,7 +51,7 @@ const handleModalClose = useMessageHandle(
     @update:visible="handleModalClose"
   >
     <header class="flex-none h-14 flex items-center justify-between border-b border-grey-400 px-6">
-      <h2 class="text-16 text-title">{{ $t({ zh: '生成背景', en: 'Backdrop Generator' }) }}</h2>
+      <h2 class="text-xl text-title">{{ $t({ zh: '生成背景', en: 'Backdrop Generator' }) }}</h2>
       <UIModalClose class="close" @click="handleModalClose" />
     </header>
 

@@ -1,18 +1,14 @@
 <template>
-  <section class="h-full flex flex-col overflow-hidden" :style="cssVars">
-    <!-- TODO: use UICardHeader? -->
-    <h4
-      class="h-11 w-20 flex items-center justify-center border-b border-grey-400 text-16"
-      :class="active ? 'border-stage-main bg-stage-main text-grey-100' : 'text-title'"
-    >
+  <section class="h-full flex flex-col overflow-hidden">
+    <UICardHeader class="h-11 w-20 justify-center">
       {{ $t({ en: 'Stage', zh: '舞台' }) }}
-    </h4>
+    </UICardHeader>
     <main class="flex-[1_1_0] flex flex-col items-center">
       <div class="flex-none p-3">
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
-          class="relative h-14 w-14 cursor-pointer flex items-center justify-center rounded-sm bg-grey-300"
-          :class="active ? 'border-2 border-stage-main bg-blue-200 p-0' : 'p-0.5 hover:bg-grey-400'"
+          class="relative h-14 w-14 cursor-pointer flex items-center justify-center rounded-md border border-grey-400 transition-colors"
+          :class="active ? 'p-0 border-2 border-primary-main bg-primary-200' : 'p-0.5 hover:bg-grey-300'"
           @click="activate"
         >
           <UIImg class="h-11 w-11 rounded-[4px] object-cover" :src="imgSrc" size="cover" :loading="imgLoading" />
@@ -26,7 +22,7 @@
               name: 'Backdrops quick entry',
               desc: 'Quick entry to open backdrops management tab in stage editor'
             }"
-            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-sm border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            :class="quickEntryClass"
             type="button"
             @click="openTab('backdrops')"
           >
@@ -36,7 +32,7 @@
           </button>
           <button
             v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
-            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-sm border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            :class="quickEntryClass"
             type="button"
             @click="openTab('sounds')"
           >
@@ -49,7 +45,7 @@
               name: 'Widgets quick entry',
               desc: 'Quick entry to open widgets management tab in stage editor'
             }"
-            class="h-14 w-14 cursor-pointer flex flex-col items-center justify-center rounded-sm border-none bg-grey-300 p-2 text-10/4 font-semibold text-grey-1000 outline-none hover:bg-grey-400"
+            :class="quickEntryClass"
             type="button"
             @click="openTab('widgets')"
           >
@@ -65,7 +61,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg, getCssVars, useUIVariables, UIDivider } from '@/components/ui'
+import { UIImg, UIDivider, UICardHeader } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import type { SelectedType } from '../../stage/StageEditor.vue'
@@ -89,8 +85,10 @@ function openTab(type: Extract<SelectedType, 'backdrops' | 'sounds' | 'widgets'>
 const backdrop = computed(() => editorCtx.project.stage.defaultBackdrop)
 const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 
-const uiVariables = useUIVariables()
-const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
+const quickEntryClass =
+  'h-14 w-14 cursor-pointer flex flex-col items-center justify-center \
+rounded-md border-none bg-grey-100 p-2 text-2xs font-semibold text-grey-800 outline-none \
+transition-colors hover:bg-grey-300'
 </script>
 
 <style scoped>

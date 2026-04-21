@@ -3,12 +3,12 @@
     <div class="flex justify-center gap-8 py-5">
       <!-- eslint-disable vue/no-v-html -->
       <div
-        class="monitor-icon h-24 w-24 flex items-center justify-center rounded-sm bg-grey-300"
+        class="monitor-icon h-24 w-24 flex-none flex items-center justify-center rounded-sm bg-grey-300"
         v-html="mntIcon"
       ></div>
       <!-- eslint-enable vue/no-v-html -->
-      <div class="flex flex-col gap-middle">
-        <div class="flex items-center gap-middle">
+      <div class="min-w-0 flex flex-col gap-xl">
+        <div class="flex items-center gap-xl">
           <p class="flex items-center gap-2 break-keep">
             {{ $t({ en: 'Label', zh: '标签' }) }}
             <UITextInput
@@ -19,12 +19,12 @@
             />
           </p>
         </div>
-        <div class="flex items-center gap-middle">
-          <p class="flex items-center gap-2 break-keep">
+        <div class="flex items-center gap-xl">
+          <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Target', zh: '对象' }) }}
             <UISelect
               v-radar="{ name: 'Target select', desc: 'Select target for monitor value' }"
-              style="width: 180px"
+              class="basis-45 shrink"
               :value="monitor.target"
               @update:value="handleTargetUpdate"
             >
@@ -34,11 +34,11 @@
               </UISelectOption>
             </UISelect>
           </p>
-          <p class="flex items-center gap-2 break-keep">
+          <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Value', zh: '值' }) }}
             <UISelect
               v-radar="{ name: 'Property select', desc: 'Select property for monitor value' }"
-              style="width: 180px"
+              class="basis-45 shrink"
               :value="monitor.variableName || null"
               :placeholder="$t({ en: 'Select property', zh: '选择属性' })"
               @update:value="handlePropertyUpdate"
@@ -51,12 +51,12 @@
           </p>
         </div>
         <div class="divider"></div>
-        <div class="flex items-center gap-middle">
-          <p class="flex items-center gap-2 break-keep">
+        <div class="flex items-center gap-xl">
+          <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Position', zh: '位置' }) }}
             <UINumberInput
               v-radar="{ name: 'X position input', desc: 'Input field for monitor X position' }"
-              class="w-45"
+              class="basis-45 shrink"
               :value="monitor.x"
               @update:value="handleXUpdate"
             >
@@ -64,7 +64,7 @@
             </UINumberInput>
             <UINumberInput
               v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
-              class="w-45"
+              class="basis-45 shrink"
               :value="monitor.y"
               @update:value="handleYUpdate"
             >
@@ -72,12 +72,12 @@
             </UINumberInput>
           </p>
         </div>
-        <div class="flex items-center gap-middle">
-          <p class="flex items-center gap-2 break-keep">
+        <div class="flex items-center gap-xl">
+          <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Size', zh: '大小' }) }}
             <UINumberInput
               v-radar="{ name: 'Size input', desc: 'Input field for monitor size' }"
-              class="w-45"
+              class="basis-45 shrink"
               :min="0"
               :value="sizePercent"
               @update:value="handleSizePercentUpdate"
@@ -86,8 +86,8 @@
             </UINumberInput>
           </p>
         </div>
-        <div class="flex items-center gap-middle">
-          <p class="flex items-center gap-2 break-keep">
+        <div class="flex items-center gap-xl">
+          <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Show', zh: '显示' }) }}
             <UIButtonGroup
               v-radar="{ name: 'Visibility control', desc: 'Control to set monitor visibility' }"

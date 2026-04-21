@@ -68,7 +68,7 @@ function applyItem(item: InternalCompletionItem) {
 </script>
 
 <template>
-  <CodeEditorCard class="max-h-56.75 w-111.75 flex items-stretch py-3 pr-0 pl-3 text-12">
+  <CodeEditorCard class="max-h-56.75 w-111.75 flex items-stretch py-3 pr-0 pl-3 text-xs">
     <ul class="flex-none min-h-0 flex flex-col gap-2 overflow-y-auto pr-3 [scrollbar-width:thin]">
       <CompletionItemComp
         v-for="(item, i) in items"

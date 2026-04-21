@@ -5,8 +5,7 @@ import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { ProjectType, Visibility, listProject, ownerAll } from '@/apis/project'
 import { useSignedInUser, useUser } from '@/stores/user'
-import { useResponsive } from '@/components/ui'
-import CommunityCard from '@/components/community/CommunityCard.vue'
+import { UICard, useResponsive } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
@@ -74,7 +73,7 @@ const likesRet = useQuery(
 
 <template>
   <div class="flex flex-col gap-5">
-    <CommunityCard class="px-middle">
+    <UICard class="px-4">
       <ProjectsSection
         v-radar="{ name: 'User projects', desc: 'Section showing user\'s projects' }"
         context="user"
@@ -109,8 +108,8 @@ const likesRet = useQuery(
           @removed="projectsRet.refetch()"
         />
       </ProjectsSection>
-    </CommunityCard>
-    <CommunityCard class="px-middle">
+    </UICard>
+    <UICard class="px-4">
       <ProjectsSection
         v-radar="{ name: 'User liked projects', desc: 'Section showing projects liked by this user' }"
         context="user"
@@ -136,6 +135,6 @@ const likesRet = useQuery(
         </template>
         <ProjectItem v-for="project in likesRet.data.value" :key="project.id" :project="project" />
       </ProjectsSection>
-    </CommunityCard>
+    </UICard>
   </div>
 </template>

@@ -32,7 +32,7 @@ const entityMessage = computed(() => humanizeAssetType(props.type))
           <slot name="item" :asset="asset" :selected="isSelected(asset)" :on-click="() => emit('toggle', asset)"></slot>
         </template>
       </ul>
-      <p class="text-center text-12 text-hint-2">
+      <p class="text-center text-xs text-hint-2">
         {{
           $t({
             en: `There are related ${entityMessage.en}s in the asset library. You can choose the one you like or continue generating.`,
@@ -41,7 +41,7 @@ const entityMessage = computed(() => humanizeAssetType(props.type))
         }}
       </p>
     </template>
-    <p v-else-if="keyword.length > 0" class="mt-14 text-center text-12 text-hint-2">
+    <p v-else-if="keyword.length > 0" class="mt-14 text-center text-xs text-hint-2">
       {{
         $t({
           en: `No matching ${entityMessage.en}s found in the asset library. You can continue generating.`,

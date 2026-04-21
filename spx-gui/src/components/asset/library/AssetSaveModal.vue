@@ -242,7 +242,7 @@ async function addAssetWithPartialData({
       <footer class="flex justify-center">
         <UIButton
           v-radar="{ name: 'Save button', desc: 'Click to save asset to the library' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :disabled="isLoading"
           :loading="handleSubmit.isLoading.value"

@@ -108,6 +108,10 @@ useModalEsc(
 
 <style>
 @layer components {
+  .n-modal-mask {
+    background-color: var(--ui-color-overlay-modal) !important;
+  }
+
   .ui-modal.has-custom-origin {
     /* Override NaiveUI's transform-origin to support custom animation origins */
     transform-origin: var(--ui-modal-custom-origin, center) !important;
@@ -123,8 +127,8 @@ useModalEsc(
   .ui-modal-container {
     display: flex;
     flex-direction: column;
-    box-shadow: var(--ui-box-shadow-big);
-    border-radius: var(--ui-border-radius-2);
+    box-shadow: var(--ui-box-shadow-lg);
+    border-radius: var(--ui-border-radius-md);
     background-color: white;
     overflow: hidden;
   }

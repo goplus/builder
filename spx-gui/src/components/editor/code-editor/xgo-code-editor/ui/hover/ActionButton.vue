@@ -1,5 +1,5 @@
 <template>
-  <UIButton variant="stroke" color="white">
+  <UIButton type="white">
     <div class="-mx-2 flex items-center justify-center gap-1">
       <CommandIcon :type="icon" />
       <slot></slot>

@@ -41,11 +41,11 @@ defineExpose({ focus })
 
 <template>
   <div class="group/loading" :class="{ loading }" @click="focus">
-    <div class="content h-full flex items-center gap-2.5 bg-grey-100 px-3.5 py-3">
+    <div class="content h-full flex items-center gap-2.5 bg-grey-100 px-4 py-2">
       <div v-if="loading" class="dot-loading flex items-center justify-between gap-0.5">
         <div class="dot"></div>
       </div>
-      <div class="input-wrapper relative flex-[1_1_0] min-w-0 min-h-5 text-13/5" :data-value="inputStr">
+      <div class="input-wrapper relative flex-[1_1_0] min-w-0 min-h-5 text-sm" :data-value="inputStr">
         <textarea
           ref="textareaRef"
           v-model="inputStr"

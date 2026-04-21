@@ -3,7 +3,7 @@
     <div class="flex gap-3 px-6 pt-5 pb-6">
       <UIIcon class="h-6 w-6" :type="type" />
       <div class="flex-[1_1_0] flex flex-col">
-        <div class="mb-2 text-16 text-title">
+        <div class="mb-2 text-xl text-title">
           {{ title }}
         </div>
         <slot></slot>

@@ -79,8 +79,8 @@ const onMouseMove = (event: MouseEvent) => {
 }
 
 .shaded-area {
-  opacity: 0.2;
-  background-color: var(--ui-color-yellow-400);
+  opacity: 0.35;
+  background-color: var(--ui-color-grey-600);
   height: 100%;
   position: absolute;
 }
@@ -113,7 +113,7 @@ const onMouseMove = (event: MouseEvent) => {
 .control-bar {
   width: 16px;
   height: 100%;
-  background-color: var(--ui-color-yellow-400);
+  background-color: var(--ui-color-primary-400);
   position: absolute;
   z-index: 10;
   cursor: ew-resize;

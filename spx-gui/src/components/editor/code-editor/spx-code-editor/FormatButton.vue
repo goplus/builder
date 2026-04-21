@@ -1,7 +1,7 @@
 <template>
   <UIButton
     v-radar="{ name: 'Format button', desc: 'Click to format the code' }"
-    color="boring"
+    type="white"
     :loading="handleFormat.isLoading.value"
     @click="handleFormat.fn"
   >

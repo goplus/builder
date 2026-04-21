@@ -21,14 +21,14 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
     <!-- TODO: should no-underline be one type of `UILink` / `RouterUILink`? -->
     <RouterUILink
       v-radar="{ name: 'User link', desc: 'Click to view user profile' }"
-      class="w-fit text-15/6 text-title no-underline"
+      class="w-fit text-lg/6 text-title no-underline"
       type="boring"
       :to="userRoute"
     >
       {{ user.displayName }}
     </RouterUILink>
     <UserJoinedAt class="w-fit" :time="user.createdAt" />
-    <TextView v-if="!!user.description" class="mt-1.5 max-h-15 w-fit text-13/5 text-text" :text="user.description" />
+    <TextView v-if="!!user.description" class="mt-1.5 max-h-15 w-fit text-sm text-text" :text="user.description" />
     <FollowButton class="absolute top-3 right-0" :name="user.username" />
   </li>
 </template>

@@ -50,7 +50,7 @@ const handleEditCollision = useMessageHandle(
     <AssetName>{{ sprite.name }}</AssetName>
     <UIIcon
       v-radar="{ name: 'Rename button', desc: 'Button to rename the sprite' }"
-      class="cursor-pointer text-grey-900 transition-colors hover:text-grey-800 active:text-grey-1000"
+      class="ml-md cursor-pointer text-grey-900 transition-colors hover:text-grey-800 active:text-grey-1000"
       :title="$t({ en: 'Rename', zh: '重命名' })"
       type="edit"
       @click="handleNameEdit"
@@ -73,23 +73,23 @@ const handleEditCollision = useMessageHandle(
       }}
     </UITooltip>
   </div>
-  <div class="flex flex-col gap-middle">
+  <div class="flex flex-col gap-xl">
     <SpritePositionSize :sprite="sprite" :project="project" />
     <div class="flex items-center">
-      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Rotation', zh: '旋转' }) }}</div>
+      <div class="mr-4 whitespace-nowrap">{{ $t({ en: 'Rotation', zh: '旋转' }) }}</div>
       <SpriteDirection :sprite="sprite" :project="project" />
     </div>
     <div class="flex items-center">
-      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Show', zh: '显示' }) }}</div>
+      <div class="mr-4 whitespace-nowrap">{{ $t({ en: 'Show', zh: '显示' }) }}</div>
       <SpriteVisible :sprite="sprite" :project="project" />
     </div>
     <div v-if="project.stage.physics.enabled" class="flex items-center">
-      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
+      <div class="mr-4 whitespace-nowrap">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
       <SpritePhysics :sprite="sprite" :project="project" />
     </div>
     <div v-if="isCollisionSettingsEnabled" class="flex items-center">
-      <div class="mr-middle whitespace-nowrap">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
-      <UIButton icon="setting" color="secondary" variant="flat" @click="handleEditCollision"></UIButton>
+      <div class="mr-4 whitespace-nowrap">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
+      <UIButton shape="square" icon="setting" type="white" @click="handleEditCollision"></UIButton>
     </div>
   </div>
 </template>

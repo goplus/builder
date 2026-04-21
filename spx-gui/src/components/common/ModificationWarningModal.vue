@@ -42,7 +42,7 @@ function handleCancel() {
     <div class="flex flex-col gap-2 text-base/[1.6] text-grey-800">
       <div class="flex items-center gap-2 font-semibold text-yellow-500">
         <span
-          class="inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-yellow-500 text-14 font-bold leading-none text-grey-100"
+          class="inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-yellow-500 text-base font-bold leading-none text-grey-100"
         >
           !
         </span>
@@ -54,8 +54,8 @@ function handleCancel() {
         </li>
       </ul>
     </div>
-    <footer class="mt-large flex justify-center gap-middle pb-1">
-      <UIButton v-radar="props.confirmRadar" color="danger" @click="emit('resolved')">
+    <footer class="mt-6 flex justify-center gap-xl pb-1">
+      <UIButton v-radar="props.confirmRadar" type="red" @click="emit('resolved')">
         {{ $t(props.confirmText) }}
       </UIButton>
     </footer>

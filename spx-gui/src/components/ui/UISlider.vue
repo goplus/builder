@@ -3,8 +3,8 @@
     v-model:value="value"
     class="ui-slider"
     :style="{
-      '--n-fill-color': `var(--ui-color-${color}-500)`,
-      '--n-fill-color-hover': `var(--ui-color-${color}-500)`,
+      '--n-fill-color': 'var(--ui-color-primary-500)',
+      '--n-fill-color-hover': 'var(--ui-color-primary-500)',
       '--n-rail-color': 'rgb(245,245,245)'
     }"
     :on-dragend="handleDragEnd"
@@ -25,12 +25,10 @@ import { computed, ref, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    color?: 'primary' | 'sound'
     value?: number
     updateOn?: 'dragend' | 'input'
   }>(),
   {
-    color: 'primary',
     value: 0,
     updateOn: 'dragend'
   }
@@ -49,7 +47,7 @@ watch(
 )
 
 const boxShadow = computed(() => {
-  return `inset 0 0 0 1px var(--ui-color-${props.color}-500)`
+  return 'inset 0 0 0 1px var(--ui-color-primary-500)'
 })
 
 const handleDragEnd = async () => {

@@ -1,9 +1,9 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div v-if="!loading && signedInUser == null" class="mr-2 h-full flex items-center px-5 whitespace-nowrap">
+  <div v-if="!loading && signedInUser == null" class="h-full flex items-center px-3 whitespace-nowrap">
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
-      color="secondary"
+      type="secondary"
       :disabled="!isOnline"
       @click="initiateSignIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
@@ -11,7 +11,7 @@
   </div>
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
-      <div class="mr-2 h-full flex items-center justify-center px-5 hover:bg-primary-600">
+      <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
         <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
       </div>
     </template>

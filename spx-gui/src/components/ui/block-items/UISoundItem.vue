@@ -1,6 +1,6 @@
 <template>
-  <UIBlockItem size="large" class="p-0.5" :active="selected" :interactive="!!selectable">
-    <div class="h-23 flex items-center justify-center">
+  <UIBlockItem size="large" :active="selected" :interactive="!!selectable">
+    <div class="mt-0.5 h-23 flex items-center justify-center">
       <div class="h-12 w-12">
         <slot name="player"></slot>
       </div>
@@ -8,7 +8,7 @@
     <UIBlockItemTitle size="large" class="h-5">
       {{ name }}
     </UIBlockItemTitle>
-    <div class="text-center text-10/[1.6] font-semibold text-hint-1">{{ duration }}</div>
+    <div class="text-center text-2xs text-hint-1">{{ duration }}</div>
     <slot></slot>
   </UIBlockItem>
 </template>

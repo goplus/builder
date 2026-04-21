@@ -148,7 +148,7 @@ const handleUseAsset = useMessageHandle(
           name: 'Use',
           desc: 'Click to use the selected library asset'
         }"
-        color="primary"
+        type="primary"
         size="large"
         @click="handleUseAsset.fn"
       >
@@ -160,7 +160,7 @@ const handleUseAsset = useMessageHandle(
           name: 'Next',
           desc: 'Click to proceed to the next phase of sprite generation (costume & animation generation)'
         }"
-        color="primary"
+        type="primary"
         size="large"
         :disabled="!canSubmit"
         :loading="handleSubmit.isLoading.value"

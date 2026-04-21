@@ -54,7 +54,7 @@ const themeOverrides: GlobalThemeOverrides = {
     // TODO: review text color mapping
     primaryColor: uiVariables.color.primary.main,
     primaryColorHover: uiVariables.color.primary[400],
-    primaryColorPressed: uiVariables.color.primary.main,
+    primaryColorPressed: uiVariables.color.primary[600],
     textColorBase: uiVariables.color.text,
     textColor1: uiVariables.color.title,
     textColor2: uiVariables.color.text,
@@ -66,31 +66,31 @@ const themeOverrides: GlobalThemeOverrides = {
     errorColor: uiVariables.color.danger.main,
     errorColorHover: uiVariables.color.danger[400],
     warningColor: uiVariables.color.yellow.main,
-    warningColorHover: uiVariables.color.yellow[100],
+    warningColorHover: uiVariables.color.yellow[400],
     successColor: uiVariables.color.success.main,
     successColorHover: uiVariables.color.success[400],
     infoColor: uiVariables.color.primary.main,
-    infoColorHover: uiVariables.color.primary[100],
+    infoColorHover: uiVariables.color.primary[400],
 
-    // TODO: review boxShadow mapping
-    boxShadow1: uiVariables.boxShadow.small,
-    boxShadow2: uiVariables.boxShadow.big,
-    boxShadow3: uiVariables.boxShadow.diffusion,
+    boxShadow1: uiVariables.boxShadow.sm,
+    boxShadow2: uiVariables.boxShadow.md,
+    boxShadow3: uiVariables.boxShadow.lg,
 
-    borderRadiusSmall: uiVariables.borderRadius[1],
-    borderRadius: uiVariables.borderRadius[2],
+    borderRadiusSmall: uiVariables.borderRadius.sm,
+    borderRadius: uiVariables.borderRadius.md,
 
-    heightSmall: uiVariables.lineHeight[1],
-    heightMedium: uiVariables.lineHeight[2],
-    heightLarge: uiVariables.lineHeight[3]
+    heightSmall: uiVariables.lineHeight.sm,
+    heightMedium: uiVariables.lineHeight.md,
+    heightLarge: uiVariables.lineHeight.lg
   },
   Popover: {
     space: '8px', // TODO: some var like gap?
-    arrowOffset: '30px'
+    arrowOffset: '30px',
+    borderRadius: uiVariables.borderRadius.md
   },
   Tooltip: {
-    borderRadius: uiVariables.borderRadius[1],
-    boxShadow: uiVariables.boxShadow.small,
+    borderRadius: uiVariables.borderRadius.md,
+    boxShadow: uiVariables.boxShadow.sm,
     color: uiVariables.color.grey[1000],
     textColor: uiVariables.color.grey[100],
     padding: '7px 8px',
@@ -119,10 +119,11 @@ const themeOverrides: GlobalThemeOverrides = {
     boxShadowFocus: `0 0 0 2px ${uiVariables.color.turquoise[300]}`
   },
   Checkbox: {
-    boxShadowFocus: 'none'
+    boxShadowFocus: 'none',
+    borderRadius: uiVariables.borderRadius.md
   },
   Message: {
-    padding: `11px ${uiVariables.gap.middle}`,
+    padding: `11px ${uiVariables.spacing.xl}`,
     iconMargin: `0 8px 0 0`,
     lineHeight: '1.57143',
     textColorInfo: uiVariables.color.title,
@@ -171,9 +172,9 @@ const cssVariables = getCssVars('--ui-', uiVariables)
   height: 100%;
 
   color: var(--ui-color-text);
-  font-size: var(--ui-font-size-text);
+  font-size: var(--ui-font-size-base);
   font-family: var(--ui-font-family-main);
-  line-height: 1.57143;
+  line-height: 22px;
 }
 </style>
 

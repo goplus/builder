@@ -17,9 +17,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="text-13/[1.7]">
+  <div class="text-sm/[1.7]">
     <div>{{ $t({ en: 'Please sign in to continue.', zh: '请先登录并继续' }) }}</div>
-    <UIButton variant="flat" class="mt-4" @click="initiateSignIn()">
+    <UIButton type="primary" class="mt-4" @click="initiateSignIn()">
       {{ $t({ en: 'Sign in', zh: '登录' }) }}
     </UIButton>
   </div>

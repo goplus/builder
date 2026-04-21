@@ -1,7 +1,7 @@
 <template>
   <div class="h-full w-full flex items-center justify-center">
     <UIForm class="w-80 flex flex-col" :form="form" @submit="handleSubmit.fn">
-      <h1 class="mb-4 text-center text-16">{{ $t(title) }}</h1>
+      <h1 class="mb-4 text-center text-xl">{{ $t(title) }}</h1>
       <UIFormItem path="token">
         <UITextInput
           v-model:value="form.value.token"
@@ -14,14 +14,14 @@
       <footer class="mt-4 flex justify-center gap-4">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel token sign-in' }"
-          color="boring"
+          type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Sign-in button', desc: 'Click to sign in with token' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >

@@ -53,7 +53,7 @@ const videoPreviewKey = computed(() => {
 <template>
   <GenPreview v-if="gen.result == null" class="absolute inset-0" :name="gen.name" @rename="handleRenameAnimation">
     <template v-if="canSaveAnimation" #ops>
-      <UIButton color="success" :loading="savingAnimation" @click="handleSaveAnimation">{{
+      <UIButton type="green" :loading="savingAnimation" @click="handleSaveAnimation">{{
         $t({ en: 'Save animation', zh: '保存动画' })
       }}</UIButton>
     </template>

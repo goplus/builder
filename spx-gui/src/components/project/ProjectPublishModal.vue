@@ -146,14 +146,14 @@ const handleSubmit = useMessageHandle(
       <footer class="mt-5 flex justify-end gap-3">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel project publishing' }"
-          color="boring"
+          type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Publish button', desc: 'Click to publish project' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >

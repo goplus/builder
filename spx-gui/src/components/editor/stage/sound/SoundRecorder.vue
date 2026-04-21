@@ -27,7 +27,7 @@
     </div>
     <div class="mb-2 mt-8 flex justify-center gap-10">
       <div v-if="recordingState === 'yetStarted'" class="flex flex-col items-center gap-2 text-base">
-        <UIButton shape="circle" size="large" icon="microphone" color="danger" @click="recordingState = 'recording'" />
+        <UIButton shape="circle" size="large" icon="microphone" type="red" @click="recordingState = 'recording'" />
         <span>
           {{
             $t({
@@ -38,7 +38,7 @@
         </span>
       </div>
       <div v-else-if="recordingState === 'recording'" class="flex flex-col items-center gap-2 text-base">
-        <UIButton shape="circle" size="large" icon="stop" color="danger" @click="stopRecording" />
+        <UIButton shape="circle" size="large" icon="stop" type="red" @click="stopRecording" />
         <span>
           {{
             $t({
@@ -49,51 +49,36 @@
         </span>
       </div>
       <template v-else>
-        <div class="flex flex-col items-center gap-2 text-base">
+        <div class="w-14 flex flex-col items-center gap-2 text-base">
           <div class="h-14 flex items-center">
-            <UIButton shape="circle" size="large" icon="reload" color="boring" @click="resetRecording" />
+            <UIButton shape="circle" size="large" icon="reload" type="neutral" @click="resetRecording" />
           </div>
-          <span>
-            {{
-              $t({
-                en: 'Re-record',
-                zh: '重新录音'
-              })
-            }}
+          <span class="whitespace-nowrap">
+            {{ $t({ en: 'Re-record', zh: '重新录音' }) }}
           </span>
         </div>
-        <div class="flex flex-col items-center gap-2 text-base">
+        <div class="w-14 flex flex-col items-center gap-2 text-base">
           <UIButton
             style="width: 56px; height: 56px"
             shape="circle"
             size="large"
-            color="blue"
+            type="blue"
             @click="waveformRecorderRef?.startPlayback()"
           >
             <template #icon>
               <UIIcon class="w-7 h-7" type="play" />
             </template>
           </UIButton>
-          <span>
-            {{
-              $t({
-                en: 'Play',
-                zh: '播放'
-              })
-            }}
+          <span class="whitespace-nowrap">
+            {{ $t({ en: 'Play', zh: '播放' }) }}
           </span>
         </div>
-        <div class="flex flex-col items-center gap-2 text-base">
+        <div class="w-14 flex flex-col items-center gap-2 text-base">
           <div class="h-14 flex items-center">
-            <UIButton shape="circle" size="large" icon="check" color="success" @click="saveRecording" />
+            <UIButton shape="circle" size="large" icon="check" type="green" @click="saveRecording" />
           </div>
-          <span>
-            {{
-              $t({
-                en: 'Save',
-                zh: '保存'
-              })
-            }}
+          <span class="whitespace-nowrap">
+            {{ $t({ en: 'Save', zh: '保存' }) }}
           </span>
         </div>
       </template>

@@ -9,7 +9,7 @@ const slots = useSlots()
 
 <template>
   <div
-    class="group h-8 w-8 cursor-pointer flex items-center justify-center rounded-[10px] text-center hover:bg-turquoise-200"
+    class="group h-8 w-8 cursor-pointer flex items-center justify-center rounded-md text-center hover:bg-turquoise-200"
   >
     <UIIcon
       v-if="slots.default == null && icon != null"

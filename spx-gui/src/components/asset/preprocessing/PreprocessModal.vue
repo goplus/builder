@@ -73,10 +73,7 @@
         />
       </div>
     </main>
-    <footer
-      class="flex items-end gap-5 border-r border-dividing-line-2 p-4"
-      :style="{ boxShadow: '0px -2px 12px 0px rgba(51, 51, 51, 0.08)' }"
-    >
+    <footer class="flex items-end gap-5 border-r border-dividing-line-2 p-4 shadow-sm">
       <div class="footer-main">
         <h4 class="text-title">{{ $t({ en: 'Costumes', zh: '造型' }) }}</h4>
         <div class="costume-wrapper">

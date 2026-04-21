@@ -17,7 +17,7 @@
           </UIEmpty>
         </template>
         <template #default="{ data }">
-          <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-middle">
+          <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-xl">
             <CourseSeriesItem v-for="courseSeries in data.data" :key="courseSeries.id" :course-series="courseSeries" />
           </ul>
         </template>

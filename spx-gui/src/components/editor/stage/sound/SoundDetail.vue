@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex flex-col gap-large px-5 py-6">
+  <div class="w-full flex flex-col gap-6 px-5 py-6">
     <div class="flex flex-col items-center">
       <div class="flex items-center gap-2 text-title">
         <AssetName>{{ sound.name }}</AssetName>
@@ -28,7 +28,6 @@
     <div class="flex">
       <PlayControl
         class="flex-none"
-        color="sound"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
         :play-handler="handlePlayClick"
@@ -40,15 +39,14 @@
       <div v-if="editing" class="flex-none flex items-center gap-2">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
-          color="boring"
+          type="neutral"
           @click="handleResetEdit"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
-          color="success"
-          icon="check"
+          type="green"
           :loading="handleSave.isLoading.value"
           @click="handleSave.fn"
         >

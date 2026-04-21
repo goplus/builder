@@ -1,10 +1,10 @@
 <!-- TODO: review root background color and promote it to a shared UI token if it becomes reused. -->
 <template>
-  <section class="min-h-full w-full flex flex-col bg-[#e9fcff]">
+  <section class="min-h-full w-full flex flex-col bg-[#f1f5f7]">
     <header class="flex-none">
       <EditorNavbar :project="state?.project ?? null" :state="state" />
     </header>
-    <main class="flex-[1_1_0] flex gap-middle p-middle">
+    <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
         <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
       </UIDetailedLoading>

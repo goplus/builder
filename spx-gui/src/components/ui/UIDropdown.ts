@@ -162,9 +162,9 @@ export default defineComponent<Props, Events>(
           class: popoverWrapperClass,
           style: {
             overflow: props.showArrow! ? 'visible' : 'hidden',
-            borderRadius: 'var(--ui-border-radius-1)',
+            borderRadius: 'var(--ui-border-radius-md)',
             backgroundColor: 'var(--ui-color-grey-100)',
-            boxShadow: 'var(--ui-box-shadow-big)',
+            boxShadow: 'var(--ui-box-shadow-sm)',
             ...extraStyle.value
           },
           placement: props.placement!,

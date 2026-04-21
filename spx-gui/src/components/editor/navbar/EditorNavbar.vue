@@ -9,7 +9,7 @@
         }"
       >
         <template #trigger>
-          <UIIcon class="w-6 h-6" type="file" />
+          <UIIcon class="h-5 w-5" type="file" />
         </template>
         <UIMenu>
           <UIMenuGroup :disabled="!isOnline">
@@ -75,7 +75,7 @@
         <UITooltip :disabled="undoAction == null">
           <template #trigger>
             <button :class="historyBtnClz" :disabled="undoAction == null" @click="handleUndo.fn">
-              <UIIcon class="w-6 h-6" type="undo" />
+              <UIIcon class="h-5 w-5" type="undo" />
             </button>
           </template>
           <span>{{ $t(undoText) }}</span>
@@ -83,7 +83,7 @@
         <UITooltip :disabled="redoAction == null">
           <template #trigger>
             <button :class="historyBtnClz" :disabled="redoAction == null" @click="handleRedo.fn">
-              <UIIcon class="w-6 h-6" type="redo" />
+              <UIIcon class="h-5 w-5" type="redo" />
             </button>
           </template>
           <span>{{ $t(redoText) }}</span>
@@ -104,7 +104,7 @@
       <UIButtonGroup
         v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
-        type="text"
+        type="icon"
         variant="secondary"
         :value="selectedEditMode"
         @update:value="(v) => state?.selectEditMode(v as EditMode)"
@@ -432,5 +432,5 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 })
 
 const historyBtnClz =
-  'h-full flex items-center justify-center border-none bg-transparent px-5 text-white outline-none disabled:cursor-not-allowed disabled:text-[#9de6ec] enabled:hover:cursor-pointer enabled:hover:bg-primary-600'
+  'h-full flex items-center justify-center border-none bg-transparent px-3 text-inherit outline-none disabled:cursor-not-allowed disabled:text-grey-600 enabled:cursor-pointer enabled:hover:bg-grey-400'
 </script>

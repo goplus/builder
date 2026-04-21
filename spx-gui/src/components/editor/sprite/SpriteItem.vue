@@ -22,7 +22,6 @@ import { useRenameSprite } from '@/components/asset'
 const props = withDefaults(
   defineProps<{
     sprite: Sprite
-    color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
     /** `operable: true` means the sprite can be published & removed */
     operable?: boolean
@@ -31,7 +30,6 @@ const props = withDefaults(
     droppable?: boolean
   }>(),
   {
-    color: 'sprite',
     selectable: false,
     operable: false,
     autoplay: false,
@@ -158,7 +156,6 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     v-radar="radarNodeMeta"
     :name="sprite.name"
     :selectable="selectable"
-    :color="color"
     :visible="sprite.visible"
   >
     <template #img="{ style }">
@@ -171,7 +168,7 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+    <CornerMenu v-if="operable && selectable && selectable.selected">
       <UIMenuItem
         v-radar="{ name: 'Visibility', desc: 'Click to toggle visibility the sprite' }"
         @click="toggleSpriteVisible"

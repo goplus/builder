@@ -39,7 +39,7 @@ const handleModifyUsername = useMessageHandle(
 </script>
 
 <template>
-  <span class="inline-flex min-w-0 items-center gap-1 font-main text-12 text-hint-2">
+  <span class="inline-flex min-w-0 items-center gap-1 font-main text-xs text-hint-2">
     <span class="min-w-0 flex-[0_1_auto]">
       <UITooltip placement="top">
         {{
@@ -53,7 +53,7 @@ const handleModifyUsername = useMessageHandle(
         </template>
       </UITooltip>
     </span>
-    <span class="inline-flex flex-none items-center gap-1">
+    <span class="inline-flex flex-none items-center gap-2">
       <UITooltip placement="top">
         {{ $t({ en: 'Copy username', zh: '复制用户名' }) }}
         <template #trigger>
@@ -66,7 +66,7 @@ const handleModifyUsername = useMessageHandle(
             <span class="absolute -m-px h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]">
               {{ $t({ en: 'Copy username', zh: '复制用户名' }) }}
             </span>
-            <UIIcon class="w-3.5 h-3.5" type="copyAltFilled" />
+            <UIIcon class="w-3.5 h-3.5" type="copy" />
           </button>
         </template>
       </UITooltip>

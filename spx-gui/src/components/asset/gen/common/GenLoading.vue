@@ -51,6 +51,7 @@ const slots = useSlots()
 .gen-loading {
   width: 100%;
   height: 100%;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,6 +60,17 @@ const slots = useSlots()
   transition:
     visibility 0.2s,
     opacity 0.2s;
+  border-radius: 8px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.gen-loading.variant-default {
+  background-image: radial-gradient(circle at -8% 0%, rgb(116 231 239 / 0.18) 0%, transparent 62%),
+    radial-gradient(circle at 106% -2%, rgb(138 195 255 / 0.12) 0%, transparent 64%),
+    radial-gradient(circle at 108% 106%, rgb(249 250 252 / 0.58) 0%, transparent 72%),
+    radial-gradient(circle at -2% 110%, rgb(244 247 250 / 0.48) 0%, transparent 68%),
+    linear-gradient(135deg, #f7fcfd 0%, #fff 54%, #f8f9fa 100%);
 }
 
 .gen-loading.cover {
@@ -70,7 +82,6 @@ const slots = useSlots()
 }
 
 .gen-loading.variant-bg-spin {
-  border-radius: 8px;
   /* CSS Progressive Enhancement: Browsers that do not support @property will skip its definition.
      We can ensure compatibility by setting an initial value here. */
   --bg-angle: 0deg;
@@ -107,10 +118,6 @@ const slots = useSlots()
   }
 }
 
-.gen-loading.variant-bg-spin .content {
-  z-index: 1;
-}
-
 .gen-loading.visible {
   visibility: visible;
   opacity: 1;
@@ -121,6 +128,8 @@ const slots = useSlots()
 }
 
 .content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;

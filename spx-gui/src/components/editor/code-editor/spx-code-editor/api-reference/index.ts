@@ -214,7 +214,6 @@ const categoryViewInfos: APICategoryViewInfo[] = [
     id: mainCategories.event,
     label: { en: 'Event', zh: '事件' },
     icon: iconEvent,
-    color: '#fabd2c',
     subCategories: [
       { id: subCategories.event.game, label: { en: 'Game Events', zh: '游戏事件' } },
       { id: subCategories.event.sensing, label: { en: 'Sensing Events', zh: '感知事件' } },
@@ -228,7 +227,6 @@ const categoryViewInfos: APICategoryViewInfo[] = [
     id: mainCategories.look,
     label: { en: 'Look', zh: '外观' },
     icon: iconLook,
-    color: '#fd8d60',
     subCategories: [
       { id: subCategories.look.visibility, label: { en: 'Visibility', zh: '显示/隐藏' } },
       { id: subCategories.look.behavior, label: { en: 'Behavior', zh: '行为' } },
@@ -242,7 +240,6 @@ const categoryViewInfos: APICategoryViewInfo[] = [
     id: mainCategories.motion,
     label: { en: 'Motion', zh: '运动' },
     icon: iconMotion,
-    color: '#91d644',
     subCategories: [
       { id: subCategories.motion.position, label: { en: 'Position', zh: '位置' } },
       { id: subCategories.motion.heading, label: { en: 'Heading', zh: '方向' } },
@@ -256,7 +253,6 @@ const categoryViewInfos: APICategoryViewInfo[] = [
     id: mainCategories.control,
     label: { en: 'Control', zh: '控制' },
     icon: iconControl,
-    color: '#3fcdd9',
     subCategories: [
       { id: subCategories.control.time, label: { en: 'Time', zh: '时间' } },
       { id: subCategories.control.flowControl, label: { en: 'Flow Control', zh: '流程控制' } },
@@ -267,7 +263,6 @@ const categoryViewInfos: APICategoryViewInfo[] = [
     id: mainCategories.sensing,
     label: { en: 'Sensing', zh: '感知' },
     icon: iconSensing,
-    color: '#4fc2f8',
     subCategories: [
       { id: subCategories.sensing.distance, label: { en: 'Distance', zh: '距离' } },
       { id: subCategories.sensing.mouse, label: { en: 'Mouse', zh: '鼠标' } },
@@ -279,7 +274,6 @@ const categoryViewInfos: APICategoryViewInfo[] = [
     id: mainCategories.sound,
     label: { en: 'Sound', zh: '声音' },
     icon: iconSound,
-    color: 'var(--ui-color-sound-main)',
     subCategories: [
       { id: subCategories.sound.playControl, label: { en: 'Play / Stop', zh: '播放/停止' } },
       { id: subCategories.sound.volume, label: { en: 'Volume', zh: '音量' } }
@@ -289,7 +283,6 @@ const categoryViewInfos: APICategoryViewInfo[] = [
     id: mainCategories.game,
     label: { en: 'Game', zh: '游戏' },
     icon: iconGame,
-    color: '#5a7afe',
     subCategories: [
       { id: subCategories.game.startStop, label: { en: 'Start / Stop', zh: '开始/停止' } },
       { id: subCategories.game.sprite, label: { en: 'Sprite', zh: '精灵' } },

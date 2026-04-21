@@ -1,11 +1,11 @@
 <template>
-  <NavbarWrapper centered>
+  <NavbarWrapper class="bg-grey-100 border-b border-grey-400" centered>
     <template #left>
       <NavbarDropdown
         :trigger-radar="{ name: 'Project menu', desc: 'Hover to see project options (create/open project)' }"
       >
         <template #trigger>
-          <UIIcon class="w-6 h-6" type="plus" />
+          <UIIcon class="w-5 h-5" type="folder" />
         </template>
         <UIMenu>
           <NavbarNewProjectItem />
@@ -21,6 +21,7 @@
           v-model:value="searchInput"
           v-radar="{ name: 'Search input', desc: 'Input and press enter to search projects' }"
           :placeholder="$t({ en: 'Search project', zh: '搜索项目' })"
+          color="white"
           clearable
           @keypress.enter="handleSearch"
         >

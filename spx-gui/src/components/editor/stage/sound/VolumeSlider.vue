@@ -2,7 +2,6 @@
   <div class="volume-slider flex items-center gap-2">
     <UIIcon class="w-6 h-6 text-grey-800" type="volumeOff" />
     <UISlider
-      color="sound"
       :min="0"
       :max="2"
       :step="0.01"

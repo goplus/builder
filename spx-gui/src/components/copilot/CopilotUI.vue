@@ -501,32 +501,31 @@ onMounted(async () => {
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
                 <template #trigger>
-                  <UIButton variant="flat" color="boring" @click="handleQuickInputClick(qi)">{{
-                    $t(qi.text)
-                  }}</UIButton>
+                  <UIButton type="neutral" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UIButton>
                 </template>
               </UITooltip>
             </div>
           </template>
           <template v-else-if="session == null">
-            <div class="hi">
-              {{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}
-            </div>
-            <div class="tips">
-              {{
-                $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
-              }}
-            </div>
-            <div class="suggested-questions-wrapper">
-              <!-- TODO: temporary, will be handled uniformly after the button design specification is complete -->
-              <button
-                v-for="(suggestedQuestion, index) in suggestedQuestions"
-                :key="index"
-                class="flat-button suggested-question"
-                @click="handleSuggestedPromptClick($t(suggestedQuestion))"
-              >
-                {{ $t(suggestedQuestion) }}
-              </button>
+            <div class="px-2 pb-2">
+              <div class="hi">
+                {{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}
+              </div>
+              <div class="tips">
+                {{
+                  $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
+                }}
+              </div>
+              <div class="suggested-questions-wrapper">
+                <button
+                  v-for="(suggestedQuestion, index) in suggestedQuestions"
+                  :key="index"
+                  class="suggested-question"
+                  @click="handleSuggestedPromptClick($t(suggestedQuestion))"
+                >
+                  {{ $t(suggestedQuestion) }}
+                </button>
+              </div>
             </div>
           </template>
         </div>
@@ -574,7 +573,7 @@ onMounted(async () => {
   pointer-events: none;
   border-radius: 16px;
   opacity: 0;
-  box-shadow: 0px 3px 18px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--ui-box-shadow-lg);
   transition:
     transform ease 0.4s,
     opacity ease 0.4s;
@@ -667,7 +666,7 @@ onMounted(async () => {
 .body {
   position: relative;
   border-radius: 16px;
-  box-shadow: 0 16px 32px 0 rgba(36, 41, 47, 0.1);
+  box-shadow: var(--ui-box-shadow-lg);
   padding: 1px;
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
 }
@@ -720,18 +719,19 @@ onMounted(async () => {
 .body-wrapper .output {
   background: var(--ui-color-grey-100);
   max-height: 300px;
-  font-size: 13px;
+  font-size: var(--ui-font-size-sm);
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
 .body-wrapper .output:not(:empty) {
   margin-top: 14px;
-  padding: 12px 16px 24px 16px;
+  padding: 12px 16px 16px 16px;
 }
 
 .body-wrapper .output .hi {
-  font-size: 20px;
+  font-size: var(--ui-font-size-2xl);
+  line-height: 28px;
   color: var(--ui-color-grey-1000);
 }
 
@@ -748,11 +748,6 @@ onMounted(async () => {
   gap: 8px;
 }
 
-.body-wrapper .output .suggested-questions-wrapper .suggested-question {
-  width: 100%;
-  padding: 9px 12px;
-}
-
 .body-wrapper .output .quick-inputs {
   padding-top: 20px;
   display: flex;
@@ -761,30 +756,33 @@ onMounted(async () => {
   background: var(--ui-color-grey-100);
 }
 
-.body-wrapper .output .flat-button {
-  --bg-color: var(--ui-color-grey-300);
-  border-radius: var(--ui-border-radius-2);
-  background: var(--bg-color);
-  border: 1px solid var(--bg-color);
+/**
+ * `.suggested-question` here is like UIButton with `size: large` & `type: white`, while with
+ * different padding, font style & alignment. So we don't use UIButton here to have better control on the style.
+ */
+
+.body-wrapper .output .suggested-question {
+  width: 100%;
+  padding: 10px 12px;
+
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  border: 1px solid var(--ui-color-grey-400);
   color: var(--ui-color-grey-900);
-  font-size: 13px;
-  line-height: inherit;
+  font-size: var(--ui-font-size-sm);
+  line-height: 20px;
   white-space: normal;
   text-align: left;
   transition: 0.3s;
   cursor: pointer;
 }
 
-.body-wrapper .output .flat-button:hover {
-  --bg-color: var(--ui-color-grey-200);
+.body-wrapper .output .suggested-question:hover {
+  background: var(--ui-color-grey-300);
 }
 
-.body-wrapper .output .flat-button:active {
-  --bg-color: var(--ui-color-grey-400);
-}
-
-.body-wrapper .output .flat-button:focus {
-  --bg-color: var(--ui-color-grey-500);
+.body-wrapper .output .suggested-question:active {
+  background: var(--ui-color-grey-400);
 }
 
 .body-wrapper .divider {
@@ -812,7 +810,7 @@ onMounted(async () => {
   border-radius: 100px;
   border: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-100);
-  box-shadow: 0 1px 8px 0 rgba(10, 13, 20, 0.05);
+  box-shadow: var(--ui-box-shadow-control);
 }
 
 .footer .v-line {

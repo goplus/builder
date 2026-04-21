@@ -249,7 +249,7 @@ const handleSubmit = useMessageHandle(
               name: 'Minimize',
               desc: 'Click to minimize the sprite generation modal'
             }"
-            color="secondary"
+            type="secondary"
             size="large"
             @click="emit('collapse')"
           >
@@ -260,7 +260,7 @@ const handleSubmit = useMessageHandle(
       <!-- TODO: Consider adding a "cancel" button here to cancel the generation process -->
       <UIButton
         v-radar="{ name: 'Use', desc: 'Click to finish and use the generated sprite in the project' }"
-        color="primary"
+        type="primary"
         size="large"
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"

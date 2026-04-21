@@ -3,10 +3,10 @@
     <template #trigger>
       <router-link
         v-radar="{ name: 'Navbar tutorials link', desc: 'Click to open the tutorials page' }"
-        class="h-full cursor-pointer flex items-center px-5 hover:bg-primary-600"
+        class="h-full cursor-pointer flex items-center px-3 hover:bg-grey-400"
         to="/tutorials"
       >
-        <UIIcon class="w-6 h-6 text-grey-100" type="tutorial" />
+        <UIIcon class="h-5 w-5 text-grey-1000" type="tutorial" />
       </router-link>
     </template>
     <div class="text">{{ $t({ en: 'Tutorials', zh: '教程' }) }}</div>

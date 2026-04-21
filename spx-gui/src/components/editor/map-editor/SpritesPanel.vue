@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 
 import type { SpxProject } from '@/models/spx/project'
 import type { Sprite } from '@/models/spx/sprite'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 
-import { getCssVars, UICard, UIIcon, UIMenu, UIMenuItem, UITooltip, useUIVariables } from '@/components/ui'
+import { UICard, UIIcon, UIMenu, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import SpriteList from '../sprite/SpriteList.vue'
@@ -30,10 +30,6 @@ watch(
   () => props.selectedSprite,
   (newSprite) => (footerExpanded.value = newSprite != null)
 )
-
-// TODO: CSS variables may not work when the component implementation changes
-const uiVariables = useUIVariables()
-const cssVars = computed(() => getCssVars('--panel-color-', uiVariables.color.sprite))
 
 function selectSprite(sprite: Sprite) {
   emit('update:selectedSprite', sprite)
@@ -84,7 +80,6 @@ const handleGenerate = useMessageHandle(
   <UICard
     v-radar="{ name: 'Map Editor\'s Sprite List', desc: 'List of all sprites in the Map Editor' }"
     class="relative flex flex-col"
-    :style="cssVars"
   >
     <PanelHeader class="flex-none" :active="selectedSprite != null">
       {{ $t({ en: 'Sprites', zh: '精灵' }) }}
@@ -120,7 +115,7 @@ const handleGenerate = useMessageHandle(
         name: `Basic configuration for selected sprite`,
         desc: 'Panel for configuring sprite basic settings'
       }"
-      class="p-middle"
+      class="p-4"
     >
       <SpriteBasicConfig :sprite="selectedSprite" :project="project" @collapse="footerExpanded = false" />
     </PanelFooter>
@@ -132,7 +127,7 @@ const handleGenerate = useMessageHandle(
             name: 'Expand button',
             desc: 'Button to expand the basic configuration panel for selected sprite'
           }"
-          class="absolute right-3 bottom-0 h-6 w-6 cursor-pointer flex items-center justify-center bg-grey-300 shadow-small"
+          class="absolute right-3 bottom-0 h-6 w-6 cursor-pointer flex items-center justify-center bg-grey-300 shadow-sm"
           @click="footerExpanded = true"
         >
           <UIIcon class="rotate-180" type="doubleArrowDown" />

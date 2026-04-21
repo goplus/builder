@@ -10,13 +10,15 @@
   /* Special title */
   h1 {
     font-size: 20px;
-    line-height: 1.4;
+    line-height: 28px;
+    font-weight: 700;
   }
 
   /* Standard title */
   h2 {
     font-size: 16px;
-    line-height: 1.5;
+    line-height: 26px;
+    font-weight: 600;
   }
 
   /* Text in navigation bar */
@@ -24,18 +26,21 @@
   /* Text */
   h4 {
     font-size: 14px;
-    line-height: 1.57143;
+    line-height: 22px;
+    font-weight: 500;
   }
 
   /* More information */
   h5 {
     font-size: 12px;
-    line-height: 1.5;
+    line-height: 18px;
+    font-weight: 400;
   }
 
   h6 {
     font-size: 10px;
-    line-height: 1.6;
+    line-height: 16px;
+    font-weight: 400;
   }
 
   button {
@@ -43,11 +48,37 @@
   }
 
   button:focus {
-    outline: 2px solid var(--ui-color-primary-700);
+    outline: 2px solid var(--ui-color-primary-600);
   }
 }
 
 @font-face {
-  font-family: 'AlibabaHealthB';
-  src: url('./fonts/AlibabaHealthFont2.0CN-85B.ttf') format('truetype');
+  font-family: 'Inter';
+  src: url('./fonts/InterVariable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/InterVariable-Italic.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+/*
+ * TODO: This Source Han Sans SC file is still quite large.
+ * Revisit whether we can further subset it or switch to a loading strategy that does not force every client to download it eagerly.
+ */
+@font-face {
+  font-family: 'Source Han Sans SC';
+  src:
+    local('Source Han Sans SC'),
+    local('Source Han Sans CN'),
+    url('./fonts/SourceHanSansCN-VF.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
 }

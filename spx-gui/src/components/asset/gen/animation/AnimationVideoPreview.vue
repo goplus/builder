@@ -285,7 +285,6 @@ function formatTime(timeInMs: number) {
         :playing="isPlaying"
         :progress="progress"
         :progress-interval="0"
-        color="primary"
         :play-handler="play"
         @stop="stop"
       />

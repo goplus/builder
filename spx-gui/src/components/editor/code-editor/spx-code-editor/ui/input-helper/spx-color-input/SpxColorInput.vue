@@ -101,7 +101,7 @@ function handleSubmit() {
   <div class="w-78 flex flex-col gap-3">
     <section class="flex flex-col gap-2">
       <div class="slider-wrapper">
-        <h5 class="text-12">
+        <h5 class="text-xs">
           {{ $t({ en: 'Hue: ', zh: '色相：' }) }}<span class="text-title">{{ hue }}</span>
         </h5>
         <ColorSlider
@@ -110,7 +110,7 @@ function handleSubmit() {
         />
       </div>
       <div class="slider-wrapper">
-        <h5 class="text-12">
+        <h5 class="text-xs">
           {{ $t({ en: 'Saturation: ', zh: '饱和度：' }) }}<span class="text-title">{{ saturation }}</span>
         </h5>
         <ColorSlider
@@ -119,7 +119,7 @@ function handleSubmit() {
         />
       </div>
       <div class="slider-wrapper">
-        <h5 class="text-12">
+        <h5 class="text-xs">
           {{ $t({ en: 'Brightness: ', zh: '亮度：' }) }}<span class="text-title">{{ brightness }}</span>
         </h5>
         <ColorSlider
@@ -130,7 +130,7 @@ function handleSubmit() {
     </section>
     <UIDivider />
     <section class="flex gap-2">
-      <UIButton v-if="isEyeDropperSupported" variant="stroke" color="boring" @click="handleOpenEyeDropper">
+      <UIButton v-if="isEyeDropperSupported" type="neutral" shape="square" @click="handleOpenEyeDropper">
         <template #icon>
           <UIIcon type="eyedrop" />
         </template>

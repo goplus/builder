@@ -4,7 +4,7 @@
     <template #op>
       <UIButton
         v-radar="{ name: 'Group costumes button', desc: 'Click to group costumes as animation' }"
-        color="boring"
+        type="neutral"
         size="large"
         @click="handleGroupCostumes"
       >
@@ -18,7 +18,6 @@
   <EditorList
     v-else
     v-radar="{ name: 'Animations management', desc: 'Managing animations of current sprite' }"
-    color="sprite"
     resource-type="animation"
     :sortable="{ list: sprite.animations }"
     @sorted="handleSorted"

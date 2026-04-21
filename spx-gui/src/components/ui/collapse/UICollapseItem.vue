@@ -29,7 +29,7 @@ function handleToggle() {
       :class="expanded ? 'mb-2' : null"
       @click="handleToggle"
     >
-      <h5 class="text-16 text-title">{{ title }}</h5>
+      <h5 class="text-xl text-title">{{ title }}</h5>
       <UIIcon
         class="h-4 w-4 text-hint-1 transition-transform duration-300"
         :class="expanded ? 'rotate-0' : 'rotate-180'"

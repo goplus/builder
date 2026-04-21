@@ -126,7 +126,7 @@ function handleBarClick(e: MouseEvent) {
   height: 30px;
   border-radius: 50%;
   border: 5px solid #fff;
-  box-shadow: 0 12px 20px rgba(14, 18, 27, 0.12);
+  box-shadow: var(--ui-box-shadow-sm);
   transition: background-color 0.3s ease;
 }
 </style>

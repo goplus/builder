@@ -90,17 +90,17 @@ const handleSubmit = useMessageHandle(async () => {
           autofocus
         />
       </UIFormItem>
-      <footer class="mt-large flex justify-end gap-middle pb-1">
+      <footer class="mt-6 flex justify-end gap-xl pb-1">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel modifying username' }"
-          color="boring"
+          type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Confirm button', desc: 'Click to confirm modifying username' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >

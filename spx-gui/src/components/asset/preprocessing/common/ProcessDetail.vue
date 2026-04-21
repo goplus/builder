@@ -7,7 +7,7 @@
       <UIButton
         v-show="applyFn && !applied"
         icon="check"
-        color="success"
+        type="green"
         :loading="handleApply.isLoading.value"
         @click="handleApply.fn"
       >
@@ -15,7 +15,7 @@
       </UIButton>
       <UIButton
         v-show="cancelFn && applied"
-        color="boring"
+        type="neutral"
         :loading="handleCancel.isLoading.value"
         @click="handleCancel.fn"
       >

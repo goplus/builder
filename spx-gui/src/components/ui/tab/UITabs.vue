@@ -8,7 +8,6 @@
 import { inject, type InjectionKey } from 'vue'
 
 export type TabsCtx = {
-  color: Color
   value: string
   setValue(value: string): void
 }
@@ -22,18 +21,15 @@ export function useTabsCtx() {
 
 <script setup lang="ts">
 import { computed, provide } from 'vue'
-import { type Color } from '../tokens/colors'
 import { computedShallowReactive } from '@/utils/utils'
 import { cn, type ClassValue } from '../utils'
 
 const props = withDefaults(
   defineProps<{
-    color?: Color
     value: string
     class?: ClassValue
   }>(),
   {
-    color: 'primary',
     class: undefined
   }
 )
@@ -42,12 +38,11 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const rootClass = computed(() => cn('flex', props.class ?? null))
+const rootClass = computed(() => cn('flex gap-6 px-2', props.class ?? null))
 
 provide(
   tabsCtxInjectionKey,
   computedShallowReactive(() => ({
-    color: props.color,
     value: props.value,
     setValue(value: string) {
       emit('update:value', value)

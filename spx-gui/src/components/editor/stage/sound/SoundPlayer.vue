@@ -4,7 +4,6 @@
   <PlayControl
     :playing="playing != null"
     :progress="playing?.progress ?? 0"
-    :color="color"
     :play-handler="handlePlay"
     :loading="loading"
     :size="size"
@@ -15,12 +14,10 @@
 <script setup lang="ts">
 import { computed, onUnmounted, reactive, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
-import type { Color } from '@/components/ui'
 import PlayControl, { type Size } from '../../common/PlayControl.vue'
 
 const props = defineProps<{
   src: string | null
-  color: Color
   size?: Size
 }>()
 

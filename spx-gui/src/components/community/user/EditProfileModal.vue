@@ -121,7 +121,7 @@ const handleSubmit = useMessageHandle(async () => {
       class="-mx-6 -mt-5 h-42 bg-center bg-cover bg-no-repeat"
       :style="{ backgroundImage: `url(${coverImgUrl})` }"
     ></div>
-    <div class="-mt-11 mb-large flex items-start gap-5">
+    <div class="-mt-11 mb-6 flex items-start gap-5">
       <button
         v-radar="{ name: 'Edit avatar button', desc: 'Click to choose a new avatar image' }"
         class="group relative h-30 w-30 flex-none cursor-pointer border-none bg-transparent p-0 outline-none shadow-none"
@@ -159,14 +159,14 @@ const handleSubmit = useMessageHandle(async () => {
       <footer class="mt-5 flex justify-end gap-3">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel editing profile' }"
-          color="boring"
+          type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Confirm button', desc: 'Click to save profile changes' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >

@@ -67,7 +67,7 @@ const expr = computed(() => {
     </div>
     <div v-else-if="inputPreview?.color != null" class="flex items-center gap-2 py-2.75">
       <i class="block h-5 w-5 rounded-[4px]" :style="{ backgroundColor: inputPreview.color }"></i>
-      <span class="font-code text-12 text-title">{{ expr }}</span>
+      <span class="font-code text-xs text-title">{{ expr }}</span>
     </div>
     <div v-else-if="inputPreview?.text != null" class="text">{{ $t(inputPreview.text) }}</div>
     <!-- We are not using inline `CodeView` here because it does not properly highlight short expressions. -->
