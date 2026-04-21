@@ -78,6 +78,21 @@ describe('UINumberInput', () => {
     expect(wrapper.emitted('update:value')).toBeUndefined()
   })
 
+  it('commits integer values ending in zero while typing', async () => {
+    const wrapper = mount(UINumberInput, {
+      props: {
+        value: null
+      }
+    })
+
+    const input = getNativeInput(wrapper)
+    await input.trigger('focus')
+    await input.setValue('10')
+    await input.setValue('100')
+
+    expect(wrapper.emitted('update:value')).toEqual([[10], [100]])
+  })
+
   it('commits work-in-progress decimal input on blur', async () => {
     const wrapper = mount(UINumberInput, {
       props: {

@@ -2,7 +2,7 @@
   <UIInputFrame
     :validation-state="validationState"
     :disabled="props.disabled"
-    :invalid="displayedValueInvalid"
+    :invalid="displayValueInvalid"
     :color="props.color"
     :size="props.size"
     :focus-control="focusControl"
@@ -15,7 +15,7 @@
       ref="controlRef"
       v-bind="controlBindings"
       :placeholder="props.placeholder || ''"
-      :value="displayedValue"
+      :value="displayValue"
       :disabled="props.disabled"
       :readonly="props.readonly"
       inputmode="decimal"
@@ -93,13 +93,100 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
+
+const controlRef = ref<HTMLInputElement | null>(null)
 const { controlBindings, onBlur, onInput, validationState } = useFieldControlBindings()
+const focused = ref(false)
+
+const displayValue = ref(formatValue(props.value))
+
+/** Keep the input DOM driven by a string representation, even though the public value is numeric. */
+function formatValue(value: number | null) {
+  return value == null ? '' : String(value)
+}
+
+/** Sync the displayed string from the committed numeric value. */
+function syncDisplayValueFromValue(value: number | null) {
+  displayValue.value = formatValue(value)
+}
+
+const minValue = computed(() => parseNumberish(props.min))
+const maxValue = computed(() => parseNumberish(props.max))
+const stepValue = computed(() => {
+  const parsed = parseNumberish(props.step)
+  if (parsed == null || parsed === 0) return 1
+  return Math.abs(parsed)
+})
 
 /** Parse numeric-like props (`min`, `max`, `step`) while tolerating undefined and invalid strings. */
 function parseNumberish(value: number | string | undefined) {
   if (value === undefined) return null
   const parsed = Number(value)
   return Number.isNaN(parsed) ? null : parsed
+}
+
+type DisplayValueAnalysis =
+  | { kind: 'empty'; parsed: null }
+  | { kind: 'wip'; parsed: number }
+  | { kind: 'invalid'; parsed: null }
+  | { kind: 'valid'; parsed: number }
+
+/**
+ * Values like `1.`, `1.0`, `.5` are still being typed and should not be eagerly normalized.
+ * This mirrors the old input-number behavior where the displayed string can temporarily diverge
+ * from the committed numeric value.
+ */
+function isWipValue(value: string) {
+  return /^-?\d+\.$/.test(value) || /^-?\d*\.\d*0$/.test(value) || /^-?\.\d+$/.test(value)
+}
+
+/**
+ * Parse the raw input string without side effects so all callers can share the same analysis result.
+ * This keeps keystroke-time validation and commit decisions aligned while avoiding duplicate parsing work.
+ */
+const displayValueAnalysis = computed<DisplayValueAnalysis>(() => {
+  const value = displayValue.value
+  if (value.trim() === '') return { kind: 'empty', parsed: null }
+  if (isWipValue(value)) return { kind: 'wip', parsed: Number(value) }
+
+  const parsed = Number(value)
+  if (Number.isNaN(parsed)) return { kind: 'invalid', parsed: null }
+  return { kind: 'valid', parsed }
+})
+
+const displayValueInvalid = computed(() => isAnalysisInvalid(displayValueAnalysis.value))
+
+function isAnalysisInvalid(analysis: DisplayValueAnalysis) {
+  if (analysis.kind === 'invalid') return true
+  // Keep empty / WIP states neutral while the user is still editing.
+  if (analysis.kind === 'empty' || analysis.kind === 'wip') return false
+
+  return (
+    (minValue.value != null && analysis.parsed < minValue.value) ||
+    (maxValue.value != null && analysis.parsed > maxValue.value)
+  )
+}
+
+watch(
+  () => props.value,
+  (value) => {
+    const analysis = displayValueAnalysis.value
+    // While the user is actively typing an unfinished/invalid number, preserve the raw text.
+    if (focused.value && (analysis.kind === 'wip' || isAnalysisInvalid(analysis))) return
+    syncDisplayValueFromValue(value)
+  }
+)
+
+/**
+ * Emit only when the numeric value actually changes.
+ * If the value is unchanged, we still normalize the displayed string so blur/input edge cases settle.
+ */
+function doUpdateValue(value: number | null) {
+  if (value === props.value) {
+    syncDisplayValueFromValue(value)
+    return
+  }
+  emit('update:value', value)
 }
 
 /** Count fractional digits so stepping can avoid common floating-point drift. */
@@ -114,28 +201,6 @@ function getPrecision(value: number) {
 }
 
 /**
- * Values like `1.`, `1.0`, `.5` are still being typed and should not be eagerly normalized.
- * This mirrors the old input-number behavior where the displayed string can temporarily diverge
- * from the committed numeric value.
- */
-function isWipValue(value: string) {
-  return value.includes('.') && (/^(-)?\d+.*([.]|0)$/.test(value) || /^\.\d+$/.test(value))
-}
-
-/** Keep the input DOM driven by a string representation, even though the public value is numeric. */
-function formatValue(value: number | null) {
-  return value == null ? '' : String(value)
-}
-
-const minValue = computed(() => parseNumberish(props.min))
-const maxValue = computed(() => parseNumberish(props.max))
-const stepValue = computed(() => {
-  const parsed = parseNumberish(props.step)
-  if (parsed == null || parsed === 0) return 1
-  return Math.abs(parsed)
-})
-
-/**
  * Reuse the same precision heuristics as Naive UI's input-number core:
  * current value, min/max and step all participate in the maximum precision we preserve.
  */
@@ -148,102 +213,25 @@ function getMaxPrecision(currentValue: number) {
   )
 }
 
-const displayedValue = ref(formatValue(props.value))
-const focused = ref(false)
-const controlRef = ref<HTMLInputElement | null>(null)
-
-/** Rebuild the displayed string from the committed numeric value. */
-function deriveDisplayedValueFromValue(value = props.value) {
-  displayedValue.value = formatValue(value)
+function normalizeValue(value: number) {
+  const precision = getMaxPrecision(value)
+  return precision > 100 ? value : parseFloat(value.toFixed(precision))
 }
 
-watch(
-  () => props.value,
-  (value) => {
-    // While the user is actively typing an unfinished/invalid number, preserve the raw text.
-    if (focused.value && (isWipValue(displayedValue.value) || displayedValueInvalid.value)) return
-    deriveDisplayedValueFromValue(value)
-  }
-)
-
-/**
- * Emit only when the numeric value actually changes.
- * If the value is unchanged, we still normalize the displayed string so blur/input edge cases settle.
- */
-function doUpdateValue(value: number | null, notify = true) {
-  if (value === props.value) {
-    deriveDisplayedValueFromValue(value)
-    return
-  }
-  emit('update:value', value)
-  if (notify) onInput()
+function clampValue(value: number) {
+  if (minValue.value != null && value < minValue.value) return minValue.value
+  if (maxValue.value != null && value > maxValue.value) return maxValue.value
+  return value
 }
-
-function deriveValueFromDisplayedValue(options: {
-  offset: number
-  doUpdateIfValid: boolean
-  allowWip: boolean
-  fixPrecision: boolean
-}) {
-  // This is the main numeric derivation pipeline used by typing, blur normalization and stepping.
-  const value = displayedValue.value
-  if (value.trim() === '') {
-    if (options.doUpdateIfValid) doUpdateValue(null)
-    return null
-  }
-  if (options.allowWip && isWipValue(value)) return false
-
-  const parsed = Number(value)
-  if (Number.isNaN(parsed)) return false
-
-  let nextValue = parsed
-  if (options.fixPrecision || options.offset !== 0) {
-    const precision = getMaxPrecision(parsed)
-    const offsetValue = parsed + options.offset
-    nextValue = precision > 100 ? offsetValue : parseFloat(offsetValue.toFixed(precision))
-  }
-
-  if (!options.fixPrecision && options.offset === 0) {
-    nextValue = parsed
-  }
-
-  if (minValue.value != null && nextValue < minValue.value) {
-    if (!options.doUpdateIfValid || options.allowWip) return false
-    nextValue = minValue.value
-  }
-
-  if (maxValue.value != null && nextValue > maxValue.value) {
-    if (!options.doUpdateIfValid || options.allowWip) return false
-    nextValue = maxValue.value
-  }
-
-  if (options.doUpdateIfValid) {
-    doUpdateValue(nextValue)
-  }
-
-  return nextValue
-}
-
-function createNextValue() {
-  let nextValue = 0
-  if (minValue.value != null && nextValue < minValue.value) {
-    nextValue = minValue.value
-  }
-  if (maxValue.value != null && nextValue > maxValue.value) {
-    nextValue = maxValue.value
-  }
-  return nextValue
-}
-
-const displayedValueInvalid = computed(
-  () =>
-    deriveValueFromDisplayedValue({ offset: 0, doUpdateIfValid: false, allowWip: false, fixPrecision: false }) === false
-)
 
 function handleInput(event: Event) {
-  displayedValue.value = (event.target as HTMLInputElement).value
-  // While typing, we allow WIP values and only commit when the string already represents a valid number.
-  void deriveValueFromDisplayedValue({ offset: 0, doUpdateIfValid: true, allowWip: true, fixPrecision: false })
+  displayValue.value = (event.target as HTMLInputElement).value
+  const analysis = displayValueAnalysis.value
+  if (analysis.kind === 'wip' || isAnalysisInvalid(analysis)) {
+    return
+  }
+  doUpdateValue(analysis.parsed)
+  onInput()
 }
 
 function handleFocus() {
@@ -253,33 +241,44 @@ function handleFocus() {
 function handleBlur() {
   focused.value = false
   // Blur is the commit point: clamp to min/max, fix precision and rewrite the displayed string.
-  const parsedValue = deriveValueFromDisplayedValue({
-    offset: 0,
-    doUpdateIfValid: true,
-    allowWip: false,
-    fixPrecision: true
-  })
-  if (parsedValue === false) {
-    deriveDisplayedValueFromValue()
+  const analysis = displayValueAnalysis.value
+  if (analysis.kind === 'empty') {
+    doUpdateValue(null)
+  } else if (analysis.kind === 'invalid') {
+    syncDisplayValueFromValue(props.value)
   } else {
-    deriveDisplayedValueFromValue(parsedValue)
+    const nextValue = clampValue(normalizeValue(analysis.parsed))
+    doUpdateValue(nextValue)
+    syncDisplayValueFromValue(nextValue)
   }
   onBlur()
 }
 
+function deriveSteppedValue(value: number | null, offset: number) {
+  if (value == null) return clampValue(0)
+
+  const precision = getMaxPrecision(value)
+  const offsetValue = value + offset
+  const nextValue = precision > 100 ? offsetValue : parseFloat(offsetValue.toFixed(precision))
+
+  if (minValue.value != null && nextValue < minValue.value) return false
+  if (maxValue.value != null && nextValue > maxValue.value) return false
+  return nextValue
+}
+
 function doStep(offset: number) {
   // Arrow-key stepping reuses the same derivation rules so typing/blur/step stay consistent.
-  const parsedValue = deriveValueFromDisplayedValue({
-    offset,
-    doUpdateIfValid: false,
-    allowWip: false,
-    fixPrecision: true
-  })
-  if (parsedValue === false) return
+  const analysis = displayValueAnalysis.value
+  if (isAnalysisInvalid(analysis)) return
 
-  const nextValue = parsedValue === null ? createNextValue() : parsedValue
-  deriveDisplayedValueFromValue(nextValue)
+  const nextValue = deriveSteppedValue(analysis.parsed == null ? null : normalizeValue(analysis.parsed), offset)
+  if (nextValue === false) return
+
+  // Arrow-key stepping changes the value outside the native `input` event path,
+  // so treat it as an input-like update for form validation timing.
+  onInput()
   doUpdateValue(nextValue)
+  syncDisplayValueFromValue(nextValue)
 }
 
 function handleKeyDown(event: KeyboardEvent) {
