@@ -388,9 +388,8 @@ const remixesRet = useQuery(
               <template #inline-overlay>
                 <Transition name="runner-mask-fade" appear>
                   <div
-                    v-if="runnerState !== 'running'"
-                    :class="runnerState === 'initial' ? 'pointer-events-auto' : 'pointer-events-none'"
-                    class="absolute inset-0 z-2 flex items-center justify-center rounded-md bg-[rgba(36,41,47,0.6)]"
+                    v-if="runnerState === 'initial'"
+                    class="absolute inset-0 z-2 flex items-center justify-center rounded-md bg-overlay-loading"
                   >
                     <template v-if="runnerState === 'initial'">
                       <div v-if="needsSignInToRun" class="h-full w-full flex items-center justify-center p-6">
@@ -675,7 +674,7 @@ const remixesRet = useQuery(
 
 .runner-mask-fade-enter-active,
 .runner-mask-fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.3s ease;
 }
 
 .project-wrapper {
@@ -683,17 +682,6 @@ const remixesRet = useQuery(
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-}
-
-/* TODO: replace these UIDetailedLoading deep overrides with an explicit loading styling API. */
-.project-wrapper :deep(.ui-detailed-loading.cover.mask-semi-transparent .text) {
-  color: var(--ui-color-grey-100);
-}
-.project-wrapper :deep(.project-runner-surface:not(.fullscreen) .ui-detailed-loading.cover) {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  z-index: 3;
 }
 
 .kiko-wave {
