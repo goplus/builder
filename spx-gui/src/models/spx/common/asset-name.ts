@@ -10,8 +10,6 @@ import {
   resourceWidgetName
 } from './resource'
 
-const numericSuffixRE = /^(.*?)(\d+)$/
-
 function validateAssetName(name: string) {
   if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
   if (name.length > 100)
@@ -169,8 +167,10 @@ export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   return unicodeSafeSlice(result, 0, 50)
 }
 
-function splitNumericSuffix(base: string) {
-  const match = base.match(numericSuffixRE)
+const numericSuffixRE = /^(.*?)(\d+)$/
+
+function splitNumericSuffix(name: string) {
+  const match = name.match(numericSuffixRE)
   if (match == null) return null
   return {
     base: match[1],
@@ -179,30 +179,27 @@ function splitNumericSuffix(base: string) {
   }
 }
 
-function formatNumericSuffix(prefix: string, suffix: number, width: number) {
-  const normalizedSuffix = width > 1 ? String(suffix).padStart(width, '0') : String(suffix)
-  return prefix + normalizedSuffix
+function formatNumericSuffix(base: string, num: number, numWidth: number) {
+  const suffix = numWidth > 1 ? String(num).padStart(numWidth, '0') : String(num)
+  return base + suffix
 }
 
-function getValidName(base: string, isValid: (name: string) => boolean) {
-  if (base === '') throw new Error('name base must not be blank')
-  if (isValid(base)) return base
+function getValidName(initialName: string, isValid: (name: string) => boolean) {
+  if (initialName === '') throw new Error('name must not be blank')
+  if (isValid(initialName)) return initialName
 
-  const numericSuffix = splitNumericSuffix(base)
-  if (numericSuffix != null) {
-    for (let i = numericSuffix.num + 1; ; i++) {
-      const name = formatNumericSuffix(numericSuffix.base, i, numericSuffix.numWidth)
-      if (isValid(name)) return name
-      if (i - numericSuffix.num > 10000) {
-        throw new Error(`unexpected infinite loop with base ${base}`)
-      }
-    }
-  }
+  // Try to add/increment numeric suffix to find a valid name
+  const splitted = splitNumericSuffix(initialName)
+  const base = splitted == null ? initialName : splitted.base
+  const initialNum = splitted == null ? 1 : splitted.num
+  const numWidth = splitted == null ? 1 : splitted.numWidth
 
-  for (let i = 2; ; i++) {
-    const name = base + i
+  for (let i = initialNum + 1; ; i++) {
+    const name = formatNumericSuffix(base, i, numWidth)
     if (isValid(name)) return name
-    if (i > 10000) throw new Error(`unexpected infinite loop with base ${base}`) // for debug purpose
+    if (i - initialNum > 10000) {
+      throw new Error(`unexpected infinite loop with base ${initialName}`)
+    }
   }
 }
 

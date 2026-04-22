@@ -16,6 +16,7 @@ export const resourceSoundName = { en: 'sound', zh: '声音' }
 export const resourceSpriteName = { en: 'sprite', zh: '精灵' }
 export const resourceBackdropName = { en: 'backdrop', zh: '背景' }
 export const resourceWidgetName = { en: 'widget', zh: '控件' }
+export const resourceMonitorName = { en: 'monitor', zh: '监视器' }
 export const resourceAnimationName = { en: 'animation', zh: '动画' }
 export const resourceCostumeName = { en: 'costume', zh: '造型' }
 

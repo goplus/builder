@@ -6,7 +6,7 @@ import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { humanizeAssetType, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
-import { resourceAnimationName, resourceSpriteName, resourceWidgetName } from '@/models/spx/common/resource'
+import { resourceAnimationName, resourceMonitorName, resourceSpriteName } from '@/models/spx/common/resource'
 import { fromNativeFile } from '@/models/common/file'
 import { type SpxProject } from '@/models/spx/project'
 import { Backdrop } from '@/models/spx/backdrop'
@@ -219,8 +219,8 @@ export function useAddMonitor() {
   const editorCtx = useEditorCtx()
   const i18n = useI18n()
   return async function addMonitor(project: SpxProject) {
-    const monitor = await Monitor.create(i18n.t(resourceWidgetName) + '1')
-    const action = { name: { en: 'Add widget', zh: '添加控件' } }
+    const monitor = await Monitor.create(i18n.t(resourceMonitorName) + '1')
+    const action = { name: { en: 'Add monitor', zh: '添加监视器' } }
     await editorCtx.state.history.doAction(action, () => {
       project.stage.addWidget(monitor)
     })
