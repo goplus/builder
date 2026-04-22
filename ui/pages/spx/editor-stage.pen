@@ -621,7 +621,7 @@
     },
     "a:turquoise500": {
       "type": "color",
-      "value": "#0bc0cf"
+      "value": "#36C2CF"
     },
     "a:turquoise700": {
       "type": "color",
@@ -689,7 +689,7 @@
     },
     "a:--ui-color-primary-main": {
       "type": "color",
-      "value": "#0bc0cf"
+      "value": "#36C2CF"
     },
     "a:--ui-color-grey-100": {
       "type": "color",
@@ -713,7 +713,7 @@
   "fonts": [
     {
       "name": "Menlo",
-      "url": "../../images/Menlo-Regular-1.ttf"
+      "url": "../../images/Menlo.ttf"
     },
     {
       "name": "XBuilder_Icons_01",

@@ -110,7 +110,7 @@ useModalEsc(
 .container {
   display: flex;
   flex-direction: column;
-  box-shadow: var(--ui-box-shadow-big);
+  box-shadow: var(--ui-box-shadow-surfaceStrong);
   border-radius: var(--ui-border-radius-2);
   background-color: white;
   overflow: hidden;

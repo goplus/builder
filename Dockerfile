@@ -33,6 +33,7 @@ RUN npm install
 
 COPY spx-gui .
 COPY docs ../docs
+COPY scripts ../scripts
 COPY tools ../tools
 COPY tutorial ../tutorial
 # Copy assets (with wasm)

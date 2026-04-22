@@ -2352,7 +2352,7 @@
                               "fill": "$grey700",
                               "content": "Search project",
                               "lineHeight": 1.5714285714285714,
-                              "fontFamily": "Inter",
+                              "fontFamily": "Alibaba Health Font 2.0 CN",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             }
@@ -2529,7 +2529,7 @@
                                   "fill": "$grey1000",
                                   "content": "Christiantsai",
                                   "lineHeight": 1.4,
-                                  "fontFamily": "Inter",
+                                  "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 20,
                                   "fontWeight": "700"
                                 },
@@ -2648,7 +2648,7 @@
                                       "fill": "$grey700",
                                       "content": "Joined November 2025",
                                       "lineHeight": 1.5384615384615385,
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }
@@ -2665,7 +2665,7 @@
                               "width": "fill_container",
                               "content": "All the world's a stage, and all the men and women merely players. They have their exits and their entrances;",
                               "lineHeight": 1.5384615384615385,
-                              "fontFamily": "Inter",
+                              "fontFamily": "Alibaba Health Font 2.0 CN",
                               "fontSize": 13,
                               "fontWeight": "normal"
                             }
@@ -2721,7 +2721,7 @@
                                       "fill": "$grey100",
                                       "content": "Edit profile",
                                       "lineHeight": 1.5714285714285714,
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 14,
                                       "fontWeight": "normal"
                                     }
@@ -2805,7 +2805,7 @@
                       "fill": "$turquoise500",
                       "content": "Overview",
                       "lineHeight": 1.5384615384615385,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 13,
                       "fontWeight": "normal"
                     },
@@ -2904,7 +2904,7 @@
                       "fill": "$grey900",
                       "content": "Projects",
                       "lineHeight": 1.5384615384615385,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 13,
                       "fontWeight": "normal"
                     },
@@ -3000,7 +3000,7 @@
                       "fill": "$grey900",
                       "content": "Likes",
                       "lineHeight": 1.5384615384615385,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 13,
                       "fontWeight": "normal"
                     },
@@ -3085,7 +3085,7 @@
                       "fill": "$grey900",
                       "content": "Following",
                       "lineHeight": 1.4285714285714286,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 13,
                       "fontWeight": "normal"
                     },
@@ -3170,7 +3170,7 @@
                       "fill": "$grey900",
                       "content": "Followers",
                       "lineHeight": 1.5384615384615385,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 13,
                       "fontWeight": "normal"
                     },
@@ -3239,7 +3239,7 @@
                           "fill": "$grey1000",
                           "content": "My projects",
                           "lineHeight": 1.4,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 20,
                           "fontWeight": "700"
                         },
@@ -3257,7 +3257,7 @@
                               "fill": "$turquoise500",
                               "content": "View all",
                               "lineHeight": 1.5714285714285714,
-                              "fontFamily": "Inter",
+                              "fontFamily": "Alibaba Health Font 2.0 CN",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             },
@@ -3343,7 +3343,7 @@
                                       "name": "Title",
                                       "fill": "$grey1000",
                                       "content": "Space Werewolf",
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 14,
                                       "fontWeight": "600"
                                     },
@@ -3433,7 +3433,7 @@
                                           "fill": "$grey700",
                                           "content": "888K",
                                           "lineHeight": 1.5384615384615385,
-                                          "fontFamily": "Inter",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
                                           "fontSize": 13,
                                           "fontWeight": "normal"
                                         }
@@ -3446,7 +3446,7 @@
                                       "fill": "$grey700",
                                       "content": "22 hours ago",
                                       "lineHeight": 1.5384615384615385,
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }
@@ -3507,7 +3507,7 @@
                                       "name": "Title",
                                       "fill": "$grey1000",
                                       "content": "Space Werewolf",
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 14,
                                       "fontWeight": "600"
                                     },
@@ -3597,7 +3597,7 @@
                                           "fill": "$grey700",
                                           "content": "888K",
                                           "lineHeight": 1.5384615384615385,
-                                          "fontFamily": "Inter",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
                                           "fontSize": 13,
                                           "fontWeight": "normal"
                                         }
@@ -3610,7 +3610,7 @@
                                       "fill": "$grey700",
                                       "content": "22 hours ago",
                                       "lineHeight": 1.5384615384615385,
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }
@@ -3672,7 +3672,7 @@
                                       "name": "Title",
                                       "fill": "$grey1000",
                                       "content": "Space Werewolf",
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 14,
                                       "fontWeight": "600"
                                     },
@@ -3762,7 +3762,7 @@
                                           "fill": "$grey700",
                                           "content": "888K",
                                           "lineHeight": 1.5384615384615385,
-                                          "fontFamily": "Inter",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
                                           "fontSize": 13,
                                           "fontWeight": "normal"
                                         }
@@ -3775,7 +3775,7 @@
                                       "fill": "$grey700",
                                       "content": "22 hours ago",
                                       "lineHeight": 1.5384615384615385,
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }
@@ -3836,7 +3836,7 @@
                                       "name": "Title",
                                       "fill": "$grey1000",
                                       "content": "Space Werewolf",
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 14,
                                       "fontWeight": "600"
                                     },
@@ -3926,7 +3926,7 @@
                                           "fill": "$grey700",
                                           "content": "888K",
                                           "lineHeight": 1.5384615384615385,
-                                          "fontFamily": "Inter",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
                                           "fontSize": 13,
                                           "fontWeight": "normal"
                                         }
@@ -3939,7 +3939,7 @@
                                       "fill": "$grey700",
                                       "content": "22 hours ago",
                                       "lineHeight": 1.5384615384615385,
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }
@@ -3979,7 +3979,7 @@
                           "fill": "$grey1000",
                           "content": "Projects I like",
                           "lineHeight": 1.4,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 20,
                           "fontWeight": "700"
                         },
@@ -3997,7 +3997,7 @@
                               "fill": "$turquoise500",
                               "content": "View all",
                               "lineHeight": 1.5714285714285714,
-                              "fontFamily": "Inter",
+                              "fontFamily": "Alibaba Health Font 2.0 CN",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             },
@@ -4092,7 +4092,7 @@
                                   "name": "card1Name",
                                   "fill": "$grey1000",
                                   "content": "Magic Carpetsss",
-                                  "fontFamily": "Inter",
+                                  "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 15,
                                   "fontWeight": "600"
                                 },
@@ -4138,7 +4138,7 @@
                                           "name": "card1Likes",
                                           "fill": "$grey700",
                                           "content": "888K",
-                                          "fontFamily": "Inter",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
                                           "fontSize": 13,
                                           "fontWeight": "normal"
                                         }
@@ -4150,7 +4150,7 @@
                                       "name": "card1Time",
                                       "fill": "$grey700",
                                       "content": "1 weeks ago",
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }
@@ -4218,7 +4218,7 @@
                                   "name": "card1Name",
                                   "fill": "$grey1000",
                                   "content": "Magic Carpetsss",
-                                  "fontFamily": "Inter",
+                                  "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 15,
                                   "fontWeight": "600"
                                 },
@@ -4263,7 +4263,7 @@
                                           "name": "card1Likes",
                                           "fill": "$grey700",
                                           "content": "888K",
-                                          "fontFamily": "Inter",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
                                           "fontSize": 13,
                                           "fontWeight": "normal"
                                         }
@@ -4275,7 +4275,7 @@
                                       "name": "card1Time",
                                       "fill": "$grey700",
                                       "content": "1 weeks ago",
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }
@@ -4343,7 +4343,7 @@
                                   "name": "card1Name",
                                   "fill": "$grey1000",
                                   "content": "Magic Carpetsss",
-                                  "fontFamily": "Inter",
+                                  "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 15,
                                   "fontWeight": "600"
                                 },
@@ -4388,7 +4388,7 @@
                                           "name": "card1Likes",
                                           "fill": "$grey700",
                                           "content": "888K",
-                                          "fontFamily": "Inter",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
                                           "fontSize": 13,
                                           "fontWeight": "normal"
                                         }
@@ -4400,7 +4400,7 @@
                                       "name": "card1Time",
                                       "fill": "$grey700",
                                       "content": "1 weeks ago",
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }
@@ -4467,7 +4467,7 @@
                                   "name": "card1Name",
                                   "fill": "$grey1000",
                                   "content": "Magic Carpetsss",
-                                  "fontFamily": "Inter",
+                                  "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 15,
                                   "fontWeight": "600"
                                 },
@@ -4512,7 +4512,7 @@
                                           "name": "card1Likes",
                                           "fill": "$grey700",
                                           "content": "888K",
-                                          "fontFamily": "Inter",
+                                          "fontFamily": "Alibaba Health Font 2.0 CN",
                                           "fontSize": 13,
                                           "fontWeight": "normal"
                                         }
@@ -4524,7 +4524,7 @@
                                       "name": "card1Time",
                                       "fill": "$grey700",
                                       "content": "1 weeks ago",
-                                      "fontFamily": "Inter",
+                                      "fontFamily": "Alibaba Health Font 2.0 CN",
                                       "fontSize": 13,
                                       "fontWeight": "normal"
                                     }

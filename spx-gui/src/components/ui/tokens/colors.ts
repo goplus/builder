@@ -1,14 +1,14 @@
 // Base colors
 
 export const turquoise = {
-  100: '#f3fcfd',
-  200: '#e7f9fa',
-  300: '#b5ebf0',
+  100: '#f3fbfc',
+  200: '#eaf9fa',
+  300: '#afe7ec',
   400: '#3fcdd9',
-  500: '#0bc0cf',
-  600: '#0eafbc',
-  700: '#0b8893',
-  main: '#0bc0cf'
+  500: '#36c2cf',
+  600: '#2b9ba5',
+  700: '#20747c',
+  main: '#36c2cf'
 } as const
 
 export const yellow = {

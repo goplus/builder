@@ -78,7 +78,7 @@
                       "fill": "$grey1000",
                       "content": "Found 250 results for 57667",
                       "lineHeight": 1.625,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 16,
                       "fontWeight": "medium"
                     },
@@ -250,7 +250,7 @@
             {
               "type": "frame",
               "id": "hRLlE",
-              "name": "Pagination",
+              "name": "pagination",
               "width": "fill_container",
               "cornerRadius": 8,
               "gap": 8,
