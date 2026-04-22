@@ -1,5 +1,6 @@
 import { type InjectionKey, provide, type Ref, inject, ref, watchEffect } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
+import { findModalRoot } from '../modal/stack'
 import { findPopupRoot } from '../popup/stack'
 export { cn, type ClassDictionary, type ClassValue } from './cn'
 export {
@@ -57,13 +58,7 @@ export function useModalContainer() {
 /** If given target in any popup content */
 export function isInPopup(target: HTMLElement | null) {
   if (findPopupRoot(target) != null) return true
-
-  let el = target
-  while (el != null) {
-    if (el.classList.contains('n-modal')) return true
-    el = el.parentElement
-  }
-  return false
+  return findModalRoot(target) != null
 }
 
 const lastClickEventKey: InjectionKey<Ref<MouseEvent | null>> = Symbol('last-click-event')

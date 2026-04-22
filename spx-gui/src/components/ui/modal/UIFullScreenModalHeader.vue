@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import UIModalClose from './UIModalClose.vue'
 
@@ -10,14 +9,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
 }>()
-
-const rootClass = computed(() =>
-  cn('h-14 flex items-center gap-8 border-b border-grey-400 text-xl text-title', props.class)
-)
 </script>
 
 <template>
-  <div :class="rootClass">
+  <div :class="cn('h-14 flex items-center gap-8 border-b border-grey-400 text-xl text-title', props.class)">
     <div class="basis-[30%] flex-1"></div>
     <div class="basis-[40%] flex-1 min-w-0 overflow-hidden">
       <slot></slot>

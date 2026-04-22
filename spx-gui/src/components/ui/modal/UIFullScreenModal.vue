@@ -1,42 +1,33 @@
 <script setup lang="ts">
-import { shallowRef, watch, type CSSProperties } from 'vue'
-import { useLastClickEvent, useModalContainer } from '../utils'
+import { cn, type ClassValue } from '../utils'
+import { useModalContainer } from '../utils'
 import { useModalEsc } from './UIModalProvider.vue'
+import { useModalSurface } from './use-modal-surface'
 
-// Note:
-// We are not using NaiveUI's modal because it causes issue when components inside the modal mount/unmount dynamically.
-// You can find more information about the issue in https://github.com/goplus/builder/pull/2029#discussion_r2300530412 .
-
-const props = defineProps<{
-  visible?: boolean
-  /**
-   * This prop should not be passed manually. It is reserved for `UIModalProvider`
-   * to indicate whether the current `UIFullScreenModal` is at the top layer.
-   */
-  active?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    visible?: boolean
+    /**
+     * This prop should not be passed manually. It is reserved for `UIModalProvider`
+     * to indicate whether the current `UIFullScreenModal` is at the top layer.
+     */
+    active?: boolean
+    class?: ClassValue
+  }>(),
+  {
+    visible: false,
+    active: undefined,
+    class: undefined
+  }
+)
 
 const emit = defineEmits<{
   'update:visible': [visible: boolean]
 }>()
 
-const lastClickEvent = useLastClickEvent()
-const modalTransformStyle = shallowRef<CSSProperties | null>(null)
-// Use the position of last click event as the transform origin of Modal, so that the modal appears from & disappears to the clicked position.
-function updateModalTransformStyle() {
-  modalTransformStyle.value =
-    lastClickEvent.value == null ? null : { transformOrigin: `${lastClickEvent.value.x}px ${lastClickEvent.value.y}px` }
-}
-
-watch(
-  () => props.visible,
-  async (visible) => {
-    if (visible) updateModalTransformStyle()
-  },
-  { immediate: true }
-)
-
 const attachTo = useModalContainer()
+
+const { surfaceRootAttrs, setContentRef, transformStyle } = useModalSurface(() => props.visible)
 
 useModalEsc(
   () => props.active ?? true,
@@ -46,8 +37,14 @@ useModalEsc(
 
 <template>
   <Teleport :to="attachTo">
-    <Transition>
-      <div v-if="visible" class="ui-full-screen-modal fixed inset-0 z-100" :style="modalTransformStyle">
+    <Transition name="ui-fullscreen-modal">
+      <div
+        v-if="visible"
+        v-bind="surfaceRootAttrs"
+        :ref="setContentRef"
+        :class="cn('fixed inset-0 z-1100', props.class)"
+        :style="transformStyle"
+      >
         <div
           v-radar="{ name: 'Full screen modal', desc: 'A full screen modal dialog for specific purpose' }"
           class="h-screen w-screen flex flex-col bg-grey-100"
@@ -61,15 +58,15 @@ useModalEsc(
 
 <style>
 @layer components {
-  .ui-full-screen-modal.v-enter-active,
-  .ui-full-screen-modal.v-leave-active {
+  .ui-fullscreen-modal-enter-active,
+  .ui-fullscreen-modal-leave-active {
     transition:
       transform 0.4s ease-in-out,
       opacity 0.2s ease-in-out 0.1s;
   }
 
-  .ui-full-screen-modal.v-enter-from,
-  .ui-full-screen-modal.v-leave-to {
+  .ui-fullscreen-modal-enter-from,
+  .ui-fullscreen-modal-leave-to {
     transform: scale(0);
     opacity: 0;
   }
