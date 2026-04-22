@@ -2,8 +2,10 @@
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-modal">
       <div v-if="visible" class="fixed inset-0 z-1100 bg-overlay-modal" @click="handleMaskClick">
-        <div class="h-full w-full overflow-y-auto">
-          <div class="min-h-full w-full p-4 flex items-center justify-center">
+        <div
+          class="h-full w-full overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <div class="min-h-full w-full flex p-4">
             <div
               v-bind="surfaceAttrs"
               :ref="setContentRef"
@@ -99,26 +101,31 @@ const {
 const surfaceAttrs = computed(() => mergeProps(surfaceRootAttrs, attrs))
 const surfaceClass = computed(() =>
   cn(
-    'flex flex-col overflow-hidden outline-none rounded-lg bg-white shadow-lg',
+    'm-auto max-w-full overflow-hidden outline-none bg-white rounded-lg shadow-lg',
     {
       'w-[480px]': props.size === 'small',
       'w-[640px]': props.size === 'medium',
       'w-[960px]': props.size === 'large',
       'w-full': props.size === 'full'
     },
+    'flex flex-col',
     props.class
   )
 )
 
 watch(
   [() => props.visible, containerRef, () => props.autoFocus],
-  async ([visible, container, autoFocus]) => {
+  async ([visible, container, autoFocus], _, onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
     if (!visible || !autoFocus || container == null) return
     // First tick: let `visible` propagate through the transition/teleport render.
     // Second tick: let the teleported surface ref settle before focusing.
     await nextTick()
     await nextTick()
-    if (!container.isConnected) return
+    if (cancelled || !container.isConnected) return
     container.focus()
   },
   { immediate: true }

@@ -55,6 +55,8 @@ export function createLayerStack(rootAttrName: string): LayerStack {
     return null
   }
 
+  const topmostId = computed(() => getTopmostOpenEntry()?.id)
+
   function register(open: Readonly<Ref<boolean>>) {
     nextId += 1
     const entry = shallowReactive<LayerEntry>({ id: nextId, open })
@@ -67,9 +69,10 @@ export function createLayerStack(rootAttrName: string): LayerStack {
     }
 
     return shallowReactive<LayerRegistration>({
-      ...entry,
+      id: entry.id,
+      open: entry.open,
       rootAttrs: Object.freeze({ [rootAttrName]: '' }),
-      isTopmost: computed(() => getTopmostOpenEntry()?.id === entry.id),
+      isTopmost: computed(() => topmostId.value === entry.id),
       unregister
     })
   }

@@ -61,8 +61,8 @@ useModalEsc(
   .ui-fullscreen-modal-enter-active,
   .ui-fullscreen-modal-leave-active {
     transition:
-      transform 0.4s ease-in-out,
-      opacity 0.2s ease-in-out 0.1s;
+      transform 0.25s cubic-bezier(0, 0, 0.2, 1),
+      opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
   }
 
   .ui-fullscreen-modal-enter-from,

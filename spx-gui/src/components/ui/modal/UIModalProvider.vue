@@ -69,21 +69,18 @@ export type ModalEvents = Emitter<{
 
 type ModalContext = {
   events: ModalEvents
-  add(modalInfo: Omit<ModalInfo, 'visible'>): void
+  add(modalInfo: Omit<ModalInfo, 'id' | 'visible'>): void
 }
 
 const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context')
-
-let mid = 0
 
 export function useModal<P extends ModalComponentProps, R>(component: ComponentDefinition<P, ModalComponentEmits<R>>) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
   return function invokeModal(extraProps: Omit<PruneProps<P, ModalComponentEmits<R>>, keyof ModalComponentProps>) {
     return new Promise<R>((resolve, reject) => {
-      mid++
       const handlers = { resolve, reject }
-      ctx.add({ id: mid, component, props: extraProps, handlers })
+      ctx.add({ component, props: extraProps, handlers })
     })
   }
 }
@@ -143,7 +140,7 @@ function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventT
   // Non-focusable DOM elements cannot trigger keydown events, so the target is either the
   // body or a focusable DOM element. If the target is the body, the modal should close.
   if (target === document.body) return true
-  if (!(target instanceof HTMLElement)) return true
+  if (!(target instanceof Element)) return true
   if (findPopupRoot(target) != null) return false
   return modalContainer.contains(target)
 }
@@ -153,8 +150,11 @@ function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventT
 const modalContainer = ref<HTMLElement>()
 const currentModals = shallowReactive<ModalInfo[]>([])
 const emitter: ModalEvents = new Emitter()
+let nextModalId = 0
 
-async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
+async function add({ component, props, handlers }: Omit<ModalInfo, 'id' | 'visible'>) {
+  nextModalId += 1
+  const id = nextModalId
   const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
   currentModals.push(currentModal)
   // The modal entry needs to exist in the tree before it can transition from hidden to visible.

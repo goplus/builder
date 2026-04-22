@@ -116,8 +116,8 @@ function resolveModalSurfaceElement(target: Element | { $el?: Element } | null) 
 function resolveClickOrigin(clickEvent: MouseEvent | null): ModalTransformOrigin | null {
   if (clickEvent == null) return null
   return {
-    x: clickEvent.clientX ?? clickEvent.x,
-    y: clickEvent.clientY ?? clickEvent.y
+    x: clickEvent.clientX,
+    y: clickEvent.clientY
   }
 }
 
