@@ -10,6 +10,8 @@ import {
   resourceWidgetName
 } from './resource'
 
+const numericSuffixRE = /^(.*?)(\d+)$/
+
 function validateAssetName(name: string) {
   if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
   if (name.length > 100)
@@ -168,12 +170,12 @@ export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
 }
 
 function splitNumericSuffix(base: string) {
-  const match = base.match(/^(.*?)(\d+)$/)
+  const match = base.match(numericSuffixRE)
   if (match == null) return null
   return {
-    prefix: match[1],
-    suffix: Number(match[2]),
-    width: match[2].length
+    base: match[1],
+    num: parseInt(match[2], 10),
+    numWidth: match[2].length
   }
 }
 
@@ -188,10 +190,10 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
 
   const numericSuffix = splitNumericSuffix(base)
   if (numericSuffix != null) {
-    for (let i = numericSuffix.suffix + 1; ; i++) {
-      const name = formatNumericSuffix(numericSuffix.prefix, i, numericSuffix.width)
+    for (let i = numericSuffix.num + 1; ; i++) {
+      const name = formatNumericSuffix(numericSuffix.base, i, numericSuffix.numWidth)
       if (isValid(name)) return name
-      if (i - numericSuffix.suffix > 10000) {
+      if (i - numericSuffix.num > 10000) {
         throw new Error(`unexpected infinite loop with base ${base}`)
       }
     }
