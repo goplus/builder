@@ -9,6 +9,7 @@ import type { SpriteGen } from '../gen/sprite-gen'
 import type { BackdropGen } from '../gen/backdrop-gen'
 import { fromBlob, fromConfig, toConfig } from '../../common/file'
 import { getFiles, saveFiles } from '../../common/cloud'
+import { resourceBackdropName, resourceSoundName, resourceSpriteName } from './resource'
 
 export type AssetMetadata = Partial<Omit<AssetData, 'files'>>
 
@@ -34,9 +35,9 @@ export type AssetGenModel<T extends AssetType = AssetType> = T extends AssetType
     : never
 
 const assetTypeMessages = {
-  [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
-  [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
-  [AssetType.Sound]: { en: 'sound', zh: '声音' }
+  [AssetType.Backdrop]: resourceBackdropName,
+  [AssetType.Sprite]: resourceSpriteName,
+  [AssetType.Sound]: resourceSoundName
 }
 
 export function humanizeAssetType(type: AssetType): LocaleMessage {

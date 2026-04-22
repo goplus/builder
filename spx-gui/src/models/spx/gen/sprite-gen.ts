@@ -33,6 +33,7 @@ import {
   validateSpriteName,
   type SpriteLikeParent
 } from '../common/asset-name'
+import { resourceAnimationName, resourceCostumeName } from '../common/resource'
 import { sprite2Asset } from '../common/asset'
 
 /** User selected item in sprite gen */
@@ -351,7 +352,7 @@ export class SpriteGen extends Disposable {
     return this.costumes[0]
   }
   addCostume() {
-    const name = getCostumeName(this)
+    const name = getCostumeName(this, this.i18n.t(resourceCostumeName) + '1')
     const defaultCostumeGen = this.defaultCostume
     if (defaultCostumeGen == null) throw new Error('default costume expected')
     const costumeGen = new CostumeGen(this.i18n, this, this.project, {
@@ -384,7 +385,7 @@ export class SpriteGen extends Disposable {
   /** Animations gen */
   animations: AnimationGen[]
   addAnimation() {
-    const name = getAnimationName(this)
+    const name = getAnimationName(this, this.i18n.t(resourceAnimationName) + '1')
     const defaultCostumeGen = this.defaultCostume
     if (defaultCostumeGen == null) throw new Error('default costume expected')
     const animationGen = new AnimationGen(this.i18n, this, this.project, {
