@@ -713,7 +713,7 @@
   "fonts": [
     {
       "name": "Menlo",
-      "url": "../../images/Menlo-Regular-1.ttf"
+      "url": "../../images/Menlo.ttf"
     },
     {
       "name": "XBuilder_Icons_01",

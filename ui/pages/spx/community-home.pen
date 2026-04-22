@@ -119,7 +119,7 @@
                                   "content": "Join XBuilder",
                                   "lineHeight": 1.5,
                                   "textAlignVertical": "middle",
-                                  "fontFamily": "Inter",
+                                  "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 24,
                                   "fontWeight": "700"
                                 },
@@ -133,7 +133,7 @@
                                   "content": "Build and share your projects",
                                   "lineHeight": 1.5384615384615385,
                                   "textAlignVertical": "middle",
-                                  "fontFamily": "Inter",
+                                  "fontFamily": "Alibaba Health Font 2.0 CN",
                                   "fontSize": 13,
                                   "fontWeight": "normal"
                                 }
@@ -7857,7 +7857,7 @@
                       "fill": "$grey1000",
                       "content": "The community is liking",
                       "lineHeight": 1.4,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 20,
                       "fontWeight": "700"
                     },
@@ -7875,7 +7875,7 @@
                           "fill": "$turquoise500",
                           "content": "View more",
                           "lineHeight": 1.6,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -8013,7 +8013,7 @@
                       "name": "section2Title",
                       "fill": "$grey1000",
                       "content": "The community is remixing",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 20,
                       "fontWeight": "700"
                     },
@@ -8031,7 +8031,7 @@
                           "fill": "$turquoise500",
                           "content": "View more",
                           "lineHeight": 1.6,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -8170,7 +8170,7 @@
                       "fill": "$grey1000",
                       "content": "Users you followed are creating",
                       "lineHeight": 1.4,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 20,
                       "fontWeight": "700"
                     },
@@ -8188,7 +8188,7 @@
                           "fill": "$turquoise500",
                           "content": "View more",
                           "lineHeight": 1.6,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -8373,7 +8373,7 @@
                       "fill": "$grey1000",
                       "content": "My projects",
                       "lineHeight": 1.4,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 20,
                       "fontWeight": "700"
                     },
@@ -8391,7 +8391,7 @@
                           "fill": "$turquoise500",
                           "content": "View more",
                           "lineHeight": 1.6,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -8530,7 +8530,7 @@
                       "fill": "$grey1000",
                       "content": "The community is liking",
                       "lineHeight": 1.4,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 20,
                       "fontWeight": "700"
                     },
@@ -8548,7 +8548,7 @@
                           "fill": "$turquoise500",
                           "content": "View more",
                           "lineHeight": 1.6,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -8686,7 +8686,7 @@
                       "name": "section2Title",
                       "fill": "$grey1000",
                       "content": "The community is remixing",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 20,
                       "fontWeight": "700"
                     },
@@ -8704,7 +8704,7 @@
                           "fill": "$turquoise500",
                           "content": "View more",
                           "lineHeight": 1.6,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -8843,7 +8843,7 @@
                       "fill": "$grey1000",
                       "content": "Users you followed are creating",
                       "lineHeight": 1.4,
-                      "fontFamily": "Inter",
+                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 20,
                       "fontWeight": "700"
                     },
@@ -8861,7 +8861,7 @@
                           "fill": "$turquoise500",
                           "content": "View more",
                           "lineHeight": 1.6,
-                          "fontFamily": "Inter",
+                          "fontFamily": "Alibaba Health Font 2.0 CN",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -9078,7 +9078,7 @@
   "fonts": [
     {
       "name": "Menlo",
-      "url": "../../images/Menlo-Regular-1.ttf"
+      "url": "../../images/Menlo.ttf"
     },
     {
       "name": "XBuilder_Icons_01",
