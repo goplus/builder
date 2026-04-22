@@ -3,7 +3,13 @@
     <div v-if="scratchAssets.sprites.length">
       <h4 class="mb-2">{{ $t({ en: 'Sprites', zh: '精灵' }) }}</h4>
       <div class="grid grid-cols-6 gap-2">
-        <div v-for="asset in scratchAssets.sprites" :key="asset.name" @click="selectSprite(asset)">
+        <div
+          v-for="asset in scratchAssets.sprites"
+          :key="asset.name"
+          role="button"
+          tabindex="0"
+          @click="selectSprite(asset)"
+        >
           <SpriteItem :asset="asset" :selected="selected.sprites.has(asset)" />
         </div>
       </div>
@@ -11,7 +17,13 @@
     <div v-if="scratchAssets.sounds.length">
       <h4 class="mb-2">{{ $t({ en: 'Sounds', zh: '声音' }) }}</h4>
       <div class="grid grid-cols-6 gap-2">
-        <div v-for="asset in scratchAssets.sounds" :key="asset.name" @click="selectSound(asset)">
+        <div
+          v-for="asset in scratchAssets.sounds"
+          :key="asset.name"
+          role="button"
+          tabindex="0"
+          @click="selectSound(asset)"
+        >
           <SoundItem :asset="asset" :selected="selected.sounds.has(asset)" />
         </div>
       </div>
@@ -20,7 +32,13 @@
     <div v-if="scratchAssets.backdrops.length">
       <h4 class="mb-2">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</h4>
       <div class="grid grid-cols-6 gap-2">
-        <div v-for="asset in scratchAssets.backdrops" :key="asset.name" @click="selectBackdrop(asset)">
+        <div
+          v-for="asset in scratchAssets.backdrops"
+          :key="asset.name"
+          role="button"
+          tabindex="0"
+          @click="selectBackdrop(asset)"
+        >
           <BackdropItem :asset="asset" :selected="selected.backdrops.has(asset)" />
         </div>
       </div>
