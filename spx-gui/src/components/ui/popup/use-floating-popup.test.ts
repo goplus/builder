@@ -168,7 +168,8 @@ describe('useFloatingPopup', () => {
     await flushFloatingEffects()
 
     const options = floatingMocks.computePosition.mock.calls[0]?.[2]
-    expect(options?.middleware[0]).toMatchObject({
+    const offsetMiddleware = options?.middleware.find((middleware: { name?: string }) => middleware.name === 'offset')
+    expect(offsetMiddleware).toMatchObject({
       name: 'offset',
       value: {
         mainAxis: POPUP_ARROW_SIZE,

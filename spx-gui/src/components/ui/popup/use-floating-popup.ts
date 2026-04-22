@@ -153,9 +153,9 @@ function resolvePopupState(
 export function resolveDefaultPopupOffset(placement: PopupPlacement, showArrow: boolean): PopupOffset {
   if (!showArrow) return { x: 0, y: 0 }
   const side = placement.split('-')[0]
-  // When an arrow is shown, keep the popup separated from the trigger by one
-  // arrow size along the placement's main axis so the arrow has room to sit
-  // between the popup surface and the trigger edge.
+  // When an arrow is shown, offset the popup by one arrow-size from the trigger
+  // along the placement's main axis, leaving room for the arrow tip to sit in
+  // the gap between the popup surface and the trigger edge.
   if (side === 'left' || side === 'right') {
     return { x: POPUP_ARROW_SIZE, y: 0 }
   }

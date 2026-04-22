@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UITooltip from './UITooltip.vue'
-import { providePopupStack } from './popup'
+import { POPUP_ARROW_SIZE, providePopupStack } from './popup'
 import { providePopupContainer } from './utils'
 
 const floatingMocks = vi.hoisted(() => {
@@ -279,11 +279,12 @@ describe('UITooltip', () => {
     await flushTooltip()
 
     const options = floatingMocks.computePosition.mock.calls[0]?.[2]
+    const offsetMiddleware = options?.middleware.find((middleware: { name?: string }) => middleware.name === 'offset')
     expect(options?.placement).toBe('right')
-    expect(options?.middleware[0]).toMatchObject({
+    expect(offsetMiddleware).toMatchObject({
       name: 'offset',
       value: {
-        mainAxis: 8,
+        mainAxis: POPUP_ARROW_SIZE,
         crossAxis: 0
       }
     })
@@ -315,11 +316,12 @@ describe('UITooltip', () => {
     await flushTooltip()
 
     const options = floatingMocks.computePosition.mock.calls[0]?.[2]
+    const offsetMiddleware = options?.middleware.find((middleware: { name?: string }) => middleware.name === 'offset')
     expect(options?.placement).toBe('top-end')
-    expect(options?.middleware[0]).toMatchObject({
+    expect(offsetMiddleware).toMatchObject({
       name: 'offset',
       value: {
-        mainAxis: 8,
+        mainAxis: POPUP_ARROW_SIZE,
         crossAxis: 0
       }
     })
