@@ -28,7 +28,10 @@ type PenDocument = PenNode & {
 }
 
 const LibraryPath = resolve(process.cwd(), '../ui/components/spx/builder-component.lib.pen')
-const ConfigPanelPath = resolve(process.cwd(), 'src/components/editor/common/viewer/quick-config/common/ConfigPanel.vue')
+const ConfigPanelPath = resolve(
+  process.cwd(),
+  'src/components/editor/common/viewer/quick-config/common/ConfigPanel.vue'
+)
 const UIModalPath = resolve(process.cwd(), 'src/components/ui/modal/UIModal.vue')
 const UIDropdownPath = resolve(process.cwd(), 'src/components/ui/UIDropdown.ts')
 const ProjectItemPath = resolve(process.cwd(), 'src/components/project/ProjectItem.vue')
