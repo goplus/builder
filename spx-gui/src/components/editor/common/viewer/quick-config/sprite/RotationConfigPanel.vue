@@ -142,7 +142,7 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
           {{ $t({ en: 'Right', zh: '右' }) }}
         </UIButtonGroupItem>
       </UIButtonGroup>
-      <UIDivider vertical />
+      <UIDivider vertical class="h-4" />
       <UITooltip>
         {{ $t({ en: 'Back', zh: '返回' }) }}
         <template #trigger>
