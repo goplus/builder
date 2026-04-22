@@ -136,6 +136,7 @@ function resolvePopupState(
 ): ResolvedPopupState {
   const virtualAnchor = options.virtualAnchor == null ? null : toValue(options.virtualAnchor)
   const showArrow = options.showArrow ?? false
+  const placement = options.placement == null ? 'bottom' : toValue(options.placement)
   return {
     visible: toValue(options.visible),
     // Dropdowns can be anchored either to a real trigger element or to an
@@ -143,10 +144,22 @@ function resolvePopupState(
     reference: resolveReferenceElement(referenceEl, virtualAnchor),
     floatingEl,
     arrowEl: showArrow ? arrowEl : null,
-    placement: options.placement == null ? 'bottom' : toValue(options.placement),
-    popupOffset: options.offset == null ? { x: 0, y: 0 } : toValue(options.offset),
+    placement,
+    popupOffset: options.offset == null ? resolveDefaultPopupOffset(placement, showArrow) : toValue(options.offset),
     showArrow
   }
+}
+
+export function resolveDefaultPopupOffset(placement: PopupPlacement, showArrow: boolean): PopupOffset {
+  if (!showArrow) return { x: 0, y: 0 }
+  const side = placement.split('-')[0]
+  // When an arrow is shown, keep the popup separated from the trigger by one
+  // arrow size along the placement's main axis so the arrow has room to sit
+  // between the popup surface and the trigger edge.
+  if (side === 'left' || side === 'right') {
+    return { x: POPUP_ARROW_SIZE, y: 0 }
+  }
+  return { x: 0, y: POPUP_ARROW_SIZE }
 }
 
 export function resolveFloatingOffset(placement: PopupPlacement, offset: PopupOffset) {

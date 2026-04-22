@@ -20,6 +20,7 @@ vi.mock('@floating-ui/dom', () => ({
 
 import {
   POPUP_ARROW_SIZE,
+  resolveDefaultPopupOffset,
   resolveFloatingOffset,
   resolvePopupTransformOrigin,
   useFloatingPopup
@@ -57,6 +58,17 @@ describe('resolveFloatingOffset', () => {
       mainAxis: 6,
       crossAxis: 10
     })
+  })
+})
+
+describe('resolveDefaultPopupOffset', () => {
+  it('uses one arrow-size gap along the main axis when arrows are enabled', () => {
+    expect(resolveDefaultPopupOffset('top-end', true)).toEqual({ x: 0, y: POPUP_ARROW_SIZE })
+    expect(resolveDefaultPopupOffset('right', true)).toEqual({ x: POPUP_ARROW_SIZE, y: 0 })
+  })
+
+  it('keeps the default gap at zero when arrows are disabled', () => {
+    expect(resolveDefaultPopupOffset('bottom', false)).toEqual({ x: 0, y: 0 })
   })
 })
 
@@ -155,6 +167,14 @@ describe('useFloatingPopup', () => {
     popup.arrowRef.value = document.createElement('div')
     await flushFloatingEffects()
 
+    const options = floatingMocks.computePosition.mock.calls[0]?.[2]
+    expect(options?.middleware[0]).toMatchObject({
+      name: 'offset',
+      value: {
+        mainAxis: POPUP_ARROW_SIZE,
+        crossAxis: 0
+      }
+    })
     expect(popup.arrowStyle.value).toMatchObject({
       width: `${POPUP_ARROW_SIZE}px`,
       height: `${POPUP_ARROW_SIZE}px`,

@@ -60,7 +60,6 @@ const {
 } = useFloatingPopup({
   visible: visibleComputed,
   placement: computed(() => props.placement),
-  offset: computed(() => ({ x: 0, y: 8 })),
   showArrow: true
 })
 const popupStyle = computed(

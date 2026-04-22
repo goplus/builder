@@ -252,4 +252,76 @@ describe('UITooltip', () => {
     expect(tooltip.emitted('update:visible')).toEqual([[true], [false]])
     expect(popupContainer.text()).not.toContain('Tooltip content')
   })
+
+  it('uses a main-axis gap for right placement instead of shifting the tooltip downward', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () =>
+                h(
+                  UITooltip,
+                  { delay: 0, placement: 'right' },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger' }, 'Hover me'),
+                    default: () => h('div', 'Tooltip content')
+                  }
+                )
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    await wrapper.get('[data-test-id="trigger"]').trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushTooltip()
+
+    const options = floatingMocks.computePosition.mock.calls[0]?.[2]
+    expect(options?.placement).toBe('right')
+    expect(options?.middleware[0]).toMatchObject({
+      name: 'offset',
+      value: {
+        mainAxis: 8,
+        crossAxis: 0
+      }
+    })
+  })
+
+  it('keeps top-end placement using a vertical gap and no horizontal shift', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () =>
+                h(
+                  UITooltip,
+                  { delay: 0, placement: 'top-end' },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger' }, 'Hover me'),
+                    default: () => h('div', 'Tooltip content')
+                  }
+                )
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    await wrapper.get('[data-test-id="trigger"]').trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushTooltip()
+
+    const options = floatingMocks.computePosition.mock.calls[0]?.[2]
+    expect(options?.placement).toBe('top-end')
+    expect(options?.middleware[0]).toMatchObject({
+      name: 'offset',
+      value: {
+        mainAxis: 8,
+        crossAxis: 0
+      }
+    })
+  })
 })
