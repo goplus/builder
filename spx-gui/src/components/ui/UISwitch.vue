@@ -46,11 +46,6 @@ function handleToggle() {
 <style>
 @layer components {
   .ui-switch {
-    --ui-switch-rail-color: rgba(0, 0, 0, 0.14);
-    --ui-switch-rail-color-active: var(--ui-color-primary-main);
-    --ui-switch-button-color: #fff;
-    --ui-switch-button-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.3), inset 0 0 1px 0 rgba(0, 0, 0, 0.05);
-    --ui-switch-focus-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-color-primary-main) 20%, transparent);
     --ui-switch-rail-width: 40px;
     --ui-switch-rail-height: 22px;
     --ui-switch-button-size: 18px;
@@ -76,6 +71,10 @@ function handleToggle() {
     outline: none;
   }
 
+  .ui-switch--disabled {
+    cursor: not-allowed;
+  }
+
   .ui-switch__rail {
     position: relative;
     display: block;
@@ -83,11 +82,26 @@ function handleToggle() {
     height: var(--ui-switch-rail-height);
     overflow: hidden;
     border-radius: calc(var(--ui-switch-rail-height) / 2);
-    background-color: var(--ui-switch-rail-color);
+    background-color: rgba(0, 0, 0, 0.14);
     transition:
       opacity 0.3s ease,
       background-color 0.3s ease,
       box-shadow 0.3s ease;
+  }
+  .ui-switch--active .ui-switch__rail {
+    background-color: var(--ui-color-primary-main);
+  }
+  .ui-switch--disabled .ui-switch__rail {
+    opacity: 0.5;
+  }
+  /*
+   * Match the old Naive UI behavior: once the switch itself receives focus,
+   * the rail should show the focus ring. Using `:focus` here intentionally
+   * keeps the visual feedback on mouse/pointer focus too, instead of limiting
+   * it to keyboard-only `:focus-visible`.
+   */
+  .ui-switch:focus .ui-switch__rail {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-color-primary-main) 20%, transparent);
   }
 
   .ui-switch__button {
@@ -99,8 +113,10 @@ function handleToggle() {
     max-width: var(--ui-switch-button-size);
     height: var(--ui-switch-button-size);
     border-radius: calc(var(--ui-switch-button-size) / 2);
-    background-color: var(--ui-switch-button-color);
-    box-shadow: var(--ui-switch-button-shadow);
+    background-color: #fff;
+    box-shadow:
+      0 1px 4px 0 rgba(0, 0, 0, 0.3),
+      inset 0 0 1px 0 rgba(0, 0, 0, 0.05);
     transition:
       left 0.3s ease,
       max-width 0.3s ease,
@@ -108,39 +124,14 @@ function handleToggle() {
       box-shadow 0.3s ease,
       opacity 0.3s ease;
   }
-
-  .ui-switch--active .ui-switch__rail {
-    background-color: var(--ui-switch-rail-color-active);
-  }
-
-  .ui-switch--active .ui-switch__button {
-    left: calc(100% - var(--ui-switch-button-size) - var(--ui-switch-offset));
-  }
-
   .ui-switch:not(.ui-switch--disabled):active .ui-switch__button {
     max-width: var(--ui-switch-button-size-pressed);
   }
-
+  .ui-switch--active .ui-switch__button {
+    left: calc(100% - var(--ui-switch-button-size) - var(--ui-switch-offset));
+  }
   .ui-switch--active:not(.ui-switch--disabled):active .ui-switch__button {
     left: calc(100% - var(--ui-switch-button-size-pressed) - var(--ui-switch-offset));
-  }
-
-  /*
-   * Match the old Naive UI behavior: once the switch itself receives focus,
-   * the rail should show the focus ring. Using `:focus` here intentionally
-   * keeps the visual feedback on mouse/pointer focus too, instead of limiting
-   * it to keyboard-only `:focus-visible`.
-   */
-  .ui-switch:focus .ui-switch__rail {
-    box-shadow: var(--ui-switch-focus-shadow);
-  }
-
-  .ui-switch--disabled {
-    cursor: not-allowed;
-  }
-
-  .ui-switch--disabled .ui-switch__rail {
-    opacity: 0.5;
   }
 }
 </style>

@@ -112,9 +112,11 @@ function handleBlur() {
     justify-content: center;
     transition:
       border-color 0.3s ease,
-      background-color 0.3s ease;
+      background-color 0.3s ease,
+      box-shadow 0.3s ease;
   }
   .ui-radio:not(.ui-radio--disabled):hover .ui-radio__dot,
+  .ui-radio:not(.ui-radio--disabled):focus-within .ui-radio__dot,
   .ui-radio--checked:not(.ui-radio--disabled) .ui-radio__dot {
     border-color: var(--ui-color-primary-main);
   }
@@ -138,7 +140,7 @@ function handleBlur() {
 
   .ui-radio__label {
     padding: 0 8px;
-    font-size: var(--ui-font-size-text);
+    font-size: var(--ui-font-size-base);
     line-height: 1;
   }
 }

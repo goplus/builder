@@ -30,14 +30,14 @@ const modelValue = computed({
 <template>
   <UIRadioGroup v-model:value="modelValue" class="py-[5px] self-stretch gap-3">
     <UIRadio
-      class="flex-auto h-8 rounded-md border justify-center gap-0.5"
+      class="flex-auto h-8 rounded-lg border justify-center gap-0.5 [transition:0.3s]"
       :class="modelValue === 'true' ? 'border-primary-500' : 'border-grey-400'"
       value="true"
     >
       <code>true</code>
     </UIRadio>
     <UIRadio
-      class="flex-auto h-8 rounded-md border justify-center gap-0.5"
+      class="flex-auto h-8 rounded-lg border justify-center gap-0.5 [transition:0.3s]"
       :class="modelValue === 'false' ? 'border-primary-500' : 'border-grey-400'"
       value="false"
     >

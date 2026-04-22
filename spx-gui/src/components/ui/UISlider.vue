@@ -1,5 +1,19 @@
 <template>
   <div class="group" :class="cn('relative h-5 w-full min-w-0 inline-flex items-center', props.class)">
+    <input
+      v-bind="controlBindings"
+      class="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0 appearance-none outline-none disabled:cursor-not-allowed focus:outline-none"
+      type="range"
+      :min="minValue"
+      :max="maxValue"
+      :step="stepValue"
+      :value="localValue"
+      :disabled="props.disabled"
+      @input="handleNativeInput"
+      @change="handleNativeChange"
+      @blur="onBlur"
+    />
+
     <div class="relative" :class="railClass">
       <div class="absolute inset-y-0 left-0 rounded-full bg-primary-500" :style="{ width: `${fillPercent}%` }"></div>
       <div
@@ -19,20 +33,6 @@
         ></div>
       </div>
     </div>
-
-    <input
-      v-bind="controlBindings"
-      class="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0 appearance-none outline-none disabled:cursor-not-allowed focus:outline-none"
-      type="range"
-      :min="minValue"
-      :max="maxValue"
-      :step="stepValue"
-      :value="localValue"
-      :disabled="props.disabled"
-      @input="handleNativeInput"
-      @change="handleNativeChange"
-      @blur="onBlur"
-    />
   </div>
 </template>
 
@@ -112,9 +112,9 @@ function handleNativeInput(event: Event) {
 function handleNativeChange(event: Event) {
   const nextValue = clampValue(Number((event.target as HTMLInputElement).value))
   localValue.value = nextValue
-  if (props.updateOn === 'dragend') {
-    emit('update:value', nextValue)
-  }
+  if (props.updateOn !== 'dragend') return
+
+  emit('update:value', nextValue)
   onChange()
 }
 </script>

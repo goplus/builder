@@ -133,7 +133,8 @@ function handleBlur() {
     background: var(--ui-color-grey-300);
     color: var(--ui-color-disabled-text);
   }
-  .ui-checkbox:not(.ui-checkbox--disabled):hover .ui-checkbox__box {
+  .ui-checkbox:not(.ui-checkbox--disabled):hover .ui-checkbox__box,
+  .ui-checkbox:not(.ui-checkbox--disabled):focus-within .ui-checkbox__box {
     border-color: var(--ui-color-primary-main);
   }
   .ui-checkbox--checked:not(.ui-checkbox--disabled) .ui-checkbox__box {
@@ -158,7 +159,7 @@ function handleBlur() {
 
   .ui-checkbox__label {
     padding: 0 8px;
-    font-size: var(--ui-font-size-text);
+    font-size: var(--ui-font-size-base);
     line-height: 1;
   }
 }

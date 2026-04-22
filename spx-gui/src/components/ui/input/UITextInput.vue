@@ -138,11 +138,10 @@ function handleTextInput(event: Event) {
 }
 
 function handleClear() {
-  // Match the previous UX: clear the value first, then restore focus back to the text control.
+  if (props.disabled || props.readonly) return
   emitValue('')
-  // The clear button updates the value outside the native `input` event path,
-  // so we still treat it as an input-like change for field validation timing.
   onInput()
+  // Match the previous UX: clear the value first, then restore focus back to the text control.
   void nextTick(() => {
     controlRef.value?.focus()
   })
