@@ -21,7 +21,7 @@ export const fontSize = {
 } as const
 
 export const fontFamily = {
-  // Figma typography uses self-hosted Inter for EN and self-hosted Source Han Sans SC for CN in the same stack.
+  // Prefer self-hosted Inter and use locally installed Source Han Sans SC when available, then fall back to common system sans fonts.
   main: `Inter,
   'Source Han Sans SC',
   'PingFang SC',

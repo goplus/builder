@@ -157,8 +157,7 @@ export function resolveButtonCssVars({ type, disabled, loading }: ButtonCssVarSt
   }
 }
 
-const buttonRootBaseClass =
-  'inline-flex cursor-pointer items-center justify-center p-0 font-medium disabled:cursor-not-allowed'
+const buttonRootBaseClass = 'inline-flex cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed'
 
 const buttonRootSurfaceClass =
   'border bg-(--ui-button-bg-color) text-(--ui-button-color) border-(--ui-button-border-color) transition-colors'

@@ -176,7 +176,7 @@
   --color-black: #000;
   --color-white: #fff;
 
-  /* Typography tokens bridged from the UI token layer. */
+  /* Typography tokens bridged from the UI token layer. Source Han Sans SC stays local-only; otherwise fall back to system sans fonts. */
   --font-main: var(
     --ui-font-family-main,
     Inter,
@@ -240,4 +240,6 @@
   --text-xl--line-height: 26px;
   --text-2xl: var(--ui-font-size-2xl, 20px);
   --text-2xl--line-height: 28px;
+  /* F1 / 2xl is the only text size that keeps a 500 weight across the project. */
+  --text-2xl--font-weight: 500;
 }

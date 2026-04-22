@@ -49,6 +49,7 @@ const style = {
     box-sizing: border-box;
     width: var(--block-item-size);
     height: var(--block-item-size);
+    flex: 0 0 auto; /* Do not grow or shrink by default */
     display: flex;
     flex-direction: column;
     align-items: center;

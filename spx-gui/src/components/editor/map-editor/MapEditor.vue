@@ -32,7 +32,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
     </div>
     <div class="flex-[0_0_400px] flex flex-col gap-xl desktop-large:basis-124">
       <UICard>
-        <UICardHeader>
+        <UICardHeader class="h-11">
           <div class="w-full flex items-center justify-between">
             {{
               $t({

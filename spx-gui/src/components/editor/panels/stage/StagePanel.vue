@@ -27,7 +27,7 @@
             @click="openTab('backdrops')"
           >
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <span class="h-6 w-6" v-html="backdropSvg"></span>
+            <span class="h-7.5 w-7.5 flex items-center justify-center" v-html="backdropSvg"></span>
             <span>{{ $t({ en: 'Backdrops', zh: '背景' }) }}</span>
           </button>
           <button
@@ -37,7 +37,7 @@
             @click="openTab('sounds')"
           >
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <span class="h-6 w-6" v-html="soundSvg"></span>
+            <span class="h-7.5 w-7.5 flex items-center justify-center" v-html="soundSvg"></span>
             <span>{{ $t({ en: 'Sounds', zh: '声音' }) }}</span>
           </button>
           <button
@@ -50,7 +50,7 @@
             @click="openTab('widgets')"
           >
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <span class="h-6 w-6" v-html="widgetSvg"></span>
+            <span class="h-7.5 w-7.5 flex items-center justify-center" v-html="widgetSvg"></span>
             <span>{{ $t({ en: 'Widgets', zh: '控件' }) }}</span>
           </button>
         </div>
@@ -86,8 +86,8 @@ const backdrop = computed(() => editorCtx.project.stage.defaultBackdrop)
 const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 
 const quickEntryClass =
-  'h-14 w-14 cursor-pointer flex flex-col items-center justify-center \
-rounded-md border-none bg-grey-100 p-2 text-2xs font-semibold text-grey-800 outline-none \
+  'h-14 w-14 cursor-pointer flex flex-col items-center justify-center gap-0.5 \
+rounded-md border-none bg-grey-100 p-1 text-2xs text-grey-900 outline-none \
 transition-colors hover:bg-grey-300'
 </script>
 

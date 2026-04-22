@@ -8,11 +8,10 @@
       @update:visible="handleDropdownVisibleUpdate"
     >
       <template #trigger>
-        <ul class="flex items-center gap-1 rounded-sm bg-grey-100 p-1 shadow-sm">
+        <ul class="flex items-center gap-1 rounded-md bg-grey-100 p-1 shadow-sm">
           <li
             v-radar="{ name: 'Edit duration', desc: 'Click to edit animation duraion' }"
-            class="h-8 cursor-pointer flex items-center gap-1 rounded-sm px-3 text-xs text-text transition-all"
-            :class="activeSetting === 'duration' ? 'bg-primary-200 text-primary-main' : ''"
+            :class="getSummaryItemClass('duration')"
             @click="handleSummaryClick('duration')"
           >
             <UIIcon type="timer" />
@@ -25,8 +24,7 @@
           </li>
           <li
             v-radar="{ name: 'Edit bound state', desc: 'Click to edit animation bound state' }"
-            class="h-8 cursor-pointer flex items-center gap-1 rounded-sm px-3 text-xs text-text transition-all"
-            :class="activeSetting === 'bound-state' ? 'bg-primary-200 text-primary-main' : ''"
+            :class="getSummaryItemClass('bound-state')"
             @click="handleSummaryClick('bound-state')"
           >
             <UIIcon type="status" />
@@ -41,8 +39,7 @@
           <li
             v-if="soundEditable"
             v-radar="{ name: 'Edit sound', desc: 'Click to edit animation sound' }"
-            class="h-8 cursor-pointer flex items-center gap-1 rounded-sm px-3 text-xs text-text transition-all"
-            :class="activeSetting === 'sound' ? 'bg-primary-200 text-primary-main' : ''"
+            :class="getSummaryItemClass('sound')"
             @click="handleSummaryClick('sound')"
           >
             <UIIcon type="sound" />
@@ -84,6 +81,12 @@ const soundName = computed(() => editorCtx.project.sounds.find((s) => s.id === p
 type Setting = 'duration' | 'bound-state' | 'sound'
 
 const activeSetting = ref<Setting | null>(null)
+
+const summaryItemBaseClass = 'h-8 cursor-pointer flex items-center gap-1 rounded-sm px-3 text-xs transition-all'
+
+function getSummaryItemClass(setting: Setting) {
+  return `${summaryItemBaseClass} ${activeSetting.value === setting ? 'bg-primary-200 text-primary-main' : 'text-text'}`
+}
 
 function handleSummaryClick(setting: Setting) {
   activeSetting.value = activeSetting.value === setting ? null : setting

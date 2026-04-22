@@ -160,7 +160,7 @@ function handleCategoryClick(id: string) {
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
-          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-sm transition-colors duration-100"
+          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
           :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
           @click="handleCategoryClick(c.id)"
         >

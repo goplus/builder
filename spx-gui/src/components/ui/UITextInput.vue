@@ -100,6 +100,12 @@ const nInput = ref<InstanceType<typeof NInput> | null>(null)
 onMounted(() => {
   if (props.autofocus && nInput.value != null) nInput.value.focus()
 })
+
+defineExpose({
+  getInputElement() {
+    return nInput.value?.inputElRef ?? null
+  }
+})
 </script>
 
 <style>

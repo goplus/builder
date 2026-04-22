@@ -21,7 +21,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   >
     <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
     <div
-      class="absolute bottom-0 w-full box-border overflow-hidden bg-grey-1000/30 px-4 text-lg/10 font-semibold text-grey-100 text-ellipsis whitespace-nowrap"
+      class="absolute bottom-0 w-full box-border overflow-hidden bg-grey-1000/30 px-4 text-lg/10 text-grey-100 text-ellipsis whitespace-nowrap"
       :title="course.title"
     >
       {{ course.title }}

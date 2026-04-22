@@ -18,7 +18,7 @@ const router = useRouter()
     <div class="w-full flex-1 flex flex-col items-center justify-center gap-4">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-html="errorSvg"></div>
-      <p class="text-2xl text-grey-1000 font-semibold">
+      <p class="text-2xl text-grey-1000">
         {{ $t({ en: 'Page not found', zh: '页面未找到' }) }}
       </p>
       <UIButton

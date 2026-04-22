@@ -709,19 +709,25 @@
           </div>
           <div :class="surfaceCardClass">
             <div :class="groupLabelClass">GenLoading</div>
-            <div :class="[controlRowClass, 'mb-3']">
-              <label :class="controlFieldClass">
-                <span :class="fieldLabelClass">variant</span>
-                <UISelect v-model:value="genLoadingVariant">
-                  <UISelectOption value="default">default</UISelectOption>
-                  <UISelectOption value="bg-spin">bg-spin</UISelectOption>
-                </UISelect>
-              </label>
-            </div>
-            <div class="relative min-h-55 overflow-hidden rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4">
-              <GenLoading cover :visible="loadingDemoVisible" :variant="genLoadingVariant">
-                {{ $t({ en: 'Generating sprite variations', zh: '正在生成精灵变体' }) }}
-              </GenLoading>
+            <div :class="variantGroupClass">
+              <div>
+                <div :class="groupLabelClass">Compact Without Text</div>
+                <div class="flex justify-center rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4">
+                  <div class="relative h-28 w-28 overflow-hidden rounded-(--ui-border-radius-md)">
+                    <GenLoading cover :visible="loadingDemoVisible" animation-style="width: 60px; height: 60px;" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div :class="groupLabelClass">Large With Text</div>
+                <div
+                  class="relative min-h-55 overflow-hidden rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4"
+                >
+                  <GenLoading cover :visible="loadingDemoVisible">
+                    {{ $t({ en: 'Generating sprite variations', zh: '正在生成精灵变体' }) }}
+                  </GenLoading>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -855,7 +861,7 @@ const exampleStackClass = 'flex flex-col gap-3'
 const wrapRowClass = 'flex flex-wrap gap-2'
 const variantStackClass = 'flex flex-col gap-5'
 const variantGroupClass = 'flex flex-col gap-3'
-const variantLabelClass = 'text-sm font-semibold leading-[22px] text-[var(--ui-color-grey-1000)]'
+const variantLabelClass = 'text-sm leading-[22px] text-[var(--ui-color-grey-1000)]'
 const choiceColumnClass = 'flex flex-col gap-3'
 const tabsContentClass =
   'rounded-[var(--ui-border-radius-md)] bg-[var(--ui-color-grey-100)] p-4 text-sm leading-[22px] text-[var(--ui-color-grey-900)]'
@@ -899,7 +905,6 @@ const tabValue = ref('assets')
 const loadingDemoVisible = ref(true)
 const loadingDemoMask = ref<'none' | 'semi-transparent' | 'solid'>('semi-transparent')
 const detailedLoadingProgress = ref<number | null>(42)
-const genLoadingVariant = ref<'default' | 'bg-spin'>('default')
 const assetItemsSelectable = ref(true)
 const assetItemsSelected = ref(false)
 const assetItemsVisibleMode = ref<'default' | 'visible' | 'hidden'>('default')
