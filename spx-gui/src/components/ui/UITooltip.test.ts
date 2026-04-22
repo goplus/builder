@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UITooltip from './UITooltip.vue'
-import { providePopupStack } from './popup'
+import { POPUP_ARROW_SIZE, providePopupStack } from './popup'
 import { providePopupContainer } from './utils'
 
 const floatingMocks = vi.hoisted(() => {
@@ -251,5 +251,79 @@ describe('UITooltip', () => {
 
     expect(tooltip.emitted('update:visible')).toEqual([[true], [false]])
     expect(popupContainer.text()).not.toContain('Tooltip content')
+  })
+
+  it('uses a main-axis gap for right placement instead of shifting the tooltip downward', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () =>
+                h(
+                  UITooltip,
+                  { delay: 0, placement: 'right' },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger' }, 'Hover me'),
+                    default: () => h('div', 'Tooltip content')
+                  }
+                )
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    await wrapper.get('[data-test-id="trigger"]').trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushTooltip()
+
+    const options = floatingMocks.computePosition.mock.calls[0]?.[2]
+    const offsetMiddleware = options?.middleware.find((middleware: { name?: string }) => middleware.name === 'offset')
+    expect(options?.placement).toBe('right')
+    expect(offsetMiddleware).toMatchObject({
+      name: 'offset',
+      value: {
+        mainAxis: POPUP_ARROW_SIZE,
+        crossAxis: 0
+      }
+    })
+  })
+
+  it('keeps top-end placement using a vertical gap and no horizontal shift', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () =>
+                h(
+                  UITooltip,
+                  { delay: 0, placement: 'top-end' },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger' }, 'Hover me'),
+                    default: () => h('div', 'Tooltip content')
+                  }
+                )
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    await wrapper.get('[data-test-id="trigger"]').trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushTooltip()
+
+    const options = floatingMocks.computePosition.mock.calls[0]?.[2]
+    const offsetMiddleware = options?.middleware.find((middleware: { name?: string }) => middleware.name === 'offset')
+    expect(options?.placement).toBe('top-end')
+    expect(offsetMiddleware).toMatchObject({
+      name: 'offset',
+      value: {
+        mainAxis: POPUP_ARROW_SIZE,
+        crossAxis: 0
+      }
+    })
   })
 })

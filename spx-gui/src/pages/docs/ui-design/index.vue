@@ -395,6 +395,94 @@
         </div>
       </section>
 
+      <section id="ui-tooltip" :class="sectionClass">
+        <div :class="sectionHeaderClass">
+          <h2 :class="sectionTitleClass">UITooltip</h2>
+          <p :class="sectionDescriptionClass">
+            {{
+              $t({
+                en: 'Hover tooltip examples for checking placement, disabled state, and content behavior.',
+                zh: '用于检查不同方向、禁用态的 tooltip 示例。'
+              })
+            }}
+          </p>
+        </div>
+
+        <div :class="showcaseGridClass">
+          <div :class="surfaceCardClass">
+            <div :class="groupLabelClass">Placements</div>
+            <div :class="wrapRowClass">
+              <UITooltip v-for="placement in tooltipPlacements" :key="placement" :placement="placement">
+                <template #trigger>
+                  <UIButton type="white">{{ placement }}</UIButton>
+                </template>
+                {{ `Tooltip: ${placement}` }}
+              </UITooltip>
+              <UITooltip disabled>
+                <template #trigger>
+                  <UIButton type="neutral">disabled</UIButton>
+                </template>
+                {{ 'YOU SHOULD NOT SEE ME' }}
+              </UITooltip>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ui-dropdown" :class="sectionClass">
+        <div :class="sectionHeaderClass">
+          <h2 :class="sectionTitleClass">UIDropdown</h2>
+          <p :class="sectionDescriptionClass">
+            {{
+              $t({
+                en: 'Dropdown examples for placement, trigger mode, disabled state.',
+                zh: '用于检查不同方向、触发方式和禁用态行为的 dropdown 示例。'
+              })
+            }}
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div :class="surfaceCardClass">
+            <div :class="controlRowClass">
+              <label :class="[controlFieldClass, compactFieldClass]">
+                <span>tigger: </span>
+                <UIRadioGroup v-model:value="dropdownTriggerType">
+                  <UIRadio value="hover">Hover</UIRadio>
+                  <UIRadio value="click">Click</UIRadio>
+                </UIRadioGroup>
+              </label>
+            </div>
+            <div :class="groupLabelClass">Placements</div>
+            <div :class="wrapRowClass">
+              <UIDropdown
+                v-for="placement in dropdownPlacements"
+                :key="placement"
+                :placement="placement"
+                :trigger="dropdownTriggerType"
+              >
+                <template #trigger>
+                  <UIButton type="white">{{ placement }}</UIButton>
+                </template>
+                <UIMenu>
+                  <UIMenuItem>Action one</UIMenuItem>
+                  <UIMenuItem>Action two</UIMenuItem>
+                  <UIMenuItem>Action three</UIMenuItem>
+                </UIMenu>
+              </UIDropdown>
+              <UIDropdown disabled :trigger="dropdownTriggerType">
+                <template #trigger>
+                  <UIButton type="neutral">disabled</UIButton>
+                </template>
+                <UIMenu>
+                  <UIMenuItem>YOU SHOULD NOT SEE ME</UIMenuItem>
+                </UIMenu>
+              </UIDropdown>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="ui-block-items" :class="sectionClass">
         <div :class="sectionHeaderClass">
           <h2 :class="sectionTitleClass">UIBlockItem Wrappers</h2>
@@ -782,6 +870,7 @@ import {
   UICardHeader,
   UICheckbox,
   UICheckboxGroup,
+  UIDropdown,
   UIEditorBackdropItem,
   UIEditorSoundItem,
   UIEditorSpriteItem,
@@ -803,7 +892,10 @@ import {
   UITab,
   UITabs,
   UITag,
+  UITooltip,
   UITextInput,
+  UIMenu,
+  UIMenuItem,
   useMessage
 } from '@/components/ui'
 import GenLoading from '@/components/asset/gen/common/GenLoading.vue'
@@ -869,6 +961,8 @@ const directoryItems = [
   { id: 'ui-choices', label: 'Choices' },
   { id: 'ui-tabs', label: 'UITabs' },
   { id: 'ui-card', label: 'UICard' },
+  { id: 'ui-tooltip', label: 'UITooltip' },
+  { id: 'ui-dropdown', label: 'UIDropdown' },
   { id: 'ui-block-items', label: 'UIBlockItem Wrappers' },
   { id: 'gen-item', label: 'GenItem' },
   { id: 'ui-tag', label: 'UITag' },
@@ -878,6 +972,17 @@ const directoryItems = [
 
 const buttonTypes = ['primary', 'secondary', 'neutral', 'white', 'red', 'green', 'blue', 'purple'] as const
 const tagDirections = ['up', 'right', 'down', 'left'] as const
+const tooltipPlacements = [
+  'top',
+  'top-start',
+  'top-end',
+  'left',
+  'right',
+  'bottom',
+  'bottom-start',
+  'bottom-end'
+] as const
+const dropdownPlacements = ['top', 'top-start', 'top-end', 'bottom', 'bottom-start', 'bottom-end'] as const
 
 const buttonShape = ref<'circle' | 'square'>('circle')
 const buttonSize = ref<'small' | 'medium' | 'large'>('medium')
@@ -931,6 +1036,8 @@ const assetItemsVisibleLabel = computed(() => {
 })
 
 async function handleSoundDemoPlay() {}
+
+const dropdownTriggerType = ref<'hover' | 'click'>('click')
 
 const tagVariant = ref<'stroke' | 'none'>('stroke')
 const message = useMessage()
