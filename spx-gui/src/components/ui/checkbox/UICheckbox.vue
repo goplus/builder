@@ -17,9 +17,9 @@
       @blur="handleBlur"
     />
     <span class="ui-checkbox__box" aria-hidden="true">
-      <svg viewBox="0 0 64 64" class="ui-checkbox__box-icon">
+      <svg viewBox="0 0 12 12" class="ui-checkbox__box-icon">
         <path
-          d="M50.42,16.76L22.34,39.45l-8.1-11.46c-1.12-1.58-3.3-1.96-4.88-0.84c-1.58,1.12-1.95,3.3-0.84,4.88l10.26,14.51  c0.56,0.79,1.42,1.31,2.38,1.45c0.16,0.02,0.32,0.03,0.48,0.03c0.8,0,1.57-0.27,2.2-0.78l30.99-25.03c1.5-1.21,1.74-3.42,0.52-4.92  C54.13,15.78,51.93,15.55,50.42,16.76z"
+          d="M9.46967 2.46967C9.76256 2.17678 10.2373 2.17678 10.5302 2.46967C10.823 2.76257 10.8231 3.23736 10.5302 3.53022L5.03022 9.03022C4.73736 9.32307 4.26257 9.323 3.96967 9.03022L1.46967 6.53022C1.17678 6.23732 1.17678 5.76256 1.46967 5.46967C1.76256 5.17678 2.23732 5.17678 2.53022 5.46967L4.49994 7.4394L9.46967 2.46967Z"
           fill="currentColor"
         />
       </svg>
@@ -117,7 +117,7 @@ function handleBlur() {
     flex: none;
     width: 16px;
     height: 16px;
-    border-radius: 50%;
+    border-radius: var(--ui-border-radius-sm);
     border: 1px solid var(--ui-color-grey-600);
     background: var(--ui-color-grey-100);
     color: transparent;
@@ -131,20 +131,26 @@ function handleBlur() {
   }
   .ui-checkbox--disabled .ui-checkbox__box {
     background: var(--ui-color-grey-300);
-    color: var(--ui-color-disabled-text);
   }
   .ui-checkbox:not(.ui-checkbox--disabled):hover .ui-checkbox__box,
   .ui-checkbox:not(.ui-checkbox--disabled):focus-within .ui-checkbox__box {
     border-color: var(--ui-color-primary-main);
   }
+  .ui-checkbox--checked .ui-checkbox__box {
+    color: var(--ui-color-grey-100);
+  }
   .ui-checkbox--checked:not(.ui-checkbox--disabled) .ui-checkbox__box {
     border-color: var(--ui-color-primary-main);
     background: var(--ui-color-primary-main);
-    color: var(--ui-color-grey-100);
+  }
+  .ui-checkbox--checked.ui-checkbox--disabled .ui-checkbox__box {
+    border-color: var(--ui-color-primary-300);
+    background: var(--ui-color-primary-300);
   }
 
   .ui-checkbox__box-icon {
-    width: 100%;
+    width: 12px;
+    height: 12px;
     opacity: 0;
     transform: scale(0.5);
     transform-origin: center;

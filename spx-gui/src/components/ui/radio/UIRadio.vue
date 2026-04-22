@@ -120,10 +120,16 @@ function handleBlur() {
   .ui-radio--checked:not(.ui-radio--disabled) .ui-radio__dot {
     border-color: var(--ui-color-primary-main);
   }
+  .ui-radio--checked.ui-radio--disabled .ui-radio__dot {
+    border-color: var(--ui-color-primary-300);
+  }
+  .ui-radio--disabled:not(.ui-radio--checked) .ui-radio__dot {
+    background: var(--ui-color-grey-300);
+  }
 
   .ui-radio__dot-indicator {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: var(--ui-color-primary-main);
     opacity: 0;
@@ -134,8 +140,8 @@ function handleBlur() {
     opacity: 1;
     transform: scale(1);
   }
-  .ui-radio--disabled .ui-radio__dot-indicator {
-    background-color: var(--ui-color-grey-600);
+  .ui-radio--checked.ui-radio--disabled .ui-radio__dot-indicator {
+    background-color: var(--ui-color-primary-300);
   }
 
   .ui-radio__label {
