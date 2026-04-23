@@ -23,6 +23,7 @@ vi.mock('@floating-ui/dom', () => ({
 
 async function flushDropdown() {
   await nextTick()
+  await vi.advanceTimersByTimeAsync(0)
   await Promise.resolve()
   await nextTick()
 }
@@ -237,12 +238,63 @@ describe('UIDropdown', () => {
     await flushDropdown()
     expect(popupContainer.text()).toContain('Dropdown content')
 
-    await wrapper.get('[data-test-id="outside"]').trigger('mouseup')
+    await wrapper.get('[data-test-id="outside"]').trigger('click')
     await flushDropdown()
 
     expect(dropdown.emitted('clickOutside')).toHaveLength(1)
     expect(dropdown.emitted('update:visible')).toEqual([[true], [false]])
     expect(popupContainer.text()).not.toContain('Dropdown content')
+  })
+
+  it('does not immediately close when manual control opens it on mouseup', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          const visible = ref(false)
+
+          return () =>
+            h(PopupProvider, null, {
+              default: () => [
+                h(
+                  UIDropdown,
+                  {
+                    trigger: 'manual',
+                    visible: visible.value,
+                    'onUpdate:visible': (nextVisible: boolean) => (visible.value = nextVisible)
+                  },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger' }, 'Trigger'),
+                    default: () => h('div', 'Dropdown content')
+                  }
+                ),
+                h(
+                  'button',
+                  {
+                    'data-test-id': 'opener',
+                    onMouseup: () => {
+                      visible.value = true
+                    }
+                  },
+                  'Open'
+                )
+              ]
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const dropdown = wrapper.getComponent(UIDropdown)
+    const popupContainer = wrapper.get('[data-test-id="popup-container"]')
+    const openerEl = wrapper.get('[data-test-id="opener"]').element
+
+    openerEl.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+    openerEl.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushDropdown()
+
+    expect(dropdown.emitted('clickOutside')).toBeUndefined()
+    expect(dropdown.emitted('update:visible')).toBeUndefined()
+    expect(popupContainer.text()).toContain('Dropdown content')
   })
 
   it('keeps the internal trigger ref working even when the trigger slot node also defines a ref', async () => {
@@ -340,7 +392,7 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).toContain('Parent content')
     expect(popupContainer.text()).toContain('Child content')
 
-    await wrapper.get('[data-test-id="parent-content"]').trigger('mouseup')
+    await wrapper.get('[data-test-id="parent-content"]').trigger('click')
     await flushDropdown()
 
     expect(childDropdown.emitted('update:visible')).toEqual([[false]])

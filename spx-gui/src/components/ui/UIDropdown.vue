@@ -44,6 +44,8 @@ export type Props = {
 
 <script setup lang="ts">
 import { computed, onScopeDispose, provide, ref, useSlots, watch, watchEffect, type CSSProperties } from 'vue'
+import { timeout } from '@/utils/utils'
+import { getCleanupSignal } from '@/utils/disposable'
 import { cn } from './utils'
 import {
   PopupRenderTrigger,
@@ -202,15 +204,11 @@ watch(
   { immediate: true }
 )
 
-watchEffect((onCleanup) => {
+watchEffect(async (onCleanup) => {
   if (!visibleComputed.value || !popup.isTopmost.value) return
 
   // Close the dropdown when user clicks outside of it.
-  // We listen to event `mouseup` instead `click` here. This avoids a
-  // timing issue with manual control: a caller may open the dropdown on
-  // `mouseup`, and a later document `click` event from the same click interaction would
-  // immediately close it again.
-  function handleDocumentMouseup(e: MouseEvent) {
+  function handleDocumentClick(e: MouseEvent) {
     // Ignore clicks that belong to the current trigger/content pair. Nested
     // dropdowns register separately, so their own stack entry handles itself.
     if (isEventInsideCurrentDropdown(e, triggerRef.value, contentRef.value)) return
@@ -226,12 +224,15 @@ watchEffect((onCleanup) => {
     setVisible(false)
   }
 
-  document.addEventListener('mouseup', handleDocumentMouseup, true)
-  window.addEventListener('keydown', handleDocumentKeydown)
-  onCleanup(() => {
-    document.removeEventListener('mouseup', handleDocumentMouseup, true)
-    window.removeEventListener('keydown', handleDocumentKeydown)
-  })
+  const signal = getCleanupSignal(onCleanup)
+  window.addEventListener('keydown', handleDocumentKeydown, { signal })
+
+  // Delay the outside-click listener to the next macro task.
+  // This avoids a timing issue with manual control: a caller may open the dropdown on
+  // event `mouseup`, and the document `click` event from the same click interaction would
+  // trigger `handleDocumentClick` here and immediately close the dropdown again.
+  await timeout(0)
+  if (!signal.aborted) document.addEventListener('click', handleDocumentClick, { capture: true, signal })
 })
 
 const exposed: PopupTriggerHandle & { setVisible(visible: boolean): void } = {
