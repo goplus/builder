@@ -11,14 +11,14 @@
   h1 {
     font-size: 20px;
     line-height: 28px;
-    font-weight: 700;
+    font-weight: 500;
   }
 
   /* Standard title */
   h2 {
     font-size: 16px;
     line-height: 26px;
-    font-weight: 600;
+    font-weight: 400;
   }
 
   /* Text in navigation bar */
@@ -27,7 +27,7 @@
   h4 {
     font-size: 14px;
     line-height: 22px;
-    font-weight: 500;
+    font-weight: 400;
   }
 
   /* More information */
@@ -47,7 +47,12 @@
     font-family: inherit;
   }
 
-  button:focus {
+  /**
+   * Make focus visible for keyboard users, but not for mouse users. TODO:
+   * - Consider using :focus-visible instead
+   * - Include other interactive elements such as links, form controls and [tabindex] elements
+   */
+  button:focus-visible {
     outline: 2px solid var(--ui-color-primary-600);
   }
 }
@@ -65,20 +70,5 @@
   src: url('./fonts/InterVariable-Italic.woff2') format('woff2');
   font-style: italic;
   font-weight: 100 900;
-  font-display: swap;
-}
-
-/*
- * TODO: This Source Han Sans SC file is still quite large.
- * Revisit whether we can further subset it or switch to a loading strategy that does not force every client to download it eagerly.
- */
-@font-face {
-  font-family: 'Source Han Sans SC';
-  src:
-    local('Source Han Sans SC'),
-    local('Source Han Sans CN'),
-    url('./fonts/SourceHanSansCN-VF.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 200 900;
   font-display: swap;
 }

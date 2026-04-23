@@ -214,7 +214,7 @@ const handleSubmit = useMessageHandle(
       </UIFormItem>
 
       <div class="mb-6">
-        <label class="mb-3 block font-medium text-grey-800">
+        <label class="mb-3 block text-grey-800">
           {{ $t({ en: 'Courses', zh: '课程' }) }}
         </label>
         <div class="grid h-100 grid-cols-2 gap-6">

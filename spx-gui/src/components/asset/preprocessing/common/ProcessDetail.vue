@@ -6,7 +6,6 @@
       </div>
       <UIButton
         v-show="applyFn && !applied"
-        icon="check"
         type="green"
         :loading="handleApply.isLoading.value"
         @click="handleApply.fn"

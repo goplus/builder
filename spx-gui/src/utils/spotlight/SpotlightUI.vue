@@ -393,7 +393,6 @@ watch(
   border-radius: 14px;
   padding: 2px;
   font-size: 12px;
-  font-weight: 600;
   background: var(--ui-color-grey-100);
   word-wrap: break-word;
   max-width: 300px;

@@ -1,7 +1,7 @@
 <template>
   <!-- TODO: is there any way to avoid the wrapper `<div>`? -->
   <!-- eslint-disable-next-line vue/no-v-html -->
-  <div :class="rootClass" v-html="typeIconMap[type]"></div>
+  <div :class="rootClass" :data-icon-type="type" v-html="typeIconMap[type]"></div>
 </template>
 
 <script setup lang="ts">

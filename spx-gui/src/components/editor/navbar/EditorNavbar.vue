@@ -91,14 +91,10 @@
       </div>
     </template>
     <template #center>
-      <template v-if="project != null">
-        <EditorProjectDisplayName
-          :project="project"
-          :can-edit="canEditProjectDisplayName"
-          :owner-display-name="ownerInfoToDisplay?.displayName ?? null"
-          :auto-save-state-icon="autoSaveStateIcon"
-        />
-      </template>
+      <div v-if="project != null" class="flex items-center justify-center gap-2">
+        <EditorProjectDisplayName :project="project" />
+        <EditorAutoSaveStateIcon :editing="state?.editing ?? null" />
+      </div>
     </template>
     <template #right>
       <UIButtonGroup
@@ -159,13 +155,13 @@ import {
   UITag
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { getProjectEditorRouteParams } from '@/utils/project-route'
 import { selectFile } from '@/utils/file'
 import { convertScratchToXbp } from '@/apis/sb2xbp'
 import { type SpxProject } from '@/models/spx/project'
-import { useSignedInUser, useUser } from '@/stores/user'
+import { useSignedInUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
 import { showTutorialsEntry } from '@/utils/env'
@@ -177,8 +173,8 @@ import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
+import EditorAutoSaveStateIcon from './EditorAutoSaveStateIcon.vue'
 import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
-import { SavingState, EditingMode } from '../editing'
 import { EditMode, type EditorState } from '../editor-state'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
@@ -189,10 +185,6 @@ import importAssetsScratchSvg from './icons/import-assets-scratch.svg'
 import publishSvg from './icons/publish.svg'
 import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
-import offlineSvg from './icons/offline.svg?raw'
-import savingSvg from './icons/saving.svg?raw'
-import failedToSaveSvg from './icons/failed-to-save.svg?raw'
-import cloudCheckSvg from './icons/cloud-check.svg?raw'
 import defaultModeSvg from './icons/default-mode.svg?raw'
 import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
 
@@ -212,17 +204,7 @@ const canManageProject = computed(() => {
   return props.project.owner === signedInUsername
 })
 
-const projectOwnerRet = useUser(() => props.project?.owner ?? null)
-
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
-
-const ownerInfoToDisplay = computed(() => {
-  const owner = projectOwnerRet.data.value
-  if (owner == null) return null
-  const signedInUsername = signedInUser.value?.username
-  if (signedInUsername == null || signedInUsername !== owner.username) return owner
-  return null
-})
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 
@@ -340,8 +322,6 @@ const handleModifyProjectName = useMessageHandle(
   { en: 'Failed to modify project name', zh: '修改项目名失败' }
 ).fn
 
-const canEditProjectDisplayName = computed(() => canManageProject.value && isOnline.value)
-
 const unpublishProject = useUnpublishProject()
 const handleUnpublishProject = useMessageHandle(
   () => unpublishProject(props.project!),
@@ -392,43 +372,6 @@ const handleUndo = useMessageHandle(() => props.state?.history.undo(), {
 const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
   en: 'Failed to redo',
   zh: '重做操作失败'
-})
-
-type AutoSaveStateIcon = {
-  svg: string
-  stateClass?: string
-  desc: LocaleMessage
-}
-
-const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
-  const editing = props.state?.editing
-  if (editing == null) return null
-  switch (editing.mode) {
-    case EditingMode.EffectFree:
-      return null // TODO: style for effect-free mode
-    case EditingMode.AutoSave: {
-      if (!isOnline.value) return { svg: offlineSvg, desc: { en: 'No internet connection', zh: '无网络连接' } }
-      if (!editing.dirty || editing.saving == null) return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
-      switch (editing.saving.state) {
-        case SavingState.Pending:
-          return {
-            svg: savingSvg,
-            stateClass: 'pending',
-            desc: { en: 'Pending save', zh: '待保存' }
-          }
-        case SavingState.InProgress:
-          return { svg: savingSvg, stateClass: 'saving', desc: { en: 'Saving', zh: '保存中' } }
-        case SavingState.Completed:
-          return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
-        case SavingState.Failed:
-          return { svg: failedToSaveSvg, desc: { en: 'Failed to save', zh: '保存失败' } }
-        default:
-          throw new Error('unknown saving state')
-      }
-    }
-    default:
-      throw new Error(`Unknown editing mode: ${editing.mode}`)
-  }
 })
 
 const historyBtnClz =

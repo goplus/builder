@@ -3,7 +3,7 @@
     <div class="flex justify-center gap-8 py-5">
       <!-- eslint-disable vue/no-v-html -->
       <div
-        class="monitor-icon h-24 w-24 flex-none flex items-center justify-center rounded-sm bg-grey-300"
+        class="monitor-icon h-24 w-24 flex-none flex items-center justify-center rounded-md bg-grey-300"
         v-html="mntIcon"
       ></div>
       <!-- eslint-enable vue/no-v-html -->

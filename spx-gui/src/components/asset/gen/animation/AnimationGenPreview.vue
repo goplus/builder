@@ -57,7 +57,7 @@ const videoPreviewKey = computed(() => {
         $t({ en: 'Save animation', zh: '保存动画' })
       }}</UIButton>
     </template>
-    <GenLoading v-if="gen.generateVideoState.status === 'running'" variant="bg-spin">
+    <GenLoading v-if="gen.generateVideoState.status === 'running'">
       {{ $t({ en: 'Generating animation...', zh: '正在生成动画...' }) }}
       {{ gen.generateVideoState.timeLeft != null ? $t(humanizeTimeLeft(gen.generateVideoState.timeLeft)) : '' }}
     </GenLoading>
@@ -70,7 +70,7 @@ const videoPreviewKey = computed(() => {
         :frames-config="gen.framesConfig"
         @update:frames-config="gen.setFramesConfig($event)"
       />
-      <GenLoading v-if="gen.finishState.status === 'running'" variant="bg-spin" cover>
+      <GenLoading v-if="gen.finishState.status === 'running'" cover>
         {{ $t({ en: 'Saving animation...', zh: '正在保存动画...' }) }}
       </GenLoading>
       <UIError
