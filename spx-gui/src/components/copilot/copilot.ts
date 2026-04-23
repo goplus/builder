@@ -62,6 +62,7 @@ function getToolExecutionText(execution: ToolExecution): string {
     case 'executing':
       return 'Executing tool...'
     case 'completed': {
+      if (typeof execution.result === 'string') return execution.result
       const serializedResult = JSON.stringify(execution.result)
       return serializedResult == null ? 'null' : serializedResult
     }
@@ -310,7 +311,7 @@ export class Round {
   private async generateCopilotMessage() {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      messages.push(this.copilot.getContextMessage())
+      messages.push(await this.copilot.getContextMessage())
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
@@ -445,7 +446,7 @@ export interface ICopilotContextProvider {
    * Provide context information for the copilot.
    * Use plain text in English.
    */
-  provideContext(): string
+  provideContext(): string | Promise<string>
 }
 
 /** A quick input represents a UI element (typically a button) which helps the user to quickly send some message */
@@ -568,11 +569,9 @@ export class Copilot extends Disposable {
     return this.currentSessionRef.value
   }
 
-  private getContext(): string {
-    return this.contextProviders
-      .map((provider) => provider.provideContext())
-      .filter((s) => s.trim() !== '')
-      .join('\n\n')
+  private async getContext(): Promise<string> {
+    const contextParts = await Promise.all(this.contextProviders.map((provider) => provider.provideContext()))
+    return contextParts.filter((s) => s.trim() !== '').join('\n\n')
   }
 
   private getCustomElementPrompt(customElement: CustomElementDefinition) {
@@ -601,8 +600,8 @@ ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
 ${topic.description}`
   }
 
-  getContextMessage(): UserTextMessage {
-    const parts = [this.getCustomElementsPrompt(), this.getContext(), this.getTopicPrompt()]
+  async getContextMessage(): Promise<UserTextMessage> {
+    const parts = [this.getCustomElementsPrompt(), await this.getContext(), this.getTopicPrompt()]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`

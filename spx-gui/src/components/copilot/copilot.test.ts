@@ -682,6 +682,8 @@ describe('Copilot', () => {
     })
 
     expect(generator.calls).toHaveLength(2)
+    const contextMessage = await copilot.getContextMessage()
+
     expect(generator.calls[1]).toEqual([
       {
         role: 'user',
@@ -719,7 +721,7 @@ describe('Copilot', () => {
         role: 'user',
         content: {
           type: 'text',
-          text: copilot.getContextMessage().content
+          text: contextMessage.content
         }
       }
     ])
@@ -870,6 +872,8 @@ describe('Copilot', () => {
     const currentRound = copilot.currentSession?.currentRound
     expect(currentRound?.state).toBe(RoundState.Completed)
     expect(generator.calls).toHaveLength(2)
+    const contextMessage = await copilot.getContextMessage()
+
     expect(generator.calls[1]).toEqual([
       {
         role: 'user',
@@ -903,7 +907,7 @@ describe('Copilot', () => {
         role: 'user',
         content: {
           type: 'text',
-          text: copilot.getContextMessage().content
+          text: contextMessage.content
         }
       }
     ])
@@ -937,6 +941,48 @@ describe('Copilot', () => {
         toolCalls: []
       }
     ])
+  })
+
+  it('should pass through string tool results without json stringification', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'call_1',
+          function: {
+            name: 'load_skill',
+            arguments: '{"skillId":"spx-core"}'
+          }
+        }),
+        createDoneEvent('tool_calls')
+      ],
+      [createTextDeltaEvent('Loaded.'), createDoneEvent('stop')]
+    ])
+    const copilot = new Copilot(generator)
+    copilot.registerTool({
+      name: 'load_skill',
+      description: 'Load a skill document.',
+      parameters: z.object({
+        skillId: z.string()
+      }),
+      implementation: async ({ skillId }) => `<skill_content id="${skillId}">demo</skill_content>`
+    })
+    const topic = createBasicTopic('String tool result test', 'Testing plain string tool results')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Load the skill', topic)
+
+    await waitForCompletion()
+
+    expect(generator.calls).toHaveLength(2)
+    expect(generator.calls[1]?.[2]).toEqual({
+      role: 'tool',
+      toolCallId: 'call_1',
+      content: {
+        type: 'text',
+        text: '<skill_content id="spx-core">demo</skill_content>'
+      }
+    })
   })
 
   it('should preserve the current copilot tool-call block when history sampling truncates older rounds', async () => {
@@ -1017,11 +1063,13 @@ describe('Copilot', () => {
         }
       }
     ])
+    const contextMessage = await copilot.getContextMessage()
+
     expect(sampledMessages?.at(-1)).toEqual({
       role: 'user',
       content: {
         type: 'text',
-        text: copilot.getContextMessage().content
+        text: contextMessage.content
       }
     })
   })
@@ -1063,11 +1111,13 @@ describe('Copilot', () => {
     expect(generator.callOptions).toHaveLength(1)
 
     const contextMessage = generator.calls[0].at(-1)
+    const expectedContextMessage = await copilot.getContextMessage()
+
     expect(contextMessage).toEqual({
       role: 'user',
       content: {
         type: 'text',
-        text: copilot.getContextMessage().content
+        text: expectedContextMessage.content
       }
     })
     expect(contextMessage).toBeDefined()
