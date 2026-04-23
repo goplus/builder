@@ -205,7 +205,12 @@ watch(
 watchEffect((onCleanup) => {
   if (!visibleComputed.value || !popup.isTopmost.value) return
 
-  function handleDocumentClick(e: MouseEvent) {
+  // Close the dropdown when user clicks outside of it.
+  // We listen to event `mouseup` instead `click` here. This avoids a
+  // timing issue with manual control: a caller may open the dropdown on
+  // `mouseup`, and a later document `click` event from the same click interaction would
+  // immediately close it again.
+  function handleDocumentMouseup(e: MouseEvent) {
     // Ignore clicks that belong to the current trigger/content pair. Nested
     // dropdowns register separately, so their own stack entry handles itself.
     if (isEventInsideCurrentDropdown(e, triggerRef.value, contentRef.value)) return
@@ -213,6 +218,7 @@ watchEffect((onCleanup) => {
     emit('clickOutside', e)
   }
 
+  // Close the dropdown when user presses ESC.
   function handleDocumentKeydown(e: KeyboardEvent) {
     if (e.key !== 'Escape') return
     // Only the topmost open dropdown installs this listener, so ESC peels off
@@ -220,10 +226,10 @@ watchEffect((onCleanup) => {
     setVisible(false)
   }
 
-  document.addEventListener('click', handleDocumentClick, true)
+  document.addEventListener('mouseup', handleDocumentMouseup, true)
   window.addEventListener('keydown', handleDocumentKeydown)
   onCleanup(() => {
-    document.removeEventListener('click', handleDocumentClick, true)
+    document.removeEventListener('mouseup', handleDocumentMouseup, true)
     window.removeEventListener('keydown', handleDocumentKeydown)
   })
 })

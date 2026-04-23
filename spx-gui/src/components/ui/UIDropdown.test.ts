@@ -237,7 +237,7 @@ describe('UIDropdown', () => {
     await flushDropdown()
     expect(popupContainer.text()).toContain('Dropdown content')
 
-    await wrapper.get('[data-test-id="outside"]').trigger('click')
+    await wrapper.get('[data-test-id="outside"]').trigger('mouseup')
     await flushDropdown()
 
     expect(dropdown.emitted('clickOutside')).toHaveLength(1)
@@ -340,7 +340,7 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).toContain('Parent content')
     expect(popupContainer.text()).toContain('Child content')
 
-    await wrapper.get('[data-test-id="parent-content"]').trigger('click')
+    await wrapper.get('[data-test-id="parent-content"]').trigger('mouseup')
     await flushDropdown()
 
     expect(childDropdown.emitted('update:visible')).toEqual([[false]])
