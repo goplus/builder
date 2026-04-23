@@ -1,40 +1,30 @@
 <script setup lang="ts">
-import { NTimelineItem } from 'naive-ui'
+import { cn, type ClassValue } from '../utils'
 
-defineProps<{
-  time: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    time: string
+    class?: ClassValue
+  }>(),
+  {
+    class: undefined
+  }
+)
 </script>
 
 <template>
-  <NTimelineItem :style="{ '--n-icon-size': '8px' }">
-    <template #icon>
-      <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 8 8" fill="none">
-        <circle cx="4" cy="4" r="4" fill="#D9DFE5" />
-      </svg>
-    </template>
-    <p class="text-xs text-hint-2">{{ time }}</p>
-    <p class="text-base">
-      <slot></slot>
-    </p>
-  </NTimelineItem>
+  <div :class="cn('group/timeline-item relative', props.class)">
+    <div class="absolute top-0 bottom-0 left-1 translate-y-[5px]" aria-hidden="true">
+      <div class="h-2 w-2 rounded-full bg-grey-500"></div>
+      <div
+        class="absolute top-2 bottom-0 left-1/2 w-px -translate-x-1/2 bg-grey-500 group-last/timeline-item:hidden"
+      ></div>
+    </div>
+    <div class="ml-[31px] mb-3">
+      <div class="text-xs text-hint-2">{{ props.time }}</div>
+      <div class="text-base">
+        <slot></slot>
+      </div>
+    </div>
+  </div>
 </template>
-
-<style scoped>
-:global(.n-timeline-item-timeline) {
-  top: 5px !important;
-  margin-left: 4px !important;
-}
-:global(.n-timeline-item-timeline__line) {
-  /* set width 2px then scale it down to 1px, to make it offset for 0.5px, to keep it centered with the circle */
-  width: 2px !important;
-  transform: scaleX(0.5);
-  left: 3px !important;
-}
-:global(.n-timeline-item-content) {
-  margin-left: 31px !important;
-}
-:global(.n-timeline-item-content__meta) {
-  margin-bottom: 12px !important;
-}
-</style>

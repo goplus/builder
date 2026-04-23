@@ -44,12 +44,9 @@
     - `UIForm` → `NForm`
     - `UITextInput` → `NInput`
     - `UINumberInput` → `NInputNumber`
-    - `UITimeline` → `NTimeline`
-    - `UITimelineItem` → `NTimelineItem`
 
   - For all UI components, an external `class` can still be passed, but prefer explicit component props or a dedicated API extension for styling-critical behavior
   - For the Naive UI-root components listed above, simple root-level overrides are generally workable because the `components` layer sits above `naive-ui`, but do not assume every visual change should come from the root `class`. For deeper visual changes, prefer an outer layout wrapper, explicit props, or Naive UI theme overrides
-  - `UIDivider`, `UIFormItem`, and `UILoading` also use Naive UI internally, but they expose a wrapper DOM root; external `class` lands on that wrapper instead of the inner Naive UI control
   - This is primarily a component authoring/maintenance concern. The long-term goal is to keep these wrappers easy to consume so business code does not need to carry much Naive UI-specific styling knowledge
 
 ### Usage

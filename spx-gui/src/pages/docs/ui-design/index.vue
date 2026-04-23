@@ -310,23 +310,43 @@
           </div>
           <div :class="surfaceCardClass">
             <div :class="groupLabelClass">UIRadioGroup</div>
-            <UIRadioGroup :value="radioValue" @update:value="(value) => (radioValue = value ?? 'default')">
-              <div :class="choiceColumnClass">
-                <UIRadio value="default">Default</UIRadio>
-                <UIRadio value="vertical">Vertical</UIRadio>
-                <UIRadio value="manual">Manual</UIRadio>
-              </div>
-            </UIRadioGroup>
+            <div class="flex">
+              <UIRadioGroup :value="radioValue" @update:value="(value) => (radioValue = value ?? 'default')">
+                <div :class="choiceColumnClass">
+                  <UIRadio value="default">Default</UIRadio>
+                  <UIRadio value="vertical">Vertical</UIRadio>
+                  <UIRadio value="manual">Manual</UIRadio>
+                </div>
+              </UIRadioGroup>
+              <UIDivider vertical class="mx-6 my-2" />
+              <UIRadioGroup value="default" disabled>
+                <div :class="choiceColumnClass">
+                  <UIRadio value="default">Default</UIRadio>
+                  <UIRadio value="vertical">Vertical</UIRadio>
+                  <UIRadio value="manual">Manual</UIRadio>
+                </div>
+              </UIRadioGroup>
+            </div>
           </div>
           <div :class="surfaceCardClass">
             <div :class="groupLabelClass">UICheckboxGroup</div>
-            <UICheckboxGroup :value="checkboxValues" @update:value="(value) => (checkboxValues = value)">
-              <div :class="choiceColumnClass">
-                <UICheckbox value="physics">Physics</UICheckbox>
-                <UICheckbox value="shadow">Shadow</UICheckbox>
-                <UICheckbox value="particles">Particles</UICheckbox>
-              </div>
-            </UICheckboxGroup>
+            <div class="flex">
+              <UICheckboxGroup :value="checkboxValues" @update:value="(value) => (checkboxValues = value)">
+                <div :class="choiceColumnClass">
+                  <UICheckbox value="physics">Physics</UICheckbox>
+                  <UICheckbox value="shadow">Shadow</UICheckbox>
+                  <UICheckbox value="particles">Particles</UICheckbox>
+                </div>
+              </UICheckboxGroup>
+              <UIDivider vertical class="mx-6 my-2" />
+              <UICheckboxGroup :value="['physics', 'shadow']" disabled>
+                <div :class="choiceColumnClass">
+                  <UICheckbox value="physics">Physics</UICheckbox>
+                  <UICheckbox value="shadow">Shadow</UICheckbox>
+                  <UICheckbox value="particles">Particles</UICheckbox>
+                </div>
+              </UICheckboxGroup>
+            </div>
           </div>
         </div>
       </section>
@@ -882,6 +902,7 @@ import {
   UIEditorSpriteItem,
   UIEditorWidgetItem,
   UIDetailedLoading,
+  UIDivider,
   UIEmpty,
   UIError,
   UIIcon,

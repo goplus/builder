@@ -1,12 +1,50 @@
 <template>
   <div :class="rootClass">
-    <NSpin />
+    <div class="h-8 w-8 text-primary-main" role="status" aria-label="loading">
+      <svg class="w-full h-full" viewBox="0 0 200 200">
+        <g>
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values="0 100 100;270 100 100"
+            begin="0s"
+            dur="1.6s"
+            repeatCount="indefinite"
+          />
+          <circle
+            fill="none"
+            stroke="currentColor"
+            stroke-width="18"
+            stroke-linecap="round"
+            cx="100"
+            cy="100"
+            r="91"
+            stroke-dasharray="567"
+          >
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              values="0 100 100;135 100 100;450 100 100"
+              begin="0s"
+              dur="1.6s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="stroke-dashoffset"
+              values="567;142;567"
+              begin="0s"
+              dur="1.6s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        </g>
+      </svg>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { NSpin } from 'naive-ui'
 import { cn, type ClassValue } from '../utils'
 
 export type MaskType = 'none' | 'semi-transparent' | 'solid'
@@ -34,7 +72,7 @@ const mask = computed(() => {
 
 const rootClass = computed(() =>
   cn(
-    'h-4/5 w-full flex justify-center invisible opacity-0 [transition:visibility_0.3s,opacity_0.3s]',
+    'h-4/5 w-full flex items-center justify-center invisible opacity-0 [transition:visibility_0.3s,opacity_0.3s]',
     props.cover ? 'absolute left-0 top-0 h-full' : null,
     props.cover && mask.value === 'semi-transparent' ? 'bg-white/50' : null,
     props.cover && mask.value === 'solid' ? 'bg-grey-100' : null,

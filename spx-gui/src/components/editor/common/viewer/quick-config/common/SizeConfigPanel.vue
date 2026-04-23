@@ -38,7 +38,7 @@ onBeforeUnmount(() => handleSizePercentUpdate.cancel())
         <template #prefix>{{ $t({ en: 'Size', zh: '大小' }) }}</template>
         <template #suffix>%</template>
       </UINumberInput>
-      <UIDivider vertical />
+      <UIDivider vertical class="h-4" />
       <UITooltip>
         {{ $t({ en: 'Back', zh: '返回' }) }}
         <template #trigger>
