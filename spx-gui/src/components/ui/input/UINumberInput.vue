@@ -40,6 +40,11 @@ import { useFieldControlBindings } from '../form/field-control-bindings'
 type Color = 'default' | 'white'
 type Size = 'medium' | 'large'
 
+type NativeNumberInputFocusEvent = FocusEvent & {
+  target: HTMLInputElement
+  currentTarget: HTMLInputElement
+}
+
 /**
  * Native replacement for the old `naive-ui` number input.
  *
@@ -91,6 +96,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:value': [number | null]
+  // Forward non-bubbling focus/blur so component listeners keep the input-like behavior.
+  focus: [NativeNumberInputFocusEvent]
+  blur: [NativeNumberInputFocusEvent]
 }>()
 
 const slots = useSlots()
@@ -235,11 +243,12 @@ function handleInput(event: Event) {
   onInput()
 }
 
-function handleFocus() {
+function handleFocus(event: FocusEvent) {
   focused.value = true
+  emit('focus', event as NativeNumberInputFocusEvent)
 }
 
-function handleBlur() {
+function handleBlur(event: FocusEvent) {
   focused.value = false
   // Blur is the commit point: clamp to min/max, fix precision and rewrite the displayed string.
   const analysis = displayValueAnalysis.value
@@ -253,6 +262,7 @@ function handleBlur() {
     syncDisplayValueFromValue(nextValue)
   }
   onBlur()
+  emit('blur', event as NativeNumberInputFocusEvent)
 }
 
 function deriveSteppedValue(value: number | null, offset: number) {

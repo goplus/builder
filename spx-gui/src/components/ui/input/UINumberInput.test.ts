@@ -8,6 +8,21 @@ function getNativeInput(wrapper: ReturnType<typeof mount<typeof UINumberInput>>)
 }
 
 describe('UINumberInput', () => {
+  it('emits focus and blur from the native input element', async () => {
+    const wrapper = mount(UINumberInput, {
+      props: {
+        value: null
+      }
+    })
+
+    const input = getNativeInput(wrapper)
+    await input.trigger('focus')
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('focus')).toHaveLength(1)
+    expect(wrapper.emitted('blur')).toHaveLength(1)
+  })
+
   it('steps from an empty value to the nearest valid value inside a fully negative range', async () => {
     const wrapper = mount(UINumberInput, {
       props: {

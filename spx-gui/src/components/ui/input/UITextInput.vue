@@ -21,7 +21,8 @@
       :readonly="props.readonly"
       :rows="props.rows"
       @input="handleTextInput"
-      @blur="onBlur"
+      @focus="handleFocus"
+      @blur="handleBlur"
       @compositionstart="onCompositionStart"
       @compositionend="onCompositionEnd"
     />
@@ -36,7 +37,8 @@
       :disabled="props.disabled"
       :readonly="props.readonly"
       @input="handleTextInput"
-      @blur="onBlur"
+      @focus="handleFocus"
+      @blur="handleBlur"
       @compositionstart="onCompositionStart"
       @compositionend="onCompositionEnd"
     />
@@ -82,6 +84,12 @@ type Type = 'textarea' | 'text' | 'password'
 type Color = 'default' | 'white'
 type Size = 'medium' | 'large'
 
+type NativeTextControl = HTMLInputElement | HTMLTextAreaElement
+type NativeTextControlFocusEvent = FocusEvent & {
+  target: NativeTextControl
+  currentTarget: NativeTextControl
+}
+
 const props = withDefaults(
   defineProps<{
     value: string
@@ -110,6 +118,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:value': [string]
+  // Forward non-bubbling focus/blur so component listeners keep the input-like behavior.
+  focus: [NativeTextControlFocusEvent]
+  blur: [NativeTextControlFocusEvent]
 }>()
 
 const slots = useSlots()
@@ -122,7 +133,7 @@ const inputType = computed(() => (props.type === 'password' ? 'password' : 'text
 const showSuffix = computed(() => (props.value && props.clearable) || slots.suffix != null)
 const clearIgnoreFocusAttrs = { [UI_INPUT_IGNORE_FOCUS_ATTR]: '' }
 
-const controlRef = ref<HTMLInputElement | HTMLTextAreaElement | null>(null)
+const controlRef = ref<NativeTextControl | null>(null)
 
 const focusControl = () => {
   controlRef.value?.focus()
@@ -133,8 +144,17 @@ function emitValue(value: string) {
 }
 
 function handleTextInput(event: Event) {
-  emitValue((event.target as HTMLInputElement | HTMLTextAreaElement).value)
+  emitValue((event.target as NativeTextControl).value)
   onInput()
+}
+
+function handleFocus(event: FocusEvent) {
+  emit('focus', event as NativeTextControlFocusEvent)
+}
+
+function handleBlur(event: FocusEvent) {
+  onBlur()
+  emit('blur', event as NativeTextControlFocusEvent)
 }
 
 function handleClear() {
