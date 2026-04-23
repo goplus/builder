@@ -1,1 +1,1 @@
-export { default as UIMessageProvider, useMessageApi as useMessage } from './UIMessageProvider.vue'
+export { default as UIMessageProvider, useMessageApi as useMessage, useMessageEvents } from './UIMessageProvider.vue'

@@ -6,7 +6,8 @@ export type MessageType = 'info' | 'success' | 'warning' | 'error' | 'loading'
 
 export type MessageEvents = Emitter<{
   message: {
-    type: 'info' | 'success' | 'warning' | 'error'
+    // loading messages are transient internal state and must not trigger event-bus notifications.
+    type: Exclude<MessageType, 'loading'>
     content: string
   }
 }>
@@ -136,14 +137,21 @@ onBeforeUnmount(() => {
 
 <template>
   <slot></slot>
-  <Teleport v-if="attachTo != null && messages.length > 0" :to="attachTo">
+  <Teleport v-if="attachTo != null" :to="attachTo">
     <!--
       TransitionGroup is kept here for list-level move animations:
       when a message is inserted or removed, sibling items can slide smoothly
       into their new positions. Each message's own enter / leave animation is
       still handled by the Transition inside UIMessageItem.
     -->
-    <TransitionGroup name="ui-message-stack" tag="div" class="ui-message-viewport">
+    <TransitionGroup
+      name="ui-message-stack"
+      tag="div"
+      class="ui-message-viewport"
+      aria-live="polite"
+      aria-atomic="false"
+      aria-relevant="additions"
+    >
       <div v-for="message in messages" :key="message.id" class="ui-message-stack-item">
         <UIMessageItem
           :type="message.type"

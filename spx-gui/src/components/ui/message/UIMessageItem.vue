@@ -16,9 +16,9 @@ function handleAfterLeave() {
   emit('after-leave')
 }
 
-// A small amount of JS is kept here because this node's height is driven by
-// dynamic content. Pure CSS cannot smoothly transition height: auto, so we
-// measure the real height first and then drive a max-height transition.
+// A small amount of JS is kept here to clamp the transition root to explicit
+// heights during enter / leave. This avoids layout jumps while the visible
+// animation still comes from the inner card's opacity + scale transition.
 function handleEnter(el: Element) {
   const target = el as HTMLElement
   target.style.transition = 'none'
@@ -41,7 +41,9 @@ function handleLeave(el: Element) {
   const target = el as HTMLElement
   target.style.maxHeight = '0'
 }
-// Flush layout between style writes so the previous max-height becomes the current transition start state.
+// Flush layout between style writes so the browser commits the temporary height
+// state before the next change. This stabilizes layout even though the outer
+// wrapper itself is not animating max-height.
 function forceReflow(el: HTMLElement) {
   // Reading a layout-dependent property forces the browser to apply pending style/layout work now.
   void el.offsetWidth
@@ -49,7 +51,7 @@ function forceReflow(el: HTMLElement) {
 </script>
 
 <template>
-  <!-- These hooks animate this item's own height expand/collapse. Removing them makes the items below jump upward more abruptly. -->
+  <!-- These hooks keep the transition root's height stable during enter / leave so sibling items do not jump abruptly. -->
   <Transition
     name="ui-message-item"
     appear
@@ -62,8 +64,6 @@ function forceReflow(el: HTMLElement) {
     <div v-if="props.visible" class="mb-2 pointer-events-auto">
       <div
         class="ui-message-item rounded-md shadow-md bg-grey-100 overflow-hidden py-[11px] px-xl flex flex-nowrap items-start text-title"
-        role="status"
-        aria-live="polite"
       >
         <div
           class="relative flex-none h-5 w-5 text-2xl mt-px mr-2"
