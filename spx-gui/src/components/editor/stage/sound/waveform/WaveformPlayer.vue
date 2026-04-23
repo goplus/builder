@@ -25,6 +25,13 @@ const props = defineProps<{
   gain: number
 }>()
 
+const emit = defineEmits<{
+  play: []
+  stop: []
+  progress: [progress: number]
+  'update:range': [range: { left: number; right: number }]
+}>()
+
 const registered = registerPlayer(stop)
 
 const play = async () => {
@@ -74,13 +81,6 @@ defineExpose({
     return wavBlob
   }
 })
-
-const emit = defineEmits<{
-  play: []
-  stop: []
-  progress: [progress: number]
-  'update:range': [range: { left: number; right: number }]
-}>()
 
 const audioElement = ref<HTMLAudioElement | null>(null)
 const gainNode = ref<GainNode | null>(null)

@@ -31,7 +31,7 @@ function handleToggle() {
     >
       <h5 class="text-xl text-title">{{ title }}</h5>
       <UIIcon
-        class="h-4 w-4 text-hint-1 transition-transform duration-300"
+        class="h-5 w-5 text-text transition-transform duration-300"
         :class="expanded ? 'rotate-0' : 'rotate-180'"
         type="arrowAlt"
       />

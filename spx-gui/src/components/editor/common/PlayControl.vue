@@ -2,10 +2,10 @@
 
 <template>
   <div class="play-control" :class="[`play-control--${props.size}`]" :style="colorCssVars">
-    <div v-show="!playing" class="play-control-play" @click.stop="handlePlay.fn">
+    <div v-show="!internalPlaying" class="play-control-play" @click.stop="handlePlay.fn">
       <UIIcon type="play" class="play-control-icon" />
     </div>
-    <div v-show="playing" class="play-control-stop" @click.stop="emit('stop')">
+    <div v-show="internalPlaying" class="play-control-stop" @click.stop="emit('stop')">
       <svg viewBox="0 0 36 36" class="progress" :style="playCssVars">
         <circle class="bg"></circle>
         <circle class="fg"></circle>
@@ -18,20 +18,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIIcon, UILoading, useUIVariables } from '@/components/ui'
 
 export type Size = 'medium' | 'large'
 
+export type Playing = {
+  /** Progress percentage, number in range `[0, 1]` */
+  progress: number
+}
+
 const props = withDefaults(
   defineProps<{
-    playing: boolean
-    /** Progress percentage, number in range `[0, 1]` */
-    progress: number
+    playing: Playing | null
     /**
      * Optional interval for rendering progress, in seconds.
-     * Defaults to `0.3` seconds for smooth animation when progress jumps.
+     * Defaults to `0.2` seconds for smooth animation when progress jumps.
      * Set to `0` to disable transition, which is useful when progress is updated continuously.
      * TODO: consider removing this prop (& transition) and ensure smooth progress update in parent component.
      */
@@ -42,7 +45,7 @@ const props = withDefaults(
   }>(),
   {
     size: 'medium',
-    progressInterval: 0.3
+    progressInterval: 0.2
   }
 )
 
@@ -50,13 +53,31 @@ const emit = defineEmits<{
   stop: []
 }>()
 
+const internalPlaying = ref(props.playing)
+
+watch(
+  () => props.playing,
+  (playing, prevPlaying, onCleanup) => {
+    if (prevPlaying != null && playing == null && props.progressInterval > 0) {
+      // If playing stopped, delay the state update to allow the progress animation to finish,
+      // making the animation more natural
+      const timer = setTimeout(() => {
+        internalPlaying.value = playing
+      }, props.progressInterval * 1000)
+      onCleanup(() => clearTimeout(timer))
+    } else {
+      internalPlaying.value = playing
+    }
+  }
+)
+
 const handlePlay = useMessageHandle(() => props.playHandler(), {
   en: 'Failed to play',
   zh: '播放失败'
 })
 
 const playCssVars = computed(() => ({
-  '--progress': props.progress ?? 0,
+  '--progress': internalPlaying.value?.progress ?? 0,
   '--progress-interval': `${props.progressInterval}s`
 }))
 

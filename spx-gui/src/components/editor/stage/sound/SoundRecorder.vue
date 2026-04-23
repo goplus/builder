@@ -3,12 +3,15 @@
     <div class="relative h-40 overflow-hidden rounded-md bg-grey-300">
       <WaveformRecorder
         v-if="recordingState === 'recording' || recordingState === 'recorded'"
-        ref="waveformRecorderRef"
+        ref="recorderRef"
         :range="audioRange"
         :gain="gain"
         @update:range="recordingState === 'recorded' && (audioRange = $event)"
         @record-started="handleRecordStarted"
         @record-stopped="recordingState = 'recorded'"
+        @playback-started="handlePlaying"
+        @playback-stopped="handlePlayingStopped"
+        @playback-progress="handlePlayingProgress"
       />
       <div
         v-if="recordingState === 'yetStarted'"
@@ -51,24 +54,16 @@
       <template v-else>
         <div class="w-14 flex flex-col items-center gap-2 text-base">
           <div class="h-14 flex items-center">
-            <UIButton shape="circle" size="large" icon="reload" type="neutral" @click="resetRecording" />
+            <UIButton shape="circle" size="large" icon="reload" type="red" @click="resetRecording" />
           </div>
           <span class="whitespace-nowrap">
             {{ $t({ en: 'Re-record', zh: '重新录音' }) }}
           </span>
         </div>
         <div class="w-14 flex flex-col items-center gap-2 text-base">
-          <UIButton
-            style="width: 56px; height: 56px"
-            shape="circle"
-            size="large"
-            type="blue"
-            @click="waveformRecorderRef?.startPlayback()"
-          >
-            <template #icon>
-              <UIIcon class="w-7 h-7" type="play" />
-            </template>
-          </UIButton>
+          <div class="h-14 flex items-center">
+            <PlayControl size="large" :playing="playing" :play-handler="handlePlay" @stop="handleStopPlaying" />
+          </div>
           <span class="whitespace-nowrap">
             {{ $t({ en: 'Play', zh: '播放' }) }}
           </span>
@@ -92,7 +87,8 @@ import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/spx/sound'
 import type { SpxProject } from '@/models/spx/project'
-import { UIButton, UIIcon } from '@/components/ui'
+import { UIButton } from '@/components/ui'
+import PlayControl, { type Playing } from '../../common/PlayControl.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import { WaveformRecorder } from './waveform'
@@ -110,14 +106,14 @@ const editorCtx = useEditorCtx()
 
 const recordingState = ref<'yetStarted' | 'recording' | 'recorded'>('yetStarted')
 
-const waveformRecorderRef = ref<InstanceType<typeof WaveformRecorder> | null>(null)
+const recorderRef = ref<InstanceType<typeof WaveformRecorder> | null>(null)
 
 const audioRange = ref({ left: 0, right: 1 })
 const gain = ref(1)
 
 const handleGainUpdate = (v: number) => {
   gain.value = v
-  waveformRecorderRef.value?.startPlayback()
+  recorderRef.value?.startPlayback()
 }
 
 const handleRecordStarted = () => {
@@ -126,12 +122,34 @@ const handleRecordStarted = () => {
 }
 
 const stopRecording = () => {
-  waveformRecorderRef.value?.stopRecording()
+  recorderRef.value?.stopRecording()
+}
+
+const playing = ref<Playing | null>(null)
+
+async function handlePlay() {
+  return recorderRef.value?.startPlayback()
+}
+
+function handlePlaying() {
+  playing.value = { progress: 0 }
+}
+
+function handleStopPlaying() {
+  recorderRef.value?.stopPlayback()
+}
+
+function handlePlayingStopped() {
+  playing.value = null
+}
+
+function handlePlayingProgress(value: number) {
+  if (playing.value != null) playing.value.progress = value
 }
 
 const saveRecording = async () => {
-  if (!waveformRecorderRef.value || recordingState.value !== 'recorded') return
-  const wav = await waveformRecorderRef.value.exportWav()
+  if (!recorderRef.value || recordingState.value !== 'recorded') return
+  const wav = await recorderRef.value.exportWav()
 
   const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`, wav)
   const sound = await Sound.create('recording', file)

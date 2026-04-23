@@ -28,8 +28,7 @@
     <div class="flex">
       <PlayControl
         class="flex-none"
-        :playing="playing != null"
-        :progress="playing?.progress ?? 0"
+        :playing="playing"
         :play-handler="handlePlayClick"
         :loading="audioLoading"
         @stop="handleStopClick"
@@ -69,7 +68,7 @@ import { UIIcon, UIButton } from '@/components/ui'
 import { useRenameSound } from '@/components/asset'
 import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import PlayControl from '../../common/PlayControl.vue'
+import PlayControl, { type Playing } from '../../common/PlayControl.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import { WaveformPlayer } from './waveform'
 
@@ -90,11 +89,6 @@ const gain = ref(1)
 const audioRange = ref({ left: 0, right: 1 })
 
 const editing = computed(() => audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1)
-
-type Playing = {
-  /** Progress percentage, number in range `[0, 1]` */
-  progress: number
-}
 
 const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
@@ -128,10 +122,7 @@ function handleStopClick() {
 }
 
 function handleStop() {
-  // delay to make the animation more natural
-  setTimeout(() => {
-    playing.value = null
-  }, 400)
+  playing.value = null
 }
 
 function handleProgress(value: number) {

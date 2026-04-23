@@ -38,7 +38,7 @@ const styles = {
   secondary: {
     base: 'h-7',
     default: 'text-grey-800 hover:text-grey-1000',
-    active: 'rounded-[calc(var(--ui-border-radius-md)-2px)] bg-grey-100 text-grey-1000',
+    active: 'rounded-[calc(var(--ui-border-radius-md)-2px)] bg-grey-100 text-grey-1000 shadow-control',
     text: 'px-3',
     icon: 'w-9'
   }

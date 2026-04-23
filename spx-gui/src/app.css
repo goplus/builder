@@ -217,7 +217,7 @@
   --shadow-md: var(--ui-box-shadow-md, 0px 6px 16px 0px rgba(36, 41, 47, 0.05));
   --shadow-lg: var(--ui-box-shadow-lg, 0px 8px 24px 8px rgba(36, 41, 47, 0.05));
   --shadow-brand: var(--ui-box-shadow-brand, 0px 4px 12px 0px rgba(175, 231, 236, 0.65));
-  --shadow-control: var(--ui-box-shadow-control, 2px 2px 3px 0px rgba(36, 41, 47, 0.04));
+  --shadow-control: var(--ui-box-shadow-control, 2px 2px 4px 0px rgba(36, 41, 47, 0.04));
 
   /* Semantic spacing tokens stop at 16px; use numeric Tailwind spacing classes for larger steps such as 20/24/28px. */
   --spacing-sm: var(--ui-spacing-sm, 4px);
