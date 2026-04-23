@@ -22,7 +22,7 @@ const props = withDefaults(
 
 const rootClass = computed(() =>
   cn(
-    'flex items-center justify-center rounded-full text-grey-700 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500',
+    'flex items-center justify-center rounded-full text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500',
     props.size === 'large' ? 'h-8 w-8' : 'h-7 w-7',
     props.class
   )

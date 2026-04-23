@@ -55,7 +55,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
 </script>
 
 <template>
-  <UIDropdownWithTooltip :disabled="disabled" placement="top">
+  <UIDropdownWithTooltip class="rounded-lg" :disabled="disabled" placement="top">
     <template v-if="selectedItem != null" #trigger>
       <!-- TODO: Standardize this button variant once the design system specification is finalized. -->
       <button
@@ -69,7 +69,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
       >
         <UIImg
           v-if="selectedItem.image != null"
-          class="h-6 w-6 rounded-[10px]"
+          class="h-6 w-6 rounded-sm"
           :class="{ 'opacity-40': disabled, 'disabled-like': disabled && showPlaceholder }"
           :src="selectedItem.image"
           size="cover"
@@ -97,7 +97,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"
           >
             <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
-              <UIImg class="h-15 w-20 rounded-[4px]" :src="item.image ?? null" />
+              <UIImg class="h-15 w-20 rounded-sm" :src="item.image ?? null" />
             </div>
             <UIBlockItemTitle size="medium">
               {{ $t(item.label) }}

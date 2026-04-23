@@ -318,6 +318,14 @@
               </div>
             </UIRadioGroup>
           </div>
+          <div :class="[surfaceCardClass, 'col-span-full']">
+            <div :class="groupLabelClass">UITabRadioGroup</div>
+            <UITabRadioGroup :value="tabRadioValue" class="w-full" @update:value="(value) => (tabRadioValue = value)">
+              <UITabRadio value="default">Default</UITabRadio>
+              <UITabRadio value="vertical">Vertical</UITabRadio>
+              <UITabRadio value="manual">Manual</UITabRadio>
+            </UITabRadioGroup>
+          </div>
           <div :class="surfaceCardClass">
             <div :class="groupLabelClass">UICheckboxGroup</div>
             <UICheckboxGroup :value="checkboxValues" @update:value="(value) => (checkboxValues = value)">
@@ -554,7 +562,7 @@
                 <div :class="controlLabelClass">UISoundItem</div>
                 <UISoundItem name="Jump" duration="0.8s" :selectable="assetItemsSelectableState">
                   <template #player>
-                    <PlayControl :playing="false" :progress="0" :play-handler="handleSoundDemoPlay" size="large" />
+                    <PlayControl :playing="null" :play-handler="handleSoundDemoPlay" size="large" />
                   </template>
                 </UISoundItem>
               </div>
@@ -895,6 +903,8 @@ import {
   UISoundItem,
   UISpriteItem,
   UISwitch,
+  UITabRadio,
+  UITabRadioGroup,
   UITab,
   UITabs,
   UITag,
@@ -1005,6 +1015,7 @@ const selectValue = ref('recent')
 
 const switchValue = ref(true)
 const radioValue = ref('default')
+const tabRadioValue = ref('default')
 const checkboxValues = ref(['physics', 'shadow'])
 const tabValue = ref('assets')
 const loadingDemoVisible = ref(true)

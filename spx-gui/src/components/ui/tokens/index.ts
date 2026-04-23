@@ -63,7 +63,7 @@ export const boxShadow = {
   // Brand-accent glow for the asset-library search bar and login-page entry surfaces.
   brand: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)',
   // Subtle control shadow for navigation tabs, code-editor tabs, and similarly compact control surfaces.
-  control: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)'
+  control: '2px 2px 4px 0px rgba(36, 41, 47, 0.04)'
 } as const
 
 export const lineHeight = {

@@ -61,12 +61,12 @@ defineExpose({ focus })
         :class="{ disabled: inputStr.length === 0 }"
         @click="handleSubmit"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
-            d="M10 16.6665L10 3.33317M10 3.33317L5 8.33317M10 3.33317L15 8.33317"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M3.78521 8.70313C3.46506 8.38222 3.46459 7.86163 3.78521 7.54102L9.419 1.9082C9.73967 1.58758 10.2602 1.5879 10.5811 1.9082L16.2149 7.54102C16.5356 7.86174 16.5354 8.38225 16.2149 8.70313C15.894 9.02393 15.3736 9.02396 15.0528 8.70313L10.8213 4.47168L10.8213 17.5117C10.8213 17.9654 10.4537 18.3338 10.0001 18.334C9.5466 18.3336 9.17876 17.9652 9.17876 17.5117L9.17876 4.47266L4.94732 8.70313C4.62647 9.02397 4.10605 9.02397 3.78521 8.70313Z"
+            fill="currentColor"
           />
         </svg>
       </button>
@@ -152,18 +152,15 @@ defineExpose({ focus })
 }
 
 .submit-btn {
-  background: var(--Gradient, linear-gradient(180deg, #9a77ff 0%, #735ffa 100%));
+  color: var(--ui-color-grey-100);
+  background: linear-gradient(180deg, #9a77ff 0%, #735ffa 100%);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .submit-btn.disabled {
+  color: var(--ui-color-grey-800);
   background: var(--ui-color-grey-400);
-}
-
-.submit-btn > svg {
-  stroke: var(--ui-color-grey-100);
-}
-
-.submit-btn.disabled > svg {
-  stroke: var(--ui-color-grey-800);
 }
 </style>

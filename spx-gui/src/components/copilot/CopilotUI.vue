@@ -665,7 +665,7 @@ onMounted(async () => {
 
 .body {
   position: relative;
-  border-radius: 16px;
+  border-radius: var(--ui-border-radius-lg);
   box-shadow: var(--ui-box-shadow-lg);
   padding: 1px;
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
@@ -673,19 +673,19 @@ onMounted(async () => {
 
 .body:has(.only-input):has(.visible).left,
 .body:has(.only-input):has(.visible).left .body-wrapper {
-  border-radius: 16px 0 0 16px;
+  border-radius: var(--ui-border-radius-lg) 0 0 var(--ui-border-radius-lg);
 }
 
 .body:has(.only-input):has(.visible).right,
 .body:has(.only-input):has(.visible).right .body-wrapper {
-  border-radius: 0 16px 16px 0;
+  border-radius: 0 var(--ui-border-radius-lg) var(--ui-border-radius-lg) 0;
 }
 
 .body-wrapper {
   position: relative;
   overflow: hidden;
   transition: opacity ease 0.4s;
-  border-radius: 16px;
+  border-radius: var(--ui-border-radius-lg);
   z-index: 2;
 }
 

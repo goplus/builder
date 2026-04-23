@@ -1,6 +1,7 @@
 <template>
   <section class="flex justify-center">
     <UIDropdown
+      class="rounded-lg"
       trigger="manual"
       :visible="activeSetting != null"
       placement="top"

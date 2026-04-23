@@ -282,8 +282,7 @@ function formatTime(timeInMs: number) {
     <div v-if="videoDurationRef != null" class="controls">
       <PlayControl
         v-radar="{ name: 'Play button', desc: 'Toggle playback of animation video preview' }"
-        :playing="isPlaying"
-        :progress="progress"
+        :playing="isPlaying ? { progress } : null"
         :progress-interval="0"
         :play-handler="play"
         @stop="stop"

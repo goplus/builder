@@ -132,7 +132,7 @@ useModalEsc(
     display: flex;
     flex-direction: column;
     box-shadow: var(--ui-box-shadow-lg);
-    border-radius: var(--ui-border-radius-md);
+    border-radius: var(--ui-border-radius-lg);
     background-color: white;
     overflow: hidden;
   }

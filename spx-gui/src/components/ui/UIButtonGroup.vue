@@ -45,6 +45,9 @@ const rootClass = computed(() =>
   cn(
     'inline-flex h-8 rounded-md',
     props.variant === 'primary' && 'bg-grey-300 overflow-hidden',
+    // TODO: Review the relationship between UIButtonGroup and UITabRadioGroup.
+    // Their positioning and visual language are already close, especially for
+    // the secondary UIButtonGroup variant, which now looks very similar to UITabRadioGroup.
     props.variant === 'secondary' && 'bg-grey-400 p-0.5',
     props.class
   )
