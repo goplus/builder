@@ -22,18 +22,9 @@
         {
           "id": "H7k0g",
           "type": "ref",
-          "ref": "2:sKPE5",
+          "ref": "2:1jllZ",
           "x": 0,
-          "y": 0,
-          "children": [
-            {
-              "id": "RKpCD",
-              "type": "ref",
-              "ref": "2:832Oq",
-              "x": 0,
-              "y": 0
-            }
-          ]
+          "y": 0
         },
         {
           "type": "frame",
@@ -91,79 +82,47 @@
                         {
                           "id": "KM7u0",
                           "type": "ref",
-                          "ref": "2:le3CV",
+                          "ref": "2:HuMs3",
                           "x": 0,
                           "y": 0.2523993895557446,
                           "width": "fit_content",
-                          "children": [
-                            {
-                              "id": "ItBiK",
-                              "type": "ref",
-                              "ref": "2:HuMs3",
-                              "width": "fit_content",
-                              "x": 0,
-                              "y": 0,
-                              "descendants": {
-                                "2:gYggs": {
-                                  "content": "Most recently liked"
-                                }
-                              }
+                          "descendants": {
+                            "2:gYggs": {
+                              "content": "Most recently liked"
                             }
-                          ]
+                          }
                         },
                         {
                           "id": "xcECk",
                           "type": "ref",
-                          "ref": "2:le3CV",
+                          "ref": "2:BRO5N",
                           "x": 164,
                           "y": 0.015456996811813895,
                           "width": "fit_content",
                           "height": "fit_content",
-                          "children": [
-                            {
-                              "id": "VX1XK",
-                              "type": "ref",
-                              "ref": "2:BRO5N",
-                              "width": "fit_content",
-                              "height": "fit_content",
-                              "x": 0,
-                              "y": 0,
-                              "descendants": {
-                                "2:H2pbv": {
-                                  "content": "My following created",
-                                  "x": 16,
-                                  "y": 5.474014568895603
-                                }
-                              }
+                          "descendants": {
+                            "2:H2pbv": {
+                              "content": "My following created",
+                              "x": 16,
+                              "y": 5.474014568895603
                             }
-                          ]
+                          }
                         },
                         {
                           "id": "9Tee1",
                           "type": "ref",
-                          "ref": "2:le3CV",
+                          "ref": "2:BRO5N",
                           "x": 342.0747534440476,
                           "y": 0,
                           "width": "fit_content",
                           "height": "fit_content",
-                          "children": [
-                            {
-                              "id": "2fAnB",
-                              "type": "ref",
-                              "ref": "2:BRO5N",
-                              "width": "fit_content",
-                              "height": "fit_content",
-                              "x": 0,
-                              "y": 0,
-                              "descendants": {
-                                "2:H2pbv": {
-                                  "content": "Most recently remixed",
-                                  "x": 16,
-                                  "y": 5.50492856251923
-                                }
-                              }
+                          "descendants": {
+                            "2:H2pbv": {
+                              "content": "Most recently remixed",
+                              "x": 16,
+                              "y": 5.50492856251923
                             }
-                          ]
+                          }
                         }
                       ]
                     }
@@ -180,66 +139,30 @@
                 {
                   "id": "sjgux",
                   "type": "ref",
-                  "ref": "2:pwk0c",
+                  "ref": "2:Jgsqa",
                   "x": 0,
-                  "y": 0,
-                  "children": [
-                    {
-                      "id": "vxKcN",
-                      "type": "ref",
-                      "ref": "2:rIuyc",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
+                  "y": 0
                 },
                 {
                   "id": "QFBkr",
                   "type": "ref",
-                  "ref": "2:pwk0c",
+                  "ref": "2:Jgsqa",
                   "x": 248,
-                  "y": 0,
-                  "children": [
-                    {
-                      "id": "aV8mO",
-                      "type": "ref",
-                      "ref": "2:rIuyc",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
+                  "y": 0
                 },
                 {
                   "id": "YMmT1",
                   "type": "ref",
-                  "ref": "2:pwk0c",
+                  "ref": "2:Jgsqa",
                   "x": 496,
-                  "y": 0,
-                  "children": [
-                    {
-                      "id": "HnXS3",
-                      "type": "ref",
-                      "ref": "2:rIuyc",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
+                  "y": 0
                 },
                 {
                   "id": "VVtVk",
                   "type": "ref",
-                  "ref": "2:pwk0c",
+                  "ref": "2:Jgsqa",
                   "x": 744,
-                  "y": 0,
-                  "children": [
-                    {
-                      "id": "45EXu",
-                      "type": "ref",
-                      "ref": "2:rIuyc",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
+                  "y": 0
                 }
               ]
             },
@@ -252,66 +175,30 @@
                 {
                   "id": "RqkpQ",
                   "type": "ref",
-                  "ref": "2:pwk0c",
+                  "ref": "2:Jgsqa",
                   "x": 0,
-                  "y": 0,
-                  "children": [
-                    {
-                      "id": "yQS6U",
-                      "type": "ref",
-                      "ref": "2:rIuyc",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
+                  "y": 0
                 },
                 {
                   "id": "izDa4",
                   "type": "ref",
-                  "ref": "2:pwk0c",
+                  "ref": "2:Jgsqa",
                   "x": 248,
-                  "y": 0,
-                  "children": [
-                    {
-                      "id": "i2aI9",
-                      "type": "ref",
-                      "ref": "2:rIuyc",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
+                  "y": 0
                 },
                 {
                   "id": "YXNEf",
                   "type": "ref",
-                  "ref": "2:pwk0c",
+                  "ref": "2:Jgsqa",
                   "x": 496,
-                  "y": 0,
-                  "children": [
-                    {
-                      "id": "0XRwK",
-                      "type": "ref",
-                      "ref": "2:rIuyc",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
+                  "y": 0
                 },
                 {
                   "id": "Ykxf1",
                   "type": "ref",
-                  "ref": "2:pwk0c",
+                  "ref": "2:Jgsqa",
                   "x": 744,
-                  "y": 0,
-                  "children": [
-                    {
-                      "id": "uHz7Z",
-                      "type": "ref",
-                      "ref": "2:rIuyc",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
+                  "y": 0
                 }
               ]
             }

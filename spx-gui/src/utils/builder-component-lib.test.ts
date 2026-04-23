@@ -8,6 +8,7 @@ import { boxShadow, radius, space } from '../components/ui/tokens'
 type PenNode = {
   id?: string
   name?: string
+  ref?: string
   reusable?: boolean
   imports?: Record<string, string>
   slot?: string[]
@@ -28,6 +29,7 @@ type PenDocument = PenNode & {
 }
 
 const LibraryPath = resolve(process.cwd(), '../ui/components/spx/builder-component.lib.pen')
+const CommunityExplorePath = resolve(process.cwd(), '../ui/pages/spx/community-explore.pen')
 const ConfigPanelPath = resolve(
   process.cwd(),
   'src/components/editor/common/viewer/quick-config/common/ConfigPanel.vue'
@@ -35,8 +37,7 @@ const ConfigPanelPath = resolve(
 const UIModalPath = resolve(process.cwd(), 'src/components/ui/modal/UIModal.vue')
 const UIDropdownPath = resolve(process.cwd(), 'src/components/ui/UIDropdown.ts')
 const ProjectItemPath = resolve(process.cwd(), 'src/components/project/ProjectItem.vue')
-const SegmentedControlId = 'le3CV'
-const CommunityExploreSegmentedSlots = ['BRO5N', 'HuMs3', '3Jeg5', 'dGMX8', 'EO5cL']
+const LegacyCommunityExploreLibraryRefIds = ['le3CV', '832Oq', 'pwk0c', 'rIuyc']
 const TurquoiseSteps = [100, 200, 300, 400, 500, 600, 700] as const
 const RadiusSteps = [1, 2, 3, 4] as const
 const SpaceSteps = [1, 2, 3, 4, 5, 6] as const
@@ -218,6 +219,23 @@ function isEquivalentMediumButtonHeight(height: unknown) {
   return height === 'fit_content(32)' || height === 'fill_container(32)'
 }
 
+function collectImportedRefIds(node: unknown, importAliases: Set<string>, refs = new Set<string>()) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectImportedRefIds(item, importAliases, refs)
+    return refs
+  }
+  if (node == null || typeof node !== 'object') return refs
+
+  const penNode = node as PenNode
+  if (typeof penNode.ref === 'string') {
+    const [alias, id] = penNode.ref.split(':')
+    if (id != null && importAliases.has(alias)) refs.add(id)
+  }
+
+  for (const value of Object.values(penNode)) collectImportedRefIds(value, importAliases, refs)
+  return refs
+}
+
 function collectTokenizableLiteralIssues(path: string) {
   const lines = readPenText(path).split('\n')
   const issues: string[] = []
@@ -277,24 +295,34 @@ describe('builder-component.lib.pen', () => {
     expect(invalidHeights).toEqual([])
   })
 
-  it('keeps the segmented control slots resolvable for community explore', () => {
-    const libraryBundle = readPenBundle(LibraryPath)
-    const nodesById = collectNodesById(libraryBundle)
-    const segmentedControl = nodesById.get(SegmentedControlId)
-    const missingSlots =
-      segmentedControl?.slot?.filter((slotId) => !slotId.includes(':') && !nodesById.has(slotId)) ?? []
+  it('keeps community explore free of legacy builder-component refs', () => {
+    const communityExplore = readPen(CommunityExplorePath) as PenDocument
+    const libraryImportAliases = new Set(
+      Object.entries(communityExplore.imports ?? {})
+        .filter(([, importPath]) => resolve(dirname(CommunityExplorePath), importPath) === LibraryPath)
+        .map(([alias]) => alias)
+    )
+    const importedRefIds = [...collectImportedRefIds(communityExplore, libraryImportAliases)]
+    const legacyRefs = importedRefIds.filter((refId) => LegacyCommunityExploreLibraryRefIds.includes(refId))
 
-    expect(segmentedControl, `${SegmentedControlId} should exist in builder-component.lib.pen`).toBeDefined()
-    expect(missingSlots, `${SegmentedControlId} should not reference missing slot ids`).toEqual([])
+    expect(legacyRefs).toEqual([])
   })
 
-  it('keeps community explore filters bound to the segmented control asset', () => {
+  it('keeps community explore builder-component refs resolvable', () => {
+    const communityExplore = readPen(CommunityExplorePath) as PenDocument
+    const libraryImportAliases = new Set(
+      Object.entries(communityExplore.imports ?? {})
+        .filter(([, importPath]) => resolve(dirname(CommunityExplorePath), importPath) === LibraryPath)
+        .map(([alias]) => alias)
+    )
+    const importedRefIds = [...collectImportedRefIds(communityExplore, libraryImportAliases)]
+
     const libraryBundle = readPenBundle(LibraryPath)
     const nodesById = collectNodesById(libraryBundle)
-    const segmentedControl = nodesById.get(SegmentedControlId)
+    const missingRefs = importedRefIds.filter((refId) => !nodesById.has(refId))
 
-    expect(segmentedControl?.name).toBe('Segmented control')
-    expect(segmentedControl?.slot).toEqual(expect.arrayContaining(CommunityExploreSegmentedSlots))
+    expect(importedRefIds.length).toBeGreaterThan(0)
+    expect(missingRefs).toEqual([])
   })
 
   it('does not store null layout values that break the pen loader', () => {
