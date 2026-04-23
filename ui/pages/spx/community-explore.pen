@@ -1,11 +1,11 @@
 {
-  "version": "2.9",
+  "version": "2.11",
   "children": [
     {
       "type": "frame",
       "id": "0hRWl",
       "x": -728,
-      "y": 7,
+      "y": -112.99999999999989,
       "name": "page",
       "width": 1440,
       "fill": "#FFFFFF",
@@ -24,7 +24,8 @@
           "type": "ref",
           "ref": "2:1jllZ",
           "x": 0,
-          "y": 0
+          "y": 0,
+          "height": "fit_content"
         },
         {
           "type": "frame",
@@ -84,7 +85,7 @@
                           "type": "ref",
                           "ref": "2:HuMs3",
                           "x": 0,
-                          "y": 0.2523993895557446,
+                          "y": 0.25411683364594495,
                           "width": "fit_content",
                           "descendants": {
                             "2:gYggs": {
@@ -96,7 +97,7 @@
                           "id": "xcECk",
                           "type": "ref",
                           "ref": "2:BRO5N",
-                          "x": 164,
+                          "x": 166,
                           "y": 0.015456996811813895,
                           "width": "fit_content",
                           "height": "fit_content",
@@ -104,7 +105,7 @@
                             "2:H2pbv": {
                               "content": "My following created",
                               "x": 16,
-                              "y": 5.474014568895603
+                              "y": 5.477449457076006
                             }
                           }
                         },
@@ -112,7 +113,7 @@
                           "id": "9Tee1",
                           "type": "ref",
                           "ref": "2:BRO5N",
-                          "x": 342.0747534440476,
+                          "x": 345.07474754480177,
                           "y": 0,
                           "width": "fit_content",
                           "height": "fit_content",
@@ -120,7 +121,7 @@
                             "2:H2pbv": {
                               "content": "Most recently remixed",
                               "x": 16,
-                              "y": 5.50492856251923
+                              "y": 5.508363450699632
                             }
                           }
                         }
@@ -241,6 +242,30 @@
     "2": "../../components/spx/builder-component.lib.pen"
   },
   "fonts": [
+    {
+      "name": "Alibaba Health Font 2.0 CN",
+      "url": "../../images/AlibabaHealthFont2.0CN-85B.ttf",
+      "weight": 600
+    },
+    {
+      "name": "Menlo",
+      "url": "../../images/Menlo-Regular-1.ttf"
+    },
+    {
+      "name": "SourceHanSansSC-VF",
+      "url": "../../images/SourceHanSansSC-VF.ttf",
+      "weight": [
+        250,
+        900
+      ],
+      "axes": [
+        {
+          "tag": "wght",
+          "start": 250,
+          "end": 900
+        }
+      ]
+    },
     {
       "name": "XBuilder_Icons_01",
       "url": "../../images/xbuilder-icons-01.ttf"
