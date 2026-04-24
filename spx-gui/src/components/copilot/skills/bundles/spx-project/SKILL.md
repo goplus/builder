@@ -54,7 +54,7 @@ You MUST follow these IMPORTANT guidelines:
   }
   ```
 
-  can not define to:
+  Do not define it as:
 
   ```spx
   var (
@@ -198,12 +198,12 @@ You MUST follow these IMPORTANT guidelines:
 
   There may be different APIs for similar purpose. For example, both `step` and `setXYpos` (or `changeXYpos`) can be used to change a sprite's position, while `step` provides higher-level abstraction as:
 
-  - it respects the sprite's heading, which is more intuitiven for character movement
+  - it respects the sprite's heading, which is more intuitive for character movement
   - if there is a bound animation to state "step", it will be played
 
   So `step` is preferred over `setXYpos` (or `changeXYpos`) in most cases. Use low-level APIs only when necessary.
 
-  The same principle applies to other APIs include `turnTo` over `setHeading`, `turn` over `changeHeading`, etc.
+  The same principle applies to other APIs, such as `turnTo` over `setHeading`, `turn` over `changeHeading`, etc.
 
 ## Some Concepts with their corresponding Chinese name
 
