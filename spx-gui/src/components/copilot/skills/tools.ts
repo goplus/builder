@@ -11,7 +11,7 @@ function formatSkillResources(resourcePaths: string[]): string {
 
 function wrapSkillContent(name: string, path: string, content: string, resourcePaths: string[] = []): string {
   const attrs = [`name="${escapeHTML(name)}"`, `path="${escapeHTML(path)}"`]
-  const resources = resourcePaths.length > 0 ? formatSkillResources(resourcePaths) : ''
+  const resources = formatSkillResources(resourcePaths)
   return `<skill_content ${attrs.join(' ')}>
 ${content}${resources}
 </skill_content>`

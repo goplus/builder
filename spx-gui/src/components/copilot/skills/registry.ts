@@ -44,7 +44,10 @@ export class InMemorySkillRegistry implements SkillRegistry {
   private getCachedRecord(bundle: SkillBundle): Promise<SkillBundleRecord> {
     let cachedRecord = this.cachedRecords.get(bundle)
     if (cachedRecord != null) return cachedRecord
-    cachedRecord = buildSkillBundleRecord(bundle)
+    cachedRecord = buildSkillBundleRecord(bundle).catch((error: unknown) => {
+      this.cachedRecords.delete(bundle)
+      throw error
+    })
     this.cachedRecords.set(bundle, cachedRecord)
     return cachedRecord
   }
@@ -80,9 +83,6 @@ export class InMemorySkillRegistry implements SkillRegistry {
   async loadResource(name: string, resourcePath: string): Promise<string> {
     const record = (await this.loadRecords()).get(name)
     if (record == null) throw new Error(`Skill not found: ${name}`)
-    if (!record.resourcePaths.includes(resourcePath)) {
-      throw new Error(`Skill resource not found: ${name}/${resourcePath}`)
-    }
     const file = record.files[resourcePath]
     if (file == null) {
       throw new Error(`Skill resource not found: ${name}/${resourcePath}`)

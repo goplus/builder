@@ -74,6 +74,8 @@ Good AI Context design principles:
 Example:
 
 ```go
+import "ai"
+
 var npc ai.Player
 npc.think "What's my next move?", { "Position": [10, 20], "HP": 80, "Equipment": ["Sword", "Shield"] }
 ```
@@ -99,6 +101,8 @@ Good AI Command design principles:
 Example:
 
 ```go
+import "ai"
+
 type AttackThePlayer struct {
     Strokes int
 }
@@ -118,6 +122,8 @@ AI Messages can include additional context information to help AI better underst
 Example:
 
 ```go
+import "ai"
+
 var guide ai.Player
 guide.think "Where is the nearest treasure?", { "CurrentPosition": [35, 42], "ExploredAreas": ["East", "South"] }
 ```
@@ -140,6 +146,8 @@ Only when the AI command is legal and successfully executed is the AI response c
 Example:
 
 ```go
+import "ai"
+
 type Help struct {
     Topic    string `desc:"Topic needing help"`
     Priority int    `desc:"Priority, range: 1-5"`
@@ -176,6 +184,8 @@ For ease of use, `setRole` can be called at any point in the game to change AI's
 Example:
 
 ```go
+import "ai"
+
 var guide ai.Player
 guide.setRole "Guide", { "Style": "Friendly", "Knowledge": "Game Rules" }
 ```
@@ -207,6 +217,8 @@ Command struct `T` has these characteristics:
 Example:
 
 ```go
+import "ai"
+
 type Move struct {
     Direction string `desc:"Move direction, options: up, down, left, right"`
     Steps     int    `desc:"Number of steps"`
@@ -237,6 +249,8 @@ For ease of use, `think` uses blocking design and returns no value. If errors oc
 Example:
 
 ```go
+import "ai"
+
 var enemy ai.Player
 enemy.think "Attack player", { "PlayerHP": 80, "Distance": 5 }
 ```
@@ -257,6 +271,8 @@ Parameters:
 Example:
 
 ```go
+import "ai"
+
 var helper ai.Player
 helper.onErr (err) => {
     say "AI assistant error occurred"
@@ -269,6 +285,8 @@ helper.onErr (err) => {
 Here's a complete example of a Tic-Tac-Toe AI opponent:
 
 ```go
+import "ai"
+
 /*
 
 Assume there's already a 3x3 2D array variable board representing game state, initialized as:

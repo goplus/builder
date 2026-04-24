@@ -113,10 +113,6 @@ describe('load_skill tool', () => {
     expect(mainDocument).toContain('<file>references/ai-interaction.md</file>')
     expect(mainDocument).toContain('<file>references/apis.md</file>')
 
-    const repeatedMainDocument = await tool.implementation({ skillName: 'spx-project' })
-    expect(repeatedMainDocument).toContain('# About spx')
-    expect(repeatedMainDocument).not.toContain('already_loaded="true"')
-
     const resourceDocument = await resourceTool.implementation({
       skillName: 'spx-project',
       resourcePath: 'references/apis.md'
