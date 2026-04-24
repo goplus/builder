@@ -46,8 +46,8 @@ type HoverTarget =
     }
 
 export class HoverController extends Emitter<{
-  cardMouseEnter: void
-  cardMouseLeave: void
+  cardMouseEnter: MouseEvent
+  cardMouseLeave: MouseEvent
 }> {
   private provider: IHoverProvider | null = null
 
@@ -255,8 +255,10 @@ export class HoverController extends Emitter<{
         lastMouseClientPoint = { x: e.event.posx, y: e.event.posy }
         // Keep the current hover alive when Monaco still maps this event back
         // to the active hover range, even if the target was briefly reclassified.
+        const isTextLikeTarget =
+          e.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT || isForeignMouseTarget(e.target)
         const targetPosition = resolveMouseTargetPosition(e.target)
-        if (targetPosition != null && isPositionInsideCurrentHover(targetPosition)) {
+        if (isTextLikeTarget && targetPosition != null && isPositionInsideCurrentHover(targetPosition)) {
           handleMouseEnter({ type: 'text', position: targetPosition })
           return
         }
@@ -286,18 +288,26 @@ export class HoverController extends Emitter<{
       })
     )
 
-    // Use DOM `mouseleave` insteadOf `editor.OnMouseLeave` so we can inspect `relatedTarget` before deciding to hide.
+    // Use DOM `mouseleave` instead of `editor.OnMouseLeave` so we can inspect `relatedTarget` before deciding to hide.
     editorEl.addEventListener(
       'mouseleave',
       (e) => {
+        lastMouseClientPoint = { x: e.clientX, y: e.clientY }
         if (shouldKeepHoverOpen(e.relatedTarget)) return
         handleMouseEnter({ type: 'other' })
       },
       { signal: this.getSignal() }
     )
 
-    this.on('cardMouseEnter', () => handleMouseEnter({ type: 'hover-card' }))
-    this.on('cardMouseLeave', () => handleMouseEnter({ type: 'other' }))
+    this.on('cardMouseEnter', (e) => {
+      lastMouseClientPoint = { x: e.clientX, y: e.clientY }
+      handleMouseEnter({ type: 'hover-card' })
+    })
+    this.on('cardMouseLeave', (e) => {
+      lastMouseClientPoint = { x: e.clientX, y: e.clientY }
+      if (shouldKeepHoverOpen(e.relatedTarget)) return
+      handleMouseEnter({ type: 'other' })
+    })
 
     this.addDisposable(editor.onKeyDown(() => this.hideHover()))
     this.addDisposable(editor.onMouseDown(() => this.hideHover()))
@@ -322,7 +332,13 @@ function isPointerInsidePopup(point: { x: number; y: number } | null) {
   return isInPopup(resolveEventHTMLElement(el))
 }
 
-export function resolveMouseTargetPosition(target: monaco.editor.IEditorMouseEvent['target']): Position | null {
+// Monaco's mouse-target union doesn't expose `detail.mightBeForeignElement`
+// as a common field, so use a narrow structural read just for this optional flag.
+function isForeignMouseTarget(target: monaco.editor.IEditorMouseEvent['target']) {
+  return (target as { detail?: { mightBeForeignElement?: boolean } | null }).detail?.mightBeForeignElement === true
+}
+
+function resolveMouseTargetPosition(target: monaco.editor.IEditorMouseEvent['target']): Position | null {
   const range = target.range
   if (range != null) {
     return fromMonacoPosition({
