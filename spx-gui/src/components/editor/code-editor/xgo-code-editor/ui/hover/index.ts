@@ -323,14 +323,14 @@ function isPointerInsidePopup(point: { x: number; y: number } | null) {
 }
 
 export function resolveMouseTargetPosition(target: monaco.editor.IEditorMouseEvent['target']): Position | null {
-  const range = (target as { range?: { startLineNumber: number; startColumn: number } | null }).range
+  const range = target.range
   if (range != null) {
     return fromMonacoPosition({
       lineNumber: range.startLineNumber,
       column: range.startColumn
     })
   }
-  const position = (target as { position?: { lineNumber: number; column: number } | null }).position
+  const position = target.position
   if (position != null) {
     return fromMonacoPosition(position)
   }
