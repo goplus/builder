@@ -45,8 +45,8 @@ type HoverTarget =
     }
 
 export class HoverController extends Emitter<{
-  cardMouseEnter: void
-  cardMouseLeave: void
+  cardMouseEnter: MouseEvent
+  cardMouseLeave: MouseEvent
 }> {
   private provider: IHoverProvider | null = null
 
@@ -221,38 +221,60 @@ export class HoverController extends Emitter<{
       this.hoverMgr.start(position)
     }, 50)
 
-    this.addDisposable(
-      editor.onMouseMove((e: monaco.editor.IEditorMouseEvent) => {
-        if (e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) {
-          handleMouseEnter({ type: 'other' })
-          return
-        }
-        if (e.target.detail.mightBeForeignElement) {
-          // `mightBeForeignElement` indicates injected or foreign content like inlay hint decorations.
-          handleMouseEnter({ type: 'other' })
-          return
-        }
-        // Here we use start position of `e.target.range` instead of `e.target.position`, as hovering happens on one character instead of between two characters.
-        // And `e.target.position` stands for the gap between two characters while `e.target.range` represents the hovered character.
-        // For example with text `ab`:
-        // * When the mouse is over the second half of `a`:
-        //   - `e.target.position` will be `{ column: 2 }`
-        //   - `e.target.range` will be `{ startColumn: 1, endColumn: 2 }`
-        // * When the mouse is over the first half of `b`:
-        //   - `e.target.position` will be `{ column: 2 }`
-        //   - `e.target.range` will be `{ startColumn: 2, endColumn: 3 }`
-        const position = fromMonacoPosition({
-          lineNumber: e.target.range.startLineNumber,
-          column: e.target.range.startColumn
-        })
-        handleMouseEnter({ type: 'text', position })
+    /** Handle mouse move event in Monaco editor. */
+    function handleEditorMouseMove(target: monaco.editor.IMouseTarget) {
+      if (target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) {
+        handleMouseEnter({ type: 'other' })
+        return
+      }
+      if (target.detail.mightBeForeignElement) {
+        // `mightBeForeignElement` indicates injected or foreign content like inlay hint decorations.
+        handleMouseEnter({ type: 'other' })
+        return
+      }
+      // Here we use start position of `target.range` instead of `target.position`, as hovering happens on one character instead of between two characters.
+      // And `target.position` stands for the gap between two characters while `target.range` represents the hovered character.
+      // For example with text `ab`:
+      // * When the mouse is over the second half of `a`:
+      //   - `target.position` will be `{ column: 2 }`
+      //   - `target.range` will be `{ startColumn: 1, endColumn: 2 }`
+      // * When the mouse is over the first half of `b`:
+      //   - `target.position` will be `{ column: 2 }`
+      //   - `target.range` will be `{ startColumn: 2, endColumn: 3 }`
+      const position = fromMonacoPosition({
+        lineNumber: target.range.startLineNumber,
+        column: target.range.startColumn
       })
-    )
+      handleMouseEnter({ type: 'text', position })
+    }
 
+    this.addDisposable(editor.onMouseMove((e) => handleEditorMouseMove(e.target)))
     this.addDisposable(editor.onMouseLeave(() => handleMouseEnter({ type: 'other' })))
 
     this.on('cardMouseEnter', () => handleMouseEnter({ type: 'hover-card' }))
-    this.on('cardMouseLeave', () => handleMouseEnter({ type: 'other' }))
+    this.on('cardMouseLeave', (e) => {
+      const target = editor.getTargetAtClientPoint(e.clientX, e.clientY)
+      if (target != null) {
+        // This handles a timing edge case caused by hover-card reflow.
+        //
+        // The pointer may start on hoverable text, which shows a hover card above it. If the card
+        // content grows afterward, the card can temporarily expand downward and cover the pointer.
+        // Monaco then thinks the pointer has left the editor and fires `mouseLeave`, followed by
+        // `cardMouseEnter` because the pointer is now over the card. Once UIDropdown repositions the
+        // card, the pointer is no longer over it, so `cardMouseLeave` fires.
+        //
+        // At that point Monaco still has not observed any new pointer movement, so it does not emit
+        // `mouseMove` again. If we simply close the hover here, the result is wrong: the pointer is
+        // still resting on the original hoverable text.
+        //
+        // To recover, when `cardMouseLeave` fires and the pointer is still inside the editor, we
+        // synthesize the equivalent `mouseMove` handling once more. That lets us detect that the
+        // pointer is back over hoverable text and keep the hover card open.
+        handleEditorMouseMove(target)
+      } else {
+        handleMouseEnter({ type: 'other' })
+      }
+    })
 
     this.addDisposable(editor.onKeyDown(() => this.hideHover()))
     this.addDisposable(editor.onMouseDown(() => this.hideHover()))
