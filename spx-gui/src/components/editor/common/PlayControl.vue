@@ -1,7 +1,7 @@
 <!-- Sound / video play control (only UI) -->
 
 <template>
-  <div class="play-control" :class="[`play-control--${props.size}`]" :style="colorCssVars">
+  <div class="play-control" :class="[`play-control--${props.size}`]">
     <div v-show="!internalPlaying" class="play-control-play" @click.stop="handlePlay.fn">
       <UIIcon type="play" class="play-control-icon" />
     </div>
@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { UIIcon, UILoading, useUIVariables } from '@/components/ui'
+import { UIIcon, UILoading } from '@/components/ui'
 
 export type Size = 'medium' | 'large'
 
@@ -80,18 +80,6 @@ const playCssVars = computed(() => ({
   '--progress': internalPlaying.value?.progress ?? 0,
   '--progress-interval': `${props.progressInterval}s`
 }))
-
-const uiVariables = useUIVariables()
-const colorCssVars = computed(() => {
-  const color = uiVariables.color.primary
-  return {
-    '--color-main': color.main,
-    '--color-100': color[100],
-    '--color-300': color[300],
-    '--color-400': color[400],
-    '--color-600': color[600]
-  }
-})
 </script>
 
 <style scoped>
@@ -119,19 +107,19 @@ const colorCssVars = computed(() => {
   border-radius: 50%;
   cursor: pointer;
   transition: transform 0.2s;
-  --color: var(--color-main);
+  --color: var(--ui-color-primary-main);
 }
 
 .play-control-play:hover,
 .play-control-stop:hover {
   transform: scale(1.15);
-  --color: var(--color-400);
+  --color: var(--ui-color-primary-400);
 }
 
 .play-control-play:active,
 .play-control-stop:active {
   transform: scale(1.15);
-  --color: var(--color-600);
+  --color: var(--ui-color-primary-600);
 }
 
 .play-control-play {
@@ -175,7 +163,7 @@ const colorCssVars = computed(() => {
 }
 
 .progress circle.bg {
-  stroke: var(--color-300);
+  stroke: var(--ui-color-primary-300);
 }
 
 .progress circle.fg {
