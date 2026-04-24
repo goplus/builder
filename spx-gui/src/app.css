@@ -47,23 +47,15 @@
  * - token definitions live in src/components/ui/tokens/
  * - UIConfigProvider exposes them as global --ui-* CSS variables
  *
- * This file maps those --ui-* variables into Tailwind theme tokens so template
- * utilities can use semantic classes such as text-text and bg-primary-100.
+ * This file maps runtime --ui-* variables to Tailwind tokens for utilities such
+ * as text-title and bg-primary-100.
  *
- * Important: these theme values must stay `inline` because the source --ui-* variables
- * are injected later by UIConfigProvider on a descendant container instead of `:root`.
- * `@theme inline` makes Tailwind emit utilities like `color: var(--ui-color-text)`
- * directly, so the final lookup happens where the utility is used.
+ * Keep this block `inline`: the source vars are injected by UIConfigProvider on
+ * a descendant container, not predefined on `:root`.
  *
  * Usage rule:
- * - Treat the `--color-*`, `--font-*`, `--radius-*`, `--shadow-*`, and `--text-*`
- *   names declared below as Tailwind theme tokens only.
- * - Do NOT reference them from handwritten CSS with `var(--color-...)` etc.; `@theme inline`
- *   does not guarantee those intermediate variables exist at runtime.
- * - In handwritten CSS, always consume the runtime source variables directly
- *   (`--ui-color-*`, `--ui-font-*`, `--ui-border-radius-*`, `--ui-box-shadow-*`, ...).
- * - The theme bridge below intentionally avoids fallback values so missing runtime
- *   token wiring fails loudly during development.
+ * - The `--color-*`, `--font-*`, `--radius-*`, `--shadow-*`, `--spacing-*`, and `--text-*` names below are Tailwind tokens only.
+ * - Do not use those intermediate names from handwritten CSS; use runtime `--ui-*` variables directly.
  */
 @theme inline {
   /* Keep only the project's breakpoint names to avoid a parallel default scale. */
@@ -79,7 +71,7 @@
    * - Prefer standard Tailwind token names when possible (for example `rounded-md` instead of old project-local names like `rounded-2`).
    * - `tailwind-merge` understands standard utility groups much better than project-private aliases, so keeping token names aligned here makes class overrides more predictable.
    * - For values that still need custom CSS variables, prefer staying inside the original utility namespace when practical.
-  *   Example: use `rounded-md` bridged to `--ui-border-radius-md`, or `h-(--ui-line-height-md)` for height.
+   *   Example: use `rounded-md` bridged to `--ui-border-radius-md`, or `h-(--ui-line-height-md)` for height.
    */
 
   /* Mirrors src/components/ui/responsive.ts. */
@@ -191,7 +183,7 @@
   --color-black: #000;
   --color-white: #fff;
 
-  /* Typography tokens bridged from the UI token layer. Source Han Sans SC stays local-only; otherwise fall back to system sans fonts. */
+  /* Typography tokens bridged from the UI token layer. */
   --font-main: var(--ui-font-family-main);
   --font-code: var(--ui-font-family-code);
 
@@ -220,7 +212,10 @@
   --spacing-lg: var(--ui-spacing-lg);
   --spacing-xl: var(--ui-spacing-xl);
 
-  /* Typography scale anchored at 14px base. Figma mapping: F7=2xs, F6=xs, F5=sm, F4=base, F3=lg, F2=xl, F1=2xl. */
+  /*
+   * Typography scale anchored at 14px base. Figma mapping: F7=2xs, F6=xs, F5=sm, F4=base, F3=lg, F2=xl, F1=2xl.
+   * Font sizes are bridged from `--ui-*`; the default line heights and font weights below stay hardcoded here intentionally.
+   */
   --text-2xs: var(--ui-font-size-2xs);
   --text-2xs--line-height: 16px;
   --text-xs: var(--ui-font-size-xs);

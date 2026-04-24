@@ -97,7 +97,7 @@ When working with backend unique string identifiers such as `username`, project 
 * The global CSS layer order is `theme, base, naive-ui, components, utilities`, declared in `index.html`.
 * Keep `--ui-*` tokens as the source of truth.
 * In Tailwind classes, prefer bridged semantic tokens (for example `text-text`, `text-title`, `bg-primary-100`).
-* In `src/app.css`, the `@theme inline` declarations for `--color-*`, `--font-*`, `--radius-*`, `--shadow-*`, and `--text-*` are Tailwind theme tokens only, not runtime CSS variables.
+* In `src/app.css`, the `@theme inline` declarations for `--color-*`, `--font-*`, `--radius-*`, `--shadow-*`, `--spacing-*` and `--text-*` are Tailwind theme tokens only, not runtime CSS variables.
   In handwritten CSS, only use runtime source variables such as `--ui-color-*`, do not reference those intermediate names with `var(--color-...)`, `var(--radius-...)`, etc.
 
 ### Responsive and Theme Rules
