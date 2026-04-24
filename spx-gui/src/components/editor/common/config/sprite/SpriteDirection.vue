@@ -61,7 +61,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
 
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div class="content">
+  <div class="flex items-center gap-3">
     <UIButtonGroup
       v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }"
       :value="sprite.rotationStyle"
@@ -103,6 +103,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
       <template #trigger>
         <UINumberInput
           v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
+          class="flex-1 basis-30"
           :disabled="sprite.rotationStyle === RotationStyle.None"
           :min="-180"
           :max="180"
@@ -113,7 +114,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
           <template #prefix>{{ $t({ en: 'Heading', zh: '朝向' }) }}</template>
         </UINumberInput>
       </template>
-      <div class="rotation-heading-container">
+      <div class="flex flex-col items-center gap-3 p-3">
         <AnglePicker :model-value="sprite.heading" @update:model-value="handleHeadingUpdate" />
       </div>
     </UIDropdown>
@@ -133,19 +134,3 @@ const handleHeadingUpdate = wrapUpdateHandler(
     </UIButtonGroup>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.content {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.rotation-heading-container {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-</style>

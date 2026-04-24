@@ -309,7 +309,7 @@ providePopupContainer(codeEditorEl)
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .code-editor {
   position: relative;
   flex: 1 1 0;
@@ -326,10 +326,10 @@ providePopupContainer(codeEditorEl)
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--ui-color-dividing-line-2);
+}
 
-  .api-reference {
-    flex: 1 1 0;
-  }
+.sidebar .api-reference {
+  flex: 1 1 0;
 }
 
 .resize-handle {
@@ -340,13 +340,14 @@ providePopupContainer(codeEditorEl)
   z-index: 10;
   cursor: col-resize;
   transition: background-color 0.2s;
+}
 
-  &:hover {
-    background-color: rgba(36, 41, 47, 0.05);
-  }
-  &.active {
-    background-color: rgba(36, 41, 47, 0.1);
-  }
+.resize-handle:hover {
+  background-color: rgba(36, 41, 47, 0.05);
+}
+
+.resize-handle.active {
+  background-color: rgba(36, 41, 47, 0.1);
 }
 
 .monaco-editor-conflict-free {
@@ -364,14 +365,14 @@ providePopupContainer(codeEditorEl)
   flex-direction: column;
   justify-content: space-between;
   gap: 40px;
+}
 
-  .document-tabs {
-    flex: 0 1 auto;
-    min-height: 0;
-  }
+.right-sidebar .document-tabs {
+  flex: 0 1 auto;
+  min-height: 0;
+}
 
-  .zoom-control {
-    flex: 0 0 auto;
-  }
+.right-sidebar .zoom-control {
+  flex: 0 0 auto;
 }
 </style>

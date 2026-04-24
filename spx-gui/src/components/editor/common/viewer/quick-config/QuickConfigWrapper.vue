@@ -97,7 +97,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 <template>
   <div
     ref="quickConfigRef"
-    class="quick-config"
+    class="p-1"
     @focusin="handleInteractionStart"
     @focusout="handleInteractionEnd"
     @mouseenter="handleInteractionStart"
@@ -106,10 +106,3 @@ onBeforeUnmount(() => clearTimeout(timer))
     <slot></slot>
   </div>
 </template>
-
-<style lang="scss">
-.quick-config {
-  position: absolute;
-  padding: 4px;
-}
-</style>

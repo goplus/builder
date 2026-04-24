@@ -71,8 +71,8 @@ useDecorations(() => {
     <HoverCard
       v-if="controller.hover != null"
       :actions="controller.hover.actions"
-      @mouseenter="controller.emit('cardMouseEnter')"
-      @mouseleave="controller.emit('cardMouseLeave')"
+      @mouseenter="controller.emit('cardMouseEnter', $event)"
+      @mouseleave="controller.emit('cardMouseLeave', $event)"
       @action="controller.hideHover()"
     >
       <HoverCardContent v-for="(content, i) in controller.hover.contents" :key="i">
@@ -82,8 +82,8 @@ useDecorations(() => {
   </UIDropdown>
 </template>
 
-<style lang="scss">
-// TODO: special style for hovered text?
+<style>
+/* TODO: special style for hovered text? */
 .code-editor-hovered-text {
   border-radius: 2px;
   background-color: var(--ui-color-grey-600);

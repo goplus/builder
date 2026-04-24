@@ -2,11 +2,11 @@
   <CommunityHeader>
     <I18nT v-if="queryRet.data.value != null">
       <template #en>
-        Found {{ queryRet.data.value?.total }} projects for "<span class="keyword">{{ keyword }}</span
+        Found {{ queryRet.data.value?.total }} projects for "<span class="text-primary-main">{{ keyword }}</span
         >"
       </template>
       <template #zh>
-        找到 {{ queryRet.data.value?.total }} 个关于“<span class="keyword">{{ keyword }}</span
+        找到 {{ queryRet.data.value?.total }} 个关于“<span class="text-primary-main">{{ keyword }}</span
         >”的项目
       </template>
     </I18nT>
@@ -44,13 +44,16 @@
       </label>
     </template>
   </CommunityHeader>
-  <CenteredWrapper class="main" :style="{ '--project-num-in-row': numInRow }">
+  <CenteredWrapper class="flex flex-col gap-5 py-5" :style="{ '--project-num-in-row': numInRow }">
     <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="528">
-      <ul class="projects">
+      <ul class="grid grid-cols-[repeat(var(--project-num-in-row),minmax(0,1fr))] gap-5">
         <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
       </ul>
     </ListResultWrapper>
-    <footer v-show="pageTotal > 1" class="pagination-wrapper">
+    <footer
+      v-show="pageTotal > 1"
+      class="flex-[0_0_56px] w-full flex items-center justify-center rounded-md border border-grey-400 bg-grey-100"
+    >
       <UIPagination v-model:current="page" :total="pageTotal" />
     </footer>
   </CenteredWrapper>
@@ -128,34 +131,3 @@ const queryRet = useQuery(() => listProject(listParams.value), {
   zh: '搜索项目失败'
 })
 </script>
-
-<style lang="scss" scoped>
-.keyword {
-  color: var(--ui-color-primary-main);
-}
-
-.main {
-  padding: 20px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.projects {
-  display: grid;
-  grid-template-columns: repeat(var(--project-num-in-row), 1fr);
-  gap: 20px;
-}
-
-.pagination-wrapper {
-  flex: 0 0 56px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  border-radius: var(--ui-border-radius-2);
-  border: 1px solid var(--ui-color-grey-400);
-  background: var(--ui-color-grey-100);
-}
-</style>

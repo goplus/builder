@@ -40,7 +40,7 @@ async function moveZorder(direction: MoveAction) {
   <ConfigPanel
     v-radar="{ name: 'Widget Quick Config Panel', desc: 'Quick config for widget position, size and layer order' }"
   >
-    <div class="default-config-wrapper">
+    <div class="flex items-center gap-1">
       <UITooltip>
         {{ $t({ en: 'Position', zh: '位置' }) }}
         <template #trigger>
@@ -64,11 +64,3 @@ async function moveZorder(direction: MoveAction) {
     </div>
   </ConfigPanel>
 </template>
-
-<style lang="scss" scoped>
-.default-config-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-</style>

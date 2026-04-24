@@ -1,16 +1,22 @@
 <template>
-  <div class="container">
-    <div class="recorder-waveform-container">
+  <div class="flex flex-col">
+    <div class="relative h-40 overflow-hidden rounded-md bg-grey-300">
       <WaveformRecorder
         v-if="recordingState === 'recording' || recordingState === 'recorded'"
-        ref="waveformRecorderRef"
+        ref="recorderRef"
         :range="audioRange"
         :gain="gain"
         @update:range="recordingState === 'recorded' && (audioRange = $event)"
         @record-started="handleRecordStarted"
         @record-stopped="recordingState = 'recorded'"
+        @playback-started="handlePlaying"
+        @playback-stopped="handlePlayingStopped"
+        @playback-progress="handlePlayingProgress"
       />
-      <div v-if="recordingState === 'yetStarted'" class="recorder-waveform-overlay">
+      <div
+        v-if="recordingState === 'yetStarted'"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-grey-800"
+      >
         {{
           $t({
             en: 'Begin recording by clicking the button below',
@@ -19,12 +25,12 @@
         }}
       </div>
     </div>
-    <div v-if="recordingState === 'recorded'" class="volume-slider-container">
+    <div v-if="recordingState === 'recorded'" class="-mb-2 pt-6">
       <VolumeSlider :value="gain" @update:value="handleGainUpdate" />
     </div>
-    <div class="button-container">
-      <div v-if="recordingState === 'yetStarted'" class="icon-button">
-        <UIButton shape="circle" size="large" icon="microphone" color="danger" @click="recordingState = 'recording'" />
+    <div class="mb-2 mt-8 flex justify-center gap-10">
+      <div v-if="recordingState === 'yetStarted'" class="flex flex-col items-center gap-2 text-base">
+        <UIButton shape="circle" size="large" icon="microphone" type="red" @click="recordingState = 'recording'" />
         <span>
           {{
             $t({
@@ -34,8 +40,8 @@
           }}
         </span>
       </div>
-      <div v-else-if="recordingState === 'recording'" class="icon-button">
-        <UIButton shape="circle" size="large" icon="stop" color="danger" @click="stopRecording" />
+      <div v-else-if="recordingState === 'recording'" class="flex flex-col items-center gap-2 text-base">
+        <UIButton shape="circle" size="large" icon="stop" type="red" @click="stopRecording" />
         <span>
           {{
             $t({
@@ -46,51 +52,28 @@
         </span>
       </div>
       <template v-else>
-        <div class="icon-button">
-          <div class="icon-button-wrapper">
-            <UIButton shape="circle" size="large" icon="reload" color="boring" @click="resetRecording" />
+        <div class="w-14 flex flex-col items-center gap-2 text-base">
+          <div class="h-14 flex items-center">
+            <UIButton shape="circle" size="large" icon="reload" type="red" @click="resetRecording" />
           </div>
-          <span>
-            {{
-              $t({
-                en: 'Re-record',
-                zh: '重新录音'
-              })
-            }}
+          <span class="whitespace-nowrap">
+            {{ $t({ en: 'Re-record', zh: '重新录音' }) }}
           </span>
         </div>
-        <div class="icon-button">
-          <UIButton
-            style="width: 56px; height: 56px"
-            shape="circle"
-            size="large"
-            color="blue"
-            @click="waveformRecorderRef?.startPlayback()"
-          >
-            <template #icon>
-              <UIIcon type="play" style="width: 28px; height: 28px" />
-            </template>
-          </UIButton>
-          <span>
-            {{
-              $t({
-                en: 'Play',
-                zh: '播放'
-              })
-            }}
+        <div class="w-14 flex flex-col items-center gap-2 text-base">
+          <div class="h-14 flex items-center">
+            <PlayControl size="large" :playing="playing" :play-handler="handlePlay" @stop="handleStopPlaying" />
+          </div>
+          <span class="whitespace-nowrap">
+            {{ $t({ en: 'Play', zh: '播放' }) }}
           </span>
         </div>
-        <div class="icon-button">
-          <div class="icon-button-wrapper">
-            <UIButton shape="circle" size="large" icon="check" color="success" @click="saveRecording" />
+        <div class="w-14 flex flex-col items-center gap-2 text-base">
+          <div class="h-14 flex items-center">
+            <UIButton shape="circle" size="large" icon="check" type="green" @click="saveRecording" />
           </div>
-          <span>
-            {{
-              $t({
-                en: 'Save',
-                zh: '保存'
-              })
-            }}
+          <span class="whitespace-nowrap">
+            {{ $t({ en: 'Save', zh: '保存' }) }}
           </span>
         </div>
       </template>
@@ -104,7 +87,8 @@ import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/spx/sound'
 import type { SpxProject } from '@/models/spx/project'
-import { UIButton, UIIcon } from '@/components/ui'
+import { UIButton } from '@/components/ui'
+import PlayControl, { type Playing } from '../../common/PlayControl.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import { WaveformRecorder } from './waveform'
@@ -122,14 +106,14 @@ const editorCtx = useEditorCtx()
 
 const recordingState = ref<'yetStarted' | 'recording' | 'recorded'>('yetStarted')
 
-const waveformRecorderRef = ref<InstanceType<typeof WaveformRecorder> | null>(null)
+const recorderRef = ref<InstanceType<typeof WaveformRecorder> | null>(null)
 
 const audioRange = ref({ left: 0, right: 1 })
 const gain = ref(1)
 
 const handleGainUpdate = (v: number) => {
   gain.value = v
-  waveformRecorderRef.value?.startPlayback()
+  recorderRef.value?.startPlayback()
 }
 
 const handleRecordStarted = () => {
@@ -138,12 +122,34 @@ const handleRecordStarted = () => {
 }
 
 const stopRecording = () => {
-  waveformRecorderRef.value?.stopRecording()
+  recorderRef.value?.stopRecording()
+}
+
+const playing = ref<Playing | null>(null)
+
+async function handlePlay() {
+  return recorderRef.value?.startPlayback()
+}
+
+function handlePlaying() {
+  playing.value = { progress: 0 }
+}
+
+function handleStopPlaying() {
+  recorderRef.value?.stopPlayback()
+}
+
+function handlePlayingStopped() {
+  playing.value = null
+}
+
+function handlePlayingProgress(value: number) {
+  if (playing.value != null) playing.value.progress = value
 }
 
 const saveRecording = async () => {
-  if (!waveformRecorderRef.value || recordingState.value !== 'recorded') return
-  const wav = await waveformRecorderRef.value.exportWav()
+  if (!recorderRef.value || recordingState.value !== 'recorded') return
+  const wav = await recorderRef.value.exportWav()
 
   const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`, wav)
   const sound = await Sound.create('recording', file)
@@ -158,63 +164,3 @@ const resetRecording = () => {
   audioRange.value = { left: 0, right: 1 }
 }
 </script>
-
-<style lang="scss" scoped>
-.container {
-  display: flex;
-  flex-direction: column;
-}
-
-.recorder-waveform-container {
-  background-color: var(--ui-color-grey-300);
-  border-radius: var(--ui-border-radius-2);
-  height: 160px;
-  position: relative;
-  overflow: hidden;
-}
-
-.recorder-waveform-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: var(--ui-color-grey-800);
-  white-space: nowrap;
-}
-
-.recorder-waveform {
-  height: 160px;
-  padding: 0 16px;
-}
-
-.hidden {
-  opacity: 0;
-}
-
-.icon-button-wrapper {
-  display: flex;
-  align-items: center;
-  height: 56px;
-}
-
-.button-container {
-  display: flex;
-  margin-top: 32px;
-  margin-bottom: 8px;
-  gap: 40px;
-  justify-content: center;
-}
-
-.icon-button {
-  display: flex;
-  gap: 8px;
-  flex-direction: column;
-  font-size: 14px;
-  align-items: center;
-}
-
-.volume-slider-container {
-  padding-top: 24px;
-  margin-bottom: -8px;
-}
-</style>

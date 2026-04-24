@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getUserPageRoute } from '@/router'
-import CommunityCard from '../../CommunityCard.vue'
+import { UICard } from '@/components/ui'
 import UserSidebarItem from './UserSidebarItem.vue'
 
 defineProps<{
@@ -9,7 +9,10 @@ defineProps<{
 </script>
 
 <template>
-  <CommunityCard v-radar="{ name: 'User sidebar', desc: 'Sidebar navigation for user pages' }" class="user-sidebar">
+  <UICard
+    v-radar="{ name: 'User sidebar', desc: 'Sidebar navigation for user pages' }"
+    class="w-53 flex flex-col gap-1 p-3 desktop-large:w-54"
+  >
     <!-- TODO: check text here -->
     <UserSidebarItem
       v-radar="{ name: 'Overview link', desc: 'Click to navigate to user overview' }"
@@ -92,21 +95,5 @@ defineProps<{
       </svg>
       {{ $t({ en: 'Followers', zh: '关注者' }) }}
     </UserSidebarItem>
-  </CommunityCard>
+  </UICard>
 </template>
-
-<style lang="scss" scoped>
-@import '@/components/ui/responsive';
-
-.user-sidebar {
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  width: 212px;
-  @include responsive(desktop-large) {
-    width: 216px;
-  }
-}
-</style>

@@ -33,8 +33,8 @@ const resultContent = computed<string | null>(() => {
 </script>
 
 <template>
-  <section class="copilot-round">
-    <MarkdownView v-if="resultContent != null" class="answer" :value="resultContent" />
+  <section>
+    <MarkdownView v-if="resultContent != null" class="self-stretch" :value="resultContent" />
     <div v-if="round.state !== RoundState.Initialized">
       <template v-if="round.state === RoundState.Failed">
         <SignInTip v-if="round.apiExceptionCode === ApiExceptionCode.errorUnauthorized" :round="round" />
@@ -48,12 +48,3 @@ const resultContent = computed<string | null>(() => {
     </div>
   </section>
 </template>
-
-<style lang="scss" scoped>
-.copilot-round {
-}
-
-.answer {
-  align-self: stretch;
-}
-</style>

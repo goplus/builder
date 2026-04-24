@@ -1,7 +1,7 @@
 <template>
-  <UIBlockItem class="ui-sprite-item" size="large" :active="selected" :interactive="!!selectable">
+  <UIBlockItem class="p-1" size="large" :active="selected" :interactive="!!selectable">
     <slot name="img" :style="imgStyle"></slot>
-    <UIBlockItemTitle size="large">
+    <UIBlockItemTitle class="mt-2" size="large">
       {{ name }}
     </UIBlockItemTitle>
     <slot></slot>
@@ -25,12 +25,7 @@ const props = withDefaults(
 const selected = computed(() => props.selectable && props.selectable.selected)
 
 const imgStyle = {
-  height: '99px',
-  width: '99px'
+  height: '98px',
+  width: '98px'
 }
 </script>
-<style scoped lang="scss">
-.ui-sprite-item {
-  padding: 2px;
-}
-</style>

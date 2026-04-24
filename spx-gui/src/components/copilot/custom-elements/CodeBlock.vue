@@ -38,8 +38,10 @@ const handleCopy = useMessageHandle(
 
 <template>
   <BlockWrapper>
-    <div class="body">
-      <CodeView class="code" :language="language" mode="block" line-numbers>{{ code }}</CodeView>
+    <div class="py-3 pl-3">
+      <CodeView class="min-w-0 overflow-x-auto pr-3" :language="language" mode="block" line-numbers>
+        {{ code }}
+      </CodeView>
     </div>
     <BlockFooter>
       <BlockActionBtn icon="insert" @click="handleInsert">
@@ -51,14 +53,3 @@ const handleCopy = useMessageHandle(
     </BlockFooter>
   </BlockWrapper>
 </template>
-
-<style lang="scss" scoped>
-.body {
-  padding: 12px 0 12px 12px;
-}
-.code {
-  padding-right: 12px;
-  min-width: 0;
-  overflow-x: auto;
-}
-</style>

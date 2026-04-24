@@ -10,16 +10,13 @@ const code = useSlotText()
 </script>
 
 <template>
-  <div class="code-block">
-    <CodeView class="code" :language="language" mode="block">{{ code }}</CodeView>
+  <div class="py-3 pl-3">
+    <CodeView class="code-view-root" :language="language" mode="block">{{ code }}</CodeView>
   </div>
 </template>
 
-<style lang="scss" scoped>
-.code-block {
-  padding: 12px 0 12px 12px;
-}
-.code {
+<style scoped>
+.code-view-root {
   padding-right: 12px;
   min-width: 0;
   overflow-x: auto;

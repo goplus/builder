@@ -45,14 +45,15 @@ useDecorations(() => {
   <div></div>
 </template>
 
-<style lang="scss">
+<style>
 .code-editor-drop-indicator-line,
 .code-editor-drop-indicator-line-header {
   background-color: var(--ui-color-grey-300);
 }
 
 .code-editor-drop-indicator-line {
-  z-index: -1; // Keep it under the indent line
+  /* Keep it under the indent line. */
+  z-index: -1;
 }
 
 .code-editor-drop-indicator-line-header {
@@ -62,15 +63,15 @@ useDecorations(() => {
 
 .code-editor-drop-indicator-insertion-point {
   position: relative;
+}
 
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 2px;
-    height: 100%;
-    background-color: #000;
-  }
+.code-editor-drop-indicator-insertion-point::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background-color: #000;
 }
 </style>

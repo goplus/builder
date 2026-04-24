@@ -14,6 +14,7 @@ import { type GlobalThemeOverrides } from 'naive-ui'
 import { inject, type InjectionKey } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import * as uiVariables from './tokens'
+import { providePopupStack } from './popup'
 import { getCssVars } from './tokens/utils'
 import { useProvideLastClickEvent } from './utils'
 import { providePopupContainer, provideModalContainer, provideRootContainer } from '.'
@@ -66,31 +67,31 @@ const themeOverrides: GlobalThemeOverrides = {
     errorColor: uiVariables.color.danger.main,
     errorColorHover: uiVariables.color.danger[400],
     warningColor: uiVariables.color.yellow.main,
-    warningColorHover: uiVariables.color.yellow[100],
+    warningColorHover: uiVariables.color.yellow[400],
     successColor: uiVariables.color.success.main,
     successColorHover: uiVariables.color.success[400],
     infoColor: uiVariables.color.primary.main,
-    infoColorHover: uiVariables.color.primary[100],
+    infoColorHover: uiVariables.color.primary[400],
 
-    // TODO: review boxShadow mapping
-    boxShadow1: uiVariables.boxShadow.small,
-    boxShadow2: uiVariables.boxShadow.big,
-    boxShadow3: uiVariables.boxShadow.diffusion,
+    boxShadow1: uiVariables.boxShadow.sm,
+    boxShadow2: uiVariables.boxShadow.md,
+    boxShadow3: uiVariables.boxShadow.lg,
 
-    borderRadiusSmall: uiVariables.borderRadius[1],
-    borderRadius: uiVariables.borderRadius[2],
+    borderRadiusSmall: uiVariables.borderRadius.sm,
+    borderRadius: uiVariables.borderRadius.md,
 
-    heightSmall: uiVariables.lineHeight[1],
-    heightMedium: uiVariables.lineHeight[2],
-    heightLarge: uiVariables.lineHeight[3]
+    heightSmall: uiVariables.lineHeight.sm,
+    heightMedium: uiVariables.lineHeight.md,
+    heightLarge: uiVariables.lineHeight.lg
   },
   Popover: {
     space: '8px', // TODO: some var like gap?
-    arrowOffset: '30px'
+    arrowOffset: '30px',
+    borderRadius: uiVariables.borderRadius.md
   },
   Tooltip: {
-    borderRadius: uiVariables.borderRadius[1],
-    boxShadow: uiVariables.boxShadow.small,
+    borderRadius: uiVariables.borderRadius.md,
+    boxShadow: uiVariables.boxShadow.sm,
     color: uiVariables.color.grey[1000],
     textColor: uiVariables.color.grey[100],
     padding: '7px 8px',
@@ -119,10 +120,11 @@ const themeOverrides: GlobalThemeOverrides = {
     boxShadowFocus: `0 0 0 2px ${uiVariables.color.turquoise[300]}`
   },
   Checkbox: {
-    boxShadowFocus: 'none'
+    boxShadowFocus: 'none',
+    borderRadius: uiVariables.borderRadius.md
   },
   Message: {
-    padding: `11px ${uiVariables.gap.middle}`,
+    padding: `11px ${uiVariables.spacing.xl}`,
     iconMargin: `0 8px 0 0`,
     lineHeight: '1.57143',
     textColorInfo: uiVariables.color.title,
@@ -160,63 +162,20 @@ const nConfigProviderEl = computed(() => nConfigProvider.value?.$el)
 provideRootContainer(nConfigProviderEl)
 providePopupContainer(nConfigProviderEl)
 provideModalContainer(nConfigProviderEl)
+providePopupStack()
 
 useProvideLastClickEvent()
 
 const cssVariables = getCssVars('--ui-', uiVariables)
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .ui-config-provider {
   height: 100%;
 
   color: var(--ui-color-text);
-  font-size: var(--ui-font-size-text);
+  font-size: var(--ui-font-size-base);
   font-family: var(--ui-font-family-main);
-  line-height: 1.57143;
-}
-</style>
-
-<style lang="scss">
-/* Special title */
-h1 {
-  font-size: 20px;
-  line-height: 1.4;
-}
-
-/* Standard title */
-h2 {
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-/* Text in navigation bar */
-h3,
-/* Text */
-h4 {
-  font-size: 14px;
-  line-height: 1.57143;
-}
-
-/* More information */
-h5 {
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-h6 {
-  font-size: 10px;
-  line-height: 1.6;
-}
-
-button:focus {
-  outline: 2px solid var(--ui-color-primary-700);
-}
-
-// vueuc (dep of naive-ui) uses `pointer-events: all` on children of `v-binder-follower-content`, which wraps `Popover` content in naive-ui.
-// It causes pointer behavior issues in popup content. For example, a svg in a `visibility: hidden` element will still be clickable.
-// So we override it here to fix the issue. See details in https://github.com/07akioni/vueuc/issues/314
-.v-binder-follower-content > * {
-  pointer-events: initial;
+  line-height: 22px;
 }
 </style>

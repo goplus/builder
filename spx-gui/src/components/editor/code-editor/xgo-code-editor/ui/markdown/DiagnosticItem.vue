@@ -8,36 +8,16 @@ defineProps<{
 </script>
 
 <template>
-  <div class="diagnostic-item" :class="`severity-${severity}`">
-    <UIIcon class="icon" :type="severity" />
-    <div class="body">
+  <div
+    class="flex items-start gap-2 self-stretch px-2 py-1.5 rounded-sm"
+    :class="{
+      'bg-yellow-200': severity === 'warning',
+      'bg-red-100': severity === 'error'
+    }"
+  >
+    <UIIcon class="mt-0.75" :type="severity" />
+    <div class="flex-1">
       <slot></slot>
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.diagnostic-item {
-  padding: 6px 8px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  align-self: stretch;
-  border-radius: 8px;
-
-  &.severity-warning {
-    background-color: var(--ui-color-yellow-200);
-  }
-  &.severity-error {
-    background-color: var(--ui-color-red-100);
-  }
-}
-
-.icon {
-  margin-top: 3px;
-}
-
-.body {
-  flex: 1;
-}
-</style>

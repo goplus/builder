@@ -30,5 +30,3 @@ const hasContent = computed(() => documentation.value != null || childrenText.va
     <MarkdownView v-else :value="childrenText" />
   </DefinitionDetailWrapper>
 </template>
-
-<style lang="scss" scoped></style>

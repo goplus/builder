@@ -30,11 +30,16 @@ watch(angle, (v) => (modelValue.value = normalizeDegree(v)))
 </script>
 
 <template>
-  <div class="angle-picker">
+  <div class="grid grid-cols-[1fr_max-content_1fr] content-center justify-center text-center">
     <UITag
       v-for="direction in specialDirections"
       :key="direction.name"
-      :class="[direction.name.toLowerCase()]"
+      :class="{
+        'col-start-2 row-start-1 justify-self-center': direction.name.toLowerCase() === 'up',
+        'col-start-2 row-start-3 justify-self-center': direction.name.toLowerCase() === 'down',
+        'col-start-1 row-start-2 self-center justify-self-end': direction.name.toLowerCase() === 'left',
+        'col-start-3 row-start-2 self-center': direction.name.toLowerCase() === 'right'
+      }"
       :checkable="{ checked: modelValue === direction.value }"
       variant="none"
       @click="modelValue = direction.value"
@@ -42,7 +47,7 @@ watch(angle, (v) => (modelValue.value = normalizeDegree(v)))
     >
     <svg
       ref="svgEl"
-      class="picker"
+      class="col-start-2 row-start-2 m-1 self-center justify-self-center"
       width="140"
       height="140"
       viewBox="0 0 140 140"
@@ -122,46 +127,3 @@ watch(angle, (v) => (modelValue.value = normalizeDegree(v)))
     </svg>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.angle-picker {
-  display: grid;
-  grid-template-columns: 1fr max-content 1fr;
-  justify-content: center;
-  align-content: center;
-  text-align: center;
-}
-
-.picker {
-  grid-column: 2;
-  grid-row: 2;
-  margin: 4px;
-  justify-self: center;
-  align-self: center;
-}
-
-.up {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: center;
-}
-
-.down {
-  grid-column: 2;
-  grid-row: 3;
-  justify-self: center;
-}
-
-.left {
-  grid-column: 1;
-  grid-row: 2;
-  align-self: center;
-  justify-self: right;
-}
-
-.right {
-  grid-column: 3;
-  grid-row: 2;
-  align-self: center;
-}
-</style>

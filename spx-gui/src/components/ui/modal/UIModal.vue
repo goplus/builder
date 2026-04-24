@@ -12,7 +12,7 @@
     <div
       ref="containerRef"
       v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
-      :class="['container', `size-${size || 'medium'}`]"
+      :class="['ui-modal-container', `ui-modal-size-${size || 'medium'}`]"
     >
       <slot></slot>
     </div>
@@ -23,7 +23,7 @@
 import { ref, watchEffect, watch } from 'vue'
 import { NModal } from 'naive-ui'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { useLastClickEvent, useModalContainer } from '../utils'
+import { providePopupContainer, useLastClickEvent, useModalContainer } from '../utils'
 import { useModalEsc } from './UIModalProvider.vue'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
@@ -58,7 +58,10 @@ const handleUpdateShow = (visible: boolean) => {
 const attachTo = useModalContainer()
 
 const lastClickEvent = useLastClickEvent()
-const containerRef = ref<HTMLElement | null>(null)
+const containerRef = ref<HTMLElement | undefined>(undefined)
+
+providePopupContainer(containerRef)
+
 const customTransformOrigin = ref<TransformOrigin>({ x: 0, y: 0 })
 
 function setTransformOrigin(transformOrigin: TransformOrigin) {
@@ -79,6 +82,7 @@ watch(
 )
 
 const modalElRef = ref<HTMLElement | null>(null)
+
 watchEffect(() => {
   if (containerRef.value == null) return
   let modalEl = modalElRef.value
@@ -106,44 +110,48 @@ useModalEsc(
 )
 </script>
 
-<style lang="scss" scoped>
-.container {
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--ui-box-shadow-big);
-  border-radius: var(--ui-border-radius-2);
-  background-color: white;
-  overflow: hidden;
-}
+<style>
+@layer components {
+  .n-modal-mask {
+    background-color: var(--ui-color-overlay-modal) !important;
+  }
 
-.size-small {
-  width: 480px;
-}
-
-.size-medium {
-  width: 640px;
-}
-
-.size-large {
-  width: 960px;
-}
-
-.size-full {
-  width: 100%;
-  margin: 16px;
-}
-</style>
-
-<style lang="scss">
-.ui-modal.has-custom-origin {
-  // Override NaiveUI's transform-origin to support custom animation origins
-  transform-origin: var(--ui-modal-custom-origin, center) !important;
-
-  &.fade-in-scale-up-transition-enter-active,
-  &.fade-in-scale-up-transition-leave-active,
-  &.fade-in-scale-up-transition-enter-to,
-  &.fade-in-scale-up-transition-leave-to {
+  .ui-modal.has-custom-origin {
+    /* Override NaiveUI's transform-origin to support custom animation origins */
     transform-origin: var(--ui-modal-custom-origin, center) !important;
+  }
+
+  .ui-modal.has-custom-origin.fade-in-scale-up-transition-enter-active,
+  .ui-modal.has-custom-origin.fade-in-scale-up-transition-leave-active,
+  .ui-modal.has-custom-origin.fade-in-scale-up-transition-enter-to,
+  .ui-modal.has-custom-origin.fade-in-scale-up-transition-leave-to {
+    transform-origin: var(--ui-modal-custom-origin, center) !important;
+  }
+
+  .ui-modal-container {
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--ui-box-shadow-lg);
+    border-radius: var(--ui-border-radius-lg);
+    background-color: white;
+    overflow: hidden;
+  }
+
+  .ui-modal-size-small {
+    width: 480px;
+  }
+
+  .ui-modal-size-medium {
+    width: 640px;
+  }
+
+  .ui-modal-size-large {
+    width: 960px;
+  }
+
+  .ui-modal-size-full {
+    width: 100%;
+    margin: 16px;
   }
 }
 </style>

@@ -34,10 +34,13 @@ provide(messageEventsInjectKey, emitter)
   </NMessageProvider>
 </template>
 
-<style lang="scss">
-.n-message {
-  align-items: flex-start; /** text-content may contain multiple lines */
-  .n-message__icon {
+<style>
+@layer components {
+  .n-message {
+    align-items: flex-start; /** text-content may contain multiple lines */
+  }
+
+  .n-message .n-message__icon {
     margin-top: 1px; /** align icon with text-content */
   }
 }

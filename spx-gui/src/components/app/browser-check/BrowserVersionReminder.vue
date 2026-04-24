@@ -8,20 +8,20 @@
     @update:visible="visible = $event"
   >
     <div>{{ $t(content) }}</div>
-    <footer class="footer">
+    <footer class="mt-6 flex justify-end gap-3">
       <UIButton
         v-radar="{
           name: 'Do not show again button',
           desc: 'Click to close browser version reminder modal and suppress it show again.'
         }"
-        color="boring"
+        type="neutral"
         @click="handleDoNotShowAgain"
       >
         {{ $t({ en: 'Do not show again', zh: '不再提示' }) }}
       </UIButton>
       <UIButton
         v-radar="{ name: 'Confirm button', desc: 'Click to close browser version reminder modal' }"
-        color="primary"
+        type="primary"
         @click="handleConfirm"
       >
         {{ $t({ en: 'Got it', zh: '我知道了' }) }}
@@ -87,12 +87,3 @@ onMounted(() => {
   visible.value = true
 })
 </script>
-
-<style scoped lang="scss">
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-}
-</style>

@@ -20,7 +20,7 @@ import { Sound } from '@/models/spx/sound'
 import { Sprite } from '@/models/spx/sprite'
 import { validateAssetDisplayName, getAssetDisplayNameTip } from '@/models/spx/common/asset-name'
 import type { AssetModel, PartialAssetData } from '@/models/spx/common/asset'
-import { backdrop2Asset, sound2Asset, sprite2Asset } from '@/models/spx/common/asset'
+import { backdrop2Asset, humanizeAssetType, sound2Asset, sprite2Asset } from '@/models/spx/common/asset'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { useSignedInUser } from '@/stores/user'
@@ -157,18 +157,7 @@ async function addAssetWithPartialData({
     sortOrder: 'desc'
   })
   if (assets.length) {
-    let assetTypeName = t({ en: 'asset', zh: '素材' })
-    switch (type) {
-      case AssetType.Sprite:
-        assetTypeName = t({ en: 'sprite', zh: '精灵' })
-        break
-      case AssetType.Backdrop:
-        assetTypeName = t({ en: 'backdrop', zh: '背景' })
-        break
-      case AssetType.Sound:
-        assetTypeName = t({ en: 'sound', zh: '声音' })
-        break
-    }
+    const assetTypeName = humanizeAssetType(type)
     await confirm({
       type: 'warning',
       title: t({
@@ -207,13 +196,17 @@ async function addAssetWithPartialData({
       {{ $t(error.userMessage) }}
     </UIError>
     <UIForm v-else :form="form" @submit="handleSubmit.fn">
-      <main class="main">
-        <div class="sider">
-          <BackdropPreview v-if="model instanceof Backdrop" class="preview" :backdrop="model" />
-          <SpritePreview v-if="model instanceof Sprite" class="preview" :sprite="model" />
-          <SoundPreview v-if="model instanceof Sound" class="preview" :sound="model" />
+      <main class="flex">
+        <div class="flex-none px-6 py-5">
+          <BackdropPreview
+            v-if="model instanceof Backdrop"
+            class="h-21 w-28 rounded-sm bg-grey-300"
+            :backdrop="model"
+          />
+          <SpritePreview v-if="model instanceof Sprite" class="h-21 w-28 rounded-sm bg-grey-300" :sprite="model" />
+          <SoundPreview v-if="model instanceof Sound" class="h-21 w-28 rounded-sm bg-grey-300" :sound="model" />
         </div>
-        <div class="inputs">
+        <div class="flex-[1_1_0] px-6 pt-5 pb-10">
           <UIFormItem path="name">
             <UITextInput
               v-model:value="form.value.name"
@@ -246,10 +239,10 @@ async function addAssetWithPartialData({
           </UIFormItem>
         </div>
       </main>
-      <footer class="footer">
+      <footer class="flex justify-center">
         <UIButton
           v-radar="{ name: 'Save button', desc: 'Click to save asset to the library' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :disabled="isLoading"
           :loading="handleSubmit.isLoading.value"
@@ -260,31 +253,3 @@ async function addAssetWithPartialData({
     </UIForm>
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.main {
-  display: flex;
-}
-
-.sider {
-  flex: 0 0 auto;
-  padding: 20px 24px;
-
-  .preview {
-    width: 112px;
-    height: 84px;
-    border-radius: 8px;
-    background-color: var(--ui-color-grey-300);
-  }
-}
-
-.inputs {
-  flex: 1 1 0;
-  padding: 20px 24px 40px;
-}
-
-.footer {
-  display: flex;
-  justify-content: center;
-}
-</style>

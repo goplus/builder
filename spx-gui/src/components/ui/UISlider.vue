@@ -3,15 +3,19 @@
     v-model:value="value"
     class="ui-slider"
     :style="{
-      '--n-fill-color': `var(--ui-color-${color}-500)`,
-      '--n-fill-color-hover': `var(--ui-color-${color}-500)`,
+      '--n-fill-color': 'var(--ui-color-primary-500)',
+      '--n-fill-color-hover': 'var(--ui-color-primary-500)',
       '--n-rail-color': 'rgb(245,245,245)'
     }"
     :on-dragend="handleDragEnd"
     @update:value="handleUpdateValue"
   >
     <template #thumb>
-      <div class="thumb" :style="{ boxShadow }"></div>
+      <!-- keep `ui-slider-thumb` for existing :deep(...) overrides -->
+      <div
+        class="ui-slider-thumb h-5 w-5 rounded-full bg-white transition-transform duration-200 hover:scale-120"
+        :style="{ boxShadow }"
+      ></div>
     </template>
   </NSlider>
 </template>
@@ -21,12 +25,10 @@ import { computed, ref, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    color?: 'primary' | 'sound'
     value?: number
     updateOn?: 'dragend' | 'input'
   }>(),
   {
-    color: 'primary',
     value: 0,
     updateOn: 'dragend'
   }
@@ -45,7 +47,7 @@ watch(
 )
 
 const boxShadow = computed(() => {
-  return `inset 0 0 0 1px var(--ui-color-${props.color}-500)`
+  return 'inset 0 0 0 1px var(--ui-color-primary-500)'
 })
 
 const handleDragEnd = async () => {
@@ -58,15 +60,3 @@ function handleUpdateValue(nextValue: number) {
   emit('update:value', nextValue)
 }
 </script>
-<style lang="scss" scoped>
-.thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: #fff;
-  transition: transform 0.2s;
-  &:hover {
-    transform: scale(1.2);
-  }
-}
-</style>

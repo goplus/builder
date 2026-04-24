@@ -1,42 +1,43 @@
 <template>
-  <section class="stage-panel" :class="{ active }" :style="cssVars">
-    <!-- TODO: use UICardHeader? -->
-    <h4 class="header">{{ $t({ en: 'Stage', zh: '舞台' }) }}</h4>
-    <main class="main">
-      <div class="stage">
+  <section class="h-full flex flex-col overflow-hidden">
+    <UICardHeader class="h-11 w-20 justify-center">
+      {{ $t({ en: 'Stage', zh: '舞台' }) }}
+    </UICardHeader>
+    <main class="flex-[1_1_0] flex flex-col items-center">
+      <div class="flex-none p-3">
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
-          class="overview"
-          :class="{ active }"
+          class="relative h-14 w-14 cursor-pointer flex items-center justify-center rounded-md border border-grey-400 transition-colors"
+          :class="active ? 'p-0 border-2 border-primary-main bg-primary-200' : 'p-0.5 hover:bg-grey-300'"
           @click="activate"
         >
-          <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
+          <UIImg class="h-11 w-11 rounded-[4px] object-cover" :src="imgSrc" size="cover" :loading="imgLoading" />
         </div>
       </div>
-      <UIDivider class="divider" />
-      <div class="scroll-container">
-        <div class="quick-actions">
+      <UIDivider class="w-10" />
+      <div class="scroll-container w-full flex-[1_0_72px] overflow-y-auto">
+        <div class="flex flex-col items-start gap-2">
           <button
             v-radar="{
               name: 'Backdrops quick entry',
               desc: 'Quick entry to open backdrops management tab in stage editor'
             }"
-            class="quick-btn"
+            :class="quickEntryClass"
             type="button"
             @click="openTab('backdrops')"
           >
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <span class="icon" v-html="backdropSvg"></span>
+            <span class="h-7.5 w-7.5 flex items-center justify-center" v-html="backdropSvg"></span>
             <span>{{ $t({ en: 'Backdrops', zh: '背景' }) }}</span>
           </button>
           <button
             v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
-            class="quick-btn"
+            :class="quickEntryClass"
             type="button"
             @click="openTab('sounds')"
           >
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <span class="icon" v-html="soundSvg"></span>
+            <span class="h-7.5 w-7.5 flex items-center justify-center" v-html="soundSvg"></span>
             <span>{{ $t({ en: 'Sounds', zh: '声音' }) }}</span>
           </button>
           <button
@@ -44,12 +45,12 @@
               name: 'Widgets quick entry',
               desc: 'Quick entry to open widgets management tab in stage editor'
             }"
-            class="quick-btn"
+            :class="quickEntryClass"
             type="button"
             @click="openTab('widgets')"
           >
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <span class="icon" v-html="widgetSvg"></span>
+            <span class="h-7.5 w-7.5 flex items-center justify-center" v-html="widgetSvg"></span>
             <span>{{ $t({ en: 'Widgets', zh: '控件' }) }}</span>
           </button>
         </div>
@@ -60,7 +61,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg, getCssVars, useUIVariables, UIDivider } from '@/components/ui'
+import { UIImg, UIDivider, UICardHeader } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import type { SelectedType } from '../../stage/StageEditor.vue'
@@ -84,124 +85,15 @@ function openTab(type: Extract<SelectedType, 'backdrops' | 'sounds' | 'widgets'>
 const backdrop = computed(() => editorCtx.project.stage.defaultBackdrop)
 const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 
-const uiVariables = useUIVariables()
-const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
+const quickEntryClass =
+  'h-14 w-14 cursor-pointer flex flex-col items-center justify-center gap-0.5 \
+rounded-md border-none bg-grey-100 p-1 text-2xs text-grey-900 outline-none \
+transition-colors hover:bg-grey-300'
 </script>
 
-<style scoped lang="scss">
-.stage-panel {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-
-  .header {
-    flex: 0 0 44px;
-    width: 80px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    font-size: 16px;
-    color: var(--ui-color-title);
-    border-bottom: 1px solid var(--ui-color-grey-400);
-  }
-
-  &.active {
-    .header {
-      color: var(--ui-color-grey-100);
-      background-color: var(--ui-color-stage-main);
-      border-color: var(--ui-color-stage-main);
-    }
-  }
-
-  .main {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-}
-
-.stage {
-  flex: 0 0 auto;
-  padding: 12px;
-
-  .overview {
-    width: 56px;
-    height: 56px;
-    padding: 2px;
-    position: relative;
-    border-radius: var(--ui-border-radius-1);
-    background-color: var(--ui-color-grey-300);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-
-    &:not(.active):hover {
-      background-color: var(--ui-color-grey-400);
-    }
-
-    &.active {
-      padding: 0;
-      background-color: var(--ui-color-blue-200);
-      border: 2px solid var(--ui-color-stage-main);
-    }
-
-    .img {
-      width: 44px;
-      height: 44px;
-      border-radius: 4px;
-      object-fit: cover;
-    }
-  }
-}
-
-.divider {
-  width: 40px;
-}
-
+<style scoped>
 .scroll-container {
-  flex: 1 0 72px;
-  overflow-y: auto;
-  width: 100%;
-  padding: 12px 0 12px 12px; // no right padding to allow optional scrollbar
+  padding: 12px 0 12px 12px; /* no right padding to allow optional scrollbar */
   scrollbar-width: thin;
-}
-
-.quick-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-
-  .quick-btn {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--ui-border-radius-1);
-    background-color: var(--ui-color-grey-300);
-    border: none;
-    outline: none;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--ui-color-grey-1000);
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 16px;
-    cursor: pointer;
-
-    &:hover {
-      background-color: var(--ui-color-grey-400);
-    }
-
-    .icon {
-      width: 24px;
-      height: 24px;
-    }
-  }
 }
 </style>

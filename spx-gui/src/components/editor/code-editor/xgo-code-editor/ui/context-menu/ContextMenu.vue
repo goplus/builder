@@ -34,5 +34,3 @@ const handleItemClick = useMessageHandle((item: InternalMenuItem) => props.contr
     </UIMenu>
   </UIDropdown>
 </template>
-
-<style lang="scss" scoped></style>

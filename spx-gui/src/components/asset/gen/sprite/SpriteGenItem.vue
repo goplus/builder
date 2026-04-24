@@ -33,19 +33,7 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
     :loading="isLoading"
     :highlight="highlight"
     :placeholder="spriteSVG"
-    :color="{
-      main: 'sprite',
-      loading: {
-        headColor: 'var(--ui-color-sprite-main)',
-        tailColor: '#FFF0DC',
-        traceColor: '#FFFAF51A',
-        activeTraceColor: '#FDCC8E'
-      },
-      highlightColor: 'var(--ui-color-sprite-main)'
-    }"
   >
     <UIBlockItemTitle size="medium">{{ gen.settings.name }}</UIBlockItemTitle>
   </GenItem>
 </template>
-
-<style lang="scss" scoped></style>

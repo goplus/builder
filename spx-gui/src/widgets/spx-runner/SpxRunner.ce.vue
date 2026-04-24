@@ -69,7 +69,7 @@ const onStop = () => {
 }
 </script>
 
-<style lang="scss">
+<style>
 .spx-runner-widget {
   position: relative;
   width: 100%;
@@ -78,59 +78,70 @@ const onStop = () => {
   flex-direction: column;
   border: 1px solid #77777789;
   border-radius: 10px;
-  .operation {
-    display: flex;
-    justify-content: end;
-    padding-top: 10px;
-    padding-right: 10px;
-    position: absolute;
-    width: 100%;
-    z-index: 100;
-    button {
-      border: 2px solid rgba(0, 20, 41, 0.4392156863);
-      border-radius: 16px;
-      z-index: 100;
-      font-size: 14px;
-      padding: 4px 14px;
-      color: white;
-      cursor: pointer;
-      margin-right: 10px;
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      &.run {
-        background-color: #3a8b3b;
-      }
-      &.stop {
-        background-color: #d03050;
-      }
-    }
-  }
-  .project-runner {
-    position: relative;
-    width: 100%;
-    flex: 1;
-    height: 100%;
-    iframe {
-      width: 100%;
-      height: 100%;
-    }
-    .loading,
-    .ready,
-    .error {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      & > p {
-        text-align: center;
-      }
-    }
-  }
+}
+
+.spx-runner-widget .operation {
+  display: flex;
+  justify-content: end;
+  padding-top: 10px;
+  padding-right: 10px;
+  position: absolute;
+  width: 100%;
+  z-index: 100;
+}
+
+.spx-runner-widget .operation button {
+  border: 2px solid rgba(0, 20, 41, 0.4392156863);
+  border-radius: 16px;
+  z-index: 100;
+  font-size: 14px;
+  padding: 4px 14px;
+  color: white;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.spx-runner-widget .operation button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spx-runner-widget .operation button.run {
+  background-color: #3a8b3b;
+}
+
+.spx-runner-widget .operation button.stop {
+  background-color: #d03050;
+}
+
+.spx-runner-widget .project-runner {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  height: 100%;
+}
+
+.spx-runner-widget .project-runner iframe {
+  width: 100%;
+  height: 100%;
+}
+
+.spx-runner-widget .project-runner .loading,
+.spx-runner-widget .project-runner .ready,
+.spx-runner-widget .project-runner .error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spx-runner-widget .project-runner .loading > p,
+.spx-runner-widget .project-runner .ready > p,
+.spx-runner-widget .project-runner .error > p {
+  text-align: center;
 }
 </style>

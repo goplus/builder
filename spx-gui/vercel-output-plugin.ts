@@ -91,7 +91,7 @@ export const createVercelOutputPlugin = ({ outputDir = defaultOutputDir, headers
     configResolved(config) {
       resolvedConfig = config
     },
-    async closeBundle() {
+    async writeBundle() {
       if (resolvedConfig == null || resolvedConfig.build.ssr) {
         return
       }

@@ -70,21 +70,21 @@ function validateName(name: string) {
         />
         <template #tip>{{ $t(target.inputTip) }}</template>
       </UIFormItem>
-      <p v-if="target.warning != null" class="warning">
-        <UIIcon class="icon" type="warning" />
+      <p v-if="target.warning != null" class="mt-3 flex items-start gap-2 text-yellow-500">
+        <UIIcon class="h-5.5 flex-none" type="warning" />
         {{ $t(target.warning) }}
       </p>
-      <footer class="footer">
+      <footer class="mt-10 flex justify-end gap-xl">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel renaming' }"
-          color="boring"
+          type="neutral"
           @click="emit('cancelled')"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Confirm button', desc: 'Click to confirm renaming' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >
@@ -94,25 +94,3 @@ function validateName(name: string) {
     </UIForm>
   </UIFormModal>
 </template>
-
-<style lang="scss" scoped>
-.warning {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  color: var(--ui-color-yellow-500);
-  align-items: flex-start;
-
-  .icon {
-    flex: 0 0 auto;
-    height: 22px;
-  }
-}
-
-.footer {
-  margin-top: 40px;
-  display: flex;
-  gap: var(--ui-gap-middle);
-  justify-content: flex-end;
-}
-</style>

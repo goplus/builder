@@ -73,7 +73,7 @@ const handleClick = useMessageHandle(
 </script>
 
 <template>
-  <a class="code-link" href="javascript:;" @click.prevent="handleClick">
+  <a class="link-boring" href="javascript:;" @click.prevent="handleClick">
     <template v-if="!!slots.default">
       <slot></slot>
     </template>
@@ -82,11 +82,3 @@ const handleClick = useMessageHandle(
     </template>
   </a>
 </template>
-
-<style lang="scss" scoped>
-@import '@/components/ui/link.scss';
-
-.code-link {
-  @include link(boring);
-}
-</style>
