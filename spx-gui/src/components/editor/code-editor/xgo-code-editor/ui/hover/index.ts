@@ -25,6 +25,7 @@ import {
   builtInCommandRenameResource,
   builtInCommandInvokeInputHelper
 } from '../code-editor-ui'
+import { isInPopup } from '@/components/ui'
 import { fromMonacoPosition } from '../common'
 import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
 
@@ -193,6 +194,11 @@ export class HoverController extends Emitter<{
 
   init() {
     const { monaco, editor, resourceReferenceController } = this.ui
+    const editorEl = editor.getDomNode()
+    if (editorEl == null) throw new Error('No editor dom node')
+    // Track the latest mouse position so we can re-check the live Monaco/popup
+    // hit target when a stationary hover is briefly disturbed by decoration or popup mount.
+    let lastMouseClientPoint: { x: number; y: number } | null = null
 
     const hideHoverWithDebounce = debounce(() => this.hideHover(), 100)
 
@@ -203,8 +209,31 @@ export class HoverController extends Emitter<{
       }
     })
 
+    const isPositionInsideCurrentHover = (position: Position) => {
+      const currentHover = this.hover
+      return currentHover != null && containsPosition(currentHover.range, position)
+    }
+
+    const shouldKeepHoverOpen = (relatedTarget: EventTarget | null) => {
+      // Treat transient Monaco target reclassification and moves into popup
+      // content as still-hovering states. This keeps a stationary hover from
+      // collapsing while decorations/popup DOM are being mounted.
+      if (lastMouseClientPoint != null) {
+        const liveTarget = editor.getTargetAtClientPoint(lastMouseClientPoint.x, lastMouseClientPoint.y)
+        if (liveTarget != null) {
+          const targetPosition = resolveMouseTargetPosition(liveTarget)
+          if (targetPosition != null && isPositionInsideCurrentHover(targetPosition)) return true
+        }
+      }
+      if (isInPopup(resolveEventHTMLElement(relatedTarget))) return true
+      return isPointerInsidePopup(lastMouseClientPoint)
+    }
+
     const handleMouseEnter = debounce((target: HoverTarget) => {
       if (target.type === 'other') {
+        // Popup mount/decorations can briefly reclassify a stationary pointer.
+        // Keep the hover open while the cursor still maps to the current range or popup.
+        if (shouldKeepHoverOpen(null)) return
         hideHoverWithDebounce()
         return
       }
@@ -223,6 +252,14 @@ export class HoverController extends Emitter<{
 
     this.addDisposable(
       editor.onMouseMove((e: monaco.editor.IEditorMouseEvent) => {
+        lastMouseClientPoint = { x: e.event.posx, y: e.event.posy }
+        // Keep the current hover alive when Monaco still maps this event back
+        // to the active hover range, even if the target was briefly reclassified.
+        const targetPosition = resolveMouseTargetPosition(e.target)
+        if (targetPosition != null && isPositionInsideCurrentHover(targetPosition)) {
+          handleMouseEnter({ type: 'text', position: targetPosition })
+          return
+        }
         if (e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) {
           handleMouseEnter({ type: 'other' })
           return
@@ -249,7 +286,15 @@ export class HoverController extends Emitter<{
       })
     )
 
-    this.addDisposable(editor.onMouseLeave(() => handleMouseEnter({ type: 'other' })))
+    // Use DOM `mouseleave` insteadOf `editor.OnMouseLeave` so we can inspect `relatedTarget` before deciding to hide.
+    editorEl.addEventListener(
+      'mouseleave',
+      (e) => {
+        if (shouldKeepHoverOpen(e.relatedTarget)) return
+        handleMouseEnter({ type: 'other' })
+      },
+      { signal: this.getSignal() }
+    )
 
     this.on('cardMouseEnter', () => handleMouseEnter({ type: 'hover-card' }))
     this.on('cardMouseLeave', () => handleMouseEnter({ type: 'other' }))
@@ -263,4 +308,31 @@ export class HoverController extends Emitter<{
       })
     )
   }
+}
+
+function resolveEventHTMLElement(target: EventTarget | null) {
+  if (target instanceof HTMLElement) return target
+  if (target instanceof Node) return target.parentElement
+  return null
+}
+
+function isPointerInsidePopup(point: { x: number; y: number } | null) {
+  if (point == null) return false
+  const el = document.elementFromPoint(point.x, point.y)
+  return isInPopup(resolveEventHTMLElement(el))
+}
+
+export function resolveMouseTargetPosition(target: monaco.editor.IEditorMouseEvent['target']): Position | null {
+  const range = (target as { range?: { startLineNumber: number; startColumn: number } | null }).range
+  if (range != null) {
+    return fromMonacoPosition({
+      lineNumber: range.startLineNumber,
+      column: range.startColumn
+    })
+  }
+  const position = (target as { position?: { lineNumber: number; column: number } | null }).position
+  if (position != null) {
+    return fromMonacoPosition(position)
+  }
+  return null
 }
