@@ -76,7 +76,7 @@ AI 默认不应修改这些文件，除非用户明确要求：
 - `MUST` 在未获用户明确授权时，把默认写入范围限制在 `ui/**`，不要直接修改 `spx-gui/src/**`。
 - `MUST` 在 `builder-component.lib.pen` 内部使用本地 token 和本地 `ref`，例如 `$grey300`、`$space-3`、`"ref": "<本地 reusable 节点 ID>"`。
 - `MUST` 在页面 `.pen` 中优先通过 import alias 使用组件库 token / 节点，例如 `$r:grey300`、`$r:space-3`、`"ref": "r:<组件库 reusable 节点 ID>"`。
-- `MUST` 在修改 `builder-component.lib.pen` 或任何引用它的活跃页面 `.pen` 后，手动运行 `cd /Users/zengqingqing/workspace/builder/spx-gui && npm run test -- src/utils/builder-component-lib.test.ts --run`，并汇报结果。
+- `MUST` 在修改 `builder-component.lib.pen` 或任何引用它的活跃页面 `.pen` 后，在仓库根目录运行 `npm --prefix spx-gui run test -- src/utils/builder-component-lib.test.ts --run`，并汇报结果。
 - `MUST` 在任务目标属于“修改 canonical palette”时，先得到用户对 `spx-gui/src/components/ui/tokens/colors.ts` 的明确授权；未获授权时，只能把 `ui/**` 同步到当前代码主源。
 - `MUST` 删除仅仅复制基础 token 的页面局部变量，只要这些值已经可以从组件库 import 得到。
 - `SHOULD` 保留组件库中不存在、且确实属于页面语义的私有变量，例如页面专用尺寸、布局常量、临时内容占位。
@@ -113,15 +113,13 @@ AI 在完成修正后，回复里至少应说明：
 当目标文件是 `builder-component.lib.pen` 或任何引用它的活跃页面 `.pen` 时，默认使用下面这条命令做手动校验：
 
 ```bash
-cd /Users/zengqingqing/workspace/builder/spx-gui
-npm run test -- src/utils/builder-component-lib.test.ts --run
+npm --prefix spx-gui run test -- src/utils/builder-component-lib.test.ts --run
 ```
 
 如果希望同时触发“创建 `.snapshots` 快照 + staged 校验”，可在 `builder-component.lib.pen` 已暂存时运行：
 
 ```bash
-cd /Users/zengqingqing/workspace/builder/spx-gui
-npm run validate:pen
+npm --prefix spx-gui run validate:pen
 ```
 
 注意：
@@ -717,8 +715,7 @@ npm run validate:pen
 4. 运行：
 
 ```bash
-cd /Users/zengqingqing/workspace/builder/spx-gui
-npm run test -- src/utils/builder-component-lib.test.ts --run
+npm --prefix spx-gui run test -- src/utils/builder-component-lib.test.ts --run
 ```
 
 #### B. 修改 canonical palette
@@ -744,8 +741,7 @@ npm run test -- src/utils/builder-component-lib.test.ts --run
 5. 运行：
 
 ```bash
-cd /Users/zengqingqing/workspace/builder/spx-gui
-npm run test -- src/utils/builder-component-lib.test.ts --run
+npm --prefix spx-gui run test -- src/utils/builder-component-lib.test.ts --run
 ```
 
 当前自动校验的限制要一并说明：

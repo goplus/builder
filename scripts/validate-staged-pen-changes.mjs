@@ -1,6 +1,5 @@
 import {
   createSnapshot,
-  defaultTargetPath,
   defaultValidateCommand,
   getDefaultSnapshotDir,
   getDefaultSourcePath,
@@ -25,7 +24,7 @@ const triggered = await validateStagedPen({
   shouldTrigger: isUiPenPath,
   validateCommand,
   onTriggered: async ({ matchedFiles }) => {
-    if (matchedFiles.some((file) => isLibraryPenPath(file) || file === defaultTargetPath)) {
+    if (matchedFiles.some(isLibraryPenPath)) {
       const snapshotPath = await createSnapshot({ sourcePath, snapshotDir })
       console.log(`Created snapshot before validation: ${snapshotPath}`)
     }
