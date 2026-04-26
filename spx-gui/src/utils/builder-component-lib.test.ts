@@ -193,16 +193,13 @@ function collectLegacyFontMarkers(path: string) {
   return LegacyFontMarkers.filter((marker) => text.includes(marker))
 }
 
-function readColorPalette<const TSteps extends readonly number[]>(
-  path: string,
-  prefix: string,
-  steps: TSteps
-) {
+function readColorPalette<const TSteps extends readonly number[]>(path: string, prefix: string, steps: TSteps) {
   const pen = readPen(path) as PenDocument
 
-  return Object.fromEntries(
-    steps.map((step) => [step, readDefaultColorVariable(pen, `${prefix}${step}`)])
-  ) as Record<TSteps[number], string>
+  return Object.fromEntries(steps.map((step) => [step, readDefaultColorVariable(pen, `${prefix}${step}`)])) as Record<
+    TSteps[number],
+    string
+  >
 }
 
 function readRadiusScale(path: string) {
@@ -246,9 +243,10 @@ function readTextLineHeightScale(path: string) {
 function readMaskScale(path: string) {
   const pen = readPen(path) as PenDocument
 
-  return Object.fromEntries(
-    MaskSteps.map((step) => [step, readDefaultColorVariable(pen, `mask-${step}`)])
-  ) as Record<(typeof MaskSteps)[number], string>
+  return Object.fromEntries(MaskSteps.map((step) => [step, readDefaultColorVariable(pen, `mask-${step}`)])) as Record<
+    (typeof MaskSteps)[number],
+    string
+  >
 }
 
 function readVariableEntries(pen: PenDocument, variableName: string) {
