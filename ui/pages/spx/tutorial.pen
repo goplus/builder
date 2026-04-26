@@ -1,14 +1,14 @@
 {
-  "version": "2.9",
+  "version": "2.11",
   "children": [
     {
       "type": "frame",
       "id": "eVpiL",
       "x": -720,
-      "y": -818.5,
+      "y": -818,
       "name": "course-series",
       "width": 1440,
-      "fill": "$grey100",
+      "fill": "$P:grey100",
       "layout": "vertical",
       "padding": [
         0,
@@ -24,23 +24,21 @@
           "name": "content",
           "clip": true,
           "width": 1440,
-          "fill": "#FFFFFF",
+          "fill": "$P:grey100",
           "layout": "vertical",
           "alignItems": "center",
           "children": [
             {
-              "id": "ftVwk",
+              "id": "5i94D",
               "type": "ref",
               "ref": "P:sKPE5",
-              "x": 0.0001936356535040689,
+              "x": 0.00019363565354524326,
               "y": 0,
               "children": [
                 {
-                  "id": "kpFCr",
+                  "id": "jGhf2",
                   "type": "ref",
-                  "ref": "P:832Oq",
-                  "x": 0,
-                  "y": 0
+                  "ref": "P:1jllZ"
                 }
               ]
             },
@@ -69,28 +67,26 @@
                   "gap": 8,
                   "children": [
                     {
-                      "type": "text",
                       "id": "y9rIh",
-                      "name": "Title",
+                      "type": "ref",
+                      "ref": "P:Lm2P8",
                       "rotation": -0.05697825074317873,
-                      "fill": "#006375",
+                      "fill": "$P:turquoise700",
                       "textGrowth": "fixed-width-height",
                       "width": 490,
                       "height": 49,
                       "content": "Explore the User Tutorial",
                       "lineHeight": 1.5,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 36,
                       "fontWeight": "bold"
                     },
                     {
-                      "type": "text",
                       "id": "N13qE",
-                      "name": "Subtitle",
-                      "fill": "#006375",
+                      "type": "ref",
+                      "ref": "P:OHwu4",
+                      "fill": "$P:turquoise700",
                       "content": "Build coding skills and develop a programming mindset",
                       "lineHeight": 1.5,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
                       "fontSize": 18,
                       "fontWeight": "normal"
                     }
@@ -117,7 +113,7 @@
                   "id": "ahdiv",
                   "name": "Course container",
                   "clip": true,
-                  "fill": "#FFFFFF",
+                  "fill": "$P:grey100",
                   "layout": "vertical",
                   "gap": 20,
                   "children": [
@@ -125,6 +121,7 @@
                       "type": "frame",
                       "id": "bNCfF",
                       "name": "Course item g",
+                      "width": "fit_content(0)",
                       "height": 214,
                       "gap": 20,
                       "justifyContent": "center",
@@ -196,6 +193,7 @@
                       "type": "frame",
                       "id": "rLyGM",
                       "name": "Course item g",
+                      "width": "fit_content(0)",
                       "height": 214,
                       "gap": 20,
                       "justifyContent": "center",
@@ -255,6 +253,7 @@
                       "type": "frame",
                       "id": "hEeCj",
                       "name": "Course item g",
+                      "width": "fit_content(0)",
                       "height": 214,
                       "gap": 20,
                       "justifyContent": "center",
@@ -314,6 +313,7 @@
                       "type": "frame",
                       "id": "AOZZq",
                       "name": "Course item g",
+                      "width": "fit_content(0)",
                       "height": 214,
                       "gap": 20,
                       "justifyContent": "center",
@@ -390,7 +390,7 @@
       "y": 818.5,
       "name": "start-page",
       "width": 1440,
-      "fill": "#F5F5F5",
+      "fill": "$P:grey300",
       "layout": "vertical",
       "gap": 32,
       "padding": [
@@ -403,27 +403,11 @@
       "alignItems": "center",
       "children": [
         {
-          "id": "cehuT",
-          "type": "ref",
-          "ref": "P:sKPE5",
-          "x": 0.0001936356535040689,
-          "y": 5.684341886080802e-14,
-          "children": [
-            {
-              "id": "Cbjqj",
-              "type": "ref",
-              "ref": "P:832Oq",
-              "x": 0,
-              "y": 0
-            }
-          ]
-        },
-        {
           "type": "frame",
           "id": "lz0Uk",
           "name": "Top Card",
           "width": 988,
-          "fill": "#FFFFFF",
+          "fill": "$P:grey100",
           "cornerRadius": 16,
           "gap": 40,
           "padding": 24,
@@ -452,26 +436,24 @@
               "gap": 20,
               "children": [
                 {
-                  "type": "text",
                   "id": "AaxB4",
-                  "name": "Title",
-                  "fill": "$grey1000",
+                  "type": "ref",
+                  "ref": "P:Lm2P8",
+                  "fill": "$P:grey1000",
                   "content": "Code kiko: 初步",
                   "lineHeight": 1.1833333333333333,
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
                   "fontSize": 20,
                   "fontWeight": "bold"
                 },
                 {
-                  "type": "text",
                   "id": "eoBFp",
-                  "name": "Description",
-                  "fill": "$grey900",
+                  "type": "ref",
+                  "ref": "P:0rSuk",
+                  "fill": "$P:grey900",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "A complete solution for adventure games that focus on storytelling and puzzles - the perfect genre for newcomers to game development.A complete solution for adventure games that focus on storytelling and puzzles - the perfect genre for newcomers to game development.",
                   "lineHeight": 1.5714285714285714,
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -484,7 +466,7 @@
           "id": "DWwGJ",
           "name": "Course container",
           "clip": true,
-          "fill": "#FFFFFF",
+          "fill": "$P:grey100",
           "layout": "vertical",
           "gap": 20,
           "children": [
@@ -492,6 +474,7 @@
               "type": "frame",
               "id": "fgSuY",
               "name": "Course item g",
+              "width": "fit_content(0)",
               "height": 214,
               "gap": 20,
               "justifyContent": "center",
@@ -551,6 +534,7 @@
               "type": "frame",
               "id": "cQ6Ci",
               "name": "Course item g",
+              "width": "fit_content(0)",
               "height": 214,
               "gap": 20,
               "justifyContent": "center",
@@ -611,52 +595,7 @@
       ]
     }
   ],
-  "themes": {
-    "Accent": [
-      "Default"
-    ]
-  },
-  "variables": {
-    "grey100": {
-      "type": "color",
-      "value": "#ffffff"
-    },
-    "grey300": {
-      "type": "color",
-      "value": "#f6f8fa"
-    },
-    "grey800": {
-      "type": "color",
-      "value": "#6e7781"
-    },
-    "grey700": {
-      "type": "color",
-      "value": "#a7b1bb"
-    },
-    "grey900": {
-      "type": "color",
-      "value": "#57606A"
-    },
-    "grey1000": {
-      "type": "color",
-      "value": "#24292f"
-    }
-  },
   "imports": {
     "P": "../../components/spx/builder-component.lib.pen"
-  },
-  "fonts": [
-    {
-      "name": "Menlo",
-      "url": "../../images/Menlo.ttf"
-    },
-    {
-      "name": "XBuilder_Icons_01",
-      "url": "../../images/xbuilder-icons-01.ttf"
-    },
-    {
-      "name": "XBuilder_Icons_02",
-      "url": "../../images/xbuilder-icons-02.ttf"
-    }
-  ]
+  }
 }

@@ -38,7 +38,7 @@ ui/
 为降低 `builder-component.lib.pen` 本地误操作或异常退出导致的数据丢失风险，仓库内提供了两层保护：
 
 1. 保存即备份：在 `spx-gui/` 目录运行 `npm run watch:pen-snapshot`，监听组件库文件变更，并把快照写入 `ui/components/spx/.snapshots/`
-2. 提交前校验：在 `spx-gui/` 目录先运行一次 `npm run setup:githooks`，之后每次 `git commit` 都会自动为组件库创建一次快照，并执行 `builder-component-lib.test.ts`
+2. 提交前校验：在 `spx-gui/` 目录先运行一次 `npm run setup:githooks`，之后每次 `git commit` 只要包含 staged 的 `ui/**/*.pen` 就会自动执行 `builder-component-lib.test.ts`；如果 staged 文件里包含 `builder-component.lib.pen`，还会额外创建一次快照
 
 常用命令：
 

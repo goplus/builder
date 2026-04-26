@@ -46,6 +46,15 @@ export function normalizeRepoPath(path) {
   return path.replaceAll('\\', '/').replace(/^\.\//, '')
 }
 
+export function isLibraryPenPath(path) {
+  return normalizeRepoPath(path) === defaultTargetPath
+}
+
+export function isUiPenPath(path) {
+  const normalizedPath = normalizeRepoPath(path)
+  return normalizedPath.startsWith('ui/') && normalizedPath.endsWith('.pen')
+}
+
 export async function listStagedFiles({ repoRoot = getRepoRoot() } = {}) {
   const { stdout } = await execFileAsync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], {
     cwd: repoRoot
@@ -81,15 +90,26 @@ export async function validateStagedPen({
   validateCommand = defaultValidateCommand,
   listStagedFiles: getStagedFiles = listStagedFiles,
   runCommand: executeCommand = runCommand,
+  shouldTrigger,
   onTriggered
 } = {}) {
   const stagedFiles = await getStagedFiles({ repoRoot })
+  const normalizedStagedFiles = stagedFiles.map((file) => normalizeRepoPath(file))
   const normalizedTargetPath = normalizeRepoPath(targetPath)
-  const targetIsStaged = stagedFiles.some((file) => normalizeRepoPath(file) === normalizedTargetPath)
+  const matchedFiles = normalizedStagedFiles.filter((file) =>
+    shouldTrigger == null ? file === normalizedTargetPath : shouldTrigger(file)
+  )
 
-  if (!targetIsStaged) return false
+  if (matchedFiles.length === 0) return false
 
-  if (onTriggered != null) await onTriggered({ repoRoot, targetPath })
+  if (onTriggered != null) {
+    await onTriggered({
+      repoRoot,
+      targetPath: normalizedTargetPath,
+      stagedFiles: normalizedStagedFiles,
+      matchedFiles
+    })
+  }
 
   const [command, ...args] = validateCommand
   await executeCommand({

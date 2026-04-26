@@ -1,9 +1,9 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, extname, resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
-import { turquoise } from '../components/ui/tokens/colors'
-import { boxShadow, radius, space } from '../components/ui/tokens'
+import { blue, red, turquoise, yellow } from '../components/ui/tokens/colors'
+import { boxShadow, mask, radius, space, textLineHeight } from '../components/ui/tokens'
 
 type PenNode = {
   id?: string
@@ -30,6 +30,16 @@ type PenDocument = PenNode & {
 
 const LibraryPath = resolve(process.cwd(), '../ui/components/spx/builder-component.lib.pen')
 const CommunityExplorePath = resolve(process.cwd(), '../ui/pages/spx/community-explore.pen')
+const CommunityHomePath = resolve(process.cwd(), '../ui/pages/spx/community-home.pen')
+const CommunityLoginPath = resolve(process.cwd(), '../ui/pages/spx/community-login.pen')
+const CommunityProjectPath = resolve(process.cwd(), '../ui/pages/spx/community-project.pen')
+const CommunitySearchPath = resolve(process.cwd(), '../ui/pages/spx/community-search.pen')
+const CommunityUserPath = resolve(process.cwd(), '../ui/pages/spx/community-user.pen')
+const EditorMapPath = resolve(process.cwd(), '../ui/pages/spx/editor-map.pen')
+const EditorSpritePath = resolve(process.cwd(), '../ui/pages/spx/editor-sprite.pen')
+const EditorStagePath = resolve(process.cwd(), '../ui/pages/spx/editor-stage.pen')
+const TutorialPath = resolve(process.cwd(), '../ui/pages/spx/tutorial.pen')
+const UIRootPath = resolve(process.cwd(), '../ui')
 const ConfigPanelPath = resolve(
   process.cwd(),
   'src/components/editor/common/viewer/quick-config/common/ConfigPanel.vue'
@@ -39,8 +49,13 @@ const UIDropdownPath = resolve(process.cwd(), 'src/components/ui/UIDropdown.ts')
 const ProjectItemPath = resolve(process.cwd(), 'src/components/project/ProjectItem.vue')
 const LegacyCommunityExploreLibraryRefIds = ['le3CV', '832Oq', 'pwk0c', 'rIuyc']
 const TurquoiseSteps = [100, 200, 300, 400, 500, 600, 700] as const
+const YellowSteps = [100, 200, 300, 400, 500, 600, 700] as const
+const BlueSteps = [100, 200, 300, 400, 500, 600, 700] as const
+const RedSteps = [100, 200, 300, 400, 500, 600] as const
 const RadiusSteps = [1, 2, 3, 4] as const
 const SpaceSteps = [1, 2, 3, 4, 5, 6] as const
+const LineHeightSteps = [1, 2, 3, 4] as const
+const MaskSteps = [1, 2] as const
 const ExpectedTurquoisePalette = {
   100: '#F3FBFC',
   200: '#EAF9FA',
@@ -49,6 +64,32 @@ const ExpectedTurquoisePalette = {
   500: '#36C2CF',
   600: '#2B9BA5',
   700: '#20747C'
+} as const
+const ExpectedYellowPalette = {
+  100: '#FFF8F1',
+  200: '#FFF1E2',
+  300: '#FFE2C2',
+  400: '#FFC584',
+  500: '#FF9F33',
+  600: '#CE8029',
+  700: '#9D611F'
+} as const
+const ExpectedBluePalette = {
+  100: '#EFF7FF',
+  200: '#DFEFFF',
+  300: '#B8E0FF',
+  400: '#78C7FF',
+  500: '#4CB8FF',
+  600: '#0693F1',
+  700: '#0076CE'
+} as const
+const ExpectedRedPalette = {
+  100: '#FEEFEF',
+  200: '#FDC7C7',
+  300: '#FF97A0',
+  400: '#F15D64',
+  500: '#EF4149',
+  600: '#BC292E'
 } as const
 const ExpectedRadiusScale = {
   1: 4,
@@ -70,8 +111,58 @@ const ExpectedBoxShadowScale = {
   surface: '0px 4px 12px 0px rgba(36, 41, 47, 0.08)',
   surfaceStrong: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
   accent: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)',
-  subtle: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)'
+  subtle: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)',
+  floating: '0px 4px 21px 0px rgba(36, 41, 47, 0.08)'
 } as const
+const ExpectedTextLineHeightScale = {
+  1: 1.4,
+  2: 1.5,
+  3: 1.57143,
+  4: 1.6
+} as const
+const ExpectedMaskScale = {
+  1: '#24292F99',
+  2: '#24292FBF'
+} as const
+const ExpectedPenShadowEffectPresets = {
+  panel: { color: '#24292F0D', x: 0, y: 6, blur: 16 },
+  surface: { color: '#24292F14', x: 0, y: 4, blur: 12 },
+  surfaceStrong: { color: '#24292F0D', x: 0, y: 8, blur: 24, spread: 8 },
+  accent: { color: '#AFE7ECA6', x: 0, y: 4, blur: 12 },
+  subtle: { color: '#24292F0A', x: 2, y: 2, blur: 3 },
+  floating: { color: '#24292F14', x: 0, y: 4, blur: 21 }
+} as const
+
+const FloatingShadowComponentNames = [
+  'editor-api-reference-code-panel',
+  'Notification/Success',
+  'Notification/Info',
+  'Notification/Warning',
+  'Notification/Error',
+  'Message/Saving',
+  'Message/Error',
+  'Message/Info',
+  'Message/Warning',
+  'Message/Success',
+  'Message/LongInfo',
+  'CornerMenu',
+  'Expand list',
+  'list/expand-list'
+] as const
+const UiTextAssetExtensions = new Set(['.pen', '.json', '.html', '.md'])
+const LegacyFontMarkers = ['Alibaba Health Font 2.0 CN', 'AlibabaHealthFont2.0CN-85B.ttf', 'Source Han Sans SC VF']
+const PagePenSpecs = [
+  { name: 'community-explore.pen', path: CommunityExplorePath, alias: '2' },
+  { name: 'community-home.pen', path: CommunityHomePath, alias: 'r' },
+  { name: 'community-login.pen', path: CommunityLoginPath, alias: 'r' },
+  { name: 'community-project.pen', path: CommunityProjectPath, alias: 'm' },
+  { name: 'community-search.pen', path: CommunitySearchPath, alias: 't' },
+  { name: 'community-user.pen', path: CommunityUserPath, alias: 'j' },
+  { name: 'editor-map.pen', path: EditorMapPath, alias: 'y' },
+  { name: 'editor-sprite.pen', path: EditorSpritePath, alias: 'a' },
+  { name: 'editor-stage.pen', path: EditorStagePath, alias: 'G' },
+  { name: 'tutorial.pen', path: TutorialPath, alias: 'P' }
+] as const
 
 function readPen(path: string): PenNode {
   return JSON.parse(readFileSync(path, 'utf8')) as PenNode
@@ -81,12 +172,34 @@ function readPenText(path: string) {
   return readFileSync(path, 'utf8')
 }
 
-function readTurquoisePalette(path: string) {
+function collectUiTextAssetPaths(path: string, files: string[] = []) {
+  for (const entry of readdirSync(path, { withFileTypes: true })) {
+    if (entry.name === '.DS_Store' || entry.name === '.snapshots' || entry.name === 'images') continue
+
+    const entryPath = resolve(path, entry.name)
+    if (entry.isDirectory()) {
+      collectUiTextAssetPaths(entryPath, files)
+      continue
+    }
+
+    if (UiTextAssetExtensions.has(extname(entry.name))) files.push(entryPath)
+  }
+
+  return files
+}
+
+function collectLegacyFontMarkers(path: string) {
+  const text = readPenText(path)
+  return LegacyFontMarkers.filter((marker) => text.includes(marker))
+}
+
+function readColorPalette<const TSteps extends readonly number[]>(path: string, prefix: string, steps: TSteps) {
   const pen = readPen(path) as PenDocument
 
-  return Object.fromEntries(
-    TurquoiseSteps.map((step) => [step, readDefaultColorVariable(pen, `turquoise${step}`)])
-  ) as Record<(typeof TurquoiseSteps)[number], string>
+  return Object.fromEntries(steps.map((step) => [step, readDefaultColorVariable(pen, `${prefix}${step}`)])) as Record<
+    TSteps[number],
+    string
+  >
 }
 
 function readRadiusScale(path: string) {
@@ -114,8 +227,43 @@ function readShadowScale(path: string) {
     surface: readDefaultStringVariable(pen, 'shadow-surface'),
     surfaceStrong: readDefaultStringVariable(pen, 'shadow-surface-strong'),
     accent: readDefaultStringVariable(pen, 'shadow-accent'),
-    subtle: readDefaultStringVariable(pen, 'shadow-subtle')
+    subtle: readDefaultStringVariable(pen, 'shadow-subtle'),
+    floating: readDefaultStringVariable(pen, 'shadow-floating')
   } as const
+}
+
+function readTextLineHeightScale(path: string) {
+  const pen = readPen(path) as PenDocument
+
+  return Object.fromEntries(
+    LineHeightSteps.map((step) => [step, readDefaultNumberVariable(pen, `line-height-${step}`)])
+  ) as Record<(typeof LineHeightSteps)[number], number>
+}
+
+function readMaskScale(path: string) {
+  const pen = readPen(path) as PenDocument
+
+  return Object.fromEntries(MaskSteps.map((step) => [step, readDefaultColorVariable(pen, `mask-${step}`)])) as Record<
+    (typeof MaskSteps)[number],
+    string
+  >
+}
+
+function readVariableEntries(pen: PenDocument, variableName: string) {
+  return pen.variables?.[variableName]?.value ?? []
+}
+
+function readShadowEffectPreset(path: string, preset: keyof typeof ExpectedPenShadowEffectPresets) {
+  const pen = readPen(path) as PenDocument
+  const baseName = `shadow-${preset}`
+
+  return {
+    color: readDefaultColorVariable(pen, `${baseName}-color`),
+    x: readDefaultNumberVariable(pen, `${baseName}-offset-x`),
+    y: readDefaultNumberVariable(pen, `${baseName}-offset-y`),
+    blur: readDefaultNumberVariable(pen, `${baseName}-blur`),
+    ...(preset === 'surfaceStrong' ? { spread: readDefaultNumberVariable(pen, `${baseName}-spread`) } : {})
+  }
 }
 
 function readPenBundle(path: string, seen = new Set<string>()): PenDocument[] {
@@ -132,6 +280,14 @@ function readPenBundle(path: string, seen = new Set<string>()): PenDocument[] {
         )
 
   return [pen, ...importedPens]
+}
+
+function findNodesByName(node: PenNode | PenDocument, name: string, acc: PenNode[] = []) {
+  if ('name' in node && node.name === name) acc.push(node)
+  if (!('children' in node) || node.children == null) return acc
+
+  for (const child of node.children) findNodesByName(child, name, acc)
+  return acc
 }
 
 function readDefaultColorVariable(pen: PenDocument, variableName: string) {
@@ -214,6 +370,36 @@ function collectNodesByNamePrefix(node: unknown, prefix: string, nodes: PenNode[
   return nodes
 }
 
+function collectNodeNames(node: unknown, names: string[] = []) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectNodeNames(item, names)
+    return names
+  }
+  if (node == null || typeof node !== 'object') return names
+
+  const penNode = node as PenNode
+  if (typeof penNode.name === 'string') names.push(penNode.name)
+
+  for (const value of Object.values(penNode)) collectNodeNames(value, names)
+  return names
+}
+
+function collectNodeTypes(node: unknown, nodeTypes = new Map<string, number>()) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectNodeTypes(item, nodeTypes)
+    return nodeTypes
+  }
+  if (node == null || typeof node !== 'object') return nodeTypes
+
+  const penNode = node as PenNode
+  if (typeof penNode.type === 'string') {
+    nodeTypes.set(penNode.type, (nodeTypes.get(penNode.type) ?? 0) + 1)
+  }
+
+  for (const value of Object.values(penNode)) collectNodeTypes(value, nodeTypes)
+  return nodeTypes
+}
+
 function isEquivalentMediumButtonHeight(height: unknown) {
   if (typeof height === 'number') return Math.abs(height - 32) < 0.01
   return height === 'fit_content(32)' || height === 'fill_container(32)'
@@ -236,6 +422,22 @@ function collectImportedRefIds(node: unknown, importAliases: Set<string>, refs =
   return refs
 }
 
+function collectAliasedRefValues(node: unknown, refs = new Set<string>()) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectAliasedRefValues(item, refs)
+    return [...refs].sort()
+  }
+  if (node == null || typeof node !== 'object') return [...refs].sort()
+
+  const penNode = node as PenNode
+  if (typeof penNode.ref === 'string' && /^[A-Za-z0-9_-]+:/.test(penNode.ref)) {
+    refs.add(penNode.ref)
+  }
+
+  for (const value of Object.values(penNode)) collectAliasedRefValues(value, refs)
+  return [...refs].sort()
+}
+
 function collectTokenizableLiteralIssues(path: string) {
   const lines = readPenText(path).split('\n')
   const issues: string[] = []
@@ -244,7 +446,7 @@ function collectTokenizableLiteralIssues(path: string) {
   for (const [index, line] of lines.entries()) {
     const lineNumber = index + 1
 
-    if (/"cornerRadius": (4|8|10|12|100|999|100\.00003814697266),?$/.test(line)) {
+    if (/"cornerRadius": (4|8|10|12|20|100|999|100\.00003814697266),?$/.test(line)) {
       issues.push(`line ${lineNumber}: ${line.trim()}`)
     }
     if (/"gap": (4|8|12|16|20|24),?$/.test(line)) {
@@ -273,6 +475,67 @@ function collectTokenizableLiteralIssues(path: string) {
   return issues
 }
 
+function collectAliasedTokenReferences(node: unknown, refs = new Set<string>()) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectAliasedTokenReferences(item, refs)
+    return [...refs].sort()
+  }
+  if (typeof node === 'string') {
+    if (/^\$[A-Za-z0-9_-]+:/.test(node)) refs.add(node)
+    return [...refs].sort()
+  }
+  if (node == null || typeof node !== 'object') return [...refs].sort()
+
+  for (const value of Object.values(node)) collectAliasedTokenReferences(value, refs)
+  return [...refs].sort()
+}
+
+function collectUnscopedTokenReferences(text: string) {
+  return [
+    ...text.matchAll(
+      /"\$(grey|turquoise|blue|red|yellow|green|purple|space-|border-radius-|radius-|shadow-|line-height-|mask(?:-[12])?)[^"]*"/g
+    )
+  ].map((match) => match[0])
+}
+
+function isLiteralShadowFieldValue(value: unknown) {
+  return typeof value === 'number' || (typeof value === 'string' && value.startsWith('#'))
+}
+
+function collectLiteralShadowEffects(node: unknown, trail: string[] = [], issues: string[] = []) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectLiteralShadowEffects(item, trail, issues)
+    return issues
+  }
+  if (node == null || typeof node !== 'object') return issues
+
+  const penNode = node as PenNode
+  const label = [penNode.name, penNode.id].find((value) => typeof value === 'string')
+  const nextTrail = label == null ? trail : [...trail, label]
+  const effect = penNode.effect as Record<string, unknown> | undefined
+
+  if (effect != null && !Array.isArray(effect) && effect.type === 'shadow') {
+    const literalFields: string[] = []
+
+    if (isLiteralShadowFieldValue(effect.color)) literalFields.push(`color=${String(effect.color)}`)
+    if (isLiteralShadowFieldValue(effect.blur)) literalFields.push(`blur=${String(effect.blur)}`)
+    if (isLiteralShadowFieldValue(effect.spread)) literalFields.push(`spread=${String(effect.spread)}`)
+    if (effect.offset != null && typeof effect.offset === 'object' && !Array.isArray(effect.offset)) {
+      const offset = effect.offset as Record<string, unknown>
+      if (isLiteralShadowFieldValue(offset.x)) literalFields.push(`offset.x=${String(offset.x)}`)
+      if (isLiteralShadowFieldValue(offset.y)) literalFields.push(`offset.y=${String(offset.y)}`)
+    }
+
+    if (literalFields.length > 0) issues.push(`${nextTrail.join(' > ')} :: ${literalFields.join(', ')}`)
+  }
+
+  for (const value of Object.values(penNode)) {
+    if (value === effect) continue
+    collectLiteralShadowEffects(value, nextTrail, issues)
+  }
+  return issues
+}
+
 describe('builder-component.lib.pen', () => {
   it('resolves imported pen libraries declared by builder-component.lib.pen', () => {
     const library = readPen(LibraryPath)
@@ -280,6 +543,18 @@ describe('builder-component.lib.pen', () => {
 
     expect(importedPenPaths).toEqual([])
     expect(readPenBundle(LibraryPath)).toHaveLength(1)
+  })
+
+  it('does not use aliased ref values such as r:... or t:...', () => {
+    const library = readPen(LibraryPath)
+
+    expect(collectAliasedRefValues(library)).toEqual([])
+  })
+
+  it('does not use page-level aliased token references such as $r:... or $t:...', () => {
+    const library = readPen(LibraryPath)
+
+    expect(collectAliasedTokenReferences(library)).toEqual([])
   })
 
   it('keeps every Button/Medium/... asset with an explicit height aligned to 32px', () => {
@@ -332,7 +607,7 @@ describe('builder-component.lib.pen', () => {
   })
 
   it('keeps turquoise palette synchronized across pen libraries and UI tokens', () => {
-    expect(readTurquoisePalette(LibraryPath)).toEqual(ExpectedTurquoisePalette)
+    expect(readColorPalette(LibraryPath, 'turquoise', TurquoiseSteps)).toEqual(ExpectedTurquoisePalette)
     expect(
       Object.fromEntries(TurquoiseSteps.map((step) => [step, turquoise[step].toUpperCase()])) as Record<
         (typeof TurquoiseSteps)[number],
@@ -340,6 +615,39 @@ describe('builder-component.lib.pen', () => {
       >
     ).toEqual(ExpectedTurquoisePalette)
     expect(turquoise.main.toUpperCase()).toBe(ExpectedTurquoisePalette[500])
+  })
+
+  it('keeps yellow palette synchronized across pen libraries and UI tokens', () => {
+    expect(readColorPalette(LibraryPath, 'yellow', YellowSteps)).toEqual(ExpectedYellowPalette)
+    expect(
+      Object.fromEntries(YellowSteps.map((step) => [step, yellow[step].toUpperCase()])) as Record<
+        (typeof YellowSteps)[number],
+        string
+      >
+    ).toEqual(ExpectedYellowPalette)
+    expect(yellow.main.toUpperCase()).toBe(ExpectedYellowPalette[500])
+  })
+
+  it('keeps blue palette synchronized across pen libraries and UI tokens', () => {
+    expect(readColorPalette(LibraryPath, 'blue', BlueSteps)).toEqual(ExpectedBluePalette)
+    expect(
+      Object.fromEntries(BlueSteps.map((step) => [step, blue[step].toUpperCase()])) as Record<
+        (typeof BlueSteps)[number],
+        string
+      >
+    ).toEqual(ExpectedBluePalette)
+    expect(blue.main.toUpperCase()).toBe(ExpectedBluePalette[500])
+  })
+
+  it('keeps red palette synchronized across pen libraries and UI tokens', () => {
+    expect(readColorPalette(LibraryPath, 'red', RedSteps)).toEqual(ExpectedRedPalette)
+    expect(
+      Object.fromEntries(RedSteps.map((step) => [step, red[step].toUpperCase()])) as Record<
+        (typeof RedSteps)[number],
+        string
+      >
+    ).toEqual(ExpectedRedPalette)
+    expect(red.main.toUpperCase()).toBe(ExpectedRedPalette[500])
   })
 
   it('keeps radius tokens synchronized across pen libraries and UI tokens', () => {
@@ -375,11 +683,77 @@ describe('builder-component.lib.pen', () => {
       surface: boxShadow.surface,
       surfaceStrong: boxShadow.surfaceStrong,
       accent: boxShadow.accent,
-      subtle: boxShadow.subtle
+      subtle: boxShadow.subtle,
+      floating: boxShadow.floating
     }).toEqual(ExpectedBoxShadowScale)
     expect(boxShadow.small).toBe(ExpectedBoxShadowScale.subtle)
     expect(boxShadow.big).toBe(ExpectedBoxShadowScale.surfaceStrong)
     expect(boxShadow.diffusion).toBe(ExpectedBoxShadowScale.accent)
+  })
+
+  it('keeps decomposed pen shadow effect presets aligned with named code shadow tokens', () => {
+    expect(readShadowEffectPreset(LibraryPath, 'panel')).toEqual(ExpectedPenShadowEffectPresets.panel)
+    expect(readShadowEffectPreset(LibraryPath, 'surface')).toEqual(ExpectedPenShadowEffectPresets.surface)
+    expect(readShadowEffectPreset(LibraryPath, 'surfaceStrong')).toEqual(ExpectedPenShadowEffectPresets.surfaceStrong)
+    expect(readShadowEffectPreset(LibraryPath, 'accent')).toEqual(ExpectedPenShadowEffectPresets.accent)
+    expect(readShadowEffectPreset(LibraryPath, 'subtle')).toEqual(ExpectedPenShadowEffectPresets.subtle)
+    expect(readShadowEffectPreset(LibraryPath, 'floating')).toEqual(ExpectedPenShadowEffectPresets.floating)
+  })
+
+  it('uses the named floating shadow preset for notification and message components', () => {
+    const pen = readPen(LibraryPath) as PenDocument
+
+    for (const name of FloatingShadowComponentNames) {
+      const nodes = findNodesByName(pen, name)
+      expect(nodes.length, `Missing component ${name}`).toBeGreaterThan(0)
+      for (const node of nodes) {
+        expect(node.effect).toEqual({
+          type: 'shadow',
+          shadowType: 'outer',
+          color: '$shadow-floating-color',
+          offset: {
+            x: '$shadow-floating-offset-x',
+            y: '$shadow-floating-offset-y'
+          },
+          blur: '$shadow-floating-blur'
+        })
+      }
+    }
+  })
+
+  it('keeps text line-height tokens synchronized across pen libraries and UI tokens', () => {
+    expect(readTextLineHeightScale(LibraryPath)).toEqual(ExpectedTextLineHeightScale)
+    expect(
+      Object.fromEntries(LineHeightSteps.map((step) => [step, Number.parseFloat(textLineHeight[step])])) as Record<
+        (typeof LineHeightSteps)[number],
+        number
+      >
+    ).toEqual(ExpectedTextLineHeightScale)
+  })
+
+  it('keeps mask tokens synchronized across pen libraries and UI tokens', () => {
+    const pen = readPen(LibraryPath) as PenDocument
+
+    expect(readMaskScale(LibraryPath)).toEqual(ExpectedMaskScale)
+    expect(
+      Object.fromEntries(MaskSteps.map((step) => [step, mask[step].toUpperCase()])) as Record<
+        (typeof MaskSteps)[number],
+        string
+      >
+    ).toEqual(ExpectedMaskScale)
+    expect(readDefaultColorVariable(pen, 'mask')).toBe(ExpectedMaskScale[2])
+    expect(mask.default.toUpperCase()).toBe(ExpectedMaskScale[2])
+  })
+
+  it('keeps border-radius-1 free of accent-specific overrides', () => {
+    const pen = readPen(LibraryPath) as PenDocument
+    const entries = readVariableEntries(pen, 'border-radius-1')
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0]?.theme == null || Object.values(entries[0].theme).every((value) => value === 'Default')).toBe(
+      true
+    )
+    expect(entries[0]?.value).toBe(8)
   })
 
   it('migrates selected component shadows to named elevation tokens', () => {
@@ -396,11 +770,119 @@ describe('builder-component.lib.pen', () => {
     expect(readPenText(ProjectItemPath)).not.toContain('0px 4px 12px 0px rgba(36, 41, 47, 0.08)')
   })
 
+  it('removes legacy custom shadow variable names from builder-component.lib.pen', () => {
+    const text = readPenText(LibraryPath)
+
+    expect(text).not.toContain('shadow-custom-01')
+    expect(text).not.toContain('shadow-custom-02')
+    expect(text).not.toContain('shadow-custom-03')
+    expect(text).not.toContain('Panel-small-Grey 1000，8%')
+    expect(text).not.toContain('Panel-small-Turquoise 300，65%')
+    expect(text).not.toContain('Panel-small-Grey 1000，5%')
+    expect(text).not.toContain('Panel-large-Grey1000，14%')
+    expect(text).not.toContain('Panel-large-40BAC4，18%')
+    expect(text).not.toContain('Card-small-Grey 1000，8%')
+  })
+
+  it('does not keep literal color or metric values inside shadow effects', () => {
+    expect(collectLiteralShadowEffects(readPen(LibraryPath))).toEqual([])
+  })
+
   it('removes hardcoded legacy turquoise literals from pen component libraries', () => {
     expect(readPenText(LibraryPath)).not.toMatch(/#0bc0cf(?:ff)?/i)
   })
 
   it('migrates tokenizable radius and spacing literals to pen tokens', () => {
     expect(collectTokenizableLiteralIssues(LibraryPath)).toEqual([])
+  })
+
+  it('uses UIButton vocabulary for button assets and button grouping nodes', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const names = collectNodeNames(libraryBundle)
+    const legacyNames = names.filter(
+      (name) =>
+        /^Button\/(?:Small|Medium|Large)\/(?:Neutral|Red)\//.test(name) ||
+        /^Button\/(?:Small|Medium|Large)\/(?:Primary|Secondary|White|Neutral|Red)\/Default\//.test(name) ||
+        name === 'Variant-Neutra'
+    )
+
+    expect(legacyNames).toEqual([])
+  })
+
+  it('uses UITextInput vocabulary for input and search box assets', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const names = collectNodeNames(libraryBundle)
+    const legacyNames = names.filter(
+      (name) =>
+        /^(?:Input|SearchBox)\/Neutra\//.test(name) ||
+        /^(?:Input|SearchBox)\/.*\/Inputing(?:\/|$)/.test(name) ||
+        name === 'ProjectName/Inputing'
+    )
+
+    expect(legacyNames).toEqual([])
+  })
+
+  it('uses UITag vocabulary for tag assets', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const names = collectNodeNames(libraryBundle)
+    const legacyNames = names.filter(
+      (name) =>
+        /^Tag\/(?:Text|Icon)\/Medium\//.test(name) ||
+        /^Tag\/(?:Text|Icon)\/.*\/(?:Grey|Turquoise|Red|Yellow)(?:\/|$)/.test(name) ||
+        /^Tag\/(?:Text|Icon)\/.*\/Disable$/.test(name)
+    )
+
+    expect(legacyNames).toEqual([])
+  })
+
+  it('keeps typography aligned to UI code vocabulary and font baseline', () => {
+    const text = readPenText(LibraryPath)
+
+    expect(text).toContain('SourceHanSansSC-VF')
+    expect(text).not.toContain('Alibaba Health Font 2.0 CN')
+    expect(text).not.toContain('AlibabaHealthFont2.0CN-85B.ttf')
+    expect(text).not.toContain('Source Han Sans SC VF')
+    expect(text).not.toContain('"name": "H7"')
+    expect(text).not.toContain('"content": "H7"')
+    expect(text).not.toContain('* H1-H7')
+  })
+
+  it('removes legacy Alibaba font references from ui text assets', () => {
+    const legacyFontReferences = collectUiTextAssetPaths(UIRootPath).flatMap((path) => {
+      const markers = collectLegacyFontMarkers(path)
+      if (markers.length === 0) return []
+      return [`${path}: ${markers.join(', ')}`]
+    })
+
+    expect(legacyFontReferences).toEqual([])
+  })
+
+  it('removes legacy m: token namespace from builder-component.lib.pen', () => {
+    const text = readPenText(LibraryPath)
+
+    expect(text).not.toContain('$m:')
+    expect(text).not.toContain('"m:Accent"')
+    expect(text).not.toContain('"m:grey1000"')
+  })
+})
+
+describe('page pens importing builder-component.lib.pen', () => {
+  it.each(PagePenSpecs)('keeps $name free of local token and font definitions', ({ path, alias }) => {
+    const pen = readPen(path) as PenDocument
+    const text = readPenText(path)
+
+    expect(pen.imports).toBeDefined()
+    expect(Object.keys(pen.imports ?? {})).toContain(alias)
+    expect(pen.themes ?? {}).toEqual({})
+    expect(pen.variables).toBeUndefined()
+    expect(pen.fonts).toBeUndefined()
+    expect(collectUnscopedTokenReferences(text)).toEqual([])
+  })
+
+  it.each(PagePenSpecs)('keeps $name free of copied local text and path assets', ({ path }) => {
+    const nodeTypes = collectNodeTypes(readPen(path))
+
+    expect(nodeTypes.get('text') ?? 0).toBe(0)
+    expect(nodeTypes.get('path') ?? 0).toBe(0)
   })
 })

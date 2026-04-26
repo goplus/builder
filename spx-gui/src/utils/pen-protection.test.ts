@@ -55,6 +55,34 @@ describe('validateStagedPen', () => {
     })
   })
 
+  it('runs the validation command when a staged ui page pen matches the trigger predicate', async () => {
+    const listStagedFiles = vitest.fn().mockResolvedValue(['ui/pages/spx/community-home.pen'])
+    const runCommand = vitest.fn().mockResolvedValue(undefined)
+    const onTriggered = vitest.fn().mockResolvedValue(undefined)
+
+    const triggered = await validateStagedPen({
+      repoRoot,
+      listStagedFiles,
+      runCommand,
+      validateCommand: ['npm', 'run', 'test', '--', 'src/utils/builder-component-lib.test.ts', '--run'],
+      shouldTrigger: (file: string) => file.startsWith('ui/') && file.endsWith('.pen'),
+      onTriggered
+    } as never)
+
+    expect(triggered).toBe(true)
+    expect(runCommand).toHaveBeenCalledWith({
+      command: 'npm',
+      args: ['run', 'test', '--', 'src/utils/builder-component-lib.test.ts', '--run'],
+      cwd: resolve(repoRoot, 'spx-gui')
+    })
+    expect(onTriggered).toHaveBeenCalledWith({
+      matchedFiles: ['ui/pages/spx/community-home.pen'],
+      repoRoot,
+      stagedFiles: ['ui/pages/spx/community-home.pen'],
+      targetPath: 'ui/components/spx/builder-component.lib.pen'
+    })
+  })
+
   it('skips validation when the component library is not staged', async () => {
     const listStagedFiles = vitest.fn().mockResolvedValue(['README.md'])
     const runCommand = vitest.fn().mockResolvedValue(undefined)

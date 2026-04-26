@@ -45,15 +45,32 @@ export const boxShadow = {
   surfaceStrong: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
   accent: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)',
   subtle: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)',
+  floating: '0px 4px 21px 0px rgba(36, 41, 47, 0.08)',
   small: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)',
   big: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
   diffusion: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)'
 } as const
 
+// Kept for backward compatibility. These values drive control heights rather than typography.
 export const lineHeight = {
   1: '26px',
   2: '32px',
   3: '40px'
+} as const
+
+export const controlHeight = lineHeight
+
+export const textLineHeight = {
+  1: '1.4',
+  2: '1.5',
+  3: '1.57143',
+  4: '1.6'
+} as const
+
+export const mask = {
+  1: '#24292F99',
+  2: '#24292FBF',
+  default: '#24292FBF'
 } as const
 
 export const button = {

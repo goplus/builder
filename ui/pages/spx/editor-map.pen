@@ -9,7 +9,7 @@
       "name": "page",
       "width": 1440,
       "height": 900,
-      "fill": "#e9fcff",
+      "fill": "$y:blue200",
       "layout": "vertical",
       "gap": 20,
       "children": [
@@ -134,99 +134,8 @@
       ]
     }
   ],
-  "variables": {
-    "grey100": {
-      "type": "color",
-      "value": "#ffffff"
-    },
-    "--ui-color-primary-main": {
-      "type": "color",
-      "value": "#36C2CF"
-    },
-    "grey200": {
-      "type": "color",
-      "value": "#FBFCFD"
-    },
-    "turquoise600": {
-      "type": "color",
-      "value": "#0AA5BE"
-    },
-    "--ui-color-grey-100": {
-      "type": "color",
-      "value": "#ffffff"
-    },
-    "--ui-shadow-custom-2": {
-      "type": "color",
-      "value": "#00000000"
-    },
-    "--ui-color-primary-300-aa6": {
-      "type": "color",
-      "value": "#b5ebf0a6"
-    },
-    "grey1000": {
-      "type": "color",
-      "value": "#24292f"
-    },
-    "--ui-shadow-custom-1": {
-      "type": "color",
-      "value": "#33333314"
-    },
-    "--ui-color-hint-2": {
-      "type": "color",
-      "value": "#a7b1bb"
-    },
-    "grey400": {
-      "type": "color",
-      "value": "#eaeff3"
-    },
-    "grey300": {
-      "type": "color",
-      "value": "#f6f8fa"
-    },
-    "grey800": {
-      "type": "color",
-      "value": "#6e7781"
-    },
-    "turquoise500": {
-      "type": "color",
-      "value": "#36C2CF"
-    },
-    "grey600": {
-      "type": "color",
-      "value": "#CBD2D8"
-    },
-    "yellow500": {
-      "type": "color",
-      "value": "#FAA135"
-    },
-    "yellow200": {
-      "type": "color",
-      "value": "#FFF6EB"
-    },
-    "--ui-color-hint-1": {
-      "type": "color",
-      "value": "#6e7781"
-    },
-    "turquoise200": {
-      "type": "color",
-      "value": "#E7F9FA"
-    }
-  },
   "imports": {
     "y": "../../components/spx/builder-component.lib.pen"
   },
-  "fonts": [
-    {
-      "name": "Menlo",
-      "url": "../../images/Menlo.ttf"
-    },
-    {
-      "name": "XBuilder_Icons_01",
-      "url": "../../images/xbuilder-icons-01.ttf"
-    },
-    {
-      "name": "XBuilder_Icons_02",
-      "url": "../../images/xbuilder-icons-02.ttf"
-    }
-  ]
+  "themes": {}
 }

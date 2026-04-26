@@ -14,13 +14,14 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "paths": {
       "@/*": [
         "src/*"
       ]
     },
-    // TODO @nighca: enable noUncheckedIndexedAccess after fixing related issues
     "noUncheckedIndexedAccess": false
   }
 }

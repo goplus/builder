@@ -8,7 +8,7 @@
       "y": -112.99999999999989,
       "name": "page",
       "width": 1440,
-      "fill": "#FFFFFF",
+      "fill": "$2:grey100",
       "layout": "vertical",
       "padding": [
         0,
@@ -39,7 +39,7 @@
           "name": "content",
           "clip": true,
           "width": 1440,
-          "fill": "$grey300",
+          "fill": "$2:grey300",
           "layout": "vertical",
           "gap": 20,
           "justifyContent": "center",
@@ -51,7 +51,7 @@
               "name": "sub header",
               "clip": true,
               "width": 1440,
-              "fill": "$grey100",
+              "fill": "$2:grey100",
               "justifyContent": "center",
               "alignItems": "center",
               "children": [
@@ -305,94 +305,8 @@
       ]
     }
   ],
-  "themes": {
-    "Accent": [
-      "Default",
-      "Red",
-      "Rose",
-      "Orange",
-      "Green",
-      "Blue",
-      "Yellow",
-      "Violet"
-    ]
-  },
-  "variables": {
-    "grey300": {
-      "type": "color",
-      "value": "#f6f8fa"
-    },
-    "grey100": {
-      "type": "color",
-      "value": "#ffffff"
-    },
-    "grey800": {
-      "type": "color",
-      "value": "#6e7781"
-    },
-    "grey700": {
-      "type": "color",
-      "value": "#a7b1bb"
-    },
-    "grey1000": {
-      "type": "color",
-      "value": "#24292f"
-    },
-    "turquoise500": {
-      "type": "color",
-      "value": "#36C2CF"
-    },
-    "grey400": {
-      "type": "color",
-      "value": "#eaeff3"
-    },
-    "radius-4": {
-      "type": "number",
-      "value": [
-        {
-          "value": 12,
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    }
-  },
+  "themes": {},
   "imports": {
     "2": "../../components/spx/builder-component.lib.pen"
-  },
-  "fonts": [
-    {
-      "name": "Alibaba Health Font 2.0 CN",
-      "url": "../../images/AlibabaHealthFont2.0CN-85B.ttf",
-      "weight": 600
-    },
-    {
-      "name": "Menlo",
-      "url": "../../images/Menlo-Regular-1.ttf"
-    },
-    {
-      "name": "SourceHanSansSC-VF",
-      "url": "../../images/SourceHanSansSC-VF.ttf",
-      "weight": [
-        250,
-        900
-      ],
-      "axes": [
-        {
-          "tag": "wght",
-          "start": 250,
-          "end": 900
-        }
-      ]
-    },
-    {
-      "name": "XBuilder_Icons_01",
-      "url": "../../images/xbuilder-icons-01.ttf"
-    },
-    {
-      "name": "XBuilder_Icons_02",
-      "url": "../../images/xbuilder-icons-02.ttf"
-    }
-  ]
+  }
 }

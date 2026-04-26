@@ -9,7 +9,7 @@
       "name": "code",
       "width": 1440,
       "height": 900,
-      "fill": "#e9fcff",
+      "fill": "$a:blue200",
       "stroke": {
         "align": "inside",
         "thickness": 1
@@ -122,10 +122,10 @@
                   "y": 439,
                   "descendants": {
                     "a:9GCD1": {
-                      "fontFamily": "Alibaba Health Font 2.0 CN"
+                      "fontFamily": "SourceHanSansSC-VF"
                     },
                     "a:c66T3": {
-                      "fontFamily": "Alibaba Health Font 2.0 CN"
+                      "fontFamily": "SourceHanSansSC-VF"
                     },
                     "a:JbS2e/a:4qrJw": {
                       "y": 6.973179894480076
@@ -149,7 +149,7 @@
       "name": "costumes",
       "width": 1440,
       "height": 900,
-      "fill": "#e9fcff",
+      "fill": "$a:blue200",
       "stroke": {
         "align": "inside",
         "thickness": 1
@@ -263,10 +263,10 @@
                   "y": 439,
                   "descendants": {
                     "a:9GCD1": {
-                      "fontFamily": "Alibaba Health Font 2.0 CN"
+                      "fontFamily": "SourceHanSansSC-VF"
                     },
                     "a:c66T3": {
-                      "fontFamily": "Alibaba Health Font 2.0 CN"
+                      "fontFamily": "SourceHanSansSC-VF"
                     },
                     "a:JbS2e/a:4qrJw": {
                       "y": 6.973179894480076
@@ -290,7 +290,7 @@
       "name": "animations",
       "width": 1440,
       "height": 900,
-      "fill": "#e9fcff",
+      "fill": "$a:blue200",
       "stroke": {
         "align": "inside",
         "thickness": 1
@@ -404,10 +404,10 @@
                   "y": 439,
                   "descendants": {
                     "a:9GCD1": {
-                      "fontFamily": "Alibaba Health Font 2.0 CN"
+                      "fontFamily": "SourceHanSansSC-VF"
                     },
                     "a:c66T3": {
-                      "fontFamily": "Alibaba Health Font 2.0 CN"
+                      "fontFamily": "SourceHanSansSC-VF"
                     },
                     "a:JbS2e/a:4qrJw": {
                       "y": 6.973179894480076
@@ -424,47 +424,8 @@
       ]
     }
   ],
-  "variables": {
-    "W:grey100": {
-      "type": "color",
-      "value": "#ffffff"
-    },
-    "W:--ui-color-primary-main": {
-      "type": "color",
-      "value": "#36C2CF"
-    },
-    "W:grey200": {
-      "type": "color",
-      "value": "#FBFCFD"
-    },
-    "W:turquoise600": {
-      "type": "color",
-      "value": "#0AA5BE"
-    },
-    "W:--ui-color-grey-100": {
-      "type": "color",
-      "value": "#ffffff"
-    },
-    "W:--ui-shadow-custom-2": {
-      "type": "color",
-      "value": "#00000000"
-    }
-  },
   "imports": {
     "a": "../../components/spx/builder-component.lib.pen"
   },
-  "fonts": [
-    {
-      "name": "Menlo",
-      "url": "../../images/Menlo.ttf"
-    },
-    {
-      "name": "XBuilder_Icons_01",
-      "url": "../../images/xbuilder-icons-01.ttf"
-    },
-    {
-      "name": "XBuilder_Icons_02",
-      "url": "../../images/xbuilder-icons-02.ttf"
-    }
-  ]
+  "themes": {}
 }
