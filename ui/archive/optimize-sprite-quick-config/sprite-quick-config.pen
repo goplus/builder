@@ -2886,7 +2886,7 @@
                       "fill": "#57606a",
                       "content": "X",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     },
@@ -2897,7 +2897,7 @@
                       "fill": "$grey1000",
                       "content": "-120",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }
@@ -2942,7 +2942,7 @@
                       "fill": "#57606a",
                       "content": "Y",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     },
@@ -2953,7 +2953,7 @@
                       "fill": "$grey1000",
                       "content": "18",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }
@@ -3123,7 +3123,7 @@
                       "fill": "#57606a",
                       "content": "Size",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     },
@@ -3134,7 +3134,7 @@
                       "fill": "$grey1000",
                       "content": "100",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }
@@ -3147,7 +3147,7 @@
                   "fill": "#57606a",
                   "content": "%",
                   "lineHeight": 1.5714285714285714,
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3464,7 +3464,7 @@
                       "fill": "#57606a",
                       "content": "Heading",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     },
@@ -3475,7 +3475,7 @@
                       "fill": "$grey1000",
                       "content": "45",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }
@@ -3797,7 +3797,7 @@
                       "lineHeight": 1.5,
                       "textAlign": "center",
                       "textAlignVertical": "middle",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     }
@@ -3830,7 +3830,7 @@
                       "lineHeight": 1.5,
                       "textAlign": "center",
                       "textAlignVertical": "middle",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     }
@@ -4620,7 +4620,7 @@
                               "content": "Bring forward",
                               "lineHeight": 1.5714285714285714,
                               "textAlignVertical": "middle",
-                              "fontFamily": "Alibaba Health Font 2.0 CN",
+                              "fontFamily": "SourceHanSansSC-VF",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             }
@@ -4670,7 +4670,7 @@
                               "content": "Bring to front",
                               "lineHeight": 1.5714285714285714,
                               "textAlignVertical": "middle",
-                              "fontFamily": "Alibaba Health Font 2.0 CN",
+                              "fontFamily": "SourceHanSansSC-VF",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             }
@@ -4720,7 +4720,7 @@
                               "content": "Send forward",
                               "lineHeight": 1.5714285714285714,
                               "textAlignVertical": "middle",
-                              "fontFamily": "Alibaba Health Font 2.0 CN",
+                              "fontFamily": "SourceHanSansSC-VF",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             }
@@ -4770,7 +4770,7 @@
                               "content": "Send to back",
                               "lineHeight": 1.5714285714285714,
                               "textAlignVertical": "middle",
-                              "fontFamily": "Alibaba Health Font 2.0 CN",
+                              "fontFamily": "SourceHanSansSC-VF",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             }
@@ -5040,7 +5040,7 @@
                       "fill": "#ffffffff",
                       "content": "层级顺序",
                       "lineHeight": 1.5,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     }
@@ -5195,7 +5195,7 @@
                           "content": "Bring forward",
                           "lineHeight": 1.5714285714285714,
                           "textAlignVertical": "middle",
-                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                          "fontFamily": "SourceHanSansSC-VF",
                           "fontSize": 14,
                           "fontWeight": "normal"
                         }
@@ -5245,7 +5245,7 @@
                           "content": "Bring to front",
                           "lineHeight": 1.5714285714285714,
                           "textAlignVertical": "middle",
-                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                          "fontFamily": "SourceHanSansSC-VF",
                           "fontSize": 14,
                           "fontWeight": "normal"
                         }
@@ -5295,7 +5295,7 @@
                           "content": "Send forward",
                           "lineHeight": 1.5714285714285714,
                           "textAlignVertical": "middle",
-                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                          "fontFamily": "SourceHanSansSC-VF",
                           "fontSize": 14,
                           "fontWeight": "normal"
                         }
@@ -5345,7 +5345,7 @@
                           "content": "Send to back",
                           "lineHeight": 1.5714285714285714,
                           "textAlignVertical": "middle",
-                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                          "fontFamily": "SourceHanSansSC-VF",
                           "fontSize": 14,
                           "fontWeight": "normal"
                         }
@@ -5463,7 +5463,7 @@
                       "content": "缩放",
                       "lineHeight": 1.5,
                       "textAlign": "center",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     }
@@ -6120,7 +6120,7 @@
                       "content": "位置",
                       "lineHeight": 1.5,
                       "textAlign": "center",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     }
@@ -6255,7 +6255,7 @@
                       "content": "旋转",
                       "lineHeight": 1.5,
                       "textAlign": "center",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     }
@@ -6384,7 +6384,7 @@
                       "content": "返回",
                       "lineHeight": 1.5,
                       "textAlign": "center",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     }
@@ -6762,7 +6762,7 @@
           "content": "active",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },
@@ -6776,7 +6776,7 @@
           "content": "hover",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },
@@ -6790,7 +6790,7 @@
           "content": "default",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },
@@ -6804,7 +6804,7 @@
           "content": "default 面板",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },
@@ -6818,7 +6818,7 @@
           "content": "位置面板",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },
@@ -6832,7 +6832,7 @@
           "content": "尺寸百分比面板",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },
@@ -6846,7 +6846,7 @@
           "content": "旋转-任意旋转",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },
@@ -6860,7 +6860,7 @@
           "content": "旋转-左右旋转",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },
@@ -6874,7 +6874,7 @@
           "content": "旋转-不可旋转",
           "lineHeight": 1.5,
           "textAlign": "center",
-          "fontFamily": "Alibaba Health Font 2.0 CN",
+          "fontFamily": "SourceHanSansSC-VF",
           "fontSize": 12,
           "fontWeight": "normal"
         },

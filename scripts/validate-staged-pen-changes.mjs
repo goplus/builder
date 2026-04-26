@@ -1,9 +1,12 @@
 import {
   createSnapshot,
+  defaultTargetPath,
   defaultValidateCommand,
   getDefaultSnapshotDir,
   getDefaultSourcePath,
   getRepoRoot,
+  isLibraryPenPath,
+  isUiPenPath,
   validateStagedPen
 } from './pen-protection.mjs'
 
@@ -19,11 +22,16 @@ const validateCommand =
 const triggered = await validateStagedPen({
   repoRoot,
   targetPath,
+  shouldTrigger: isUiPenPath,
   validateCommand,
-  onTriggered: async () => {
-    const snapshotPath = await createSnapshot({ sourcePath, snapshotDir })
-    console.log(`Created snapshot before validation: ${snapshotPath}`)
+  onTriggered: async ({ matchedFiles }) => {
+    if (matchedFiles.some((file) => isLibraryPenPath(file) || file === defaultTargetPath)) {
+      const snapshotPath = await createSnapshot({ sourcePath, snapshotDir })
+      console.log(`Created snapshot before validation: ${snapshotPath}`)
+    }
+
+    console.log(`Running pen validation for staged files: ${matchedFiles.join(', ')}`)
   }
 })
 
-if (!triggered) console.log('Skipped builder-component.lib.pen validation; file is not staged')
+if (!triggered) console.log('Skipped pen validation; no staged ui .pen files detected')

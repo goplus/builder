@@ -15,6 +15,8 @@ export interface CreateSnapshotOptions {
 export function createSnapshot(options?: CreateSnapshotOptions): Promise<string>
 
 export function normalizeRepoPath(path: string): string
+export function isLibraryPenPath(path: string): boolean
+export function isUiPenPath(path: string): boolean
 
 export interface ListStagedFilesOptions {
   repoRoot?: string
@@ -37,7 +39,13 @@ export interface ValidateStagedPenOptions {
   validateCommand?: string[]
   listStagedFiles?: (options: { repoRoot: string }) => Promise<string[]>
   runCommand?: (options: RunCommandOptions) => Promise<void>
-  onTriggered?: (payload: { repoRoot: string; targetPath: string }) => void | Promise<void>
+  shouldTrigger?: (file: string) => boolean
+  onTriggered?: (payload: {
+    repoRoot: string
+    targetPath: string
+    stagedFiles: string[]
+    matchedFiles: string[]
+  }) => void | Promise<void>
 }
 
 export function validateStagedPen(options?: ValidateStagedPenOptions): Promise<boolean>

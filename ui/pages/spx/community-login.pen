@@ -57,11 +57,11 @@
               "alignItems": "center",
               "children": [
                 {
-                  "type": "text",
                   "id": "cgp06",
-                  "name": "text",
-                  "fill": "$r:grey1000",
+                  "type": "ref",
+                  "ref": "r:Lm2P8",
                   "content": "登录",
+                  "fill": "$r:grey1000",
                   "fontFamily": "Inter",
                   "fontSize": 26,
                   "fontWeight": "600"
@@ -148,11 +148,11 @@
                           "alignItems": "center",
                           "children": [
                             {
-                              "type": "text",
                               "id": "Jbve6",
-                              "name": "App Name",
-                              "fill": "$r:grey1000",
+                              "type": "ref",
+                              "ref": "r:Lm2P8",
                               "content": "XBuilder",
+                              "fill": "$r:grey1000",
                               "fontFamily": "HarmonyOS Sans",
                               "fontSize": 24,
                               "fontWeight": "700"
@@ -241,11 +241,11 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "text",
                       "id": "2v7iK",
-                      "name": "App Name",
-                      "fill": "$r:grey1000",
+                      "type": "ref",
+                      "ref": "r:Lm2P8",
                       "content": "XBuilder",
+                      "fill": "$r:grey1000",
                       "fontFamily": "HarmonyOS Sans",
                       "fontSize": 24,
                       "fontWeight": "700"
@@ -274,187 +274,8 @@
       ]
     }
   ],
-  "themes": {
-    "Accent": [
-      "Default",
-      "Red",
-      "Rose",
-      "Orange",
-      "Green",
-      "Blue",
-      "Yellow",
-      "Violet"
-    ]
-  },
-  "variables": {
-    "grey1000": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#24292f",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "grey100": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#ffffff",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "turquoise500": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#0bc0cf",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "grey800": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#6e7781",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "blue400": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#4db2fd",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "code-black": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#000000",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "code-red": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#db1c2b",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "green600": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#3ca80c",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "grey400": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#eaeff3",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "grey500": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#d9dfe5",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "red500": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#ef4149",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    },
-    "yellow500": {
-      "type": "color",
-      "value": [
-        {
-          "value": "#FAA135",
-          "theme": {
-            "Accent": "Default"
-          }
-        }
-      ]
-    }
-  },
+  "themes": {},
   "imports": {
     "r": "../../components/spx/builder-component.lib.pen"
-  },
-  "fonts": [
-    {
-      "name": "Alibaba Health Font 2.0 CN",
-      "url": "../../images/AlibabaHealthFont2.0CN-85B.ttf",
-      "weight": 600
-    },
-    {
-      "name": "Menlo",
-      "url": "../../images/Menlo-Regular-1.ttf"
-    },
-    {
-      "name": "SourceHanSansSC-VF",
-      "url": "../../images/SourceHanSansSC-VF.ttf",
-      "weight": [
-        250,
-        900
-      ],
-      "axes": [
-        {
-          "tag": "wght",
-          "start": 250,
-          "end": 900
-        }
-      ]
-    },
-    {
-      "name": "XBuilder_Icons_01",
-      "url": "../../images/xbuilder-icons-01.ttf"
-    },
-    {
-      "name": "XBuilder_Icons_02",
-      "url": "../../images/xbuilder-icons-02.ttf"
-    }
-  ]
+  }
 }
