@@ -78,7 +78,7 @@ watch(angle, (v) => (modelValue.value = normalizeDegree(v)))
         <g :transform="`rotate(${modelValue} 70 70)`">
           <rect x="69.0542" y="7" width="1.39453" height="63" fill="white" />
           <g filter="url(#filter0_d_1229_8413)">
-            <rect x="60" width="20" height="20" rx="10" fill="#0AA5BE" />
+            <rect x="60" width="20" height="20" rx="10" fill="#2B9BA5" />
             <rect
               x="60.4109"
               y="0.410905"

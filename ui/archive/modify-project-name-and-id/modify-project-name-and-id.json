@@ -374,7 +374,7 @@
                   "fill": "$grey100",
                   "content": "my-test-gameccc",
                   "lineHeight": 1.625,
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 16,
                   "fontWeight": "600"
                 },
@@ -1010,7 +1010,7 @@
                   "fill": "#ffffffff",
                   "content": "my-test-game",
                   "lineHeight": 1.625,
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 16,
                   "fontWeight": "normal"
                 },
@@ -1705,7 +1705,7 @@
                       "fill": "#a7b1bbff",
                       "content": "my-test-game",
                       "lineHeight": 1.625,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 16,
                       "fontWeight": "normal"
                     },
@@ -2391,7 +2391,7 @@
                       "fill": "#24292fff",
                       "content": "new name",
                       "lineHeight": 1.625,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 16,
                       "fontWeight": "normal"
                     },
@@ -2811,7 +2811,7 @@
                   "content": "New project",
                   "lineHeight": 1.5714285714285714,
                   "textAlignVertical": "middle",
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -2922,7 +2922,7 @@
                   "content": "Open project...",
                   "lineHeight": 1.5714285714285714,
                   "textAlignVertical": "middle",
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3032,7 +3032,7 @@
                   "content": "Import project file...",
                   "lineHeight": 1.5714285714285714,
                   "textAlignVertical": "middle",
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3136,7 +3136,7 @@
                   "content": "Export project to file",
                   "lineHeight": 1.5714285714285714,
                   "textAlignVertical": "middle",
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3231,7 +3231,7 @@
                   "content": "Import Assets from Scratch file",
                   "lineHeight": 1.5714285714285714,
                   "textAlignVertical": "middle",
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3326,7 +3326,7 @@
                   "content": "Publish project",
                   "lineHeight": 1.5714285714285714,
                   "textAlignVertical": "middle",
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3415,7 +3415,7 @@
                   "content": "Open project page",
                   "lineHeight": 1.5714285714285714,
                   "textAlignVertical": "middle",
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3542,7 +3542,7 @@
                       "content": "Modify project ID",
                       "lineHeight": 1.5714285714285714,
                       "textAlignVertical": "middle",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     },
@@ -3566,7 +3566,7 @@
                           "content": "ID",
                           "lineHeight": 1.5714285714285714,
                           "textAlignVertical": "middle",
-                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                          "fontFamily": "SourceHanSansSC-VF",
                           "fontSize": 14,
                           "fontWeight": "normal"
                         },
@@ -3578,7 +3578,7 @@
                           "content": "123125",
                           "lineHeight": 1.5714285714285714,
                           "textAlignVertical": "middle",
-                          "fontFamily": "Alibaba Health Font 2.0 CN",
+                          "fontFamily": "SourceHanSansSC-VF",
                           "fontSize": 14,
                           "fontWeight": "normal"
                         }
@@ -3698,7 +3698,7 @@
                   "content": "Remove project",
                   "lineHeight": 1.5714285714285714,
                   "textAlignVertical": "middle",
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3763,7 +3763,7 @@
               "content": "修改项目 ID",
               "lineHeight": 1.625,
               "textAlignVertical": "middle",
-              "fontFamily": "Alibaba Health Font 2.0 CN",
+              "fontFamily": "SourceHanSansSC-VF",
               "fontSize": 16,
               "fontWeight": "normal"
             },
@@ -3899,7 +3899,7 @@
                       "content": "修改项目 ID ，可能造成以下影响，请谨慎操作。",
                       "lineHeight": 1.5714285714285714,
                       "textAlignVertical": "middle",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }
@@ -3914,7 +3914,7 @@
                   "width": "fill_container",
                   "content": "我们不会为您的旧个人主页设置重定向。\n我们不会为 Pages 网站设置重定向。\n我们将为您的存储库（包括网页访问和 Git 访问）创建重定向。\n重命名操作可能需要几分钟才能完成。",
                   "lineHeight": 1.5714285714285714,
-                  "fontFamily": "Alibaba Health Font 2.0 CN",
+                  "fontFamily": "SourceHanSansSC-VF",
                   "fontSize": 14,
                   "fontWeight": "normal"
                 }
@@ -3992,7 +3992,7 @@
                       "lineHeight": 1.5714285714285714,
                       "textAlign": "center",
                       "textAlignVertical": "middle",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }
@@ -4059,7 +4059,7 @@
               "content": "修改项目 ID",
               "lineHeight": 1.5714285714285714,
               "textAlignVertical": "middle",
-              "fontFamily": "Alibaba Health Font 2.0 CN",
+              "fontFamily": "SourceHanSansSC-VF",
               "fontSize": 14,
               "fontWeight": "normal"
             },
@@ -4202,7 +4202,7 @@
                               "fill": "#24292fff",
                               "content": "qiniu123125",
                               "lineHeight": 1.5714285714285714,
-                              "fontFamily": "Alibaba Health Font 2.0 CN",
+                              "fontFamily": "SourceHanSansSC-VF",
                               "fontSize": 14,
                               "fontWeight": "normal"
                             }
@@ -4217,7 +4217,7 @@
                       "fill": "#6e7781ff",
                       "content": "项目 ID 只能包含数字和字母。",
                       "lineHeight": 1.5714285714285714,
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }
@@ -4328,7 +4328,7 @@
                       "lineHeight": 1.5714285714285714,
                       "textAlign": "center",
                       "textAlignVertical": "middle",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }
@@ -4421,7 +4421,7 @@
                       "lineHeight": 1.5714285714285714,
                       "textAlign": "center",
                       "textAlignVertical": "middle",
-                      "fontFamily": "Alibaba Health Font 2.0 CN",
+                      "fontFamily": "SourceHanSansSC-VF",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     }

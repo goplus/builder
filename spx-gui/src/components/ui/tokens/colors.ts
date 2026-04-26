@@ -12,14 +12,14 @@ export const turquoise = {
 } as const
 
 export const yellow = {
-  100: '#fffaf5',
-  200: '#fff6eb',
-  300: '#fde2c0',
-  400: '#fbb45d',
-  500: '#faa135',
-  600: '#e49330',
-  700: '#b27226',
-  main: '#faa135'
+  100: '#fff8f1',
+  200: '#fff1e2',
+  300: '#ffe2c2',
+  400: '#ffc584',
+  500: '#ff9f33',
+  600: '#ce8029',
+  700: '#9d611f',
+  main: '#ff9f33'
 } as const
 
 export const purple = {
@@ -34,14 +34,14 @@ export const purple = {
 } as const
 
 export const blue = {
-  100: '#f4faff',
-  200: '#e9f5ff',
-  300: '#bae1fe',
-  400: '#4db2fd',
-  500: '#219ffc',
-  600: '#1e91e5',
-  700: '#1771b3',
-  main: '#219ffc'
+  100: '#eff7ff',
+  200: '#dfefff',
+  300: '#b8e0ff',
+  400: '#78c7ff',
+  500: '#4cb8ff',
+  600: '#0693f1',
+  700: '#0076ce',
+  main: '#4cb8ff'
 } as const
 
 export const red = {
