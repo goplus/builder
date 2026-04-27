@@ -53,7 +53,7 @@ const YellowSteps = [100, 200, 300, 400, 500, 600, 700] as const
 const BlueSteps = [100, 200, 300, 400, 500, 600, 700] as const
 const RedSteps = [100, 200, 300, 400, 500, 600] as const
 const RadiusSteps = [1, 2, 3, 4] as const
-const SpaceSteps = [1, 2, 3, 4, 5, 6] as const
+const SpaceSteps = [0, 1, 2, 3, 4, 5, 6] as const
 const LineHeightSteps = [1, 2, 3, 4] as const
 const MaskSteps = [1, 2] as const
 const ExpectedTurquoisePalette = {
@@ -99,6 +99,7 @@ const ExpectedRadiusScale = {
   full: 100
 } as const
 const ExpectedSpaceScale = {
+  0: 2,
   1: 4,
   2: 8,
   3: 12,
@@ -134,7 +135,6 @@ const ExpectedPenShadowEffectPresets = {
 } as const
 
 const FloatingShadowComponentNames = [
-  'editor-api-reference-code-panel',
   'Notification/Success',
   'Notification/Info',
   'Notification/Warning',

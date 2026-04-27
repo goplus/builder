@@ -180,7 +180,7 @@ npm --prefix spx-gui run validate:pen
 | Radius | `tokens/index.ts` 的 `radius` / `borderRadius` | `builder-component.lib.pen` 的 `radius-*` / `border-radius-*` | 组件库层已对齐 | 保持 `radius-*` 与 `border-radius-*` 两套命名，不再新增平行词 |
 | Space / Gap | `tokens/index.ts` 的 `space` / `gap` | `builder-component.lib.pen` 的 `space-*` | 组件库层已对齐；页面层仍有局部快照 | 设计层继续用 `space-*`，代码层允许额外暴露语义别名 `gap-*` |
 | Shadow / Elevation | `tokens/index.ts` 的 `boxShadow` | `builder-component.lib.pen` 的 `shadow-panel` / `shadow-surface` / `shadow-surface-strong` / `shadow-accent` / `shadow-subtle` | 已对齐，且仓库已有自动校验 | 统一使用具名阴影，不再回退到匿名 literal |
-| Typography | `tokens/index.ts` 的 `fontFamily` / `fontSize` + `UIConfigProvider.vue` 的 `h1-h6` + 组件内字号实现（如 `UIButton.vue`、`UITag.vue`） | `builder-component.lib.pen` 的 `H1-H6` 与局部文字样式 | 标题层级已基本对齐；默认字体仍有漂移 | 活跃设计默认字体当前应视为 `SourceHanSansSC-VF`；代码侧若仍出现 `AlibabaHealthB`，应视为待收敛残留，而不是新的设计主源 |
+| Typography | `tokens/index.ts` 的 `fontFamily` / `fontSize` + `UIConfigProvider.vue` 的 `h1-h6` + 组件内字号实现（如 `UIButton.vue`、`UITag.vue`） | `builder-component.lib.pen` 的 `H1-H6` 与局部文字样式 | 标题层级已基本对齐；默认字体仍有漂移 | 活跃设计默认字体当前应视为 `SourceHanSansSC-VF`；代码侧也应使用同一字体作为主源 |
 | CSS Variable Mirror | `UIConfigProvider.vue` 通过 `getCssVars('--ui-', uiVariables)` 输出 `--ui-*` | `ui/pages/spx/*.pen` 中的 `--ui-*` 或 `a:--ui-*` / `W:--ui-*` 镜像变量 | 存在，但不是主源 | 页面局部 `--ui-*` 只能视作快照或演示，不能反向覆盖代码 token |
 
 ### Canonical Color Token Snapshot
@@ -284,7 +284,7 @@ npm --prefix spx-gui run validate:pen
   - 这些前缀可以用于 import alias，但不应继续充当基础 token 主命名空间
 - Typography 与组件词表：
   - 活跃设计默认字体应按 `SourceHanSansSC-VF` + `H1-H6` 理解
-  - `spx-gui` 代码侧当前仍能看到 `AlibabaHealthB` 和对应字体文件残留，这不应被 AI 当作新的设计基线
+  - `spx-gui` 代码侧应以 `SourceHanSansSC-VF` 和对应字体文件作为新的设计基线
   - Button / Input / SearchBox / Tag 已按 `UIButton.vue`、`UITextInput.vue`、`UITag.vue` 的词表更新命名
   - 历史页面快照、`.snapshots` 和页面局部说明文字里仍可能出现旧词，应优先判断它是不是历史材料而不是活跃规范
 - 页面局部别名前缀过多：

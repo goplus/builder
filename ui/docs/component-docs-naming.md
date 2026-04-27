@@ -7,6 +7,7 @@
 - `ui/docs` 下的组件文档
 - 未来新增的组件说明、API、示例、无障碍文档
 - 设计组件与前端实现之间的映射文档
+- `ui/components/spx/builder-component.lib.pen` 中可文档化组件的命名映射
 
 不适用范围：
 
@@ -27,14 +28,20 @@
 
 每个组件必须同时具备以下四种名字，其中只有一个是机器主键：
 
-| 层级 | 规则 | 示例 |
-| ---- | ---- | ---- |
-| 代码组件名 | `PascalCase` | `DatePicker` |
-| 组件 ID | `kebab-case` | `date-picker` |
-| 文档目录名 | 与 `component_id` 完全一致 | `date-picker` |
-| 文档标题 | 面向人类展示 | `Date Picker` |
+| 层级       | 规则                             | 示例          |
+| ---------- | -------------------------------- | ------------- |
+| 代码组件名 | `PascalCase`                     | `DatePicker`  |
+| 组件 ID    | `kebab-case`                     | `date-picker` |
+| 文档目录名 | 与 `component_id` 字段值完全一致 | `date-picker` |
+| 文档标题   | 面向人类展示                     | `Date Picker` |
 
 唯一机器主键是 `component_id`。
+
+`component_name` 和 `component_id` 指向同一个组件，不代表两个组件。区别只在使用场景：
+
+- `component_name` 给代码、设计组件主名和人工阅读使用，例如 `DatePicker`
+- `component_id` 给文档目录、slug、frontmatter 主键和机器检索使用，例如 `date-picker`
+- 单词组件也遵守同一规则，例如 `Button` 对应 `button`
 
 约束如下：
 
@@ -87,12 +94,12 @@ ui/docs/components/
 
 组件目录下允许的标准文件名：
 
-| 文件名 | 职责 |
-| ---- | ---- |
-| `index.md` | 组件概览、适用场景、设计原则 |
-| `api.md` | Props、events、slots、tokens、状态说明 |
-| `examples.md` | 标准示例、推荐写法、反例 |
-| `accessibility.md` | 键盘交互、语义、ARIA、读屏说明 |
+| 文件名             | 职责                                   |
+| ------------------ | -------------------------------------- |
+| `index.md`         | 组件概览、适用场景、设计原则           |
+| `api.md`           | Props、events、slots、tokens、状态说明 |
+| `examples.md`      | 标准示例、推荐写法、反例               |
+| `accessibility.md` | 键盘交互、语义、ARIA、读屏说明         |
 
 如果未来需要新增固定专题页，应先扩展这份规范，再统一落地。不要让 AI 临时创造新文件名。
 
@@ -182,7 +189,55 @@ component_id: date-picker <-> component_name: DatePicker
 
 但 AI 不应把标题当成路径或主键使用，所有自动化逻辑统一以 `component_id` 为准。
 
-## Allowed and Disallowed Names
+## Design Library Naming
+
+`builder-component.lib.pen` 里的 `name` 不全部等于 `component_name`。先按用途区分：
+
+| 类型       | 用途                                | 示例                            |
+| ---------- | ----------------------------------- | ------------------------------- |
+| 组件主名   | 可文档化组件，对应 `component_name` | `Button`                        |
+| 变体路径   | 表达尺寸、样式、状态等组合          | `Button/Medium/Primary/Default` |
+| 内部图层名 | 设计实现细节，不作为文档主键        | `Icon`, `Label`                 |
+
+基础映射方式：
+
+```text
+component_name: Button
+component_id: button
+pen reusable: Button/Medium/Primary/Default
+```
+
+规则如下：
+
+- 文档目录和 slug 只使用 `component_id`，例如 `button`
+- `.pen` 里的组件主名使用 `PascalCase`，例如 `Button`
+- `.pen` 里的变体可以用 `/` 分层，但不要直接当作组件文档目录
+- 临时词不要进入主名或路径，例如 `new`、`final`、`draft2`
+- 带空格的旧命名应收敛为稳定主名，例如 `Button-only icon` 收敛为 `IconButton`
+
+Button 变体建议只保留必要层级，不要求每个变体都写满：
+
+```text
+Button/<Size>/<Intent>/<State>
+Button/Medium/Primary/Default
+Button/Medium/Primary/Disabled
+```
+
+## Repository Path Naming
+
+仓库里的路径型名称统一使用小写 `kebab-case`：
+
+- `ui/docs` 下的规范文档，例如 `component-docs-naming.md`
+- 组件目录，例如 `ui/docs/components/date-picker/`
+- 组件主页固定为 `index.md`
+- 组件专题页只使用保留文件名，例如 `api.md`、`examples.md`、`accessibility.md`
+- `ui/images` 下的普通图片，例如 `project-fullscreen.png`、`notification-success.png`
+
+字体文件、图标字体这类外部资源可以保留官方或全库统一命名。其他新文件不要使用空格、冒号、下划线、无语义编号或临时后缀。
+
+## Allowed and Disallowed Component IDs
+
+本节只约束 `component_id`、文档目录、slug、图片文件名等路径型名称；不约束 `.pen` 变体路径中的 `PascalCase` 段。
 
 推荐：
 

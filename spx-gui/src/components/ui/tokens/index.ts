@@ -8,8 +8,8 @@ export const fontSize = {
 } as const
 
 export const fontFamily = {
-  // see definition for `AlibabaHealthB` in global.scss
-  main: `AlibabaHealthB,
+  // see definition for `SourceHanSansSC-VF` in global.scss
+  main: `SourceHanSansSC-VF,
   -apple-system,
   BlinkMacSystemFont,
   'Segoe UI',
@@ -80,6 +80,7 @@ export const button = {
 } as const
 
 export const space = {
+  0: '2px',
   1: '4px',
   2: '8px',
   3: '12px',
