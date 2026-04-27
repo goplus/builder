@@ -30,7 +30,7 @@ onBeforeUnmount(() => handleSizePercentUpdate.cancel())
     <div class="flex items-center gap-1">
       <UINumberInput
         v-radar="{ name: 'Size input', desc: `Input to set ${name} size percentage` }"
-        class="w-25.5"
+        class="w-26"
         :min="0"
         :value="round(localConfig.size * 100)"
         @update:value="handleSizePercentUpdate"

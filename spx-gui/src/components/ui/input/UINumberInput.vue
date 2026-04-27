@@ -314,10 +314,3 @@ defineExpose({
   }
 })
 </script>
-
-<style scoped>
-/* Keep number input suffix spacing aligned with the previous UI. */
-.ui-number-input :deep(.ui-input__wrapper) {
-  padding-right: 8px;
-}
-</style>
