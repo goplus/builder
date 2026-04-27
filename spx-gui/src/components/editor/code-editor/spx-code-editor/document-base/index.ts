@@ -1837,12 +1837,12 @@ export const gamePlay0: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '0'
   },
-  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:true}',
-  insertSnippetParameterHints: ['sound', 'loop'],
-  overview: 'play sound, loop',
+  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}',
+  insertSnippetParameterHints: ['sound'],
+  overview: 'play sound',
   detail: makeBasicMarkdownString({
-    en: 'Play sound with given name in a loop',
-    zh: '循环播放声音（指定名字）'
+    en: 'Play sound with given name',
+    zh: '播放声音（指定名字）'
   })
 }
 
@@ -1854,12 +1854,12 @@ export const gamePlay1: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '1'
   },
-  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}',
-  insertSnippetParameterHints: ['sound'],
-  overview: 'play sound',
+  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:true}',
+  insertSnippetParameterHints: ['sound', 'loop'],
+  overview: 'play sound, loop',
   detail: makeBasicMarkdownString({
-    en: 'Play sound with given name',
-    zh: '播放声音（指定名字）'
+    en: 'Play sound with given name in a loop',
+    zh: '循环播放声音（指定名字）'
   })
 }
 
