@@ -1,9 +1,8 @@
 import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { provideModalContainer, useProvideLastClickEvent } from '../utils'
+import { UI_LAYER_ROOT_ATTR, provideLayerStack, provideModalContainer, useProvideLastClickEvent } from '../utils'
 import UIModal from './UIModal.vue'
-import { provideModalStack } from './stack'
 
 async function flushModal() {
   await nextTick()
@@ -46,7 +45,7 @@ const ModalTestProvider = defineComponent({
   setup(_, { slots }) {
     const modalContainer = ref<HTMLElement>()
     provideModalContainer(modalContainer)
-    provideModalStack()
+    provideLayerStack()
     useProvideLastClickEvent()
     return () => h('div', { ref: modalContainer, 'data-test-id': 'modal-container' }, slots.default?.())
   }
@@ -100,7 +99,7 @@ describe('UIModal', () => {
 
       await flushModal()
 
-      const modalRoot = getLatestElement('[data-ui-modal-root]') as HTMLElement
+      const modalRoot = getLatestElement(`[${UI_LAYER_ROOT_ATTR}]`) as HTMLElement
       const surface = getLatestElement('.ui-modal-surface') as HTMLElement
       expect(modalRoot).toBeTruthy()
       expect(surface).toBeTruthy()
@@ -138,7 +137,7 @@ describe('UIModal', () => {
       await flushModal()
 
       const modalSurface = getLatestElement('.ui-modal-surface') as HTMLElement
-      const modalRoot = getLatestElement('[data-ui-modal-root]') as HTMLElement
+      const modalRoot = getLatestElement(`[${UI_LAYER_ROOT_ATTR}]`) as HTMLElement
 
       expect(modalSurface.dataset.testId).toBe('external-modal-root')
       expect(modalSurface.className).toContain('external-modal-class')
@@ -172,17 +171,17 @@ describe('UIModal', () => {
       const modal = wrapper.findComponent(UIModal)
       const surface = getLatestElement('.ui-modal-surface') as HTMLElement
       const backdrop = getLatestElement('.bg-overlay-modal') as HTMLElement | null
-      const rootVNode = findVNodeByAttr((modal.vm as { $?: { subTree?: unknown } }).$?.subTree, 'data-ui-modal-root')
+      const rootVNode = findVNodeByAttr((modal.vm as { $?: { subTree?: unknown } }).$?.subTree, UI_LAYER_ROOT_ATTR)
 
       expect(backdrop).toBeTruthy()
 
       await new DOMWrapper(surface).trigger('click')
       await flushModal()
       expect(modal.emitted('update:visible')).toBeUndefined()
-      expect(getLatestElement('[data-ui-modal-root]')).toBe(surface)
+      expect(getLatestElement(`[${UI_LAYER_ROOT_ATTR}]`)).toBe(surface)
 
       expect(rootVNode?.props).toMatchObject({
-        'data-ui-modal-root': '',
+        [UI_LAYER_ROOT_ATTR]: '',
         class: expect.stringContaining('ui-modal-surface')
       })
       await new DOMWrapper(backdrop!).trigger('click')

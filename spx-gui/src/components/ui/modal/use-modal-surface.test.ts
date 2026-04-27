@@ -1,8 +1,13 @@
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref, type Ref } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { useProvideLastClickEvent, provideModalContainer, usePopupContainer } from '../utils'
-import { findModalRoot, provideModalStack } from './stack'
+import {
+  findLayerRoot,
+  provideLayerStack,
+  useProvideLastClickEvent,
+  provideModalContainer,
+  usePopupContainer
+} from '../utils'
 import { useModalSurface } from './use-modal-surface'
 
 async function flushModalEffects() {
@@ -45,7 +50,7 @@ describe('useModalSurface', () => {
       setup(_, { slots }) {
         const modalContainer = ref<HTMLElement>()
         provideModalContainer(modalContainer)
-        provideModalStack()
+        provideLayerStack()
         useProvideLastClickEvent()
         return () => h('div', { ref: modalContainer, 'data-test-id': 'modal-container' }, slots.default?.())
       }
@@ -89,7 +94,7 @@ describe('useModalSurface', () => {
     const popupContainer = popupContainerRef as Ref<HTMLElement | undefined>
     const transformStyle = transformStyleRef as Ref<Record<string, unknown> | null>
 
-    expect(findModalRoot(surface)).toBe(surface)
+    expect(findLayerRoot(surface)).toBe(surface)
     expect(popupContainer.value).toBe(surface)
     expect(transformStyle.value).toEqual({ transformOrigin: '35px 65px' })
 

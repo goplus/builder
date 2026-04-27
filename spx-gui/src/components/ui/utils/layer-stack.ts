@@ -5,7 +5,9 @@
  * layers: registration order, open-state tracking, topmost detection, and DOM
  * root markers for document-level event scope recovery.
  */
-import { computed, shallowReactive, type Ref } from 'vue'
+import { computed, inject, onScopeDispose, provide, shallowReactive, type InjectionKey, type Ref } from 'vue'
+
+export const UI_LAYER_ROOT_ATTR = 'data-ui-layer-root'
 
 /**
  * One stack-tracked layer instance. The stack only cares about stable identity
@@ -36,10 +38,9 @@ export type LayerStack = {
 /**
  * Create the shared stack implementation used by popup/modal layers.
  *
- * Each consumer passes its own root-attr factory, while registration order,
- * topmost tracking, and cleanup remain shared.
+ * Registration order, topmost tracking, root markers, and cleanup remain shared.
  */
-export function createLayerStack(rootAttrName: string): LayerStack {
+export function createLayerStack(): LayerStack {
   const entries = shallowReactive<LayerEntry[]>([])
   let nextId = 0
 
@@ -71,7 +72,7 @@ export function createLayerStack(rootAttrName: string): LayerStack {
     return shallowReactive<LayerRegistration>({
       id: entry.id,
       open: entry.open,
-      rootAttrs: Object.freeze({ [rootAttrName]: '' }),
+      rootAttrs: Object.freeze({ [UI_LAYER_ROOT_ATTR]: '' }),
       isTopmost: computed(() => topmostId.value === entry.id),
       unregister
     })
@@ -88,11 +89,31 @@ export function createLayerStack(rootAttrName: string): LayerStack {
 /**
  * Walk up from an event target/node until the nearest marked layer root is found.
  */
-export function findLayerRoot(target: EventTarget | Node | null, rootAttr: string) {
+export function findLayerRoot(target: EventTarget | Node | null) {
   let current: Node | null = target instanceof Node ? target : null
   while (current != null) {
-    if (current instanceof HTMLElement && current.hasAttribute(rootAttr)) return current
+    if (current instanceof HTMLElement && current.hasAttribute(UI_LAYER_ROOT_ATTR)) return current
     current = current.parentNode
   }
   return null
+}
+
+const layerStackKey: InjectionKey<LayerStack> = Symbol('layer-stack')
+
+export function provideLayerStack(stack: LayerStack = createLayerStack()) {
+  provide(layerStackKey, stack)
+  return stack
+}
+
+export function useLayerStack() {
+  const stack = inject(layerStackKey)
+  if (stack == null) throw new Error('Layer stack not provided')
+  return stack
+}
+
+export function useLayerRegistration(open: Readonly<Ref<boolean>>) {
+  const stack = useLayerStack()
+  const registration = stack.register(open)
+  onScopeDispose(registration.unregister)
+  return registration
 }

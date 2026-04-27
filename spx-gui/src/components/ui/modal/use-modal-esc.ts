@@ -1,16 +1,18 @@
 import { watch, type WatchSource } from 'vue'
 import { useModalContainer } from '../utils'
-import { findPopupRoot } from '../popup/stack'
 
 /**
  * Close the current topmost modal with ESC when the key event originates from the
  * modal subtree (or from `document.body`).
+ *
+ * `activeSource` controls whether this modal should handle ESC at the moment,
+ * for example when it is both the provider-active modal and the topmost UI layer.
  */
-export function useModalEsc(source: WatchSource<boolean>, handler: () => void) {
+export function useModalEsc(activeSource: WatchSource<boolean>, handler: () => void) {
   const modalContainerRef = useModalContainer()
 
   watch(
-    [modalContainerRef, source],
+    [modalContainerRef, activeSource],
     ([modalContainer, active], _, onCleanUp) => {
       if (modalContainer == null || !active) return
 
@@ -34,6 +36,5 @@ function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventT
   // body or a focusable DOM element. If the target is the body, the modal should close.
   if (target === document.body) return true
   if (!(target instanceof Element)) return true
-  if (findPopupRoot(target) != null) return false
   return modalContainer.contains(target)
 }

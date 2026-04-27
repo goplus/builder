@@ -2,13 +2,12 @@
  * Shared modal-surface wiring.
  *
  * This composable connects a modal surface to the modal stack, keeps the
- * surface root attrs in sync, computes the transform origin
+ * surface root attrs and topmost state in sync, computes the transform origin
  * used by open/close animations, and re-provides popup content into the modal
  * surface so dropdowns/tooltips opened inside a modal stay within that modal layer.
  */
 import { computed, nextTick, ref, toValue, watch, type CSSProperties, type Ref, type WatchSource } from 'vue'
-import { providePopupContainer, useLastClickEvent } from '../utils'
-import { useModalRegistration } from './stack'
+import { providePopupContainer, useLastClickEvent, useLayerRegistration } from '../utils'
 
 export type ModalTransformOrigin = {
   x: number
@@ -17,6 +16,7 @@ export type ModalTransformOrigin = {
 
 export type UseModalSurfaceResult = {
   surfaceRootAttrs: Record<string, string>
+  isTopmost: Readonly<Ref<boolean>>
   contentRef: Ref<HTMLElement | undefined>
   setTransformOrigin(origin: ModalTransformOrigin | null): void
   transformStyle: Ref<CSSProperties | null>
@@ -24,7 +24,7 @@ export type UseModalSurfaceResult = {
 
 export function useModalSurface(visibleSource: WatchSource<boolean>): UseModalSurfaceResult {
   const visible = computed(() => toValue(visibleSource))
-  const registration = useModalRegistration(visible)
+  const registration = useLayerRegistration(visible)
   const contentRef = ref<HTMLElement | undefined>(undefined)
   const explicitTransformOrigin = ref<ModalTransformOrigin | null>(null)
   // The final animation origin for the current modal cycle, resolved from the open
@@ -90,6 +90,7 @@ export function useModalSurface(visibleSource: WatchSource<boolean>): UseModalSu
   return {
     contentRef,
     surfaceRootAttrs: registration.rootAttrs,
+    isTopmost: registration.isTopmost,
     setTransformOrigin,
     transformStyle
   }

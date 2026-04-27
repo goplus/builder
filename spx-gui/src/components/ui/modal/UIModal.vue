@@ -92,6 +92,7 @@ const attachTo = useModalContainer()
 const {
   contentRef: containerRef,
   surfaceRootAttrs,
+  isTopmost,
   setTransformOrigin,
   transformStyle
 } = useModalSurface(() => props.visible)
@@ -152,7 +153,7 @@ defineExpose({
 })
 
 useModalEsc(
-  () => props.active,
+  () => props.active && isTopmost.value,
   () => emit('update:visible', false)
 )
 </script>

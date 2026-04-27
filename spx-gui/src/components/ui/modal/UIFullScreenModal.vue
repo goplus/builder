@@ -27,10 +27,10 @@ const emit = defineEmits<{
 
 const attachTo = useModalContainer()
 
-const { surfaceRootAttrs, contentRef, transformStyle } = useModalSurface(() => props.visible)
+const { surfaceRootAttrs, isTopmost, contentRef, transformStyle } = useModalSurface(() => props.visible)
 
 useModalEsc(
-  () => props.active ?? true,
+  () => (props.active ?? true) && isTopmost.value,
   () => emit('update:visible', false)
 )
 </script>

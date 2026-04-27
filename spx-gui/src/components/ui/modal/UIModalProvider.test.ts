@@ -1,8 +1,8 @@
 import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
-import { defineComponent, h, nextTick, onUnmounted } from 'vue'
+import { computed, defineComponent, h, nextTick, onUnmounted, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Cancelled } from '@/utils/exception'
-import { UI_POPUP_ROOT_ATTR } from '../popup'
+import { provideLayerStack, useLayerRegistration } from '../utils'
 import UIModalProvider, { useModal, useModalEvents } from './UIModalProvider.vue'
 import { useModalEsc } from './use-modal-esc'
 
@@ -15,7 +15,15 @@ async function flushModalProvider() {
 const mountedWrappers: VueWrapper[] = []
 
 function mountWithModalProvider(component: ReturnType<typeof defineComponent>) {
-  const wrapper = mount(component, { attachTo: document.body })
+  const wrapper = mount(
+    defineComponent({
+      setup() {
+        provideLayerStack()
+        return () => h(component)
+      }
+    }),
+    { attachTo: document.body }
+  )
   mountedWrappers.push(wrapper)
   return wrapper
 }
@@ -89,16 +97,24 @@ const EscAwareModal = defineComponent({
     cancelled: (_reason?: unknown) => true
   },
   setup(props, { emit }) {
+    const modalRegistration = useLayerRegistration(computed(() => props.visible))
+
     useModalEsc(
-      () => props.active ?? false,
+      () => (props.active ?? false) && modalRegistration.isTopmost.value,
       () => emit('cancelled', `${props.label}-esc`)
     )
 
     return () =>
       props.visible
-        ? h('div', { 'data-test-id': props.label, 'data-active': String(props.active ?? false) }, [
-            h('button', { 'data-test-id': `${props.label}-inside` }, 'Inside')
-          ])
+        ? h(
+            'div',
+            {
+              ...modalRegistration.rootAttrs,
+              'data-test-id': props.label,
+              'data-active': String(props.active ?? false)
+            },
+            [h('button', { 'data-test-id': `${props.label}-inside` }, 'Inside')]
+          )
         : null
   }
 })
@@ -121,19 +137,37 @@ const EscAwareModalWithNestedPopup = defineComponent({
     cancelled: (_reason?: unknown) => true
   },
   setup(props, { emit }) {
+    const modalRegistration = useLayerRegistration(computed(() => props.visible))
+    const popupVisible = ref(true)
+    const popupRegistration = useLayerRegistration(computed(() => props.visible && popupVisible.value))
+
     useModalEsc(
-      () => props.active ?? false,
+      () => (props.active ?? false) && modalRegistration.isTopmost.value,
       () => emit('cancelled', `${props.label}-esc`)
     )
 
-    const nestedPopupAttrs = { [UI_POPUP_ROOT_ATTR]: '' }
-
     return () =>
       props.visible
-        ? h('div', { 'data-test-id': props.label, 'data-active': String(props.active ?? false) }, [
-            h('button', { 'data-test-id': `${props.label}-inside` }, 'Inside'),
-            h('div', { ...nestedPopupAttrs }, [h('button', { 'data-test-id': `${props.label}-popup` }, 'Popup')])
-          ])
+        ? h(
+            'div',
+            {
+              ...modalRegistration.rootAttrs,
+              'data-test-id': props.label,
+              'data-active': String(props.active ?? false)
+            },
+            [
+              h(
+                'button',
+                { 'data-test-id': `${props.label}-inside`, onClick: () => (popupVisible.value = false) },
+                'Inside'
+              ),
+              popupVisible.value
+                ? h('div', { ...popupRegistration.rootAttrs }, [
+                    h('button', { 'data-test-id': `${props.label}-popup` }, 'Popup')
+                  ])
+                : null
+            ]
+          )
         : null
   }
 })

@@ -14,10 +14,9 @@ import {
   type PopupTriggerHandle,
   renderPopupTrigger,
   resolveTriggerElement,
-  useFloatingPopup,
-  usePopupRegistration
+  useFloatingPopup
 } from './popup'
-import { cn, type ClassValue } from './utils'
+import { cn, useLayerRegistration, type ClassValue } from './utils'
 import { usePopupContainer } from './utils'
 
 defineOptions({
@@ -50,7 +49,7 @@ const slots = useSlots()
 const attachTo = usePopupContainer()
 const internalVisibleRef = ref(false)
 const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
-const popup = usePopupRegistration(visibleComputed)
+const popup = useLayerRegistration(visibleComputed)
 const {
   referenceRef: triggerRef,
   floatingRef: contentRef,
