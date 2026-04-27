@@ -38,7 +38,7 @@ export { default as UIButtonGroup } from './UIButtonGroup.vue'
 export { default as UIButtonGroupItem } from './UIButtonGroupItem.vue'
 export { default as UIDropdownWithTooltip } from './UIDropdownWithTooltip.vue'
 export {
-  isInPopup,
+  isInPopupOrModal,
   provideRootContainer,
   providePopupContainer,
   provideModalContainer,

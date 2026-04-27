@@ -64,7 +64,7 @@
 import { computed, ref } from 'vue'
 import { formatDuration } from '@/utils/audio'
 import type { Animation } from '@/models/spx/animation'
-import { UIDropdown, UIIcon, isInPopup } from '@/components/ui'
+import { UIDropdown, UIIcon, isInPopupOrModal } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import DurationEditor from './DurationEditor.vue'
 import BoundStateEditor from './state/BoundStateEditor.vue'
@@ -106,7 +106,7 @@ const boundStateNum = computed(() => {
 function handleClickOutside(e: MouseEvent) {
   // There are popups (dropdown, modal, ...) in setting editor (e.g. "Record" in `SoundEditor`), we should not close the editor when user clicks in the popup content.
   // TODO: There should be a systematical solution for this, something like event propagation along the component tree instead of DOM tree.
-  if (isInPopup(e.target as HTMLElement | null)) return
+  if (isInPopupOrModal(e.target as HTMLElement | null)) return
   activeSetting.value = null
 }
 

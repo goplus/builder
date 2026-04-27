@@ -2,7 +2,13 @@
   <form :class="rootClass" @submit.prevent="emit('confirm')">
     <header class="h-11 flex flex-none items-center px-4">
       <h4 class="flex-1 text-xl text-title">{{ title }}</h4>
-      <UIModalClose class="-mr-1" @click="emit('cancel')" />
+      <div
+        v-radar="{ name: 'Close button', desc: 'Click to close the dropdown' }"
+        class="-mr-1 h-7 w-7 flex items-center justify-center rounded-full text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500"
+        @click="emit('cancel')"
+      >
+        <UIIcon type="close" class="h-5 w-5" />
+      </div>
     </header>
     <UIDivider />
     <main class="flex-auto min-h-0 overflow-y-auto px-4 py-3">
@@ -28,9 +34,8 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIButton, UIDivider } from '@/components/ui'
+import { UIButton, UIDivider, UIIcon } from '@/components/ui'
 import { cn, type ClassValue } from './utils'
-import UIModalClose from './modal/UIModalClose.vue'
 
 const props = defineProps<{
   title: string

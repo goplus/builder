@@ -1,3 +1,7 @@
+/**
+ * Modal stack tracks rendered modal surfaces at the DOM layer: root markers,
+ * layer ordering, and lookup from event targets. It does not create modal instances.
+ */
 import { inject, onScopeDispose, provide, type InjectionKey, type Ref } from 'vue'
 import { createLayerStack, findLayerRoot, type LayerStack } from '../utils/layer-stack'
 

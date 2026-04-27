@@ -3,7 +3,8 @@ import { defineComponent, h, nextTick, onUnmounted } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Cancelled } from '@/utils/exception'
 import { UI_POPUP_ROOT_ATTR } from '../popup'
-import UIModalProvider, { useModal, useModalEvents, useModalEsc } from './UIModalProvider.vue'
+import UIModalProvider, { useModal, useModalEvents } from './UIModalProvider.vue'
+import { useModalEsc } from './use-modal-esc'
 
 async function flushModalProvider() {
   await nextTick()

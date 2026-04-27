@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { cn, type ClassValue } from '../utils'
 import { useModalContainer } from '../utils'
-import { useModalEsc } from './UIModalProvider.vue'
+import { useModalEsc } from './use-modal-esc'
 import { useModalSurface } from './use-modal-surface'
 
 const props = withDefaults(
@@ -27,7 +27,7 @@ const emit = defineEmits<{
 
 const attachTo = useModalContainer()
 
-const { surfaceRootAttrs, setContentRef, transformStyle } = useModalSurface(() => props.visible)
+const { surfaceRootAttrs, contentRef, transformStyle } = useModalSurface(() => props.visible)
 
 useModalEsc(
   () => props.active ?? true,
@@ -41,7 +41,7 @@ useModalEsc(
       <div
         v-if="visible"
         v-bind="surfaceRootAttrs"
-        :ref="setContentRef"
+        ref="contentRef"
         :class="cn('fixed inset-0 z-1100', props.class)"
         :style="transformStyle"
       >

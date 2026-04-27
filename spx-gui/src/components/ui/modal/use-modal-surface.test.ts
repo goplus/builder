@@ -34,7 +34,7 @@ describe('useModalSurface', () => {
             h(PopupContainerConsumer),
             h('div', {
               ...modalSurface.surfaceRootAttrs,
-              ref: modalSurface.setContentRef,
+              ref: modalSurface.contentRef,
               'data-test-id': 'surface'
             })
           ])
@@ -77,7 +77,7 @@ describe('useModalSurface', () => {
       }
     })
     surface.getBoundingClientRect = () =>
-      ({ x: 10, y: 20, left: 10, top: 20, right: 110, bottom: 120, width: 100, height: 100 }) as DOMRect
+      ({ x: 15, y: 25, left: 15, top: 25, right: 115, bottom: 125, width: 100, height: 100 }) as DOMRect
 
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 50, clientY: 90 }))
     await flushModalEffects()
@@ -91,14 +91,14 @@ describe('useModalSurface', () => {
 
     expect(findModalRoot(surface)).toBe(surface)
     expect(popupContainer.value).toBe(surface)
-    expect(transformStyle.value).toEqual({ transformOrigin: '40px 70px' })
+    expect(transformStyle.value).toEqual({ transformOrigin: '35px 65px' })
 
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 80, clientY: 120 }))
     await flushModalEffects()
-    expect(transformStyle.value).toEqual({ transformOrigin: '40px 70px' })
+    expect(transformStyle.value).toEqual({ transformOrigin: '35px 65px' })
 
     visible.value = false
     await flushModalEffects()
-    expect(transformStyle.value).toEqual({ transformOrigin: '40px 70px' })
+    expect(transformStyle.value).toEqual({ transformOrigin: '35px 65px' })
   })
 })

@@ -15,22 +15,15 @@
 </template>
 
 <script lang="ts">
-import {
-  type InjectionKey,
-  inject,
-  provide,
-  shallowReactive,
-  nextTick,
-  type Component,
-  watch,
-  ref,
-  type WatchSource
-} from 'vue'
+/**
+ * UIModalProvider owns programmatic modal instances: creation, promise lifecycle,
+ * delayed removal, events, and the provider-level `active` prop.
+ */
+import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component, ref } from 'vue'
 import type { ComponentDefinition, PruneProps } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
 import Emitter from '@/utils/emitter'
-import { provideModalContainer, useModalContainer } from '../utils'
-import { findPopupRoot } from '../popup/stack'
+import { provideModalContainer } from '../utils'
 
 // The Modal Component should provide Props as following:
 export type ModalComponentProps = {
@@ -89,60 +82,6 @@ export function useModalEvents(): ModalEvents {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModalEvents should be called inside of ModalProvider')
   return ctx.events
-}
-
-/**
- * Close the current topmost modal with ESC when the key event originates from the
- * modal subtree (or from `document.body`).
- *
- * Why `active` is required:
- * - multiple modals can coexist in the provider stack
- * - only the topmost one should react to ESC
- *
- * Why we filter event targets:
- * - this modal implementation intentionally does not trap focus
- * - focus may temporarily live outside the modal subtree
- * - in that case, pressing ESC should be handled by the focused context instead of
- *   force-closing the modal stack
- * - nested popup content inside a modal (for example dropdowns) should consume ESC first,
- *   so the parent modal must ignore those events
- */
-export function useModalEsc(source: WatchSource<boolean>, handler: () => void) {
-  const modalContainerRef = useModalContainer()
-
-  watch(
-    [modalContainerRef, source],
-    ([modalContainer, active], _, onCleanUp) => {
-      if (modalContainer == null || !active) return
-
-      // Our modal implementation intentionally does not trap focus. In that setup, we only
-      // want ESC to close the active modal when the key event comes from the document body or
-      // from an element inside the modal container subtree.
-      const handleKeydown = (e: KeyboardEvent) => {
-        if (e.key !== 'Escape') return
-
-        if (!isEscTargetWithinModalScope(modalContainer, e.target)) return
-        handler()
-      }
-
-      document.addEventListener('keydown', handleKeydown)
-      onCleanUp(() => {
-        document.removeEventListener('keydown', handleKeydown)
-      })
-    },
-    {
-      immediate: true
-    }
-  )
-}
-
-function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventTarget | null) {
-  // Non-focusable DOM elements cannot trigger keydown events, so the target is either the
-  // body or a focusable DOM element. If the target is the body, the modal should close.
-  if (target === document.body) return true
-  if (!(target instanceof Element)) return true
-  if (findPopupRoot(target) != null) return false
-  return modalContainer.contains(target)
 }
 </script>
 

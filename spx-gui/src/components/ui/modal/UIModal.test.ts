@@ -253,7 +253,47 @@ describe('UIModal', () => {
   })
 
   describe('focus management', () => {
-    it('renders the modal surface as focusable when autoFocus is enabled', async () => {
+    it('focuses the first focusable element when autoFocus is enabled', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            const visible = ref(false)
+            return { visible }
+          },
+          render() {
+            return h(ModalTestProvider, null, {
+              default: () =>
+                h(
+                  UIModal,
+                  {
+                    visible: this.visible,
+                    'onUpdate:visible': (nextVisible: boolean) => (this.visible = nextVisible)
+                  },
+                  {
+                    default: () => [
+                      h('button', { disabled: true, 'data-test-id': 'disabled' }, 'Disabled'),
+                      h('div', { tabindex: -1, 'data-test-id': 'ignored' }, 'Ignored'),
+                      h('button', { 'data-test-id': 'first-focusable' }, 'First focusable')
+                    ]
+                  }
+                )
+            })
+          }
+        })
+      )
+
+      ;(wrapper.vm as unknown as { visible: boolean }).visible = true
+      await flushModal()
+
+      const surface = getLatestElement('.ui-modal-surface') as HTMLElement
+      const firstFocusable = getLatestElement('[data-test-id="first-focusable"]') as HTMLElement
+
+      expect(surface.getAttribute('tabindex')).toBe('-1')
+      expect(surface.tabIndex).toBe(-1)
+      expect(document.activeElement).toBe(firstFocusable)
+    })
+
+    it('falls back to focusing the modal surface when there is no focusable child', async () => {
       const wrapper = mountWithModalProvider(
         defineComponent({
           setup() {
@@ -283,7 +323,7 @@ describe('UIModal', () => {
 
       expect(surface.getAttribute('tabindex')).toBe('-1')
       expect(surface.tabIndex).toBe(-1)
-      expect(typeof surface.focus).toBe('function')
+      expect(document.activeElement).toBe(surface)
     })
   })
 })

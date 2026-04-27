@@ -56,7 +56,7 @@ export function useModalContainer() {
 }
 
 /** If given target in any popup/modal content */
-export function isInPopup(target: HTMLElement | null) {
+export function isInPopupOrModal(target: HTMLElement | null) {
   if (findPopupRoot(target) != null) return true
   return findModalRoot(target) != null
 }
