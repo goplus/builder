@@ -50,14 +50,14 @@
       -->
       <button
         v-if="props.value && props.clearable"
-        class="ui-input__clear"
+        class="mr-1 h-5 w-5 cursor-pointer appearance-none outline-none border-none rounded-full bg-transparent inline-flex items-center justify-center p-0 text-grey-800 transition-colors duration-200 last:-mr-0.5 hover:bg-grey-400 active:bg-grey-500"
         type="button"
         v-bind="clearIgnoreFocusAttrs"
         @mousedown.prevent
         @click="handleClear"
       >
         <svg
-          class="ui-input__clear-icon"
+          class="block h-3 w-3 shrink-0"
           width="12"
           height="12"
           viewBox="0 0 12 12"
@@ -180,44 +180,3 @@ defineExpose({
   }
 })
 </script>
-
-<style>
-@layer components {
-  .ui-input__clear {
-    margin-right: -2px;
-    height: 20px;
-    width: 20px;
-    appearance: none;
-    outline: none;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--ui-color-grey-800);
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .ui-input__clear:focus {
-    outline: none;
-  }
-
-  .ui-input__clear:hover {
-    background: var(--ui-color-grey-400);
-  }
-
-  .ui-input__clear:active {
-    background: var(--ui-color-grey-500);
-  }
-
-  .ui-input__clear-icon {
-    display: block;
-    width: 12px;
-    height: 12px;
-    flex-shrink: 0;
-  }
-}
-</style>

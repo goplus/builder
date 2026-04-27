@@ -1,5 +1,11 @@
 <template>
-  <div class="group" :class="cn('relative h-5 w-full min-w-0 inline-flex items-center', props.class)">
+  <div
+    class="group"
+    :class="cn('relative h-5 w-full min-w-0 inline-flex items-center', props.class)"
+    :style="{
+      '--ui-slider-main-color': props.disabled ? 'var(--ui-color-primary-300)' : 'var(--ui-color-primary-main)'
+    }"
+  >
     <input
       v-bind="controlBindings"
       class="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0 appearance-none outline-none disabled:cursor-not-allowed focus:outline-none"
@@ -15,7 +21,10 @@
     />
 
     <div class="relative" :class="railClass">
-      <div class="absolute inset-y-0 left-0 rounded-full bg-primary-500" :style="{ width: `${fillPercent}%` }"></div>
+      <div
+        class="absolute inset-y-0 left-0 rounded-full bg-(--ui-slider-main-color)"
+        :style="{ width: `${fillPercent}%` }"
+      ></div>
       <div
         class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center bg-transparent shadow-none"
         :style="{ left: `${fillPercent}%` }"
@@ -29,7 +38,7 @@
         <div
           class="h-5 w-5 rounded-full bg-white transition-transform duration-200"
           :class="props.disabled ? null : 'group-hover:scale-[1.2]'"
-          :style="{ boxShadow: 'inset 0 0 0 1px var(--ui-color-primary-500)' }"
+          :style="{ boxShadow: 'inset 0 0 0 1px var(--ui-slider-main-color)' }"
         ></div>
       </div>
     </div>

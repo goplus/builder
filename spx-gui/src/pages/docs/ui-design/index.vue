@@ -23,7 +23,7 @@
       >
         <div :class="[directoryHeaderClass, isDirectoryPinned ? 'hidden' : '']">
           <h2 :class="sectionTitleClass">Directory</h2>
-          <p class="text-(--ui-color-grey-700) text-xs leading-4.5">
+          <p class="text-xs text-grey-700">
             {{
               $t({
                 en: 'Jump to a component section for quick style checks.',
@@ -235,12 +235,12 @@
 
       <section id="ui-inputs" :class="sectionClass">
         <div :class="sectionHeaderClass">
-          <h2 :class="sectionTitleClass">Inputs And Select</h2>
+          <h2 :class="sectionTitleClass">Inputs, Slider And Select</h2>
           <p :class="sectionDescriptionClass">
             {{
               $t({
-                en: 'Common text, number, and select inputs for forms and filters.',
-                zh: '表单和筛选中最常用的文本、数字和选择输入组件。'
+                en: 'Common text, number, slider, and select inputs for forms and filters.',
+                zh: '表单和筛选中最常用的文本、数字、滑块和选择输入组件。'
               })
             }}
           </p>
@@ -256,7 +256,21 @@
                   <UIIcon type="search" />
                 </template>
               </UITextInput>
-              <UITextInput value="Read only field" readonly disabled class="w-full" />
+              <UITextInput v-model:value="largeTextInputValue" size="large" clearable class="w-full">
+                <template #suffix>
+                  <span class="text-xs text-grey-800">large</span>
+                </template>
+              </UITextInput>
+              <UITextInput v-model:value="passwordInputValue" type="password" clearable class="w-full" />
+              <UITextInput
+                v-model:value="multilineTextInputValue"
+                type="textarea"
+                :rows="3"
+                placeholder="Describe your project"
+                class="w-full"
+              />
+              <UITextInput value="Read only field" readonly class="w-full" />
+              <UITextInput value="Disabled field" disabled class="w-full" />
             </div>
           </div>
           <div :class="surfaceCardClass">
@@ -264,14 +278,60 @@
             <div :class="exampleStackClass">
               <UINumberInput v-model:value="numberInputValue" :min="0" :max="100" class="w-full">
                 <template #suffix>
-                  <span class="text-xs text-(--ui-color-grey-800)">px</span>
+                  <span class="text-xs text-grey-800">px</span>
+                </template>
+              </UINumberInput>
+              <UINumberInput v-model:value="decimalNumberInputValue" :min="0" :max="1" :step="0.05" class="w-full">
+                <template #prefix>
+                  <span class="text-xs text-grey-800">α</span>
+                </template>
+                <template #suffix>
+                  <span class="text-xs text-grey-800">opacity</span>
+                </template>
+              </UINumberInput>
+              <UINumberInput
+                v-model:value="emptyNumberInputValue"
+                color="white"
+                size="large"
+                placeholder="Empty value"
+                class="w-full"
+              />
+              <UINumberInput :value="16" readonly class="w-full">
+                <template #suffix>
+                  <span class="text-xs text-grey-800">readonly</span>
                 </template>
               </UINumberInput>
               <UINumberInput :value="24" disabled class="w-full">
                 <template #suffix>
-                  <span class="text-xs text-(--ui-color-grey-800)">px</span>
+                  <span class="text-xs text-grey-800">px</span>
                 </template>
               </UINumberInput>
+            </div>
+          </div>
+          <div :class="surfaceCardClass">
+            <div :class="groupLabelClass">UISlider</div>
+            <div :class="exampleStackClass">
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs text-grey-800">
+                  <span>dragend update</span>
+                  <span>{{ sliderValue }}</span>
+                </div>
+                <UISlider v-model:value="sliderValue" />
+              </div>
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs text-grey-800">
+                  <span>input update</span>
+                  <span>{{ sliderLiveValue.toFixed(2) }}</span>
+                </div>
+                <UISlider v-model:value="sliderLiveValue" :min="0" :max="2" :step="0.01" update-on="input" />
+              </div>
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs text-grey-800">
+                  <span>disabled</span>
+                  <span>60</span>
+                </div>
+                <UISlider :value="60" disabled />
+              </div>
             </div>
           </div>
           <div :class="surfaceCardClass">
@@ -309,6 +369,26 @@
             </div>
           </div>
           <div :class="surfaceCardClass">
+            <div :class="groupLabelClass">UICheckboxGroup</div>
+            <div class="flex">
+              <UICheckboxGroup :value="checkboxValues" @update:value="(value) => (checkboxValues = value)">
+                <div :class="choiceColumnClass">
+                  <UICheckbox value="physics">Physics</UICheckbox>
+                  <UICheckbox value="shadow">Shadow</UICheckbox>
+                  <UICheckbox value="particles">Particles</UICheckbox>
+                </div>
+              </UICheckboxGroup>
+              <UIDivider vertical class="mx-3 my-2" />
+              <UICheckboxGroup :value="['physics', 'shadow']" disabled>
+                <div :class="choiceColumnClass">
+                  <UICheckbox value="physics">Physics</UICheckbox>
+                  <UICheckbox value="shadow">Shadow</UICheckbox>
+                  <UICheckbox value="particles">Particles</UICheckbox>
+                </div>
+              </UICheckboxGroup>
+            </div>
+          </div>
+          <div :class="surfaceCardClass">
             <div :class="groupLabelClass">UIRadioGroup</div>
             <div class="flex">
               <UIRadioGroup :value="radioValue" @update:value="(value) => (radioValue = value ?? 'default')">
@@ -318,7 +398,7 @@
                   <UIRadio value="manual">Manual</UIRadio>
                 </div>
               </UIRadioGroup>
-              <UIDivider vertical class="mx-6 my-2" />
+              <UIDivider vertical class="mx-3 my-2" />
               <UIRadioGroup value="default" disabled>
                 <div :class="choiceColumnClass">
                   <UIRadio value="default">Default</UIRadio>
@@ -335,26 +415,6 @@
               <UITabRadio value="vertical">Vertical</UITabRadio>
               <UITabRadio value="manual">Manual</UITabRadio>
             </UITabRadioGroup>
-          </div>
-          <div :class="surfaceCardClass">
-            <div :class="groupLabelClass">UICheckboxGroup</div>
-            <div class="flex">
-              <UICheckboxGroup :value="checkboxValues" @update:value="(value) => (checkboxValues = value)">
-                <div :class="choiceColumnClass">
-                  <UICheckbox value="physics">Physics</UICheckbox>
-                  <UICheckbox value="shadow">Shadow</UICheckbox>
-                  <UICheckbox value="particles">Particles</UICheckbox>
-                </div>
-              </UICheckboxGroup>
-              <UIDivider vertical class="mx-6 my-2" />
-              <UICheckboxGroup :value="['physics', 'shadow']" disabled>
-                <div :class="choiceColumnClass">
-                  <UICheckbox value="physics">Physics</UICheckbox>
-                  <UICheckbox value="shadow">Shadow</UICheckbox>
-                  <UICheckbox value="particles">Particles</UICheckbox>
-                </div>
-              </UICheckboxGroup>
-            </div>
           </div>
         </div>
       </section>
@@ -408,9 +468,7 @@
             <div :class="groupLabelClass">UICard</div>
             <UICard class="overflow-hidden">
               <UICardHeader>Asset Panel</UICardHeader>
-              <div
-                class="rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4 text-(--ui-color-grey-900) text-sm leading-5.5"
-              >
+              <div class="rounded-md bg-grey-100 p-4 text-sm/5.5 text-grey-900">
                 {{
                   $t({
                     en: 'Use cards for grouped editor panels or community blocks.',
@@ -820,8 +878,8 @@
         <div :class="showcaseGridClass">
           <div :class="surfaceCardClass">
             <div :class="groupLabelClass">UILoading</div>
-            <div class="relative min-h-40 overflow-hidden rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4">
-              <div class="flex h-full min-h-32 items-center justify-center text-sm text-(--ui-color-grey-700)">
+            <div class="relative min-h-40 overflow-hidden rounded-md bg-grey-100 p-4">
+              <div class="flex h-full min-h-32 items-center justify-center text-sm text-grey-700">
                 Asset grid preview
               </div>
               <UILoading cover :visible="loadingDemoVisible" :mask="loadingDemoMask" />
@@ -834,12 +892,12 @@
                 <span :class="fieldLabelClass">progress</span>
                 <UINumberInput v-model:value="detailedLoadingProgress" :min="0" :max="100">
                   <template #suffix>
-                    <span class="text-xs text-(--ui-color-grey-800)">%</span>
+                    <span class="text-xs text-grey-800">%</span>
                   </template>
                 </UINumberInput>
               </label>
             </div>
-            <div class="relative min-h-55 overflow-hidden rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4">
+            <div class="relative min-h-55 overflow-hidden rounded-md bg-grey-100 p-4">
               <UIDetailedLoading
                 cover
                 :visible="loadingDemoVisible"
@@ -855,17 +913,15 @@
             <div :class="variantGroupClass">
               <div>
                 <div :class="groupLabelClass">Compact Without Text</div>
-                <div class="flex justify-center rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4">
-                  <div class="relative h-28 w-28 overflow-hidden rounded-(--ui-border-radius-md)">
+                <div class="flex justify-center rounded-md bg-grey-100 p-4">
+                  <div class="relative h-28 w-28 overflow-hidden rounded-md">
                     <GenLoading cover :visible="loadingDemoVisible" animation-style="width: 60px; height: 60px;" />
                   </div>
                 </div>
               </div>
               <div>
                 <div :class="groupLabelClass">Large With Text</div>
-                <div
-                  class="relative min-h-55 overflow-hidden rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4"
-                >
+                <div class="relative min-h-55 overflow-hidden rounded-md bg-grey-100 p-4">
                   <GenLoading cover :visible="loadingDemoVisible">
                     {{ $t({ en: 'Generating sprite variations', zh: '正在生成精灵变体' }) }}
                   </GenLoading>
@@ -948,6 +1004,7 @@ import {
   UIRadioGroup,
   UISelect,
   UISelectOption,
+  UISlider,
   UISoundItem,
   UISpriteItem,
   UISwitch,
@@ -979,49 +1036,46 @@ usePageTitle({
   zh: 'UI设计'
 })
 
-const pageShellClass = 'flex h-full w-full flex-col overflow-y-auto bg-[var(--ui-color-grey-100)]'
-const pageContentClass = 'my-[30px] flex flex-col gap-6'
+const pageShellClass = 'flex h-full w-full flex-col overflow-y-auto bg-grey-100'
+const pageContentClass = 'my-7.5 flex flex-col gap-6'
 const pageIntroClass =
-  'rounded-[var(--ui-border-radius-lg)] bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.14),transparent_30%),linear-gradient(180deg,#fff_0%,#f8fcfd_100%)] px-7 py-6 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)]'
-const pageTitleClass = 'text-[28px] leading-9 text-[var(--ui-color-grey-1000)]'
-const pageDescriptionClass = 'mt-1.5 text-sm leading-[22px] text-[var(--ui-color-grey-800)]'
-const sectionClass =
-  'rounded-[var(--ui-border-radius-lg)] bg-white px-6 pb-6 pt-5 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)] scroll-mt-6'
+  'rounded-lg bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.14),transparent_30%),linear-gradient(180deg,#fff_0%,#f8fcfd_100%)] px-7 py-6 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)]'
+const pageTitleClass = 'text-[28px]/9 text-grey-1000'
+const pageDescriptionClass = 'mt-1.5 text-sm/5.5 text-grey-800'
+const sectionClass = 'rounded-lg bg-white px-6 pb-6 pt-5 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)] scroll-mt-6'
 const sectionHeaderClass = 'mb-4'
-const sectionTitleClass = 'text-[20px] leading-7 text-[var(--ui-color-grey-1000)]'
-const sectionDescriptionClass = 'mt-1 text-[13px] leading-5 text-[var(--ui-color-grey-800)]'
+const sectionTitleClass = 'text-2xl text-grey-1000'
+const sectionDescriptionClass = 'mt-1 text-sm text-grey-800'
 const directorySectionClass =
-  'sticky top-2 z-10 rounded-[var(--ui-border-radius-lg)] bg-[rgba(255,255,255,0.92)] px-4 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)] backdrop-blur-[12px]'
-const directoryHeaderClass = 'mb-[10px] flex items-baseline justify-between gap-3'
+  'sticky top-2 z-10 rounded-lg bg-[rgba(255,255,255,0.92)] px-4 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)] backdrop-blur-md'
+const directoryHeaderClass = 'mb-2.5 flex items-baseline justify-between gap-3'
 const directoryGridClass = 'grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'
 const directoryLinkClass =
-  'rounded-[var(--ui-border-radius-md)] bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.08),transparent_40%),#f9fcfd] px-[10px] py-2 text-xs leading-[18px] text-[var(--ui-color-grey-900)] no-underline shadow-[inset_0_0_0_1px_rgba(213,226,232,0.9)] transition-[color,box-shadow,transform] duration-200 hover:-translate-y-px hover:text-[var(--ui-color-grey-1000)] hover:shadow-[inset_0_0_0_1px_rgba(64,195,211,0.45)]'
+  'rounded-md bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.08),transparent_40%),#f9fcfd] px-2.5 py-2 text-xs text-grey-900 no-underline shadow-[inset_0_0_0_1px_rgba(213,226,232,0.9)] transition-[color,box-shadow,transform] duration-200 hover:-translate-y-px hover:text-grey-1000 hover:shadow-[inset_0_0_0_1px_rgba(64,195,211,0.45)]'
 const showcaseGridClass = 'grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4'
 const nestedShowcaseGridClass = 'grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4'
 const surfaceCardClass =
-  'rounded-[var(--ui-border-radius-md)] bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.08),transparent_36%),#f9fcfd] p-4 shadow-[inset_0_0_0_1px_rgba(213,226,232,0.9)]'
+  'rounded-md bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.08),transparent_36%),#f9fcfd] p-4 shadow-[inset_0_0_0_1px_rgba(213,226,232,0.9)]'
 const controlRowClass = 'mb-4 flex flex-wrap items-center gap-x-4 gap-y-3'
 const controlFieldClass = 'inline-flex max-w-full items-center gap-3 align-middle'
 const compactFieldClass = ''
-const fieldLabelClass = 'shrink-0 text-left text-xs leading-[18px] text-[var(--ui-color-grey-800)]'
-const controlLabelClass = 'text-xs leading-[18px] text-[var(--ui-color-grey-800)]'
-const groupLabelClass = 'mb-[10px] text-xs leading-[18px] text-[var(--ui-color-grey-800)]'
+const fieldLabelClass = 'shrink-0 text-left text-xs text-grey-800'
+const controlLabelClass = 'text-xs text-grey-800'
+const groupLabelClass = 'mb-2.5 text-xs text-grey-800'
 const demoPanelClass = 'flex flex-col gap-3'
 const exampleStackClass = 'flex flex-col gap-3'
 const wrapRowClass = 'flex flex-wrap gap-2'
 const variantStackClass = 'flex flex-col gap-5'
 const variantGroupClass = 'flex flex-col gap-3'
-const variantLabelClass = 'text-sm leading-[22px] text-[var(--ui-color-grey-1000)]'
+const variantLabelClass = 'text-sm/5.5 text-grey-1000'
 const choiceColumnClass = 'flex flex-col gap-3'
-const tabsContentClass =
-  'rounded-[var(--ui-border-radius-md)] bg-[var(--ui-color-grey-100)] p-4 text-sm leading-[22px] text-[var(--ui-color-grey-900)]'
-const feedbackSurfaceClass =
-  'relative min-h-[220px] rounded-[var(--ui-border-radius-md)] bg-[var(--ui-color-grey-100)] p-4'
+const tabsContentClass = 'rounded-md bg-grey-100 p-4 text-sm/5.5 text-grey-900'
+const feedbackSurfaceClass = 'relative min-h-55 rounded-md bg-grey-100 p-4'
 
 const directoryItems = [
   { id: 'ui-button', label: 'UIButton' },
   { id: 'ui-button-group', label: 'UIButtonGroup' },
-  { id: 'ui-inputs', label: 'Inputs And Select' },
+  { id: 'ui-inputs', label: 'Inputs, Slider And Select' },
   { id: 'ui-choices', label: 'Choices' },
   { id: 'ui-tabs', label: 'UITabs' },
   { id: 'ui-card', label: 'UICard' },
@@ -1059,7 +1113,14 @@ const primaryIconValue = ref('balanced')
 
 const textInputValue = ref('Builder Project')
 const searchInputValue = ref('Search assets')
+const largeTextInputValue = ref('Large input')
+const passwordInputValue = ref('secret')
+const multilineTextInputValue = ref('A short project description.')
 const numberInputValue = ref<number | null>(24)
+const decimalNumberInputValue = ref<number | null>(0.75)
+const emptyNumberInputValue = ref<number | null>(null)
+const sliderValue = ref(42)
+const sliderLiveValue = ref(1)
 const selectValue = ref('recent')
 
 const switchValue = ref(true)
