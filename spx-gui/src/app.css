@@ -47,10 +47,17 @@
  * - token definitions live in src/components/ui/tokens/
  * - UIConfigProvider exposes them as global --ui-* CSS variables
  *
- * This file maps those --ui-* variables into Tailwind theme tokens so template
- * utilities can use semantic classes such as text-text and bg-primary-100.
+ * This file maps runtime --ui-* variables to Tailwind tokens for utilities such
+ * as text-title and bg-primary-100.
+ *
+ * Keep this block `inline`: the source vars are injected by UIConfigProvider on
+ * a descendant container, not predefined on `:root`.
+ *
+ * Usage rule:
+ * - The `--color-*`, `--font-*`, `--radius-*`, `--shadow-*`, `--spacing-*`, and `--text-*` names below are Tailwind tokens only.
+ * - Do not use those intermediate names from handwritten CSS; use runtime `--ui-*` variables directly.
  */
-@theme {
+@theme inline {
   /* Keep only the project's breakpoint names to avoid a parallel default scale. */
   --breakpoint-*: initial;
   --color-*: initial;
@@ -64,7 +71,7 @@
    * - Prefer standard Tailwind token names when possible (for example `rounded-md` instead of old project-local names like `rounded-2`).
    * - `tailwind-merge` understands standard utility groups much better than project-private aliases, so keeping token names aligned here makes class overrides more predictable.
    * - For values that still need custom CSS variables, prefer staying inside the original utility namespace when practical.
-  *   Example: use `rounded-md` bridged to `--ui-border-radius-md`, or `h-(--ui-line-height-md)` for height.
+   *   Example: use `rounded-md` bridged to `--ui-border-radius-md`, or `h-(--ui-line-height-md)` for height.
    */
 
   /* Mirrors src/components/ui/responsive.ts. */
@@ -73,139 +80,119 @@
   --breakpoint-desktop-large: 105rem;
 
   /* Product palette and semantic color tokens bridged from global --ui-color-* vars. */
-  --color-turquoise-100: var(--ui-color-turquoise-100, #f3fbfc);
-  --color-turquoise-200: var(--ui-color-turquoise-200, #eaf9fa);
-  --color-turquoise-300: var(--ui-color-turquoise-300, #afe7ec);
-  --color-turquoise-400: var(--ui-color-turquoise-400, #3fcdd9);
-  --color-turquoise-500: var(--ui-color-turquoise-500, #36c2cf);
-  --color-turquoise-600: var(--ui-color-turquoise-600, #2b9ba5);
-  --color-turquoise-700: var(--ui-color-turquoise-700, #20747c);
-  --color-turquoise-main: var(--ui-color-turquoise-main, #36c2cf);
+  --color-turquoise-100: var(--ui-color-turquoise-100);
+  --color-turquoise-200: var(--ui-color-turquoise-200);
+  --color-turquoise-300: var(--ui-color-turquoise-300);
+  --color-turquoise-400: var(--ui-color-turquoise-400);
+  --color-turquoise-500: var(--ui-color-turquoise-500);
+  --color-turquoise-600: var(--ui-color-turquoise-600);
+  --color-turquoise-700: var(--ui-color-turquoise-700);
+  --color-turquoise-main: var(--ui-color-turquoise-main);
 
-  --color-yellow-100: var(--ui-color-yellow-100, #fff8f1);
-  --color-yellow-200: var(--ui-color-yellow-200, #fff1e2);
-  --color-yellow-300: var(--ui-color-yellow-300, #ffe2c2);
-  --color-yellow-400: var(--ui-color-yellow-400, #ffc584);
-  --color-yellow-500: var(--ui-color-yellow-500, #ff9f33);
-  --color-yellow-600: var(--ui-color-yellow-600, #ce8029);
-  --color-yellow-700: var(--ui-color-yellow-700, #9d611f);
-  --color-yellow-main: var(--ui-color-yellow-main, #ff9f33);
+  --color-yellow-100: var(--ui-color-yellow-100);
+  --color-yellow-200: var(--ui-color-yellow-200);
+  --color-yellow-300: var(--ui-color-yellow-300);
+  --color-yellow-400: var(--ui-color-yellow-400);
+  --color-yellow-500: var(--ui-color-yellow-500);
+  --color-yellow-600: var(--ui-color-yellow-600);
+  --color-yellow-700: var(--ui-color-yellow-700);
+  --color-yellow-main: var(--ui-color-yellow-main);
 
-  --color-purple-100: var(--ui-color-purple-100, #faf8ff);
-  --color-purple-200: var(--ui-color-purple-200, #f6f1ff);
-  --color-purple-300: var(--ui-color-purple-300, #e2d4ff);
-  --color-purple-400: var(--ui-color-purple-400, #b390ff);
-  --color-purple-500: var(--ui-color-purple-500, #a074ff);
-  --color-purple-600: var(--ui-color-purple-600, #926ae8);
-  --color-purple-700: var(--ui-color-purple-700, #7252b5);
-  --color-purple-main: var(--ui-color-purple-main, #a074ff);
+  --color-purple-100: var(--ui-color-purple-100);
+  --color-purple-200: var(--ui-color-purple-200);
+  --color-purple-300: var(--ui-color-purple-300);
+  --color-purple-400: var(--ui-color-purple-400);
+  --color-purple-500: var(--ui-color-purple-500);
+  --color-purple-600: var(--ui-color-purple-600);
+  --color-purple-700: var(--ui-color-purple-700);
+  --color-purple-main: var(--ui-color-purple-main);
 
-  --color-blue-100: var(--ui-color-blue-100, #eff7ff);
-  --color-blue-200: var(--ui-color-blue-200, #dfefff);
-  --color-blue-300: var(--ui-color-blue-300, #b8e0ff);
-  --color-blue-400: var(--ui-color-blue-400, #78c7ff);
-  --color-blue-500: var(--ui-color-blue-500, #4cb8ff);
-  --color-blue-600: var(--ui-color-blue-600, #0693f1);
-  --color-blue-700: var(--ui-color-blue-700, #0076ce);
-  --color-blue-main: var(--ui-color-blue-main, #4cb8ff);
+  --color-blue-100: var(--ui-color-blue-100);
+  --color-blue-200: var(--ui-color-blue-200);
+  --color-blue-300: var(--ui-color-blue-300);
+  --color-blue-400: var(--ui-color-blue-400);
+  --color-blue-500: var(--ui-color-blue-500);
+  --color-blue-600: var(--ui-color-blue-600);
+  --color-blue-700: var(--ui-color-blue-700);
+  --color-blue-main: var(--ui-color-blue-main);
 
-  --color-red-100: var(--ui-color-red-100, #feefef);
-  --color-red-200: var(--ui-color-red-200, #fdc7c7);
-  --color-red-300: var(--ui-color-red-300, #ff97a0);
-  --color-red-400: var(--ui-color-red-400, #f15d64);
-  --color-red-500: var(--ui-color-red-500, #ef4149);
-  --color-red-600: var(--ui-color-red-600, #bc292e);
-  --color-red-main: var(--ui-color-red-main, #ef4149);
+  --color-red-100: var(--ui-color-red-100);
+  --color-red-200: var(--ui-color-red-200);
+  --color-red-300: var(--ui-color-red-300);
+  --color-red-400: var(--ui-color-red-400);
+  --color-red-500: var(--ui-color-red-500);
+  --color-red-600: var(--ui-color-red-600);
+  --color-red-main: var(--ui-color-red-main);
 
-  --color-green-100: var(--ui-color-green-100, #e0f8e3);
-  --color-green-200: var(--ui-color-green-200, #cbf1cd);
-  --color-green-300: var(--ui-color-green-300, #b0ea90);
-  --color-green-400: var(--ui-color-green-400, #90e05a);
-  --color-green-500: var(--ui-color-green-500, #63ce29);
-  --color-green-600: var(--ui-color-green-600, #3ca80c);
-  --color-green-main: var(--ui-color-green-main, #63ce29);
+  --color-green-100: var(--ui-color-green-100);
+  --color-green-200: var(--ui-color-green-200);
+  --color-green-300: var(--ui-color-green-300);
+  --color-green-400: var(--ui-color-green-400);
+  --color-green-500: var(--ui-color-green-500);
+  --color-green-600: var(--ui-color-green-600);
+  --color-green-main: var(--ui-color-green-main);
 
-  --color-grey-100: var(--ui-color-grey-100, #ffffff);
-  --color-grey-200: var(--ui-color-grey-200, #fbfcfd);
-  --color-grey-300: var(--ui-color-grey-300, #f6f8fa);
-  --color-grey-400: var(--ui-color-grey-400, #eaeff3);
-  --color-grey-500: var(--ui-color-grey-500, #d9dfe5);
-  --color-grey-600: var(--ui-color-grey-600, #cbd2d8);
-  --color-grey-700: var(--ui-color-grey-700, #a7b1bb);
-  --color-grey-800: var(--ui-color-grey-800, #6e7781);
-  --color-grey-900: var(--ui-color-grey-900, #57606a);
-  --color-grey-1000: var(--ui-color-grey-1000, #24292f);
+  --color-grey-100: var(--ui-color-grey-100);
+  --color-grey-200: var(--ui-color-grey-200);
+  --color-grey-300: var(--ui-color-grey-300);
+  --color-grey-400: var(--ui-color-grey-400);
+  --color-grey-500: var(--ui-color-grey-500);
+  --color-grey-600: var(--ui-color-grey-600);
+  --color-grey-700: var(--ui-color-grey-700);
+  --color-grey-800: var(--ui-color-grey-800);
+  --color-grey-900: var(--ui-color-grey-900);
+  --color-grey-1000: var(--ui-color-grey-1000);
 
-  --color-primary-100: var(--ui-color-primary-100, #f3fbfc);
-  --color-primary-200: var(--ui-color-primary-200, #eaf9fa);
-  --color-primary-300: var(--ui-color-primary-300, #afe7ec);
-  --color-primary-400: var(--ui-color-primary-400, #3fcdd9);
-  --color-primary-500: var(--ui-color-primary-500, #36c2cf);
-  --color-primary-600: var(--ui-color-primary-600, #2b9ba5);
-  --color-primary-700: var(--ui-color-primary-700, #20747c);
-  --color-primary-main: var(--ui-color-primary-main, #36c2cf);
+  --color-primary-100: var(--ui-color-primary-100);
+  --color-primary-200: var(--ui-color-primary-200);
+  --color-primary-300: var(--ui-color-primary-300);
+  --color-primary-400: var(--ui-color-primary-400);
+  --color-primary-500: var(--ui-color-primary-500);
+  --color-primary-600: var(--ui-color-primary-600);
+  --color-primary-700: var(--ui-color-primary-700);
+  --color-primary-main: var(--ui-color-primary-main);
 
-  --color-danger-100: var(--ui-color-danger-100, #feefef);
-  --color-danger-200: var(--ui-color-danger-200, #fdc7c7);
-  --color-danger-300: var(--ui-color-danger-300, #ff97a0);
-  --color-danger-400: var(--ui-color-danger-400, #f15d64);
-  --color-danger-500: var(--ui-color-danger-500, #ef4149);
-  --color-danger-600: var(--ui-color-danger-600, #bc292e);
-  --color-danger-main: var(--ui-color-danger-main, #ef4149);
+  --color-danger-100: var(--ui-color-danger-100);
+  --color-danger-200: var(--ui-color-danger-200);
+  --color-danger-300: var(--ui-color-danger-300);
+  --color-danger-400: var(--ui-color-danger-400);
+  --color-danger-500: var(--ui-color-danger-500);
+  --color-danger-600: var(--ui-color-danger-600);
+  --color-danger-main: var(--ui-color-danger-main);
 
-  --color-success-100: var(--ui-color-success-100, #e0f8e3);
-  --color-success-200: var(--ui-color-success-200, #cbf1cd);
-  --color-success-300: var(--ui-color-success-300, #b0ea90);
-  --color-success-400: var(--ui-color-success-400, #90e05a);
-  --color-success-500: var(--ui-color-success-500, #63ce29);
-  --color-success-600: var(--ui-color-success-600, #3ca80c);
-  --color-success-main: var(--ui-color-success-main, #63ce29);
+  --color-success-100: var(--ui-color-success-100);
+  --color-success-200: var(--ui-color-success-200);
+  --color-success-300: var(--ui-color-success-300);
+  --color-success-400: var(--ui-color-success-400);
+  --color-success-500: var(--ui-color-success-500);
+  --color-success-600: var(--ui-color-success-600);
+  --color-success-main: var(--ui-color-success-main);
 
-  --color-disabled-bg: var(--ui-color-disabled-bg, #f6f8fa);
-  --color-disabled-text: var(--ui-color-disabled-text, #cbd2d8);
-  --color-overlay-loading: var(--ui-color-overlay-loading, rgba(36, 41, 47, 0.6));
-  --color-overlay-modal: var(--ui-color-overlay-modal, rgba(36, 41, 47, 0.75));
-  --color-title: var(--ui-color-title, #24292f);
-  --color-text: var(--ui-color-text, #57606a);
-  --color-hint-1: var(--ui-color-hint-1, #6e7781);
-  --color-hint-2: var(--ui-color-hint-2, #a7b1bb);
-  --color-dividing-line-1: var(--ui-color-dividing-line-1, #d9dfe5);
-  --color-dividing-line-2: var(--ui-color-dividing-line-2, #eaeff3);
-  --color-border: var(--ui-color-border, #cbd2d8);
+  --color-disabled-bg: var(--ui-color-disabled-bg);
+  --color-disabled-text: var(--ui-color-disabled-text);
+  --color-overlay-loading: var(--ui-color-overlay-loading);
+  --color-overlay-modal: var(--ui-color-overlay-modal);
+  --color-title: var(--ui-color-title);
+  --color-text: var(--ui-color-text);
+  --color-hint-1: var(--ui-color-hint-1);
+  --color-hint-2: var(--ui-color-hint-2);
+  --color-dividing-line-1: var(--ui-color-dividing-line-1);
+  --color-dividing-line-2: var(--ui-color-dividing-line-2);
+  --color-border: var(--ui-color-border);
 
   --color-black: #000;
   --color-white: #fff;
 
-  /* Typography tokens bridged from the UI token layer. Source Han Sans SC stays local-only; otherwise fall back to system sans fonts. */
-  --font-main: var(
-    --ui-font-family-main,
-    Inter,
-    'Source Han Sans SC',
-    'PingFang SC',
-    'Hiragino Sans GB',
-    'Noto Sans CJK SC',
-    'Microsoft YaHei',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    'Noto Sans',
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol',
-    'Noto Color Emoji'
-  );
-  --font-code: var(--ui-font-family-code, Menlo, Monaco, 'Courier New', monospace);
+  /* Typography tokens bridged from the UI token layer. */
+  --font-main: var(--ui-font-family-main);
+  --font-code: var(--ui-font-family-code);
 
   /* Radius and shadow tokens bridged from the UI token layer. */
   --radius-none: 0px;
   --radius-full: 9999px;
-  --radius-sm: var(--ui-border-radius-sm, 4px);
-  --radius-md: var(--ui-border-radius-md, 8px);
-  --radius-lg: var(--ui-border-radius-lg, 12px);
+  --radius-sm: var(--ui-border-radius-sm);
+  --radius-md: var(--ui-border-radius-md);
+  --radius-lg: var(--ui-border-radius-lg);
 
   /*
    * The radius aliases above intentionally use Tailwind's standard names (`sm` / `md` / `lg`).
@@ -213,32 +200,35 @@
    */
 
   --shadow-none: 0 0 #0000;
-  --shadow-sm: var(--ui-box-shadow-sm, 0px 4px 12px 0px rgba(36, 41, 47, 0.08));
-  --shadow-md: var(--ui-box-shadow-md, 0px 6px 16px 0px rgba(36, 41, 47, 0.05));
-  --shadow-lg: var(--ui-box-shadow-lg, 0px 8px 24px 8px rgba(36, 41, 47, 0.05));
-  --shadow-brand: var(--ui-box-shadow-brand, 0px 4px 12px 0px rgba(175, 231, 236, 0.65));
-  --shadow-control: var(--ui-box-shadow-control, 2px 2px 4px 0px rgba(36, 41, 47, 0.04));
+  --shadow-sm: var(--ui-box-shadow-sm);
+  --shadow-md: var(--ui-box-shadow-md);
+  --shadow-lg: var(--ui-box-shadow-lg);
+  --shadow-brand: var(--ui-box-shadow-brand);
+  --shadow-control: var(--ui-box-shadow-control);
 
   /* Semantic spacing tokens stop at 16px; use numeric Tailwind spacing classes for larger steps such as 20/24/28px. */
-  --spacing-sm: var(--ui-spacing-sm, 4px);
-  --spacing-md: var(--ui-spacing-md, 8px);
-  --spacing-lg: var(--ui-spacing-lg, 12px);
-  --spacing-xl: var(--ui-spacing-xl, 16px);
+  --spacing-sm: var(--ui-spacing-sm);
+  --spacing-md: var(--ui-spacing-md);
+  --spacing-lg: var(--ui-spacing-lg);
+  --spacing-xl: var(--ui-spacing-xl);
 
-  /* Typography scale anchored at 14px base. Figma mapping: F7=2xs, F6=xs, F5=sm, F4=base, F3=lg, F2=xl, F1=2xl. */
-  --text-2xs: var(--ui-font-size-2xs, 10px);
+  /*
+   * Typography scale anchored at 14px base. Figma mapping: F7=2xs, F6=xs, F5=sm, F4=base, F3=lg, F2=xl, F1=2xl.
+   * Font sizes are bridged from `--ui-*`; the default line heights and font weights below stay hardcoded here intentionally.
+   */
+  --text-2xs: var(--ui-font-size-2xs);
   --text-2xs--line-height: 16px;
-  --text-xs: var(--ui-font-size-xs, 12px);
+  --text-xs: var(--ui-font-size-xs);
   --text-xs--line-height: 18px;
-  --text-sm: var(--ui-font-size-sm, 13px);
+  --text-sm: var(--ui-font-size-sm);
   --text-sm--line-height: 20px;
-  --text-base: var(--ui-font-size-base, 14px);
+  --text-base: var(--ui-font-size-base);
   --text-base--line-height: 22px;
-  --text-lg: var(--ui-font-size-lg, 15px);
+  --text-lg: var(--ui-font-size-lg);
   --text-lg--line-height: 24px;
-  --text-xl: var(--ui-font-size-xl, 16px);
+  --text-xl: var(--ui-font-size-xl);
   --text-xl--line-height: 26px;
-  --text-2xl: var(--ui-font-size-2xl, 20px);
+  --text-2xl: var(--ui-font-size-2xl);
   --text-2xl--line-height: 28px;
   /* F1 / 2xl is the only text size that keeps a 500 weight across the project. */
   --text-2xl--font-weight: 500;
