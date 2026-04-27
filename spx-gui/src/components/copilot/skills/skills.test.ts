@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { SkillCatalogContextProvider } from './context-provider'
-import { createBuiltInSkillRegistry } from './index'
+import { Copilot } from '../copilot'
+import { createBuiltInSkillRegistry } from './built-in'
 import { createLoadSkillResourceTool, createLoadSkillTool } from './tools'
 import { parseSkillDocument } from './parser'
 import type { SkillRegistry } from './types'
@@ -70,33 +70,75 @@ describe('built-in skill registry', () => {
   })
 })
 
-describe('skill catalog context', () => {
-  it('formats the catalog for normal copilot context injection', async () => {
+describe('copilot skill catalog context', () => {
+  it('formats the catalog in normal copilot context injection', async () => {
     const registry = createBuiltInSkillRegistry()
-    const provider = new SkillCatalogContextProvider(registry)
-    const emptyRegistry: SkillRegistry = {
-      register() {
-        return () => {}
-      },
-      async list() {
-        return []
-      },
-      async load() {
-        throw new Error('Skill not found: empty')
-      },
-      async loadResource() {
-        throw new Error('Skill resource not found: empty/resource')
-      }
-    }
-    const emptyProvider = new SkillCatalogContextProvider(emptyRegistry)
+    const copilot = new Copilot(registry)
 
-    expect(await emptyProvider.provideContext()).toBe('')
-    expect(await provider.provideContext()).toContain('# Skills')
-    expect(await provider.provideContext()).toContain('call `load_skill` with the exact skill name to read the skill')
-    expect(await provider.provideContext()).toContain(
+    expect((await copilot.getContextMessage()).content).toContain('# Skills')
+    expect((await copilot.getContextMessage()).content).toContain(
+      'call `load_skill` with the exact skill name to read the skill'
+    )
+    expect((await copilot.getContextMessage()).content).toContain(
       'You can also read resources in a skill by calling `load_skill_resource` with the skill name and the resource path'
     )
-    expect(await provider.provideContext()).toContain('Skill name: spx-project')
+    expect((await copilot.getContextMessage()).content).toContain('Skill name: spx-project')
+  })
+})
+
+describe('copilot preload skills', () => {
+  it('adds preload skills to context through Copilot', async () => {
+    const registry = createBuiltInSkillRegistry()
+    const copilot = new Copilot(registry)
+
+    copilot.registerContextProvider({
+      providePreloadSkills() {
+        return ['spx-project', 'spx-project']
+      }
+    })
+
+    const context = (await copilot.getContextMessage()).content
+    expect(context).toContain('# Preloaded skills')
+    expect(context).toContain('These skills are already preloaded')
+    expect(context).toContain('<skill_content name="spx-project" path="SKILL.md">')
+    expect(context.match(/<skill_content name="spx-project" path="SKILL\.md">/g)).toHaveLength(1)
+    expect(context).toContain('<file>references/apis.md</file>')
+  })
+
+  it('keeps context available when preloading a skill fails', async () => {
+    const error = new Error('load failed')
+    const registry: SkillRegistry = {
+      register: vi.fn(),
+      list: vi.fn(async () => [{ name: 'broken-skill', description: 'Broken skill.' }]),
+      load: vi.fn(async () => {
+        throw error
+      }),
+      loadResource: vi.fn()
+    }
+    const copilot = new Copilot(registry)
+
+    copilot.registerContextProvider({
+      providePreloadSkills() {
+        return ['broken-skill']
+      }
+    })
+
+    const context = (await copilot.getContextMessage()).content
+
+    expect(context).toContain('Failed to preload skill "broken-skill".')
+  })
+
+  it('omits preload skills when no skill name is configured', async () => {
+    const registry = createBuiltInSkillRegistry()
+    const copilot = new Copilot(registry)
+
+    copilot.registerContextProvider({
+      providePreloadSkills() {
+        return []
+      }
+    })
+
+    expect((await copilot.getContextMessage()).content).not.toContain('# Preloaded skills')
   })
 })
 
@@ -127,5 +169,12 @@ describe('load_skill tool', () => {
     })
     expect(directResourceDocument).toContain('# XGo Syntax Cheatsheet')
     expect(directResourceDocument).toContain('for_iterate')
+  })
+
+  it('does not reload preloaded skills', async () => {
+    const registry = createBuiltInSkillRegistry()
+    const tool = createLoadSkillTool(registry, (skillName) => skillName === 'spx-project')
+
+    expect(await tool.implementation({ skillName: 'spx-project' })).toBe('Skill "spx-project" is already preloaded.')
   })
 })
