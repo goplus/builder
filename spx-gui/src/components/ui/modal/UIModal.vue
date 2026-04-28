@@ -287,6 +287,7 @@ defineExpose({
     transition: opacity 0.25s cubic-bezier(0.4, 0, 1, 1);
   }
 
+  .ui-modal-enter-from,
   .ui-modal-leave-to {
     opacity: 0;
   }
