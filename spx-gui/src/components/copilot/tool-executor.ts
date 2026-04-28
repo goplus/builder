@@ -31,8 +31,8 @@ export class ToolExecutor {
     { id, tool: toolName, parameters: parametersStr }: ToolExecutionInput,
     signal?: AbortSignal
   ): Promise<unknown> {
-    this.executions.set(id, { state: 'executing' })
     if (this.executions.has(id)) console.warn(`Execution with ID ${id} already exists`)
+    this.executions.set(id, { state: 'executing' })
     try {
       if (typeof toolName !== 'string') throw new Error('Tool name must be a string')
       if (typeof parametersStr !== 'string') throw new Error('Parameters must be JSON string')

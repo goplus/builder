@@ -45,11 +45,14 @@ import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
 import { EditMode } from './editor-state'
 import MapEditor from './map-editor/MapEditor.vue'
+import { useSpxEditorCopilot } from './copilot'
 
 const editorCtx = useEditorCtx()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
+
+useSpxEditorCopilot()
 
 function handleSpriteSelect(spriteId: string | null) {
   if (spriteId == null) return

@@ -1,6 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
-import { codeFilePathSchema } from '../common'
+import { codeFilePathSchema } from '@/components/copilot/common'
 
 export const tagName = 'code-change'
 
@@ -37,9 +37,9 @@ import {
   type Range,
   useCodeEditorRef
 } from '@/components/editor/code-editor/spx-code-editor'
-import BlockWrapper from './common/BlockWrapper.vue'
-import BlockFooter from './common/BlockFooter.vue'
-import BlockActionBtn from './common/BlockActionBtn.vue'
+import BlockWrapper from '@/components/copilot/custom-elements/common/BlockWrapper.vue'
+import BlockFooter from '@/components/copilot/custom-elements/common/BlockFooter.vue'
+import BlockActionBtn from '@/components/copilot/custom-elements/common/BlockActionBtn.vue'
 
 const props = defineProps<{
   /** Code file path, e.g., `NiuXiaoQi.spx` */
