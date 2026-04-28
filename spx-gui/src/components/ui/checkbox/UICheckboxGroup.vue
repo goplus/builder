@@ -26,6 +26,7 @@ export const checkboxGroupContextKey: InjectionKey<CheckboxGroupContext> = Symbo
 <script setup lang="ts">
 import { computed, provide, ref } from 'vue'
 import { useFieldControlBindings } from '../form/field-control-bindings'
+import { formFieldContextKey } from '../form/context'
 import { cn, type ClassValue } from '../utils'
 
 const props = withDefaults(
@@ -53,6 +54,10 @@ provide(checkboxGroupContextKey, {
   disabled: computed(() => props.disabled),
   updateValue: handleUpdateValue
 })
+
+// The group itself is the form field control. Shadow the item-level field context so
+// descendant checkboxes naturally fall back to standalone/no-op field bindings.
+provide(formFieldContextKey, null)
 
 function handleUpdateValue(v: string, checked: boolean) {
   if (props.disabled) return

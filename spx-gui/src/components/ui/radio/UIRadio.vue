@@ -7,7 +7,7 @@
     }"
   >
     <input
-      v-bind="inputBindings"
+      v-bind="controlBindings"
       class="ui-radio__input"
       type="radio"
       :name="radioGroupContext?.name"
@@ -15,7 +15,7 @@
       :checked="checked"
       :disabled="mergedDisabled"
       @change="handleChange"
-      @blur="handleBlur"
+      @blur="onBlur"
     />
     <span class="ui-radio__dot" aria-hidden="true">
       <span class="ui-radio__dot-indicator"></span>
@@ -45,8 +45,7 @@ const emit = defineEmits<{
 const radioGroupContext = inject(radioGroupContextKey, null)
 const { controlBindings, onBlur, onChange } = useFieldControlBindings()
 
-const mergedDisabled = computed(() => props.disabled === true || radioGroupContext?.disabled.value === true)
-const inputBindings = computed(() => (radioGroupContext == null ? controlBindings.value : {}))
+const mergedDisabled = computed(() => props.disabled || radioGroupContext?.disabled.value === true)
 const checked = computed(() => {
   if (radioGroupContext != null) return radioGroupContext.value.value === (props.value ?? null)
   return props.checked === true
@@ -64,11 +63,6 @@ function handleChange() {
     emit('update:checked', true)
     onChange()
   }
-}
-
-function handleBlur() {
-  if (radioGroupContext != null) return
-  onBlur()
 }
 </script>
 

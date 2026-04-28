@@ -7,14 +7,14 @@
     }"
   >
     <input
-      v-bind="inputBindings"
+      v-bind="controlBindings"
       class="ui-checkbox__input"
       type="checkbox"
       :value="props.value"
       :checked="checked"
       :disabled="mergedDisabled"
       @change="handleChange"
-      @blur="handleBlur"
+      @blur="onBlur"
     />
     <span class="ui-checkbox__box" aria-hidden="true">
       <svg viewBox="0 0 12 12" class="ui-checkbox__box-icon">
@@ -56,7 +56,6 @@ const checkboxGroupContext = inject(checkboxGroupContextKey, null)
 const { controlBindings, onBlur, onChange } = useFieldControlBindings()
 
 const mergedDisabled = computed(() => props.disabled || checkboxGroupContext?.disabled.value === true)
-const inputBindings = computed(() => (checkboxGroupContext == null ? controlBindings.value : {}))
 const checked = computed(() => {
   if (checkboxGroupContext != null && props.value != null) {
     return checkboxGroupContext.value.value.includes(props.value)
@@ -77,11 +76,6 @@ function handleChange(event: Event) {
     emit('update:checked', nextChecked)
     onChange()
   }
-}
-
-function handleBlur() {
-  if (checkboxGroupContext != null) return
-  onBlur()
 }
 </script>
 

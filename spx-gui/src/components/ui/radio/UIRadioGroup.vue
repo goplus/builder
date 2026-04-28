@@ -27,6 +27,7 @@ export const radioGroupContextKey: InjectionKey<RadioGroupContext> = Symbol('ui-
 <script setup lang="ts">
 import { computed, provide, ref, useId } from 'vue'
 import { useFieldControlBindings } from '../form/field-control-bindings'
+import { formFieldContextKey } from '../form/context'
 import { cn, type ClassValue } from '../utils'
 
 const props = withDefaults(
@@ -57,6 +58,10 @@ provide(radioGroupContextKey, {
   name: radioGroupName,
   updateValue: handleUpdateValue
 })
+
+// The group itself is the form field control. Shadow the item-level field context so
+// descendant radios naturally fall back to standalone/no-op field bindings.
+provide(formFieldContextKey, null)
 
 function handleUpdateValue(v: string) {
   if (props.disabled || props.value === v) return
