@@ -36,7 +36,7 @@ export function useMessageEvents(): MessageEvents {
   return ctx
 }
 
-export function useMessageApi(): MessageApi {
+export function useMessage(): MessageApi {
   const ctx = inject(messageApiInjectKey)
   if (ctx == null) throw new Error('useMessage should be called inside of UIMessageProvider')
   return ctx
@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
       aria-atomic="false"
       aria-relevant="additions"
     >
-      <div v-for="message in messages" :key="message.id" class="ui-message-stack-item">
+      <div v-for="message in messages" :key="message.id">
         <UIMessageItem
           :type="message.type"
           :content="message.content"
