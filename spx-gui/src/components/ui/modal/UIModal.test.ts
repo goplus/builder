@@ -295,22 +295,11 @@ describe('UIModal', () => {
 
   describe('animation', () => {
     it('applies click-based transform origin and supports imperative overrides', async () => {
-      const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
-      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-        if (this.classList.contains('ui-modal-surface')) {
-          return {
-            x: 10,
-            y: 20,
-            left: 10,
-            top: 20,
-            right: 110,
-            bottom: 120,
-            width: 100,
-            height: 100,
-            toJSON: () => ({})
-          } as DOMRect
-        }
-        return originalGetBoundingClientRect.call(this)
+      vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.classList.contains('ui-modal-surface') ? 10 : 0
+      })
+      vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.classList.contains('ui-modal-surface') ? 20 : 0
       })
 
       const wrapper = mountWithModalProvider(

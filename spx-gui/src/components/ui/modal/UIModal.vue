@@ -226,8 +226,7 @@ watch(
 )
 
 // Recompute the inline transform-origin whenever visibility, surface mounting, or
-// the resolved origin changes. The measured CSS value must be relative to the modal
-// surface itself rather than viewport coordinates.
+// the resolved origin changes.
 watch(
   [visible, containerRef, resolvedTransformOrigin],
   async ([show, contentEl, resolvedOrigin], _, onCleanup) => {
@@ -253,7 +252,7 @@ watch(
     if (cancelled || !contentEl.isConnected) return
 
     transformStyle.value = {
-      transformOrigin: resolveTransformOrigin(contentEl, resolvedOrigin)
+      transformOrigin: transformOriginToStyle(contentEl, resolvedOrigin)
     }
   },
   { immediate: true, flush: 'post' }
@@ -267,9 +266,11 @@ function resolveClickOrigin(clickEvent: MouseEvent | null): ModalTransformOrigin
   }
 }
 
-function resolveTransformOrigin(contentEl: HTMLElement, origin: ModalTransformOrigin) {
-  const rect = contentEl.getBoundingClientRect()
-  return `${origin.x - rect.left}px ${origin.y - rect.top}px`
+function transformOriginToStyle(contentEl: HTMLElement, origin: ModalTransformOrigin) {
+  // Use layout offsets here instead of getBoundingClientRect(): the modal surface is
+  // scaled during enter/leave transitions, while offsetLeft/offsetTop stay anchored to
+  // the untransformed layout position we want for this approximate transform origin.
+  return `${origin.x - contentEl.offsetLeft}px ${origin.y - contentEl.offsetTop}px`
 }
 
 defineExpose({
