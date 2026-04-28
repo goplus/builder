@@ -1,15 +1,28 @@
 import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
-import { computed, defineComponent, h, nextTick, onUnmounted, ref } from 'vue'
+import { defineComponent, h, nextTick, onUnmounted } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Cancelled } from '@/utils/exception'
-import { provideLayerStack, useLayerRegistration } from '../utils'
+import { provideLayerStack } from '../utils/layer-stack'
 import UIModalProvider, { useModal, useModalEvents } from './UIModalProvider.vue'
-import { useModalEsc } from './use-modal-esc'
 
 async function flushModalProvider() {
   await nextTick()
   await Promise.resolve()
   await nextTick()
+}
+
+function getByTestId(testId: string) {
+  return document.body.querySelector(`[data-test-id="${testId}"]`) as HTMLElement | null
+}
+
+function getActiveState(testId: string) {
+  return getByTestId(testId)?.getAttribute('data-active') ?? null
+}
+
+async function clickByTestId(testId: string) {
+  const element = getByTestId(testId)
+  expect(element).toBeInstanceOf(HTMLElement)
+  await new DOMWrapper(element as HTMLElement).trigger('click')
 }
 
 const mountedWrappers: VueWrapper[] = []
@@ -79,99 +92,6 @@ const ProgrammaticModal = defineComponent({
   }
 })
 
-const EscAwareModal = defineComponent({
-  name: 'EscAwareModalTestDouble',
-  props: {
-    visible: {
-      type: Boolean,
-      required: true
-    },
-    active: Boolean,
-    label: {
-      type: String,
-      required: true
-    }
-  },
-  emits: {
-    resolved: (_resolved: string) => true,
-    cancelled: (_reason?: unknown) => true
-  },
-  setup(props, { emit }) {
-    const modalRegistration = useLayerRegistration(computed(() => props.visible))
-
-    useModalEsc(
-      () => (props.active ?? false) && modalRegistration.isTopmost.value,
-      () => emit('cancelled', `${props.label}-esc`)
-    )
-
-    return () =>
-      props.visible
-        ? h(
-            'div',
-            {
-              ...modalRegistration.rootAttrs,
-              'data-test-id': props.label,
-              'data-active': String(props.active ?? false)
-            },
-            [h('button', { 'data-test-id': `${props.label}-inside` }, 'Inside')]
-          )
-        : null
-  }
-})
-
-const EscAwareModalWithNestedPopup = defineComponent({
-  name: 'EscAwareModalWithNestedPopupTestDouble',
-  props: {
-    visible: {
-      type: Boolean,
-      required: true
-    },
-    active: Boolean,
-    label: {
-      type: String,
-      required: true
-    }
-  },
-  emits: {
-    resolved: (_resolved: string) => true,
-    cancelled: (_reason?: unknown) => true
-  },
-  setup(props, { emit }) {
-    const modalRegistration = useLayerRegistration(computed(() => props.visible))
-    const popupVisible = ref(true)
-    const popupRegistration = useLayerRegistration(computed(() => props.visible && popupVisible.value))
-
-    useModalEsc(
-      () => (props.active ?? false) && modalRegistration.isTopmost.value,
-      () => emit('cancelled', `${props.label}-esc`)
-    )
-
-    return () =>
-      props.visible
-        ? h(
-            'div',
-            {
-              ...modalRegistration.rootAttrs,
-              'data-test-id': props.label,
-              'data-active': String(props.active ?? false)
-            },
-            [
-              h(
-                'button',
-                { 'data-test-id': `${props.label}-inside`, onClick: () => (popupVisible.value = false) },
-                'Inside'
-              ),
-              popupVisible.value
-                ? h('div', { ...popupRegistration.rootAttrs }, [
-                    h('button', { 'data-test-id': `${props.label}-popup` }, 'Popup')
-                  ])
-                : null
-            ]
-          )
-        : null
-  }
-})
-
 describe('UIModalProvider', () => {
   it('opens modals programmatically, resolves results, and emits lifecycle events', async () => {
     vi.useFakeTimers()
@@ -205,9 +125,9 @@ describe('UIModalProvider', () => {
     await flushModalProvider()
 
     expect(eventLog).toEqual(['open'])
-    expect(document.body.querySelector('[data-test-id="alpha"]')).toBeInstanceOf(HTMLElement)
+    expect(getByTestId('alpha')).toBeInstanceOf(HTMLElement)
 
-    await new DOMWrapper(document.body.querySelector('[data-test-id="alpha-resolve"]') as HTMLElement).trigger('click')
+    await clickByTestId('alpha-resolve')
     await flushModalProvider()
 
     await expect(modalPromise).resolves.toBe('alpha')
@@ -215,7 +135,7 @@ describe('UIModalProvider', () => {
 
     await vi.advanceTimersByTimeAsync(300)
     await flushModalProvider()
-    expect(document.body.querySelector('[data-test-id="alpha"]')).toBeNull()
+    expect(getByTestId('alpha')).toBeNull()
   })
 
   it('rejects cancelled modals with Cancelled and emits cancelled events', async () => {
@@ -249,7 +169,7 @@ describe('UIModalProvider', () => {
     const modalPromise = openModal({ label: 'beta' })
     await flushModalProvider()
 
-    await new DOMWrapper(document.body.querySelector('[data-test-id="beta-cancel"]') as HTMLElement).trigger('click')
+    await clickByTestId('beta-cancel')
     await flushModalProvider()
 
     await expect(modalPromise).rejects.toEqual(new Cancelled('beta'))
@@ -257,10 +177,10 @@ describe('UIModalProvider', () => {
 
     await vi.advanceTimersByTimeAsync(300)
     await flushModalProvider()
-    expect(document.body.querySelector('[data-test-id="beta"]')).toBeNull()
+    expect(getByTestId('beta')).toBeNull()
   })
 
-  it('passes active only to the topmost modal in the provider stack', async () => {
+  it('passes active only to the topmost modal', async () => {
     vi.useFakeTimers()
 
     let openModal!: (props: { label: string }) => Promise<unknown>
@@ -280,100 +200,32 @@ describe('UIModalProvider', () => {
       })
     )
 
-    void openModal({ label: 'first' }).catch(() => undefined)
-    await flushModalProvider()
-    void openModal({ label: 'second' }).catch(() => undefined)
+    const alphaPromise = openModal({ label: 'alpha' })
     await flushModalProvider()
 
-    expect((document.body.querySelector('[data-test-id="first"]') as HTMLElement).dataset.active).toBe('false')
-    expect((document.body.querySelector('[data-test-id="second"]') as HTMLElement).dataset.active).toBe('true')
-  })
+    expect(getActiveState('alpha')).toBe('true')
 
-  it('closes only the topmost ESC-aware modal for ESC events inside the modal scope', async () => {
-    vi.useFakeTimers()
-
-    let openModal!: (props: { label: string }) => Promise<unknown>
-
-    const Consumer = defineComponent({
-      setup() {
-        openModal = useModal(EscAwareModal as any)
-        return () => h('button', { 'data-test-id': 'outside' }, 'Outside')
-      }
-    })
-
-    mountWithModalProvider(
-      defineComponent({
-        setup() {
-          return () => h(UIModalProvider, null, { default: () => h(Consumer) })
-        }
-      })
-    )
-
-    const firstPromise = openModal({ label: 'first' })
-    await flushModalProvider()
-    const secondPromise = openModal({ label: 'second' })
-    await flushModalProvider()
-    ;(document.body.querySelector('[data-test-id="outside"]') as HTMLElement).dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
-    )
-    await flushModalProvider()
-    expect(document.body.querySelector('[data-test-id="first"]')).toBeInstanceOf(HTMLElement)
-    expect(document.body.querySelector('[data-test-id="second"]')).toBeInstanceOf(HTMLElement)
-    ;(document.body.querySelector('[data-test-id="second-inside"]') as HTMLElement).dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
-    )
+    const betaPromise = openModal({ label: 'beta' })
     await flushModalProvider()
 
-    await expect(secondPromise).rejects.toEqual(new Cancelled('second-esc'))
-    expect(document.body.querySelector('[data-test-id="first"]')).toBeInstanceOf(HTMLElement)
+    expect(getActiveState('alpha')).toBe('false')
+    expect(getActiveState('beta')).toBe('true')
+
+    await clickByTestId('beta-resolve')
+    await flushModalProvider()
+    await expect(betaPromise).resolves.toBe('beta')
 
     await vi.advanceTimersByTimeAsync(300)
     await flushModalProvider()
-    ;(document.body.querySelector('[data-test-id="first-inside"]') as HTMLElement).dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
-    )
+
+    expect(getActiveState('alpha')).toBe('true')
+
+    await clickByTestId('alpha-resolve')
     await flushModalProvider()
+    await expect(alphaPromise).resolves.toBe('alpha')
 
-    await expect(firstPromise).rejects.toEqual(new Cancelled('first-esc'))
-  })
-
-  it('does not close the modal when ESC originates from nested popup content', async () => {
-    vi.useFakeTimers()
-
-    let openModal!: (props: { label: string }) => Promise<unknown>
-
-    const Consumer = defineComponent({
-      setup() {
-        openModal = useModal(EscAwareModalWithNestedPopup as any)
-        return () => null
-      }
-    })
-
-    mountWithModalProvider(
-      defineComponent({
-        setup() {
-          return () => h(UIModalProvider, null, { default: () => h(Consumer) })
-        }
-      })
-    )
-
-    const modalPromise = openModal({ label: 'popup-owner' })
+    await vi.advanceTimersByTimeAsync(300)
     await flushModalProvider()
-    ;(document.body.querySelector('[data-test-id="popup-owner-popup"]') as HTMLElement).dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
-    )
-    await flushModalProvider()
-
-    expect(document.body.querySelector('[data-test-id="popup-owner"]')).toBeInstanceOf(HTMLElement)
-
-    await new DOMWrapper(document.body.querySelector('[data-test-id="popup-owner-inside"]') as HTMLElement).trigger(
-      'click'
-    )
-    ;(document.body.querySelector('[data-test-id="popup-owner-inside"]') as HTMLElement).dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
-    )
-    await flushModalProvider()
-
-    await expect(modalPromise).rejects.toEqual(new Cancelled('popup-owner-esc'))
+    expect(getByTestId('alpha')).toBeNull()
   })
 })

@@ -1,7 +1,13 @@
 import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
-import { defineComponent, h, nextTick, ref } from 'vue'
+import { defineComponent, h, nextTick, ref, type Ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { UI_LAYER_ROOT_ATTR, provideLayerStack, provideModalContainer, useProvideLastClickEvent } from '../utils'
+import {
+  UI_LAYER_ROOT_ATTR,
+  provideLayerStack,
+  provideModalContainer,
+  usePopupContainer,
+  useProvideLastClickEvent
+} from '../utils'
 import UIModal from './UIModal.vue'
 
 async function flushModal() {
@@ -78,6 +84,14 @@ afterEach(() => {
 describe('UIModal', () => {
   describe('rendering', () => {
     it('renders a teleported modal surface with the expected accessibility and size attributes', async () => {
+      let popupContainerRef: Ref<HTMLElement | undefined> | null = null
+      const PopupContainerConsumer = defineComponent({
+        setup() {
+          popupContainerRef = usePopupContainer()
+          return () => null
+        }
+      })
+
       const wrapper = mountWithModalProvider(
         defineComponent({
           setup() {
@@ -90,7 +104,7 @@ describe('UIModal', () => {
                       visible: true,
                       size: 'large'
                     },
-                    { default: () => h('button', { 'data-test-id': 'inside' }, 'Inside') }
+                    { default: () => [h(PopupContainerConsumer), h('button', { 'data-test-id': 'inside' }, 'Inside')] }
                   )
               })
           }
@@ -108,6 +122,8 @@ describe('UIModal', () => {
       expect(surface.getAttribute('aria-modal')).toBe('true')
       expect(surface.className).toContain('w-[960px]')
       expect(wrapper.find('[data-test-id="inside"]').exists()).toBe(true)
+      if (popupContainerRef == null) throw new Error('Expected popup container ref')
+      expect((popupContainerRef as Ref<HTMLElement | undefined>).value).toBe(surface)
     })
   })
 
@@ -187,6 +203,93 @@ describe('UIModal', () => {
       await new DOMWrapper(backdrop!).trigger('click')
       await flushModal()
       expect(modal.emitted('update:visible')).toEqual([[false]])
+    })
+
+    it('closes on Escape when the key event originates from inside the modal', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () =>
+                  h(
+                    UIModal,
+                    {
+                      visible: true
+                    },
+                    { default: () => h('button', { 'data-test-id': 'inside' }, 'Inside') }
+                  )
+              })
+          }
+        })
+      )
+
+      await flushModal()
+
+      const modal = wrapper.findComponent(UIModal)
+      ;(getLatestElement('[data-test-id="inside"]') as HTMLElement).dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+      )
+      await flushModal()
+
+      expect(modal.emitted('update:visible')).toEqual([[false]])
+    })
+
+    it('ignores Escape when the key event originates outside the modal subtree', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () => [
+                  h(
+                    UIModal,
+                    {
+                      visible: true
+                    },
+                    { default: () => h('button', { 'data-test-id': 'inside' }, 'Inside') }
+                  ),
+                  h('button', { 'data-test-id': 'outside' }, 'Outside')
+                ]
+              })
+          }
+        })
+      )
+
+      await flushModal()
+
+      const modal = wrapper.findComponent(UIModal)
+      ;(wrapper.get('[data-test-id="outside"]').element as HTMLElement).dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+      )
+      await flushModal()
+
+      expect(modal.emitted('update:visible')).toBeUndefined()
+    })
+
+    it('only closes the topmost modal on Escape from document.body', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () => [
+                  h(UIModal, { visible: true }, { default: () => h('div', 'First') }),
+                  h(UIModal, { visible: true }, { default: () => h('div', 'Second') })
+                ]
+              })
+          }
+        })
+      )
+
+      await flushModal()
+
+      const [firstModal, secondModal] = wrapper.findAllComponents(UIModal)
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await flushModal()
+
+      expect(firstModal?.emitted('update:visible')).toBeUndefined()
+      expect(secondModal?.emitted('update:visible')).toEqual([[false]])
     })
   })
 

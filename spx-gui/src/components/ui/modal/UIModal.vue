@@ -27,21 +27,33 @@
   </Teleport>
 </template>
 
+<script lang="ts">
+export type ModalSize = 'small' | 'medium' | 'large' | 'full'
+
+export type ModalTransformOrigin = {
+  x: number
+  y: number
+}
+</script>
+
 <script setup lang="ts">
-import { computed, mergeProps, useAttrs, watch } from 'vue'
+import { computed, mergeProps, nextTick, ref, useAttrs, watch, type CSSProperties } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { untilNotNull } from '@/utils/utils'
-import { cn, type ClassValue, useModalContainer } from '../utils'
-import { useModalEsc } from './use-modal-esc'
-import { useModalSurface } from './use-modal-surface'
+import {
+  cn,
+  type ClassValue,
+  providePopupContainer,
+  useLastClickEvent,
+  useLayerRegistration,
+  useModalContainer
+} from '../utils'
 
 defineOptions({
   // The teleported backdrop is an implementation detail. Keep fallthrough attrs on the
   // dialog surface so external class/style semantics stay compatible with the old modal.
   inheritAttrs: false
 })
-
-export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 
 const props = withDefaults(
   defineProps<{
@@ -88,19 +100,16 @@ function handleMaskClick() {
 }
 
 const attachTo = useModalContainer()
+const containerRef = ref<HTMLElement | undefined>(undefined)
+providePopupContainer(containerRef)
 
-const {
-  contentRef: containerRef,
-  surfaceRootAttrs,
-  isTopmost,
-  setTransformOrigin,
-  transformStyle
-} = useModalSurface(() => props.visible)
+const visible = computed(() => props.visible)
+const modalRegistration = useLayerRegistration(visible)
 
 // Modal stack attrs and fallthrough attrs should both live on the surface element:
 // - surfaceRootAttrs marks the actual modal root for stack/popup lookup
 // - attrs preserves external style/data-* on the dialog container
-const surfaceAttrs = computed(() => mergeProps(surfaceRootAttrs, attrs))
+const surfaceAttrs = computed(() => mergeProps(modalRegistration.rootAttrs, attrs))
 const surfaceClass = computed(() =>
   cn(
     'm-auto max-w-full overflow-hidden outline-none bg-white rounded-lg shadow-lg',
@@ -123,8 +132,8 @@ watch(
     const controller = new AbortController()
     onCleanup(() => controller.abort())
 
-    const container = await untilNotNull(containerRef, controller.signal)
-    if (controller.signal.aborted || !container.isConnected) return
+    const container = await untilNotNull(containerRef, controller.signal).catch(() => null)
+    if (controller.signal.aborted || container == null || !container.isConnected) return
     const focusTarget = getFirstFocusableElement(container) ?? container
     focusTarget.focus()
   },
@@ -148,14 +157,124 @@ function getFirstFocusableElement(container: HTMLElement) {
   })
 }
 
+watch(
+  () => props.active && modalRegistration.isTopmost.value,
+  async (active, _, onCleanUp) => {
+    if (!active) return
+
+    const controller = new AbortController()
+    onCleanUp(() => controller.abort())
+    const container = await untilNotNull(containerRef, controller.signal).catch(() => null)
+    if (controller.signal.aborted || container == null || !container.isConnected) return
+
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (!isEscTargetWithinModalScope(container, e.target)) return
+      emit('update:visible', false)
+    }
+
+    document.addEventListener('keydown', handleKeydown)
+    onCleanUp(() => {
+      document.removeEventListener('keydown', handleKeydown)
+    })
+  },
+  { immediate: true }
+)
+
+function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventTarget | null) {
+  // Non-focusable DOM elements cannot trigger keydown events, so the target is either the
+  // body or a focusable DOM element. If the target is the body, the modal should close.
+  if (target === document.body) return true
+  if (!(target instanceof Element)) return true
+  return modalContainer.contains(target)
+}
+
+// Imperative transform-origin override requested by external callers for the
+// current modal cycle (for example, collapse-back-to-trigger flows).
+const explicitTransformOrigin = ref<ModalTransformOrigin | null>(null)
+// The final animation origin for the current modal cycle, resolved from the open
+// position and any later explicit override.
+const resolvedTransformOrigin = ref<ModalTransformOrigin | null>(null)
+
+// Inline style applied to the teleported modal surface after the final origin has
+// been converted into surface-local coordinates.
+const transformStyle = ref<CSSProperties | null>(null)
+const lastClickEvent = useLastClickEvent()
+
+function setTransformOrigin(origin: ModalTransformOrigin | null) {
+  explicitTransformOrigin.value = origin
+}
+
+// If a caller overrides the origin while the modal is already open, switch the
+// current cycle to that explicit origin immediately.
+watch(explicitTransformOrigin, (explicitOrigin) => {
+  if (!visible.value || explicitOrigin == null) return
+  resolvedTransformOrigin.value = explicitOrigin
+})
+
+// When a new open cycle starts, capture the origin once: prefer an explicit
+// override if one is already present, otherwise fall back to the last click point.
+watch(
+  visible,
+  (show, prevShow) => {
+    if (!show || prevShow) return
+
+    const explicitOrigin = explicitTransformOrigin.value
+    resolvedTransformOrigin.value = explicitOrigin ?? resolveClickOrigin(lastClickEvent.value)
+  },
+  { immediate: true }
+)
+
+// Recompute the inline transform-origin whenever visibility, surface mounting, or
+// the resolved origin changes. The measured CSS value must be relative to the modal
+// surface itself rather than viewport coordinates.
+watch(
+  [visible, containerRef, resolvedTransformOrigin],
+  async ([show, contentEl, resolvedOrigin], _, onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+
+    if (contentEl == null || !contentEl.isConnected) {
+      transformStyle.value = null
+      return
+    }
+
+    if (!show) return
+
+    if (resolvedOrigin == null) {
+      transformStyle.value = null
+      return
+    }
+
+    // Wait until the teleported surface has settled into its final layout before measuring.
+    await nextTick()
+    if (cancelled || !contentEl.isConnected) return
+
+    transformStyle.value = {
+      transformOrigin: resolveTransformOrigin(contentEl, resolvedOrigin)
+    }
+  },
+  { immediate: true, flush: 'post' }
+)
+
+function resolveClickOrigin(clickEvent: MouseEvent | null): ModalTransformOrigin | null {
+  if (clickEvent == null) return null
+  return {
+    x: clickEvent.clientX,
+    y: clickEvent.clientY
+  }
+}
+
+function resolveTransformOrigin(contentEl: HTMLElement, origin: ModalTransformOrigin) {
+  const rect = contentEl.getBoundingClientRect()
+  return `${origin.x - rect.left}px ${origin.y - rect.top}px`
+}
+
 defineExpose({
   setTransformOrigin
 })
-
-useModalEsc(
-  () => props.active && isTopmost.value,
-  () => emit('update:visible', false)
-)
 </script>
 
 <style>
