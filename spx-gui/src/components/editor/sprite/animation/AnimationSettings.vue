@@ -111,7 +111,7 @@ function handleDropdownVisibleUpdate(visible: boolean) {
   padding: 4px;
   gap: 4px;
   border-radius: var(--ui-border-radius-1);
-  box-shadow: var(--ui-box-shadow-small);
+  box-shadow: var(--ui-box-shadow-subtle);
   background-color: var(--ui-color-grey-100);
 }
 
