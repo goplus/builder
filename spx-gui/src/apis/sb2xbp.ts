@@ -3,6 +3,7 @@ import { client } from './common'
 import { humanizeFileSize } from '@/utils/utils'
 
 const maxFileSize = 32 * 1024 * 1024 // 32MB
+const convertTimeout = 60 * 1000 // 60s
 
 /**
  * Convert Scratch project (.sb2/.sb3) to XBuilder project (.xbp) via backend `/scratch-convert` endpoint.
@@ -21,6 +22,6 @@ export async function convertScratchToXbp(file: File, signal?: AbortSignal) {
   const form = new FormData()
   form.append('file', file, file.name)
 
-  const blob = await client.postBinary('/util/sb2xbp', form, { signal })
+  const blob = await client.postBinary('/util/sb2xbp', form, { signal, timeout: convertTimeout })
   return blob as Blob
 }
