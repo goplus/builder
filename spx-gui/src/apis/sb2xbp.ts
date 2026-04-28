@@ -10,7 +10,7 @@ const convertTimeout = 60 * 1000 // 60s
  * The backend is expected to return the converted xbp as binary response (200).
  *
  * Uses shared `client` so token and Sentry headers are consistent with other APIs.
- * A custom 60-second timeout is applied because Scratch conversion is significantly slower than typical API calls.
+ * A custom timeout is applied because Scratch conversion is significantly slower than typical API calls.
  */
 export async function convertScratchToXbp(file: File, signal?: AbortSignal) {
   if (file.size > maxFileSize) {
