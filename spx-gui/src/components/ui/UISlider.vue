@@ -40,9 +40,13 @@
           would require extra pointer tracking or a custom drag implementation.
         -->
         <div
-          class="h-5 w-5 rounded-full bg-white transition-transform duration-200"
+          class="rounded-full bg-white transition-transform duration-200"
           :class="props.disabled ? null : 'group-hover:scale-[1.2]'"
-          :style="{ boxShadow: 'inset 0 0 0 1px var(--ui-slider-main-color)' }"
+          :style="{
+            width: `${SLIDER_THUMB_SIZE_PX}px`,
+            height: `${SLIDER_THUMB_SIZE_PX}px`,
+            boxShadow: 'inset 0 0 0 1px var(--ui-slider-main-color)'
+          }"
         ></div>
       </div>
     </div>

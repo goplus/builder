@@ -259,7 +259,7 @@ function handleRootClick(event: MouseEvent) {
     padding-top: 5px;
     padding-bottom: 5px;
     resize: none;
-    line-height: 1.57143;
+    line-height: 22px;
   }
 
   .ui-input--size-large.ui-input--textarea .ui-input__content > textarea {
@@ -272,7 +272,6 @@ function handleRootClick(event: MouseEvent) {
     text-decoration: line-through;
   }
 
-  /* Render the state border as an inset shadow on the root so content layout never shifts. */
   .ui-input:not([data-ui-state='success']):not([data-ui-state='error']):focus-within {
     --ui-input-border-color: var(--ui-color-primary-main);
   }
