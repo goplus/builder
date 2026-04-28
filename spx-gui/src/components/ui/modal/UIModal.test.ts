@@ -271,17 +271,23 @@ describe('UIModal', () => {
       const wrapper = mountWithModalProvider(
         defineComponent({
           setup() {
-            return () =>
-              h(ModalTestProvider, null, {
-                default: () => [
-                  h(UIModal, { visible: true }, { default: () => h('div', 'First') }),
-                  h(UIModal, { visible: true }, { default: () => h('div', 'Second') })
-                ]
-              })
+            const firstVisible = ref(true)
+            const secondVisible = ref(false)
+            return { firstVisible, secondVisible }
+          },
+          render() {
+            return h(ModalTestProvider, null, {
+              default: () => [
+                h(UIModal, { visible: this.firstVisible }, { default: () => h('div', 'First') }),
+                h(UIModal, { visible: this.secondVisible }, { default: () => h('div', 'Second') })
+              ]
+            })
           }
         })
       )
 
+      await flushModal()
+      ;(wrapper.vm as unknown as { secondVisible: boolean }).secondVisible = true
       await flushModal()
 
       const [firstModal, secondModal] = wrapper.findAllComponents(UIModal)
@@ -382,39 +388,6 @@ describe('UIModal', () => {
       expect(surface.getAttribute('tabindex')).toBe('-1')
       expect(surface.tabIndex).toBe(-1)
       expect(document.activeElement).toBe(firstFocusable)
-    })
-
-    it('falls back to focusing the modal surface when there is no focusable child', async () => {
-      const wrapper = mountWithModalProvider(
-        defineComponent({
-          setup() {
-            const visible = ref(false)
-            return { visible }
-          },
-          render() {
-            return h(ModalTestProvider, null, {
-              default: () =>
-                h(
-                  UIModal,
-                  {
-                    visible: this.visible,
-                    'onUpdate:visible': (nextVisible: boolean) => (this.visible = nextVisible)
-                  },
-                  { default: () => h('div', 'Content') }
-                )
-            })
-          }
-        })
-      )
-
-      ;(wrapper.vm as unknown as { visible: boolean }).visible = true
-      await flushModal()
-
-      const surface = getLatestElement('.ui-modal-surface') as HTMLElement
-
-      expect(surface.getAttribute('tabindex')).toBe('-1')
-      expect(surface.tabIndex).toBe(-1)
-      expect(document.activeElement).toBe(surface)
     })
   })
 })

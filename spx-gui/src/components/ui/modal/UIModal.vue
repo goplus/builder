@@ -39,6 +39,7 @@ export type ModalTransformOrigin = {
 <script setup lang="ts">
 import { computed, mergeProps, nextTick, ref, useAttrs, watch, type CSSProperties } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
+import { getCleanupSignal } from '@/utils/disposable'
 import { untilNotNull } from '@/utils/utils'
 import {
   cn,
@@ -126,18 +127,16 @@ const surfaceClass = computed(() =>
 
 watch(
   () => props.visible,
-  async (visible, previousVisible, onCleanup) => {
-    if (!visible || previousVisible === true || !props.autoFocus) return
+  async (visible, _, onCleanup) => {
+    if (!visible || !props.autoFocus) return
 
-    const controller = new AbortController()
-    onCleanup(() => controller.abort())
-
-    const container = await untilNotNull(containerRef, controller.signal).catch(() => null)
-    if (controller.signal.aborted || container == null || !container.isConnected) return
-    const focusTarget = getFirstFocusableElement(container) ?? container
-    focusTarget.focus()
+    const signal = getCleanupSignal(onCleanup)
+    const container = await untilNotNull(containerRef, signal)
+    if (!container.isConnected) return
+    const focusTarget = getFirstFocusableElement(container)
+    if (focusTarget != null) focusTarget.focus()
   },
-  { immediate: true, flush: 'post' }
+  { immediate: true }
 )
 
 const focusableSelector = [
@@ -162,10 +161,9 @@ watch(
   async (active, _, onCleanUp) => {
     if (!active) return
 
-    const controller = new AbortController()
-    onCleanUp(() => controller.abort())
-    const container = await untilNotNull(containerRef, controller.signal).catch(() => null)
-    if (controller.signal.aborted || container == null || !container.isConnected) return
+    const signal = getCleanupSignal(onCleanUp)
+    const container = await untilNotNull(containerRef, signal)
+    if (!container.isConnected) return
 
     const handleKeydown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
@@ -173,7 +171,7 @@ watch(
       emit('update:visible', false)
     }
 
-    document.addEventListener('keydown', handleKeydown)
+    document.addEventListener('keydown', handleKeydown, { signal })
     onCleanUp(() => {
       document.removeEventListener('keydown', handleKeydown)
     })
@@ -216,11 +214,9 @@ watch(explicitTransformOrigin, (explicitOrigin) => {
 // override if one is already present, otherwise fall back to the last click point.
 watch(
   visible,
-  (show, prevShow) => {
-    if (!show || prevShow) return
-
-    const explicitOrigin = explicitTransformOrigin.value
-    resolvedTransformOrigin.value = explicitOrigin ?? resolveClickOrigin(lastClickEvent.value)
+  (show) => {
+    if (!show) return
+    resolvedTransformOrigin.value = explicitTransformOrigin.value ?? resolveClickOrigin(lastClickEvent.value)
   },
   { immediate: true }
 )
@@ -230,27 +226,15 @@ watch(
 watch(
   [visible, containerRef, resolvedTransformOrigin],
   async ([show, contentEl, resolvedOrigin], _, onCleanup) => {
-    let cancelled = false
-    onCleanup(() => {
-      cancelled = true
-    })
-
-    if (contentEl == null || !contentEl.isConnected) {
+    const signal = getCleanupSignal(onCleanup)
+    if (contentEl == null || !contentEl.isConnected || resolvedOrigin == null) {
       transformStyle.value = null
       return
     }
-
     if (!show) return
-
-    if (resolvedOrigin == null) {
-      transformStyle.value = null
-      return
-    }
-
     // Wait until the teleported surface has settled into its final layout before measuring.
     await nextTick()
-    if (cancelled || !contentEl.isConnected) return
-
+    if (signal.aborted || !contentEl.isConnected) return
     transformStyle.value = {
       transformOrigin: transformOriginToStyle(contentEl, resolvedOrigin)
     }

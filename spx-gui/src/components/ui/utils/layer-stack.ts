@@ -72,7 +72,7 @@ export function createLayerStack(): LayerStack {
     return shallowReactive<LayerRegistration>({
       id: entry.id,
       open: entry.open,
-      rootAttrs: Object.freeze({ [UI_LAYER_ROOT_ATTR]: '' }),
+      rootAttrs: { [UI_LAYER_ROOT_ATTR]: '' },
       isTopmost: computed(() => topmostId.value === entry.id),
       unregister
     })

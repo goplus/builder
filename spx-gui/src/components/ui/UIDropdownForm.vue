@@ -16,14 +16,14 @@
     </main>
     <footer class="flex-none flex justify-end gap-3 p-4">
       <UIButton
-        v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in dropdown form' }"
+        v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in dropdown' }"
         type="neutral"
         @click="emit('cancel')"
       >
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton
-        v-radar="{ name: 'Confirm button', desc: 'Click to submit the dropdown form' }"
+        v-radar="{ name: 'Confirm button', desc: 'Click to submit the dropdown' }"
         type="primary"
         html-type="submit"
       >
