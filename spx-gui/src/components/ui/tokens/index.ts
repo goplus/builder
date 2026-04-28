@@ -44,11 +44,7 @@ export const boxShadow = {
   surface: '0px 4px 12px 0px rgba(36, 41, 47, 0.08)',
   surfaceStrong: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
   accent: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)',
-  subtle: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)',
-  floating: '0px 4px 21px 0px rgba(36, 41, 47, 0.08)',
-  small: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)',
-  big: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
-  diffusion: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)'
+  subtle: '0px 0px 4px 0px rgba(36, 41, 47, 0.1)'
 } as const
 
 // Kept for backward compatibility. These values drive control heights rather than typography.
@@ -80,6 +76,7 @@ export const button = {
 } as const
 
 export const space = {
+  0: '2px',
   1: '4px',
   2: '8px',
   3: '12px',

@@ -24,8 +24,14 @@ type PenVariable = {
   }>
 }
 
+type PenFont = {
+  name?: string
+  url?: string
+}
+
 type PenDocument = PenNode & {
   variables?: Record<string, PenVariable>
+  fonts?: PenFont[]
 }
 
 const LibraryPath = resolve(process.cwd(), '../ui/components/spx/builder-component.lib.pen')
@@ -53,7 +59,7 @@ const YellowSteps = [100, 200, 300, 400, 500, 600, 700] as const
 const BlueSteps = [100, 200, 300, 400, 500, 600, 700] as const
 const RedSteps = [100, 200, 300, 400, 500, 600] as const
 const RadiusSteps = [1, 2, 3, 4] as const
-const SpaceSteps = [1, 2, 3, 4, 5, 6] as const
+const SpaceSteps = [0, 1, 2, 3, 4, 5, 6] as const
 const LineHeightSteps = [1, 2, 3, 4] as const
 const MaskSteps = [1, 2] as const
 const ExpectedTurquoisePalette = {
@@ -99,6 +105,7 @@ const ExpectedRadiusScale = {
   full: 100
 } as const
 const ExpectedSpaceScale = {
+  0: 2,
   1: 4,
   2: 8,
   3: 12,
@@ -111,8 +118,7 @@ const ExpectedBoxShadowScale = {
   surface: '0px 4px 12px 0px rgba(36, 41, 47, 0.08)',
   surfaceStrong: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
   accent: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)',
-  subtle: '2px 2px 3px 0px rgba(36, 41, 47, 0.04)',
-  floating: '0px 4px 21px 0px rgba(36, 41, 47, 0.08)'
+  subtle: '0px 0px 4px 0px rgba(36, 41, 47, 0.1)'
 } as const
 const ExpectedTextLineHeightScale = {
   1: 1.4,
@@ -129,11 +135,10 @@ const ExpectedPenShadowEffectPresets = {
   surface: { color: '#24292F14', x: 0, y: 4, blur: 12 },
   surfaceStrong: { color: '#24292F0D', x: 0, y: 8, blur: 24, spread: 8 },
   accent: { color: '#AFE7ECA6', x: 0, y: 4, blur: 12 },
-  subtle: { color: '#24292F0A', x: 2, y: 2, blur: 3 },
-  floating: { color: '#24292F14', x: 0, y: 4, blur: 21 }
+  subtle: { color: '#24292F1A', x: 0, y: 0, blur: 4 }
 } as const
 
-const FloatingShadowComponentNames = [
+const SurfaceShadowComponentNames = [
   'editor-api-reference-code-panel',
   'Notification/Success',
   'Notification/Info',
@@ -227,8 +232,7 @@ function readShadowScale(path: string) {
     surface: readDefaultStringVariable(pen, 'shadow-surface'),
     surfaceStrong: readDefaultStringVariable(pen, 'shadow-surface-strong'),
     accent: readDefaultStringVariable(pen, 'shadow-accent'),
-    subtle: readDefaultStringVariable(pen, 'shadow-subtle'),
-    floating: readDefaultStringVariable(pen, 'shadow-floating')
+    subtle: readDefaultStringVariable(pen, 'shadow-subtle')
   } as const
 }
 
@@ -255,14 +259,20 @@ function readVariableEntries(pen: PenDocument, variableName: string) {
 
 function readShadowEffectPreset(path: string, preset: keyof typeof ExpectedPenShadowEffectPresets) {
   const pen = readPen(path) as PenDocument
-  const baseName = `shadow-${preset}`
+  const variablePrefix = {
+    panel: 'shadow-panel',
+    surface: 'shadow-surface',
+    surfaceStrong: 'shadow-surface-strong',
+    accent: 'shadow-accent',
+    subtle: 'shadow-subtle'
+  }[preset]
 
   return {
-    color: readDefaultColorVariable(pen, `${baseName}-color`),
-    x: readDefaultNumberVariable(pen, `${baseName}-offset-x`),
-    y: readDefaultNumberVariable(pen, `${baseName}-offset-y`),
-    blur: readDefaultNumberVariable(pen, `${baseName}-blur`),
-    ...(preset === 'surfaceStrong' ? { spread: readDefaultNumberVariable(pen, `${baseName}-spread`) } : {})
+    color: readDefaultColorVariable(pen, `${variablePrefix}-color`),
+    x: readDefaultNumberVariable(pen, `${variablePrefix}-offset-x`),
+    y: readDefaultNumberVariable(pen, `${variablePrefix}-offset-y`),
+    blur: readDefaultNumberVariable(pen, `${variablePrefix}-blur`),
+    ...(preset === 'surfaceStrong' ? { spread: readDefaultNumberVariable(pen, `${variablePrefix}-spread`) } : {})
   }
 }
 
@@ -683,12 +693,9 @@ describe('builder-component.lib.pen', () => {
       surface: boxShadow.surface,
       surfaceStrong: boxShadow.surfaceStrong,
       accent: boxShadow.accent,
-      subtle: boxShadow.subtle,
-      floating: boxShadow.floating
+      subtle: boxShadow.subtle
     }).toEqual(ExpectedBoxShadowScale)
-    expect(boxShadow.small).toBe(ExpectedBoxShadowScale.subtle)
-    expect(boxShadow.big).toBe(ExpectedBoxShadowScale.surfaceStrong)
-    expect(boxShadow.diffusion).toBe(ExpectedBoxShadowScale.accent)
+    expect(Object.keys(boxShadow)).toEqual(['panel', 'surface', 'surfaceStrong', 'accent', 'subtle'])
   })
 
   it('keeps decomposed pen shadow effect presets aligned with named code shadow tokens', () => {
@@ -697,25 +704,31 @@ describe('builder-component.lib.pen', () => {
     expect(readShadowEffectPreset(LibraryPath, 'surfaceStrong')).toEqual(ExpectedPenShadowEffectPresets.surfaceStrong)
     expect(readShadowEffectPreset(LibraryPath, 'accent')).toEqual(ExpectedPenShadowEffectPresets.accent)
     expect(readShadowEffectPreset(LibraryPath, 'subtle')).toEqual(ExpectedPenShadowEffectPresets.subtle)
-    expect(readShadowEffectPreset(LibraryPath, 'floating')).toEqual(ExpectedPenShadowEffectPresets.floating)
+
+    const penText = readPenText(LibraryPath)
+    expect(penText).not.toContain('shadow-surfaceStrong')
+    expect(penText).not.toContain('shadow-floating')
+    expect(penText).not.toMatch(/"x": "\\$shadow-offset-x-0"/)
+    expect(penText).not.toMatch(/"y": "\\$shadow-offset-y-4"/)
+    expect(penText).not.toMatch(/"blur": "\\$shadow-blur-10_5"/)
   })
 
-  it('uses the named floating shadow preset for notification and message components', () => {
+  it('uses the closest named surface shadow preset for former floating shadow components', () => {
     const pen = readPen(LibraryPath) as PenDocument
 
-    for (const name of FloatingShadowComponentNames) {
+    for (const name of SurfaceShadowComponentNames) {
       const nodes = findNodesByName(pen, name)
       expect(nodes.length, `Missing component ${name}`).toBeGreaterThan(0)
       for (const node of nodes) {
         expect(node.effect).toEqual({
           type: 'shadow',
           shadowType: 'outer',
-          color: '$shadow-floating-color',
+          color: '$shadow-surface-color',
           offset: {
-            x: '$shadow-floating-offset-x',
-            y: '$shadow-floating-offset-y'
+            x: '$shadow-surface-offset-x',
+            y: '$shadow-surface-offset-y'
           },
-          blur: '$shadow-floating-blur'
+          blur: '$shadow-surface-blur'
         })
       }
     }
@@ -760,7 +773,7 @@ describe('builder-component.lib.pen', () => {
     expect(readPenText(ConfigPanelPath)).toContain('var(--ui-box-shadow-panel)')
     expect(readPenText(ConfigPanelPath)).not.toContain('var(--ui-box-shadow-big)')
 
-    expect(readPenText(UIModalPath)).toContain('var(--ui-box-shadow-surfaceStrong)')
+    expect(readPenText(UIModalPath)).toContain('var(--ui-box-shadow-surface-strong)')
     expect(readPenText(UIModalPath)).not.toContain('var(--ui-box-shadow-big)')
 
     expect(readPenText(UIDropdownPath)).toContain('var(--ui-box-shadow-surface)')
@@ -833,6 +846,116 @@ describe('builder-component.lib.pen', () => {
     )
 
     expect(legacyNames).toEqual([])
+  })
+
+  it('uses PascalCase GenList vocabulary for generation list assets', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const names = collectNodeNames(libraryBundle)
+    const legacyNames = names.filter((name) => /^genlist-(?:sprite|backdrop)-/.test(name))
+
+    expect(legacyNames).toEqual([])
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'GenList/Sprite/DefaultUserWaitingSystemGeneration',
+        'GenList/Sprite/HoverUserWaitingSystemGeneration',
+        'GenList/Sprite/SelectedUserWaitingSystemGeneration',
+        'GenList/Sprite/DefaultUserWaitingSystemProcessing',
+        'GenList/Sprite/HoverUserWaitingSystemProcessing',
+        'GenList/Sprite/SelectedUserWaitingSystemProcessing',
+        'GenList/Sprite/DefaultSystemWaitingUser',
+        'GenList/Sprite/HoverSystemWaitingUser',
+        'GenList/Sprite/SelectedSystemWaitingUser',
+        'GenList/Backdrop/DefaultUserWaitingSystemGeneration',
+        'GenList/Backdrop/HoverUserWaitingSystemGeneration',
+        'GenList/Backdrop/SelectedUserWaitingSystemGeneration',
+        'GenList/Backdrop/DefaultUserWaitingSystemProcessing',
+        'GenList/Backdrop/HoverUserWaitingSystemProcessing',
+        'GenList/Backdrop/SelectedUserWaitingSystemProcessing',
+        'GenList/Backdrop/DefaultSystemWaitingUser',
+        'GenList/Backdrop/HoverSystemWaitingUser',
+        'GenList/Backdrop/SelectedSystemWaitingUser'
+      ])
+    )
+  })
+
+  it('uses PascalCase card vocabulary for large add items and state items', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const names = collectNodeNames(libraryBundle)
+    const legacyNames = names.filter((name) =>
+      /^card-(?:add-(?:backdrop|sound|sprite)-item-large|state-item-(?:default|die|step))-/.test(name)
+    )
+
+    expect(legacyNames).toEqual([])
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'Card/AddBackdropItem/LargeClick',
+        'Card/AddBackdropItem/LargeHover',
+        'Card/AddBackdropItem/LargeDefault',
+        'Card/AddSoundItem/LargeClick',
+        'Card/AddSoundItem/LargeHover',
+        'Card/AddSoundItem/LargeDefault',
+        'Card/AddSpriteItem/LargeClick',
+        'Card/AddSpriteItem/LargeHover',
+        'Card/AddSpriteItem/LargeDefault',
+        'Card/StateItem/DefaultClick',
+        'Card/StateItem/DefaultHover',
+        'Card/StateItem/DefaultDefault',
+        'Card/StateItem/DieClick',
+        'Card/StateItem/DieHover',
+        'Card/StateItem/DieDefault',
+        'Card/StateItem/StepClick',
+        'Card/StateItem/StepHover',
+        'Card/StateItem/StepDefault'
+      ])
+    )
+  })
+
+  it('uses PascalCase CornerMarker vocabulary for corner marker assets', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const names = collectNodeNames(libraryBundle)
+    const legacyNames = names.filter((name) =>
+      /^Corner marker\/(?:Library\/Check|Item\/Cancel selection|Gen-sprite item\/More|Project item\/More|Add sprite item\/Check|Backdrop item\/More|Sprite item\/More)\/(?:Default|Hover|Click)$/.test(
+        name
+      )
+    )
+
+    expect(legacyNames).toEqual([])
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'CornerMarker/Library/CheckClick',
+        'CornerMarker/Library/CheckHover',
+        'CornerMarker/Library/CheckDefault',
+        'CornerMarker/Item/CancelSelectionClick',
+        'CornerMarker/Item/CancelSelectionHover',
+        'CornerMarker/Item/CancelSelectionDefault',
+        'CornerMarker/GenSpriteItem/MoreClick',
+        'CornerMarker/GenSpriteItem/MoreHover',
+        'CornerMarker/GenSpriteItem/MoreDefault',
+        'CornerMarker/ProjectItem/MoreClick',
+        'CornerMarker/ProjectItem/MoreHover',
+        'CornerMarker/ProjectItem/MoreDefault',
+        'CornerMarker/AddSpriteItem/CheckClick',
+        'CornerMarker/AddSpriteItem/CheckHover',
+        'CornerMarker/AddSpriteItem/CheckDefault',
+        'CornerMarker/BackdropItem/MoreClick',
+        'CornerMarker/BackdropItem/MoreDefault',
+        'CornerMarker/BackdropItem/MoreHover',
+        'CornerMarker/SpriteItem/MoreDefault',
+        'CornerMarker/SpriteItem/MoreHover',
+        'CornerMarker/SpriteItem/MoreClick'
+      ])
+    )
+  })
+
+  it('loads refreshed XBuilder icon font assets', () => {
+    const pen = readPen(LibraryPath) as PenDocument
+    const text = readPenText(LibraryPath)
+    const iconFonts = new Map(pen.fonts?.map((font) => [font.name, font.url]))
+
+    expect(iconFonts.get('XBuilder_Icons_01')).toBe('../../images/xbuilder-newicons-01.ttf')
+    expect(iconFonts.get('XBuilder_Icons_02')).toBe('../../images/xbuilder-newicons-02.ttf')
+    expect(text).not.toContain('"url": "../../images/xbuilder-icons-01.ttf"')
+    expect(text).not.toContain('"url": "../../images/xbuilder-icons-02.ttf"')
   })
 
   it('keeps typography aligned to UI code vocabulary and font baseline', () => {

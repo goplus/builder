@@ -47,7 +47,7 @@ withDefaults(
   background-position: center;
   background-repeat: repeat;
   background-image: url(./bg.svg);
-  box-shadow: var(--ui-box-shadow-diffusion);
+  box-shadow: var(--ui-box-shadow-accent);
 }
 
 .content {

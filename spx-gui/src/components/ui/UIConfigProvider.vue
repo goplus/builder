@@ -72,10 +72,9 @@ const themeOverrides: GlobalThemeOverrides = {
     infoColor: uiVariables.color.primary.main,
     infoColorHover: uiVariables.color.primary[100],
 
-    // TODO: review boxShadow mapping
-    boxShadow1: uiVariables.boxShadow.small,
-    boxShadow2: uiVariables.boxShadow.big,
-    boxShadow3: uiVariables.boxShadow.diffusion,
+    boxShadow1: uiVariables.boxShadow.subtle,
+    boxShadow2: uiVariables.boxShadow.surfaceStrong,
+    boxShadow3: uiVariables.boxShadow.accent,
 
     borderRadiusSmall: uiVariables.borderRadius[1],
     borderRadius: uiVariables.borderRadius[2],
@@ -90,7 +89,7 @@ const themeOverrides: GlobalThemeOverrides = {
   },
   Tooltip: {
     borderRadius: uiVariables.borderRadius[1],
-    boxShadow: uiVariables.boxShadow.small,
+    boxShadow: uiVariables.boxShadow.subtle,
     color: uiVariables.color.grey[1000],
     textColor: uiVariables.color.grey[100],
     padding: '7px 8px',
