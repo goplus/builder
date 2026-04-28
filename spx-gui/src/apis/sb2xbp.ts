@@ -6,10 +6,11 @@ const maxFileSize = 32 * 1024 * 1024 // 32MB
 const convertTimeout = 60 * 1000 // 60s
 
 /**
- * Convert Scratch project (.sb2/.sb3) to XBuilder project (.xbp) via backend `/scratch-convert` endpoint.
+ * Convert Scratch project (.sb2/.sb3) to XBuilder project (.xbp) via backend `/util/sb2xbp` endpoint.
  * The backend is expected to return the converted xbp as binary response (200).
  *
- * Uses shared `client` so token, Sentry headers and timeout behavior are consistent with other APIs.
+ * Uses shared `client` so token and Sentry headers are consistent with other APIs.
+ * A custom timeout is applied because Scratch conversion is significantly slower than typical API calls.
  */
 export async function convertScratchToXbp(file: File, signal?: AbortSignal) {
   if (file.size > maxFileSize) {
