@@ -24,7 +24,6 @@ type MessageRecord = {
   id: number
   type: MessageType
   content: string
-  visible: boolean
 }
 
 const messageEventsInjectKey: InjectionKey<MessageEvents> = Symbol('message-events')
@@ -61,13 +60,6 @@ function clearHideTimer(id: number) {
   hideTimers.delete(id)
 }
 
-function hideMessage(id: number) {
-  clearHideTimer(id)
-  const message = messages.value.find((item) => item.id === id)
-  if (message == null) return
-  message.visible = false
-}
-
 function removeMessage(id: number) {
   clearHideTimer(id)
   const index = messages.value.findIndex((item) => item.id === id)
@@ -80,8 +72,7 @@ function createMessage(type: MessageType, content: string, duration = 3000) {
   const message: MessageRecord = {
     id: nextMessageId,
     type,
-    content,
-    visible: true
+    content
   }
   messages.value.push(message)
 
@@ -89,14 +80,14 @@ function createMessage(type: MessageType, content: string, duration = 3000) {
     hideTimers.set(
       message.id,
       window.setTimeout(() => {
-        hideMessage(message.id)
+        removeMessage(message.id)
       }, duration)
     )
   }
 
   return {
     destroy() {
-      hideMessage(message.id)
+      removeMessage(message.id)
     }
   }
 }
@@ -133,17 +124,32 @@ onBeforeUnmount(() => {
   })
   hideTimers.clear()
 })
+
+/**
+ * Pin the leaving item to its current visual position before taking it out of
+ * layout flow. This lets sibling move animations start immediately without the
+ * leaving node jumping to the top of the viewport.
+ */
+function handleBeforeLeave(el: Element) {
+  const target = el as HTMLElement
+  const offsetParent = target.offsetParent
+  const container = offsetParent instanceof HTMLElement ? offsetParent : target.parentElement
+  if (container == null) return
+
+  const targetRect = target.getBoundingClientRect()
+  const containerRect = container.getBoundingClientRect()
+
+  target.style.position = 'absolute'
+  target.style.left = `${targetRect.left - containerRect.left}px`
+  target.style.top = `${targetRect.top - containerRect.top}px`
+  target.style.width = `${targetRect.width}px`
+  target.style.height = `${targetRect.height}px`
+}
 </script>
 
 <template>
   <slot></slot>
   <Teleport v-if="attachTo != null" :to="attachTo">
-    <!--
-      TransitionGroup is kept here for list-level move animations:
-      when a message is inserted or removed, sibling items can slide smoothly
-      into their new positions. Each message's own enter / leave animation is
-      still handled by the Transition inside UIMessageItem.
-    -->
     <TransitionGroup
       name="ui-message-stack"
       tag="div"
@@ -151,15 +157,9 @@ onBeforeUnmount(() => {
       aria-live="polite"
       aria-atomic="false"
       aria-relevant="additions"
+      :on-before-leave="handleBeforeLeave"
     >
-      <div v-for="message in messages" :key="message.id">
-        <UIMessageItem
-          :type="message.type"
-          :content="message.content"
-          :visible="message.visible"
-          @after-leave="removeMessage(message.id)"
-        />
-      </div>
+      <UIMessageItem v-for="message in messages" :key="message.id" :type="message.type" :content="message.content" />
     </TransitionGroup>
   </Teleport>
 </template>
@@ -180,9 +180,22 @@ onBeforeUnmount(() => {
     pointer-events: none;
   }
 
-  /* TransitionGroup automatically adds the *-move class to items whose position changes but that are not leaving. */
+  .ui-message-stack-enter-active,
+  .ui-message-stack-leave-active,
   .ui-message-stack-move {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .ui-message-stack-enter-active,
+  .ui-message-stack-leave-active {
+    transition-property: opacity, transform;
+    transform-origin: top center;
+  }
+
+  .ui-message-stack-enter-from,
+  .ui-message-stack-leave-to {
+    opacity: 0;
+    transform: scale(0.6);
   }
 }
 </style>
