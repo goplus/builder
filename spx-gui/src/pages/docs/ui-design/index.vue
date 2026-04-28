@@ -419,6 +419,91 @@
         </div>
       </section>
 
+      <section id="ui-form" :class="sectionClass">
+        <div :class="sectionHeaderClass">
+          <h2 :class="sectionTitleClass">UIForm</h2>
+          <p :class="sectionDescriptionClass">
+            {{
+              $t({
+                en: 'A composed form example with validation feedback for the controls that are commonly used inside forms.',
+                zh: '组合展示在表单中常用输入控件及其校验反馈。'
+              })
+            }}
+          </p>
+        </div>
+
+        <div :class="showcaseGridClass">
+          <div :class="[surfaceCardClass, 'col-span-full']">
+            <div :class="groupLabelClass">Project Settings Form</div>
+            <div class="grid gap-4 desktop:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
+              <UIForm :form="demoForm" has-success-feedback @submit="handleDemoFormSubmit">
+                <UIFormItem label="Project name" path="projectName">
+                  <UITextInput v-model:value="demoForm.value.projectName" placeholder="Enter a project name" />
+                  <template #tip>
+                    {{ $t({ en: 'Used in the project list and publish page.', zh: '会显示在项目列表和发布页。' }) }}
+                  </template>
+                </UIFormItem>
+
+                <UIFormItem label="Stage width" path="stageWidth">
+                  <UINumberInput v-model:value="demoForm.value.stageWidth" :min="240" :max="1920">
+                    <template #suffix>
+                      <span class="text-xs text-grey-800">px</span>
+                    </template>
+                  </UINumberInput>
+                  <template #tip>
+                    {{ $t({ en: 'Valid range: 240 ~ 1920.', zh: '输入范围：240 ~ 1920' }) }}
+                  </template>
+                </UIFormItem>
+
+                <UIFormItem label="Template" path="template">
+                  <UISelect v-model:value="demoForm.value.template" class="w-full">
+                    <UISelectOption value="platformer">platformer</UISelectOption>
+                    <UISelectOption value="topdown">topdown</UISelectOption>
+                    <UISelectOption value="story">story</UISelectOption>
+                  </UISelect>
+                </UIFormItem>
+
+                <UIFormItem label="Features" path="features">
+                  <UICheckboxGroup v-model:value="demoForm.value.features">
+                    <div class="mt-1 flex gap-3">
+                      <UICheckbox value="physics">Physics</UICheckbox>
+                      <UICheckbox value="particles">Particles</UICheckbox>
+                      <UICheckbox value="multiplayer">Multiplayer</UICheckbox>
+                    </div>
+                  </UICheckboxGroup>
+                </UIFormItem>
+
+                <UIFormItem label="Control mode" path="controlMode">
+                  <UIRadioGroup v-model:value="demoForm.value.controlMode">
+                    <div class="mt-1 flex gap-3">
+                      <UIRadio value="balanced">Balanced</UIRadio>
+                      <UIRadio value="keyboard">Keyboard</UIRadio>
+                      <UIRadio value="touch">Touch</UIRadio>
+                    </div>
+                  </UIRadioGroup>
+                </UIFormItem>
+
+                <UIFormItem label="Include music" path="includeMusic">
+                  <div class="mt-1">
+                    <UISwitch v-model:value="demoForm.value.includeMusic" />
+                  </div>
+                </UIFormItem>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                  <UIButton html-type="submit">Submit</UIButton>
+                  <UIButton type="white" html-type="button" @click="resetDemoForm">Reset</UIButton>
+                </div>
+              </UIForm>
+
+              <div class="rounded-md bg-grey-100 p-4">
+                <div :class="groupLabelClass">Current Value</div>
+                <pre class="overflow-x-auto text-xs/5 text-grey-900 whitespace-pre-wrap">{{ demoFormPreview }}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="ui-tabs" :class="sectionClass">
         <div :class="sectionHeaderClass">
           <h2 :class="sectionTitleClass">UITabs</h2>
@@ -996,6 +1081,8 @@ import {
   UIDivider,
   UIEmpty,
   UIError,
+  UIForm,
+  UIFormItem,
   UIIcon,
   UIImg,
   UILoading,
@@ -1017,6 +1104,7 @@ import {
   UITextInput,
   UIMenu,
   UIMenuItem,
+  useForm,
   useMessage
 } from '@/components/ui'
 import GenLoading from '@/components/asset/gen/common/GenLoading.vue'
@@ -1077,6 +1165,7 @@ const directoryItems = [
   { id: 'ui-button-group', label: 'UIButtonGroup' },
   { id: 'ui-inputs', label: 'Inputs, Slider And Select' },
   { id: 'ui-choices', label: 'Choices' },
+  { id: 'ui-form', label: 'UIForm' },
   { id: 'ui-tabs', label: 'UITabs' },
   { id: 'ui-card', label: 'UICard' },
   { id: 'ui-tooltip', label: 'UITooltip' },
@@ -1122,7 +1211,6 @@ const emptyNumberInputValue = ref<number | null>(null)
 const sliderValue = ref(42)
 const sliderLiveValue = ref(1)
 const selectValue = ref('recent')
-
 const switchValue = ref(true)
 const radioValue = ref('default')
 const tabRadioValue = ref('default')
@@ -1214,5 +1302,29 @@ async function handleMessageLoading() {
     }),
     'Loading message...'
   )
+}
+
+const demoForm = useForm({
+  projectName: ['', (value: string) => (value.trim() === '' ? 'Project name is required' : null)],
+  stageWidth: [480, (value: number | null) => (value == null ? 'Stage width is required' : null)],
+  template: ['platformer', (value: string) => (value === '' ? 'Template is required' : null)],
+  features: [['physics'], (value: string[]) => (value.length === 0 ? 'Select at least one feature' : null)],
+  controlMode: ['balanced', (value: string | null) => (value == null ? 'Control mode is required' : null)],
+  includeMusic: [true]
+})
+
+const demoFormPreview = computed(() => JSON.stringify(demoForm.value, null, 2))
+
+function handleDemoFormSubmit() {
+  message.success('form submitted')
+}
+
+function resetDemoForm() {
+  demoForm.value.projectName = ''
+  demoForm.value.stageWidth = 480
+  demoForm.value.template = 'platformer'
+  demoForm.value.features = ['physics']
+  demoForm.value.controlMode = 'balanced'
+  demoForm.value.includeMusic = true
 }
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div :class="cn('flex flex-col [&+&]:mt-6', props.class)" :data-ui-state="validationState">
+  <div :class="cn('flex flex-col [&+&]:mt-6', props.class)">
     <div v-if="props.label != null" :id="ids.labelId" class="mb-1 text-hint-1">
       {{ props.label }}
     </div>
