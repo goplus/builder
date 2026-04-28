@@ -25,8 +25,6 @@
         <slot name="suffix"></slot>
       </div>
     </div>
-
-    <div class="ui-input__state-border"></div>
   </div>
 </template>
 
@@ -104,20 +102,24 @@ function handleRootClick(event: MouseEvent) {
     width: 100%;
     min-width: 0;
     border-radius: var(--ui-border-radius-md);
+    /* Use an inset shadow instead of a real border so focus/error/success state changes never affect layout. */
+    box-shadow: inset 0 0 0 1px var(--ui-input-border-color);
     color: var(--ui-color-grey-1000);
     font-size: var(--ui-font-size-base);
     line-height: 22px;
-    transition: background-color 0.2s;
+    transition:
+      background-color 0.2s,
+      box-shadow 0.2s;
   }
 
   .ui-input--color-default {
     background: var(--ui-color-grey-300);
-    --ui-text-input-border-color: var(--ui-color-grey-300);
+    --ui-input-border-color: var(--ui-color-grey-300);
   }
 
   .ui-input--color-white {
     background: var(--ui-color-grey-100);
-    --ui-text-input-border-color: var(--ui-color-grey-400);
+    --ui-input-border-color: var(--ui-color-grey-400);
   }
 
   .ui-input--size-medium {
@@ -270,26 +272,17 @@ function handleRootClick(event: MouseEvent) {
     text-decoration: line-through;
   }
 
-  .ui-input__state-border {
-    pointer-events: none;
-    position: absolute;
-    inset: 0;
-    border: 1px solid var(--ui-text-input-border-color);
-    border-radius: inherit;
-    transition: border-color 0.2s;
+  /* Render the state border as an inset shadow on the root so content layout never shifts. */
+  .ui-input:not([data-ui-state='success']):not([data-ui-state='error']):focus-within {
+    --ui-input-border-color: var(--ui-color-primary-main);
   }
 
-  /* Render focus/error/success on a dedicated overlay so content layout never shifts. */
-  .ui-input:not([data-ui-state='success']):not([data-ui-state='error']):focus-within .ui-input__state-border {
-    border-color: var(--ui-color-primary-main);
+  .ui-input[data-ui-state='success'] {
+    --ui-input-border-color: var(--ui-color-success-main);
   }
 
-  .ui-input[data-ui-state='success'] .ui-input__state-border {
-    border-color: var(--ui-color-success-main);
-  }
-
-  .ui-input[data-ui-state='error'] .ui-input__state-border {
-    border-color: var(--ui-color-danger-main);
+  .ui-input[data-ui-state='error'] {
+    --ui-input-border-color: var(--ui-color-danger-main);
   }
 
   .ui-input[data-ui-state='error'] .ui-input__content > input,
