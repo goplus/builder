@@ -6,7 +6,7 @@ import {
   getTextDocumentId,
   CodeLink as RawCodeLink
 } from '@/components/editor/code-editor/spx-code-editor'
-import { codeFilePathSchema } from '../common'
+import { codeFilePathSchema } from '@/components/copilot/common'
 
 export const tagName = 'code-link'
 

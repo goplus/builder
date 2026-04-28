@@ -13,8 +13,6 @@ import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as pageLink from './custom-elements/PageLink'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
-import * as codeLink from './custom-elements/CodeLink'
-import * as codeChange from './custom-elements/CodeChange.vue'
 import { useSignedInStateQuery, type SignedInState } from '@/stores/user'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import { provideCopilot } from './context'
@@ -176,20 +174,6 @@ copilot.registerCustomElement({
   attributes: highlightLink.attributes,
   isRaw: highlightLink.isRaw,
   component: highlightLink.default
-})
-copilot.registerCustomElement({
-  tagName: codeLink.tagName,
-  description: codeLink.detailedDescription,
-  attributes: codeLink.attributes,
-  isRaw: codeLink.isRaw,
-  component: codeLink.default
-})
-copilot.registerCustomElement({
-  tagName: codeChange.tagName,
-  description: codeChange.detailedDescription,
-  attributes: codeChange.attributes,
-  isRaw: codeChange.isRaw,
-  component: codeChange.default
 })
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))

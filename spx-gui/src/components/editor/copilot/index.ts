@@ -8,7 +8,7 @@ import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 import { SpxProject } from '@/models/spx/project'
 import type { Sprite } from '@/models/spx/sprite'
 import { Disposable } from '@/utils/disposable'
-import { useEditorCtx, type EditorCtx } from './EditorContextProvider.vue'
+import { useEditorCtx, type EditorCtx } from '../EditorContextProvider.vue'
 import {
   CodeEditor,
   getCodeFilePath,
@@ -16,7 +16,9 @@ import {
   textDocumentId2CodeFileName,
   useCodeEditor,
   type TextDocument
-} from './code-editor/spx-code-editor'
+} from '../code-editor/spx-code-editor'
+import * as codeLink from './CodeLink'
+import * as codeChange from './CodeChange.vue'
 
 class Retriever {
   constructor(
@@ -281,6 +283,24 @@ export function useSpxEditorCopilot(): void {
   d.addDisposer(copilot.registerTool(new GetSpriteContentTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetProjectCodeTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetCodeDiagnosticsTool(codeEditor)))
+  d.addDisposer(
+    copilot.registerCustomElement({
+      tagName: codeLink.tagName,
+      description: codeLink.detailedDescription,
+      attributes: codeLink.attributes,
+      isRaw: codeLink.isRaw,
+      component: codeLink.default
+    })
+  )
+  d.addDisposer(
+    copilot.registerCustomElement({
+      tagName: codeChange.tagName,
+      description: codeChange.detailedDescription,
+      attributes: codeChange.attributes,
+      isRaw: codeChange.isRaw,
+      component: codeChange.default
+    })
+  )
   d.addDisposer(copilot.registerContextProvider(new ProjectContextProvider(editorCtx)))
   d.addDisposer(copilot.registerContextProvider(new SpriteContextProvider(editorCtx)))
   d.addDisposer(copilot.registerContextProvider(new CodeContextProvider(codeEditor)))
