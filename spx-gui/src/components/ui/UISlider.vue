@@ -20,14 +20,18 @@
       @blur="onBlur"
     />
 
-    <div class="relative" :class="railClass">
+    <!--
+      The native range input above owns all pointer interaction.
+      Keep the visual rail/thumb layer non-interactive so it never blocks click/drag hit-testing.
+    -->
+    <div class="relative pointer-events-none" :class="railClass">
       <div
         class="absolute inset-y-0 left-0 rounded-full bg-(--ui-slider-main-color)"
-        :style="{ width: `${fillPercent}%` }"
+        :style="{ width: `${fillRatio * 100}%` }"
       ></div>
       <div
-        class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center bg-transparent shadow-none"
-        :style="{ left: `${fillPercent}%` }"
+        class="absolute top-1/2 -translate-y-1/2 flex items-center justify-center bg-transparent shadow-none"
+        :style="{ left: thumbPosition }"
       >
         <!--
           NOTE: Intentionally use `group-hover` instead of handle-only hover.
@@ -103,11 +107,17 @@ watch(
   }
 )
 
-const fillPercent = computed(() => {
+const fillRatio = computed(() => {
   const range = maxValue.value - minValue.value
   if (range <= 0) return 0
-  return ((localValue.value - minValue.value) / range) * 100
+  return (localValue.value - minValue.value) / range
 })
+
+const SLIDER_THUMB_SIZE_PX = 20
+
+// `left` positions the thumb wrapper's left edge, so the travel range is
+// exactly the rail width minus one thumb width.
+const thumbPosition = computed(() => `calc((100% - ${SLIDER_THUMB_SIZE_PX}px) * ${fillRatio.value})`)
 
 function handleNativeInput(event: Event) {
   const nextValue = clampValue(Number((event.target as HTMLInputElement).value))
