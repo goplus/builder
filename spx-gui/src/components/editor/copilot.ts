@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { z } from 'zod'
-import { onScopeDispose, watch, type ComputedRef } from 'vue'
+import { onScopeDispose, watch } from 'vue'
 import { useCopilot } from '@/components/copilot/context'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from '@/components/copilot/common'
 import { type ICopilotContextProvider, type ToolDefinition } from '@/components/copilot/copilot'
@@ -8,26 +8,25 @@ import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 import { SpxProject } from '@/models/spx/project'
 import type { Sprite } from '@/models/spx/sprite'
 import { Disposable } from '@/utils/disposable'
-import { useEditorCtxRef, type EditorCtx } from './EditorContextProvider.vue'
+import { useEditorCtx, type EditorCtx } from './EditorContextProvider.vue'
 import {
   CodeEditor,
   getCodeFilePath,
   isSelectionEmpty,
   textDocumentId2CodeFileName,
-  useCodeEditorRef,
+  useCodeEditor,
   type TextDocument
 } from './code-editor/spx-code-editor'
 
 class Retriever {
   constructor(
-    private editorCtxRef: ComputedRef<EditorCtx | undefined>,
+    private editorCtx: EditorCtx,
     private helpers: CloudHelpers
   ) {}
 
   async getProject(project: string | undefined, signal?: AbortSignal): Promise<SpxProject> {
-    const currentProject = this.editorCtxRef.value?.project
+    const currentProject = this.editorCtx.project
     if (project == null) {
-      if (currentProject == null) throw new Error('No project specified and no current editing project available')
       return currentProject
     }
     const { owner, name } = parseProjectIdentifier(project)
@@ -178,21 +177,18 @@ class GetCodeDiagnosticsTool implements ToolDefinition {
   description = 'Get code diagnostics (errors or warnings) of current editing project.'
   parameters = getCodeDiagnosticsParamsSchema
 
-  constructor(private codeEditorRef: ComputedRef<CodeEditor | null>) {}
+  constructor(private codeEditor: CodeEditor) {}
 
   async implementation(_: z.infer<typeof getCodeDiagnosticsParamsSchema>, signal?: AbortSignal) {
-    const codeEditor = this.codeEditorRef.value
-    if (codeEditor == null) throw new Error('Code editor is not available')
-    return codeEditor.diagnosticWorkspace(signal)
+    return this.codeEditor.diagnosticWorkspace(signal)
   }
 }
 
 class ProjectContextProvider implements ICopilotContextProvider {
-  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  constructor(private editorCtx: EditorCtx) {}
 
   provideContext(): string {
-    const project = this.editorCtxRef.value?.project
-    if (project == null) return ''
+    const project = this.editorCtx.project
     return `# Current project
 The user is now working on project: ${project.displayName} (${project.owner}/${project.name})
 Class framework ID: spx
@@ -202,10 +198,10 @@ ${getProjectContent(project)}`
 }
 
 class SpriteContextProvider implements ICopilotContextProvider {
-  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  constructor(private editorCtx: EditorCtx) {}
 
   provideContext(): string {
-    const sprite = this.editorCtxRef.value?.state.selectedSprite
+    const sprite = this.editorCtx.state.selectedSprite
     if (sprite == null) return ''
     return `# Current sprite content
 ${JSON.stringify(getSpriteContent(sprite))}`
@@ -213,7 +209,7 @@ ${JSON.stringify(getSpriteContent(sprite))}`
 }
 
 class CodeContextProvider implements ICopilotContextProvider {
-  constructor(private codeEditorRef: ComputedRef<CodeEditor | null>) {}
+  constructor(private codeEditor: CodeEditor) {}
 
   private sampleCode(activeTextDocument: TextDocument, line: number) {
     const threshold = 10
@@ -223,7 +219,7 @@ class CodeContextProvider implements ICopilotContextProvider {
   }
 
   provideContext(): string {
-    const codeEditorUI = this.codeEditorRef.value?.getAttachedUI()
+    const codeEditorUI = this.codeEditor.getAttachedUI()
     if (codeEditorUI == null) return ''
     const { activeTextDocument, cursorPosition, selection } = codeEditorUI
     if (activeTextDocument == null) return ''
@@ -247,11 +243,10 @@ ${JSON.stringify(code)}`
 }
 
 class RuntimeContextProvider implements ICopilotContextProvider {
-  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  constructor(private editorCtx: EditorCtx) {}
 
   provideContext(): string {
-    const runtime = this.editorCtxRef.value?.state.runtime
-    if (runtime == null) return ''
+    const runtime = this.editorCtx.state.runtime
     const outputs = runtime.outputs
     if (outputs.length === 0) return ''
     const recentOutputs = outputs.slice(-50)
@@ -277,24 +272,23 @@ export function useSpxEditorCopilot(): void {
   onScopeDispose(() => d.dispose())
 
   const copilot = useCopilot()
-  const editorCtxRef = useEditorCtxRef()
-  const codeEditorRef = useCodeEditorRef()
-  const retriever = new Retriever(editorCtxRef, cloudHelpers)
+  const editorCtx = useEditorCtx()
+  const codeEditor = useCodeEditor()
+  const retriever = new Retriever(editorCtx, cloudHelpers)
 
   d.addDisposer(copilot.registerTool(new GetProjectMetadataTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetProjectContentTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetSpriteContentTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetProjectCodeTool(retriever)))
-  d.addDisposer(copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorRef)))
-  d.addDisposer(copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef)))
-  d.addDisposer(copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef)))
-  d.addDisposer(copilot.registerContextProvider(new CodeContextProvider(codeEditorRef)))
-  d.addDisposer(copilot.registerContextProvider(new RuntimeContextProvider(editorCtxRef)))
+  d.addDisposer(copilot.registerTool(new GetCodeDiagnosticsTool(codeEditor)))
+  d.addDisposer(copilot.registerContextProvider(new ProjectContextProvider(editorCtx)))
+  d.addDisposer(copilot.registerContextProvider(new SpriteContextProvider(editorCtx)))
+  d.addDisposer(copilot.registerContextProvider(new CodeContextProvider(codeEditor)))
+  d.addDisposer(copilot.registerContextProvider(new RuntimeContextProvider(editorCtx)))
 
   watch(
-    () => editorCtxRef.value?.state.runtime,
+    () => editorCtx.state.runtime,
     (editorRuntime, _, onCleanup) => {
-      if (editorRuntime == null) return
       const unlisten = editorRuntime.on('didExit', (code) => {
         if (code !== 0) return
         copilot.notifyUserEvent({ en: 'Game exited with code 0', zh: '游戏正常退出' }, `Game exited with code ${code}`)
