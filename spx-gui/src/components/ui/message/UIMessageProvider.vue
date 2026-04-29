@@ -164,7 +164,7 @@ function handleBeforeLeave(el: Element) {
   </Teleport>
 </template>
 
-<style>
+<style scoped>
 @layer components {
   .ui-message-viewport {
     position: fixed;
