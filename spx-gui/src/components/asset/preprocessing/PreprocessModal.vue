@@ -7,7 +7,7 @@
     style="width: 780px"
     :visible="props.visible && ready"
     :title="$t(title)"
-    :body-style="{ padding: '0' }"
+    body-class="p-0"
     @update:visible="emit('cancelled')"
   >
     <main class="flex items-stretch" style="height: 475px">

@@ -17,15 +17,15 @@
 
       <UIDivider />
 
-      <div class="px-6 pt-5 pb-6" :style="bodyStyle">
+      <div :class="cn('px-6 pt-5 pb-6', bodyClass)">
         <slot></slot>
       </div>
     </div>
   </UIModal>
 </template>
 <script setup lang="ts">
-import type { CSSProperties } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
+import { cn, type ClassValue } from '../utils'
 import { UIDivider } from '@/components/ui'
 import UIModal from './UIModal.vue'
 import UIModalClose from './UIModalClose.vue'
@@ -37,16 +37,13 @@ withDefaults(
     autoFocus?: boolean
     maskClosable?: boolean
     centerTitle?: boolean
-    // maybe it is better to let caller specify the body class instead of body style,
-    // but it is now not possible with scoped style & naive-ui `Modal`, which is similar to the issue we encountered in `UIDropdown.vue`
-    // Or maybe we need a modal which has header while no body padding by default?
-    bodyStyle?: CSSProperties
+    bodyClass?: ClassValue
     radar?: RadarNodeMeta
   }>(),
   {
     autoFocus: true,
     maskClosable: true,
-    bodyStyle: () => ({}),
+    bodyClass: undefined,
     radar: undefined
   }
 )

@@ -13,7 +13,7 @@ export * from './base'
 /**
  * `useMessageHandle`
  * - transforms exceptions like `useAction`
- * - handles loading / success / failure with naive-ui message
+ * - handles loading / success / failure with ui message
  */
 export function useMessageHandle<Args extends any[], T>(
   fn: (...args: Args) => Promise<T> | T,
