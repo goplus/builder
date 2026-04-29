@@ -163,6 +163,30 @@ describe('sampleApiMessages', () => {
   })
 })
 
+describe('Copilot markdown elements', () => {
+  it('should register and dispose markdown element renderers', () => {
+    const copilot = new Copilot()
+    const codeBlock = defineComponent(() => () => null)
+
+    const dispose = copilot.registerMarkdownElements({ codeBlock })
+    expect(copilot.markdownElements.codeBlock).toBe(codeBlock)
+
+    dispose()
+    expect(copilot.markdownElements.codeBlock).toBeUndefined()
+  })
+
+  it('should ignore empty markdown element registrations', () => {
+    const copilot = new Copilot()
+    const codeBlock = defineComponent(() => () => null)
+
+    copilot.registerMarkdownElements({ codeBlock })
+    const dispose = copilot.registerMarkdownElements({ codeBlock: undefined })
+    dispose()
+
+    expect(copilot.markdownElements.codeBlock).toBe(codeBlock)
+  })
+})
+
 class MockStorage implements ISessionExportedStorage {
   private saved: SessionExported | null = null
   set(value: SessionExported | null): void {
