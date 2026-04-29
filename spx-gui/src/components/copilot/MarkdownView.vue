@@ -29,7 +29,7 @@ import MarkdownView, {
   findCustomComponentUsages as fccu,
   type Components
 } from '@/components/common/markdown-vue/MarkdownView'
-import CodeBlock from './custom-elements/CodeBlock.vue'
+import CodeBlock from './markdown-elements/CodeBlock.vue'
 import { useCopilot } from './context'
 import type { Copilot } from './copilot'
 

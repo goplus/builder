@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle } from '@/utils/exception'
-import BaseCodeBlock from '@/components/copilot/custom-elements/CodeBlock.vue'
-import BlockActionBtn from '@/components/copilot/custom-elements/common/BlockActionBtn.vue'
+import BaseCodeBlock from '@/components/copilot/markdown-elements/CodeBlock.vue'
+import BlockActionBtn from '@/components/copilot/markdown-elements/common/BlockActionBtn.vue'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorRef } from '@/components/editor/spx-code-editor'
 
