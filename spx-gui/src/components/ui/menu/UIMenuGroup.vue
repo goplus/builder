@@ -30,7 +30,7 @@ provide(
 )
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-menu-group + .ui-menu-group {
     margin-top: 13px;

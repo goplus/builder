@@ -1,14 +1,8 @@
 <template>
-  <label
-    class="ui-radio"
-    :class="{
-      'ui-radio--checked': checked,
-      'ui-radio--disabled': mergedDisabled
-    }"
-  >
+  <label class="ui-radio" :class="{ checked, disabled: mergedDisabled }">
     <input
       v-bind="controlBindings"
-      class="ui-radio__input"
+      class="input"
       type="radio"
       :name="radioGroupContext?.name"
       :value="props.value"
@@ -17,10 +11,10 @@
       @change="handleChange"
       @blur="onBlur"
     />
-    <span class="ui-radio__dot" aria-hidden="true">
-      <span class="ui-radio__dot-indicator"></span>
+    <span class="dot" aria-hidden="true">
+      <span class="indicator"></span>
     </span>
-    <span v-if="props.label != null || $slots.default != null" class="ui-radio__label">
+    <span v-if="props.label != null || $slots.default != null" class="label">
       <slot>{{ props.label }}</slot>
     </span>
   </label>
@@ -66,7 +60,7 @@ function handleChange() {
 }
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-radio {
     position: relative;
@@ -77,11 +71,11 @@ function handleChange() {
     -webkit-user-select: none;
   }
 
-  .ui-radio--disabled {
+  .ui-radio.disabled {
     color: var(--ui-color-disabled-text);
   }
 
-  .ui-radio__input {
+  .input {
     position: absolute;
     inset: 0;
     border: 0;
@@ -90,11 +84,11 @@ function handleChange() {
     z-index: 1;
     cursor: pointer;
   }
-  .ui-radio--disabled .ui-radio__input {
+  .ui-radio.disabled .input {
     cursor: not-allowed;
   }
 
-  .ui-radio__dot {
+  .dot {
     flex: none;
     width: 16px;
     height: 16px;
@@ -109,19 +103,20 @@ function handleChange() {
       background-color 0.3s ease,
       box-shadow 0.3s ease;
   }
-  .ui-radio:not(.ui-radio--disabled):hover .ui-radio__dot,
-  .ui-radio:not(.ui-radio--disabled):focus-within .ui-radio__dot,
-  .ui-radio--checked:not(.ui-radio--disabled) .ui-radio__dot {
+  .ui-radio:not(.disabled):hover .dot,
+  .ui-radio:not(.disabled):focus-within .dot,
+  .ui-radio.checked:not(.disabled) .dot {
     border-color: var(--ui-color-primary-main);
   }
-  .ui-radio--checked.ui-radio--disabled .ui-radio__dot {
+  .ui-radio.checked.disabled .dot {
     border-color: var(--ui-color-primary-300);
+    background: var(--ui-color-grey-100);
   }
-  .ui-radio--disabled:not(.ui-radio--checked) .ui-radio__dot {
+  .ui-radio.disabled:not(.checked) .dot {
     background: var(--ui-color-grey-300);
   }
 
-  .ui-radio__dot-indicator {
+  .indicator {
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -130,15 +125,15 @@ function handleChange() {
     transform: scale(0.8);
     transition: transform 0.3s ease;
   }
-  .ui-radio--checked .ui-radio__dot-indicator {
+  .ui-radio.checked .indicator {
     opacity: 1;
     transform: scale(1);
   }
-  .ui-radio--checked.ui-radio--disabled .ui-radio__dot-indicator {
+  .ui-radio.checked.disabled .indicator {
     background-color: var(--ui-color-primary-300);
   }
 
-  .ui-radio__label {
+  .label {
     padding: 0 8px;
     font-size: var(--ui-font-size-base);
     line-height: 1;

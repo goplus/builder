@@ -44,7 +44,7 @@ function handleToggle() {
   </li>
 </template>
 
-<style>
+<style scoped>
 @layer components {
   .ui-collapse-item + .ui-collapse-item::before {
     content: '';

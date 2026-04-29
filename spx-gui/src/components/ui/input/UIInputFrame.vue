@@ -7,21 +7,21 @@
     :data-disabled="props.disabled || undefined"
     @click="handleRootClick"
   >
-    <div class="ui-input__wrapper">
-      <div v-if="$slots.prefix != null" class="ui-input__prefix">
+    <div class="wrapper">
+      <div v-if="$slots.prefix != null" class="prefix">
         <slot name="prefix"></slot>
       </div>
 
       <!--
         The default slot is expected to render a native <input> or <textarea> directly.
-        Shell-level control styling intentionally targets that structure with `.ui-input__content > input/textarea`
+        Shell-level control styling intentionally targets that structure with `.content > input/textarea`
         so concrete components only own value/behavior logic, not duplicated base input CSS.
       -->
-      <div class="ui-input__content">
+      <div class="content">
         <slot></slot>
       </div>
 
-      <div v-if="$slots.suffix != null" class="ui-input__suffix">
+      <div v-if="$slots.suffix != null" class="suffix">
         <slot name="suffix"></slot>
       </div>
     </div>
@@ -65,11 +65,11 @@ const props = withDefaults(
 )
 
 const rootClass = computed(() => ({
-  'ui-input--textarea': props.textarea,
-  'ui-input--color-default': props.color === 'default',
-  'ui-input--color-white': props.color === 'white',
-  'ui-input--size-medium': props.size === 'medium',
-  'ui-input--size-large': props.size === 'large'
+  textarea: props.textarea,
+  'color-default': props.color === 'default',
+  'color-white': props.color === 'white',
+  'size-medium': props.size === 'medium',
+  'size-large': props.size === 'large'
 }))
 
 function handleRootClick(event: MouseEvent) {
@@ -81,7 +81,7 @@ function handleRootClick(event: MouseEvent) {
 }
 </script>
 
-<style>
+<style scoped>
 /*
  * Shared frame for text-like controls.
  *
@@ -112,25 +112,25 @@ function handleRootClick(event: MouseEvent) {
       box-shadow 0.2s;
   }
 
-  .ui-input--color-default {
+  .ui-input.color-default {
     background: var(--ui-color-grey-300);
     --ui-input-border-color: var(--ui-color-grey-300);
   }
 
-  .ui-input--color-white {
+  .ui-input.color-white {
     background: var(--ui-color-grey-100);
     --ui-input-border-color: var(--ui-color-grey-400);
   }
 
-  .ui-input--size-medium {
+  .ui-input.size-medium {
     height: 32px;
   }
 
-  .ui-input--size-large {
+  .ui-input.size-large {
     height: 40px;
   }
 
-  .ui-input--textarea {
+  .ui-input.textarea {
     min-height: inherit;
     height: auto;
   }
@@ -141,25 +141,25 @@ function handleRootClick(event: MouseEvent) {
    * - hover deepens to grey-400
    * - focus / error / success switch back to white
    */
-  .ui-input--color-default:not(
+  .ui-input.color-default:not(
       :is([data-disabled='true'], [data-ui-state='error'], [data-ui-state='success'], :focus-within)
     ):hover {
     background: var(--ui-color-grey-400);
   }
 
-  .ui-input--color-white:not(
+  .ui-input.color-white:not(
       :is([data-disabled='true'], [data-ui-state='error'], [data-ui-state='success'], :focus-within)
     ):hover {
     background: var(--ui-color-grey-100);
   }
 
-  .ui-input--color-default:not([data-disabled='true']):focus-within,
-  .ui-input--color-default[data-ui-state='error'],
-  .ui-input--color-default[data-ui-state='success'] {
+  .ui-input.color-default:not([data-disabled='true']):focus-within,
+  .ui-input.color-default[data-ui-state='error'],
+  .ui-input.color-default[data-ui-state='success'] {
     background: var(--ui-color-grey-100);
   }
 
-  .ui-input--color-default:is([data-ui-state='error'], [data-ui-state='success']):not(
+  .ui-input.color-default:is([data-ui-state='error'], [data-ui-state='success']):not(
       :is([data-disabled='true'], :focus-within)
     ):hover {
     background: var(--ui-color-grey-400);
@@ -171,7 +171,7 @@ function handleRootClick(event: MouseEvent) {
     color: var(--ui-color-disabled-text);
   }
 
-  .ui-input__wrapper {
+  .wrapper {
     position: relative;
     z-index: 1;
     flex: 1 1 0;
@@ -182,13 +182,13 @@ function handleRootClick(event: MouseEvent) {
     padding: 0 12px;
   }
 
-  .ui-input--textarea .ui-input__wrapper {
+  .ui-input.textarea .wrapper {
     min-height: inherit;
     align-items: stretch;
   }
 
-  .ui-input__prefix,
-  .ui-input__suffix {
+  .prefix,
+  .suffix {
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
@@ -196,32 +196,32 @@ function handleRootClick(event: MouseEvent) {
     color: var(--ui-color-grey-800);
   }
 
-  .ui-input[data-disabled='true'] .ui-input__prefix,
-  .ui-input[data-disabled='true'] .ui-input__suffix {
+  .ui-input[data-disabled='true'] .prefix,
+  .ui-input[data-disabled='true'] .suffix {
     color: var(--ui-color-disabled-text);
   }
 
-  .ui-input__prefix {
+  .prefix {
     margin-right: 8px;
   }
 
-  .ui-input__suffix {
+  .suffix {
     margin-left: 4px;
   }
 
-  .ui-input__content {
+  .content {
     position: relative;
     flex: 1 1 0;
     min-width: 0;
   }
 
-  .ui-input--textarea .ui-input__content {
+  .ui-input.textarea .content {
     display: flex;
     min-height: inherit;
   }
 
-  .ui-input__content > input,
-  .ui-input__content > textarea {
+  .content > :deep(input),
+  .content > :deep(textarea) {
     width: 100%;
     min-width: 0;
     height: inherit;
@@ -237,23 +237,23 @@ function handleRootClick(event: MouseEvent) {
     outline: none;
   }
 
-  .ui-input__content > input:focus,
-  .ui-input__content > textarea:focus {
+  .content > :deep(input:focus),
+  .content > :deep(textarea:focus) {
     outline: none;
   }
 
-  .ui-input__content > input::placeholder,
-  .ui-input__content > textarea::placeholder {
+  .content > :deep(input::placeholder),
+  .content > :deep(textarea::placeholder) {
     color: var(--ui-color-grey-700);
   }
 
-  .ui-input__content > input:disabled,
-  .ui-input__content > textarea:disabled {
+  .content > :deep(input:disabled),
+  .content > :deep(textarea:disabled) {
     cursor: not-allowed;
     color: var(--ui-color-disabled-text);
   }
 
-  .ui-input--textarea .ui-input__content > textarea {
+  .ui-input.textarea .content > :deep(textarea) {
     min-height: inherit;
     height: auto;
     padding-top: 5px;
@@ -262,13 +262,13 @@ function handleRootClick(event: MouseEvent) {
     line-height: 22px;
   }
 
-  .ui-input--size-large.ui-input--textarea .ui-input__content > textarea {
+  .ui-input.size-large.textarea .content > :deep(textarea) {
     padding-top: 8px;
     padding-bottom: 8px;
   }
 
-  .ui-input[data-invalid='true'] .ui-input__content > input,
-  .ui-input[data-invalid='true'] .ui-input__content > textarea {
+  .ui-input[data-invalid='true'] .content > :deep(input),
+  .ui-input[data-invalid='true'] .content > :deep(textarea) {
     text-decoration: line-through;
   }
 
@@ -284,15 +284,15 @@ function handleRootClick(event: MouseEvent) {
     --ui-input-border-color: var(--ui-color-danger-main);
   }
 
-  .ui-input[data-ui-state='error'] .ui-input__content > input,
-  .ui-input[data-ui-state='error'] .ui-input__content > textarea {
+  .ui-input[data-ui-state='error'] .content > :deep(input),
+  .ui-input[data-ui-state='error'] .content > :deep(textarea) {
     caret-color: var(--ui-color-danger-main);
   }
 
-  .ui-input__content > input::-ms-reveal,
-  .ui-input__content > input::-ms-clear,
-  .ui-input__content > input::-webkit-outer-spin-button,
-  .ui-input__content > input::-webkit-inner-spin-button {
+  .content > :deep(input::-ms-reveal),
+  .content > :deep(input::-ms-clear),
+  .content > :deep(input::-webkit-outer-spin-button),
+  .content > :deep(input::-webkit-inner-spin-button) {
     display: none;
     appearance: none;
   }

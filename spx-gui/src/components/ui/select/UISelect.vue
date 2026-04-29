@@ -108,7 +108,7 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-select {
     height: var(--ui-line-height-md);

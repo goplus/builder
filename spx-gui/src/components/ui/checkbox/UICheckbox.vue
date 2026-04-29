@@ -1,14 +1,8 @@
 <template>
-  <label
-    class="ui-checkbox"
-    :class="{
-      'ui-checkbox--checked': checked,
-      'ui-checkbox--disabled': mergedDisabled
-    }"
-  >
+  <label class="ui-checkbox" :class="{ checked, disabled: mergedDisabled }">
     <input
       v-bind="controlBindings"
-      class="ui-checkbox__input"
+      class="input"
       type="checkbox"
       :value="props.value"
       :checked="checked"
@@ -16,15 +10,15 @@
       @change="handleChange"
       @blur="onBlur"
     />
-    <span class="ui-checkbox__box" aria-hidden="true">
-      <svg viewBox="0 0 12 12" class="ui-checkbox__box-icon">
+    <span class="box" aria-hidden="true">
+      <svg viewBox="0 0 12 12" class="icon">
         <path
           d="M9.46967 2.46967C9.76256 2.17678 10.2373 2.17678 10.5302 2.46967C10.823 2.76257 10.8231 3.23736 10.5302 3.53022L5.03022 9.03022C4.73736 9.32307 4.26257 9.323 3.96967 9.03022L1.46967 6.53022C1.17678 6.23732 1.17678 5.76256 1.46967 5.46967C1.76256 5.17678 2.23732 5.17678 2.53022 5.46967L4.49994 7.4394L9.46967 2.46967Z"
           fill="currentColor"
         />
       </svg>
     </span>
-    <span v-if="$slots.default != null" class="ui-checkbox__label">
+    <span v-if="$slots.default != null" class="label">
       <slot></slot>
     </span>
   </label>
@@ -79,7 +73,7 @@ function handleChange(event: Event) {
 }
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-checkbox {
     position: relative;
@@ -90,11 +84,11 @@ function handleChange(event: Event) {
     -webkit-user-select: none;
   }
 
-  .ui-checkbox--disabled {
+  .ui-checkbox.disabled {
     color: var(--ui-color-disabled-text);
   }
 
-  .ui-checkbox__input {
+  .input {
     position: absolute;
     inset: 0;
     border: 0;
@@ -103,11 +97,11 @@ function handleChange(event: Event) {
     z-index: 1;
     cursor: pointer;
   }
-  .ui-checkbox--disabled .ui-checkbox__input {
+  .ui-checkbox.disabled .input {
     cursor: not-allowed;
   }
 
-  .ui-checkbox__box {
+  .box {
     flex: none;
     width: 16px;
     height: 16px;
@@ -123,26 +117,26 @@ function handleChange(event: Event) {
       background-color 0.3s ease,
       color 0.3s ease;
   }
-  .ui-checkbox--disabled .ui-checkbox__box {
+  .ui-checkbox.disabled .box {
     background: var(--ui-color-grey-300);
   }
-  .ui-checkbox:not(.ui-checkbox--disabled):hover .ui-checkbox__box,
-  .ui-checkbox:not(.ui-checkbox--disabled):focus-within .ui-checkbox__box {
+  .ui-checkbox:not(.disabled):hover .box,
+  .ui-checkbox:not(.disabled):focus-within .box {
     border-color: var(--ui-color-primary-main);
   }
-  .ui-checkbox--checked .ui-checkbox__box {
+  .ui-checkbox.checked .box {
     color: var(--ui-color-grey-100);
   }
-  .ui-checkbox--checked:not(.ui-checkbox--disabled) .ui-checkbox__box {
+  .ui-checkbox.checked:not(.disabled) .box {
     border-color: var(--ui-color-primary-main);
     background: var(--ui-color-primary-main);
   }
-  .ui-checkbox--checked.ui-checkbox--disabled .ui-checkbox__box {
+  .ui-checkbox.checked.disabled .box {
     border-color: var(--ui-color-primary-300);
     background: var(--ui-color-primary-300);
   }
 
-  .ui-checkbox__box-icon {
+  .icon {
     width: 12px;
     height: 12px;
     opacity: 0;
@@ -152,12 +146,12 @@ function handleChange(event: Event) {
       opacity 0.3s ease,
       transform 0.3s ease;
   }
-  .ui-checkbox--checked .ui-checkbox__box-icon {
+  .ui-checkbox.checked .icon {
     opacity: 1;
     transform: scale(1);
   }
 
-  .ui-checkbox__label {
+  .label {
     padding: 0 8px;
     font-size: var(--ui-font-size-base);
     line-height: 1;

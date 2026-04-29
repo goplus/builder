@@ -39,7 +39,7 @@ const disabled = computed(() => props.disabled || !!ctx?.disabled)
 const rootClass = computed(() => {
   return cn(
     'ui-menu-item',
-    ctx?.inGroup ? 'ui-menu-item-in-group' : null,
+    ctx?.inGroup ? 'in-group' : null,
     'flex items-center gap-2 rounded-sm px-2 py-2 pr-10 text-grey-1000',
     disabled.value ? 'cursor-not-allowed text-grey-600' : null,
     !disabled.value && props.interactive ? 'cursor-pointer hover:bg-grey-300' : null,
@@ -56,7 +56,7 @@ function handleClick(e: MouseEvent) {
 }
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-menu-item + .ui-menu-item {
     position: relative;
@@ -73,11 +73,11 @@ function handleClick(e: MouseEvent) {
     border-top: 1px solid var(--ui-color-dividing-line-2);
   }
 
-  .ui-menu-item.ui-menu-item-in-group + .ui-menu-item.ui-menu-item-in-group {
+  .ui-menu-item.in-group + .ui-menu-item.in-group {
     margin-top: 0;
   }
 
-  .ui-menu-item.ui-menu-item-in-group + .ui-menu-item.ui-menu-item-in-group::before {
+  .ui-menu-item.in-group + .ui-menu-item.in-group::before {
     display: none;
   }
 }

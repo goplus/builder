@@ -35,7 +35,7 @@ withDefaults(
 )
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-block-item {
     box-sizing: border-box;

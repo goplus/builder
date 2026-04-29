@@ -3,8 +3,8 @@
     v-bind="controlBindings"
     class="ui-switch"
     :class="{
-      'ui-switch--active': checked,
-      'ui-switch--disabled': props.disabled
+      active: checked,
+      disabled: props.disabled
     }"
     role="switch"
     :aria-checked="checked"
@@ -13,8 +13,8 @@
     @click="handleToggle"
     @blur="onBlur"
   >
-    <span class="ui-switch__rail" aria-hidden="true">
-      <span class="ui-switch__button"></span>
+    <span class="rail" aria-hidden="true">
+      <span class="button"></span>
     </span>
   </button>
 </template>
@@ -43,7 +43,7 @@ function handleToggle() {
 }
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-switch {
     --ui-switch-rail-width: 40px;
@@ -71,11 +71,11 @@ function handleToggle() {
     outline: none;
   }
 
-  .ui-switch--disabled {
+  .ui-switch.disabled {
     cursor: not-allowed;
   }
 
-  .ui-switch__rail {
+  .rail {
     position: relative;
     display: block;
     width: var(--ui-switch-rail-width);
@@ -88,10 +88,10 @@ function handleToggle() {
       background-color 0.3s ease,
       box-shadow 0.3s ease;
   }
-  .ui-switch--active .ui-switch__rail {
+  .ui-switch.active .rail {
     background-color: var(--ui-color-primary-main);
   }
-  .ui-switch--disabled .ui-switch__rail {
+  .ui-switch.disabled .rail {
     opacity: 0.5;
   }
   /*
@@ -100,11 +100,11 @@ function handleToggle() {
    * keeps the visual feedback on mouse/pointer focus too, instead of limiting
    * it to keyboard-only `:focus-visible`.
    */
-  .ui-switch:focus .ui-switch__rail {
+  .ui-switch:focus .rail {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-color-primary-main) 20%, transparent);
   }
 
-  .ui-switch__button {
+  .button {
     position: absolute;
     top: var(--ui-switch-offset);
     left: var(--ui-switch-offset);
@@ -124,13 +124,13 @@ function handleToggle() {
       box-shadow 0.3s ease,
       opacity 0.3s ease;
   }
-  .ui-switch:not(.ui-switch--disabled):active .ui-switch__button {
+  .ui-switch:not(.disabled):active .button {
     max-width: var(--ui-switch-button-size-pressed);
   }
-  .ui-switch--active .ui-switch__button {
+  .ui-switch.active .button {
     left: calc(100% - var(--ui-switch-button-size) - var(--ui-switch-offset));
   }
-  .ui-switch--active:not(.ui-switch--disabled):active .ui-switch__button {
+  .ui-switch.active:not(.disabled):active .button {
     left: calc(100% - var(--ui-switch-button-size-pressed) - var(--ui-switch-offset));
   }
 }
