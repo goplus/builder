@@ -762,6 +762,33 @@
         </div>
       </section>
 
+      <section id="ui-message" :class="sectionClass">
+        <div :class="sectionHeaderClass">
+          <h2 :class="sectionTitleClass">UIMessage</h2>
+          <p :class="sectionDescriptionClass">
+            {{
+              $t({
+                en: 'Transient feedback messages for info, success, warning, error, and loading states.',
+                zh: '用于信息、成功、警告、错误和加载态的轻量消息提示。'
+              })
+            }}
+          </p>
+        </div>
+
+        <div :class="showcaseGridClass">
+          <div :class="[surfaceCardClass, 'col-span-full']">
+            <div :class="groupLabelClass">Message Types</div>
+            <div :class="wrapRowClass">
+              <UIButton type="neutral" @click="showMessage('info')">info</UIButton>
+              <UIButton type="neutral" @click="showMessage('success')">success</UIButton>
+              <UIButton type="neutral" @click="showMessage('warning')">warning</UIButton>
+              <UIButton type="neutral" @click="showMessage('error')">error</UIButton>
+              <UIButton type="neutral" @click="handleMessageLoading">loading</UIButton>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="ui-loading" :class="sectionClass">
         <div :class="sectionHeaderClass">
           <h2 :class="sectionTitleClass">UILoading And UIDetailedLoading</h2>
@@ -1003,6 +1030,7 @@ const directoryItems = [
   { id: 'ui-block-items', label: 'UIBlockItem Wrappers' },
   { id: 'gen-item', label: 'GenItem' },
   { id: 'ui-tag', label: 'UITag' },
+  { id: 'ui-message', label: 'UIMessage' },
   { id: 'ui-loading', label: 'UILoading And UIDetailedLoading' },
   { id: 'ui-feedback', label: 'UIEmpty And UIError' }
 ] as const
@@ -1112,5 +1140,18 @@ function handleRetry() {
 
 function handleBack() {
   message.info('back')
+}
+
+function showMessage(type: 'info' | 'success' | 'warning' | 'error') {
+  message[type](`This is a ${type} message.`)
+}
+
+async function handleMessageLoading() {
+  await message.withLoading(
+    new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 1500)
+    }),
+    'Loading message...'
+  )
 }
 </script>
