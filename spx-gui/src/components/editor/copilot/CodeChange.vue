@@ -31,12 +31,7 @@ import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle, ActionException } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
-import {
-  CodeLink,
-  getTextDocumentId,
-  type Range,
-  useCodeEditorRef
-} from '@/components/editor/code-editor/spx-code-editor'
+import { CodeLink, getTextDocumentId, type Range, useCodeEditorRef } from '@/components/editor/spx-code-editor'
 import BlockWrapper from '@/components/copilot/custom-elements/common/BlockWrapper.vue'
 import BlockFooter from '@/components/copilot/custom-elements/common/BlockFooter.vue'
 import BlockActionBtn from '@/components/copilot/custom-elements/common/BlockActionBtn.vue'

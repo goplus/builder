@@ -16,7 +16,7 @@ import {
   textDocumentId2CodeFileName,
   useCodeEditor,
   type TextDocument
-} from '../code-editor/spx-code-editor'
+} from '../spx-code-editor'
 import * as codeLink from './CodeLink'
 import * as codeChange from './CodeChange.vue'
 
