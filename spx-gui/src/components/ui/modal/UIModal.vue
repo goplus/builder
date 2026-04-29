@@ -132,7 +132,6 @@ watch(
 
     const signal = getCleanupSignal(onCleanup)
     const container = await untilNotNull(containerRef, signal)
-    if (!container.isConnected) return
     const focusTarget = getFirstFocusableElement(container)
     if (focusTarget != null) focusTarget.focus()
   },
@@ -163,7 +162,6 @@ watch(
 
     const signal = getCleanupSignal(onCleanUp)
     const container = await untilNotNull(containerRef, signal)
-    if (!container.isConnected) return
 
     const handleKeydown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
@@ -172,9 +170,6 @@ watch(
     }
 
     document.addEventListener('keydown', handleKeydown, { signal })
-    onCleanUp(() => {
-      document.removeEventListener('keydown', handleKeydown)
-    })
   },
   { immediate: true }
 )
@@ -262,7 +257,7 @@ defineExpose({
 })
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-modal-enter-active {
     transition: opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
