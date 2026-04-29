@@ -104,8 +104,7 @@ const attachTo = useModalContainer()
 const containerRef = ref<HTMLElement | undefined>(undefined)
 providePopupContainer(containerRef)
 
-const visible = computed(() => props.visible)
-const modalRegistration = useLayerRegistration(visible)
+const modalRegistration = useLayerRegistration(computed(() => props.visible))
 
 // Modal stack attrs and fallthrough attrs should both live on the surface element:
 // - surfaceRootAttrs marks the actual modal root for stack/popup lookup
@@ -187,31 +186,30 @@ function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventT
 const explicitTransformOrigin = ref<ModalTransformOrigin | null>(null)
 // The final animation origin for the current modal cycle, resolved from the open
 // position and any later explicit override.
-const resolvedTransformOrigin = ref<ModalTransformOrigin | null>(null)
-
+const transformOrigin = ref<ModalTransformOrigin | null>(null)
 // Inline style applied to the teleported modal surface after the final origin has
 // been converted into surface-local coordinates.
 const transformStyle = ref<CSSProperties | null>(null)
-const lastClickEvent = useLastClickEvent()
 
-function setTransformOrigin(origin: ModalTransformOrigin | null) {
+function setExplicitTransformOrigin(origin: ModalTransformOrigin | null) {
   explicitTransformOrigin.value = origin
+  // If a caller overrides the origin while the modal is already open, switch the
+  // current cycle to that explicit origin immediately.
+  if (props.visible && origin != null) {
+    transformOrigin.value = origin
+  }
 }
 
-// If a caller overrides the origin while the modal is already open, switch the
-// current cycle to that explicit origin immediately.
-watch(explicitTransformOrigin, (explicitOrigin) => {
-  if (!visible.value || explicitOrigin == null) return
-  resolvedTransformOrigin.value = explicitOrigin
-})
+const lastClickEvent = useLastClickEvent()
 
 // When a new open cycle starts, capture the origin once: prefer an explicit
 // override if one is already present, otherwise fall back to the last click point.
 watch(
-  visible,
+  () => props.visible,
   (show) => {
-    if (!show) return
-    resolvedTransformOrigin.value = explicitTransformOrigin.value ?? resolveClickOrigin(lastClickEvent.value)
+    if (show) {
+      transformOrigin.value = explicitTransformOrigin.value ?? resolveClickOrigin(lastClickEvent.value)
+    }
   },
   { immediate: true }
 )
@@ -219,19 +217,18 @@ watch(
 // Recompute the inline transform-origin whenever visibility, surface mounting, or
 // the resolved origin changes.
 watch(
-  [visible, containerRef, resolvedTransformOrigin],
-  async ([show, contentEl, resolvedOrigin], _, onCleanup) => {
+  [() => props.visible, containerRef, transformOrigin],
+  async ([show, contentEl, origin], _, onCleanup) => {
     const signal = getCleanupSignal(onCleanup)
-    if (contentEl == null || !contentEl.isConnected || resolvedOrigin == null) {
+    if (!show || contentEl == null || !contentEl.isConnected || origin == null) {
       transformStyle.value = null
       return
     }
-    if (!show) return
     // Wait until the teleported surface has settled into its final layout before measuring.
     await nextTick()
     if (signal.aborted || !contentEl.isConnected) return
     transformStyle.value = {
-      transformOrigin: transformOriginToStyle(contentEl, resolvedOrigin)
+      transformOrigin: transformOriginToStyle(contentEl, origin)
     }
   },
   { immediate: true, flush: 'post' }
@@ -253,7 +250,7 @@ function transformOriginToStyle(contentEl: HTMLElement, origin: ModalTransformOr
 }
 
 defineExpose({
-  setTransformOrigin
+  setTransformOrigin: setExplicitTransformOrigin
 })
 </script>
 
