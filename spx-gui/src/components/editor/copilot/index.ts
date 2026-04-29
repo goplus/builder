@@ -19,6 +19,7 @@ import {
 } from '../spx-code-editor'
 import * as codeLink from './CodeLink'
 import * as codeChange from './CodeChange.vue'
+import CodeBlock from './CodeBlock.vue'
 
 class Retriever {
   constructor(
@@ -278,6 +279,7 @@ export function useSpxEditorCopilot(): void {
   const codeEditor = useCodeEditor()
   const retriever = new Retriever(editorCtx, cloudHelpers)
 
+  d.addDisposer(copilot.registerMarkdownElements({ codeBlock: CodeBlock }))
   d.addDisposer(copilot.registerTool(new GetProjectMetadataTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetProjectContentTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetSpriteContentTool(retriever)))

@@ -487,6 +487,11 @@ export type CustomElementDefinition = {
   component: Component
 }
 
+export type MarkdownElementDefinitions = {
+  /** Component for rendering markdown code blocks. */
+  codeBlock?: Component
+}
+
 export type ToolImplementation = (params: any, signal?: AbortSignal) => Promise<unknown>
 
 export type ToolDefinition = {
@@ -540,6 +545,7 @@ export class Copilot extends Disposable {
   private quickInputProviders: IQuickInputProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
+  markdownElements = shallowReactive<MarkdownElementDefinitions>({})
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
 
   getTools(): ToolDefinition[] {
@@ -752,6 +758,17 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       if (this.customElementMap.get(customElement.tagName) === customElement) {
         this.customElementMap.delete(customElement.tagName)
       }
+    }
+  }
+
+  registerMarkdownElements(elements: MarkdownElementDefinitions): Disposer {
+    Object.assign(this.markdownElements, elements)
+    return () => {
+      Object.entries(elements).forEach(([name, component]) => {
+        const key = name as keyof MarkdownElementDefinitions
+        if (this.markdownElements[key] !== component) return
+        delete this.markdownElements[key]
+      })
     }
   }
 

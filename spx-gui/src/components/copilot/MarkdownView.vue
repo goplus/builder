@@ -11,7 +11,7 @@ function getComponents(copilot: Copilot): Components {
     customComponents[tool.tagName] = tool.component
   })
   return {
-    codeBlock: CodeBlock,
+    codeBlock: copilot.markdownElements.codeBlock ?? CodeBlock,
     custom: customComponents,
     customRaw: customRawComponents
   }
