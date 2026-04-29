@@ -761,10 +761,19 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
   }
 
+  /**
+   * Register renderers for built-in markdown elements.
+   * When the same element is registered multiple times, only the latest registration takes effect.
+   */
   registerMarkdownElements(elements: MarkdownElementDefinitions): Disposer {
-    Object.assign(this.markdownElements, elements)
+    Object.entries(elements).forEach(([name, component]) => {
+      if (component == null) return
+      const key = name as keyof MarkdownElementDefinitions
+      this.markdownElements[key] = component
+    })
     return () => {
       Object.entries(elements).forEach(([name, component]) => {
+        if (component == null) return
         const key = name as keyof MarkdownElementDefinitions
         if (this.markdownElements[key] !== component) return
         delete this.markdownElements[key]

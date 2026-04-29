@@ -27,7 +27,7 @@ const handleCopy = useMessageHandle(
       </CodeView>
     </div>
     <BlockFooter>
-      <slot name="actions"></slot>
+      <slot name="actions" :code="code"></slot>
       <BlockActionBtn icon="copy" @click="handleCopy">
         {{ $t({ en: 'Copy', zh: '复制' }) }}
       </BlockActionBtn>
