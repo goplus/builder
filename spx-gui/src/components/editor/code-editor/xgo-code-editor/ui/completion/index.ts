@@ -208,7 +208,7 @@ export class CompletionController extends Emitter<{
 }
 
 function shouldTriggerCompletion(char: string) {
-  return /[\w."]/.test(char)
+  return /[\p{L}\p{Nd}_."]/u.test(char)
 }
 
 function compareItems(a: InternalCompletionItem, b: InternalCompletionItem) {
