@@ -1,6 +1,6 @@
 <template>
-  <UIDropdownModal
-    v-radar="{ name: 'Duration editor modal', desc: 'Modal for editing animation duration' }"
+  <UIDropdownForm
+    v-radar="{ name: 'Duration editor dropdown form', desc: 'Dropdown form for editing animation duration' }"
     :title="$t(actionName)"
     style="width: 280px"
     @cancel="emit('close')"
@@ -10,13 +10,13 @@
       <template #prefix>{{ $t({ en: 'Duration', zh: '时长' }) }}</template>
       <template #suffix>{{ $t({ en: 's', zh: '秒' }) }}</template>
     </UINumberInput>
-  </UIDropdownModal>
+  </UIDropdownForm>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Animation } from '@/models/spx/animation'
-import { UIDropdownModal, UINumberInput } from '@/components/ui'
+import { UIDropdownForm, UINumberInput } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const props = defineProps<{

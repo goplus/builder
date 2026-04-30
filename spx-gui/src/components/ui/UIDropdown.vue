@@ -46,14 +46,13 @@ export type Props = {
 import { computed, onScopeDispose, provide, ref, useSlots, watch, watchEffect, type CSSProperties } from 'vue'
 import { timeout } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
-import { cn } from './utils'
+import { cn, useLayerRegistration } from './utils'
 import {
   PopupRenderTrigger,
   type PopupTriggerHandle,
   renderPopupTrigger,
   resolveTriggerElement,
-  useFloatingPopup,
-  usePopupRegistration
+  useFloatingPopup
 } from './popup'
 import { usePopupContainer } from './utils'
 
@@ -88,7 +87,7 @@ const internalVisibleRef = ref(false)
 const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
 // Register the dropdown in the shared popup stack so ESC/outside-click logic can
 // reason about the current topmost popup and its live DOM anchors.
-const popup = usePopupRegistration(visibleComputed)
+const popup = useLayerRegistration(visibleComputed)
 const {
   referenceRef: triggerRef,
   floatingRef: contentRef,

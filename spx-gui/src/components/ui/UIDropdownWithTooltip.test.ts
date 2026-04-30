@@ -4,8 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UIDropdownWithTooltip from './UIDropdownWithTooltip.vue'
 import UIConfigProvider from './UIConfigProvider.vue'
 import UIModal from './modal/UIModal.vue'
-import { providePopupStack } from './popup'
-import { providePopupContainer } from './utils'
+import { UI_LAYER_ROOT_ATTR, provideLayerStack, providePopupContainer } from './utils'
 
 const floatingMocks = vi.hoisted(() => {
   return {
@@ -33,7 +32,7 @@ const PopupProvider = defineComponent({
   setup(_, { slots }) {
     const popupContainer = ref<HTMLElement>()
     providePopupContainer(popupContainer)
-    providePopupStack()
+    provideLayerStack()
 
     return () => h('div', [slots.default?.(), h('div', { ref: popupContainer, 'data-test-id': 'popup-container' })])
   }
@@ -98,8 +97,8 @@ describe('UIDropdownWithTooltip', () => {
     expect(popupContainer.text()).toContain('Dropdown content')
     expect(popupContainer.text()).not.toContain('Tooltip content')
 
-    const dropdownRoot = Array.from(document.body.querySelectorAll('[data-ui-popup-root]')).find((el) =>
-      el.textContent?.includes('Dropdown content')
+    const dropdownRoot = Array.from(document.body.querySelectorAll<HTMLElement>(`[${UI_LAYER_ROOT_ATTR}]`)).find(
+      (el) => el.textContent?.includes('Dropdown content') && el.style.visibility === 'visible'
     )
     expect(dropdownRoot).toBeInstanceOf(HTMLElement)
     expect((dropdownRoot as HTMLElement).style.visibility).toBe('visible')
@@ -143,16 +142,16 @@ describe('UIDropdownWithTooltip', () => {
     await vi.advanceTimersByTimeAsync(600)
     await flushPopup()
 
-    const tooltipRoot = Array.from(document.body.querySelectorAll('[data-ui-popup-root]')).find((el) =>
-      el.textContent?.includes('Tooltip content')
+    const tooltipRoot = Array.from(document.body.querySelectorAll<HTMLElement>(`[${UI_LAYER_ROOT_ATTR}]`)).find(
+      (el) => el.textContent?.includes('Tooltip content') && el.style.visibility === 'visible'
     )
     expect(tooltipRoot).toBeInstanceOf(HTMLElement)
     expect((tooltipRoot as HTMLElement).style.visibility).toBe('visible')
     ;(trigger as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await flushPopup()
 
-    const dropdownRoot = Array.from(document.body.querySelectorAll('[data-ui-popup-root]')).find((el) =>
-      el.textContent?.includes('Dropdown content')
+    const dropdownRoot = Array.from(document.body.querySelectorAll<HTMLElement>(`[${UI_LAYER_ROOT_ATTR}]`)).find(
+      (el) => el.textContent?.includes('Dropdown content') && el.style.visibility === 'visible'
     )
     expect(dropdownRoot).toBeInstanceOf(HTMLElement)
     expect((dropdownRoot as HTMLElement).style.visibility).toBe('visible')

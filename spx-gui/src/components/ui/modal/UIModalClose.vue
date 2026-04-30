@@ -1,6 +1,6 @@
 <template>
   <div v-radar="{ name: 'Close button', desc: 'Click to close the modal' }" :class="rootClass">
-    <UIIcon type="close" :class="iconClass" />
+    <UIIcon type="close" :class="size === 'large' ? 'h-6 w-6' : 'h-5 w-5'" />
   </div>
 </template>
 
@@ -27,5 +27,4 @@ const rootClass = computed(() =>
     props.class
   )
 )
-const iconClass = computed(() => (props.size === 'large' ? 'h-6 w-6' : 'h-5 w-5'))
 </script>

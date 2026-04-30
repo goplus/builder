@@ -3,6 +3,7 @@ export { default as UICard } from './UICard.vue'
 export { default as UICardHeader } from './UICardHeader.vue'
 export { default as UIButton } from './UIButton.vue'
 export { default as UIDropdown, type Pos as DropdownPos } from './UIDropdown.vue'
+export { default as UIDropdownForm } from './UIDropdownForm.vue'
 export { default as UITooltip } from './UITooltip.vue'
 export { UIMenu, UIMenuGroup, UIMenuItem } from './menu'
 export { default as UIIcon, type Type as IconType } from './icons/UIIcon.vue'
@@ -37,7 +38,7 @@ export { default as UIButtonGroup } from './UIButtonGroup.vue'
 export { default as UIButtonGroupItem } from './UIButtonGroupItem.vue'
 export { default as UIDropdownWithTooltip } from './UIDropdownWithTooltip.vue'
 export {
-  isInPopup,
+  isInPopupOrModal,
   provideRootContainer,
   providePopupContainer,
   provideModalContainer,

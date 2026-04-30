@@ -9,7 +9,7 @@
         zh: '将造型合并为动画'
       })
     "
-    :body-style="{ padding: '0' }"
+    body-class="p-0"
     @update:visible="emit('cancelled')"
   >
     <div class="min-h-119 max-h-150 flex">

@@ -64,8 +64,7 @@ type NativeNumberInputFocusEvent = FocusEvent & {
  * - clearable number input UI
  * - +/- step buttons and hold-to-step interactions
  *
- * If any of those become product requirements later, extend the derivation pipeline here
- * instead of re-introducing `naive-ui`.
+ * If any of those become product requirements later, extend the derivation pipeline here.
  */
 
 const props = withDefaults(

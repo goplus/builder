@@ -1,6 +1,6 @@
 import { type InjectionKey, provide, type Ref, inject, ref, watchEffect } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
-import { findPopupRoot } from '../popup/stack'
+import { findLayerRoot } from './layer-stack'
 export { cn, type ClassDictionary, type ClassValue } from './cn'
 export {
   createRecipe,
@@ -11,6 +11,17 @@ export {
   type RecipeConfig,
   type RecipeResult
 } from './create-recipe'
+export {
+  UI_LAYER_ROOT_ATTR,
+  createLayerStack,
+  findLayerRoot,
+  provideLayerStack,
+  useLayerRegistration,
+  useLayerStack,
+  type LayerEntry,
+  type LayerRegistration,
+  type LayerStack
+} from './layer-stack'
 
 const rootContainerInjectionKey: InjectionKey<Ref<HTMLElement | undefined>> = Symbol('root-container')
 
@@ -54,16 +65,9 @@ export function useModalContainer() {
   return modalContainer
 }
 
-/** If given target in any popup content */
-export function isInPopup(target: HTMLElement | null) {
-  if (findPopupRoot(target) != null) return true
-
-  let el = target
-  while (el != null) {
-    if (el.classList.contains('n-modal')) return true
-    el = el.parentElement
-  }
-  return false
+/** If given target in any popup/modal content */
+export function isInPopupOrModal(target: HTMLElement | null) {
+  return findLayerRoot(target) != null
 }
 
 const lastClickEventKey: InjectionKey<Ref<MouseEvent | null>> = Symbol('last-click-event')
