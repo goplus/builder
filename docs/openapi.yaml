@@ -1517,74 +1517,6 @@ paths:
               schema:
                 type: integer
 
-  /workflow/stream/message:
-    post:
-      tags:
-        - Workflow
-      summary: Generate a stream message from workflow
-      description: |
-        Generate a stream message by sending a list of input messages.
-
-        #### Quota & rate limits
-
-        - Each workflow execution may consume multiple quotas from the authenticated user's allowance.
-        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
-        - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
-          time in seconds.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - messages
-              properties:
-                messages:
-                  description: Input messages.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotMessage"
-                  examples:
-                    - - role: user
-                        content:
-                          type: text
-                          text: Hello, world!
-                tools:
-                  description: Use Mcp tools.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CopilotTool"
-                  examples:
-                    - - type: function
-                        function:
-                          name: create_project
-                          description: Create a new project.
-                          parameters: { "name": "My Project" }
-                workflow:
-                  description: Environment variables of the workflow.
-                  $ref: "#/components/schemas/Workflow"
-      responses:
-        "201":
-          description: Stream Message successfully generated.
-          content:
-            application/stream:
-        "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
-        "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
-
   /ai/description:
     post:
       tags:
@@ -1628,6 +1560,15 @@ paths:
                       onStart => {
                         // ...
                       }
+                knowledge:
+                  description: Optional background knowledge used to ground project description generation.
+                  type: string
+                  maxLength: 120000
+                  examples:
+                    - |
+                      # About spx
+
+                      spx is a Scratch-like 2D Game Engine for STEM education.
       responses:
         "200":
           description: Successfully generated AI description.
@@ -3375,16 +3316,6 @@ components:
               type: object
               examples:
                 - { "name": "NiuXiaoQi" }
-
-    Workflow:
-      description: Workflow configuration for copilot execution.
-      type: object
-      properties:
-        env:
-          description: Environment variables of the workflow.
-          type: object
-          examples:
-            - { "reference_id": "275" }
 
     AIInteractionTurn:
       description: Single turn in an AI interaction session.

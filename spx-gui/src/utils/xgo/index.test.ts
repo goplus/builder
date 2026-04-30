@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest'
-import { normalizeXGoIdentifierAssetName } from '.'
+import { describe, expect, it } from 'vitest'
+
+import { getXGoLanguageSkillFiles, normalizeXGoIdentifierAssetName } from '.'
+
+describe('getXGoLanguageSkillFiles', () => {
+  it('gets bundled XGo language skill files', () => {
+    const files = getXGoLanguageSkillFiles()
+
+    expect(Object.keys(files).sort()).toEqual(['SKILL.md', 'references/syntax.md'])
+    expect(files['SKILL.md']).toContain('name: xgo-language')
+    expect(files['references/syntax.md']).toContain('# XGo Syntax Cheatsheet')
+  })
+})
 
 describe('normalizeXGoIdentifierAssetName', () => {
   it('should work well with camel case', () => {

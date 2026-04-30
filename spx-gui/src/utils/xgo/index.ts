@@ -3,6 +3,8 @@
  * @desc definition or helpers for xgo language
  */
 
+import { mapKeys } from 'lodash'
+
 import { unicodeSafeSlice, upFirst } from '../utils'
 import type { LocaleMessage } from '../i18n'
 
@@ -95,4 +97,18 @@ export function normalizeXGoIdentifierAssetName(src: string, cas: 'camel' | 'pas
   // 50 should be enough, it will be hard to read with too long name
   // TODO: should we move the truncation to outer layer?
   return unicodeSafeSlice(result, 0, 50)
+}
+
+export const xgoLanguageSkillName = 'xgo-language'
+
+const skillFiles = import.meta.glob('./skills/xgo-language/**/*.md', {
+  eager: true,
+  query: '?raw',
+  import: 'default'
+}) as Record<string, string>
+
+/** Get bundled XGo language skill files. */
+export function getXGoLanguageSkillFiles(): Record<string, string> {
+  const prefixLen = './skills/xgo-language/'.length
+  return mapKeys(skillFiles, (_, path) => path.slice(prefixLen))
 }
