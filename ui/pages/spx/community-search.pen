@@ -23,7 +23,7 @@
           "id": "0VKUq",
           "type": "ref",
           "ref": "t:sKPE5",
-          "x": 0.0001936356535040689,
+          "x": 0,
           "y": 0,
           "children": [
             {
@@ -350,7 +350,7 @@
           "id": "us4P7",
           "type": "ref",
           "ref": "t:sKPE5",
-          "x": 0.0001936356535040689,
+          "x": 0,
           "y": 0,
           "children": [
             {
@@ -454,7 +454,7 @@
               "name": "content",
               "clip": true,
               "width": 1440,
-              "height": 793.2197958407676,
+              "height": 793,
               "fill": "$t:grey300",
               "layout": "vertical",
               "justifyContent": "center",
