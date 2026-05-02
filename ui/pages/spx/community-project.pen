@@ -24,7 +24,7 @@
           "id": "xUIs2",
           "type": "ref",
           "ref": "m:sKPE5",
-          "x": 0.0001936356535040689,
+          "x": 0,
           "y": 0,
           "children": [
             {
@@ -39,9 +39,10 @@
           "id": "D1KNC",
           "name": "Main Content Card",
           "fill": "$m:grey100",
-          "cornerRadius": 16,
+          "cornerRadius": "$m:radius-4",
           "gap": 40,
-          "padding": 20,
+          "padding": "$m:space-5",
+          "justifyContent": "center",
           "children": [
             {
               "type": "frame",
@@ -49,7 +50,7 @@
               "name": "Left Column",
               "width": 744,
               "layout": "vertical",
-              "gap": 12,
+              "gap": "$m:space-3",
               "justifyContent": "center",
               "alignItems": "center",
               "children": [
@@ -90,7 +91,7 @@
                             "m:WEgxF": {
                               "content": "Run",
                               "x": 36,
-                              "y": 5.006055476592931,
+                              "y": 5.006055476592933,
                               "rotation": 0.026683455116293515
                             }
                           }
@@ -137,7 +138,7 @@
               "name": "Right Column",
               "width": 416,
               "layout": "vertical",
-              "gap": 16,
+              "gap": "$m:space-4",
               "children": [
                 {
                   "id": "zClKQ",
@@ -179,7 +180,7 @@
           "name": "Community Liking Section",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 16,
+          "gap": "$m:space-4",
           "justifyContent": "center",
           "alignItems": "center",
           "children": [
@@ -187,7 +188,7 @@
               "type": "frame",
               "id": "lBsFY",
               "name": "Section Header",
-              "width": 1240,
+              "width": 1224,
               "justifyContent": "space_between",
               "alignItems": "center",
               "children": [
@@ -230,11 +231,26 @@
                       ]
                     },
                     {
-                      "id": "9uk2e",
+                      "id": "CgMQg",
                       "type": "ref",
-                      "ref": "m:8TV3Z",
-                      "fontSize": 20,
-                      "fill": "$m:turquoise500"
+                      "ref": "m:bW00p",
+                      "x": 0,
+                      "y": 0,
+                      "children": [
+                        {
+                          "id": "H7LHW",
+                          "type": "ref",
+                          "ref": "m:R1pbv",
+                          "children": [
+                            {
+                              "id": "rHD2Y",
+                              "type": "ref",
+                              "ref": "m:KuyD8",
+                              "fill": "$m:turquoise500"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 }
@@ -244,14 +260,14 @@
               "type": "frame",
               "id": "nxf2P",
               "name": "Grid",
-              "gap": 16,
+              "gap": "$m:space-4",
               "children": [
                 {
                   "id": "kGp9M",
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 0,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "dIf8S",
@@ -265,7 +281,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 248,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "tRCem",
@@ -279,7 +295,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 496,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "8fjeW",
@@ -293,7 +309,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 744,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "B4Tkn",
@@ -307,7 +323,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 992,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "0jY01",
@@ -331,7 +347,7 @@
       "width": 1440,
       "fill": "$m:grey100",
       "layout": "vertical",
-      "gap": 20,
+      "gap": "$m:space-5",
       "padding": [
         0,
         0,
@@ -344,7 +360,7 @@
           "id": "1Mas9",
           "type": "ref",
           "ref": "m:sKPE5",
-          "x": 0.00018589109107464483,
+          "x": 0,
           "y": 0,
           "children": [
             {
@@ -394,7 +410,7 @@
           "id": "7d8Ei",
           "type": "ref",
           "ref": "m:sKPE5",
-          "x": 0.0001936356535040689,
+          "x": 0,
           "y": 0,
           "children": [
             {
@@ -411,7 +427,8 @@
           "fill": "$m:grey100",
           "cornerRadius": 16,
           "gap": 40,
-          "padding": 20,
+          "padding": "$m:space-5",
+          "justifyContent": "center",
           "children": [
             {
               "type": "frame",
@@ -419,7 +436,7 @@
               "name": "Left Column",
               "width": 744,
               "layout": "vertical",
-              "gap": 12,
+              "gap": "$m:space-3",
               "justifyContent": "center",
               "alignItems": "center",
               "children": [
@@ -447,7 +464,7 @@
                       "type": "ref",
                       "ref": "m:Yg1nD",
                       "x": 242,
-                      "y": 194.95590397593705,
+                      "y": 194.45590414579723,
                       "rotation": 0,
                       "children": [
                         {
@@ -497,7 +514,7 @@
               "name": "Right Column",
               "width": 416,
               "layout": "vertical",
-              "gap": 16,
+              "gap": "$m:space-4",
               "children": [
                 {
                   "id": "VWkHI",
@@ -539,7 +556,7 @@
           "name": "Community Liking Section",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 16,
+          "gap": "$m:space-4",
           "justifyContent": "center",
           "alignItems": "center",
           "children": [
@@ -547,7 +564,7 @@
               "type": "frame",
               "id": "gagdz",
               "name": "Section Header",
-              "width": 1240,
+              "width": 1224,
               "justifyContent": "space_between",
               "alignItems": "center",
               "children": [
@@ -568,20 +585,20 @@
                 },
                 {
                   "type": "frame",
-                  "id": "Qt7po",
+                  "id": "Y4sdtA",
                   "name": "ViewAllWrapper",
                   "gap": 4,
                   "alignItems": "center",
                   "children": [
                     {
-                      "id": "onW6O",
+                      "id": "VqEvf",
                       "type": "ref",
                       "ref": "m:tfxWX",
                       "x": 0,
                       "y": 0,
                       "children": [
                         {
-                          "id": "kaV5o",
+                          "id": "VaKnV",
                           "type": "ref",
                           "ref": "m:0rSuk",
                           "content": "View all",
@@ -590,11 +607,26 @@
                       ]
                     },
                     {
-                      "id": "bNz9M",
+                      "id": "Me5lL",
                       "type": "ref",
-                      "ref": "m:8TV3Z",
-                      "fontSize": 20,
-                      "fill": "$m:turquoise500"
+                      "ref": "m:bW00p",
+                      "x": 0,
+                      "y": 0,
+                      "children": [
+                        {
+                          "id": "mhTlx",
+                          "type": "ref",
+                          "ref": "m:R1pbv",
+                          "children": [
+                            {
+                              "id": "KVOv9",
+                              "type": "ref",
+                              "ref": "m:KuyD8",
+                              "fill": "$m:turquoise500"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 }
@@ -604,14 +636,14 @@
               "type": "frame",
               "id": "TZrpy",
               "name": "Grid",
-              "gap": 16,
+              "gap": "$m:space-4",
               "children": [
                 {
                   "id": "UAqZW",
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 0,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "2k3Ou",
@@ -625,7 +657,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 248,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "XgdY1",
@@ -639,7 +671,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 496,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "fHeUB",
@@ -653,7 +685,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 744,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "yG6eQ",
@@ -667,7 +699,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 992,
-                  "y": 5.682361148043719e-14,
+                  "y": 0,
                   "children": [
                     {
                       "id": "YbM9a",
@@ -683,7 +715,6 @@
       ]
     }
   ],
-  "themes": {},
   "imports": {
     "m": "../../components/spx/builder-component.lib.pen"
   }

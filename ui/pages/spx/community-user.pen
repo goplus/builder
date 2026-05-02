@@ -6,7 +6,7 @@
       "id": "mNWuo",
       "x": 1540,
       "y": 6,
-      "name": "page",
+      "name": "Personal homepage",
       "width": 1440,
       "fill": "$j:grey300",
       "layout": "vertical",
@@ -35,211 +35,16 @@
           ]
         },
         {
-          "type": "frame",
-          "id": "nVnHD",
-          "name": "userheader",
-          "clip": true,
-          "fill": "$j:grey100",
-          "cornerRadius": 20,
-          "layout": "vertical",
+          "id": "d4PoHP",
+          "type": "ref",
+          "ref": "j:uyN2t",
+          "x": 100,
+          "y": 77.33137141238818,
           "children": [
             {
-              "type": "group",
-              "id": "t4zSy",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "xeHjm",
-                  "x": 0,
-                  "y": 0,
-                  "name": "UserHeader",
-                  "width": 1240,
-                  "height": 200,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "../../images/user-bg.png",
-                    "mode": "fill"
-                  },
-                  "layout": "none"
-                },
-                {
-                  "type": "frame",
-                  "id": "khtmH",
-                  "x": 0,
-                  "y": 124,
-                  "name": "HeaderContent",
-                  "width": 1240,
-                  "gap": 20,
-                  "padding": [
-                    0,
-                    20,
-                    20,
-                    20
-                  ],
-                  "justifyContent": "center",
-                  "alignItems": "end",
-                  "children": [
-                    {
-                      "type": "ellipse",
-                      "id": "y4WPw",
-                      "name": "Avatar",
-                      "fill": {
-                        "type": "image",
-                        "enabled": true,
-                        "url": "../../images/avatar.png",
-                        "mode": "fill"
-                      },
-                      "width": 152,
-                      "height": 152,
-                      "stroke": {
-                        "thickness": 2,
-                        "fill": "$j:grey100"
-                      }
-                    },
-                    {
-                      "type": "frame",
-                      "id": "OxuIU",
-                      "name": "Content",
-                      "rotation": 0.031157614378122738,
-                      "width": "fill_container",
-                      "gap": 100,
-                      "justifyContent": "center",
-                      "alignItems": "end",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "oTBVe",
-                          "name": "Info",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 12,
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "V0acK",
-                              "name": "Frame 1000004675",
-                              "clip": true,
-                              "width": 452,
-                              "gap": 16,
-                              "alignItems": "end",
-                              "children": [
-                                {
-                                  "id": "LTkNP",
-                                  "type": "ref",
-                                  "ref": "j:tfxWX",
-                                  "x": 0.0152264820725523,
-                                  "y": 0,
-                                  "rotation": -0.03115761437812273,
-                                  "children": [
-                                    {
-                                      "id": "6LNWG",
-                                      "type": "ref",
-                                      "ref": "j:Lm2P8",
-                                      "content": "Christiantsai"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "moe2r",
-                                  "name": "Frame 1000004676",
-                                  "clip": true,
-                                  "gap": 4,
-                                  "justifyContent": "center",
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "id": "aGQ86",
-                                      "type": "ref",
-                                      "ref": "j:Bj8fQ",
-                                      "rotation": -0.03115761437812273,
-                                      "descendants": {
-                                        "j:TSC5e": {
-                                          "fill": "$j:grey700",
-                                          "fontSize": 14
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "id": "zsIeG",
-                                      "type": "ref",
-                                      "ref": "j:tfxWX",
-                                      "x": 18.017399623745654,
-                                      "y": 0,
-                                      "rotation": -0.031157614378122724,
-                                      "children": [
-                                        {
-                                          "id": "ZJ5rs",
-                                          "type": "ref",
-                                          "ref": "j:qjr9H",
-                                          "fill": "$j:grey700",
-                                          "content": "Joined November 2025"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "id": "Br5bZ",
-                              "type": "ref",
-                              "ref": "j:tfxWX",
-                              "x": 0.009788452760926476,
-                              "y": 40.065796014567574,
-                              "rotation": -0.03115761437812272,
-                              "children": [
-                                {
-                                  "id": "JDZu6",
-                                  "type": "ref",
-                                  "ref": "j:qjr9H",
-                                  "fill": "$j:grey800",
-                                  "content": "All the world's a stage, and all the men and women merely players. They have their exits and their entrances;"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "j38yF",
-                          "name": "button-default",
-                          "rotation": -0.03115761437812273,
-                          "clip": true,
-                          "width": "fit_content(0)",
-                          "height": "fit_content(0)",
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "id": "bT1kH",
-                              "type": "ref",
-                              "ref": "j:0onmu",
-                              "x": 0,
-                              "y": 0,
-                              "width": "fit_content",
-                              "descendants": {
-                                "j:u4Nmq": {
-                                  "fill": "$j:turquoise500",
-                                  "width": "fit_content"
-                                },
-                                "j:awuls": {
-                                  "enabled": false
-                                },
-                                "j:ynnQK": {
-                                  "content": "Edit profile",
-                                  "x": 16
-                                }
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
+              "id": "A8lwG",
+              "type": "ref",
+              "ref": "j:gqX4A"
             }
           ]
         },
@@ -248,13 +53,13 @@
           "id": "rkxVC",
           "name": "Main",
           "width": 1240,
-          "gap": 20,
+          "gap": "$j:space-5",
           "children": [
             {
               "id": "8R5mW",
               "type": "ref",
               "ref": "j:qli5Z",
-              "x": 0.7024092379903313,
+              "x": 0,
               "y": 0,
               "children": [
                 {
@@ -270,7 +75,7 @@
               "name": "Content",
               "width": "fill_container",
               "layout": "vertical",
-              "gap": 20,
+              "gap": "$j:space-5",
               "children": [
                 {
                   "type": "frame",
@@ -278,10 +83,10 @@
                   "name": "ProjectsSection",
                   "width": "fill_container",
                   "fill": "$j:grey100",
-                  "cornerRadius": 20,
+                  "cornerRadius": "$j:radius-2",
                   "layout": "vertical",
-                  "gap": 8,
-                  "padding": 16,
+                  "gap": "$j:space-2",
+                  "padding": "$j:space-4",
                   "children": [
                     {
                       "type": "frame",
@@ -330,11 +135,23 @@
                               ]
                             },
                             {
-                              "id": "eh5wU",
+                              "id": "lvKov",
                               "type": "ref",
-                              "ref": "j:8TV3Z",
-                              "fontSize": 20,
-                              "fill": "$j:turquoise500"
+                              "ref": "j:bW00p",
+                              "x": 55,
+                              "y": 3,
+                              "children": [
+                                {
+                                  "id": "ijIKe",
+                                  "type": "ref",
+                                  "ref": "j:R1pbv",
+                                  "descendants": {
+                                    "j:KuyD8": {
+                                      "fill": "$j:turquoise500"
+                                    }
+                                  }
+                                }
+                              ]
                             }
                           ]
                         }
@@ -345,14 +162,14 @@
                       "id": "JrX4n",
                       "name": "ProjectsGrid",
                       "width": "fill_container",
-                      "gap": 16,
+                      "gap": "$j:space-4",
                       "children": [
                         {
                           "id": "mKFmz",
                           "type": "ref",
                           "ref": "j:m6A5K",
                           "x": 0,
-                          "y": 5.688236350192498e-14,
+                          "y": 0,
                           "children": [
                             {
                               "id": "9D3iC",
@@ -365,8 +182,8 @@
                           "id": "eX6be",
                           "type": "ref",
                           "ref": "j:m6A5K",
-                          "x": 248.2398733313504,
-                          "y": 5.688236350192498e-14,
+                          "x": 248,
+                          "y": 0,
                           "children": [
                             {
                               "id": "gG5C5",
@@ -379,8 +196,8 @@
                           "id": "TCXcx",
                           "type": "ref",
                           "ref": "j:m6A5K",
-                          "x": 496.4797466627008,
-                          "y": 5.688236350192498e-14,
+                          "x": 496,
+                          "y": 0,
                           "children": [
                             {
                               "id": "nSVqM",
@@ -393,8 +210,8 @@
                           "id": "MhSTn",
                           "type": "ref",
                           "ref": "j:m6A5K",
-                          "x": 744.7196199940512,
-                          "y": 5.688236350192498e-14,
+                          "x": 744,
+                          "y": 0,
                           "children": [
                             {
                               "id": "28Ifx",
@@ -413,10 +230,10 @@
                   "name": "ProjectsSection",
                   "width": "fill_container",
                   "fill": "$j:grey100",
-                  "cornerRadius": 20,
+                  "cornerRadius": "$j:radius-2",
                   "layout": "vertical",
-                  "gap": 8,
-                  "padding": 16,
+                  "gap": "$j:space-2",
+                  "padding": "$j:space-4",
                   "children": [
                     {
                       "type": "frame",
@@ -465,11 +282,23 @@
                               ]
                             },
                             {
-                              "id": "pXLcW",
+                              "id": "wkwzi",
                               "type": "ref",
-                              "ref": "j:8TV3Z",
-                              "fontSize": 20,
-                              "fill": "$j:turquoise500"
+                              "ref": "j:bW00p",
+                              "x": 55,
+                              "y": 3,
+                              "children": [
+                                {
+                                  "id": "kf1Gs",
+                                  "type": "ref",
+                                  "ref": "j:R1pbv",
+                                  "descendants": {
+                                    "j:KuyD8": {
+                                      "fill": "$j:turquoise500"
+                                    }
+                                  }
+                                }
+                              ]
                             }
                           ]
                         }
@@ -480,14 +309,14 @@
                       "id": "PgDpO",
                       "name": "ProjectsGrid",
                       "width": "fill_container",
-                      "gap": 16,
+                      "gap": "$j:space-4",
                       "children": [
                         {
                           "id": "7R67b",
                           "type": "ref",
                           "ref": "j:m6A5K",
                           "x": 0,
-                          "y": 5.688236350192498e-14,
+                          "y": 0,
                           "children": [
                             {
                               "id": "NIu6g",
@@ -500,8 +329,8 @@
                           "id": "vQ6Y0",
                           "type": "ref",
                           "ref": "j:m6A5K",
-                          "x": 248.2398733313504,
-                          "y": 5.688236350192498e-14,
+                          "x": 248,
+                          "y": 0,
                           "children": [
                             {
                               "id": "YqHMz",
@@ -514,8 +343,8 @@
                           "id": "vWinl",
                           "type": "ref",
                           "ref": "j:m6A5K",
-                          "x": 496.4797466627008,
-                          "y": 5.688236350192498e-14,
+                          "x": 496,
+                          "y": 0,
                           "children": [
                             {
                               "id": "9XfNT",
@@ -528,8 +357,8 @@
                           "id": "tdCua",
                           "type": "ref",
                           "ref": "j:m6A5K",
-                          "x": 744.7196199940512,
-                          "y": 5.688236350192498e-14,
+                          "x": 744,
+                          "y": 0,
                           "children": [
                             {
                               "id": "awftL",
@@ -549,7 +378,6 @@
       ]
     }
   ],
-  "themes": {},
   "imports": {
     "j": "../../components/spx/builder-component.lib.pen"
   }

@@ -32,7 +32,7 @@
           "layout": "vertical",
           "gap": 32,
           "padding": [
-            20,
+            "$r:space-5",
             0,
             40,
             0
@@ -157,7 +157,7 @@
               "width": 988,
               "height": 314,
               "layout": "vertical",
-              "gap": 8,
+              "gap": "$r:space-2",
               "children": [
                 {
                   "type": "frame",
@@ -207,16 +207,21 @@
                           ]
                         },
                         {
-                          "id": "wHDlw",
+                          "id": "z0Zfj",
                           "type": "ref",
-                          "ref": "r:29TuH",
-                          "x": 78,
-                          "y": 2,
+                          "ref": "r:bW00p",
+                          "x": 75,
+                          "y": 3,
                           "children": [
                             {
-                              "id": "Wz0RM",
+                              "id": "VRKyf",
                               "type": "ref",
-                              "ref": "r:8TV3Z"
+                              "ref": "r:R1pbv",
+                              "descendants": {
+                                "r:KuyD8": {
+                                  "fill": "$r:turquoise500"
+                                }
+                              }
                             }
                           ]
                         }
@@ -228,19 +233,19 @@
                   "type": "frame",
                   "id": "QoacQ",
                   "name": "Grid",
-                  "gap": 20,
+                  "gap": "$r:space-5",
                   "children": [
                     {
                       "id": "7TWAP",
                       "type": "ref",
                       "ref": "r:Yg1nD",
                       "x": 0,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "acl9J",
@@ -253,13 +258,13 @@
                       "id": "tbUsd",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 252.2398733313504,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 252,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "ZiGts",
@@ -272,13 +277,13 @@
                       "id": "wYhTZ",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 504.4797466627008,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 504,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "HZIl1",
@@ -291,13 +296,13 @@
                       "id": "Lp1Zw",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 756.7196199940512,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 756,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "uDcHO",
@@ -316,7 +321,7 @@
               "name": "Section Remixing",
               "width": 988,
               "layout": "vertical",
-              "gap": 8,
+              "gap": "$r:space-2",
               "children": [
                 {
                   "type": "frame",
@@ -366,16 +371,21 @@
                           ]
                         },
                         {
-                          "id": "VLmeD",
+                          "id": "zEEOW",
                           "type": "ref",
-                          "ref": "r:29TuH",
-                          "x": 78,
-                          "y": 2,
+                          "ref": "r:bW00p",
+                          "x": 75,
+                          "y": 3,
                           "children": [
                             {
-                              "id": "64n7b",
+                              "id": "wjUCT",
                               "type": "ref",
-                              "ref": "r:8TV3Z"
+                              "ref": "r:R1pbv",
+                              "descendants": {
+                                "r:KuyD8": {
+                                  "fill": "$r:turquoise500"
+                                }
+                              }
                             }
                           ]
                         }
@@ -387,19 +397,19 @@
                   "type": "frame",
                   "id": "WFMW4",
                   "name": "Grid",
-                  "gap": 20,
+                  "gap": "$r:space-5",
                   "children": [
                     {
                       "id": "eiVnl",
                       "type": "ref",
                       "ref": "r:Yg1nD",
                       "x": 0,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "Nqy8m",
@@ -412,13 +422,13 @@
                       "id": "1Wbpp",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 252.2398733313504,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 252,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "GMm4s",
@@ -431,13 +441,13 @@
                       "id": "QWKb3",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 504.4797466627008,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 504,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "MKnk8",
@@ -450,13 +460,13 @@
                       "id": "KF1T3",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 756.7196199940512,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 756,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "F44dA",
@@ -475,7 +485,7 @@
               "name": "Section Remixing",
               "width": 988,
               "layout": "vertical",
-              "gap": 8,
+              "gap": "$r:space-2",
               "children": [
                 {
                   "type": "frame",
@@ -525,16 +535,21 @@
                           ]
                         },
                         {
-                          "id": "zxL71",
+                          "id": "QVEy0",
                           "type": "ref",
-                          "ref": "r:29TuH",
-                          "x": 78,
-                          "y": 2,
+                          "ref": "r:bW00p",
+                          "x": 75,
+                          "y": 3,
                           "children": [
                             {
-                              "id": "fMGYA",
+                              "id": "oHlBb",
                               "type": "ref",
-                              "ref": "r:8TV3Z"
+                              "ref": "r:R1pbv",
+                              "descendants": {
+                                "r:KuyD8": {
+                                  "fill": "$r:turquoise500"
+                                }
+                              }
                             }
                           ]
                         }
@@ -546,19 +561,19 @@
                   "type": "frame",
                   "id": "Xr7Ls",
                   "name": "Grid",
-                  "gap": 20,
+                  "gap": "$r:space-5",
                   "children": [
                     {
                       "id": "HJ4WR",
                       "type": "ref",
                       "ref": "r:Yg1nD",
                       "x": 0,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "FAvOq",
@@ -571,13 +586,13 @@
                       "id": "EaWbM",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 252.2398733313504,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 252,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "IFgk8",
@@ -590,13 +605,13 @@
                       "id": "dm98F",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 504.4797466627008,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 504,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "wvKXd",
@@ -609,13 +624,13 @@
                       "id": "IjyYN",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 756.7196199940512,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 756,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "sotWN",
@@ -647,7 +662,7 @@
           "id": "l4jLT",
           "type": "ref",
           "ref": "r:sKPE5",
-          "x": 0.00019363565361775573,
+          "x": 0,
           "y": 0,
           "children": [
             {
@@ -665,7 +680,7 @@
           "layout": "vertical",
           "gap": 32,
           "padding": [
-            20,
+            "$r:space-5",
             0,
             40,
             0
@@ -678,7 +693,7 @@
               "name": "Section Liking",
               "width": 988,
               "layout": "vertical",
-              "gap": 8,
+              "gap": "$r:space-2",
               "children": [
                 {
                   "type": "frame",
@@ -728,16 +743,21 @@
                           ]
                         },
                         {
-                          "id": "ALWxw",
+                          "id": "aJSs2",
                           "type": "ref",
-                          "ref": "r:29TuH",
-                          "x": 78,
-                          "y": 2,
+                          "ref": "r:bW00p",
+                          "x": 75,
+                          "y": 3,
                           "children": [
                             {
-                              "id": "xG096",
+                              "id": "FDHR3",
                               "type": "ref",
-                              "ref": "r:8TV3Z"
+                              "ref": "r:R1pbv",
+                              "descendants": {
+                                "r:KuyD8": {
+                                  "fill": "$r:turquoise500"
+                                }
+                              }
                             }
                           ]
                         }
@@ -749,19 +769,19 @@
                   "type": "frame",
                   "id": "jmPVd",
                   "name": "Grid",
-                  "gap": 20,
+                  "gap": "$r:space-5",
                   "children": [
                     {
                       "id": "b5cbz",
                       "type": "ref",
                       "ref": "r:Yg1nD",
                       "x": 0,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "wpX4A",
@@ -774,9 +794,9 @@
                       "id": "DUFIP",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 252.2398733313504,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 252,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
                       "width": "fit_content",
@@ -793,13 +813,13 @@
                       "id": "fsYdz",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 504.4797466627008,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 504,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "H2Rdq",
@@ -812,13 +832,13 @@
                       "id": "DgXPh",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 756.7196199940512,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 756,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "GY1V4",
@@ -837,7 +857,7 @@
               "name": "Section Liking",
               "width": 988,
               "layout": "vertical",
-              "gap": 8,
+              "gap": "$r:space-2",
               "children": [
                 {
                   "type": "frame",
@@ -887,16 +907,21 @@
                           ]
                         },
                         {
-                          "id": "bX7YE",
+                          "id": "MdEz0",
                           "type": "ref",
-                          "ref": "r:29TuH",
-                          "x": 78,
-                          "y": 2,
+                          "ref": "r:bW00p",
+                          "x": 75,
+                          "y": 3,
                           "children": [
                             {
-                              "id": "gndyg",
+                              "id": "tnAHl",
                               "type": "ref",
-                              "ref": "r:8TV3Z"
+                              "ref": "r:R1pbv",
+                              "descendants": {
+                                "r:KuyD8": {
+                                  "fill": "$r:turquoise500"
+                                }
+                              }
                             }
                           ]
                         }
@@ -908,19 +933,19 @@
                   "type": "frame",
                   "id": "GxPBb",
                   "name": "Grid",
-                  "gap": 20,
+                  "gap": "$r:space-5",
                   "children": [
                     {
                       "id": "rQBTf",
                       "type": "ref",
                       "ref": "r:Yg1nD",
                       "x": 0,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "a7avB",
@@ -933,13 +958,13 @@
                       "id": "SogIN",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 252.2398733313504,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 252,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "BRhDV",
@@ -952,13 +977,13 @@
                       "id": "ArnM5",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 504.4797466627008,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 504,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "DOEnf",
@@ -971,13 +996,13 @@
                       "id": "TjiH1",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 756.7196199940512,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 756,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "Zr3mF",
@@ -996,7 +1021,7 @@
               "name": "Section Remixing",
               "width": 988,
               "layout": "vertical",
-              "gap": 8,
+              "gap": "$r:space-2",
               "children": [
                 {
                   "type": "frame",
@@ -1046,16 +1071,21 @@
                           ]
                         },
                         {
-                          "id": "P6pGe",
+                          "id": "uaeqS",
                           "type": "ref",
-                          "ref": "r:29TuH",
-                          "x": 78,
-                          "y": 2,
+                          "ref": "r:bW00p",
+                          "x": 75,
+                          "y": 3,
                           "children": [
                             {
-                              "id": "fvt10",
+                              "id": "XtZBh",
                               "type": "ref",
-                              "ref": "r:8TV3Z"
+                              "ref": "r:R1pbv",
+                              "descendants": {
+                                "r:KuyD8": {
+                                  "fill": "$r:turquoise500"
+                                }
+                              }
                             }
                           ]
                         }
@@ -1067,19 +1097,19 @@
                   "type": "frame",
                   "id": "8FboG",
                   "name": "Grid",
-                  "gap": 20,
+                  "gap": "$r:space-5",
                   "children": [
                     {
                       "id": "bB3qS",
                       "type": "ref",
                       "ref": "r:Yg1nD",
                       "x": 0,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "nk7D1",
@@ -1092,13 +1122,13 @@
                       "id": "tPqc2",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 252.2398733313504,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 252,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "Twr0I",
@@ -1111,13 +1141,13 @@
                       "id": "Tuo7X",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 504.4797466627008,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 504,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "C4R3k",
@@ -1130,13 +1160,13 @@
                       "id": "frXvh",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 756.7196199940512,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 756,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "UBaDJ",
@@ -1155,7 +1185,7 @@
               "name": "Section Remixing",
               "width": 988,
               "layout": "vertical",
-              "gap": 8,
+              "gap": "$r:space-2",
               "children": [
                 {
                   "type": "frame",
@@ -1205,16 +1235,21 @@
                           ]
                         },
                         {
-                          "id": "wcA0z",
+                          "id": "Pit46",
                           "type": "ref",
-                          "ref": "r:29TuH",
-                          "x": 78,
-                          "y": 2,
+                          "ref": "r:bW00p",
+                          "x": 75,
+                          "y": 3,
                           "children": [
                             {
-                              "id": "3fZLw",
+                              "id": "C5oK8",
                               "type": "ref",
-                              "ref": "r:8TV3Z"
+                              "ref": "r:R1pbv",
+                              "descendants": {
+                                "r:KuyD8": {
+                                  "fill": "$r:turquoise500"
+                                }
+                              }
                             }
                           ]
                         }
@@ -1226,19 +1261,19 @@
                   "type": "frame",
                   "id": "n8GZg",
                   "name": "Grid",
-                  "gap": 20,
+                  "gap": "$r:space-5",
                   "children": [
                     {
                       "id": "DEErA",
                       "type": "ref",
                       "ref": "r:Yg1nD",
                       "x": 0,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "ItCJl",
@@ -1251,13 +1286,13 @@
                       "id": "uHj6H",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 252.2398733313504,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 252,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "jBBzy",
@@ -1270,13 +1305,13 @@
                       "id": "Rf10f",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 504.4797466627008,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 504,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "xIxKm",
@@ -1289,13 +1324,13 @@
                       "id": "PynZ6",
                       "type": "ref",
                       "ref": "r:Yg1nD",
-                      "x": 756.7196199940512,
-                      "y": 5.688236350192498e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "x": 756,
+                      "y": 0,
+                      "rotation": 0,
                       "flipX": false,
                       "flipY": false,
-                      "width": "fit_content(232.23987333135034)",
-                      "height": "fit_content(254.21907811367538)",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "children": [
                         {
                           "id": "qHEY3",
@@ -1313,7 +1348,6 @@
       ]
     }
   ],
-  "themes": {},
   "imports": {
     "r": "../../components/spx/builder-component.lib.pen"
   }
