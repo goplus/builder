@@ -8,7 +8,7 @@
       "y": -112.99999999999989,
       "name": "page",
       "width": 1440,
-      "fill": "$2:grey100",
+      "fill": "$2:grey300",
       "layout": "vertical",
       "padding": [
         0,
@@ -23,7 +23,7 @@
           "id": "IXY42",
           "type": "ref",
           "ref": "2:sKPE5",
-          "x": 0.00019363565361775573,
+          "x": 0.0001936356535040689,
           "y": 0,
           "children": [
             {
@@ -41,7 +41,7 @@
           "width": 1440,
           "fill": "$2:grey300",
           "layout": "vertical",
-          "gap": 20,
+          "gap": "$2:space-5",
           "justifyContent": "center",
           "alignItems": "center",
           "children": [
@@ -73,7 +73,7 @@
                       "type": "ref",
                       "ref": "2:tfxWX",
                       "x": 0,
-                      "y": 18.908992239232298,
+                      "y": 19.907360582425405,
                       "children": [
                         {
                           "id": "Rmaxe",
@@ -116,7 +116,7 @@
                           "id": "lMP5h",
                           "type": "ref",
                           "ref": "2:elraQ",
-                          "x": 162,
+                          "x": 166,
                           "y": 0,
                           "children": [
                             {
@@ -138,7 +138,7 @@
                           "id": "kO3hS",
                           "type": "ref",
                           "ref": "2:elraQ",
-                          "x": 337,
+                          "x": 345,
                           "y": 0,
                           "children": [
                             {
@@ -166,7 +166,7 @@
               "type": "frame",
               "id": "4cSa8",
               "name": "Grid",
-              "gap": 16,
+              "gap": "$2:space-4",
               "children": [
                 {
                   "id": "B6Yfo",
@@ -189,7 +189,7 @@
                   "id": "q5qCu",
                   "type": "ref",
                   "ref": "2:Yg1nD",
-                  "x": 248.2398733313504,
+                  "x": 248,
                   "y": 0,
                   "rotation": 0,
                   "children": [
@@ -204,7 +204,7 @@
                   "id": "Ejz6r",
                   "type": "ref",
                   "ref": "2:Yg1nD",
-                  "x": 496.4797466627008,
+                  "x": 496,
                   "y": 0,
                   "rotation": 0,
                   "children": [
@@ -219,7 +219,7 @@
                   "id": "YbRl1",
                   "type": "ref",
                   "ref": "2:Yg1nD",
-                  "x": 744.7196199940512,
+                  "x": 744,
                   "y": 0,
                   "rotation": 0,
                   "children": [
@@ -236,7 +236,7 @@
               "type": "frame",
               "id": "NytXi",
               "name": "Grid",
-              "gap": 16,
+              "gap": "$2:space-4",
               "children": [
                 {
                   "id": "3h7NN",
@@ -257,7 +257,7 @@
                   "id": "XdEEx",
                   "type": "ref",
                   "ref": "2:Yg1nD",
-                  "x": 248.2398733313504,
+                  "x": 248,
                   "y": 0,
                   "rotation": 0,
                   "children": [
@@ -272,7 +272,7 @@
                   "id": "JFylt",
                   "type": "ref",
                   "ref": "2:Yg1nD",
-                  "x": 496.4797466627008,
+                  "x": 496,
                   "y": 0,
                   "rotation": 0,
                   "children": [
@@ -287,7 +287,7 @@
                   "id": "a1HMt",
                   "type": "ref",
                   "ref": "2:Yg1nD",
-                  "x": 744.7196199940513,
+                  "x": 744,
                   "y": 0,
                   "rotation": 0,
                   "children": [
@@ -305,7 +305,6 @@
       ]
     }
   ],
-  "themes": {},
   "imports": {
     "2": "../../components/spx/builder-component.lib.pen"
   }
