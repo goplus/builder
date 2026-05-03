@@ -957,8 +957,8 @@ describe('builder-component.lib.pen', () => {
     const text = readPenText(LibraryPath)
     const iconFonts = new Map(pen.fonts?.map((font) => [font.name, font.url]))
 
-    expect(iconFonts.get('XBuilder_Icons_01')).toBe('../../images/xbuilder-newicons-01.ttf')
-    expect(iconFonts.get('XBuilder_Icons_02')).toBe('../../images/xbuilder-newicons-02.ttf')
+    expect(iconFonts.get('XBuilder_NewIcons_01')).toBe('../../images/xbuilder-newicons-01.ttf')
+    expect(iconFonts.get('XBuilder_NewIcons_02')).toBe('../../images/xbuilder-newicons-02.ttf')
     expect(text).not.toContain('"url": "../../images/xbuilder-icons-01.ttf"')
     expect(text).not.toContain('"url": "../../images/xbuilder-icons-02.ttf"')
   })
