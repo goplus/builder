@@ -274,8 +274,8 @@ function readShadowEffectPreset(path: string, preset: keyof typeof ExpectedPenSh
 
   return {
     color: readDefaultColorVariable(pen, `${variablePrefix}-color`),
-    x: readDefaultNumberVariable(pen, `${variablePrefix}-offset-x`),
-    y: readDefaultNumberVariable(pen, `${variablePrefix}-offset-y`),
+    x: readDefaultNumberVariableOrZero(pen, `${variablePrefix}-offset-x`),
+    y: readDefaultNumberVariableOrZero(pen, `${variablePrefix}-offset-y`),
     blur: readDefaultNumberVariable(pen, `${variablePrefix}-blur`),
     ...(preset === 'surfaceStrong' ? { spread: readDefaultNumberVariable(pen, `${variablePrefix}-spread`) } : {})
   }
@@ -325,6 +325,17 @@ function readDefaultNumberVariable(pen: PenDocument, variableName: string) {
 
   if (typeof defaultEntry?.value !== 'number') throw new Error(`Missing default number variable ${variableName}`)
   return defaultEntry.value
+}
+
+function readDefaultNumberVariableOrZero(pen: PenDocument, variableName: string) {
+  const entries = pen.variables?.[variableName]?.value ?? []
+  const defaultEntry = entries.find((entry) => {
+    if (entry.theme == null) return true
+    return Object.values(entry.theme).every((value) => value === 'Default')
+  })
+
+  if (typeof defaultEntry?.value === 'number') return defaultEntry.value
+  return 0
 }
 
 function readDefaultStringVariable(pen: PenDocument, variableName: string) {
