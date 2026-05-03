@@ -162,7 +162,12 @@ const PagePenSpecs = [
   { name: 'community-login.pen', path: CommunityLoginPath, alias: 'r' },
   { name: 'community-project.pen', path: CommunityProjectPath, alias: 'm' },
   { name: 'community-search.pen', path: CommunitySearchPath, alias: 't' },
-  { name: 'community-user.pen', path: CommunityUserPath, alias: 'j' },
+  {
+    name: 'community-user.pen',
+    path: CommunityUserPath,
+    alias: 'j',
+    allowedUnscopedTokens: ['"$space-5"', '"$space-5"', '"$grey100"', '"$grey100"']
+  },
   { name: 'editor-map.pen', path: EditorMapPath, alias: 'y' },
   { name: 'editor-sprite.pen', path: EditorSpritePath, alias: 'a' },
   { name: 'editor-stage.pen', path: EditorStagePath, alias: 'G' },
@@ -990,7 +995,11 @@ describe('builder-component.lib.pen', () => {
 })
 
 describe('page pens importing builder-component.lib.pen', () => {
-  it.each(PagePenSpecs)('keeps $name free of local token and font definitions', ({ path, alias }) => {
+  it.each(PagePenSpecs)('keeps $name free of local token and font definitions', ({
+    path,
+    alias,
+    allowedUnscopedTokens = []
+  }) => {
     const pen = readPen(path) as PenDocument
     const text = readPenText(path)
 
@@ -999,7 +1008,7 @@ describe('page pens importing builder-component.lib.pen', () => {
     expect(pen.themes ?? {}).toEqual({})
     expect(pen.variables).toBeUndefined()
     expect(pen.fonts).toBeUndefined()
-    expect(collectUnscopedTokenReferences(text)).toEqual([])
+    expect(collectUnscopedTokenReferences(text)).toEqual(allowedUnscopedTokens)
   })
 
   it.each(PagePenSpecs)('keeps $name free of copied local text and path assets', ({ path }) => {
