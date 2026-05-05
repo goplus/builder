@@ -53,7 +53,7 @@
           "id": "rkxVC",
           "name": "Main",
           "width": 1240,
-          "gap": "$space-5",
+          "gap": "$j:space-5",
           "children": [
             {
               "id": "8R5mW",
@@ -75,14 +75,14 @@
               "name": "Content",
               "width": "fill_container",
               "layout": "vertical",
-              "gap": "$space-5",
+              "gap": "$j:space-5",
               "children": [
                 {
                   "type": "frame",
                   "id": "wqCGQ",
                   "name": "ProjectsSection",
                   "width": "fill_container",
-                  "fill": "$grey100",
+                  "fill": "$j:grey100",
                   "cornerRadius": "$j:radius-2",
                   "layout": "vertical",
                   "gap": "$j:space-2",
@@ -229,7 +229,7 @@
                   "id": "8KEoW",
                   "name": "ProjectsSection",
                   "width": "fill_container",
-                  "fill": "$grey100",
+                  "fill": "$j:grey100",
                   "cornerRadius": "$j:radius-2",
                   "layout": "vertical",
                   "gap": "$j:space-2",
