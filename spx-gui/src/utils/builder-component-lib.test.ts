@@ -542,9 +542,7 @@ function collectForbiddenPenNodeNameIssues(node: unknown, issues: string[] = [])
   const penNode = node as PenNode
   if (typeof penNode.name === 'string') {
     const nodeName = penNode.name
-    const hasForbiddenName = ForbiddenPenNodeNames.includes(
-      nodeName as (typeof ForbiddenPenNodeNames)[number]
-    )
+    const hasForbiddenName = ForbiddenPenNodeNames.includes(nodeName as (typeof ForbiddenPenNodeNames)[number])
     const hasForbiddenPattern = ForbiddenPenNodeNamePatterns.some((pattern) => pattern.test(nodeName))
     const hasWhitespaceIssue = /\t| {2,}|^ | $/.test(nodeName)
 
