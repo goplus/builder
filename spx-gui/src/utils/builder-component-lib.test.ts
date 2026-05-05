@@ -140,20 +140,147 @@ const ExpectedPenShadowEffectPresets = {
 
 const SurfaceShadowComponentNames = [
   'editor-api-reference-code-panel',
-  'Notification/Success',
-  'Notification/Info',
-  'Notification/Warning',
-  'Notification/Error',
-  'Message/Saving',
-  'Message/Error',
-  'Message/Info',
-  'Message/Warning',
-  'Message/Success',
-  'Message/LongInfo',
-  'CornerMenu',
+  'Notification/Toast/Success',
+  'Notification/Toast/Info',
+  'Notification/Toast/Warning',
+  'Notification/Toast/Error',
+  'Message/Status/Saving',
+  'Message/Status/Error',
+  'Message/Status/Info',
+  'Message/Status/Warning',
+  'Message/Status/Success',
+  'Message/Status/LongInfo',
+  'Menu/Corner/Default',
+  'Menu/Corner/DefaultAlt',
   'Expand list',
   'list/expand-list'
 ] as const
+const P0LegacyReusableNames = [
+  'NavigationBar',
+  'Logo',
+  'Logo/App/LogIn',
+  'pagination-item-default',
+  'pagination-item-hover',
+  'pagination-item-active',
+  'pagination-item-ellipsis',
+  'pagination-default',
+  'pagination-multi',
+  'pagination-4',
+  'pagination-prev-default',
+  'pagination-prev-active',
+  'pagination-prev-disabled',
+  'pagination-next-default',
+  'pagination-next-active',
+  'pagination-next-disabled',
+  'CombinationTab',
+  'RadioGroup',
+  'Tooltip',
+  'Switch',
+  'Tag',
+  'Componet',
+  'DataDisplay',
+  'EditorLeft',
+  'MardownFont',
+  'CodeLine'
+] as const
+const P0ExpectedReusableNames = [
+  'Nav/TopBar/Default',
+  'Logo/XBuilder/Default',
+  'Logo/App/Login',
+  'Pagination/Item/Default',
+  'Pagination/Item/Hover',
+  'Pagination/Item/Active',
+  'Pagination/Item/Ellipsis',
+  'Pagination/Control/Default',
+  'Pagination/Control/MultiPage',
+  'Pagination/Control/FourPage',
+  'Pagination/PrevButton/Default',
+  'Pagination/PrevButton/Active',
+  'Pagination/PrevButton/Disabled',
+  'Pagination/NextButton/Default',
+  'Pagination/NextButton/Active',
+  'Pagination/NextButton/Disabled',
+  'Tabs/Combined/Default',
+  'Input/RadioGroup/Default',
+  'Overlay/Tooltip/Default',
+  'Input/Switch/Default',
+  'DataDisplay/Tag/Default',
+  'Component/Reference/Default',
+  'DataDisplay/Panel/Default',
+  'Editor/Sidebar/Default',
+  'Typography/Markdown/Default',
+  'Code/Line/Default'
+] as const
+const P1ExpectedNodeNames = {
+  D4l6Dn: 'Label',
+  zovCP: 'Label',
+  CHG3T: 'LabelGroup',
+  UTWX3: 'LabelGroup',
+  F4CjY: 'LabelGroup',
+  WOuN6: 'LabelGroup',
+  wb2fC: 'LabelGroup',
+  vnQBA: 'Root',
+  GccHR: 'Leading',
+  oCgUD: 'Divider',
+  TLKzm: 'Trailing',
+  WxMd6: 'Search',
+  Yef5k: 'Avatar',
+  cF6Xv: 'Root',
+  SF6Hy: 'Leading',
+  i8I5k3: 'Divider',
+  y0Jn9: 'Trailing',
+  H6ly9: 'Search',
+  p72xZ0: 'PrimaryAction',
+  BxaNZ: 'Divider',
+  s7YuQh: 'LabelGroup',
+  Q95By: 'Search',
+  fZwVV: 'PrimaryAction',
+  AviqE: 'Divider',
+  Aoesu: 'LabelGroup',
+  mQTew: 'Actions',
+  v8o0e: 'Avatar',
+  kk5TK: 'LabelGroup',
+  XH2iW: 'Actions'
+} as const
+const P2ExpectedNodeNames = {
+  Nf0mh: 'Wordmark',
+  Wf2kM: 'Glyph',
+  DZhwW: 'icon/language',
+  zA2WJ: 'Wordmark',
+  oPOhE: 'Glyph',
+  pQlJZ: 'icon/language',
+  npZEm: 'Wordmark',
+  j5xG8d: 'Glyph',
+  nuNB4: 'Wordmark',
+  rnrZ3: 'Glyph',
+  o13S2g: 'Wordmark',
+  m0XNj: 'Glyph',
+  w4rEN: 'Docs/Pagination/Items',
+  Fa8zb: 'Docs/Pagination/Controls',
+  owokt: 'Component'
+} as const
+const ForbiddenPenNodeNames = [
+  'Frame',
+  'Container',
+  'Text',
+  '左',
+  '右',
+  'line',
+  'User Avatar',
+  'nav-actions-group',
+  'IconSlot',
+  'TopRightButtonArea',
+  'LeftContent',
+  'icon/langurage',
+  'icon/pubilsh-colorful',
+  'union1',
+  'union',
+  'componet',
+  'Componet',
+  'MardownFont',
+  'Mardown'
+] as const
+const ForbiddenPenNodeNamePatterns = [/Tutorail/i, /APIReferece/i, /inputing/i, /confim/i, /Notifacation/i, /Crad/i]
 const UiTextAssetExtensions = new Set(['.pen', '.json', '.html', '.md'])
 const LegacyFontMarkers = ['Alibaba Health Font 2.0 CN', 'AlibabaHealthFont2.0CN-85B.ttf', 'Source Han Sans SC VF']
 const PagePenSpecs = [
@@ -403,6 +530,47 @@ function collectNodeNames(node: unknown, names: string[] = []) {
 
   for (const value of Object.values(penNode)) collectNodeNames(value, names)
   return names
+}
+
+function collectForbiddenPenNodeNameIssues(node: unknown, issues: string[] = []) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectForbiddenPenNodeNameIssues(item, issues)
+    return issues
+  }
+  if (node == null || typeof node !== 'object') return issues
+
+  const penNode = node as PenNode
+  if (typeof penNode.name === 'string') {
+    const nodeName = penNode.name
+    const hasForbiddenName = ForbiddenPenNodeNames.includes(
+      nodeName as (typeof ForbiddenPenNodeNames)[number]
+    )
+    const hasForbiddenPattern = ForbiddenPenNodeNamePatterns.some((pattern) => pattern.test(nodeName))
+    const hasWhitespaceIssue = /\t| {2,}|^ | $/.test(nodeName)
+
+    if (hasForbiddenName || hasForbiddenPattern || hasWhitespaceIssue) {
+      issues.push(`${penNode.id ?? '<missing-id>'}: ${nodeName}`)
+    }
+  }
+
+  for (const value of Object.values(penNode)) collectForbiddenPenNodeNameIssues(value, issues)
+  return issues
+}
+
+function collectDefaultNumberedPenNodeNameIssues(node: unknown, issues: string[] = []) {
+  if (Array.isArray(node)) {
+    for (const item of node) collectDefaultNumberedPenNodeNameIssues(item, issues)
+    return issues
+  }
+  if (node == null || typeof node !== 'object') return issues
+
+  const penNode = node as PenNode
+  if (typeof penNode.name === 'string' && /^(?:Frame|Group|Rectangle) \d+$/.test(penNode.name)) {
+    issues.push(`${penNode.id ?? '<missing-id>'}: ${penNode.name}`)
+  }
+
+  for (const value of Object.values(penNode)) collectDefaultNumberedPenNodeNameIssues(value, issues)
+  return issues
 }
 
 function collectNodeTypes(node: unknown, nodeTypes = new Map<string, number>()) {
@@ -919,6 +1087,47 @@ describe('builder-component.lib.pen', () => {
         'Card/StateItem/StepDefault'
       ])
     )
+  })
+
+  it('uses scoped names for selected reusable component roots scheduled in the P0 migration batch', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const names = collectNodeNames(libraryBundle)
+    const legacyNames = names.filter((name) =>
+      P0LegacyReusableNames.includes(name as (typeof P0LegacyReusableNames)[number])
+    )
+
+    expect(legacyNames).toEqual([])
+    expect(names).toEqual(expect.arrayContaining([...P0ExpectedReusableNames]))
+  })
+
+  it('uses role-based structural names for selected P1 frame and slot nodes', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const nodesById = collectNodesById(libraryBundle)
+
+    for (const [id, expectedName] of Object.entries(P1ExpectedNodeNames)) {
+      const node = nodesById.get(id)
+      expect(node, `Missing node ${id}`).toBeDefined()
+      expect(node?.name).toBe(expectedName)
+    }
+  })
+
+  it('cleans up selected P2 typo and primitive names', () => {
+    const libraryBundle = readPenBundle(LibraryPath)
+    const nodesById = collectNodesById(libraryBundle)
+
+    for (const [id, expectedName] of Object.entries(P2ExpectedNodeNames)) {
+      const node = nodesById.get(id)
+      expect(node, `Missing node ${id}`).toBeDefined()
+      expect(node?.name).toBe(expectedName)
+    }
+  })
+
+  it('keeps node names free of forbidden structure words, typos, and stray whitespace', () => {
+    expect(collectForbiddenPenNodeNameIssues(readPenBundle(LibraryPath))).toEqual([])
+  })
+
+  it('keeps node names free of default numbered Figma names', () => {
+    expect(collectDefaultNumberedPenNodeNameIssues(readPenBundle(LibraryPath))).toEqual([])
   })
 
   it('uses PascalCase CornerMarker vocabulary for corner marker assets', () => {
