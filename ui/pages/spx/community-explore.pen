@@ -22,16 +22,9 @@
         {
           "id": "IXY42",
           "type": "ref",
-          "ref": "2:sKPE5",
+          "ref": "2:F2SlL",
           "x": 0,
-          "y": 0,
-          "children": [
-            {
-              "id": "TFeR8",
-              "type": "ref",
-              "ref": "2:ZFyMf"
-            }
-          ]
+          "y": 0
         },
         {
           "type": "frame",
