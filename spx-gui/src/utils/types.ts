@@ -1,33 +1,93 @@
-import { type AllowedComponentProps, type ObjectEmitsOptions, type VNodeProps } from 'vue'
+import { type AllowedComponentProps, type EmitFn, type VNodeProps } from 'vue'
 
-// copied from vue source code
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never
 
-// copied from vue source code
-type EmitFn<Options = ObjectEmitsOptions, Event extends keyof Options = keyof Options> =
-  Options extends Array<infer V>
-    ? (event: V, ...args: any[]) => void
-    : {} extends Options
-      ? (event: string, ...args: any[]) => void
-      : UnionToIntersection<
-          {
-            [key in Event]: Options[key] extends (...args: infer Args) => any
-              ? (event: key, ...args: Args) => void
-              : Options[key] extends any[]
-                ? (event: key, ...args: Options[key]) => void
-                : (event: key, ...args: any[]) => void
-          }[Event]
-        >
+// At most 8 overloads (event names) are supported, which should be enough for most use cases.
+// TypeScript doesn't support infinite overloads, and supporting too many overloads can cause performance issues.
+type OverloadedParameters<T> = T extends {
+  (...args: infer A1): any
+  (...args: infer A2): any
+  (...args: infer A3): any
+  (...args: infer A4): any
+  (...args: infer A5): any
+  (...args: infer A6): any
+  (...args: infer A7): any
+  (...args: infer A8): any
+}
+  ? A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8
+  : T extends {
+        (...args: infer A1): any
+        (...args: infer A2): any
+        (...args: infer A3): any
+        (...args: infer A4): any
+        (...args: infer A5): any
+        (...args: infer A6): any
+        (...args: infer A7): any
+      }
+    ? A1 | A2 | A3 | A4 | A5 | A6 | A7
+    : T extends {
+          (...args: infer A1): any
+          (...args: infer A2): any
+          (...args: infer A3): any
+          (...args: infer A4): any
+          (...args: infer A5): any
+          (...args: infer A6): any
+        }
+      ? A1 | A2 | A3 | A4 | A5 | A6
+      : T extends {
+            (...args: infer A1): any
+            (...args: infer A2): any
+            (...args: infer A3): any
+            (...args: infer A4): any
+            (...args: infer A5): any
+          }
+        ? A1 | A2 | A3 | A4 | A5
+        : T extends {
+              (...args: infer A1): any
+              (...args: infer A2): any
+              (...args: infer A3): any
+              (...args: infer A4): any
+            }
+          ? A1 | A2 | A3 | A4
+          : T extends {
+                (...args: infer A1): any
+                (...args: infer A2): any
+                (...args: infer A3): any
+              }
+            ? A1 | A2 | A3
+            : T extends {
+                  (...args: infer A1): any
+                  (...args: infer A2): any
+                }
+              ? A1 | A2
+              : T extends (...args: infer A) => any
+                ? A
+                : never
+
+type EmitParamsToEmits<Params> = Params extends [infer Event, ...infer Args]
+  ? Event extends PropertyKey
+    ? string extends Event
+      ? never
+      : number extends Event
+        ? never
+        : symbol extends Event
+          ? never
+          : { [K in Event]: Args }
+    : never
+  : never
+
+/** Convert an Emit function type to an emits object type. Inverse operation of `EmitFn`. */
+type EmitFnToEmitsObject<T> = Prettify<UnionToIntersection<EmitParamsToEmits<OverloadedParameters<T>>>>
 
 /** Vue Component type with given props type & emits type */
-export type ComponentDefinition<Props, Emits extends Record<string, any[]>> = {
+export type ComponentDefinition<Props, Emits> = {
   new (): {
     $props: Props
     $emit: EmitFn<Emits>
   }
 }
 
-type ShortEmitsToProps<Emits extends Record<string, any[]>> = {
+type ShortEmitsToProps<Emits extends Record<string, any>> = {
   [K in `on${Capitalize<string & keyof Emits>}`]?: K extends `on${infer C}`
     ? (
         ...args: Emits[Uncapitalize<C>] extends (...args: infer P) => any
@@ -45,10 +105,17 @@ type ShortEmitsToProps<Emits extends Record<string, any[]>> = {
  * - Props from Vue internal, like `class`, `style`
  * - Props of VNode, like `key`, `ref`
  */
-export type PruneProps<Props, Emits extends Record<string, any[]>> = Omit<
-  Props,
-  keyof ShortEmitsToProps<Emits> | keyof VNodeProps | keyof AllowedComponentProps
+export type PruneProps<Props, Emits extends Record<string, any>> = Prettify<
+  Omit<Props, keyof ShortEmitsToProps<Emits> | keyof VNodeProps | keyof AllowedComponentProps>
 >
+
+/** Get the emits (object) type of a Vue component. */
+export type EmitsForComponent<C> = C extends { new (): { $emit: infer Emit } } ? EmitFnToEmitsObject<Emit> : never
+
+/** Get the props type of a Vue component, excluding emits-generated props and internal props. */
+export type PropsForComponent<C> = C extends { new (): { $props: infer Props; $emit: infer Emit } }
+  ? PruneProps<Props, EmitFnToEmitsObject<Emit>>
+  : never
 
 /** Prettify a type to make it more readable in IDEs */
 export type Prettify<T> = { [K in keyof T]: T[K] } & {}
