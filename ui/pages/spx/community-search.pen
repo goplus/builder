@@ -20,16 +20,16 @@
       "alignItems": "center",
       "children": [
         {
-          "id": "0VKUq",
+          "id": "stYWm",
           "type": "ref",
-          "ref": "t:sKPE5",
+          "ref": "t:WiWwa",
           "x": 0,
           "y": 0,
           "children": [
             {
-              "id": "otTab",
+              "id": "fYG5L",
               "type": "ref",
-              "ref": "t:1jllZ"
+              "ref": "t:O7syE"
             }
           ]
         },
@@ -43,7 +43,6 @@
           "fill": "$t:grey300",
           "layout": "vertical",
           "gap": "$t:space-5",
-          "justifyContent": "center",
           "alignItems": "center",
           "children": [
             {
@@ -298,29 +297,16 @@
               ]
             },
             {
-              "type": "frame",
-              "id": "hRLlE",
-              "name": "pagination",
-              "width": "fill_container",
-              "cornerRadius": 8,
-              "gap": "$t:space-2",
-              "padding": 16,
-              "justifyContent": "center",
-              "alignItems": "center",
+              "id": "uPZAQ",
+              "type": "ref",
+              "ref": "t:q1BTMr",
+              "x": 604,
+              "y": 632,
               "children": [
                 {
-                  "id": "DlJak",
+                  "id": "qCv9w",
                   "type": "ref",
-                  "ref": "t:bm7Pn",
-                  "x": 524,
-                  "y": 16,
-                  "children": [
-                    {
-                      "id": "NVMpk",
-                      "type": "ref",
-                      "ref": "t:SG7PY"
-                    }
-                  ]
+                  "ref": "t:V7fdbe"
                 }
               ]
             }
@@ -347,16 +333,16 @@
       "alignItems": "center",
       "children": [
         {
-          "id": "us4P7",
+          "id": "IO5go",
           "type": "ref",
-          "ref": "t:sKPE5",
+          "ref": "t:WiWwa",
           "x": 0,
           "y": 0,
           "children": [
             {
-              "id": "H2Bm1",
+              "id": "CTVQ8",
               "type": "ref",
-              "ref": "t:1jllZ"
+              "ref": "t:O7syE"
             }
           ]
         },
@@ -454,7 +440,7 @@
               "name": "content",
               "clip": true,
               "width": 1440,
-              "height": 793,
+              "height": 911.75,
               "fill": "$t:grey300",
               "layout": "vertical",
               "justifyContent": "center",
@@ -465,7 +451,7 @@
                   "type": "ref",
                   "ref": "t:hRBgA",
                   "x": 625,
-                  "y": 298.48147843637935,
+                  "y": 357.7465791987831,
                   "children": [
                     {
                       "id": "WZ6ED",

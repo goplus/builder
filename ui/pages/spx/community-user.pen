@@ -20,17 +20,16 @@
       "alignItems": "center",
       "children": [
         {
-          "id": "EKyvj",
+          "id": "ecQW8",
           "type": "ref",
-          "ref": "j:sKPE5",
-          "x": -0.1179588707664152,
-          "y": 7.332019546780522,
-          "rotation": 0.291733048978369,
+          "ref": "j:WiWwa",
+          "x": 0.0001975079348324681,
+          "y": 0,
           "children": [
             {
-              "id": "Bw3qv",
+              "id": "UFEMQ",
               "type": "ref",
-              "ref": "j:1jllZ"
+              "ref": "j:O7syE"
             }
           ]
         },
@@ -39,7 +38,7 @@
           "type": "ref",
           "ref": "j:uyN2t",
           "x": 100,
-          "y": 21.000000000000302,
+          "y": 71.01115216840645,
           "children": [
             {
               "id": "A8lwG",

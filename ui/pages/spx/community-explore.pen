@@ -20,11 +20,18 @@
       "alignItems": "center",
       "children": [
         {
-          "id": "IXY42",
+          "id": "v86y0o",
           "type": "ref",
-          "ref": "2:F2SlL",
+          "ref": "2:WiWwa",
           "x": 0,
-          "y": 0
+          "y": 0,
+          "children": [
+            {
+              "id": "m3gbS3",
+              "type": "ref",
+              "ref": "2:O7syE"
+            }
+          ]
         },
         {
           "type": "frame",
