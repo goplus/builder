@@ -20,7 +20,7 @@
  * delayed removal, events, and the provider-level `active` prop.
  */
 import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component, ref } from 'vue'
-import type { ComponentDefinition, PruneProps } from '@/utils/types'
+import type { ComponentDefinition, EmitsForComponent, PropsForComponent, Prettify } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
 import Emitter from '@/utils/emitter'
 import { provideModalContainer } from '../utils'
@@ -65,13 +65,19 @@ type ModalContext = {
   add(modalInfo: Omit<ModalInfo, 'id' | 'visible'>): void
 }
 
+export type ModalComponentDefinition = ComponentDefinition<ModalComponentProps, ModalComponentEmits<any>>
+
+type ResolvedValue<E> = E extends { resolved: infer Args extends any[] } ? Args[0] : never
+
+type ExtraProps<C extends ModalComponentDefinition> = Prettify<Omit<PropsForComponent<C>, keyof ModalComponentProps>>
+
 const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context')
 
-export function useModal<P extends ModalComponentProps, R>(component: ComponentDefinition<P, ModalComponentEmits<R>>) {
+export function useModal<C extends ModalComponentDefinition>(component: C) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(extraProps: Omit<PruneProps<P, ModalComponentEmits<R>>, keyof ModalComponentProps>) {
-    return new Promise<R>((resolve, reject) => {
+  return function invokeModal(extraProps: ExtraProps<C>) {
+    return new Promise<ResolvedValue<EmitsForComponent<C>>>((resolve, reject) => {
       const handlers = { resolve, reject }
       ctx.add({ component, props: extraProps, handlers })
     })
