@@ -1,5 +1,6 @@
 import { mapValues } from 'lodash'
 import * as lsp from 'vscode-languageserver-protocol'
+import type { StringWithTypeInfo } from '@/utils/types'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
 
@@ -404,10 +405,7 @@ export function getDdiDragData(dataTransfer: DataTransfer): DefinitionDocumentat
   return JSON.parse(data) as DefinitionDocumentationItem
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface CommandConstraint<A, R> {}
-
-export type Command<A extends any[], R> = string & CommandConstraint<A, R>
+export type Command<A extends any[], R> = StringWithTypeInfo<[args: A, returnValue: R]>
 export type CommandHandler<A extends any[], R> = (...args: A) => R | Promise<R>
 export type CommandInfo<A extends any[], R> = {
   icon: CommandIconType

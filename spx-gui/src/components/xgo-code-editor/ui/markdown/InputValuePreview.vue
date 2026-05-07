@@ -28,8 +28,7 @@ const parsedInput = computed(() => {
 })
 
 const codeEditorCtx = useCodeEditorUICtx()
-const resourceProvider = codeEditorCtx.ui.resourceProvider
-const inputHelperProvider = codeEditorCtx.ui.inputHelperController.provider
+const itemRenderer = computed(() => codeEditorCtx.ui.codeEditor.resourceAdapter.provideResourceItemRenderer())
 const resourceIdentifier = computed(() => {
   if (parsedInput.value == null) return null
   if (parsedInput.value.type !== BuiltInInputType.ResourceName) return null
@@ -39,24 +38,21 @@ const resourceIdentifier = computed(() => {
 
 const inputPreview = computed(() => {
   if (parsedInput.value == null) return null
-  return inputHelperProvider?.provideInputValuePreview(parsedInput.value) ?? null
+  return codeEditorCtx.ui.codeEditor.inputHelperProvider.provideInputValuePreview(parsedInput.value) ?? null
 })
 
 const expr = computed(() => {
   if (parsedInput.value == null) return ''
-  const inputTypeHandler = inputHelperProvider?.provideInputTypeHandler(parsedInput.value.type)
+  const inputTypeHandler = codeEditorCtx.ui.codeEditor.inputHelperProvider.provideInputTypeHandler(
+    parsedInput.value.type
+  )
   return inputTypeHandler?.exprForInput(parsedInput.value) ?? ''
 })
 </script>
 
 <template>
   <div class="input-value-preview">
-    <component
-      :is="resourceProvider?.provideResourceItemRenderer()"
-      v-if="resourceIdentifier != null"
-      :resource="resourceIdentifier"
-      autoplay
-    />
+    <component :is="itemRenderer" v-if="resourceIdentifier != null" :resource="resourceIdentifier" autoplay />
     <component :is="() => inputPreview?.vnode" v-else-if="inputPreview?.vnode != null" />
     <div
       v-else-if="inputPreview?.key != null"

@@ -23,17 +23,17 @@ import {
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { MonacoEditor, monaco } from '../monaco'
-import { HoverController, type IHoverProvider } from './hover'
-import { CompletionController, type ICompletionProvider } from './completion'
-import { ResourceReferenceController, type IResourceProvider } from './resource'
-import { ContextMenuController, type IContextMenuProvider } from './context-menu'
-import { DiagnosticsController, type IDiagnosticsProvider } from './diagnostics'
-import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
+import { HoverController } from './hover'
+import { CompletionController } from './completion'
+import { ResourceReferenceController } from './resource'
+import { ContextMenuController } from './context-menu'
+import { DiagnosticsController } from './diagnostics'
+import { APIReferenceController } from './api-reference'
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition } from './common'
-import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
-import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
+import { InputHelperController, type InternalInputSlot } from './input-helper'
+import { InlayHintController } from './inlay-hint'
 import { DropIndicatorController } from './drop-indicator'
-import { SnippetParser, type ISnippetVariablesProvider } from './snippet'
+import { SnippetParser } from './snippet'
 import {
   CopilotExplainKind,
   makeCodeBlock,
@@ -44,7 +44,6 @@ import {
   type ICopilot
 } from '../copilot'
 import type { CodeEditor } from '../code-editor'
-import type { IDocumentBase } from '../document-base'
 
 export * from './hover'
 export * from './completion'
@@ -59,17 +58,6 @@ export * from './drop-indicator'
 export type { ISnippetVariablesProvider } from './snippet'
 
 export interface ICodeEditorUIController {
-  registerHoverProvider(provider: IHoverProvider): void
-  registerCompletionProvider(provider: ICompletionProvider): void
-  registerResourceProvider(provider: IResourceProvider): void
-  registerInputHelperProvider(provider: IInputHelperProvider): void
-  registerInlayHintProvider(provider: IInlayHintProvider): void
-  registerContextMenuProvider(provider: IContextMenuProvider): void
-  registerDiagnosticsProvider(provider: IDiagnosticsProvider): void
-  registerAPIReferenceProvider(provider: IAPIReferenceProvider): void
-  registerDocumentBase(documentBase: IDocumentBase): void
-  registerSnippetVariablesProvider(provider: ISnippetVariablesProvider): void
-
   /** Execute a command */
   executeCommand<A extends any[], R>(command: Command<A, R>, ...input: A): Promise<R>
   /** Register a command with given name & handler */
@@ -116,38 +104,6 @@ export type InternalAction<A extends any[] = any, R = any> = {
 }
 
 export class CodeEditorUIController extends Disposable implements ICodeEditorUIController {
-  registerHoverProvider(provider: IHoverProvider): void {
-    this.hoverController.registerProvider(provider)
-  }
-  registerCompletionProvider(provider: ICompletionProvider): void {
-    this.completionController.registerProvider(provider)
-  }
-  registerResourceProvider(provider: IResourceProvider): void {
-    this.resourceReferenceController.registerProvider(provider)
-    this.resourceProviderRef.value = provider
-  }
-  registerInputHelperProvider(provider: IInputHelperProvider): void {
-    this.inputHelperController.registerProvider(provider)
-  }
-  registerInlayHintProvider(provider: IInlayHintProvider): void {
-    this.inlayHintController.registerProvider(provider)
-  }
-  registerContextMenuProvider(provider: IContextMenuProvider): void {
-    this.contextMenuController.registerProvider(provider)
-  }
-  registerDiagnosticsProvider(provider: IDiagnosticsProvider): void {
-    this.diagnosticsController.registerProvider(provider)
-  }
-  registerAPIReferenceProvider(provider: IAPIReferenceProvider): void {
-    this.apiReferenceController.registerProvider(provider)
-  }
-  registerSnippetVariablesProvider(provider: ISnippetVariablesProvider): void {
-    this.snippetParser.registerProvider(provider)
-  }
-  registerDocumentBase(documentBase: IDocumentBase): void {
-    this.documentBase = documentBase
-  }
-
   private commands = new Map<Command<any, any>, CommandInfo<any, any>>()
   getCommandInfo<A extends any[], R>(command: Command<A, R>): CommandInfo<A, R> | null {
     return this.commands.get(command) ?? null
@@ -159,6 +115,9 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
   registerCommand<A extends any[], R>(command: Command<A, R>, info: CommandInfo<A, R>): void {
     this.commands.set(command, info)
+  }
+  unregisterCommand<A extends any[], R>(command: Command<A, R>): void {
+    this.commands.delete(command)
   }
 
   resolveAction<A extends any[], R>(action: Action<A, R>): InternalAction<A, R> | null {
@@ -192,11 +151,9 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
 
   constructor(
     private mainTextDocumentId: TextDocumentIdentifier,
-    private codeEditor: CodeEditor,
+    readonly codeEditor: CodeEditor,
     public i18n: I18n,
-    private renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>,
-    private renameResourceHandler: (resource: ResourceIdentifier) => Promise<void>,
-    private goToResourceHandler: (resource: ResourceIdentifier) => Promise<void>
+    private renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>
   ) {
     super()
   }
@@ -215,15 +172,10 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   contextMenuController = new ContextMenuController(this)
   diagnosticsController = new DiagnosticsController(this)
   resourceReferenceController = new ResourceReferenceController(this)
-  private resourceProviderRef = shallowRef<IResourceProvider | null>(null)
-  get resourceProvider(): IResourceProvider | null {
-    return this.resourceProviderRef.value
-  }
   inputHelperController = new InputHelperController(this)
   inlayHintController = new InlayHintController(this)
   dropIndicatorController = new DropIndicatorController(this)
   snippetParser = new SnippetParser(this)
-  documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
   private tempTextDocumentIds = shallowReactive<TextDocumentIdentifier[]>([])
@@ -672,14 +624,6 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       }
     })
 
-    this.registerCommand(builtInCommandGoToResource, {
-      icon: 'goto',
-      title: { en: 'View detail', zh: '查看详情' },
-      handler: async (resource) => {
-        await this.goToResourceHandler(resource)
-      }
-    })
-
     this.registerCommand(builtInCommandInvokeInputHelper, {
       icon: 'modify',
       title: { en: 'Modify', zh: '修改' },
@@ -697,13 +641,34 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       }
     })
 
-    this.registerCommand(builtInCommandRenameResource, {
-      icon: 'rename',
-      title: { en: 'Rename', zh: '重命名' },
-      handler: async (resource) => {
-        await this.renameResourceHandler(resource)
-      }
-    })
+    this.addDisposer(
+      watch(
+        () => this.codeEditor.resourceAdapter,
+        (adapter, _, onCleanup) => {
+          if (adapter.openResource != null) {
+            this.registerCommand(builtInCommandGoToResource, {
+              icon: 'goto',
+              title: { en: 'View detail', zh: '查看详情' },
+              handler: adapter.openResource.bind(adapter)
+            })
+            onCleanup(() => {
+              this.unregisterCommand(builtInCommandGoToResource)
+            })
+          }
+          if (adapter.requestResourceRename != null) {
+            this.registerCommand(builtInCommandRenameResource, {
+              icon: 'rename',
+              title: { en: 'Rename', zh: '重命名' },
+              handler: adapter.requestResourceRename.bind(adapter)
+            })
+            onCleanup(() => {
+              this.unregisterCommand(builtInCommandRenameResource)
+            })
+          }
+        },
+        { immediate: true }
+      )
+    )
 
     // Clear newly inserted range when cursor position moved out of it
     this.addDisposer(

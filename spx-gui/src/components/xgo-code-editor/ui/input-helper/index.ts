@@ -19,13 +19,8 @@ export type InternalInputSlot = InputSlot & {
 }
 
 export class InputHelperController extends Disposable {
-  private providerRef = shallowRef<IInputHelperProvider | null>(null)
-  registerProvider(provider: IInputHelperProvider) {
-    this.providerRef.value = provider
-  }
-
   get provider(): IInputHelperProvider | null {
-    return this.providerRef.value
+    return this.ui.codeEditor.inputHelperProvider
   }
 
   constructor(private ui: CodeEditorUIController) {
@@ -33,8 +28,7 @@ export class InputHelperController extends Disposable {
   }
 
   private mgr = new TaskManager(async (signal) => {
-    const provider = this.providerRef.value
-    if (provider == null) return []
+    const provider = this.ui.codeEditor.inputHelperProvider
     const { activeTextDocument: textDocument } = this.ui
     if (textDocument == null) return []
     const items = await provider.provideInputSlots({ textDocument, signal })
@@ -74,7 +68,7 @@ export class InputHelperController extends Disposable {
 
     this.addDisposer(
       watch(
-        () => [this.providerRef.value, this.ui.project.exportFiles(), this.ui.activeTextDocument],
+        () => [this.ui.codeEditor.inputHelperProvider, this.ui.project.exportFiles(), this.ui.activeTextDocument],
         () => refreshSlots(),
         { immediate: true }
       )

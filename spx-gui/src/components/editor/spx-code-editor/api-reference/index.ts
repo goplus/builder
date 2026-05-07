@@ -8,8 +8,7 @@ import { once } from 'lodash'
 import { packageSpx } from '@/utils/spx'
 import type {
   APICategoryViewInfo,
-  DefinitionDocumentationItem,
-  DocumentBase,
+  IDocumentBase,
   IAPIReferenceProvider,
   APIReferenceContext
 } from '@/components/xgo-code-editor'
@@ -293,11 +292,11 @@ const categoryViewInfos: APICategoryViewInfo[] = [
 ]
 
 export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
-  constructor(private documentBase: DocumentBase) {}
+  constructor(private documentBase: IDocumentBase) {}
 
   private getStageAPIReferenceItems = once(async () => {
     const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
-    const allItems = maybeItems.filter((i) => i != null) as DefinitionDocumentationItem[]
+    const allItems = maybeItems.filter((i) => i != null)
     return allItems.filter((item) => {
       if (item.definition.package !== packageSpx) return true
       const [receiver] = parseDefinitionName(item.definition.name)
@@ -307,7 +306,7 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
 
   private getSpriteAPIReferenceItems = once(async () => {
     const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
-    const allItems = maybeItems.filter((i) => i != null) as DefinitionDocumentationItem[]
+    const allItems = maybeItems.filter((i) => i != null)
     const spriteMethods = allItems.reduce((set, item) => {
       const [receiver, method] = parseDefinitionName(item.definition.name)
       if (receiver === 'Sprite') set.add(method)

@@ -1,4 +1,3 @@
-import { shallowRef } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
@@ -13,7 +12,7 @@ import {
   type InternalAction
 } from '../code-editor-ui'
 import { fromMonacoPosition, fromMonacoSelection } from '../common'
-import type { IContextMenuProvider, ContextMenuContext, MenuItem } from '../../context-menu'
+import type { ContextMenuContext, MenuItem } from '../../context-menu'
 
 export type { IContextMenuProvider, ContextMenuContext, MenuItem } from '../../context-menu'
 
@@ -38,11 +37,6 @@ export type TriggerData = {
 }
 
 export class ContextMenuController extends Disposable {
-  private providerRef = shallowRef<IContextMenuProvider | null>(null)
-  registerProvider(provider: IContextMenuProvider) {
-    this.providerRef.value = provider
-  }
-
   constructor(private ui: CodeEditorUIController) {
     super()
   }
@@ -58,8 +52,7 @@ export class ContextMenuController extends Disposable {
   }
 
   private menuMgr = new TaskManager(async (signal, aPos: AbsolutePosition, posOrSel: Position | Selection) => {
-    const provider = this.providerRef.value
-    if (provider == null) return null
+    const provider = this.ui.codeEditor.contextMenuProvider
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return null
     const ctx: ContextMenuContext = { textDocument, signal }

@@ -23,7 +23,7 @@ import IntegerInput, * as integerInput from './ui/input-helper/IntegerInput.vue'
 import DecimalInput, * as decimalInput from './ui/input-helper/DecimalInput.vue'
 import StringInput, * as stringInput from './ui/input-helper/StringInput.vue'
 import ResourceInput, * as resourceInput from './ui/input-helper/ResourceInput.vue'
-import type { IResourceProvider } from './resource'
+import type { IResourceAdapter } from './resource'
 
 export type InputHelperContext = BaseContext
 
@@ -79,7 +79,7 @@ export interface IInputHelperProvider {
 export class InputHelperProvider implements IInputHelperProvider {
   constructor(
     private lspClient: ILSPClient,
-    private resourceProvider: IResourceProvider
+    private getResourceAdapter: () => IResourceAdapter
   ) {}
 
   async provideInputSlots(ctx: InputHelperContext): Promise<InputSlot[]> {
@@ -142,13 +142,18 @@ export class InputHelperProvider implements IInputHelperProvider {
           component: ResourceInput,
           getTitle: (accept: InputSlotAccept) => {
             const resourceContext = (accept as InputSlotAcceptForType<BuiltInInputType.ResourceName>).resourceContext
-            return this.resourceProvider.provideResourceSelectorTitle(resourceContext)
+            return (
+              this.getResourceAdapter().provideResourceSelector(resourceContext)?.title ?? {
+                en: 'Select a resource',
+                zh: '选择资源'
+              }
+            )
           },
           getDefaultValue: resourceInput.getDefaultValue,
           exprForInput: (input: InPlaceInput) => {
             if (input.type !== BuiltInInputType.ResourceName) return null
             const value = input.value as InputValueForType<BuiltInInputType.ResourceName>
-            const resourceName = this.resourceProvider.provideResourceName({ uri: value })
+            const resourceName = this.getResourceAdapter().provideResourceName({ uri: value })
             return JSON.stringify(resourceName)
           }
         }

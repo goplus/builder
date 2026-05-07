@@ -9,7 +9,7 @@ const props = defineProps<{
 }>()
 
 const codeEditorCtx = useCodeEditorUICtx()
-const provider = codeEditorCtx.ui.resourceProvider
+const itemRenderer = computed(() => codeEditorCtx.ui.codeEditor.resourceAdapter.provideResourceItemRenderer())
 const resourceIdentifier = computed<ResourceIdentifier>(() => ({
   uri: props.resource
 }))
@@ -17,5 +17,5 @@ const resourceIdentifier = computed<ResourceIdentifier>(() => ({
 
 <!-- TODO: Design specially for `ResourcePreview`, instead of using the same `ResourceItem` as `ResourceSelector` -->
 <template>
-  <component :is="provider?.provideResourceItemRenderer()" :resource="resourceIdentifier" autoplay />
+  <component :is="itemRenderer" :resource="resourceIdentifier" autoplay />
 </template>

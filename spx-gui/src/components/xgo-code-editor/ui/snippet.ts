@@ -3,12 +3,11 @@
  */
 
 import { debounce } from 'lodash'
-import { shallowRef, watch } from 'vue'
+import { watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { TaskManager } from '@/utils/task'
 import { SnippetParser as BaseSnippetParser, Text, Variable } from '@/utils/snippet-parser'
 import type { CodeEditorUIController } from './code-editor-ui'
-import type { ISnippetVariablesProvider } from '../snippet-variables'
 
 export type * from '../snippet-variables'
 
@@ -19,14 +18,8 @@ export class SnippetParser extends Disposable {
 
   private parser = new BaseSnippetParser()
 
-  private providerRef = shallowRef<ISnippetVariablesProvider | null>(null)
-  registerProvider(provider: ISnippetVariablesProvider) {
-    this.providerRef.value = provider
-  }
-
   private variablesMgr = new TaskManager(async (signal) => {
-    const provider = this.providerRef.value
-    if (provider == null) return {}
+    const provider = this.ui.codeEditor.snippetVariablesProvider
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return {}
     return provider.provideSnippetVariables({ textDocument, signal })
@@ -41,7 +34,7 @@ export class SnippetParser extends Disposable {
 
     this.addDisposer(
       watch(
-        this.providerRef,
+        () => this.ui.codeEditor.snippetVariablesProvider,
         () => {
           refreshVariables()
         },

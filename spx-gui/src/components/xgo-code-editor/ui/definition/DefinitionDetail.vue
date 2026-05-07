@@ -15,8 +15,7 @@ const codeEditorCtx = useCodeEditorUICtx()
 
 const documentation = useAsyncComputedLegacy<DefinitionDocumentationItem | null>(async () => {
   const defId = parseDefinitionId(props.defId)
-  const documentBase = codeEditorCtx.ui.documentBase
-  if (documentBase == null) return null
+  const documentBase = codeEditorCtx.ui.codeEditor.documentBase
   return documentBase.getDocumentation(defId)
 })
 

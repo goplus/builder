@@ -5,12 +5,7 @@ import { type Position, positionEq } from '../../common'
 import { type monaco } from '../../monaco'
 import type { CodeEditorUIController } from '../code-editor-ui'
 import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
-import {
-  InsertTextFormat,
-  type CompletionContext,
-  type CompletionItem,
-  type ICompletionProvider
-} from '../../completion'
+import { InsertTextFormat, type CompletionContext, type CompletionItem } from '../../completion'
 
 export * from '../../completion'
 
@@ -24,11 +19,6 @@ export type InternalCompletionItem = CompletionItem & {
 export class CompletionController extends Emitter<{
   editorKeydown: monaco.IKeyboardEvent
 }> {
-  private provider: ICompletionProvider | null = null
-  registerProvider(provider: ICompletionProvider) {
-    this.provider = provider
-  }
-
   constructor(private ui: CodeEditorUIController) {
     super()
   }
@@ -36,14 +26,14 @@ export class CompletionController extends Emitter<{
   private filterPositionRef = shallowRef<Position | null>(null)
 
   private completionMgr = new TaskManager(async (signal) => {
-    if (this.provider == null) return null
+    const provider = this.ui.codeEditor.completionProvider
     const { activeTextDocument: textDocument, cursorPosition: position } = this.ui
     if (textDocument == null || position == null) return null
     this.filterPositionRef.value = position
     const word = textDocument.getWordAtPosition(position)
     const wordStart = word != null ? { line: position.line, column: word.startColumn } : position
     const ctx: CompletionContext = { textDocument, signal }
-    const items = await this.provider.provideCompletion(ctx, position)
+    const items = await provider.provideCompletion(ctx, position)
     return { textDocument, wordStart, items }
   })
 

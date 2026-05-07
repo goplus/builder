@@ -2,9 +2,8 @@
 import { computed, useSlots } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { type Range, type Position, type TextDocumentIdentifier } from '@/components/xgo-code-editor'
+import { type Range, type Position, type TextDocumentIdentifier, useCodeEditorRef } from '@/components/xgo-code-editor'
 import { textDocumentId2CodeFileName } from './common'
-import { useCodeEditorRef } from './context'
 
 const props = defineProps<{
   file: TextDocumentIdentifier

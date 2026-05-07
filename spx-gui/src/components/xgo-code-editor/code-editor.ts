@@ -1,13 +1,15 @@
 import * as lsp from 'vscode-languageserver-protocol'
+import { shallowRef, type ShallowRef } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import type { History } from '@/components/editor/history'
 import type { IXGoProject } from './project'
 import { type IDocumentBase, DocumentBase } from './document-base'
 import type { ILSPClient } from './lsp/types'
+import { EmptyAPIReferenceProvider } from './api-reference'
 import {
   type ICodeEditorUIController,
   type IDiagnosticsProvider,
-  type IResourceProvider,
+  type IResourceAdapter,
   type IInputHelperProvider,
   type IContextMenuProvider,
   type IHoverProvider,
@@ -27,6 +29,7 @@ import {
   type WorkspaceDiagnostics,
   type TextDocumentDiagnostics,
   fromLSPDiagnostic,
+  DiagnosticSeverity,
   type Property
 } from './common'
 import { filterPropertiesByDocumentation } from './utils'
@@ -35,7 +38,7 @@ import { type Monaco } from './monaco'
 import { HoverProvider } from './hover'
 import { ContextMenuProvider } from './context-menu'
 import { InlayHintProvider } from './inlay-hint'
-import { ResourceProvider } from './resource'
+import { ResourceAdapter } from './resource'
 import { InputHelperProvider } from './input-helper'
 import { CompletionProvider } from './completion'
 import { DiagnosticsProvider } from './diagnostics'
@@ -51,16 +54,7 @@ export type CodeEditorParams = {
   copilot?: ICopilot | null
   monaco: Monaco
   lspClient: ILSPClient
-  apiReferenceProvider: IAPIReferenceProvider
   documentBase?: IDocumentBase
-  completionProvider?: ICompletionProvider
-  diagnosticsProvider?: IDiagnosticsProvider
-  snippetVariablesProvider?: ISnippetVariablesProvider
-  hoverProvider?: IHoverProvider
-  contextMenuProvider?: IContextMenuProvider
-  resourceProvider?: IResourceProvider
-  inputHelperProvider?: IInputHelperProvider
-  inlayHintProvider?: IInlayHintProvider
 }
 
 export class CodeEditor extends Disposable {
@@ -68,17 +62,8 @@ export class CodeEditor extends Disposable {
   readonly project: IXGoProject
   readonly history: History
   readonly copilot: ICopilot | null
-  private lspClient: ILSPClient
-  private documentBase: IDocumentBase
-  private hoverProvider: IHoverProvider
-  private contextMenuProvider: IContextMenuProvider
-  private resourceProvider: IResourceProvider
-  private inputHelperProvider: IInputHelperProvider
-  private inlayHintProvider: IInlayHintProvider
-  private apiReferenceProvider: IAPIReferenceProvider
-  private completionProvider: ICompletionProvider
-  private diagnosticsProvider: IDiagnosticsProvider
-  private snippetVariablesProvider: ISnippetVariablesProvider
+  readonly lspClient: ILSPClient
+  readonly documentBase: IDocumentBase
 
   constructor(params: CodeEditorParams) {
     super()
@@ -87,20 +72,91 @@ export class CodeEditor extends Disposable {
     this.copilot = params.copilot ?? null
     this.monaco = params.monaco
     this.lspClient = params.lspClient
-    this.documentBase = params.documentBase ?? new DocumentBase()
-    this.resourceProvider = params.resourceProvider ?? new ResourceProvider(params.lspClient)
-    this.hoverProvider = params.hoverProvider ?? new HoverProvider(params.lspClient, this.documentBase)
-    this.contextMenuProvider =
-      params.contextMenuProvider ?? new ContextMenuProvider(params.lspClient, this.documentBase)
-    this.inlayHintProvider = params.inlayHintProvider ?? new InlayHintProvider(params.lspClient)
-    this.inputHelperProvider =
-      params.inputHelperProvider ?? new InputHelperProvider(params.lspClient, this.resourceProvider)
-    this.apiReferenceProvider = params.apiReferenceProvider
-    this.completionProvider =
-      params.completionProvider ??
-      new CompletionProvider(params.lspClient, this.documentBase, params.project.classFramework)
-    this.diagnosticsProvider = params.diagnosticsProvider ?? new DiagnosticsProvider(params.lspClient, params.project)
-    this.snippetVariablesProvider = params.snippetVariablesProvider ?? new SnippetVariablesProvider()
+    const documentBase = params.documentBase ?? new DocumentBase()
+    this.documentBase = documentBase
+    this.resourceAdapterRef = shallowRef(new ResourceAdapter(params.lspClient))
+    this.hoverProviderRef = shallowRef(new HoverProvider(params.lspClient, documentBase))
+    this.contextMenuProviderRef = shallowRef(new ContextMenuProvider(params.lspClient, documentBase))
+    this.inlayHintProviderRef = shallowRef(new InlayHintProvider(params.lspClient))
+    this.inputHelperProviderRef = shallowRef(new InputHelperProvider(params.lspClient, () => this.resourceAdapter))
+    this.apiReferenceProviderRef = shallowRef(new EmptyAPIReferenceProvider())
+    this.completionProviderRef = shallowRef(
+      new CompletionProvider(params.lspClient, documentBase, params.project.classFramework)
+    )
+    this.diagnosticsProviderRef = shallowRef(new DiagnosticsProvider(params.lspClient, params.project))
+    this.snippetVariablesProviderRef = shallowRef(new SnippetVariablesProvider())
+  }
+
+  private hoverProviderRef: ShallowRef<IHoverProvider>
+  get hoverProvider() {
+    return this.hoverProviderRef.value
+  }
+  registerHoverProvider(provider: IHoverProvider) {
+    this.hoverProviderRef.value = provider
+  }
+
+  private contextMenuProviderRef: ShallowRef<IContextMenuProvider>
+  get contextMenuProvider() {
+    return this.contextMenuProviderRef.value
+  }
+  registerContextMenuProvider(provider: IContextMenuProvider) {
+    this.contextMenuProviderRef.value = provider
+  }
+
+  private resourceAdapterRef: ShallowRef<IResourceAdapter>
+  get resourceAdapter() {
+    return this.resourceAdapterRef.value
+  }
+  registerResourceAdapter(adapter: IResourceAdapter) {
+    this.resourceAdapterRef.value = adapter
+  }
+
+  private inputHelperProviderRef: ShallowRef<IInputHelperProvider>
+  get inputHelperProvider() {
+    return this.inputHelperProviderRef.value
+  }
+  registerInputHelperProvider(provider: IInputHelperProvider) {
+    this.inputHelperProviderRef.value = provider
+  }
+
+  private inlayHintProviderRef: ShallowRef<IInlayHintProvider>
+  get inlayHintProvider() {
+    return this.inlayHintProviderRef.value
+  }
+  registerInlayHintProvider(provider: IInlayHintProvider) {
+    this.inlayHintProviderRef.value = provider
+  }
+
+  private apiReferenceProviderRef: ShallowRef<IAPIReferenceProvider>
+  get apiReferenceProvider() {
+    return this.apiReferenceProviderRef.value
+  }
+  registerAPIReferenceProvider(provider: IAPIReferenceProvider) {
+    this.apiReferenceProviderRef.value = provider
+  }
+
+  private completionProviderRef: ShallowRef<ICompletionProvider>
+  get completionProvider() {
+    return this.completionProviderRef.value
+  }
+  registerCompletionProvider(provider: ICompletionProvider) {
+    this.completionProviderRef.value = provider
+  }
+
+  private diagnosticsProviderRef: ShallowRef<IDiagnosticsProvider>
+  get diagnosticsProvider() {
+    return this.diagnosticsProviderRef.value
+  }
+  registerDiagnosticsProvider(provider: IDiagnosticsProvider) {
+    this.diagnosticsProviderRef.value = provider
+  }
+
+  private snippetVariablesProviderRef: ShallowRef<ISnippetVariablesProvider>
+  get snippetVariablesProvider() {
+    return this.snippetVariablesProviderRef.value
+  }
+  registerSnippetVariablesProvider(provider: ISnippetVariablesProvider) {
+    this.snippetVariablesProviderRef.value = provider
   }
 
   /**
@@ -175,6 +231,19 @@ export class CodeEditor extends Disposable {
     return { items }
   }
 
+  /** Get the warning shown before renaming when the workspace has diagnostics errors. */
+  async getRenameWarning() {
+    const result = await this.diagnosticWorkspace()
+    const hasError = result.items.some((item) =>
+      item.diagnostics.some((diagnostic) => diagnostic.severity === DiagnosticSeverity.Error)
+    )
+    if (!hasError) return null
+    return {
+      en: 'There are errors in the project code. Some references may not be updated automatically. You can check the code and update them manually after renaming.',
+      zh: '当前项目代码中存在错误，部分引用可能不会自动更新，你可以在重命名后检查代码并手动修改。'
+    }
+  }
+
   /** Update code for renaming */
   async rename(id: TextDocumentIdentifier, position: Position, newName: string) {
     const edit = await this.lspClient.textDocumentRename(
@@ -208,17 +277,6 @@ export class CodeEditor extends Disposable {
     const idx = this.uis.indexOf(ui)
     if (idx >= 0) this.uis.splice(idx, 1)
     this.uis.push(ui)
-
-    ui.registerAPIReferenceProvider(this.apiReferenceProvider)
-    ui.registerCompletionProvider(this.completionProvider)
-    ui.registerContextMenuProvider(this.contextMenuProvider)
-    ui.registerDiagnosticsProvider(this.diagnosticsProvider)
-    ui.registerHoverProvider(this.hoverProvider)
-    ui.registerResourceProvider(this.resourceProvider)
-    ui.registerInputHelperProvider(this.inputHelperProvider)
-    ui.registerInlayHintProvider(this.inlayHintProvider)
-    ui.registerDocumentBase(this.documentBase)
-    ui.registerSnippetVariablesProvider(this.snippetVariablesProvider)
   }
 
   detachUI(ui: ICodeEditorUIController) {

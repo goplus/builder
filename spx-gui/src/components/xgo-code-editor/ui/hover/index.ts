@@ -15,7 +15,7 @@ import {
   rangeEq
 } from '../../common'
 import type { monaco } from '../../monaco'
-import type { Hover, IHoverProvider } from '../../hover'
+import type { Hover } from '../../hover'
 
 export type { Hover, HoverContext, IHoverProvider } from '../../hover'
 import {
@@ -48,23 +48,17 @@ export class HoverController extends Emitter<{
   cardMouseEnter: MouseEvent
   cardMouseLeave: MouseEvent
 }> {
-  private provider: IHoverProvider | null = null
-
-  registerProvider(provider: IHoverProvider) {
-    this.provider = provider
-  }
-
   constructor(private ui: CodeEditorUIController) {
     super()
   }
 
   private hoverMgr = new TaskManager(async (signal, position: Position) => {
-    if (this.provider == null) return null
+    const provider = this.ui.codeEditor.hoverProvider
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return null
 
     const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
-    const providedHover = await this.provider.provideHover({ textDocument, signal }, position)
+    const providedHover = await provider.provideHover({ textDocument, signal }, position)
     let providedInternalHover: InternalHover | null = null
     if (providedHover != null) {
       const range = providedHover.range ?? textDocument.getDefaultRange(position)

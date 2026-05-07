@@ -12,9 +12,8 @@
 <script setup lang="ts">
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { getTextDocumentId } from '@/components/xgo-code-editor'
+import { getTextDocumentId, useCodeEditor } from '@/components/xgo-code-editor'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import { useCodeEditor } from './context'
 
 const props = defineProps<{
   codeFilePath: string
