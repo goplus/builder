@@ -15,7 +15,7 @@
               tabindex="-1"
               class="ui-modal-surface"
               :class="surfaceClass"
-              :style="transformStyle"
+              :style="{ transformOrigin: 'var(--ui-modal-transform-origin, center)' }"
               @click.stop
             >
               <slot></slot>
@@ -37,7 +37,7 @@ export type ModalTransformOrigin = {
 </script>
 
 <script setup lang="ts">
-import { computed, mergeProps, nextTick, ref, useAttrs, watch, type CSSProperties } from 'vue'
+import { computed, mergeProps, ref, useAttrs, watch } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilNotNull } from '@/utils/utils'
@@ -181,76 +181,47 @@ function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventT
   return modalContainer.contains(target)
 }
 
-// Imperative transform-origin override requested by external callers for the
-// current modal cycle (for example, collapse-back-to-trigger flows).
-const explicitTransformOrigin = ref<ModalTransformOrigin | null>(null)
-// The final animation origin for the current modal cycle, resolved from the open
-// position and any later explicit override.
 const transformOrigin = ref<ModalTransformOrigin | null>(null)
-// Inline style applied to the teleported modal surface after the final origin has
-// been converted into surface-local coordinates.
-const transformStyle = ref<CSSProperties | null>(null)
 
-function setExplicitTransformOrigin(origin: ModalTransformOrigin | null) {
-  explicitTransformOrigin.value = origin
-  // If a caller overrides the origin while the modal is already open, switch the
-  // current cycle to that explicit origin immediately.
-  if (props.visible && origin != null) {
-    transformOrigin.value = origin
-  }
+function setTransformOrigin(origin: ModalTransformOrigin | null) {
+  transformOrigin.value = origin
 }
 
+// When a new open cycle starts, capture the last click point as origin.
 const lastClickEvent = useLastClickEvent()
-
-// When a new open cycle starts, capture the origin once: prefer an explicit
-// override if one is already present, otherwise fall back to the last click point.
 watch(
   () => props.visible,
   (show) => {
-    if (show) {
-      transformOrigin.value = explicitTransformOrigin.value ?? resolveClickOrigin(lastClickEvent.value)
+    if (!show) return
+    if (lastClickEvent.value == null) {
+      setTransformOrigin(null)
+    } else {
+      setTransformOrigin({
+        x: lastClickEvent.value.clientX,
+        y: lastClickEvent.value.clientY
+      })
     }
   },
   { immediate: true }
 )
 
-// Recompute the inline transform-origin whenever visibility, surface mounting, or
-// the resolved origin changes.
 watch(
-  [() => props.visible, containerRef, transformOrigin],
-  async ([show, contentEl, origin], _, onCleanup) => {
-    const signal = getCleanupSignal(onCleanup)
-    if (!show || contentEl == null || !contentEl.isConnected || origin == null) {
-      transformStyle.value = null
-      return
-    }
-    // Wait until the teleported surface has settled into its final layout before measuring.
-    await nextTick()
-    if (signal.aborted || !contentEl.isConnected) return
-    transformStyle.value = {
-      transformOrigin: transformOriginToStyle(contentEl, origin)
-    }
+  [containerRef, transformOrigin],
+  ([contentEl, origin]) => {
+    if (contentEl == null || !contentEl.isConnected || origin == null) return
+    contentEl.style.setProperty(
+      '--ui-modal-transform-origin',
+      // Use layout offsets here instead of getBoundingClientRect(): the modal surface is
+      // scaled during enter/leave transitions, while offsetLeft/offsetTop stay anchored to
+      // the untransformed layout position we want for this approximate transform origin.
+      `${origin.x - contentEl.offsetLeft}px ${origin.y - contentEl.offsetTop}px`
+    )
   },
-  { immediate: true, flush: 'post' }
+  { immediate: true }
 )
 
-function resolveClickOrigin(clickEvent: MouseEvent | null): ModalTransformOrigin | null {
-  if (clickEvent == null) return null
-  return {
-    x: clickEvent.clientX,
-    y: clickEvent.clientY
-  }
-}
-
-function transformOriginToStyle(contentEl: HTMLElement, origin: ModalTransformOrigin) {
-  // Use layout offsets here instead of getBoundingClientRect(): the modal surface is
-  // scaled during enter/leave transitions, while offsetLeft/offsetTop stay anchored to
-  // the untransformed layout position we want for this approximate transform origin.
-  return `${origin.x - contentEl.offsetLeft}px ${origin.y - contentEl.offsetTop}px`
-}
-
 defineExpose({
-  setTransformOrigin: setExplicitTransformOrigin
+  setTransformOrigin
 })
 </script>
 

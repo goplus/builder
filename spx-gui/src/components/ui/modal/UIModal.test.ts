@@ -339,13 +339,14 @@ describe('UIModal', () => {
 
       const surface = getLatestElement('.ui-modal-surface') as HTMLElement
 
-      expect(surface.style.transformOrigin).toBe('40px 70px')
+      expect(surface.style.transformOrigin).toBe('var(--ui-modal-transform-origin, center)')
+      expect(surface.style.getPropertyValue('--ui-modal-transform-origin')).toBe('40px 70px')
       ;(wrapper.vm as unknown as { modalRef: InstanceType<typeof UIModal> | null }).modalRef?.setTransformOrigin({
         x: 80,
         y: 120
       })
       await flushModal()
-      expect(surface.style.transformOrigin).toBe('70px 100px')
+      expect(surface.style.getPropertyValue('--ui-modal-transform-origin')).toBe('70px 100px')
     })
   })
 
