@@ -4,6 +4,7 @@ import { onScopeDispose, watch } from 'vue'
 import { useCopilot } from '@/components/copilot/context'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from '@/components/copilot/common'
 import { type ICopilotContextProvider, type ToolDefinition } from '@/components/copilot/copilot'
+import { skillSpxProject, skillXgoLanguage } from '@/components/copilot/skills/built-in'
 import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 import { SpxProject } from '@/models/spx/project'
 import type { Sprite } from '@/models/spx/sprite'
@@ -307,6 +308,13 @@ export function useSpxEditorCopilot(): void {
   d.addDisposer(copilot.registerContextProvider(new SpriteContextProvider(editorCtx)))
   d.addDisposer(copilot.registerContextProvider(new CodeContextProvider(codeEditor)))
   d.addDisposer(copilot.registerContextProvider(new RuntimeContextProvider(editorCtx)))
+  d.addDisposer(
+    copilot.registerContextProvider({
+      providePreloadSkills() {
+        return [skillXgoLanguage, skillSpxProject]
+      }
+    })
+  )
 
   watch(
     () => editorCtx.state.runtime,

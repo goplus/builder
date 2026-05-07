@@ -1,12 +1,15 @@
 import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { debounce, throttle } from 'lodash'
+import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
 import { localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { Disposable, type Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
+import { wrapSkillContent } from './skills/content'
+import { createLoadSkillResourceTool, createLoadSkillTool } from './skills/tools'
+import type { SkillManifestItem, SkillRegistry } from './skills/types'
 import { accumulateToolCallDelta, finalizeToolCalls, type ToolCallDraft } from './tool-call'
 import { ToolExecutor, type ToolExecution } from './tool-executor'
 import dayjs from 'dayjs'
@@ -446,7 +449,9 @@ export interface ICopilotContextProvider {
    * Provide context information for the copilot.
    * Use plain text in English.
    */
-  provideContext(): string | Promise<string>
+  provideContext?(): string
+  /** List skill names that should be preloaded as part of current context. */
+  providePreloadSkills?(): string[]
 }
 
 /** A quick input represents a UI element (typically a button) which helps the user to quickly send some message */
@@ -560,8 +565,15 @@ export class Copilot extends Disposable {
 
   executor = new ToolExecutor(() => this.getTools())
 
-  constructor(public generator: IMessageEventGenerator = apis) {
+  constructor(
+    private skillRegistry: SkillRegistry,
+    public generator: IMessageEventGenerator = apis
+  ) {
     super()
+    this.registerTool(
+      createLoadSkillTool(this.skillRegistry, (skillName) => this.getPreloadSkillNames().includes(skillName))
+    )
+    this.registerTool(createLoadSkillResourceTool(this.skillRegistry))
   }
 
   /** If copilot is active (the panel is visible) */
@@ -575,9 +587,61 @@ export class Copilot extends Disposable {
     return this.currentSessionRef.value
   }
 
+  private getPreloadSkillNames(): string[] {
+    const skillNames = this.contextProviders.map((p) => p.providePreloadSkills?.() ?? [])
+    return uniq(skillNames.flat())
+  }
+
+  private formatSkillCatalogItems(items: SkillManifestItem[]): string {
+    return items.map((item) => `- Skill name: ${item.name}\n  Description: ${item.description}`).join('\n')
+  }
+
+  private async getSkillCatalogContext(): Promise<string> {
+    const items = await this.skillRegistry.list()
+    if (items.length === 0) return ''
+    return `# Skills
+
+When a task matches a skill description, call \`load_skill\` with the exact skill name to read the skill.
+You can also read resources in a skill by calling \`load_skill_resource\` with the skill name and the resource path.
+
+Here are the available skills:
+
+${this.formatSkillCatalogItems(items)}`
+  }
+
+  private async getPreloadSkillsContext(): Promise<string> {
+    const skillNames = this.getPreloadSkillNames()
+    if (skillNames.length === 0) return ''
+    const skillContents = await Promise.all(
+      skillNames.map(async (skillName) => {
+        try {
+          const skillDocument = await this.skillRegistry.load(skillName)
+          return wrapSkillContent(
+            skillDocument.name,
+            'SKILL.md',
+            skillDocument.instructions,
+            skillDocument.resourcePaths
+          )
+        } catch (error) {
+          capture(error, `Failed to preload skill ${skillName}`)
+          return `Failed to preload skill "${skillName}".`
+        }
+      })
+    )
+    return `# Preloaded skills
+
+These skills are already preloaded. Avoid calling \`load_skill\` for them again.
+
+${skillContents.join('\n\n')}`
+  }
+
   private async getContext(): Promise<string> {
-    const contextParts = await Promise.all(this.contextProviders.map((provider) => provider.provideContext()))
-    return contextParts.filter((s) => s.trim() !== '').join('\n\n')
+    const contextParts = await Promise.all([
+      ...this.contextProviders.map((p) => p.provideContext?.()),
+      this.getSkillCatalogContext(),
+      this.getPreloadSkillsContext()
+    ])
+    return contextParts.filter((s) => s != null && s.trim() !== '').join('\n\n')
   }
 
   private getCustomElementPrompt(customElement: CustomElementDefinition) {

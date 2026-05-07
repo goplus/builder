@@ -15,7 +15,7 @@ import * as highlightLink from './markdown-elements/HighlightLink.vue'
 import { useSignedInStateQuery, type SignedInState } from '@/stores/user'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import { provideCopilot } from './context'
-import { registerSkillSupport } from './skills'
+import { createBuiltInSkillRegistry } from './skills/built-in'
 
 const listProjectsParamsSchema = z.object({
   owner: z
@@ -117,7 +117,7 @@ class UserContextProvider implements ICopilotContextProvider {
       signedInState == null
         ? 'The signed-in state is still loading'
         : signedInState.isSignedIn
-          ? `Now the user is signed in with name "${signedInState.user.username}"`
+          ? `Now the user is signed in as "${signedInState.user.username}", with display name: "${signedInState.user.displayName}"`
           : 'The user is not signed in'
     return `# Current user
 ${userInfo}`
@@ -141,8 +141,8 @@ const router = useRouter()
 const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
 const signedInStateQuery = useSignedInStateQuery()
-const copilot = new Copilot()
-const disposeSkillSupport = registerSkillSupport(copilot)
+const skillRegistry = createBuiltInSkillRegistry()
+const copilot = new Copilot(skillRegistry)
 const sessionStorageRef = userSessionStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
 
 copilot.syncSessionWith({
@@ -155,7 +155,6 @@ copilot.syncSessionWith({
 })
 
 onUnmounted(() => {
-  disposeSkillSupport()
   copilot.dispose()
 })
 

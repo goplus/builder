@@ -1,12 +1,11 @@
 import { fromText, type Files } from '@/models/common/file'
-import { Disposable, type Disposer } from '@/utils/disposable'
-import type { Copilot } from '../copilot'
-import { SkillCatalogContextProvider } from './context-provider'
 import { InMemorySkillRegistry } from './registry'
-import { createLoadSkillResourceTool, createLoadSkillTool } from './tools'
 import type { SkillBundle, SkillRegistry } from './types'
 
-const builtInSkills = ['spx-project', 'xgo-language']
+export const skillSpxProject = 'spx-project'
+export const skillXgoLanguage = 'xgo-language'
+
+const builtInSkills = [skillSpxProject, skillXgoLanguage]
 
 const bundleFiles = import.meta.glob(
   './bundles/**/*.md', // For now we only bundle markdown resources from built-in skills.
@@ -35,14 +34,4 @@ export function createBuiltInSkillRegistry(): SkillRegistry {
     registry.register(bundle)
   }
   return registry
-}
-
-/** Register built-in skill support to the given Copilot instance. */
-export function registerSkillSupport(copilot: Copilot): Disposer {
-  const disposable = new Disposable()
-  const registry = createBuiltInSkillRegistry()
-  disposable.addDisposer(copilot.registerContextProvider(new SkillCatalogContextProvider(registry)))
-  disposable.addDisposer(copilot.registerTool(createLoadSkillTool(registry)))
-  disposable.addDisposer(copilot.registerTool(createLoadSkillResourceTool(registry)))
-  return () => disposable.dispose()
 }
