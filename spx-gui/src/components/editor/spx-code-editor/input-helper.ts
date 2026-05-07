@@ -19,14 +19,14 @@ import type { ColorValue } from '@/utils/spx'
 import {
   type Input,
   type InPlaceInput,
-  type IResourceProvider,
+  type IResourceAdapter,
   InputKind,
   InputHelperProvider,
   type InputTypeHandler,
-  type InputValuePreview
+  type InputValuePreview,
+  type ILSPClient
 } from '@/components/xgo-code-editor'
 import { SpxInputType, type InputValueForSpxType } from './common'
-import type { SpxLSPClient } from './lsp/spx-lsp-client'
 import SpxDirectionInput, * as spxDirectionInput from './ui/input-helper/SpxDirectionInput.vue'
 import SpxLayerActionInput, * as spxLayerActionInput from './ui/input-helper/SpxLayerActionInput.vue'
 import SpxDirActionInput, * as spxDirActionInput from './ui/input-helper/SpxDirActionInput.vue'
@@ -40,8 +40,8 @@ import SpxRotationStyleInput, * as spxRotationStyleInput from './ui/input-helper
 import SpxPropertyNameInput, * as spxPropertyNameInput from './ui/input-helper/SpxPropertyNameInput.vue'
 
 export class SpxInputHelperProvider extends InputHelperProvider {
-  constructor(lspClient: SpxLSPClient, resourceProvider: IResourceProvider) {
-    super(lspClient, resourceProvider)
+  constructor(lspClient: ILSPClient, resourceAdapter: IResourceAdapter) {
+    super(lspClient, () => resourceAdapter)
   }
 
   override provideInputTypeHandler(type: string): InputTypeHandler | null {

@@ -20,15 +20,8 @@ import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/xgo'
 import { theme, tabSize, insertSpaces } from '@/utils/xgo/highlighter'
 import { providePopupContainer, useModal } from '@/components/ui'
 import RenameModal from '@/components/common/RenameModal.vue'
-import { useCodeEditor, useRenameWarning } from '../context'
-import {
-  getDdiDragData,
-  getTextDocumentId,
-  type Position,
-  type Range,
-  type ResourceIdentifier,
-  type TextDocumentIdentifier
-} from '../common'
+import { useCodeEditor } from '../context'
+import { getDdiDragData, getTextDocumentId, type Position, type Range, type TextDocumentIdentifier } from '../common'
 import { type MonacoEditor, type monaco } from '../monaco'
 import { fromMonacoPosition } from './common'
 import { CodeEditorUIController } from './code-editor-ui'
@@ -47,14 +40,11 @@ import { userLocalStorageRef } from '@/utils/user-storage'
 
 const props = defineProps<{
   codeFilePath: string
-  renameResourceHandler?: (resourceId: ResourceIdentifier) => Promise<void>
-  goToResourceHandler?: (resourceId: ResourceIdentifier) => Promise<void>
 }>()
 
 const i18n = useI18n()
 const codeEditor = useCodeEditor()
 const invokeRenameModal = useModal(RenameModal)
-const getRenameWarning = useRenameWarning()
 
 async function rename(textDocumentId: TextDocumentIdentifier, position: Position, range: Range): Promise<void> {
   const textDocument = codeEditor.getTextDocument(textDocumentId)
@@ -69,26 +59,14 @@ async function rename(textDocumentId: TextDocumentIdentifier, position: Position
           codeEditor.rename(textDocumentId, position, newName)
         ),
       inputTip: getXGoIdentifierNameTip(),
-      warning: await getRenameWarning()
+      warning: await codeEditor.getRenameWarning()
     }
   })
 }
 
-function renameResource(resourceId: ResourceIdentifier): Promise<void> {
-  const handler = props.renameResourceHandler
-  if (handler == null) throw new Error(`Rename resource (${resourceId.uri}) not supported`)
-  return handler(resourceId)
-}
-
-function goToResource(resourceId: ResourceIdentifier): Promise<void> {
-  const handler = props.goToResourceHandler
-  if (handler == null) throw new Error(`Resource (${resourceId.uri}) not found`)
-  return handler(resourceId)
-}
-
 const uiRef = computed(() => {
   const mainTextDocumentId = getTextDocumentId(props.codeFilePath)
-  return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, rename, renameResource, goToResource)
+  return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, rename)
 })
 
 const initialFontSize = 12

@@ -25,3 +25,13 @@ export interface IAPIReferenceProvider {
   /** Provide view info (labels and icons) for categories. Returns null if not available. */
   provideCategoryViewInfos(): APICategoryViewInfo[] | null
 }
+
+export class EmptyAPIReferenceProvider implements IAPIReferenceProvider {
+  async provideAPIReference(): Promise<APIReferenceItem[]> {
+    return []
+  }
+
+  provideCategoryViewInfos(): APICategoryViewInfo[] | null {
+    return null
+  }
+}

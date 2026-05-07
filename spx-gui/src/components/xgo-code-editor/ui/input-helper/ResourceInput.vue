@@ -5,7 +5,7 @@ export function getDefaultValue() {
 </script>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -28,9 +28,10 @@ const emit = defineEmits<{
 }>()
 
 const { ui } = useCodeEditorUICtx()
-const provider = ui.resourceProvider
 const accept = props.accept as InputSlotAcceptForType<BuiltInInputType.ResourceName>
-const selector = provider?.useResourceSelector(accept.resourceContext) ?? null
+const itemRenderer = computed(() => ui.codeEditor.resourceAdapter.provideResourceItemRenderer())
+const selector = computed(() => ui.codeEditor.resourceAdapter.provideResourceSelector(accept.resourceContext))
+const items = computed(() => selector.value?.getItems() ?? [])
 
 const selected = ref(props.value)
 function select(item: ResourceIdentifier) {
@@ -47,20 +48,17 @@ const handleCreateWith = useMessageHandle(
 ).fn
 
 onMounted(() => {
-  if (selected.value == null && selector != null && selector.items.length > 0) {
-    select(selector.items[0])
+  if (selected.value == null && items.value.length > 0) {
+    select(items.value[0])
   }
 })
 </script>
 
 <template>
-  <ul
-    v-if="provider != null && selector != null"
-    class="w-94 max-h-70 flex-none flex flex-wrap content-start gap-2 overflow-y-auto"
-  >
+  <ul v-if="selector != null" class="w-94 max-h-70 flex-none flex flex-wrap content-start gap-2 overflow-y-auto">
     <component
-      :is="provider.provideResourceItemRenderer()"
-      v-for="item in selector.items"
+      :is="itemRenderer"
+      v-for="item in items"
       :key="item.uri"
       :resource="item"
       :selectable="{ selected: item.uri === selected }"

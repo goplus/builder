@@ -1,26 +1,18 @@
 import { debounce } from 'lodash'
-import { shallowRef, watch } from 'vue'
+import { watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { TaskManager } from '@/utils/task'
-import type { IDiagnosticsProvider } from '../../diagnostics'
 import type { CodeEditorUIController } from '../code-editor-ui'
 
 export type { IDiagnosticsProvider, DiagnosticsContext } from '../../diagnostics'
 
 export class DiagnosticsController extends Disposable {
-  private providerRef = shallowRef<IDiagnosticsProvider | null>(null)
-
-  registerProvider(provider: IDiagnosticsProvider) {
-    this.providerRef.value = provider
-  }
-
   constructor(private ui: CodeEditorUIController) {
     super()
   }
 
   private diagnosticsMgr = new TaskManager(async (signal) => {
-    const provider = this.providerRef.value
-    if (provider == null) return []
+    const provider = this.ui.codeEditor.diagnosticsProvider
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return []
     return provider.provideDiagnostics({ textDocument, signal })
@@ -35,9 +27,8 @@ export class DiagnosticsController extends Disposable {
 
     this.addDisposer(
       watch(
-        this.providerRef,
+        () => this.ui.codeEditor.diagnosticsProvider,
         (provider, _, onCleanup) => {
-          if (provider == null) return
           refreshDiagnostics()
           onCleanup(provider.on('didChangeDiagnostics', refreshDiagnostics))
         },

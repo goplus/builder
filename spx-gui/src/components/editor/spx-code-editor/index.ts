@@ -10,9 +10,6 @@ export * from '@/components/xgo-code-editor'
 // and the merged InputTypedValue / InputSlotAccept)
 export * from './common'
 
-// Spx-specific context (only new exports not already covered by xgo-code-editor)
-export { useProvideCodeEditorCtx, type SpxEditorState } from './context'
-
 // Spx project adapter
 export * from './spx-project'
 
@@ -29,6 +26,6 @@ export * from './input-helper'
 export * from './resource'
 
 // Vue components
-export { default as CodeEditorUI } from './ui/CodeEditorUI.vue'
+export { default as CodeEditorProvider } from './CodeEditorProvider.vue'
 export { default as CodeLink } from './CodeLink.vue'
 export { default as FormatButton } from './FormatButton.vue'
