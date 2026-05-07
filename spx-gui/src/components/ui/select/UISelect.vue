@@ -122,17 +122,6 @@ onBeforeUnmount(() => {
     background: var(--ui-color-grey-400);
   }
 
-  .ui-select:has(:active) {
-    color: var(--ui-color-grey-1000);
-    background: var(--ui-color-grey-500);
-  }
-
-  .ui-select:has(:focus) {
-    color: var(--ui-color-grey-1000);
-    background: var(--ui-color-grey-400);
-    box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
-  }
-
   .ui-select[data-disabled='true'] {
     background: var(--ui-color-disabled-bg);
     color: var(--ui-color-disabled-text);
@@ -141,6 +130,12 @@ onBeforeUnmount(() => {
 
   .ui-select[data-disabled='true'] select {
     cursor: not-allowed;
+  }
+
+  .ui-select:has(:focus) {
+    color: var(--ui-color-grey-1000);
+    background: var(--ui-color-grey-400);
+    box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
   }
 
   .ui-select[data-ui-state='success'] {
@@ -153,6 +148,11 @@ onBeforeUnmount(() => {
 
   .ui-select:is([data-ui-state='success'], [data-ui-state='error']):not(:hover) {
     background: var(--ui-color-grey-100);
+  }
+
+  .ui-select:has(:active) {
+    color: var(--ui-color-grey-1000);
+    background: var(--ui-color-grey-500);
   }
 }
 </style>
