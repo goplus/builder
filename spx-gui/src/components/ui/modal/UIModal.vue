@@ -208,7 +208,11 @@ watch(
 watch(
   [containerRef, transformOrigin],
   ([contentEl, origin]) => {
-    if (contentEl == null || !contentEl.isConnected || origin == null) return
+    if (contentEl == null || !contentEl.isConnected) return
+    if (origin == null) {
+      contentEl.style.removeProperty('--ui-modal-transform-origin')
+      return
+    }
     contentEl.style.setProperty(
       '--ui-modal-transform-origin',
       // Use layout offsets here instead of getBoundingClientRect(): the modal surface is
