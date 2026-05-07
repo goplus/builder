@@ -117,6 +117,10 @@ onBeforeUnmount(() => {
     transition: 0.3s;
   }
 
+  .ui-select:is([data-ui-state='success'], [data-ui-state='error']) {
+    background: var(--ui-color-grey-100);
+  }
+
   .ui-select:hover {
     color: var(--ui-color-grey-800);
     background: var(--ui-color-grey-400);
@@ -144,10 +148,6 @@ onBeforeUnmount(() => {
 
   .ui-select[data-ui-state='error'] {
     box-shadow: inset 0 0 0 1px var(--ui-color-danger-main);
-  }
-
-  .ui-select:is([data-ui-state='success'], [data-ui-state='error']):not(:hover) {
-    background: var(--ui-color-grey-100);
   }
 
   .ui-select:has(:active) {
