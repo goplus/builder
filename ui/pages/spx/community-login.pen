@@ -1,5 +1,5 @@
 {
-  "version": "2.10",
+  "version": "2.11",
   "children": [
     {
       "type": "frame",
@@ -13,7 +13,7 @@
       "fill": {
         "type": "image",
         "enabled": true,
-        "url": "../../images/Login:background:pc.png",
+        "url": "../../images/login-background-pc.png",
         "mode": "fill"
       },
       "layout": "vertical",
@@ -32,6 +32,16 @@
           "width": 1000,
           "fill": "$r:grey100",
           "cornerRadius": 16,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#afe7eca6",
+            "offset": {
+              "x": 0,
+              "y": "$r:space-1"
+            },
+            "blur": 12
+          },
           "layout": "vertical",
           "padding": [
             0,
@@ -47,7 +57,6 @@
               "id": "0SPCV",
               "name": "login-top-area",
               "width": "fill_container",
-              "gap": 10,
               "padding": [
                 36,
                 0,
@@ -60,7 +69,7 @@
                   "id": "cgp06",
                   "type": "ref",
                   "ref": "r:Lm2P8",
-                  "content": "登录",
+                  "content": "Sign in",
                   "fill": "$r:grey1000",
                   "fontFamily": "Inter",
                   "fontSize": 26,
@@ -87,9 +96,9 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "id": "1wWNR",
+                      "id": "x9Xv2E",
                       "type": "ref",
-                      "ref": "r:F1FG5",
+                      "ref": "r:x4bElu",
                       "x": 14,
                       "y": 0
                     }
@@ -120,53 +129,60 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "TFQc4",
-                      "name": "login-logo-pc-container",
-                      "clip": true,
+                      "id": "WxNZJ",
+                      "name": "login-logo-name",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
                       "layout": "vertical",
-                      "gap": 12,
-                      "justifyContent": "center",
+                      "gap": "$r:space-3",
                       "alignItems": "center",
                       "children": [
                         {
-                          "id": "gUKoh",
+                          "id": "u9XJpD",
                           "type": "ref",
-                          "ref": "r:rDyIo",
+                          "ref": "r:KUJAz",
                           "x": 15.5,
-                          "y": 0
-                        },
-                        {
-                          "type": "frame",
-                          "id": "WxNZJ",
-                          "name": "login-logo-name",
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": 1
-                          },
-                          "layout": "vertical",
-                          "gap": 4,
-                          "alignItems": "center",
+                          "y": 0,
+                          "name": "Logo/XBuilder/Default",
                           "children": [
                             {
-                              "id": "Jbve6",
+                              "id": "K1dvD",
                               "type": "ref",
-                              "ref": "r:Lm2P8",
-                              "content": "XBuilder",
-                              "fill": "$r:grey1000",
-                              "fontFamily": "HarmonyOS Sans",
-                              "fontSize": 24,
-                              "fontWeight": "700"
+                              "ref": "r:Dl4iF"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "ypUJR",
+                          "type": "ref",
+                          "ref": "r:KUJAz",
+                          "x": 0,
+                          "y": 84,
+                          "children": [
+                            {
+                              "id": "BpAgE",
+                              "type": "ref",
+                              "ref": "r:R1561"
                             }
                           ]
                         }
                       ]
                     },
                     {
-                      "id": "1xRFU",
+                      "id": "AsH1J",
                       "type": "ref",
-                      "ref": "r:PjHLr",
-                      "x": 85,
-                      "y": 238.5
+                      "ref": "r:DrlMA",
+                      "x": 77,
+                      "y": 235,
+                      "children": [
+                        {
+                          "id": "bWmqf",
+                          "type": "ref",
+                          "ref": "r:YtTaN"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -188,7 +204,7 @@
       "fill": {
         "type": "image",
         "enabled": true,
-        "url": "../../images/Login:background:app.png",
+        "url": "../../images/login-background-app.png",
         "mode": "fill"
       },
       "layout": "vertical",
@@ -205,7 +221,6 @@
           "type": "frame",
           "id": "EMvsJ",
           "name": "login-container-app",
-          "width": 295,
           "layout": "vertical",
           "gap": 64,
           "justifyContent": "center",
@@ -217,64 +232,59 @@
               "name": "login-signin-app-container",
               "clip": true,
               "layout": "vertical",
-              "gap": 12,
+              "gap": "$r:space-3",
               "justifyContent": "center",
               "alignItems": "center",
               "children": [
                 {
-                  "id": "iMxuc",
+                  "id": "IPT8p",
                   "type": "ref",
-                  "ref": "r:rDyIo",
+                  "ref": "r:KUJAz",
                   "x": 15.5,
-                  "y": 0
-                },
-                {
-                  "type": "frame",
-                  "id": "4QZN0",
-                  "name": "login-logo-name",
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1
-                  },
-                  "layout": "vertical",
-                  "gap": 4,
-                  "alignItems": "center",
+                  "y": 0,
                   "children": [
                     {
-                      "id": "2v7iK",
+                      "id": "LQIm9",
                       "type": "ref",
-                      "ref": "r:Lm2P8",
-                      "content": "XBuilder",
-                      "fill": "$r:grey1000",
-                      "fontFamily": "HarmonyOS Sans",
-                      "fontSize": 24,
-                      "fontWeight": "700"
+                      "ref": "r:Dl4iF"
+                    }
+                  ]
+                },
+                {
+                  "id": "b4Fm3",
+                  "type": "ref",
+                  "ref": "r:KUJAz",
+                  "x": 0,
+                  "y": 84,
+                  "children": [
+                    {
+                      "id": "WLt61",
+                      "type": "ref",
+                      "ref": "r:R1561"
                     }
                   ]
                 }
               ]
             },
             {
-              "id": "40Vtt",
+              "id": "spn1P",
               "type": "ref",
-              "ref": "r:sH3wB",
+              "ref": "r:DrlMA",
               "x": 0,
-              "y": 181,
-              "descendants": {
-                "r:2ZR1K": {
-                  "enabled": false
-                },
-                "r:RaNPU": {
-                  "enabled": false
+              "y": 182,
+              "children": [
+                {
+                  "id": "tHc5O",
+                  "type": "ref",
+                  "ref": "r:zuNgo"
                 }
-              }
+              ]
             }
           ]
         }
       ]
     }
   ],
-  "themes": {},
   "imports": {
     "r": "../../components/spx/builder-component.lib.pen"
   }

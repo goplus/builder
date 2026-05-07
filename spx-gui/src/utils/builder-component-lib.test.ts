@@ -243,11 +243,7 @@ const P1ExpectedNodeNames = {
   XH2iW: 'Actions'
 } as const
 const P2ExpectedNodeNames = {
-  Nf0mh: 'Wordmark',
-  Wf2kM: 'Glyph',
   DZhwW: 'icon/language',
-  zA2WJ: 'Wordmark',
-  oPOhE: 'Glyph',
   pQlJZ: 'icon/language',
   npZEm: 'Wordmark',
   j5xG8d: 'Glyph',
