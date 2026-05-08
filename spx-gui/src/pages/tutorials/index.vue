@@ -7,9 +7,10 @@
 
     <CenteredWrapper
       v-radar="{ name: 'Course series list', desc: 'Scroll to view the course series' }"
-      class="my-8 flex-1 flex flex-col items-center"
+      class="mt-10 mb-15 flex-1 flex flex-col items-center"
       :style="{ '--num-in-row': numInRow }"
     >
+      <div class="w-full mb-5 text-2xl text-title">{{ $t({ en: 'Basic Tutorial', zh: '基础教程' }) }}</div>
       <ListResultWrapper :query-ret="courseSeriesQuery" :height="height">
         <template #empty>
           <UIEmpty size="extra-large">
@@ -17,7 +18,7 @@
           </UIEmpty>
         </template>
         <template #default="{ data }">
-          <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-xl">
+          <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-5">
             <CourseSeriesItem v-for="courseSeries in data.data" :key="courseSeries.id" :course-series="courseSeries" />
           </ul>
         </template>

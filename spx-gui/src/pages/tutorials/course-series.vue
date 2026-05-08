@@ -102,20 +102,20 @@ const { fn: handleCourseClick } = useMessageHandle(
     <CommunityNavbar />
 
     <CenteredWrapper size="medium" class="my-6">
-      <UICard class="relative flex gap-10 bg-grey-100 p-5">
+      <UICard class="h-[145px] flex gap-10 bg-grey-100 p-5">
         <UILoading v-if="courseSeriesIsLoading" cover mask="solid" />
         <UIError v-else-if="courseSeriesError != null" :retry="courseSeriesRefetch">
           {{ $t(courseSeriesError.userMessage) }}
         </UIError>
         <div
-          class="flex-[1_1_200px] aspect-[1.08] overflow-hidden rounded-lg"
+          class="flex-none w-35 aspect-4/3 overflow-hidden rounded-sm"
           :style="{ backgroundImage: `url(${stageBg})` }"
         >
           <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
         </div>
-        <div class="flex-[1_1_1000px] mr-5 flex flex-col gap-5 overflow-hidden">
+        <div class="flex-auto flex flex-col gap-3 overflow-hidden">
           <template v-if="courseSeries != null">
-            <h2 class="overflow-hidden text-2xl whitespace-nowrap text-ellipsis text-grey-1000">
+            <h2 class="flex-none overflow-hidden whitespace-nowrap text-ellipsis text-2xl text-title">
               {{ courseSeries.title }}
             </h2>
 
@@ -124,7 +124,7 @@ const { fn: handleCourseClick } = useMessageHandle(
                 name: 'Course series details',
                 desc: 'Course series description'
               }"
-              class="flex-[1_1_0] overflow-auto"
+              class="flex-auto overflow-auto"
             >
               <TextView
                 :text="courseSeries.description"
@@ -155,6 +155,7 @@ const { fn: handleCourseClick } = useMessageHandle(
                   v-for="course in data.data"
                   :key="course.id"
                   :href="`/course/${courseSeries.id}/${course.id}/start`"
+                  class="no-underline"
                   @click="handleCourseClick($event, course, courseSeries)"
                 >
                   <CourseItem :course="course" />

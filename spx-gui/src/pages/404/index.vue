@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import { UIButton } from '@/components/ui'
-import errorSvg from './error.svg?raw'
+import { UIButton, UIImg } from '@/components/ui'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
+import errorImg from './error.png'
 
 const router = useRouter()
 </script>
@@ -16,8 +16,7 @@ const router = useRouter()
   >
     <CommunityNavbar />
     <div class="w-full flex-1 flex flex-col items-center justify-center gap-4">
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <div v-html="errorSvg"></div>
+      <UIImg :src="errorImg" class="h-47.5 w-67.5" />
       <p class="text-2xl text-grey-1000">
         {{ $t({ en: 'Page not found', zh: '页面未找到' }) }}
       </p>

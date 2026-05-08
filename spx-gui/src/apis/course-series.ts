@@ -15,6 +15,8 @@ export type CourseSeries = {
   courseIDs: string[]
   /** Order/priority of the course series for sorting */
   order: number
+  createdAt: string
+  updatedAt: string
 }
 
 /** Get a course series by ID */

@@ -1,12 +1,12 @@
 <script lang="ts">
-export const courseSeriesItemHeight = 214
+export const courseSeriesItemHeight = 254
 </script>
 
 <script lang="ts" setup>
 import type { CourseSeries } from '@/apis/course-series'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UIImg } from '@/components/ui'
-import { useAsyncComputed } from '@/utils/utils'
+import { humanizeTime, useAsyncComputed } from '@/utils/utils'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 
 const props = defineProps<{
@@ -27,16 +27,26 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
       name: `Course series item \u0022${props.courseSeries.title}\u0022`,
       desc: 'Click to view the course series'
     }"
-    class="relative w-58 overflow-hidden rounded-lg transition-all duration-200 hover:cursor-pointer hover:-translate-y-0.5 hover:shadow-sm"
+    class="w-58 overflow-hidden rounded-md border border-grey-400 transition-all duration-200 hover:cursor-pointer hover:shadow-sm"
     :style="{ height: `${courseSeriesItemHeight}px`, backgroundImage: `url(${stageBgUrl})` }"
   >
-    <RouterLink :to="`/course-series/${props.courseSeries.id}`">
-      <UIImg class="h-full w-full" :src="thumbnailUrl" size="cover" />
-      <div
-        class="absolute bottom-0 h-10 w-full overflow-hidden whitespace-nowrap px-4 text-lg/10 text-grey-100 text-ellipsis"
-        :style="{ background: 'rgb(from var(--ui-color-grey-1000) r g b / 0.2)' }"
-      >
-        {{ courseSeries.title }}
+    <RouterLink :to="`/course-series/${props.courseSeries.id}`" class="no-underline">
+      <div class="h-full w-full flex flex-col">
+        <UIImg class="flex-auto" :src="thumbnailUrl" size="cover" />
+        <div class="flex-none h-20 w-full overflow-hidden p-4 bg-grey-100">
+          <div
+            class="w-full overflow-hidden whitespace-nowrap text-lg text-title text-ellipsis"
+            :title="courseSeries.title"
+          >
+            {{ courseSeries.title }}
+          </div>
+          <div class="mt-1 inline-flex items-center gap-3 text-sm text-hint-2">
+            <span>
+              {{ $t({ en: `${courseSeries.courseIDs.length} Total`, zh: `${courseSeries.courseIDs.length} 节课程` }) }}
+            </span>
+            <span>{{ $t(humanizeTime(courseSeries.createdAt)) }}</span>
+          </div>
+        </div>
       </div>
     </RouterLink>
   </li>
