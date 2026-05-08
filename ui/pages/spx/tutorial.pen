@@ -19,6 +19,20 @@
       "alignItems": "center",
       "children": [
         {
+          "id": "ong2L",
+          "type": "ref",
+          "ref": "P:WiWwa",
+          "x": 0.00019750793483246803,
+          "y": 0,
+          "children": [
+            {
+              "id": "lGGpB",
+              "type": "ref",
+              "ref": "P:O7syE"
+            }
+          ]
+        },
+        {
           "type": "frame",
           "id": "2rbCt",
           "name": "content",
@@ -28,20 +42,6 @@
           "layout": "vertical",
           "alignItems": "center",
           "children": [
-            {
-              "id": "5i94D",
-              "type": "ref",
-              "ref": "P:sKPE5",
-              "x": 0,
-              "y": 0,
-              "children": [
-                {
-                  "id": "jGhf2",
-                  "type": "ref",
-                  "ref": "P:1jllZ"
-                }
-              ]
-            },
             {
               "type": "frame",
               "id": "hC3Zt",
@@ -115,478 +115,205 @@
                   "clip": true,
                   "fill": "$P:grey100",
                   "layout": "vertical",
-                  "gap": 20,
+                  "gap": "$P:space-5",
                   "children": [
                     {
                       "type": "frame",
                       "id": "bNCfF",
                       "name": "Course item g",
-                      "width": "fit_content(0)",
-                      "height": 214,
-                      "gap": 20,
+                      "width": 988.0000000000002,
+                      "gap": "$P:space-5",
                       "justifyContent": "center",
-                      "alignItems": "center",
                       "children": [
                         {
-                          "id": "3JDOM",
+                          "id": "Msw6I",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 0,
-                          "y": 0,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "../../images/builder-usage.png",
-                            "mode": "fill"
-                          },
-                          "descendants": {
-                            "P:lOMEl": {
-                              "fill": [
-                                "#d19a60",
-                                "#24292f33"
-                              ]
-                            },
-                            "P:sBHFN": {
-                              "content": "Builder 使用指引"
+                          "ref": "P:m6A5K",
+                          "x": 1.1368683772161603e-13,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "gqB7m",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "rqPBg",
+                          "id": "F8LPb5",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 252,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code kiko：初步 "
+                          "ref": "P:m6A5K",
+                          "x": 252.00000000000017,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "v3LEr",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "oRfhs",
+                          "id": "rGdVX",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 504,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：对象"
+                          "ref": "P:m6A5K",
+                          "x": 504.0000000000002,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "gMue2",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "9wCXN",
+                          "id": "f3Ws9",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 756,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：循环"
+                          "ref": "P:m6A5K",
+                          "x": 756.0000000000002,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "J4CGOf",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "rLyGM",
+                      "id": "xKn5b",
                       "name": "Course item g",
-                      "width": "fit_content(0)",
-                      "height": 214,
-                      "gap": 20,
+                      "gap": "$P:space-5",
                       "justifyContent": "center",
-                      "alignItems": "center",
                       "children": [
                         {
-                          "id": "Q2LYO",
+                          "id": "UgZoQ",
                           "type": "ref",
-                          "ref": "P:EoQIl",
+                          "ref": "P:m6A5K",
                           "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：变量"
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "I5kOgN",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "2LPqD",
+                          "id": "ElORu",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 252,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：综合1"
+                          "ref": "P:m6A5K",
+                          "x": 252.00000000000006,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "lhQg5",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "SZ6ub",
+                          "id": "f01chy",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 504,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：函数调用"
+                          "ref": "P:m6A5K",
+                          "x": 504.0000000000001,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "SXqi3",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "2OSKW",
+                          "id": "gf7ot",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 756,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：数组"
+                          "ref": "P:m6A5K",
+                          "x": 756.0000000000002,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "U5MXKM",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "hEeCj",
+                      "id": "hnF7A",
                       "name": "Course item g",
-                      "width": "fit_content(0)",
-                      "height": 214,
-                      "gap": 20,
+                      "gap": "$P:space-5",
                       "justifyContent": "center",
-                      "alignItems": "center",
                       "children": [
                         {
-                          "id": "ZVWx1",
+                          "id": "sCfPF",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：条件"
+                          "ref": "P:m6A5K",
+                          "x": 5.684341886080802e-14,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "yZwho",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "Lo92c",
+                          "id": "Nwfck",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 252,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：综合2"
+                          "ref": "P:m6A5K",
+                          "x": 252.0000000000001,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "ttF96",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "KLjyT",
+                          "id": "ghN8M",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 504,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：事件"
+                          "ref": "P:m6A5K",
+                          "x": 504.00000000000017,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "ol9R2",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
+                          ]
                         },
                         {
-                          "id": "LH3OR",
+                          "id": "fWnAb",
                           "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 756,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：多精灵编程"
+                          "ref": "P:m6A5K",
+                          "x": 756.0000000000002,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "ukqlB",
+                              "type": "ref",
+                              "ref": "P:XzIf9"
                             }
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "AOZZq",
-                      "name": "Course item g",
-                      "width": "fit_content(0)",
-                      "height": 214,
-                      "gap": 20,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "id": "yqyXR",
-                          "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 0,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：函数定义与调用"
-                            }
-                          }
-                        },
-                        {
-                          "id": "KhsHu",
-                          "type": "ref",
-                          "ref": "P:EoQIl",
-                          "x": 252,
-                          "y": 0,
-                          "descendants": {
-                            "P:sBHFN": {
-                              "content": "Code Kiko：最终大型游戏"
-                            }
-                          }
+                          ]
                         }
                       ]
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "4q1lx",
-              "name": "pagination",
-              "width": "fill_container",
-              "cornerRadius": 8,
-              "gap": 8,
-              "padding": 16,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "id": "TOuLK",
-                  "type": "ref",
-                  "ref": "P:bm7Pn",
-                  "x": 604,
-                  "y": 16,
-                  "width": "fit_content",
-                  "children": [
-                    {
-                      "id": "5HHGD",
-                      "type": "ref",
-                      "ref": "P:X3aQ5",
-                      "x": 0,
-                      "y": 0
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "frame",
-      "id": "4IqER",
-      "x": -720,
-      "y": 818.5,
-      "name": "start-page",
-      "width": 1440,
-      "fill": "$P:grey300",
-      "layout": "vertical",
-      "gap": 32,
-      "padding": [
-        0,
-        0,
-        40,
-        0
-      ],
-      "justifyContent": "center",
-      "alignItems": "center",
-      "children": [
-        {
-          "type": "frame",
-          "id": "lz0Uk",
-          "name": "Top Card",
-          "width": 988,
-          "fill": "$P:grey100",
-          "cornerRadius": 16,
-          "gap": 40,
-          "padding": 24,
-          "children": [
-            {
-              "type": "frame",
-              "id": "jbcHB",
-              "name": "Card Image",
-              "width": 142,
-              "height": 131,
-              "fill": {
-                "type": "image",
-                "enabled": true,
-                "url": "../../images/codekiko.png",
-                "mode": "stretch"
-              },
-              "cornerRadius": 12
-            },
-            {
-              "type": "frame",
-              "id": "GnuCa",
-              "name": "text-container",
-              "width": 758,
-              "height": 111,
-              "layout": "vertical",
-              "gap": 20,
-              "children": [
-                {
-                  "id": "AaxB4",
-                  "type": "ref",
-                  "ref": "P:Lm2P8",
-                  "fill": "$P:grey1000",
-                  "content": "Code kiko: 初步",
-                  "lineHeight": 1.1833333333333333,
-                  "fontSize": 20,
-                  "fontWeight": "bold"
-                },
-                {
-                  "id": "eoBFp",
-                  "type": "ref",
-                  "ref": "P:0rSuk",
-                  "fill": "$P:grey900",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "A complete solution for adventure games that focus on storytelling and puzzles - the perfect genre for newcomers to game development.A complete solution for adventure games that focus on storytelling and puzzles - the perfect genre for newcomers to game development.",
-                  "lineHeight": 1.5714285714285714,
-                  "fontSize": 14,
-                  "fontWeight": "normal"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "DWwGJ",
-          "name": "Course container",
-          "clip": true,
-          "fill": "$P:grey100",
-          "layout": "vertical",
-          "gap": 20,
-          "children": [
-            {
-              "type": "frame",
-              "id": "fgSuY",
-              "name": "Course item g",
-              "width": "fit_content(0)",
-              "height": 214,
-              "gap": 20,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "id": "bZeba",
-                  "type": "ref",
-                  "ref": "P:EoQIl",
-                  "x": 0,
-                  "y": 0,
-                  "descendants": {
-                    "P:sBHFN": {
-                      "content": "Code kiko：初步 "
-                    }
-                  }
-                },
-                {
-                  "id": "oYIyy",
-                  "type": "ref",
-                  "ref": "P:EoQIl",
-                  "x": 252,
-                  "y": 0,
-                  "descendants": {
-                    "P:sBHFN": {
-                      "content": "Code kiko：初步 "
-                    }
-                  }
-                },
-                {
-                  "id": "vPTbn",
-                  "type": "ref",
-                  "ref": "P:EoQIl",
-                  "x": 504,
-                  "y": 0,
-                  "descendants": {
-                    "P:sBHFN": {
-                      "content": "Code kiko：初步 "
-                    }
-                  }
-                },
-                {
-                  "id": "y8rR6",
-                  "type": "ref",
-                  "ref": "P:EoQIl",
-                  "x": 756,
-                  "y": 0,
-                  "descendants": {
-                    "P:sBHFN": {
-                      "content": "Code kiko：初步 "
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "cQ6Ci",
-              "name": "Course item g",
-              "width": "fit_content(0)",
-              "height": 214,
-              "gap": 20,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "id": "p9LLi",
-                  "type": "ref",
-                  "ref": "P:EoQIl",
-                  "x": 0,
-                  "y": 0,
-                  "descendants": {
-                    "P:sBHFN": {
-                      "content": "Code kiko：初步 "
-                    }
-                  }
-                },
-                {
-                  "id": "MXgEu",
-                  "type": "ref",
-                  "ref": "P:EoQIl",
-                  "x": 252,
-                  "y": 0,
-                  "descendants": {
-                    "P:sBHFN": {
-                      "content": "Code kiko：初步 "
-                    }
-                  }
-                },
-                {
-                  "id": "ksPP6",
-                  "type": "ref",
-                  "ref": "P:EoQIl",
-                  "x": 504,
-                  "y": 0,
-                  "descendants": {
-                    "P:sBHFN": {
-                      "content": "Code kiko：初步 "
-                    }
-                  }
-                },
-                {
-                  "id": "JtDM7",
-                  "type": "ref",
-                  "ref": "P:EoQIl",
-                  "x": 756,
-                  "y": 0,
-                  "descendants": {
-                    "P:sBHFN": {
-                      "content": "Code kiko：初步 "
-                    }
-                  }
                 }
               ]
             }

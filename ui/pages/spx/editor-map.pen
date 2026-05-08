@@ -9,33 +9,21 @@
       "name": "page",
       "width": 1440,
       "height": 900,
-      "fill": "$y:blue200",
+      "fill": "$y:grey300",
       "layout": "vertical",
       "gap": 20,
       "children": [
         {
-          "id": "IMV5v",
+          "id": "qiNmn",
           "type": "ref",
-          "ref": "y:sKPE5",
-          "x": 0,
+          "ref": "y:WiWwa",
+          "x": 0.00037173899785242556,
           "y": 0,
-          "height": "fit_content",
           "children": [
             {
-              "id": "9Os2U",
+              "id": "WIh0Y",
               "type": "ref",
-              "ref": "y:sExhj",
-              "height": "fit_content",
-              "x": 0,
-              "y": 0,
-              "descendants": {
-                "y:8oWEL": {
-                  "height": "fit_content"
-                },
-                "y:f9x4M": {
-                  "height": "fit_content(0)"
-                }
-              }
+              "ref": "y:So19f"
             }
           ]
         },
@@ -54,40 +42,55 @@
           ],
           "children": [
             {
-              "id": "fKzs6",
+              "id": "y6MgiT",
               "type": "ref",
-              "ref": "y:yljU1",
+              "ref": "y:qEHhD",
               "x": 20,
-              "y": 0
+              "y": 0,
+              "children": [
+                {
+                  "id": "zOgBS",
+                  "type": "ref",
+                  "ref": "y:ehGL5"
+                }
+              ]
             },
             {
               "type": "frame",
               "id": "P5f0T",
               "name": "Sidebar",
-              "width": "fill_container",
+              "clip": true,
               "height": "fill_container",
               "layout": "vertical",
               "gap": 20,
               "children": [
                 {
-                  "id": "cuchT",
+                  "id": "G7Xsx",
                   "type": "ref",
-                  "ref": "y:JdOB2",
+                  "ref": "y:Hjqqt",
                   "x": 0,
-                  "y": 0
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "VAE7F",
+                      "type": "ref",
+                      "ref": "y:XUmrh"
+                    }
+                  ]
                 },
                 {
-                  "id": "PuqT0",
+                  "id": "SO3XP",
                   "type": "ref",
-                  "ref": "y:xpnDl",
+                  "ref": "y:Hjqqt",
                   "x": 0,
-                  "y": 208,
-                  "descendants": {
-                    "y:auY3z": {
-                      "content": "q",
-                      "fill": "$y:turquoise500"
+                  "y": 198,
+                  "children": [
+                    {
+                      "id": "D2ORVQ",
+                      "type": "ref",
+                      "ref": "y:TaNBl"
                     }
-                  }
+                  ]
                 }
               ]
             }
