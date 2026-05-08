@@ -175,7 +175,7 @@ import {
   DiagnosticSeverity,
   textDocumentId2CodeFileName,
   getInvalidMonitors
-} from '@/components/editor/code-editor/spx-code-editor'
+} from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'

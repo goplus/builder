@@ -35,7 +35,7 @@ onBeforeUnmount(() => {
     <div class="flex items-center gap-1">
       <UINumberInput
         v-radar="{ name: 'X position input', desc: `Input to set ${name} X position` }"
-        class="w-18"
+        class="w-19"
         :value="localConfig.x"
         @update:value="handleUpdateX($event ?? 0)"
       >
@@ -43,7 +43,7 @@ onBeforeUnmount(() => {
       </UINumberInput>
       <UINumberInput
         v-radar="{ name: 'Y position input', desc: `Input to set ${name} Y position` }"
-        class="w-18"
+        class="w-19"
         :value="localConfig.y"
         @update:value="handleUpdateY($event ?? 0)"
       >

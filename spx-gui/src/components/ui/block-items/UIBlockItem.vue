@@ -7,7 +7,6 @@
       droppable && `ui-block-item-droppable-${droppable}`,
       `ui-block-item-${size}`
     ]"
-    :style="style"
   >
     <slot></slot>
   </div>
@@ -34,16 +33,9 @@ withDefaults(
     droppable: false
   }
 )
-
-const style = {
-  '--color-outline': 'var(--ui-color-primary-main)',
-  '--color-background-active': 'var(--ui-color-primary-200)',
-  '--color-background-default': 'var(--ui-color-primary-100)',
-  '--color-background-hover': 'var(--ui-color-primary-200)'
-}
 </script>
 
-<style>
+<style scoped>
 @layer components {
   .ui-block-item {
     box-sizing: border-box;
@@ -90,12 +82,12 @@ const style = {
   }
 
   .ui-block-item.ui-block-item-active {
-    background-color: var(--color-background-active);
+    background-color: var(--ui-color-primary-200);
   }
 
   .ui-block-item.ui-block-item-active::before {
     border-width: 2px;
-    border-color: var(--color-outline);
+    border-color: var(--ui-color-primary-main);
   }
 
   .ui-block-item.ui-block-item-active.ui-block-item-draggable {
@@ -113,12 +105,12 @@ const style = {
 
   .ui-block-item.ui-block-item-droppable-over {
     animation: droppable-shaking 0.2s ease-in-out 2;
-    background-color: var(--color-background-active);
+    background-color: var(--ui-color-primary-200);
   }
 
   .ui-block-item.ui-block-item-droppable-over::before {
     border-width: 2px;
-    border-color: var(--color-outline);
+    border-color: var(--ui-color-primary-main);
   }
 }
 

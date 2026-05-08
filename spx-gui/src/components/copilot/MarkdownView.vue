@@ -11,7 +11,7 @@ function getComponents(copilot: Copilot): Components {
     customComponents[tool.tagName] = tool.component
   })
   return {
-    codeBlock: CodeBlock,
+    codeBlock: copilot.markdownElements.codeBlock ?? CodeBlock,
     custom: customComponents,
     customRaw: customRawComponents
   }
@@ -29,7 +29,7 @@ import MarkdownView, {
   findCustomComponentUsages as fccu,
   type Components
 } from '@/components/common/markdown-vue/MarkdownView'
-import CodeBlock from './custom-elements/CodeBlock.vue'
+import CodeBlock from './markdown-elements/CodeBlock.vue'
 import { useCopilot } from './context'
 import type { Copilot } from './copilot'
 

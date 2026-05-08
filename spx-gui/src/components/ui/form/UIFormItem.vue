@@ -1,5 +1,5 @@
 <template>
-  <div :class="rootClass" :data-ui-state="validationState">
+  <div :class="cn('flex flex-col [&+&]:mt-6', props.class)">
     <div v-if="props.label != null" :id="ids.labelId" class="mb-1 text-hint-1">
       {{ props.label }}
     </div>
@@ -33,8 +33,6 @@ const props = withDefaults(
     class: undefined
   }
 )
-
-const rootClass = computed(() => cn('flex flex-col [&+&]:mt-6', props.class ?? null))
 
 const slots = useSlots()
 const formCtx = useFormContext()

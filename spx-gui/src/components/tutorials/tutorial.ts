@@ -5,7 +5,7 @@ import type { Router } from 'vue-router'
 import { timeout, until } from '@/utils/utils'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
-import { tagName as highlightLinkTagName } from '@/components/copilot/custom-elements/HighlightLink.vue'
+import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 

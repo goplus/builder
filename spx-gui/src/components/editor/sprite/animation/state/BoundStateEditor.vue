@@ -1,8 +1,8 @@
 <!-- eslint-disable vue/no-v-html -->
 
 <template>
-  <UIDropdownModal
-    v-radar="{ name: 'Bound state editor modal', desc: 'Modal for editing animation bound state' }"
+  <UIDropdownForm
+    v-radar="{ name: 'Bound state editor dropdown form', desc: 'Dropdown form for editing animation bound state' }"
     :title="$t(actionName)"
     style="width: 320px"
     @cancel="emit('close')"
@@ -49,14 +49,14 @@
         <UICornerIcon v-show="isBound(State.Die)" type="check" />
       </UIBlockItem>
     </ul>
-  </UIDropdownModal>
+  </UIDropdownForm>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Animation } from '@/models/spx/animation'
 import { State } from '@/models/spx/sprite'
-import { UIDropdownModal, UICornerIcon, UIBlockItem } from '@/components/ui'
+import { UIDropdownForm, UICornerIcon, UIBlockItem } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import iconStateDefault from './default.svg?raw'
 import iconStateStep from './step.svg?raw'

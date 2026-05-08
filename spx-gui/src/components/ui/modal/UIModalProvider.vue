@@ -15,21 +15,15 @@
 </template>
 
 <script lang="ts">
-import {
-  type InjectionKey,
-  inject,
-  provide,
-  shallowReactive,
-  nextTick,
-  type Component,
-  watch,
-  ref,
-  type WatchSource
-} from 'vue'
-import type { ComponentDefinition, PruneProps } from '@/utils/types'
+/**
+ * UIModalProvider owns programmatic modal instances: creation, promise lifecycle,
+ * delayed removal, events, and the provider-level `active` prop.
+ */
+import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component, ref } from 'vue'
+import type { ComponentDefinition, EmitsForComponent, PropsForComponent, Prettify } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
 import Emitter from '@/utils/emitter'
-import { provideModalContainer, useModalContainer } from '../utils'
+import { provideModalContainer } from '../utils'
 
 // The Modal Component should provide Props as following:
 export type ModalComponentProps = {
@@ -68,21 +62,24 @@ export type ModalEvents = Emitter<{
 
 type ModalContext = {
   events: ModalEvents
-  add(modalInfo: Omit<ModalInfo, 'visible'>): void
+  add(modalInfo: Omit<ModalInfo, 'id' | 'visible'>): void
 }
+
+export type ModalComponentDefinition = ComponentDefinition<ModalComponentProps, ModalComponentEmits<any>>
+
+type ResolvedValue<E> = E extends { resolved: infer Args extends any[] } ? Args[0] : never
+
+type ExtraProps<C extends ModalComponentDefinition> = Prettify<Omit<PropsForComponent<C>, keyof ModalComponentProps>>
 
 const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context')
 
-let mid = 0
-
-export function useModal<P extends ModalComponentProps, R>(component: ComponentDefinition<P, ModalComponentEmits<R>>) {
+export function useModal<C extends ModalComponentDefinition>(component: C) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(extraProps: Omit<PruneProps<P, ModalComponentEmits<R>>, keyof ModalComponentProps>) {
-    return new Promise<R>((resolve, reject) => {
-      mid++
+  return function invokeModal(extraProps: ExtraProps<C>) {
+    return new Promise<ResolvedValue<EmitsForComponent<C>>>((resolve, reject) => {
       const handlers = { resolve, reject }
-      ctx.add({ id: mid, component, props: extraProps, handlers })
+      ctx.add({ component, props: extraProps, handlers })
     })
   }
 }
@@ -92,56 +89,22 @@ export function useModalEvents(): ModalEvents {
   if (ctx == null) throw new Error('useModalEvents should be called inside of ModalProvider')
   return ctx.events
 }
-
-export function useModalEsc(source: WatchSource<boolean>, handler: () => void) {
-  const modalContainerRef = useModalContainer()
-
-  watch(
-    [modalContainerRef, source],
-    ([modalContainer, active], _, onCleanUp) => {
-      if (modalContainer == null || !active) return
-
-      // naive-ui does not adequately support simultaneously having "focus outside the modal" and allowing the modal to be "closed by the ESC key."
-      // Refer to: https://github.com/goplus/builder/pull/1874#discussion_r2220769290
-      const handleKeydown = (e: KeyboardEvent) => {
-        if (e.key !== 'Escape') return
-
-        const target = e.target
-        if (
-          // Non-focusable DOM elements cannot trigger keydown events,so the target is either the body or a focusable DOM element.
-          // If the target is the body, the modal should be closed normally.
-          target != document.body &&
-          target instanceof HTMLElement &&
-          // ignore events if the focused element is outside the modal container subtree.
-          !modalContainer.contains(target)
-        ) {
-          return
-        }
-        handler()
-      }
-
-      document.addEventListener('keydown', handleKeydown)
-      onCleanUp(() => {
-        document.removeEventListener('keydown', handleKeydown)
-      })
-    },
-    {
-      immediate: true
-    }
-  )
-}
 </script>
 
 <script setup lang="ts">
 const modalContainer = ref<HTMLElement>()
 const currentModals = shallowReactive<ModalInfo[]>([])
 const emitter: ModalEvents = new Emitter()
+let nextModalId = 1
 
-async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
+async function add({ component, props, handlers }: Omit<ModalInfo, 'id' | 'visible'>) {
+  const id = nextModalId
+  nextModalId += 1
   const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
   currentModals.push(currentModal)
-  // delay visible-setting, so there will be animation for modal-show
-  // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
+  // The modal entry needs to exist in the tree before it can transition from hidden to visible.
+  // Wait one render turn before toggling `visible` so teleported modals enter through
+  // their transition instead of appearing in the final state immediately.
   await nextTick()
   currentModal.visible = true
   emitter.emit('open')
@@ -153,7 +116,11 @@ function remove(id: number, onHide: (modal: ModalInfo) => void) {
   modal.visible = false
   onHide(modal)
   setTimeout(() => {
-    // wait for hide animation to finish
+    // Keep the entry mounted until the leave transition completes.
+    // The provider hosts different modal wrappers, so keep this slightly more relaxed than
+    // any single modal's transition timing instead of coupling it to one implementation.
+    // TODO: consider replacing this timeout with an `after-leave` driven removal flow if
+    // modal wrappers eventually share a consistent leave lifecycle contract.
     const modalIndex = currentModals.findIndex((m) => m.id === id)
     if (modalIndex === -1) return
     currentModals.splice(modalIndex, 1)

@@ -12,7 +12,9 @@
         {{ $t(allQueryRet.error.value.userMessage) }}
       </UIError>
       <EditorContextProvider v-else :project="state!.project" :state="state!">
-        <ProjectEditor />
+        <CodeEditorProvider :monaco="monacoQueryRet.data.value!">
+          <ProjectEditor />
+        </CodeEditorProvider>
       </EditorContextProvider>
     </main>
   </section>
@@ -55,7 +57,7 @@ import { untilNotNull, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
-import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/spx-code-editor'
+import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
@@ -118,6 +120,7 @@ const stateQueryRet = useQuery(
     ctx.signal.throwIfAborted()
     const state = new EditorState(i18n, project, isOnline, signedInStateQuery, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
+    ctx.reporter.startAutoReport(1000)
     await state.editing.loadProject(
       ownerInput,
       projectNameInput,
@@ -148,7 +151,16 @@ usePageTitle(() => {
   }
 })
 
-const codeEditorQueryRet = useProvideCodeEditorCtx(stateQueryRet)
+const monacoQueryRet = useQuery(
+  (ctx) => {
+    ctx.reporter.startAutoReport(1000)
+    return loadMonaco(i18n.lang.value)
+  },
+  {
+    en: 'Failed to load code editor',
+    zh: '加载代码编辑器失败'
+  }
+)
 
 watch(currentProjectIdentifier, (nextProjectIdentifier) => {
   if (nextProjectIdentifier == null || isSameProjectIdentifier(nextProjectIdentifier, routeProjectIdentifier.value)) {
@@ -161,11 +173,12 @@ watch(currentProjectIdentifier, (nextProjectIdentifier) => {
     hash: currentRoute.hash
   })
 })
+
 const allQueryRet = useQuery(
   (ctx) =>
     Promise.all([
       composeQuery(ctx, stateQueryRet, [{ en: 'Loading project...', zh: '加载项目中...' }, 2]),
-      composeQuery(ctx, codeEditorQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
+      composeQuery(ctx, monacoQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
     ]),
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )

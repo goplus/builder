@@ -1,5 +1,5 @@
 <template>
-  <div :class="rootClass">
+  <div :class="cn('flex items-center justify-center rounded-md bg-grey-400 p-0.5', props.class)">
     <slot />
   </div>
 </template>
@@ -24,8 +24,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:value': [string]
 }>()
-
-const rootClass = computed(() => cn('flex items-center justify-center rounded-md bg-grey-400 p-[2px]', props.class))
 
 const updateValue = (newValue: string) => {
   emit('update:value', newValue)

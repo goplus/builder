@@ -53,7 +53,7 @@ export type FormFieldContext = {
   onCompositionEnd: () => void
 }
 
-export const formFieldContextKey: InjectionKey<FormFieldContext> = Symbol('ui-form-field')
+export const formFieldContextKey: InjectionKey<FormFieldContext | null> = Symbol('ui-form-field')
 
 /** Optional accessor used by controls so they can still work outside a form item. */
 export function useMaybeFormFieldContext() {

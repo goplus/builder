@@ -1,5 +1,5 @@
 <template>
-  <div :class="rootClass">
+  <div :class="cn('flex gap-2', props.class)">
     <button :class="buttonClass()" :disabled="current === 1" @click="prevPage">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
@@ -53,7 +53,6 @@ const emit = defineEmits<{
   'update:current': [number]
 }>()
 
-const rootClass = computed(() => cn('flex gap-2', props.class))
 const buttonClass = (active = false) =>
   cn(
     'h-8 w-8 flex items-center justify-center rounded-sm border-none bg-grey-300 text-base text-grey-900',

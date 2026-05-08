@@ -23,7 +23,7 @@
       >
         <div :class="[directoryHeaderClass, isDirectoryPinned ? 'hidden' : '']">
           <h2 :class="sectionTitleClass">Directory</h2>
-          <p class="text-(--ui-color-grey-700) text-xs leading-4.5">
+          <p class="text-xs text-grey-700">
             {{
               $t({
                 en: 'Jump to a component section for quick style checks.',
@@ -235,12 +235,12 @@
 
       <section id="ui-inputs" :class="sectionClass">
         <div :class="sectionHeaderClass">
-          <h2 :class="sectionTitleClass">Inputs And Select</h2>
+          <h2 :class="sectionTitleClass">Inputs, Slider And Select</h2>
           <p :class="sectionDescriptionClass">
             {{
               $t({
-                en: 'Common text, number, and select inputs for forms and filters.',
-                zh: '表单和筛选中最常用的文本、数字和选择输入组件。'
+                en: 'Common text, number, slider, and select inputs for forms and filters.',
+                zh: '表单和筛选中最常用的文本、数字、滑块和选择输入组件。'
               })
             }}
           </p>
@@ -256,7 +256,21 @@
                   <UIIcon type="search" />
                 </template>
               </UITextInput>
-              <UITextInput value="Read only field" readonly disabled class="w-full" />
+              <UITextInput v-model:value="largeTextInputValue" size="large" clearable class="w-full">
+                <template #suffix>
+                  <span class="text-xs text-grey-800">large</span>
+                </template>
+              </UITextInput>
+              <UITextInput v-model:value="passwordInputValue" type="password" clearable class="w-full" />
+              <UITextInput
+                v-model:value="multilineTextInputValue"
+                type="textarea"
+                :rows="3"
+                placeholder="Describe your project"
+                class="w-full"
+              />
+              <UITextInput value="Read only field" readonly class="w-full" />
+              <UITextInput value="Disabled field" disabled class="w-full" />
             </div>
           </div>
           <div :class="surfaceCardClass">
@@ -264,14 +278,60 @@
             <div :class="exampleStackClass">
               <UINumberInput v-model:value="numberInputValue" :min="0" :max="100" class="w-full">
                 <template #suffix>
-                  <span class="text-xs text-(--ui-color-grey-800)">px</span>
+                  <span class="text-xs text-grey-800">px</span>
+                </template>
+              </UINumberInput>
+              <UINumberInput v-model:value="decimalNumberInputValue" :min="0" :max="1" :step="0.05" class="w-full">
+                <template #prefix>
+                  <span class="text-xs text-grey-800">α</span>
+                </template>
+                <template #suffix>
+                  <span class="text-xs text-grey-800">opacity</span>
+                </template>
+              </UINumberInput>
+              <UINumberInput
+                v-model:value="emptyNumberInputValue"
+                color="white"
+                size="large"
+                placeholder="Empty value"
+                class="w-full"
+              />
+              <UINumberInput :value="16" readonly class="w-full">
+                <template #suffix>
+                  <span class="text-xs text-grey-800">readonly</span>
                 </template>
               </UINumberInput>
               <UINumberInput :value="24" disabled class="w-full">
                 <template #suffix>
-                  <span class="text-xs text-(--ui-color-grey-800)">px</span>
+                  <span class="text-xs text-grey-800">px</span>
                 </template>
               </UINumberInput>
+            </div>
+          </div>
+          <div :class="surfaceCardClass">
+            <div :class="groupLabelClass">UISlider</div>
+            <div :class="exampleStackClass">
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs text-grey-800">
+                  <span>dragend update</span>
+                  <span>{{ sliderValue }}</span>
+                </div>
+                <UISlider v-model:value="sliderValue" />
+              </div>
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs text-grey-800">
+                  <span>input update</span>
+                  <span>{{ sliderLiveValue.toFixed(2) }}</span>
+                </div>
+                <UISlider v-model:value="sliderLiveValue" :min="0" :max="2" :step="0.01" update-on="input" />
+              </div>
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs text-grey-800">
+                  <span>disabled</span>
+                  <span>60</span>
+                </div>
+                <UISlider :value="60" disabled />
+              </div>
             </div>
           </div>
           <div :class="surfaceCardClass">
@@ -309,6 +369,26 @@
             </div>
           </div>
           <div :class="surfaceCardClass">
+            <div :class="groupLabelClass">UICheckboxGroup</div>
+            <div class="flex">
+              <UICheckboxGroup :value="checkboxValues" @update:value="(value) => (checkboxValues = value)">
+                <div :class="choiceColumnClass">
+                  <UICheckbox value="physics">Physics</UICheckbox>
+                  <UICheckbox value="shadow">Shadow</UICheckbox>
+                  <UICheckbox value="particles">Particles</UICheckbox>
+                </div>
+              </UICheckboxGroup>
+              <UIDivider vertical class="mx-3 my-2" />
+              <UICheckboxGroup :value="['physics', 'shadow']" disabled>
+                <div :class="choiceColumnClass">
+                  <UICheckbox value="physics">Physics</UICheckbox>
+                  <UICheckbox value="shadow">Shadow</UICheckbox>
+                  <UICheckbox value="particles">Particles</UICheckbox>
+                </div>
+              </UICheckboxGroup>
+            </div>
+          </div>
+          <div :class="surfaceCardClass">
             <div :class="groupLabelClass">UIRadioGroup</div>
             <div class="flex">
               <UIRadioGroup :value="radioValue" @update:value="(value) => (radioValue = value ?? 'default')">
@@ -318,7 +398,7 @@
                   <UIRadio value="manual">Manual</UIRadio>
                 </div>
               </UIRadioGroup>
-              <UIDivider vertical class="mx-6 my-2" />
+              <UIDivider vertical class="mx-3 my-2" />
               <UIRadioGroup value="default" disabled>
                 <div :class="choiceColumnClass">
                   <UIRadio value="default">Default</UIRadio>
@@ -336,24 +416,89 @@
               <UITabRadio value="manual">Manual</UITabRadio>
             </UITabRadioGroup>
           </div>
-          <div :class="surfaceCardClass">
-            <div :class="groupLabelClass">UICheckboxGroup</div>
-            <div class="flex">
-              <UICheckboxGroup :value="checkboxValues" @update:value="(value) => (checkboxValues = value)">
-                <div :class="choiceColumnClass">
-                  <UICheckbox value="physics">Physics</UICheckbox>
-                  <UICheckbox value="shadow">Shadow</UICheckbox>
-                  <UICheckbox value="particles">Particles</UICheckbox>
+        </div>
+      </section>
+
+      <section id="ui-form" :class="sectionClass">
+        <div :class="sectionHeaderClass">
+          <h2 :class="sectionTitleClass">UIForm</h2>
+          <p :class="sectionDescriptionClass">
+            {{
+              $t({
+                en: 'A composed form example with validation feedback for the controls that are commonly used inside forms.',
+                zh: '组合展示在表单中常用输入控件及其校验反馈。'
+              })
+            }}
+          </p>
+        </div>
+
+        <div :class="showcaseGridClass">
+          <div :class="[surfaceCardClass, 'col-span-full']">
+            <div :class="groupLabelClass">Project Settings Form</div>
+            <div class="grid gap-4 desktop:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
+              <UIForm :form="demoForm" has-success-feedback @submit="handleDemoFormSubmit">
+                <UIFormItem label="Project name" path="projectName">
+                  <UITextInput v-model:value="demoForm.value.projectName" placeholder="Enter a project name" />
+                  <template #tip>
+                    {{ $t({ en: 'Used in the project list and publish page.', zh: '会显示在项目列表和发布页。' }) }}
+                  </template>
+                </UIFormItem>
+
+                <UIFormItem label="Stage width" path="stageWidth">
+                  <UINumberInput v-model:value="demoForm.value.stageWidth" :min="240" :max="1920">
+                    <template #suffix>
+                      <span class="text-xs text-grey-800">px</span>
+                    </template>
+                  </UINumberInput>
+                  <template #tip>
+                    {{ $t({ en: 'Valid range: 240 ~ 1920.', zh: '输入范围：240 ~ 1920' }) }}
+                  </template>
+                </UIFormItem>
+
+                <UIFormItem label="Template" path="template">
+                  <UISelect v-model:value="demoForm.value.template" class="w-full">
+                    <UISelectOption value="platformer">platformer</UISelectOption>
+                    <UISelectOption value="topdown">topdown</UISelectOption>
+                    <UISelectOption value="story">story</UISelectOption>
+                  </UISelect>
+                </UIFormItem>
+
+                <UIFormItem label="Features" path="features">
+                  <UICheckboxGroup v-model:value="demoForm.value.features">
+                    <div class="mt-1 flex gap-3">
+                      <UICheckbox value="physics">Physics</UICheckbox>
+                      <UICheckbox value="particles">Particles</UICheckbox>
+                      <UICheckbox value="multiplayer">Multiplayer</UICheckbox>
+                    </div>
+                  </UICheckboxGroup>
+                </UIFormItem>
+
+                <UIFormItem label="Control mode" path="controlMode">
+                  <UIRadioGroup v-model:value="demoForm.value.controlMode">
+                    <div class="mt-1 flex gap-3">
+                      <UIRadio value="balanced">Balanced</UIRadio>
+                      <UIRadio value="keyboard">Keyboard</UIRadio>
+                      <UIRadio value="touch">Touch</UIRadio>
+                    </div>
+                  </UIRadioGroup>
+                </UIFormItem>
+
+                <UIFormItem label="Include music" path="includeMusic">
+                  <div class="mt-1">
+                    <UISwitch v-model:value="demoForm.value.includeMusic" />
+                  </div>
+                </UIFormItem>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                  <UIButton html-type="submit">Submit</UIButton>
+                  <UIButton type="white" html-type="button" @click="resetDemoForm">Reset</UIButton>
                 </div>
-              </UICheckboxGroup>
-              <UIDivider vertical class="mx-6 my-2" />
-              <UICheckboxGroup :value="['physics', 'shadow']" disabled>
-                <div :class="choiceColumnClass">
-                  <UICheckbox value="physics">Physics</UICheckbox>
-                  <UICheckbox value="shadow">Shadow</UICheckbox>
-                  <UICheckbox value="particles">Particles</UICheckbox>
-                </div>
-              </UICheckboxGroup>
+              </UIForm>
+
+              <div class="rounded-md bg-grey-100 p-4">
+                <div :class="groupLabelClass">Current Value</div>
+                <pre class="overflow-x-auto text-xs/5 text-grey-900 whitespace-pre-wrap">{{ demoFormPreview }}</pre>
+              </div>
             </div>
           </div>
         </div>
@@ -408,9 +553,7 @@
             <div :class="groupLabelClass">UICard</div>
             <UICard class="overflow-hidden">
               <UICardHeader>Asset Panel</UICardHeader>
-              <div
-                class="rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4 text-(--ui-color-grey-900) text-sm leading-5.5"
-              >
+              <div class="rounded-md bg-grey-100 p-4 text-sm/5.5 text-grey-900">
                 {{
                   $t({
                     en: 'Use cards for grouped editor panels or community blocks.',
@@ -762,6 +905,33 @@
         </div>
       </section>
 
+      <section id="ui-message" :class="sectionClass">
+        <div :class="sectionHeaderClass">
+          <h2 :class="sectionTitleClass">UIMessage</h2>
+          <p :class="sectionDescriptionClass">
+            {{
+              $t({
+                en: 'Transient feedback messages for info, success, warning, error, and loading states.',
+                zh: '用于信息、成功、警告、错误和加载态的轻量消息提示。'
+              })
+            }}
+          </p>
+        </div>
+
+        <div :class="showcaseGridClass">
+          <div :class="[surfaceCardClass, 'col-span-full']">
+            <div :class="groupLabelClass">Message Types</div>
+            <div :class="wrapRowClass">
+              <UIButton type="neutral" @click="showMessage('info')">info</UIButton>
+              <UIButton type="neutral" @click="showMessage('success')">success</UIButton>
+              <UIButton type="neutral" @click="showMessage('warning')">warning</UIButton>
+              <UIButton type="neutral" @click="showMessage('error')">error</UIButton>
+              <UIButton type="neutral" @click="handleMessageLoading">loading</UIButton>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="ui-loading" :class="sectionClass">
         <div :class="sectionHeaderClass">
           <h2 :class="sectionTitleClass">UILoading And UIDetailedLoading</h2>
@@ -793,8 +963,8 @@
         <div :class="showcaseGridClass">
           <div :class="surfaceCardClass">
             <div :class="groupLabelClass">UILoading</div>
-            <div class="relative min-h-40 overflow-hidden rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4">
-              <div class="flex h-full min-h-32 items-center justify-center text-sm text-(--ui-color-grey-700)">
+            <div class="relative min-h-40 overflow-hidden rounded-md bg-grey-100 p-4">
+              <div class="flex h-full min-h-32 items-center justify-center text-sm text-grey-700">
                 Asset grid preview
               </div>
               <UILoading cover :visible="loadingDemoVisible" :mask="loadingDemoMask" />
@@ -807,12 +977,12 @@
                 <span :class="fieldLabelClass">progress</span>
                 <UINumberInput v-model:value="detailedLoadingProgress" :min="0" :max="100">
                   <template #suffix>
-                    <span class="text-xs text-(--ui-color-grey-800)">%</span>
+                    <span class="text-xs text-grey-800">%</span>
                   </template>
                 </UINumberInput>
               </label>
             </div>
-            <div class="relative min-h-55 overflow-hidden rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4">
+            <div class="relative min-h-55 overflow-hidden rounded-md bg-grey-100 p-4">
               <UIDetailedLoading
                 cover
                 :visible="loadingDemoVisible"
@@ -828,17 +998,15 @@
             <div :class="variantGroupClass">
               <div>
                 <div :class="groupLabelClass">Compact Without Text</div>
-                <div class="flex justify-center rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4">
-                  <div class="relative h-28 w-28 overflow-hidden rounded-(--ui-border-radius-md)">
+                <div class="flex justify-center rounded-md bg-grey-100 p-4">
+                  <div class="relative h-28 w-28 overflow-hidden rounded-md">
                     <GenLoading cover :visible="loadingDemoVisible" animation-style="width: 60px; height: 60px;" />
                   </div>
                 </div>
               </div>
               <div>
                 <div :class="groupLabelClass">Large With Text</div>
-                <div
-                  class="relative min-h-55 overflow-hidden rounded-(--ui-border-radius-md) bg-(--ui-color-grey-100) p-4"
-                >
+                <div class="relative min-h-55 overflow-hidden rounded-md bg-grey-100 p-4">
                   <GenLoading cover :visible="loadingDemoVisible">
                     {{ $t({ en: 'Generating sprite variations', zh: '正在生成精灵变体' }) }}
                   </GenLoading>
@@ -913,6 +1081,8 @@ import {
   UIDivider,
   UIEmpty,
   UIError,
+  UIForm,
+  UIFormItem,
   UIIcon,
   UIImg,
   UILoading,
@@ -921,6 +1091,7 @@ import {
   UIRadioGroup,
   UISelect,
   UISelectOption,
+  UISlider,
   UISoundItem,
   UISpriteItem,
   UISwitch,
@@ -933,6 +1104,7 @@ import {
   UITextInput,
   UIMenu,
   UIMenuItem,
+  useForm,
   useMessage
 } from '@/components/ui'
 import GenLoading from '@/components/asset/gen/common/GenLoading.vue'
@@ -952,50 +1124,48 @@ usePageTitle({
   zh: 'UI设计'
 })
 
-const pageShellClass = 'flex h-full w-full flex-col overflow-y-auto bg-[var(--ui-color-grey-100)]'
-const pageContentClass = 'my-[30px] flex flex-col gap-6'
+const pageShellClass = 'flex h-full w-full flex-col overflow-y-auto bg-grey-100'
+const pageContentClass = 'my-7.5 flex flex-col gap-6'
 const pageIntroClass =
-  'rounded-[var(--ui-border-radius-lg)] bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.14),transparent_30%),linear-gradient(180deg,#fff_0%,#f8fcfd_100%)] px-7 py-6 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)]'
-const pageTitleClass = 'text-[28px] leading-9 text-[var(--ui-color-grey-1000)]'
-const pageDescriptionClass = 'mt-1.5 text-sm leading-[22px] text-[var(--ui-color-grey-800)]'
-const sectionClass =
-  'rounded-[var(--ui-border-radius-lg)] bg-white px-6 pb-6 pt-5 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)] scroll-mt-6'
+  'rounded-lg bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.14),transparent_30%),linear-gradient(180deg,#fff_0%,#f8fcfd_100%)] px-7 py-6 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)]'
+const pageTitleClass = 'text-[28px]/9 text-grey-1000'
+const pageDescriptionClass = 'mt-1.5 text-sm/5.5 text-grey-800'
+const sectionClass = 'rounded-lg bg-white px-6 pb-6 pt-5 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)] scroll-mt-6'
 const sectionHeaderClass = 'mb-4'
-const sectionTitleClass = 'text-[20px] leading-7 text-[var(--ui-color-grey-1000)]'
-const sectionDescriptionClass = 'mt-1 text-[13px] leading-5 text-[var(--ui-color-grey-800)]'
+const sectionTitleClass = 'text-2xl text-grey-1000'
+const sectionDescriptionClass = 'mt-1 text-sm text-grey-800'
 const directorySectionClass =
-  'sticky top-2 z-10 rounded-[var(--ui-border-radius-lg)] bg-[rgba(255,255,255,0.92)] px-4 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)] backdrop-blur-[12px]'
-const directoryHeaderClass = 'mb-[10px] flex items-baseline justify-between gap-3'
+  'sticky top-2 z-10 rounded-lg bg-[rgba(255,255,255,0.92)] px-4 shadow-[inset_0_0_0_1px_rgba(226,234,238,0.95)] backdrop-blur-md'
+const directoryHeaderClass = 'mb-2.5 flex items-baseline justify-between gap-3'
 const directoryGridClass = 'grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2'
 const directoryLinkClass =
-  'rounded-[var(--ui-border-radius-md)] bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.08),transparent_40%),#f9fcfd] px-[10px] py-2 text-xs leading-[18px] text-[var(--ui-color-grey-900)] no-underline shadow-[inset_0_0_0_1px_rgba(213,226,232,0.9)] transition-[color,box-shadow,transform] duration-200 hover:-translate-y-px hover:text-[var(--ui-color-grey-1000)] hover:shadow-[inset_0_0_0_1px_rgba(64,195,211,0.45)]'
+  'rounded-md bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.08),transparent_40%),#f9fcfd] px-2.5 py-2 text-xs text-grey-900 no-underline shadow-[inset_0_0_0_1px_rgba(213,226,232,0.9)] transition-[color,box-shadow,transform] duration-200 hover:-translate-y-px hover:text-grey-1000 hover:shadow-[inset_0_0_0_1px_rgba(64,195,211,0.45)]'
 const showcaseGridClass = 'grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4'
 const nestedShowcaseGridClass = 'grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4'
 const surfaceCardClass =
-  'rounded-[var(--ui-border-radius-md)] bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.08),transparent_36%),#f9fcfd] p-4 shadow-[inset_0_0_0_1px_rgba(213,226,232,0.9)]'
+  'rounded-md bg-[radial-gradient(circle_at_top_right,rgba(64,195,211,0.08),transparent_36%),#f9fcfd] p-4 shadow-[inset_0_0_0_1px_rgba(213,226,232,0.9)]'
 const controlRowClass = 'mb-4 flex flex-wrap items-center gap-x-4 gap-y-3'
 const controlFieldClass = 'inline-flex max-w-full items-center gap-3 align-middle'
 const compactFieldClass = ''
-const fieldLabelClass = 'shrink-0 text-left text-xs leading-[18px] text-[var(--ui-color-grey-800)]'
-const controlLabelClass = 'text-xs leading-[18px] text-[var(--ui-color-grey-800)]'
-const groupLabelClass = 'mb-[10px] text-xs leading-[18px] text-[var(--ui-color-grey-800)]'
+const fieldLabelClass = 'shrink-0 text-left text-xs text-grey-800'
+const controlLabelClass = 'text-xs text-grey-800'
+const groupLabelClass = 'mb-2.5 text-xs text-grey-800'
 const demoPanelClass = 'flex flex-col gap-3'
 const exampleStackClass = 'flex flex-col gap-3'
 const wrapRowClass = 'flex flex-wrap gap-2'
 const variantStackClass = 'flex flex-col gap-5'
 const variantGroupClass = 'flex flex-col gap-3'
-const variantLabelClass = 'text-sm leading-[22px] text-[var(--ui-color-grey-1000)]'
+const variantLabelClass = 'text-sm/5.5 text-grey-1000'
 const choiceColumnClass = 'flex flex-col gap-3'
-const tabsContentClass =
-  'rounded-[var(--ui-border-radius-md)] bg-[var(--ui-color-grey-100)] p-4 text-sm leading-[22px] text-[var(--ui-color-grey-900)]'
-const feedbackSurfaceClass =
-  'relative min-h-[220px] rounded-[var(--ui-border-radius-md)] bg-[var(--ui-color-grey-100)] p-4'
+const tabsContentClass = 'rounded-md bg-grey-100 p-4 text-sm/5.5 text-grey-900'
+const feedbackSurfaceClass = 'relative min-h-55 rounded-md bg-grey-100 p-4'
 
 const directoryItems = [
   { id: 'ui-button', label: 'UIButton' },
   { id: 'ui-button-group', label: 'UIButtonGroup' },
-  { id: 'ui-inputs', label: 'Inputs And Select' },
+  { id: 'ui-inputs', label: 'Inputs, Slider And Select' },
   { id: 'ui-choices', label: 'Choices' },
+  { id: 'ui-form', label: 'UIForm' },
   { id: 'ui-tabs', label: 'UITabs' },
   { id: 'ui-card', label: 'UICard' },
   { id: 'ui-tooltip', label: 'UITooltip' },
@@ -1003,6 +1173,7 @@ const directoryItems = [
   { id: 'ui-block-items', label: 'UIBlockItem Wrappers' },
   { id: 'gen-item', label: 'GenItem' },
   { id: 'ui-tag', label: 'UITag' },
+  { id: 'ui-message', label: 'UIMessage' },
   { id: 'ui-loading', label: 'UILoading And UIDetailedLoading' },
   { id: 'ui-feedback', label: 'UIEmpty And UIError' }
 ] as const
@@ -1031,9 +1202,15 @@ const primaryIconValue = ref('balanced')
 
 const textInputValue = ref('Builder Project')
 const searchInputValue = ref('Search assets')
+const largeTextInputValue = ref('Large input')
+const passwordInputValue = ref('secret')
+const multilineTextInputValue = ref('A short project description.')
 const numberInputValue = ref<number | null>(24)
+const decimalNumberInputValue = ref<number | null>(0.75)
+const emptyNumberInputValue = ref<number | null>(null)
+const sliderValue = ref(42)
+const sliderLiveValue = ref(1)
 const selectValue = ref('recent')
-
 const switchValue = ref(true)
 const radioValue = ref('default')
 const tabRadioValue = ref('default')
@@ -1112,5 +1289,42 @@ function handleRetry() {
 
 function handleBack() {
   message.info('back')
+}
+
+function showMessage(type: 'info' | 'success' | 'warning' | 'error') {
+  message[type](`This is a ${type} message.`)
+}
+
+async function handleMessageLoading() {
+  await message.withLoading(
+    new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 1500)
+    }),
+    'Loading message...'
+  )
+}
+
+const demoForm = useForm({
+  projectName: ['', (value: string) => (value.trim() === '' ? 'Project name is required' : null)],
+  stageWidth: [480, (value: number | null) => (value == null ? 'Stage width is required' : null)],
+  template: ['platformer', (value: string) => (value === '' ? 'Template is required' : null)],
+  features: [['physics'], (value: string[]) => (value.length === 0 ? 'Select at least one feature' : null)],
+  controlMode: ['balanced', (value: string | null) => (value == null ? 'Control mode is required' : null)],
+  includeMusic: [true]
+})
+
+const demoFormPreview = computed(() => JSON.stringify(demoForm.value, null, 2))
+
+function handleDemoFormSubmit() {
+  message.success('form submitted')
+}
+
+function resetDemoForm() {
+  demoForm.value.projectName = ''
+  demoForm.value.stageWidth = 480
+  demoForm.value.template = 'platformer'
+  demoForm.value.features = ['physics']
+  demoForm.value.controlMode = 'balanced'
+  demoForm.value.includeMusic = true
 }
 </script>

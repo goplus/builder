@@ -13,7 +13,6 @@ const props = defineProps<{
 const collapseCtx = useCollapseCtx()
 
 const expanded = computed(() => collapseCtx.expandedNames.value.includes(props.name))
-const rootClass = computed(() => cn('flex flex-col', props.class))
 
 function handleToggle() {
   collapseCtx.expandedNames.value = expanded.value
@@ -23,7 +22,7 @@ function handleToggle() {
 </script>
 
 <template>
-  <li class="ui-collapse-item" :class="rootClass">
+  <li class="ui-collapse-item" :class="cn('flex flex-col', props.class)">
     <header
       class="flex cursor-pointer items-center justify-between [transition:margin-bottom_0.3s]"
       :class="expanded ? 'mb-2' : null"
@@ -45,7 +44,7 @@ function handleToggle() {
   </li>
 </template>
 
-<style>
+<style scoped>
 @layer components {
   .ui-collapse-item + .ui-collapse-item::before {
     content: '';

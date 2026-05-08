@@ -2,8 +2,8 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UITooltip from './UITooltip.vue'
-import { POPUP_ARROW_SIZE, providePopupStack } from './popup'
-import { providePopupContainer } from './utils'
+import { POPUP_ARROW_SIZE } from './popup'
+import { UI_LAYER_ROOT_ATTR, provideLayerStack, providePopupContainer } from './utils'
 
 const floatingMocks = vi.hoisted(() => {
   return {
@@ -31,7 +31,7 @@ const PopupProvider = defineComponent({
   setup(_, { slots }) {
     const popupContainer = ref<HTMLElement>()
     providePopupContainer(popupContainer)
-    providePopupStack()
+    provideLayerStack()
 
     return () => h('div', [slots.default?.(), h('div', { ref: popupContainer, 'data-test-id': 'popup-container' })])
   }
@@ -200,7 +200,7 @@ describe('UITooltip', () => {
     await flushTooltip()
     expect(popupContainer.text()).toContain('Tooltip content')
 
-    const tooltipContent = popupContainer.get('[data-ui-popup-root]')
+    const tooltipContent = popupContainer.get(`[${UI_LAYER_ROOT_ATTR}]`)
     await wrapper.get('[data-test-id="trigger"]').trigger('mouseleave')
     await tooltipContent.trigger('mouseenter')
     await vi.advanceTimersByTimeAsync(100)

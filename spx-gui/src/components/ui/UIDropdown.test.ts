@@ -2,8 +2,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UIDropdown from './UIDropdown.vue'
-import { providePopupStack } from './popup'
-import { providePopupContainer } from './utils'
+import { provideLayerStack, providePopupContainer } from './utils'
 
 const floatingMocks = vi.hoisted(() => {
   return {
@@ -32,7 +31,7 @@ const PopupProvider = defineComponent({
   setup(_, { slots }) {
     const popupContainer = ref<HTMLElement>()
     providePopupContainer(popupContainer)
-    providePopupStack()
+    provideLayerStack()
 
     return () => h('div', [slots.default?.(), h('div', { ref: popupContainer, 'data-test-id': 'popup-container' })])
   }

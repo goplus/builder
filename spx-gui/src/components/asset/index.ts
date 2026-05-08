@@ -25,7 +25,7 @@ import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/stage/sound/SoundRecorderModal.vue'
 import { useEditorCtx } from '../editor/EditorContextProvider.vue'
-import { useCodeEditor, useRenameWarning, getResourceIdentifier } from '../editor/code-editor/spx-code-editor'
+import { getResourceIdentifier, useCodeEditor } from '../editor/spx-code-editor'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetSaveModal from './library/AssetSaveModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
@@ -232,7 +232,6 @@ export function useRenameSprite() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameSprite(sprite: Sprite) {
     return invokeRenameModal({
       target: {
@@ -254,7 +253,7 @@ export function useRenameSprite() {
           })
         },
         inputTip: assetName.spriteNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -264,7 +263,6 @@ export function useRenameSound() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameSound(sound: Sound) {
     return invokeRenameModal({
       target: {
@@ -280,7 +278,7 @@ export function useRenameSound() {
           })
         },
         inputTip: assetName.soundNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -290,7 +288,6 @@ export function useRenameCostume() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameCostume(costume: Costume) {
     return invokeRenameModal({
       target: {
@@ -306,7 +303,7 @@ export function useRenameCostume() {
           })
         },
         inputTip: assetName.costumeNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -316,7 +313,6 @@ export function useRenameBackdrop() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameBackdrop(backdrop: Backdrop) {
     return invokeRenameModal({
       target: {
@@ -332,7 +328,7 @@ export function useRenameBackdrop() {
           })
         },
         inputTip: assetName.backdropNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -342,7 +338,6 @@ export function useRenameAnimation() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameAnimation(animation: Animation) {
     return invokeRenameModal({
       target: {
@@ -358,7 +353,7 @@ export function useRenameAnimation() {
           })
         },
         inputTip: assetName.animationNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -368,7 +363,6 @@ export function useRenameWidget() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameWidget(widget: Widget) {
     return invokeRenameModal({
       target: {
@@ -384,7 +378,7 @@ export function useRenameWidget() {
           })
         },
         inputTip: assetName.widgetNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }

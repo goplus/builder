@@ -5,7 +5,7 @@ const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
 export function useCopilot(): Copilot {
   const copilot = inject(copilotInjectionKey)
-  if (!copilot) throw new Error('Copilot not provided')
+  if (copilot == null) throw new Error('Copilot not provided')
   return copilot
 }
 

@@ -19,7 +19,7 @@ export default defineConfigWithVueTs(
       '**/wasm_exec.js',
       'src/utils/snippet-parser/**',
       'src/assets/wasm/**',
-      'src/components/editor/code-editor/xgo-code-editor/ui/completion/fuzzy/**'
+      'src/components/xgo-code-editor/ui/completion/fuzzy/**'
     ]
   },
 

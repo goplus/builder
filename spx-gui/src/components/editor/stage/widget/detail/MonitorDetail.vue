@@ -126,7 +126,7 @@ import { capture, useMessageHandle } from '@/utils/exception'
 import type { Monitor } from '@/models/spx/widget/monitor'
 import { useRenameWidget } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { filterOwnProperties, useCodeEditor } from '@/components/editor/code-editor/spx-code-editor'
+import { filterOwnProperties, useCodeEditor } from '@/components/editor/spx-code-editor'
 import EditorItemDetail from '../../../common/EditorItemDetail.vue'
 import mntIcon from '../monitor.svg?raw'
 
