@@ -1,9 +1,11 @@
 # Component Naming Rules
 
-本文统一约束两类对象：
+本文统一约束四类对象：
 
 - 文件系统资源命名
 - `ui/components/spx/builder-component.lib.pen` 设计节点命名
+- `builder-component.lib.pen` 变量命名
+- `ui/pages/**/*.pen` 页面文件的组件库引用方式
 
 目标不是追求“名字好看”，而是保证以下几点：
 
@@ -40,7 +42,7 @@ card-widget-item-medium-hover.png
 
 `builder-component.lib.pen` 内的节点不要再按同一套规则硬套。必须先判断节点属于哪一类，再决定命名方式。
 
-统一分成 5 类：
+设计节点统一分成 5 类：
 
 1. 可复用组件节点
 2. 结构布局节点
@@ -59,7 +61,7 @@ card-widget-item-medium-hover.png
 
 统一使用 `/` 分层命名。
 
-标准格式：
+推荐格式：
 
 ```text
 Category/ComponentName/VariantOrState
@@ -71,8 +73,9 @@ Category/ComponentName/VariantOrState
 - 每一段使用 `PascalCase`
 - 第 1 段表示组件类别，例如 `Card`、`Nav`、`Input`、`Overlay`
 - 第 2 段表示具体组件语义，例如 `SpriteItem`、`TopBar`、`Switch`、`Tooltip`
-- 第 3 段表示尺寸、状态或变体组合，例如 `MediumDefault`、`Default`、`Hover`, `MultiPage`
+- 后续段表示尺寸、语义分组、状态或变体组合，例如 `MediumDefault`、`Default`、`Hover`, `MultiPage`
 - 不把每个单词都拆成独立层级
+- 允许组件族为了和代码 props 词表对齐使用 4-5 段，但每一段仍必须有稳定语义
 
 示例：
 
@@ -86,6 +89,8 @@ Nav/TopBar/Default
 Input/Switch/Default
 Overlay/Tooltip/Default
 Code/Line/Default
+Button/IconOnly/MediumPrimaryStrokeCircleDefault
+Button/Medium/White/Stroke/Square/Default
 ```
 
 旧名称迁移示例：
@@ -109,6 +114,7 @@ Logo/App/LogIn
 - 组件名表达“组件 API 是什么”，不表达它内部如何布局
 - 不把 `Frame`、`Container`、`Text` 之类结构词塞进组件根节点名
 - 不在组件根节点上使用 kebab-case、中文、随机编号、Figma 默认名
+- 对于 button 组件族，优先使用 `Button/<Size>/<Variant>/<Style>/<Shape>/<State>` 或既有 `Button/IconOnly/<VariantState>` 词表，不新增 `button-*` kebab-case
 
 ---
 
@@ -342,7 +348,59 @@ union
 
 ---
 
-## 9. 新增节点前的自检清单
+## 9. 变量命名
+
+适用范围：
+
+- `ui/components/spx/builder-component.lib.pen` 内定义的 design token
+- 供组件库内部或页面引用的颜色、圆角、间距、阴影、字体行高等变量
+
+规则：
+
+- 组件库变量只在 `builder-component.lib.pen` 定义
+- 页面 `.pen` 不保留本地 `themes`、`variables`、`fonts` 快照
+- 组件库当前只保留本地 theme 轴；不要保留 `j:Accent`、`m:Accent`、`2:Accent` 这类页面 import alias theme
+- 变量名使用稳定 token 前缀，例如 `grey*`、`turquoise*`、`space-*`、`radius-*`、`border-radius-*`、`shadow-*`、`line-height-*`、`mask-*`
+- 不新增语义不明的 `number-*` 变量；历史变量如无引用，应在确认影响后清理
+- 允许不同 token 在数值上相同，但语义必须不同，例如 `radius-2` 与 `border-radius-1` 都可能是 `8`
+
+示例：
+
+```text
+grey500
+turquoise300
+space-3
+radius-2
+border-radius-1
+shadow-surface-color
+shadow-surface-blur
+line-height-3
+mask-2
+```
+
+---
+
+## 10. 页面 `.pen` 引用规则
+
+适用范围：
+
+- `ui/pages/**/*.pen`
+
+规则：
+
+- 每个活跃页面 `.pen` 必须通过 `imports` 引用 `../components/spx/builder-component.lib.pen`
+- 页面只保留页面结构和组件实例，不保留从组件库复制出来的本地 token、字体或主题
+- 页面里引用组件库变量或组件时必须使用 import alias 作用域，例如 `$a:grey300` 或 `a:<reusable-id>`
+- 页面 `.pen` 的 `themes`、`variables`、`fonts` 预期为空或不存在
+- 修改组件库或引用组件库的页面后，运行：
+
+```bash
+npm --prefix spx-gui run test -- src/utils/builder-component-lib.test.ts --run
+```
+
+---
+
+## 11. 新增节点前的自检清单
 
 新增名字前，至少检查以下 6 项：
 
@@ -352,5 +410,6 @@ union
 - 是否误把文件资源风格 `kebab-case` 用到了组件 API
 - 是否存在拼写错误
 - 是否和现有同类节点风格一致
+- 页面 `.pen` 是否只引用组件库，而不是复制组件库变量
 
 如果其中任意一项答不上来，先不要落库，先归类。
