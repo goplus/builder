@@ -199,6 +199,8 @@ export function filterOwnProperties(target: string, properties: Property[]) {
 export type { ColorValue }
 
 export enum SpxInputType {
+  /** Sprite instance resource references in spx */
+  SpxSpriteInstance = 'spx-sprite-instance',
   /** `Direction` in spx */
   SpxDirection = 'spx-direction',
   /** `layerAction` in spx */
@@ -224,6 +226,11 @@ export enum SpxInputType {
 }
 
 export type SpxInputTypedValue =
+  | {
+      type: SpxInputType.SpxSpriteInstance
+      /** URI of a sprite resource */
+      value: ResourceURI
+    }
   | { type: SpxInputType.SpxDirection; value: number }
   | { type: SpxInputType.SpxLayerAction; value: string }
   | { type: SpxInputType.SpxDirAction; value: string }

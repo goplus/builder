@@ -1,7 +1,7 @@
 /**
  * @desc SpxInputHelperProvider — spx-specific input helper provider.
  * Extends the generic InputHelperProvider with spx-specific input type handlers
- * (SpxDirection, SpxColor, SpxKey, etc.).
+ * (SpxSpriteInstance, SpxDirection, SpxColor, SpxKey, etc.).
  */
 
 import { h } from 'vue'
@@ -19,13 +19,16 @@ import type { ColorValue } from '@/utils/spx'
 import {
   type Input,
   type InPlaceInput,
+  type InputSlotAccept,
   type IResourceAdapter,
+  type ResourceInputSlotAccept,
   InputKind,
   InputHelperProvider,
   type InputTypeHandler,
   type InputValuePreview,
   type ILSPClient
 } from '@/components/xgo-code-editor'
+import ResourceInput, * as resourceInput from '@/components/xgo-code-editor/ui/input-helper/ResourceInput.vue'
 import { SpxInputType, type InputValueForSpxType } from './common'
 import SpxDirectionInput, * as spxDirectionInput from './ui/input-helper/SpxDirectionInput.vue'
 import SpxLayerActionInput, * as spxLayerActionInput from './ui/input-helper/SpxLayerActionInput.vue'
@@ -40,12 +43,36 @@ import SpxRotationStyleInput, * as spxRotationStyleInput from './ui/input-helper
 import SpxPropertyNameInput, * as spxPropertyNameInput from './ui/input-helper/SpxPropertyNameInput.vue'
 
 export class SpxInputHelperProvider extends InputHelperProvider {
-  constructor(lspClient: ILSPClient, resourceAdapter: IResourceAdapter) {
+  constructor(
+    lspClient: ILSPClient,
+    private resourceAdapter: IResourceAdapter
+  ) {
     super(lspClient, () => resourceAdapter)
   }
 
   override provideInputTypeHandler(type: string): InputTypeHandler | null {
     switch (type) {
+      case SpxInputType.SpxSpriteInstance:
+        return {
+          component: ResourceInput,
+          getTitle: (accept: InputSlotAccept) => {
+            const resourceContext = (accept as ResourceInputSlotAccept).resourceContext
+            return (
+              this.resourceAdapter.provideResourceSelector(resourceContext)?.title ?? {
+                en: 'Select a resource',
+                zh: '选择资源'
+              }
+            )
+          },
+          getDefaultValue: resourceInput.getDefaultValue,
+          exprForInput: (input: InPlaceInput) => {
+            if (input.type !== SpxInputType.SpxSpriteInstance) return null
+            const value = input.value as InputValueForSpxType<SpxInputType.SpxSpriteInstance> | null
+            if (value == null) return null
+            // Sprite instances are referenced as bare identifiers. Sprite names are validated upstream.
+            return this.resourceAdapter.provideResourceName({ uri: value })
+          }
+        }
       case SpxInputType.SpxDirection:
         return {
           component: SpxDirectionInput,
@@ -155,6 +182,13 @@ export class SpxInputHelperProvider extends InputHelperProvider {
   override provideInputValuePreview(input: Input): InputValuePreview | null {
     if (input.kind === InputKind.Predefined) return null
     switch (input.type) {
+      case SpxInputType.SpxSpriteInstance: {
+        const uri = input.value as InputValueForSpxType<SpxInputType.SpxSpriteInstance> | null
+        if (uri == null) return null
+        const itemRenderer = this.resourceAdapter.provideResourceItemRenderer()
+        if (itemRenderer == null) return null
+        return { vnode: h(itemRenderer, { resource: { uri }, autoplay: true }) }
+      }
       case SpxInputType.SpxEffectKind: {
         const effectKind = effectKinds.find((d) => d.name === (input.value as string))?.name
         if (effectKind == null) return null
@@ -190,7 +224,7 @@ export class SpxInputHelperProvider extends InputHelperProvider {
         return { text: style.text }
       }
       default:
-        return null
+        return super.provideInputValuePreview(input)
     }
   }
 }
