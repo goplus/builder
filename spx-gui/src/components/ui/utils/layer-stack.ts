@@ -42,7 +42,7 @@ export type LayerStack = {
  */
 export function createLayerStack(): LayerStack {
   const entries = shallowReactive<LayerEntry[]>([])
-  let nextId = 0
+  let nextId = 1
 
   function getEntry(id: number) {
     return entries.find((entry) => entry.id === id) ?? null
@@ -59,8 +59,8 @@ export function createLayerStack(): LayerStack {
   const topmostId = computed(() => getTopmostOpenEntry()?.id)
 
   function register(open: Readonly<Ref<boolean>>) {
-    nextId += 1
     const entry = shallowReactive<LayerEntry>({ id: nextId, open })
+    nextId += 1
     entries.push(entry)
 
     function unregister() {

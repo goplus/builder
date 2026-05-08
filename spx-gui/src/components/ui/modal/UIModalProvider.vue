@@ -95,11 +95,11 @@ export function useModalEvents(): ModalEvents {
 const modalContainer = ref<HTMLElement>()
 const currentModals = shallowReactive<ModalInfo[]>([])
 const emitter: ModalEvents = new Emitter()
-let nextModalId = 0
+let nextModalId = 1
 
 async function add({ component, props, handlers }: Omit<ModalInfo, 'id' | 'visible'>) {
-  nextModalId += 1
   const id = nextModalId
+  nextModalId += 1
   const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
   currentModals.push(currentModal)
   // The modal entry needs to exist in the tree before it can transition from hidden to visible.
