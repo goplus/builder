@@ -60,16 +60,16 @@
               "gap": "$G:space-4",
               "children": [
                 {
-                  "id": "m3sEXf",
+                  "id": "B8OUn",
                   "type": "ref",
                   "ref": "G:SkXtO",
                   "x": 0,
                   "y": 0,
                   "children": [
                     {
-                      "id": "R71EeB",
+                      "id": "YifrK",
                       "type": "ref",
-                      "ref": "G:ai8di"
+                      "ref": "G:StCZN"
                     }
                   ]
                 },
@@ -83,7 +83,17 @@
                     {
                       "id": "gJ5IR",
                       "type": "ref",
-                      "ref": "G:ba6Ia"
+                      "ref": "G:ba6Ia",
+                      "descendants": {
+                        "G:K09Oqe/G:FG72c": {
+                          "fill": "$G:turquoise200",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 2,
+                            "fill": "$G:turquoise500"
+                          }
+                        }
+                      }
                     }
                   ]
                 }
@@ -152,16 +162,16 @@
               "gap": "$G:space-4",
               "children": [
                 {
-                  "id": "KpkvP",
+                  "id": "sMXvT",
                   "type": "ref",
                   "ref": "G:SkXtO",
                   "x": 0,
                   "y": 0,
                   "children": [
                     {
-                      "id": "u9AcIE",
+                      "id": "FAHG9",
                       "type": "ref",
-                      "ref": "G:ai8di"
+                      "ref": "G:StCZN"
                     }
                   ]
                 },
@@ -175,7 +185,17 @@
                     {
                       "id": "Tmzi7",
                       "type": "ref",
-                      "ref": "G:ba6Ia"
+                      "ref": "G:ba6Ia",
+                      "descendants": {
+                        "G:K09Oqe/G:FG72c": {
+                          "fill": "$G:turquoise200",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 2,
+                            "fill": "$G:turquoise500"
+                          }
+                        }
+                      }
                     }
                   ]
                 }
@@ -244,16 +264,16 @@
               "gap": "$G:space-4",
               "children": [
                 {
-                  "id": "jd1bB",
+                  "id": "vhfmD",
                   "type": "ref",
                   "ref": "G:SkXtO",
                   "x": 0,
                   "y": 0,
                   "children": [
                     {
-                      "id": "nw6fg",
+                      "id": "Xwcwu",
                       "type": "ref",
-                      "ref": "G:ai8di"
+                      "ref": "G:StCZN"
                     }
                   ]
                 },
@@ -267,7 +287,17 @@
                     {
                       "id": "CkTjM",
                       "type": "ref",
-                      "ref": "G:ba6Ia"
+                      "ref": "G:ba6Ia",
+                      "descendants": {
+                        "G:K09Oqe/G:FG72c": {
+                          "fill": "$G:turquoise200",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 2,
+                            "fill": "$G:turquoise500"
+                          }
+                        }
+                      }
                     }
                   ]
                 }
@@ -336,16 +366,16 @@
               "gap": "$G:space-4",
               "children": [
                 {
-                  "id": "j9naQ",
+                  "id": "Djdff",
                   "type": "ref",
                   "ref": "G:SkXtO",
                   "x": 0,
                   "y": 0,
                   "children": [
                     {
-                      "id": "I6oiXv",
+                      "id": "DfRlL",
                       "type": "ref",
-                      "ref": "G:ai8di"
+                      "ref": "G:StCZN"
                     }
                   ]
                 },
@@ -359,7 +389,17 @@
                     {
                       "id": "NqUvF",
                       "type": "ref",
-                      "ref": "G:ba6Ia"
+                      "ref": "G:ba6Ia",
+                      "descendants": {
+                        "G:K09Oqe/G:FG72c": {
+                          "fill": "$G:turquoise200",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 2,
+                            "fill": "$G:turquoise500"
+                          }
+                        }
+                      }
                     }
                   ]
                 }
