@@ -15,8 +15,8 @@ github.com/goplus/spx/v2 v2.0.0-pre.51 h1:wlWVLWgsm0dMAd7s36eXwogYl3JbjG4DaCPaEK
 github.com/goplus/spx/v2 v2.0.0-pre.51/go.mod h1:1fr3o6/DmZOwo7hNez3gRivDVCGd9d32VgYSJ926pSc=
 github.com/goplus/xgo v1.7.2-0.20260414235301-df19f4a1b7c2 h1:kXIGYlJUTii+7nv1XTKR0ctMZSeTcgYMoQuEexZPr7A=
 github.com/goplus/xgo v1.7.2-0.20260414235301-df19f4a1b7c2/go.mod h1:fX3+ZaYEzBE6qkgFcJx83D6DbUo/vMO8Y1Allydy2ws=
-github.com/goplus/xgolsw v0.18.1 h1:1usHVKF/JvG0KWVTVE0f7828/EIqxleoS31UVk+fKG8=
-github.com/goplus/xgolsw v0.18.1/go.mod h1:KYkoFt4d2m55rLtZthAaBnPFbgRxQU2V8XJOgRwgtsY=
+github.com/goplus/xgolsw v0.19.0 h1:P0HbT3TgKjnxNEDOSXVK/EIrFYOi/9EX21Bk2yLmhLE=
+github.com/goplus/xgolsw v0.19.0/go.mod h1:sJU4wnLy521bmH1PYMvw01Kg7BwVMbAOLscWP+fjKB4=
 github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e h1:D0bJD+4O3G4izvrQUmzCL80zazlN7EwJ0PPDhpJWC/I=
 github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e/go.mod h1:pxMtw7cyUw6B2bRH0ZBANSPg+AoSud1I1iyJHI69jH4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
