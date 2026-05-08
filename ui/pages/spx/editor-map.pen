@@ -17,8 +17,10 @@
           "id": "qiNmn",
           "type": "ref",
           "ref": "y:WiWwa",
-          "x": 0.00037173899785242556,
+          "x": 0,
           "y": 0,
+          "width": 1440,
+          "rotation": 0,
           "children": [
             {
               "id": "WIh0Y",

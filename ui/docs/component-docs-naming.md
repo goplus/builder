@@ -114,7 +114,7 @@ Logo/App/LogIn
 - 组件名表达“组件 API 是什么”，不表达它内部如何布局
 - 不把 `Frame`、`Container`、`Text` 之类结构词塞进组件根节点名
 - 不在组件根节点上使用 kebab-case、中文、随机编号、Figma 默认名
-- 对于 button 组件族，优先使用 `Button/<SizeOrShape>/<Variant>/<Style>/<Shape>/<State>` 或既有 `Button/IconOnly/<VariantState>` 词表，不新增 `button-*` kebab-case
+- 对于 button 组件族，优先使用 `Button/<Size>/<Variant>/<Style>/<Shape>/<State>` 或既有 `Button/IconOnly/<VariantState>` 词表，不新增 `button-*` kebab-case
 
 ---
 
