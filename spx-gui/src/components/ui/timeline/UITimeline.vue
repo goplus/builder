@@ -1,11 +1,13 @@
-<script setup lang="ts">
-import { NTimeline } from 'naive-ui'
-</script>
-
 <template>
-  <NTimeline>
+  <div :class="cn('w-full flex flex-col', props.class)">
     <slot></slot>
-  </NTimeline>
+  </div>
 </template>
 
-<style lang="scss" scoped></style>
+<script setup lang="ts">
+import { cn, type ClassValue } from '../utils'
+
+const props = defineProps<{
+  class?: ClassValue
+}>()
+</script>

@@ -7,7 +7,8 @@
     :gain="gain"
     @update:range="emit('update:range', $event)"
     @play="emit('playbackStarted')"
-    @stop="emit('playbackStoped')"
+    @stop="emit('playbackStopped')"
+    @progress="emit('playbackProgress', $event)"
   />
 </template>
 <script lang="ts">
@@ -35,7 +36,8 @@ defineProps<{
 const emit = defineEmits<{
   'update:range': [value: { left: number; right: number }]
   playbackStarted: []
-  playbackStoped: []
+  playbackStopped: []
+  playbackProgress: [progress: number]
   recordStarted: []
   recordStopped: [Blob]
 }>()
@@ -196,10 +198,8 @@ onUnmounted(() => {
 
 defineExpose({
   stopRecording,
-  startPlayback: () => {
-    if (!waveformPlayerRef.value) return
-    waveformPlayerRef.value.play()
-  },
+  startPlayback: () => waveformPlayerRef.value?.play(),
+  stopPlayback: () => waveformPlayerRef.value?.stop(),
   exportWav: () => {
     if (!waveformPlayerRef.value) throw new Error('Not yet recorded')
     return waveformPlayerRef.value.exportWav()

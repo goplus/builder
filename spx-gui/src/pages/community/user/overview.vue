@@ -3,10 +3,9 @@ import { computed } from 'vue'
 import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { Visibility, listProject, ownerAll } from '@/apis/project'
+import { ProjectType, Visibility, listProject, ownerAll } from '@/apis/project'
 import { useSignedInUser, useUser } from '@/stores/user'
-import { useResponsive } from '@/components/ui'
-import CommunityCard from '@/components/community/CommunityCard.vue'
+import { UICard, useResponsive } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
@@ -38,6 +37,7 @@ const projectsRoute = computed(() => {
 const projectsRet = useQuery(
   async () => {
     const { data: projects } = await listProject({
+      type: ProjectType.Game,
       owner: props.nameInput,
       pageIndex: 1,
       pageSize: numInRow.value,
@@ -56,6 +56,7 @@ const likesRoute = computed(() => {
 const likesRet = useQuery(
   async () => {
     const { data: likes } = await listProject({
+      type: ProjectType.Game,
       visibility: Visibility.Public,
       owner: ownerAll,
       liker: props.nameInput,
@@ -71,8 +72,8 @@ const likesRet = useQuery(
 </script>
 
 <template>
-  <div class="user-overview">
-    <CommunityCard class="card">
+  <div class="flex flex-col gap-5">
+    <UICard class="px-4">
       <ProjectsSection
         v-radar="{ name: 'User projects', desc: 'Section showing user\'s projects' }"
         context="user"
@@ -107,8 +108,8 @@ const likesRet = useQuery(
           @removed="projectsRet.refetch()"
         />
       </ProjectsSection>
-    </CommunityCard>
-    <CommunityCard class="card">
+    </UICard>
+    <UICard class="px-4">
       <ProjectsSection
         v-radar="{ name: 'User liked projects', desc: 'Section showing projects liked by this user' }"
         context="user"
@@ -134,18 +135,6 @@ const likesRet = useQuery(
         </template>
         <ProjectItem v-for="project in likesRet.data.value" :key="project.id" :project="project" />
       </ProjectsSection>
-    </CommunityCard>
+    </UICard>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.user-overview {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.card {
-  padding: 0 var(--ui-gap-middle);
-}
-</style>

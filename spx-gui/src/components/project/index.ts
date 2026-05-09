@@ -86,12 +86,12 @@ export function useModifyProjectName() {
       tip: { en: 'Changing the project name may have the following impacts.', zh: '修改项目名，可能造成以下影响。' },
       items: [
         {
-          en: 'The project page URL will change, and existing links will no longer work.',
-          zh: '项目页面 URL 将会变更，原有链接将无法访问。'
+          en: 'The project page and editor URLs will change to use the new project name.',
+          zh: '项目页和编辑页链接将会切换为新的项目名。'
         },
         {
-          en: 'Existing sharing links to this project will become invalid.',
-          zh: '已有的项目分享链接将会失效。'
+          en: 'Existing links should currently redirect to the new address, but may stop pointing to this project if the old project name is claimed again in the future.',
+          zh: '现有链接当前通常会自动跳转到新地址，但如果旧项目名将来被重新占用，这些链接可能不再指向当前项目。'
         },
         {
           en: 'This operation may take a moment to complete.',

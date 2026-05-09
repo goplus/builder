@@ -14,10 +14,15 @@ import {
 import type { Message } from '@/apis/copilot'
 import * as apis from '@/apis/copilot'
 import { timeout } from '@/utils/utils'
+import { InMemorySkillRegistry } from './skills/registry'
 
 // Test constants
 const THROTTLE_WAIT_TIME = 400
 const COMPLETION_WAIT_TIME = 500
+
+function createTestSkillRegistry() {
+  return new InMemorySkillRegistry()
+}
 
 // Test helper functions
 function createBasicTopic(title = 'Test Topic', description = 'Test description'): Topic {
@@ -90,7 +95,7 @@ function createCopilotWithStorage(
 ) {
   const storage = new MockStorage()
   const mockGenerator = new MockMessageEventGenerator(eventBatches, delay, shouldNeverComplete)
-  const copilot = new Copilot(mockGenerator)
+  const copilot = new Copilot(createTestSkillRegistry(), mockGenerator)
   copilot.syncSessionWith(storage)
   return { copilot, storage, mockGenerator }
 }
@@ -160,6 +165,30 @@ describe('sampleApiMessages', () => {
     ]
 
     expect(sampleApiMessages(originalMessages, 100)).toEqual(originalMessages)
+  })
+})
+
+describe('Copilot markdown elements', () => {
+  it('should register and dispose markdown element renderers', () => {
+    const copilot = new Copilot(createTestSkillRegistry())
+    const codeBlock = defineComponent(() => () => null)
+
+    const dispose = copilot.registerMarkdownElements({ codeBlock })
+    expect(copilot.markdownElements.codeBlock).toBe(codeBlock)
+
+    dispose()
+    expect(copilot.markdownElements.codeBlock).toBeUndefined()
+  })
+
+  it('should ignore empty markdown element registrations', () => {
+    const copilot = new Copilot(createTestSkillRegistry())
+    const codeBlock = defineComponent(() => () => null)
+
+    copilot.registerMarkdownElements({ codeBlock })
+    const dispose = copilot.registerMarkdownElements({ codeBlock: undefined })
+    dispose()
+
+    expect(copilot.markdownElements.codeBlock).toBe(codeBlock)
   })
 })
 
@@ -407,7 +436,7 @@ describe('Copilot', () => {
     expect(currentRound?.resultMessages[0].role).toBe('copilot')
 
     // Create a new copilot instance and sync with the same storage
-    const newCopilot = new Copilot(mockGenerator)
+    const newCopilot = new Copilot(createTestSkillRegistry(), mockGenerator)
     newCopilot.syncSessionWith(storage)
 
     // Verify session was restored correctly
@@ -509,7 +538,7 @@ describe('Copilot', () => {
 
     const failingStorage = new FailingStorage()
     const mockGenerator = new MockMessageEventGenerator(createTextStreamBatches('Hello!'))
-    const copilot = new Copilot(mockGenerator)
+    const copilot = new Copilot(createTestSkillRegistry(), mockGenerator)
 
     // Should not throw when syncing with failing storage
     expect(() => copilot.syncSessionWith(failingStorage)).not.toThrow()
@@ -558,7 +587,7 @@ describe('Copilot', () => {
     const newMockGenerator = new MockMessageEventGenerator(
       createTextStreamBatches('Continuing from where we left off...')
     )
-    const newCopilot = new Copilot(newMockGenerator)
+    const newCopilot = new Copilot(createTestSkillRegistry(), newMockGenerator)
     newCopilot.syncSessionWith(storage)
 
     // Verify the in-progress message content was restored
@@ -578,7 +607,7 @@ describe('Copilot', () => {
       [createTextDeltaEvent('Hello'), createTextDeltaEvent(', world!'), createDoneEvent('stop')],
       50
     )
-    const copilot = new Copilot(generator)
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
     const topic = createBasicTopic('Text-only stream test', 'Testing streamed assistant text-only completion')
 
     await copilot.startSession(topic)
@@ -627,7 +656,7 @@ describe('Copilot', () => {
       ],
       [createTextDeltaEvent('I found one matching project.'), createDoneEvent('stop')]
     ])
-    const copilot = new Copilot(generator)
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
     copilot.registerTool({
       name: 'list_projects',
       description: 'List projects matching the query.',
@@ -682,6 +711,8 @@ describe('Copilot', () => {
     })
 
     expect(generator.calls).toHaveLength(2)
+    const contextMessage = await copilot.getContextMessage()
+
     expect(generator.calls[1]).toEqual([
       {
         role: 'user',
@@ -719,7 +750,7 @@ describe('Copilot', () => {
         role: 'user',
         content: {
           type: 'text',
-          text: copilot.getContextMessage().content
+          text: contextMessage.content
         }
       }
     ])
@@ -746,7 +777,7 @@ describe('Copilot', () => {
       ],
       [createTextDeltaEvent('Here are your projects.'), createDoneEvent('stop')]
     ])
-    const copilot = new Copilot(generator)
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
     copilot.registerTool({
       name: 'list_projects',
       description: 'List projects matching the query.',
@@ -849,7 +880,7 @@ describe('Copilot', () => {
       ],
       [createTextDeltaEvent('Finished after the tool call.'), createDoneEvent('stop')]
     ])
-    const copilot = new Copilot(generator)
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
     copilot.registerTool({
       name: 'list_projects',
       description: 'List projects matching the query.',
@@ -870,6 +901,8 @@ describe('Copilot', () => {
     const currentRound = copilot.currentSession?.currentRound
     expect(currentRound?.state).toBe(RoundState.Completed)
     expect(generator.calls).toHaveLength(2)
+    const contextMessage = await copilot.getContextMessage()
+
     expect(generator.calls[1]).toEqual([
       {
         role: 'user',
@@ -903,7 +936,7 @@ describe('Copilot', () => {
         role: 'user',
         content: {
           type: 'text',
-          text: copilot.getContextMessage().content
+          text: contextMessage.content
         }
       }
     ])
@@ -939,6 +972,48 @@ describe('Copilot', () => {
     ])
   })
 
+  it('should pass through string tool results without json stringification', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'call_1',
+          function: {
+            name: 'load_skill',
+            arguments: '{"skillId":"spx-core"}'
+          }
+        }),
+        createDoneEvent('tool_calls')
+      ],
+      [createTextDeltaEvent('Loaded.'), createDoneEvent('stop')]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerTool({
+      name: 'load_skill',
+      description: 'Load a skill document.',
+      parameters: z.object({
+        skillId: z.string()
+      }),
+      implementation: async ({ skillId }) => `<skill_content id="${skillId}">demo</skill_content>`
+    })
+    const topic = createBasicTopic('String tool result test', 'Testing plain string tool results')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Load the skill', topic)
+
+    await waitForCompletion()
+
+    expect(generator.calls).toHaveLength(2)
+    expect(generator.calls[1]?.[2]).toEqual({
+      role: 'tool',
+      toolCallId: 'call_1',
+      content: {
+        type: 'text',
+        text: '<skill_content id="spx-core">demo</skill_content>'
+      }
+    })
+  })
+
   it('should preserve the current copilot tool-call block when history sampling truncates older rounds', async () => {
     const previousUserMessage = 'u'.repeat(60_000)
     const previousCopilotMessage = 'a'.repeat(60_000)
@@ -957,7 +1032,7 @@ describe('Copilot', () => {
       ],
       [createTextDeltaEvent('Finished after the tool call.'), createDoneEvent('stop')]
     ])
-    const copilot = new Copilot(generator)
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
     copilot.registerTool({
       name: 'list_projects',
       description: 'List projects matching the query.',
@@ -1017,18 +1092,20 @@ describe('Copilot', () => {
         }
       }
     ])
+    const contextMessage = await copilot.getContextMessage()
+
     expect(sampledMessages?.at(-1)).toEqual({
       role: 'user',
       content: {
         type: 'text',
-        text: copilot.getContextMessage().content
+        text: contextMessage.content
       }
     })
   })
 
   it('should keep custom element descriptions in context while sending tool definitions via api options', async () => {
     const generator = new MockBatchedMessageEventGenerator([[createTextDeltaEvent('Done.'), createDoneEvent('stop')]])
-    const copilot = new Copilot(generator)
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
     copilot.registerContextProvider({
       provideContext: () => 'Project context'
     })
@@ -1063,11 +1140,13 @@ describe('Copilot', () => {
     expect(generator.callOptions).toHaveLength(1)
 
     const contextMessage = generator.calls[0].at(-1)
+    const expectedContextMessage = await copilot.getContextMessage()
+
     expect(contextMessage).toEqual({
       role: 'user',
       content: {
         type: 'text',
-        text: copilot.getContextMessage().content
+        text: expectedContextMessage.content
       }
     })
     expect(contextMessage).toBeDefined()
@@ -1084,15 +1163,16 @@ describe('Copilot', () => {
     expect(contextMessage.content.text).not.toContain('list_projects')
 
     const tools = generator.callOptions[0]?.tools
-    expect(tools).toHaveLength(1)
-    expect(tools?.[0]).toMatchObject({
+    expect(tools).toHaveLength(3)
+    const listProjectsTool = tools?.find((tool) => tool.function.name === 'list_projects')
+    expect(listProjectsTool).toMatchObject({
       type: apis.ToolType.Function,
       function: {
         name: 'list_projects',
         description: 'List projects matching the query.'
       }
     })
-    expect(tools?.[0].function.parameters).toMatchObject({
+    expect(listProjectsTool?.function.parameters).toMatchObject({
       type: 'object',
       required: ['query'],
       properties: {
@@ -1121,7 +1201,7 @@ describe('Copilot', () => {
       ],
       100
     )
-    const copilot = new Copilot(generator)
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
     copilot.registerTool({
       name: 'list_projects',
       description: 'List projects matching the query.',
@@ -1181,7 +1261,7 @@ describe('Copilot', () => {
       createTextDeltaEvent('<tool-use id="call_legacy" tool="echo" parameters=' + '\'{"text":"demo"}\'' + ' />'),
       createDoneEvent('stop')
     ])
-    const copilot = new Copilot(generator)
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
     copilot.registerTool({
       name: 'echo',
       description: 'Echo the provided text.',

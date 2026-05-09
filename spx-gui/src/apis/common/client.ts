@@ -3,10 +3,11 @@
  */
 
 import * as Sentry from '@sentry/vue'
+import dayjs from 'dayjs'
 import { apiBaseUrl } from '@/utils/env'
 import { TimeoutException } from '@/utils/exception/base'
 import { mergeSignals } from '@/utils/disposable'
-import { ApiException } from './exception'
+import { ApiException, ApiExceptionCode, type MovedResourceCanonical, type QuotaExceededMeta } from './exception'
 import { parseSSE, type SSEEvent } from './sse'
 
 /** Response body when exception encountered for API calling */
@@ -15,10 +16,34 @@ export type ApiExceptionPayload = {
   code: number
   /** Message for developer reading */
   msg: string
+  canonical?: MovedResourceCanonical
 }
 
 function isApiExceptionPayload(body: any): body is ApiExceptionPayload {
   return body && typeof body.code === 'number' && typeof body.msg === 'string'
+}
+
+function getQuotaExceededMeta(headers: Headers): QuotaExceededMeta {
+  const retryAfter = headers.get('Retry-After')
+  let date
+  if (retryAfter != null) {
+    const seconds = Number(retryAfter)
+    date = Number.isFinite(seconds) ? dayjs().add(seconds, 's') : dayjs(retryAfter)
+  }
+  return {
+    retryAfter: date?.isValid() ? date.valueOf() : null
+  }
+}
+
+function getApiExceptionMeta(code: number, resp: Response, payload: ApiExceptionPayload): unknown {
+  switch (code) {
+    case ApiExceptionCode.errorQuotaExceeded:
+      return getQuotaExceededMeta(resp.headers)
+    case ApiExceptionCode.errorResourceMoved:
+      return payload.canonical ?? null
+    default:
+      return null
+  }
 }
 
 /** TokenProvider provides access token used for the Authorization header */
@@ -41,13 +66,24 @@ export type JSONSSEEvent = {
   data: unknown
 }
 
+export type ClientOptions = {
+  baseUrl?: string
+  fetchFn?: typeof fetch
+}
+
 export class Client {
+  constructor(options: ClientOptions = {}) {
+    this.baseUrl = options.baseUrl ?? apiBaseUrl
+    this.fetchFn = options.fetchFn ?? globalThis.fetch.bind(globalThis)
+  }
+
   private tokenProvider: TokenProvider = async () => null
   setTokenProvider(provider: TokenProvider) {
     this.tokenProvider = provider
   }
 
-  private baseUrl = apiBaseUrl
+  private baseUrl: string
+  private fetchFn: typeof fetch
   private defaultTimeout = 10 * 1000 // 10 seconds
 
   /** Prepare request object, stringifying payload as JSON */
@@ -74,7 +110,7 @@ export class Client {
     const timeoutCtrl = new AbortController()
     const timeoutTimer = setTimeout(() => timeoutCtrl.abort(new TimeoutException()), timeout)
     const signal = mergeSignals(options?.signal, timeoutCtrl.signal)
-    const resp = await fetch(req, { signal }).finally(() => clearTimeout(timeoutTimer))
+    const resp = await this.fetchFn(req, { signal }).finally(() => clearTimeout(timeoutTimer))
     if (!resp.ok) {
       let payload: ApiExceptionPayload | undefined
       try {
@@ -84,7 +120,10 @@ export class Client {
         // ignore
       }
       if (payload == null) throw new Error(`status ${resp.status} for api call: ${req.url.slice(0, 200)}`)
-      throw new ApiException(payload.code, payload.msg, { req, resp })
+      throw new ApiException(payload.code, payload.msg, {
+        req,
+        meta: getApiExceptionMeta(payload.code, resp, payload)
+      })
     }
     return resp
   }

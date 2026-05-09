@@ -163,23 +163,6 @@ describe('BackdropGen', () => {
     await expect(gen.recordAdoption()).rejects.toThrow('result backdrop expected')
   })
 
-  it('should track isPreparePhase correctly', async () => {
-    const project = makeSpxProject()
-    const gen = new BackdropGen(i18n, project, {
-      settings: { description: 'A test backdrop' }
-    })
-
-    expect(gen.isPreparePhase).toBe(true)
-
-    await gen.enrich()
-    await gen.genImages()
-    expect(gen.isPreparePhase).toBe(true)
-
-    gen.setImageIndex(0)
-    await gen.finish()
-    expect(gen.isPreparePhase).toBe(false)
-  })
-
   it('should allow multiple enrichments', async () => {
     const project = makeSpxProject()
     const gen = new BackdropGen(i18n, project, {

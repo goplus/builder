@@ -276,16 +276,14 @@ function formatTime(timeInMs: number) {
     <div class="preview-area">
       <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" muted loop />
     </div>
-    <GenLoading :visible="videoDurationRef == null" cover variant="bg-spin">
+    <GenLoading :visible="videoDurationRef == null" cover>
       {{ $t({ en: 'Loading video...', zh: '正在加载视频...' }) }}
     </GenLoading>
     <div v-if="videoDurationRef != null" class="controls">
       <PlayControl
         v-radar="{ name: 'Play button', desc: 'Toggle playback of animation video preview' }"
-        :playing="isPlaying"
-        :progress="progress"
+        :playing="isPlaying ? { progress } : null"
         :progress-interval="0"
-        color="primary"
         :play-handler="play"
         @stop="stop"
       />
@@ -321,7 +319,7 @@ function formatTime(timeInMs: number) {
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 @keyframes leftMarker {
   0%,
   100% {
@@ -410,48 +408,45 @@ function formatTime(timeInMs: number) {
   width: 100%;
   height: 100%;
   isolation: isolate;
+}
 
-  &.nudge {
-    .segment-marker {
-      &::after {
-        content: '';
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        position: absolute;
-        background-color: var(--ui-color-turquoise-300);
-        mask-image: url('@/components/asset/gen/animation/marker-arrow.svg');
-        mask-size: contain;
-        mask-repeat: no-repeat;
-      }
+.track-inner.nudge .segment-marker::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  background-color: var(--ui-color-turquoise-300);
+  mask-image: url('@/components/asset/gen/animation/marker-arrow.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
 
-      &.left {
-        animation: leftMarker 1.8s infinite ease-in-out;
+.track-inner.nudge .segment-marker.left {
+  animation: leftMarker 1.8s infinite ease-in-out;
+}
 
-        &::after {
-          right: -24px;
-          animation: markerArrow 1.8s infinite ease-in-out;
-        }
-      }
+.track-inner.nudge .segment-marker.left::after {
+  right: -24px;
+  animation: markerArrow 1.8s infinite ease-in-out;
+}
 
-      &.right {
-        animation: rightMarker 1.8s infinite ease-in-out;
-        &::after {
-          left: -24px;
-          transform: rotateY(180deg);
-          animation: markerArrow 1.8s infinite ease-in-out;
-        }
-      }
-    }
+.track-inner.nudge .segment-marker.right {
+  animation: rightMarker 1.8s infinite ease-in-out;
+}
 
-    .track-tips {
-      display: block;
-    }
+.track-inner.nudge .segment-marker.right::after {
+  left: -24px;
+  transform: rotateY(180deg);
+  animation: markerArrow 1.8s infinite ease-in-out;
+}
 
-    .current-time {
-      display: none;
-    }
-  }
+.track-inner.nudge .track-tips {
+  display: block;
+}
+
+.track-inner.nudge .current-time {
+  display: none;
 }
 
 .segment {
@@ -482,15 +477,16 @@ function formatTime(timeInMs: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1; // Ensure it stays above .current-time to prioritize .segment-marker as it is interactive
+  /* Ensure it stays above .current-time to prioritize .segment-marker as it is interactive. */
+  z-index: 1;
+}
 
-  &::before {
-    content: '';
-    display: block;
-    width: 1px;
-    height: 12px;
-    background: var(--ui-color-grey-100);
-  }
+.segment-marker::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 12px;
+  background: var(--ui-color-grey-100);
 }
 
 .track-tips {
@@ -518,7 +514,6 @@ function formatTime(timeInMs: number) {
   justify-content: space-between;
   font-size: 12px;
   line-height: 18px;
-  font-weight: 600;
   color: var(--ui-color-grey-700);
 }
 

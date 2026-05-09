@@ -9,8 +9,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getUser } from '@/apis/user'
+import { isUsernameTaken } from '@/apis/user'
 import { useModifySignedInUsername } from '@/stores/user'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -47,11 +46,7 @@ async function validateUsername(val: string): Promise<FormValidationResult> {
       zh: '用户名长度超出限制（最多 100 个字符）'
     })
 
-  const existedUser = await getUser(trimmed).catch((e) => {
-    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
-    throw e
-  })
-  if (existedUser != null)
+  if (await isUsernameTaken(trimmed))
     return t({
       en: `Username ${trimmed} already exists`,
       zh: `用户名 ${trimmed} 已存在`
@@ -95,17 +90,17 @@ const handleSubmit = useMessageHandle(async () => {
           autofocus
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-6 flex justify-end gap-xl pb-1">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel modifying username' }"
-          color="boring"
+          type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Confirm button', desc: 'Click to confirm modifying username' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >
@@ -115,13 +110,3 @@ const handleSubmit = useMessageHandle(async () => {
     </UIForm>
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ui-gap-middle);
-  margin-top: var(--ui-gap-large);
-  padding-bottom: 4px;
-}
-</style>

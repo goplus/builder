@@ -22,16 +22,12 @@ export function useModifyUsername() {
           zh: '您将会被登出，需要重新登录才能继续使用。'
         },
         {
-          en: 'Your profile page URL will change, and existing links to your profile may no longer work.',
-          zh: '您的个人主页 URL 将会变更，原有主页链接可能无法继续访问。'
+          en: 'Your profile, project page, and editor URLs will change to use the new username.',
+          zh: '您的个人主页、项目页和编辑页链接将会切换为新的用户名。'
         },
         {
-          en: 'Project URLs that include your username, including project pages and editor routes, will also change.',
-          zh: '包含您用户名的项目链接（包括项目页和编辑页）也会随之变更。'
-        },
-        {
-          en: 'Existing sharing links to your projects may become invalid.',
-          zh: '已分享出去的项目链接可能会失效。'
+          en: 'Existing links should currently redirect to the new address, but may stop pointing to your account or projects if the old username is claimed again in the future.',
+          zh: '现有链接当前通常会自动跳转到新地址，但如果旧用户名将来被重新占用，这些链接可能不再指向您的账号或项目。'
         },
         {
           en: 'This operation may take a moment to complete.',

@@ -6,7 +6,7 @@
     :auto-focus="false"
     @update:visible="emit('cancelled')"
   >
-    <div class="desc">
+    <div class="mb-2 text-grey-900">
       {{
         $t({
           en: 'A sharing link to the project has been created. Feel free to copy it below to share the project with others.',
@@ -14,7 +14,7 @@
         })
       }}
     </div>
-    <div class="link">
+    <div class="mb-4 flex">
       <UITextInput
         v-radar="{ name: 'Sharing link input', desc: 'Input field showing the project sharing link' }"
         :value="projectSharingLink"
@@ -23,7 +23,7 @@
       />
       <UIButton
         v-radar="{ name: 'Copy button', desc: 'Click to copy sharing link to clipboard' }"
-        class="copy-button"
+        class="ml-3 whitespace-nowrap"
         :loading="handleCopy.isLoading.value"
         @click="handleCopy.fn"
       >
@@ -60,20 +60,3 @@ const handleCopy = useMessageHandle(
   { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
 )
 </script>
-
-<style scoped lang="scss">
-.desc {
-  color: var(--ui-color-grey-900);
-  margin-bottom: 8px;
-}
-
-.link {
-  display: flex;
-  margin-bottom: 16px;
-}
-
-.copy-button {
-  margin-left: 12px;
-  white-space: nowrap;
-}
-</style>

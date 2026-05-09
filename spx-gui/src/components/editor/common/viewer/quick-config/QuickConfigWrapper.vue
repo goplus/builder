@@ -20,7 +20,7 @@ export function useQuickConfigContext() {
 <script lang="ts" setup>
 import { provide, ref, type InjectionKey, type Ref, onBeforeUnmount } from 'vue'
 
-import { isInPopup } from '@/components/ui'
+import { isInPopupOrModal } from '@/components/ui'
 
 const configTypeRef = ref<ConfigType>('default')
 
@@ -74,7 +74,7 @@ function handleMouseLeave(e: MouseEvent) {
   // TODO: Temporary. We need a more reliable solution to keep ConfigPanel active.
   // Current issue: If the mouse leaves ConfigPanel and enters something other than a Popup,
   // the logic below fails, causing ConfigPanel back to `default`.
-  if (relatedTarget instanceof HTMLElement && isInPopup(relatedTarget)) {
+  if (relatedTarget instanceof HTMLElement && isInPopupOrModal(relatedTarget)) {
     relatedTarget.addEventListener('mouseleave', handleInteractionEnd, { once: true })
     return
   }
@@ -97,7 +97,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 <template>
   <div
     ref="quickConfigRef"
-    class="quick-config"
+    class="p-1"
     @focusin="handleInteractionStart"
     @focusout="handleInteractionEnd"
     @mouseenter="handleInteractionStart"
@@ -106,10 +106,3 @@ onBeforeUnmount(() => clearTimeout(timer))
     <slot></slot>
   </div>
 </template>
-
-<style lang="scss">
-.quick-config {
-  position: absolute;
-  padding: 4px;
-}
-</style>

@@ -79,5 +79,3 @@ const submitText = computed(() => {
     </template>
   </SettingsInput>
 </template>
-
-<style lang="scss" scoped></style>

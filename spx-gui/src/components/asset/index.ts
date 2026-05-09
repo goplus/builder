@@ -5,7 +5,8 @@ import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import { type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
+import { humanizeAssetType, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
+import { resourceAnimationName, resourceMonitorName, resourceSpriteName } from '@/models/spx/common/resource'
 import { fromNativeFile } from '@/models/common/file'
 import { type SpxProject } from '@/models/spx/project'
 import { Backdrop } from '@/models/spx/backdrop'
@@ -17,10 +18,14 @@ import { Monitor } from '@/models/spx/widget/monitor'
 import * as assetName from '@/models/spx/common/asset-name'
 import { Costume } from '@/models/spx/costume'
 import type { Widget } from '@/models/spx/widget'
+import { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
+import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/stage/sound/SoundRecorderModal.vue'
-import { useEditorCtx, type EditorCtx } from '../editor/EditorContextProvider.vue'
-import { useCodeEditor, useRenameWarning, getResourceIdentifier } from '../editor/code-editor/spx-code-editor'
+import { useEditorCtx } from '../editor/EditorContextProvider.vue'
+import { getResourceIdentifier, useCodeEditor } from '../editor/spx-code-editor'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetSaveModal from './library/AssetSaveModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
@@ -29,51 +34,43 @@ import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
-import { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
-import type { CostumeGen } from '@/models/spx/gen/costume-gen'
-import type { AnimationGen } from '@/models/spx/gen/animation-gen'
-
-function makeGenCollapseHandler(editorCtx: EditorCtx) {
-  return async (gen: AssetGenModel, isNewGen = true) => {
-    // Add the ongoing asset generation to the editor state when the generation is newly created and not yet added
-    if (gen instanceof SpriteGen) {
-      if (isNewGen) editorCtx.state.genState.addSprite(gen)
-      return editorCtx.state.genState.getSpritePos(gen)
-    } else if (gen instanceof BackdropGen) {
-      if (isNewGen) editorCtx.state.genState.addBackdrop(gen)
-      return editorCtx.state.genState.getBackdropPos(gen)
-    }
-    return null
-  }
-}
+import type { GenHelpers } from './gen/modal'
 
 export function useSpriteGenModal() {
-  const editorCtx = useEditorCtx()
-  const genCollapseHandler = makeGenCollapseHandler(editorCtx)
+  const helpers = useGenHelpers()
   const invokeModal = useModal(SpriteGenModal)
   return function invokeSpriteGenModal(project: SpxProject, gen?: SpriteGen) {
-    return invokeModal({ project, gen, genCollapseHandler })
+    return invokeModal({ project, gen, helpers })
   }
 }
 
 export function useBackdropGenModal() {
   const invokeModal = useModal(BackdropGenModal)
-  return function invokeBackdropGenModal(project: SpxProject, gen?: BackdropGen) {
-    return invokeModal({ project, gen })
+  return function invokeBackdropGenModal(project: SpxProject) {
+    return invokeModal({ project })
   }
 }
 
 export function useAddAssetFromLibrary() {
   const editorCtx = useEditorCtx()
-  const genCollapseHandler = makeGenCollapseHandler(editorCtx)
+  const genHelpers = useGenHelpers()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: SpxProject, type: T) {
-    return (await invokeAssetLibraryModal({
-      project,
-      type,
-      genCollapseHandler
-    })) as Array<AssetModel<T>>
+    const models = (await invokeAssetLibraryModal({ project, type, genHelpers })) as Array<AssetModel<T>>
+    const em = humanizeAssetType(type)
+    await editorCtx.state.history.doAction({ name: { en: `Add ${em.en}`, zh: `添加${em.zh}` } }, async () => {
+      for (const model of models) {
+        if (model instanceof Sprite) {
+          project.addSprite(model)
+          await model.autoFit()
+        } else if (model instanceof Backdrop) {
+          project.stage.addBackdrop(model)
+        } else if (model instanceof Sound) {
+          project.addSound(model)
+        }
+      }
+    })
+    return models
   }
 }
 
@@ -102,13 +99,14 @@ export function useLoadFromScratchModal() {
 
 export function useAddSpriteFromLocalFile() {
   const editorCtx = useEditorCtx()
+  const i18n = useI18n()
   const preprocess = useModal(PreprocessModal)
   return async function addSpriteFromLocalFile(project: SpxProject) {
     const actionMessage = { en: 'Add sprite', zh: '添加精灵' }
     const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
     const files = nativeFiles.map((f) => fromNativeFile(f))
-    const spriteName = files.length > 1 ? '' : stripExt(files[0].name)
-    const sprite = Sprite.create(spriteName)
+    const spriteNameBase = files.length > 1 ? i18n.t(resourceSpriteName) + '1' : stripExt(files[0].name)
+    const sprite = Sprite.create(spriteNameBase)
     const costumes = await preprocess({
       files,
       title: actionMessage,
@@ -196,13 +194,14 @@ export function useAddBackdropFromLocalFile() {
 
 export function useAddAnimationByGroupingCostumes() {
   const editorCtx = useEditorCtx()
+  const i18n = useI18n()
   const invokeGroupCostumesModal = useModal(GroupCostumesModal)
   return async function addAnimationByGroupingCostumes(project: SpxProject, sprite: Sprite) {
     const { selectedCostumes, removeCostumes } = await invokeGroupCostumesModal({ sprite })
     const action = { name: { en: 'Group costumes as animation', zh: '合并造型为动画' } }
     return editorCtx.state.history.doAction(action, () => {
       const costumes = selectedCostumes.map((costume) => costume.clone())
-      const animation = Animation.create('', costumes)
+      const animation = Animation.create(i18n.t(resourceAnimationName) + '1', costumes)
       sprite.addAnimation(animation)
       if (removeCostumes) {
         for (let i = selectedCostumes.length - 1; i >= 0; i--) {
@@ -218,9 +217,10 @@ export function useAddAnimationByGroupingCostumes() {
 
 export function useAddMonitor() {
   const editorCtx = useEditorCtx()
+  const i18n = useI18n()
   return async function addMonitor(project: SpxProject) {
-    const monitor = await Monitor.create()
-    const action = { name: { en: 'Add widget', zh: '添加控件' } }
+    const monitor = await Monitor.create(i18n.t(resourceMonitorName) + '1')
+    const action = { name: { en: 'Add monitor', zh: '添加监视器' } }
     await editorCtx.state.history.doAction(action, () => {
       project.stage.addWidget(monitor)
     })
@@ -232,7 +232,6 @@ export function useRenameSprite() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameSprite(sprite: Sprite) {
     return invokeRenameModal({
       target: {
@@ -254,7 +253,7 @@ export function useRenameSprite() {
           })
         },
         inputTip: assetName.spriteNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -264,7 +263,6 @@ export function useRenameSound() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameSound(sound: Sound) {
     return invokeRenameModal({
       target: {
@@ -280,7 +278,7 @@ export function useRenameSound() {
           })
         },
         inputTip: assetName.soundNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -290,7 +288,6 @@ export function useRenameCostume() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameCostume(costume: Costume) {
     return invokeRenameModal({
       target: {
@@ -306,7 +303,7 @@ export function useRenameCostume() {
           })
         },
         inputTip: assetName.costumeNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -316,7 +313,6 @@ export function useRenameBackdrop() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameBackdrop(backdrop: Backdrop) {
     return invokeRenameModal({
       target: {
@@ -332,7 +328,7 @@ export function useRenameBackdrop() {
           })
         },
         inputTip: assetName.backdropNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -342,7 +338,6 @@ export function useRenameAnimation() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameAnimation(animation: Animation) {
     return invokeRenameModal({
       target: {
@@ -358,7 +353,7 @@ export function useRenameAnimation() {
           })
         },
         inputTip: assetName.animationNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -368,7 +363,6 @@ export function useRenameWidget() {
   const editorCtx = useEditorCtx()
   const codeEditor = useCodeEditor()
   const invokeRenameModal = useModal(RenameModal)
-  const getRenameWarning = useRenameWarning()
   return async function renameWidget(widget: Widget) {
     return invokeRenameModal({
       target: {
@@ -384,7 +378,7 @@ export function useRenameWidget() {
           })
         },
         inputTip: assetName.widgetNameTip,
-        warning: await getRenameWarning()
+        warning: await codeEditor.getRenameWarning()
       }
     })
   }
@@ -426,4 +420,25 @@ export function useRenameAnimationGen() {
       }
     })
   }
+}
+
+// TODO: Consider moving to class `GenState`?
+function useGenHelpers(): GenHelpers {
+  const editorCtx = useEditorCtx()
+  function isPersisted(gen: AssetGenModel) {
+    if (gen instanceof SpriteGen) return editorCtx.state.genState.sprites.some((s) => s.id === gen.id)
+    if (gen instanceof BackdropGen) return editorCtx.state.genState.backdrops.some((b) => b.id === gen.id)
+    throw new Error('Unsupported gen type')
+  }
+  function persist(gen: AssetGenModel) {
+    if (gen instanceof SpriteGen) return editorCtx.state.genState.addSprite(gen)
+    if (gen instanceof BackdropGen) return editorCtx.state.genState.addBackdrop(gen)
+    throw new Error('Unsupported gen type')
+  }
+  function getPos(gen: AssetGenModel) {
+    if (gen instanceof SpriteGen) return editorCtx.state.genState.getSpritePos(gen)
+    if (gen instanceof BackdropGen) return editorCtx.state.genState.getBackdropPos(gen)
+    throw new Error('Unsupported gen type')
+  }
+  return { isPersisted, persist, getPos }
 }

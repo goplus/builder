@@ -1,36 +1,24 @@
 <!-- Sound player for given audio src, based on `PlayControl` -->
 
 <template>
-  <PlayControl
-    :playing="playing != null"
-    :progress="playing?.progress ?? 0"
-    :color="color"
-    :play-handler="handlePlay"
-    :loading="loading"
-    :size="size"
-    @stop="stop"
-  />
+  <PlayControl :playing="playing" :play-handler="handlePlay" :loading="loading" :size="size" @stop="stop" />
 </template>
 
 <script setup lang="ts">
 import { computed, onUnmounted, reactive, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
-import type { Color } from '@/components/ui'
-import PlayControl, { type Size } from '../../common/PlayControl.vue'
+import PlayControl, { type Playing, type Size } from '../../common/PlayControl.vue'
 
 const props = defineProps<{
   src: string | null
-  color: Color
   size?: Size
 }>()
 
-type Playing = {
-  /** Progress percentage, number in range `[0, 1]` */
-  progress: number
+type PlayingWithAudio = Playing & {
   audio: HTMLAudioElement
 }
 
-const playing = ref<Playing | null>(null)
+const playing = ref<PlayingWithAudio | null>(null)
 const registered = registerPlayer(stop)
 
 async function handlePlay() {
@@ -42,7 +30,7 @@ async function handlePlay() {
 
 function makePlaying(src: string) {
   const audio = new Audio(src)
-  const p = reactive<Playing>({ audio, progress: 0 })
+  const p = reactive<PlayingWithAudio>({ audio, progress: 0 })
   audio.addEventListener('timeupdate', () => {
     p.progress = audio.currentTime / audio.duration
   })
@@ -50,10 +38,7 @@ function makePlaying(src: string) {
     console.warn('audio error:', e)
     stop()
   })
-  audio.addEventListener('ended', () => {
-    // delay to make the animation more natural
-    setTimeout(stop, 400)
-  })
+  audio.addEventListener('ended', stop)
   return p
 }
 

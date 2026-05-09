@@ -81,25 +81,19 @@ export const grey = {
 
 export const primary = turquoise
 
-export const sprite = {
-  ...yellow,
-  bgSelected: yellow[200]
-}
-export const sound = {
-  ...blue,
-  bgSelected: blue[200]
-}
-export const stage = {
-  ...blue,
-  bgSelected: blue[200]
-}
-
 export const danger = red
 export const success = green
 export const disabled = {
   bg: grey[300],
   text: grey[600]
 }
+
+export const overlay = {
+  // Used by full-screen loading and running-state cover layers.
+  loading: 'rgba(36, 41, 47, 0.6)',
+  // Used by modal backdrops, which need a heavier page dim.
+  modal: 'rgba(36, 41, 47, 0.75)'
+} as const
 
 export const title = grey[1000]
 export const text = grey[900]
@@ -121,5 +115,3 @@ export const dividingLine = {
 } as const
 
 export const border = grey[600]
-
-export type Color = 'primary' | 'sprite' | 'sound' | 'stage'

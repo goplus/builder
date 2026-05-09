@@ -1,6 +1,8 @@
 import { shallowReactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
+import { untilNotNull } from '@/utils/utils'
+import { capture } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
 import type { Files } from '@/models/common/file'
 import { ensureValidBackdropName, ensureValidSpriteName } from '@/models/spx/common/asset-name'
@@ -30,6 +32,8 @@ export class GenState extends Disposable {
     gen.setSettings({ name: newName })
     gen.setParent(this)
     gen.addDisposer(() => gen.setParent(null))
+    // Remove (& dispose) the gen when generation finished
+    untilNotNull(() => gen.result, gen.getSignal()).then(() => this.removeSprite(gen.id), capture)
   }
   addSprite(gen: SpriteGen) {
     this.prepareAddSprite(gen)
@@ -48,6 +52,8 @@ export class GenState extends Disposable {
     gen.setSettings({ name: newName })
     gen.setParent(this)
     gen.addDisposer(() => gen.setParent(null))
+    // Remove (& dispose) the gen when generation finished
+    untilNotNull(() => gen.result, gen.getSignal()).then(() => this.removeBackdrop(gen.id), capture)
   }
   addBackdrop(gen: BackdropGen) {
     this.prepareAddBackdrop(gen)

@@ -33,7 +33,7 @@ const handleCopy = useMessageHandle(
     :auto-focus="false"
     @update:visible="emit('cancelled')"
   >
-    <div class="desc">
+    <div class="mb-2 text-grey-900">
       <I18nT>
         <template #en>
           Visit
@@ -54,7 +54,7 @@ const handleCopy = useMessageHandle(
         </template>
       </I18nT>
     </div>
-    <div class="link-wrapper">
+    <div class="mb-4 flex">
       <UITextInput
         v-radar="{ name: 'Project link input', desc: 'Input field showing the published project link' }"
         :value="projectPageLink"
@@ -63,7 +63,7 @@ const handleCopy = useMessageHandle(
       />
       <UIButton
         v-radar="{ name: 'Copy link button', desc: 'Click to copy project link to clipboard' }"
-        class="copy-button"
+        class="ml-3 whitespace-nowrap"
         @click="handleCopy"
       >
         {{ $t({ en: 'Copy link', zh: '复制链接' }) }}
@@ -71,20 +71,3 @@ const handleCopy = useMessageHandle(
     </div>
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.desc {
-  color: var(--ui-color-grey-900);
-  margin-bottom: 8px;
-}
-
-.link-wrapper {
-  display: flex;
-  margin-bottom: 16px;
-}
-
-.copy-button {
-  margin-left: 12px;
-  white-space: nowrap;
-}
-</style>

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { Visibility, listProject, ownerAll } from '@/apis/project'
+import { ProjectType, Visibility, listProject, ownerAll } from '@/apis/project'
 import { useUser } from '@/stores/user'
 import { UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -32,6 +32,7 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 const queryRet = useQuery(
   () =>
     listProject({
+      type: ProjectType.Game,
       visibility: Visibility.Public,
       owner: ownerAll,
       liker: props.nameInput,
@@ -52,30 +53,13 @@ const queryRet = useQuery(
     <template #title>
       {{ $t({ en: 'Projects I like', zh: '我喜欢的项目' }) }}
     </template>
-    <div class="projects-wrapper">
+    <div class="mt-2">
       <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
-        <ul class="projects">
+        <ul class="grid grid-cols-[repeat(var(--project-num-in-row),minmax(0,1fr))] gap-xl">
           <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
         </ul>
       </ListResultWrapper>
-      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 mb-5 justify-center" :total="pageTotal" />
     </div>
   </UserContent>
 </template>
-
-<style lang="scss" scoped>
-.projects-wrapper {
-  margin-top: 8px;
-}
-
-.projects {
-  display: grid;
-  grid-template-columns: repeat(var(--project-num-in-row), 1fr);
-  gap: var(--ui-gap-middle);
-}
-
-.pagination {
-  margin: 36px 0 20px;
-  justify-content: center;
-}
-</style>

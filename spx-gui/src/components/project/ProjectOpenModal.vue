@@ -4,7 +4,7 @@ import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import { computed, shallowRef } from 'vue'
 import { useQuery } from '@/utils/query'
-import { listProject } from '@/apis/project'
+import { listProject, ProjectType } from '@/apis/project'
 
 const props = defineProps<{
   visible: boolean
@@ -22,6 +22,8 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 const queryRet = useQuery(
   () =>
     listProject({
+      // This modal will list projects across types in a later design.
+      type: ProjectType.Game,
       orderBy: 'updatedAt',
       sortOrder: 'desc',
       pageIndex: page.value,
@@ -43,7 +45,7 @@ const queryRet = useQuery(
     @update:visible="emit('cancelled')"
   >
     <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
-      <ul class="project-list">
+      <ul class="flex flex-wrap content-start gap-xl">
         <ProjectItem
           v-for="project in slotProps.data.data"
           :key="project.id"
@@ -53,19 +55,6 @@ const queryRet = useQuery(
         />
       </ul>
     </ListResultWrapper>
-    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-8 mb-4 justify-center" :total="pageTotal" />
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.project-list {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: var(--ui-gap-middle);
-}
-.pagination {
-  justify-content: center;
-  margin: 32px 0 16px;
-}
-</style>

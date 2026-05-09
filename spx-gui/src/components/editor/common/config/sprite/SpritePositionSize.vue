@@ -35,7 +35,7 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
 </script>
 
 <template>
-  <div class="content">
+  <div class="flex items-center gap-3">
     <UINumberInput
       v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
       :value="sprite.x"
@@ -61,11 +61,3 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
     </UINumberInput>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.content {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-</style>

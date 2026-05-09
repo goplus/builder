@@ -1,4 +1,5 @@
 import './polyfills'
+import './app.css'
 import { createApp, watchEffect, type App as VueApp } from 'vue'
 import * as Sentry from '@sentry/vue'
 import type { Router } from 'vue-router'

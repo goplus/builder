@@ -7,7 +7,7 @@
     @update:visible="handleCancel"
   >
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <div class="alert">
+      <div class="h-7.5 text-grey-900">
         {{
           $t({
             en: 'The project name will also be used in project URLs.',
@@ -22,11 +22,11 @@
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-10 flex justify-center">
         <UIButton
           v-radar="{ name: 'Create button', desc: 'Click to create the project' }"
           class="create-button"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >
@@ -48,12 +48,11 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { getProject, addProject, Visibility, parseRemixSource } from '@/apis/project'
+import { addProject, isProjectNameTaken, ProjectType, Visibility, parseRemixSource } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { untilLoaded } from '@/utils/query'
 import { useSignedInStateQuery } from '@/stores/user'
-import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { cloudHelpers } from '@/models/common/cloud'
 import { xbpHelpers } from '@/models/common/xbp'
 import { SpxProject } from '@/models/spx/project'
@@ -93,6 +92,8 @@ const handleSubmit = useMessageHandle(
       await addProject({
         name: projectName,
         displayName: projectName,
+        // This modal will own project type selection in a later design.
+        type: ProjectType.Game,
         visibility: Visibility.Private,
         remixSource: props.remixSource
       })
@@ -139,27 +140,10 @@ async function validateName(name: string): Promise<FormValidationResult> {
   // check naming conflict
   const signedInState = await untilLoaded(signedInStateQuery)
   if (!signedInState.isSignedIn) throw new Error('login required')
-  const existedProject = await getProject(signedInState.user.username, name).catch((e) => {
-    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
-    throw e
-  })
-  if (existedProject != null)
+  if (await isProjectNameTaken(signedInState.user.username, name))
     return t({
       en: `Project ${name} already exists`,
       zh: `项目 ${name} 已存在`
     })
 }
 </script>
-
-<style scoped lang="scss">
-.alert {
-  height: 30px;
-  color: var(--ui-color-grey-900);
-}
-
-.footer {
-  margin-top: 40px;
-  display: flex;
-  justify-content: center;
-}
-</style>

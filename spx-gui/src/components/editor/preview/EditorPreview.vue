@@ -1,17 +1,16 @@
 <template>
   <UICard
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
-    class="editor-preview"
+    class="editor-preview relative flex flex-col overflow-hidden"
   >
-    <UICardHeader>
-      <div class="header">
+    <UICardHeader class="gap-3">
+      <div class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
           v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-          class="button"
-          color="primary"
+          type="primary"
           icon="playHollow"
           :loading="handleRun.isLoading.value"
           @click="handleRun.fn"
@@ -22,19 +21,18 @@
         <UIButton
           v-show="canManageProject"
           v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-          color="secondary"
+          type="secondary"
+          icon="publish"
           :disabled="!isOnline"
           @click="handlePublishProject"
         >
-          <img :src="publishSvg" style="width: 14px" />
           {{ $t({ en: 'Publish', zh: '发布' }) }}
         </UIButton>
       </template>
       <template v-else>
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
-          class="button"
-          color="primary"
+          type="primary"
           icon="rotate"
           :disabled="runnerState !== 'running' || handleStop.isLoading.value"
           :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
@@ -44,8 +42,7 @@
         </UIButton>
         <UIButton
           v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
-          class="button"
-          color="boring"
+          type="neutral"
           icon="end"
           :loading="handleStop.isLoading.value"
           @click="handleStop.fn"
@@ -56,8 +53,8 @@
           <template #trigger>
             <UIButton
               v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
-              class="button"
-              color="boring"
+              type="neutral"
+              shape="square"
               icon="enterFullScreen"
               :disabled="handleStop.isLoading.value"
               @click="handleEnterFullscreen"
@@ -68,14 +65,17 @@
       </template>
     </UICardHeader>
 
-    <div class="main">
+    <div class="flex grow justify-center overflow-hidden p-3">
       <div
         ref="stageContainerRef"
-        class="stage-viewer-container"
-        :class="{ 'stage-viewer-container--running': runnerState !== 'initial' }"
+        class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
+        :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
       >
-        <StageViewer />
-        <div v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky" class="runner-host">
+        <StageViewer class="stage-viewer" />
+        <div
+          v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
+          class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
+        >
           <ProjectRunnerSurface
             ref="projectRunnerSurfaceRef"
             v-model:fullscreen="fullscreen"
@@ -175,12 +175,11 @@ import {
   DiagnosticSeverity,
   textDocumentId2CodeFileName,
   getInvalidMonitors
-} from '@/components/editor/code-editor/spx-code-editor'
+} from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
-import publishSvg from './publish.svg'
 
 const editorCtx = useEditorCtx()
 const codeEditor = useCodeEditor()
@@ -439,75 +438,29 @@ function getStageInlineAnchor() {
 }
 </script>
 
-<style scoped lang="scss">
-.editor-preview {
-  // TODO: The fixed height here should be removed. Instead, set the StageViewer size (maintaining 4:3 aspect ratio) and let this container adapt its height accordingly.
-  height: 422px;
+<style scoped>
+.stage-viewer-container-running .stage-viewer {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.runner-host :deep(.project-runner-surface) {
+  width: 100%;
+  height: 100%;
   display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
+}
 
-  .header {
-    flex: 1;
-    color: var(--ui-color-title);
-  }
+.runner-host :deep(.project-runner-surface:not(.fullscreen)) {
+  align-items: center;
+  justify-content: center;
+}
 
-  .button {
-    margin: 0 8px;
-  }
-
-  .main {
-    display: flex;
-    overflow: hidden;
-    justify-content: center;
-    padding: 12px;
-    height: 100%;
-  }
-
-  .stage-viewer-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: var(--ui-border-radius-1);
-    overflow: hidden;
-    background-color: var(--ui-color-grey-200);
-
-    &--running {
-      :deep(.stage-viewer) {
-        filter: blur(4px);
-        pointer-events: none;
-        user-select: none;
-      }
-    }
-
-    .runner-host {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--ui-color-grey-300);
-
-      :deep(.project-runner-surface) {
-        width: 100%;
-        height: 100%;
-        display: flex;
-      }
-
-      :deep(.project-runner-surface:not(.fullscreen)) {
-        align-items: center;
-        justify-content: center;
-      }
-
-      :deep(.project-runner-surface:not(.fullscreen) .runner) {
-        width: 100%;
-        max-width: 100%;
-        max-height: 100%;
-        aspect-ratio: 4 / 3;
-        height: auto;
-      }
-    }
-  }
+.runner-host :deep(.project-runner-surface:not(.fullscreen) .runner) {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto;
 }
 </style>

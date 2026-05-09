@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import type { FileCollection, ByPage, PaginationParams, Perspective, ArtStyle } from './common'
 import { client, Visibility, ownerAll, timeStringify } from './common'
-import { ApiException, ApiExceptionCode } from './common/exception'
+import { ApiException, ApiExceptionCode, type MovedResourceCanonical } from './common/exception'
 import { parseProjectReleaseFullName, stringifyProjectReleaseFullName, type ProjectRelease } from './project-release'
 import type { Prettify } from '@/utils/types'
 
@@ -11,6 +11,15 @@ export enum ProjectDataType {
   Sprite = 0,
   Backdrop = 1,
   Sound = 2
+}
+
+export enum ProjectType {
+  /** 2D game project based on spx. */
+  Game = 'game'
+}
+
+export function isSupportedProjectType(type: string | null | undefined): boolean {
+  return type === ProjectType.Game
 }
 
 /** Source of extra settings of the project. */
@@ -49,6 +58,8 @@ export type ProjectData = {
   latestRelease: ProjectRelease | null
   /** Unique name of the project */
   name: string
+  /** Type of the project */
+  type: ProjectType
   /** Display name of the project */
   displayName: string
   /** Version number of the project */
@@ -76,7 +87,7 @@ export type ProjectData = {
 }
 
 export type AddProjectByRemixParams = Prettify<
-  Pick<ProjectData, 'name' | 'visibility'> &
+  Pick<ProjectData, 'name' | 'visibility' | 'type'> &
     Partial<Pick<ProjectData, 'displayName'>> & {
       /** Full name of the project or project release to remix from. */
       remixSource: string
@@ -84,7 +95,7 @@ export type AddProjectByRemixParams = Prettify<
 >
 
 export type AddProjectParams = Prettify<
-  Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'> & Partial<Pick<ProjectData, 'displayName'>>
+  Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail' | 'type'> & Partial<Pick<ProjectData, 'displayName'>>
 >
 
 export function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
@@ -101,9 +112,29 @@ export type UpdateProjectParams = Prettify<
 >
 
 export function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
+  return updateProjectOnce(owner, name, params, signal).catch((err) => {
+    const movedProjectIdentifier = getMovedProjectIdentifier(err)
+    if (movedProjectIdentifier == null) throw err
+
+    const { owner: canonicalOwner, name: canonicalName } = movedProjectIdentifier
+    if (canonicalOwner === owner && canonicalName === name) throw err
+
+    return updateProjectOnce(canonicalOwner, canonicalName, params, signal)
+  })
+}
+
+function updateProjectOnce(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
   return client.patch(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
     signal
   }) as Promise<ProjectData>
+}
+
+function getMovedProjectIdentifier(err: unknown): { owner: string; name: string } | null {
+  if (!(err instanceof ApiException) || err.code !== ApiExceptionCode.errorResourceMoved) return null
+  if (err.meta == null || typeof err.meta !== 'object') return null
+  const { owner, name } = err.meta as Partial<MovedResourceCanonical>
+  if (!owner || !name) return null
+  return { owner, name }
 }
 
 export function deleteProject(owner: string, name: string) {
@@ -122,6 +153,8 @@ export type ListProjectParams = PaginationParams & {
   keyword?: string
   /** Filter projects by visibility */
   visibility?: Visibility
+  /** Filter projects by type */
+  type?: ProjectType
   /** Filter projects liked by the specified user */
   liker?: string
   /** Filter projects that were created after this timestamp */
@@ -148,6 +181,16 @@ export function getProject(owner: string, name: string, signal?: AbortSignal) {
   }) as Promise<ProjectData>
 }
 
+export async function isProjectNameTaken(owner: string, name: string, signal?: AbortSignal) {
+  try {
+    const project = await getProject(owner, name, signal)
+    return project.owner.toLowerCase() === owner.toLowerCase() && project.name.toLowerCase() === name.toLowerCase()
+  } catch (e) {
+    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return false
+    throw e
+  }
+}
+
 export enum ExploreOrder {
   MostLikes = 'likes',
   MostRemixes = 'remix',
@@ -157,15 +200,17 @@ export enum ExploreOrder {
 export type ExploreParams = {
   order: ExploreOrder
   count: number
+  type: ProjectType
 }
 
 /** Get project list for explore purpose */
-export async function exploreProjects({ order, count }: ExploreParams) {
+export async function exploreProjects({ order, count, type }: ExploreParams) {
   // count within the last 6 months
   const countAfter = timeStringify(dayjs().subtract(6, 'month').valueOf())
   const p: ListProjectParams = {
     visibility: Visibility.Public,
     owner: ownerAll,
+    type,
     pageSize: count,
     pageIndex: 1
   }

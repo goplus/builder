@@ -10,14 +10,8 @@ defineProps<{
 </script>
 
 <template>
-  <RetryableWrapper class="failed" :round="round" :is-last-round="isLastRound">
+  <RetryableWrapper class="text-red-main" :round="round" :is-last-round="isLastRound">
     <UIIcon type="errorTriangle" />
     {{ $t(round.error!) }}
   </RetryableWrapper>
 </template>
-
-<style lang="scss" scoped>
-.failed {
-  color: var(--ui-color-red-main);
-}
-</style>

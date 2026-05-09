@@ -1,12 +1,7 @@
 <template>
-  <UIBlockItem
-    class="ui-backdrop-item"
-    size="large"
-    :active="selectable && selectable.selected"
-    :interactive="!!selectable"
-  >
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-    <UIBlockItemTitle size="large">
+  <UIBlockItem class="p-1" size="large" :active="selectable && selectable.selected" :interactive="!!selectable">
+    <UIImg class="h-24.5 w-33 overflow-hidden rounded-sm" size="cover" :src="imgSrc" :loading="imgLoading" />
+    <UIBlockItemTitle class="mt-2" size="large">
       {{ name }}
     </UIBlockItemTitle>
     <slot></slot>
@@ -29,15 +24,3 @@ withDefaults(
   }
 )
 </script>
-<style scoped lang="scss">
-.ui-backdrop-item {
-  padding: 2px;
-  gap: 2px;
-}
-.img {
-  height: 98px;
-  width: 132px;
-  overflow: hidden;
-  border-radius: 9px;
-}
-</style>

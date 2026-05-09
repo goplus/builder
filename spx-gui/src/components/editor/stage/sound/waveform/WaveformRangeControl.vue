@@ -66,7 +66,7 @@ const onMouseMove = (event: MouseEvent) => {
 }
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .record-control-container {
   position: absolute;
   top: 0;
@@ -79,25 +79,28 @@ const onMouseMove = (event: MouseEvent) => {
 }
 
 .shaded-area {
-  opacity: 0.2;
-  background-color: var(--ui-color-yellow-400);
+  opacity: 0.35;
+  background-color: var(--ui-color-grey-600);
   height: 100%;
   position: absolute;
+}
 
-  &.left {
-    left: 0;
-  }
-  &.right {
-    right: 0;
-  }
-  &.left-fixed {
-    width: 16px;
-    left: -16px;
-  }
-  &.right-fixed {
-    width: 16px;
-    right: -16px;
-  }
+.shaded-area.left {
+  left: 0;
+}
+
+.shaded-area.right {
+  right: 0;
+}
+
+.shaded-area.left-fixed {
+  width: 16px;
+  left: -16px;
+}
+
+.shaded-area.right-fixed {
+  width: 16px;
+  right: -16px;
 }
 
 .selection-area {
@@ -110,7 +113,7 @@ const onMouseMove = (event: MouseEvent) => {
 .control-bar {
   width: 16px;
   height: 100%;
-  background-color: var(--ui-color-yellow-400);
+  background-color: var(--ui-color-primary-400);
   position: absolute;
   z-index: 10;
   cursor: ew-resize;

@@ -1,50 +1,51 @@
 <!-- Sound / video play control (only UI) -->
 
 <template>
-  <div class="play-control" :class="[`size-${props.size}`]" :style="colorCssVars">
-    <div v-show="!playing" class="play" @click.stop="handlePlay.fn">
-      <UIIcon class="icon" type="play" />
+  <div class="play-control" :class="[`play-control--${props.size}`]">
+    <div v-show="!internalPlaying" class="play-control-play" @click.stop="handlePlay.fn">
+      <UIIcon type="play" class="play-control-icon" />
     </div>
-    <div v-show="playing" class="stop" @click.stop="emit('stop')">
+    <div v-show="internalPlaying" class="play-control-stop" @click.stop="emit('stop')">
       <svg viewBox="0 0 36 36" class="progress" :style="playCssVars">
         <circle class="bg"></circle>
         <circle class="fg"></circle>
       </svg>
-      <UIIcon class="icon" type="stop" />
+      <UIIcon type="stop" class="play-control-icon" />
     </div>
     <!-- TODO: style optimization for play control -->
-    <UILoading :visible="loading" cover class="loading" />
+    <UILoading :visible="loading" cover class="play-control-loading" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { UIIcon, UILoading, useUIVariables } from '@/components/ui'
-import type { Color } from '@/components/ui/tokens/colors'
+import { UIIcon, UILoading } from '@/components/ui'
 
 export type Size = 'medium' | 'large'
 
+export type Playing = {
+  /** Progress percentage, number in range `[0, 1]` */
+  progress: number
+}
+
 const props = withDefaults(
   defineProps<{
-    playing: boolean
-    /** Progress percentage, number in range `[0, 1]` */
-    progress: number
+    playing: Playing | null
     /**
      * Optional interval for rendering progress, in seconds.
-     * Defaults to `0.3` seconds for smooth animation when progress jumps.
+     * Defaults to `0.2` seconds for smooth animation when progress jumps.
      * Set to `0` to disable transition, which is useful when progress is updated continuously.
      * TODO: consider removing this prop (& transition) and ensure smooth progress update in parent component.
      */
     progressInterval?: number
-    color: Color
     playHandler: () => Promise<void>
     loading?: boolean
     size?: Size
   }>(),
   {
     size: 'medium',
-    progressInterval: 0.3
+    progressInterval: 0.2
   }
 )
 
@@ -52,79 +53,92 @@ const emit = defineEmits<{
   stop: []
 }>()
 
+const internalPlaying = ref(props.playing)
+
+watch(
+  () => props.playing,
+  (playing, prevPlaying, onCleanup) => {
+    if (prevPlaying != null && playing == null && props.progressInterval > 0) {
+      // If playing stopped, delay the state update to allow the progress animation to finish,
+      // making the animation more natural
+      const timer = setTimeout(() => {
+        internalPlaying.value = playing
+      }, props.progressInterval * 1000)
+      onCleanup(() => clearTimeout(timer))
+    } else {
+      internalPlaying.value = playing
+    }
+  }
+)
+
 const handlePlay = useMessageHandle(() => props.playHandler(), {
   en: 'Failed to play',
   zh: '播放失败'
 })
 
 const playCssVars = computed(() => ({
-  '--progress': props.progress ?? 0,
+  '--progress': internalPlaying.value?.progress ?? 0,
   '--progress-interval': `${props.progressInterval}s`
 }))
-
-const uiVariables = useUIVariables()
-const colorCssVars = computed(() => {
-  const color = uiVariables.color[props.color]
-  return {
-    '--color-main': color.main,
-    '--color-100': color[100],
-    '--color-300': color[300],
-    '--color-400': color[400],
-    '--color-600': color[600]
-  }
-})
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .play-control {
   position: relative;
-
-  &.size-medium {
-    width: 36px;
-    height: 36px;
-  }
-
-  &.size-large {
-    width: 48px;
-    height: 48px;
-    .icon {
-      width: 20px;
-      height: 20px;
-    }
-  }
 }
 
-.play,
-.stop {
+.play-control--medium {
+  width: 36px;
+  height: 36px;
+}
+
+.play-control--large {
+  width: 48px;
+  height: 48px;
+}
+
+.play-control-play,
+.play-control-stop {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 50%;
   cursor: pointer;
-
   transition: transform 0.2s;
-  --color: var(--color-main);
-  &:hover {
-    transform: scale(1.15);
-    --color: var(--color-400);
-  }
-  &:active {
-    transform: scale(1.15);
-    --color: var(--color-600);
-  }
+  --color: var(--ui-color-primary-main);
 }
 
-.play {
+.play-control-play:hover,
+.play-control-stop:hover {
+  transform: scale(1.15);
+  --color: var(--ui-color-primary-400);
+}
+
+.play-control-play:active,
+.play-control-stop:active {
+  transform: scale(1.15);
+  --color: var(--ui-color-primary-600);
+}
+
+.play-control-play {
   color: var(--ui-color-grey-100);
   background-color: var(--color);
 }
 
-.stop {
-  position: relative;
+.play-control-stop {
   color: var(--color);
+}
+
+.play-control-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.play-control--large .play-control-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .progress {
@@ -137,30 +151,30 @@ const colorCssVars = computed(() => {
   --radius: calc((var(--size) - var(--stroke-width)) / 2);
   --circumference: calc(var(--radius) * pi * 2);
   --dash: calc((var(--progress) * var(--circumference)));
-
-  circle {
-    cx: var(--half-size);
-    cy: var(--half-size);
-    r: var(--radius);
-    stroke-width: var(--stroke-width);
-    fill: none;
-    stroke-linecap: round;
-
-    &.bg {
-      stroke: var(--color-300);
-    }
-
-    &.fg {
-      transform: rotate(-90deg);
-      transform-origin: var(--half-size) var(--half-size);
-      stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
-      transition: stroke-dasharray var(--progress-interval) linear 0s;
-      stroke: var(--color);
-    }
-  }
 }
 
-.loading {
+.progress circle {
+  cx: var(--half-size);
+  cy: var(--half-size);
+  r: var(--radius);
+  stroke-width: var(--stroke-width);
+  fill: none;
+  stroke-linecap: round;
+}
+
+.progress circle.bg {
+  stroke: var(--ui-color-primary-300);
+}
+
+.progress circle.fg {
+  transform: rotate(-90deg);
+  transform-origin: var(--half-size) var(--half-size);
+  stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
+  transition: stroke-dasharray var(--progress-interval) linear 0s;
+  stroke: var(--color);
+}
+
+.play-control-loading {
   border-radius: 50%;
 }
 </style>

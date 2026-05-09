@@ -1,73 +1,300 @@
-<template>
-  <button
-    ref="btnRef"
-    class="ui-button"
-    :class="[
-      `variant-${variant}`,
-      `shape-${shape}`,
-      `color-${color}`,
-      `size-${size}`,
-      loading && 'loading',
-      iconOnly && 'icon-only'
-    ]"
-    :disabled="disabled"
-    :type="htmlType"
-  >
-    <div class="content">
-      <UIIcon v-if="icon != null" class="icon" :type="icon" />
-      <slot v-else name="icon"></slot>
-      <slot></slot>
-    </div>
-  </button>
-</template>
+<script lang="ts">
+import { createRecipe, type ClassValue } from './utils'
+
+export type ButtonType = 'primary' | 'secondary' | 'neutral' | 'white' | 'red' | 'green' | 'blue' | 'purple' | 'yellow'
+export type ButtonSize = 'small' | 'medium' | 'large'
+export type ButtonHtmlType = 'button' | 'submit' | 'reset'
+export type ButtonShape = 'default' | 'circle' | 'square'
+
+type ButtonCssVarState = {
+  type: ButtonType
+  disabled: boolean
+  loading: boolean
+}
+
+type ButtonStatePalette = {
+  color: string
+  bgColor: string
+  borderColor: string
+}
+
+type ButtonPalette = {
+  default: ButtonStatePalette
+  hover: ButtonStatePalette
+  active: ButtonStatePalette
+  loading: ButtonStatePalette
+  disabled: ButtonStatePalette
+  focusBorderColor: string
+}
+
+type ButtonCssVars = {
+  '--ui-button-color': string
+  '--ui-button-bg-color': string
+  '--ui-button-border-color': string
+  '--ui-button-hover-bg-color': string
+  '--ui-button-hover-border-color': string
+  '--ui-button-active-bg-color': string
+  '--ui-button-active-border-color': string
+  '--ui-button-focus-border-color': string
+}
+
+function defineButtonStatePalette(
+  color: string,
+  backgroundColor: string,
+  borderColor = 'transparent'
+): ButtonStatePalette {
+  return {
+    color,
+    bgColor: backgroundColor,
+    borderColor
+  }
+}
+
+function defineButtonPalette(
+  defaultState: ButtonStatePalette,
+  hoverState: ButtonStatePalette,
+  activeState: ButtonStatePalette,
+  options: {
+    loading?: ButtonStatePalette
+    disabled: ButtonStatePalette
+    focusBorderColor?: string
+  }
+): ButtonPalette {
+  return {
+    default: defaultState,
+    hover: hoverState,
+    active: activeState,
+    loading: options.loading ?? defaultState,
+    disabled: options.disabled,
+    focusBorderColor: options.focusBorderColor ?? 'var(--ui-color-primary-700)'
+  }
+}
+
+const buttonDisabledFilledPalette = defineButtonStatePalette(
+  'var(--ui-color-disabled-text)',
+  'var(--ui-color-disabled-bg)'
+)
+
+const buttonDisabledStrokePalette = defineButtonStatePalette(
+  'var(--ui-color-disabled-text)',
+  'var(--ui-color-disabled-bg)',
+  'var(--ui-color-grey-400)'
+)
+
+const buttonPalettes: Record<ButtonType, ButtonPalette> = {
+  primary: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-primary-500)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-primary-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-primary-600)'),
+    { disabled: buttonDisabledFilledPalette }
+  ),
+  secondary: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-primary-500)', 'var(--ui-color-primary-200)'),
+    defineButtonStatePalette('var(--ui-color-primary-500)', 'var(--ui-color-primary-100)'),
+    defineButtonStatePalette('var(--ui-color-primary-500)', 'var(--ui-color-primary-300)'),
+    { disabled: buttonDisabledFilledPalette }
+  ),
+  neutral: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-grey-900)', 'var(--ui-color-grey-300)', 'var(--ui-color-grey-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-900)', 'var(--ui-color-grey-200)', 'var(--ui-color-grey-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-900)', 'var(--ui-color-grey-400)', 'var(--ui-color-grey-400)'),
+    { disabled: buttonDisabledStrokePalette }
+  ),
+  white: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-grey-900)', 'var(--ui-color-grey-100)', 'var(--ui-color-grey-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-900)', 'var(--ui-color-grey-300)', 'var(--ui-color-grey-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-900)', 'var(--ui-color-grey-400)', 'var(--ui-color-grey-400)'),
+    { disabled: buttonDisabledStrokePalette }
+  ),
+  red: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-red-500)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-red-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-red-600)'),
+    { disabled: buttonDisabledFilledPalette }
+  ),
+  green: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-green-500)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-green-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-green-600)'),
+    { disabled: buttonDisabledFilledPalette }
+  ),
+  blue: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-blue-600)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-blue-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-blue-600)'),
+    { disabled: buttonDisabledFilledPalette }
+  ),
+  purple: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-purple-600)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-purple-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-purple-600)'),
+    { disabled: buttonDisabledFilledPalette }
+  ),
+  yellow: defineButtonPalette(
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-yellow-500)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-yellow-400)'),
+    defineButtonStatePalette('var(--ui-color-grey-100)', 'var(--ui-color-yellow-600)'),
+    { disabled: buttonDisabledFilledPalette }
+  )
+}
+
+export function resolveButtonCssVars({ type, disabled, loading }: ButtonCssVarState): ButtonCssVars {
+  const palette = buttonPalettes[type]
+  const current = disabled && !loading ? palette.disabled : loading ? palette.loading : palette.default
+  const hover = disabled || loading ? current : palette.hover
+  const active = disabled || loading ? current : palette.active
+  const focusBorderColor = disabled || loading ? current.borderColor : palette.focusBorderColor
+
+  return {
+    '--ui-button-color': current.color,
+    '--ui-button-bg-color': current.bgColor,
+    '--ui-button-border-color': current.borderColor,
+    '--ui-button-hover-bg-color': hover.bgColor,
+    '--ui-button-hover-border-color': hover.borderColor,
+    '--ui-button-active-bg-color': active.bgColor,
+    '--ui-button-active-border-color': active.borderColor,
+    '--ui-button-focus-border-color': focusBorderColor
+  }
+}
+
+const buttonRootBaseClass = 'inline-flex cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed'
+
+const buttonRootSurfaceClass =
+  'border bg-(--ui-button-bg-color) text-(--ui-button-color) border-(--ui-button-border-color) transition-colors'
+
+const buttonRootInteractiveClass =
+  'enabled:hover:bg-(--ui-button-hover-bg-color) enabled:hover:border-(--ui-button-hover-border-color) enabled:active:bg-(--ui-button-active-bg-color) enabled:active:border-(--ui-button-active-border-color)'
+
+const buttonRootFocusClass = 'focus-visible:border-(--ui-button-focus-border-color) focus-visible:outline-none'
+
+const buttonRootClass = [
+  buttonRootBaseClass,
+  buttonRootSurfaceClass,
+  buttonRootInteractiveClass,
+  buttonRootFocusClass
+].join(' ')
+
+const buttonSlots = {
+  root: buttonRootClass,
+  icon: 'shrink-0'
+} as const
+
+export const buttonRecipe = createRecipe({
+  slots: buttonSlots,
+  variants: {
+    shape: {
+      default: {
+        root: 'rounded-md'
+      },
+      circle: {
+        root: 'rounded-full'
+      },
+      square: {
+        root: 'rounded-md'
+      }
+    },
+    size: {
+      large: {
+        root: 'h-10 gap-2 px-6 text-lg/[24px]',
+        icon: 'size-5'
+      },
+      medium: {
+        root: 'h-8 gap-1 px-4 text-base/[22px]',
+        icon: 'size-4'
+      },
+      small: {
+        root: 'h-[26px] gap-1 px-3 text-base/[22px]',
+        icon: 'size-[13px]'
+      }
+    }
+  },
+  defaultVariants: {
+    shape: 'default',
+    size: 'medium'
+  },
+  compoundVariants: [
+    {
+      when: {
+        shape: ['circle', 'square'],
+        size: 'small'
+      },
+      class: {
+        root: 'aspect-square gap-0 p-0',
+        icon: 'size-[13px]'
+      }
+    },
+    {
+      when: {
+        shape: ['circle', 'square'],
+        size: 'medium'
+      },
+      class: {
+        root: 'aspect-square gap-0 p-0',
+        icon: 'size-4'
+      }
+    },
+    {
+      when: {
+        shape: ['circle', 'square'],
+        size: 'large'
+      },
+      class: {
+        root: 'aspect-square gap-0 p-0',
+        icon: 'size-5'
+      }
+    }
+  ]
+})
+</script>
 
 <script setup lang="ts">
 import { computed, ref, useSlots } from 'vue'
+
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
-export type ButtonColor =
-  | 'primary'
-  | 'secondary'
-  | 'boring'
-  | 'white'
-  | 'danger'
-  | 'success'
-  | 'blue'
-  | 'purple'
-  | 'yellow'
-export type ButtonSize = 'small' | 'medium' | 'large'
-export type ButtonHtmlType = 'button' | 'submit' | 'reset'
-export type ButtonVariant = 'shadow' | 'flat' | 'stroke'
-export type ButtonShape = 'square' | 'circle'
 
 const props = withDefaults(
   defineProps<{
-    variant?: ButtonVariant
+    type?: ButtonType
     shape?: ButtonShape
-    color?: ButtonColor
     size?: ButtonSize
     icon?: IconType
     disabled?: boolean
     loading?: boolean
     htmlType?: ButtonHtmlType
+    class?: ClassValue
   }>(),
   {
-    variant: 'shadow',
-    shape: 'square',
-    color: 'primary',
+    type: 'primary',
+    shape: 'default',
     size: 'medium',
     icon: undefined,
     disabled: false,
     loading: false,
-    htmlType: 'button'
+    htmlType: 'button',
+    class: undefined
   }
 )
 
-const disabled = computed(() => props.disabled || props.loading)
-const icon = computed(() => (props.loading ? 'loading' : props.icon))
-const btnRef = ref<HTMLButtonElement>()
-
+const btnRef = ref<HTMLButtonElement | null>(null)
 const slots = useSlots()
-const iconOnly = computed(() => (props.icon != null || slots.icon != null) && slots.default == null)
+const isDisabled = computed(() => props.disabled || props.loading)
+const resolvedIcon = computed(() => (props.loading ? 'loading' : props.icon))
+const hasDefaultSlot = computed(() => slots.default != null)
+const contentStyle = computed(() =>
+  resolveButtonCssVars({
+    type: props.type,
+    disabled: props.disabled,
+    loading: props.loading
+  })
+)
+const classes = computed(() =>
+  buttonRecipe({
+    shape: props.shape,
+    size: props.size
+  })
+)
+const rootClass = computed(() => classes.value.root(props.class))
+const iconClass = computed(() => classes.value.icon())
 
 defineExpose({
   focus() {
@@ -76,241 +303,10 @@ defineExpose({
 })
 </script>
 
-<style lang="scss" scoped>
-// base
-.ui-button {
-  display: flex;
-  align-items: stretch;
-  background: none;
-  border: none;
-  border-radius: var(--ui-button-radius);
-  height: var(--ui-button-height);
-  cursor: pointer;
-
-  --ui-button-color: var(--ui-color-grey-100);
-  --ui-button-bg-color: var(--ui-color-primary-main);
-  --ui-button-shadow-color: var(--ui-color-primary-700);
-  --ui-button-radius: var(--ui-border-radius-2);
-  --ui-button-stroke-color: var(--ui-color-grey-400);
-
-  .content {
-    flex: 1 1 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: var(--ui-button-content-padding);
-    border-radius: var(--ui-button-radius);
-    font-size: var(--ui-button-font-size);
-    line-height: var(--ui-button-line-height);
-    gap: var(--ui-button-gap);
-    color: var(--ui-button-color);
-    background-color: var(--ui-button-bg-color);
-  }
-
-  .icon {
-    width: var(--ui-button-icon-size);
-    height: var(--ui-button-icon-size);
-  }
-
-  &.icon-only {
-    aspect-ratio: 1 / 1;
-    .content {
-      padding: 0;
-    }
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-
-    &:not(.loading) {
-      --ui-button-color: var(--ui-color-disabled-text);
-      --ui-button-bg-color: var(--ui-color-disabled-bg);
-      --ui-button-shadow-color: var(--ui-color-grey-500);
-    }
-  }
-}
-
-// variant
-.variant-shadow {
-  padding: 0;
-}
-
-.variant-flat {
-  padding: 0;
-}
-
-.variant-stroke {
-  padding: 0;
-
-  .content {
-    border: 1px solid var(--ui-button-stroke-color);
-  }
-}
-// shape
-.shape-square {
-  --ui-button-radius: var(--ui-button-radius-square);
-}
-
-.shape-circle {
-  --ui-button-radius: 100%;
-}
-
-// color
-.color-primary {
-  --ui-button-color: var(--ui-color-grey-100);
-  --ui-button-bg-color: var(--ui-color-primary-main);
-  --ui-button-shadow-color: var(--ui-color-primary-700);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-primary-400);
-  }
-}
-
-.color-secondary {
-  --ui-button-color: var(--ui-color-primary-main);
-  --ui-button-bg-color: var(--ui-color-primary-200);
-  --ui-button-shadow-color: var(--ui-color-primary-300);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-primary-100);
-  }
-}
-
-.color-boring {
-  --ui-button-color: var(--ui-color-text);
-  --ui-button-bg-color: var(--ui-color-grey-300);
-  --ui-button-shadow-color: var(--ui-color-grey-600);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-grey-200);
-  }
-}
-
-.color-white {
-  --ui-button-color: var(--ui-color-text);
-  --ui-button-bg-color: var(--ui-color-grey-100);
-  --ui-button-shadow-color: var(--ui-color-grey-400);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-grey-300);
-  }
-}
-
-.color-danger {
-  --ui-button-color: var(--ui-color-grey-100);
-  --ui-button-bg-color: var(--ui-color-danger-main);
-  --ui-button-shadow-color: var(--ui-color-danger-600);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-danger-400);
-  }
-}
-
-.color-success {
-  --ui-button-color: var(--ui-color-grey-100);
-  --ui-button-bg-color: var(--ui-color-success-main);
-  --ui-button-shadow-color: var(--ui-color-success-600);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-success-400);
-  }
-}
-
-.color-blue {
-  --ui-button-color: var(--ui-color-grey-100);
-  --ui-button-bg-color: var(--ui-color-blue-main);
-  --ui-button-shadow-color: var(--ui-color-blue-700);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-blue-400);
-  }
-}
-
-.color-purple {
-  --ui-button-color: var(--ui-color-grey-100);
-  --ui-button-bg-color: var(--ui-color-purple-main);
-  --ui-button-shadow-color: var(--ui-color-purple-700);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-purple-400);
-  }
-}
-
-.color-yellow {
-  --ui-button-color: var(--ui-color-grey-100);
-  --ui-button-bg-color: var(--ui-color-yellow-main);
-  --ui-button-shadow-color: var(--ui-color-yellow-700);
-
-  &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-yellow-400);
-  }
-}
-
-// size
-.size-large {
-  --ui-button-height: var(--ui-line-height-3);
-  --ui-button-icon-size: 18px;
-  --ui-button-content-padding: 8px 24px;
-  --ui-button-font-size: 15px;
-  --ui-button-gap: 8px;
-  --ui-button-line-height: 1.6;
-
-  &.variant-flat {
-    --ui-button-icon-size: 20px;
-    --ui-button-content-padding: 9px 24px;
-    --ui-button-font-size: 13px;
-    --ui-button-line-height: 1.6923076923;
-  }
-
-  &.variant-stroke {
-    --ui-button-icon-size: 20px;
-    --ui-button-content-padding: 9px 24px;
-    --ui-button-font-size: 13px;
-    --ui-button-line-height: 1.6923076923;
-  }
-}
-
-.size-medium {
-  --ui-button-height: var(--ui-line-height-2);
-  --ui-button-icon-size: 14px;
-  --ui-button-content-padding: 5px 16px;
-  --ui-button-font-size: 14px;
-  --ui-button-gap: 4px;
-  --ui-button-line-height: 1.5714285714;
-
-  &.variant-flat {
-    --ui-button-icon-size: 16px;
-    --ui-button-content-padding: 5px 16px;
-    --ui-button-font-size: 13px;
-    --ui-button-line-height: 1.5384615385;
-  }
-
-  &.variant-stroke {
-    --ui-button-icon-size: 16px;
-    --ui-button-content-padding: 6px 16px;
-    --ui-button-font-size: 13px;
-    --ui-button-line-height: 1.5384615385;
-  }
-}
-
-.size-small {
-  --ui-button-height: var(--ui-line-height-1);
-  --ui-button-icon-size: 13px;
-  --ui-button-content-padding: 5px 12px;
-  --ui-button-font-size: 14px;
-  --ui-button-gap: 4px;
-  --ui-button-line-height: 1.5714285714;
-
-  &.variant-flat {
-    --ui-button-content-padding: 5px 12px;
-    --ui-button-font-size: 13px;
-    --ui-button-line-height: 1.5384615385;
-  }
-
-  &.variant-stroke {
-    --ui-button-content-padding: 6px 12px;
-    --ui-button-font-size: 13px;
-    --ui-button-line-height: 1.5384615385;
-  }
-}
-</style>
+<template>
+  <button ref="btnRef" :class="rootClass" :disabled="isDisabled" :style="contentStyle" :type="htmlType">
+    <UIIcon v-if="resolvedIcon != null" :class="iconClass" :type="resolvedIcon" />
+    <slot v-else name="icon"></slot>
+    <slot v-if="hasDefaultSlot"></slot>
+  </button>
+</template>

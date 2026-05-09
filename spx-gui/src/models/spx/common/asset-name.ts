@@ -1,6 +1,14 @@
-import { lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
+import { lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
 import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/xgo'
+import {
+  resourceAnimationName,
+  resourceBackdropName,
+  resourceCostumeName,
+  resourceSoundName,
+  resourceSpriteName,
+  resourceWidgetName
+} from './resource'
 
 function validateAssetName(name: string) {
   if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
@@ -45,7 +53,7 @@ function getXGoIdentifierAssetNameTip(asset: LocaleMessage) {
   return getXGoIdentifierNameTip(asset)
 }
 
-export const spriteNameTip = getXGoIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })
+export const spriteNameTip = getXGoIdentifierAssetNameTip(resourceSpriteName)
 
 export interface SpriteLike {
   name: string
@@ -65,7 +73,7 @@ export function validateSpriteName(name: string, parent: SpriteLikeParent | null
     return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
 }
 
-export const costumeNameTip = getAssetNameTip({ en: 'costume', zh: '造型' })
+export const costumeNameTip = getAssetNameTip(resourceCostumeName)
 
 export interface CostumeLike {
   name: string
@@ -82,7 +90,7 @@ export function validateCostumeName(name: string, parent: CostumeLikeParent | nu
     return { en: `Costume with name ${name} already exists`, zh: '存在同名的造型' }
 }
 
-export const animationNameTip = getAssetNameTip({ en: 'animation', zh: '动画' })
+export const animationNameTip = getAssetNameTip(resourceAnimationName)
 
 export interface AnimationLike {
   name: string
@@ -99,7 +107,7 @@ export function validateAnimationName(name: string, parent: AnimationLikeParent 
     return { en: `Animation with name ${name} already exists`, zh: '存在同名的动画' }
 }
 
-export const soundNameTip = getAssetNameTip({ en: 'sound', zh: '声音' })
+export const soundNameTip = getAssetNameTip(resourceSoundName)
 
 export interface SoundLike {
   name: string
@@ -116,7 +124,7 @@ export function validateSoundName(name: string, parent: SoundLikeParent | null) 
     return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
 }
 
-export const backdropNameTip = getAssetNameTip({ en: 'backdrop', zh: '背景' })
+export const backdropNameTip = getAssetNameTip(resourceBackdropName)
 
 export interface BackdropLike {
   name: string
@@ -133,7 +141,7 @@ export function validateBackdropName(name: string, parent: BackdropLikeParent | 
     return { en: `Backdrop with name ${name} already exists`, zh: '存在同名的背景' }
 }
 
-export const widgetNameTip = getAssetNameTip({ en: 'widget', zh: '控件' })
+export const widgetNameTip = getAssetNameTip(resourceWidgetName)
 
 export interface WidgetLike {
   name: string
@@ -159,17 +167,44 @@ export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   return unicodeSafeSlice(result, 0, 50)
 }
 
-function getValidName(base: string, isValid: (name: string) => boolean) {
-  let name: string
-  for (let i = 1; ; i++) {
-    name = i === 1 ? base : base + i
-    if (isValid(name)) return name
-    if (i > 10000) throw new Error(`unexpected infinite loop with base ${base}`) // for debug purpose
+const numericSuffixRE = /^(.*?)(\d+)$/
+
+function splitNumericSuffix(name: string) {
+  const match = name.match(numericSuffixRE)
+  if (match == null) return null
+  return {
+    base: match[1],
+    num: parseInt(match[2], 10),
+    numWidth: match[2].length
   }
 }
 
-export function getSpriteName(parent: SpriteLikeParent | null, base = '') {
-  base = normalizeXGoIdentifierAssetName(base, 'pascal') || 'MySprite'
+function formatNumericSuffix(base: string, num: number, numWidth: number) {
+  const suffix = numWidth > 1 ? String(num).padStart(numWidth, '0') : String(num)
+  return base + suffix
+}
+
+function getValidName(initialName: string, isValid: (name: string) => boolean) {
+  if (initialName === '') throw new Error('name must not be blank')
+  if (isValid(initialName)) return initialName
+
+  // Try to add/increment numeric suffix to find a valid name
+  const splitted = splitNumericSuffix(initialName)
+  const base = splitted == null ? initialName : splitted.base
+  const initialNum = splitted == null ? 1 : splitted.num
+  const numWidth = splitted == null ? 1 : splitted.numWidth
+
+  for (let i = initialNum + 1; ; i++) {
+    const name = formatNumericSuffix(base, i, numWidth)
+    if (isValid(name)) return name
+    if (i - initialNum > 10000) {
+      throw new Error(`unexpected infinite loop with base ${initialName}`)
+    }
+  }
+}
+
+export function getSpriteName(parent: SpriteLikeParent | null, base: string) {
+  base = normalizeXGoIdentifierAssetName(base, 'pascal') || 'Sprite1'
   return getValidName(base, (n) => validateSpriteName(n, parent) == null)
 }
 
@@ -178,8 +213,8 @@ export function ensureValidSpriteName(name: string, parent: SpriteLikeParent | n
   return getSpriteName(parent, name)
 }
 
-export function getCostumeName(parent: CostumeLikeParent | null, base = '') {
-  base = normalizeAssetName(base, 'camel') || 'costume'
+export function getCostumeName(parent: CostumeLikeParent | null, base: string) {
+  base = normalizeAssetName(base, 'camel') || 'costume1'
   return getValidName(base, (n) => validateCostumeName(n, parent) == null)
 }
 
@@ -188,8 +223,8 @@ export function ensureValidCostumeName(name: string, parent: CostumeLikeParent |
   return getCostumeName(parent, name)
 }
 
-export function getAnimationName(parent: AnimationLikeParent | null, base = '') {
-  base = normalizeAssetName(base, 'camel') || 'animation'
+export function getAnimationName(parent: AnimationLikeParent | null, base: string) {
+  base = normalizeAssetName(base, 'camel') || 'animation1'
   return getValidName(base, (n) => validateAnimationName(n, parent) == null)
 }
 
@@ -198,8 +233,8 @@ export function ensureValidAnimationName(name: string, parent: AnimationLikePare
   return getAnimationName(parent, name)
 }
 
-export function getSoundName(parent: SoundLikeParent | null, base = '') {
-  base = normalizeAssetName(base, 'camel') || 'sound'
+export function getSoundName(parent: SoundLikeParent | null, base: string) {
+  base = normalizeAssetName(base, 'camel') || 'sound1'
   return getValidName(base, (n) => validateSoundName(n, parent) == null)
 }
 
@@ -208,8 +243,8 @@ export function ensureValidSoundName(name: string, parent: SoundLikeParent | nul
   return getSoundName(parent, name)
 }
 
-export function getBackdropName(parent: BackdropLikeParent | null, base = '') {
-  base = normalizeAssetName(base, 'camel') || 'backdrop'
+export function getBackdropName(parent: BackdropLikeParent | null, base: string) {
+  base = normalizeAssetName(base, 'camel') || 'backdrop1'
   return getValidName(base, (n) => validateBackdropName(n, parent) == null)
 }
 
@@ -218,8 +253,8 @@ export function ensureValidBackdropName(name: string, parent: BackdropLikeParent
   return getBackdropName(parent, name)
 }
 
-export function getWidgetName(parent: WidgetLikeParent | null, base = '') {
-  base = normalizeAssetName(base, 'camel') || 'widget'
+export function getWidgetName(parent: WidgetLikeParent | null, base: string) {
+  base = normalizeAssetName(base, 'camel') || 'widget1'
   return getValidName(base, (n) => validateWidgetName(n, parent) == null)
 }
 

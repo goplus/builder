@@ -9,8 +9,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getProject, updateProject } from '@/apis/project'
+import { isProjectNameTaken, updateProject } from '@/apis/project'
 import type { SpxProject } from '@/models/spx/project'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -75,11 +74,7 @@ async function validateName(name: string): Promise<FormValidationResult> {
 
   const owner = props.project.owner
   if (owner == null) throw new Error('Project owner is not loaded')
-  const existedProject = await getProject(owner, name).catch((e) => {
-    if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
-    throw e
-  })
-  if (existedProject != null)
+  if (await isProjectNameTaken(owner, name))
     return t({
       en: `Project ${name} already exists`,
       zh: `项目 ${name} 已存在`
@@ -103,17 +98,17 @@ async function validateName(name: string): Promise<FormValidationResult> {
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
-      <footer class="footer">
+      <footer class="mt-6 flex justify-end gap-xl pb-1">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel updating project name' }"
-          color="boring"
+          type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
           v-radar="{ name: 'Confirm button', desc: 'Click to confirm updating project name' }"
-          color="primary"
+          type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >
@@ -123,13 +118,3 @@ async function validateName(name: string): Promise<FormValidationResult> {
     </UIForm>
   </UIFormModal>
 </template>
-
-<style scoped lang="scss">
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ui-gap-middle);
-  margin-top: var(--ui-gap-large);
-  padding-bottom: 4px;
-}
-</style>

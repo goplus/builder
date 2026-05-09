@@ -1,24 +1,33 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
+import { isSameProjectIdentifier, toProjectIdentifier, type ProjectIdentifier } from '@/utils/project-route'
 import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
 import { isSignInRequiredForProject } from '@/utils/project'
 import { usePageTitle } from '@/utils/utils'
-import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSource, Visibility } from '@/apis/project'
+import {
+  ProjectType,
+  ownerAll,
+  recordProjectView,
+  stringifyProjectFullName,
+  stringifyRemixSource,
+  Visibility
+} from '@/apis/project'
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
 import { useSignedInUser, useUser, isSignedIn, initiateSignIn } from '@/stores/user'
-import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
+import { getOwnProjectEditorRoute, getProjectEditorRoute, getProjectPageRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
   UILoading,
   UIError,
   UIButton,
+  UICard,
   UIDropdown,
   UIMenu,
   UIMenuItem,
@@ -35,7 +44,6 @@ import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurfa
 import RemixedFrom from '@/components/community/project/RemixedFrom.vue'
 import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
 import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProject } from '@/components/project'
-import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -47,6 +55,11 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
+const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
+  owner: props.ownerInput,
+  name: props.nameInput
+}))
 const {
   data: project,
   isLoading,
@@ -54,9 +67,10 @@ const {
   refetch: reloadProject
 } = useQuery(
   async (ctx) => {
+    const { owner, name } = routeProjectIdentifier.value
     const p = new SpxProject()
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    const serialized = await cloudHelpers.load(props.ownerInput, props.nameInput, true, ctx.signal)
+    const serialized = await cloudHelpers.load(owner, name, true, ctx.signal)
     await p.load(serialized)
     return p as CloudProject
   },
@@ -66,7 +80,18 @@ const {
   }
 )
 
-const { data: ownerInfo } = useUser(() => props.ownerInput)
+const currentProjectIdentifier = computed(() => toProjectIdentifier(project.value?.owner, project.value?.name))
+
+watch(currentProjectIdentifier, (currentIdentifier) => {
+  if (currentIdentifier == null || isSameProjectIdentifier(currentIdentifier, routeProjectIdentifier.value)) return
+  router.replace({
+    path: getProjectPageRoute(currentIdentifier.owner, currentIdentifier.name),
+    query: route.query,
+    hash: route.hash
+  })
+})
+
+const { data: ownerInfo } = useUser(() => routeProjectIdentifier.value.owner)
 const signedInUser = useSignedInUser()
 
 usePageTitle(() => {
@@ -84,18 +109,18 @@ usePageTitle(() => {
 })
 
 watch(
-  () => [props.ownerInput, props.nameInput],
-  () => isSignedIn() && recordProjectView(props.ownerInput, props.nameInput),
+  currentProjectIdentifier,
+  (currentIdentifier) => {
+    if (!isSignedIn() || currentIdentifier == null) return
+    recordProjectView(currentIdentifier.owner, currentIdentifier.name)
+  },
   { immediate: true }
 )
 
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
-watch(
-  () => [props.ownerInput, props.nameInput],
-  () => {
-    runnerState.value = 'initial'
-  }
-)
+watch(routeProjectIdentifier, () => {
+  runnerState.value = 'initial'
+})
 
 const isOwner = computed(() => {
   const signedInUsername = signedInUser.value?.username
@@ -103,7 +128,7 @@ const isOwner = computed(() => {
   if (signedInUsername == null || projectOwner == null) return false
   return projectOwner === signedInUsername
 })
-const { data: liking } = useIsLikingProject(() => ({ owner: props.ownerInput, name: props.nameInput }))
+const { data: liking } = useIsLikingProject(() => routeProjectIdentifier.value)
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const isFullScreenRunning = ref(false)
@@ -195,7 +220,10 @@ const handleRerun = useMessageHandle(
 
 const handleEdit = useMessageHandle(
   async () => {
-    const projectEditorRoute = getProjectEditorRoute(props.ownerInput, props.nameInput)
+    const projectEditorRoute = getProjectEditorRoute(
+      routeProjectIdentifier.value.owner,
+      routeProjectIdentifier.value.name
+    )
     await router.push(projectEditorRoute)
   },
   { en: 'Failed to open editor', zh: '打开编辑器失败' }
@@ -205,7 +233,7 @@ const likeProject = useLikeProject()
 const handleLike = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    await likeProject(props.ownerInput, props.nameInput)
+    await likeProject(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name)
     if (project.value != null) {
       // refresh project info (likeCount)
       const serialized = await cloudHelpers.load(project.value.owner!, project.value.name!, true)
@@ -219,7 +247,7 @@ const unlikeProject = useUnlikeProject()
 const handleUnlike = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    await unlikeProject(props.ownerInput, props.nameInput)
+    await unlikeProject(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name)
     if (project.value != null) {
       // refresh project info (likeCount)
       const serialized = await cloudHelpers.load(project.value.owner!, project.value.name!, true)
@@ -237,17 +265,22 @@ function handleToggleLike() {
 
 const shareProject = useShareProject()
 
-const handleShare = useMessageHandle(() => shareProject(props.ownerInput, props.nameInput), {
-  en: 'Failed to share project',
-  zh: '分享项目失败'
-})
+const handleShare = useMessageHandle(
+  () => shareProject(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name),
+  {
+    en: 'Failed to share project',
+    zh: '分享项目失败'
+  }
+)
 
 const createProject = useCreateProject()
 
 const handleRemix = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    const name = await createProject(stringifyRemixSource(props.ownerInput, props.nameInput))
+    const name = await createProject(
+      stringifyRemixSource(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name)
+    )
     router.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to remix project', zh: '改编项目失败' }
@@ -255,9 +288,8 @@ const handleRemix = useMessageHandle(
 
 const releasesRet = useQuery(
   async () => {
-    const { ownerInput, nameInput } = props
     const { data } = await listReleases({
-      projectFullName: stringifyProjectFullName(ownerInput, nameInput),
+      projectFullName: stringifyProjectFullName(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name),
       orderBy: 'createdAt',
       sortOrder: 'desc',
       pageIndex: 1,
@@ -287,14 +319,18 @@ const handleUnpublish = useMessageHandle(
 const handlePublish = useMessageHandle(
   // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
   // to ensure thumbnail for project-release, we jump to editor where we are able to generate thumbnails and then finish publishing
-  async () => router.push(getOwnProjectEditorRoute(props.nameInput, true)),
+  async () => router.push(getOwnProjectEditorRoute(routeProjectIdentifier.value.name, true)),
   { en: 'Failed to publish project', zh: '发布项目失败' }
 )
 
 const removeProject = useRemoveProject()
 const handleRemove = useMessageHandle(
   async () => {
-    await removeProject(props.ownerInput, props.nameInput, project.value!.displayName)
+    await removeProject(
+      routeProjectIdentifier.value.owner,
+      routeProjectIdentifier.value.name,
+      project.value!.displayName
+    )
     const { username } = await untilNotNull(signedInUser)
     await router.push(getUserPageRoute(username, 'projects'))
   },
@@ -308,9 +344,10 @@ const remixNumInRow = computed(() => (isDesktopLarge.value ? 6 : 5))
 const remixesRet = useQuery(
   async () => {
     const { data: projects } = await listProject({
+      type: ProjectType.Game,
       visibility: Visibility.Public,
       owner: ownerAll,
-      remixedFrom: stringifyRemixSource(props.ownerInput, props.nameInput),
+      remixedFrom: stringifyRemixSource(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name),
       pageIndex: 1,
       pageSize: remixNumInRow.value,
       orderBy: 'likeCount',
@@ -324,15 +361,15 @@ const remixesRet = useQuery(
 
 <template>
   <CenteredWrapper size="large">
-    <CommunityCard
+    <UICard
       v-radar="{ name: 'Project content', desc: 'Main content area for project details and runner' }"
-      class="main"
+      class="relative mt-6 flex-none flex gap-10 bg-grey-100 p-5"
     >
       <UILoading v-if="isLoading" cover mask="solid" />
       <UIError v-else-if="error != null" class="error" :retry="reloadProject">
         {{ $t(error.userMessage) }}
       </UIError>
-      <div class="left">
+      <div class="left flex-[1_1_744px]">
         <div class="project-wrapper">
           <template v-if="project != null">
             <ProjectRunnerSurface
@@ -351,15 +388,17 @@ const remixesRet = useQuery(
               <template #inline-overlay>
                 <Transition name="runner-mask-fade" appear>
                   <div
-                    v-if="runnerState !== 'running'"
-                    :class="['runner-mask', { initial: runnerState === 'initial' }]"
+                    v-if="runnerState === 'initial'"
+                    class="absolute inset-0 z-2 flex items-center justify-center rounded-md bg-overlay-loading"
                   >
                     <template v-if="runnerState === 'initial'">
-                      <div v-if="needsSignInToRun" class="sign-in-prompt">
-                        <div class="sign-in-card">
+                      <div v-if="needsSignInToRun" class="h-full w-full flex items-center justify-center p-6">
+                        <div
+                          class="relative w-85 flex flex-col items-center overflow-visible rounded-[16px] bg-grey-100 px-6 pt-17 pb-6 text-center shadow-lg"
+                        >
                           <!-- eslint-disable-next-line vue/no-v-html -->
                           <div class="kiko-wave" aria-hidden="true" v-html="kikoWaveSvg"></div>
-                          <p class="message">
+                          <p class="mb-11 leading-6 text-grey-800">
                             {{
                               $t({
                                 en: 'This game requires sign-in before playing',
@@ -369,9 +408,9 @@ const remixesRet = useQuery(
                           </p>
                           <UIButton
                             v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
-                            class="sign-in-button"
+                            class="w-full"
                             size="large"
-                            color="primary"
+                            type="primary"
                             @click="handleSignIn"
                           >
                             {{ $t({ en: 'Sign in', zh: '立即登录' }) }}
@@ -381,14 +420,15 @@ const remixesRet = useQuery(
                       <UIButton
                         v-else
                         v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
-                        color="primary"
+                        type="primary"
                         size="large"
                         icon="playHollow"
                         :disabled="projectRunnerRef == null"
                         :loading="handleRun.isLoading.value"
                         @click="handleRun.fn"
-                        >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
                       >
+                        {{ $t({ en: 'Run', zh: '运行' }) }}
+                      </UIButton>
                     </template>
                   </div>
                 </Transition>
@@ -396,11 +436,11 @@ const remixesRet = useQuery(
             </ProjectRunnerSurface>
           </template>
         </div>
-        <div class="ops">
+        <div class="mt-3 flex justify-end gap-lg">
           <UIButton
             v-if="runnerState !== 'initial'"
             v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
-            color="primary"
+            type="primary"
             icon="rotate"
             :disabled="runnerState !== 'running' || projectRunnerRef == null || handleStop.isLoading.value"
             :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
@@ -411,7 +451,7 @@ const remixesRet = useQuery(
           <UIButton
             v-if="runnerState === 'loading' || runnerState === 'running'"
             v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
-            color="boring"
+            type="neutral"
             icon="end"
             :loading="handleStop.isLoading.value"
             @click="handleStop.fn"
@@ -425,7 +465,8 @@ const remixesRet = useQuery(
                   name: 'Enter full screen button',
                   desc: 'Click to enter full screen for the running project'
                 }"
-                color="boring"
+                type="neutral"
+                shape="square"
                 icon="enterFullScreen"
                 :disabled="handleStop.isLoading.value"
                 @click="isFullScreenRunning = true"
@@ -437,7 +478,8 @@ const remixesRet = useQuery(
             <template #trigger>
               <UIButton
                 v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
-                color="boring"
+                type="neutral"
+                shape="square"
                 icon="share"
                 @click="handleShare.fn"
               ></UIButton>
@@ -446,67 +488,73 @@ const remixesRet = useQuery(
           </UITooltip>
         </div>
       </div>
-      <div class="right">
+      <div class="right flex-[1_1_456px] min-w-0 flex flex-col pr-5">
         <template v-if="project != null">
-          <h2 class="title">{{ project.displayName }}</h2>
-          <RemixedFrom v-if="project.remixedFrom != null" class="remixed-from" :remixed-from="project.remixedFrom" />
-          <div class="info">
+          <h2 class="text-2xl/[1.4] text-title break-all">{{ project.displayName }}</h2>
+          <RemixedFrom v-if="project.remixedFrom != null" class="mt-2" :remixed-from="project.remixedFrom" />
+          <div class="mt-4 flex items-center justify-between">
             <OwnerInfo :owner="project.owner!" />
-            <p class="extra">
-              <span class="part" :title="$t(viewCount!.title)">
-                <UIIcon class="icon" type="eye" />
+            <p class="flex items-center gap-2">
+              <span class="flex items-center gap-1 text-hint-2" :title="$t(viewCount!.title)">
+                <UIIcon class="w-3.5 h-3.5" type="eye" />
                 {{ $t(viewCount!.text) }}
               </span>
               <template v-if="isOwner">
-                <i class="sep"></i>
-                <span class="part" :title="$t(likeCount!.title)">
-                  <UIIcon class="icon" type="heart" />
+                <i class="h-3 w-px bg-dividing-line-1"></i>
+                <span class="flex items-center gap-1 text-hint-2" :title="$t(likeCount!.title)">
+                  <UIIcon class="w-3.5 h-3.5" type="heart" />
                   {{ $t(likeCount!.text) }}
                 </span>
               </template>
-              <i class="sep"></i>
-              <span class="part" :title="$t(remixCount!.title)">
-                <UIIcon class="icon" type="remix" />
+              <i class="h-3 w-px bg-dividing-line-1"></i>
+              <span class="flex items-center gap-1 text-hint-2" :title="$t(remixCount!.title)">
+                <UIIcon class="w-3.5 h-3.5" type="remix" />
                 {{ $t(remixCount!.text) }}
               </span>
             </p>
           </div>
-          <div class="ops">
+          <div class="ops mt-4 flex gap-3">
             <template v-if="isOwner">
               <UIButton
                 v-radar="{ name: 'Edit button', desc: 'Click to edit the project' }"
-                color="primary"
+                style="flex: 1 1 0"
+                type="primary"
                 size="large"
                 icon="edit"
                 :loading="handleEdit.isLoading.value"
                 @click="handleEdit.fn"
-                >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
               >
+                {{ $t({ en: 'Edit', zh: '编辑' }) }}
+              </UIButton>
               <UIButton
                 v-if="project.visibility === Visibility.Public"
                 v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
-                color="boring"
+                style="flex: 1 1 0"
+                type="secondary"
                 size="large"
                 icon="share"
                 @click="handleShare.fn"
-                >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
               >
+                {{ $t({ en: 'Share', zh: '分享' }) }}
+              </UIButton>
               <UIButton
                 v-else
                 v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-                color="boring"
+                style="flex: 1 1 0"
+                type="secondary"
                 size="large"
-                icon="share"
+                icon="publish"
                 :loading="handlePublish.isLoading.value"
                 @click="handlePublish.fn"
-                >{{ $t({ en: 'Publish', zh: '发布' }) }}</UIButton
               >
+                {{ $t({ en: 'Publish', zh: '发布' }) }}
+              </UIButton>
               <UIDropdown placement="bottom-end" trigger="click">
                 <template #trigger>
                   <UIButton
                     v-radar="{ name: 'More options button', desc: 'Click to see more project options' }"
-                    class="more"
-                    color="boring"
+                    type="neutral"
+                    shape="square"
                     size="large"
                     icon="more"
                   ></UIButton>
@@ -516,13 +564,15 @@ const remixesRet = useQuery(
                     v-if="project.visibility === Visibility.Public"
                     v-radar="{ name: 'Unpublish option', desc: 'Click to unpublish the project' }"
                     @click="handleUnpublish.fn"
-                    >{{ $t({ en: 'Unpublish', zh: '取消发布' }) }}</UIMenuItem
                   >
+                    {{ $t({ en: 'Unpublish', zh: '取消发布' }) }}
+                  </UIMenuItem>
                   <UIMenuItem
                     v-radar="{ name: 'Remove option', desc: 'Click to remove the project' }"
                     @click="handleRemove.fn"
-                    >{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem
                   >
+                    {{ $t({ en: 'Remove', zh: '删除' }) }}
+                  </UIMenuItem>
                 </UIMenu>
               </UIDropdown>
             </template>
@@ -530,17 +580,19 @@ const remixesRet = useQuery(
               <UIButton
                 v-if="hasRelease"
                 v-radar="{ name: 'Remix button', desc: 'Click to remix this project' }"
-                color="primary"
+                class="flex-[1_1_0]"
+                type="primary"
                 size="large"
                 icon="remix"
                 :loading="handleRemix.isLoading.value"
                 @click="handleRemix.fn"
-                >{{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
               >
+                {{ $t({ en: 'Remix', zh: '改编' }) }}
+              </UIButton>
               <UIButton
                 v-radar="{ name: 'Like button', desc: 'Click to like or unlike the project' }"
-                :class="{ liking }"
-                color="boring"
+                :class="['flex-[1_1_0]', liking && 'text-red-main!']"
+                type="neutral"
                 size="large"
                 :title="$t(likeCount!.title)"
                 :icon="liking ? 'heart' : 'heartHollow'"
@@ -551,21 +603,23 @@ const remixesRet = useQuery(
               </UIButton>
               <UIButton
                 v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
-                color="boring"
+                class="flex-[1_1_0]"
+                type="neutral"
                 size="large"
                 icon="share"
                 @click="handleShare.fn"
-                >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
               >
+                {{ $t({ en: 'Share', zh: '分享' }) }}
+              </UIButton>
             </template>
           </div>
-          <UIDivider class="divider" />
+          <UIDivider class="mt-6 mb-4" />
           <UICollapse
             v-radar="{
               name: 'Project details',
               desc: 'Collapsible sections showing project description, instructions and release history'
             }"
-            class="collapse"
+            class="mb-2 flex-[1_1_0] overflow-y-auto"
             :default-expanded-names="['description', 'instructions', 'releases']"
           >
             <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
@@ -583,10 +637,10 @@ const remixesRet = useQuery(
           </UICollapse>
         </template>
       </div>
-    </CommunityCard>
+    </UICard>
     <ProjectsSection
       v-radar="{ name: 'Popular remixes section', desc: 'Section showing popular remixes of this project' }"
-      class="remixes"
+      class="mt-5"
       context="project"
       :num-in-row="remixNumInRow"
       :query-ret="remixesRet"
@@ -604,7 +658,7 @@ const remixesRet = useQuery(
   </CenteredWrapper>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .error {
   position: absolute;
   width: 100%;
@@ -613,205 +667,33 @@ const remixesRet = useQuery(
   background: var(--ui-color-grey-100);
 }
 
-.main {
+.runner-mask-fade-enter-from,
+.runner-mask-fade-leave-to {
+  opacity: 0;
+}
+
+.runner-mask-fade-enter-active,
+.runner-mask-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.project-wrapper {
   position: relative;
-  flex: 0 0 auto;
-  margin-top: 24px;
-  padding: 20px;
-  display: flex;
-  gap: 40px;
-  background: var(--ui-color-grey-100);
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
 }
 
-.left {
-  flex: 1 1 744px;
-
-  .runner-mask-fade-enter-from,
-  .runner-mask-fade-leave-to {
-    opacity: 0;
-  }
-
-  .runner-mask-fade-enter-active,
-  .runner-mask-fade-leave-active {
-    transition: opacity 0.2s ease;
-  }
-
-  .project-wrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-
-    .runner-mask {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: var(--ui-border-radius-2);
-      background: rgba(36, 41, 47, 0.6);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .runner-mask.initial {
-      pointer-events: auto;
-    }
-
-    .sign-in-prompt {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-      padding: 24px;
-
-      .sign-in-card {
-        position: relative;
-        width: 340px;
-        padding: 68px 24px 24px;
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        overflow: visible;
-      }
-
-      .kiko-wave {
-        position: absolute;
-        top: -56px;
-        width: 340px;
-        line-height: 0;
-
-        :deep(svg) {
-          display: block;
-          width: 100%;
-          height: auto;
-        }
-      }
-
-      .message {
-        margin-bottom: 44px;
-        line-height: 24px;
-        color: var(--ui-color-grey-800);
-      }
-
-      .sign-in-button {
-        width: 100%;
-      }
-    }
-
-    :deep(.ui-detailed-loading.cover.mask-semi-transparent .text) {
-      color: var(--ui-color-grey-100);
-    }
-
-    :deep(.project-runner-surface:not(.fullscreen) .ui-detailed-loading.cover) {
-      background: transparent;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      z-index: 3;
-    }
-  }
-
-  .ops {
-    margin-top: 12px;
-    display: flex;
-    gap: var(--ui-gap-middle);
-    justify-content: flex-end;
-  }
+.kiko-wave {
+  position: absolute;
+  top: -56px;
+  width: 340px;
+  line-height: 0;
 }
 
-.right {
-  flex: 1 1 456px;
-  min-width: 0;
-  padding-right: 20px;
-  display: flex;
-  flex-direction: column;
-
-  .title {
-    font-size: 20px;
-    line-height: 1.4;
-    color: var(--ui-color-title);
-    word-break: break-all;
-  }
-
-  .remixed-from {
-    margin-top: 8px;
-  }
-
-  .info {
-    margin-top: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .extra {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      .part {
-        display: flex;
-        gap: 4px;
-        align-items: center;
-        color: var(--ui-color-hint-2);
-      }
-
-      .icon {
-        width: 14px;
-        height: 14px;
-      }
-
-      .sep {
-        width: 1px;
-        height: 12px;
-        background-color: var(--ui-color-dividing-line-1);
-      }
-    }
-  }
-
-  .ops {
-    margin-top: 16px;
-    display: flex;
-    gap: 12px;
-
-    & > * {
-      flex: 1 1 0;
-
-      &.more {
-        flex: 0 0 auto;
-        width: 40px;
-        :deep(.content) {
-          padding: 0;
-        }
-      }
-    }
-
-    .liking :deep(.content) {
-      color: var(--ui-color-red-main);
-    }
-  }
-
-  .divider {
-    margin: 24px 0 16px;
-  }
-
-  .collapse {
-    margin-bottom: 8px;
-    flex: 1 1 0;
-    overflow-y: auto;
-  }
-}
-
-.remixes {
-  margin-top: 20px;
+.kiko-wave > svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 </style>

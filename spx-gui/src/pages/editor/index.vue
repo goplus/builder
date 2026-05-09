@@ -1,9 +1,10 @@
+<!-- TODO: review root background color and promote it to a shared UI token if it becomes reused. -->
 <template>
-  <section class="editor-home">
-    <header class="editor-header">
+  <section class="min-h-full w-full flex flex-col bg-[#f1f5f7]">
+    <header class="flex-none">
       <EditorNavbar :project="state?.project ?? null" :state="state" />
     </header>
-    <main class="editor-main">
+    <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
         <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
       </UIDetailedLoading>
@@ -11,7 +12,9 @@
         {{ $t(allQueryRet.error.value.userMessage) }}
       </UIError>
       <EditorContextProvider v-else :project="state!.project" :state="state!">
-        <ProjectEditor />
+        <CodeEditorProvider :monaco="monacoQueryRet.data.value!">
+          <ProjectEditor />
+        </CodeEditorProvider>
       </EditorContextProvider>
     </main>
   </section>
@@ -35,11 +38,17 @@ class LocalCache implements ILocalCache {
 </script>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { getProjectEditorRoute } from '@/router'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import {
+  getProjectEditorRouteParams,
+  isSameProjectIdentifier,
+  toProjectIdentifier,
+  type ProjectIdentifier
+} from '@/utils/project-route'
 import { composeQuery, useQuery } from '@/utils/query'
 import { UIDetailedLoading, UIError, useConfirmDialogWithResult, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
@@ -48,20 +57,8 @@ import { untilNotNull, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
-import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/spx-code-editor'
-import {
-  writeToFileToolDescription,
-  WriteToFileArgsSchema,
-  listFilesToolDescription,
-  ListFilesArgsSchema,
-  getDiagnosticsToolDescription,
-  GetDiagnosticsArgsSchema,
-  getFileCodeToolDescription,
-  GetFileCodeArgsSchema
-} from '@/components/agent-copilot/mcp/definitions'
-import * as z from 'zod'
+import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
-import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -76,9 +73,12 @@ const props = defineProps<{
 const localCache = new LocalCache(localHelpers)
 
 const signedInStateQuery = useSignedInStateQuery()
-const copilotCtx = useAgentCopilotCtx()
 
 const router = useRouter()
+const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
+  owner: props.ownerNameInput,
+  name: props.projectNameInput
+}))
 
 const confirm = useConfirmDialogWithResult()
 const i18n = useI18n()
@@ -105,10 +105,10 @@ const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: str
 
 const stateQueryRet = useQuery(
   async (ctx) => {
-    // We need to access deps (`ownerNameInput`, `projectNameInput`) synchronously,
+    // We need to access route deps synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const ownerInput = props.ownerNameInput
-    const projectNameInput = props.projectNameInput
+    const ownerInput = routeProjectIdentifier.value.owner
+    const projectNameInput = routeProjectIdentifier.value.name
 
     // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause infinite loop of query fetching.
     // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
@@ -120,6 +120,7 @@ const stateQueryRet = useQuery(
     ctx.signal.throwIfAborted()
     const state = new EditorState(i18n, project, isOnline, signedInStateQuery, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
+    ctx.reporter.startAutoReport(1000)
     await state.editing.loadProject(
       ownerInput,
       projectNameInput,
@@ -138,6 +139,9 @@ const stateQueryRet = useQuery(
 )
 
 const state = stateQueryRet.data
+const currentProjectIdentifier = computed(() =>
+  toProjectIdentifier(state.value?.project.owner, state.value?.project.name)
+)
 
 usePageTitle(() => {
   const displayName = state.value?.project.displayName ?? props.projectNameInput
@@ -147,84 +151,34 @@ usePageTitle(() => {
   }
 })
 
-const { registry } = copilotCtx.mcp
-if (registry == null) {
-  throw new Error('Copilot registry not initialized')
-}
-
-const codeEditorQueryRet = useProvideCodeEditorCtx(stateQueryRet)
-
-watch(
-  codeEditorQueryRet.data,
-  (editor, _, onCleanUp) => {
-    if (editor == null) return
-    registry.registerTools(
-      [
-        {
-          description: writeToFileToolDescription,
-          implementation: {
-            validate: (args) => {
-              const result = WriteToFileArgsSchema.safeParse(args)
-              if (!result.success) {
-                throw new Error(`Invalid arguments for ${writeToFileToolDescription.name}: ${result.error}`)
-              }
-              return result.data
-            },
-            execute: async (args) => editor.writeToFile(args)
-          }
-        },
-        {
-          description: listFilesToolDescription,
-          implementation: {
-            validate: (args) => {
-              const result = ListFilesArgsSchema.safeParse(args)
-              if (!result.success) {
-                throw new Error(`Invalid arguments for ${listFilesToolDescription.name}: ${result.error}`)
-              }
-              return result.data
-            },
-            execute: async () => editor.listFiles()
-          }
-        },
-        {
-          description: getDiagnosticsToolDescription,
-          implementation: {
-            validate: (args) => {
-              const result = GetDiagnosticsArgsSchema.safeParse(args)
-              if (!result.success) {
-                throw new Error(`Invalid arguments for ${getDiagnosticsToolDescription.name}: ${result.error}`)
-              }
-              return result.data
-            },
-            execute: async () => editor.getDiagnostics()
-          }
-        },
-        {
-          description: getFileCodeToolDescription,
-          implementation: {
-            validate: (args) => {
-              const result = GetFileCodeArgsSchema.safeParse(args)
-              if (!result.success) {
-                throw new Error(`Invalid arguments for ${getFileCodeToolDescription.name}: ${result.error}`)
-              }
-              return result.data
-            },
-            execute: async (args: z.infer<typeof GetFileCodeArgsSchema>) => editor.getFileCode(args)
-          }
-        }
-      ],
-      'code-editor'
-    )
-    onCleanUp(() => registry.unregisterProviderTools('code-editor'))
+const monacoQueryRet = useQuery(
+  (ctx) => {
+    ctx.reporter.startAutoReport(1000)
+    return loadMonaco(i18n.lang.value)
   },
-  { immediate: true }
+  {
+    en: 'Failed to load code editor',
+    zh: '加载代码编辑器失败'
+  }
 )
+
+watch(currentProjectIdentifier, (nextProjectIdentifier) => {
+  if (nextProjectIdentifier == null || isSameProjectIdentifier(nextProjectIdentifier, routeProjectIdentifier.value)) {
+    return
+  }
+  const currentRoute = router.currentRoute.value
+  router.replace({
+    params: getProjectEditorRouteParams(currentRoute.params, nextProjectIdentifier),
+    query: currentRoute.query,
+    hash: currentRoute.hash
+  })
+})
 
 const allQueryRet = useQuery(
   (ctx) =>
     Promise.all([
       composeQuery(ctx, stateQueryRet, [{ en: 'Loading project...', zh: '加载项目中...' }, 2]),
-      composeQuery(ctx, codeEditorQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
+      composeQuery(ctx, monacoQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
     ]),
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
@@ -328,25 +282,3 @@ function openProject(owner: string, name: string) {
   router.push(getProjectEditorRoute(owner, name))
 }
 </script>
-
-<style scoped lang="scss">
-.editor-home {
-  width: 100%;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  background-color: #e9fcff; // TODO: define as UI vars
-}
-
-.editor-header {
-  flex: 0 0 auto;
-}
-
-.editor-main {
-  flex: 1 1 0;
-  display: flex;
-  gap: var(--ui-gap-middle);
-  padding: 16px;
-}
-</style>

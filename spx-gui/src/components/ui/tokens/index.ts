@@ -3,13 +3,31 @@ import * as color from './colors'
 export { color }
 
 export const fontSize = {
-  // TODO: more font-related vars
-  text: '14px'
+  // Standard text scale anchored at base = 14px, which maps to F4 in the design.
+  // F7 / H8 auxiliary text used by label bars and compact metadata.
+  '2xs': '10px',
+  // F6 supporting text used by helper copy and secondary labels.
+  xs: '12px',
+  // F5 compact text used by smaller actions and metadata.
+  sm: '13px',
+  // F4 default text size for regular body and emphasized inline text.
+  base: '14px',
+  // F3 button text for primary and large actions.
+  lg: '15px',
+  // F2 standard title for section and card headers.
+  xl: '16px',
+  // F1 special title for prominent page and hero headings.
+  '2xl': '20px'
 } as const
 
 export const fontFamily = {
-  // see definition for `AlibabaHealthB` in global.scss
-  main: `AlibabaHealthB,
+  // Prefer self-hosted Inter and use locally installed Source Han Sans SC when available, then fall back to common system sans fonts.
+  main: `Inter,
+  'Source Han Sans SC',
+  'PingFang SC',
+  'Hiragino Sans GB',
+  'Noto Sans CJK SC',
+  'Microsoft YaHei',
   -apple-system,
   BlinkMacSystemFont,
   'Segoe UI',
@@ -22,6 +40,7 @@ export const fontFamily = {
   'Segoe UI Emoji',
   'Segoe UI Symbol',
   'Noto Color Emoji'`,
+  // Monospace stack for code editor and technical data displays.
   code: 'Menlo, Monaco, "Courier New", monospace'
 }
 
@@ -34,59 +53,44 @@ export const radius = {
 } as const
 
 export const borderRadius = {
-  1: '8px',
-  2: '12px',
-  3: '20px'
+  // Auxiliary 4px radius used by tags and interior content blocks nested inside 8px surfaces.
+  sm: '4px',
+  // Primary 8px radius used by buttons, panels, and most cards.
+  md: '8px',
+  // Auxiliary 12px radius used by popups and outer floating surfaces around 8px content.
+  lg: '12px'
 } as const
 
 export const boxShadow = {
-  panel: '0px 6px 16px 0px rgba(36, 41, 47, 0.05)',
-  surface: '0px 4px 12px 0px rgba(36, 41, 47, 0.08)',
-  surfaceStrong: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
-  accent: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)',
-  subtle: '0px 0px 4px 0px rgba(36, 41, 47, 0.1)'
+  // Secondary small shadow for hover popups and hover-elevated cards, such as tooltip-like explainer popups and dropdown menus.
+  sm: '0px 4px 12px 0px rgba(36, 41, 47, 0.08)',
+  // Primary panel shadow used by editor panels, profile panels, and community panels.
+  md: '0px 6px 16px 0px rgba(36, 41, 47, 0.05)',
+  // Secondary large shadow for copilot dialog level floating panels and other prominent floating layers.
+  lg: '0px 8px 24px 8px rgba(36, 41, 47, 0.05)',
+  // Brand-accent glow for the asset-library search bar and login-page entry surfaces.
+  brand: '0px 4px 12px 0px rgba(175, 231, 236, 0.65)',
+  // Subtle control shadow for navigation tabs, code-editor tabs, and similarly compact control surfaces.
+  control: '2px 2px 4px 0px rgba(36, 41, 47, 0.04)'
 } as const
 
 // Kept for backward compatibility. These values drive control heights rather than typography.
 export const lineHeight = {
-  1: '26px',
-  2: '32px',
-  3: '40px'
+  // Small control height used by compact inputs and buttons.
+  sm: '26px',
+  // Default control height used by most interactive components.
+  md: '32px',
+  // Large control height used by primary actions and tall controls.
+  lg: '40px'
 } as const
 
-export const controlHeight = lineHeight
-
-export const textLineHeight = {
-  1: '1.4',
-  2: '1.5',
-  3: '1.57143',
-  4: '1.6'
-} as const
-
-export const mask = {
-  1: '#24292F99',
-  2: '#24292FBF',
-  default: '#24292FBF'
-} as const
-
-export const button = {
-  radius: {
-    square: radius[1]
-  }
-} as const
-
-export const space = {
-  0: '2px',
-  1: '4px',
-  2: '8px',
-  3: '12px',
-  4: '16px',
-  5: '20px',
-  6: '24px'
-} as const
-
-export const gap = {
-  middle: space[4],
-  large: space[6]
-  // TODO: other gap defs
+export const spacing = {
+  // Tight inner spacing and compact gaps.
+  sm: '4px',
+  // Default small spacing for closely related controls.
+  md: '8px',
+  // Medium spacing for regular component internals.
+  lg: '12px',
+  // Large semantic spacing; use numeric Tailwind spacing classes for 24px / 28px and above.
+  xl: '16px'
 } as const

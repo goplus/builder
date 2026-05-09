@@ -6,7 +6,6 @@
         desc: 'Navigation tabs for switching between different sprite editing views'
       }"
       :value="state.selected.type"
-      color="sprite"
       @update:value="(type) => state.select(type as SelectedType)"
     >
       <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">{{
@@ -149,7 +148,7 @@ import type { Costume } from '@/models/spx/costume'
 import type { Animation } from '@/models/spx/animation'
 import { type Sprite } from '@/models/spx/sprite'
 import { UITabs, UITab } from '@/components/ui'
-import { CodeEditorUI, FormatButton } from '../code-editor/spx-code-editor'
+import { CodeEditorUI, FormatButton } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'

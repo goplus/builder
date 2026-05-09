@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
-import { UIImg } from '@/components/ui'
+import { UIBlockItem, UIImg } from '@/components/ui'
 import { useImageSelectorCompact, useImageSelectorDisabled } from '../common/ImageSelector.vue'
 import GenLoading from '../common/GenLoading.vue'
 
@@ -26,74 +26,18 @@ const loading = computed(() => props.loading || fileLoading.value)
 </script>
 
 <template>
-  <div
+  <UIBlockItem
     v-radar="{
       name: 'Backdrop image item',
       desc: 'Click to select this image as the backdrop'
     }"
-    class="backdrop-image-item"
-    :class="{ active, compact, loading, disabled }"
+    class="justify-center"
+    :class="compact ? 'h-16.5' : 'h-27'"
+    :size="compact ? 'medium' : 'large'"
+    :interactive="!disabled && !loading"
+    :active="active"
   >
-    <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" />
-    <UIImg v-else class="img" :src="url" size="cover" />
-  </div>
+    <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" cover />
+    <UIImg v-else :class="compact ? 'h-14.5 w-20 rounded-[4px]' : 'h-25 w-33 rounded-sm'" :src="url" size="cover" />
+  </UIBlockItem>
 </template>
-
-<style lang="scss" scoped>
-.backdrop-image-item {
-  display: flex;
-  width: 140px;
-  height: 108px;
-  padding: 4px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 2px solid transparent;
-  background-color: var(--ui-color-grey-300);
-  cursor: pointer;
-  overflow: hidden;
-
-  transition:
-    width 0.2s ease,
-    height 0.2s ease,
-    border-radius 0.2s ease;
-
-  &.active {
-    background-color: var(--ui-color-turquoise-200);
-    border-color: var(--ui-color-turquoise-500);
-    cursor: default;
-  }
-
-  &.disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  &.loading {
-    cursor: default;
-    pointer-events: none;
-  }
-
-  &.compact {
-    width: 88px;
-    height: 68px;
-    border-radius: 8px;
-  }
-}
-
-.img {
-  width: 132px;
-  height: 100px;
-  border-radius: 8px;
-  transition:
-    width 0.2s ease,
-    height 0.2s ease,
-    border-radius 0.2s ease;
-}
-
-.backdrop-image-item.compact .img {
-  width: 80px;
-  height: 60px;
-  border-radius: 4px;
-}
-</style>

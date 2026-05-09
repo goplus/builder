@@ -1,7 +1,7 @@
 <template>
-  <UIBlockItem :color="color" :active="selectable && selectable.selected" :interactive="!!selectable">
-    <div class="img-container">
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+  <UIBlockItem :active="selectable && selectable.selected" :interactive="!!selectable">
+    <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
+      <UIImg class="h-15 w-20 rounded-[4px]" size="cover" :src="imgSrc" :loading="imgLoading" />
     </div>
     <UIBlockItemTitle size="medium">
       {{ name }}
@@ -20,21 +20,9 @@ withDefaults(
     imgLoading: boolean
     name: string
     selectable?: false | { selected: boolean }
-    color?: 'stage' | 'primary'
   }>(),
   {
-    selectable: false,
-    color: 'stage'
+    selectable: false
   }
 )
 </script>
-<style scoped lang="scss">
-.img-container {
-  margin: 12px 0 14px;
-}
-.img {
-  width: 52px;
-  height: 39px;
-  border-radius: 4px;
-}
-</style>

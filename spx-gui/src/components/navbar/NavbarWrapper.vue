@@ -1,14 +1,17 @@
 <template>
-  <nav v-radar="{ name: 'Navbar', desc: 'Top navigation bar' }" class="top-nav">
-    <div class="content" :class="{ centered }">
-      <div class="left">
+  <nav v-radar="{ name: 'Navbar', desc: 'Top navigation bar' }" class="w-full flex justify-center text-grey-1000">
+    <div
+      class="h-12 flex items-stretch justify-between gap-3"
+      :class="centered ? 'w-310 desktop-large:w-373' : 'w-full'"
+    >
+      <div class="basis-[30%] flex">
         <NavbarLogo />
         <slot name="left"></slot>
       </div>
-      <div class="center">
+      <div class="basis-[40%] flex items-center justify-center overflow-hidden">
         <slot name="center"></slot>
       </div>
-      <div class="right">
+      <div class="basis-[30%] flex items-center justify-end" :class="!centered && 'mr-2'">
         <slot name="right"></slot>
         <NavbarProfile />
       </div>
@@ -34,53 +37,3 @@ withDefaults(
   }
 )
 </script>
-
-<style lang="scss" scoped>
-@import '@/components/ui/responsive';
-
-.top-nav {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-primary-main);
-  background-position: center;
-  background-repeat: repeat;
-  background-image: url(./bg.svg);
-  box-shadow: var(--ui-box-shadow-accent);
-}
-
-.content {
-  width: 100%;
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 12px;
-  height: 50px;
-
-  &.centered {
-    width: 1220px;
-    @include responsive(desktop-large) {
-      width: 1480px;
-    }
-  }
-}
-
-.left,
-.right {
-  flex-basis: 30%;
-  display: flex;
-}
-
-.center {
-  flex-basis: 40%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.right {
-  justify-content: flex-end;
-}
-</style>

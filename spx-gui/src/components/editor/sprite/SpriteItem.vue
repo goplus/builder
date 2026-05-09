@@ -22,7 +22,6 @@ import { useRenameSprite } from '@/components/asset'
 const props = withDefaults(
   defineProps<{
     sprite: Sprite
-    color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
     /** `operable: true` means the sprite can be published & removed */
     operable?: boolean
@@ -31,7 +30,6 @@ const props = withDefaults(
     droppable?: boolean
   }>(),
   {
-    color: 'sprite',
     selectable: false,
     operable: false,
     autoplay: false,
@@ -135,11 +133,11 @@ const duplicateAnimation = useMessageHandle(
 ).fn
 
 useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
-  // Now styles for `block-item-droppable-accept` & `block-item-droppable-over` are implemented in `UIBlockItem`.
+  // Now styles for `ui-block-item-droppable-accept` & `ui-block-item-droppable-over` are implemented in `UIBlockItem`.
   // While the ideal way to control `UIBlockItem` is passing prop `droppable`, instead of using its internal classes directly.
   // TODO: Update API `useDragDroppable` (& `useDragSortable`) to control props instead of classes.
-  acceptClass: 'block-item-droppable-accept',
-  overClass: 'block-item-droppable-over',
+  acceptClass: 'ui-block-item-droppable-accept',
+  overClass: 'ui-block-item-droppable-over',
   accept: (item) => {
     if (item instanceof Costume) return !props.sprite.costumes.includes(item)
     if (item instanceof Animation) return !props.sprite.animations.includes(item)
@@ -158,7 +156,6 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     v-radar="radarNodeMeta"
     :name="sprite.name"
     :selectable="selectable"
-    :color="color"
     :visible="sprite.visible"
   >
     <template #img="{ style }">
@@ -171,7 +168,7 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+    <CornerMenu v-if="operable && selectable && selectable.selected">
       <UIMenuItem
         v-radar="{ name: 'Visibility', desc: 'Click to toggle visibility the sprite' }"
         @click="toggleSpriteVisible"
