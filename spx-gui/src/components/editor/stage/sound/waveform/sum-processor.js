@@ -1,7 +1,7 @@
-// This file is similar to a worker. It is expected to be imported
-// with `?url` where it need to be used.
+// This file is similar to a worker. It is expected to be referenced
+// with `new URL('./sum-processor.js', import.meta.url).href` where needed.
 
-// As we import it with `?url`, it is not processed by TypeScript
+// As it is loaded by URL, it is not processed by TypeScript
 // or Rollup. It is directly loaded by the browser.
 
 class SumProcessor extends AudioWorkletProcessor {

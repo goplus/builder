@@ -243,7 +243,13 @@ export class HoverController extends Emitter<{
     }
 
     this.addDisposable(editor.onMouseMove((e) => handleEditorMouseMove(e.target)))
-    this.addDisposable(editor.onMouseLeave(() => handleMouseEnter({ type: 'other' })))
+
+    const editorDomNode = editor.getDomNode()
+    if (editorDomNode == null) throw new Error('editor dom node expected')
+    // Monaco's mouseLeave fire incorrectly in shadow DOM, so use the editor DOM node's native mouseleave instead.
+    editorDomNode.addEventListener('mouseleave', () => handleMouseEnter({ type: 'other' }), {
+      signal: this.getSignal()
+    })
 
     this.on('cardMouseEnter', () => handleMouseEnter({ type: 'hover-card' }))
     this.on('cardMouseLeave', (e) => {

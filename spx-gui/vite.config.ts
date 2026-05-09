@@ -90,7 +90,10 @@ export default defineConfig(({ mode }) => {
       rolldownOptions: {
         input: {
           main: resolve('index.html'),
-          'spx-runner': resolve('src/widgets/spx-runner/index.ts')
+          // Open http://localhost:5173/src/widgets/dev.html to test widgets during development.
+          'widget-dev': resolve('src/widgets/dev.html'),
+          'spx-runner': resolve('src/widgets/spx-runner/index.ts'),
+          'xgo-code-editor': resolve('src/widgets/xgo-code-editor/index.ts')
         },
         output: {
           entryFileNames: (chunkInfo: { name: string }) => {

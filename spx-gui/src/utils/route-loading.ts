@@ -48,7 +48,12 @@ export function useIsRouteLoaded(): Ref<boolean> {
 }
 
 export function useRegisterUpdateRouteLoaded(loadedSource: WatchSource<boolean>) {
-  const loadedSources = useLoadedSources()
+  // Do nothing if loading context is not available, which means route-loading is not set up in the app.
+  // This allows this composable to be used in any component without requiring route-loading setup.
+  const ctx = useAppInject(loadingCtxKey)
+  if (ctx.value == null) return
+
+  const loadedSources = ctx.value.loadedSources
 
   watch(
     loadedSource,

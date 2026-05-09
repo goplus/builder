@@ -2,7 +2,8 @@
 import { computed, ref, watch, nextTick } from 'vue'
 import { DotLottieVue, type DotLottieVueInstance } from '@lottiefiles/dotlottie-vue'
 import { cn, type ClassValue } from '../utils'
-import animationFileUrl from './animation.lottie?url'
+
+const animationFileUrl = new URL('./animation.lottie', import.meta.url).href
 
 export type MaskType = 'none' | 'semi-transparent'
 

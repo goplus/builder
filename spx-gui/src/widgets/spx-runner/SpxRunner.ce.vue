@@ -1,147 +1,99 @@
 <template>
-  <div class="spx-runner-widget">
-    <div class="operation">
-      <button v-if="!run" :disabled="!ready || !!errorMsg" class="run" @click="onRun">run</button>
-      <button v-else class="stop" @click="onStop">stop</button>
-    </div>
-    <div class="project-runner">
-      <div v-if="errorMsg" class="error">
-        <p>{{ errorMsg }}</p>
-      </div>
-      <div v-if="!ready && !errorMsg" class="loading">
-        <p>loading...</p>
-      </div>
-      <div v-if="ready && !errorMsg" class="ready">
-        <p>project ready</p>
-        <p>{{ project.displayName }} ({{ fullName(project.owner!, project.name!) }})</p>
-      </div>
+  <UIConfigProvider :config="uiConfig">
+    <UIMessageProvider>
+      <UIModalProvider>
+        <div
+          class="relative flex w-full aspect-4/3 flex-col overflow-hidden rounded-md border border-black/15 bg-white"
+        >
+          <div class="absolute top-3 right-3 z-100 flex gap-2">
+            <button
+              v-if="!running"
+              :disabled="!runnable"
+              class="cursor-pointer rounded-full border-none bg-primary-main px-3 py-1 text-sm font-medium text-white shadow-sm transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+              @click="handleRun"
+            >
+              {{ $t({ en: 'Run', zh: '运行' }) }}
+            </button>
+            <button
+              v-else
+              class="cursor-pointer rounded-full border-none bg-red-main px-3 py-1 text-sm font-medium text-white shadow-sm transition-opacity"
+              @click="handleStop"
+            >
+              {{ $t({ en: 'Stop', zh: '停止' }) }}
+            </button>
+          </div>
 
-      <ProjectRunner ref="runner" :project="project" />
-    </div>
-  </div>
+          <div class="relative h-full w-full flex-1">
+            <ProjectRunner v-if="project != null" ref="runner" :project="project" @exit="handleExit" />
+            <UILoading v-if="isLoading" cover mask="solid" />
+            <UIError v-else-if="error != null" cover :retry="refetch">
+              {{ $t(error.userMessage) }}
+            </UIError>
+          </div>
+        </div>
+      </UIModalProvider>
+    </UIMessageProvider>
+  </UIConfigProvider>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, shallowRef } from 'vue'
-import { SpxProject, fullName } from '@/models/spx/project'
+import { computed, ref } from 'vue'
+import { useQuery } from '@/utils/query'
+import { useI18n } from '@/utils/i18n'
 import { cloudHelpers } from '@/models/common/cloud'
+import { SpxProject } from '@/models/spx/project'
+import { UIConfigProvider, UIMessageProvider, UIModalProvider, UIError, UILoading, type Config } from '@/components/ui'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
+import { getUIConfig } from '@/setup'
 
-const props = defineProps<{ owner?: string; name?: string }>()
-const runner = ref()
-const run = ref(false)
-const ready = ref(false)
-const errorMsg = ref('')
-const project = shallowRef(new SpxProject())
+const props = defineProps<{
+  owner: string
+  name: string
+}>()
 
-watch(
-  () => [props.owner, props.name],
-  async ([owner, name]) => {
-    if (owner && name) {
-      ready.value = false
-      errorMsg.value = ''
-      try {
-        const newProject = new SpxProject(owner, name)
-        const serialized = await cloudHelpers.load(owner, name, true)
-        await newProject.load(serialized)
-        project.value.dispose()
-        project.value = newProject
-        ready.value = true
-      } catch {
-        errorMsg.value = 'loading project fail'
-      } finally {
-        ready.value = true
-      }
-    }
+const i18n = useI18n()
+const uiConfig = computed<Config>(() => getUIConfig(i18n))
+
+const running = ref(false)
+const runner = ref<InstanceType<typeof ProjectRunner>>()
+
+const {
+  data: project,
+  isLoading,
+  error,
+  refetch
+} = useQuery(
+  async () => {
+    const { owner, name } = props
+    if (owner === '' || name === '') throw new Error('owner and name required')
+
+    const project = new SpxProject()
+    const serialized = await cloudHelpers.load(owner, name, true)
+    await project.load(serialized)
+    return project
   },
-  {
-    immediate: true
-  }
+  { en: 'Load project failed', zh: '加载项目失败' }
 )
 
-const onRun = () => {
-  run.value = true
+const runnable = computed(() => project.value != null && !isLoading.value && error.value == null)
+
+async function handleRun() {
+  if (!runnable.value || runner.value == null) return
+  running.value = true
   runner.value.run()
 }
-const onStop = () => {
-  run.value = false
-  runner.value.stop()
+
+async function handleStop() {
+  if (runner.value == null) return
+  await runner.value.stop()
+  running.value = false
+}
+
+function handleExit() {
+  running.value = false
 }
 </script>
 
 <style>
-.spx-runner-widget {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #77777789;
-  border-radius: 10px;
-}
-
-.spx-runner-widget .operation {
-  display: flex;
-  justify-content: end;
-  padding-top: 10px;
-  padding-right: 10px;
-  position: absolute;
-  width: 100%;
-  z-index: 100;
-}
-
-.spx-runner-widget .operation button {
-  border: 2px solid rgba(0, 20, 41, 0.4392156863);
-  border-radius: 16px;
-  z-index: 100;
-  font-size: 14px;
-  padding: 4px 14px;
-  color: white;
-  cursor: pointer;
-  margin-right: 10px;
-}
-
-.spx-runner-widget .operation button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.spx-runner-widget .operation button.run {
-  background-color: #3a8b3b;
-}
-
-.spx-runner-widget .operation button.stop {
-  background-color: #d03050;
-}
-
-.spx-runner-widget .project-runner {
-  position: relative;
-  width: 100%;
-  flex: 1;
-  height: 100%;
-}
-
-.spx-runner-widget .project-runner iframe {
-  width: 100%;
-  height: 100%;
-}
-
-.spx-runner-widget .project-runner .loading,
-.spx-runner-widget .project-runner .ready,
-.spx-runner-widget .project-runner .error {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.spx-runner-widget .project-runner .loading > p,
-.spx-runner-widget .project-runner .ready > p,
-.spx-runner-widget .project-runner .error > p {
-  text-align: center;
-}
+@import '../../app.css';
 </style>

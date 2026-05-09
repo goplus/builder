@@ -8,9 +8,10 @@
 declare const self: DedicatedWorkerGlobalScope
 
 import '@/assets/wasm/wasm_exec.js'
-import spxlsWasmUrl from '@/assets/wasm/spxls.wasm?url'
-import spxlsPkgdataZipUrl from '@/assets/wasm/spxls-pkgdata.zip?url'
 import type { Files, Message, NotificationMessage, RequestMessage, ResponseMessage, XGoLanguageServer } from './spxls'
+
+const spxlsWasmUrl = new URL('@/assets/wasm/spxls.wasm', import.meta.url).href
+const spxlsPkgdataZipUrl = new URL('@/assets/wasm/spxls-pkgdata.zip', import.meta.url).href
 
 /** Message for files synchronization */
 export type FilesMessage = {
