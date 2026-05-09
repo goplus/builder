@@ -10,7 +10,7 @@ import { debounce } from 'lodash'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
-import { Visibility, type ProjectExtraSettings } from '@/apis/project'
+import { ProjectType, Visibility, type ProjectExtraSettings } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from './common/asset-name'
@@ -103,6 +103,7 @@ export class SpxProject extends Disposable implements IProject {
   owner?: string
   remixedFrom?: string | null
   name?: string
+  type = ProjectType.Game
   displayName = ''
   version = 0
   visibility?: Visibility
@@ -387,6 +388,7 @@ export class SpxProject extends Disposable implements IProject {
       updatedAt: this.updatedAt,
       owner: this.owner,
       name: this.name,
+      type: this.type,
       displayName: this.displayName,
       version: this.version,
       visibility: this.visibility,

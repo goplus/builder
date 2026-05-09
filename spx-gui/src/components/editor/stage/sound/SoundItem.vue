@@ -18,13 +18,11 @@ import {
 const props = withDefaults(
   defineProps<{
     sound: Sound
-    color?: 'sound' | 'primary'
     selectable?: false | { selected: boolean }
     /** `operable: true` means the backdrop can be published & removed */
     operable?: boolean
   }>(),
   {
-    color: 'sound',
     selectable: false,
     operable: false
   }
@@ -76,17 +74,11 @@ const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
 </script>
 
 <template>
-  <UIEditorSoundItem
-    v-radar="radarNodeMeta"
-    :audio-src="audioSrc"
-    :name="sound.name"
-    :selectable="selectable"
-    :color="color"
-  >
+  <UIEditorSoundItem v-radar="radarNodeMeta" :audio-src="audioSrc" :name="sound.name" :selectable="selectable">
     <template #player>
-      <SoundPlayer :color="color" :src="audioSrc" />
+      <SoundPlayer :src="audioSrc" />
     </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+    <CornerMenu v-if="operable && selectable && selectable.selected">
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sound' }"
         @click="handleDuplicate"

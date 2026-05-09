@@ -1,6 +1,7 @@
 <template>
-  <section class="wrapper">
+  <section class="flex justify-center">
     <UIDropdown
+      class="rounded-lg"
       trigger="manual"
       :visible="activeSetting != null"
       placement="top"
@@ -8,37 +9,47 @@
       @update:visible="handleDropdownVisibleUpdate"
     >
       <template #trigger>
-        <ul class="settings">
+        <ul class="flex items-center gap-1 rounded-md bg-grey-100 p-1 shadow-sm">
           <li
             v-radar="{ name: 'Edit duration', desc: 'Click to edit animation duraion' }"
-            class="setting"
-            :class="{ active: activeSetting === 'duration' }"
+            :class="getSummaryItemClass('duration')"
             @click="handleSummaryClick('duration')"
           >
             <UIIcon type="timer" />
             {{ $t({ en: 'Duration', zh: '时长' }) }}
-            <span class="value">{{ formatDuration(animation.duration, 2) }}</span>
+            <span
+              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+            >
+              {{ formatDuration(animation.duration, 2) }}
+            </span>
           </li>
           <li
             v-radar="{ name: 'Edit bound state', desc: 'Click to edit animation bound state' }"
-            class="setting"
-            :class="{ active: activeSetting === 'bound-state' }"
+            :class="getSummaryItemClass('bound-state')"
             @click="handleSummaryClick('bound-state')"
           >
             <UIIcon type="status" />
             {{ $t({ en: 'Binding', zh: '绑定' }) }}
-            <span v-if="boundStateNum > 0" class="value">{{ boundStateNum }}</span>
+            <span
+              v-if="boundStateNum > 0"
+              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+            >
+              {{ boundStateNum }}
+            </span>
           </li>
           <li
             v-if="soundEditable"
             v-radar="{ name: 'Edit sound', desc: 'Click to edit animation sound' }"
-            class="setting"
-            :class="{ active: activeSetting === 'sound' }"
+            :class="getSummaryItemClass('sound')"
             @click="handleSummaryClick('sound')"
           >
             <UIIcon type="sound" />
             {{ $t({ en: 'Sound', zh: '声音' }) }}
-            <span class="value">{{ soundName }}</span>
+            <span
+              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+            >
+              {{ soundName }}
+            </span>
           </li>
         </ul>
       </template>
@@ -53,7 +64,7 @@
 import { computed, ref } from 'vue'
 import { formatDuration } from '@/utils/audio'
 import type { Animation } from '@/models/spx/animation'
-import { UIDropdown, UIIcon, isInPopup } from '@/components/ui'
+import { UIDropdown, UIIcon, isInPopupOrModal } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import DurationEditor from './DurationEditor.vue'
 import BoundStateEditor from './state/BoundStateEditor.vue'
@@ -72,6 +83,12 @@ type Setting = 'duration' | 'bound-state' | 'sound'
 
 const activeSetting = ref<Setting | null>(null)
 
+const summaryItemBaseClass = 'h-8 cursor-pointer flex items-center gap-1 rounded-sm px-3 text-xs transition-all'
+
+function getSummaryItemClass(setting: Setting) {
+  return `${summaryItemBaseClass} ${activeSetting.value === setting ? 'bg-primary-200 text-primary-main' : 'text-text'}`
+}
+
 function handleSummaryClick(setting: Setting) {
   activeSetting.value = activeSetting.value === setting ? null : setting
 }
@@ -89,7 +106,7 @@ const boundStateNum = computed(() => {
 function handleClickOutside(e: MouseEvent) {
   // There are popups (dropdown, modal, ...) in setting editor (e.g. "Record" in `SoundEditor`), we should not close the editor when user clicks in the popup content.
   // TODO: There should be a systematical solution for this, something like event propagation along the component tree instead of DOM tree.
-  if (isInPopup(e.target as HTMLElement | null)) return
+  if (isInPopupOrModal(e.target as HTMLElement | null)) return
   activeSetting.value = null
 }
 
@@ -97,55 +114,3 @@ function handleDropdownVisibleUpdate(visible: boolean) {
   if (!visible) activeSetting.value = null
 }
 </script>
-
-<style lang="scss" scoped>
-.wrapper {
-  display: flex;
-  justify-content: center;
-}
-
-.settings {
-  display: flex;
-  align-items: center;
-
-  padding: 4px;
-  gap: 4px;
-  border-radius: var(--ui-border-radius-1);
-  box-shadow: var(--ui-box-shadow-subtle);
-  background-color: var(--ui-color-grey-100);
-}
-
-.setting {
-  display: flex;
-  height: 32px;
-  padding: 4px 12px;
-  align-items: center;
-  gap: 4px;
-
-  border-radius: var(--ui-border-radius-1);
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--ui-color-text-main);
-  cursor: pointer;
-  transition: 0.2s;
-
-  &.active {
-    color: var(--ui-color-primary-main);
-    background: var(--ui-color-primary-200);
-  }
-}
-
-.value {
-  padding: 0px 5px;
-  border-radius: 8px;
-  max-width: 5em;
-  overflow-x: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  font-size: 10px;
-  line-height: 1.6;
-  color: var(--ui-color-grey-800);
-  background-color: var(--ui-color-grey-400);
-}
-</style>

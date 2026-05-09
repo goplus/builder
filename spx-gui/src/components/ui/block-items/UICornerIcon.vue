@@ -1,25 +1,24 @@
 <!-- icon at the top-right corner of block-item -->
 
 <template>
-  <div class="ui-corner-icon" :style="cssVars" @click.stop="emit('click', $event)">
-    <UIIcon class="icon" :type="type" />
+  <div :class="rootClass" @click.stop="emit('click', $event)">
+    <UIIcon class="h-4 w-4" :type="type" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+
+import { cn, type ClassValue } from '../utils'
 import UIIcon, { type Type as IconType } from '../icons/UIIcon.vue'
-import type { Color } from '../tokens/colors'
-import { useUIVariables } from '../UIConfigProvider.vue'
-import { getCssVars } from '../tokens/utils'
 
 const props = withDefaults(
   defineProps<{
     type: IconType
-    color?: Color
+    class?: ClassValue
   }>(),
   {
-    color: 'primary'
+    class: undefined
   }
 )
 
@@ -27,37 +26,11 @@ const emit = defineEmits<{
   click: [MouseEvent]
 }>()
 
-const uiVariables = useUIVariables()
-const cssVars = computed(() => getCssVars('--ui-corner-icon-color-', uiVariables.color[props.color]))
+const rootClass = computed(() =>
+  cn(
+    'absolute -top-1.5 -right-1.5 h-6 w-6 flex items-center justify-center rounded-full cursor-pointer',
+    'text-grey-100 bg-primary-main hover:bg-primary-400 active:bg-primary-600',
+    props.class
+  )
+)
 </script>
-
-<style scoped lang="scss">
-.ui-corner-icon {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-
-  display: flex;
-  width: 24px;
-  height: 24px;
-  justify-content: center;
-  align-items: center;
-
-  color: var(--ui-color-grey-100);
-  border-radius: 50%;
-  background: var(--ui-corner-icon-color-main);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--ui-corner-icon-color-400);
-  }
-  &:active {
-    background-color: var(--ui-corner-icon-color-600);
-  }
-
-  .icon {
-    width: 16px;
-    height: 16px;
-  }
-}
-</style>

@@ -1,46 +1,36 @@
 <template>
-  <li class="ui-tab-radio" :class="{ active: isActive }" @click="handleClick">
+  <li :class="rootClass" @click="handleClick">
     <slot></slot>
   </li>
 </template>
 
 <script setup lang="ts">
-import { inject, computed } from 'vue'
+import { computed, inject } from 'vue'
+
+import { cn, type ClassValue } from '../utils'
 import { radioGroupValueKey, updateRadioValueKey } from './UITabRadioGroup.vue'
 
 const props = defineProps<{
   value: string
+  class?: ClassValue
 }>()
 
 const radioGroupValue = inject(radioGroupValueKey)
 const updateRadioValue = inject(updateRadioValueKey)
 
 const isActive = computed(() => radioGroupValue?.value === props.value)
+const rootClass = computed(() =>
+  cn(
+    // TODO: animation for background slide?
+    'flex-[1_1_0] flex items-center justify-center px-2 py-[5px] [transition:0.2s]',
+    isActive.value
+      ? 'rounded-[calc(var(--ui-border-radius-md)-2px)] bg-grey-100 text-title shadow-control'
+      : 'cursor-pointer text-hint-1',
+    props.class
+  )
+)
 
 const handleClick = () => {
   updateRadioValue?.(props.value)
 }
 </script>
-
-<style scoped lang="scss">
-.ui-tab-radio {
-  display: flex;
-  flex: 1 1 0;
-  padding: 5px 8px;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-
-  color: var(--ui-color-hint-1);
-  transition: 0.2s; // TODO: animation for background slide?
-
-  &.active {
-    border-radius: 8px;
-    color: var(--ui-color-title);
-    background: var(--ui-color-grey-100);
-    box-shadow:
-      0px 6px 10px 0px rgba(14, 18, 27, 0.06),
-      0px 2px 4px 0px rgba(14, 18, 27, 0.03);
-  }
-}
-</style>

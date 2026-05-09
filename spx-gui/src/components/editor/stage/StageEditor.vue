@@ -1,12 +1,11 @@
 <template>
-  <EditorHeader color="stage">
+  <EditorHeader>
     <UITabs
       v-radar="{
         name: 'Stage editor tabs',
         desc: 'Navigation tabs for switching between different stage editing views'
       }"
       :value="state.selected.type"
-      color="stage"
       @update:value="(type) => state.select(type as SelectedType)"
     >
       <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">
@@ -181,7 +180,7 @@ import type { Backdrop } from '@/models/spx/backdrop'
 import type { Sound } from '@/models/spx/sound'
 import type { Widget } from '@/models/spx/widget'
 import { UITabs, UITab } from '@/components/ui'
-import { CodeEditorUI, FormatButton } from '../code-editor/spx-code-editor'
+import { CodeEditorUI, FormatButton } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor, { BackdropsEditorState } from './backdrop/BackdropsEditor.vue'
 import SoundsEditor from './sound/SoundsEditor.vue'

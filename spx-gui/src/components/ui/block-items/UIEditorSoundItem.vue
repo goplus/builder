@@ -1,11 +1,6 @@
 <template>
-  <UIBlockItem
-    :color="color"
-    :variant="color === 'sound' ? 'colorful' : 'standard'"
-    :active="selectable && selectable.selected"
-    :interactive="!!selectable"
-  >
-    <div class="sound-player">
+  <UIBlockItem :active="selectable && selectable.selected" :interactive="!!selectable">
+    <div class="my-3 h-9 w-9">
       <slot name="player"></slot>
     </div>
     <UIBlockItemTitle size="medium">
@@ -20,20 +15,11 @@ import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 withDefaults(
   defineProps<{
-    color?: 'sound' | 'primary'
     name: string
     selectable?: false | { selected: boolean }
   }>(),
   {
-    color: 'sound',
     selectable: false
   }
 )
 </script>
-<style scoped lang="scss">
-.sound-player {
-  margin: 12px 0 18px;
-  height: 36px;
-  width: 36px;
-}
-</style>

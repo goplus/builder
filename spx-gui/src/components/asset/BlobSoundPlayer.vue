@@ -1,17 +1,15 @@
 <!-- Sound player for given audio blob, based on `SoundPlayer` -->
 
 <template>
-  <SoundPlayer :src="src" :color="color" size="large" />
+  <SoundPlayer :src="src" size="large" />
 </template>
 
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
-import type { Color } from '@/components/ui'
 import SoundPlayer from '../editor/stage/sound/SoundPlayer.vue'
 
 const props = defineProps<{
   blob: Blob
-  color: Color
 }>()
 
 const src = ref('')

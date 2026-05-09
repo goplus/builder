@@ -1,20 +1,13 @@
+<script setup lang="ts">
+import { cn } from './utils'
+
+const props = defineProps<{
+  class?: string
+}>()
+</script>
+
 <template>
-  <div>
-    <div class="main">
-      <slot></slot>
-    </div>
-    <UIDivider />
+  <div :class="cn('h-12 flex items-center px-3 text-xl border-b border-grey-400 text-title', props.class)">
+    <slot></slot>
   </div>
 </template>
-<script setup lang="ts">
-import { UIDivider } from '@/components/ui'
-</script>
-<style scoped lang="scss">
-.main {
-  display: flex;
-  align-items: center;
-  height: 43px;
-  padding: 0 16px;
-  font-size: 16px;
-}
-</style>

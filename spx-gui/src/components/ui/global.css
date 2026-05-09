@@ -1,0 +1,74 @@
+@import './reset.css' layer(base);
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+
+  /* Special title */
+  h1 {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 500;
+  }
+
+  /* Standard title */
+  h2 {
+    font-size: 16px;
+    line-height: 26px;
+    font-weight: 400;
+  }
+
+  /* Text in navigation bar */
+  h3,
+  /* Text */
+  h4 {
+    font-size: 14px;
+    line-height: 22px;
+    font-weight: 400;
+  }
+
+  /* More information */
+  h5 {
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 400;
+  }
+
+  h6 {
+    font-size: 10px;
+    line-height: 16px;
+    font-weight: 400;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  /**
+   * Make focus visible for keyboard users, but not for mouse users. TODO:
+   * - Consider using :focus-visible instead
+   * - Include other interactive elements such as links, form controls and [tabindex] elements
+   */
+  button:focus-visible {
+    outline: 2px solid var(--ui-color-primary-600);
+  }
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/InterVariable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/InterVariable-Italic.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}

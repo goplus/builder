@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div class="h-screen flex items-center justify-center">
     <h4>{{ $t(title) }}</h4>
   </div>
 </template>
@@ -23,11 +23,3 @@ try {
   window.location.replace('/')
 }
 </script>
-<style scoped lang="scss">
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-</style>

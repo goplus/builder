@@ -1,17 +1,13 @@
 <template>
-  <code class="ui-code">
+  <code :class="cn('rounded-sm bg-primary-200 px-1 py-0.5 font-code text-2xs text-primary-main', props.class)">
     <slot></slot>
   </code>
 </template>
 
-<style lang="scss" scoped>
-.ui-code {
-  padding: 2px 4px;
-  font-size: 10px;
-  font-family: var(--ui-font-family-code);
-  line-height: 1.6;
-  color: var(--ui-color-primary-main);
-  background-color: var(--ui-color-primary-200);
-  border-radius: 4px;
-}
-</style>
+<script setup lang="ts">
+import { cn, type ClassValue } from './utils'
+
+const props = defineProps<{
+  class?: ClassValue
+}>()
+</script>

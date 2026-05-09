@@ -1,11 +1,27 @@
 <template>
-  <NSwitch v-bind="props" @update:value="(v) => emit('update:value', v)">
-    <slot></slot>
-  </NSwitch>
+  <button
+    v-bind="controlBindings"
+    class="ui-switch"
+    :class="{
+      active: checked,
+      disabled: props.disabled
+    }"
+    role="switch"
+    :aria-checked="checked"
+    type="button"
+    :disabled="props.disabled"
+    @click="handleToggle"
+    @blur="onBlur"
+  >
+    <span class="rail" aria-hidden="true">
+      <span class="button"></span>
+    </span>
+  </button>
 </template>
 
 <script setup lang="ts">
-import { NSwitch } from 'naive-ui'
+import { computed } from 'vue'
+import { useFieldControlBindings } from './form/field-control-bindings'
 
 const props = defineProps<{
   value?: boolean
@@ -15,8 +31,107 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:value': [boolean]
 }>()
+
+const { controlBindings, onBlur, onChange } = useFieldControlBindings()
+
+const checked = computed(() => props.value === true)
+
+function handleToggle() {
+  if (props.disabled) return
+  emit('update:value', !checked.value)
+  onChange()
+}
 </script>
 
-<style lang="scss" scoped>
-// TODO: switch style not designed yet
+<style scoped>
+@layer components {
+  .ui-switch {
+    --ui-switch-rail-width: 40px;
+    --ui-switch-rail-height: 22px;
+    --ui-switch-button-size: 18px;
+    --ui-switch-button-size-pressed: 24px;
+    --ui-switch-offset: 2px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--ui-switch-rail-width);
+    height: var(--ui-switch-rail-height);
+    padding: 0;
+    border: none;
+    background: transparent;
+    vertical-align: middle;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .ui-switch:focus {
+    outline: none;
+  }
+
+  .ui-switch.disabled {
+    cursor: not-allowed;
+  }
+
+  .rail {
+    position: relative;
+    display: block;
+    width: var(--ui-switch-rail-width);
+    height: var(--ui-switch-rail-height);
+    overflow: hidden;
+    border-radius: calc(var(--ui-switch-rail-height) / 2);
+    background-color: rgba(0, 0, 0, 0.14);
+    transition:
+      opacity 0.3s ease,
+      background-color 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+  .ui-switch.active .rail {
+    background-color: var(--ui-color-primary-main);
+  }
+  .ui-switch.disabled .rail {
+    opacity: 0.5;
+  }
+  /*
+   * Match the old Naive UI behavior: once the switch itself receives focus,
+   * the rail should show the focus ring. Using `:focus` here intentionally
+   * keeps the visual feedback on mouse/pointer focus too, instead of limiting
+   * it to keyboard-only `:focus-visible`.
+   */
+  .ui-switch:focus .rail {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-color-primary-main) 20%, transparent);
+  }
+
+  .button {
+    position: absolute;
+    top: var(--ui-switch-offset);
+    left: var(--ui-switch-offset);
+    display: block;
+    width: var(--ui-switch-button-size-pressed);
+    max-width: var(--ui-switch-button-size);
+    height: var(--ui-switch-button-size);
+    border-radius: calc(var(--ui-switch-button-size) / 2);
+    background-color: #fff;
+    box-shadow:
+      0 1px 4px 0 rgba(0, 0, 0, 0.3),
+      inset 0 0 1px 0 rgba(0, 0, 0, 0.05);
+    transition:
+      left 0.3s ease,
+      max-width 0.3s ease,
+      background-color 0.3s ease,
+      box-shadow 0.3s ease,
+      opacity 0.3s ease;
+  }
+  .ui-switch:not(.disabled):active .button {
+    max-width: var(--ui-switch-button-size-pressed);
+  }
+  .ui-switch.active .button {
+    left: calc(100% - var(--ui-switch-button-size) - var(--ui-switch-offset));
+  }
+  .ui-switch.active:not(.disabled):active .button {
+    left: calc(100% - var(--ui-switch-button-size-pressed) - var(--ui-switch-offset));
+  }
+}
 </style>

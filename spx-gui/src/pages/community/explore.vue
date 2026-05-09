@@ -15,9 +15,9 @@
       </UIChipRadioGroup>
     </template>
   </CommunityHeader>
-  <CenteredWrapper class="main">
+  <CenteredWrapper class="flex-[1_1_0] flex flex-col gap-5 py-5">
     <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet">
-      <ul class="projects">
+      <ul class="flex flex-wrap content-start gap-5">
         <ProjectItem v-for="project in slotProps.data" :key="project.id" :project="project" />
       </ul>
     </ListResultWrapper>
@@ -28,7 +28,7 @@
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
-import { exploreProjects, ExploreOrder as Order } from '@/apis/project'
+import { exploreProjects, ExploreOrder as Order, ProjectType } from '@/apis/project'
 import { UIChipRadioGroup, UIChipRadio } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
@@ -55,7 +55,8 @@ const queryRet = useQuery(
     if (order.value === Order.FollowingCreated) await ensureSignedIn()
     return exploreProjects({
       order: order.value,
-      count: maxCount
+      count: maxCount,
+      type: ProjectType.Game
     })
   },
   {
@@ -64,20 +65,3 @@ const queryRet = useQuery(
   }
 )
 </script>
-
-<style lang="scss" scoped>
-.main {
-  flex: 1 1 0;
-  padding: 20px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.projects {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 20px;
-}
-</style>

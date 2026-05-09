@@ -15,7 +15,7 @@
           })
         }}
       </div>
-      <UICheckbox v-model:checked="preserveCostumes" class="checkbox">
+      <UICheckbox v-model:checked="preserveCostumes" class="mt-5">
         {{
           $t({
             en: "Preserve (the costumes will be moved to the sprite's costume list)",
@@ -24,17 +24,17 @@
         }}
       </UICheckbox>
     </div>
-    <div class="action">
+    <div class="mt-10 flex justify-end gap-xl">
       <UIButton
         v-radar="{ name: 'Cancel button', desc: 'Click to cancel removing animation' }"
-        color="boring"
+        type="neutral"
         @click="emit('cancelled')"
       >
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton
         v-radar="{ name: 'Confirm button', desc: 'Click to confirm removing animation' }"
-        color="primary"
+        type="primary"
         @click="handleConfirm"
       >
         {{ $t({ en: 'Confirm', zh: '确认' }) }}
@@ -87,14 +87,3 @@ const handleConfirm = async () => {
   emit('resolved')
 }
 </script>
-<style scoped lang="scss">
-.checkbox {
-  margin-top: 20px;
-}
-.action {
-  margin-top: 40px;
-  display: flex;
-  gap: var(--ui-gap-middle);
-  justify-content: flex-end;
-}
-</style>

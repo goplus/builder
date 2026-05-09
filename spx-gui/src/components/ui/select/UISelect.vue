@@ -1,8 +1,26 @@
 <template>
-  <div class="ui-select">
-    <span class="label" :class="{ placeholder: selectedRef == null }">{{ selectedRef?.label ?? placeholder }}</span>
-    <UIIcon class="arrow" type="arrowDown" />
-    <select ref="selectRef" class="select" :value="value" @change="handleSelectChange">
+  <div
+    class="ui-select"
+    :data-ui-state="validationState"
+    :data-disabled="props.disabled || undefined"
+    :class="cn('relative rounded-md px-4 inline-flex items-center justify-between gap-0.5', props.class)"
+  >
+    <span
+      class="min-w-0 flex-1 overflow-x-hidden text-ellipsis whitespace-nowrap"
+      :class="selectedRef == null ? 'text-grey-700' : null"
+    >
+      {{ selectedRef?.label ?? placeholder }}
+    </span>
+    <UIIcon class="shrink-0" type="arrowDown" />
+    <select
+      ref="selectRef"
+      v-bind="controlBindings"
+      class="absolute inset-0 h-full w-full opacity-0"
+      :value="value"
+      :disabled="props.disabled"
+      @change="handleSelectChange"
+      @blur="handleBlur"
+    >
       <option v-if="selectedRef == null" disabled :value="placeholderValue">{{ placeholder }}</option>
       <slot></slot>
     </select>
@@ -12,15 +30,21 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { untilNotNull } from '@/utils/utils'
+import { cn, type ClassValue } from '../utils'
 import UIIcon from '../icons/UIIcon.vue'
+import { useFieldControlBindings } from '../form/field-control-bindings'
 
 const props = withDefaults(
   defineProps<{
     value: string | null
     placeholder?: string
+    disabled?: boolean
+    class?: ClassValue
   }>(),
   {
-    placeholder: ''
+    placeholder: '',
+    disabled: false,
+    class: undefined
   }
 )
 
@@ -39,6 +63,7 @@ const placeholderValue = '\0'
 
 const selectedRef = ref<Selected>(null)
 const selectRef = ref<HTMLSelectElement | null>(null)
+const { controlBindings, onBlur, onChange, validationState } = useFieldControlBindings()
 
 async function syncSelected() {
   const select = await untilNotNull(() => selectRef.value)
@@ -54,7 +79,14 @@ async function syncSelected() {
 }
 
 function handleSelectChange() {
-  emit('update:value', selectRef.value!.selectedOptions[0]?.value ?? null)
+  const nextValue = selectRef.value!.selectedOptions[0]?.value ?? null
+  emit('update:value', nextValue)
+  if (nextValue === props.value) return
+  onChange()
+}
+
+function handleBlur() {
+  onBlur()
 }
 
 watch(() => props.value, syncSelected, {
@@ -76,57 +108,51 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style lang="scss" scoped>
-.ui-select {
-  height: var(--ui-line-height-2);
-  padding: 0px var(--ui-gap-middle);
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2px;
+<style scoped>
+@layer components {
+  .ui-select {
+    height: var(--ui-line-height-md);
+    color: var(--ui-color-grey-1000);
+    background: var(--ui-color-grey-300);
+    transition: 0.3s;
+  }
 
-  border-radius: var(--ui-border-radius-2);
-  color: var(--ui-color-grey-1000);
-  background: var(--ui-color-grey-300);
-  transition: 0.3s;
+  .ui-select:is([data-ui-state='success'], [data-ui-state='error']) {
+    background: var(--ui-color-grey-100);
+  }
 
-  &:hover {
+  .ui-select:hover {
     color: var(--ui-color-grey-800);
     background: var(--ui-color-grey-400);
   }
-  &:has(:focus) {
+
+  .ui-select[data-disabled='true'] {
+    background: var(--ui-color-disabled-bg);
+    color: var(--ui-color-disabled-text);
+    box-shadow: none;
+  }
+
+  .ui-select[data-disabled='true'] select {
+    cursor: not-allowed;
+  }
+
+  .ui-select:has(:focus) {
     color: var(--ui-color-grey-1000);
     background: var(--ui-color-grey-400);
     box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
   }
-  &:has(:active) {
+
+  .ui-select[data-ui-state='success'] {
+    box-shadow: inset 0 0 0 1px var(--ui-color-success-main);
+  }
+
+  .ui-select[data-ui-state='error'] {
+    box-shadow: inset 0 0 0 1px var(--ui-color-danger-main);
+  }
+
+  .ui-select:has(:active) {
     color: var(--ui-color-grey-1000);
     background: var(--ui-color-grey-500);
   }
-}
-
-.label {
-  flex: 1 1 auto;
-  overflow-x: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  &.placeholder {
-    color: var(--ui-color-grey-700);
-  }
-}
-
-.arrow {
-  flex: 0 0 auto;
-}
-
-.select {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
-  opacity: 0;
 }
 </style>

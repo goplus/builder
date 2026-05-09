@@ -59,7 +59,7 @@ export class Monitor extends BaseWidget {
    * Create instance with default inits
    * NOTE: the "default" means default behavior for builder, not the default behavior of spx
    */
-  static async create(nameBase: string = 'monitor', inits?: MonitorInits) {
+  static async create(nameBase: string, inits?: MonitorInits) {
     return new Monitor(getWidgetName(null, nameBase), {
       // Default position: the left-top corner with margin 10
       // TODO: calculate initial position based on current stage size & existed widgets

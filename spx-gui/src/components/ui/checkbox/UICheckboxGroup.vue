@@ -1,20 +1,87 @@
 <template>
-  <NCheckboxGroup v-bind="props" @update:value="(v) => emit('update:value', v as string[])">
+  <div
+    ref="rootRef"
+    role="group"
+    v-bind="controlBindings"
+    :class="cn('inline-flex items-center', props.class)"
+    :aria-disabled="props.disabled || undefined"
+    @focusout="handleFocusOut"
+  >
     <slot></slot>
-  </NCheckboxGroup>
+  </div>
 </template>
 
-<script setup lang="ts">
-import { NCheckboxGroup } from 'naive-ui'
+<script lang="ts">
+import type { ComputedRef, InjectionKey } from 'vue'
 
-const props = defineProps<{
-  value?: string[]
-  disabled?: boolean
-}>()
+export type CheckboxGroupContext = {
+  value: ComputedRef<string[]>
+  disabled: ComputedRef<boolean>
+  updateValue: (value: string, checked: boolean) => void
+}
+
+export const checkboxGroupContextKey: InjectionKey<CheckboxGroupContext> = Symbol('ui-checkbox-group-context')
+</script>
+
+<script setup lang="ts">
+import { computed, provide, ref } from 'vue'
+import { useFieldControlBindings } from '../form/field-control-bindings'
+import { formFieldContextKey } from '../form/context'
+import { cn, type ClassValue } from '../utils'
+
+const props = withDefaults(
+  defineProps<{
+    value?: string[]
+    disabled?: boolean
+    class?: ClassValue
+  }>(),
+  {
+    value: () => [],
+    disabled: false,
+    class: undefined
+  }
+)
 
 const emit = defineEmits<{
   'update:value': [string[]]
 }>()
-</script>
 
-<style lang="scss" scoped></style>
+const { controlBindings, onBlur, onChange } = useFieldControlBindings()
+const rootRef = ref<HTMLElement | null>(null)
+
+provide(checkboxGroupContextKey, {
+  value: computed(() => props.value),
+  disabled: computed(() => props.disabled),
+  updateValue: handleUpdateValue
+})
+
+// The group itself is the form field control. Shadow the item-level field context so
+// descendant checkboxes naturally fall back to standalone/no-op field bindings.
+provide(formFieldContextKey, null)
+
+function handleUpdateValue(v: string, checked: boolean) {
+  if (props.disabled) return
+
+  const currentValues = props.value
+  const hasValue = currentValues.includes(v)
+  let nextValues = currentValues
+
+  if (checked && !hasValue) {
+    nextValues = [...currentValues, v]
+  } else if (!checked && hasValue) {
+    nextValues = currentValues.filter((item) => item !== v)
+  }
+
+  if (nextValues === currentValues) return
+  emit('update:value', nextValues)
+  onChange()
+}
+
+function handleFocusOut(event: FocusEvent) {
+  const root = rootRef.value
+  const nextFocused = event.relatedTarget
+  if (root == null) return
+  if (nextFocused instanceof Node && root.contains(nextFocused)) return
+  onBlur()
+}
+</script>

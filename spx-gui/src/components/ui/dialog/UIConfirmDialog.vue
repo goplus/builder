@@ -8,10 +8,10 @@
     @update:visible="emit('cancelled')"
   >
     <div>{{ content }}</div>
-    <footer class="footer">
+    <footer class="mt-6 flex justify-end gap-3">
       <UIButton
         v-radar="{ name: 'Cancel button', desc: 'Click to cancel current action' }"
-        color="boring"
+        type="neutral"
         @click="emit('cancelled')"
       >
         {{ cancelText ?? config?.cancelText ?? 'Cancel' }}
@@ -19,7 +19,7 @@
       <UIButton
         ref="confirmBtnRef"
         v-radar="{ name: 'Confirm button', desc: 'Click to confirm current action' }"
-        color="primary"
+        type="primary"
         :loading="isConfirmLoading"
         @click="handleConfirm"
       >
@@ -88,11 +88,3 @@ onMounted(() => {
   if (props.autoConfirm) handleConfirm()
 })
 </script>
-<style scoped lang="scss">
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-}
-</style>

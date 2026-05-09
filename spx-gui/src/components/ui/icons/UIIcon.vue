@@ -1,11 +1,14 @@
-<template v-html="typeIconMap[type]">
+<template>
   <!-- TODO: is there any way to avoid the wrapper `<div>`? -->
-  <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
-  <div class="ui-icon" :class="{ spinning: type === 'loading' }" v-html="typeIconMap[type]"></div>
+  <!-- eslint-disable-next-line vue/no-v-html -->
+  <div :class="rootClass" :data-icon-type="type" v-html="typeIconMap[type]"></div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { cn, type ClassValue } from '../utils'
 import file from './file.svg?raw'
+import folder from './folder.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
 import arrowUp from './arrow-up.svg?raw'
 import play from './play.svg?raw'
@@ -19,6 +22,7 @@ import stop from './stop.svg?raw'
 import plus from './plus.svg?raw'
 import trash from './trash.svg?raw'
 import edit from './edit.svg?raw'
+import publish from './publish.svg?raw'
 import eye from './eye.svg?raw'
 import eyeSlash from './eye-slash.svg?raw'
 import eyeOff from './eye-off.svg?raw'
@@ -30,6 +34,8 @@ import closeCircle from './close-circle.svg?raw'
 import rotate from './rotate.svg?raw'
 import share from './share.svg?raw'
 import arrowAlt from './arrow-alt.svg?raw'
+import arrowMini from './arrow-mini.svg?raw'
+import arrowRightSmall from './arrow-right-small.svg?raw'
 import doubleArrowDown from './double-arrow-down.svg?raw'
 import clock from './clock.svg?raw'
 import timer from './timer.svg?raw'
@@ -40,7 +46,6 @@ import volumeOff from './volume-off.svg?raw'
 import statePublic from './state-public.svg?raw'
 import statePrivate from './state-private.svg?raw'
 import heart from './heart.svg?raw'
-import arrowRightSmall from './arrow-right-small.svg?raw'
 import calendar from './calendar.svg?raw'
 import remix from './remix.svg?raw'
 import heartHollow from './heart-hollow.svg?raw'
@@ -74,9 +79,13 @@ import back from './back.svg?raw'
 import position from './position.svg?raw'
 import resize from './resize.svg?raw'
 import camera from './camera.svg?raw'
+import zoomIn from './zoom-in.svg?raw'
+import zoomOut from './zoom-out.svg?raw'
+import zoomReset from './zoom-reset.svg?raw'
 
 const typeIconMap = {
   file,
+  folder,
   arrowDown,
   arrowUp,
   play,
@@ -90,6 +99,7 @@ const typeIconMap = {
   plus,
   trash,
   edit,
+  publish,
   eye,
   eyeSlash,
   eyeOff,
@@ -102,6 +112,8 @@ const typeIconMap = {
   rotateAround,
   share,
   arrowAlt,
+  arrowMini,
+  arrowRightSmall,
   doubleArrowDown,
   clock,
   timer,
@@ -112,7 +124,6 @@ const typeIconMap = {
   statePublic,
   statePrivate,
   heart,
-  arrowRightSmall,
   calendar,
   remix,
   heartHollow,
@@ -144,39 +155,40 @@ const typeIconMap = {
   back,
   position,
   resize,
-  camera
+  camera,
+  zoomIn,
+  zoomOut,
+  zoomReset
 }
 
 export type Type = keyof typeof typeIconMap
 
-defineProps<{
+const props = defineProps<{
   type: Type
+  class?: ClassValue
 }>()
+
+const rootClass = computed(() => cn('ui-icon flex h-4 w-4', props.type === 'loading' ? 'spinning' : null, props.class))
 </script>
 
-<style scoped lang="scss">
-.ui-icon {
-  width: 16px;
-  height: 16px;
-  display: flex;
-
-  :deep(svg) {
-    width: 100%;
-    height: 100%;
-  }
+<style scoped>
+.ui-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
 }
 
 .spinning {
   animation: ui-icon-spinning 1s linear infinite;
-  @keyframes ui-icon-spinning {
-    from {
-      transform-origin: 50% 50%;
-      transform: rotate(0);
-    }
-    to {
-      transform-origin: 50% 50%;
-      transform: rotate(360deg);
-    }
+}
+
+@keyframes ui-icon-spinning {
+  from {
+    transform-origin: 50% 50%;
+    transform: rotate(0);
+  }
+  to {
+    transform-origin: 50% 50%;
+    transform: rotate(360deg);
   }
 }
 </style>

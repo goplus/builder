@@ -1,8 +1,11 @@
 <template>
-  <div v-radar="{ name: 'Animation player', desc: 'Provides preview for animation' }" class="animation-player">
-    <CheckerboardBackground class="background" />
-    <CostumesPlayer ref="costumesPlayerRef" class="costumes-player" />
-    <MuteSwitch v-if="sound != null" class="mute-switch" :muted="mutedRef" @click="setMuted(!mutedRef)" />
+  <div
+    v-radar="{ name: 'Animation player', desc: 'Provides preview for animation' }"
+    class="relative overflow-hidden rounded-sm"
+  >
+    <CheckerboardBackground class="absolute inset-0" />
+    <CostumesPlayer ref="costumesPlayerRef" class="absolute h-full w-full" />
+    <MuteSwitch v-if="sound != null" class="absolute top-3 right-3" :muted="mutedRef" @click="setMuted(!mutedRef)" />
     <UILoading :visible="loading" cover />
   </div>
 </template>
@@ -107,27 +110,3 @@ watchEffect(async () => {
   }
 })
 </script>
-<style scoped lang="scss">
-.animation-player {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
-.costumes-player {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-.mute-switch {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-}
-</style>

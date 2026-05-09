@@ -2,7 +2,7 @@ import { effectScope, ref, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
 import type { SpxProject } from '@/models/spx/project'
-import type { TextDocumentRange } from './code-editor/xgo-code-editor'
+import type { TextDocumentRange } from '@/components/xgo-code-editor'
 
 export type RunningState =
   | {

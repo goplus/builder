@@ -1,10 +1,9 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div v-if="!loading && signedInUser == null" class="sign-in">
+  <div v-if="!loading && signedInUser == null" class="h-full flex items-center px-3 whitespace-nowrap">
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
-      class="sign-in-button"
-      color="secondary"
+      type="secondary"
       :disabled="!isOnline"
       @click="initiateSignIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
@@ -12,11 +11,11 @@
   </div>
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
-      <div class="avatar">
-        <img class="avatar-img" :src="avatarUrl ?? undefined" />
+      <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
+        <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
       </div>
     </template>
-    <UIMenu class="user-menu">
+    <UIMenu class="min-w-30">
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
           <div class="user-info-wrapper">
@@ -27,11 +26,11 @@
           <template #trigger>
             <UIMenuItem
               v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
-              class="lang-item"
+              class="justify-between p-2"
               @click="toggleLang"
             >
               {{ $t({ en: 'Language', zh: '语言' }) }}
-              <div class="icon" v-html="langContent"></div>
+              <div class="lang-switch-icon h-4.5 w-4.5 text-turquoise-600" v-html="langContent"></div>
             </UIMenuItem>
           </template>
           {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
@@ -64,14 +63,6 @@
           {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="isDeveloperMode">
-        <UIMenuItem @click="handleUseMcpDebuggerUtils">
-          {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="handleAskCopilotAgent">
-          {{ $t({ en: 'Ask Copilot Agent', zh: '向 Copilot Agent 提问' }) }}
-        </UIMenuItem>
-      </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
@@ -91,33 +82,18 @@ import { useAvatarUrl } from '@/stores/user/avatar'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
-import { isDeveloperMode } from '@/utils/developer-mode'
-import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 import { useI18n } from '@/utils/i18n'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
 
 const { isOnline } = useNetwork()
 const router = useRouter()
-const { controls } = useAgentCopilotCtx()
 const i18n = useI18n()
 
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
 const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
-
-const handleAskCopilotAgent = useMessageHandle(
-  async () => {
-    const isVisible = controls.toggle()
-    return isVisible
-  },
-  undefined,
-  (isVisible) => ({
-    en: isVisible ? 'Copilot Agent opened' : 'Copilot Agent closed',
-    zh: isVisible ? 'Copilot Agent 已打开' : 'Copilot Agent 已关闭'
-  })
-).fn
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 function toggleLang() {
@@ -141,73 +117,15 @@ const manageCourses = useMessageHandle(manageCoursesFn).fn
 const manageCourseSeriesFn = useCourseSeriesManagement()
 const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
 
-const handleUseMcpDebuggerUtils = useMessageHandle(
-  async () => {
-    const isVisible = controls.mcpDebugger.toggle()
-    return isVisible
-  },
-  undefined,
-  (isVisible) => ({
-    en: `MCP Debugger Utils ${isVisible ? 'enabled' : 'disabled'}`,
-    zh: `MCP 调试工具${isVisible ? '已启用' : '已禁用'}`
-  })
-).fn
-
 function handleSignOut() {
   signOut()
   router.go(0) // Reload the page to trigger navigation guards.
 }
 </script>
 
-<style lang="scss" scoped>
-.sign-in,
-.avatar {
-  padding: 0 20px;
-  margin-right: 8px;
+<style scoped>
+.lang-switch-icon :deep(svg) {
+  width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-}
-
-.sign-in-button {
-  font: inherit;
-}
-
-.sign-in {
-  white-space: nowrap;
-}
-
-.avatar {
-  justify-content: center;
-
-  &:hover {
-    background-color: var(--ui-color-primary-600);
-  }
-
-  .avatar-img {
-    width: 32px;
-    height: 32px;
-    border-radius: 16px;
-  }
-}
-
-.lang-item {
-  padding: 8px;
-  justify-content: space-between;
-
-  .icon {
-    width: 18px;
-    height: 18px;
-    color: var(--ui-color-turquoise-600);
-
-    :deep(svg) {
-      width: 100%;
-      height: 100%;
-    }
-  }
-}
-
-.user-menu {
-  min-width: 120px;
 }
 </style>

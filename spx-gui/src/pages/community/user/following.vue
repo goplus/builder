@@ -53,13 +53,6 @@ const queryRet = useQuery(
         <UserItem v-for="u in slotProps.data.data" :key="u.id" :user="u" />
       </ul>
     </ListResultWrapper>
-    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 mb-5 justify-center" :total="pageTotal" />
   </UserContent>
 </template>
-
-<style lang="scss" scoped>
-.pagination {
-  margin: 36px 0 20px;
-  justify-content: center;
-}
-</style>

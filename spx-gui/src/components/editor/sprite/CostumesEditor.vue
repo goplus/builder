@@ -1,7 +1,6 @@
 <template>
   <EditorList
     v-radar="{ name: 'Costumes management', desc: 'Managing costumes of current sprite' }"
-    color="sprite"
     resource-type="costume"
     :sortable="{ list: sprite.costumes }"
     @sorted="handleSorted"

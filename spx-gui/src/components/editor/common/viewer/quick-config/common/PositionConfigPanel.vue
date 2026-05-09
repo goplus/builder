@@ -32,10 +32,10 @@ onBeforeUnmount(() => {
 
 <template>
   <ConfigPanel>
-    <div class="position-config-wrapper">
+    <div class="flex items-center gap-1">
       <UINumberInput
         v-radar="{ name: 'X position input', desc: `Input to set ${name} X position` }"
-        class="position-input"
+        class="w-19"
         :value="localConfig.x"
         @update:value="handleUpdateX($event ?? 0)"
       >
@@ -43,13 +43,13 @@ onBeforeUnmount(() => {
       </UINumberInput>
       <UINumberInput
         v-radar="{ name: 'Y position input', desc: `Input to set ${name} Y position` }"
-        class="position-input"
+        class="w-19"
         :value="localConfig.y"
         @update:value="handleUpdateY($event ?? 0)"
       >
         <template #prefix>Y</template>
       </UINumberInput>
-      <UIDivider vertical />
+      <UIDivider vertical class="h-4" />
       <UITooltip>
         {{ $t({ en: 'Back', zh: '返回' }) }}
         <template #trigger>
@@ -59,15 +59,3 @@ onBeforeUnmount(() => {
     </div>
   </ConfigPanel>
 </template>
-
-<style lang="scss" scoped>
-.position-config-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.position-input {
-  width: 72px;
-}
-</style>

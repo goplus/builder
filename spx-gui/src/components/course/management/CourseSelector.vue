@@ -31,8 +31,8 @@ const availableCourses = computed(() => {
 </script>
 
 <template>
-  <div class="course-selector">
-    <div class="search-bar">
+  <div class="h-full flex flex-col">
+    <div class="border-b border-dividing-line-2 p-3">
       <UITextInput v-model:value="searchKeyword" :placeholder="$t({ en: 'Search courses...', zh: '搜索课程...' })">
         <template #prefix>
           <UIIcon type="search" />
@@ -40,7 +40,7 @@ const availableCourses = computed(() => {
       </UITextInput>
     </div>
 
-    <div class="course-list">
+    <div class="flex-1 overflow-y-auto p-3">
       <UILoading v-if="loading" />
       <UIEmpty
         v-else-if="availableCourses.length === 0"
@@ -51,54 +51,23 @@ const availableCourses = computed(() => {
             : $t({ en: 'All courses have been selected', zh: '所有课程都已选择' })
         "
       />
-      <div v-else class="course-items">
+      <div v-else class="flex flex-col gap-2">
         <CourseItemMini
           v-for="course in availableCourses"
           :key="course.id"
           :course="course"
           interactive
+          class="group"
           @click="emit('select', course.id)"
         >
           <template #suffix>
-            <UIIcon class="action-icon" type="plus" />
+            <UIIcon
+              class="shrink-0 text-grey-400 transition-colors duration-200 group-hover:text-primary-600"
+              type="plus"
+            />
           </template>
         </CourseItemMini>
       </div>
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.course-selector {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.search-bar {
-  padding: 12px;
-  border-bottom: 1px solid var(--ui-color-divider-subtle);
-}
-
-.course-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-}
-
-.course-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.action-icon {
-  color: var(--ui-color-grey-400);
-  flex-shrink: 0;
-  transition: color 0.2s;
-}
-
-.course-items :deep(.course-item-mini:hover) .action-icon {
-  color: var(--ui-color-primary-600);
-}
-</style>

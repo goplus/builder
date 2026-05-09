@@ -21,24 +21,23 @@ defineProps<{
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .layout-with-preview {
   flex: 1 1 0;
+  min-width: 0;
   display: flex;
   align-items: stretch;
   justify-content: center;
-  gap: 0;
-  min-width: 0;
   transition: gap 0.2s ease;
 }
 
 .main-panel {
   width: 584px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 24px;
-  min-width: 0;
   transition-property: flex, width, padding;
   transition-duration: 0.2s;
   transition-timing-function: ease;

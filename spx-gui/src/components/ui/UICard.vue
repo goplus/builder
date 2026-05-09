@@ -1,14 +1,13 @@
 <template>
-  <div class="ui-card">
+  <div :class="cn('overflow-hidden rounded-md bg-grey-100 shadow-md', props.class)">
     <slot></slot>
   </div>
 </template>
 
-<style lang="scss" scoped>
-.ui-card {
-  box-shadow: var(--ui-box-shadow-accent);
-  border-radius: var(--ui-border-radius-3);
-  background-color: var(--ui-color-grey-100);
-  overflow: hidden;
-}
-</style>
+<script setup lang="ts">
+import { cn, type ClassValue } from './utils'
+
+const props = defineProps<{
+  class?: ClassValue
+}>()
+</script>

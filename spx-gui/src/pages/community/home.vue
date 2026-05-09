@@ -1,6 +1,6 @@
 <template>
-  <CenteredWrapper class="home-page">
-    <GuestBanner v-if="!isSignedIn()" class="guest-banner" />
+  <CenteredWrapper class="mt-5">
+    <GuestBanner v-if="!isSignedIn()" class="my-3 mb-8" />
     <ProjectsSection
       v-else
       v-radar="{ name: 'Your projects', desc: 'Section showing user\'s own projects' }"
@@ -119,7 +119,7 @@
 import { computed } from 'vue'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { ExploreOrder, exploreProjects, listProject } from '@/apis/project'
+import { ExploreOrder, ProjectType, exploreProjects, listProject } from '@/apis/project'
 import { getExploreRoute, getUserPageRoute } from '@/router'
 import { isSignedIn, useSignedInUser } from '@/stores/user'
 import { useResponsive } from '@/components/ui'
@@ -144,6 +144,7 @@ const myProjects = useQuery(
   async () => {
     if (!isSignedIn()) return []
     const { data: projects } = await listProject({
+      type: ProjectType.Game,
       pageIndex: 1,
       pageSize: numInRow.value,
       orderBy: 'updatedAt',
@@ -157,14 +158,14 @@ const myProjects = useQuery(
 const communityLikingRoute = getExploreRoute(ExploreOrder.MostLikes)
 
 const communityLikingProjects = useQuery(
-  () => exploreProjects({ order: ExploreOrder.MostLikes, count: numInRow.value }),
+  () => exploreProjects({ type: ProjectType.Game, order: ExploreOrder.MostLikes, count: numInRow.value }),
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
 const communityRemixingRoute = getExploreRoute(ExploreOrder.MostRemixes)
 
 const communityRemixingProjects = useQuery(
-  () => exploreProjects({ order: ExploreOrder.MostRemixes, count: numInRow.value }),
+  () => exploreProjects({ type: ProjectType.Game, order: ExploreOrder.MostRemixes, count: numInRow.value }),
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
@@ -173,18 +174,8 @@ const followingCreatedRoute = computed(() => getExploreRoute(ExploreOrder.Follow
 const followingCreatedProjects = useQuery(
   async () => {
     if (!isSignedIn()) return []
-    return exploreProjects({ order: ExploreOrder.FollowingCreated, count: numInRow.value })
+    return exploreProjects({ type: ProjectType.Game, order: ExploreOrder.FollowingCreated, count: numInRow.value })
   },
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 </script>
-
-<style lang="scss" scoped>
-.home-page {
-  margin-top: 20px;
-}
-
-.guest-banner {
-  margin: 12px 0 32px;
-}
-</style>

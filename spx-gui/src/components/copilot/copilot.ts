@@ -1,12 +1,15 @@
 import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { debounce, throttle } from 'lodash'
+import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
 import { localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { Disposable, type Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
+import { wrapSkillContent } from './skills/content'
+import { createLoadSkillResourceTool, createLoadSkillTool } from './skills/tools'
+import type { SkillManifestItem, SkillRegistry } from './skills/types'
 import { accumulateToolCallDelta, finalizeToolCalls, type ToolCallDraft } from './tool-call'
 import { ToolExecutor, type ToolExecution } from './tool-executor'
 import dayjs from 'dayjs'
@@ -62,6 +65,7 @@ function getToolExecutionText(execution: ToolExecution): string {
     case 'executing':
       return 'Executing tool...'
     case 'completed': {
+      if (typeof execution.result === 'string') return execution.result
       const serializedResult = JSON.stringify(execution.result)
       return serializedResult == null ? 'null' : serializedResult
     }
@@ -310,7 +314,7 @@ export class Round {
   private async generateCopilotMessage() {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      messages.push(this.copilot.getContextMessage())
+      messages.push(await this.copilot.getContextMessage())
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
@@ -445,7 +449,9 @@ export interface ICopilotContextProvider {
    * Provide context information for the copilot.
    * Use plain text in English.
    */
-  provideContext(): string
+  provideContext?(): string
+  /** List skill names that should be preloaded as part of current context. */
+  providePreloadSkills?(): string[]
 }
 
 /** A quick input represents a UI element (typically a button) which helps the user to quickly send some message */
@@ -484,6 +490,11 @@ export type CustomElementDefinition = {
   isRaw: boolean
   /** Component to render the tool in the UI. */
   component: Component
+}
+
+export type MarkdownElementDefinitions = {
+  /** Component for rendering markdown code blocks. */
+  codeBlock?: Component
 }
 
 export type ToolImplementation = (params: any, signal?: AbortSignal) => Promise<unknown>
@@ -539,6 +550,7 @@ export class Copilot extends Disposable {
   private quickInputProviders: IQuickInputProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
+  markdownElements = shallowReactive<MarkdownElementDefinitions>({})
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
 
   getTools(): ToolDefinition[] {
@@ -553,8 +565,15 @@ export class Copilot extends Disposable {
 
   executor = new ToolExecutor(() => this.getTools())
 
-  constructor(public generator: IMessageEventGenerator = apis) {
+  constructor(
+    private skillRegistry: SkillRegistry,
+    public generator: IMessageEventGenerator = apis
+  ) {
     super()
+    this.registerTool(
+      createLoadSkillTool(this.skillRegistry, (skillName) => this.getPreloadSkillNames().includes(skillName))
+    )
+    this.registerTool(createLoadSkillResourceTool(this.skillRegistry))
   }
 
   /** If copilot is active (the panel is visible) */
@@ -568,11 +587,61 @@ export class Copilot extends Disposable {
     return this.currentSessionRef.value
   }
 
-  private getContext(): string {
-    return this.contextProviders
-      .map((provider) => provider.provideContext())
-      .filter((s) => s.trim() !== '')
-      .join('\n\n')
+  private getPreloadSkillNames(): string[] {
+    const skillNames = this.contextProviders.map((p) => p.providePreloadSkills?.() ?? [])
+    return uniq(skillNames.flat())
+  }
+
+  private formatSkillCatalogItems(items: SkillManifestItem[]): string {
+    return items.map((item) => `- Skill name: ${item.name}\n  Description: ${item.description}`).join('\n')
+  }
+
+  private async getSkillCatalogContext(): Promise<string> {
+    const items = await this.skillRegistry.list()
+    if (items.length === 0) return ''
+    return `# Skills
+
+When a task matches a skill description, call \`load_skill\` with the exact skill name to read the skill.
+You can also read resources in a skill by calling \`load_skill_resource\` with the skill name and the resource path.
+
+Here are the available skills:
+
+${this.formatSkillCatalogItems(items)}`
+  }
+
+  private async getPreloadSkillsContext(): Promise<string> {
+    const skillNames = this.getPreloadSkillNames()
+    if (skillNames.length === 0) return ''
+    const skillContents = await Promise.all(
+      skillNames.map(async (skillName) => {
+        try {
+          const skillDocument = await this.skillRegistry.load(skillName)
+          return wrapSkillContent(
+            skillDocument.name,
+            'SKILL.md',
+            skillDocument.instructions,
+            skillDocument.resourcePaths
+          )
+        } catch (error) {
+          capture(error, `Failed to preload skill ${skillName}`)
+          return `Failed to preload skill "${skillName}".`
+        }
+      })
+    )
+    return `# Preloaded skills
+
+These skills are already preloaded. Avoid calling \`load_skill\` for them again.
+
+${skillContents.join('\n\n')}`
+  }
+
+  private async getContext(): Promise<string> {
+    const contextParts = await Promise.all([
+      ...this.contextProviders.map((p) => p.provideContext?.()),
+      this.getSkillCatalogContext(),
+      this.getPreloadSkillsContext()
+    ])
+    return contextParts.filter((s) => s != null && s.trim() !== '').join('\n\n')
   }
 
   private getCustomElementPrompt(customElement: CustomElementDefinition) {
@@ -601,8 +670,8 @@ ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
 ${topic.description}`
   }
 
-  getContextMessage(): UserTextMessage {
-    const parts = [this.getCustomElementsPrompt(), this.getContext(), this.getTopicPrompt()]
+  async getContextMessage(): Promise<UserTextMessage> {
+    const parts = [this.getCustomElementsPrompt(), await this.getContext(), this.getTopicPrompt()]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`
@@ -753,6 +822,26 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       if (this.customElementMap.get(customElement.tagName) === customElement) {
         this.customElementMap.delete(customElement.tagName)
       }
+    }
+  }
+
+  /**
+   * Register renderers for built-in markdown elements.
+   * When the same element is registered multiple times, only the latest registration takes effect.
+   */
+  registerMarkdownElements(elements: MarkdownElementDefinitions): Disposer {
+    Object.entries(elements).forEach(([name, component]) => {
+      if (component == null) return
+      const key = name as keyof MarkdownElementDefinitions
+      this.markdownElements[key] = component
+    })
+    return () => {
+      Object.entries(elements).forEach(([name, component]) => {
+        if (component == null) return
+        const key = name as keyof MarkdownElementDefinitions
+        if (this.markdownElements[key] !== component) return
+        delete this.markdownElements[key]
+      })
     }
   }
 

@@ -13,12 +13,10 @@ import { RenameMenuItem, RemoveMenuItem, DuplicateMenuItem } from '@/components/
 const props = withDefaults(
   defineProps<{
     costume: Costume
-    color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
     operable?: boolean
   }>(),
   {
-    color: 'sprite',
     selectable: false,
     selected: false,
     operable: false
@@ -91,11 +89,11 @@ const { fn: handleRename } = useMessageHandle(() => renameCostume(props.costume)
 </script>
 
 <template>
-  <UIEditorSpriteItem v-radar="radarNodeMeta" :selectable="selectable" :name="costume.name" :color="color">
+  <UIEditorSpriteItem v-radar="radarNodeMeta" :selectable="selectable" :name="costume.name">
     <template #img="{ style }">
       <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+    <CornerMenu v-if="operable && selectable && selectable.selected">
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the costume' }"
         @click="handleDuplicate"

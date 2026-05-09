@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-menu">
+  <div :class="cn('p-2', props.class)">
     <slot></slot>
   </div>
 </template>
@@ -14,11 +14,11 @@ export const ctxKey: InjectionKey<MenuCtx> = Symbol('menu-ctx')
 </script>
 
 <script setup lang="ts">
+import { cn, type ClassValue } from '../utils'
+
+const props = defineProps<{
+  class?: ClassValue
+}>()
+
 provide(ctxKey, { disabled: false, inGroup: false })
 </script>
-
-<style lang="scss" scoped>
-.ui-menu {
-  padding: 8px;
-}
-</style>

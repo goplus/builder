@@ -29,10 +29,10 @@ describe('normalizeAssetName', () => {
 describe('getSpriteName', () => {
   it('should work well', () => {
     const project = new SpxProject()
-    expect(getSpriteName(project)).toBe('MySprite')
-    project.addSprite(new Sprite('MySprite'))
-    project.addSprite(new Sprite('MySprite3'))
-    expect(getSpriteName(project)).toBe('MySprite2')
+    expect(getSpriteName(project, 'sprite')).toBe('Sprite')
+    project.addSprite(new Sprite('Sprite'))
+    project.addSprite(new Sprite('Sprite3'))
+    expect(getSpriteName(project, 'sprite')).toBe('Sprite2')
   })
 
   it('should work well with base', () => {
@@ -44,15 +44,29 @@ describe('getSpriteName', () => {
     expect(getSpriteName(project, 'fooBar')).toBe('FooBar3')
     expect(getSpriteName(project, 'Foo  bar')).toBe('FooBar3')
   })
+
+  it('should increment numeric suffix instead of appending to it', () => {
+    const project = new SpxProject()
+    project.addSprite(new Sprite('Sprite2'))
+    project.addSprite(new Sprite('Sprite4'))
+    expect(getSpriteName(project, 'sprite2')).toBe('Sprite3')
+  })
+
+  it('should fall back to english default name for empty base', () => {
+    const project = new SpxProject()
+    expect(getSpriteName(project, '')).toBe('Sprite1')
+    project.addSprite(new Sprite('Sprite1'))
+    expect(getSpriteName(project, '')).toBe('Sprite2')
+  })
 })
 
 describe('getSoundName', () => {
   it('should work well', () => {
     const project = new SpxProject()
-    expect(getSoundName(project)).toBe('sound')
+    expect(getSoundName(project, 'sound')).toBe('sound')
     project.addSound(new Sound('sound', mockFile()))
     project.addSound(new Sound('sound3', mockFile()))
-    expect(getSoundName(project)).toBe('sound2')
+    expect(getSoundName(project, 'sound')).toBe('sound2')
   })
 
   it('should work well with base', () => {
@@ -63,6 +77,20 @@ describe('getSoundName', () => {
     expect(getSoundName(project, 'foo_bar')).toBe('foo_bar3')
     expect(getSoundName(project, 'fooBar')).toBe('fooBar')
     expect(getSoundName(project, 'Foo  bar')).toBe('foo  bar')
+  })
+
+  it('should increment numeric suffix instead of appending to it', () => {
+    const project = new SpxProject()
+    project.addSound(new Sound('sound2', mockFile()))
+    project.addSound(new Sound('sound4', mockFile()))
+    expect(getSoundName(project, 'sound2')).toBe('sound3')
+  })
+
+  it('should fall back to english default name for empty base', () => {
+    const project = new SpxProject()
+    expect(getSoundName(project, '')).toBe('sound1')
+    project.addSound(new Sound('sound1', mockFile()))
+    expect(getSoundName(project, '')).toBe('sound2')
   })
 })
 
