@@ -12,6 +12,7 @@
   />
 </template>
 <script lang="ts">
+const sumProcessorUrl = new URL('./sum-processor.js', import.meta.url).href
 let sumProcessorLoaded = false
 
 const newSumProcessorNode = async (audioContext: AudioContext) => {
@@ -26,7 +27,6 @@ const newSumProcessorNode = async (audioContext: AudioContext) => {
 import { getAudioContext } from '@/utils/audio'
 import WaveformPlayer from './WaveformPlayer.vue'
 import { onMounted, onUnmounted, ref, watchEffect } from 'vue'
-import sumProcessorUrl from './sum-processor.js?url'
 
 defineProps<{
   range: { left: number; right: number }

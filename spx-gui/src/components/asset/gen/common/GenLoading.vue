@@ -3,7 +3,8 @@
 <script setup lang="ts">
 import { useSlots, type CSSProperties } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
-import animationFileUrl from './gen-loading.lottie?url'
+
+const animationFileUrl = new URL('./gen-loading.lottie', import.meta.url).href
 
 withDefaults(
   defineProps<{

@@ -170,12 +170,13 @@ function handleCategoryClick(id: string) {
         </li>
       </ul>
       <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
-        <li v-for="c in categoriesForItems" :key="c.id" :data-category-id="c.id" class="category-wrapper">
-          <section
-            v-for="sc in c.subCategories"
-            :key="sc.id"
-            class="subcategory-wrapper border-b border-dashed border-grey-500"
-          >
+        <li
+          v-for="c in categoriesForItems"
+          :key="c.id"
+          :data-category-id="c.id"
+          class="[&:last-child>section:last-child]:border-b-0"
+        >
+          <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
             <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
             <ul class="flex flex-col gap-md pb-5">
               <APIReferenceItemComp
@@ -191,9 +192,3 @@ function handleCategoryClick(id: string) {
     </template>
   </section>
 </template>
-
-<style scoped>
-.category-wrapper:last-child .subcategory-wrapper:last-child {
-  border-bottom: none;
-}
-</style>

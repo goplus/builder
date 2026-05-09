@@ -1,5 +1,5 @@
 <template>
-  <div ref="rootEl" class="ui-config-provider" :style="cssVariables">
+  <div ref="rootEl" class="h-full text-text font-main text-base" :style="cssVariables">
     <slot></slot>
   </div>
 </template>
@@ -67,14 +67,3 @@ useProvideLastClickEvent()
 
 const cssVariables = getCssVars('--ui-', uiVariables)
 </script>
-
-<style scoped>
-.ui-config-provider {
-  height: 100%;
-
-  color: var(--ui-color-text);
-  font-size: var(--ui-font-size-base);
-  font-family: var(--ui-font-family-main);
-  line-height: 22px;
-}
-</style>

@@ -238,20 +238,27 @@ providePopupContainer(codeEditorEl)
 </script>
 
 <template>
-  <div ref="codeEditorEl" class="code-editor" :style="{ userSelect: isResizing ? 'none' : undefined }">
-    <aside class="sidebar" :style="{ flexBasis: `${sidebarWidth}px` }">
-      <APIReferenceUI class="api-reference" :controller="uiRef.apiReferenceController" />
+  <div
+    ref="codeEditorEl"
+    class="relative flex min-h-0 flex-[1_1_0] justify-stretch"
+    :style="{ userSelect: isResizing ? 'none' : undefined }"
+  >
+    <aside
+      class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
+      :style="{ flexBasis: `${sidebarWidth}px` }"
+    >
+      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
     </aside>
     <div
       ref="resizeHandleEl"
       v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
-      class="resize-handle"
-      :class="{ active: isResizing }"
+      class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
+      :class="{ 'bg-black/10': isResizing }"
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
     <MonacoEditorComp
       v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
-      class="monaco-editor-conflict-free"
+      class="my-3 min-w-0 flex-[1_1_0]"
       :monaco="codeEditor.monaco"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
@@ -266,77 +273,9 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <aside class="right-sidebar">
-      <DocumentTabs class="document-tabs" />
-      <ZoomControl class="zoom-control" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+    <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
+      <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
+      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>
-
-<style scoped>
-.code-editor {
-  position: relative;
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  justify-content: stretch;
-}
-
-.sidebar {
-  flex: 0 0 auto;
-  min-width: 0;
-  min-height: 0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--ui-color-dividing-line-2);
-}
-
-.sidebar .api-reference {
-  flex: 1 1 0;
-}
-
-.resize-handle {
-  position: absolute;
-  width: 13px;
-  height: 100%;
-  margin-left: -7px;
-  z-index: 10;
-  cursor: col-resize;
-  transition: background-color 0.2s;
-}
-
-.resize-handle:hover {
-  background-color: rgba(36, 41, 47, 0.05);
-}
-
-.resize-handle.active {
-  background-color: rgba(36, 41, 47, 0.1);
-}
-
-.monaco-editor-conflict-free {
-  flex: 1 1 0;
-  min-width: 0;
-  margin: 12px 0;
-}
-
-.right-sidebar {
-  padding: 12px 8px;
-  flex: 0 0 auto;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 40px;
-}
-
-.right-sidebar .document-tabs {
-  flex: 0 1 auto;
-  min-height: 0;
-}
-
-.right-sidebar .zoom-control {
-  flex: 0 0 auto;
-}
-</style>

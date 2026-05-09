@@ -26,6 +26,10 @@ Keep import statements in order:
 2. Internal libraries: from base to specific, e.g., from `utils` to `models` to `components`
 3. Local files: relative paths starting with `./` or `../`
 
+### Asset URLs
+
+* For widget-safe full asset URLs, use `new URL('...', import.meta.url).href` instead of `import x from './file.ext?url'`.
+
 ### Naming Conventions
 
 * Use `PascalCase` for the following:
