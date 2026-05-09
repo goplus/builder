@@ -81,6 +81,7 @@ const {
       documentBase
     })
     codeEditor.disposeOnSignal(ctx.signal)
+    lspClient.disposeOnSignal(ctx.signal)
     return codeEditor
   },
   { en: 'Load code editor failed', zh: '加载代码编辑器失败' }

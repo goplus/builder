@@ -92,13 +92,14 @@ const langLocalStorageKey = 'spx-gui-language'
 function initI18n(app: VueApp) {
   const lang = localStorage.getItem(langLocalStorageKey) ?? defaultLang
   const i18n = createI18n({ lang: normalizeLang(lang) })
-  watchEffect(() => {
+  const stop = watchEffect(() => {
     localStorage.setItem(langLocalStorageKey, i18n.lang.value)
   })
+  app.onUnmount(stop)
   app.use(i18n)
 }
 
-/** Do general app setup, such as initializing / configuring libraries. */
+/** Do general app setup, including shared library init and app-level global state/bootstrap side effects. */
 export function setup() {
   initDotLottie()
   initDayjs()

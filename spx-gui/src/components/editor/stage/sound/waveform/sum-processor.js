@@ -2,7 +2,7 @@
 // with `new URL('./sum-processor.js', import.meta.url).href` where needed.
 
 // As it is loaded by URL, it is not processed by TypeScript
-// or Rollup. It is directly loaded by the browser.
+// or the app bundler. It is directly loaded by the browser.
 
 class SumProcessor extends AudioWorkletProcessor {
   process(inputs, outputs) {

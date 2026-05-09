@@ -13,7 +13,18 @@ const resolve = (dir: string) => path.join(__dirname, dir)
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const vercelProxiedApiBaseURL = env.VITE_VERCEL_PROXIED_API_BASE_URL == null ? null : env.VITE_VERCEL_PROXIED_API_BASE_URL
+  const vercelProxiedApiBaseURL =
+    env.VITE_VERCEL_PROXIED_API_BASE_URL == null ? null : env.VITE_VERCEL_PROXIED_API_BASE_URL
+
+  const input: Record<string, string> = {
+    main: resolve('index.html'),
+    'spx-runner': resolve('src/widgets/spx-runner/index.ts'),
+    'xgo-code-editor': resolve('src/widgets/xgo-code-editor/index.ts')
+  }
+  if (mode === 'development') {
+    // Open http://localhost:5173/src/widgets/dev.html to test widgets during development.
+    input['widget-dev'] = resolve('src/widgets/dev.html')
+  }
 
   return {
     plugins: [
@@ -88,13 +99,7 @@ export default defineConfig(({ mode }) => {
     build: {
       target: browserslistToEsbuild(),
       rolldownOptions: {
-        input: {
-          main: resolve('index.html'),
-          // Open http://localhost:5173/src/widgets/dev.html to test widgets during development.
-          'widget-dev': resolve('src/widgets/dev.html'),
-          'spx-runner': resolve('src/widgets/spx-runner/index.ts'),
-          'xgo-code-editor': resolve('src/widgets/xgo-code-editor/index.ts')
-        },
+        input,
         output: {
           entryFileNames: (chunkInfo: { name: string }) => {
             if (chunkInfo.name === 'main') {

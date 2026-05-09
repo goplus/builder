@@ -77,7 +77,7 @@ const {
 
 const runnable = computed(() => project.value != null && !isLoading.value && error.value == null)
 
-async function handleRun() {
+function handleRun() {
   if (!runnable.value || runner.value == null) return
   running.value = true
   runner.value.run()
