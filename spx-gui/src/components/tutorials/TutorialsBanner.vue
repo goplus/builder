@@ -2,7 +2,7 @@
   <div class="relative flex items-center justify-center">
     <div class="overflow-hidden">
       <img
-        src="@/components/tutorials/banner.png"
+        src="@/components/tutorials/banner.jpg"
         alt="Tutorials Banner"
         class="h-84.5 w-full object-cover object-center"
       />
