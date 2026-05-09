@@ -3,10 +3,11 @@ export const courseSeriesItemHeight = 254
 </script>
 
 <script lang="ts" setup>
+import { computed } from 'vue'
 import type { CourseSeries } from '@/apis/course-series'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UIImg } from '@/components/ui'
-import { humanizeTime, useAsyncComputed } from '@/utils/utils'
+import { humanizeExactTime, humanizeTime, useAsyncComputed } from '@/utils/utils'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 
 const props = defineProps<{
@@ -18,6 +19,14 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   if (thumbnailUniversalUrl === '') return null
   const thumbnail = createFileWithUniversalUrl(thumbnailUniversalUrl)
   return thumbnail.url(onCleanup)
+})
+
+const updatedAtTitle = computed(() => {
+  const exactTime = humanizeExactTime(props.courseSeries.updatedAt)
+  return {
+    en: `Last updated at ${exactTime.en}`,
+    zh: `最后更新于 ${exactTime.zh}`
+  }
 })
 </script>
 
@@ -44,7 +53,9 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
             <span>
               {{ $t({ en: `${courseSeries.courseIDs.length} Total`, zh: `${courseSeries.courseIDs.length} 节课程` }) }}
             </span>
-            <span>{{ $t(humanizeTime(courseSeries.createdAt)) }}</span>
+            <span :title="$t(updatedAtTitle)">
+              {{ $t(humanizeTime(courseSeries.updatedAt)) }}
+            </span>
           </div>
         </div>
       </div>
