@@ -4,6 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>XBuilder Widget Dev</title>
+    <style>
+      /*
+       * This local widget page also needs the layer prelude at the document entry.
+       * Vite may reorder extracted CSS during bundling, so declaring the order here
+       * avoids depending on app.css appearing first in the final output.
+       * See: https://github.com/vitejs/vite/issues/21903
+       */
+      @layer theme, base, components, utilities;
+    </style>
     <link rel="stylesheet" href="/src/app.css" />
     <script type="module" src="/src/widgets/spx-runner/index.ts"></script>
     <script type="module" src="/src/widgets/xgo-code-editor/index.ts"></script>

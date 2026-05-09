@@ -15,6 +15,14 @@
     <link rel="icon" href="/src/assets/logo.svg" />
 
     <style>
+      /*
+       * Declare the layer order at the document entry instead of inside app.css.
+       * Vite may reorder extracted CSS in the final bundle, so the prelude needs
+       * to be parsed before any layered rules for the order to stay deterministic.
+       * See: https://github.com/vitejs/vite/issues/21903
+       */
+      @layer theme, base, components, utilities;
+
       html,
       body,
       #app {
