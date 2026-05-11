@@ -3,8 +3,11 @@
  * @desc definition or helpers for spx language
  */
 
+import { mapKeys } from 'lodash'
+
 import { File, fromBlob, toNativeFile } from '@/models/common/file'
 import { getMimeFromExt } from '../file'
+import { parseMarkdownWithFrontmatter } from '../frontmatter'
 import { stripExt } from '../path'
 import { toWav } from '../audio'
 import { toJpeg } from '../img'
@@ -19,6 +22,9 @@ import {
   type BuilderHSB,
   type BuilderHSBA
 } from '../color'
+
+import spxApisDoc from './skills/spx-project/references/apis.md?raw'
+import spxProjectSkillMainDoc from './skills/spx-project/SKILL.md?raw'
 
 export const packageSpx = 'github.com/goplus/spx/v2'
 
@@ -225,3 +231,24 @@ export const rotationStyles = [
   { name: 'Normal', text: { en: 'Normal', zh: '正常旋转' } },
   { name: 'LeftRight', text: { en: 'Left-Right', zh: '左右翻转' } }
 ]
+
+export const spxProjectSkillName = 'spx-project'
+
+const skillFiles = import.meta.glob('./skills/spx-project/**/*.md', {
+  eager: true,
+  query: '?raw',
+  import: 'default'
+}) as Record<string, string>
+
+/** Get bundled SPX project skill files. */
+export function getSpxProjectSkillFiles(): Record<string, string> {
+  const prefixLen = './skills/spx-project/'.length
+  return mapKeys(skillFiles, (_, path) => path.slice(prefixLen))
+}
+
+/** Background knowledge to help users or LLMs understand spx projects. */
+export function getSpxProjectKnowledge(): string {
+  const mainDoc = parseMarkdownWithFrontmatter(spxProjectSkillMainDoc)
+  if (mainDoc == null) throw new Error('failed to parse main document of spx project skill')
+  return [mainDoc.content, spxApisDoc].map((d) => d.trim()).join('\n\n')
+}

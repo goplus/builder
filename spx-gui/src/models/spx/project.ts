@@ -10,11 +10,12 @@ import { debounce } from 'lodash'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
+import { getSpxProjectKnowledge } from '@/utils/spx'
 import { ProjectType, Visibility, type ProjectExtraSettings } from '@/apis/project'
+import { generateAIDescription } from '@/apis/ai-description'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from './common/asset-name'
-import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { defaultMapSize, Stage, type RawStageConfig } from './stage'
@@ -546,7 +547,8 @@ export class SpxProject extends Disposable implements IProject {
     if (this.aiDescription == null || this.aiDescriptionHash !== currentHash) {
       try {
         const content = await this.serializeForAI()
-        this.aiDescription = await generateAIDescription(content, signal)
+        const spxKnowledge = getSpxProjectKnowledge()
+        this.aiDescription = await generateAIDescription(content, spxKnowledge, signal)
         this.aiDescriptionHash = currentHash
       } catch (e) {
         if (e instanceof Cancelled) throw e
