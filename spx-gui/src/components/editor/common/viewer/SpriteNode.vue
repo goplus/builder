@@ -44,7 +44,7 @@ const emit = defineEmits<{
 const nodeRef = ref<KonvaNodeInstance<Image>>()
 const costume = computed(() => props.localConfig.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
-const [image] = useFileImg(() => costume.value?.img)
+const [image, imageLoading] = useFileImg(() => costume.value?.img)
 const rawSize = useAsyncComputedLegacy(async () => costume.value?.getRawSize() ?? null)
 
 const nodeId = computed(() => getNodeId(props.localConfig))
@@ -56,7 +56,7 @@ const configGetter = computed(() => {
 })
 
 watchEffect((onCleanup) => {
-  props.nodeReadyMap.set(nodeId.value, image.value != null)
+  props.nodeReadyMap.set(nodeId.value, !imageLoading.value)
   onCleanup(() => props.nodeReadyMap.delete(nodeId.value))
 })
 

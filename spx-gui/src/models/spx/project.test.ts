@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import { TimeoutException } from '@/utils/exception'
 import { ProjectType } from '@/apis/project'
 import { Sprite } from './sprite'
 import { Animation } from './animation'
@@ -113,6 +114,41 @@ describe('Project', () => {
     const { metadata } = await project.export()
     expect(metadata.type).toBe(ProjectType.Game)
     expect(metadata.thumbnail).toBe(thumbnail)
+  })
+
+  it('should stop waiting for screenshot after timeout when exporting', async () => {
+    vi.useFakeTimers()
+    const project = makeProject(null)
+    const signalPromise = new Promise<AbortSignal>((resolve) => {
+      project.bindScreenshotTaker((_name, signal) => {
+        if (signal == null) throw new Error('abort signal expected')
+        resolve(signal)
+        return new Promise((_, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason))
+        })
+      })
+    })
+
+    let settled = false
+    const exportPromise = project.export().then((result) => {
+      settled = true
+      return result
+    })
+
+    const signal = await signalPromise
+    expect(settled).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(2999)
+    expect(settled).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(100)
+    expect(settled).toBe(true)
+
+    const { metadata } = await exportPromise
+    expect(signal.aborted).toBe(true)
+    expect(signal.reason).toBeInstanceOf(TimeoutException)
+    expect(metadata.thumbnail).toBeUndefined()
+    vi.useRealTimers()
   })
 
   it('should move sprites correctly', async () => {

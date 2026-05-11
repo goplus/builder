@@ -3,7 +3,7 @@
  */
 
 import { markRaw } from 'vue'
-import { Cancelled } from './exception/base'
+import { Cancelled, TimeoutException } from './exception/base'
 
 export type Disposer = () => void
 
@@ -60,9 +60,27 @@ export function getCleanupSignal(onCleanup: OnCleanup) {
   return ctrl.signal
 }
 
+/** Merge multiple signals into one. The merged signal will be aborted when any of the input signals is aborted. */
+export function mergeSignals(signal: AbortSignal, ...others: Array<AbortSignal | null | undefined>): AbortSignal
+export function mergeSignals(...signals: Array<AbortSignal | null | undefined>): AbortSignal | null
 export function mergeSignals(...signals: Array<AbortSignal | null | undefined>): AbortSignal | null {
   const nonEmptySignals = signals.filter((s) => s != null) as AbortSignal[]
   if (nonEmptySignals.length === 0) return null
   if (nonEmptySignals.length === 1) return nonEmptySignals[0]
   return AbortSignal.any(nonEmptySignals)
+}
+
+/** Create a signal which will be aborted after given timeout. The signal will be aborted with `TimeoutException`. */
+export function getTimeoutSignal(timeout: number): [AbortSignal, Disposer] {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(new TimeoutException()), timeout)
+  return [ctrl.signal, () => clearTimeout(timer)]
+}
+
+/** Create a promise which will be rejected when given signal is aborted. The promise will be rejected with the abort reason. */
+export function promiseForSignal(signal: AbortSignal): Promise<never> {
+  if (signal.aborted) return Promise.reject(signal.reason)
+  return new Promise<never>((_, reject) => {
+    signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+  })
 }
