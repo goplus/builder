@@ -54,20 +54,20 @@
 import { computed, useSlots } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import { useConfig } from '../UIConfigProvider.vue'
-import noDataImg from './no-data.svg'
-import emptyBoxImg from './empty-box.svg'
+import documentImg from './document.svg'
+import boxImg from './box.svg'
 
 const props = defineProps<{
   size: 'small' | 'medium' | 'large' | 'extra-large'
-  img?: 'data' | 'box'
+  img?: 'document' | 'box'
   class?: ClassValue
 }>()
 
 const img = computed(() => {
-  if (props.img === 'box') return emptyBoxImg
-  if (props.img === 'data') return noDataImg
-  if (props.size === 'extra-large') return emptyBoxImg
-  return noDataImg
+  if (props.img === 'box') return boxImg
+  if (props.img === 'document') return documentImg
+  if (props.size === 'extra-large') return boxImg
+  return documentImg
 })
 
 const config = useConfig()
