@@ -47,7 +47,6 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
 import { cloudHelpers } from '@/models/common/cloud'
-import warningSvg from './warning.svg?raw'
 
 const props = defineProps<{
   ownerInput: string
@@ -396,13 +395,12 @@ const remixesRet = useQuery(
                         <div
                           class="relative w-85 flex flex-col items-center overflow-visible rounded-md bg-grey-100 p-6 text-center"
                         >
-                          <!-- eslint-disable-next-line vue/no-v-html -->
-                          <div class="h-10 w-10 text-yellow-500" v-html="warningSvg"></div>
+                          <UIIcon type="info" class="h-10 w-10" />
                           <p class="mt-2 mb-6 text-base text-hint-1">
                             {{
                               $t({
-                                en: 'Log in first to experience this game',
-                                zh: '请先登录再体验该游戏'
+                                en: 'This game requires sign-in before playing',
+                                zh: '该游戏需要先登录后才能体验'
                               })
                             }}
                           </p>

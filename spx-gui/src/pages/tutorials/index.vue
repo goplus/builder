@@ -10,7 +10,7 @@
       class="mt-10 mb-15 flex-1 flex flex-col items-center"
       :style="{ '--num-in-row': numInRow }"
     >
-      <div class="w-full mb-5 text-2xl text-title">{{ $t({ en: 'Basic Tutorial', zh: '基础教程' }) }}</div>
+      <div class="w-full mb-5 text-2xl text-title">{{ $t({ en: 'All Tutorials', zh: '所有教程' }) }}</div>
       <ListResultWrapper :query-ret="courseSeriesQuery" :height="height">
         <template #empty>
           <UIEmpty size="extra-large">
