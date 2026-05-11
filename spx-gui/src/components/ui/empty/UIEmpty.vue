@@ -54,20 +54,20 @@
 import { computed, useSlots } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import { useConfig } from '../UIConfigProvider.vue'
-import searchImg from './search.svg'
-import gameImg from './game.svg'
+import noDataImg from './no-data.svg'
+import emptyBoxImg from './empty-box.svg'
 
 const props = defineProps<{
   size: 'small' | 'medium' | 'large' | 'extra-large'
-  img?: 'search' | 'game'
+  img?: 'data' | 'box'
   class?: ClassValue
 }>()
 
 const img = computed(() => {
-  if (props.img === 'game') return gameImg
-  if (props.img === 'search') return searchImg
-  if (props.size === 'extra-large') return gameImg
-  return searchImg
+  if (props.img === 'box') return emptyBoxImg
+  if (props.img === 'data') return noDataImg
+  if (props.size === 'extra-large') return emptyBoxImg
+  return noDataImg
 })
 
 const config = useConfig()
