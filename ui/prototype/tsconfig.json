@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../spx-gui/src/*"],
+      "@docs/*": ["../../docs/*"],
+      "@prototype/*": ["src/*"],
+      "@/pages/tutorials/index.vue": ["src/pages/tutorials/index.vue"],
+      "vue": ["../../spx-gui/node_modules/vue"],
+      "vue-router": ["../../spx-gui/node_modules/vue-router"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue", "../../spx-gui/src/**/*.ts", "../../spx-gui/src/**/*.vue"]
+}

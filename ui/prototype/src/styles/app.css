@@ -1,0 +1,368 @@
+.prototype-tutorial-page {
+  --prototype-color-turquoise-500: #36c2cf;
+  --prototype-color-turquoise-700: #20747c;
+  --prototype-color-grey-100: #ffffff;
+  --prototype-color-grey-300: #f6f8fa;
+  --prototype-color-grey-400: #eaeff3;
+  --prototype-color-grey-700: #a7b1bb;
+  --prototype-color-grey-1000: #24292f;
+  --prototype-shadow-surface: 0 4px 12px rgb(36 41 47 / 0.08);
+  --prototype-radius-md: 8px;
+  --prototype-radius-lg: 12px;
+  width: 1440px;
+  min-width: 1440px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--prototype-color-grey-1000);
+  background: var(--prototype-color-grey-100);
+  font-family:
+    Inter, 'Source Han Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.prototype-tutorial-page *,
+.prototype-tutorial-page *::before,
+.prototype-tutorial-page *::after {
+  box-sizing: border-box;
+}
+
+.prototype-tutorial-page button,
+.prototype-tutorial-page input {
+  font: inherit;
+}
+
+.prototype-tutorial-page button {
+  cursor: pointer;
+}
+
+.prototype-tutorial-page .community-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1440px;
+  height: 51px;
+  min-width: 1440px;
+  border-bottom: 1px solid var(--prototype-color-grey-400);
+  background: var(--prototype-color-grey-100);
+}
+
+.prototype-tutorial-page .navbar-inner {
+  display: flex;
+  align-items: center;
+  width: min(100% - 200px, 1240px);
+  height: 50px;
+}
+
+.prototype-tutorial-page .navbar-leading {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+}
+
+.prototype-tutorial-page .brand-button,
+.prototype-tutorial-page .nav-icons button,
+.prototype-tutorial-page .search-box,
+.prototype-tutorial-page .modal-close,
+.prototype-tutorial-page .assistant-button {
+  border: 0;
+  background: none;
+}
+
+.prototype-tutorial-page .brand-button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  width: 150px;
+  height: 48px;
+  padding: 0 24px;
+  color: var(--prototype-color-grey-1000);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.prototype-tutorial-page .brand-button img {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) saturate(100%) invert(15%) sepia(7%) saturate(621%) hue-rotate(169deg)
+    brightness(95%) contrast(91%);
+}
+
+.prototype-tutorial-page .brand-button span {
+  transform: translateY(-1px);
+}
+
+.prototype-tutorial-page .navbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--prototype-color-grey-400);
+}
+
+.prototype-tutorial-page .nav-icons {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 50px;
+}
+
+.prototype-tutorial-page .nav-icons button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 50px;
+  color: var(--prototype-color-grey-1000);
+}
+
+.prototype-tutorial-page .nav-icons .has-caret {
+  width: 80px;
+}
+
+.prototype-tutorial-page .nav-icons .active {
+  color: var(--prototype-color-grey-1000);
+}
+
+.prototype-tutorial-page .nav-svg {
+  width: 24px;
+  height: 24px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.6;
+}
+
+.prototype-tutorial-page .nav-svg-plus {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2.4;
+}
+
+.prototype-tutorial-page .nav-caret {
+  width: 0;
+  height: 0;
+  margin-left: 8px;
+  border-top: 6px solid currentColor;
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+}
+
+.prototype-tutorial-page .search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 364px;
+  height: 50px;
+  padding: 9px 12px;
+}
+
+.prototype-tutorial-page .search-box input {
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--prototype-color-grey-400);
+  border-radius: var(--prototype-radius-md);
+  outline: 0;
+  padding: 5px 12px 5px 30px;
+  color: var(--prototype-color-grey-1000);
+  background: var(--prototype-color-grey-100);
+  font-size: 14px;
+}
+
+.prototype-tutorial-page .search-box input::placeholder {
+  color: var(--prototype-color-grey-700);
+}
+
+.prototype-tutorial-page .search-icon {
+  position: absolute;
+  left: 24px;
+  top: 18px;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--prototype-color-grey-700);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.prototype-tutorial-page .assistant-button {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 50px;
+  padding: 0 12px;
+}
+
+.prototype-tutorial-page .assistant-button span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.prototype-tutorial-page .tutorial-main {
+  flex: 1;
+}
+
+.prototype-tutorial-page .tutorials-banner {
+  position: relative;
+  width: 1440px;
+  height: 338px;
+  min-width: 1440px;
+  overflow: hidden;
+  background: #d2f4f5;
+}
+
+.prototype-tutorial-page .tutorials-banner img {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2560px;
+  height: 338px;
+  max-width: none;
+  transform: translateX(-50%);
+}
+
+.prototype-tutorial-page .banner-copy {
+  position: absolute;
+  left: calc(50% + 16px);
+  top: 91px;
+  width: 490px;
+  color: var(--prototype-color-turquoise-700);
+}
+
+.prototype-tutorial-page .banner-copy h1 {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.prototype-tutorial-page .banner-copy p {
+  margin: 8px 0 0;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.prototype-tutorial-page .centered-wrapper {
+  width: min(100% - 40px, 988px);
+  margin-inline: auto;
+}
+
+.prototype-tutorial-page .home-content {
+  padding-top: 32px;
+  padding-bottom: 40px;
+}
+
+.prototype-tutorial-page .series-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 232px);
+  gap: 20px;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.prototype-tutorial-page .course-series-card {
+  display: block;
+  width: 232px;
+  height: 254px;
+  overflow: hidden;
+  border: 1px solid var(--prototype-color-grey-400);
+  border-radius: var(--prototype-radius-lg);
+  background: var(--prototype-color-grey-100);
+  padding: 0;
+  text-align: left;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.prototype-tutorial-page .course-series-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--prototype-shadow-surface);
+}
+
+.prototype-tutorial-page .card-image {
+  width: 232px;
+  height: 174px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--prototype-color-grey-400);
+  background: var(--prototype-color-grey-300);
+}
+
+.prototype-tutorial-page .card-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.prototype-tutorial-page .card-info {
+  display: flex;
+  height: 78px;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 16px;
+  background: var(--prototype-color-grey-100);
+}
+
+.prototype-tutorial-page .card-info h2 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--prototype-color-grey-1000);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.prototype-tutorial-page .card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--prototype-color-grey-700);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.prototype-tutorial-page .toast {
+  position: fixed;
+  right: 24px;
+  bottom: 72px;
+  z-index: 30;
+  padding: 12px 16px;
+  border-radius: var(--prototype-radius-md);
+  color: var(--prototype-color-grey-100);
+  background: var(--prototype-color-grey-1000);
+  box-shadow: var(--prototype-shadow-surface);
+}
+
+.prototype-tutorial-page .community-footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 40px;
+  width: 1440px;
+  min-width: 1440px;
+  padding: 0 20px 16px;
+  color: var(--prototype-color-grey-700);
+  font-size: 12px;
+}
