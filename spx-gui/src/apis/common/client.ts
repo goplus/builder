@@ -5,8 +5,7 @@
 import * as Sentry from '@sentry/vue'
 import dayjs from 'dayjs'
 import { apiBaseUrl } from '@/utils/env'
-import { TimeoutException } from '@/utils/exception/base'
-import { mergeSignals } from '@/utils/disposable'
+import { getTimeoutSignal, mergeSignals } from '@/utils/disposable'
 import { ApiException, ApiExceptionCode, type MovedResourceCanonical, type QuotaExceededMeta } from './exception'
 import { parseSSE, type SSEEvent } from './sse'
 
@@ -107,10 +106,9 @@ export class Client {
   /** Perform request object and handle errors */
   private async doRequest(req: Request, options?: RequestOptions): Promise<Response> {
     const timeout = options?.timeout ?? this.defaultTimeout
-    const timeoutCtrl = new AbortController()
-    const timeoutTimer = setTimeout(() => timeoutCtrl.abort(new TimeoutException()), timeout)
-    const signal = mergeSignals(options?.signal, timeoutCtrl.signal)
-    const resp = await this.fetchFn(req, { signal }).finally(() => clearTimeout(timeoutTimer))
+    const [timeoutSignal, cancelTimeout] = getTimeoutSignal(timeout)
+    const signal = mergeSignals(timeoutSignal, options?.signal)
+    const resp = await this.fetchFn(req, { signal }).finally(cancelTimeout)
     if (!resp.ok) {
       let payload: ApiExceptionPayload | undefined
       try {
