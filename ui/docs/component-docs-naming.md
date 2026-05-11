@@ -395,7 +395,7 @@ mask-2
 - 修改组件库或引用组件库的页面后，运行：
 
 ```bash
-npm --prefix spx-gui run test -- src/utils/builder-component-lib.test.ts --run
+npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/builder-component-lib.test.ts --run
 ```
 
 ---

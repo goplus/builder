@@ -8,7 +8,17 @@ import { promisify } from 'node:util'
 const execFileAsync = promisify(execFile)
 
 export const defaultTargetPath = 'ui/components/spx/builder-component.lib.pen'
-export const defaultValidateCommand = ['npm', 'run', 'test', '--', 'src/utils/builder-component-lib.test.ts', '--run']
+export const defaultValidateCommand = [
+  'npm',
+  'run',
+  'test',
+  '--',
+  '--root',
+  '..',
+  '--no-cache',
+  'ui/tests/pen/builder-component-lib.test.ts',
+  '--run'
+]
 
 export function getRepoRoot() {
   return resolve(fileURLToPath(new URL('..', import.meta.url)))
