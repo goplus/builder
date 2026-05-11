@@ -9,6 +9,7 @@
       "@/*": ["../../spx-gui/src/*"],
       "@docs/*": ["../../docs/*"],
       "@prototype/*": ["src/*"],
+      "@ui-images/*": ["../images/*"],
       "@/pages/tutorials/index.vue": ["src/pages/tutorials/index.vue"],
       "vue": ["../../spx-gui/node_modules/vue"],
       "vue-router": ["../../spx-gui/node_modules/vue-router"]

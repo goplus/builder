@@ -7,7 +7,9 @@ import spxGuiConfig from '../../spx-gui/vite.config'
 const prototypeRoot = fileURLToPath(new URL('.', import.meta.url))
 const prototypeSrc = fileURLToPath(new URL('./src', import.meta.url))
 const prototypeTutorialsPage = fileURLToPath(new URL('./src/pages/tutorials/index.vue', import.meta.url))
+const uiImagesRoot = fileURLToPath(new URL('../images', import.meta.url))
 const spxGuiRoot = fileURLToPath(new URL('../../spx-gui', import.meta.url))
+const spxGuiRouter = fileURLToPath(new URL('../../spx-gui/src/router.ts', import.meta.url))
 
 async function resolveUserConfig(config: UserConfigExport, env: ConfigEnv): Promise<UserConfig> {
   if (typeof config === 'function') {
@@ -32,6 +34,27 @@ export default defineConfig(async (env) => {
   return mergeConfig(baseConfig, {
     root: spxGuiRoot,
     envDir: spxGuiRoot,
+    plugins: [
+      {
+        name: 'prototype-home-redirect',
+        enforce: 'pre',
+        transform(code, id) {
+          if (id !== spxGuiRouter) return
+          return code.replace(
+            `{
+        path: '/',
+        name: homePageName,
+        component: () => import('@/pages/community/home.vue')
+      }`,
+            `{
+        path: '/',
+        name: homePageName,
+        redirect: '/tutorials'
+      }`
+          )
+        }
+      }
+    ],
     resolve: {
       alias: [
         {
@@ -41,6 +64,10 @@ export default defineConfig(async (env) => {
         {
           find: '@prototype',
           replacement: prototypeSrc
+        },
+        {
+          find: '@ui-images',
+          replacement: uiImagesRoot
         },
         {
           find: 'vue',
@@ -62,7 +89,7 @@ export default defineConfig(async (env) => {
     },
     server: {
       fs: {
-        allow: [spxGuiRoot, prototypeRoot, fileURLToPath(new URL('../..', import.meta.url))]
+        allow: [spxGuiRoot, prototypeRoot, uiImagesRoot, fileURLToPath(new URL('../..', import.meta.url))]
       }
     }
   })

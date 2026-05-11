@@ -9,7 +9,7 @@
   --prototype-shadow-surface: 0 4px 12px rgb(36 41 47 / 0.08);
   --prototype-radius-md: 8px;
   --prototype-radius-lg: 12px;
-  width: 1440px;
+  width: 100%;
   min-width: 1440px;
   min-height: 100vh;
   display: flex;
@@ -43,8 +43,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1440px;
-  height: 51px;
+  width: 100%;
+  height: 49px;
   min-width: 1440px;
   border-bottom: 1px solid var(--prototype-color-grey-400);
   background: var(--prototype-color-grey-100);
@@ -53,19 +53,41 @@
 .prototype-tutorial-page .navbar-inner {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: min(100% - 200px, 1240px);
-  height: 50px;
+  height: 48px;
 }
 
-.prototype-tutorial-page .navbar-leading {
+.prototype-tutorial-page .navbar-left,
+.prototype-tutorial-page .navbar-right,
+.prototype-tutorial-page .navbar-center {
   display: flex;
-  flex: 1 1 0;
   align-items: center;
+}
+
+.prototype-tutorial-page .navbar-left {
+  flex: 0 0 30%;
+  height: 48px;
   min-width: 0;
 }
 
-.prototype-tutorial-page .brand-button,
-.prototype-tutorial-page .nav-icons button,
+.prototype-tutorial-page .navbar-center {
+  flex: 0 1 40%;
+  justify-content: center;
+  min-width: 0;
+}
+
+.prototype-tutorial-page .navbar-right {
+  flex: 0 0 30%;
+  justify-content: flex-end;
+  height: 48px;
+  min-width: 0;
+}
+
+.prototype-tutorial-page .navbar-logo,
+.prototype-tutorial-page .navbar-dropdown-trigger,
+.prototype-tutorial-page .navbar-icon-button,
 .prototype-tutorial-page .search-box,
 .prototype-tutorial-page .modal-close,
 .prototype-tutorial-page .assistant-button {
@@ -73,86 +95,76 @@
   background: none;
 }
 
-.prototype-tutorial-page .brand-button {
+.prototype-tutorial-page .navbar-logo {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 4px;
-  width: 150px;
   height: 48px;
-  padding: 0 24px;
-  color: var(--prototype-color-grey-1000);
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1;
+  margin: 0 24px;
 }
 
-.prototype-tutorial-page .brand-button img {
-  width: 24px;
-  height: 24px;
-  filter: brightness(0) saturate(100%) invert(15%) sepia(7%) saturate(621%) hue-rotate(169deg)
-    brightness(95%) contrast(91%);
-}
-
-.prototype-tutorial-page .brand-button span {
-  transform: translateY(-1px);
-}
-
-.prototype-tutorial-page .navbar-divider {
+.prototype-tutorial-page .navbar-logo::after {
+  content: '';
+  position: absolute;
+  right: -24px;
+  display: block;
   width: 1px;
   height: 24px;
-  background: var(--prototype-color-grey-400);
+  background: rgb(36 41 47 / 0.12);
 }
 
-.prototype-tutorial-page .nav-icons {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  height: 50px;
+.prototype-tutorial-page .navbar-logo img {
+  display: block;
+  width: 102px;
+  height: 30px;
 }
 
-.prototype-tutorial-page .nav-icons button {
+.prototype-tutorial-page .navbar-dropdown-trigger,
+.prototype-tutorial-page .navbar-icon-button {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 50px;
+  height: 48px;
+  padding: 0 12px;
   color: var(--prototype-color-grey-1000);
+  text-decoration: none;
 }
 
-.prototype-tutorial-page .nav-icons .has-caret {
-  width: 80px;
+.prototype-tutorial-page .navbar-dropdown-trigger:hover,
+.prototype-tutorial-page .navbar-icon-button:hover {
+  background: var(--prototype-color-grey-400);
 }
 
-.prototype-tutorial-page .nav-icons .active {
-  color: var(--prototype-color-grey-1000);
+.prototype-tutorial-page .navbar-dropdown-trigger {
+  margin-left: 24px;
 }
 
-.prototype-tutorial-page .nav-svg {
-  width: 24px;
-  height: 24px;
+.prototype-tutorial-page .navbar-symbol-icon {
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+  fill: currentColor;
+}
+
+.prototype-tutorial-page .navbar-icon {
+  width: 20px;
+  height: 20px;
   overflow: visible;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 2.6;
+  stroke-width: 2.5;
 }
 
-.prototype-tutorial-page .nav-svg-plus {
-  width: 28px;
-  height: 28px;
-  stroke-width: 2.4;
-}
-
-.prototype-tutorial-page .nav-caret {
+.prototype-tutorial-page .navbar-caret {
   width: 0;
   height: 0;
-  margin-left: 8px;
-  border-top: 6px solid currentColor;
-  border-right: 5px solid transparent;
-  border-left: 5px solid transparent;
+  margin-left: 6px;
+  border-top: 5px solid currentColor;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
 }
 
 .prototype-tutorial-page .search-box {
@@ -160,7 +172,7 @@
   display: flex;
   align-items: center;
   width: 364px;
-  height: 50px;
+  height: 48px;
   padding: 9px 12px;
 }
 
@@ -199,7 +211,7 @@
   display: grid;
   place-items: center;
   width: 56px;
-  height: 50px;
+  height: 48px;
   padding: 0 12px;
 }
 
@@ -218,7 +230,7 @@
 
 .prototype-tutorial-page .tutorials-banner {
   position: relative;
-  width: 1440px;
+  width: 100%;
   height: 338px;
   min-width: 1440px;
   overflow: hidden;
@@ -229,9 +241,10 @@
   position: absolute;
   top: 0;
   left: 50%;
-  width: 2560px;
+  width: max(100%, 2560px);
   height: 338px;
   max-width: none;
+  object-fit: cover;
   transform: translateX(-50%);
 }
 
@@ -262,8 +275,21 @@
 }
 
 .prototype-tutorial-page .home-content {
-  padding-top: 32px;
+  padding-top: 12px;
   padding-bottom: 40px;
+}
+
+.prototype-tutorial-page .tutorial-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 60px;
+  margin: 0 0 6px;
+  color: var(--prototype-color-grey-1000);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
 }
 
 .prototype-tutorial-page .series-grid {
@@ -360,7 +386,7 @@
   justify-content: center;
   gap: 24px;
   min-height: 40px;
-  width: 1440px;
+  width: 100%;
   min-width: 1440px;
   padding: 0 20px 16px;
   color: var(--prototype-color-grey-700);

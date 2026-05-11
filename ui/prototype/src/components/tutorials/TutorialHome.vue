@@ -18,6 +18,8 @@ defineEmits<{
     <TutorialsBanner />
 
     <CenteredWrapper class="home-content">
+      <h2 class="tutorial-section-title">All Tutorials</h2>
+
       <ul class="series-grid">
         <CourseSeriesCard
           v-for="tutorial in tutorials"

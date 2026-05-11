@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
 import CommunityFooter from '@prototype/components/community/CommunityFooter.vue'
 import CommunityNavbar from '@prototype/components/community/CommunityNavbar.vue'
@@ -13,21 +13,7 @@ usePageTitle({
   zh: '教程'
 })
 
-const searchKeyword = ref('')
 const activeTutorial = ref<TutorialCard | null>(null)
-
-const visibleTutorials = computed(() => {
-  const keyword = searchKeyword.value.trim().toLowerCase()
-  if (keyword === '') return tutorials
-  return tutorials.filter((item) =>
-    [item.title, item.total, item.updatedAt].join(' ').toLowerCase().includes(keyword)
-  )
-})
-
-function goHome() {
-  activeTutorial.value = null
-  searchKeyword.value = ''
-}
 
 function openTutorial(tutorial: TutorialCard) {
   activeTutorial.value = tutorial
@@ -36,10 +22,10 @@ function openTutorial(tutorial: TutorialCard) {
 
 <template>
   <div class="prototype-tutorial-page">
-    <CommunityNavbar @home="goHome" @search="searchKeyword = $event" />
+    <CommunityNavbar />
 
     <TutorialHome
-      :tutorials="visibleTutorials"
+      :tutorials="tutorials"
       @open-tutorial="openTutorial"
     />
 
