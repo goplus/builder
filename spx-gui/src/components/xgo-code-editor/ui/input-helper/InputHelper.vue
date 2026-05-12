@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { UITabRadioGroup, UITabRadio, UISelect, UISelectOption } from '@/components/ui'
 import { InputKind, type Input, BuiltInInputType, InputSlotKind, type InputSlotAccept } from './../../common'
 import type { IInputHelperProvider } from '.'
@@ -39,22 +39,11 @@ const inPlaceValueTitle = computed(() => {
   return handler.value?.getTitle(acceptSnapshot) ?? { en: 'Input a value', zh: '输入值' }
 })
 
-const kind = ref(InputKind.InPlace)
-const inPlaceValue = shallowRef(handler.value?.getDefaultValue() ?? null) // use `any` to avoid type error in template
-const predefinedName = ref<string | null>(null)
-
-watch(
-  () => props.input,
-  (input) => {
-    kind.value = input.kind
-    if (input.kind === InputKind.InPlace) {
-      inPlaceValue.value = input.value
-    } else {
-      predefinedName.value = input.name
-    }
-  },
-  { immediate: true }
+const kind = ref(props.input.kind)
+const inPlaceValue = shallowRef(
+  props.input.kind === InputKind.InPlace ? props.input.value : handler.value?.getDefaultValue() ?? null
 )
+const predefinedName = ref<string | null>(props.input.kind === InputKind.Predefined ? props.input.name : null)
 
 function updateInput() {
   let newInput: Input
