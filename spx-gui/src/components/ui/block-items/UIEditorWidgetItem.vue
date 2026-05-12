@@ -3,7 +3,7 @@
     <div class="icon-container mt-2.5 mb-3 h-10 w-10">
       <slot name="icon"></slot>
     </div>
-    <UIBlockItemTitle size="medium">
+    <UIBlockItemTitle size="medium" :title="name">
       {{ name }}
       <template v-if="visible === false" #suffix>
         <UIIcon class="cursor-auto text-grey-700" type="eyeOff" />

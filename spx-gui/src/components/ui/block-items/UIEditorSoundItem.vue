@@ -3,7 +3,7 @@
     <div class="my-3 h-9 w-9">
       <slot name="player"></slot>
     </div>
-    <UIBlockItemTitle size="medium">
+    <UIBlockItemTitle size="medium" :title="name">
       {{ name }}
     </UIBlockItemTitle>
     <slot></slot>
