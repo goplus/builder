@@ -4,9 +4,20 @@ import { join, resolve } from 'node:path'
 
 import { afterEach, describe, expect, it, vitest } from 'vitest'
 
-import { createSnapshot, validateStagedPen } from '../../../scripts/pen-protection.mjs'
+import { createSnapshot, defaultValidateCommand, validateStagedPen } from '../../../scripts/pen-protection.mjs'
 
 const repoRoot = resolve(process.cwd(), '..')
+const expectedValidateCommand = [
+  'npm',
+  'run',
+  'test',
+  '--',
+  '--root',
+  '..',
+  '--no-cache',
+  'ui/tests/pen/builder-component-lib.test.ts',
+  '--run'
+]
 
 describe('createSnapshot', () => {
   const tempDirs: string[] = []
@@ -43,14 +54,13 @@ describe('validateStagedPen', () => {
     const triggered = await validateStagedPen({
       repoRoot,
       listStagedFiles,
-      runCommand,
-      validateCommand: ['npm', 'run', 'test', '--', 'src/utils/builder-component-lib.test.ts', '--run']
+      runCommand
     })
 
     expect(triggered).toBe(true)
     expect(runCommand).toHaveBeenCalledWith({
       command: 'npm',
-      args: ['run', 'test', '--', 'src/utils/builder-component-lib.test.ts', '--run'],
+      args: expectedValidateCommand.slice(1),
       cwd: resolve(repoRoot, 'spx-gui')
     })
   })
@@ -64,7 +74,6 @@ describe('validateStagedPen', () => {
       repoRoot,
       listStagedFiles,
       runCommand,
-      validateCommand: ['npm', 'run', 'test', '--', 'src/utils/builder-component-lib.test.ts', '--run'],
       shouldTrigger: (file: string) => file.startsWith('ui/') && file.endsWith('.pen'),
       onTriggered
     } as never)
@@ -72,7 +81,7 @@ describe('validateStagedPen', () => {
     expect(triggered).toBe(true)
     expect(runCommand).toHaveBeenCalledWith({
       command: 'npm',
-      args: ['run', 'test', '--', 'src/utils/builder-component-lib.test.ts', '--run'],
+      args: expectedValidateCommand.slice(1),
       cwd: resolve(repoRoot, 'spx-gui')
     })
     expect(onTriggered).toHaveBeenCalledWith({
@@ -90,11 +99,14 @@ describe('validateStagedPen', () => {
     const triggered = await validateStagedPen({
       repoRoot,
       listStagedFiles,
-      runCommand,
-      validateCommand: ['npm', 'run', 'test', '--', 'src/utils/builder-component-lib.test.ts', '--run']
+      runCommand
     })
 
     expect(triggered).toBe(false)
     expect(runCommand).not.toHaveBeenCalled()
+  })
+
+  it('uses the repo-root pen validation test as the default validation command', () => {
+    expect(defaultValidateCommand).toEqual(expectedValidateCommand)
   })
 })
