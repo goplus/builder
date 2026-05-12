@@ -21,8 +21,9 @@ ui/
 │       ├── *-editor.pen
 │       └── tutorial.pen
 ├── docs/                # Documentation
+├── skills/              # AI agent task skills
 ├── images/              # Image assets
-└── archive/             # Deprecated designs
+└── tests/               # Design asset validation tests
 ```
 
 ## Quick Start
@@ -41,10 +42,17 @@ Page designs are in `pages/spx/`. Each `.pen` file corresponds to a feature or p
 
 | Document | Description |
 | -------- | ----------- |
-| [Team Workflow](docs/team-workflow.md) | Collaboration process |
-| [AI Design Workflow](docs/ai-design-workflow.md) | Using AI to reproduce Figma designs |
+| [Team Workflow](docs/team-workflow.md) | Current Issue → Design PR → Code PR workflow |
+| [Team Workflow (Legacy)](docs/team-workflow-legacy.md) | Legacy workflow, kept for historical reference |
 | [PR Template](docs/pr-template.md) | PR title and description format |
 | [Design Review Checklist](docs/design-review-checklist.md) | Pre-submission checklist |
+| [Design to Code Mapping (Legacy)](docs/design-to-code-mapping-legacy.md) | Legacy `.pen` to `spx-gui` mapping rules |
+
+## Skills
+
+| Skill | Description |
+| ----- | ----------- |
+| [Prototype Maintenance](skills/prototype-maintenance/SKILL.md) | Use when maintaining `ui/prototype` and keeping it aligned with the real frontend structure, routes, and interactions |
 
 ## Workflow
 

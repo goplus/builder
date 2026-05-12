@@ -6,7 +6,7 @@
 
 | Scope         | 说明           |
 |---------------|----------------|
-| `[UI]`        | 页面级设计变更 |
+| `[Page]`      | 页面级设计变更 |
 | `[Component]` | 组件级变更     |
 
 | Type      | 说明               |
@@ -17,7 +17,7 @@
 
 **示例**：
 
-- `[UI] Feature: Add notification banner design`
+- `[Page] Feature: Add notification banner design`
 - `[Component] Update: Button disabled state`
 
 ## 描述模板
@@ -25,9 +25,9 @@
 ```markdown
 ### Issue
 
-- update #issue_number  <!-- 完成大 issue 的部分更新 -->
-- ref #issue_number     <!-- 与某 issue 有关联 -->
-- close #issue_number   <!-- 完全解决该 issue -->
+- Related to #issue_number  <!-- 与某 issue 有关联，不自动关闭 -->
+- Updates #issue_number     <!-- 完成大 issue 的部分更新，不自动关闭 -->
+- Closes #issue_number      <!-- 完全解决该 issue，合并后自动关闭 -->
 
 ### Background
 
@@ -52,11 +52,11 @@
 ## 完整示例
 
 ```markdown
-[UI] Feature: Add notification banner design
+[Page] Feature: Add notification banner design
 
 ### Issue
 
-update #2575
+Updates #2575
 
 ### Background
 

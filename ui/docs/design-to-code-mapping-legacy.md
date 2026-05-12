@@ -1,4 +1,7 @@
-# Design to Code Mapping Guide
+# Design to Code Mapping Guide (Legacy)
+
+> 本文是旧版 `.pen` 到 `spx-gui` 的映射与规范化文档，主要服务旧版设计同步流程。
+> 当前 prototype 维护规则请优先查看 [`ui/skills/prototype-maintenance/SKILL.md`](../skills/prototype-maintenance/SKILL.md)。
 
 本文记录整个仓库里 `.pen` 设计资产与 `spx-gui` 前端实现之间的对应关系，供后续开发者同步设计稿到代码时使用。
 
@@ -76,7 +79,7 @@ AI 默认不应修改这些文件，除非用户明确要求：
 - `MUST` 在未获用户明确授权时，把默认写入范围限制在 `ui/**`，不要直接修改 `spx-gui/src/**`。
 - `MUST` 在 `builder-component.lib.pen` 内部使用本地 token 和本地 `ref`，例如 `$grey300`、`$space-3`、`"ref": "<本地 reusable 节点 ID>"`。
 - `MUST` 在页面 `.pen` 中优先通过 import alias 使用组件库 token / 节点，例如 `$r:grey300`、`$r:space-3`、`"ref": "r:<组件库 reusable 节点 ID>"`。
-- `MUST` 在修改 `builder-component.lib.pen` 或任何引用它的活跃页面 `.pen` 后，在仓库根目录运行 `npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/builder-component-lib.test.ts --run`，并汇报结果。
+- `MUST` 在修改 `builder-component.lib.pen` 或任何引用它的活跃页面 `.pen` 后，在仓库根目录运行 `npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/design-asset-conformance.test.ts --run`，并汇报结果。
 - `MUST` 在任务目标属于“修改 canonical palette”时，先得到用户对 `spx-gui/src/components/ui/tokens/colors.ts` 的明确授权；未获授权时，只能把 `ui/**` 同步到当前代码主源。
 - `MUST` 删除仅仅复制基础 token 的页面局部变量，只要这些值已经可以从组件库 import 得到。
 - `SHOULD` 保留组件库中不存在、且确实属于页面语义的私有变量，例如页面专用尺寸、布局常量、临时内容占位。
@@ -99,7 +102,7 @@ AI 在完成修正后，回复里至少应说明：
 如果希望 AI 直接按本文修正文件，推荐用这种指令方式：
 
 ```text
-请先阅读 ui/docs/design-to-code-mapping.md。
+请先阅读 ui/docs/design-to-code-mapping-legacy.md。
 然后检查并修正 <target-file>，把它改到符合文档规范。
 要求：
 1. 先判断它属于代码主源、设计组件库，还是页面设计文件。
@@ -113,7 +116,7 @@ AI 在完成修正后，回复里至少应说明：
 当目标文件是 `builder-component.lib.pen` 或任何引用它的活跃页面 `.pen` 时，默认使用下面这条命令做手动校验：
 
 ```bash
-npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/builder-component-lib.test.ts --run
+npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/design-asset-conformance.test.ts --run
 ```
 
 如果希望同时触发“创建 `.snapshots` 快照 + staged 校验”，可在 `builder-component.lib.pen` 已暂存时运行：
@@ -295,7 +298,7 @@ npm --prefix spx-gui run validate:pen
 
 仓库已经有一部分“设计到代码”自动校验，集中在：
 
-- `ui/tests/pen/builder-component-lib.test.ts`
+- `ui/tests/pen/design-asset-conformance.test.ts`
 
 当前已覆盖：
 
@@ -715,7 +718,7 @@ npm --prefix spx-gui run validate:pen
 4. 运行：
 
 ```bash
-npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/builder-component-lib.test.ts --run
+npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/design-asset-conformance.test.ts --run
 ```
 
 #### B. 修改 canonical palette
@@ -741,7 +744,7 @@ npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/builder-compo
 5. 运行：
 
 ```bash
-npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/builder-component-lib.test.ts --run
+npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/design-asset-conformance.test.ts --run
 ```
 
 当前自动校验的限制要一并说明：
