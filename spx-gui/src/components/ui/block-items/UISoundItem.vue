@@ -5,7 +5,7 @@
         <slot name="player"></slot>
       </div>
     </div>
-    <UIBlockItemTitle size="large" class="h-5">
+    <UIBlockItemTitle size="large" class="h-5" :title="name">
       {{ name }}
     </UIBlockItemTitle>
     <div class="text-center text-2xs text-hint-1">{{ duration }}</div>
