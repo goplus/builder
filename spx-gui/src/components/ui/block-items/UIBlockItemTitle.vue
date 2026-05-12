@@ -13,7 +13,7 @@ import { cn, type ClassValue } from '../utils'
 const props = defineProps<{
   size: 'medium' | 'large'
   class?: ClassValue
-  title?: string
+  title: string
 }>()
 
 const slots = useSlots()
