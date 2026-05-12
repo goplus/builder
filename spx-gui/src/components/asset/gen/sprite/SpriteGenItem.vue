@@ -34,6 +34,6 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
     :highlight="highlight"
     :placeholder="spriteSVG"
   >
-    <UIBlockItemTitle size="medium">{{ gen.settings.name }}</UIBlockItemTitle>
+    <UIBlockItemTitle size="medium" :title="gen.settings.name">{{ gen.settings.name }}</UIBlockItemTitle>
   </GenItem>
 </template>

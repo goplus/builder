@@ -796,10 +796,10 @@
           <div :class="[surfaceCardClass, 'col-span-full']">
             <div class="flex flex-wrap gap-4">
               <GenItem :placeholder="spriteSvg">
-                <UIBlockItemTitle size="medium">Default</UIBlockItemTitle>
+                <UIBlockItemTitle size="medium" title="Default">Default</UIBlockItemTitle>
               </GenItem>
               <GenItem highlight :placeholder="spriteSvg">
-                <UIBlockItemTitle size="medium">Highlight</UIBlockItemTitle>
+                <UIBlockItemTitle size="medium" title="Highlight">Highlight</UIBlockItemTitle>
               </GenItem>
               <GenItem loading :placeholder="spriteSvg">
                 <template #preview>
@@ -809,7 +809,7 @@
                     <div class="absolute inset-1.75 rounded-[12px] border-2 border-[rgba(255,255,255,0.72)]"></div>
                   </div>
                 </template>
-                <UIBlockItemTitle size="medium">Loading</UIBlockItemTitle>
+                <UIBlockItemTitle size="medium" title="Loading">Loading</UIBlockItemTitle>
               </GenItem>
               <GenItem active :placeholder="spriteSvg">
                 <template #preview>
@@ -819,7 +819,7 @@
                     <div class="absolute inset-1.75 rounded-[12px] border-2 border-[rgba(255,255,255,0.72)]"></div>
                   </div>
                 </template>
-                <UIBlockItemTitle size="medium">Active</UIBlockItemTitle>
+                <UIBlockItemTitle size="medium" title="Active">Active</UIBlockItemTitle>
               </GenItem>
               <GenItem active loading :placeholder="spriteSvg">
                 <template #preview>
@@ -829,7 +829,7 @@
                     <div class="absolute inset-1.75 rounded-[12px] border-2 border-[rgba(255,255,255,0.72)]"></div>
                   </div>
                 </template>
-                <UIBlockItemTitle size="medium">Active Loading</UIBlockItemTitle>
+                <UIBlockItemTitle size="medium" title="Active Loading">Active Loading</UIBlockItemTitle>
               </GenItem>
             </div>
           </div>

@@ -29,7 +29,7 @@ const imgStyle = {
 <template>
   <UIBlockItem size="medium">
     <UIImg :style="imgStyle" :src="getSpxEffectImage(item.name)" />
-    <UIBlockItemTitle size="medium">
+    <UIBlockItemTitle size="medium" :title="$t(item.text)">
       {{ $t(item.text) }}
     </UIBlockItemTitle>
   </UIBlockItem>

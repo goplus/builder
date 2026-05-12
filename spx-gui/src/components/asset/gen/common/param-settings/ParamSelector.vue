@@ -99,7 +99,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
               <UIImg class="h-15 w-20 rounded-sm" :src="item.image ?? null" />
             </div>
-            <UIBlockItemTitle size="medium">
+            <UIBlockItemTitle size="medium" :title="t(item.label)">
               {{ $t(item.label) }}
             </UIBlockItemTitle>
             <UICornerIcon
