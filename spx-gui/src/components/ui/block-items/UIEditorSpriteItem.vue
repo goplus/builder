@@ -2,7 +2,7 @@
   <UIBlockItem :active="selected" :interactive="!!selectable">
     <slot name="img" :style="imgStyle"></slot>
     <UIBlockItemTitle size="medium">
-      {{ name }}
+      <span :title="name">{{ name }}</span>
       <template v-if="visible === false" #suffix>
         <UIIcon class="cursor-auto text-grey-700" type="eyeOff" :title="$t({ en: 'Invisible', zh: '不可见' })" />
       </template>
