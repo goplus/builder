@@ -1,0 +1,107 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "Y75XC",
+      "x": -720,
+      "y": -450,
+      "name": "page",
+      "width": 1440,
+      "height": 900,
+      "fill": "$y:grey300",
+      "layout": "vertical",
+      "gap": 20,
+      "children": [
+        {
+          "id": "qiNmn",
+          "type": "ref",
+          "ref": "y:WiWwa",
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "rotation": 0,
+          "children": [
+            {
+              "id": "WIh0Y",
+              "type": "ref",
+              "ref": "y:So19f"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "m8gZ4",
+          "name": "Main Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "gap": 20,
+          "padding": [
+            0,
+            20,
+            20,
+            20
+          ],
+          "children": [
+            {
+              "id": "y6MgiT",
+              "type": "ref",
+              "ref": "y:qEHhD",
+              "x": 20,
+              "y": 0,
+              "children": [
+                {
+                  "id": "zOgBS",
+                  "type": "ref",
+                  "ref": "y:ehGL5"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "P5f0T",
+              "name": "Sidebar",
+              "clip": true,
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 20,
+              "children": [
+                {
+                  "id": "G7Xsx",
+                  "type": "ref",
+                  "ref": "y:Hjqqt",
+                  "x": 0,
+                  "y": 0,
+                  "children": [
+                    {
+                      "id": "VAE7F",
+                      "type": "ref",
+                      "ref": "y:XUmrh"
+                    }
+                  ]
+                },
+                {
+                  "id": "SO3XP",
+                  "type": "ref",
+                  "ref": "y:Hjqqt",
+                  "x": 0,
+                  "y": 198,
+                  "children": [
+                    {
+                      "id": "D2ORVQ",
+                      "type": "ref",
+                      "ref": "y:TaNBl"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "y": "../../components/spx/builder-component.lib.pen"
+  }
+}

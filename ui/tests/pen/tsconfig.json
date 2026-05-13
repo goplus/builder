@@ -1,0 +1,14 @@
+{
+  "extends": "../../../spx-gui/tsconfig.app.json",
+  "include": ["*.test.ts"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "composite": false,
+    "types": ["node"],
+    "typeRoots": ["../../../spx-gui/node_modules/@types"],
+    "paths": {
+      "vitest": ["../../../spx-gui/node_modules/vitest/dist/index.d.ts"]
+    },
+    "tsBuildInfoFile": ".tmp/tsconfig.tsbuildinfo"
+  }
+}

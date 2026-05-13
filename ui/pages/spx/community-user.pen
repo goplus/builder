@@ -1,0 +1,383 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "mNWuo",
+      "x": 1540,
+      "y": 6,
+      "name": "Personal homepage",
+      "width": 1440,
+      "fill": "$j:grey300",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": [
+        0,
+        0,
+        40,
+        0
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "id": "ecQW8",
+          "type": "ref",
+          "ref": "j:WiWwa",
+          "x": 0.0001975079348324681,
+          "y": 0,
+          "children": [
+            {
+              "id": "UFEMQ",
+              "type": "ref",
+              "ref": "j:O7syE"
+            }
+          ]
+        },
+        {
+          "id": "d4PoHP",
+          "type": "ref",
+          "ref": "j:uyN2t",
+          "x": 100,
+          "y": 71.01115216840645,
+          "children": [
+            {
+              "id": "A8lwG",
+              "type": "ref",
+              "ref": "j:gqX4A"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "rkxVC",
+          "name": "Main",
+          "width": 1240,
+          "gap": "$j:space-5",
+          "children": [
+            {
+              "id": "8R5mW",
+              "type": "ref",
+              "ref": "j:qli5Z",
+              "x": 0,
+              "y": 5.192502428384778e-14,
+              "children": [
+                {
+                  "id": "wDkc9",
+                  "type": "ref",
+                  "ref": "j:hqiqp"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AFtX2",
+              "name": "Content",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$j:space-5",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "wqCGQ",
+                  "name": "ProjectsSection",
+                  "width": "fill_container",
+                  "fill": "$j:grey100",
+                  "cornerRadius": "$j:radius-2",
+                  "layout": "vertical",
+                  "gap": "$j:space-2",
+                  "padding": "$j:space-4",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "xnxKT",
+                      "name": "SectionHeader",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "V40yz",
+                          "type": "ref",
+                          "ref": "j:tfxWX",
+                          "x": 0,
+                          "y": 0,
+                          "children": [
+                            {
+                              "id": "T8EFn",
+                              "type": "ref",
+                              "ref": "j:Lm2P8",
+                              "content": "My projects"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "uxYFo",
+                          "name": "ViewAllWrapper",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "id": "VFlHp",
+                              "type": "ref",
+                              "ref": "j:tfxWX",
+                              "x": 0,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "5MGxW",
+                                  "type": "ref",
+                                  "ref": "j:0rSuk",
+                                  "content": "View all",
+                                  "fill": "$j:turquoise500"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "lvKov",
+                              "type": "ref",
+                              "ref": "j:bW00p",
+                              "x": 55,
+                              "y": 3,
+                              "children": [
+                                {
+                                  "id": "ijIKe",
+                                  "type": "ref",
+                                  "ref": "j:R1pbv",
+                                  "descendants": {
+                                    "j:KuyD8": {
+                                      "fill": "$j:turquoise500"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JrX4n",
+                      "name": "ProjectsGrid",
+                      "width": "fill_container",
+                      "gap": "$j:space-4",
+                      "children": [
+                        {
+                          "id": "mKFmz",
+                          "type": "ref",
+                          "ref": "j:m6A5K",
+                          "x": 0,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "9D3iC",
+                              "type": "ref",
+                              "ref": "j:gmlTw"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "eX6be",
+                          "type": "ref",
+                          "ref": "j:m6A5K",
+                          "x": 248.00000000000006,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "gG5C5",
+                              "type": "ref",
+                              "ref": "j:gmlTw"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "TCXcx",
+                          "type": "ref",
+                          "ref": "j:m6A5K",
+                          "x": 496.0000000000001,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "nSVqM",
+                              "type": "ref",
+                              "ref": "j:7j4Je"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "MhSTn",
+                          "type": "ref",
+                          "ref": "j:m6A5K",
+                          "x": 744.0000000000002,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "28Ifx",
+                              "type": "ref",
+                              "ref": "j:7j4Je"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "8KEoW",
+                  "name": "ProjectsSection",
+                  "width": "fill_container",
+                  "fill": "$j:grey100",
+                  "cornerRadius": "$j:radius-2",
+                  "layout": "vertical",
+                  "gap": "$j:space-2",
+                  "padding": "$j:space-4",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "5gwt9",
+                      "name": "SectionHeader",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "QIaZ1",
+                          "type": "ref",
+                          "ref": "j:tfxWX",
+                          "x": 0,
+                          "y": 0,
+                          "children": [
+                            {
+                              "id": "nrsQB",
+                              "type": "ref",
+                              "ref": "j:Lm2P8",
+                              "content": "Projects I like"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qclbZ",
+                          "name": "ViewAllWrapper",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "id": "qR9Ue",
+                              "type": "ref",
+                              "ref": "j:tfxWX",
+                              "x": 0,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "eymg6",
+                                  "type": "ref",
+                                  "ref": "j:0rSuk",
+                                  "content": "View all",
+                                  "fill": "$j:turquoise500"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "wkwzi",
+                              "type": "ref",
+                              "ref": "j:bW00p",
+                              "x": 55,
+                              "y": 3,
+                              "children": [
+                                {
+                                  "id": "kf1Gs",
+                                  "type": "ref",
+                                  "ref": "j:R1pbv",
+                                  "descendants": {
+                                    "j:KuyD8": {
+                                      "fill": "$j:turquoise500"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PgDpO",
+                      "name": "ProjectsGrid",
+                      "width": "fill_container",
+                      "gap": "$j:space-4",
+                      "children": [
+                        {
+                          "id": "7R67b",
+                          "type": "ref",
+                          "ref": "j:m6A5K",
+                          "x": 0,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "NIu6g",
+                              "type": "ref",
+                              "ref": "j:7j4Je"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "vQ6Y0",
+                          "type": "ref",
+                          "ref": "j:m6A5K",
+                          "x": 248.00000000000006,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "YqHMz",
+                              "type": "ref",
+                              "ref": "j:7j4Je"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "vWinl",
+                          "type": "ref",
+                          "ref": "j:m6A5K",
+                          "x": 496.0000000000001,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "9XfNT",
+                              "type": "ref",
+                              "ref": "j:7j4Je"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "tdCua",
+                          "type": "ref",
+                          "ref": "j:m6A5K",
+                          "x": 744.0000000000002,
+                          "y": 5.682361148043719e-14,
+                          "children": [
+                            {
+                              "id": "awftL",
+                              "type": "ref",
+                              "ref": "j:7j4Je"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "j": "../../components/spx/builder-component.lib.pen"
+  }
+}
