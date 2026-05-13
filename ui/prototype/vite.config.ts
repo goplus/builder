@@ -11,7 +11,8 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': prototypeSrc
+      '@': prototypeSrc,
+      '@ui-images': uiImagesRoot
     }
   },
   build: {

@@ -5,7 +5,8 @@
     "jsx": "preserve",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@ui-images/*": ["../images/*"]
     },
     "types": ["vite/client"]
   },
