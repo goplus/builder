@@ -6,6 +6,7 @@ import SettingsInput from '../common/SettingsInput.vue'
 import SpriteCategoryInput from './SpriteCategoryInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
+import ReferenceImageInput from '../common/ReferenceImageInput.vue'
 import EnrichableSubmitButton from '../common/EnrichableSubmitButton.vue'
 
 const props = withDefaults(
@@ -63,6 +64,10 @@ const submitText = computed(() => {
       <SpriteCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
+      <ReferenceImageInput
+        :reference-image="gen.referenceImage"
+        @update:reference-image="gen.setReferenceImage($event)"
+      />
     </template>
     <template #submit>
       <EnrichableSubmitButton

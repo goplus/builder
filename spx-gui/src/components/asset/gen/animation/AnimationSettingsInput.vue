@@ -4,7 +4,7 @@ import { useMessageHandle } from '@/utils/exception'
 import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
-import ReferenceCostumeInput from '../common/ReferenceCostumeInput.vue'
+import ReferenceImageInput from '../common/ReferenceImageInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import AnimationLoopModeInput from './AnimationLoopModeInput.vue'
@@ -44,11 +44,13 @@ const submitText = computed(() => {
     @enrich="handleEnrich"
   >
     <template #extra>
-      <ReferenceCostumeInput
+      <ReferenceImageInput
         :costumes="gen.sprite.costumes"
-        :selected-id="gen.referenceCostume?.id ?? null"
+        :selected-costume-id="gen.referenceCostume?.id ?? null"
+        :reference-image="gen.referenceImage"
         :clearable="false"
-        @update:selected-id="gen.setReferenceCostume($event)"
+        @update:selected-costume-id="gen.setReferenceCostume($event)"
+        @update:reference-image="gen.setReferenceImage($event)"
       />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />

@@ -4,7 +4,7 @@ import { useMessageHandle } from '@/utils/exception'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
-import ReferenceCostumeInput from '../common/ReferenceCostumeInput.vue'
+import ReferenceImageInput from '../common/ReferenceImageInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import FacingInput from './FacingInput.vue'
@@ -42,10 +42,12 @@ const submitText = computed(() => {
     @enrich="handleEnrich"
   >
     <template #extra>
-      <ReferenceCostumeInput
+      <ReferenceImageInput
         :costumes="gen.sprite.costumes"
-        :selected-id="gen.referenceCostume?.id ?? null"
-        @update:selected-id="gen.setReferenceCostume($event)"
+        :selected-costume-id="gen.referenceCostume?.id ?? null"
+        :reference-image="gen.referenceImage"
+        @update:selected-costume-id="gen.setReferenceCostume($event)"
+        @update:reference-image="gen.setReferenceImage($event)"
       />
       <FacingInput :value="gen.settings.facing" @update:value="gen.setSettings({ facing: $event })" />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
