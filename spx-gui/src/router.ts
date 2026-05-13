@@ -162,10 +162,6 @@ const routes: Array<RouteRecordRaw> = [
     path: '/docs',
     children: [
       {
-        path: 'animation-preview',
-        component: () => import('@/pages/docs/animation-preview.vue')
-      },
-      {
         path: 'api/:pathMatch(.*)?',
         component: () => import('@/pages/docs/api.vue')
       },
