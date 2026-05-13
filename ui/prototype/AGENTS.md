@@ -1,0 +1,130 @@
+# AGENTS.md
+
+This file guides AI agents working under `ui/prototype/`.
+
+## Purpose
+
+`ui/prototype/` is a standalone, design-driven UI preview workspace, usually generated from `.pen` files in `ui/pages/` and assets in `ui/images/`.
+
+It should stay close to the real frontend in stack and presentation style, but it is not the real frontend.
+
+## Core Contract
+
+- `spx-gui/` is the real product frontend.
+- `ui/prototype/` is a local preview sandbox.
+- The prototype should resemble the real frontend in structure, theme shape, typography, and implementation style.
+- The prototype must not depend on the real frontend at runtime, build time, or type-check time.
+
+Stable rule:
+
+- You may copy or adapt presentation-layer patterns from the real frontend.
+- You must not import code, config, styles, fonts, routes, tokens, utilities, or components directly from `spx-gui/`.
+
+If something is needed from the real frontend, copy the minimum local version into `ui/prototype/` and remove production-only concerns.
+
+## Source Priority
+
+When changing the prototype, use this order:
+
+1. Design files and design assets decide what should be rendered.
+2. Existing prototype files decide local conventions.
+3. The real frontend is only a reference for structure, theme, naming, and visual implementation patterns.
+
+## Boundaries
+
+Agents must preserve all of the following:
+
+- `ui/prototype/` stays installable, runnable, and buildable by itself.
+- Runtime and build dependencies stay inside `ui/prototype/`, except shared static assets under `ui/images/`.
+- Do not import from `../../spx-gui` or any other real frontend directory.
+- Do not extend, merge, or proxy real frontend config.
+- Do not add business logic, network requests, auth flow, persistence, or real app state.
+- Keep interactions local, minimal, and preview-oriented.
+- Keep mock data local.
+
+Forbidden shortcuts include:
+
+- importing the real frontend's Vite config, router, token files, or components
+- reading fonts from the real frontend instead of copying them locally
+- using aliases that resolve into the real frontend project
+
+## Alignment And Simplification
+
+Keep these areas aligned with the real frontend when practical:
+
+- Vite + Vue 3 + Vue Router + Tailwind CSS v4
+- page/component/data/style directory split
+- semantic token naming and UI-facing class style
+- typography, spacing, radius, shadow, and color conventions
+- `src/styles/app.css`, especially the `@theme inline` bridge and base presentation rules
+
+At the same time, keep the prototype simpler than the real frontend:
+
+- replace business state with static data or minimal local state
+- replace real flows with a small local router
+- replace product actions with no-op handlers or local feedback
+- omit infrastructure and edge-case handling unless it changes the visual result
+
+## Editing Rules
+
+When iterating on the prototype:
+
+1. Start from the design artifact that changed.
+2. Reuse existing prototype components before adding abstractions.
+3. Prefer pure presentational Vue components.
+4. Prefer Tailwind utility classes.
+5. Keep `src/styles/app.css` structurally aligned with the real frontend's `app.css`.
+6. If new token families are needed, add local `--ui-*` variables first, then expose them through local `@theme inline` mapping.
+7. If copying from the real frontend, copy the minimum presentational subset and strip production logic.
+
+## Long-Term Stability
+
+These rules are more important than reducing duplication:
+
+- Never reintroduce a direct dependency on the real frontend.
+- Prefer local copies over shared imports for theme, style, asset, and config surfaces.
+- Keep the prototype's public shape similar to the real frontend so later migration stays easy.
+- Keep the prototype's implementation simpler so preview work stays cheap.
+- If the prototype deliberately diverges from the real frontend, document that near the affected file or in `README.md`.
+
+Sync direction:
+
+1. Copy semantic token names and theme structure.
+2. Copy base presentation rules.
+3. Copy static assets locally when needed.
+4. Recreate markup and styling locally.
+5. Drop production-only logic.
+
+Do not treat prototype code as the source of truth for production code.
+
+## Validation
+
+After substantive changes:
+
+- run `npm run build` inside `ui/prototype/`
+
+When UI structure or styling changes, also do the following when possible:
+
+- run the dev server from `ui/prototype/`
+- open the preview in a browser
+- verify the main route renders
+- verify any local preview interaction still works
+
+Before finishing, confirm:
+
+- no import points into `spx-gui/`
+- no config references the real frontend
+- the prototype still behaves as a standalone app
+
+## Keep This File Updated
+
+Keep this file and `README.md` aligned with reality.
+
+Update this file when any of the following changes:
+
+- the allowed relationship with the real frontend
+- the validation flow
+- the local prototype architecture
+- the sync strategy for theme, asset, or config surfaces
+
+If a change creates pressure to depend on the real frontend directly, document the local alternative here instead.
