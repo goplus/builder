@@ -1,1 +1,0 @@
-https://www.figma.com/design/3cZrrPn7oD4wvdYakaUL1b/%E8%AE%BE%E8%AE%A1%E6%96%87%E4%BB%B6-2.0-XBuilder?node-id=7828-584&t=GOD178jexsY4Si5V-1
