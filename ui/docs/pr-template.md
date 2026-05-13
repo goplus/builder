@@ -8,6 +8,7 @@
 |---------------|----------------|
 | `[Page]`      | 页面级设计变更 |
 | `[Component]` | 组件级变更     |
+| `[Docs]`      | 文档、流程、模板或 skill 变更 |
 
 | Type      | 说明               |
 |-----------|--------------------|
@@ -19,6 +20,7 @@
 
 - `[Page] Feature: Add notification banner design`
 - `[Component] Update: Button disabled state`
+- `[Docs] Update: Organize UI design workflow docs`
 
 ## 描述模板
 
