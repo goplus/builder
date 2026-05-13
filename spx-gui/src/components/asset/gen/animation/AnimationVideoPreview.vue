@@ -12,6 +12,8 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   const duration = ref<number | null>(null)
   /** Current playback time in ms */
   const currentTime = ref(0)
+  /** Version async play requests so pause/suspend can invalidate stale play() continuations after await. */
+  let playRequestVersion = 0
 
   function seek(timeInMs: number) {
     const video = videoRef.value
@@ -22,6 +24,7 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   }
 
   function pausePlayback() {
+    playRequestVersion += 1
     stopTick()
     const video = videoRef.value
     if (video == null) return
@@ -81,8 +84,10 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   async function play() {
     if (isPlaying.value) return
     isPlaying.value = true
+    const requestVersion = ++playRequestVersion
     startTick()
     const video = await untilNotNull(videoRef)
+    if (!isPlaying.value || requestVersion !== playRequestVersion) return
     return video.play()
   }
 
@@ -252,28 +257,25 @@ function getTrackProgressRect() {
   return trackInnerRef.value?.getBoundingClientRect() ?? null
 }
 
-function getPreviewTimeForDragTarget(target: Exclude<DragTarget, 'preview'>) {
-  if (target === 'start') return cutStartRef.value
-  return Math.max(cutStartRef.value, cutEndRef.value - 1)
-}
-
 function getTimeFromPointer(clientX: number, rect: DOMRect, duration: number) {
   if (rect.width <= 0) return 0
   const ratio = (clientX - rect.left) / rect.width
   return clamp(ratio * duration, 0, duration)
 }
 
-function updatePreviewTime(clientX: number) {
-  if (dragging == null) return
-  const videoDuration = videoDurationRef.value
-  if (videoDuration == null) return
-  const time = getTimeFromPointer(clientX, dragging.rect, videoDuration)
-  seek(clamp(time, cutStartRef.value, cutEndRef.value))
+function getPreviewTimeForDragTarget(target: Exclude<DragTarget, 'preview'>) {
+  if (target === 'start') return cutStartRef.value
+  // end - 1ms: keep the right-handle preview just inside the play range so it doesn't immediately wrap to start.
+  return Math.max(cutStartRef.value, cutEndRef.value - 1)
 }
 
 function handleDragStart(target: DragTarget, e: PointerEvent) {
+  // Ignore re-entrant drag starts until the current drag finishes.
+  if (dragging != null) return
   const rect = getTrackProgressRect()
   if (rect == null) return
+  const videoDuration = videoDurationRef.value
+  if (videoDuration == null) return
   shouldNudge.value = false
   dragging = {
     target,
@@ -282,7 +284,8 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
     resumePlayback: suspend()
   }
   if (target === 'preview') {
-    updatePreviewTime(e.clientX)
+    const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
+    seek(clamp(time, cutStartRef.value, cutEndRef.value))
   } else {
     seek(getPreviewTimeForDragTarget(target))
   }
@@ -293,6 +296,7 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
 }
 
 function handlePreviewStart(e: PointerEvent) {
+  // Ignore pointerdown events from child handles (segment markers).
   if (e.target !== e.currentTarget) return
   handleDragStart('preview', e)
 }
@@ -301,11 +305,11 @@ function handleDragMove(e: PointerEvent) {
   if (dragging == null || e.pointerId !== dragging.pointerId) return
   const videoDuration = videoDurationRef.value
   if (videoDuration == null) return
+  const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
   if (dragging.target === 'preview') {
-    updatePreviewTime(e.clientX)
+    seek(clamp(time, cutStartRef.value, cutEndRef.value))
     return
   }
-  const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
   const minDuration = precision
   if (dragging.target === 'start') {
     cutStartRef.value = clamp(time, 0, cutEndRef.value - minDuration)
@@ -561,6 +565,7 @@ function formatTime(timeInMs: number) {
   justify-content: space-between;
   padding: 0;
   cursor: pointer;
+  touch-action: none;
 }
 
 .segment-marker {
@@ -631,5 +636,6 @@ function formatTime(timeInMs: number) {
 .current-time::before,
 .current-time::after {
   pointer-events: none;
+  touch-action: none;
 }
 </style>
