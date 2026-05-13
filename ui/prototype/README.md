@@ -1,32 +1,99 @@
-# XBuilder Prototype Preview
+# XBuilder Prototype
 
-这是一个独立的 UI 原型工程，用来预览 `ui/pages/spx/tutorial.pen` 对应的设计实现。
-它保持与真实前端相近的组织方式和技术栈：基于 Vite、Vue 3、Vue Router、Tailwind CSS v4，按页面、
-组件、数据和样式拆分；主题 token、基础排版和字体资源尽量与真实前端保持一致，但不包含业务逻辑，也不直接依赖真实前端项目。
+`ui/prototype` is the preview project for XBuilder product and UI changes. It is
+a demo implementation, but not an isolated demo app: it runs on top of the
+current real Builder frontend, follows the same frontend stack, and keeps the
+real application routes and behavior available.
 
-## Run
+Prototype changes are driven by Pencil files under `ui/components` and
+`ui/pages`. When a Pencil file changes, the corresponding product behavior,
+page structure, or UI styling is reflected here using the current real frontend
+code organization.
+
+## Architecture
+
+The prototype project reuses `spx-gui` as its runtime base:
+
+- Vite config, env loading, API proxy, server headers, widgets, routing, and
+  shared frontend behavior come from `spx-gui`.
+- Vue, Vue Router, TailwindCSS utilities, component conventions, data fetching,
+  and interaction patterns should match the real frontend implementation.
+- Prototype files under `ui/prototype/src` override only the pages or components
+  affected by the latest Pencil changes.
+- Routes and components that are not overridden continue to resolve to the real
+  `spx-gui/src` implementation.
+
+This keeps the prototype useful for reviewing concrete UI/product changes while
+preserving the behavior of the full XBuilder application.
+
+## Change Policy
+
+- Keep the prototype project fixed at `ui/prototype`.
+- Make changes only under `ui/`.
+- Do not build standalone static pages or duplicate an independent frontend
+  stack.
+- If the target page or component does not exist in `ui/prototype`, initialize it
+  from the current real frontend structure before applying prototype changes.
+- If an existing prototype file has drifted from the current real frontend
+  structure, align the structure first, then apply the Pencil-driven change.
+- Override only the affected page or component. For example, a change in
+  `ui/pages/**/tutorial.pen` should not replace unrelated routes.
+
+## Active Overrides
+
+The current prototype setup overrides:
+
+- `@/pages/tutorials/index.vue`
+- `@/components/community/CommunityNavbar.vue`
+- `@/components/community/CenteredWrapper.vue`
+- `@/components/navbar/NavbarWrapper.vue`
+- `@/pages/editor/index.vue`
+- `@/components/editor/ProjectEditor.vue`
+- `@/components/editor/sprite/SpriteEditor.vue`
+- `@/components/editor/sprite/CostumesEditor.vue`
+- `@/components/editor/sprite/AnimationEditor.vue`
+- `@/components/tutorials/CourseSeriesItem.vue`
+- `@/components/tutorials/TutorialsBanner.vue`
+- `@/assets/wasm/*`, generated locally for the prototype runtime
+
+All other routes and unresolved aliases continue to use the real `spx-gui`
+implementation.
+
+## Development
 
 ```bash
 npm install --ignore-scripts
 npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
-预览地址：
+Open:
 
 ```text
 http://127.0.0.1:5174/
 ```
 
-## Scope
+If the requested port is already in use, Vite will choose the next available
+port. Use the actual URL printed by Vite.
 
-- `/` 重定向到 `/tutorials`
-- `/tutorials` 使用 prototype 页面，并直接引用 `ui/images` 中的设计资源
-- 样式通过 Tailwind v4 utility class 实现，并在 `src/styles/app.css` 中维护与真实前端接近的 `@theme inline` token 映射
-- 本地 mock 教程数据与卡片点击反馈
-- 导航、banner、列表和页脚都保留为纯展示层实现
+`npm run dev` and `npm run build` run `scripts/build-wasm.sh` first. The script
+builds the local wasm assets required by the reused Builder frontend runtime and
+writes them to `src/assets/wasm/`.
 
-## Constraints
+## Verification
 
-- 这个目录应始终可单独安装、单独启动、单独构建
-- 可以复用 `ui/images` 这类设计资源，但不要直接 import 真实前端项目中的代码或配置
-- 如需模拟交互，只保留用于预览 UI 的最小本地状态
+After changing the prototype, run:
+
+```bash
+npm run build
+```
+
+Then start the preview server and verify the affected UI plus representative
+real application routes:
+
+- `/` loads the real XBuilder home page.
+- `/tutorials` loads the prototype override when tutorials is the affected area.
+- Navigation, search, course card navigation, and project/user pages remain
+  usable.
+- Console errors should be investigated. Backend 4xx responses from real API
+  data should be distinguished from frontend runtime, routing, or override
+  errors.

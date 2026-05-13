@@ -143,4 +143,3 @@ Code PR 不应绕开 issue 和 Design PR 单独解释需求。
 - Issue 编写规则：[Issue 模板](./issue-template.md)
 - Design PR 编写规则：[PR 模板](./pr-template.md)
 - Prototype 维护规则：[`ui/skills/prototype-maintenance/SKILL.md`](../skills/prototype-maintenance/SKILL.md)
-- 旧版协作流程：[团队工作流程（旧版）](./team-workflow-legacy.md)

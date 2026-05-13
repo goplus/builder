@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "./scripts/build-wasm.sh",
     "dev": "vite",
+    "prebuild": "./scripts/build-wasm.sh",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview"
   },

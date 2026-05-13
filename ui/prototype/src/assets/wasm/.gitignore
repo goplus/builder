@@ -1,0 +1,4 @@
+# This directory is populated by executing the `ui/prototype/scripts/build-wasm.sh` script.
+*
+*/*
+!.gitignore

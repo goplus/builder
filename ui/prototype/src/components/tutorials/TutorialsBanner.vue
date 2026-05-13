@@ -1,9 +1,14 @@
+<script setup lang="ts">
+import bannerUrl from '@ui-images/banner.png'
+</script>
+
 <template>
-  <section class="relative h-84.5 min-w-360 overflow-hidden bg-turquoise-100">
-    <img class="absolute top-0 left-1/2 h-84.5 w-[max(100%,2560px)] max-w-none -translate-x-1/2 object-cover" src="@ui-images/banner.png" alt="" />
-    <div class="absolute top-22.75 left-[calc(50%+16px)] w-122.5 text-turquoise-700">
-      <h1 class="m-0 text-[36px] leading-normal font-bold">Explore the User Tutorial</h1>
-      <p class="mt-2 text-[18px] leading-normal">Build coding skills and develop a programming mindset</p>
+  <div class="tutorials-banner" :style="{ backgroundImage: `url(${bannerUrl})` }">
+    <div class="banner-copy">
+      <div class="banner-title">{{ $t({ en: 'Explore the User Tutorial', zh: '探索用户教程' }) }}</div>
+      <div class="banner-subtitle">
+        {{ $t({ en: 'Build coding skills and develop a programming mindset', zh: '构建编程技能，培养程序思维' }) }}
+      </div>
     </div>
-  </section>
+  </div>
 </template>

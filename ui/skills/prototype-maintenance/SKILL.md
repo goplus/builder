@@ -7,6 +7,19 @@ description: Use when creating, updating, or validating Builder UI prototypes un
 
 Use this skill when maintaining `ui/prototype` for Builder design work.
 
+## Invocation Contract
+
+When the user says they changed a Pencil file under `ui/pages` or `ui/components`
+and asks to update the prototype, treat that as a complete request. The user
+does not need to restate the workflow.
+
+For example, this is sufficient:
+
+> I changed `/path/to/builder/ui/pages/spx/editor-sprite.pen`; update prototype.
+
+From that, infer the target design surface, locate the corresponding real
+frontend implementation, update `ui/prototype`, and validate the preview.
+
 ## Goal
 
 `ui/prototype` is a runnable product prototype, not an isolated static demo. It should reflect the current Pencil design change while staying aligned with the real Builder frontend structure and behavior.
@@ -14,17 +27,25 @@ Use this skill when maintaining `ui/prototype` for Builder design work.
 ## Required Workflow
 
 1. Start from the real frontend.
+   - Map the changed Pencil file to the corresponding real frontend route,
+     page, component, or UI surface.
    - Inspect the corresponding implementation in the current Builder frontend before editing prototype code.
    - Reuse the same page structure, routing model, component boundaries, styling approach, and interaction logic where practical.
    - Do not invent a standalone demo architecture.
 
 2. Ensure the target prototype surface exists.
-   - If `ui/prototype` does not have the page or UI being changed, initialize it from the current real frontend structure.
-   - If it exists but has drifted from the real frontend organization, align the structure first, then apply the design change.
+   - If `ui/prototype` does not have the page or UI being changed, initialize it
+     from the current real frontend structure.
+   - If it exists but has drifted from the real frontend organization, align the
+     structure first, then apply the design change.
+   - Add or adjust prototype aliasing/config only as needed to override the
+     affected surface while keeping the rest of the app on the real frontend.
 
 3. Apply only the current design change.
-   - Sync the latest relevant Pencil page change into `ui/prototype`.
+   - Sync the latest relevant Pencil change into `ui/prototype`.
    - If only `tutorial.pen` changed, only override the tutorials surface.
+   - If only `editor-sprite.pen` changed, only override the editor sprite
+     surface.
    - Other pages, routes, and features must continue to use or mirror the original real frontend behavior and remain accessible.
 
 4. Keep edits scoped.

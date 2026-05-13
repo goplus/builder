@@ -1,14 +1,29 @@
 {
   "extends": "./tsconfig.node.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "jsx": "preserve",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@ui-images/*": ["../images/*"]
-    },
-    "types": ["vite/client"]
+      "@/*": ["../../spx-gui/src/*"],
+      "@docs/*": ["../../docs/*"],
+      "@prototype/*": ["src/*"],
+      "@ui-images/*": ["../images/*"],
+      "@/pages/tutorials/index.vue": ["src/pages/tutorials/index.vue"],
+      "@/components/tutorials/CourseSeriesItem.vue": ["src/components/tutorials/CourseSeriesItem.vue"],
+      "@/components/tutorials/TutorialsBanner.vue": ["src/components/tutorials/TutorialsBanner.vue"],
+      "@/components/community/CommunityNavbar.vue": ["src/components/community/CommunityNavbar.vue"],
+      "@/components/community/CenteredWrapper.vue": ["src/components/community/CenteredWrapper.vue"],
+      "@/components/navbar/NavbarWrapper.vue": ["src/components/navbar/NavbarWrapper.vue"],
+      "@/pages/editor/index.vue": ["src/pages/editor/index.vue"],
+      "@/components/editor/ProjectEditor.vue": ["src/components/editor/ProjectEditor.vue"],
+      "@/components/editor/sprite/SpriteEditor.vue": ["src/components/editor/sprite/SpriteEditor.vue"],
+      "@/components/editor/sprite/CostumesEditor.vue": ["src/components/editor/sprite/CostumesEditor.vue"],
+      "@/components/editor/sprite/AnimationEditor.vue": ["src/components/editor/sprite/AnimationEditor.vue"],
+      "vue": ["../../spx-gui/node_modules/vue"],
+      "vue-router": ["../../spx-gui/node_modules/vue-router"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "../../spx-gui/src/**/*.ts", "../../spx-gui/src/**/*.vue"]
 }
