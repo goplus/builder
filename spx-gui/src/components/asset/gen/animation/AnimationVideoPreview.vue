@@ -495,9 +495,12 @@ function formatTime(timeInMs: number) {
   position: relative;
   width: 100%;
   height: 20px;
-  padding: 0 11px; /* 11px = segment-marker width + current-time width/2 */
   background: var(--ui-color-grey-400);
   border-radius: 2px;
+  --segment-marker-width: 10px;
+  --playhead-width: 2px;
+  --track-padding: calc(var(--segment-marker-width) + var(--playhead-width) / 2);
+  padding: 0 var(--track-padding);
 }
 
 .track-inner {
@@ -548,7 +551,7 @@ function formatTime(timeInMs: number) {
 
 .segment {
   position: absolute;
-  margin: 0 -11px;
+  margin: 0 calc(-1 * var(--track-padding));
   top: 0;
   bottom: 0;
   background: var(--ui-color-primary-200);
@@ -561,7 +564,7 @@ function formatTime(timeInMs: number) {
 }
 
 .segment-marker {
-  width: 10px;
+  width: var(--segment-marker-width);
   height: 20px;
   background: var(--ui-color-primary-500);
   border-radius: 2px;
@@ -609,8 +612,8 @@ function formatTime(timeInMs: number) {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -1px;
-  width: 2px;
+  left: calc(-1 * var(--playhead-width) / 2);
+  width: var(--playhead-width);
   border-radius: 1px;
   background: var(--ui-color-yellow-500);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
