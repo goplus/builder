@@ -18,7 +18,7 @@ function openTutorial(tutorial: TutorialCard) {
 </script>
 
 <template>
-  <div class="prototype-tutorial-page">
+  <div class="flex min-h-screen min-w-360 flex-col bg-grey-100 font-main text-text">
     <CommunityNavbar />
 
     <TutorialHome
@@ -26,7 +26,11 @@ function openTutorial(tutorial: TutorialCard) {
       @open-tutorial="openTutorial"
     />
 
-    <div v-if="activeTutorial" class="toast" role="status">
+    <div
+      v-if="activeTutorial"
+      class="fixed right-6 bottom-[72px] z-30 rounded-md bg-grey-1000 px-4 py-3 text-sm text-grey-100 shadow-sm"
+      role="status"
+    >
       Opening {{ activeTutorial.title }}
     </div>
 
