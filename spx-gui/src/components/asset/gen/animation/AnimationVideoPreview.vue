@@ -13,6 +13,28 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   /** Current playback time in ms */
   const currentTime = ref(0)
 
+  function seek(timeInMs: number) {
+    const video = videoRef.value
+    if (video == null) return
+    const nextTime = Math.max(0, timeInMs)
+    video.currentTime = nextTime / 1000
+    currentTime.value = nextTime
+  }
+
+  function pausePlayback() {
+    stopTick()
+    const video = videoRef.value
+    if (video == null) return
+    video.pause()
+  }
+
+  function suspend() {
+    const wasPlaying = isPlaying.value
+    isPlaying.value = false
+    pausePlayback()
+    return wasPlaying
+  }
+
   const [startTick, stopTick] = useTick(() => {
     const video = videoRef.value
     if (video == null) return
@@ -34,7 +56,8 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
     rangeRef,
     (newRange) => {
       if (newRange == null || videoRef.value == null) return
-      videoRef.value.currentTime = newRange.start / 1000
+      if (currentTime.value >= newRange.start && currentTime.value < newRange.end) return
+      seek(newRange.start)
     },
     { immediate: true }
   )
@@ -66,15 +89,15 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   async function stop() {
     if (!isPlaying.value) return
     isPlaying.value = false
-    stopTick()
-    const video = await untilNotNull(videoRef)
-    video.pause()
+    pausePlayback()
   }
 
   return {
     isPlaying,
     duration,
     currentTime,
+    seek,
+    suspend,
     play,
     stop
   }
@@ -147,7 +170,15 @@ const playingRange = computed<PlayRange | null>(() => {
   }
 })
 
-const { isPlaying, duration: videoDurationRef, currentTime, play, stop } = useVideoPlayer(videoRef, playingRange)
+const {
+  isPlaying,
+  duration: videoDurationRef,
+  currentTime,
+  seek,
+  suspend,
+  play,
+  stop
+} = useVideoPlayer(videoRef, playingRange)
 
 /** Playback progress in range [0, 1] */
 const progress = computed(() => {
@@ -175,7 +206,7 @@ watch(
   { immediate: true }
 )
 
-const trackRef = ref<HTMLDivElement | null>(null)
+const trackInnerRef = ref<HTMLDivElement | null>(null)
 // Shows nudge animation on mount, hides after first user hover
 const shouldNudge = ref(true)
 
@@ -196,11 +227,12 @@ const currentTimeStyle = computed(() => {
   return { left }
 })
 
-type DragTarget = 'start' | 'end'
+type DragTarget = 'start' | 'end' | 'preview'
 type Dragging = {
   target: DragTarget
   pointerId: number
   rect: DOMRect
+  resumePlayback: boolean
 }
 
 // TODO: Check if we can reuse `useDraggable` from utils
@@ -216,14 +248,43 @@ function stopDragging() {
 
 onScopeDispose(stopDragging)
 
+function getTrackProgressRect() {
+  return trackInnerRef.value?.getBoundingClientRect() ?? null
+}
+
+function getPreviewTimeForDragTarget(target: Exclude<DragTarget, 'preview'>) {
+  if (target === 'start') return cutStartRef.value
+  return Math.max(cutStartRef.value, cutEndRef.value - 1)
+}
+
+function getTimeFromPointer(clientX: number, rect: DOMRect, duration: number) {
+  if (rect.width <= 0) return 0
+  const ratio = (clientX - rect.left) / rect.width
+  return clamp(ratio * duration, 0, duration)
+}
+
+function updatePreviewTime(clientX: number) {
+  if (dragging == null) return
+  const videoDuration = videoDurationRef.value
+  if (videoDuration == null) return
+  const time = getTimeFromPointer(clientX, dragging.rect, videoDuration)
+  seek(clamp(time, cutStartRef.value, cutEndRef.value))
+}
+
 function handleDragStart(target: DragTarget, e: PointerEvent) {
-  const track = trackRef.value
-  if (track == null) return
-  const rect = track.getBoundingClientRect()
+  const rect = getTrackProgressRect()
+  if (rect == null) return
+  shouldNudge.value = false
   dragging = {
     target,
     pointerId: e.pointerId,
-    rect
+    rect,
+    resumePlayback: suspend()
+  }
+  if (target === 'preview') {
+    updatePreviewTime(e.clientX)
+  } else {
+    seek(getPreviewTimeForDragTarget(target))
   }
   e.preventDefault()
   window.addEventListener('pointermove', handleDragMove)
@@ -231,25 +292,50 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
   window.addEventListener('pointercancel', handleDragEnd)
 }
 
+function handlePreviewStart(e: PointerEvent) {
+  if (e.target !== e.currentTarget) return
+  handleDragStart('preview', e)
+}
+
 function handleDragMove(e: PointerEvent) {
   if (dragging == null || e.pointerId !== dragging.pointerId) return
   const videoDuration = videoDurationRef.value
   if (videoDuration == null) return
-  const ratio = (e.clientX - dragging.rect.left) / dragging.rect.width
-  const time = snap(ratio * videoDuration)
+  if (dragging.target === 'preview') {
+    updatePreviewTime(e.clientX)
+    return
+  }
+  const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
   const minDuration = precision
   if (dragging.target === 'start') {
     cutStartRef.value = clamp(time, 0, cutEndRef.value - minDuration)
   } else {
     cutEndRef.value = clamp(time, cutStartRef.value + minDuration, videoDuration)
   }
+  seek(getPreviewTimeForDragTarget(dragging.target))
 }
 
 function handleDragEnd(e: PointerEvent) {
   if (dragging == null || e.pointerId !== dragging.pointerId) return
+  const { target, resumePlayback } = dragging
   stopDragging()
-  notifyFramesConfigChanged()
-  play()
+  if (target !== 'preview') {
+    snapDraggedRange(target)
+    seek(getPreviewTimeForDragTarget(target))
+    notifyFramesConfigChanged()
+  }
+  if (resumePlayback) play()
+}
+
+function snapDraggedRange(target: Exclude<DragTarget, 'preview'>) {
+  const videoDuration = videoDurationRef.value
+  if (videoDuration == null) return
+  const minDuration = precision
+  if (target === 'start') {
+    cutStartRef.value = clamp(snap(cutStartRef.value), 0, cutEndRef.value - minDuration)
+  } else {
+    cutEndRef.value = clamp(snap(cutEndRef.value), cutStartRef.value + minDuration, videoDuration)
+  }
 }
 
 /** Precision for snapping in ms */
@@ -288,9 +374,14 @@ function formatTime(timeInMs: number) {
         @stop="stop"
       />
       <div class="timeline">
-        <div ref="trackRef" class="track">
-          <div class="track-inner" :class="{ nudge: shouldNudge }" @mouseenter.once="shouldNudge = false">
-            <div class="segment" :style="segmentStyle">
+        <div class="track">
+          <div
+            ref="trackInnerRef"
+            class="track-inner"
+            :class="{ nudge: shouldNudge }"
+            @mouseenter.once="shouldNudge = false"
+          >
+            <div class="segment" :style="segmentStyle" @pointerdown="handlePreviewStart">
               <button
                 v-radar="{ name: 'Start marker', desc: 'Drag to adjust start time of extracted segment' }"
                 class="segment-marker left"
@@ -304,15 +395,21 @@ function formatTime(timeInMs: number) {
                 @pointerdown="handleDragStart('end', $event)"
               ></button>
             </div>
-            <i class="current-time" :style="currentTimeStyle"></i>
+            <button
+              class="current-time"
+              :style="currentTimeStyle"
+              type="button"
+              @pointerdown="handleDragStart('preview', $event)"
+            ></button>
             <div class="track-tips">
               {{ $t({ zh: '拖动滑块截取动画片段', en: 'Drag markers to cut animation segment' }) }}
             </div>
           </div>
         </div>
-        <div class="time-row">
-          <span class="time">{{ formatTime(0) }}</span>
-          <span class="time">{{ formatTime(videoDurationRef) }}</span>
+        <div class="flex items-center text-xs">
+          <span class="w-9 text-grey-700">{{ formatTime(currentTime) }}</span>
+          <span class="mr-1 text-grey-600">/</span>
+          <span class="w-9 text-grey-600">{{ formatTime(videoDurationRef) }}</span>
         </div>
       </div>
     </div>
@@ -398,7 +495,7 @@ function formatTime(timeInMs: number) {
   position: relative;
   width: 100%;
   height: 20px;
-  padding: 0 5px;
+  padding: 0 11px; /* 11px = segment-marker width + current-time width/2 */
   background: var(--ui-color-grey-400);
   border-radius: 2px;
 }
@@ -451,7 +548,7 @@ function formatTime(timeInMs: number) {
 
 .segment {
   position: absolute;
-  margin: 0 -5px;
+  margin: 0 -11px;
   top: 0;
   bottom: 0;
   background: var(--ui-color-primary-200);
@@ -460,9 +557,7 @@ function formatTime(timeInMs: number) {
   align-items: center;
   justify-content: space-between;
   padding: 0;
-  transition:
-    left 0.1s,
-    right 0.1s;
+  cursor: pointer;
 }
 
 .segment-marker {
@@ -502,22 +597,36 @@ function formatTime(timeInMs: number) {
   position: absolute;
   top: 0;
   bottom: 0;
+  width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.current-time::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -1px;
   width: 2px;
+  border-radius: 1px;
+  background: var(--ui-color-yellow-500);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.current-time::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -6px;
+  width: 12px;
+}
+
+.current-time::before,
+.current-time::after {
   pointer-events: none;
-  transform: translateX(-1px);
-  background: var(--ui-color-primary-500);
-}
-
-.time-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--ui-color-grey-700);
-}
-
-.time {
-  white-space: nowrap;
 }
 </style>
