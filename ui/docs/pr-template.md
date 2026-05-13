@@ -47,7 +47,7 @@
 
 ### Design System Impact
 
-- [ ] Yes (requires Component PR)
+- [ ] Yes
 - [ ] No
 ```
 
