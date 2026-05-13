@@ -1,15 +1,9 @@
 <script setup lang="ts">
-const emit = defineEmits<{
-  search: [keyword: string]
-}>()
-
 let searchValue = ''
 
 function submitSearch(event: Event) {
   event.preventDefault()
-  const keyword = searchValue.trim()
-  window.location.href = keyword === '' ? '/search' : `/search?q=${encodeURIComponent(keyword)}`
-  emit('search', keyword)
+  searchValue = searchValue.trim()
 }
 </script>
 
@@ -18,7 +12,7 @@ function submitSearch(event: Event) {
     <div class="navbar-inner">
       <div class="navbar-left">
         <a class="navbar-logo" href="/" aria-label="XBuilder home">
-          <img src="@/components/navbar/logo.svg" alt="XBuilder" />
+          <img src="../../../../images/ai-canvas-logo.png" alt="XBuilder" />
         </a>
 
         <button class="navbar-dropdown-trigger" type="button" aria-label="Project menu">
@@ -57,6 +51,7 @@ function submitSearch(event: Event) {
           <input
             type="search"
             placeholder="Search project"
+            :value="searchValue"
             @input="searchValue = ($event.target as HTMLInputElement).value"
           />
         </form>

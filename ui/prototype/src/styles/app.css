@@ -1,3 +1,11 @@
+.prototype-root,
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+}
+
 .prototype-tutorial-page {
   --prototype-color-turquoise-500: #36c2cf;
   --prototype-color-turquoise-700: #20747c;
@@ -19,6 +27,10 @@
   font-family:
     Inter, 'Source Han Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system,
     BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.prototype-root {
+  min-height: 100vh;
 }
 
 .prototype-tutorial-page *,

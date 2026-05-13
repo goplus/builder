@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
-import CommunityFooter from '@prototype/components/community/CommunityFooter.vue'
-import CommunityNavbar from '@prototype/components/community/CommunityNavbar.vue'
-import TutorialHome from '@prototype/components/tutorials/TutorialHome.vue'
-import { tutorials, type TutorialCard } from '@prototype/data/tutorials'
-import { usePageTitle } from '@/utils/utils'
-import '@prototype/styles/app.css'
+import CommunityFooter from '@/components/community/CommunityFooter.vue'
+import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
+import TutorialHome from '@/components/tutorials/TutorialHome.vue'
+import { tutorials, type TutorialCard } from '@/data/tutorials'
 
-usePageTitle({
-  en: 'Tutorials',
-  zh: '教程'
+onMounted(() => {
+  document.title = 'Tutorials - XBuilder'
 })
 
 const activeTutorial = ref<TutorialCard | null>(null)
