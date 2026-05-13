@@ -23,11 +23,15 @@ const prototypeNavbarWrapper = fileURLToPath(new URL('./src/components/navbar/Na
 const prototypeEditorPage = fileURLToPath(new URL('./src/pages/editor/index.vue', import.meta.url))
 const prototypeProjectEditor = fileURLToPath(new URL('./src/components/editor/ProjectEditor.vue', import.meta.url))
 const prototypeSpriteEditor = fileURLToPath(new URL('./src/components/editor/sprite/SpriteEditor.vue', import.meta.url))
+const prototypeSpriteItem = fileURLToPath(new URL('./src/components/editor/sprite/SpriteItem.vue', import.meta.url))
 const prototypeCostumesEditor = fileURLToPath(
   new URL('./src/components/editor/sprite/CostumesEditor.vue', import.meta.url)
 )
 const prototypeAnimationEditor = fileURLToPath(
   new URL('./src/components/editor/sprite/AnimationEditor.vue', import.meta.url)
+)
+const prototypeEditorSpriteItem = fileURLToPath(
+  new URL('./src/components/ui/block-items/UIEditorSpriteItem.vue', import.meta.url)
 )
 const prototypeWasmRoot = fileURLToPath(new URL('./src/assets/wasm', import.meta.url))
 const uiImagesRoot = fileURLToPath(new URL('../images', import.meta.url))
@@ -107,12 +111,20 @@ export default defineConfig(async (env) => {
           replacement: prototypeSpriteEditor
         },
         {
+          find: /^@\/components\/editor\/sprite\/SpriteItem\.vue$/,
+          replacement: prototypeSpriteItem
+        },
+        {
           find: /^@\/components\/editor\/sprite\/CostumesEditor\.vue$/,
           replacement: prototypeCostumesEditor
         },
         {
           find: /^@\/components\/editor\/sprite\/AnimationEditor\.vue$/,
           replacement: prototypeAnimationEditor
+        },
+        {
+          find: /^@\/components\/ui\/block-items\/UIEditorSpriteItem\.vue$/,
+          replacement: prototypeEditorSpriteItem
         },
         {
           find: '@prototype',

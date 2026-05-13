@@ -19,8 +19,10 @@
       "@/pages/editor/index.vue": ["src/pages/editor/index.vue"],
       "@/components/editor/ProjectEditor.vue": ["src/components/editor/ProjectEditor.vue"],
       "@/components/editor/sprite/SpriteEditor.vue": ["src/components/editor/sprite/SpriteEditor.vue"],
+      "@/components/editor/sprite/SpriteItem.vue": ["src/components/editor/sprite/SpriteItem.vue"],
       "@/components/editor/sprite/CostumesEditor.vue": ["src/components/editor/sprite/CostumesEditor.vue"],
       "@/components/editor/sprite/AnimationEditor.vue": ["src/components/editor/sprite/AnimationEditor.vue"],
+      "@/components/ui/block-items/UIEditorSpriteItem.vue": ["src/components/ui/block-items/UIEditorSpriteItem.vue"],
       "vue": ["../../spx-gui/node_modules/vue"],
       "vue-router": ["../../spx-gui/node_modules/vue-router"]
     }

@@ -15,9 +15,9 @@
         For details, see: https://github.com/vuejs/core/issues/2349
     -->
     <SpriteEditor
-      v-if="selected.type === 'sprite' && selected.sprite != null"
+      v-if="selected.type === 'sprite' && selected.sprite != null && spriteEditorState != null"
       :sprite="selected.sprite"
-      :state="editorCtx.state.spriteState!"
+      :state="spriteEditorState"
     />
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UICard } from '@/components/ui'
-import SpriteEditor from './sprite/SpriteEditor.vue'
+import SpriteEditor, { type SpriteEditorState } from './sprite/SpriteEditor.vue'
 import StageEditor from '@/components/editor/stage/StageEditor.vue'
 import EditorPreview from '@/components/editor/preview/EditorPreview.vue'
 import EditorPanels from '@/components/editor/panels/EditorPanels.vue'
@@ -51,6 +51,7 @@ const editorCtx = useEditorCtx()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
+const spriteEditorState = computed(() => editorCtx.state.spriteState as unknown as SpriteEditorState | null)
 
 useSpxEditorCopilot()
 
