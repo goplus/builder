@@ -11,6 +11,13 @@ import (
 	"github.com/goplus/spx/v2/pkg/ispx"
 )
 
+var (
+	// defaultPackagesToImport is the list of packages that are always imported by ispx.
+	defaultPackagesToImport = []string{
+		"github.com/goplus/builder/tools/ai",
+	}
+)
+
 func init() {
 	// NOTE: Keep in sync with the config in spx's gop.mod.
 	xgobuild.RegisterProject(&modfile.Project{
@@ -24,9 +31,12 @@ func init() {
 
 // ispxInit initializes the ispx interpreter with extended capabilities.
 func ispxInit() error {
-	ixgoCtx := ixgo.NewContext(ixgo.SupportMultipleInterp)
+	ixgoCtx := ixgo.NewContext(ixgo.SupportMultipleInterp | xgobuild.StaticLoad)
 	ixgoCtx.Lookup = nil // Let [ispx.Init] handle the lookup.
 	ixgoCtx.SetPanic(logWithPanicInfo)
+	for _, pkg := range defaultPackagesToImport {
+		ixgoCtx.Loader.Import(pkg)
+	}
 
 	// Override fmt.Print* functions to log with caller info.
 	ixgoCtx.RegisterExternal("fmt.Print", func(frame *ixgo.Frame, a ...any) (n int, err error) {
