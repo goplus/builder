@@ -18,7 +18,7 @@ defineEmits<{
       @click="$emit('select', tutorial)"
     >
       <div class="card-image" aria-hidden="true">
-        <img src="../../../../images/map-bg.png" alt="" />
+        <img src="@ui-images/map-bg.png" alt="" />
       </div>
       <div class="card-info">
         <h2>{{ tutorial.title }}</h2>

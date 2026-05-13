@@ -12,7 +12,7 @@ function submitSearch(event: Event) {
     <div class="navbar-inner">
       <div class="navbar-left">
         <a class="navbar-logo" href="/" aria-label="XBuilder home">
-          <img src="../../../../images/ai-canvas-logo.png" alt="XBuilder" />
+          <img src="@ui-images/ai-canvas-logo.png" alt="XBuilder" />
         </a>
 
         <button class="navbar-dropdown-trigger" type="button" aria-label="Project menu">
