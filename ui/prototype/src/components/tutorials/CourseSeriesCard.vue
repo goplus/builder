@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TutorialCard } from '@prototype/data/tutorials'
+import type { TutorialCard } from '@/data/tutorials'
 
 defineProps<{
   tutorial: TutorialCard
@@ -18,7 +18,7 @@ defineEmits<{
       @click="$emit('select', tutorial)"
     >
       <div class="card-image" aria-hidden="true">
-        <img src="@ui-images/map-bg.png" alt="" />
+        <img src="../../../../images/map-bg.png" alt="" />
       </div>
       <div class="card-info">
         <h2>{{ tutorial.title }}</h2>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import CenteredWrapper from '@prototype/components/community/CenteredWrapper.vue'
-import CourseSeriesCard from '@prototype/components/tutorials/CourseSeriesCard.vue'
-import TutorialsBanner from '@prototype/components/tutorials/TutorialsBanner.vue'
-import type { TutorialCard } from '@prototype/data/tutorials'
+import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import CourseSeriesCard from '@/components/tutorials/CourseSeriesCard.vue'
+import TutorialsBanner from '@/components/tutorials/TutorialsBanner.vue'
+import type { TutorialCard } from '@/data/tutorials'
 
 defineProps<{
   tutorials: TutorialCard[]
