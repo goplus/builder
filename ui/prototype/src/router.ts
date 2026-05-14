@@ -13,6 +13,11 @@ const router = createRouter({
       component: () => import('@/pages/tutorials/index.vue')
     },
     {
+      path: '/editor',
+      name: 'editor',
+      component: () => import('@/pages/editor/index.vue')
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/tutorials'
     }
