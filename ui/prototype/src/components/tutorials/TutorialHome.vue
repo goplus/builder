@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import CenteredWrapper from '@prototype/components/community/CenteredWrapper.vue'
-import CourseSeriesCard from '@prototype/components/tutorials/CourseSeriesCard.vue'
-import TutorialsBanner from '@prototype/components/tutorials/TutorialsBanner.vue'
-import type { TutorialCard } from '@prototype/data/tutorials'
+import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import CourseSeriesCard from '@/components/tutorials/CourseSeriesCard.vue'
+import TutorialsBanner from '@/components/tutorials/TutorialsBanner.vue'
+import type { TutorialCard } from '@/data/tutorials'
 
 defineProps<{
   tutorials: TutorialCard[]
@@ -14,13 +14,13 @@ defineEmits<{
 </script>
 
 <template>
-  <main class="tutorial-main">
+  <main class="flex-1">
     <TutorialsBanner />
 
-    <CenteredWrapper class="home-content">
-      <h2 class="tutorial-section-title">All Tutorials</h2>
+    <CenteredWrapper class="pt-3 pb-10">
+      <h2 class="mb-1.5 flex h-15 w-full items-center justify-start text-xl leading-6 font-normal text-title">All Tutorials</h2>
 
-      <ul class="series-grid">
+      <ul class="grid list-none grid-cols-4 justify-center gap-5 p-0 m-0">
         <CourseSeriesCard
           v-for="tutorial in tutorials"
           :key="tutorial.id"

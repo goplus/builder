@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
-import CommunityFooter from '@prototype/components/community/CommunityFooter.vue'
-import CommunityNavbar from '@prototype/components/community/CommunityNavbar.vue'
-import TutorialHome from '@prototype/components/tutorials/TutorialHome.vue'
-import { tutorials, type TutorialCard } from '@prototype/data/tutorials'
-import { usePageTitle } from '@/utils/utils'
-import '@prototype/styles/app.css'
+import CommunityFooter from '@/components/community/CommunityFooter.vue'
+import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
+import TutorialHome from '@/components/tutorials/TutorialHome.vue'
+import { tutorials, type TutorialCard } from '@/data/tutorials'
 
-usePageTitle({
-  en: 'Tutorials',
-  zh: '教程'
+onMounted(() => {
+  document.title = 'Tutorials - XBuilder'
 })
 
 const activeTutorial = ref<TutorialCard | null>(null)
@@ -21,7 +18,7 @@ function openTutorial(tutorial: TutorialCard) {
 </script>
 
 <template>
-  <div class="prototype-tutorial-page">
+  <div class="flex min-h-screen min-w-360 flex-col bg-grey-100 font-main text-text">
     <CommunityNavbar />
 
     <TutorialHome
@@ -29,7 +26,11 @@ function openTutorial(tutorial: TutorialCard) {
       @open-tutorial="openTutorial"
     />
 
-    <div v-if="activeTutorial" class="toast" role="status">
+    <div
+      v-if="activeTutorial"
+      class="fixed right-6 bottom-[72px] z-30 rounded-md bg-grey-1000 px-4 py-3 text-sm text-grey-100 shadow-sm"
+      role="status"
+    >
       Opening {{ activeTutorial.title }}
     </div>
 
