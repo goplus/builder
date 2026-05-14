@@ -1,33 +1,57 @@
 # XBuilder Prototype Preview
 
-这是一个独立的 UI 原型工程，用来预览 `ui/pages/spx/tutorial.pen` 和 `ui/pages/spx/editor-sprite.pen` 对应的设计实现。
-它保持与真实前端相近的组织方式和技术栈：基于 Vite、Vue 3、Vue Router、Tailwind CSS v4，按页面、
-组件、数据和样式拆分；主题 token、基础排版和字体资源尽量与真实前端保持一致，但不包含业务逻辑，也不直接依赖真实前端项目。
+`ui/prototype` is the runnable Builder prototype preview workspace for design changes in `ui/pages` and `ui/components`.
 
-## Run
+It should behave like the real Builder frontend preview with only the current prototype surface overridden. It is not meant to be a standalone static demo.
+
+## Run Locally
+
+Run commands from this directory:
 
 ```bash
-npm install --ignore-scripts
+cd /Users/zengqingqing/workspace/builder/ui/prototype
+npm run vercel:install
 npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
-预览地址：
+`npm run dev` runs the real frontend preparation step first, matching `spx-gui` dev behavior: install SPX web assets, build wasm assets, and build tutorial books.
+
+Preview URL:
 
 ```text
 http://127.0.0.1:5174/
 ```
 
-## Scope
+## Current Scope
 
-- `/` 重定向到 `/tutorials`
-- `/tutorials` 使用 prototype 页面，并直接引用 `ui/images` 中的设计资源
-- `/editor` 使用 prototype 页面预览 editor sprite 列表中的名称截断、原生 tooltip 和隐藏状态图标
-- 样式通过 Tailwind v4 utility class 实现，并在 `src/styles/app.css` 中维护与真实前端接近的 `@theme inline` token 映射
-- 本地 mock 教程数据与卡片点击反馈
-- 导航、banner、列表和页脚都保留为纯展示层实现
+- Routes, navigation, search, tutorial pages, project pages, and editor entry points come from the real `spx-gui` frontend.
+- The current prototype override replaces only `spx-gui/src/components/ui/block-items/UIEditorSpriteItem.vue`.
+- Prototype-authored overrides live under `ui/prototype/src/overrides`
+- Shared design assets may be read from `ui/images`
+- Real frontend structure, route behavior, styling conventions, and generated prerequisites should be taken from `spx-gui`
 
-## Constraints
+## Vercel
 
-- 这个目录应始终可单独安装、单独启动、单独构建
-- 可以复用 `ui/images` 这类设计资源，但不要直接 import 真实前端项目中的代码或配置
-- 如需模拟交互，只保留用于预览 UI 的最小本地状态
+The Vercel preview for this directory should be configured as a Builder frontend overlay preview:
+
+- Root Directory: `ui/prototype`
+- Install Command: `source ./vercel-install.sh`
+- Build Command: `source ./vercel-build.sh`
+- Output Directory: `dist`
+
+The install script prepares both sides of the preview:
+
+- installs the Go toolchain when needed for the Builder wasm build
+- installs dependencies in `../../spx-gui`
+- installs dependencies in `ui/prototype`
+
+The build script prepares real frontend generated assets before building the prototype:
+
+- runs `npm run build` in `ui/prototype`
+- relies on the `prebuild` step to install SPX web assets, build wasm assets, and build tutorial books first
+
+This keeps Vercel aligned with Builder's real frontend prerequisites while still emitting the prototype preview from `ui/prototype/dist`.
+
+## Maintenance
+
+See `AGENTS.md` for the full prototype maintenance contract.

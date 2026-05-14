@@ -1,0 +1,12 @@
+{
+  "framework": "vite",
+  "installCommand": "source ./vercel-install.sh",
+  "buildCommand": "source ./vercel-build.sh",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

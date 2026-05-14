@@ -4,9 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prepare:frontend": "bash ./prepare-frontend.sh",
+    "predev": "bash ./prepare-frontend.sh",
     "dev": "vite",
+    "prebuild": "bash ./prepare-frontend.sh",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vercel:install": "bash ./vercel-install.sh",
+    "vercel:build": "bash ./vercel-build.sh"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.2.2",
