@@ -108,11 +108,11 @@ Code PR 不应只从静态设计稿重新推导实现方案，而应把 Design P
 
 ## Prototype 维护
 
-Prototype 的维护规则已经单独整理为 skill：
+Prototype 的维护规则已经移植到 `ui/prototype/AGENTS.md`：
 
-- [`ui/skills/prototype-maintenance/SKILL.md`](../skills/prototype-maintenance/SKILL.md)
+- [`ui/prototype/AGENTS.md`](../prototype/AGENTS.md)
 
-当任务涉及 `ui/prototype`、Pencil 页面改动同步、prototype 预览环境或 prototype 与真实前端代码对齐时，应优先使用该 skill。
+当任务涉及 `ui/prototype`、Pencil 页面改动同步、prototype 预览环境或 prototype 与真实前端代码对齐时，应优先遵循该文件。
 
 ## 责任边界
 
@@ -142,5 +142,5 @@ Code PR 不应绕开 issue 和 Design PR 单独解释需求。
 
 - Issue 编写规则：[Issue 模板](./issue-template.md)
 - Design PR 编写规则：[PR 模板](./pr-template.md)
-- Prototype 维护规则：[`ui/skills/prototype-maintenance/SKILL.md`](../skills/prototype-maintenance/SKILL.md)
+- Prototype 维护规则：[`ui/prototype/AGENTS.md`](../prototype/AGENTS.md)
 - 旧版协作流程：[团队工作流程（旧版）](./team-workflow-legacy.md)

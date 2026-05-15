@@ -5,7 +5,7 @@
     "jsx": "preserve",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "paths": {
-      "@/*": ["src/*"],
+      "@/*": ["../../spx-gui/src/*"],
       "@ui-images/*": ["../images/*"]
     },
     "types": ["vite/client"]
