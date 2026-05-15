@@ -14,13 +14,22 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   const currentTime = ref(0)
   /** Version async play requests so pause/stop can invalidate stale play() continuations after await. */
   let playRequestVersion = 0
+  /** Latest requested preview seek time in ms while a browser seek may still be in flight. */
+  let pendingSeekTime: number | null = null
+
+  function flushPendingSeek() {
+    const video = videoRef.value
+    if (video == null || pendingSeekTime == null || video.seeking) return
+    const nextTime = pendingSeekTime
+    pendingSeekTime = null
+    video.currentTime = nextTime / 1000
+  }
 
   function seek(timeInMs: number) {
-    const video = videoRef.value
-    if (video == null) return
     const nextTime = Math.max(0, timeInMs)
-    video.currentTime = nextTime / 1000
     currentTime.value = nextTime
+    pendingSeekTime = nextTime
+    flushPendingSeek()
   }
 
   function pausePlayback() {
@@ -69,7 +78,11 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
     (video, _, onCleanup) => {
       if (video == null) return
       video.addEventListener('loadedmetadata', handleLoadedMetadata)
-      onCleanup(() => video.removeEventListener('loadedmetadata', handleLoadedMetadata))
+      video.addEventListener('seeked', flushPendingSeek)
+      onCleanup(() => {
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata)
+        video.removeEventListener('seeked', flushPendingSeek)
+      })
     },
     { immediate: true }
   )
