@@ -6,7 +6,7 @@
       "id": "so3Mg",
       "x": -720,
       "y": -92,
-      "name": "page",
+      "name": "PageSearch",
       "height": 900,
       "fill": "$t:grey300",
       "layout": "vertical",
@@ -17,8 +17,8 @@
           "id": "stYWm",
           "type": "ref",
           "ref": "t:WiWwa",
-          "x": 0.0003949726852182021,
-          "y": -1.505576084203085,
+          "x": 0.0003717389978524254,
+          "y": -0.005576084248048119,
           "children": [
             {
               "id": "fYG5L",
@@ -30,7 +30,7 @@
         {
           "type": "frame",
           "id": "j0KrA",
-          "name": "content",
+          "name": "HeaderSection",
           "clip": true,
           "width": 1440,
           "fill": "$t:grey300",
@@ -41,7 +41,7 @@
             {
               "type": "frame",
               "id": "hhuwk",
-              "name": "sub header",
+              "name": "Header",
               "clip": true,
               "width": 1440,
               "fill": "$t:grey100",
@@ -51,7 +51,7 @@
                 {
                   "type": "frame",
                   "id": "HWMDT",
-                  "name": "sub header content",
+                  "name": "HeaderContent",
                   "clip": true,
                   "width": 988,
                   "padding": [
@@ -126,6 +126,7 @@
         {
           "type": "frame",
           "id": "rAUZ7",
+          "name": "Body",
           "width": 1440,
           "height": 788,
           "fill": "$t:grey300",
@@ -138,7 +139,7 @@
             {
               "type": "frame",
               "id": "P27RNF",
-              "name": "Container",
+              "name": "Content",
               "width": 1440,
               "height": "fill_container",
               "stroke": {
@@ -157,7 +158,7 @@
                 {
                   "type": "frame",
                   "id": "Q69Pf",
-                  "name": "list",
+                  "name": "ResultsList",
                   "width": 988,
                   "stroke": {
                     "align": "inside",
@@ -175,7 +176,7 @@
                     {
                       "type": "frame",
                       "id": "DHEUM",
-                      "name": "Grid",
+                      "name": "CardGridTopRow",
                       "gap": "$t:space-5",
                       "children": [
                         {
@@ -259,7 +260,7 @@
                     {
                       "type": "frame",
                       "id": "gkOw6",
-                      "name": "Grid",
+                      "name": "CardGridBottomRow",
                       "gap": "$t:space-5",
                       "children": [
                         {
@@ -345,7 +346,7 @@
                 {
                   "type": "frame",
                   "id": "Z87Sw",
-                  "name": "Frame 1000002981",
+                  "name": "PaginationSection",
                   "width": 988,
                   "fill": "$t:grey100",
                   "cornerRadius": 8,

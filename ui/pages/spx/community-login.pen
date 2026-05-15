@@ -6,7 +6,7 @@
       "id": "ROyt9",
       "x": 6978,
       "y": 3547,
-      "name": "Login/pc",
+      "name": "PageLoginDesktop",
       "clip": true,
       "width": 1440,
       "height": 1016,
@@ -28,7 +28,7 @@
         {
           "type": "frame",
           "id": "OHdeB",
-          "name": "login-container-pc",
+          "name": "LoginPanel",
           "width": 1000,
           "fill": "$r:grey100",
           "cornerRadius": 16,
@@ -55,7 +55,7 @@
             {
               "type": "frame",
               "id": "0SPCV",
-              "name": "login-top-area",
+              "name": "Header",
               "width": "fill_container",
               "padding": [
                 36,
@@ -80,7 +80,7 @@
             {
               "type": "frame",
               "id": "hXdrd",
-              "name": "login-middle-area",
+              "name": "Content",
               "width": "fill_container",
               "justifyContent": "space_between",
               "alignItems": "center",
@@ -88,7 +88,7 @@
                 {
                   "type": "frame",
                   "id": "Uxg4s",
-                  "name": "login-illustration-pc-container",
+                  "name": "Illustration",
                   "width": 500,
                   "layout": "vertical",
                   "gap": 10,
@@ -107,7 +107,7 @@
                 {
                   "type": "frame",
                   "id": "vGtql",
-                  "name": "login-signin-pc-container",
+                  "name": "SignInPanel",
                   "clip": true,
                   "width": 500,
                   "height": 460,
@@ -130,7 +130,7 @@
                     {
                       "type": "frame",
                       "id": "WxNZJ",
-                      "name": "login-logo-name",
+                      "name": "Brand",
                       "stroke": {
                         "align": "inside",
                         "thickness": 1
@@ -197,7 +197,7 @@
       "id": "CF3U2",
       "x": 8497,
       "y": 3719,
-      "name": "Login/app",
+      "name": "PageLoginApp",
       "clip": true,
       "width": 390,
       "height": 844,
@@ -220,7 +220,7 @@
         {
           "type": "frame",
           "id": "EMvsJ",
-          "name": "login-container-app",
+          "name": "Content",
           "layout": "vertical",
           "gap": 64,
           "justifyContent": "center",
@@ -229,7 +229,7 @@
             {
               "type": "frame",
               "id": "5s6ZN",
-              "name": "login-signin-app-container",
+              "name": "Brand",
               "clip": true,
               "layout": "vertical",
               "gap": "$r:space-3",
