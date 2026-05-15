@@ -8,6 +8,7 @@
       "y": -1231,
       "name": "page-run",
       "width": 1440,
+      "height": 1096,
       "fill": "$m:grey300",
       "layout": "vertical",
       "gap": 20,
@@ -24,8 +25,8 @@
           "id": "FVq8K",
           "type": "ref",
           "ref": "m:WiWwa",
-          "x": 0,
-          "y": 0,
+          "x": 0.0001975079347187812,
+          "y": 12.494423915796858,
           "children": [
             {
               "id": "wMq6E",
@@ -122,7 +123,7 @@
                           "descendants": {
                             "m:EOln9": {
                               "content": "m",
-                              "fontFamily": "XBuilder_Icons_02"
+                              "fontFamily": "XBuilder_NewIcons_02"
                             }
                           }
                         }
@@ -268,7 +269,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 0,
-                  "y": 0,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "dIf8S",
@@ -281,8 +282,8 @@
                   "id": "bDTdT",
                   "type": "ref",
                   "ref": "m:m6A5K",
-                  "x": 248,
-                  "y": 0,
+                  "x": 248.00000000000006,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "tRCem",
@@ -295,8 +296,8 @@
                   "id": "chirl",
                   "type": "ref",
                   "ref": "m:m6A5K",
-                  "x": 496,
-                  "y": 0,
+                  "x": 496.0000000000001,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "8fjeW",
@@ -309,8 +310,8 @@
                   "id": "n77Cm",
                   "type": "ref",
                   "ref": "m:m6A5K",
-                  "x": 744,
-                  "y": 0,
+                  "x": 744.0000000000002,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "B4Tkn",
@@ -323,8 +324,8 @@
                   "id": "l1WrV",
                   "type": "ref",
                   "ref": "m:m6A5K",
-                  "x": 992,
-                  "y": 0,
+                  "x": 992.0000000000003,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "0jY01",
@@ -346,6 +347,7 @@
       "y": 1231,
       "name": "Running in full screen",
       "width": 1440,
+      "height": 900,
       "fill": "$m:grey100",
       "layout": "vertical",
       "gap": "$m:space-5",
@@ -361,7 +363,7 @@
           "id": "JcMtk",
           "type": "ref",
           "ref": "m:WiWwa",
-          "x": 0,
+          "x": 0.0001975079347187812,
           "y": 0,
           "children": [
             {
@@ -395,6 +397,7 @@
       "y": -10,
       "name": "page-running",
       "width": 1440,
+      "height": 1096,
       "fill": "$m:grey300",
       "layout": "vertical",
       "gap": 20,
@@ -411,8 +414,8 @@
           "id": "teJml",
           "type": "ref",
           "ref": "m:WiWwa",
-          "x": 0,
-          "y": 0,
+          "x": 0.00019750793483246803,
+          "y": 12.494423915796858,
           "children": [
             {
               "id": "zdjtd",
@@ -499,7 +502,7 @@
                           "descendants": {
                             "m:EOln9": {
                               "content": "m",
-                              "fontFamily": "XBuilder_Icons_02"
+                              "fontFamily": "XBuilder_NewIcons_02"
                             }
                           }
                         }
@@ -645,7 +648,7 @@
                   "type": "ref",
                   "ref": "m:m6A5K",
                   "x": 0,
-                  "y": 0,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "2k3Ou",
@@ -658,8 +661,8 @@
                   "id": "X9L46",
                   "type": "ref",
                   "ref": "m:m6A5K",
-                  "x": 248,
-                  "y": 0,
+                  "x": 248.00000000000006,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "XgdY1",
@@ -672,8 +675,8 @@
                   "id": "F0PMx",
                   "type": "ref",
                   "ref": "m:m6A5K",
-                  "x": 496,
-                  "y": 0,
+                  "x": 496.0000000000001,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "fHeUB",
@@ -686,8 +689,8 @@
                   "id": "Fhuxu",
                   "type": "ref",
                   "ref": "m:m6A5K",
-                  "x": 744,
-                  "y": 0,
+                  "x": 744.0000000000002,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "yG6eQ",
@@ -700,8 +703,8 @@
                   "id": "QiLW0",
                   "type": "ref",
                   "ref": "m:m6A5K",
-                  "x": 992,
-                  "y": 0,
+                  "x": 992.0000000000003,
+                  "y": 5.682361148043719e-14,
                   "children": [
                     {
                       "id": "YbM9a",
