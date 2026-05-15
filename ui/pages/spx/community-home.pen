@@ -6,7 +6,7 @@
       "id": "zQsHr",
       "x": 0,
       "y": 0,
-      "name": "page",
+      "name": "PageHome",
       "width": 1440,
       "height": 1412,
       "fill": "$r:grey300",
@@ -34,6 +34,7 @@
         {
           "type": "frame",
           "id": "U2vTu4",
+          "name": "Body",
           "width": 1440,
           "fill": "$r:grey300",
           "stroke": {
@@ -45,7 +46,7 @@
             {
               "type": "frame",
               "id": "ft4bi",
-              "name": "Container",
+              "name": "Content",
               "width": 1440,
               "stroke": {
                 "align": "inside",
@@ -64,7 +65,7 @@
                 {
                   "type": "frame",
                   "id": "wARjE",
-                  "name": "Frame 1000004790",
+                  "name": "MainContent",
                   "stroke": {
                     "align": "inside",
                     "thickness": 1
@@ -79,7 +80,7 @@
                     {
                       "type": "frame",
                       "id": "HCYbL",
-                      "name": "Frame 1000004673",
+                      "name": "CommunityFeed",
                       "clip": true,
                       "width": "fill_container",
                       "fill": "$r:grey100",
@@ -93,7 +94,7 @@
                         {
                           "type": "frame",
                           "id": "yhhdN",
-                          "name": "Banner",
+                          "name": "HeroBanner",
                           "width": "fill_container",
                           "height": 230,
                           "fill": "$r:blue100",
@@ -109,13 +110,13 @@
                             {
                               "type": "frame",
                               "id": "qBwfY",
-                              "name": "文字",
+                              "name": "HeroContent",
                               "gap": 10,
                               "children": [
                                 {
                                   "type": "frame",
                                   "id": "br4yM",
-                                  "name": "Frame 1000003090",
+                                  "name": "HeroBody",
                                   "width": 400,
                                   "layout": "vertical",
                                   "gap": 28,
@@ -123,7 +124,7 @@
                                     {
                                       "type": "frame",
                                       "id": "crXfo",
-                                      "name": "Frame 1000003089",
+                                      "name": "HeroHeader",
                                       "width": "fill_container",
                                       "layout": "vertical",
                                       "gap": 8,
@@ -186,14 +187,14 @@
                     {
                       "type": "frame",
                       "id": "yzBtD",
-                      "name": "Section Liking",
+                      "name": "CommunityLikingSection",
                       "layout": "vertical",
                       "gap": "$r:space-5",
                       "children": [
                         {
                           "type": "frame",
                           "id": "WwSDE",
-                          "name": "section1Header",
+                          "name": "Header",
                           "width": "fill_container",
                           "justifyContent": "space_between",
                           "alignItems": "center",
@@ -216,7 +217,7 @@
                             {
                               "type": "frame",
                               "id": "OV6Vu",
-                              "name": "ViewAllWrapper",
+                              "name": "SecondaryAction",
                               "gap": 4,
                               "alignItems": "center",
                               "children": [
@@ -262,7 +263,7 @@
                         {
                           "type": "frame",
                           "id": "QoacQ",
-                          "name": "Grid",
+                          "name": "CardList",
                           "gap": "$r:space-5",
                           "children": [
                             {
@@ -348,14 +349,14 @@
                     {
                       "type": "frame",
                       "id": "9bBWi",
-                      "name": "Section Remixing",
+                      "name": "CommunityRemixingSection",
                       "layout": "vertical",
                       "gap": "$r:space-5",
                       "children": [
                         {
                           "type": "frame",
                           "id": "pdEpo",
-                          "name": "section1Header",
+                          "name": "Header",
                           "width": "fill_container",
                           "justifyContent": "space_between",
                           "alignItems": "center",
@@ -378,7 +379,7 @@
                             {
                               "type": "frame",
                               "id": "AmAGf",
-                              "name": "ViewAllWrapper",
+                              "name": "SecondaryAction",
                               "gap": 4,
                               "alignItems": "center",
                               "children": [
@@ -424,7 +425,7 @@
                         {
                           "type": "frame",
                           "id": "WFMW4",
-                          "name": "Grid",
+                          "name": "CardList",
                           "gap": "$r:space-5",
                           "children": [
                             {
@@ -510,14 +511,14 @@
                     {
                       "type": "frame",
                       "id": "ZRuN8",
-                      "name": "Section Remixing",
+                      "name": "FollowingCreationSection",
                       "layout": "vertical",
                       "gap": "$r:space-5",
                       "children": [
                         {
                           "type": "frame",
                           "id": "eB4hv",
-                          "name": "section1Header",
+                          "name": "Header",
                           "width": "fill_container",
                           "justifyContent": "space_between",
                           "alignItems": "center",
@@ -540,7 +541,7 @@
                             {
                               "type": "frame",
                               "id": "dgCOp",
-                              "name": "ViewAllWrapper",
+                              "name": "SecondaryAction",
                               "gap": 4,
                               "alignItems": "center",
                               "children": [
@@ -586,7 +587,7 @@
                         {
                           "type": "frame",
                           "id": "Xr7Ls",
-                          "name": "Grid",
+                          "name": "CardList",
                           "gap": "$r:space-5",
                           "children": [
                             {

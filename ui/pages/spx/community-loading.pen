@@ -1,0 +1,112 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "ofW9x",
+      "x": -672,
+      "y": -481,
+      "name": "PageLoading",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$9:grey300",
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "vertical",
+      "alignItems": "center",
+      "children": [
+        {
+          "id": "cm5BB",
+          "type": "ref",
+          "ref": "9:WiWwa",
+          "x": 0.00018589109107464483,
+          "y": 0,
+          "children": [
+            {
+              "id": "vSWuG",
+              "type": "ref",
+              "ref": "9:cnhih",
+              "descendants": {
+                "9:vxyh6": {
+                  "fill": "$9:grey300"
+                },
+                "9:xIVoM": {
+                  "fill": "$9:grey600"
+                },
+                "9:vV9hb": {
+                  "fill": "$9:grey600"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "f0mDR",
+          "name": "Body",
+          "width": "fill_container",
+          "height": 852,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "layout": "vertical",
+          "gap": "$9:radius-3",
+          "padding": [
+            "$9:space-5",
+            0
+          ],
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "H4HZWV",
+              "name": "LoadingScreen",
+              "width": 1082,
+              "height": 812,
+              "fill": [
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "../../images/project-fullscreen.png",
+                  "mode": "fill"
+                },
+                "#24292f99"
+              ],
+              "cornerRadius": "$9:border-radius-1",
+              "stroke": {
+                "align": "inside",
+                "thickness": 3.1157803535461426
+              },
+              "layout": "none",
+              "children": [
+                {
+                  "id": "Z1Fuea",
+                  "type": "ref",
+                  "ref": "9:Yg1nD",
+                  "x": 411,
+                  "y": 320.4521952169764,
+                  "rotation": 1.4033418597069752e-14,
+                  "children": [
+                    {
+                      "id": "knRcJ",
+                      "type": "ref",
+                      "ref": "9:5XouD"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "9": "../../components/spx/builder-component.lib.pen"
+  }
+}
