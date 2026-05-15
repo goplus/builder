@@ -1,7 +1,7 @@
 # Design to Code Mapping Guide (Legacy)
 
 > 本文是旧版 `.pen` 到 `spx-gui` 的映射与规范化文档，主要服务旧版设计同步流程。
-> 当前 prototype 维护规则请优先查看 [`ui/skills/prototype-maintenance/SKILL.md`](../skills/prototype-maintenance/SKILL.md)。
+> 当前 prototype 维护规则请优先查看 [`ui/prototype/AGENTS.md`](../prototype/AGENTS.md)。
 
 本文记录整个仓库里 `.pen` 设计资产与 `spx-gui` 前端实现之间的对应关系，供后续开发者同步设计稿到代码时使用。
 

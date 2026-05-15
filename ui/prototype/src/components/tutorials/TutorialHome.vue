@@ -2,14 +2,10 @@
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CourseSeriesCard from '@/components/tutorials/CourseSeriesCard.vue'
 import TutorialsBanner from '@/components/tutorials/TutorialsBanner.vue'
-import type { TutorialCard } from '@/data/tutorials'
+import type { CourseSeries } from '@/data/mock'
 
 defineProps<{
-  tutorials: TutorialCard[]
-}>()
-
-defineEmits<{
-  openTutorial: [tutorial: TutorialCard]
+  tutorials: CourseSeries[]
 }>()
 </script>
 
@@ -24,8 +20,7 @@ defineEmits<{
         <CourseSeriesCard
           v-for="tutorial in tutorials"
           :key="tutorial.id"
-          :tutorial="tutorial"
-          @select="$emit('openTutorial', $event)"
+          :series="tutorial"
         />
       </ul>
     </CenteredWrapper>
