@@ -1,36 +1,26 @@
+import { getSpxProjectSkillFiles, spxProjectSkillName } from '@/utils/spx'
+import { getXGoLanguageSkillFiles, xgoLanguageSkillName } from '@/utils/xgo'
 import { fromText, type Files } from '@/models/common/file'
 import { InMemorySkillRegistry } from './registry'
 import type { SkillBundle, SkillRegistry } from './types'
 
-export const skillSpxProject = 'spx-project'
-export const skillXgoLanguage = 'xgo-language'
+export const skillSpxProject = spxProjectSkillName
+export const skillXgoLanguage = xgoLanguageSkillName
 
-const builtInSkills = [skillSpxProject, skillXgoLanguage]
+const builtInSkillFileGetters = [getSpxProjectSkillFiles, getXGoLanguageSkillFiles]
 
-const bundleFiles = import.meta.glob(
-  './bundles/**/*.md', // For now we only bundle markdown resources from built-in skills.
-  {
-    eager: true,
-    query: '?raw',
-    import: 'default'
-  }
-) as Record<string, string>
-
-function createBuiltInSkillBundle(name: string): SkillBundle {
+function createBuiltInSkillBundle(skillFiles: Record<string, string>): SkillBundle {
   const files: Files = {}
-  const pathPrefix = `./bundles/${name}/`
-  for (const path of Object.keys(bundleFiles).sort()) {
-    if (!path.startsWith(pathPrefix)) continue
-    const filePath = path.slice(pathPrefix.length)
-    files[filePath] = fromText(filePath, bundleFiles[path])
+  for (const [filePath, content] of Object.entries(skillFiles)) {
+    files[filePath] = fromText(filePath, content)
   }
   return { files }
 }
 
 export function createBuiltInSkillRegistry(): SkillRegistry {
   const registry = new InMemorySkillRegistry()
-  for (const name of builtInSkills) {
-    const bundle = createBuiltInSkillBundle(name)
+  for (const getFiles of builtInSkillFileGetters) {
+    const bundle = createBuiltInSkillBundle(getFiles())
     registry.register(bundle)
   }
   return registry

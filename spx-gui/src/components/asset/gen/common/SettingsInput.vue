@@ -23,8 +23,9 @@ import {
 import { useContentSize } from '@/utils/dom'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 
-import enrichingFileUrl from './enriching.lottie?url'
 import enrichIcon from './enrich.svg?raw'
+
+const enrichingFileUrl = new URL('./enriching.lottie', import.meta.url).href
 
 const props = withDefaults(
   defineProps<{

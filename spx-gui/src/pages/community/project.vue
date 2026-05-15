@@ -47,7 +47,6 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
 import { cloudHelpers } from '@/models/common/cloud'
-import kikoWaveSvg from './kiko-wave.svg?raw'
 
 const props = defineProps<{
   ownerInput: string
@@ -394,11 +393,10 @@ const remixesRet = useQuery(
                     <template v-if="runnerState === 'initial'">
                       <div v-if="needsSignInToRun" class="h-full w-full flex items-center justify-center p-6">
                         <div
-                          class="relative w-85 flex flex-col items-center overflow-visible rounded-[16px] bg-grey-100 px-6 pt-17 pb-6 text-center shadow-lg"
+                          class="relative w-85 flex flex-col items-center overflow-visible rounded-md bg-grey-100 p-6 text-center"
                         >
-                          <!-- eslint-disable-next-line vue/no-v-html -->
-                          <div class="kiko-wave" aria-hidden="true" v-html="kikoWaveSvg"></div>
-                          <p class="mb-11 leading-6 text-grey-800">
+                          <UIIcon type="info" class="h-10 w-10" />
+                          <p class="mt-2 mb-6 text-base text-hint-1">
                             {{
                               $t({
                                 en: 'This game requires sign-in before playing',
@@ -682,18 +680,5 @@ const remixesRet = useQuery(
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-}
-
-.kiko-wave {
-  position: absolute;
-  top: -56px;
-  width: 340px;
-  line-height: 0;
-}
-
-.kiko-wave > svg {
-  display: block;
-  width: 100%;
-  height: auto;
 }
 </style>

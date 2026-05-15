@@ -12,6 +12,33 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   const duration = ref<number | null>(null)
   /** Current playback time in ms */
   const currentTime = ref(0)
+  /** Version async play requests so pause/stop can invalidate stale play() continuations after await. */
+  let playRequestVersion = 0
+  /** Latest requested preview seek time in ms while a browser seek may still be in flight. */
+  let pendingSeekTime: number | null = null
+
+  function flushPendingSeek() {
+    const video = videoRef.value
+    if (video == null || pendingSeekTime == null || video.seeking) return
+    const nextTime = pendingSeekTime
+    pendingSeekTime = null
+    video.currentTime = nextTime / 1000
+  }
+
+  function seek(timeInMs: number) {
+    const nextTime = Math.max(0, timeInMs)
+    currentTime.value = nextTime
+    pendingSeekTime = nextTime
+    flushPendingSeek()
+  }
+
+  function pausePlayback() {
+    playRequestVersion += 1
+    stopTick()
+    const video = videoRef.value
+    if (video == null) return
+    video.pause()
+  }
 
   const [startTick, stopTick] = useTick(() => {
     const video = videoRef.value
@@ -29,12 +56,13 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
     currentTime.value = video.currentTime * 1000
   })
 
-  // If range changes, replay from range start
+  // Keep preview time inside the current play range when the range changes.
   watch(
     rangeRef,
     (newRange) => {
       if (newRange == null || videoRef.value == null) return
-      videoRef.value.currentTime = newRange.start / 1000
+      if (currentTime.value >= newRange.start && currentTime.value < newRange.end) return
+      seek(newRange.start)
     },
     { immediate: true }
   )
@@ -50,7 +78,11 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
     (video, _, onCleanup) => {
       if (video == null) return
       video.addEventListener('loadedmetadata', handleLoadedMetadata)
-      onCleanup(() => video.removeEventListener('loadedmetadata', handleLoadedMetadata))
+      video.addEventListener('seeked', flushPendingSeek)
+      onCleanup(() => {
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata)
+        video.removeEventListener('seeked', flushPendingSeek)
+      })
     },
     { immediate: true }
   )
@@ -58,23 +90,24 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   async function play() {
     if (isPlaying.value) return
     isPlaying.value = true
+    const requestVersion = ++playRequestVersion
     startTick()
     const video = await untilNotNull(videoRef)
+    if (!isPlaying.value || requestVersion !== playRequestVersion) return
     return video.play()
   }
 
-  async function stop() {
+  function stop() {
     if (!isPlaying.value) return
     isPlaying.value = false
-    stopTick()
-    const video = await untilNotNull(videoRef)
-    video.pause()
+    pausePlayback()
   }
 
   return {
     isPlaying,
     duration,
     currentTime,
+    seek,
     play,
     stop
   }
@@ -147,7 +180,7 @@ const playingRange = computed<PlayRange | null>(() => {
   }
 })
 
-const { isPlaying, duration: videoDurationRef, currentTime, play, stop } = useVideoPlayer(videoRef, playingRange)
+const { isPlaying, duration: videoDurationRef, currentTime, seek, play, stop } = useVideoPlayer(videoRef, playingRange)
 
 /** Playback progress in range [0, 1] */
 const progress = computed(() => {
@@ -175,7 +208,7 @@ watch(
   { immediate: true }
 )
 
-const trackRef = ref<HTMLDivElement | null>(null)
+const trackInnerRef = ref<HTMLDivElement | null>(null)
 // Shows nudge animation on mount, hides after first user hover
 const shouldNudge = ref(true)
 
@@ -196,11 +229,12 @@ const currentTimeStyle = computed(() => {
   return { left }
 })
 
-type DragTarget = 'start' | 'end'
+type DragTarget = 'start' | 'end' | 'preview'
 type Dragging = {
   target: DragTarget
   pointerId: number
   rect: DOMRect
+  wasPlaying: boolean
 }
 
 // TODO: Check if we can reuse `useDraggable` from utils
@@ -216,14 +250,39 @@ function stopDragging() {
 
 onScopeDispose(stopDragging)
 
+function getTimeFromPointer(clientX: number, rect: DOMRect, duration: number) {
+  if (rect.width <= 0) return 0
+  const ratio = (clientX - rect.left) / rect.width
+  return clamp(ratio * duration, 0, duration)
+}
+
+function getPreviewTimeForDragTarget(target: Exclude<DragTarget, 'preview'>) {
+  if (target === 'start') return cutStartRef.value
+  // end - 1ms: keep the right-handle preview just inside the play range so it doesn't immediately wrap to start.
+  return Math.max(cutStartRef.value, cutEndRef.value - 1)
+}
+
 function handleDragStart(target: DragTarget, e: PointerEvent) {
-  const track = trackRef.value
-  if (track == null) return
-  const rect = track.getBoundingClientRect()
+  // Ignore extra pointerdowns (for example from multi-touch) until the current drag finishes.
+  if (dragging != null) return
+  const rect = trackInnerRef.value?.getBoundingClientRect() ?? null
+  if (rect == null) return
+  const videoDuration = videoDurationRef.value
+  if (videoDuration == null) return
+  shouldNudge.value = false
+  const wasPlaying = isPlaying.value
+  stop()
   dragging = {
     target,
     pointerId: e.pointerId,
-    rect
+    rect,
+    wasPlaying
+  }
+  if (target === 'preview') {
+    const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
+    seek(clamp(time, cutStartRef.value, cutEndRef.value))
+  } else {
+    seek(getPreviewTimeForDragTarget(target))
   }
   e.preventDefault()
   window.addEventListener('pointermove', handleDragMove)
@@ -231,29 +290,60 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
   window.addEventListener('pointercancel', handleDragEnd)
 }
 
+function handleSegmentPointerDown(e: PointerEvent) {
+  // Ignore pointerdown events from child handles (segment markers).
+  if (e.target !== e.currentTarget) return
+  handleDragStart('preview', e)
+}
+
 function handleDragMove(e: PointerEvent) {
   if (dragging == null || e.pointerId !== dragging.pointerId) return
   const videoDuration = videoDurationRef.value
   if (videoDuration == null) return
-  const ratio = (e.clientX - dragging.rect.left) / dragging.rect.width
-  const time = snap(ratio * videoDuration)
-  const minDuration = precision
-  if (dragging.target === 'start') {
-    cutStartRef.value = clamp(time, 0, cutEndRef.value - minDuration)
-  } else {
-    cutEndRef.value = clamp(time, cutStartRef.value + minDuration, videoDuration)
+  const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
+  if (dragging.target === 'preview') {
+    seek(clamp(time, cutStartRef.value, cutEndRef.value))
+    return
   }
+  if (dragging.target === 'start') {
+    cutStartRef.value = adjustStartTime(time)
+  } else {
+    cutEndRef.value = adjustEndTime(time, videoDuration)
+  }
+  seek(getPreviewTimeForDragTarget(dragging.target))
 }
 
 function handleDragEnd(e: PointerEvent) {
   if (dragging == null || e.pointerId !== dragging.pointerId) return
+  const { target, wasPlaying } = dragging
   stopDragging()
-  notifyFramesConfigChanged()
-  play()
+  if (target !== 'preview') {
+    if (target === 'start') {
+      cutStartRef.value = adjustStartTime(cutStartRef.value, true)
+    } else {
+      cutEndRef.value = adjustEndTime(cutEndRef.value, videoDurationRef.value!, true)
+    }
+    seek(getPreviewTimeForDragTarget(target))
+    notifyFramesConfigChanged()
+  }
+  if (wasPlaying) play()
+}
+
+function adjustStartTime(newTime: number, withSnap = false) {
+  const time = withSnap ? snap(newTime) : newTime
+  return clamp(time, 0, cutEndRef.value - minDuration)
+}
+
+function adjustEndTime(newTime: number, videoDuration: number, withSnap = false) {
+  const time = withSnap ? snap(newTime) : newTime
+  return clamp(time, cutStartRef.value + minDuration, videoDuration)
 }
 
 /** Precision for snapping in ms */
 const precision = 100
+/** Minimum allowed segment duration in ms */
+const minDuration = precision
+
 function snap(timeInMs: number) {
   return Math.round(timeInMs / precision) * precision
 }
@@ -288,9 +378,14 @@ function formatTime(timeInMs: number) {
         @stop="stop"
       />
       <div class="timeline">
-        <div ref="trackRef" class="track">
-          <div class="track-inner" :class="{ nudge: shouldNudge }" @mouseenter.once="shouldNudge = false">
-            <div class="segment" :style="segmentStyle">
+        <div class="track">
+          <div
+            ref="trackInnerRef"
+            class="track-inner"
+            :class="{ nudge: shouldNudge }"
+            @mouseenter.once="shouldNudge = false"
+          >
+            <div class="segment" :style="segmentStyle" @pointerdown="handleSegmentPointerDown">
               <button
                 v-radar="{ name: 'Start marker', desc: 'Drag to adjust start time of extracted segment' }"
                 class="segment-marker left"
@@ -310,9 +405,10 @@ function formatTime(timeInMs: number) {
             </div>
           </div>
         </div>
-        <div class="time-row">
-          <span class="time">{{ formatTime(0) }}</span>
-          <span class="time">{{ formatTime(videoDurationRef) }}</span>
+        <div class="flex items-center text-xs">
+          <span class="w-9 text-grey-700">{{ formatTime(currentTime) }}</span>
+          <span class="mr-1 text-grey-600">/</span>
+          <span class="w-9 text-grey-600">{{ formatTime(videoDurationRef) }}</span>
         </div>
       </div>
     </div>
@@ -398,9 +494,12 @@ function formatTime(timeInMs: number) {
   position: relative;
   width: 100%;
   height: 20px;
-  padding: 0 5px;
   background: var(--ui-color-grey-400);
   border-radius: 2px;
+  --segment-marker-width: 10px;
+  --playhead-width: 2px;
+  --track-padding: calc(var(--segment-marker-width) + var(--playhead-width) / 2);
+  padding: 0 var(--track-padding);
 }
 
 .track-inner {
@@ -451,7 +550,7 @@ function formatTime(timeInMs: number) {
 
 .segment {
   position: absolute;
-  margin: 0 -5px;
+  margin: 0 calc(-1 * var(--track-padding));
   top: 0;
   bottom: 0;
   background: var(--ui-color-primary-200);
@@ -460,13 +559,12 @@ function formatTime(timeInMs: number) {
   align-items: center;
   justify-content: space-between;
   padding: 0;
-  transition:
-    left 0.1s,
-    right 0.1s;
+  cursor: pointer;
+  touch-action: none;
 }
 
 .segment-marker {
-  width: 10px;
+  width: var(--segment-marker-width);
   height: 20px;
   background: var(--ui-color-primary-500);
   border-radius: 2px;
@@ -502,22 +600,19 @@ function formatTime(timeInMs: number) {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 2px;
+  width: 0;
   pointer-events: none;
-  transform: translateX(-1px);
-  background: var(--ui-color-primary-500);
 }
 
-.time-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--ui-color-grey-700);
-}
-
-.time {
-  white-space: nowrap;
+.current-time::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--playhead-width) / 2);
+  width: var(--playhead-width);
+  border-radius: 1px;
+  background: var(--ui-color-yellow-500);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 </style>

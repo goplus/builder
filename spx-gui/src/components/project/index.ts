@@ -3,6 +3,7 @@ import ModificationWarningModal from '@/components/common/ModificationWarningMod
 import { Visibility, deleteProject } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import type { SpxProject } from '@/models/spx/project'
+import { cloudHelpers } from '@/models/common/cloud'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
@@ -17,8 +18,7 @@ import ProjectModifyNameModal from './ProjectModifyNameModal.vue'
  * 3. Export the project file (`.xbp`).
  * 4. Replace `./default-project.xbp` with the exported file.
  */
-import defaultProjectFileUrl from './default-project.xbp?url'
-import { cloudHelpers } from '@/models/common/cloud'
+const defaultProjectFileUrl = new URL('./default-project.xbp', import.meta.url).href
 
 /**
  * Get the default project file as a File object

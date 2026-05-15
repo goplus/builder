@@ -1,6 +1,6 @@
 /**
  * @desc IInputHelperProvider interface + InputHelperProvider default implementation.
- * Uses ILSPClient. Handles the 4 generic input types (Integer, Decimal, String, Boolean).
+ * Uses ILSPClient. Handles primitive built-in input types and resource names.
  * Framework-specific types are handled by framework adapters.
  */
 
@@ -13,7 +13,7 @@ import type {
   Input,
   InputSlot,
   InputSlotAccept,
-  InputSlotAcceptForType,
+  ResourceInputSlotAccept,
   InputValueForType
 } from './common'
 import { BuiltInInputType, rangeContains } from './common'
@@ -73,7 +73,7 @@ export interface IInputHelperProvider {
 
 /**
  * Default implementation of IInputHelperProvider.
- * Handles input slot detection via LSP and the 4 generic input types.
+ * Handles input slot detection via LSP, primitive built-in input types, and resource names.
  * Spx-specific input types are handled by SpxInputHelperProvider.
  */
 export class InputHelperProvider implements IInputHelperProvider {
@@ -141,7 +141,7 @@ export class InputHelperProvider implements IInputHelperProvider {
         return {
           component: ResourceInput,
           getTitle: (accept: InputSlotAccept) => {
-            const resourceContext = (accept as InputSlotAcceptForType<BuiltInInputType.ResourceName>).resourceContext
+            const resourceContext = (accept as ResourceInputSlotAccept).resourceContext
             return (
               this.getResourceAdapter().provideResourceSelector(resourceContext)?.title ?? {
                 en: 'Select a resource',

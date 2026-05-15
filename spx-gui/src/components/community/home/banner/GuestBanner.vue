@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { initiateSignIn } from '@/stores/user'
 import { UIButton, UICard } from '@/components/ui'
-import bgSvg from './bg.svg'
+import bgImg from './bg.png'
 
 function handleJoin() {
   initiateSignIn()
@@ -12,7 +12,11 @@ function handleJoin() {
   <UICard class="p-3">
     <div
       class="relative rounded-md bg-[#f0faff] bg-no-repeat px-13 pt-12 pb-12.5 text-[#073156]"
-      :style="{ backgroundImage: `url(${bgSvg})`, backgroundPosition: 'center right 54px' }"
+      :style="{
+        backgroundImage: `url(${bgImg})`,
+        backgroundSize: '270px 190px',
+        backgroundPosition: 'center right 54px'
+      }"
     >
       <h1 class="text-[24px]/[1.5]">
         {{ $t({ en: 'Join XBuilder', zh: '加入 XBuilder' }) }}

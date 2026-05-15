@@ -23,6 +23,6 @@ const highlight = computed(() => props.gen.imagesGenState.status === 'finished')
     :highlight="highlight"
     :placeholder="backdropSVG"
   >
-    <UIBlockItemTitle size="medium">{{ gen.settings.name }}</UIBlockItemTitle>
+    <UIBlockItemTitle size="medium" :title="gen.settings.name">{{ gen.settings.name }}</UIBlockItemTitle>
   </GenItem>
 </template>

@@ -1,7 +1,7 @@
 <template>
   <UIBlockItem class="p-1" size="large" :active="selected" :interactive="!!selectable">
     <slot name="img" :style="imgStyle"></slot>
-    <UIBlockItemTitle class="mt-2" size="large">
+    <UIBlockItemTitle class="mt-2" size="large" :title="name">
       {{ name }}
     </UIBlockItemTitle>
     <slot></slot>

@@ -1,8 +1,7 @@
 <script lang="ts">
-import ispxWasmUrl from '@/assets/wasm/ispx.wasm?url'
-
+const ispxWasmUrl = new URL('@/assets/wasm/ispx.wasm', import.meta.url).href
 const runnerBaseUrl = `/spx_${spxVersion}`
-const runnerUrl = `${runnerBaseUrl}/runner.html`
+const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
 
 const assetURLs = {
   // TODO: include these assets as "static asset" to generate immutable URLs

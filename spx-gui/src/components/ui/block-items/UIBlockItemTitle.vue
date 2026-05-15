@@ -1,6 +1,6 @@
 <template>
   <div :class="rootClass">
-    <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+    <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap" :title="title">
       <slot></slot>
     </span>
     <slot v-if="slots.suffix != null" name="suffix"></slot>
@@ -13,6 +13,7 @@ import { cn, type ClassValue } from '../utils'
 const props = defineProps<{
   size: 'medium' | 'large'
   class?: ClassValue
+  title: string
 }>()
 
 const slots = useSlots()

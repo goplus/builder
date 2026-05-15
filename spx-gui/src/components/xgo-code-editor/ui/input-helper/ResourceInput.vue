@@ -9,13 +9,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
-import type {
-  ResourceURI,
-  ResourceIdentifier,
-  InputSlotAccept,
-  BuiltInInputType,
-  InputSlotAcceptForType
-} from '../../common'
+import type { ResourceURI, ResourceIdentifier, InputSlotAccept, ResourceInputSlotAccept } from '../../common'
 
 const props = defineProps<{
   accept: InputSlotAccept
@@ -28,7 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const { ui } = useCodeEditorUICtx()
-const accept = props.accept as InputSlotAcceptForType<BuiltInInputType.ResourceName>
+const accept = props.accept as ResourceInputSlotAccept
 const itemRenderer = computed(() => ui.codeEditor.resourceAdapter.provideResourceItemRenderer())
 const selector = computed(() => ui.codeEditor.resourceAdapter.provideResourceSelector(accept.resourceContext))
 const items = computed(() => selector.value?.getItems() ?? [])

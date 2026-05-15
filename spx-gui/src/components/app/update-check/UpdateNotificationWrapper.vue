@@ -35,7 +35,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import UIButton from '@/components/ui/UIButton.vue'
 import { UpdateChecker } from './update-checker'
-import notificationIconUrl from './notification.lottie?url'
+
+const notificationIconUrl = new URL('./notification.lottie', import.meta.url).href
 
 const visible = ref(false)
 

@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -8,9 +7,9 @@ import { getCourse, type Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 
-import { UIButton, UIModal, UIModalClose } from '@/components/ui'
+import { UIButton, UIImg, UIModal, UIModalClose } from '@/components/ui'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import success from './success.svg?raw'
+import successImg from './success.png'
 
 const props = defineProps<{
   visible: boolean
@@ -90,18 +89,16 @@ const { fn: handleStartNextCourse } = useMessageHandle(
         <UIModalClose class="close" @click="handleCancel" />
       </div>
 
-      <div class="flex flex-col items-center justify-center text-center">
-        <!-- eslint-disable vue/no-v-html -->
-        <div class="h-fit w-fit" v-html="success"></div>
+      <div class="flex flex-col items-center text-center">
+        <UIImg :src="successImg" class="h-47.5 w-67.5" />
 
-        <div>{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
-        <div>{{ courseCompleteMessage }}</div>
+        <div class="mt-5 text-2xl">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
+        <div class="mt-2 text-base">{{ courseCompleteMessage }}</div>
 
-        <div class="mt-6 w-full flex flex-col gap-5">
+        <div class="mt-10 w-full flex flex-col gap-5">
           <UIButton type="neutral" size="large" @click="handleBrowseTutorials">
             {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
           </UIButton>
-
           <UIButton v-if="hasNextCourse" size="large" @click="handleStartNextCourse">
             {{ $t({ zh: '学习下一个课程', en: 'Learn next course' }) }}
           </UIButton>

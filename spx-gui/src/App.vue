@@ -30,26 +30,14 @@ import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from '@/utils/i18n'
 import { useInstallRouteLoading } from '@/utils/route-loading'
 import { isMobile } from '@/utils/ua'
+import { getUIConfig } from './setup'
 
 const MobileReminder = defineAsyncComponent(() => import('@/components/app/device-check/MobileReminder.vue'))
 
 const showMobileReminder = isMobile()
 
-const { t } = useI18n()
-
-const config = computed<Config>(() => ({
-  confirmDialog: {
-    cancelText: t({ en: 'Cancel', zh: '取消' }),
-    confirmText: t({ en: 'Confirm', zh: '确认' })
-  },
-  empty: {
-    text: t({ en: 'No data', zh: '没有结果' })
-  },
-  error: {
-    retryText: t({ en: 'Retry', zh: '重试' }),
-    backText: t({ en: 'Back', zh: '返回' })
-  }
-}))
+const i18n = useI18n()
+const config = computed<Config>(() => getUIConfig(i18n))
 
 useInstallRouteLoading()
 </script>

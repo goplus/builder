@@ -602,11 +602,13 @@ export type InputSlotAccept = {
   [key: string]: unknown
 }
 
+export type ResourceInputSlotAccept = InputSlotAccept & {
+  /** Resource context */
+  resourceContext: ResourceContextURI
+}
+
 export type InputSlotAcceptForType<T> = T extends BuiltInInputType.ResourceName
-  ? InputSlotAccept & {
-      /** Resource context */
-      resourceContext: ResourceContextURI
-    }
+  ? ResourceInputSlotAccept
   : InputSlotAccept
 
 export type InputSlot = {
