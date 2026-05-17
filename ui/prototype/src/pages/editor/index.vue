@@ -278,8 +278,10 @@ onMounted(() => {
               <button v-for="sprite in sprites" :key="sprite.id" class="sprite-card" :class="{ active: sprite.active }" type="button">
                 <span v-if="sprite.active" class="sprite-menu">•••</span>
                 <img :src="sprite.image" :alt="sprite.name" />
-                <span class="sprite-name">{{ sprite.shortName }}</span>
-                <span v-if="sprite.hidden" class="hidden-mark">⌁</span>
+                <span class="sprite-title">
+                  <span class="sprite-name">{{ sprite.shortName }}</span>
+                  <span v-if="sprite.hidden" class="hidden-mark">⌁</span>
+                </span>
               </button>
             </div>
           </div>
@@ -810,36 +812,64 @@ onMounted(() => {
 
 .sprite-card {
   position: relative;
-  width: 84px;
-  height: 72px;
-  border: 1px solid var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-lg);
+  box-sizing: border-box;
+  width: 88px;
+  height: 88px;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-grey-100);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  justify-content: flex-start;
+  padding: 2px;
   color: var(--ui-color-grey-1000);
 }
 
+.sprite-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 .sprite-card.active {
-  border: 2px solid var(--ui-color-primary-main);
-  background: var(--ui-color-primary-100);
+  background: var(--ui-color-primary-200);
+}
+
+.sprite-card.active::before {
+  border-width: 2px;
+  border-color: var(--ui-color-primary-main);
 }
 
 .sprite-card img {
-  width: 37px;
-  height: 37px;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 5px;
   object-fit: contain;
 }
 
+.sprite-title {
+  display: flex;
+  width: 100%;
+  height: 22px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  color: var(--ui-color-grey-1000);
+  font-size: 11px;
+  line-height: 22px;
+  text-align: center;
+}
+
 .sprite-name {
-  max-width: 64px;
+  min-width: 0;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
 }
 
 .sprite-menu {
@@ -857,9 +887,7 @@ onMounted(() => {
 }
 
 .hidden-mark {
-  position: absolute;
-  right: 9px;
-  bottom: 8px;
+  flex: 0 0 auto;
   color: var(--ui-color-grey-500);
 }
 
