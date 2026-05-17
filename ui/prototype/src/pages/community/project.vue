@@ -105,18 +105,33 @@ onMounted(() => {
 
           <div class="mt-6 mb-4 h-px bg-dividing-line-1"></div>
 
-          <div class="mb-2 min-h-0 flex-[1_1_0] overflow-y-auto">
-            <details class="border-b border-grey-300 py-3" open>
-              <summary class="cursor-pointer text-base text-title">Description</summary>
-              <TextView class="mt-3" :text="project.description" placeholder="No description yet." />
+          <div class="project-collapse mb-2 min-h-0 flex-[1_1_0] overflow-y-auto">
+            <details class="project-collapse-item" open>
+              <summary class="project-collapse-summary">
+                <h5 class="m-0 text-xl font-normal text-title">Description</h5>
+                <svg class="project-collapse-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M11.4474 7.82134C11.7909 7.54092 12.2988 7.56097 12.6192 7.88091L19.6192 14.8809C19.961 15.2226 19.961 15.7775 19.6192 16.1192C19.2775 16.4608 18.7226 16.4609 18.381 16.1192L12.0001 9.73834L5.61925 16.1192C5.27753 16.4608 4.72264 16.4609 4.38097 16.1192C4.03982 15.7775 4.03954 15.2225 4.38097 14.8809L11.381 7.88091L11.4474 7.82134Z" fill="currentColor" />
+                </svg>
+              </summary>
+              <TextView class="mt-2" :text="project.description" placeholder="No description yet." />
             </details>
-            <details class="border-b border-grey-300 py-3" open>
-              <summary class="cursor-pointer text-base text-title">Play instructions</summary>
-              <TextView class="mt-3" :text="project.instructions" placeholder="No instructions yet." />
+            <details class="project-collapse-item" open>
+              <summary class="project-collapse-summary">
+                <h5 class="m-0 text-xl font-normal text-title">Play instructions</h5>
+                <svg class="project-collapse-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M11.4474 7.82134C11.7909 7.54092 12.2988 7.56097 12.6192 7.88091L19.6192 14.8809C19.961 15.2226 19.961 15.7775 19.6192 16.1192C19.2775 16.4608 18.7226 16.4609 18.381 16.1192L12.0001 9.73834L5.61925 16.1192C5.27753 16.4608 4.72264 16.4609 4.38097 16.1192C4.03982 15.7775 4.03954 15.2225 4.38097 14.8809L11.381 7.88091L11.4474 7.82134Z" fill="currentColor" />
+                </svg>
+              </summary>
+              <TextView class="mt-2" :text="project.instructions" placeholder="No instructions yet." />
             </details>
-            <details v-if="project.releaseHistory?.length" class="border-b border-grey-300 py-3" open>
-              <summary class="cursor-pointer text-base text-title">Release history</summary>
-              <ol class="m-0 mt-3 list-none p-0">
+            <details v-if="project.releaseHistory?.length" class="project-collapse-item" open>
+              <summary class="project-collapse-summary">
+                <h5 class="m-0 text-xl font-normal text-title">Release history</h5>
+                <svg class="project-collapse-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M11.4474 7.82134C11.7909 7.54092 12.2988 7.56097 12.6192 7.88091L19.6192 14.8809C19.961 15.2226 19.961 15.7775 19.6192 16.1192C19.2775 16.4608 18.7226 16.4609 18.381 16.1192L12.0001 9.73834L5.61925 16.1192C5.27753 16.4608 4.72264 16.4609 4.38097 16.1192C4.03982 15.7775 4.03954 15.2225 4.38097 14.8809L11.381 7.88091L11.4474 7.82134Z" fill="currentColor" />
+                </svg>
+              </summary>
+              <ol class="m-0 mt-2 list-none p-0">
                 <li v-for="release in project.releaseHistory" :key="release.id" class="py-2">
                   <div class="flex items-center justify-between">
                     <span class="font-medium text-title">{{ release.version }}</span>
@@ -134,3 +149,46 @@ onMounted(() => {
     </CenteredWrapper>
   </main>
 </template>
+
+<style scoped>
+.project-collapse-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-collapse-item + .project-collapse-item::before {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 16px 0;
+  background: var(--color-grey-400);
+}
+
+.project-collapse-summary {
+  display: flex;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-collapse-summary::-webkit-details-marker {
+  display: none;
+}
+
+.project-collapse-summary::marker {
+  content: '';
+  font-size: 0;
+}
+
+.project-collapse-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text);
+  transition: transform 0.3s;
+}
+
+.project-collapse-item:not([open]) .project-collapse-icon {
+  transform: rotate(180deg);
+}
+</style>
