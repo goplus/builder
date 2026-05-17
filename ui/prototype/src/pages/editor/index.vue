@@ -13,6 +13,10 @@ import soundIcon from '@/assets/editor/category-icons/sound.svg'
 import backdropPanelIcon from '@/assets/editor/stage-panel/backdrop.svg?raw'
 import soundPanelIcon from '@/assets/editor/stage-panel/sound.svg?raw'
 import widgetPanelIcon from '@/assets/editor/stage-panel/widget.svg?raw'
+import layerQuickIcon from '@/assets/editor/quick-config/layer.svg?raw'
+import positionQuickIcon from '@/assets/editor/quick-config/position.svg?raw'
+import resizeQuickIcon from '@/assets/editor/quick-config/resize.svg?raw'
+import rotateQuickIcon from '@/assets/editor/quick-config/rotate.svg?raw'
 import backdropUrl from '@/assets/projects/niu-run/editor/backdrop.png'
 import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
 import niuXiaoHuaUrl from '@/assets/projects/niu-run/editor/sprite-niu-xiao-hua.png'
@@ -125,6 +129,13 @@ const stageEntries = [
   { id: 'backdrops', label: 'Backdrops', icon: backdropPanelIcon },
   { id: 'sounds', label: 'Sounds', icon: soundPanelIcon },
   { id: 'widgets', label: 'Widgets', icon: widgetPanelIcon }
+]
+
+const quickConfigTools = [
+  { id: 'position', label: 'Position', icon: positionQuickIcon },
+  { id: 'rotation', label: 'Rotation', icon: rotateQuickIcon },
+  { id: 'size', label: 'Size', icon: resizeQuickIcon },
+  { id: 'layer', label: 'Layer order', icon: layerQuickIcon }
 ]
 
 async function runProject() {
@@ -267,10 +278,9 @@ onMounted(() => {
                 <span class="corner top-right"></span>
               </div>
               <div class="stage-tools">
-                <button type="button" aria-label="Center stage">⌾</button>
-                <button type="button" aria-label="Restart">↻</button>
-                <button type="button" aria-label="Full screen">↗</button>
-                <button type="button" aria-label="Layers">▰</button>
+                <button v-for="tool in quickConfigTools" :key="tool.id" type="button" :aria-label="tool.label">
+                  <span v-html="tool.icon"></span>
+                </button>
               </div>
             </template>
             <PrototypeProjectRunner v-show="runnerActive" ref="runnerRef" :project="project" :show-controls="false" />
@@ -776,18 +786,32 @@ onMounted(() => {
   bottom: 16px;
   transform: translateX(-50%);
   display: flex;
-  gap: 11px;
+  gap: 4px;
   align-items: center;
-  padding: 6px 12px;
+  padding: 4px;
   border-radius: 8px;
   background: var(--ui-color-grey-100);
   box-shadow: var(--ui-box-shadow-lg);
 }
 
 .stage-tools button {
-  width: 21px;
-  height: 21px;
-  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ui-border-radius-md);
+}
+
+.stage-tools button:hover {
+  background: var(--ui-color-turquoise-200);
+}
+
+.stage-tools button span,
+.stage-tools button :deep(svg) {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .asset-card {
