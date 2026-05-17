@@ -19,6 +19,10 @@ import resizeQuickIcon from '@/assets/editor/quick-config/resize.svg?raw'
 import rotateQuickIcon from '@/assets/editor/quick-config/rotate.svg?raw'
 import defaultModeIcon from '@/assets/editor/navbar-icons/default-mode.svg?raw'
 import mapEditModeIcon from '@/assets/editor/navbar-icons/map-edit-mode.svg?raw'
+import cloudCheckIcon from '@/assets/editor/navbar-icons/cloud-check.svg?raw'
+import failedToSaveIcon from '@/assets/editor/navbar-icons/failed-to-save.svg?raw'
+import offlineIcon from '@/assets/editor/navbar-icons/offline.svg?raw'
+import savingIcon from '@/assets/editor/navbar-icons/saving.svg?raw'
 import backdropUrl from '@/assets/projects/niu-run/editor/backdrop.png'
 import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
 import niuXiaoHuaUrl from '@/assets/projects/niu-run/editor/sprite-niu-xiao-hua.png'
@@ -51,6 +55,7 @@ type EventSnippet = {
 
 type EditorTab = 'code' | 'costumes' | 'animations'
 type EditMode = 'default' | 'map'
+type SaveState = 'saved' | 'saving' | 'failed' | 'offline'
 
 type AssetItem = {
   id: string
@@ -68,9 +73,14 @@ const runnerRef = ref<InstanceType<typeof PrototypeProjectRunner>>()
 const runnerActive = ref(false)
 const activeEditorTab = ref<EditorTab>('code')
 const activeEditMode = ref<EditMode>('default')
+const projectDisplayName = ref(project.value.title)
+const draftProjectDisplayName = ref(project.value.title)
+const projectNameEditing = ref(false)
+const saveState = ref<SaveState>('saved')
 const selectedCostumeId = ref('niu-xiao-qi-default')
 const selectedAnimationId = ref('niu-run')
 const selectedMapSpriteId = ref('niu-xiao-qi')
+const projectNameInputRef = ref<HTMLInputElement>()
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -255,6 +265,19 @@ const quickConfigTools = [
 ]
 
 const selectedMapSprite = computed(() => sprites.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites[0])
+const saveStateMeta = computed(() => {
+  switch (saveState.value) {
+    case 'saving':
+      return { icon: savingIcon, label: 'Saving', className: 'saving' }
+    case 'failed':
+      return { icon: failedToSaveIcon, label: 'Failed to save', className: 'failed' }
+    case 'offline':
+      return { icon: offlineIcon, label: 'No internet connection', className: 'offline' }
+    case 'saved':
+    default:
+      return { icon: cloudCheckIcon, label: 'Saved', className: 'saved' }
+  }
+})
 
 function selectEditorTab(tab: EditorTab) {
   activeEditorTab.value = tab
@@ -262,6 +285,34 @@ function selectEditorTab(tab: EditorTab) {
 
 function selectEditMode(mode: EditMode) {
   activeEditMode.value = mode
+}
+
+async function startProjectNameEdit() {
+  draftProjectDisplayName.value = projectDisplayName.value
+  projectNameEditing.value = true
+  await nextTick()
+  projectNameInputRef.value?.focus()
+  projectNameInputRef.value?.select()
+}
+
+function cancelProjectNameEdit() {
+  draftProjectDisplayName.value = projectDisplayName.value
+  projectNameEditing.value = false
+}
+
+function submitProjectNameEdit() {
+  if (!projectNameEditing.value) return
+  const nextName = draftProjectDisplayName.value.trim()
+  if (nextName === '' || nextName === projectDisplayName.value) {
+    cancelProjectNameEdit()
+    return
+  }
+  projectDisplayName.value = nextName
+  projectNameEditing.value = false
+  saveState.value = 'saving'
+  window.setTimeout(() => {
+    saveState.value = 'saved'
+  }, 650)
 }
 
 async function runProject() {
@@ -306,11 +357,35 @@ onMounted(() => {
       </div>
 
       <div class="navbar-title">
-        <span>{{ project.title }}</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M8.5 18.5H17a4 4 0 0 0 .5-8 6 6 0 0 0-11.2 1.5A3.5 3.5 0 0 0 8.5 18.5Z" />
-          <path d="m9.5 14 2 2 4-5" />
-        </svg>
+        <button
+          v-if="!projectNameEditing"
+          class="project-name-trigger"
+          type="button"
+          aria-label="Edit project display name"
+          @click="startProjectNameEdit"
+        >
+          <span>{{ projectDisplayName }}</span>
+          <span class="project-name-edit-icon">✎</span>
+        </button>
+        <form v-else class="project-name-form" @submit.prevent="submitProjectNameEdit">
+          <input
+            ref="projectNameInputRef"
+            v-model="draftProjectDisplayName"
+            aria-label="Project display name"
+            @blur="submitProjectNameEdit"
+            @keydown.esc.prevent="cancelProjectNameEdit"
+          />
+        </form>
+        <button
+          class="auto-save-state"
+          :class="saveStateMeta.className"
+          type="button"
+          :aria-label="saveStateMeta.label"
+          :title="saveStateMeta.label"
+          @click="saveState = saveState === 'offline' ? 'saved' : 'offline'"
+        >
+          <span v-html="saveStateMeta.icon"></span>
+        </button>
       </div>
 
       <div class="navbar-right">
@@ -741,14 +816,91 @@ onMounted(() => {
 }
 
 .navbar-title {
-  gap: 10px;
+  min-width: 0;
+  gap: 8px;
   font-size: 18px;
   font-weight: 500;
 }
 
-.navbar-title svg {
+.project-name-trigger {
+  min-width: 0;
+  max-width: 248px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: transparent;
+  padding: 3px 12px;
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+}
+
+.project-name-trigger:hover,
+.project-name-trigger:focus-visible {
+  background: var(--ui-color-grey-400);
+}
+
+.project-name-trigger span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-name-edit-icon {
+  display: none;
+  color: var(--ui-color-grey-800);
+  font-size: 14px;
+}
+
+.project-name-trigger:hover .project-name-edit-icon,
+.project-name-trigger:focus-visible .project-name-edit-icon {
+  display: inline;
+}
+
+.project-name-form {
+  max-width: 248px;
+}
+
+.project-name-form input {
+  width: 248px;
+  height: 34px;
+  border: 1px solid var(--ui-color-primary-main);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 0 12px;
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+  outline: none;
+}
+
+.auto-save-state {
   width: 24px;
   height: 24px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ui-color-grey-900);
+}
+
+.auto-save-state span,
+.auto-save-state :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.auto-save-state.saving :deep(svg) path {
+  stroke-dasharray: 2;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 24;
+  }
 }
 
 .mode-button {
