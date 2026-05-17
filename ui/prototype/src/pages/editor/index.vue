@@ -14,6 +14,7 @@ import backdropPanelIcon from '@/assets/editor/stage-panel/backdrop.svg?raw'
 import soundPanelIcon from '@/assets/editor/stage-panel/sound.svg?raw'
 import widgetPanelIcon from '@/assets/editor/stage-panel/widget.svg?raw'
 import layerQuickIcon from '@/assets/editor/quick-config/layer.svg?raw'
+import moreIcon from '@/assets/editor/quick-config/more.svg?raw'
 import positionQuickIcon from '@/assets/editor/quick-config/position.svg?raw'
 import resizeQuickIcon from '@/assets/editor/quick-config/resize.svg?raw'
 import rotateQuickIcon from '@/assets/editor/quick-config/rotate.svg?raw'
@@ -593,7 +594,7 @@ onMounted(() => {
             </header>
             <div class="sprite-list">
               <button v-for="sprite in sprites" :key="sprite.id" class="sprite-card" :class="{ active: sprite.active }" type="button">
-                <span v-if="sprite.active" class="sprite-menu">•••</span>
+                <span v-if="sprite.active" class="sprite-menu" v-html="moreIcon"></span>
                 <img :src="sprite.image" :alt="sprite.name" />
                 <span class="sprite-title">
                   <span class="sprite-name">{{ sprite.shortName }}</span>
@@ -676,7 +677,7 @@ onMounted(() => {
               type="button"
               @click="selectedMapSpriteId = sprite.id"
             >
-              <span v-if="selectedMapSpriteId === sprite.id" class="sprite-menu">•••</span>
+              <span v-if="selectedMapSpriteId === sprite.id" class="sprite-menu" v-html="moreIcon"></span>
               <img :src="sprite.image" :alt="sprite.name" />
               <span class="sprite-title">
                 <span class="sprite-name">{{ sprite.shortName }}</span>
@@ -1944,16 +1945,22 @@ onMounted(() => {
 
 .sprite-menu {
   position: absolute;
-  top: -10px;
-  right: -8px;
+  top: -6px;
+  right: -6px;
   width: 24px;
   height: 24px;
   border-radius: 999px;
   background: var(--ui-color-primary-main);
   color: white;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sprite-menu :deep(svg) {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .hidden-mark {
