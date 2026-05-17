@@ -21,6 +21,7 @@ import rotateQuickIcon from '@/assets/editor/quick-config/rotate.svg?raw'
 import defaultModeIcon from '@/assets/editor/navbar-icons/default-mode.svg?raw'
 import mapEditModeIcon from '@/assets/editor/navbar-icons/map-edit-mode.svg?raw'
 import cloudCheckIcon from '@/assets/editor/navbar-icons/cloud-check.svg?raw'
+import editIcon from '@/assets/editor/quick-config/edit.svg?raw'
 import failedToSaveIcon from '@/assets/editor/navbar-icons/failed-to-save.svg?raw'
 import offlineIcon from '@/assets/editor/navbar-icons/offline.svg?raw'
 import savingIcon from '@/assets/editor/navbar-icons/saving.svg?raw'
@@ -489,7 +490,7 @@ onMounted(() => {
           <section class="asset-detail" aria-label="Costume detail">
             <header class="asset-detail-header">
               <h2>{{ selectedCostume.name }}</h2>
-              <button type="button" aria-label="Rename costume">✎</button>
+              <button type="button" aria-label="Rename costume" v-html="editIcon"></button>
             </header>
             <div class="costume-preview">
               <img :src="selectedCostume.image" :alt="selectedCostume.name" />
@@ -515,7 +516,7 @@ onMounted(() => {
           <section v-if="selectedAnimation != null" class="asset-detail" aria-label="Animation detail">
             <header class="asset-detail-header">
               <h2>{{ selectedAnimation.name }}</h2>
-              <button type="button" aria-label="Rename animation">✎</button>
+              <button type="button" aria-label="Rename animation" v-html="editIcon"></button>
             </header>
             <div class="animation-detail-content">
               <div class="animation-player">
@@ -1378,6 +1379,7 @@ onMounted(() => {
   height: 36px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -1386,15 +1388,22 @@ onMounted(() => {
   margin: 0;
   font-size: 16px;
   font-weight: 500;
+  text-align: center;
 }
 
 .asset-detail-header button {
-  width: 28px;
-  height: 28px;
+  width: 16px;
+  height: 16px;
   border: 0;
-  border-radius: var(--ui-border-radius-md);
   background: transparent;
-  color: var(--ui-color-grey-700);
+  padding: 0;
+  color: var(--ui-color-grey-900);
+}
+
+.asset-detail-header button :deep(svg) {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .costume-preview {
