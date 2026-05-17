@@ -156,9 +156,14 @@ onBeforeUnmount(() => {
           />
         </form>
 
-        <RouterLink class="flex h-12 min-w-18 shrink-0 items-center justify-center px-4 text-sm font-medium whitespace-nowrap text-title no-underline hover:bg-grey-400" to="/sign-in/callback">
-          Sign in
-        </RouterLink>
+        <div class="flex h-full items-center px-3 whitespace-nowrap">
+          <RouterLink
+            class="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-primary-200 px-4 text-base leading-[22px] text-primary-500 no-underline transition-colors hover:bg-primary-100 active:bg-primary-300 focus-visible:border-primary-700 focus-visible:outline-none"
+            to="/sign-in/callback"
+          >
+            Sign in
+          </RouterLink>
+        </div>
       </div>
     </div>
   </nav>
