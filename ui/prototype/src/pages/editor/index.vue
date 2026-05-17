@@ -145,12 +145,6 @@ onMounted(() => {
           </svg>
           <span class="caret"></span>
         </button>
-        <button class="icon-button" type="button" aria-label="New project">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 5h10v14H5z" />
-            <path d="M18 8v8M14 12h8" />
-          </svg>
-        </button>
         <button class="icon-button muted" type="button" aria-label="Undo">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 7 4 12l5 5" />
