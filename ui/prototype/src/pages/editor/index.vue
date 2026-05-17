@@ -47,9 +47,21 @@ type EventSnippet = {
   parts: SnippetPart[]
 }
 
+type EditorTab = 'code' | 'costumes' | 'animations'
+
+type AssetItem = {
+  id: string
+  name: string
+  image: string
+  active?: boolean
+}
+
 const project = computed(() => getProject(props.ownerNameInput, props.projectNameInput))
 const runnerRef = ref<InstanceType<typeof PrototypeProjectRunner>>()
 const runnerActive = ref(false)
+const activeEditorTab = ref<EditorTab>('code')
+const selectedCostumeId = ref('niu-xiao-qi-default')
+const selectedAnimationId = ref('niu-run')
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -168,6 +180,27 @@ const sprites: SpriteCard[] = [
   }
 ]
 
+const costumes: AssetItem[] = [
+  {
+    id: 'niu-xiao-qi-default',
+    name: '牛小七',
+    image: niuXiaoQiUrl
+  }
+]
+
+const animations: AssetItem[] = [
+  {
+    id: 'niu-run',
+    name: '跑步',
+    image: niuXiaoQiUrl
+  }
+]
+
+const selectedCostume = computed(() => costumes.find((costume) => costume.id === selectedCostumeId.value) ?? costumes[0])
+const selectedAnimation = computed(
+  () => animations.find((animation) => animation.id === selectedAnimationId.value) ?? animations[0] ?? null
+)
+
 const codeLines = [
   ['onMsg', 'msg:"click", => {'],
   ['  turnTo', 'target:Mouse'],
@@ -207,6 +240,10 @@ const quickConfigTools = [
   { id: 'size', label: 'Size', icon: resizeQuickIcon },
   { id: 'layer', label: 'Layer order', icon: layerQuickIcon }
 ]
+
+function selectEditorTab(tab: EditorTab) {
+  activeEditorTab.value = tab
+}
 
 async function runProject() {
   runnerActive.value = true
@@ -277,13 +314,24 @@ onMounted(() => {
     <section class="editor-main">
       <section class="code-card">
         <header class="code-tabs">
-          <button class="tab active" type="button">Code</button>
-          <button class="tab" type="button">Costumes</button>
-          <button class="tab" type="button">Animations</button>
-          <button class="format-button" type="button">Format</button>
+          <button class="tab" :class="{ active: activeEditorTab === 'code' }" type="button" @click="selectEditorTab('code')">
+            Code
+          </button>
+          <button class="tab" :class="{ active: activeEditorTab === 'costumes' }" type="button" @click="selectEditorTab('costumes')">
+            Costumes
+          </button>
+          <button
+            class="tab"
+            :class="{ active: activeEditorTab === 'animations' }"
+            type="button"
+            @click="selectEditorTab('animations')"
+          >
+            Animations
+          </button>
+          <button v-if="activeEditorTab === 'code'" class="format-button" type="button">Format</button>
         </header>
 
-        <div class="code-body">
+        <div v-if="activeEditorTab === 'code'" class="code-body">
           <aside class="category-rail" aria-label="Code categories">
             <button
               v-for="category in codeCategories"
@@ -318,6 +366,58 @@ onMounted(() => {
               <button type="button" aria-label="Zoom in">⌕</button>
               <button type="button" aria-label="Zoom out">⌔</button>
               <button type="button" aria-label="Reset zoom">⊜</button>
+            </div>
+          </section>
+        </div>
+
+        <div v-else-if="activeEditorTab === 'costumes'" class="asset-editor-body">
+          <aside class="asset-editor-list" aria-label="Costumes list">
+            <button
+              v-for="costume in costumes"
+              :key="costume.id"
+              class="editor-asset-item"
+              :class="{ active: selectedCostumeId === costume.id }"
+              type="button"
+              @click="selectedCostumeId = costume.id"
+            >
+              <img :src="costume.image" :alt="costume.name" />
+              <span>{{ costume.name }}</span>
+            </button>
+            <button class="asset-add-button" type="button" aria-label="Add costume">+</button>
+          </aside>
+          <section class="asset-detail" aria-label="Costume detail">
+            <header class="asset-detail-header">
+              <h2>{{ selectedCostume.name }}</h2>
+              <button type="button" aria-label="Rename costume">✎</button>
+            </header>
+            <div class="costume-preview">
+              <img :src="selectedCostume.image" :alt="selectedCostume.name" />
+            </div>
+          </section>
+        </div>
+
+        <div v-else class="asset-editor-body">
+          <aside class="asset-editor-list" aria-label="Animations list">
+            <button
+              v-for="animation in animations"
+              :key="animation.id"
+              class="editor-asset-item"
+              :class="{ active: selectedAnimationId === animation.id }"
+              type="button"
+              @click="selectedAnimationId = animation.id"
+            >
+              <img :src="animation.image" :alt="animation.name" />
+              <span>{{ animation.name }}</span>
+            </button>
+            <button class="asset-add-button" type="button" aria-label="Add animation">+</button>
+          </aside>
+          <section v-if="selectedAnimation != null" class="asset-detail" aria-label="Animation detail">
+            <header class="asset-detail-header">
+              <h2>{{ selectedAnimation.name }}</h2>
+              <button type="button" aria-label="Rename animation">✎</button>
+            </header>
+            <div class="costume-preview">
+              <img :src="selectedAnimation.image" :alt="selectedAnimation.name" />
             </div>
           </section>
         </div>
@@ -590,6 +690,149 @@ onMounted(() => {
   flex: 1;
   display: grid;
   grid-template-columns: 60px 219px minmax(0, 1fr);
+}
+
+.asset-editor-body {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+}
+
+.asset-editor-list {
+  width: 112px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 10px;
+  border-right: 1px solid var(--ui-color-grey-400);
+  overflow-y: auto;
+}
+
+.editor-asset-item {
+  position: relative;
+  box-sizing: border-box;
+  width: 88px;
+  height: 88px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px;
+  color: var(--ui-color-grey-1000);
+}
+
+.editor-asset-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.editor-asset-item.active {
+  background: var(--ui-color-primary-200);
+}
+
+.editor-asset-item.active::before {
+  border-width: 2px;
+  border-color: var(--ui-color-primary-main);
+}
+
+.editor-asset-item img {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 5px;
+  object-fit: contain;
+}
+
+.editor-asset-item span {
+  width: 100%;
+  height: 22px;
+  overflow: hidden;
+  padding: 0 6px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 22px;
+}
+
+.asset-add-button {
+  height: 44px;
+  width: calc(100% + 20px);
+  margin: auto -10px -12px;
+  flex: 0 0 auto;
+  border: 0;
+  border-top: 1px solid var(--ui-color-grey-400);
+  border-radius: 0 0 0 var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  color: var(--ui-color-grey-800);
+  font-size: 20px;
+}
+
+.asset-detail {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.asset-detail-header {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.asset-detail-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.asset-detail-header button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: transparent;
+  color: var(--ui-color-grey-700);
+}
+
+.costume-preview {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--ui-border-radius-sm);
+  background-color: var(--ui-color-grey-100);
+  background-image:
+    linear-gradient(45deg, var(--ui-color-grey-400) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--ui-color-grey-400) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--ui-color-grey-400) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--ui-color-grey-400) 75%);
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+}
+
+.costume-preview img {
+  max-width: 72%;
+  max-height: 72%;
+  object-fit: contain;
 }
 
 .category-rail {
