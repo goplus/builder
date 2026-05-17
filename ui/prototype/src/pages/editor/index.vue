@@ -95,6 +95,7 @@ const projectDisplayName = ref(project.value.title)
 const draftProjectDisplayName = ref(project.value.title)
 const projectNameEditing = ref(false)
 const projectMenuOpen = ref(false)
+const addSpriteMenuOpen = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
 const saveState = ref<SaveState>('saved')
 const selectedSpriteId = ref('niu-xiao-qi')
@@ -106,6 +107,7 @@ const selectedWidgetId = ref('score')
 const selectedMapSpriteId = ref('niu-xiao-qi')
 const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
+const addSpriteMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
@@ -414,10 +416,39 @@ function closeProjectMenu() {
   projectMenuOpen.value = false
 }
 
+function toggleAddSpriteMenu() {
+  addSpriteMenuOpen.value = !addSpriteMenuOpen.value
+}
+
+function closeAddSpriteMenu() {
+  addSpriteMenuOpen.value = false
+}
+
 function toggleSpriteMenu(spriteId: string) {
   activeEditorTarget.value = 'sprite'
   selectedSpriteId.value = spriteId
   spriteMenuOpenFor.value = spriteMenuOpenFor.value === spriteId ? null : spriteId
+}
+
+function addLocalSprite(source: 'local' | 'library' | 'ai') {
+  const nextIndex = sprites.value.length + 1
+  const presets = {
+    local: { name: `Local sprite ${nextIndex}`, image: niuXiaoQiUrl },
+    library: { name: `Library sprite ${nextIndex}`, image: niuXiaoHuaUrl },
+    ai: { name: `AI sprite ${nextIndex}`, image: flowerUrl }
+  }
+  const preset = presets[source]
+  const sprite: SpriteCard = {
+    id: `${source}-sprite-${Date.now()}`,
+    name: preset.name,
+    shortName: preset.name.length > 10 ? `${preset.name.slice(0, 8)}...` : preset.name,
+    image: preset.image,
+    hidden: false
+  }
+  sprites.value.push(sprite)
+  selectedSpriteId.value = sprite.id
+  activeEditorTarget.value = 'sprite'
+  closeAddSpriteMenu()
 }
 
 function closeSpriteMenu() {
@@ -499,6 +530,7 @@ function handleDocumentClick(event: MouseEvent) {
   const target = event.target
   if (!(target instanceof Node)) return
   if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
+  if (!addSpriteMenuRef.value?.contains(target)) closeAddSpriteMenu()
   if (!spriteMenuRef.value?.contains(target)) closeSpriteMenu()
 }
 
@@ -955,7 +987,28 @@ onBeforeUnmount(() => {
           <div class="sprites-panel">
             <header class="asset-header">
               <h2>Sprites</h2>
-              <button type="button" aria-label="Add sprite">+</button>
+              <span ref="addSpriteMenuRef" class="add-sprite-menu-wrap">
+                <button
+                  type="button"
+                  aria-label="Add sprite"
+                  :aria-expanded="addSpriteMenuOpen"
+                  aria-haspopup="menu"
+                  @click.stop="toggleAddSpriteMenu"
+                >
+                  +
+                </button>
+                <span v-if="addSpriteMenuOpen" class="add-sprite-menu" role="menu" @click.stop>
+                  <button class="add-sprite-menu-item" type="button" role="menuitem" @click="addLocalSprite('local')">
+                    Select local file
+                  </button>
+                  <button class="add-sprite-menu-item" type="button" role="menuitem" @click="addLocalSprite('library')">
+                    Choose from asset library
+                  </button>
+                  <button class="add-sprite-menu-item" type="button" role="menuitem" @click="addLocalSprite('ai')">
+                    Generate with AI
+                  </button>
+                </span>
+              </span>
             </header>
             <div ref="spriteMenuRef" class="sprite-list">
               <div
@@ -2479,8 +2532,55 @@ onBeforeUnmount(() => {
 }
 
 .asset-header button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   font-size: 18px;
   color: var(--ui-color-grey-600);
+}
+
+.asset-header button:hover {
+  background: var(--ui-color-grey-400);
+}
+
+.add-sprite-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.add-sprite-menu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  z-index: 30;
+  min-width: 214px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.add-sprite-menu-item {
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px 10px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.add-sprite-menu-item:hover {
+  background: var(--ui-color-grey-300);
 }
 
 .sprite-list {
