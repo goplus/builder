@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+import monitorImage from '@ui-images/monitor-colorful.png'
+import CommunityFooter from '@/components/community/CommunityFooter.vue'
+import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
+import PrototypeButton from '@/components/ui/PrototypeButton.vue'
+
+const router = useRouter()
 
 onMounted(() => {
   document.title = 'Page not found - XBuilder'
@@ -7,13 +15,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="grid min-h-screen place-items-center bg-grey-300 p-8">
-    <section class="w-full max-w-120 rounded-lg border border-grey-400 bg-grey-100 p-8 text-center">
-      <h1 class="m-0 text-2xl font-medium text-title">Page not found</h1>
-      <p class="mt-2 text-sm text-hint-1">This offline prototype route is not available.</p>
-      <RouterLink class="mt-5 inline-flex rounded-md bg-primary-main px-4 py-2 text-sm font-medium text-white no-underline" to="/">
-        Back home
-      </RouterLink>
-    </section>
-  </main>
+  <div class="flex min-h-screen min-w-360 flex-col bg-grey-200">
+    <CommunityNavbar />
+    <main class="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12 text-center">
+      <img class="h-47.5 w-67.5 object-contain" :src="monitorImage" alt="" />
+      <h1 class="m-0 text-2xl font-medium text-grey-1000">Page not found</h1>
+      <PrototypeButton class="mt-4 h-9 text-lg" type="primary" @click="router.push('/')">
+        Return to home page
+      </PrototypeButton>
+    </main>
+    <CommunityFooter />
+  </div>
 </template>

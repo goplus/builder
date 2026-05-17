@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import avatarImage from '@ui-images/avatar.png'
 import logoSvg from '@/assets/navbar-logo.svg'
 
 const router = useRouter()
@@ -61,8 +60,8 @@ function submitSearch(event: Event) {
           />
         </form>
 
-        <RouterLink class="grid h-12 w-14 place-items-center px-3 text-title" to="/user/code-kiko" aria-label="Signed in user">
-          <img class="size-8 rounded-full border border-grey-400 object-cover" :src="avatarImage" alt="" />
+        <RouterLink class="flex h-12 items-center px-4 text-sm font-medium text-title no-underline hover:bg-grey-400" to="/sign-in/callback">
+          Sign in
         </RouterLink>
       </div>
     </div>

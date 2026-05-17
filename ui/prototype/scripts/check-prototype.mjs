@@ -21,6 +21,7 @@ const failures = []
 const sourceFiles = walk(srcRoot).filter((path) => /\.(ts|vue|css)$/.test(path))
 const router = read('src/router.ts')
 const communityHome = read('src/pages/community/home.vue')
+const guestBanner = read('src/components/community/home/GuestBanner.vue')
 const navbar = read('src/components/community/CommunityNavbar.vue')
 const projectsSection = read('src/components/community/ProjectsSection.vue')
 const projectCard = read('src/components/project/ProjectCard.vue')
@@ -64,6 +65,7 @@ for (const requiredFile of [
   'src/assets/projects/niu-run/niu-run.xbp',
   'src/assets/projects/niu-run/thumbnail.jpeg',
   'src/components/project/PrototypeProjectRunner.vue',
+  'src/components/community/home/GuestBanner.vue',
   'src/pages/community/index.vue',
   'src/pages/community/project.vue',
   'src/pages/community/user/overview.vue',
@@ -91,7 +93,15 @@ for (const requiredFile of [
 }
 
 if (communityHome.includes('Build, play, and remix games') || communityHome.includes('ai-boy.png')) {
-  failures.push('community home must mirror dev signed-in home, not render a standalone hero banner')
+  failures.push('community home must mirror real community home, not render a standalone marketing hero')
+}
+
+for (const bannerToken of ['Join XBuilder', 'Build and share your projects', 'Join now', 'guest-banner-bg.png']) {
+  if (!guestBanner.includes(bannerToken)) failures.push(`guest home banner must mirror real token: ${bannerToken}`)
+}
+
+for (const signedInOnlyToken of ['Your projects', '/explore?o=following']) {
+  if (communityHome.includes(signedInOnlyToken)) failures.push(`default community home must render guest state, not signed-in token: ${signedInOnlyToken}`)
 }
 
 if (navbar.includes('to="/explore"')) {
@@ -106,12 +116,12 @@ if (!projectCard.includes('updatedAt')) {
   failures.push('project card must render updatedAt metadata')
 }
 
-for (const route of ['/explore?o=likes', '/explore?o=remix', '/explore?o=following']) {
+for (const route of ['/explore?o=likes', '/explore?o=remix']) {
   if (!communityHome.includes(route)) failures.push(`community home must use real explore route: ${route}`)
 }
 
-if (!communityHome.includes('link-text="View all"')) {
-  failures.push('home Your projects section must use real link label: View all')
+if (!navbar.includes('Sign in') || !navbar.includes('/sign-in/callback')) {
+  failures.push('community navbar must expose the real guest sign-in entry')
 }
 
 if (!projectsSection.includes('link-primary flex items-center text-lg')) {
