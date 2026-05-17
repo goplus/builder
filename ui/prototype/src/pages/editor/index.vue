@@ -3198,12 +3198,12 @@ onBeforeUnmount(() => {
   gap: 2px;
   color: var(--ui-color-grey-800);
   border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
   padding: 4px;
 }
 
 .stage-entry.active {
-  background: var(--ui-color-primary-100);
-  color: var(--ui-color-primary-700);
+  color: var(--ui-color-grey-800);
 }
 
 .stage-entry:hover {
