@@ -18,14 +18,6 @@ defineProps<{
         <p class="mt-1 text-sm text-hint-1">@{{ user.username }} · {{ user.joinedAt }}</p>
         <p class="mt-3 max-w-180 text-sm leading-6 text-text">{{ user.bio }}</p>
       </div>
-      <dl class="mb-1 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-        <dt class="text-hint-2">Followers</dt>
-        <dd class="m-0 text-right text-title">{{ user.followers }}</dd>
-        <dt class="text-hint-2">Following</dt>
-        <dd class="m-0 text-right text-title">{{ user.following }}</dd>
-        <dt class="text-hint-2">Location</dt>
-        <dd class="m-0 text-right text-title">{{ user.location }}</dd>
-      </dl>
     </div>
   </section>
 </template>
