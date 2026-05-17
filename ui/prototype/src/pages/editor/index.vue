@@ -53,6 +53,10 @@ type AssetItem = {
   id: string
   name: string
   image: string
+  frames?: string[]
+  duration?: string
+  binding?: string
+  sound?: string
   active?: boolean
 }
 
@@ -192,7 +196,11 @@ const animations: AssetItem[] = [
   {
     id: 'niu-run',
     name: '跑步',
-    image: niuXiaoQiUrl
+    image: niuXiaoQiUrl,
+    frames: [niuXiaoQiUrl, niuXiaoHuaUrl, niuXiaoQiUrl, niuXiaoHuaUrl],
+    duration: '0.8s',
+    binding: '1',
+    sound: 'None'
   }
 ]
 
@@ -416,8 +424,32 @@ onMounted(() => {
               <h2>{{ selectedAnimation.name }}</h2>
               <button type="button" aria-label="Rename animation">✎</button>
             </header>
-            <div class="costume-preview">
-              <img :src="selectedAnimation.image" :alt="selectedAnimation.name" />
+            <div class="animation-detail-content">
+              <div class="animation-player">
+                <img
+                  v-for="(frame, index) in selectedAnimation.frames ?? [selectedAnimation.image]"
+                  :key="`${selectedAnimation.id}-frame-${index}`"
+                  :src="frame"
+                  :alt="selectedAnimation.name"
+                />
+              </div>
+              <div class="animation-settings" aria-label="Animation settings">
+                <button class="animation-setting" type="button">
+                  <span class="setting-icon">◷</span>
+                  <span>Duration</span>
+                  <strong>{{ selectedAnimation.duration }}</strong>
+                </button>
+                <button class="animation-setting" type="button">
+                  <span class="setting-icon">●</span>
+                  <span>Binding</span>
+                  <strong>{{ selectedAnimation.binding }}</strong>
+                </button>
+                <button class="animation-setting" type="button">
+                  <span class="setting-icon">♪</span>
+                  <span>Sound</span>
+                  <strong>{{ selectedAnimation.sound }}</strong>
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -833,6 +865,118 @@ onMounted(() => {
   max-width: 72%;
   max-height: 72%;
   object-fit: contain;
+}
+
+.animation-detail-content {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.animation-player {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--ui-border-radius-sm);
+  background-color: var(--ui-color-grey-100);
+  background-image:
+    linear-gradient(45deg, var(--ui-color-grey-400) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--ui-color-grey-400) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--ui-color-grey-400) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--ui-color-grey-400) 75%);
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+}
+
+.animation-player img {
+  grid-area: 1 / 1;
+  max-width: 64%;
+  max-height: 64%;
+  object-fit: contain;
+  opacity: 0;
+  animation: animation-frame-preview 1.6s steps(1, end) infinite;
+}
+
+.animation-player img:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.animation-player img:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.animation-player img:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+.animation-player img:nth-child(4) {
+  animation-delay: 1.2s;
+}
+
+.animation-settings {
+  display: flex;
+  justify-content: center;
+}
+
+.animation-settings {
+  align-self: center;
+  gap: 4px;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 4px;
+  box-shadow: var(--ui-box-shadow-sm);
+}
+
+.animation-setting {
+  min-width: 118px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--ui-color-grey-1000);
+  font-size: 12px;
+}
+
+.animation-setting strong {
+  max-width: 5em;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ui-color-grey-400);
+  padding: 1px 5px;
+  color: var(--ui-color-grey-800);
+  font-size: 10px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setting-icon {
+  color: var(--ui-color-grey-900);
+}
+
+@keyframes animation-frame-preview {
+  0%,
+  24.99% {
+    opacity: 1;
+  }
+
+  25%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .category-rail {
