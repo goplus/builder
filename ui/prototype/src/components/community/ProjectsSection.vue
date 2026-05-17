@@ -13,7 +13,7 @@ defineProps<{
 
 <template>
   <section>
-    <header class="flex h-13 items-center justify-between">
+    <header v-if="title || linkTo" class="flex h-13 items-center justify-between">
       <h2 class="m-0 text-2xl font-normal text-title">{{ title }}</h2>
       <RouterLink
         v-if="linkTo"
