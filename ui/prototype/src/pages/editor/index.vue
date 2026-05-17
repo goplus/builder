@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getProject } from '@/apis/project'
@@ -41,6 +41,9 @@ import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
 import niuXiaoHuaUrl from '@/assets/projects/niu-run/editor/sprite-niu-xiao-hua.png'
 import niuXiaoQiUrl from '@/assets/projects/niu-run/editor/sprite-niu-xiao-qi.png'
 import tornadoUrl from '@/assets/projects/niu-run/editor/sprite-tornado.svg'
+import weatherggggBackdropUrl from '@/assets/projects/weathergggg/editor/urban1.png'
+import jaimeUrl from '@/assets/projects/weathergggg/editor/jaime.png'
+import kaiUrl from '@/assets/projects/weathergggg/editor/kai.png'
 
 const props = defineProps<{
   ownerNameInput: string
@@ -83,6 +86,31 @@ type AssetItem = {
   binding?: string
   sound?: string
   active?: boolean
+}
+
+type SoundItem = {
+  id: string
+  name: string
+  duration: string
+}
+
+type WidgetItem = {
+  id: string
+  name: string
+  value: string
+}
+
+type CodeLine = [string, string]
+
+type EditorProjectData = {
+  sprites: SpriteCard[]
+  costumes: AssetItem[]
+  animations: AssetItem[]
+  backdrops: AssetItem[]
+  sounds: SoundItem[]
+  widgets: WidgetItem[]
+  codeLines: CodeLine[]
+  stageCodeLines: CodeLine[]
 }
 
 const project = computed(() => getProject(props.ownerNameInput, props.projectNameInput))
@@ -231,7 +259,7 @@ const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items
   ]
 }
 
-const sprites = ref<SpriteCard[]>([
+const niuRunSprites = ref<SpriteCard[]>([
   {
     id: 'niu-xiao-qi',
     name: '牛小七',
@@ -262,7 +290,7 @@ const sprites = ref<SpriteCard[]>([
   }
 ])
 
-const costumes: AssetItem[] = [
+const niuRunCostumes: AssetItem[] = [
   {
     id: 'niu-xiao-qi-default',
     name: '牛小七',
@@ -270,7 +298,7 @@ const costumes: AssetItem[] = [
   }
 ]
 
-const animations: AssetItem[] = [
+const niuRunAnimations: AssetItem[] = [
   {
     id: 'niu-run',
     name: '跑步',
@@ -282,7 +310,7 @@ const animations: AssetItem[] = [
   }
 ]
 
-const backdrops: AssetItem[] = [
+const niuRunBackdrops: AssetItem[] = [
   {
     id: 'grass-field',
     name: 'backdrop',
@@ -290,25 +318,17 @@ const backdrops: AssetItem[] = [
   }
 ]
 
-const sounds = [
+const niuRunSounds: SoundItem[] = [
   { id: 'pop', name: 'pop', duration: '0.18s' },
   { id: 'jump', name: 'jump', duration: '0.32s' }
 ]
 
-const widgets = [
+const defaultWidgets: WidgetItem[] = [
   { id: 'score', name: 'Score', value: '0' },
   { id: 'timer', name: 'Timer', value: '60' }
 ]
 
-const selectedCostume = computed(() => costumes.find((costume) => costume.id === selectedCostumeId.value) ?? costumes[0])
-const selectedAnimation = computed(
-  () => animations.find((animation) => animation.id === selectedAnimationId.value) ?? animations[0] ?? null
-)
-const selectedBackdrop = computed(() => backdrops.find((backdrop) => backdrop.id === selectedBackdropId.value) ?? backdrops[0])
-const selectedSound = computed(() => sounds.find((sound) => sound.id === selectedSoundId.value) ?? sounds[0])
-const selectedWidget = computed(() => widgets.find((widget) => widget.id === selectedWidgetId.value) ?? widgets[0])
-
-const codeLines = [
+const niuRunCodeLines: CodeLine[] = [
   ['onMsg', 'msg:"click", => {'],
   ['  turnTo', 'target:Mouse'],
   ['  stepTo', 'obj:Mouse'],
@@ -324,6 +344,105 @@ const codeLines = [
   ['', ''],
   ['}', '']
 ]
+
+const niuRunStageCodeLines: CodeLine[] = [
+  ['onBackdrop', 'name:"backdrop", => {'],
+  ['  show', ''],
+  ['}', '']
+]
+
+const weatherggggSprites = ref<SpriteCard[]>([
+  {
+    id: 'jaime',
+    name: 'Jaime',
+    shortName: 'Jaime',
+    image: jaimeUrl,
+    hidden: false
+  },
+  {
+    id: 'kai',
+    name: 'Kai',
+    shortName: 'Kai',
+    image: kaiUrl,
+    hidden: false
+  }
+])
+
+const weatherggggCostumes: AssetItem[] = [
+  {
+    id: 'jaime-b',
+    name: 'jaime-b',
+    image: jaimeUrl
+  }
+]
+
+const weatherggggAnimations: AssetItem[] = []
+
+const weatherggggBackdrops: AssetItem[] = [
+  {
+    id: 'urban1',
+    name: 'urban1',
+    image: weatherggggBackdropUrl
+  }
+]
+
+const weatherggggCodeLines: CodeLine[] = [
+  ['onMsg', 'msg:"1", => {'],
+  ['  say', '"I come from England.", 2'],
+  ['  broadcast', '"2"'],
+  ['}', ''],
+  ['', ''],
+  ['onMsg', 'msg:"3", => {'],
+  ['  say', "\"It's mild, but it's not always pleasant.\", 4"],
+  ['  setCostume', 'Next'],
+  ['', ''],
+  ['  say', "\"The weather's often cold in the North and windy in the East.\", 5.5"],
+  ['  say', "\"It's often wet in the West and sometimes warm in the South.\", 5"],
+  ['  broadcast', '"4"'],
+  ['}', '']
+]
+
+const weatherggggStageCodeLines: CodeLine[] = []
+
+const niuRunEditorData: EditorProjectData = {
+  sprites: niuRunSprites.value,
+  costumes: niuRunCostumes,
+  animations: niuRunAnimations,
+  backdrops: niuRunBackdrops,
+  sounds: niuRunSounds,
+  widgets: defaultWidgets,
+  codeLines: niuRunCodeLines,
+  stageCodeLines: niuRunStageCodeLines
+}
+
+const weatherggggEditorData: EditorProjectData = {
+  sprites: weatherggggSprites.value,
+  costumes: weatherggggCostumes,
+  animations: weatherggggAnimations,
+  backdrops: weatherggggBackdrops,
+  sounds: [],
+  widgets: defaultWidgets,
+  codeLines: weatherggggCodeLines,
+  stageCodeLines: weatherggggStageCodeLines
+}
+
+const editorProjectData = computed(() => (project.value.name === 'weathergggg' ? weatherggggEditorData : niuRunEditorData))
+const sprites = computed(() => editorProjectData.value.sprites)
+const costumes = computed(() => editorProjectData.value.costumes)
+const animations = computed(() => editorProjectData.value.animations)
+const backdrops = computed(() => editorProjectData.value.backdrops)
+const sounds = computed(() => editorProjectData.value.sounds)
+const widgets = computed(() => editorProjectData.value.widgets)
+const codeLines = computed(() => editorProjectData.value.codeLines)
+const stageCodeLines = computed(() => editorProjectData.value.stageCodeLines)
+
+const selectedCostume = computed(() => costumes.value.find((costume) => costume.id === selectedCostumeId.value) ?? costumes.value[0])
+const selectedAnimation = computed(
+  () => animations.value.find((animation) => animation.id === selectedAnimationId.value) ?? animations.value[0] ?? null
+)
+const selectedBackdrop = computed(() => backdrops.value.find((backdrop) => backdrop.id === selectedBackdropId.value) ?? backdrops.value[0])
+const selectedSound = computed(() => sounds.value.find((sound) => sound.id === selectedSoundId.value) ?? sounds.value[0] ?? null)
+const selectedWidget = computed(() => widgets.value.find((widget) => widget.id === selectedWidgetId.value) ?? widgets.value[0])
 
 const codeCategories: Array<{ id: CodeCategoryId; label: string; icon: string }> = [
   { id: 'event', label: 'Event', icon: eventIcon },
@@ -351,6 +470,8 @@ const quickConfigTools = [
 const selectedSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedSpriteId.value) ?? sprites.value[0])
 const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites.value[0])
 const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
+const stageBackdrop = computed(() => selectedBackdrop.value?.image ?? project.value.thumbnail)
+const stageCompanionSprite = computed(() => sprites.value.find((sprite) => sprite.id !== selectedSprite.value?.id))
 const saveStateMeta = computed(() => {
   switch (saveState.value) {
     case 'pending':
@@ -366,6 +487,26 @@ const saveStateMeta = computed(() => {
       return { icon: cloudCheckIcon, label: 'Saved', className: 'saved' }
   }
 })
+
+function syncProjectSelection(data: EditorProjectData) {
+  selectedSpriteId.value = data.sprites[0]?.id ?? ''
+  selectedMapSpriteId.value = data.sprites[0]?.id ?? ''
+  selectedCostumeId.value = data.costumes[0]?.id ?? ''
+  selectedAnimationId.value = data.animations[0]?.id ?? ''
+  selectedBackdropId.value = data.backdrops[0]?.id ?? ''
+  selectedSoundId.value = data.sounds[0]?.id ?? ''
+  selectedWidgetId.value = data.widgets[0]?.id ?? ''
+}
+
+watch(
+  project,
+  (nextProject) => {
+    projectDisplayName.value = nextProject.title
+    draftProjectDisplayName.value = nextProject.title
+    syncProjectSelection(editorProjectData.value)
+  },
+  { immediate: true }
+)
 
 function clearSaveStateTimeouts() {
   saveStateTimeouts.splice(0).forEach((timeoutId) => {
@@ -937,20 +1078,15 @@ onBeforeUnmount(() => {
           </aside>
 
           <section class="code-editor" aria-label="Stage code editor">
-            <div class="code-line">
+            <div v-if="stageCodeLines.length === 0" class="code-line">
               <span class="line-number">1</span>
-              <span class="keyword">onBackdrop</span>
-              <span class="source">name:"backdrop", => {</span>
-            </div>
-            <div class="code-line">
-              <span class="line-number">2</span>
-              <span class="keyword">  show</span>
+              <span class="keyword"></span>
               <span class="source"></span>
             </div>
-            <div class="code-line">
-              <span class="line-number">3</span>
-              <span class="keyword">}</span>
-              <span class="source"></span>
+            <div v-for="(line, index) in stageCodeLines" v-else :key="index" class="code-line">
+              <span class="line-number">{{ index + 1 }}</span>
+              <span class="keyword">{{ line[0] }}</span>
+              <span class="source">{{ line[1] }}</span>
             </div>
           </section>
         </div>
@@ -1000,7 +1136,7 @@ onBeforeUnmount(() => {
             </button>
             <button class="asset-add-button" type="button" aria-label="Add sound">+</button>
           </aside>
-          <section class="asset-detail" aria-label="Sound detail">
+          <section v-if="selectedSound != null" class="asset-detail" aria-label="Sound detail">
             <header class="sound-detail-title">
               <div class="asset-detail-header">
                 <h2>{{ selectedSound.name }}</h2>
@@ -1041,6 +1177,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
           </section>
+          <section v-else class="asset-detail empty-asset-detail" aria-label="Sound detail">No sounds</section>
         </div>
 
         <div v-else class="asset-editor-body">
@@ -1095,9 +1232,9 @@ onBeforeUnmount(() => {
 
           <div class="stage-frame">
             <template v-if="!runnerActive">
-              <img class="stage-backdrop" :src="backdropUrl" alt="" />
-              <img class="stage-sprite cow-flower" :src="niuXiaoHuaUrl" alt="" />
-              <div class="selected-sprite">
+              <img class="stage-backdrop" :src="stageBackdrop" alt="" />
+              <img v-if="stageCompanionSprite != null" class="stage-sprite cow-flower" :src="stageCompanionSprite.image" alt="" />
+              <div v-if="selectedSprite != null" class="selected-sprite">
                 <img :src="selectedSprite.image" alt="" />
                 <span class="coordinate">-224, 74</span>
                 <span class="handle left"></span>
