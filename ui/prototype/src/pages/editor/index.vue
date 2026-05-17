@@ -71,7 +71,7 @@ type EditorTarget = 'sprite' | 'stage'
 type EditorTab = 'code' | 'costumes' | 'animations'
 type StageTab = 'code' | 'backdrops' | 'sounds' | 'widgets'
 type EditMode = 'default' | 'map'
-type SaveState = 'saved' | 'saving' | 'failed' | 'offline'
+type SaveState = 'saved' | 'pending' | 'saving' | 'failed' | 'offline'
 type CodeCategoryId = 'event' | 'look' | 'motion' | 'control' | 'sensing' | 'sound' | 'game'
 
 type AssetItem = {
@@ -117,6 +117,7 @@ const projectMenuRef = ref<HTMLElement>()
 const addSpriteMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
 const mapSpriteNameInputRef = ref<HTMLInputElement>()
+const saveStateTimeouts: number[] = []
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -352,6 +353,8 @@ const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.i
 const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
 const saveStateMeta = computed(() => {
   switch (saveState.value) {
+    case 'pending':
+      return { icon: savingIcon, label: 'Pending save', className: 'pending' }
     case 'saving':
       return { icon: savingIcon, label: 'Saving', className: 'saving' }
     case 'failed':
@@ -363,6 +366,34 @@ const saveStateMeta = computed(() => {
       return { icon: cloudCheckIcon, label: 'Saved', className: 'saved' }
   }
 })
+
+function clearSaveStateTimeouts() {
+  saveStateTimeouts.splice(0).forEach((timeoutId) => {
+    window.clearTimeout(timeoutId)
+  })
+}
+
+function simulateAutoSave() {
+  clearSaveStateTimeouts()
+  saveState.value = 'pending'
+  saveStateTimeouts.push(
+    window.setTimeout(() => {
+      saveState.value = 'saving'
+    }, 300)
+  )
+  saveStateTimeouts.push(
+    window.setTimeout(() => {
+      saveState.value = 'saved'
+    }, 900)
+  )
+}
+
+function cycleSaveState() {
+  clearSaveStateTimeouts()
+  const states: SaveState[] = ['saved', 'pending', 'saving', 'failed', 'offline']
+  const nextIndex = (states.indexOf(saveState.value) + 1) % states.length
+  saveState.value = states[nextIndex]
+}
 
 const projectMenuGroups = [
   [
@@ -445,10 +476,7 @@ function submitProjectNameEdit() {
   }
   projectDisplayName.value = nextName
   projectNameEditing.value = false
-  saveState.value = 'saving'
-  window.setTimeout(() => {
-    saveState.value = 'saved'
-  }, 650)
+  simulateAutoSave()
 }
 
 function toggleProjectMenu() {
@@ -516,10 +544,7 @@ function openProjectPage() {
 }
 
 function markPrototypeAction() {
-  saveState.value = 'saving'
-  window.setTimeout(() => {
-    saveState.value = 'saved'
-  }, 500)
+  simulateAutoSave()
 }
 
 function handleSpriteMenuAction(action: () => void) {
@@ -618,6 +643,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
+  clearSaveStateTimeouts()
 })
 </script>
 
@@ -702,7 +728,7 @@ onBeforeUnmount(() => {
           type="button"
           :aria-label="saveStateMeta.label"
           :title="saveStateMeta.label"
-          @click="saveState = saveState === 'offline' ? 'saved' : 'offline'"
+          @click="cycleSaveState"
         >
           <span v-html="saveStateMeta.icon"></span>
         </button>
@@ -1557,8 +1583,12 @@ onBeforeUnmount(() => {
   display: block;
 }
 
+.auto-save-state.pending :deep(svg) path,
 .auto-save-state.saving :deep(svg) path {
   stroke-dasharray: 2;
+}
+
+.auto-save-state.saving :deep(svg) path {
   animation: dash 1s linear infinite;
 }
 
