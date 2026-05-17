@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 
 type ChatMessage = {
   role: 'user' | 'copilot'
@@ -15,10 +15,22 @@ const suggestedQuestions = [
 const isOpen = ref(false)
 const input = ref('')
 const messages = ref<ChatMessage[]>([])
+const panelRef = ref<HTMLElement>()
 const inputRef = ref<HTMLTextAreaElement>()
 const outputRef = ref<HTMLDivElement>()
+const panelPosition = ref({ right: 10, bottom: 20 })
+const dragStart = ref<{
+  pointerX: number
+  pointerY: number
+  right: number
+  bottom: number
+} | null>(null)
 
 const hasMessages = computed(() => messages.value.length > 0)
+const panelStyle = computed(() => ({
+  right: `${panelPosition.value.right}px`,
+  bottom: `${panelPosition.value.bottom}px`
+}))
 
 function getMockAnswer(question: string) {
   if (question.toLowerCase().includes('project')) {
@@ -47,13 +59,95 @@ function handleSubmit() {
 function focusInput() {
   inputRef.value?.focus()
 }
+
+function clampPanelPosition(position = panelPosition.value) {
+  const panel = panelRef.value
+  const panelWidth = panel?.offsetWidth ?? 340
+  const panelHeight = panel?.offsetHeight ?? (isOpen.value ? 356 : 48)
+  const horizontalBuffer = 10
+  const verticalBuffer = 10
+  return {
+    right: Math.min(
+      window.innerWidth - horizontalBuffer - 48,
+      Math.max(position.right, horizontalBuffer - panelWidth + 48)
+    ),
+    bottom: Math.min(window.innerHeight - verticalBuffer - 48, Math.max(position.bottom, verticalBuffer))
+  }
+}
+
+function persistPanelPosition() {
+  window.localStorage.setItem('xbuilder-prototype-copilot-panel-position', JSON.stringify(panelPosition.value))
+}
+
+function handleDragStart(event: PointerEvent) {
+  const target = event.currentTarget
+  if (!(target instanceof HTMLElement)) return
+  target.setPointerCapture(event.pointerId)
+  dragStart.value = {
+    pointerX: event.clientX,
+    pointerY: event.clientY,
+    right: panelPosition.value.right,
+    bottom: panelPosition.value.bottom
+  }
+}
+
+function handleDragMove(event: PointerEvent) {
+  const start = dragStart.value
+  if (start == null) return
+  panelPosition.value = clampPanelPosition({
+    right: start.right - (event.clientX - start.pointerX),
+    bottom: start.bottom - (event.clientY - start.pointerY)
+  })
+}
+
+function handleDragEnd(event: PointerEvent) {
+  const target = event.currentTarget
+  if (target instanceof HTMLElement && target.hasPointerCapture(event.pointerId)) {
+    target.releasePointerCapture(event.pointerId)
+  }
+  if (dragStart.value != null) persistPanelPosition()
+  dragStart.value = null
+}
+
+function handleResize() {
+  panelPosition.value = clampPanelPosition()
+  persistPanelPosition()
+}
+
+onMounted(() => {
+  const rawPosition = window.localStorage.getItem('xbuilder-prototype-copilot-panel-position')
+  if (rawPosition != null) {
+    try {
+      const parsed = JSON.parse(rawPosition) as { right?: number; bottom?: number }
+      if (typeof parsed.right === 'number' && typeof parsed.bottom === 'number') {
+        panelPosition.value = clampPanelPosition({ right: parsed.right, bottom: parsed.bottom })
+      }
+    } catch {
+      window.localStorage.removeItem('xbuilder-prototype-copilot-panel-position')
+    }
+  }
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <template>
-  <aside class="copilot-panel" aria-label="Copilot">
+  <aside ref="panelRef" class="copilot-panel" :style="panelStyle" aria-label="Copilot">
     <div v-if="isOpen" class="body">
       <div class="body-wrapper">
-        <div class="dragger" aria-hidden="true">
+        <div
+          class="dragger"
+          role="button"
+          tabindex="0"
+          aria-label="Drag Copilot panel"
+          @pointerdown.prevent="handleDragStart"
+          @pointermove.prevent="handleDragMove"
+          @pointerup.prevent="handleDragEnd"
+          @pointercancel.prevent="handleDragEnd"
+        >
           <svg width="12" height="6" viewBox="0 0 12 6" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="1.5" cy="1" r="1" fill="#A7B1BB" />
             <circle cx="6" cy="1" r="1" fill="#A7B1BB" />
@@ -150,8 +244,6 @@ function focusInput() {
 <style scoped>
 .copilot-panel {
   position: fixed;
-  right: 10px;
-  bottom: 20px;
   z-index: 9999;
   width: 340px;
   display: flex;
@@ -184,7 +276,15 @@ function focusInput() {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 0;
   background-color: var(--ui-color-grey-100);
+  cursor: move;
+  touch-action: none;
+  transition: background-color 0.2s;
+}
+
+.dragger:hover {
+  background-color: var(--ui-color-grey-300);
 }
 
 .output {
