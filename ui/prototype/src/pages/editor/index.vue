@@ -3,6 +3,13 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 
 import { getProject } from '@/apis/project'
 import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
+import controlIcon from '@/assets/editor/category-icons/control.svg'
+import eventIcon from '@/assets/editor/category-icons/event.svg'
+import gameIcon from '@/assets/editor/category-icons/game.svg'
+import lookIcon from '@/assets/editor/category-icons/look.svg'
+import motionIcon from '@/assets/editor/category-icons/motion.svg'
+import sensingIcon from '@/assets/editor/category-icons/sensing.svg'
+import soundIcon from '@/assets/editor/category-icons/sound.svg'
 import backdropUrl from '@/assets/projects/niu-run/editor/backdrop.png'
 import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
 import niuXiaoHuaUrl from '@/assets/projects/niu-run/editor/sprite-niu-xiao-hua.png'
@@ -101,6 +108,16 @@ const codeLines = [
   ['}', '']
 ]
 
+const codeCategories = [
+  { id: 'event', label: 'Event', icon: eventIcon, active: true },
+  { id: 'look', label: 'Look', icon: lookIcon },
+  { id: 'motion', label: 'Motion', icon: motionIcon },
+  { id: 'control', label: 'Control', icon: controlIcon },
+  { id: 'sensing', label: 'Sensing', icon: sensingIcon },
+  { id: 'sound', label: 'Sound', icon: soundIcon },
+  { id: 'game', label: 'Game', icon: gameIcon }
+]
+
 async function runProject() {
   runnerActive.value = true
   await nextTick()
@@ -182,33 +199,15 @@ onMounted(() => {
 
         <div class="code-body">
           <aside class="category-rail" aria-label="Code categories">
-            <button class="category active" type="button">
-              <span class="category-icon event"></span>
-              <span>Event</span>
-            </button>
-            <button class="category" type="button">
-              <span class="category-icon look"></span>
-              <span>Look</span>
-            </button>
-            <button class="category" type="button">
-              <span class="category-icon motion"></span>
-              <span>Motion</span>
-            </button>
-            <button class="category" type="button">
-              <span class="category-icon control"></span>
-              <span>Control</span>
-            </button>
-            <button class="category" type="button">
-              <span class="category-icon sensing"></span>
-              <span>Sensing</span>
-            </button>
-            <button class="category" type="button">
-              <span class="category-icon sound"></span>
-              <span>Sound</span>
-            </button>
-            <button class="category" type="button">
-              <span class="category-icon game"></span>
-              <span>Game</span>
+            <button
+              v-for="category in codeCategories"
+              :key="category.id"
+              class="category"
+              :class="{ active: category.active }"
+              type="button"
+            >
+              <img class="category-icon" :src="category.icon" alt="" />
+              <span>{{ category.label }}</span>
             </button>
           </aside>
 
@@ -521,33 +520,9 @@ onMounted(() => {
 }
 
 .category-icon {
-  width: 19px;
-  height: 16px;
-  border: 2px solid currentColor;
-  border-radius: 5px;
+  width: 20px;
+  height: 20px;
   display: block;
-}
-
-.category-icon.look {
-  border-radius: 6px 14px 6px 14px;
-}
-
-.category-icon.motion {
-  border-radius: 50%;
-}
-
-.category-icon.control {
-  border-radius: 4px;
-}
-
-.category-icon.sensing,
-.category-icon.sound {
-  border-left-color: transparent;
-  border-right-color: transparent;
-}
-
-.category-icon.game {
-  border-radius: 6px;
 }
 
 .events-list {
