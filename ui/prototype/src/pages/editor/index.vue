@@ -54,8 +54,7 @@ type SpriteCard = {
   name: string
   shortName: string
   image: string
-  hidden?: boolean
-  active?: boolean
+  hidden: boolean
 }
 
 type SnippetPart = {
@@ -96,7 +95,9 @@ const projectDisplayName = ref(project.value.title)
 const draftProjectDisplayName = ref(project.value.title)
 const projectNameEditing = ref(false)
 const projectMenuOpen = ref(false)
+const spriteMenuOpenFor = ref<string | null>(null)
 const saveState = ref<SaveState>('saved')
+const selectedSpriteId = ref('niu-xiao-qi')
 const selectedCostumeId = ref('niu-xiao-qi-default')
 const selectedAnimationId = ref('niu-run')
 const selectedBackdropId = ref('grass-field')
@@ -105,6 +106,7 @@ const selectedWidgetId = ref('score')
 const selectedMapSpriteId = ref('niu-xiao-qi')
 const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
+const spriteMenuRef = ref<HTMLElement>()
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -193,19 +195,20 @@ const eventGroups = [
   }
 ]
 
-const sprites: SpriteCard[] = [
+const sprites = ref<SpriteCard[]>([
   {
     id: 'niu-xiao-qi',
     name: '牛小七',
     shortName: '牛小七',
     image: niuXiaoQiUrl,
-    active: true
+    hidden: false
   },
   {
     id: 'niu-xiao-hua',
     name: '牛小花牛小花牛小花牛小花牛小花牛小花',
     shortName: '牛小花牛小花...',
-    image: niuXiaoHuaUrl
+    image: niuXiaoHuaUrl,
+    hidden: false
   },
   {
     id: 'flower',
@@ -221,7 +224,7 @@ const sprites: SpriteCard[] = [
     image: tornadoUrl,
     hidden: true
   }
-]
+])
 
 const costumes: AssetItem[] = [
   {
@@ -309,7 +312,8 @@ const quickConfigTools = [
   { id: 'layer', label: 'Layer order', icon: layerQuickIcon }
 ]
 
-const selectedMapSprite = computed(() => sprites.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites[0])
+const selectedSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedSpriteId.value) ?? sprites.value[0])
+const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites.value[0])
 const saveStateMeta = computed(() => {
   switch (saveState.value) {
     case 'saving':
@@ -359,8 +363,10 @@ function selectEditorTab(tab: EditorTab) {
   activeEditorTab.value = tab
 }
 
-function selectSprite() {
+function selectSprite(id = selectedSpriteId.value) {
   activeEditorTarget.value = 'sprite'
+  selectedSpriteId.value = id
+  spriteMenuOpenFor.value = null
 }
 
 function selectStage(tab: StageTab = 'code') {
@@ -408,6 +414,16 @@ function closeProjectMenu() {
   projectMenuOpen.value = false
 }
 
+function toggleSpriteMenu(spriteId: string) {
+  activeEditorTarget.value = 'sprite'
+  selectedSpriteId.value = spriteId
+  spriteMenuOpenFor.value = spriteMenuOpenFor.value === spriteId ? null : spriteId
+}
+
+function closeSpriteMenu() {
+  spriteMenuOpenFor.value = null
+}
+
 async function handleProjectMenuItem(action: () => void | Promise<void>) {
   closeProjectMenu()
   await action()
@@ -432,10 +448,58 @@ function markPrototypeAction() {
   }, 500)
 }
 
+function handleSpriteMenuAction(action: () => void) {
+  closeSpriteMenu()
+  action()
+}
+
+function toggleSelectedSpriteVisibility() {
+  const sprite = selectedSprite.value
+  if (sprite == null) return
+  sprite.hidden = !sprite.hidden
+}
+
+function duplicateSelectedSprite() {
+  const sprite = selectedSprite.value
+  if (sprite == null) return
+  const copyIndex = sprites.value.filter((item) => item.name.startsWith(sprite.name)).length + 1
+  const copy: SpriteCard = {
+    ...sprite,
+    id: `${sprite.id}-copy-${Date.now()}`,
+    name: `${sprite.name} ${copyIndex}`,
+    shortName: `${sprite.shortName} ${copyIndex}`,
+    hidden: false
+  }
+  sprites.value.push(copy)
+  selectedSpriteId.value = copy.id
+}
+
+function renameSelectedSprite() {
+  const sprite = selectedSprite.value
+  if (sprite == null) return
+  const nextName = window.prompt('Rename sprite', sprite.name)?.trim()
+  if (!nextName) return
+  sprite.name = nextName
+  sprite.shortName = nextName.length > 10 ? `${nextName.slice(0, 8)}...` : nextName
+}
+
+function saveSelectedSpriteToLibrary() {
+  markPrototypeAction()
+}
+
+function removeSelectedSprite() {
+  if (sprites.value.length <= 1) return
+  const currentIndex = sprites.value.findIndex((sprite) => sprite.id === selectedSpriteId.value)
+  if (currentIndex < 0) return
+  sprites.value.splice(currentIndex, 1)
+  selectedSpriteId.value = sprites.value[Math.max(0, currentIndex - 1)]?.id ?? sprites.value[0]?.id
+}
+
 function handleDocumentClick(event: MouseEvent) {
   const target = event.target
   if (!(target instanceof Node)) return
   if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
+  if (!spriteMenuRef.value?.contains(target)) closeSpriteMenu()
 }
 
 async function runProject() {
@@ -870,7 +934,7 @@ onBeforeUnmount(() => {
               <img class="stage-backdrop" :src="backdropUrl" alt="" />
               <img class="stage-sprite cow-flower" :src="niuXiaoHuaUrl" alt="" />
               <div class="selected-sprite">
-                <img :src="niuXiaoQiUrl" alt="" />
+                <img :src="selectedSprite.image" alt="" />
                 <span class="coordinate">-224, 74</span>
                 <span class="handle left"></span>
                 <span class="handle right"></span>
@@ -893,22 +957,55 @@ onBeforeUnmount(() => {
               <h2>Sprites</h2>
               <button type="button" aria-label="Add sprite">+</button>
             </header>
-            <div class="sprite-list">
-              <button
+            <div ref="spriteMenuRef" class="sprite-list">
+              <div
                 v-for="sprite in sprites"
                 :key="sprite.id"
                 class="sprite-card"
-                :class="{ active: activeEditorTarget === 'sprite' && sprite.active }"
-                type="button"
-                @click="selectSprite"
+                :class="{ active: activeEditorTarget === 'sprite' && selectedSpriteId === sprite.id }"
+                role="button"
+                tabindex="0"
+                @click="selectSprite(sprite.id)"
+                @keydown.enter.prevent="selectSprite(sprite.id)"
               >
-                <span v-if="activeEditorTarget === 'sprite' && sprite.active" class="sprite-menu" v-html="moreIcon"></span>
+                <span
+                  v-if="activeEditorTarget === 'sprite' && selectedSpriteId === sprite.id"
+                  class="sprite-menu-wrap"
+                  @click.stop
+                >
+                  <button
+                    class="sprite-menu"
+                    type="button"
+                    aria-label="Options button"
+                    :aria-expanded="spriteMenuOpenFor === sprite.id"
+                    aria-haspopup="menu"
+                    @click="toggleSpriteMenu(sprite.id)"
+                    v-html="moreIcon"
+                  ></button>
+                  <span v-if="spriteMenuOpenFor === sprite.id" class="sprite-options-menu" role="menu">
+                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(toggleSelectedSpriteVisibility)">
+                      {{ selectedSprite.hidden ? 'Show' : 'Hide' }}
+                    </button>
+                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(duplicateSelectedSprite)">
+                      Duplicate
+                    </button>
+                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(renameSelectedSprite)">
+                      Rename
+                    </button>
+                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(saveSelectedSpriteToLibrary)">
+                      Save to asset library
+                    </button>
+                    <button class="sprite-options-item danger" type="button" role="menuitem" @click="handleSpriteMenuAction(removeSelectedSprite)">
+                      Remove
+                    </button>
+                  </span>
+                </span>
                 <img :src="sprite.image" :alt="sprite.name" />
                 <span class="sprite-title">
                   <span class="sprite-name">{{ sprite.shortName }}</span>
                   <span v-if="sprite.hidden" class="hidden-mark">⌁</span>
                 </span>
-              </button>
+              </div>
             </div>
           </div>
 
@@ -2389,7 +2486,7 @@ onBeforeUnmount(() => {
 .sprite-list {
   gap: 8px;
   padding: 12px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sprite-card {
@@ -2406,6 +2503,7 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   padding: 2px;
   color: var(--ui-color-grey-1000);
+  cursor: pointer;
 }
 
 .sprite-card::before {
@@ -2454,15 +2552,21 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.sprite-menu {
+.sprite-menu-wrap {
   position: absolute;
   top: -6px;
   right: -6px;
+  z-index: 5;
+}
+
+.sprite-menu {
   width: 24px;
   height: 24px;
+  border: 0;
   border-radius: 999px;
   background: var(--ui-color-primary-main);
   color: white;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2472,6 +2576,46 @@ onBeforeUnmount(() => {
   width: 16px;
   height: 16px;
   display: block;
+}
+
+.sprite-options-menu {
+  position: absolute;
+  top: 26px;
+  right: 0;
+  z-index: 20;
+  min-width: 184px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.sprite-options-item {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px 10px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sprite-options-item:hover {
+  background: var(--ui-color-grey-300);
+}
+
+.sprite-options-item + .sprite-options-item {
+  margin-top: 1px;
+}
+
+.sprite-options-item.danger {
+  color: var(--ui-color-danger-main);
 }
 
 .hidden-mark {
