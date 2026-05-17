@@ -46,26 +46,6 @@ onMounted(() => {
           <div class="aspect-video bg-grey-1000">
             <PrototypeProjectRunner :project="project" />
           </div>
-          <div class="flex items-center justify-between border-t border-grey-300 p-4">
-            <div class="flex items-center gap-4 text-sm text-hint-1">
-              <span :title="`${project.views} views`">{{ humanizeCount(project.views) }} views</span>
-              <span>{{ project.updatedAt }}</span>
-            </div>
-            <div class="flex gap-2">
-              <PrototypeButton :active="liked" @click="toggleLike">
-                {{ liked ? 'Liked' : 'Like' }}
-              </PrototypeButton>
-              <PrototypeButton @click="copyShareLink">
-                {{ copied ? 'Link copied' : 'Share' }}
-              </PrototypeButton>
-              <RouterLink
-                class="inline-flex h-9 items-center justify-center rounded-sm bg-primary-500 px-3 text-sm font-medium text-white no-underline hover:bg-primary-600"
-                :to="getProjectEditorRoute(project)"
-              >
-                See inside
-              </RouterLink>
-            </div>
-          </div>
         </PrototypeCard>
 
         <PrototypeCard class="p-5">
@@ -123,6 +103,20 @@ onMounted(() => {
               {{ tag }}
             </span>
           </div>
+          <div class="mt-5 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+            <RouterLink
+              class="col-span-2 inline-flex h-10 items-center justify-center rounded-sm border border-transparent bg-primary-500 px-3 text-sm font-medium text-white no-underline hover:bg-primary-600"
+              :to="getProjectEditorRoute(project)"
+            >
+              See inside
+            </RouterLink>
+            <PrototypeButton class="h-10" :active="liked" @click="toggleLike">
+              {{ liked ? 'Liked' : 'Like' }}
+            </PrototypeButton>
+            <PrototypeButton class="h-10" @click="copyShareLink">
+              {{ copied ? 'Link copied' : 'Share' }}
+            </PrototypeButton>
+          </div>
         </PrototypeCard>
 
         <PrototypeCard class="p-5">
@@ -140,6 +134,7 @@ onMounted(() => {
               <dd class="m-0 mt-1 text-lg text-title">{{ humanizeCount(project.views) }}</dd>
             </div>
           </dl>
+          <p class="mt-4 mb-0 text-center text-sm text-hint-1">Updated {{ project.updatedAt }}</p>
         </PrototypeCard>
 
         <PrototypeCard class="p-5">
