@@ -128,6 +128,8 @@ const projectDisplayName = ref(project.value.title)
 const draftProjectDisplayName = ref(project.value.title)
 const projectNameEditing = ref(false)
 const projectMenuOpen = ref(false)
+const profileMenuOpen = ref(false)
+const profileLanguage = ref<'English' | '中文'>('English')
 const addSpriteMenuOpen = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
 const saveState = ref<SaveState>('saved')
@@ -147,6 +149,7 @@ const mapWidth = ref(480)
 const mapHeight = ref(360)
 const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
+const profileMenuRef = ref<HTMLElement>()
 const addSpriteMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
 const mapSpriteNameInputRef = ref<HTMLInputElement>()
@@ -641,6 +644,35 @@ function closeProjectMenu() {
   projectMenuOpen.value = false
 }
 
+function toggleProfileMenu() {
+  profileMenuOpen.value = !profileMenuOpen.value
+}
+
+function closeProfileMenu() {
+  profileMenuOpen.value = false
+}
+
+async function handleProfileMenuItem(action: () => void | Promise<void>) {
+  closeProfileMenu()
+  await action()
+}
+
+function toggleProfileLanguage() {
+  profileLanguage.value = profileLanguage.value === 'English' ? '中文' : 'English'
+}
+
+function openSignedInUserPage() {
+  router.push('/user/qingqing')
+}
+
+function openSignedInUserProjects() {
+  router.push('/user/qingqing/projects')
+}
+
+function signOutPrototypeUser() {
+  router.push('/')
+}
+
 function toggleAddSpriteMenu() {
   addSpriteMenuOpen.value = !addSpriteMenuOpen.value
 }
@@ -780,6 +812,7 @@ function handleDocumentClick(event: MouseEvent) {
   const target = event.target
   if (!(target instanceof Node)) return
   if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
+  if (!profileMenuRef.value?.contains(target)) closeProfileMenu()
   if (!addSpriteMenuRef.value?.contains(target)) closeAddSpriteMenu()
   if (!spriteMenuRef.value?.contains(target)) closeSpriteMenu()
 }
@@ -907,7 +940,40 @@ onBeforeUnmount(() => {
         >
           <span v-html="mapEditModeIcon"></span>
         </button>
-        <img class="profile" src="@ui-images/avatar.png" alt="" />
+        <div ref="profileMenuRef" class="profile-dropdown">
+          <button
+            class="profile-trigger"
+            type="button"
+            aria-label="User profile menu"
+            :aria-expanded="profileMenuOpen"
+            aria-haspopup="menu"
+            @click.stop="toggleProfileMenu"
+          >
+            <img class="profile" src="@ui-images/avatar.png" alt="" />
+          </button>
+          <div v-if="profileMenuOpen" class="profile-menu" role="menu" @click.stop>
+            <div class="profile-menu-group">
+              <div class="profile-menu-user" role="presentation">Qingqing</div>
+              <button class="profile-menu-item" type="button" role="menuitem" @click="handleProfileMenuItem(toggleProfileLanguage)">
+                <span>Language</span>
+                <span>{{ profileLanguage }}</span>
+              </button>
+            </div>
+            <div class="profile-menu-group">
+              <button class="profile-menu-item" type="button" role="menuitem" @click="handleProfileMenuItem(openSignedInUserPage)">
+                Profile
+              </button>
+              <button class="profile-menu-item" type="button" role="menuitem" @click="handleProfileMenuItem(openSignedInUserProjects)">
+                Projects
+              </button>
+            </div>
+            <div class="profile-menu-group">
+              <button class="profile-menu-item" type="button" role="menuitem" @click="handleProfileMenuItem(signOutPrototypeUser)">
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1836,11 +1902,100 @@ onBeforeUnmount(() => {
   box-shadow: var(--ui-box-shadow-lg);
 }
 
+.profile-dropdown {
+  position: relative;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.profile-trigger {
+  height: 100%;
+  min-width: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  padding: 0 12px;
+}
+
+.profile-trigger:hover,
+.profile-trigger[aria-expanded='true'] {
+  background: var(--ui-color-grey-400);
+}
+
 .profile {
   width: 30px;
   height: 30px;
   border-radius: 999px;
   object-fit: cover;
+}
+
+.profile-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 40;
+  min-width: 156px;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.profile-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.profile-menu-group + .profile-menu-group {
+  position: relative;
+  margin-top: 13px;
+}
+
+.profile-menu-group + .profile-menu-group::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 0;
+  width: 100%;
+  border-top: 1px solid var(--ui-color-dividing-line-2);
+}
+
+.profile-menu-user,
+.profile-menu-item {
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.profile-menu-user {
+  color: var(--ui-color-grey-800);
+  cursor: default;
+}
+
+.profile-menu-item:hover {
+  background: var(--ui-color-grey-300);
+}
+
+.profile-menu-item span + span {
+  color: var(--ui-color-primary-700);
+  font-size: 12px;
 }
 
 .editor-main {
