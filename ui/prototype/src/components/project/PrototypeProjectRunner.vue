@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 
 import type { Project } from '@/data/mock'
+import PrototypeButton from '@/components/ui/PrototypeButton.vue'
 
 type RunnerFile = {
   content: ArrayBuffer
@@ -197,32 +198,12 @@ defineExpose({
 
     <div v-if="state !== 'running'" class="absolute inset-0">
       <img class="size-full object-cover" :src="project.thumbnail" :alt="project.title" />
-      <div class="absolute inset-0 bg-[rgb(0_0_0/0.18)]"></div>
-      <div class="absolute inset-0 grid place-items-center p-6 text-center">
-        <div class="max-w-88 rounded-lg bg-grey-100 p-5 shadow-lg">
-          <h3 class="m-0 text-lg font-medium text-title">{{ project.title }}</h3>
-          <p v-if="state === 'failed'" class="mt-2 text-sm leading-5 text-red-600">{{ message }}</p>
-          <p v-else-if="message" class="mt-2 text-sm leading-5 text-hint-2">{{ message }}</p>
-          <p v-else-if="project.instructions" class="mt-2 text-sm leading-5 text-hint-2">{{ project.instructions }}</p>
-          <div class="mt-4 flex justify-center gap-2">
-            <button
-              v-if="canRun"
-              class="rounded-md bg-primary-main px-4 py-2 text-sm font-medium text-white"
-              type="button"
-              :disabled="state === 'loading'"
-              @click="run"
-            >
-              {{ state === 'loading' ? 'Loading' : state === 'failed' ? 'Retry' : 'Run' }}
-            </button>
-            <a
-              v-if="project.projectFile"
-              class="rounded-md border border-grey-400 bg-grey-100 px-4 py-2 text-sm text-title no-underline"
-              :href="project.projectFile"
-              :download="`${project.name}.xbp`"
-            >
-              XBP
-            </a>
-          </div>
+      <div class="absolute inset-0 z-2 flex items-center justify-center rounded-md bg-overlay-loading p-6">
+        <div class="flex flex-col items-center gap-3 text-center">
+          <PrototypeButton v-if="canRun" type="primary" :disabled="state === 'loading'" @click="run">
+            {{ state === 'loading' ? 'Loading' : state === 'failed' ? 'Retry' : 'Run' }}
+          </PrototypeButton>
+          <p v-if="state === 'failed'" class="m-0 max-w-80 text-sm leading-5 text-red-600">{{ message }}</p>
         </div>
       </div>
     </div>
