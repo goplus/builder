@@ -107,6 +107,8 @@ const selectedBackdropId = ref('grass-field')
 const selectedSoundId = ref('pop')
 const selectedWidgetId = ref('score')
 const selectedMapSpriteId = ref('niu-xiao-qi')
+const mapWidth = ref(480)
+const mapHeight = ref(360)
 const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
 const addSpriteMenuRef = ref<HTMLElement>()
@@ -1154,7 +1156,16 @@ onBeforeUnmount(() => {
           <div class="map-config">
             <label>
               <span>Map size</span>
-              <strong>480 × 360</strong>
+              <span class="map-size-inputs">
+                <label class="map-number-input">
+                  <span>Width</span>
+                  <input v-model.number="mapWidth" type="number" inputmode="numeric" min="1" />
+                </label>
+                <label class="map-number-input">
+                  <span>Height</span>
+                  <input v-model.number="mapHeight" type="number" inputmode="numeric" min="1" />
+                </label>
+              </span>
             </label>
             <label>
               <span>Physics</span>
@@ -1740,6 +1751,60 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 16px;
   font-size: 14px;
+}
+
+.map-size-inputs {
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.map-number-input {
+  width: 118px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-300);
+  box-shadow: inset 0 0 0 1px var(--ui-color-grey-300);
+  padding: 0 12px;
+  color: var(--ui-color-grey-1000);
+  line-height: 22px;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.map-number-input:hover {
+  background: var(--ui-color-grey-400);
+}
+
+.map-number-input:focus-within {
+  background: var(--ui-color-grey-100);
+  box-shadow: inset 0 0 0 1px var(--ui-color-primary-main);
+}
+
+.map-number-input span {
+  flex: 0 0 auto;
+  color: var(--ui-color-grey-800);
+}
+
+.map-number-input input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+  text-align: right;
+  outline: none;
+}
+
+.map-number-input input::-webkit-outer-spin-button,
+.map-number-input input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
 }
 
 .map-config strong,
