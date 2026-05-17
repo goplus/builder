@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import { getProject, getProjectEditorRoute } from '@/apis/project'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
 
 const props = defineProps<{
   ownerInput: string
@@ -22,7 +23,7 @@ onMounted(() => {
     <CenteredWrapper class="grid grid-cols-[minmax(0,1fr)_320px] gap-8 pt-8 pb-10">
       <section class="overflow-hidden rounded-lg border border-grey-400 bg-grey-100">
         <div class="aspect-video bg-grey-1000">
-          <img class="size-full object-cover" :src="project.thumbnail" :alt="project.title" />
+          <PrototypeProjectRunner :project="project" />
         </div>
         <div class="flex items-center justify-between border-t border-grey-400 p-4">
           <div class="text-sm text-hint-1">{{ project.views }} views · {{ project.updatedAt }}</div>
@@ -44,6 +45,7 @@ onMounted(() => {
           <span>{{ project.owner.displayName }}</span>
         </RouterLink>
         <p class="mt-5 text-sm leading-6 text-text">{{ project.description }}</p>
+        <p v-if="project.instructions" class="mt-3 text-sm leading-6 text-hint-2">{{ project.instructions }}</p>
         <div class="mt-5 flex flex-wrap gap-2">
           <span v-for="tag in project.tags" :key="tag" class="rounded-full bg-grey-300 px-3 py-1 text-xs text-hint-2">{{ tag }}</span>
         </div>

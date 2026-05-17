@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport"
+		content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+	<title>XGo Builder</title>
+	<style>
+		*:focus {
+			outline: none;
+			background-color: black;
+		}
+
+		#canvas,
+		#gameCanvas {
+			display: block;
+			margin: 0;
+			color: white;
+		}
+		
+		body {
+			background-color: #333;
+			margin: 0;
+			color: white;
+		}
+		/* 添加动画容器和动画盒子的样式 */
+		.control-group {
+			margin-bottom: 20px;
+		}
+		
+		.animation-container {
+			width: 300px;
+			height: 30px;
+			background-color: #f0f0f0;
+			position: relative;
+			overflow: hidden;
+			border-radius: 15px;
+			margin-top: 10px;
+		}
+		
+		.animation-box {
+			width: 50px;
+			height: 20px;
+			background-color: #4CAF50;
+			position: absolute;
+			top: 5px;
+			left: 0;
+			border-radius: 10px;
+			animation: slide 2s infinite alternate ease-in-out;
+		}
+		
+		@keyframes slide {
+			0% {
+				left: 0;
+			}
+			100% {
+				left: calc(100% - 50px);
+			}
+		}
+	</style>
+	<script src="fflate.js"></script>
+</head>
+
+<body>
+	<!-- <button id="initGameBtn">Init</button> -->
+	<button id="startGameBtn">Start</button>
+	<button id="stopGameBtn">Stop</button>
+	<button id="startNewGameBtn">StartNew</button>
+	<button id="startRecordingBtn">StartRecording</button>
+	<button id="stopRecordingBtn">StopRecording</button>
+	<button id="screenshotBtn">Screenshot</button>
+	<button id="pauseGameBtn">Pause</button>
+	<button id="resumeGameBtn">Resume</button>
+	<button id="stepNextFrameBtn">NextFrame</button>
+	<button id="toggleSizeBtn">ToggleSize</button>
+
+	<progress id="progress-bar" value="0" max="1" style="display: none;"></progress>
+	<div id="tabs">
+		<div id="tab-loader">
+		</div>
+		<div id="tab-game" style="display: none;">
+		</div>
+	</div>
+	<div class="control-group">
+		<h2>Test Animation</h2>
+		<div class="animation-container">
+			<div class="animation-box"></div>
+		</div>
+	</div>
+	<iframe id="runnerFrame" src="runner.html" width="480" height="360"></iframe>
+
+	<script>
+		window.addEventListener('load', function() {
+			animateBox();
+			initEngine()
+		});
+
+		function animateBox() {
+			const box = document.querySelector('.animation-box');
+			if (!box) return;
+			const style = window.getComputedStyle(box);
+			if (style.animationName !== 'none') return;
+			let position = 0;
+			let direction = 1;
+			setInterval(() => {
+				if (position >= 250) direction = -1;
+				if (position <= 0) direction = 1;
+				
+				position += direction * 2;
+				box.style.left = position + 'px';
+			}, 20);
+		}
+
+		let runnerWindow = {}
+		// document.getElementById('initGameBtn').addEventListener('click', initGame);
+		document.getElementById('startNewGameBtn').addEventListener('click', startNewGame);
+		document.getElementById('startGameBtn').addEventListener('click', startGame);
+		document.getElementById('stopGameBtn').addEventListener('click', stopGame);
+		document.getElementById('startRecordingBtn').addEventListener('click', startRecording);
+		document.getElementById('stopRecordingBtn').addEventListener('click', stopRecording);
+		document.getElementById('screenshotBtn').addEventListener('click', takeScreenshot);
+		document.getElementById('pauseGameBtn').addEventListener('click', pauseGame);
+		document.getElementById('resumeGameBtn').addEventListener('click', resumeGame);
+		document.getElementById('stepNextFrameBtn').addEventListener('click', stepNextFrame);
+		document.getElementById('toggleSizeBtn').addEventListener('click', toggleSizeFrame);
+
+		const iframe = document.getElementById('runnerFrame');
+		let enlarged = false;
+
+		runnerWindow = iframe.contentWindow;
+		function onProgress(value) {
+			document.getElementById('progress-bar').value = value;
+			if (value >= 1) {
+				document.getElementById('tab-game').style.display = 'block';
+				document.getElementById('tab-loader').style.display = 'none';
+			}
+			document.getElementById('progress-bar').style.display = value >= 1 ? 'none' : 'block';
+		}
+
+		async function initEngine() {
+			await runnerWindow.initEngine(null, { logLevel: LOG_LEVEL_VERBOSE })
+		}
+
+		async function startNewGame() {
+			await startProject('/diff.zip')
+		}
+
+		async function startGame() {
+			await startProject('/game.zip')
+		}
+
+		async function stopGame() {
+			runnerWindow.stopGame()
+		}
+
+		function startRecording() {
+			runnerWindow.startRecording()
+		}
+
+		async function stopRecording() {
+			await runnerWindow.stopRecording()
+			runnerWindow.downloadRecordedVideo()
+		}
+		async function pauseGame() {
+			if (runnerWindow.pauseGame) {
+				runnerWindow.pauseGame();
+			} else {
+				console.warn("Pause function not available");
+			}
+		}
+
+		async function resumeGame() {
+			if (runnerWindow.resumeGame) {
+				runnerWindow.resumeGame();
+			} else {
+				console.warn("Resume function not available");
+			}
+		}
+
+		async function stepNextFrame() {
+			if (runnerWindow.stepNextFrame) {
+				runnerWindow.stepNextFrame();
+			} else {
+				console.warn("StepNextFrame function not available");
+			}
+		}
+		async function toggleSizeFrame() {
+			const SMALL_SIZE = { width: 480, height: 360 };
+			const LARGE_SIZE = { width: 960, height: 720 };
+			
+			const size = enlarged ? SMALL_SIZE : LARGE_SIZE;
+			iframe.width = size.width;
+			iframe.height = size.height;
+			enlarged = !enlarged;
+		}
+		async function takeScreenshot() {
+			try {
+				const blob = await runnerWindow.getScreenshot()
+				if (blob) {
+					const url = URL.createObjectURL(blob)
+					const a = document.createElement('a')
+					a.href = url
+					a.download = `screenshot-${Date.now()}.png`
+					document.body.appendChild(a)
+					a.click()
+					document.body.removeChild(a)
+					URL.revokeObjectURL(url)
+				} else {
+					console.error('Failed to get screenshot')
+				}
+			} catch (error) {
+				console.error('Error taking screenshot:', error)
+			}
+		}
+		const LOG_LEVEL_VERBOSE = 0
+		let stopGameFlag = true
+
+		async function startProject(zipUrl) {
+			if(stopGameFlag === false){
+				console.error("game is running.")
+				return
+			}
+
+			runnerWindow.addEventListener('onProgress', (event) => {
+				onProgress(event.detail.progress)
+			})
+			runnerWindow.onGameError(function (msg) {
+				console.error("onGameError", msg)
+			})
+			runnerWindow.onGameExit(function (code) {
+				stopGameFlag = true
+				console.error("onGameExit", code)
+			})
+			runnerWindow.onEngineCrash(function (code) {
+				stopGameFlag = true
+				console.error("onEngineCrash", code)
+			})
+
+			runnerWindow.spxIsForceDebugLog = true
+
+			let zipped = await (await (fetch(zipUrl))).arrayBuffer()
+			let unzipped = fflate.unzipSync(new Uint8Array(zipped))
+			let files = {}
+			Object.entries(unzipped).forEach(([path, data]) => {
+				if (path.endsWith('/')) return // skip directories
+				files[path] = { lastModified: Date.now(), content: data.buffer }
+			})
+			await runnerWindow.initGame(files)
+			await runnerWindow.startGame()
+			stopGameFlag = false
+		}
+	</script>
+</body>
+
+</html>

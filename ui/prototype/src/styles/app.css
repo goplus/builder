@@ -1,6 +1,35 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
+@layer components {
+  .link-primary {
+    color: var(--ui-color-primary-main);
+    text-decoration: none;
+    transition: color 0.1s;
+
+    &:hover {
+      color: var(--ui-color-primary-400);
+    }
+
+    &:active {
+      color: var(--ui-color-primary-600);
+    }
+  }
+
+  .link-boring {
+    color: inherit;
+    transition: color 0.1s;
+
+    &:hover {
+      color: var(--ui-color-primary-main);
+    }
+
+    &:active {
+      color: var(--ui-color-primary-600);
+    }
+  }
+}
+
 @layer base {
   :root {
     --ui-color-turquoise-100: #d2f4f5;
@@ -107,10 +136,10 @@
     --ui-spacing-xl: 16px;
     --ui-font-size-2xs: 10px;
     --ui-font-size-xs: 12px;
-    --ui-font-size-sm: 14px;
-    --ui-font-size-base: 16px;
-    --ui-font-size-lg: 18px;
-    --ui-font-size-xl: 20px;
+    --ui-font-size-sm: 13px;
+    --ui-font-size-base: 14px;
+    --ui-font-size-lg: 15px;
+    --ui-font-size-xl: 16px;
     --ui-font-size-2xl: 20px;
     --ui-font-main:
       Inter,

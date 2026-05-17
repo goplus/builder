@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import avatarImage from '@ui-images/avatar.png'
+import logoSvg from '@/assets/navbar-logo.svg'
 
 const router = useRouter()
 const searchValue = ref('')
@@ -15,15 +16,15 @@ function submitSearch(event: Event) {
 </script>
 
 <template>
-  <nav class="sticky top-0 z-20 flex h-12.25 min-w-360 items-center justify-center border-b border-dividing-line-2 bg-grey-100" aria-label="Top navigation">
-    <div class="flex h-12 w-[calc(100%-200px)] max-w-310 items-center justify-between gap-3">
+  <nav class="sticky top-0 z-20 flex h-12 min-w-360 justify-center border-b border-grey-400 bg-grey-100 text-grey-1000" aria-label="Top navigation">
+    <div class="flex h-12 w-310 items-stretch justify-between gap-3 desktop-large:w-373">
       <div class="flex h-12 min-w-0 basis-[30%] items-center">
         <RouterLink
           class="relative mx-6 flex h-12 items-center after:absolute after:-right-6 after:block after:h-6 after:w-px after:bg-dividing-line-1 after:content-['']"
           to="/"
           aria-label="XBuilder home"
         >
-          <img class="block h-7.5 w-25.5" src="@ui-images/ai-canvas-logo.png" alt="XBuilder" />
+          <img class="block h-7.5 w-25.5" :src="logoSvg" alt="XBuilder" />
         </RouterLink>
 
         <RouterLink class="relative ml-6 flex h-12 items-center justify-center px-3 text-title no-underline hover:bg-grey-400" to="/user/code-kiko/projects" aria-label="Project menu">
@@ -33,13 +34,6 @@ function submitSearch(event: Event) {
             />
           </svg>
           <span class="ml-1.5 h-0 w-0 border-r-4 border-l-4 border-r-transparent border-l-transparent border-t-[5px] border-t-current" aria-hidden="true"></span>
-        </RouterLink>
-
-        <RouterLink class="relative flex h-12 items-center justify-center px-3 text-title no-underline hover:bg-grey-400" to="/explore" aria-label="Explore projects">
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5 overflow-visible fill-none stroke-current stroke-[2.5] [stroke-linecap:round] [stroke-linejoin:round]">
-            <rect x="4" y="4" width="16" height="16" rx="2.5" />
-            <path d="M12 8v8M8 12h8" />
-          </svg>
         </RouterLink>
 
         <RouterLink class="relative flex h-12 items-center justify-center px-3 text-title no-underline hover:bg-grey-400" to="/tutorials" aria-label="Tutorials">

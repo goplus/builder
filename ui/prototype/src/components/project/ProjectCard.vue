@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getProjectRoute } from '@/apis/project'
 import type { Project } from '@/data/mock'
+import stageBgUrl from '@/assets/stage-bg.svg'
 
 defineProps<{
   project: Project
@@ -8,28 +9,24 @@ defineProps<{
 </script>
 
 <template>
-  <li>
+  <li class="group w-58 flex-none overflow-hidden rounded-md border border-grey-400 bg-grey-100 transition-all duration-100 hover:shadow-sm">
     <RouterLink
-      class="block overflow-hidden rounded-lg border border-grey-400 bg-grey-100 text-text no-underline shadow-none transition hover:-translate-y-0.5 hover:shadow-sm"
+      class="flex flex-col text-text no-underline"
       :to="getProjectRoute(project)"
     >
-      <div class="h-36 overflow-hidden border-b border-grey-400 bg-grey-300">
+      <div class="relative h-43 w-full bg-contain bg-center" :style="{ backgroundImage: `url(${stageBgUrl})` }">
         <img class="block size-full object-cover" :src="project.thumbnail" :alt="project.title" />
       </div>
       <div class="p-4">
-        <h3 class="m-0 overflow-hidden text-base font-medium whitespace-nowrap text-title text-ellipsis">
-          {{ project.title }}
-        </h3>
-        <div class="mt-2 flex items-center gap-2">
-          <img class="size-6 rounded-full border border-grey-400 object-cover" :src="project.owner.avatar" alt="" />
-          <span class="min-w-0 overflow-hidden text-sm whitespace-nowrap text-hint-2 text-ellipsis">
-            {{ project.owner.displayName }}
-          </span>
+        <div class="flex items-center gap-1">
+          <h5 class="m-0 min-w-0 shrink truncate text-lg leading-6 font-normal text-title" :title="project.title">
+            {{ project.title }}
+          </h5>
         </div>
-        <div class="mt-3 flex gap-3 text-xs text-hint-1">
-          <span>{{ project.likes }} likes</span>
-          <span>{{ project.remixes }} remixes</span>
-        </div>
+        <p class="mt-1 flex h-5 gap-3 text-sm text-grey-700">
+          <span class="flex-none">{{ project.likes }} likes</span>
+          <span class="block flex-auto truncate" :title="project.updatedAt">{{ project.updatedAt }}</span>
+        </p>
       </div>
     </RouterLink>
   </li>

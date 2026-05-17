@@ -9,17 +9,17 @@ export type CommunityHome = {
 
 export function getCommunityHome(): CommunityHome {
   return {
-    mine: projects.slice(0, 3),
+    mine: projects.slice(0, 4),
     liked: projects.slice(0, 4),
     remixing: projects.slice(2, 6),
     following: projects.slice(1, 5)
   }
 }
 
-export function exploreProjects(order = 'popular'): Project[] {
+export function exploreProjects(order = 'likes'): Project[] {
   const sorted = [...projects]
-  if (order === 'remixes') return sorted.sort((a, b) => b.remixes - a.remixes)
-  if (order === 'latest') return sorted.reverse()
+  if (order === 'remix' || order === 'remixes') return sorted.sort((a, b) => b.remixes - a.remixes)
+  if (order === 'following' || order === 'latest') return sorted.reverse()
   return sorted.sort((a, b) => b.likes - a.likes)
 }
 

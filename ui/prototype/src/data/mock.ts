@@ -10,6 +10,10 @@ import personalInfoBackgroundImage from '@ui-images/personal-information-backgro
 import projectRunImage from '@ui-images/project-run.png'
 import spriteReviewImage from '@ui-images/sprite-review.png'
 import userBackgroundImage from '@ui-images/user-bg.png'
+import niuRunProjectFile from '@/assets/projects/niu-run/niu-run.xbp?url'
+import niuRunThumbnail from '@/assets/projects/niu-run/thumbnail.jpeg'
+import weatherggggProjectFile from '@/assets/projects/weathergggg/Weathergggg.xbp?url'
+import weatherggggThumbnail from '@/assets/projects/weathergggg/thumbnail.jpg'
 
 export type UserProfile = {
   username: string
@@ -29,7 +33,9 @@ export type Project = {
   title: string
   owner: UserProfile
   description: string
+  instructions?: string
   thumbnail: string
+  projectFile?: string
   tags: string[]
   likes: number
   remixes: number
@@ -96,10 +102,51 @@ export const users: UserProfile[] = [
     joinedAt: 'Joined 2025',
     followers: 614,
     following: 102
+  },
+  {
+    username: 'qingqing',
+    displayName: 'Qingqing',
+    avatar: avatarImage,
+    cover: personalInfoBackgroundImage,
+    bio: 'Designing and testing local XBuilder prototype projects.',
+    location: 'Builder Lab',
+    joinedAt: 'Joined 2026',
+    followers: 96,
+    following: 18
   }
 ]
 
 export const projects: Project[] = [
+  {
+    id: 'local-weathergggg',
+    name: 'weathergggg',
+    title: 'Weathergggg',
+    owner: users[3],
+    description: 'A local offline XBuilder game project loaded from the bundled Weathergggg.xbp file.',
+    instructions: 'Press Run to play this bundled local project in the prototype.',
+    thumbnail: weatherggggThumbnail,
+    projectFile: weatherggggProjectFile,
+    tags: ['Game', 'Local XBP', 'Offline'],
+    likes: 412,
+    remixes: 63,
+    views: 5380,
+    updatedAt: 'Today'
+  },
+  {
+    id: 'local-niu-run',
+    name: 'niu-run',
+    title: 'niu-run',
+    owner: users[3],
+    description: '被牛小花抓到你就输啦',
+    instructions: '点击草地控制小牛行走',
+    thumbnail: niuRunThumbnail,
+    projectFile: niuRunProjectFile,
+    tags: ['Game', 'Runner', 'Local XBP'],
+    likes: 389,
+    remixes: 57,
+    views: 5010,
+    updatedAt: 'Today'
+  },
   {
     id: '1',
     name: 'forest-runner',
@@ -111,7 +158,7 @@ export const projects: Project[] = [
     likes: 368,
     remixes: 54,
     views: 4920,
-    updatedAt: 'Updated 1 day ago'
+    updatedAt: '1 day ago'
   },
   {
     id: '2',
@@ -124,7 +171,7 @@ export const projects: Project[] = [
     likes: 274,
     remixes: 39,
     views: 3560,
-    updatedAt: 'Updated 3 days ago'
+    updatedAt: '3 days ago'
   },
   {
     id: '3',
@@ -137,7 +184,7 @@ export const projects: Project[] = [
     likes: 221,
     remixes: 42,
     views: 2980,
-    updatedAt: 'Updated 5 days ago'
+    updatedAt: '5 days ago'
   },
   {
     id: '4',
@@ -150,7 +197,7 @@ export const projects: Project[] = [
     likes: 184,
     remixes: 31,
     views: 2640,
-    updatedAt: 'Updated 1 week ago'
+    updatedAt: '1 week ago'
   },
   {
     id: '5',
@@ -163,7 +210,7 @@ export const projects: Project[] = [
     likes: 162,
     remixes: 25,
     views: 2110,
-    updatedAt: 'Updated 2 weeks ago'
+    updatedAt: '2 weeks ago'
   },
   {
     id: '6',
@@ -176,7 +223,7 @@ export const projects: Project[] = [
     likes: 148,
     remixes: 18,
     views: 1890,
-    updatedAt: 'Updated 2 weeks ago'
+    updatedAt: '2 weeks ago'
   }
 ]
 
