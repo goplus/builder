@@ -23,7 +23,7 @@ defineProps<{
             {{ project.title }}
           </h5>
         </div>
-        <p class="mt-1 flex h-5 gap-3 text-sm text-grey-700">
+        <p class="m-0 mt-1 flex h-5 gap-3 text-sm text-grey-700">
           <span class="flex-none">{{ project.likes }} likes</span>
           <span class="block flex-auto truncate" :title="project.updatedAt">{{ project.updatedAt }}</span>
         </p>
