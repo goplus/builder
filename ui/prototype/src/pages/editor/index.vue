@@ -1340,7 +1340,7 @@ onBeforeUnmount(() => {
               aria-label="Stage overview"
               @click="selectStage('code')"
             >
-              <img :src="backdropUrl" alt="" />
+              <img :src="stageBackdrop" alt="" />
             </button>
             <button
               v-for="entry in stageEntries"
@@ -1361,7 +1361,7 @@ onBeforeUnmount(() => {
     <section v-else class="map-editor-main">
       <section class="map-workspace">
         <div class="map-stage">
-          <img class="map-backdrop" :src="backdropUrl" alt="" />
+          <img class="map-backdrop" :src="stageBackdrop" alt="" />
           <button
             v-for="sprite in sprites"
             :key="`map-${sprite.id}`"
@@ -1887,6 +1887,24 @@ onBeforeUnmount(() => {
 
 .map-sprite-tornado img {
   width: 54px;
+}
+
+.map-sprite-jaime {
+  left: 41%;
+  top: 69%;
+}
+
+.map-sprite-jaime img {
+  width: 40px;
+}
+
+.map-sprite-kai {
+  left: 68%;
+  top: 71%;
+}
+
+.map-sprite-kai img {
+  width: 50px;
 }
 
 .map-sprite.active {
