@@ -1372,16 +1372,20 @@ onMounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  gap: 20px;
+  border-bottom-right-radius: var(--ui-border-radius-lg);
+  background: var(--ui-color-grey-200);
+  padding: 24px 20px;
 }
 
 .asset-detail-header {
-  height: 36px;
+  width: 100%;
+  min-height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 4px;
+  margin: 0;
 }
 
 .asset-detail-header h2 {
@@ -1394,6 +1398,7 @@ onMounted(() => {
 .asset-detail-header button {
   width: 16px;
   height: 16px;
+  flex: 0 0 auto;
   border: 0;
   background: transparent;
   padding: 0;
