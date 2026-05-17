@@ -37,34 +37,104 @@ type SpriteCard = {
   active?: boolean
 }
 
+type SnippetPart = {
+  text: string
+  type?: 'function' | 'hint' | 'string' | 'custom' | 'operator'
+}
+
+type EventSnippet = {
+  id: string
+  parts: SnippetPart[]
+}
+
 const project = computed(() => getProject(props.ownerNameInput, props.projectNameInput))
 const runnerRef = ref<InstanceType<typeof PrototypeProjectRunner>>()
 const runnerActive = ref(false)
 
+function snippet(id: string, parts: SnippetPart[]): EventSnippet {
+  return { id, parts }
+}
+
 const eventGroups = [
   {
     title: 'Game Events',
-    items: ['onStart => {}']
+    items: [snippet('onStart', [{ text: 'onStart', type: 'function' }, { text: ' => {}', type: 'operator' }])]
   },
   {
     title: 'Sensing Events',
-    items: ['onClick => {}', 'onKey key:KeyA, => {}', 'onSwipe direction:left,...', 'onTouchStart name:"牛小...', 'onTouchStart names:["牛...']
+    items: [
+      snippet('onClick', [{ text: 'onClick', type: 'function' }, { text: ' => {}', type: 'operator' }]),
+      snippet('onKey', [
+        { text: 'onKey', type: 'function' },
+        { text: ' key:', type: 'hint' },
+        { text: 'KeyA', type: 'custom' },
+        { text: ', => {}', type: 'operator' }
+      ]),
+      snippet('onSwipe', [
+        { text: 'onSwipe', type: 'function' },
+        { text: ' direction:', type: 'hint' },
+        { text: 'left', type: 'custom' },
+        { text: ',...', type: 'operator' }
+      ]),
+      snippet('onTouchStart-name', [
+        { text: 'onTouchStart', type: 'function' },
+        { text: ' name:', type: 'hint' },
+        { text: '"牛小...', type: 'string' }
+      ]),
+      snippet('onTouchStart-names', [
+        { text: 'onTouchStart', type: 'function' },
+        { text: ' names:', type: 'hint' },
+        { text: '["牛...', type: 'string' }
+      ])
+    ]
   },
   {
     title: 'Message Events',
-    items: ['broadcast msg:"ping"', 'broadcastAndWait msg:"p...', 'onMsg msg:"ping", => {}']
+    items: [
+      snippet('broadcast', [
+        { text: 'broadcast', type: 'function' },
+        { text: ' msg:', type: 'hint' },
+        { text: '"ping"', type: 'string' }
+      ]),
+      snippet('broadcastAndWait', [
+        { text: 'broadcastAndWait', type: 'function' },
+        { text: ' msg:', type: 'hint' },
+        { text: '"p...', type: 'string' }
+      ]),
+      snippet('onMsg', [
+        { text: 'onMsg', type: 'function' },
+        { text: ' msg:', type: 'hint' },
+        { text: '"ping"', type: 'string' },
+        { text: ', => {}', type: 'operator' }
+      ])
+    ]
   },
   {
     title: 'Sprite Events',
-    items: ['onCloned data => {}']
+    items: [
+      snippet('onCloned', [
+        { text: 'onCloned', type: 'function' },
+        { text: ' data', type: 'custom' },
+        { text: ' => {}', type: 'operator' }
+      ])
+    ]
   },
   {
     title: 'Stage Events',
-    items: ['onBackdrop name:"backdr...']
+    items: [
+      snippet('onBackdrop', [
+        { text: 'onBackdrop', type: 'function' },
+        { text: ' name:', type: 'hint' },
+        { text: '"backdr...', type: 'string' }
+      ])
+    ]
   },
   {
     title: 'Visibility',
-    items: ['visible', 'show']
+    items: [
+      snippet('visible', [{ text: 'visible', type: 'function' }]),
+      snippet('show', [{ text: 'show', type: 'function' }])
+    ]
   }
 ]
 
@@ -230,7 +300,11 @@ onMounted(() => {
           <aside class="events-list" aria-label="Event snippets">
             <section v-for="group in eventGroups" :key="group.title" class="event-group">
               <h3>{{ group.title }}</h3>
-              <button v-for="item in group.items" :key="item" class="event-snippet" type="button">{{ item }}</button>
+              <button v-for="item in group.items" :key="item.id" class="event-snippet" type="button">
+                <span v-for="(part, index) in item.parts" :key="`${item.id}-${index}`" :class="part.type && `token-${part.type}`">
+                  {{ part.text }}
+                </span>
+              </button>
             </section>
           </aside>
 
@@ -577,8 +651,25 @@ onMounted(() => {
   text-align: left;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
-  color: #a57400;
+  color: #000;
   white-space: nowrap;
+}
+
+.token-function,
+.token-custom {
+  color: #b08a01;
+}
+
+.token-hint {
+  color: var(--ui-color-grey-700);
+}
+
+.token-string {
+  color: #9c2c2c;
+}
+
+.token-operator {
+  color: #000;
 }
 
 .code-editor {
@@ -603,7 +694,7 @@ onMounted(() => {
 }
 
 .keyword {
-  color: #b48100;
+  color: #b08a01;
 }
 
 .source {
