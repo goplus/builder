@@ -36,6 +36,7 @@ import projectPageIcon from '@/assets/editor/navbar-icons/project-page.svg'
 import publishIcon from '@/assets/editor/navbar-icons/publish.svg'
 import removeProjectIcon from '@/assets/editor/navbar-icons/remove-project.svg'
 import savingIcon from '@/assets/editor/navbar-icons/saving.svg?raw'
+import stageBgUrl from '@/assets/stage-bg.svg'
 import backdropUrl from '@/assets/projects/niu-run/editor/backdrop.png'
 import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
 import niuXiaoHuaUrl from '@/assets/projects/niu-run/editor/sprite-niu-xiao-hua.png'
@@ -479,6 +480,8 @@ const selectedSprite = computed(() => sprites.value.find((sprite) => sprite.id =
 const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites.value[0])
 const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
 const stageBackdrop = computed(() => selectedBackdrop.value?.image ?? project.value.thumbnail)
+const mapWorkspaceStyle = computed(() => ({ backgroundImage: `url(${stageBgUrl})` }))
+const mapStageStyle = computed(() => ({ backgroundImage: `url(${stageBackdrop.value})` }))
 const stageCompanionSprite = computed(() => sprites.value.find((sprite) => sprite.id !== selectedSprite.value?.id))
 const saveStateMeta = computed(() => {
   switch (saveState.value) {
@@ -1369,8 +1372,8 @@ onBeforeUnmount(() => {
     </section>
 
     <section v-else class="map-editor-main">
-      <section class="map-workspace">
-        <div class="map-stage">
+      <section class="map-workspace" :style="mapWorkspaceStyle">
+        <div class="map-stage" :style="mapStageStyle">
           <img class="map-backdrop" :src="stageBackdrop" alt="" />
           <button
             v-for="sprite in sprites"
@@ -1864,6 +1867,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  border-radius: var(--ui-border-radius-lg);
+  background-color: var(--ui-color-grey-200);
+  background-position: center;
+  background-repeat: repeat;
+  background-size: contain;
 }
 
 .map-stage {
@@ -1872,7 +1881,10 @@ onBeforeUnmount(() => {
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: var(--ui-border-radius-lg);
-  background: var(--ui-color-grey-300);
+  background-color: var(--ui-color-grey-300);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   box-shadow: var(--ui-box-shadow-lg);
 }
 
