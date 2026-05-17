@@ -111,6 +111,8 @@ type EditorProjectData = {
   widgets: WidgetItem[]
   codeLines: CodeLine[]
   stageCodeLines: CodeLine[]
+  physicsEnabled: boolean
+  layerSorting: 'default' | 'vertical'
 }
 
 const project = computed(() => getProject(props.ownerNameInput, props.projectNameInput))
@@ -137,6 +139,8 @@ const selectedWidgetId = ref('score')
 const selectedMapSpriteId = ref('niu-xiao-qi')
 const mapSpriteNameEditing = ref(false)
 const mapSpriteConfigExpanded = ref(true)
+const mapPhysicsEnabled = ref(true)
+const mapLayerSorting = ref<'default' | 'vertical'>('vertical')
 const draftMapSpriteName = ref('')
 const mapWidth = ref(480)
 const mapHeight = ref(360)
@@ -412,7 +416,9 @@ const niuRunEditorData: EditorProjectData = {
   sounds: niuRunSounds,
   widgets: defaultWidgets,
   codeLines: niuRunCodeLines,
-  stageCodeLines: niuRunStageCodeLines
+  stageCodeLines: niuRunStageCodeLines,
+  physicsEnabled: true,
+  layerSorting: 'vertical'
 }
 
 const weatherggggEditorData: EditorProjectData = {
@@ -423,7 +429,9 @@ const weatherggggEditorData: EditorProjectData = {
   sounds: [],
   widgets: defaultWidgets,
   codeLines: weatherggggCodeLines,
-  stageCodeLines: weatherggggStageCodeLines
+  stageCodeLines: weatherggggStageCodeLines,
+  physicsEnabled: false,
+  layerSorting: 'default'
 }
 
 const editorProjectData = computed(() => (project.value.name === 'weathergggg' ? weatherggggEditorData : niuRunEditorData))
@@ -496,6 +504,8 @@ function syncProjectSelection(data: EditorProjectData) {
   selectedBackdropId.value = data.backdrops[0]?.id ?? ''
   selectedSoundId.value = data.sounds[0]?.id ?? ''
   selectedWidgetId.value = data.widgets[0]?.id ?? ''
+  mapPhysicsEnabled.value = data.physicsEnabled
+  mapLayerSorting.value = data.layerSorting
 }
 
 watch(
@@ -1403,11 +1413,44 @@ onBeforeUnmount(() => {
             </label>
             <label>
               <span>Physics</span>
-              <strong>On</strong>
+              <button
+                class="map-switch"
+                :class="{ active: mapPhysicsEnabled }"
+                role="switch"
+                :aria-checked="mapPhysicsEnabled"
+                type="button"
+                aria-label="Physics"
+                @click="mapPhysicsEnabled = !mapPhysicsEnabled"
+              >
+                <span class="map-switch-rail" aria-hidden="true">
+                  <span class="map-switch-thumb"></span>
+                </span>
+              </button>
             </label>
-            <label>
+            <label v-if="mapPhysicsEnabled">
               <span>Layer Sorting</span>
-              <strong>By Y position</strong>
+              <span class="map-radio-group" role="radiogroup" aria-label="Layer Sorting">
+                <button
+                  class="map-radio"
+                  :class="{ active: mapLayerSorting === 'default' }"
+                  type="button"
+                  role="radio"
+                  :aria-checked="mapLayerSorting === 'default'"
+                  @click="mapLayerSorting = 'default'"
+                >
+                  Default
+                </button>
+                <button
+                  class="map-radio"
+                  :class="{ active: mapLayerSorting === 'vertical' }"
+                  type="button"
+                  role="radio"
+                  :aria-checked="mapLayerSorting === 'vertical'"
+                  @click="mapLayerSorting = 'vertical'"
+                >
+                  Vertical
+                </button>
+              </span>
             </label>
           </div>
         </section>
@@ -2079,6 +2122,97 @@ onBeforeUnmount(() => {
 .map-number-input input::-webkit-inner-spin-button {
   margin: 0;
   appearance: none;
+}
+
+.map-switch {
+  --ui-switch-rail-width: 40px;
+  --ui-switch-rail-height: 22px;
+  --ui-switch-button-size: 18px;
+  --ui-switch-offset: 2px;
+  min-width: var(--ui-switch-rail-width);
+  height: var(--ui-switch-rail-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.map-switch-rail {
+  position: relative;
+  width: var(--ui-switch-rail-width);
+  height: var(--ui-switch-rail-height);
+  display: block;
+  overflow: hidden;
+  border-radius: calc(var(--ui-switch-rail-height) / 2);
+  background: rgb(0 0 0 / 0.14);
+  transition:
+    background-color 0.3s,
+    box-shadow 0.3s;
+}
+
+.map-switch.active .map-switch-rail {
+  background: var(--ui-color-primary-main);
+}
+
+.map-switch:focus .map-switch-rail {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-color-primary-main) 20%, transparent);
+}
+
+.map-switch-thumb {
+  position: absolute;
+  top: var(--ui-switch-offset);
+  left: var(--ui-switch-offset);
+  width: var(--ui-switch-button-size);
+  height: var(--ui-switch-button-size);
+  border-radius: 50%;
+  background: var(--ui-color-grey-100);
+  box-shadow:
+    0 1px 4px 0 rgb(0 0 0 / 0.3),
+    inset 0 0 1px 0 rgb(0 0 0 / 0.05);
+  transition: left 0.3s;
+}
+
+.map-switch.active .map-switch-thumb {
+  left: calc(100% - var(--ui-switch-button-size) - var(--ui-switch-offset));
+}
+
+.map-radio-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.map-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ui-color-grey-900);
+  font: inherit;
+  cursor: pointer;
+}
+
+.map-radio::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 1px solid var(--ui-color-grey-600);
+  border-radius: 50%;
+  background: var(--ui-color-grey-100);
+  box-shadow: inset 0 0 0 3px var(--ui-color-grey-100);
+}
+
+.map-radio.active::before {
+  border-color: var(--ui-color-primary-main);
+  background: var(--ui-color-primary-main);
 }
 
 .map-config strong,
