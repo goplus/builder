@@ -1,14 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Project } from '@/data/mock'
 import ProjectCard from '@/components/project/ProjectCard.vue'
 
-defineProps<{
+const props = defineProps<{
   title: string
   linkText?: string
   linkTo?: string
   projects: Project[]
   context?: 'home' | 'user' | 'project'
 }>()
+
+const gridClass = computed(() => {
+  return props.context === 'project'
+    ? 'grid-cols-5 desktop-large:grid-cols-6'
+    : 'grid-cols-4 desktop-large:grid-cols-5'
+})
 </script>
 
 <template>
@@ -27,7 +34,7 @@ defineProps<{
       </RouterLink>
     </header>
 
-    <ul class="relative mt-2 mb-8 grid list-none grid-cols-4 gap-5 p-0 desktop-large:grid-cols-5">
+    <ul class="relative mt-2 mb-8 grid list-none gap-5 p-0" :class="gridClass">
       <ProjectCard
         v-for="project in projects"
         :key="project.id"
