@@ -991,7 +991,11 @@ onBeforeUnmount(() => {
               type="button"
               @click="selectedSoundId = sound.id"
             >
-              <span class="sound-wave-icon">♪</span>
+              <span class="sound-wave-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 25" fill="none">
+                  <path d="M19.661 14.8859L9.58496 21.0519C7.57996 22.2789 5.00098 20.8398 5.00098 18.4938V6.50477C5.00098 4.15877 7.57996 2.71991 9.58496 3.94691L19.661 10.1129C21.446 11.2059 21.446 13.7939 19.661 14.8859Z" fill="currentColor" />
+                </svg>
+              </span>
               <span>{{ sound.name }}</span>
             </button>
             <button class="asset-add-button" type="button" aria-label="Add sound">+</button>
@@ -2156,11 +2160,37 @@ onBeforeUnmount(() => {
 
 .sound-asset-item,
 .widget-asset-item {
-  justify-content: center;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 0;
 }
 
-.sound-wave-icon,
+.sound-wave-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  margin: 12px 0;
+  border-radius: 50%;
+  background: var(--ui-color-primary-main);
+  color: var(--ui-color-grey-100);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.sound-asset-item:hover .sound-wave-icon {
+  background: var(--ui-color-primary-400);
+  transform: scale(1.15);
+}
+
+.sound-asset-item:active .sound-wave-icon {
+  background: var(--ui-color-primary-600);
+  transform: scale(1.15);
+}
+
+.sound-wave-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
 .widget-icon {
   width: 44px;
   height: 44px;
