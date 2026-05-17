@@ -997,14 +997,44 @@ onBeforeUnmount(() => {
             <button class="asset-add-button" type="button" aria-label="Add sound">+</button>
           </aside>
           <section class="asset-detail" aria-label="Sound detail">
-            <header class="asset-detail-header">
-              <h2>{{ selectedSound.name }}</h2>
-              <button type="button" aria-label="Rename sound" v-html="editIcon"></button>
+            <header class="sound-detail-title">
+              <div class="asset-detail-header">
+                <h2>{{ selectedSound.name }}</h2>
+                <button type="button" aria-label="Rename sound" v-html="editIcon"></button>
+              </div>
+              <div class="sound-duration">{{ selectedSound.duration }}</div>
             </header>
             <div class="sound-detail">
-              <div class="sound-waveform"></div>
-              <button type="button">Play</button>
-              <span>{{ selectedSound.duration }}</span>
+              <div class="sound-waveform" aria-hidden="true">
+                <svg class="sound-waveform-canvas" viewBox="0 0 640 222" preserveAspectRatio="none">
+                  <path class="waveform-shape" d="M0 111 C24 88 48 86 72 111 C96 136 120 132 144 111 C168 90 192 82 216 111 C240 140 264 136 288 111 C312 86 336 78 360 111 C384 144 408 139 432 111 C456 83 480 88 504 111 C528 134 552 126 576 111 C600 96 620 101 640 111 L640 111 C620 121 600 126 576 111 C552 96 528 88 504 111 C480 134 456 139 432 111 C408 83 384 78 360 111 C336 144 312 136 288 111 C264 86 240 82 216 111 C192 140 168 132 144 111 C120 90 96 86 72 111 C48 136 24 134 0 111 Z" />
+                </svg>
+                <div class="waveform-range-control">
+                  <div class="waveform-shaded-area waveform-left-fixed"></div>
+                  <div class="waveform-selection-area">
+                    <div class="waveform-control-bar waveform-left-bar"></div>
+                    <div class="waveform-control-bar waveform-right-bar"></div>
+                  </div>
+                  <div class="waveform-shaded-area waveform-right-fixed"></div>
+                </div>
+              </div>
+              <div class="sound-controls">
+                <button class="sound-play-control" type="button" aria-label="Play sound">
+                  <svg class="sound-play-icon" viewBox="0 0 24 25" fill="none" aria-hidden="true">
+                    <path d="M19.661 14.8859L9.58496 21.0519C7.57996 22.2789 5.00098 20.8398 5.00098 18.4938V6.50477C5.00098 4.15877 7.57996 2.71991 9.58496 3.94691L19.661 10.1129C21.446 11.2059 21.446 13.7939 19.661 14.8859Z" fill="currentColor" />
+                  </svg>
+                </button>
+                <div class="sound-volume-slider" aria-hidden="true">
+                  <svg class="sound-volume-icon" viewBox="0 0 24 24" fill="none">
+                    <path d="M7.5 6.99989H9.26697C9.74097 6.99989 10.1991 6.83177 10.5601 6.52577L14.251 3.39882C15.336 2.47982 17.001 3.25099 17.001 4.67299V19.3268C17.001 20.7488 15.336 21.521 14.251 20.601L10.5601 17.474C10.1991 17.168 9.74097 16.9999 9.26697 16.9999H7.5C6.672 16.9999 6 16.3279 6 15.4999V8.50087C6 7.67187 6.672 6.99989 7.5 6.99989Z" fill="currentColor" />
+                  </svg>
+                  <div class="sound-slider-track"><span></span></div>
+                  <svg class="sound-volume-icon" viewBox="0 0 24 24" fill="none">
+                    <path d="M3.5 6.99989H5.26697C5.74097 6.99989 6.19906 6.83177 6.56006 6.52577L10.251 3.39882C11.336 2.47982 13.001 3.25099 13.001 4.67299V19.3268C13.001 20.7488 11.336 21.521 10.251 20.601L6.56006 17.474C6.19906 17.168 5.74097 16.9999 5.26697 16.9999H3.5C2.672 16.9999 2 16.3279 2 15.4999V8.50087C2 7.67187 2.672 6.99989 3.5 6.99989ZM16.767 16.7709C18.046 15.4979 18.75 13.8029 18.75 11.9999C18.75 10.1969 18.046 8.5019 16.767 7.2289C16.473 6.9369 15.9981 6.93685 15.7061 7.23085C15.4131 7.52385 15.415 7.99988 15.708 8.29188C16.702 9.28188 17.25 10.5999 17.25 12.0009C17.25 13.4019 16.702 14.7199 15.708 15.7099C15.415 16.0019 15.4131 16.4769 15.7061 16.7709C15.8521 16.9179 16.0451 16.9918 16.2371 16.9918C16.4291 16.9898 16.62 16.9169 16.767 16.7709ZM19.067 19.82C18.875 19.82 18.682 19.747 18.536 19.6C18.244 19.307 18.244 18.832 18.538 18.539C20.287 16.795 21.25 14.4729 21.25 11.9999C21.25 9.52689 20.287 7.20583 18.538 5.46083C18.244 5.16783 18.244 4.69279 18.536 4.39979C18.828 4.10679 19.303 4.10582 19.597 4.39882C21.63 6.42682 22.75 9.12689 22.75 11.9999C22.75 14.8729 21.63 17.573 19.597 19.601C19.45 19.747 19.259 19.82 19.067 19.82Z" fill="currentColor" />
+                  </svg>
+                </div>
+                <div class="sound-controls-spacer"></div>
+              </div>
             </div>
           </section>
         </div>
@@ -2211,6 +2241,17 @@ onBeforeUnmount(() => {
   display: block;
 }
 
+.sound-detail-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sound-duration {
+  color: var(--ui-color-grey-700);
+  line-height: 18px;
+}
+
 .costume-preview {
   position: relative;
   min-height: 0;
@@ -2354,7 +2395,6 @@ onBeforeUnmount(() => {
   color: var(--ui-color-grey-900);
 }
 
-.sound-detail,
 .widget-detail {
   min-height: 0;
   flex: 1;
@@ -2368,26 +2408,163 @@ onBeforeUnmount(() => {
   padding: 24px;
 }
 
-.sound-waveform {
-  width: min(480px, 90%);
-  height: 96px;
-  border-radius: var(--ui-border-radius-md);
-  background:
-    linear-gradient(90deg, transparent 0 8%, var(--ui-color-primary-main) 8% 10%, transparent 10% 18%),
-    linear-gradient(90deg, transparent 0 18%, var(--ui-color-primary-600) 18% 21%, transparent 21% 30%),
-    linear-gradient(90deg, transparent 0 32%, var(--ui-color-primary-main) 32% 36%, transparent 36% 48%),
-    linear-gradient(90deg, transparent 0 52%, var(--ui-color-primary-600) 52% 55%, transparent 55% 62%),
-    linear-gradient(90deg, transparent 0 68%, var(--ui-color-primary-main) 68% 71%, transparent 71% 82%);
-  background-color: var(--ui-color-primary-100);
+.sound-detail {
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 20px;
 }
 
-.sound-detail button {
-  height: 32px;
-  border: 0;
+.sound-waveform {
+  position: relative;
+  height: 222px;
+  width: 100%;
+  overflow: hidden;
   border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-300);
+}
+
+.sound-waveform-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.waveform-shape {
+  fill: var(--ui-color-grey-500);
+}
+
+.waveform-range-control {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  margin: 0 16px;
+  user-select: none;
+}
+
+.waveform-shaded-area {
+  position: absolute;
+  height: 100%;
+  background: var(--ui-color-grey-600);
+  opacity: 0.35;
+}
+
+.waveform-left-fixed {
+  left: -16px;
+  width: 16px;
+}
+
+.waveform-right-fixed {
+  right: -16px;
+  width: 16px;
+}
+
+.waveform-selection-area {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+}
+
+.waveform-control-bar {
+  position: absolute;
+  z-index: 10;
+  width: 16px;
+  height: 100%;
+  cursor: ew-resize;
+  background: var(--ui-color-primary-400);
+}
+
+.waveform-control-bar::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 40px;
+  border-radius: 1px;
+  background: var(--ui-color-grey-100);
+  transform: translate(-50%, -50%);
+}
+
+.waveform-left-bar {
+  left: -16px;
+}
+
+.waveform-right-bar {
+  right: -16px;
+}
+
+.sound-controls {
+  display: flex;
+  align-items: center;
+}
+
+.sound-play-control {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
   background: var(--ui-color-primary-main);
-  padding: 0 18px;
   color: var(--ui-color-grey-100);
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.sound-play-control:hover {
+  background: var(--ui-color-primary-400);
+  transform: scale(1.15);
+}
+
+.sound-play-control:active {
+  background: var(--ui-color-primary-600);
+  transform: scale(1.15);
+}
+
+.sound-play-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.sound-volume-slider {
+  display: flex;
+  flex: 0 1 438px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 24px;
+}
+
+.sound-volume-icon {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  color: var(--ui-color-grey-800);
+}
+
+.sound-slider-track {
+  position: relative;
+  height: 4px;
+  flex: 1;
+  border-radius: 999px;
+  background: var(--ui-color-grey-400);
+}
+
+.sound-slider-track span {
+  position: absolute;
+  inset: 0 45% 0 0;
+  border-radius: inherit;
+  background: var(--ui-color-primary-main);
+}
+
+.sound-controls-spacer {
+  flex: 1 1 0;
 }
 
 .widget-detail label {
