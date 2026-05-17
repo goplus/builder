@@ -108,6 +108,7 @@ const selectedSoundId = ref('pop')
 const selectedWidgetId = ref('score')
 const selectedMapSpriteId = ref('niu-xiao-qi')
 const mapSpriteNameEditing = ref(false)
+const mapSpriteConfigExpanded = ref(true)
 const draftMapSpriteName = ref('')
 const mapWidth = ref(480)
 const mapHeight = ref(360)
@@ -415,6 +416,11 @@ function selectStage(tab: StageTab = 'code') {
 
 function selectEditMode(mode: EditMode) {
   activeEditMode.value = mode
+}
+
+function selectMapSprite(spriteId: string) {
+  selectedMapSpriteId.value = spriteId
+  mapSpriteConfigExpanded.value = true
 }
 
 async function startProjectNameEdit() {
@@ -1165,7 +1171,7 @@ onBeforeUnmount(() => {
             class="map-sprite"
             :class="[`map-sprite-${sprite.id}`, { active: selectedMapSpriteId === sprite.id }]"
             type="button"
-            @click="selectedMapSpriteId = sprite.id"
+            @click="selectMapSprite(sprite.id)"
           >
             <img :src="sprite.image" :alt="sprite.name" />
             <span v-if="selectedMapSpriteId === sprite.id" class="map-sprite-coordinate">-224, 74</span>
@@ -1221,7 +1227,7 @@ onBeforeUnmount(() => {
               class="sprite-card"
               :class="{ active: selectedMapSpriteId === sprite.id }"
               type="button"
-              @click="selectedMapSpriteId = sprite.id"
+              @click="selectMapSprite(sprite.id)"
             >
               <span v-if="selectedMapSpriteId === sprite.id" class="sprite-menu" v-html="moreIcon"></span>
               <img :src="sprite.image" :alt="sprite.name" />
@@ -1231,7 +1237,7 @@ onBeforeUnmount(() => {
               </span>
             </button>
           </div>
-          <footer class="map-sprite-config">
+          <footer v-if="mapSpriteConfigExpanded" class="map-sprite-config">
             <div class="map-config-title">
               <strong v-if="!mapSpriteNameEditing">{{ selectedMapSprite.name }}</strong>
               <form v-else class="map-sprite-name-form" @submit.prevent="submitMapSpriteRename">
@@ -1244,7 +1250,7 @@ onBeforeUnmount(() => {
                 />
               </form>
               <button type="button" aria-label="Rename sprite" @click="startMapSpriteRename">✎</button>
-              <button type="button" aria-label="Collapse sprite config">⌄</button>
+              <button type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false">⌄</button>
             </div>
             <div class="map-config-grid">
               <label><span>X</span><input value="-224" readonly /></label>
@@ -1265,6 +1271,15 @@ onBeforeUnmount(() => {
               <button type="button">No physics</button>
             </div>
           </footer>
+          <button
+            v-else
+            class="map-config-expand"
+            type="button"
+            aria-label="Expand sprite config"
+            @click="mapSpriteConfigExpanded = true"
+          >
+            ⌃
+          </button>
         </section>
       </aside>
     </section>
@@ -1861,6 +1876,7 @@ onBeforeUnmount(() => {
 }
 
 .map-sprites-card {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1880,6 +1896,22 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-200);
   padding: 16px;
+}
+
+.map-config-expand {
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm) var(--ui-border-radius-sm) 0 0;
+  background: var(--ui-color-grey-300);
+  color: var(--ui-color-grey-900);
+  box-shadow: var(--ui-box-shadow-sm);
 }
 
 .map-config-title {
