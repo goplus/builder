@@ -17,6 +17,8 @@ import layerQuickIcon from '@/assets/editor/quick-config/layer.svg?raw'
 import positionQuickIcon from '@/assets/editor/quick-config/position.svg?raw'
 import resizeQuickIcon from '@/assets/editor/quick-config/resize.svg?raw'
 import rotateQuickIcon from '@/assets/editor/quick-config/rotate.svg?raw'
+import defaultModeIcon from '@/assets/editor/navbar-icons/default-mode.svg?raw'
+import mapEditModeIcon from '@/assets/editor/navbar-icons/map-edit-mode.svg?raw'
 import backdropUrl from '@/assets/projects/niu-run/editor/backdrop.png'
 import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
 import niuXiaoHuaUrl from '@/assets/projects/niu-run/editor/sprite-niu-xiao-hua.png'
@@ -48,6 +50,7 @@ type EventSnippet = {
 }
 
 type EditorTab = 'code' | 'costumes' | 'animations'
+type EditMode = 'default' | 'map'
 
 type AssetItem = {
   id: string
@@ -64,8 +67,10 @@ const project = computed(() => getProject(props.ownerNameInput, props.projectNam
 const runnerRef = ref<InstanceType<typeof PrototypeProjectRunner>>()
 const runnerActive = ref(false)
 const activeEditorTab = ref<EditorTab>('code')
+const activeEditMode = ref<EditMode>('default')
 const selectedCostumeId = ref('niu-xiao-qi-default')
 const selectedAnimationId = ref('niu-run')
+const selectedMapSpriteId = ref('niu-xiao-qi')
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -249,8 +254,14 @@ const quickConfigTools = [
   { id: 'layer', label: 'Layer order', icon: layerQuickIcon }
 ]
 
+const selectedMapSprite = computed(() => sprites.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites[0])
+
 function selectEditorTab(tab: EditorTab) {
   activeEditorTab.value = tab
+}
+
+function selectEditMode(mode: EditMode) {
+  activeEditMode.value = mode
 }
 
 async function runProject() {
@@ -303,23 +314,29 @@ onMounted(() => {
       </div>
 
       <div class="navbar-right">
-        <button class="mode-button active" type="button" aria-label="Default mode">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 8h14a3 3 0 0 1 3 3v2a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-2a3 3 0 0 1 3-3Z" />
-            <path d="M8 12h.01M16 12h.01M11 10h2v4h-2z" />
-          </svg>
+        <button
+          class="mode-button"
+          :class="{ active: activeEditMode === 'default' }"
+          type="button"
+          aria-label="Default mode"
+          @click="selectEditMode('default')"
+        >
+          <span v-html="defaultModeIcon"></span>
         </button>
-        <button class="mode-button" type="button" aria-label="Map edit mode">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m4 6 5-2 6 2 5-2v14l-5 2-6-2-5 2V6Z" />
-            <path d="M9 4v14M15 6v14" />
-          </svg>
+        <button
+          class="mode-button"
+          :class="{ active: activeEditMode === 'map' }"
+          type="button"
+          aria-label="Map edit mode"
+          @click="selectEditMode('map')"
+        >
+          <span v-html="mapEditModeIcon"></span>
         </button>
         <img class="profile" src="@ui-images/avatar.png" alt="" />
       </div>
     </header>
 
-    <section class="editor-main">
+    <section v-if="activeEditMode === 'default'" class="editor-main">
       <section class="code-card">
         <header class="code-tabs">
           <button class="tab" :class="{ active: activeEditorTab === 'code' }" type="button" @click="selectEditorTab('code')">
@@ -524,6 +541,102 @@ onMounted(() => {
         </section>
       </aside>
     </section>
+
+    <section v-else class="map-editor-main">
+      <section class="map-workspace">
+        <div class="map-stage">
+          <img class="map-backdrop" :src="backdropUrl" alt="" />
+          <button
+            v-for="sprite in sprites"
+            :key="`map-${sprite.id}`"
+            class="map-sprite"
+            :class="[`map-sprite-${sprite.id}`, { active: selectedMapSpriteId === sprite.id }]"
+            type="button"
+            @click="selectedMapSpriteId = sprite.id"
+          >
+            <img :src="sprite.image" :alt="sprite.name" />
+            <span v-if="selectedMapSpriteId === sprite.id" class="map-sprite-coordinate">-224, 74</span>
+          </button>
+          <div class="map-zoom-controls">
+            <button type="button" aria-label="Zoom in">+</button>
+            <button type="button" aria-label="Zoom out">-</button>
+            <button type="button" aria-label="Reset zoom">100%</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="map-side">
+        <section class="map-card">
+          <header class="map-card-header">
+            <h2>Global Config</h2>
+            <button type="button" aria-label="Collapse global config">⌄</button>
+          </header>
+          <div class="map-config">
+            <label>
+              <span>Map size</span>
+              <strong>480 × 360</strong>
+            </label>
+            <label>
+              <span>Physics</span>
+              <strong>On</strong>
+            </label>
+            <label>
+              <span>Layer Sorting</span>
+              <strong>By Y position</strong>
+            </label>
+          </div>
+        </section>
+
+        <section class="map-card map-sprites-card">
+          <header class="map-card-header active">
+            <h2>Sprites</h2>
+            <button type="button" aria-label="Add sprite">+</button>
+          </header>
+          <div class="map-sprite-list">
+            <button
+              v-for="sprite in sprites"
+              :key="`map-list-${sprite.id}`"
+              class="sprite-card"
+              :class="{ active: selectedMapSpriteId === sprite.id }"
+              type="button"
+              @click="selectedMapSpriteId = sprite.id"
+            >
+              <span v-if="selectedMapSpriteId === sprite.id" class="sprite-menu">•••</span>
+              <img :src="sprite.image" :alt="sprite.name" />
+              <span class="sprite-title">
+                <span class="sprite-name">{{ sprite.shortName }}</span>
+                <span v-if="sprite.hidden" class="hidden-mark">⌁</span>
+              </span>
+            </button>
+          </div>
+          <footer class="map-sprite-config">
+            <div class="map-config-title">
+              <strong>{{ selectedMapSprite.name }}</strong>
+              <button type="button" aria-label="Rename sprite">✎</button>
+              <button type="button" aria-label="Collapse sprite config">⌄</button>
+            </div>
+            <div class="map-config-grid">
+              <label><span>X</span><input value="-224" readonly /></label>
+              <label><span>Y</span><input value="74" readonly /></label>
+              <label><span>W</span><input value="54" readonly /></label>
+              <label><span>H</span><input value="60" readonly /></label>
+            </div>
+            <div class="map-config-row">
+              <span>Rotation</span>
+              <button type="button">Normal</button>
+            </div>
+            <div class="map-config-row">
+              <span>Show</span>
+              <button type="button">Visible</button>
+            </div>
+            <div class="map-config-row">
+              <span>Physics</span>
+              <button type="button">No physics</button>
+            </div>
+          </footer>
+        </section>
+      </aside>
+    </section>
   </main>
 </template>
 
@@ -596,7 +709,7 @@ onMounted(() => {
 }
 
 .icon-button svg,
-.mode-button svg,
+.mode-button :deep(svg),
 .navbar-title svg,
 .run-button svg,
 .publish-button svg {
@@ -643,6 +756,15 @@ onMounted(() => {
   height: 30px;
   border-radius: 6px;
   background: var(--ui-color-grey-200);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mode-button span {
+  width: 20px;
+  height: 20px;
+  display: flex;
 }
 
 .mode-button.active {
@@ -664,6 +786,290 @@ onMounted(() => {
   grid-template-columns: minmax(0, 1fr) 496px;
   gap: 16px;
   padding: 8px 16px 16px;
+}
+
+.map-editor-main {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 24px;
+  padding: 20px 24px 24px;
+}
+
+.map-workspace {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-stage {
+  position: relative;
+  width: min(100%, 820px);
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--ui-border-radius-lg);
+  background: var(--ui-color-grey-300);
+  box-shadow: var(--ui-box-shadow-lg);
+}
+
+.map-backdrop {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.map-sprite {
+  position: absolute;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  transform: translate(-50%, -50%);
+}
+
+.map-sprite img {
+  display: block;
+  object-fit: contain;
+}
+
+.map-sprite-niu-xiao-qi {
+  left: 49%;
+  top: 46%;
+}
+
+.map-sprite-niu-xiao-qi img {
+  width: 58px;
+}
+
+.map-sprite-niu-xiao-hua {
+  left: 26%;
+  top: 33%;
+}
+
+.map-sprite-niu-xiao-hua img {
+  width: 72px;
+}
+
+.map-sprite-flower {
+  left: 68%;
+  top: 48%;
+}
+
+.map-sprite-flower img {
+  width: 46px;
+}
+
+.map-sprite-tornado {
+  left: 82%;
+  top: 61%;
+}
+
+.map-sprite-tornado img {
+  width: 54px;
+}
+
+.map-sprite.active {
+  outline: 1px solid var(--ui-color-primary-main);
+  outline-offset: 6px;
+}
+
+.map-sprite.active::before,
+.map-sprite.active::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ui-color-grey-100);
+  border: 1px solid var(--ui-color-grey-500);
+}
+
+.map-sprite.active::before {
+  left: -11px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.map-sprite.active::after {
+  right: -11px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.map-sprite-coordinate {
+  position: absolute;
+  right: -28px;
+  top: -32px;
+  border-radius: var(--ui-border-radius-sm);
+  background: rgb(89 117 66 / 0.78);
+  color: var(--ui-color-grey-100);
+  padding: 3px 7px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.map-zoom-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 4px;
+  box-shadow: var(--ui-box-shadow-sm);
+}
+
+.map-zoom-controls button {
+  height: 28px;
+  min-width: 28px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  color: var(--ui-color-grey-900);
+}
+
+.map-side {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.map-card {
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--ui-border-radius-lg);
+  background: var(--ui-color-grey-100);
+  box-shadow: var(--ui-box-shadow-lg);
+}
+
+.map-card-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ui-color-grey-400);
+  padding: 0 16px;
+}
+
+.map-card-header.active {
+  color: var(--ui-color-primary-main);
+}
+
+.map-card-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.map-card-header button,
+.map-config-title button,
+.map-config-row button {
+  border: 0;
+  background: transparent;
+  color: var(--ui-color-grey-800);
+}
+
+.map-config {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.map-config label,
+.map-config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.map-config strong,
+.map-config-row button {
+  min-width: 126px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-300);
+  color: var(--ui-color-grey-1000);
+  font-weight: 500;
+}
+
+.map-sprites-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-sprite-list {
+  min-height: 120px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  padding: 12px;
+  overflow: auto;
+}
+
+.map-sprite-config {
+  border-top: 1px solid var(--ui-color-grey-400);
+  background: var(--ui-color-grey-200);
+  padding: 16px;
+}
+
+.map-config-title {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.map-config-title strong {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.map-config-grid label {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-config-grid span {
+  width: 16px;
+  color: var(--ui-color-grey-800);
+}
+
+.map-config-grid input {
+  min-width: 0;
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 0 8px;
+  color: var(--ui-color-grey-1000);
 }
 
 .code-card,
