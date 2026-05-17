@@ -60,7 +60,7 @@ function submitSearch(event: Event) {
           />
         </form>
 
-        <RouterLink class="flex h-12 items-center px-4 text-sm font-medium text-title no-underline hover:bg-grey-400" to="/sign-in/callback">
+        <RouterLink class="flex h-12 min-w-18 shrink-0 items-center justify-center px-4 text-sm font-medium whitespace-nowrap text-title no-underline hover:bg-grey-400" to="/sign-in/callback">
           Sign in
         </RouterLink>
       </div>
