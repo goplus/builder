@@ -10,6 +10,9 @@ import lookIcon from '@/assets/editor/category-icons/look.svg'
 import motionIcon from '@/assets/editor/category-icons/motion.svg'
 import sensingIcon from '@/assets/editor/category-icons/sensing.svg'
 import soundIcon from '@/assets/editor/category-icons/sound.svg'
+import backdropPanelIcon from '@/assets/editor/stage-panel/backdrop.svg?raw'
+import soundPanelIcon from '@/assets/editor/stage-panel/sound.svg?raw'
+import widgetPanelIcon from '@/assets/editor/stage-panel/widget.svg?raw'
 import backdropUrl from '@/assets/projects/niu-run/editor/backdrop.png'
 import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
 import niuXiaoHuaUrl from '@/assets/projects/niu-run/editor/sprite-niu-xiao-hua.png'
@@ -116,6 +119,12 @@ const codeCategories = [
   { id: 'sensing', label: 'Sensing', icon: sensingIcon },
   { id: 'sound', label: 'Sound', icon: soundIcon },
   { id: 'game', label: 'Game', icon: gameIcon }
+]
+
+const stageEntries = [
+  { id: 'backdrops', label: 'Backdrops', icon: backdropPanelIcon },
+  { id: 'sounds', label: 'Sounds', icon: soundPanelIcon },
+  { id: 'widgets', label: 'Widgets', icon: widgetPanelIcon }
 ]
 
 async function runProject() {
@@ -291,9 +300,10 @@ onMounted(() => {
             <button class="stage-thumb" type="button">
               <img :src="backdropUrl" alt="" />
             </button>
-            <button class="stage-entry" type="button">▧<span>Backdrops</span></button>
-            <button class="stage-entry" type="button">≋<span>Sounds</span></button>
-            <button class="stage-entry" type="button">▣<span>Widgets</span></button>
+            <button v-for="entry in stageEntries" :key="entry.id" class="stage-entry" type="button">
+              <span class="stage-entry-icon" v-html="entry.icon"></span>
+              <span>{{ entry.label }}</span>
+            </button>
           </div>
         </section>
       </aside>
@@ -926,15 +936,30 @@ onMounted(() => {
 }
 
 .stage-entry {
-  width: 47px;
-  height: 46px;
+  width: 56px;
+  height: 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  font-size: 14px;
+  gap: 2px;
   color: var(--ui-color-grey-800);
+  border-radius: var(--ui-border-radius-md);
+  padding: 4px;
+}
+
+.stage-entry-icon {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage-entry-icon :deep(svg) {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .stage-entry span {
