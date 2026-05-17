@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { getProject } from '@/apis/project'
 import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
@@ -21,9 +22,19 @@ import rotateQuickIcon from '@/assets/editor/quick-config/rotate.svg?raw'
 import defaultModeIcon from '@/assets/editor/navbar-icons/default-mode.svg?raw'
 import mapEditModeIcon from '@/assets/editor/navbar-icons/map-edit-mode.svg?raw'
 import cloudCheckIcon from '@/assets/editor/navbar-icons/cloud-check.svg?raw'
+import exportProjectIcon from '@/assets/editor/navbar-icons/export-project.svg'
 import editIcon from '@/assets/editor/quick-config/edit.svg?raw'
 import failedToSaveIcon from '@/assets/editor/navbar-icons/failed-to-save.svg?raw'
+import importAssetsScratchIcon from '@/assets/editor/navbar-icons/import-assets-scratch.svg'
+import importProjectIcon from '@/assets/editor/navbar-icons/import-project.svg'
+import importScratchIcon from '@/assets/editor/navbar-icons/import-scratch.svg'
 import offlineIcon from '@/assets/editor/navbar-icons/offline.svg?raw'
+import modifyProjectNameIcon from '@/assets/editor/navbar-icons/modify-project-name.svg'
+import newProjectIcon from '@/assets/editor/navbar-icons/new.svg'
+import openProjectIcon from '@/assets/editor/navbar-icons/open.svg'
+import projectPageIcon from '@/assets/editor/navbar-icons/project-page.svg'
+import publishIcon from '@/assets/editor/navbar-icons/publish.svg'
+import removeProjectIcon from '@/assets/editor/navbar-icons/remove-project.svg'
 import savingIcon from '@/assets/editor/navbar-icons/saving.svg?raw'
 import backdropUrl from '@/assets/projects/niu-run/editor/backdrop.png'
 import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
@@ -35,6 +46,8 @@ const props = defineProps<{
   ownerNameInput: string
   projectNameInput: string
 }>()
+
+const router = useRouter()
 
 type SpriteCard = {
   id: string
@@ -78,11 +91,13 @@ const activeEditMode = ref<EditMode>('default')
 const projectDisplayName = ref(project.value.title)
 const draftProjectDisplayName = ref(project.value.title)
 const projectNameEditing = ref(false)
+const projectMenuOpen = ref(false)
 const saveState = ref<SaveState>('saved')
 const selectedCostumeId = ref('niu-xiao-qi-default')
 const selectedAnimationId = ref('niu-run')
 const selectedMapSpriteId = ref('niu-xiao-qi')
 const projectNameInputRef = ref<HTMLInputElement>()
+const projectMenuRef = ref<HTMLElement>()
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -281,6 +296,36 @@ const saveStateMeta = computed(() => {
   }
 })
 
+const projectMenuGroups = [
+  [
+    { id: 'new', label: 'New project...', icon: newProjectIcon, action: createPrototypeProject },
+    { id: 'open', label: 'Open project...', icon: openProjectIcon, action: openPrototypeProject }
+  ],
+  [
+    { id: 'import-project', label: 'Import project file...', icon: importProjectIcon, action: markPrototypeAction },
+    {
+      id: 'import-scratch',
+      label: 'Import Scratch project file...',
+      icon: importScratchIcon,
+      badge: 'Beta',
+      action: markPrototypeAction
+    },
+    {
+      id: 'import-assets-scratch',
+      label: 'Import assets from Scratch...',
+      icon: importAssetsScratchIcon,
+      action: markPrototypeAction
+    }
+  ],
+  [{ id: 'export-project', label: 'Export project file', icon: exportProjectIcon, action: markPrototypeAction }],
+  [
+    { id: 'publish-project', label: 'Publish project...', icon: publishIcon, action: markPrototypeAction },
+    { id: 'project-page', label: 'Open project page', icon: projectPageIcon, action: openProjectPage },
+    { id: 'modify-project-name', label: 'Modify project name', icon: modifyProjectNameIcon, action: startProjectNameEdit }
+  ],
+  [{ id: 'remove-project', label: 'Remove project...', icon: removeProjectIcon, action: markPrototypeAction }]
+]
+
 function selectEditorTab(tab: EditorTab) {
   activeEditorTab.value = tab
 }
@@ -317,6 +362,44 @@ function submitProjectNameEdit() {
   }, 650)
 }
 
+function toggleProjectMenu() {
+  projectMenuOpen.value = !projectMenuOpen.value
+}
+
+function closeProjectMenu() {
+  projectMenuOpen.value = false
+}
+
+async function handleProjectMenuItem(action: () => void | Promise<void>) {
+  closeProjectMenu()
+  await action()
+}
+
+function createPrototypeProject() {
+  router.push('/editor/qingqing/niu-run')
+}
+
+function openPrototypeProject() {
+  router.push('/user/qingqing/projects')
+}
+
+function openProjectPage() {
+  router.push(`/project/${encodeURIComponent(project.value.owner.username)}/${encodeURIComponent(project.value.name)}`)
+}
+
+function markPrototypeAction() {
+  saveState.value = 'saving'
+  window.setTimeout(() => {
+    saveState.value = 'saved'
+  }, 500)
+}
+
+function handleDocumentClick(event: MouseEvent) {
+  const target = event.target
+  if (!(target instanceof Node)) return
+  if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
+}
+
 async function runProject() {
   runnerActive.value = true
   await nextTick()
@@ -325,6 +408,11 @@ async function runProject() {
 
 onMounted(() => {
   document.title = `Edit ${project.value.title} - XBuilder`
+  document.addEventListener('click', handleDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
 })
 </script>
 
@@ -336,14 +424,39 @@ onMounted(() => {
           <img src="@/assets/navbar-logo.svg" alt="XBuilder" />
         </RouterLink>
         <div class="navbar-divider"></div>
-        <button class="icon-button" type="button" aria-label="Project menu">
-          <svg class="file-icon" viewBox="0 0 20 20" aria-hidden="true">
-            <path
-              d="M6.6084 1.77051C7.00493 1.77063 7.39605 1.8695 7.74512 2.05762C8.09163 2.24443 8.38686 2.51387 8.60449 2.8418L9.2793 3.8418L9.28418 3.84961C9.37032 3.98023 9.4879 4.08753 9.62598 4.16113C9.76424 4.23474 9.91955 4.27199 10.0762 4.27051H16.667C17.3023 4.27059 17.9121 4.52343 18.3613 4.97266C18.8104 5.42193 19.0625 6.03173 19.0625 6.66699V15C19.0625 15.6353 18.8105 16.245 18.3613 16.6943C17.9121 17.1436 17.3023 17.3954 16.667 17.3955H3.33301C2.69771 17.3954 2.0879 17.1436 1.63867 16.6943C1.18947 16.245 0.9375 15.6353 0.9375 15V4.16699C0.9375 3.53173 1.18957 2.92193 1.63867 2.47266C2.0879 2.02343 2.69771 1.77059 3.33301 1.77051H6.6084ZM2.39551 15C2.39551 15.2486 2.49421 15.4873 2.66992 15.6631C2.84566 15.8388 3.08448 15.9374 3.33301 15.9375H16.667C16.9155 15.9374 17.1543 15.8388 17.3301 15.6631C17.5058 15.4873 17.6045 15.2486 17.6045 15V9.0625H2.39551V15ZM3.33301 3.22949C3.08456 3.22958 2.84565 3.32729 2.66992 3.50293C2.49411 3.67875 2.39551 3.91835 2.39551 4.16699V7.60449H17.6045V6.66699C17.6045 6.41835 17.5059 6.17875 17.3301 6.00293C17.1544 5.82729 16.9154 5.72958 16.667 5.72949H10.083C9.68507 5.73215 9.29276 5.63524 8.94141 5.44824C8.59002 5.26111 8.29029 4.98894 8.07031 4.65723L7.39551 3.6582L7.39062 3.65039C7.30537 3.52117 7.18899 3.4153 7.05273 3.3418C6.91626 3.2683 6.7634 3.22957 6.6084 3.22949H3.33301Z"
-            />
-          </svg>
-          <span class="caret"></span>
-        </button>
+        <div ref="projectMenuRef" class="navbar-dropdown">
+          <button
+            class="icon-button project-menu-trigger"
+            type="button"
+            aria-label="Project menu"
+            :aria-expanded="projectMenuOpen"
+            aria-haspopup="menu"
+            @click.stop="toggleProjectMenu"
+          >
+            <svg class="file-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M6.6084 1.77051C7.00493 1.77063 7.39605 1.8695 7.74512 2.05762C8.09163 2.24443 8.38686 2.51387 8.60449 2.8418L9.2793 3.8418L9.28418 3.84961C9.37032 3.98023 9.4879 4.08753 9.62598 4.16113C9.76424 4.23474 9.91955 4.27199 10.0762 4.27051H16.667C17.3023 4.27059 17.9121 4.52343 18.3613 4.97266C18.8104 5.42193 19.0625 6.03173 19.0625 6.66699V15C19.0625 15.6353 18.8105 16.245 18.3613 16.6943C17.9121 17.1436 17.3023 17.3954 16.667 17.3955H3.33301C2.69771 17.3954 2.0879 17.1436 1.63867 16.6943C1.18947 16.245 0.9375 15.6353 0.9375 15V4.16699C0.9375 3.53173 1.18957 2.92193 1.63867 2.47266C2.0879 2.02343 2.69771 1.77059 3.33301 1.77051H6.6084ZM2.39551 15C2.39551 15.2486 2.49421 15.4873 2.66992 15.6631C2.84566 15.8388 3.08448 15.9374 3.33301 15.9375H16.667C16.9155 15.9374 17.1543 15.8388 17.3301 15.6631C17.5058 15.4873 17.6045 15.2486 17.6045 15V9.0625H2.39551V15ZM3.33301 3.22949C3.08456 3.22958 2.84565 3.32729 2.66992 3.50293C2.49411 3.67875 2.39551 3.91835 2.39551 4.16699V7.60449H17.6045V6.66699C17.6045 6.41835 17.5059 6.17875 17.3301 6.00293C17.1544 5.82729 16.9154 5.72958 16.667 5.72949H10.083C9.68507 5.73215 9.29276 5.63524 8.94141 5.44824C8.59002 5.26111 8.29029 4.98894 8.07031 4.65723L7.39551 3.6582L7.39062 3.65039C7.30537 3.52117 7.18899 3.4153 7.05273 3.3418C6.91626 3.2683 6.7634 3.22957 6.6084 3.22949H3.33301Z"
+              />
+            </svg>
+            <span class="caret"></span>
+          </button>
+          <div v-if="projectMenuOpen" class="project-menu" role="menu" @click.stop>
+            <div v-for="group in projectMenuGroups" :key="group[0]?.id" class="project-menu-group">
+              <button
+                v-for="item in group"
+                :key="item.id"
+                class="project-menu-item"
+                type="button"
+                role="menuitem"
+                @click="handleProjectMenuItem(item.action)"
+              >
+                <img :src="item.icon" alt="" />
+                <span>{{ item.label }}</span>
+                <span v-if="item.badge" class="project-menu-badge">{{ item.badge }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
         <button class="icon-button muted" type="button" aria-label="Undo">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 7 4 12l5 5" />
@@ -807,6 +920,100 @@ onMounted(() => {
   fill: currentColor;
   stroke: none;
   stroke-width: 0;
+}
+
+.navbar-dropdown {
+  position: relative;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.project-menu-trigger {
+  height: 100%;
+  width: auto;
+  padding: 0 12px;
+}
+
+.project-menu-trigger:hover {
+  background: var(--ui-color-grey-400);
+}
+
+.project-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 40;
+  min-width: 274px;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.project-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.project-menu-group + .project-menu-group {
+  position: relative;
+  margin-top: 13px;
+}
+
+.project-menu-group + .project-menu-group::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 0;
+  width: 100%;
+  border-top: 1px solid var(--ui-color-dividing-line-2);
+}
+
+.project-menu-item {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px 40px 8px 8px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.project-menu-item:hover {
+  background: var(--ui-color-grey-300);
+}
+
+.project-menu-item img {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+
+.project-menu-item span:nth-of-type(1) {
+  min-width: 0;
+  flex: 1;
+}
+
+.project-menu-badge {
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--ui-border-radius-sm);
+  background: var(--ui-color-primary-100);
+  padding: 0 6px;
+  color: var(--ui-color-primary-700);
+  font-size: 12px;
+  line-height: 20px;
 }
 
 .caret {
