@@ -1,17 +1,53 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import logoSvg from '@/assets/navbar-logo.svg'
+import newProjectIcon from '@/assets/editor/navbar-icons/new.svg'
+import openProjectIcon from '@/assets/editor/navbar-icons/open.svg'
 
 const router = useRouter()
 const searchValue = ref('')
+const projectMenuOpen = ref(false)
+const projectMenuRef = ref<HTMLElement>()
 
 function submitSearch(event: Event) {
   event.preventDefault()
   const keyword = searchValue.value.trim()
   router.push(keyword === '' ? '/search' : `/search?q=${encodeURIComponent(keyword)}`)
 }
+
+function toggleProjectMenu() {
+  projectMenuOpen.value = !projectMenuOpen.value
+}
+
+function closeProjectMenu() {
+  projectMenuOpen.value = false
+}
+
+function createPrototypeProject() {
+  closeProjectMenu()
+  router.push('/editor/qingqing/niu-run')
+}
+
+function openPrototypeProject() {
+  closeProjectMenu()
+  router.push('/user/qingqing/projects')
+}
+
+function handleDocumentClick(event: MouseEvent) {
+  const target = event.target
+  if (!(target instanceof Node)) return
+  if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+})
 </script>
 
 <template>
@@ -26,14 +62,38 @@ function submitSearch(event: Event) {
           <img class="block h-7.5 w-25.5" :src="logoSvg" alt="XBuilder" />
         </RouterLink>
 
-        <RouterLink class="relative ml-6 flex h-12 items-center justify-center px-3 text-title no-underline hover:bg-grey-400" to="/user/code-kiko/projects" aria-label="Project menu">
-          <svg aria-hidden="true" viewBox="0 0 20 20" class="size-5 overflow-visible fill-current">
-            <path
-              d="M6.608 1.771c.397 0 .788.099 1.137.287.347.186.642.456.86.784l.674 1 .005.008c.086.13.204.238.342.311.138.074.294.111.45.109h6.591c.635 0 1.245.253 1.694.703.449.449.702 1.059.702 1.694V15c0 .635-.253 1.245-.702 1.694-.449.45-1.059.702-1.694.702H3.333c-.635 0-1.245-.252-1.694-.702C1.19 16.245.938 15.635.938 15V4.167c0-.635.252-1.245.701-1.694.449-.45 1.059-.702 1.694-.702h3.275ZM3.333 3.23a.935.935 0 0 0-.663.273.936.936 0 0 0-.274.664V15c0 .249.099.487.274.663a.935.935 0 0 0 .663.274h13.334a.935.935 0 0 0 .663-.274.934.934 0 0 0 .274-.663V6.667a.936.936 0 0 0-.274-.664.935.935 0 0 0-.663-.273h-6.584a2.386 2.386 0 0 1-1.142-.282 2.399 2.399 0 0 1-.871-.791l-.674-1-.005-.007a.946.946 0 0 0-.338-.308.939.939 0 0 0-.445-.112H3.333ZM10 7.604c.403 0 .729.326.73.729v1.771h1.77c.403 0 .729.326.73.729 0 .403-.327.73-.73.73h-1.77v1.77a.73.73 0 0 1-1.46 0v-1.77H7.5a.73.73 0 0 1 0-1.459h1.77V8.333c0-.403.327-.729.73-.729Z"
-            />
-          </svg>
-          <span class="ml-1.5 h-0 w-0 border-r-4 border-l-4 border-r-transparent border-l-transparent border-t-[5px] border-t-current" aria-hidden="true"></span>
-        </RouterLink>
+        <div ref="projectMenuRef" class="relative ml-6 flex h-12 items-center">
+          <button
+            class="flex h-12 items-center justify-center px-3 text-title hover:bg-grey-400"
+            type="button"
+            aria-label="Project menu"
+            aria-haspopup="menu"
+            :aria-expanded="projectMenuOpen"
+            @click.stop="toggleProjectMenu"
+          >
+            <svg aria-hidden="true" viewBox="0 0 20 20" class="size-5 overflow-visible fill-current">
+              <path
+                d="M6.608 1.771c.397 0 .788.099 1.137.287.347.186.642.456.86.784l.674 1 .005.008c.086.13.204.238.342.311.138.074.294.111.45.109h6.591c.635 0 1.245.253 1.694.703.449.449.702 1.059.702 1.694V15c0 .635-.253 1.245-.702 1.694-.449.45-1.059.702-1.694.702H3.333c-.635 0-1.245-.252-1.694-.702C1.19 16.245.938 15.635.938 15V4.167c0-.635.252-1.245.701-1.694.449-.45 1.059-.702 1.694-.702h3.275ZM3.333 3.23a.935.935 0 0 0-.663.273.936.936 0 0 0-.274.664V15c0 .249.099.487.274.663a.935.935 0 0 0 .663.274h13.334a.935.935 0 0 0 .663-.274.934.934 0 0 0 .274-.663V6.667a.936.936 0 0 0-.274-.664.935.935 0 0 0-.663-.273h-6.584a2.386 2.386 0 0 1-1.142-.282 2.399 2.399 0 0 1-.871-.791l-.674-1-.005-.007a.946.946 0 0 0-.338-.308.939.939 0 0 0-.445-.112H3.333ZM10 7.604c.403 0 .729.326.73.729v1.771h1.77c.403 0 .729.326.73.729 0 .403-.327.73-.73.73h-1.77v1.77a.73.73 0 0 1-1.46 0v-1.77H7.5a.73.73 0 0 1 0-1.459h1.77V8.333c0-.403.327-.729.73-.729Z"
+              />
+            </svg>
+            <span class="ml-1.5 h-0 w-0 border-r-4 border-l-4 border-r-transparent border-l-transparent border-t-[5px] border-t-current" aria-hidden="true"></span>
+          </button>
+          <div
+            v-if="projectMenuOpen"
+            class="absolute top-full left-0 z-30 min-w-55 rounded-md border border-grey-400 bg-grey-100 p-2 shadow-md"
+            role="menu"
+            @click.stop
+          >
+            <button class="flex min-h-10 w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm text-title hover:bg-grey-300" type="button" role="menuitem" @click="createPrototypeProject">
+              <img class="size-6 shrink-0" :src="newProjectIcon" alt="" />
+              <span>New project...</span>
+            </button>
+            <button class="flex min-h-10 w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm text-title hover:bg-grey-300" type="button" role="menuitem" @click="openPrototypeProject">
+              <img class="size-6 shrink-0" :src="openProjectIcon" alt="" />
+              <span>Open project...</span>
+            </button>
+          </div>
+        </div>
 
         <RouterLink class="relative flex h-12 items-center justify-center px-3 text-title no-underline hover:bg-grey-400" to="/tutorials" aria-label="Tutorials">
           <svg aria-hidden="true" viewBox="0 0 20 20" class="size-5 overflow-visible fill-current">
