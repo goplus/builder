@@ -72,6 +72,7 @@ type EditorTab = 'code' | 'costumes' | 'animations'
 type StageTab = 'code' | 'backdrops' | 'sounds' | 'widgets'
 type EditMode = 'default' | 'map'
 type SaveState = 'saved' | 'saving' | 'failed' | 'offline'
+type CodeCategoryId = 'event' | 'look' | 'motion' | 'control' | 'sensing' | 'sound' | 'game'
 
 type AssetItem = {
   id: string
@@ -90,6 +91,7 @@ const runnerActive = ref(false)
 const activeEditorTarget = ref<EditorTarget>('sprite')
 const activeEditorTab = ref<EditorTab>('code')
 const activeStageTab = ref<StageTab>('code')
+const activeCodeCategory = ref<CodeCategoryId>('event')
 const activeEditMode = ref<EditMode>('default')
 const projectDisplayName = ref(project.value.title)
 const draftProjectDisplayName = ref(project.value.title)
@@ -114,88 +116,113 @@ function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
 }
 
-const eventGroups = [
-  {
-    title: 'Game Events',
-    items: [snippet('onStart', [{ text: 'onStart', type: 'function' }, { text: ' => {}', type: 'operator' }])]
-  },
-  {
-    title: 'Sensing Events',
-    items: [
-      snippet('onClick', [{ text: 'onClick', type: 'function' }, { text: ' => {}', type: 'operator' }]),
-      snippet('onKey', [
-        { text: 'onKey', type: 'function' },
-        { text: ' key:', type: 'hint' },
-        { text: 'KeyA', type: 'custom' },
-        { text: ', => {}', type: 'operator' }
-      ]),
-      snippet('onSwipe', [
-        { text: 'onSwipe', type: 'function' },
-        { text: ' direction:', type: 'hint' },
-        { text: 'left', type: 'custom' },
-        { text: ',...', type: 'operator' }
-      ]),
-      snippet('onTouchStart-name', [
-        { text: 'onTouchStart', type: 'function' },
-        { text: ' name:', type: 'hint' },
-        { text: '"牛小...', type: 'string' }
-      ]),
-      snippet('onTouchStart-names', [
-        { text: 'onTouchStart', type: 'function' },
-        { text: ' names:', type: 'hint' },
-        { text: '["牛...', type: 'string' }
-      ])
-    ]
-  },
-  {
-    title: 'Message Events',
-    items: [
-      snippet('broadcast', [
-        { text: 'broadcast', type: 'function' },
-        { text: ' msg:', type: 'hint' },
-        { text: '"ping"', type: 'string' }
-      ]),
-      snippet('broadcastAndWait', [
-        { text: 'broadcastAndWait', type: 'function' },
-        { text: ' msg:', type: 'hint' },
-        { text: '"p...', type: 'string' }
-      ]),
-      snippet('onMsg', [
-        { text: 'onMsg', type: 'function' },
-        { text: ' msg:', type: 'hint' },
-        { text: '"ping"', type: 'string' },
-        { text: ', => {}', type: 'operator' }
-      ])
-    ]
-  },
-  {
-    title: 'Sprite Events',
-    items: [
-      snippet('onCloned', [
-        { text: 'onCloned', type: 'function' },
-        { text: ' data', type: 'custom' },
-        { text: ' => {}', type: 'operator' }
-      ])
-    ]
-  },
-  {
-    title: 'Stage Events',
-    items: [
-      snippet('onBackdrop', [
-        { text: 'onBackdrop', type: 'function' },
-        { text: ' name:', type: 'hint' },
-        { text: '"backdr...', type: 'string' }
-      ])
-    ]
-  },
-  {
-    title: 'Visibility',
-    items: [
-      snippet('visible', [{ text: 'visible', type: 'function' }]),
-      snippet('show', [{ text: 'show', type: 'function' }])
-    ]
-  }
-]
+const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items: EventSnippet[] }>> = {
+  event: [
+    {
+      title: 'Game Events',
+      items: [snippet('onStart', [{ text: 'onStart', type: 'function' }, { text: ' => {}', type: 'operator' }])]
+    },
+    {
+      title: 'Sensing Events',
+      items: [
+        snippet('onClick', [{ text: 'onClick', type: 'function' }, { text: ' => {}', type: 'operator' }]),
+        snippet('onKey', [
+          { text: 'onKey', type: 'function' },
+          { text: ' key:', type: 'hint' },
+          { text: 'KeyA', type: 'custom' },
+          { text: ', => {}', type: 'operator' }
+        ]),
+        snippet('onSwipe', [
+          { text: 'onSwipe', type: 'function' },
+          { text: ' direction:', type: 'hint' },
+          { text: 'left', type: 'custom' },
+          { text: ',...', type: 'operator' }
+        ]),
+        snippet('onTouchStart-name', [
+          { text: 'onTouchStart', type: 'function' },
+          { text: ' name:', type: 'hint' },
+          { text: '"牛小...', type: 'string' }
+        ]),
+        snippet('onTouchStart-names', [
+          { text: 'onTouchStart', type: 'function' },
+          { text: ' names:', type: 'hint' },
+          { text: '["牛...', type: 'string' }
+        ])
+      ]
+    },
+    {
+      title: 'Message Events',
+      items: [
+        snippet('broadcast', [
+          { text: 'broadcast', type: 'function' },
+          { text: ' msg:', type: 'hint' },
+          { text: '"ping"', type: 'string' }
+        ]),
+        snippet('broadcastAndWait', [
+          { text: 'broadcastAndWait', type: 'function' },
+          { text: ' msg:', type: 'hint' },
+          { text: '"p...', type: 'string' }
+        ]),
+        snippet('onMsg', [
+          { text: 'onMsg', type: 'function' },
+          { text: ' msg:', type: 'hint' },
+          { text: '"ping"', type: 'string' },
+          { text: ', => {}', type: 'operator' }
+        ])
+      ]
+    },
+    {
+      title: 'Sprite Events',
+      items: [
+        snippet('onCloned', [
+          { text: 'onCloned', type: 'function' },
+          { text: ' data', type: 'custom' },
+          { text: ' => {}', type: 'operator' }
+        ])
+      ]
+    },
+    {
+      title: 'Stage Events',
+      items: [
+        snippet('onBackdrop', [
+          { text: 'onBackdrop', type: 'function' },
+          { text: ' name:', type: 'hint' },
+          { text: '"backdr...', type: 'string' }
+        ])
+      ]
+    }
+  ],
+  look: [
+    { title: 'Visibility', items: [snippet('visible', [{ text: 'visible', type: 'function' }]), snippet('show', [{ text: 'show', type: 'function' }]), snippet('hide', [{ text: 'hide', type: 'function' }])] },
+    { title: 'Costume', items: [snippet('setCostume', [{ text: 'setCostume', type: 'function' }, { text: ' name:', type: 'hint' }, { text: '"牛小七"', type: 'string' }])] },
+    { title: 'Graphic Effect', items: [snippet('clearGraphicEffects', [{ text: 'clearGraphicEffects', type: 'function' }])] }
+  ],
+  motion: [
+    { title: 'Position', items: [snippet('stepTo', [{ text: 'stepTo', type: 'function' }, { text: ' obj:', type: 'hint' }, { text: 'Mouse', type: 'custom' }]), snippet('setXYpos', [{ text: 'setXYpos', type: 'function' }, { text: ' x:', type: 'hint' }, { text: '0', type: 'custom' }, { text: ', y:', type: 'hint' }, { text: '0', type: 'custom' }])] },
+    { title: 'Heading', items: [snippet('turnTo', [{ text: 'turnTo', type: 'function' }, { text: ' target:', type: 'hint' }, { text: 'Mouse', type: 'custom' }])] },
+    { title: 'Physics', items: [snippet('touching', [{ text: 'touching', type: 'function' }, { text: ' target:', type: 'hint' }, { text: 'Sprite', type: 'custom' }])] }
+  ],
+  control: [
+    { title: 'Time', items: [snippet('wait', [{ text: 'wait', type: 'function' }, { text: ' seconds:', type: 'hint' }, { text: '1', type: 'custom' }])] },
+    { title: 'Flow Control', items: [snippet('forever', [{ text: 'forever', type: 'function' }, { text: ' => {}', type: 'operator' }]), snippet('repeat', [{ text: 'repeat', type: 'function' }, { text: ' times:', type: 'hint' }, { text: '10', type: 'custom' }])] },
+    { title: 'Declaration', items: [snippet('var', [{ text: 'var', type: 'function' }, { text: ' score', type: 'custom' }])] }
+  ],
+  sensing: [
+    { title: 'Mouse', items: [snippet('mouseX', [{ text: 'mouseX', type: 'function' }]), snippet('mouseY', [{ text: 'mouseY', type: 'function' }]), snippet('mousePressed', [{ text: 'mousePressed', type: 'function' }])] },
+    { title: 'Keyboard', items: [snippet('keyPressed', [{ text: 'keyPressed', type: 'function' }, { text: ' key:', type: 'hint' }, { text: 'KeyA', type: 'custom' }])] },
+    { title: 'Ask', items: [snippet('ask', [{ text: 'ask', type: 'function' }, { text: ' question:', type: 'hint' }, { text: '"name?"', type: 'string' }])] }
+  ],
+  sound: [
+    { title: 'Play / Stop', items: [snippet('play', [{ text: 'play', type: 'function' }, { text: ' name:', type: 'hint' }, { text: '"pop"', type: 'string' }]), snippet('stopAllSounds', [{ text: 'stopAllSounds', type: 'function' }])] },
+    { title: 'Volume', items: [snippet('volume', [{ text: 'volume', type: 'function' }]), snippet('setVolume', [{ text: 'setVolume', type: 'function' }, { text: ' volume:', type: 'hint' }, { text: '80', type: 'custom' }])] }
+  ],
+  game: [
+    { title: 'Start / Stop', items: [snippet('start', [{ text: 'start', type: 'function' }]), snippet('stop', [{ text: 'stop', type: 'function' }]), snippet('wait', [{ text: 'wait', type: 'function' }, { text: ' seconds:', type: 'hint' }, { text: '1', type: 'custom' }])] },
+    { title: 'Sprite', items: [snippet('getSprite', [{ text: 'getSprite', type: 'function' }, { text: ' name:', type: 'hint' }, { text: '"牛小七"', type: 'string' }]), snippet('cloneSprite', [{ text: 'cloneSprite', type: 'function' }, { text: ' sprite:', type: 'hint' }, { text: '牛小七', type: 'custom' }])] },
+    { title: 'Camera', items: [snippet('cameraFollow', [{ text: 'cameraFollow', type: 'function' }, { text: ' target:', type: 'hint' }, { text: '牛小七', type: 'custom' }]), snippet('cameraShake', [{ text: 'cameraShake', type: 'function' }, { text: ' strength:', type: 'hint' }, { text: '4', type: 'custom' }])] },
+    { title: 'Others', items: [snippet('timer', [{ text: 'timer', type: 'function' }]), snippet('resetTimer', [{ text: 'resetTimer', type: 'function' }]), snippet('getWidget', [{ text: 'getWidget', type: 'function' }, { text: ' name:', type: 'hint' }, { text: '"Score"', type: 'string' }])] }
+  ]
+}
 
 const sprites = ref<SpriteCard[]>([
   {
@@ -291,8 +318,8 @@ const codeLines = [
   ['}', '']
 ]
 
-const codeCategories = [
-  { id: 'event', label: 'Event', icon: eventIcon, active: true },
+const codeCategories: Array<{ id: CodeCategoryId; label: string; icon: string }> = [
+  { id: 'event', label: 'Event', icon: eventIcon },
   { id: 'look', label: 'Look', icon: lookIcon },
   { id: 'motion', label: 'Motion', icon: motionIcon },
   { id: 'control', label: 'Control', icon: controlIcon },
@@ -316,6 +343,7 @@ const quickConfigTools = [
 
 const selectedSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedSpriteId.value) ?? sprites.value[0])
 const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites.value[0])
+const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
 const saveStateMeta = computed(() => {
   switch (saveState.value) {
     case 'saving':
@@ -363,6 +391,10 @@ const projectMenuGroups = [
 function selectEditorTab(tab: EditorTab) {
   activeEditorTarget.value = 'sprite'
   activeEditorTab.value = tab
+}
+
+function selectCodeCategory(categoryId: CodeCategoryId) {
+  activeCodeCategory.value = categoryId
 }
 
 function selectSprite(id = selectedSpriteId.value) {
@@ -704,8 +736,9 @@ onBeforeUnmount(() => {
               v-for="category in codeCategories"
               :key="category.id"
               class="category"
-              :class="{ active: category.active }"
+              :class="{ active: activeCodeCategory === category.id }"
               type="button"
+              @click="selectCodeCategory(category.id)"
             >
               <img class="category-icon" :src="category.icon" alt="" />
               <span>{{ category.label }}</span>
@@ -713,7 +746,7 @@ onBeforeUnmount(() => {
           </aside>
 
           <aside class="events-list" aria-label="Event snippets">
-            <section v-for="group in eventGroups" :key="group.title" class="event-group">
+            <section v-for="group in visibleSnippetGroups" :key="group.title" class="event-group">
               <h3>{{ group.title }}</h3>
               <button v-for="item in group.items" :key="item.id" class="event-snippet" type="button">
                 <span v-for="(part, index) in item.parts" :key="`${item.id}-${index}`" :class="part.type && `token-${part.type}`">
