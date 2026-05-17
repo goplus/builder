@@ -41,6 +41,13 @@ export type Project = {
   remixes: number
   views: number
   updatedAt: string
+  createdAt?: string
+  remixedFrom?: {
+    owner: string
+    name: string
+    title: string
+  }
+  releaseHistory?: Release[]
 }
 
 export type Course = {
@@ -68,6 +75,54 @@ export type Sprite = {
   selected: boolean
   visible: boolean
 }
+
+export type Release = {
+  id: string
+  version: string
+  createdAt: string
+  notes: string
+}
+
+export type ActivityUser = UserProfile & {
+  relation: 'follower' | 'following'
+}
+
+export type DocsEndpoint = {
+  method: 'GET' | 'POST'
+  path: string
+  title: string
+  description: string
+  response: string
+}
+
+export type WidgetSample = {
+  id: string
+  title: string
+  description: string
+}
+
+export const signedInUsername = 'qingqing'
+
+export const releases: Release[] = [
+  {
+    id: 'niu-run-v3',
+    version: 'v3',
+    createdAt: 'Today',
+    notes: 'Adjusted movement timing and refreshed the local thumbnail.'
+  },
+  {
+    id: 'niu-run-v2',
+    version: 'v2',
+    createdAt: '1 week ago',
+    notes: 'Added touch controls and clearer start instructions.'
+  },
+  {
+    id: 'niu-run-v1',
+    version: 'v1',
+    createdAt: '2 weeks ago',
+    notes: 'Published the first offline prototype build.'
+  }
+]
 
 export const users: UserProfile[] = [
   {
@@ -130,7 +185,9 @@ export const projects: Project[] = [
     likes: 412,
     remixes: 63,
     views: 5380,
-    updatedAt: 'Today'
+    updatedAt: 'Today',
+    createdAt: '2 weeks ago',
+    releaseHistory: releases.slice(1)
   },
   {
     id: 'local-niu-run',
@@ -145,7 +202,14 @@ export const projects: Project[] = [
     likes: 389,
     remixes: 57,
     views: 5010,
-    updatedAt: 'Today'
+    updatedAt: 'Today',
+    createdAt: '2 weeks ago',
+    remixedFrom: {
+      owner: 'code-kiko',
+      name: 'forest-runner',
+      title: 'Forest Runner'
+    },
+    releaseHistory: releases
   },
   {
     id: '1',
@@ -158,7 +222,8 @@ export const projects: Project[] = [
     likes: 368,
     remixes: 54,
     views: 4920,
-    updatedAt: '1 day ago'
+    updatedAt: '1 day ago',
+    createdAt: '1 month ago'
   },
   {
     id: '2',
@@ -171,7 +236,8 @@ export const projects: Project[] = [
     likes: 274,
     remixes: 39,
     views: 3560,
-    updatedAt: '3 days ago'
+    updatedAt: '3 days ago',
+    createdAt: '1 month ago'
   },
   {
     id: '3',
@@ -184,7 +250,8 @@ export const projects: Project[] = [
     likes: 221,
     remixes: 42,
     views: 2980,
-    updatedAt: '5 days ago'
+    updatedAt: '5 days ago',
+    createdAt: '1 month ago'
   },
   {
     id: '4',
@@ -197,7 +264,8 @@ export const projects: Project[] = [
     likes: 184,
     remixes: 31,
     views: 2640,
-    updatedAt: '1 week ago'
+    updatedAt: '1 week ago',
+    createdAt: '2 months ago'
   },
   {
     id: '5',
@@ -210,7 +278,8 @@ export const projects: Project[] = [
     likes: 162,
     remixes: 25,
     views: 2110,
-    updatedAt: '2 weeks ago'
+    updatedAt: '2 weeks ago',
+    createdAt: '2 months ago'
   },
   {
     id: '6',
@@ -223,7 +292,8 @@ export const projects: Project[] = [
     likes: 148,
     remixes: 18,
     views: 1890,
-    updatedAt: '2 weeks ago'
+    updatedAt: '2 weeks ago',
+    createdAt: '2 months ago'
   }
 ]
 
@@ -335,3 +405,40 @@ export const editorProject = {
     }
   ] satisfies Sprite[]
 }
+
+export const docsEndpoints: DocsEndpoint[] = [
+  {
+    method: 'GET',
+    path: '/api/projects',
+    title: 'List projects',
+    description: 'Returns a paginated local prototype project list.',
+    response: '{ "data": [{ "name": "niu-run", "owner": "qingqing" }], "total": 1 }'
+  },
+  {
+    method: 'GET',
+    path: '/api/users/{username}',
+    title: 'Get user profile',
+    description: 'Returns a local user profile for community pages.',
+    response: '{ "username": "qingqing", "displayName": "Qingqing" }'
+  },
+  {
+    method: 'POST',
+    path: '/api/copilot/messages',
+    title: 'Generate local Copilot reply',
+    description: 'Prototype-only static response used to preserve the documentation surface.',
+    response: '{ "message": "This is a local prototype response." }'
+  }
+]
+
+export const widgetSamples: WidgetSample[] = [
+  {
+    id: 'runner',
+    title: 'Local SPX runner',
+    description: 'Runs the bundled niu-run project preview with local state.'
+  },
+  {
+    id: 'code-editor',
+    title: 'Local XGo code editor',
+    description: 'Shows code, diagnostics, and snippets without Monaco or LSP.'
+  }
+]

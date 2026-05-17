@@ -34,11 +34,23 @@ for (const route of [
   '/explore',
   '/search',
   '/user/:nameInput',
+  'projects',
+  'likes',
+  'followers',
+  'following',
   '/project/:ownerInput/:nameInput',
+  '/editor',
+  '/editor/:ownerNameInput/:projectNameInput/:inEditorPath*',
   '/tutorials',
   '/course-series/:courseSeriesIdInput',
   '/course/:courseSeriesIdInput/:courseIdInput/start',
-  '/editor/:ownerNameInput/:projectNameInput/:inEditorPath*'
+  '/sign-in/callback',
+  '/sign-in/token',
+  '/share/:owner/:name',
+  '/docs',
+  'api/:pathMatch(.*)?',
+  'ui-design',
+  '/:pathMatch(.*)*'
 ]) {
   if (!router.includes(route)) failures.push(`missing route: ${route}`)
 }
@@ -54,9 +66,22 @@ for (const requiredFile of [
   'src/components/project/PrototypeProjectRunner.vue',
   'src/pages/community/index.vue',
   'src/pages/community/project.vue',
+  'src/pages/community/user/overview.vue',
+  'src/pages/community/user/projects.vue',
+  'src/pages/community/user/likes.vue',
+  'src/pages/community/user/followers.vue',
+  'src/pages/community/user/following.vue',
   'src/pages/editor/index.vue',
+  'src/pages/sign-in/callback.vue',
+  'src/pages/sign-in/token.vue',
+  'src/pages/docs/api.vue',
+  'src/pages/docs/ui-design/index.vue',
   'src/pages/tutorials/course-series.vue',
-  'src/pages/tutorials/course-start.vue'
+  'src/pages/tutorials/course-start.vue',
+  'src/widgets/spx-runner/SpxRunner.ce.vue',
+  'src/widgets/spx-runner/index.ts',
+  'src/widgets/xgo-code-editor/XGoCodeEditor.ce.vue',
+  'src/widgets/xgo-code-editor/index.ts'
 ]) {
   try {
     statSync(join(root, requiredFile))
@@ -135,6 +160,7 @@ for (const file of sourceFiles) {
   if (text.includes('spx-gui')) failures.push(`forbidden real frontend reference: ${rel}`)
   if (/\baxios\b/.test(text)) failures.push(`forbidden server call primitive: ${rel}`)
   if (/\bfetch\s*\(\s*['"`]https?:\/\//.test(text)) failures.push(`forbidden remote fetch call: ${rel}`)
+  if (text.includes('@scalar/api-reference')) failures.push(`docs page must use local static prototype content: ${rel}`)
 }
 
 if (failures.length > 0) {

@@ -57,8 +57,7 @@ function submitSearch(event: Event) {
             class="h-8 w-full rounded-md border border-grey-400 bg-grey-100 py-1.25 pr-3 pl-7.5 text-sm text-text outline-none placeholder:text-hint-1"
             type="search"
             placeholder="Search project"
-            :value="searchValue"
-            @input="searchValue = ($event.target as HTMLInputElement).value"
+            v-model="searchValue"
           />
         </form>
 

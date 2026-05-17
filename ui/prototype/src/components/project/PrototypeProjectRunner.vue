@@ -45,6 +45,7 @@ const message = ref('')
 const canRun = computed(() => props.project.projectFile != null)
 
 let runToken = 0
+let engineInitialized = false
 
 function getRunnerWindow() {
   return iframeRef.value?.contentWindow as RunnerIframeWindow | null | undefined
@@ -141,6 +142,7 @@ async function run() {
 
     message.value = 'Preparing engine...'
     await iframeWindow.initEngine?.(assetURLs, { logLevel: 3, useProfiler: false })
+    engineInitialized = true
     if (token !== runToken) return
 
     message.value = 'Opening project...'
@@ -161,7 +163,7 @@ async function run() {
 
 async function stop() {
   runToken += 1
-  await getRunnerWindow()?.stopGame?.()
+  if (engineInitialized) await getRunnerWindow()?.stopGame?.()
   state.value = 'initial'
   message.value = ''
 }
@@ -173,7 +175,7 @@ async function rerun() {
 
 onBeforeUnmount(() => {
   runToken += 1
-  getRunnerWindow()?.stopGame?.()
+  if (engineInitialized) getRunnerWindow()?.stopGame?.()
 })
 
 defineExpose({

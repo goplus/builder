@@ -41,3 +41,16 @@ export function listUserProjects(username: string): Project[] {
   const owned = projects.filter((project) => project.owner.username === username)
   return owned.length > 0 ? owned : projects.slice(0, 3)
 }
+
+export function listUserLikes(username: string): Project[] {
+  const offset = users.findIndex((user) => user.username === username)
+  return projects.slice(Math.max(0, offset), Math.max(4, offset + 4))
+}
+
+export function listFollowers(username: string): UserProfile[] {
+  return users.filter((user) => user.username !== username)
+}
+
+export function listFollowing(username: string): UserProfile[] {
+  return [...users].reverse().filter((user) => user.username !== username)
+}
