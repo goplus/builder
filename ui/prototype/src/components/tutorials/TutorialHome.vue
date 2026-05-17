@@ -16,8 +16,8 @@ defineProps<{
     <CommunityNavbar />
     <TutorialsBanner />
 
-    <CenteredWrapper class="flex-1 pt-3 pb-10">
-      <h2 class="mb-1.5 flex h-15 w-full items-center justify-start text-xl leading-6 font-normal text-title">All Tutorials</h2>
+    <CenteredWrapper class="mt-10 mb-15 flex flex-1 flex-col items-center">
+      <h2 class="mb-5 w-full text-2xl text-title">All Tutorials</h2>
 
       <ul class="grid list-none grid-cols-4 justify-center gap-5 p-0 m-0">
         <CourseSeriesCard
