@@ -107,12 +107,15 @@ const selectedBackdropId = ref('grass-field')
 const selectedSoundId = ref('pop')
 const selectedWidgetId = ref('score')
 const selectedMapSpriteId = ref('niu-xiao-qi')
+const mapSpriteNameEditing = ref(false)
+const draftMapSpriteName = ref('')
 const mapWidth = ref(480)
 const mapHeight = ref(360)
 const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
 const addSpriteMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
+const mapSpriteNameInputRef = ref<HTMLInputElement>()
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -546,6 +549,34 @@ function renameSelectedSprite() {
   if (!nextName) return
   sprite.name = nextName
   sprite.shortName = nextName.length > 10 ? `${nextName.slice(0, 8)}...` : nextName
+}
+
+async function startMapSpriteRename() {
+  const sprite = selectedMapSprite.value
+  if (sprite == null) return
+  draftMapSpriteName.value = sprite.name
+  mapSpriteNameEditing.value = true
+  await nextTick()
+  mapSpriteNameInputRef.value?.focus()
+  mapSpriteNameInputRef.value?.select()
+}
+
+function cancelMapSpriteRename() {
+  mapSpriteNameEditing.value = false
+  draftMapSpriteName.value = ''
+}
+
+function submitMapSpriteRename() {
+  if (!mapSpriteNameEditing.value) return
+  const sprite = selectedMapSprite.value
+  const nextName = draftMapSpriteName.value.trim()
+  if (sprite == null || nextName === '' || nextName === sprite.name) {
+    cancelMapSpriteRename()
+    return
+  }
+  sprite.name = nextName
+  sprite.shortName = nextName.length > 10 ? `${nextName.slice(0, 8)}...` : nextName
+  cancelMapSpriteRename()
 }
 
 function saveSelectedSpriteToLibrary() {
@@ -1202,8 +1233,17 @@ onBeforeUnmount(() => {
           </div>
           <footer class="map-sprite-config">
             <div class="map-config-title">
-              <strong>{{ selectedMapSprite.name }}</strong>
-              <button type="button" aria-label="Rename sprite">✎</button>
+              <strong v-if="!mapSpriteNameEditing">{{ selectedMapSprite.name }}</strong>
+              <form v-else class="map-sprite-name-form" @submit.prevent="submitMapSpriteRename">
+                <input
+                  ref="mapSpriteNameInputRef"
+                  v-model="draftMapSpriteName"
+                  aria-label="Sprite name"
+                  @blur="submitMapSpriteRename"
+                  @keydown.esc.prevent="cancelMapSpriteRename"
+                />
+              </form>
+              <button type="button" aria-label="Rename sprite" @click="startMapSpriteRename">✎</button>
               <button type="button" aria-label="Collapse sprite config">⌄</button>
             </div>
             <div class="map-config-grid">
@@ -1856,6 +1896,24 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.map-sprite-name-form {
+  min-width: 0;
+  flex: 1;
+}
+
+.map-sprite-name-form input {
+  width: 100%;
+  height: 28px;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  box-shadow: inset 0 0 0 1px var(--ui-color-primary-main);
+  padding: 0 10px;
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+  outline: none;
 }
 
 .map-config-grid {
