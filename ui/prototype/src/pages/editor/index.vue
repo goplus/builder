@@ -68,7 +68,9 @@ type EventSnippet = {
   parts: SnippetPart[]
 }
 
+type EditorTarget = 'sprite' | 'stage'
 type EditorTab = 'code' | 'costumes' | 'animations'
+type StageTab = 'code' | 'backdrops' | 'sounds' | 'widgets'
 type EditMode = 'default' | 'map'
 type SaveState = 'saved' | 'saving' | 'failed' | 'offline'
 
@@ -86,7 +88,9 @@ type AssetItem = {
 const project = computed(() => getProject(props.ownerNameInput, props.projectNameInput))
 const runnerRef = ref<InstanceType<typeof PrototypeProjectRunner>>()
 const runnerActive = ref(false)
+const activeEditorTarget = ref<EditorTarget>('sprite')
 const activeEditorTab = ref<EditorTab>('code')
+const activeStageTab = ref<StageTab>('code')
 const activeEditMode = ref<EditMode>('default')
 const projectDisplayName = ref(project.value.title)
 const draftProjectDisplayName = ref(project.value.title)
@@ -95,6 +99,9 @@ const projectMenuOpen = ref(false)
 const saveState = ref<SaveState>('saved')
 const selectedCostumeId = ref('niu-xiao-qi-default')
 const selectedAnimationId = ref('niu-run')
+const selectedBackdropId = ref('grass-field')
+const selectedSoundId = ref('pop')
+const selectedWidgetId = ref('score')
 const selectedMapSpriteId = ref('niu-xiao-qi')
 const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
@@ -236,10 +243,31 @@ const animations: AssetItem[] = [
   }
 ]
 
+const backdrops: AssetItem[] = [
+  {
+    id: 'grass-field',
+    name: 'backdrop',
+    image: backdropUrl
+  }
+]
+
+const sounds = [
+  { id: 'pop', name: 'pop', duration: '0.18s' },
+  { id: 'jump', name: 'jump', duration: '0.32s' }
+]
+
+const widgets = [
+  { id: 'score', name: 'Score', value: '0' },
+  { id: 'timer', name: 'Timer', value: '60' }
+]
+
 const selectedCostume = computed(() => costumes.find((costume) => costume.id === selectedCostumeId.value) ?? costumes[0])
 const selectedAnimation = computed(
   () => animations.find((animation) => animation.id === selectedAnimationId.value) ?? animations[0] ?? null
 )
+const selectedBackdrop = computed(() => backdrops.find((backdrop) => backdrop.id === selectedBackdropId.value) ?? backdrops[0])
+const selectedSound = computed(() => sounds.find((sound) => sound.id === selectedSoundId.value) ?? sounds[0])
+const selectedWidget = computed(() => widgets.find((widget) => widget.id === selectedWidgetId.value) ?? widgets[0])
 
 const codeLines = [
   ['onMsg', 'msg:"click", => {'],
@@ -268,7 +296,7 @@ const codeCategories = [
   { id: 'game', label: 'Game', icon: gameIcon }
 ]
 
-const stageEntries = [
+const stageEntries: Array<{ id: Exclude<StageTab, 'code'>; label: string; icon: string }> = [
   { id: 'backdrops', label: 'Backdrops', icon: backdropPanelIcon },
   { id: 'sounds', label: 'Sounds', icon: soundPanelIcon },
   { id: 'widgets', label: 'Widgets', icon: widgetPanelIcon }
@@ -327,7 +355,17 @@ const projectMenuGroups = [
 ]
 
 function selectEditorTab(tab: EditorTab) {
+  activeEditorTarget.value = 'sprite'
   activeEditorTab.value = tab
+}
+
+function selectSprite() {
+  activeEditorTarget.value = 'sprite'
+}
+
+function selectStage(tab: StageTab = 'code') {
+  activeEditorTarget.value = 'stage'
+  activeStageTab.value = tab
 }
 
 function selectEditMode(mode: EditMode) {
@@ -529,24 +567,42 @@ onBeforeUnmount(() => {
     <section v-if="activeEditMode === 'default'" class="editor-main">
       <section class="code-card">
         <header class="code-tabs">
-          <button class="tab" :class="{ active: activeEditorTab === 'code' }" type="button" @click="selectEditorTab('code')">
-            Code
+          <template v-if="activeEditorTarget === 'sprite'">
+            <button class="tab" :class="{ active: activeEditorTab === 'code' }" type="button" @click="selectEditorTab('code')">
+              Code
+            </button>
+            <button class="tab" :class="{ active: activeEditorTab === 'costumes' }" type="button" @click="selectEditorTab('costumes')">
+              Costumes
+            </button>
+            <button
+              class="tab"
+              :class="{ active: activeEditorTab === 'animations' }"
+              type="button"
+              @click="selectEditorTab('animations')"
+            >
+              Animations
+            </button>
+          </template>
+          <template v-else>
+            <button class="tab" :class="{ active: activeStageTab === 'code' }" type="button" @click="selectStage('code')">
+              Code
+            </button>
+            <button class="tab" :class="{ active: activeStageTab === 'backdrops' }" type="button" @click="selectStage('backdrops')">
+              Backdrops
+            </button>
+            <button class="tab" :class="{ active: activeStageTab === 'sounds' }" type="button" @click="selectStage('sounds')">
+              Sounds
+            </button>
+            <button class="tab" :class="{ active: activeStageTab === 'widgets' }" type="button" @click="selectStage('widgets')">
+              Widgets
+            </button>
+          </template>
+          <button v-if="activeEditorTarget === 'sprite' ? activeEditorTab === 'code' : activeStageTab === 'code'" class="format-button" type="button">
+            Format
           </button>
-          <button class="tab" :class="{ active: activeEditorTab === 'costumes' }" type="button" @click="selectEditorTab('costumes')">
-            Costumes
-          </button>
-          <button
-            class="tab"
-            :class="{ active: activeEditorTab === 'animations' }"
-            type="button"
-            @click="selectEditorTab('animations')"
-          >
-            Animations
-          </button>
-          <button v-if="activeEditorTab === 'code'" class="format-button" type="button">Format</button>
         </header>
 
-        <div v-if="activeEditorTab === 'code'" class="code-body">
+        <div v-if="activeEditorTarget === 'sprite' && activeEditorTab === 'code'" class="code-body">
           <aside class="category-rail" aria-label="Code categories">
             <button
               v-for="category in codeCategories"
@@ -585,7 +641,7 @@ onBeforeUnmount(() => {
           </section>
         </div>
 
-        <div v-else-if="activeEditorTab === 'costumes'" class="asset-editor-body">
+        <div v-else-if="activeEditorTarget === 'sprite' && activeEditorTab === 'costumes'" class="asset-editor-body">
           <aside class="asset-editor-list" aria-label="Costumes list">
             <button
               v-for="costume in costumes"
@@ -611,7 +667,7 @@ onBeforeUnmount(() => {
           </section>
         </div>
 
-        <div v-else class="asset-editor-body">
+        <div v-else-if="activeEditorTarget === 'sprite'" class="asset-editor-body">
           <aside class="asset-editor-list" aria-label="Animations list">
             <button
               v-for="animation in animations"
@@ -657,6 +713,137 @@ onBeforeUnmount(() => {
                   <strong>{{ selectedAnimation.sound }}</strong>
                 </button>
               </div>
+            </div>
+          </section>
+        </div>
+
+        <div v-else-if="activeStageTab === 'code'" class="code-body">
+          <aside class="category-rail" aria-label="Code categories">
+            <button
+              v-for="category in codeCategories"
+              :key="`stage-${category.id}`"
+              class="category"
+              :class="{ active: category.id === 'event' }"
+              type="button"
+            >
+              <img class="category-icon" :src="category.icon" alt="" />
+              <span>{{ category.label }}</span>
+            </button>
+          </aside>
+
+          <aside class="events-list" aria-label="Stage snippets">
+            <section class="event-group">
+              <h3>Stage Events</h3>
+              <button class="event-snippet" type="button">
+                <span class="token-function">onBackdrop</span><span class="token-hint"> name:</span><span class="token-string">"backdrop"</span>
+              </button>
+              <button class="event-snippet" type="button"><span class="token-function">show</span></button>
+              <button class="event-snippet" type="button"><span class="token-function">hide</span></button>
+            </section>
+          </aside>
+
+          <section class="code-editor" aria-label="Stage code editor">
+            <div class="code-line">
+              <span class="line-number">1</span>
+              <span class="keyword">onBackdrop</span>
+              <span class="source">name:"backdrop", => {</span>
+            </div>
+            <div class="code-line">
+              <span class="line-number">2</span>
+              <span class="keyword">  show</span>
+              <span class="source"></span>
+            </div>
+            <div class="code-line">
+              <span class="line-number">3</span>
+              <span class="keyword">}</span>
+              <span class="source"></span>
+            </div>
+          </section>
+        </div>
+
+        <div v-else-if="activeStageTab === 'backdrops'" class="asset-editor-body">
+          <aside class="asset-editor-list" aria-label="Backdrops list">
+            <button
+              v-for="backdrop in backdrops"
+              :key="backdrop.id"
+              class="editor-asset-item"
+              :class="{ active: selectedBackdropId === backdrop.id }"
+              type="button"
+              @click="selectedBackdropId = backdrop.id"
+            >
+              <img :src="backdrop.image" :alt="backdrop.name" />
+              <span>{{ backdrop.name }}</span>
+            </button>
+            <button class="asset-add-button" type="button" aria-label="Add backdrop">+</button>
+          </aside>
+          <section class="asset-detail" aria-label="Backdrop detail">
+            <header class="asset-detail-header">
+              <h2>{{ selectedBackdrop.name }}</h2>
+              <button type="button" aria-label="Rename backdrop" v-html="editIcon"></button>
+            </header>
+            <div class="backdrop-preview">
+              <img :src="selectedBackdrop.image" :alt="selectedBackdrop.name" />
+            </div>
+          </section>
+        </div>
+
+        <div v-else-if="activeStageTab === 'sounds'" class="asset-editor-body">
+          <aside class="asset-editor-list" aria-label="Sounds list">
+            <button
+              v-for="sound in sounds"
+              :key="sound.id"
+              class="editor-asset-item sound-asset-item"
+              :class="{ active: selectedSoundId === sound.id }"
+              type="button"
+              @click="selectedSoundId = sound.id"
+            >
+              <span class="sound-wave-icon">♪</span>
+              <span>{{ sound.name }}</span>
+            </button>
+            <button class="asset-add-button" type="button" aria-label="Add sound">+</button>
+          </aside>
+          <section class="asset-detail" aria-label="Sound detail">
+            <header class="asset-detail-header">
+              <h2>{{ selectedSound.name }}</h2>
+              <button type="button" aria-label="Rename sound" v-html="editIcon"></button>
+            </header>
+            <div class="sound-detail">
+              <div class="sound-waveform"></div>
+              <button type="button">Play</button>
+              <span>{{ selectedSound.duration }}</span>
+            </div>
+          </section>
+        </div>
+
+        <div v-else class="asset-editor-body">
+          <aside class="asset-editor-list" aria-label="Widgets list">
+            <button
+              v-for="widget in widgets"
+              :key="widget.id"
+              class="editor-asset-item widget-asset-item"
+              :class="{ active: selectedWidgetId === widget.id }"
+              type="button"
+              @click="selectedWidgetId = widget.id"
+            >
+              <span class="widget-icon">▣</span>
+              <span>{{ widget.name }}</span>
+            </button>
+            <button class="asset-add-button" type="button" aria-label="Add widget">+</button>
+          </aside>
+          <section class="asset-detail" aria-label="Widget detail">
+            <header class="asset-detail-header">
+              <h2>{{ selectedWidget.name }}</h2>
+              <button type="button" aria-label="Rename widget" v-html="editIcon"></button>
+            </header>
+            <div class="widget-detail">
+              <label>
+                <span>Value</span>
+                <strong>{{ selectedWidget.value }}</strong>
+              </label>
+              <label>
+                <span>Visible</span>
+                <strong>On</strong>
+              </label>
             </div>
           </section>
         </div>
@@ -707,8 +894,15 @@ onBeforeUnmount(() => {
               <button type="button" aria-label="Add sprite">+</button>
             </header>
             <div class="sprite-list">
-              <button v-for="sprite in sprites" :key="sprite.id" class="sprite-card" :class="{ active: sprite.active }" type="button">
-                <span v-if="sprite.active" class="sprite-menu" v-html="moreIcon"></span>
+              <button
+                v-for="sprite in sprites"
+                :key="sprite.id"
+                class="sprite-card"
+                :class="{ active: activeEditorTarget === 'sprite' && sprite.active }"
+                type="button"
+                @click="selectSprite"
+              >
+                <span v-if="activeEditorTarget === 'sprite' && sprite.active" class="sprite-menu" v-html="moreIcon"></span>
                 <img :src="sprite.image" :alt="sprite.name" />
                 <span class="sprite-title">
                   <span class="sprite-name">{{ sprite.shortName }}</span>
@@ -720,10 +914,23 @@ onBeforeUnmount(() => {
 
           <div class="stage-panel">
             <header class="stage-panel-header">Stage</header>
-            <button class="stage-thumb" type="button">
+            <button
+              class="stage-thumb"
+              :class="{ active: activeEditorTarget === 'stage' && activeStageTab === 'code' }"
+              type="button"
+              aria-label="Stage overview"
+              @click="selectStage('code')"
+            >
               <img :src="backdropUrl" alt="" />
             </button>
-            <button v-for="entry in stageEntries" :key="entry.id" class="stage-entry" type="button">
+            <button
+              v-for="entry in stageEntries"
+              :key="entry.id"
+              class="stage-entry"
+              :class="{ active: activeEditorTarget === 'stage' && activeStageTab === entry.id }"
+              type="button"
+              @click="selectStage(entry.id)"
+            >
               <span class="stage-entry-icon" v-html="entry.icon"></span>
               <span>{{ entry.label }}</span>
             </button>
@@ -1549,6 +1756,24 @@ onBeforeUnmount(() => {
   object-fit: contain;
 }
 
+.sound-asset-item,
+.widget-asset-item {
+  justify-content: center;
+  gap: 8px;
+}
+
+.sound-wave-icon,
+.widget-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-primary-100);
+  color: var(--ui-color-primary-main);
+  font-size: 22px;
+}
+
 .editor-asset-item span {
   width: 100%;
   height: 22px;
@@ -1639,6 +1864,20 @@ onBeforeUnmount(() => {
     8px -8px,
     -8px 0;
   background-size: 16px 16px;
+}
+
+.backdrop-preview {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border-radius: var(--ui-border-radius-sm);
+  background: var(--ui-color-grey-100);
+}
+
+.backdrop-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .costume-preview img {
@@ -1745,6 +1984,57 @@ onBeforeUnmount(() => {
 
 .setting-icon {
   color: var(--ui-color-grey-900);
+}
+
+.sound-detail,
+.widget-detail {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border-radius: var(--ui-border-radius-sm);
+  background: var(--ui-color-grey-100);
+  padding: 24px;
+}
+
+.sound-waveform {
+  width: min(480px, 90%);
+  height: 96px;
+  border-radius: var(--ui-border-radius-md);
+  background:
+    linear-gradient(90deg, transparent 0 8%, var(--ui-color-primary-main) 8% 10%, transparent 10% 18%),
+    linear-gradient(90deg, transparent 0 18%, var(--ui-color-primary-600) 18% 21%, transparent 21% 30%),
+    linear-gradient(90deg, transparent 0 32%, var(--ui-color-primary-main) 32% 36%, transparent 36% 48%),
+    linear-gradient(90deg, transparent 0 52%, var(--ui-color-primary-600) 52% 55%, transparent 55% 62%),
+    linear-gradient(90deg, transparent 0 68%, var(--ui-color-primary-main) 68% 71%, transparent 71% 82%);
+  background-color: var(--ui-color-primary-100);
+}
+
+.sound-detail button {
+  height: 32px;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-primary-main);
+  padding: 0 18px;
+  color: var(--ui-color-grey-100);
+}
+
+.widget-detail label {
+  width: min(360px, 90%);
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-200);
+  padding: 0 14px;
+}
+
+.widget-detail strong {
+  font-weight: 500;
 }
 
 @keyframes animation-frame-preview {
@@ -2216,6 +2506,12 @@ onBeforeUnmount(() => {
   padding: 3px;
 }
 
+.stage-thumb.active {
+  border: 2px solid var(--ui-color-primary-main);
+  background: var(--ui-color-primary-200);
+  padding: 2px;
+}
+
 .stage-thumb img {
   width: 100%;
   height: 100%;
@@ -2234,6 +2530,15 @@ onBeforeUnmount(() => {
   color: var(--ui-color-grey-800);
   border-radius: var(--ui-border-radius-md);
   padding: 4px;
+}
+
+.stage-entry.active {
+  background: var(--ui-color-primary-100);
+  color: var(--ui-color-primary-700);
+}
+
+.stage-entry:hover {
+  background: var(--ui-color-grey-300);
 }
 
 .stage-entry-icon {
