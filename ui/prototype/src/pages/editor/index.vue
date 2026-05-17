@@ -1548,7 +1548,7 @@ onBeforeUnmount(() => {
           </div>
           <footer v-if="mapSpriteConfigExpanded" class="map-sprite-config">
             <div class="map-config-title">
-              <strong v-if="!mapSpriteNameEditing">{{ selectedMapSprite.name }}</strong>
+              <strong v-if="!mapSpriteNameEditing" class="map-config-name">{{ selectedMapSprite.name }}</strong>
               <form v-else class="map-sprite-name-form" @submit.prevent="submitMapSpriteRename">
                 <input
                   ref="mapSpriteNameInputRef"
@@ -1558,8 +1558,13 @@ onBeforeUnmount(() => {
                   @keydown.esc.prevent="cancelMapSpriteRename"
                 />
               </form>
-              <button type="button" aria-label="Rename sprite" @click="startMapSpriteRename">✎</button>
-              <button type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false">⌄</button>
+              <button class="map-config-icon" type="button" aria-label="Rename sprite" @click="startMapSpriteRename" v-html="editIcon"></button>
+              <span class="map-config-title-spacer"></span>
+              <button class="map-config-icon collapse" type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="m5 8 5 5 5-5" />
+                </svg>
+              </button>
             </div>
             <div class="map-config-grid">
               <label><span>X</span><input value="-224" readonly /></label>
@@ -2442,17 +2447,56 @@ onBeforeUnmount(() => {
   margin-bottom: 16px;
 }
 
-.map-config-title strong {
+.map-config-name {
   min-width: 0;
-  flex: 1;
+  max-width: 16em;
+  flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.map-config-title-spacer {
+  flex: 1 1 auto;
+}
+
+.map-config-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--ui-color-grey-900);
+  transition: color 0.15s ease;
+}
+
+.map-config-icon:hover {
+  color: var(--ui-color-grey-1000);
+}
+
+.map-config-icon :deep(svg),
+.map-config-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-config-icon.collapse :deep(svg),
+.map-config-icon.collapse svg {
+  width: 18px;
+  height: 18px;
+}
+
 .map-sprite-name-form {
   min-width: 0;
-  flex: 1;
+  max-width: 16em;
+  flex: 1 1 16em;
 }
 
 .map-sprite-name-form input {
