@@ -230,7 +230,10 @@ export class Animation extends Disposable {
     }
     const soundName = sounds.find((s) => s.id === this.sound)?.name
     if (soundName != null) {
-      config.onPlay = { play: soundName, loop: this.soundLoop }
+      // Revert to legacy onStart temporarily. For details, see https://github.com/goplus/builder/issues/3172
+      // TODO: Use `onPlay` instead of `onStart` after goplus/spx#1574 resolved and spx updated.
+      // config.onPlay = { play: soundName, loop: this.soundLoop }
+      config.onStart = { play: soundName }
     }
     if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]

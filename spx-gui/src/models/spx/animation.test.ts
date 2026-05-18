@@ -129,47 +129,47 @@ describe('Animation', () => {
     expect(exportedId).toBeUndefined()
   })
 
-  it('should export sound binding using onPlay', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].id)
+  // it('should export sound binding using onPlay', () => {
+  //   const project = makeProject()
+  //   const sprite = project.sprites[0]
+  //   const animation = sprite.animations[0]
+  //   animation.setSound(project.sounds[0].id)
 
-    const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: false })
-    expect(config.onStart).toBeUndefined()
-  })
+  //   const [config] = animation.export('', { sounds: project.sounds })
+  //   expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: false })
+  //   expect(config.onStart).toBeUndefined()
+  // })
 
-  it('should export loop: true in onPlay when soundLoop is true', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].id)
-    animation.setSoundLoop(true)
+  // it('should export loop: true in onPlay when soundLoop is true', () => {
+  //   const project = makeProject()
+  //   const sprite = project.sprites[0]
+  //   const animation = sprite.animations[0]
+  //   animation.setSound(project.sounds[0].id)
+  //   animation.setSoundLoop(true)
 
-    const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
-  })
+  //   const [config] = animation.export('', { sounds: project.sounds })
+  //   expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
+  // })
 
-  it('should load soundLoop from onPlay.loop', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const costumes = sprite.costumes
-    const sounds = project.sounds
+  // it('should load soundLoop from onPlay.loop', () => {
+  //   const project = makeProject()
+  //   const sprite = project.sprites[0]
+  //   const costumes = sprite.costumes
+  //   const sounds = project.sounds
 
-    const [animation] = Animation.load(
-      'default',
-      {
-        frameFrom: costumes[0].name,
-        frameTo: costumes[0].name,
-        onPlay: { play: sounds[0].name, loop: true }
-      },
-      costumes,
-      { sounds }
-    )
-    expect(animation.sound).toBe(sounds[0].id)
-    expect(animation.soundLoop).toBe(true)
-  })
+  //   const [animation] = Animation.load(
+  //     'default',
+  //     {
+  //       frameFrom: costumes[0].name,
+  //       frameTo: costumes[0].name,
+  //       onPlay: { play: sounds[0].name, loop: true }
+  //     },
+  //     costumes,
+  //     { sounds }
+  //   )
+  //   expect(animation.sound).toBe(sounds[0].id)
+  //   expect(animation.soundLoop).toBe(true)
+  // })
 
   it('should default soundLoop to false when loop field is absent', () => {
     const project = makeProject()
