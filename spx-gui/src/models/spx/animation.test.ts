@@ -128,6 +128,36 @@ describe('Animation', () => {
     })[0].builder_id
     expect(exportedId).toBeUndefined()
   })
+
+  it('should export sound binding using onPlay', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    animation.setSound(project.sounds[0].id)
+
+    const [config] = animation.export('', { sounds: project.sounds })
+    expect(config.onPlay).toEqual({ play: project.sounds[0].name })
+    expect(config.onStart).toBeUndefined()
+  })
+
+  it('should load sound binding from legacy onStart for backward compatibility', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const costumes = sprite.costumes
+    const sounds = project.sounds
+
+    const [animation] = Animation.load(
+      'default',
+      {
+        frameFrom: costumes[0].name,
+        frameTo: costumes[0].name,
+        onStart: { play: sounds[0].name }
+      },
+      costumes,
+      { sounds }
+    )
+    expect(animation.sound).toBe(sounds[0].id)
+  })
   it('should clone well', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
