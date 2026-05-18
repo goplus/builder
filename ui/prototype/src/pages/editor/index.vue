@@ -48,6 +48,7 @@ import projectPageIcon from '@/assets/editor/navbar-icons/project-page.svg'
 import publishIcon from '@/assets/editor/navbar-icons/publish.svg'
 import removeProjectIcon from '@/assets/editor/navbar-icons/remove-project.svg'
 import savingIcon from '@/assets/editor/navbar-icons/saving.svg?raw'
+import tutorialIcon from '@/assets/editor/navbar-icons/tutorial.svg?raw'
 import stageBgUrl from '@/assets/stage-bg.svg'
 import backdropUrl from '@/assets/projects/niu-run/editor/backdrop.png'
 import flowerUrl from '@/assets/projects/niu-run/editor/sprite-flower.png'
@@ -1249,6 +1250,9 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
+        <RouterLink class="flex h-full items-center px-3 text-grey-1000 hover:bg-grey-400" to="/tutorials" aria-label="Tutorials" title="Tutorials">
+          <span class="block h-5 w-5 [&_svg]:block [&_svg]:h-5 [&_svg]:w-5" v-html="tutorialIcon"></span>
+        </RouterLink>
         <button class="icon-button muted" type="button" aria-label="Undo">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 7 4 12l5 5" />

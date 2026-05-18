@@ -36,6 +36,7 @@ const codeZoomInIcon = read('src/assets/editor/code-editor/zoom-in.svg')
 const codeZoomOutIcon = read('src/assets/editor/code-editor/zoom-out.svg')
 const codeZoomResetIcon = read('src/assets/editor/code-editor/zoom-reset.svg')
 const codeCloseCircleIcon = read('src/assets/editor/code-editor/close-circle.svg')
+const tutorialIcon = read('src/assets/editor/navbar-icons/tutorial.svg')
 const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
 const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
@@ -79,6 +80,7 @@ for (const requiredFile of [
   'src/assets/projects/weathergggg/thumbnail.jpg',
   'src/assets/projects/niu-run/niu-run.xbp',
   'src/assets/projects/niu-run/thumbnail.jpeg',
+  'src/assets/editor/navbar-icons/tutorial.svg',
   'src/components/project/PrototypeProjectRunner.vue',
   'src/components/editor/PrototypeSpriteItem.vue',
   'src/components/ui/PrototypeCardHeader.vue',
@@ -451,6 +453,15 @@ if (
 
 if (!codeCloseCircleIcon.includes('M9.99984 1.0415') || !codeCloseCircleIcon.includes('fill="currentColor"')) {
   failures.push('editor code document close icon must mirror the real close-circle icon asset')
+}
+
+if (
+  !editorPage.includes("import tutorialIcon from '@/assets/editor/navbar-icons/tutorial.svg?raw'") ||
+  !editorPage.includes('to="/tutorials" aria-label="Tutorials"') ||
+  !editorPage.includes('flex h-full items-center px-3 text-grey-1000 hover:bg-grey-400') ||
+  !tutorialIcon.includes('M10.9023 2.19043')
+) {
+  failures.push('editor navbar must include the real tutorials entry after the project menu')
 }
 
 if (!editorPage.includes('.stage-tools button') || !editorPage.includes('color: var(--ui-color-grey-1000);')) {
