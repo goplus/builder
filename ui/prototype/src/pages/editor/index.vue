@@ -73,6 +73,8 @@ type SpriteCard = {
   shortName: string
   image: string
   hidden: boolean
+  x: number
+  y: number
   size: number
   heading: number
   rotationStyle: RotationStyle
@@ -307,6 +309,8 @@ const niuRunSprites = ref<SpriteCard[]>([
     shortName: '牛小七',
     image: niuXiaoQiUrl,
     hidden: false,
+    x: -224,
+    y: 74,
     size: 100,
     heading: 90,
     rotationStyle: 'normal'
@@ -317,6 +321,8 @@ const niuRunSprites = ref<SpriteCard[]>([
     shortName: '牛小花牛小花...',
     image: niuXiaoHuaUrl,
     hidden: false,
+    x: -130,
+    y: 94,
     size: 100,
     heading: 90,
     rotationStyle: 'normal'
@@ -327,6 +333,8 @@ const niuRunSprites = ref<SpriteCard[]>([
     shortName: '花朵花...',
     image: flowerUrl,
     hidden: true,
+    x: 0,
+    y: 0,
     size: 100,
     heading: 90,
     rotationStyle: 'normal'
@@ -337,6 +345,8 @@ const niuRunSprites = ref<SpriteCard[]>([
     shortName: '龙卷风...',
     image: tornadoUrl,
     hidden: true,
+    x: 120,
+    y: -20,
     size: 100,
     heading: 90,
     rotationStyle: 'normal'
@@ -411,6 +421,8 @@ const weatherggggSprites = ref<SpriteCard[]>([
     shortName: 'Jaime',
     image: jaimeUrl,
     hidden: false,
+    x: -80,
+    y: 40,
     size: 100,
     heading: 90,
     rotationStyle: 'normal'
@@ -421,6 +433,8 @@ const weatherggggSprites = ref<SpriteCard[]>([
     shortName: 'Kai',
     image: kaiUrl,
     hidden: false,
+    x: 80,
+    y: 40,
     size: 100,
     heading: 90,
     rotationStyle: 'normal'
@@ -582,8 +596,11 @@ const tempCodeDocumentTabs = computed<CodeDocumentTab[]>(() => {
   return tabs
 })
 const selectedSpriteFrameStyle = computed(() => ({
+  left: `${178 + (((selectedSprite.value?.x ?? -224) + 224) * 0.5)}px`,
+  top: `${108 - (((selectedSprite.value?.y ?? 74) - 74) * 0.5)}px`,
   transform: selectedSpriteTransform(selectedSprite.value)
 }))
+const selectedSpriteCoordinate = computed(() => `${selectedSprite.value?.x ?? -224}, ${selectedSprite.value?.y ?? 74}`)
 const codeEditorStyle = computed<CSSProperties>(() => ({
   '--prototype-code-zoom': codeZoom.value
 }))
@@ -726,10 +743,6 @@ function selectEditMode(mode: EditMode) {
 }
 
 function openQuickConfig(type: QuickConfigType) {
-  if (type === 'layer') {
-    markPrototypeAction()
-    return
-  }
   activeQuickConfig.value = type
 }
 
@@ -750,6 +763,20 @@ function updateSelectedSpriteSize(event: Event) {
   const nextSize = Number((event.target as HTMLInputElement).value)
   if (!Number.isFinite(nextSize) || selectedSprite.value == null) return
   selectedSprite.value.size = Math.max(1, Math.min(400, Math.round(nextSize)))
+  markPrototypeAction()
+}
+
+function updateSelectedSpriteX(event: Event) {
+  const nextX = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextX) || selectedSprite.value == null) return
+  selectedSprite.value.x = Math.max(-999, Math.min(999, Math.round(nextX)))
+  markPrototypeAction()
+}
+
+function updateSelectedSpriteY(event: Event) {
+  const nextY = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextY) || selectedSprite.value == null) return
+  selectedSprite.value.y = Math.max(-999, Math.min(999, Math.round(nextY)))
   markPrototypeAction()
 }
 
@@ -775,6 +802,25 @@ function updateSelectedSpriteRotationStyle(style: RotationStyle) {
 function updateSelectedSpriteLeftRight(direction: 'left' | 'right') {
   if (selectedSprite.value == null) return
   selectedSprite.value.heading = direction === 'right' ? 90 : -90
+  markPrototypeAction()
+}
+
+function moveSelectedSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
+  const sprite = selectedSprite.value
+  if (sprite == null) return
+  const index = sprites.value.findIndex((item) => item.id === sprite.id)
+  if (index < 0) return
+  const [item] = sprites.value.splice(index, 1)
+  if (direction === 'top') {
+    sprites.value.push(item)
+  } else if (direction === 'bottom') {
+    sprites.value.unshift(item)
+  } else if (direction === 'up') {
+    sprites.value.splice(Math.min(index + 1, sprites.value.length), 0, item)
+  } else {
+    sprites.value.splice(Math.max(index - 1, 0), 0, item)
+  }
+  activeQuickConfig.value = 'default'
   markPrototypeAction()
 }
 
@@ -899,6 +945,8 @@ function addLocalSprite(source: 'local' | 'library' | 'ai') {
     shortName: preset.name.length > 10 ? `${preset.name.slice(0, 8)}...` : preset.name,
     image: preset.image,
     hidden: false,
+    x: -224,
+    y: 74,
     size: 100,
     heading: 90,
     rotationStyle: 'normal'
@@ -1645,7 +1693,7 @@ onBeforeUnmount(() => {
               <img v-if="stageCompanionSprite != null" class="stage-sprite cow-flower" :src="stageCompanionSprite.image" alt="" />
               <div v-if="selectedSprite != null" class="selected-sprite" :style="selectedSpriteFrameStyle">
                 <img :src="selectedSprite.image" alt="" />
-                <span class="coordinate">-224, 74</span>
+                <span class="coordinate">{{ selectedSpriteCoordinate }}</span>
                 <span class="handle left"></span>
                 <span class="handle right"></span>
                 <span class="corner bottom-left"></span>
@@ -1676,6 +1724,36 @@ onBeforeUnmount(() => {
                       @input="updateSelectedSpriteSize"
                     />
                     <span>%</span>
+                  </label>
+                  <span class="quick-config-divider" aria-hidden="true"></span>
+                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
+                    <span v-html="backQuickIcon"></span>
+                  </button>
+                </template>
+                <template v-else-if="activeQuickConfig === 'position' && selectedSprite != null">
+                  <label class="quick-config-input position-input">
+                    <span>X</span>
+                    <input
+                      :value="selectedSprite.x"
+                      type="number"
+                      inputmode="numeric"
+                      min="-999"
+                      max="999"
+                      aria-label="X position input"
+                      @input="updateSelectedSpriteX"
+                    />
+                  </label>
+                  <label class="quick-config-input position-input">
+                    <span>Y</span>
+                    <input
+                      :value="selectedSprite.y"
+                      type="number"
+                      inputmode="numeric"
+                      min="-999"
+                      max="999"
+                      aria-label="Y position input"
+                      @input="updateSelectedSpriteY"
+                    />
                   </label>
                   <span class="quick-config-divider" aria-hidden="true"></span>
                   <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
@@ -1739,6 +1817,18 @@ onBeforeUnmount(() => {
                     >
                       Right
                     </button>
+                  </div>
+                  <span class="quick-config-divider" aria-hidden="true"></span>
+                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
+                    <span v-html="backQuickIcon"></span>
+                  </button>
+                </template>
+                <template v-else-if="activeQuickConfig === 'layer' && selectedSprite != null">
+                  <div class="quick-layer-menu" role="menu" aria-label="Layer order options">
+                    <button type="button" role="menuitem" @click="moveSelectedSpriteLayer('up')">Bring forward</button>
+                    <button type="button" role="menuitem" @click="moveSelectedSpriteLayer('top')">Bring to front</button>
+                    <button type="button" role="menuitem" @click="moveSelectedSpriteLayer('down')">Send backward</button>
+                    <button type="button" role="menuitem" @click="moveSelectedSpriteLayer('bottom')">Send to back</button>
                   </div>
                   <span class="quick-config-divider" aria-hidden="true"></span>
                   <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
@@ -3949,6 +4039,7 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 4px;
   border-radius: 8px;
+  border: 2px solid var(--ui-color-grey-100);
   background: var(--ui-color-grey-100);
   box-shadow: var(--ui-box-shadow-lg);
 }
@@ -3964,7 +4055,9 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 0;
   border-radius: var(--ui-border-radius-md);
+  background: transparent;
   color: var(--ui-color-grey-1000);
 }
 
@@ -4045,6 +4138,34 @@ onBeforeUnmount(() => {
 
 .heading-input input {
   width: 52px;
+}
+
+.position-input input {
+  width: 52px;
+}
+
+.quick-layer-menu {
+  position: absolute;
+  left: 0;
+  bottom: 44px;
+  min-width: 152px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 6px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.quick-layer-menu button {
+  width: 100%;
+  height: 32px;
+  justify-content: flex-start;
+  padding: 0 8px;
+  color: var(--ui-color-grey-1000);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .quick-config-back {

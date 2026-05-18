@@ -285,6 +285,25 @@ if (!editorPage.includes('grid-template-columns: repeat(4, 88px);') || !editorPa
 }
 
 if (
+  !editorPage.includes("activeQuickConfig === 'position'") ||
+  !editorPage.includes('X position input') ||
+  !editorPage.includes('Y position input') ||
+  !editorPage.includes('updateSelectedSpriteX') ||
+  !editorPage.includes('selectedSpriteCoordinate')
+) {
+  failures.push('editor sprite quick config must support position editing and coordinate display')
+}
+
+if (
+  !editorPage.includes("activeQuickConfig === 'layer'") ||
+  !editorPage.includes('Layer order options') ||
+  !editorPage.includes('moveSelectedSpriteLayer') ||
+  !editorPage.includes('Bring to front')
+) {
+  failures.push('editor sprite quick config must support layer order actions')
+}
+
+if (
   !editorPage.includes("zoom-in.svg?raw") ||
   !editorPage.includes("zoom-out.svg?raw") ||
   !editorPage.includes("zoom-reset.svg?raw") ||
