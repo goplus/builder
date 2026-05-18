@@ -280,8 +280,8 @@ if (
   failures.push('editor sprite options dropdown must escape panel clipping and keep local menu actions')
 }
 
-if (!editorPage.includes('flex-wrap: wrap;') || !editorPage.includes('align-content: flex-start;')) {
-  failures.push('editor sprites panel must wrap sprite cards instead of overflowing into the stage panel')
+if (!editorPage.includes('grid-template-columns: repeat(4, 88px);') || !editorPage.includes('grid-auto-rows: 88px;')) {
+  failures.push('editor sprites panel must keep fixed 4-column sprite item rows')
 }
 
 if (

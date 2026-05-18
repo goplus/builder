@@ -4144,8 +4144,12 @@ onBeforeUnmount(() => {
 .sprite-list {
   min-height: 0;
   flex: 1;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 88px);
+  grid-auto-rows: 88px;
   align-content: flex-start;
+  align-items: flex-start;
+  justify-content: flex-start;
   gap: 8px;
   padding: 12px;
   overflow: auto;
