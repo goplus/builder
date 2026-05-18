@@ -2542,6 +2542,7 @@ onBeforeUnmount(() => {
             >
               <img :src="stageBackdrop" alt="" />
             </button>
+            <div class="stage-divider" aria-hidden="true"></div>
             <button
               v-for="entry in stageEntries"
               :key="entry.id"
@@ -5701,6 +5702,13 @@ onBeforeUnmount(() => {
   height: 44px;
   border-radius: 4px;
   object-fit: cover;
+}
+
+.stage-divider {
+  width: 40px;
+  height: 1px;
+  flex: none;
+  background: var(--ui-color-dividing-line-2);
 }
 
 .stage-entry {

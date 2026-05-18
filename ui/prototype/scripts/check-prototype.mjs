@@ -353,6 +353,11 @@ if (
   !editorPage.includes('width: 44px;') ||
   !editorPage.includes('height: 44px;') ||
   !editorPage.includes('.stage-thumb:hover:not(.active)') ||
+  !editorPage.includes('<div class="stage-divider" aria-hidden="true"></div>') ||
+  !editorPage.includes('.stage-divider {') ||
+  !editorPage.includes('width: 40px;') ||
+  !editorPage.includes('height: 1px;') ||
+  !editorPage.includes('background: var(--ui-color-dividing-line-2);') ||
   !editorPage.includes('.stage-entry.active {\n  color: var(--ui-color-primary-main);') ||
   !editorPage.includes('.stage-entry:hover:not(.active)') ||
   !editorPage.includes('.stage-entry-icon {\n  width: 24px;\n  height: 24px;') ||
