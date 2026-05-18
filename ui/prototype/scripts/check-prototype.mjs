@@ -460,6 +460,26 @@ if (
 }
 
 if (
+  !editorPage.includes('const addCostumeMenuOpen = ref(false)') ||
+  !editorPage.includes('const costumeMenuOpenFor = ref<string | null>(null)') ||
+  !editorPage.includes('function toggleAddCostumeMenu(event: MouseEvent)') ||
+  !editorPage.includes('function addCostumeFromLocalFile()') ||
+  !editorPage.includes('function toggleCostumeMenu(costumeId: string, event: MouseEvent)') ||
+  !editorPage.includes('function duplicateCostume(costume: AssetItem)') ||
+  !editorPage.includes('function renameCostume(costume: AssetItem)') ||
+  !editorPage.includes('function removeCostume(costume: AssetItem)') ||
+  !editorPage.includes('class="costume-options-menu asset-options-menu"') ||
+  !editorPage.includes('aria-label="Costume options"') ||
+  !editorPage.includes('Select local file') ||
+  !editorPage.includes(':disabled="costumes.length <= 1"') ||
+  !editorPage.includes('@click="renameCostume(selectedCostume)"') ||
+  !editorPage.includes("target.closest('.costume-options-menu')") ||
+  !editorPage.includes("target.closest('.costume-add-menu')")
+) {
+  failures.push('editor costume list must support add-options plus duplicate, rename, and guarded remove actions')
+}
+
+if (
   !editorPage.includes("activeQuickConfig === 'position'") ||
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||

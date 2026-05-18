@@ -213,12 +213,16 @@ const projectMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileLanguage = ref<'English' | '中文'>('English')
 const addSpriteMenuOpen = ref(false)
+const addCostumeMenuOpen = ref(false)
 const addAnimationMenuOpen = ref(false)
+const costumeMenuOpenFor = ref<string | null>(null)
 const animationMenuOpenFor = ref<string | null>(null)
 const animationPendingRemoval = ref<AssetItem | null>(null)
 const preserveRemovedAnimationFrames = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
 const spriteMenuPosition = ref({ top: 0, left: 0 })
+const addCostumeMenuPosition = ref({ top: 0, left: 0 })
+const costumeMenuPosition = ref({ top: 0, left: 0 })
 const addAnimationMenuPosition = ref({ top: 0, left: 0 })
 const animationMenuPosition = ref({ top: 0, left: 0 })
 const codeZoom = ref(1)
@@ -244,6 +248,8 @@ const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
 const profileMenuRef = ref<HTMLElement>()
 const addSpriteMenuRef = ref<HTMLElement>()
+const addCostumeMenuRef = ref<HTMLElement>()
+const costumeMenuRef = ref<HTMLElement>()
 const addAnimationMenuRef = ref<HTMLElement>()
 const animationMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
@@ -574,6 +580,7 @@ const codeLines = computed(() => editorProjectData.value.codeLines)
 const stageCodeLines = computed(() => editorProjectData.value.stageCodeLines)
 
 const selectedCostume = computed(() => costumes.value.find((costume) => costume.id === selectedCostumeId.value) ?? costumes.value[0])
+const costumeMenuCostume = computed(() => costumes.value.find((costume) => costume.id === costumeMenuOpenFor.value) ?? null)
 const selectedAnimation = computed(() => {
   editorRevision.value
   return animations.value.find((animation) => animation.id === selectedAnimationId.value) ?? animations.value[0] ?? null
@@ -995,11 +1002,75 @@ function closeAddSpriteMenu() {
   addSpriteMenuOpen.value = false
 }
 
-function getAddAnimationMenuStyle(): CSSProperties {
+function getMenuPositionStyle(position: { top: number; left: number }): CSSProperties {
   return {
-    top: `${addAnimationMenuPosition.value.top}px`,
-    left: `${addAnimationMenuPosition.value.left}px`
+    top: `${position.top}px`,
+    left: `${position.left}px`
   }
+}
+
+function getAddCostumeMenuStyle(): CSSProperties {
+  return getMenuPositionStyle(addCostumeMenuPosition.value)
+}
+
+function updateAddCostumeMenuPosition(trigger: HTMLElement) {
+  const rect = trigger.getBoundingClientRect()
+  const menuWidth = 184
+  const menuHeight = 44
+  const viewportPadding = 8
+  const left = Math.min(
+    Math.max(viewportPadding, rect.left),
+    Math.max(viewportPadding, window.innerWidth - menuWidth - viewportPadding)
+  )
+  const top = Math.max(viewportPadding, rect.top - menuHeight - 8)
+  addCostumeMenuPosition.value = { top, left }
+}
+
+function toggleAddCostumeMenu(event: MouseEvent) {
+  const trigger = event.currentTarget
+  if (!(trigger instanceof HTMLElement)) return
+  updateAddCostumeMenuPosition(trigger)
+  addCostumeMenuOpen.value = !addCostumeMenuOpen.value
+}
+
+function closeAddCostumeMenu() {
+  addCostumeMenuOpen.value = false
+}
+
+function getCostumeMenuStyle(): CSSProperties {
+  return getMenuPositionStyle(costumeMenuPosition.value)
+}
+
+function updateCostumeMenuPosition(trigger: HTMLElement) {
+  const rect = trigger.getBoundingClientRect()
+  const menuWidth = 184
+  const viewportPadding = 8
+  const left = Math.min(
+    Math.max(viewportPadding, rect.right - menuWidth),
+    Math.max(viewportPadding, window.innerWidth - menuWidth - viewportPadding)
+  )
+  const top = Math.min(rect.bottom + 6, Math.max(viewportPadding, window.innerHeight - 164))
+  costumeMenuPosition.value = { top, left }
+}
+
+function toggleCostumeMenu(costumeId: string, event: MouseEvent) {
+  const trigger = event.currentTarget
+  if (!(trigger instanceof HTMLElement)) return
+  selectedCostumeId.value = costumeId
+  if (costumeMenuOpenFor.value === costumeId) {
+    closeCostumeMenu()
+    return
+  }
+  updateCostumeMenuPosition(trigger)
+  costumeMenuOpenFor.value = costumeId
+}
+
+function closeCostumeMenu() {
+  costumeMenuOpenFor.value = null
+}
+
+function getAddAnimationMenuStyle(): CSSProperties {
+  return getMenuPositionStyle(addAnimationMenuPosition.value)
 }
 
 function updateAddAnimationMenuPosition(trigger: HTMLElement) {
@@ -1032,10 +1103,7 @@ function handleGroupCostumesAsAnimation() {
 }
 
 function getAnimationMenuStyle(): CSSProperties {
-  return {
-    top: `${animationMenuPosition.value.top}px`,
-    left: `${animationMenuPosition.value.left}px`
-  }
+  return getMenuPositionStyle(animationMenuPosition.value)
 }
 
 function updateAnimationMenuPosition(trigger: HTMLElement) {
@@ -1162,6 +1230,57 @@ function getUniqueCostumeName(baseName: string) {
   let suffix = 2
   while (existingNames.has(`${baseName} ${suffix}`)) suffix += 1
   return `${baseName} ${suffix}`
+}
+
+function addCostumeFromLocalFile() {
+  const nextIndex = costumes.value.length + 1
+  const sources = [niuXiaoQiUrl, niuXiaoHuaUrl, flowerUrl, tornadoUrl]
+  const costume: AssetItem = {
+    id: `local-costume-${Date.now()}`,
+    name: getUniqueCostumeName(`Local costume ${nextIndex}`),
+    image: sources[(nextIndex - 1) % sources.length]
+  }
+  costumes.value.push(costume)
+  selectedCostumeId.value = costume.id
+  closeAddCostumeMenu()
+  markPrototypeAction()
+}
+
+function duplicateCostume(costume: AssetItem) {
+  const copy: AssetItem = {
+    ...costume,
+    id: `${costume.id}-copy-${Date.now()}`,
+    name: getUniqueCostumeName(`${costume.name} 2`),
+    frames: costume.frames != null ? [...costume.frames] : undefined
+  }
+  const sourceIndex = costumes.value.findIndex((item) => item.id === costume.id)
+  costumes.value.splice(sourceIndex >= 0 ? sourceIndex + 1 : costumes.value.length, 0, copy)
+  selectedCostumeId.value = copy.id
+  markPrototypeAction()
+}
+
+function renameCostume(costume: AssetItem) {
+  const nextName = window.prompt('Rename costume', costume.name)?.trim()
+  if (!nextName || nextName === costume.name) return
+  costume.name = nextName
+  markPrototypeAction()
+}
+
+function removeCostume(costume: AssetItem) {
+  if (costumes.value.length <= 1) return
+  const currentIndex = costumes.value.findIndex((item) => item.id === costume.id)
+  if (currentIndex < 0) return
+  costumes.value.splice(currentIndex, 1)
+  const nextCostume = costumes.value[Math.min(currentIndex, costumes.value.length - 1)] ?? costumes.value[0]
+  selectedCostumeId.value = nextCostume?.id ?? ''
+  markPrototypeAction()
+}
+
+function handleCostumeMenuAction(action: (costume: AssetItem) => void) {
+  const costume = costumeMenuCostume.value
+  closeCostumeMenu()
+  if (costume == null) return
+  action(costume)
 }
 
 function duplicateAnimation(animation: AssetItem) {
@@ -1353,6 +1472,12 @@ function handleDocumentClick(event: MouseEvent) {
   if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
   if (!profileMenuRef.value?.contains(target)) closeProfileMenu()
   if (!addSpriteMenuRef.value?.contains(target)) closeAddSpriteMenu()
+  if (!addCostumeMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.costume-add-menu'))) {
+    closeAddCostumeMenu()
+  }
+  if (!costumeMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.costume-options-menu'))) {
+    closeCostumeMenu()
+  }
   if (!addAnimationMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.animation-add-menu'))) {
     closeAddAnimationMenu()
   }
@@ -1646,23 +1771,76 @@ onBeforeUnmount(() => {
 
         <div v-else-if="activeEditorTarget === 'sprite' && activeEditorTab === 'costumes'" class="asset-editor-body">
           <aside class="asset-editor-list" aria-label="Costumes list">
-            <button
+            <div
               v-for="costume in costumes"
               :key="costume.id"
               class="editor-asset-item"
-              :class="{ active: selectedCostumeId === costume.id }"
-              type="button"
-              @click="selectedCostumeId = costume.id"
+              :class="{ active: selectedCostumeId === costume.id, 'costume-asset-item': true }"
             >
-              <img :src="costume.image" :alt="costume.name" />
-              <span>{{ costume.name }}</span>
+              <button class="asset-select-button" type="button" @click="selectedCostumeId = costume.id">
+                <img :src="costume.image" :alt="costume.name" />
+                <span>{{ costume.name }}</span>
+              </button>
+              <button
+                v-if="selectedCostumeId === costume.id"
+                class="asset-item-menu"
+                type="button"
+                aria-label="Costume options"
+                :aria-expanded="costumeMenuOpenFor === costume.id"
+                aria-haspopup="menu"
+                @click.stop="toggleCostumeMenu(costume.id, $event)"
+                v-html="moreIcon"
+              ></button>
+            </div>
+            <Teleport to="body">
+              <div
+                v-if="costumeMenuCostume != null"
+                ref="costumeMenuRef"
+                class="costume-options-menu asset-options-menu"
+                :style="getCostumeMenuStyle()"
+                role="menu"
+                @click.stop
+              >
+                <button class="asset-options-item" type="button" role="menuitem" @click="handleCostumeMenuAction(duplicateCostume)">
+                  Duplicate
+                </button>
+                <button class="asset-options-item" type="button" role="menuitem" @click="handleCostumeMenuAction(renameCostume)">
+                  Rename
+                </button>
+                <button
+                  class="asset-options-item danger"
+                  type="button"
+                  role="menuitem"
+                  :disabled="costumes.length <= 1"
+                  @click="handleCostumeMenuAction(removeCostume)"
+                >
+                  Remove
+                </button>
+              </div>
+            </Teleport>
+            <button
+              ref="addCostumeMenuRef"
+              class="asset-add-button"
+              type="button"
+              aria-label="Add costume"
+              :aria-expanded="addCostumeMenuOpen"
+              aria-haspopup="menu"
+              @click.stop="toggleAddCostumeMenu"
+            >
+              +
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add costume">+</button>
+            <Teleport to="body">
+              <div v-if="addCostumeMenuOpen" class="costume-add-menu asset-add-menu" :style="getAddCostumeMenuStyle()" role="menu" @click.stop>
+                <button class="asset-add-menu-item" type="button" role="menuitem" @click="addCostumeFromLocalFile">
+                  Select local file
+                </button>
+              </div>
+            </Teleport>
           </aside>
           <section class="asset-detail" aria-label="Costume detail">
             <header class="asset-detail-header">
               <h2>{{ selectedCostume.name }}</h2>
-              <button type="button" aria-label="Rename costume" v-html="editIcon"></button>
+              <button type="button" aria-label="Rename costume" @click="renameCostume(selectedCostume)" v-html="editIcon"></button>
             </header>
             <div class="costume-preview">
               <img :src="selectedCostume.image" :alt="selectedCostume.name" />
@@ -3718,7 +3896,8 @@ onBeforeUnmount(() => {
   line-height: 22px;
 }
 
-.animation-asset-item {
+.animation-asset-item,
+.costume-asset-item {
   overflow: visible;
 }
 
@@ -3789,6 +3968,37 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-300);
 }
 
+.asset-add-menu {
+  position: fixed;
+  z-index: 70;
+  box-sizing: border-box;
+  width: 184px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 4px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.asset-add-menu-item {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  text-align: left;
+}
+
+.asset-add-menu-item:hover {
+  background: var(--ui-color-grey-300);
+}
+
 .animation-options-menu {
   position: fixed;
   z-index: 80;
@@ -3825,6 +4035,49 @@ onBeforeUnmount(() => {
 
 .animation-options-item.danger {
   color: var(--ui-color-danger-main);
+}
+
+.asset-options-menu {
+  position: fixed;
+  z-index: 80;
+  min-width: 184px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.asset-options-item {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px 10px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.asset-options-item:hover:not(:disabled) {
+  background: var(--ui-color-grey-300);
+}
+
+.asset-options-item + .asset-options-item {
+  margin-top: 1px;
+}
+
+.asset-options-item.danger {
+  color: var(--ui-color-danger-main);
+}
+
+.asset-options-item:disabled {
+  color: var(--ui-color-grey-600);
+  cursor: not-allowed;
 }
 
 .asset-detail {
