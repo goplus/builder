@@ -319,6 +319,20 @@ if (
 }
 
 if (
+  !editorPage.includes('.stage-thumb.active {') ||
+  !editorPage.includes('background: var(--ui-color-primary-200);') ||
+  !editorPage.includes('margin: 8px 0 10px;') ||
+  !editorPage.includes('padding: 5px 8px;') ||
+  !editorPage.includes('.stage-entry.active {\n  color: var(--ui-color-primary-main);') ||
+  !editorPage.includes('.stage-entry:hover:not(.active)') ||
+  !editorPage.includes('.stage-entry-icon {\n  width: 24px;\n  height: 24px;') ||
+  editorPage.includes('.stage-entry.active {\n  color: var(--ui-color-grey-800);') ||
+  editorPage.includes('.stage-entry:hover {\n  background: var(--ui-color-grey-300);')
+) {
+  failures.push('stage panel entries must mirror StagePanel transparent entry states and UIIcon sizing')
+}
+
+if (
   !editorPage.includes('category-rail flex flex-none flex-col gap-3 border-r border-grey-400 px-1 py-3') ||
   !editorPage.includes('category flex h-13 w-13 cursor-pointer flex-col items-center justify-center rounded-md') ||
   !editorPage.includes("category-icons/event.svg?raw") ||

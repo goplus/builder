@@ -5475,6 +5475,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .stage-panel-header {
@@ -5484,11 +5486,12 @@ onBeforeUnmount(() => {
 .stage-thumb {
   width: 40px;
   height: 40px;
-  margin: 12px 0;
+  margin: 8px 0 10px;
   border: 1px solid var(--ui-color-grey-400);
   border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-grey-100);
   padding: 3px;
+  transition: border-color 0.1s, background 0.1s;
 }
 
 .stage-thumb.active {
@@ -5505,30 +5508,31 @@ onBeforeUnmount(() => {
 }
 
 .stage-entry {
-  width: 56px;
-  height: 56px;
+  width: 100%;
+  min-height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
+  border: 0;
   color: var(--ui-color-grey-800);
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  padding: 4px;
+  background: transparent;
+  padding: 5px 8px;
+  transition: color 0.1s;
 }
 
 .stage-entry.active {
-  color: var(--ui-color-grey-800);
+  color: var(--ui-color-primary-main);
 }
 
-.stage-entry:hover {
-  background: var(--ui-color-grey-300);
+.stage-entry:hover:not(.active) {
+  color: var(--ui-color-grey-900);
 }
 
 .stage-entry-icon {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
