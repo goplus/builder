@@ -219,6 +219,9 @@ const costumeMenuOpenFor = ref<string | null>(null)
 const animationMenuOpenFor = ref<string | null>(null)
 const animationPendingRemoval = ref<AssetItem | null>(null)
 const preserveRemovedAnimationFrames = ref(false)
+const spritePendingRename = ref<SpriteCard | null>(null)
+const draftSpriteRenameName = ref('')
+const spriteRenameError = ref('')
 const spriteMenuOpenFor = ref<string | null>(null)
 const spriteMenuPosition = ref({ top: 0, left: 0 })
 const addCostumeMenuPosition = ref({ top: 0, left: 0 })
@@ -254,6 +257,7 @@ const addAnimationMenuRef = ref<HTMLElement>()
 const animationMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
 const mapSpriteNameInputRef = ref<HTMLInputElement>()
+const spriteRenameInputRef = ref<HTMLInputElement>()
 const saveStateTimeouts: number[] = []
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
@@ -1414,11 +1418,45 @@ function duplicateSprite(sprite: SpriteCard) {
   markPrototypeAction()
 }
 
-function renameSprite(sprite: SpriteCard) {
-  const nextName = window.prompt('Rename sprite', sprite.name)?.trim()
-  if (!nextName) return
+async function renameSprite(sprite: SpriteCard) {
+  spritePendingRename.value = sprite
+  draftSpriteRenameName.value = sprite.name
+  spriteRenameError.value = ''
+  await nextTick()
+  spriteRenameInputRef.value?.focus()
+  spriteRenameInputRef.value?.select()
+}
+
+function cancelSpriteRename() {
+  spritePendingRename.value = null
+  draftSpriteRenameName.value = ''
+  spriteRenameError.value = ''
+}
+
+function validateSpriteRename(nextName: string, sprite: SpriteCard) {
+  if (nextName === '') return 'Name is required.'
+  if (nextName !== sprite.name && sprites.value.some((item) => item.id !== sprite.id && item.name === nextName)) {
+    return 'A sprite with this name already exists.'
+  }
+  return ''
+}
+
+function submitSpriteRename() {
+  const sprite = spritePendingRename.value
+  if (sprite == null) return
+  const nextName = draftSpriteRenameName.value.trim()
+  const error = validateSpriteRename(nextName, sprite)
+  if (error !== '') {
+    spriteRenameError.value = error
+    return
+  }
+  if (nextName === sprite.name) {
+    cancelSpriteRename()
+    return
+  }
   sprite.name = nextName
   sprite.shortName = nextName.length > 10 ? `${nextName.slice(0, 8)}...` : nextName
+  cancelSpriteRename()
   markPrototypeAction()
 }
 
@@ -2678,6 +2716,33 @@ onBeforeUnmount(() => {
         </section>
       </div>
     </Teleport>
+    <Teleport to="body">
+      <div v-if="spritePendingRename != null" class="prototype-modal-backdrop" role="presentation" @click.self="cancelSpriteRename">
+        <section class="prototype-modal" role="dialog" aria-modal="true" aria-labelledby="rename-sprite-title">
+          <h2 id="rename-sprite-title">Rename</h2>
+          <form class="prototype-form" @submit.prevent="submitSpriteRename">
+            <label class="prototype-field">
+              <span>Name</span>
+              <input
+                ref="spriteRenameInputRef"
+                v-model="draftSpriteRenameName"
+                type="text"
+                aria-label="Sprite name"
+                :aria-invalid="spriteRenameError !== ''"
+                @input="spriteRenameError = ''"
+                @keydown.esc.prevent="cancelSpriteRename"
+              />
+            </label>
+            <p class="prototype-field-tip">Use letters, numbers, spaces, hyphens, or underscores.</p>
+            <p v-if="spriteRenameError !== ''" class="prototype-field-error">{{ spriteRenameError }}</p>
+            <div class="prototype-modal-actions">
+              <PrototypeButton type="white" size="medium" @click="cancelSpriteRename">Cancel</PrototypeButton>
+              <PrototypeButton type="primary" size="medium" @click="submitSpriteRename">Confirm</PrototypeButton>
+            </div>
+          </form>
+        </section>
+      </div>
+    </Teleport>
   </main>
 </template>
 
@@ -3139,6 +3204,55 @@ onBeforeUnmount(() => {
   width: 16px;
   height: 16px;
   accent-color: var(--ui-color-primary-main);
+}
+
+.prototype-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.prototype-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.prototype-field input {
+  height: 36px;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 0 10px;
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+  outline: none;
+}
+
+.prototype-field input:focus {
+  border-color: var(--ui-color-primary-main);
+  box-shadow: var(--ui-box-shadow-control);
+}
+
+.prototype-field input[aria-invalid='true'] {
+  border-color: var(--ui-color-danger-main);
+}
+
+.prototype-field-tip,
+.prototype-field-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.prototype-field-tip {
+  color: var(--ui-color-grey-700);
+}
+
+.prototype-field-error {
+  color: var(--ui-color-danger-main);
 }
 
 .prototype-modal-actions {

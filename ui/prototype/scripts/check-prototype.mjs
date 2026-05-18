@@ -480,6 +480,20 @@ if (
 }
 
 if (
+  !editorPage.includes('const spritePendingRename = ref<SpriteCard | null>(null)') ||
+  !editorPage.includes('const draftSpriteRenameName = ref') ||
+  !editorPage.includes('const spriteRenameError = ref') ||
+  !editorPage.includes('async function renameSprite(sprite: SpriteCard)') ||
+  !editorPage.includes('function submitSpriteRename()') ||
+  !editorPage.includes('role="dialog" aria-modal="true" aria-labelledby="rename-sprite-title"') ||
+  !editorPage.includes('aria-label="Sprite name"') ||
+  !editorPage.includes('A sprite with this name already exists.') ||
+  editorPage.includes("window.prompt('Rename sprite'")
+) {
+  failures.push('editor sprite rename action must use the local rename modal instead of a browser prompt')
+}
+
+if (
   !editorPage.includes("activeQuickConfig === 'position'") ||
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||
