@@ -1747,10 +1747,10 @@ onBeforeUnmount(() => {
 
     <section v-if="activeEditMode === 'default'" class="editor-main">
       <section class="code-card">
-        <header class="code-tabs flex h-[47px] items-end border-b border-grey-400 px-2">
+        <header class="code-tabs flex h-[47px] items-end overflow-hidden border-b border-grey-400 px-2">
           <UITabs
             v-if="activeEditorTarget === 'sprite'"
-            class="h-full"
+            class="h-full flex-1 gap-6"
             :value="activeEditorTab"
             @update:value="(tab) => selectEditorTab(tab as EditorTab)"
           >
@@ -1760,7 +1760,7 @@ onBeforeUnmount(() => {
           </UITabs>
           <UITabs
             v-else
-            class="h-full"
+            class="h-full flex-1 gap-6"
             :value="activeStageTab"
             @update:value="(tab) => selectStage(tab as StageTab)"
           >

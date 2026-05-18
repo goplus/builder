@@ -41,7 +41,7 @@ provide(prototypeTabsCtxKey, {
 </script>
 
 <template>
-  <ul class="flex gap-6 px-2" :class="props.class">
+  <ul class="m-0 flex min-w-0 list-none overflow-hidden px-2" :class="props.class">
     <slot />
   </ul>
 </template>

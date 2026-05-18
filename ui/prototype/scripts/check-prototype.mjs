@@ -312,8 +312,14 @@ if (
   !editorPage.includes("import UITabs from '@/components/ui/UITabs.vue'") ||
   !editorPage.includes("import UITab from '@/components/ui/UITab.vue'") ||
   !editorPage.includes('<UITabs') ||
+  !editorPage.includes('code-tabs flex h-[47px] items-end overflow-hidden') ||
+  !editorPage.includes('class="h-full flex-1 gap-6"') ||
   !editorPage.includes('<UITab value="costumes">Costumes</UITab>') ||
   editorPage.includes('class="tab" :class') ||
+  !prototypeTab.includes('h-full min-w-0') ||
+  !prototypeTab.includes('overflow-hidden') ||
+  !prototypeTab.includes('whitespace-nowrap') ||
+  !read('src/components/ui/UITabs.vue').includes('m-0 flex min-w-0 list-none overflow-hidden') ||
   !prototypeTab.includes('text-xl/8') ||
   !prototypeTab.includes('text-grey-800 hover:text-grey-1000') ||
   !prototypeTab.includes('border-grey-1000 text-grey-1000')
