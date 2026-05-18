@@ -319,6 +319,15 @@ if (
 }
 
 if (
+  !editorPage.includes('<span class="project-name-edit-icon" v-html="editIcon"></span>') ||
+  editorPage.includes('✎') ||
+  !editorPage.includes('.map-config-icon.collapse :deep(svg)') ||
+  editorPage.includes('.map-config-icon svg {\n  width: 16px;\n  height: 16px;\n  fill: none;')
+) {
+  failures.push('editor edit icons must use the component-library edit SVG without ad-hoc stroke styling')
+}
+
+if (
   !editorPage.includes("activeQuickConfig === 'position'") ||
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||

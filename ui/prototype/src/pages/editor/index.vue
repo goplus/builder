@@ -1228,7 +1228,7 @@ onBeforeUnmount(() => {
           @click="startProjectNameEdit"
         >
           <span>{{ projectDisplayName }}</span>
-          <span class="project-name-edit-icon">✎</span>
+          <span class="project-name-edit-icon" v-html="editIcon"></span>
         </button>
         <form v-else class="project-name-form" @submit.prevent="submitProjectNameEdit">
           <input
@@ -2443,12 +2443,17 @@ onBeforeUnmount(() => {
 .project-name-edit-icon {
   display: none;
   color: var(--ui-color-grey-800);
-  font-size: 14px;
+}
+
+.project-name-edit-icon :deep(svg) {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .project-name-trigger:hover .project-name-edit-icon,
 .project-name-trigger:focus-visible .project-name-edit-icon {
-  display: inline;
+  display: inline-flex;
 }
 
 .project-name-form {
@@ -3172,21 +3177,21 @@ onBeforeUnmount(() => {
   color: var(--ui-color-grey-1000);
 }
 
-.map-config-icon :deep(svg),
-.map-config-icon svg {
+.map-config-icon :deep(svg) {
   width: 16px;
   height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  display: block;
 }
 
 .map-config-icon.collapse :deep(svg),
 .map-config-icon.collapse svg {
   width: 18px;
   height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .map-sprite-name-form {
