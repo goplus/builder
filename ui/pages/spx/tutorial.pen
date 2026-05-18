@@ -22,7 +22,7 @@
           "id": "ong2L",
           "type": "ref",
           "ref": "P:WiWwa",
-          "x": 0.0001975079347187812,
+          "x": 0.00018589109107464467,
           "y": 0,
           "children": [
             {
@@ -121,14 +121,14 @@
                       "ref": "P:OHwu4",
                       "x": 0.07806559948336479,
                       "y": 0,
-                      "content": "All Tutorials"
+                      "content": "hrllo"
                     },
                     {
                       "type": "frame",
                       "id": "ahdiv",
                       "name": "Course container",
                       "clip": true,
-                      "width": 988,
+                      "width": 987.9219405682865,
                       "fill": "$P:grey100",
                       "layout": "vertical",
                       "gap": "$P:space-5",
@@ -154,7 +154,12 @@
                                 {
                                   "id": "gqB7m",
                                   "type": "ref",
-                                  "ref": "P:XzIf9"
+                                  "ref": "P:XzIf9",
+                                  "descendants": {
+                                    "P:W0vhG5": {
+                                      "fill": "$P:blue600"
+                                    }
+                                  }
                                 }
                               ]
                             },
