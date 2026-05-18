@@ -228,8 +228,7 @@ export class Animation extends Disposable {
     }
     const soundName = sounds.find((s) => s.id === this.sound)?.name
     if (soundName != null) {
-      config.onPlay = { play: soundName }
-      if (this.soundLoop) config.onPlay.loop = true
+      config.onPlay = { play: soundName, loop: this.soundLoop }
     }
     if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]
