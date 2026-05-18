@@ -1697,7 +1697,6 @@ onBeforeUnmount(() => {
 }
 
 .icon-button svg,
-.mode-button :deep(svg),
 .navbar-title svg,
 .run-button svg,
 .publish-button svg {
@@ -1928,6 +1927,14 @@ onBeforeUnmount(() => {
   width: 20px;
   height: 20px;
   display: flex;
+}
+
+.mode-button :deep(svg) {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  stroke: none;
+  animation: none;
 }
 
 .mode-button.active {
