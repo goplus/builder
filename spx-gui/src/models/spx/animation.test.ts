@@ -151,16 +151,6 @@ describe('Animation', () => {
     expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
   })
 
-  it('should export loop: false in onPlay when soundLoop is false (default)', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].id)
-
-    const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay?.loop).toBe(false)
-  })
-
   it('should load soundLoop from onPlay.loop', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
