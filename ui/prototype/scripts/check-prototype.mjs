@@ -265,6 +265,17 @@ if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: 
   failures.push('editor navbar must use the real grey-300 background token')
 }
 
+if (
+  !editorPage.includes('<Teleport to="body">') ||
+  !editorPage.includes('spriteMenuPosition') ||
+  !editorPage.includes('position: fixed;') ||
+  !editorPage.includes('toggleSpriteVisibility') ||
+  !editorPage.includes('duplicateSprite') ||
+  !editorPage.includes('removeSprite')
+) {
+  failures.push('editor sprite options dropdown must escape panel clipping and keep local menu actions')
+}
+
 if (!editorPage.includes('.stage-tools button') || !editorPage.includes('color: var(--ui-color-grey-1000);')) {
   failures.push('editor quick config controls must use the real grey-1000 icon token')
 }

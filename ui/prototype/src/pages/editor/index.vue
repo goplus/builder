@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type CSSProperties } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getProject } from '@/apis/project'
@@ -148,6 +148,7 @@ const profileMenuOpen = ref(false)
 const profileLanguage = ref<'English' | '中文'>('English')
 const addSpriteMenuOpen = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
+const spriteMenuPosition = ref({ top: 0, left: 0 })
 const saveState = ref<SaveState>('saved')
 const editorRevision = ref(0)
 const selectedSpriteId = ref('niu-xiao-qi')
@@ -517,6 +518,7 @@ const quickConfigTools: Array<{ id: QuickConfigType; label: string; icon: string
 
 const selectedSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedSpriteId.value) ?? sprites.value[0])
 const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites.value[0])
+const spriteMenuSprite = computed(() => sprites.value.find((sprite) => sprite.id === spriteMenuOpenFor.value))
 const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
 const stageBackdrop = computed(() => selectedBackdrop.value?.image ?? project.value.thumbnail)
 const selectedSpriteFrameStyle = computed(() => ({
@@ -775,10 +777,36 @@ function closeAddSpriteMenu() {
   addSpriteMenuOpen.value = false
 }
 
-function toggleSpriteMenu(spriteId: string) {
+function getSpriteMenuStyle(): CSSProperties {
+  return {
+    top: `${spriteMenuPosition.value.top}px`,
+    left: `${spriteMenuPosition.value.left}px`
+  }
+}
+
+function updateSpriteMenuPosition(trigger: HTMLElement) {
+  const rect = trigger.getBoundingClientRect()
+  const menuWidth = 184
+  const viewportPadding = 8
+  const left = Math.min(
+    Math.max(viewportPadding, rect.right - menuWidth),
+    Math.max(viewportPadding, window.innerWidth - menuWidth - viewportPadding)
+  )
+  const top = Math.min(rect.bottom + 6, Math.max(viewportPadding, window.innerHeight - 220))
+  spriteMenuPosition.value = { top, left }
+}
+
+function toggleSpriteMenu(spriteId: string, event: MouseEvent) {
+  const trigger = event.currentTarget
+  if (!(trigger instanceof HTMLElement)) return
   activeEditorTarget.value = 'sprite'
   selectedSpriteId.value = spriteId
-  spriteMenuOpenFor.value = spriteMenuOpenFor.value === spriteId ? null : spriteId
+  if (spriteMenuOpenFor.value === spriteId) {
+    closeSpriteMenu()
+    return
+  }
+  updateSpriteMenuPosition(trigger)
+  spriteMenuOpenFor.value = spriteId
 }
 
 function addLocalSprite(source: 'local' | 'library' | 'ai') {
@@ -854,8 +882,14 @@ function markPrototypeAction() {
 }
 
 function handleSpriteMenuAction(action: () => void) {
-  closeSpriteMenu()
   action()
+  closeSpriteMenu()
+}
+
+function handleOpenSpriteMenuAction(action: (sprite: SpriteCard) => void) {
+  const sprite = spriteMenuSprite.value
+  if (sprite == null) return
+  handleSpriteMenuAction(() => action(sprite))
 }
 
 function toggleSpriteVisibility(sprite: SpriteCard) {
@@ -937,7 +971,9 @@ function handleDocumentClick(event: MouseEvent) {
   if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
   if (!profileMenuRef.value?.contains(target)) closeProfileMenu()
   if (!addSpriteMenuRef.value?.contains(target)) closeAddSpriteMenu()
-  if (!spriteMenuRef.value?.contains(target)) closeSpriteMenu()
+  if (!spriteMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.sprite-options-menu'))) {
+    closeSpriteMenu()
+  }
 }
 
 async function runProject() {
@@ -1605,26 +1641,9 @@ onBeforeUnmount(() => {
                     aria-label="Options button"
                     :aria-expanded="spriteMenuOpenFor === sprite.id"
                     aria-haspopup="menu"
-                    @click="toggleSpriteMenu(sprite.id)"
+                    @click="toggleSpriteMenu(sprite.id, $event)"
                     v-html="moreIcon"
                   ></button>
-                  <span v-if="spriteMenuOpenFor === sprite.id" class="sprite-options-menu" role="menu">
-                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(() => toggleSpriteVisibility(sprite))">
-                      {{ sprite.hidden ? 'Show' : 'Hide' }}
-                    </button>
-                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(() => duplicateSprite(sprite))">
-                      Duplicate
-                    </button>
-                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(() => renameSprite(sprite))">
-                      Rename
-                    </button>
-                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(() => saveSpriteToLibrary(sprite))">
-                      Save to asset library
-                    </button>
-                    <button class="sprite-options-item danger" type="button" role="menuitem" @click="handleSpriteMenuAction(() => removeSprite(sprite))">
-                      Remove
-                    </button>
-                  </span>
                 </span>
                 <img :src="sprite.image" :alt="sprite.name" />
                 <span class="sprite-title">
@@ -1659,6 +1678,31 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </section>
+        <Teleport to="body">
+          <div
+            v-if="spriteMenuSprite != null"
+            class="sprite-options-menu"
+            :style="getSpriteMenuStyle()"
+            role="menu"
+            @click.stop
+          >
+            <button class="sprite-options-item" type="button" role="menuitem" @click="handleOpenSpriteMenuAction(toggleSpriteVisibility)">
+              {{ spriteMenuSprite.hidden ? 'Show' : 'Hide' }}
+            </button>
+            <button class="sprite-options-item" type="button" role="menuitem" @click="handleOpenSpriteMenuAction(duplicateSprite)">
+              Duplicate
+            </button>
+            <button class="sprite-options-item" type="button" role="menuitem" @click="handleOpenSpriteMenuAction(renameSprite)">
+              Rename
+            </button>
+            <button class="sprite-options-item" type="button" role="menuitem" @click="handleOpenSpriteMenuAction(saveSpriteToLibrary)">
+              Save to asset library
+            </button>
+            <button class="sprite-options-item danger" type="button" role="menuitem" @click="handleOpenSpriteMenuAction(removeSprite)">
+              Remove
+            </button>
+          </div>
+        </Teleport>
       </aside>
     </section>
 
@@ -3920,10 +3964,8 @@ onBeforeUnmount(() => {
 }
 
 .sprite-options-menu {
-  position: absolute;
-  top: 26px;
-  right: 0;
-  z-index: 20;
+  position: fixed;
+  z-index: 80;
   min-width: 184px;
   display: flex;
   flex-direction: column;
