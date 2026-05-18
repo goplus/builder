@@ -11,7 +11,7 @@ import type { Sound } from './sound'
 type ActionConfig = {
   /** Sound name to play */
   play?: string
-  /** Whether to loop the sound; for onStart defaults to false, for onPlay defaults to true */
+  /** Whether to loop the sound */
   loop?: boolean
   // not supported by builder:
   costumes?: unknown
@@ -33,13 +33,13 @@ export type RawAnimationConfig = {
   frameFrom?: string
   frameTo?: string
   frameFps?: number
-  onPlay?: ActionConfig
+  onStart?: ActionConfig
 
   // legacy APIs, for compatibility only:
   from?: number | string
   to?: number | string
   fps?: number
-  onStart?: ActionConfig
+  onPlay?: ActionConfig
 
   // not supported by builder:
   duration?: number
@@ -181,14 +181,14 @@ export class Animation extends Disposable {
     if (anitype != null) console.warn(`unsupported field: anitype for animation ${name}`)
     let soundId: string | undefined = undefined
     let soundLoop = false
-    // onPlay is the current API; onStart is legacy for backward compatibility
-    const soundName = onPlay?.play ?? onStart?.play
+    // onStart is the current API; onPlay is legacy for backward compatibility (TODO: remove after goplus/spx#1574 is fixed)
+    const soundName = onStart?.play ?? onPlay?.play
     if (soundName != null) {
       const sound = sounds.find((s) => s.name === soundName)
       if (sound == null) console.warn(`Sound ${soundName} not found when creating animation ${name}`)
       else {
         soundId = sound.id
-        soundLoop = onPlay?.loop ?? false
+        soundLoop = onStart?.loop ?? false
       }
     }
     const animation = new Animation(name, {
@@ -230,7 +230,7 @@ export class Animation extends Disposable {
     }
     const soundName = sounds.find((s) => s.id === this.sound)?.name
     if (soundName != null) {
-      config.onPlay = { play: soundName, loop: this.soundLoop }
+      config.onStart = { play: soundName, loop: this.soundLoop }
     }
     if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]

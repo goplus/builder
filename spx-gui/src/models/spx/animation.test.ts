@@ -129,18 +129,18 @@ describe('Animation', () => {
     expect(exportedId).toBeUndefined()
   })
 
-  it('should export sound binding using onPlay', () => {
+  it('should export sound binding using onStart', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
     animation.setSound(project.sounds[0].id)
 
     const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: false })
-    expect(config.onStart).toBeUndefined()
+    expect(config.onStart).toEqual({ play: project.sounds[0].name, loop: false })
+    expect(config.onPlay).toBeUndefined()
   })
 
-  it('should export loop: true in onPlay when soundLoop is true', () => {
+  it('should export loop: true in onStart when soundLoop is true', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
@@ -148,10 +148,10 @@ describe('Animation', () => {
     animation.setSoundLoop(true)
 
     const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
+    expect(config.onStart).toEqual({ play: project.sounds[0].name, loop: true })
   })
 
-  it('should load soundLoop from onPlay.loop', () => {
+  it('should load soundLoop from onStart.loop', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const costumes = sprite.costumes
@@ -162,7 +162,7 @@ describe('Animation', () => {
       {
         frameFrom: costumes[0].name,
         frameTo: costumes[0].name,
-        onPlay: { play: sounds[0].name, loop: true }
+        onStart: { play: sounds[0].name, loop: true }
       },
       costumes,
       { sounds }
@@ -182,7 +182,7 @@ describe('Animation', () => {
       {
         frameFrom: costumes[0].name,
         frameTo: costumes[0].name,
-        onPlay: { play: sounds[0].name }
+        onStart: { play: sounds[0].name }
       },
       costumes,
       { sounds }
@@ -190,7 +190,7 @@ describe('Animation', () => {
     expect(animation.soundLoop).toBe(false)
   })
 
-  it('should load sound binding from legacy onStart for backward compatibility', () => {
+  it('should load sound binding from legacy onPlay for backward compatibility', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const costumes = sprite.costumes
@@ -201,7 +201,7 @@ describe('Animation', () => {
       {
         frameFrom: costumes[0].name,
         frameTo: costumes[0].name,
-        onStart: { play: sounds[0].name }
+        onPlay: { play: sounds[0].name }
       },
       costumes,
       { sounds }
