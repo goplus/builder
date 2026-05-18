@@ -133,6 +133,7 @@ const profileLanguage = ref<'English' | '中文'>('English')
 const addSpriteMenuOpen = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
 const saveState = ref<SaveState>('saved')
+const editorRevision = ref(0)
 const selectedSpriteId = ref('niu-xiao-qi')
 const selectedCostumeId = ref('niu-xiao-qi-default')
 const selectedAnimationId = ref('niu-run')
@@ -449,9 +450,10 @@ const codeLines = computed(() => editorProjectData.value.codeLines)
 const stageCodeLines = computed(() => editorProjectData.value.stageCodeLines)
 
 const selectedCostume = computed(() => costumes.value.find((costume) => costume.id === selectedCostumeId.value) ?? costumes.value[0])
-const selectedAnimation = computed(
-  () => animations.value.find((animation) => animation.id === selectedAnimationId.value) ?? animations.value[0] ?? null
-)
+const selectedAnimation = computed(() => {
+  editorRevision.value
+  return animations.value.find((animation) => animation.id === selectedAnimationId.value) ?? animations.value[0] ?? null
+})
 const selectedBackdrop = computed(() => backdrops.value.find((backdrop) => backdrop.id === selectedBackdropId.value) ?? backdrops.value[0])
 const selectedSound = computed(() => sounds.value.find((sound) => sound.id === selectedSoundId.value) ?? sounds.value[0] ?? null)
 const selectedWidget = computed(() => widgets.value.find((widget) => widget.id === selectedWidgetId.value) ?? widgets.value[0])
@@ -706,6 +708,29 @@ function addLocalSprite(source: 'local' | 'library' | 'ai') {
   selectedSpriteId.value = sprite.id
   activeEditorTarget.value = 'sprite'
   closeAddSpriteMenu()
+}
+
+function groupCostumesAsAnimation() {
+  const nextIndex = animations.value.length + 1
+  const sourceFrames = costumes.value.map((costume) => costume.image)
+  const fallbackFrame = selectedSprite.value?.image ?? project.value.thumbnail
+  const frames = sourceFrames.length > 0 ? sourceFrames : [fallbackFrame]
+  const animation: AssetItem = {
+    id: `animation-${Date.now()}`,
+    name: `animation${nextIndex}`,
+    image: frames[0],
+    frames: frames.length > 1 ? frames : [frames[0], frames[0]],
+    duration: `${Math.max(0.2, frames.length * 0.2).toFixed(1)}s`,
+    binding: '0',
+    sound: 'None'
+  }
+
+  animations.value.push(animation)
+  selectedAnimationId.value = animation.id
+  editorRevision.value += 1
+  activeEditorTarget.value = 'sprite'
+  activeEditorTab.value = 'animations'
+  markPrototypeAction()
 }
 
 function closeSpriteMenu() {
@@ -1094,7 +1119,7 @@ onBeforeUnmount(() => {
               <img :src="animation.image" :alt="animation.name" />
               <span>{{ animation.name }}</span>
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add animation">+</button>
+            <button class="asset-add-button" type="button" aria-label="Add animation" @click="groupCostumesAsAnimation">+</button>
           </aside>
           <section v-if="selectedAnimation != null" class="asset-detail" aria-label="Animation detail">
             <header class="asset-detail-header">
