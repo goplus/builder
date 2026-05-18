@@ -1961,7 +1961,7 @@ onBeforeUnmount(() => {
             >
               <button class="asset-select-button" type="button" @click="selectedCostumeId = costume.id">
                 <img :src="costume.image" :alt="costume.name" />
-                <span>{{ costume.name }}</span>
+                <span class="asset-item-title">{{ costume.name }}</span>
               </button>
               <button
                 v-if="selectedCostumeId === costume.id"
@@ -2040,7 +2040,7 @@ onBeforeUnmount(() => {
             >
               <button class="asset-select-button" type="button" @click="selectedAnimationId = animation.id">
                 <img :src="animation.image" :alt="animation.name" />
-                <span>{{ animation.name }}</span>
+                <span class="asset-item-title">{{ animation.name }}</span>
               </button>
               <button
                 v-if="selectedAnimationId === animation.id"
@@ -2230,7 +2230,7 @@ onBeforeUnmount(() => {
               @click="selectedBackdropId = backdrop.id"
             >
               <img :src="backdrop.image" :alt="backdrop.name" />
-              <span>{{ backdrop.name }}</span>
+              <span class="asset-item-title">{{ backdrop.name }}</span>
             </button>
             <button class="asset-add-button" type="button" aria-label="Add backdrop">+</button>
           </aside>
@@ -2260,7 +2260,7 @@ onBeforeUnmount(() => {
                   <path d="M19.661 14.8859L9.58496 21.0519C7.57996 22.2789 5.00098 20.8398 5.00098 18.4938V6.50477C5.00098 4.15877 7.57996 2.71991 9.58496 3.94691L19.661 10.1129C21.446 11.2059 21.446 13.7939 19.661 14.8859Z" fill="currentColor" />
                 </svg>
               </span>
-              <span>{{ sound.name }}</span>
+              <span class="asset-item-title">{{ sound.name }}</span>
             </button>
             <button class="asset-add-button" type="button" aria-label="Add sound">+</button>
           </aside>
@@ -2319,7 +2319,7 @@ onBeforeUnmount(() => {
               @click="selectedWidgetId = widget.id"
             >
               <span class="widget-icon" v-html="widgetPanelIcon"></span>
-              <span>{{ widget.name }}</span>
+              <span class="asset-item-title">{{ widget.name }}</span>
             </button>
             <button class="asset-add-button" type="button" aria-label="Add widget">+</button>
           </aside>
@@ -4428,7 +4428,7 @@ onBeforeUnmount(() => {
   display: block;
 }
 
-.editor-asset-item span {
+.editor-asset-item .asset-item-title {
   width: 100%;
   height: 22px;
   overflow: hidden;

@@ -387,6 +387,16 @@ if (
 }
 
 if (
+  !editorPage.includes('class="editor-asset-item sound-asset-item"') ||
+  !editorPage.includes('class="sound-wave-icon"') ||
+  !editorPage.includes('class="asset-item-title">{{ sound.name }}</span>') ||
+  !editorPage.includes('.editor-asset-item .asset-item-title') ||
+  /\\.editor-asset-item\\s+span\\s*\\{/.test(editorPage)
+) {
+  failures.push('editor sound asset item must preserve the UIEditorSoundItem player size and scope text styles to the title only')
+}
+
+if (
   !editorPage.includes('category-rail flex flex-none flex-col gap-3 border-r border-grey-400 px-1 py-3') ||
   !editorPage.includes('category flex h-13 w-13 cursor-pointer flex-col items-center justify-center rounded-md') ||
   !editorPage.includes('text-center text-[10px]/4') ||
