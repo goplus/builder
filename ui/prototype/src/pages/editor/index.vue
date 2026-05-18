@@ -10,13 +10,13 @@ import PrototypeCard from '@/components/ui/PrototypeCard.vue'
 import PrototypeTab from '@/components/ui/PrototypeTab.vue'
 import PrototypeTabs from '@/components/ui/PrototypeTabs.vue'
 import PrototypeTag from '@/components/ui/PrototypeTag.vue'
-import controlIcon from '@/assets/editor/category-icons/control.svg'
-import eventIcon from '@/assets/editor/category-icons/event.svg'
-import gameIcon from '@/assets/editor/category-icons/game.svg'
-import lookIcon from '@/assets/editor/category-icons/look.svg'
-import motionIcon from '@/assets/editor/category-icons/motion.svg'
-import sensingIcon from '@/assets/editor/category-icons/sensing.svg'
-import soundIcon from '@/assets/editor/category-icons/sound.svg'
+import controlIcon from '@/assets/editor/category-icons/control.svg?raw'
+import eventIcon from '@/assets/editor/category-icons/event.svg?raw'
+import gameIcon from '@/assets/editor/category-icons/game.svg?raw'
+import lookIcon from '@/assets/editor/category-icons/look.svg?raw'
+import motionIcon from '@/assets/editor/category-icons/motion.svg?raw'
+import sensingIcon from '@/assets/editor/category-icons/sensing.svg?raw'
+import soundIcon from '@/assets/editor/category-icons/sound.svg?raw'
 import zoomInIcon from '@/assets/editor/code-editor/zoom-in.svg?raw'
 import zoomOutIcon from '@/assets/editor/code-editor/zoom-out.svg?raw'
 import zoomResetIcon from '@/assets/editor/code-editor/zoom-reset.svg?raw'
@@ -1355,7 +1355,7 @@ onBeforeUnmount(() => {
               type="button"
               @click="selectCodeCategory(category.id)"
             >
-              <img class="block h-6 w-6" :src="category.icon" alt="" />
+              <span class="block h-6 w-6" aria-hidden="true" v-html="category.icon"></span>
               <span class="mt-0.5 text-center">{{ category.label }}</span>
             </button>
           </aside>
@@ -1507,7 +1507,7 @@ onBeforeUnmount(() => {
               :class="category.id === 'event' ? 'bg-grey-400 text-grey-1000' : 'bg-transparent text-grey-800 hover:bg-grey-300'"
               type="button"
             >
-              <img class="block h-6 w-6" :src="category.icon" alt="" />
+              <span class="block h-6 w-6" aria-hidden="true" v-html="category.icon"></span>
               <span class="mt-0.5 text-center">{{ category.label }}</span>
             </button>
           </aside>

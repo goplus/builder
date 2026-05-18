@@ -293,8 +293,11 @@ if (
 if (
   !editorPage.includes('category-rail flex flex-none flex-col gap-3 border-r border-grey-400 px-1 py-3') ||
   !editorPage.includes('category flex h-13 w-13 cursor-pointer flex-col items-center justify-center rounded-md') ||
+  !editorPage.includes("category-icons/event.svg?raw") ||
+  !editorPage.includes('v-html="category.icon"') ||
   !editorPage.includes("'bg-grey-400 text-grey-1000'") ||
   !editorPage.includes("'bg-transparent text-grey-800 hover:bg-grey-300'") ||
+  editorPage.includes(':src="category.icon"') ||
   editorPage.includes('.category-rail {') ||
   editorPage.includes('.category.active')
 ) {
