@@ -217,6 +217,7 @@ describe('Animation', () => {
       { sounds }
     )
     expect(animation.sound).toBe(sounds[0].id)
+    expect(animation.soundLoop).toBe(false)
   })
 
   it('should clone well', () => {
