@@ -222,6 +222,13 @@ const preserveRemovedAnimationFrames = ref(false)
 const spritePendingRename = ref<SpriteCard | null>(null)
 const draftSpriteRenameName = ref('')
 const spriteRenameError = ref('')
+const spriteGenModalOpen = ref(false)
+const spriteGenDescription = ref('')
+const spriteGenCategory = ref('Character')
+const spriteGenStyle = ref('Cartoon')
+const spriteGenPerspective = ref('Side')
+const spriteGenGenerated = ref(false)
+const selectedGeneratedSpriteIndex = ref(0)
 const spriteMenuOpenFor = ref<string | null>(null)
 const spriteMenuPosition = ref({ top: 0, left: 0 })
 const addCostumeMenuPosition = ref({ top: 0, left: 0 })
@@ -608,6 +615,12 @@ const stageEntries: Array<{ id: Exclude<StageTab, 'code'>; label: string; icon: 
   { id: 'backdrops', label: 'Backdrops', icon: backdropPanelIcon },
   { id: 'sounds', label: 'Sounds', icon: soundPanelIcon },
   { id: 'widgets', label: 'Widgets', icon: widgetPanelIcon }
+]
+
+const generatedSpriteCandidates = [
+  { name: 'Generated flower sprite', image: flowerUrl },
+  { name: 'Generated calf sprite', image: niuXiaoQiUrl },
+  { name: 'Generated windy sprite', image: tornadoUrl }
 ]
 
 const quickConfigTools: Array<{ id: QuickConfigType; label: string; icon: string }> = [
@@ -1170,19 +1183,12 @@ function toggleSpriteMenu(spriteId: string, event: MouseEvent) {
   spriteMenuOpenFor.value = spriteId
 }
 
-function addLocalSprite(source: 'local' | 'library' | 'ai') {
-  const nextIndex = sprites.value.length + 1
-  const presets = {
-    local: { name: `Local sprite ${nextIndex}`, image: niuXiaoQiUrl },
-    library: { name: `Library sprite ${nextIndex}`, image: niuXiaoHuaUrl },
-    ai: { name: `AI sprite ${nextIndex}`, image: flowerUrl }
-  }
-  const preset = presets[source]
+function createSpriteCard(source: string, name: string, image: string): SpriteCard {
   const sprite: SpriteCard = {
     id: `${source}-sprite-${Date.now()}`,
-    name: preset.name,
-    shortName: preset.name.length > 10 ? `${preset.name.slice(0, 8)}...` : preset.name,
-    image: preset.image,
+    name,
+    shortName: name.length > 10 ? `${name.slice(0, 8)}...` : name,
+    image,
     hidden: false,
     x: -224,
     y: 74,
@@ -1190,10 +1196,57 @@ function addLocalSprite(source: 'local' | 'library' | 'ai') {
     heading: 90,
     rotationStyle: 'normal'
   }
+  return sprite
+}
+
+function appendSprite(sprite: SpriteCard) {
   sprites.value.push(sprite)
   selectedSpriteId.value = sprite.id
+  selectedMapSpriteId.value = sprite.id
   activeEditorTarget.value = 'sprite'
+  markPrototypeAction()
+}
+
+function addLocalSprite(source: 'local' | 'library') {
+  const nextIndex = sprites.value.length + 1
+  const presets = {
+    local: { name: `Local sprite ${nextIndex}`, image: niuXiaoQiUrl },
+    library: { name: `Library sprite ${nextIndex}`, image: niuXiaoHuaUrl }
+  }
+  const preset = presets[source]
+  appendSprite(createSpriteCard(source, preset.name, preset.image))
   closeAddSpriteMenu()
+}
+
+function openSpriteGenModal() {
+  spriteGenModalOpen.value = true
+  spriteGenDescription.value = ''
+  spriteGenCategory.value = 'Character'
+  spriteGenStyle.value = 'Cartoon'
+  spriteGenPerspective.value = 'Side'
+  spriteGenGenerated.value = false
+  selectedGeneratedSpriteIndex.value = 0
+  closeAddSpriteMenu()
+}
+
+function cancelSpriteGenModal() {
+  spriteGenModalOpen.value = false
+}
+
+function generateSpriteCandidates() {
+  if (spriteGenDescription.value.trim() === '') return
+  spriteGenGenerated.value = true
+  selectedGeneratedSpriteIndex.value = 0
+}
+
+function useGeneratedSprite() {
+  if (!spriteGenGenerated.value) return
+  const selected = generatedSpriteCandidates[selectedGeneratedSpriteIndex.value] ?? generatedSpriteCandidates[0]
+  const nextIndex = sprites.value.length + 1
+  const description = spriteGenDescription.value.trim()
+  const name = description !== '' ? description : selected.name
+  appendSprite(createSpriteCard('ai', `${name} ${nextIndex}`, selected.image))
+  spriteGenModalOpen.value = false
 }
 
 function groupCostumesAsAnimation() {
@@ -2387,7 +2440,7 @@ onBeforeUnmount(() => {
                   <button class="add-sprite-menu-item" type="button" role="menuitem" @click="addLocalSprite('library')">
                     Choose from asset library
                   </button>
-                  <button class="add-sprite-menu-item" type="button" role="menuitem" @click="addLocalSprite('ai')">
+                  <button class="add-sprite-menu-item" type="button" role="menuitem" @click="openSpriteGenModal">
                     Generate with AI
                   </button>
                 </span>
@@ -2740,6 +2793,81 @@ onBeforeUnmount(() => {
               <PrototypeButton type="primary" size="medium" @click="submitSpriteRename">Confirm</PrototypeButton>
             </div>
           </form>
+        </section>
+      </div>
+    </Teleport>
+    <Teleport to="body">
+      <div v-if="spriteGenModalOpen" class="prototype-modal-backdrop" role="presentation" @click.self="cancelSpriteGenModal">
+        <section class="prototype-modal sprite-gen-modal" role="dialog" aria-modal="true" aria-labelledby="sprite-gen-title">
+          <header class="sprite-gen-header">
+            <h2 id="sprite-gen-title">Sprite Generator</h2>
+            <button type="button" aria-label="Close sprite generator" @click="cancelSpriteGenModal">×</button>
+          </header>
+          <div class="sprite-gen-body">
+            <form class="sprite-gen-settings" @submit.prevent="generateSpriteCandidates">
+              <label class="prototype-field">
+                <span>Description</span>
+                <textarea
+                  v-model="spriteGenDescription"
+                  aria-label="Sprite description"
+                  placeholder="Describe a sprite to generate"
+                ></textarea>
+              </label>
+              <div class="sprite-gen-controls">
+                <label class="prototype-field">
+                  <span>Category</span>
+                  <select v-model="spriteGenCategory" aria-label="Sprite category">
+                    <option>Character</option>
+                    <option>Object</option>
+                    <option>Effect</option>
+                  </select>
+                </label>
+                <label class="prototype-field">
+                  <span>Art style</span>
+                  <select v-model="spriteGenStyle" aria-label="Sprite art style">
+                    <option>Cartoon</option>
+                    <option>Pixel</option>
+                    <option>Watercolor</option>
+                  </select>
+                </label>
+                <label class="prototype-field">
+                  <span>Perspective</span>
+                  <select v-model="spriteGenPerspective" aria-label="Sprite perspective">
+                    <option>Side</option>
+                    <option>Top-down</option>
+                    <option>Front</option>
+                  </select>
+                </label>
+              </div>
+              <PrototypeButton
+                type="primary"
+                size="large"
+                :disabled="spriteGenDescription.trim() === ''"
+                @click="generateSpriteCandidates"
+              >
+                {{ spriteGenGenerated ? 'Regenerate' : 'Generate' }}
+              </PrototypeButton>
+            </form>
+            <section class="sprite-gen-results" aria-label="Generated sprite candidates">
+              <div v-if="!spriteGenGenerated" class="sprite-gen-empty">Generated sprite candidates will appear here.</div>
+              <button
+                v-for="(candidate, index) in generatedSpriteCandidates"
+                v-else
+                :key="candidate.name"
+                class="sprite-gen-candidate"
+                :class="{ active: selectedGeneratedSpriteIndex === index }"
+                type="button"
+                @click="selectedGeneratedSpriteIndex = index"
+              >
+                <img :src="candidate.image" :alt="candidate.name" />
+                <span>{{ candidate.name }}</span>
+              </button>
+            </section>
+          </div>
+          <footer class="prototype-modal-actions">
+            <PrototypeButton type="white" size="medium" @click="cancelSpriteGenModal">Cancel</PrototypeButton>
+            <PrototypeButton type="primary" size="medium" :disabled="!spriteGenGenerated" @click="useGeneratedSprite">Use</PrototypeButton>
+          </footer>
         </section>
       </div>
     </Teleport>
@@ -3231,7 +3359,29 @@ onBeforeUnmount(() => {
   outline: none;
 }
 
-.prototype-field input:focus {
+.prototype-field textarea,
+.prototype-field select {
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px 10px;
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+  outline: none;
+}
+
+.prototype-field textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.prototype-field select {
+  height: 36px;
+}
+
+.prototype-field input:focus,
+.prototype-field textarea:focus,
+.prototype-field select:focus {
   border-color: var(--ui-color-primary-main);
   box-shadow: var(--ui-box-shadow-control);
 }
@@ -3260,6 +3410,112 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: 16px;
   margin-top: 40px;
+}
+
+.sprite-gen-modal {
+  width: min(920px, 100%);
+}
+
+.sprite-gen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -4px 0 20px;
+}
+
+.sprite-gen-header h2 {
+  margin: 0;
+}
+
+.sprite-gen-header button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: transparent;
+  color: var(--ui-color-grey-800);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.sprite-gen-header button:hover {
+  background: var(--ui-color-grey-300);
+  color: var(--ui-color-grey-1000);
+}
+
+.sprite-gen-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 316px;
+  gap: 24px;
+}
+
+.sprite-gen-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sprite-gen-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sprite-gen-results {
+  min-height: 284px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 12px;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-200);
+  padding: 12px;
+}
+
+.sprite-gen-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  color: var(--ui-color-grey-700);
+  font-size: 14px;
+  text-align: center;
+}
+
+.sprite-gen-candidate {
+  min-width: 0;
+  height: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px;
+  color: var(--ui-color-grey-1000);
+}
+
+.sprite-gen-candidate.active {
+  border: 2px solid var(--ui-color-primary-main);
+  background: var(--ui-color-primary-100);
+  padding: 7px;
+}
+
+.sprite-gen-candidate img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.sprite-gen-candidate span {
+  width: 100%;
+  overflow: hidden;
+  margin-top: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
 }
 
 .editor-main {

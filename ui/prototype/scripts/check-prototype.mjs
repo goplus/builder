@@ -507,6 +507,24 @@ if (
 }
 
 if (
+  !editorPage.includes('const spriteGenModalOpen = ref(false)') ||
+  !editorPage.includes('const spriteGenDescription = ref') ||
+  !editorPage.includes('const generatedSpriteCandidates = [') ||
+  !editorPage.includes('function openSpriteGenModal()') ||
+  !editorPage.includes('function generateSpriteCandidates()') ||
+  !editorPage.includes('function useGeneratedSprite()') ||
+  !editorPage.includes('@click="openSpriteGenModal"') ||
+  !editorPage.includes('role="dialog" aria-modal="true" aria-labelledby="sprite-gen-title"') ||
+  !editorPage.includes('Sprite Generator') ||
+  !editorPage.includes('aria-label="Sprite description"') ||
+  !editorPage.includes('Generated sprite candidates') ||
+  !editorPage.includes('selectedGeneratedSpriteIndex') ||
+  editorPage.includes("addLocalSprite('ai')")
+) {
+  failures.push('editor Generate with AI menu item must open a local sprite generator modal and add a generated sprite')
+}
+
+if (
   !editorPage.includes("activeQuickConfig === 'position'") ||
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||
