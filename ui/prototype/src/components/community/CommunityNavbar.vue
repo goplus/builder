@@ -82,7 +82,10 @@ function handleDocumentClick(event: MouseEvent) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') closeSignInModal()
+  if (event.key === 'Escape') {
+    closeProjectMenu()
+    closeSignInModal()
+  }
 }
 
 onMounted(() => {

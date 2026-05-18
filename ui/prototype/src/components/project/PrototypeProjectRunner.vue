@@ -33,7 +33,6 @@ const props = defineProps<{
 const runnerBaseUrl = '/spx_2.0.0'
 const runnerUrl = `${runnerBaseUrl}/runner.html`
 const assetURLs = {
-  'engineres.zip': `${runnerBaseUrl}/game.zip`,
   'game.zip': `${runnerBaseUrl}/game.zip`,
   'ispx.wasm': `${runnerBaseUrl}/ispx.wasm`,
   'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
@@ -47,6 +46,7 @@ const canRun = computed(() => props.project.projectFile != null)
 
 let runToken = 0
 let engineInitialized = false
+let fflateLoadPromise: Promise<Fflate> | undefined
 
 function getRunnerWindow() {
   return iframeRef.value?.contentWindow as RunnerIframeWindow | null | undefined
@@ -74,8 +74,9 @@ function waitForRunnerReady(iframeWindow: RunnerIframeWindow) {
 function loadFflate() {
   const existing = (window as Window & { fflate?: Fflate }).fflate
   if (existing != null) return Promise.resolve(existing)
+  if (fflateLoadPromise != null) return fflateLoadPromise
 
-  return new Promise<Fflate>((resolve, reject) => {
+  fflateLoadPromise = new Promise<Fflate>((resolve, reject) => {
     const script = document.createElement('script')
     script.src = `${runnerBaseUrl}/fflate.js`
     script.async = true
@@ -89,7 +90,11 @@ function loadFflate() {
     }
     script.onerror = () => reject(new Error('Failed to load local zip reader.'))
     document.head.append(script)
+  }).catch((err) => {
+    fflateLoadPromise = undefined
+    throw err
   })
+  return fflateLoadPromise
 }
 
 async function loadProjectFiles(projectFile: string): Promise<RunnerFiles> {
@@ -157,6 +162,7 @@ async function run() {
     state.value = 'running'
     message.value = ''
   } catch (err) {
+    engineInitialized = false
     state.value = 'failed'
     message.value = err instanceof Error ? err.message : String(err)
   }
@@ -165,6 +171,7 @@ async function run() {
 async function stop() {
   runToken += 1
   if (engineInitialized) await getRunnerWindow()?.stopGame?.()
+  engineInitialized = false
   state.value = 'initial'
   message.value = ''
 }
@@ -193,6 +200,7 @@ defineExpose({
       class="absolute inset-0 size-full border-0"
       :class="{ 'opacity-0': state !== 'running' }"
       :src="runnerUrl"
+      sandbox="allow-scripts allow-same-origin"
       title="Local project runner"
     ></iframe>
 

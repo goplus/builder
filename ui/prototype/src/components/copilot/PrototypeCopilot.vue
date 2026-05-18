@@ -26,6 +26,8 @@ const dragStart = ref<{
   bottom: number
 } | null>(null)
 
+let resizeTimer: ReturnType<typeof setTimeout> | undefined
+
 const hasMessages = computed(() => messages.value.length > 0)
 const panelStyle = computed(() => ({
   right: isOpen.value ? `${panelPosition.value.right}px` : '24px',
@@ -67,7 +69,6 @@ function focusInput() {
 function clampPanelPosition(position = panelPosition.value) {
   const panel = panelRef.value
   const panelWidth = panel?.offsetWidth ?? 340
-  const panelHeight = panel?.offsetHeight ?? (isOpen.value ? 356 : 48)
   const horizontalBuffer = 10
   const verticalBuffer = 10
   return {
@@ -115,7 +116,8 @@ function handleDragEnd(event: PointerEvent) {
 
 function handleResize() {
   panelPosition.value = clampPanelPosition()
-  persistPanelPosition()
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(persistPanelPosition, 100)
 }
 
 onMounted(() => {
@@ -135,6 +137,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  clearTimeout(resizeTimer)
 })
 </script>
 

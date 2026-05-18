@@ -29,6 +29,10 @@ const app = read('src/App.vue')
 const styles = read('src/styles/app.css')
 const mockData = read('src/data/mock.ts')
 const editorPage = read('src/pages/editor/index.vue')
+const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
+const copilot = read('src/components/copilot/PrototypeCopilot.vue')
+const communityApi = read('src/apis/community.ts')
+const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
 
 for (const route of [
   '/',
@@ -136,8 +140,52 @@ if (!app.includes('PrototypeCopilot')) {
   failures.push('prototype must mount the offline Copilot surface globally')
 }
 
-if (!read('src/components/copilot/PrototypeCopilot.vue').includes('const isOpen = ref(false)')) {
+if (copilot.includes('const isOpen = ref(true)')) {
   failures.push('offline Copilot must default to collapsed so it does not cover editor panels')
+}
+
+if (!projectRunner.includes('sandbox="allow-scripts allow-same-origin"')) {
+  failures.push('project runner iframe must be sandboxed while preserving local runner script access')
+}
+
+if (projectRunner.includes("'engineres.zip'")) {
+  failures.push('project runner assetURLs must not include the redundant engineres.zip alias')
+}
+
+if (!projectRunner.includes('let fflateLoadPromise')) {
+  failures.push('project runner must share an in-flight fflate loader promise across concurrent runs')
+}
+
+if (!projectRunner.includes("engineInitialized = false\n    state.value = 'failed'")) {
+  failures.push('project runner must reset engineInitialized when run fails')
+}
+
+if (!projectRunner.includes("engineInitialized = false\n  state.value = 'initial'")) {
+  failures.push('project runner must reset engineInitialized after stop')
+}
+
+if (copilot.includes('const panelHeight =')) {
+  failures.push('copilot drag clamp must not compute unused panelHeight on every move')
+}
+
+if (!copilot.includes('let resizeTimer') || !copilot.includes('setTimeout(persistPanelPosition, 100)')) {
+  failures.push('copilot resize persistence must be debounced')
+}
+
+if (/if \(normalized === ''\) return projects\s*(?:\n|;)/.test(communityApi)) {
+  failures.push('empty community search must return a defensive copy of mock projects')
+}
+
+if (communityApi.includes('Math.max(4, offset + 4)')) {
+  failures.push('user likes pagination must clamp missing users before slicing')
+}
+
+if (!/function handleKeydown\(event: KeyboardEvent\) \{\s*if \(event\.key === 'Escape'\) \{\s*closeProjectMenu\(\)/.test(navbar)) {
+  failures.push('community navbar Escape handler must close the project menu')
+}
+
+if (centeredWrapper.includes('w-310') || centeredWrapper.includes('w-247')) {
+  failures.push('centered wrapper must use explicit arbitrary width classes instead of undefined numeric widths')
 }
 
 if (!styles.includes('--ui-font-size-lg: 15px;')) {

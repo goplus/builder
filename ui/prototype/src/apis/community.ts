@@ -25,7 +25,7 @@ export function exploreProjects(order = 'likes'): Project[] {
 
 export function searchCommunity(keyword: string): Project[] {
   const normalized = keyword.trim().toLowerCase()
-  if (normalized === '') return projects
+  if (normalized === '') return projects.slice()
   return projects.filter((project) =>
     [project.title, project.description, project.owner.displayName, ...project.tags].some((value) =>
       value.toLowerCase().includes(normalized)
@@ -43,8 +43,9 @@ export function listUserProjects(username: string): Project[] {
 }
 
 export function listUserLikes(username: string): Project[] {
-  const offset = users.findIndex((user) => user.username === username)
-  return projects.slice(Math.max(0, offset), Math.max(4, offset + 4))
+  const userIndex = users.findIndex((user) => user.username === username)
+  const offset = Math.max(0, userIndex)
+  return projects.slice(offset, offset + 4)
 }
 
 export function listFollowers(username: string): UserProfile[] {

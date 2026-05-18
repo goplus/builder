@@ -10,7 +10,9 @@ const props = withDefaults(
   }
 )
 
-const widthClass = computed(() => (props.size === 'large' ? 'w-310 desktop-large:w-373' : 'w-247 desktop-large:w-310'))
+const widthClass = computed(() =>
+  props.size === 'large' ? 'w-[1240px] desktop-large:w-[1492px]' : 'w-[988px] desktop-large:w-[1240px]'
+)
 </script>
 
 <template>
