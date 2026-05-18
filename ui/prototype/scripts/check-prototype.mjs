@@ -206,8 +206,15 @@ if (!copilot.includes('let resizeTimer') || !copilot.includes('setTimeout(persis
   failures.push('copilot resize persistence must be debounced')
 }
 
-if (!copilot.includes('right: 16, bottom: 16') || !copilot.includes('width: 64px') || !copilot.includes('height: 64px')) {
-  failures.push('copilot collapsed launcher must stay compact and inset from the viewport edge')
+if (
+  !copilot.includes("right: isOpen.value ? `${panelPosition.value.right}px` : '-340px'") ||
+  !copilot.includes('class="copilot-trigger right visible"') ||
+  !copilot.includes('.copilot-trigger.right.visible') ||
+  copilot.includes('.copilot-panel.closed .footer-wrapper') ||
+  copilot.includes('width: 64px') ||
+  copilot.includes('height: 64px')
+) {
+  failures.push('copilot collapsed launcher must mirror the real side-attached trigger instead of a standalone square button')
 }
 
 if (/if \(normalized === ''\) return projects\s*(?:\n|;)/.test(communityApi)) {

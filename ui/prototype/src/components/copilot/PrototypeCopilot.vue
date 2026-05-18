@@ -30,8 +30,8 @@ let resizeTimer: ReturnType<typeof setTimeout> | undefined
 
 const hasMessages = computed(() => messages.value.length > 0)
 const panelStyle = computed(() => ({
-  right: isOpen.value ? `${panelPosition.value.right}px` : '16px',
-  bottom: isOpen.value ? `${panelPosition.value.bottom}px` : '16px'
+  right: isOpen.value ? `${panelPosition.value.right}px` : '-340px',
+  bottom: isOpen.value ? `${panelPosition.value.bottom}px` : '20px'
 }))
 const panelSide = computed<'left' | 'right'>(() => {
   const panelWidth = panelRef.value?.offsetWidth ?? 340
@@ -143,8 +143,28 @@ onBeforeUnmount(() => {
 
 <template>
   <aside ref="panelRef" class="copilot-panel" :class="{ open: isOpen, closed: !isOpen }" :style="panelStyle" aria-label="Copilot">
-    <div v-if="isOpen" class="body">
-      <div class="body-wrapper">
+    <div class="body">
+      <button
+        v-if="!isOpen"
+        class="copilot-trigger right visible"
+        type="button"
+        aria-label="Open Copilot"
+        @click="isOpen = true"
+      >
+        <span class="copilot-trigger-content">
+          <svg class="copilot-logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="12" fill="url(#paint0_linear_prototype_copilot_trigger)" />
+            <path d="M27.1326 16.4061C27.6217 17.2175 28.4776 17.7029 29.4224 17.7029C30.6229 17.714 31.7456 16.8507 32.005 15.6613C32.1791 14.9277 32.0383 14.1644 31.6381 13.5346C27.6773 6.67626 17.5584 5.32387 11.9784 10.9817C10.9521 11.9784 10.1369 13.0862 9.51075 14.2867H9.50704L9.43294 14.4386C9.4033 14.4979 9.36995 14.5572 9.34402 14.6165L9.32179 14.6721L9.26991 14.7795C8.6215 16.143 8.21023 17.5436 8.08055 19.1479C7.99162 20.215 8.0472 21.2784 8.23246 22.301C8.43254 23.3607 8.75119 24.3648 9.17358 25.2985L9.32179 25.6098H9.3292C11.8858 30.7526 17.8585 33.6612 23.4867 32.3088C26.6324 31.727 32.3829 27.9589 31.916 24.4019C31.4121 22.038 28.0923 21.6378 26.9511 23.7609C26.173 24.9984 25.1022 25.8914 23.8721 26.5398C22.8939 27.014 21.812 27.2771 20.693 27.2771C20.2743 27.2771 19.8482 27.2364 19.437 27.1623C19.3517 27.1474 19.2628 27.1326 19.1887 27.1326C19.1183 27.1326 19.0664 27.1474 19.0071 27.1808C18.4588 27.492 18.355 27.5476 17.8104 27.8292L17.2138 28.1552C16.5951 28.5221 15.7318 28.9815 15.3538 28.1404V28.1293C15.2983 27.8996 15.3575 27.681 15.3872 27.5735C15.4316 27.4142 15.4761 27.2512 15.5243 27.0696C15.628 26.6806 15.7355 26.273 15.8837 25.8766C15.9541 25.695 15.9689 25.6394 15.7355 25.4208C13.831 23.6275 13.0788 21.397 13.5012 18.8071C13.7569 17.2361 14.4868 15.88 15.6725 14.7721C17.1212 13.4234 18.7885 12.7417 20.6152 12.7417C21.0932 12.7417 21.5934 12.7898 22.0973 12.8862C22.1825 12.901 22.2751 12.9195 22.3603 12.938H22.3826C24.4056 13.3827 26.0025 14.5461 27.1252 16.4024L27.1326 16.4061Z" fill="white" />
+            <defs>
+              <linearGradient id="paint0_linear_prototype_copilot_trigger" x1="20" y1="0" x2="20" y2="40" gradientUnits="userSpaceOnUse">
+                <stop class="stop-start" />
+                <stop offset="1" class="stop-end" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+      </button>
+      <div v-if="isOpen" class="body-wrapper">
         <div
           class="dragger"
           role="button"
@@ -225,7 +245,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-    <div class="footer">
+    <div v-if="isOpen" class="footer">
       <div class="footer-wrapper">
         <button
           class="fold"
@@ -237,16 +257,6 @@ onBeforeUnmount(() => {
           <svg v-if="isOpen" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M3.33301 3.33334L8.66634 8L3.33301 12.6667" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <svg v-else class="copilot-logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="12" fill="url(#paint0_linear_prototype_copilot)" />
-            <path d="M27.1326 16.4061C27.6217 17.2175 28.4776 17.7029 29.4224 17.7029C30.6229 17.714 31.7456 16.8507 32.005 15.6613C32.1791 14.9277 32.0383 14.1644 31.6381 13.5346C27.6773 6.67626 17.5584 5.32387 11.9784 10.9817C10.9521 11.9784 10.1369 13.0862 9.51075 14.2867H9.50704L9.43294 14.4386C9.4033 14.4979 9.36995 14.5572 9.34402 14.6165L9.32179 14.6721L9.26991 14.7795C8.6215 16.143 8.21023 17.5436 8.08055 19.1479C7.99162 20.215 8.0472 21.2784 8.23246 22.301C8.43254 23.3607 8.75119 24.3648 9.17358 25.2985L9.32179 25.6098H9.3292C11.8858 30.7526 17.8585 33.6612 23.4867 32.3088C26.6324 31.727 32.3829 27.9589 31.916 24.4019C31.4121 22.038 28.0923 21.6378 26.9511 23.7609C26.173 24.9984 25.1022 25.8914 23.8721 26.5398C22.8939 27.014 21.812 27.2771 20.693 27.2771C20.2743 27.2771 19.8482 27.2364 19.437 27.1623C19.3517 27.1474 19.2628 27.1326 19.1887 27.1326C19.1183 27.1326 19.0664 27.1474 19.0071 27.1808C18.4588 27.492 18.355 27.5476 17.8104 27.8292L17.2138 28.1552C16.5951 28.5221 15.7318 28.9815 15.3538 28.1404V28.1293C15.2983 27.8996 15.3575 27.681 15.3872 27.5735C15.4316 27.4142 15.4761 27.2512 15.5243 27.0696C15.628 26.6806 15.7355 26.273 15.8837 25.8766C15.9541 25.695 15.9689 25.6394 15.7355 25.4208C13.831 23.6275 13.0788 21.397 13.5012 18.8071C13.7569 17.2361 14.4868 15.88 15.6725 14.7721C17.1212 13.4234 18.7885 12.7417 20.6152 12.7417C21.0932 12.7417 21.5934 12.7898 22.0973 12.8862C22.1825 12.901 22.2751 12.9195 22.3603 12.938H22.3826C24.4056 13.3827 26.0025 14.5461 27.1252 16.4024L27.1326 16.4061Z" fill="white" />
-            <defs>
-              <linearGradient id="paint0_linear_prototype_copilot" x1="20" y1="0" x2="20" y2="40" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#9A77FF" />
-                <stop offset="1" stop-color="#735FFA" />
-              </linearGradient>
-            </defs>
           </svg>
         </button>
       </div>
@@ -266,17 +276,82 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.copilot-panel.closed {
-  width: auto;
-  gap: 0;
-}
-
 .body {
   position: relative;
   border-radius: var(--ui-border-radius-lg);
   box-shadow: var(--ui-box-shadow-lg);
   padding: 1px;
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
+}
+
+.copilot-panel.closed .body {
+  border-radius: 0 var(--ui-border-radius-lg) var(--ui-border-radius-lg) 0;
+  box-shadow: none;
+}
+
+.copilot-trigger {
+  position: absolute;
+  width: fit-content;
+  height: 50px;
+  top: 50%;
+  padding: 1px;
+  border: 0;
+  cursor: pointer;
+  transform: translate(0, -50%);
+  pointer-events: none;
+  border-radius: 16px;
+  opacity: 0;
+  box-shadow: var(--ui-box-shadow-lg);
+  transition:
+    transform 0.4s ease,
+    opacity 0.4s ease;
+}
+
+.copilot-trigger .stop-start {
+  stop-color: #9a77ff;
+}
+
+.copilot-trigger .stop-end {
+  stop-color: #735ffa;
+}
+
+.copilot-trigger:hover .stop-start {
+  stop-color: #ae92ff;
+}
+
+.copilot-trigger:hover .stop-end {
+  stop-color: #9181fb;
+}
+
+.copilot-trigger.visible {
+  pointer-events: all;
+  opacity: 1;
+}
+
+.copilot-trigger.right {
+  left: 1px;
+  padding-right: 0;
+  background: linear-gradient(90deg, #c390ff 0%, #72bbff 100%);
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.copilot-trigger.right.visible {
+  transform: translate(-100%, -50%);
+}
+
+.copilot-trigger.right .copilot-trigger-content {
+  padding: 0 10px 0 5px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.copilot-trigger-content {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  border-radius: 16px;
+  background: var(--ui-color-grey-100);
 }
 
 .body-wrapper {
@@ -473,18 +548,6 @@ textarea::placeholder {
   box-shadow: var(--ui-box-shadow-control);
 }
 
-.copilot-panel.closed .footer-wrapper {
-  width: 64px;
-  height: 64px;
-  border: 2px solid #c7b6ff;
-  border-radius: 18px;
-  background: var(--ui-color-grey-100);
-  padding: 5px;
-  box-shadow:
-    0 12px 24px rgba(58, 46, 139, 0.16),
-    0 0 0 6px rgba(154, 119, 255, 0.08);
-}
-
 .fold {
   width: 28px;
   height: 28px;
@@ -507,26 +570,14 @@ textarea::placeholder {
   transform: rotate(180deg);
 }
 
-.copilot-panel.closed .fold {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
-  color: var(--ui-color-grey-100);
-}
-
 .fold:hover {
   stroke: var(--ui-color-primary-500);
   background: var(--ui-color-primary-200);
 }
 
-.copilot-panel.closed .fold:hover {
-  background: transparent;
-  filter: brightness(1.05);
-}
-
 .copilot-logo {
-  width: 100%;
-  height: 100%;
+  width: 40px;
+  height: 40px;
   display: block;
   flex: none;
 }
