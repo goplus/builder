@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { getProject } from '@/apis/project'
 import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
 import PrototypeButton from '@/components/ui/PrototypeButton.vue'
+import PrototypeTag from '@/components/ui/PrototypeTag.vue'
 import controlIcon from '@/assets/editor/category-icons/control.svg'
 import eventIcon from '@/assets/editor/category-icons/event.svg'
 import gameIcon from '@/assets/editor/category-icons/game.svg'
@@ -992,7 +993,7 @@ onBeforeUnmount(() => {
               >
                 <img :src="item.icon" alt="" />
                 <span>{{ item.label }}</span>
-                <span v-if="item.badge" class="project-menu-badge">{{ item.badge }}</span>
+                <PrototypeTag v-if="item.badge">{{ item.badge }}</PrototypeTag>
               </button>
             </div>
           </div>
@@ -1080,7 +1081,7 @@ onBeforeUnmount(() => {
               <div class="profile-menu-user" role="presentation">Qingqing</div>
               <button class="profile-menu-item" type="button" role="menuitem" @click="handleProfileMenuItem(toggleProfileLanguage)">
                 <span>Language</span>
-                <span>{{ profileLanguage }}</span>
+                <PrototypeTag>{{ profileLanguage }}</PrototypeTag>
               </button>
             </div>
             <div class="profile-menu-group">
@@ -1997,18 +1998,6 @@ onBeforeUnmount(() => {
   flex: 1;
 }
 
-.project-menu-badge {
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  border-radius: var(--ui-border-radius-sm);
-  background: var(--ui-color-primary-100);
-  padding: 0 6px;
-  color: var(--ui-color-primary-700);
-  font-size: 12px;
-  line-height: 20px;
-}
-
 .caret {
   width: 0;
   height: 0;
@@ -2240,11 +2229,6 @@ onBeforeUnmount(() => {
 
 .profile-menu-item:hover {
   background: var(--ui-color-grey-300);
-}
-
-.profile-menu-item span + span {
-  color: var(--ui-color-primary-700);
-  font-size: 12px;
 }
 
 .editor-main {

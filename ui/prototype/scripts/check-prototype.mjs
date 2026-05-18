@@ -36,6 +36,7 @@ const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
 const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
 const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
+const prototypeTag = read('src/components/ui/PrototypeTag.vue')
 
 for (const route of [
   '/',
@@ -245,6 +246,19 @@ if (!editorPage.includes("back.svg?raw") || quickConfigBackIcon.includes('M15 18
 
 if (!editorPage.includes("import PrototypeButton from '@/components/ui/PrototypeButton.vue'") || !editorPage.includes('<PrototypeButton') || editorPage.includes('class="format-button" type="button"')) {
   failures.push('editor format action must use the prototype UI Button component')
+}
+
+if (
+  !editorPage.includes("import PrototypeTag from '@/components/ui/PrototypeTag.vue'") ||
+  !editorPage.includes('<PrototypeTag') ||
+  editorPage.includes('project-menu-badge') ||
+  editorPage.includes('.profile-menu-item span + span')
+) {
+  failures.push('editor labels must use the prototype UI Tag component instead of ad-hoc label styles')
+}
+
+if (!prototypeTag.includes('--ui-color-grey-900') || !prototypeTag.includes('--ui-color-grey-300') || !prototypeTag.includes('--ui-color-grey-400')) {
+  failures.push('prototype tag must mirror the real default tag grey tokens')
 }
 
 if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: var(--ui-color-grey-300);')) {
