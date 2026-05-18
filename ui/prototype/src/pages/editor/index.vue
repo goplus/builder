@@ -214,9 +214,13 @@ const profileMenuOpen = ref(false)
 const profileLanguage = ref<'English' | '中文'>('English')
 const addSpriteMenuOpen = ref(false)
 const addAnimationMenuOpen = ref(false)
+const animationMenuOpenFor = ref<string | null>(null)
+const animationPendingRemoval = ref<AssetItem | null>(null)
+const preserveRemovedAnimationFrames = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
 const spriteMenuPosition = ref({ top: 0, left: 0 })
 const addAnimationMenuPosition = ref({ top: 0, left: 0 })
+const animationMenuPosition = ref({ top: 0, left: 0 })
 const codeZoom = ref(1)
 const tempCodeDocumentsOpen = ref(true)
 const saveState = ref<SaveState>('saved')
@@ -241,6 +245,7 @@ const projectMenuRef = ref<HTMLElement>()
 const profileMenuRef = ref<HTMLElement>()
 const addSpriteMenuRef = ref<HTMLElement>()
 const addAnimationMenuRef = ref<HTMLElement>()
+const animationMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
 const mapSpriteNameInputRef = ref<HTMLInputElement>()
 const saveStateTimeouts: number[] = []
@@ -573,6 +578,7 @@ const selectedAnimation = computed(() => {
   editorRevision.value
   return animations.value.find((animation) => animation.id === selectedAnimationId.value) ?? animations.value[0] ?? null
 })
+const animationMenuAnimation = computed(() => animations.value.find((animation) => animation.id === animationMenuOpenFor.value) ?? null)
 const selectedBackdrop = computed(() => backdrops.value.find((backdrop) => backdrop.id === selectedBackdropId.value) ?? backdrops.value[0])
 const selectedSound = computed(() => sounds.value.find((sound) => sound.id === selectedSoundId.value) ?? sounds.value[0] ?? null)
 const selectedWidget = computed(() => widgets.value.find((widget) => widget.id === selectedWidgetId.value) ?? widgets.value[0])
@@ -1025,6 +1031,41 @@ function handleGroupCostumesAsAnimation() {
   groupCostumesAsAnimation()
 }
 
+function getAnimationMenuStyle(): CSSProperties {
+  return {
+    top: `${animationMenuPosition.value.top}px`,
+    left: `${animationMenuPosition.value.left}px`
+  }
+}
+
+function updateAnimationMenuPosition(trigger: HTMLElement) {
+  const rect = trigger.getBoundingClientRect()
+  const menuWidth = 184
+  const viewportPadding = 8
+  const left = Math.min(
+    Math.max(viewportPadding, rect.right - menuWidth),
+    Math.max(viewportPadding, window.innerWidth - menuWidth - viewportPadding)
+  )
+  const top = Math.min(rect.bottom + 6, Math.max(viewportPadding, window.innerHeight - 164))
+  animationMenuPosition.value = { top, left }
+}
+
+function toggleAnimationMenu(animationId: string, event: MouseEvent) {
+  const trigger = event.currentTarget
+  if (!(trigger instanceof HTMLElement)) return
+  selectedAnimationId.value = animationId
+  if (animationMenuOpenFor.value === animationId) {
+    closeAnimationMenu()
+    return
+  }
+  updateAnimationMenuPosition(trigger)
+  animationMenuOpenFor.value = animationId
+}
+
+function closeAnimationMenu() {
+  animationMenuOpenFor.value = null
+}
+
 function getSpriteMenuStyle(): CSSProperties {
   return {
     top: `${spriteMenuPosition.value.top}px`,
@@ -1105,6 +1146,87 @@ function groupCostumesAsAnimation() {
   activeEditorTab.value = 'animations'
   closeAddAnimationMenu()
   markPrototypeAction()
+}
+
+function getUniqueAnimationName(baseName: string) {
+  const existingNames = new Set(animations.value.map((animation) => animation.name))
+  if (!existingNames.has(baseName)) return baseName
+  let suffix = 2
+  while (existingNames.has(`${baseName} ${suffix}`)) suffix += 1
+  return `${baseName} ${suffix}`
+}
+
+function getUniqueCostumeName(baseName: string) {
+  const existingNames = new Set(costumes.value.map((costume) => costume.name))
+  if (!existingNames.has(baseName)) return baseName
+  let suffix = 2
+  while (existingNames.has(`${baseName} ${suffix}`)) suffix += 1
+  return `${baseName} ${suffix}`
+}
+
+function duplicateAnimation(animation: AssetItem) {
+  const copy: AssetItem = {
+    ...animation,
+    id: `${animation.id}-copy-${Date.now()}`,
+    name: getUniqueAnimationName(`${animation.name} 2`),
+    frames: [...(animation.frames ?? [animation.image])]
+  }
+  const sourceIndex = animations.value.findIndex((item) => item.id === animation.id)
+  animations.value.splice(sourceIndex >= 0 ? sourceIndex + 1 : animations.value.length, 0, copy)
+  selectedAnimationId.value = copy.id
+  editorRevision.value += 1
+  markPrototypeAction()
+}
+
+function renameAnimation(animation: AssetItem) {
+  const nextName = window.prompt('Rename animation', animation.name)?.trim()
+  if (!nextName || nextName === animation.name) return
+  animation.name = nextName
+  editorRevision.value += 1
+  markPrototypeAction()
+}
+
+function requestRemoveAnimation(animation: AssetItem) {
+  animationPendingRemoval.value = animation
+  preserveRemovedAnimationFrames.value = false
+}
+
+function cancelRemoveAnimation() {
+  animationPendingRemoval.value = null
+  preserveRemovedAnimationFrames.value = false
+}
+
+function confirmRemoveAnimation() {
+  const animation = animationPendingRemoval.value
+  if (animation == null) return
+  const currentIndex = animations.value.findIndex((item) => item.id === animation.id)
+  if (currentIndex < 0) {
+    cancelRemoveAnimation()
+    return
+  }
+  if (preserveRemovedAnimationFrames.value) {
+    const frames = animation.frames ?? [animation.image]
+    frames.forEach((frame, index) => {
+      costumes.value.push({
+        id: `${animation.id}-frame-${index}-${Date.now()}`,
+        name: getUniqueCostumeName(`${animation.name} ${index + 1}`),
+        image: frame
+      })
+    })
+  }
+  animations.value.splice(currentIndex, 1)
+  const nextAnimation = animations.value[Math.min(currentIndex, animations.value.length - 1)] ?? animations.value[0] ?? null
+  selectedAnimationId.value = nextAnimation?.id ?? ''
+  editorRevision.value += 1
+  cancelRemoveAnimation()
+  markPrototypeAction()
+}
+
+function handleAnimationMenuAction(action: (animation: AssetItem) => void) {
+  const animation = animationMenuAnimation.value
+  closeAnimationMenu()
+  if (animation == null) return
+  action(animation)
 }
 
 function closeSpriteMenu() {
@@ -1233,6 +1355,9 @@ function handleDocumentClick(event: MouseEvent) {
   if (!addSpriteMenuRef.value?.contains(target)) closeAddSpriteMenu()
   if (!addAnimationMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.animation-add-menu'))) {
     closeAddAnimationMenu()
+  }
+  if (!animationMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.animation-options-menu'))) {
+    closeAnimationMenu()
   }
   if (!spriteMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.sprite-options-menu'))) {
     closeSpriteMenu()
@@ -1547,17 +1672,47 @@ onBeforeUnmount(() => {
 
         <div v-else-if="activeEditorTarget === 'sprite'" class="asset-editor-body">
           <aside class="asset-editor-list" aria-label="Animations list">
-            <button
+            <div
               v-for="animation in animations"
               :key="animation.id"
               class="editor-asset-item"
-              :class="{ active: selectedAnimationId === animation.id }"
-              type="button"
-              @click="selectedAnimationId = animation.id"
+              :class="{ active: selectedAnimationId === animation.id, 'animation-asset-item': true }"
             >
-              <img :src="animation.image" :alt="animation.name" />
-              <span>{{ animation.name }}</span>
-            </button>
+              <button class="asset-select-button" type="button" @click="selectedAnimationId = animation.id">
+                <img :src="animation.image" :alt="animation.name" />
+                <span>{{ animation.name }}</span>
+              </button>
+              <button
+                v-if="selectedAnimationId === animation.id"
+                class="asset-item-menu"
+                type="button"
+                aria-label="Animation options"
+                :aria-expanded="animationMenuOpenFor === animation.id"
+                aria-haspopup="menu"
+                @click.stop="toggleAnimationMenu(animation.id, $event)"
+                v-html="moreIcon"
+              ></button>
+            </div>
+            <Teleport to="body">
+              <div
+                v-if="animationMenuAnimation != null"
+                ref="animationMenuRef"
+                class="animation-options-menu"
+                :style="getAnimationMenuStyle()"
+                role="menu"
+                @click.stop
+              >
+                <button class="animation-options-item" type="button" role="menuitem" @click="handleAnimationMenuAction(duplicateAnimation)">
+                  Duplicate
+                </button>
+                <button class="animation-options-item" type="button" role="menuitem" @click="handleAnimationMenuAction(renameAnimation)">
+                  Rename
+                </button>
+                <button class="animation-options-item danger" type="button" role="menuitem" @click="handleAnimationMenuAction(requestRemoveAnimation)">
+                  Remove
+                </button>
+              </div>
+            </Teleport>
             <button
               ref="addAnimationMenuRef"
               class="asset-add-button"
@@ -1580,7 +1735,7 @@ onBeforeUnmount(() => {
           <section v-if="selectedAnimation != null" class="asset-detail" aria-label="Animation detail">
             <header class="asset-detail-header">
               <h2>{{ selectedAnimation.name }}</h2>
-              <button type="button" aria-label="Rename animation" v-html="editIcon"></button>
+              <button type="button" aria-label="Rename animation" @click="renameAnimation(selectedAnimation)" v-html="editIcon"></button>
             </header>
             <div class="animation-detail-content">
               <div class="animation-player">
@@ -2329,6 +2484,22 @@ onBeforeUnmount(() => {
         </PrototypeCard>
       </aside>
     </section>
+    <Teleport to="body">
+      <div v-if="animationPendingRemoval != null" class="prototype-modal-backdrop" role="presentation" @click.self="cancelRemoveAnimation">
+        <section class="prototype-modal" role="dialog" aria-modal="true" aria-labelledby="remove-animation-title">
+          <h2 id="remove-animation-title">Remove animation</h2>
+          <p>Animation {{ animationPendingRemoval.name }} will be removed. Do you want to preserve the costumes?</p>
+          <label class="prototype-checkbox">
+            <input v-model="preserveRemovedAnimationFrames" type="checkbox" />
+            <span>Preserve (the costumes will be moved to the sprite's costume list)</span>
+          </label>
+          <div class="prototype-modal-actions">
+            <PrototypeButton type="white" size="medium" @click="cancelRemoveAnimation">Cancel</PrototypeButton>
+            <PrototypeButton type="primary" size="medium" @click="confirmRemoveAnimation">Confirm</PrototypeButton>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </main>
 </template>
 
@@ -2741,6 +2912,62 @@ onBeforeUnmount(() => {
 
 .profile-menu-item:hover {
   background: var(--ui-color-grey-300);
+}
+
+.prototype-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  background: rgb(31 41 55 / 36%);
+  padding: 24px;
+}
+
+.prototype-modal {
+  width: min(560px, 100%);
+  border-radius: var(--ui-border-radius-lg);
+  background: var(--ui-color-grey-100);
+  padding: 24px;
+  box-shadow: var(--ui-box-shadow-lg);
+}
+
+.prototype-modal h2 {
+  margin: 0 0 16px;
+  color: var(--ui-color-grey-1000);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.prototype-modal p {
+  margin: 0;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.prototype-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.prototype-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ui-color-primary-main);
+}
+
+.prototype-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 40px;
 }
 
 .editor-main {
@@ -3408,6 +3635,20 @@ onBeforeUnmount(() => {
   border-color: var(--ui-color-primary-main);
 }
 
+.asset-select-button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  padding: 2px;
+  color: inherit;
+  font: inherit;
+}
+
 .editor-asset-item img {
   width: 60px;
   height: 60px;
@@ -3477,6 +3718,33 @@ onBeforeUnmount(() => {
   line-height: 22px;
 }
 
+.animation-asset-item {
+  overflow: visible;
+}
+
+.asset-item-menu {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ui-color-primary-main);
+  color: var(--ui-color-grey-100);
+  padding: 0;
+  box-shadow: var(--ui-box-shadow-sm);
+}
+
+.asset-item-menu :deep(svg) {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
 .asset-add-button {
   height: 44px;
   width: calc(100% + 20px);
@@ -3519,6 +3787,44 @@ onBeforeUnmount(() => {
 
 .animation-add-menu-item:hover {
   background: var(--ui-color-grey-300);
+}
+
+.animation-options-menu {
+  position: fixed;
+  z-index: 80;
+  min-width: 184px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.animation-options-item {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px 10px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.animation-options-item:hover {
+  background: var(--ui-color-grey-300);
+}
+
+.animation-options-item + .animation-options-item {
+  margin-top: 1px;
+}
+
+.animation-options-item.danger {
+  color: var(--ui-color-danger-main);
 }
 
 .asset-detail {

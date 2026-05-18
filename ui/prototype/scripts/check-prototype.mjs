@@ -440,6 +440,26 @@ if (
 }
 
 if (
+  !editorPage.includes('const animationMenuOpenFor = ref<string | null>(null)') ||
+  !editorPage.includes('const animationPendingRemoval = ref<AssetItem | null>(null)') ||
+  !editorPage.includes('function toggleAnimationMenu(animationId: string, event: MouseEvent)') ||
+  !editorPage.includes('function duplicateAnimation(animation: AssetItem)') ||
+  !editorPage.includes('function renameAnimation(animation: AssetItem)') ||
+  !editorPage.includes('function requestRemoveAnimation(animation: AssetItem)') ||
+  !editorPage.includes('function confirmRemoveAnimation()') ||
+  !editorPage.includes('class="animation-options-menu"') ||
+  !editorPage.includes('Duplicate') ||
+  !editorPage.includes('Rename') ||
+  !editorPage.includes('Remove') ||
+  !editorPage.includes('aria-label="Animation options"') ||
+  !editorPage.includes('role="dialog" aria-modal="true" aria-labelledby="remove-animation-title"') ||
+  !editorPage.includes('Preserve (the costumes will be moved to the sprite') ||
+  !editorPage.includes('@click="renameAnimation(selectedAnimation)"')
+) {
+  failures.push('editor animation list items must support duplicate, rename, and remove through the local item menu')
+}
+
+if (
   !editorPage.includes("activeQuickConfig === 'position'") ||
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||
