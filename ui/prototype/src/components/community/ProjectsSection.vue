@@ -9,6 +9,7 @@ const props = defineProps<{
   linkTo?: string
   projects: Project[]
   context?: 'home' | 'user' | 'project'
+  cardContext?: 'public' | 'mine'
 }>()
 
 const gridClass = computed(() => {
@@ -39,6 +40,7 @@ const gridClass = computed(() => {
         v-for="project in projects"
         :key="project.id"
         :project="project"
+        :context="cardContext"
       />
     </ul>
   </section>

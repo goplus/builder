@@ -29,7 +29,12 @@ const projects = computed(() => {
       <PrototypeButton v-if="isSignedInUser(user.username)" type="primary">New project</PrototypeButton>
     </template>
     <ul class="m-0 grid list-none grid-cols-4 gap-5 p-0 desktop-large:grid-cols-5">
-      <ProjectCard v-for="project in projects" :key="project.id" :project="project" />
+      <ProjectCard
+        v-for="project in projects"
+        :key="project.id"
+        :project="project"
+        :context="isSignedInUser(user.username) ? 'mine' : 'public'"
+      />
     </ul>
   </UserContent>
 </template>

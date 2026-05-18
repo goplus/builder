@@ -30,7 +30,7 @@ const likesTitle = computed(() => (isSignedInUser(user.value.username) ? 'Projec
           </svg>
         </RouterLink>
       </template>
-      <ProjectsSection title="" :projects="projects" context="user" />
+      <ProjectsSection title="" :projects="projects" context="user" :card-context="isSignedInUser(user.username) ? 'mine' : 'public'" />
     </UserContent>
     <UserContent>
       <template #title>{{ likesTitle }}</template>

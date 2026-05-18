@@ -32,6 +32,7 @@ export type Project = {
   name: string
   title: string
   owner: UserProfile
+  visibility?: 'public' | 'private'
   description: string
   instructions?: string
   thumbnail: string
@@ -177,6 +178,7 @@ export const projects: Project[] = [
     name: 'weathergggg',
     title: 'Weathergggg',
     owner: users[3],
+    visibility: 'public',
     description: 'A local offline XBuilder game project loaded from the bundled Weathergggg.xbp file.',
     instructions: 'Press Run to play this bundled local project in the prototype.',
     thumbnail: weatherggggThumbnail,
@@ -194,6 +196,7 @@ export const projects: Project[] = [
     name: 'niu-run',
     title: 'niu-run',
     owner: users[3],
+    visibility: 'private',
     description: '被牛小花抓到你就输啦',
     instructions: '点击草地控制小牛行走',
     thumbnail: niuRunThumbnail,
@@ -216,6 +219,7 @@ export const projects: Project[] = [
     name: 'forest-runner',
     title: 'Forest Runner',
     owner: users[0],
+    visibility: 'public',
     description: 'A side-scrolling runner with collectible stars, moving platforms, and a timed finish.',
     thumbnail: projectRunImage,
     tags: ['Game', 'Runner', 'Remixable'],
@@ -230,6 +234,7 @@ export const projects: Project[] = [
     name: 'space-catcher',
     title: 'Space Catcher',
     owner: users[1],
+    visibility: 'public',
     description: 'Catch falling crystals and avoid asteroids while the backdrop changes speed.',
     thumbnail: aiSideScrollingImage,
     tags: ['Arcade', 'Sprite'],
@@ -244,6 +249,7 @@ export const projects: Project[] = [
     name: 'pixel-garden',
     title: 'Pixel Garden',
     owner: users[2],
+    visibility: 'public',
     description: 'Grow a garden by sequencing actions and remixing sprite costumes.',
     thumbnail: aiPixelImage,
     tags: ['Pixel', 'Tutorial'],
