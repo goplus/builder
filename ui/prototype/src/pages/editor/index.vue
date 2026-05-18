@@ -3480,7 +3480,10 @@ onBeforeUnmount(() => {
   top: 36px;
   right: 0;
   z-index: 30;
-  min-width: 214px;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 240px;
+  max-width: min(320px, calc(100vw - 32px));
   display: flex;
   flex-direction: column;
   border: 1px solid var(--ui-color-grey-400);
@@ -3490,21 +3493,27 @@ onBeforeUnmount(() => {
   box-shadow: var(--ui-box-shadow-md);
 }
 
-.add-sprite-menu-item {
+.asset-header .add-sprite-menu-item {
+  box-sizing: border-box;
   width: 100%;
-  min-height: 36px;
+  height: auto;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
   border: 0;
   border-radius: var(--ui-border-radius-sm);
   background: transparent;
-  padding: 8px 10px;
+  padding: 8px 40px 8px 8px;
   color: var(--ui-color-grey-1000);
   font-size: 14px;
-  line-height: 20px;
+  line-height: 22px;
   text-align: left;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.add-sprite-menu-item:hover {
+.asset-header .add-sprite-menu-item:hover {
   background: var(--ui-color-grey-300);
 }
 
