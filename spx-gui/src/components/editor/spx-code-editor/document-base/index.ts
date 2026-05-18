@@ -832,6 +832,7 @@ export const glide2: DefinitionDocumentationItem = {
 export const glide3: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
+  hiddenFromList: true, // not included in the reference panel, keep it out of the default list
   definition: {
     package: packageSpx,
     name: 'Sprite.glide',
@@ -1462,7 +1463,7 @@ export const touching0: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['sprite'],
   overview: 'touching(sprite)',
   detail: makeBasicMarkdownString({
-    en: 'if sprite touching given sprite',
+    en: 'If sprite touching given sprite',
     zh: '精灵是否与指定的其他精灵接触'
   })
 }
