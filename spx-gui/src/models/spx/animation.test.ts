@@ -129,7 +129,8 @@ describe('Animation', () => {
     expect(exportedId).toBeUndefined()
   })
 
-  it('should export sound binding using onPlay', () => {
+  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
+  it.skip('should export sound binding using onPlay', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
@@ -140,7 +141,8 @@ describe('Animation', () => {
     expect(config.onStart).toBeUndefined()
   })
 
-  it('should export loop: true in onPlay when soundLoop is true', () => {
+  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
+  it.skip('should export loop: true in onPlay when soundLoop is true', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
@@ -151,7 +153,8 @@ describe('Animation', () => {
     expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
   })
 
-  it('should load soundLoop from onPlay.loop', () => {
+  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
+  it.skip('should load soundLoop from onPlay.loop', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const costumes = sprite.costumes
