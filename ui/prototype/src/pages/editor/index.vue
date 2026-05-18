@@ -48,6 +48,7 @@ import offlineIcon from '@/assets/editor/navbar-icons/offline.svg?raw'
 import modifyProjectNameIcon from '@/assets/editor/navbar-icons/modify-project-name.svg'
 import newProjectIcon from '@/assets/editor/navbar-icons/new.svg'
 import openProjectIcon from '@/assets/editor/navbar-icons/open.svg'
+import plusIcon from '@/assets/editor/ui-icons/plus.svg?raw'
 import projectPageIcon from '@/assets/editor/navbar-icons/project-page.svg'
 import publishIcon from '@/assets/editor/navbar-icons/publish.svg'
 import removeProjectIcon from '@/assets/editor/navbar-icons/remove-project.svg'
@@ -2492,7 +2493,7 @@ onBeforeUnmount(() => {
                   aria-haspopup="menu"
                   @click.stop="toggleAddSpriteMenu"
                 >
-                  +
+                  <span aria-hidden="true" v-html="plusIcon"></span>
                 </button>
                 <span v-if="addSpriteMenuOpen" class="add-sprite-menu" role="menu" @click.stop>
                   <button class="add-sprite-menu-item" type="button" role="menuitem" @click="addLocalSprite('local')">
@@ -5410,17 +5411,37 @@ onBeforeUnmount(() => {
 }
 
 .asset-header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
   border: 0;
   border-radius: 999px;
   background: transparent;
-  font-size: 18px;
-  color: var(--ui-color-grey-600);
+  padding: 0;
+  color: var(--ui-color-grey-800);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  outline: none;
 }
 
 .asset-header button:hover {
   background: var(--ui-color-grey-400);
+}
+
+.asset-header button:active {
+  background: var(--ui-color-grey-500);
+}
+
+.asset-header button:focus-visible {
+  box-shadow: 0 0 0 2px var(--ui-color-primary-300);
+}
+
+.asset-header button > span,
+.asset-header button > span :deep(svg) {
+  width: 16px;
+  height: 16px;
 }
 
 .add-sprite-menu-wrap {

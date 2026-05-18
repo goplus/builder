@@ -45,6 +45,7 @@ const editorStatusIcon = read('src/assets/editor/ui-icons/status.svg')
 const editorSoundIcon = read('src/assets/editor/ui-icons/sound.svg')
 const editorArrowDownIcon = read('src/assets/editor/ui-icons/arrow-down.svg')
 const editorEyeOffIcon = read('src/assets/editor/ui-icons/eye-off.svg')
+const editorPlusIcon = read('src/assets/editor/ui-icons/plus.svg')
 const projectRunner = read('src/components/project/ProjectRunner.vue')
 const copilot = read('src/components/copilot/Copilot.vue')
 const communityApi = read('src/apis/community.ts')
@@ -88,6 +89,7 @@ for (const requiredFile of [
   'src/assets/editor/ui-icons/status.svg',
   'src/assets/editor/ui-icons/sound.svg',
   'src/assets/editor/ui-icons/arrow-down.svg',
+  'src/assets/editor/ui-icons/plus.svg',
   'src/components/project/ProjectRunner.vue',
   'src/components/editor/SpriteItem.vue',
   'src/components/ui/UICardHeader.vue',
@@ -481,6 +483,20 @@ if (
   /[◷●♪⌄▣]/.test(editorPage)
 ) {
   failures.push('editor animation and panel icons must use copied UIIcon SVG assets with component token sizing and color')
+}
+
+if (
+  !editorPage.includes("import plusIcon from '@/assets/editor/ui-icons/plus.svg?raw'") ||
+  !editorPage.includes('<span aria-hidden="true" v-html="plusIcon"></span>') ||
+  !editorPage.includes('.asset-header button > span,\n.asset-header button > span :deep(svg)') ||
+  !editorPage.includes('color: var(--ui-color-grey-800);') ||
+  !editorPage.includes('.asset-header button:active') ||
+  !editorPage.includes('background: var(--ui-color-grey-500);') ||
+  !editorPage.includes('.asset-header button:focus-visible') ||
+  !editorPlusIcon.includes('M12 2.125C12.4832 2.125') ||
+  editorPage.includes('aria-label="Add sprite"\n                  :aria-expanded="addSpriteMenuOpen"\n                  aria-haspopup="menu"\n                  @click.stop="toggleAddSpriteMenu"\n                >\n                  +')
+) {
+  failures.push('editor add sprite trigger must use the copied UIIcon plus asset with PanelHeader icon button states')
 }
 
 if (
