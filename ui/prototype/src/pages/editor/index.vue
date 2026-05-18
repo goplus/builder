@@ -2888,7 +2888,6 @@ onBeforeUnmount(() => {
   grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
   align-items: center;
   background: inherit;
-  border-bottom: 1px solid var(--ui-color-grey-400);
   padding: 0 24px;
 }
 

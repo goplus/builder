@@ -379,8 +379,12 @@ if (
   failures.push('editor code snippets must follow the local XBuilder code theme mapping instead of ad-hoc token classes')
 }
 
-if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: inherit;')) {
-  failures.push('editor navbar background must inherit the editor page background')
+if (
+  !editorPage.includes('.editor-navbar') ||
+  !editorPage.includes('background: inherit;') ||
+  editorPage.includes('.editor-navbar {\n  height: 56px;\n  display: grid;\n  grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);\n  align-items: center;\n  background: inherit;\n  border-bottom:')
+) {
+  failures.push('editor navbar must inherit page background without a bottom border')
 }
 
 if (
