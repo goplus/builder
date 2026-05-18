@@ -763,15 +763,12 @@ function handleSpriteMenuAction(action: () => void) {
   action()
 }
 
-function toggleSelectedSpriteVisibility() {
-  const sprite = selectedSprite.value
-  if (sprite == null) return
+function toggleSpriteVisibility(sprite: SpriteCard) {
   sprite.hidden = !sprite.hidden
+  markPrototypeAction()
 }
 
-function duplicateSelectedSprite() {
-  const sprite = selectedSprite.value
-  if (sprite == null) return
+function duplicateSprite(sprite: SpriteCard) {
   const copyIndex = sprites.value.filter((item) => item.name.startsWith(sprite.name)).length + 1
   const copy: SpriteCard = {
     ...sprite,
@@ -780,17 +777,19 @@ function duplicateSelectedSprite() {
     shortName: `${sprite.shortName} ${copyIndex}`,
     hidden: false
   }
-  sprites.value.push(copy)
+  const sourceIndex = sprites.value.findIndex((item) => item.id === sprite.id)
+  sprites.value.splice(sourceIndex >= 0 ? sourceIndex + 1 : sprites.value.length, 0, copy)
   selectedSpriteId.value = copy.id
+  selectedMapSpriteId.value = copy.id
+  markPrototypeAction()
 }
 
-function renameSelectedSprite() {
-  const sprite = selectedSprite.value
-  if (sprite == null) return
+function renameSprite(sprite: SpriteCard) {
   const nextName = window.prompt('Rename sprite', sprite.name)?.trim()
   if (!nextName) return
   sprite.name = nextName
   sprite.shortName = nextName.length > 10 ? `${nextName.slice(0, 8)}...` : nextName
+  markPrototypeAction()
 }
 
 async function startMapSpriteRename() {
@@ -821,16 +820,20 @@ function submitMapSpriteRename() {
   cancelMapSpriteRename()
 }
 
-function saveSelectedSpriteToLibrary() {
+function saveSpriteToLibrary(sprite: SpriteCard) {
+  selectedSpriteId.value = sprite.id
   markPrototypeAction()
 }
 
-function removeSelectedSprite() {
+function removeSprite(sprite: SpriteCard) {
   if (sprites.value.length <= 1) return
-  const currentIndex = sprites.value.findIndex((sprite) => sprite.id === selectedSpriteId.value)
+  const currentIndex = sprites.value.findIndex((item) => item.id === sprite.id)
   if (currentIndex < 0) return
   sprites.value.splice(currentIndex, 1)
-  selectedSpriteId.value = sprites.value[Math.max(0, currentIndex - 1)]?.id ?? sprites.value[0]?.id
+  const nextSprite = sprites.value[Math.min(currentIndex, sprites.value.length - 1)] ?? sprites.value[0]
+  selectedSpriteId.value = nextSprite?.id ?? ''
+  selectedMapSpriteId.value = nextSprite?.id ?? ''
+  markPrototypeAction()
 }
 
 function handleDocumentClick(event: MouseEvent) {
@@ -1409,19 +1412,19 @@ onBeforeUnmount(() => {
                     v-html="moreIcon"
                   ></button>
                   <span v-if="spriteMenuOpenFor === sprite.id" class="sprite-options-menu" role="menu">
-                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(toggleSelectedSpriteVisibility)">
-                      {{ selectedSprite.hidden ? 'Show' : 'Hide' }}
+                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(() => toggleSpriteVisibility(sprite))">
+                      {{ sprite.hidden ? 'Show' : 'Hide' }}
                     </button>
-                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(duplicateSelectedSprite)">
+                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(() => duplicateSprite(sprite))">
                       Duplicate
                     </button>
-                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(renameSelectedSprite)">
+                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(() => renameSprite(sprite))">
                       Rename
                     </button>
-                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(saveSelectedSpriteToLibrary)">
+                    <button class="sprite-options-item" type="button" role="menuitem" @click="handleSpriteMenuAction(() => saveSpriteToLibrary(sprite))">
                       Save to asset library
                     </button>
-                    <button class="sprite-options-item danger" type="button" role="menuitem" @click="handleSpriteMenuAction(removeSelectedSprite)">
+                    <button class="sprite-options-item danger" type="button" role="menuitem" @click="handleSpriteMenuAction(() => removeSprite(sprite))">
                       Remove
                     </button>
                   </span>
