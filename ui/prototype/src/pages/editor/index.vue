@@ -2925,6 +2925,7 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite-list {
+  flex: 1 1 auto;
   min-height: 120px;
   display: flex;
   flex-wrap: wrap;
@@ -2935,9 +2936,15 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite-config {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
   border-top: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-200);
   padding: 16px;
+  box-shadow: 0 -12px 24px rgb(16 24 40 / 0.08);
 }
 
 .map-config-expand {

@@ -298,6 +298,15 @@ if (
 }
 
 if (
+  !editorPage.includes('.map-sprite-config') ||
+  !editorPage.includes('position: absolute;') ||
+  !editorPage.includes('bottom: 0;') ||
+  !editorPage.includes('box-shadow: 0 -12px 24px')
+) {
+  failures.push('map sprite config must render as an overlay drawer above the sprite list')
+}
+
+if (
   !editorPage.includes("activeQuickConfig === 'position'") ||
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||
