@@ -796,6 +796,51 @@ function selectCodeCategory(categoryId: CodeCategoryId) {
   activeCodeCategory.value = categoryId
 }
 
+type SnippetDragState = {
+  pointerId: number
+  startX: number
+  scrollLeft: number
+  target: HTMLElement
+  dragged: boolean
+}
+
+let snippetDragState: SnippetDragState | null = null
+
+function startSnippetHorizontalDrag(event: PointerEvent) {
+  const target = event.currentTarget
+  if (!(target instanceof HTMLElement)) return
+  if (event.pointerType === 'mouse' && event.button !== 0) return
+  if (target.scrollWidth <= target.clientWidth) return
+  snippetDragState = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    scrollLeft: target.scrollLeft,
+    target,
+    dragged: false
+  }
+  target.classList.add('dragging')
+  target.setPointerCapture?.(event.pointerId)
+}
+
+function moveSnippetHorizontalDrag(event: PointerEvent) {
+  const dragState = snippetDragState
+  if (dragState == null || dragState.pointerId !== event.pointerId) return
+  const deltaX = event.clientX - dragState.startX
+  if (Math.abs(deltaX) > 2) dragState.dragged = true
+  dragState.target.scrollLeft = dragState.scrollLeft - deltaX
+  if (dragState.dragged) event.preventDefault()
+}
+
+function endSnippetHorizontalDrag(event: PointerEvent) {
+  const dragState = snippetDragState
+  if (dragState == null || dragState.pointerId !== event.pointerId) return
+  if (dragState.target.hasPointerCapture?.(event.pointerId)) {
+    dragState.target.releasePointerCapture(event.pointerId)
+  }
+  dragState.target.classList.remove('dragging')
+  snippetDragState = null
+}
+
 function selectSprite(id = selectedSpriteId.value) {
   activeEditorTarget.value = 'sprite'
   selectedSpriteId.value = id
@@ -1593,6 +1638,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
+  snippetDragState?.target.classList.remove('dragging')
+  snippetDragState = null
   clearSaveStateTimeouts()
 })
 </script>
@@ -1794,7 +1841,14 @@ onBeforeUnmount(() => {
             </button>
           </aside>
 
-          <aside class="events-list" aria-label="Event snippets">
+          <aside
+            class="events-list"
+            aria-label="Event snippets"
+            @pointerdown="startSnippetHorizontalDrag"
+            @pointermove="moveSnippetHorizontalDrag"
+            @pointerup="endSnippetHorizontalDrag"
+            @pointercancel="endSnippetHorizontalDrag"
+          >
             <section v-for="group in visibleSnippetGroups" :key="group.title" class="event-group">
               <h3>{{ group.title }}</h3>
               <button v-for="item in group.items" :key="item.id" class="event-snippet" type="button">
@@ -2050,7 +2104,14 @@ onBeforeUnmount(() => {
             </button>
           </aside>
 
-          <aside class="events-list" aria-label="Stage snippets">
+          <aside
+            class="events-list"
+            aria-label="Stage snippets"
+            @pointerdown="startSnippetHorizontalDrag"
+            @pointermove="moveSnippetHorizontalDrag"
+            @pointerup="endSnippetHorizontalDrag"
+            @pointercancel="endSnippetHorizontalDrag"
+          >
             <section class="event-group">
               <h3>Stage Events</h3>
               <button class="event-snippet" type="button">
@@ -4858,10 +4919,24 @@ onBeforeUnmount(() => {
 .events-list {
   border-right: 1px solid var(--ui-color-grey-400);
   padding: 15px 16px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: grab;
+  scrollbar-width: none;
+  touch-action: pan-y;
+}
+
+.events-list.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.events-list::-webkit-scrollbar {
+  display: none;
 }
 
 .event-group {
+  min-width: max-content;
   border-bottom: 1px dashed var(--ui-color-grey-400);
   padding-bottom: 12px;
   margin-bottom: 12px;
@@ -4876,7 +4951,8 @@ onBeforeUnmount(() => {
 
 .event-snippet {
   display: block;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border: 0;
   background: transparent;
   padding: 5px 6px;

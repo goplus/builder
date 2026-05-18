@@ -386,6 +386,20 @@ if (
 }
 
 if (
+  !editorPage.includes('function startSnippetHorizontalDrag(event: PointerEvent)') ||
+  !editorPage.includes('function moveSnippetHorizontalDrag(event: PointerEvent)') ||
+  !editorPage.includes('function endSnippetHorizontalDrag(event: PointerEvent)') ||
+  (editorPage.match(/@pointerdown="startSnippetHorizontalDrag"/g) ?? []).length < 2 ||
+  !editorPage.includes('overflow-x: auto;') ||
+  !editorPage.includes('scrollbar-width: none;') ||
+  !editorPage.includes('.events-list::-webkit-scrollbar') ||
+  !editorPage.includes('min-width: max-content;') ||
+  !editorPage.includes('width: max-content;')
+) {
+  failures.push('editor snippets panel must support horizontal drag scrolling for long code snippets')
+}
+
+if (
   !editorPage.includes('.editor-navbar') ||
   !editorPage.includes('background: inherit;') ||
   editorPage.includes('.editor-navbar {\n  height: 56px;\n  display: grid;\n  grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);\n  align-items: center;\n  background: inherit;\n  border-bottom:')
