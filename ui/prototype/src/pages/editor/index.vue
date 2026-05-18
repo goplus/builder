@@ -86,7 +86,48 @@ type SpriteCard = {
 
 type SnippetPart = {
   text: string
-  type?: 'function' | 'hint' | 'string' | 'custom' | 'operator'
+  type?: 'function' | 'hint' | 'string' | 'identifier' | 'number' | 'keyword' | 'custom' | 'operator'
+}
+
+type CodeTokenType = NonNullable<SnippetPart['type']>
+
+const codeTokenClass: Record<CodeTokenType, string> = {
+  function: 'text-[#b08a01]',
+  hint: 'text-grey-700',
+  string: 'text-[#9c2c2c]',
+  identifier: 'text-[#0774cd]',
+  number: 'text-[#139707]',
+  keyword: 'text-[#892ba8]',
+  custom: 'text-[#0774cd]',
+  operator: 'text-grey-1000'
+}
+
+function getCodeTokenClass(type?: SnippetPart['type']) {
+  return type != null ? codeTokenClass[type] : undefined
+}
+
+function getSourceParts(source: string): SnippetPart[] {
+  if (source.length === 0) return []
+  const parts: SnippetPart[] = []
+  const tokenPattern = /"[^"]*"|\b\d+(?:\.\d+)?\b|[A-Za-z_][A-Za-z0-9_]*|[\u4e00-\u9fff]+/g
+  let cursor = 0
+  for (const match of source.matchAll(tokenPattern)) {
+    const text = match[0]
+    const index = match.index ?? 0
+    if (index > cursor) parts.push({ text: source.slice(cursor, index), type: 'operator' })
+    if (text.startsWith('"')) {
+      parts.push({ text, type: 'string' })
+    } else if (/^\d/.test(text)) {
+      parts.push({ text, type: 'number' })
+    } else if (text === 'true' || text === 'false' || text === 'nil') {
+      parts.push({ text, type: 'keyword' })
+    } else {
+      parts.push({ text, type: 'identifier' })
+    }
+    cursor = index + text.length
+  }
+  if (cursor < source.length) parts.push({ text: source.slice(cursor), type: 'operator' })
+  return parts
 }
 
 type EventSnippet = {
@@ -212,13 +253,13 @@ const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items
         snippet('onKey', [
           { text: 'onKey', type: 'function' },
           { text: ' key:', type: 'hint' },
-          { text: 'KeyA', type: 'custom' },
+          { text: 'KeyA', type: 'identifier' },
           { text: ', => {}', type: 'operator' }
         ]),
         snippet('onSwipe', [
           { text: 'onSwipe', type: 'function' },
           { text: ' direction:', type: 'hint' },
-          { text: 'left', type: 'custom' },
+          { text: 'left', type: 'identifier' },
           { text: ',...', type: 'operator' }
         ]),
         snippet('onTouchStart-name', [
@@ -259,7 +300,7 @@ const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items
       items: [
         snippet('onCloned', [
           { text: 'onCloned', type: 'function' },
-          { text: ' data', type: 'custom' },
+          { text: ' data', type: 'identifier' },
           { text: ' => {}', type: 'operator' }
         ])
       ]
@@ -281,28 +322,28 @@ const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items
     { title: 'Graphic Effect', items: [snippet('clearGraphicEffects', [{ text: 'clearGraphicEffects', type: 'function' }])] }
   ],
   motion: [
-    { title: 'Position', items: [snippet('stepTo', [{ text: 'stepTo', type: 'function' }, { text: ' obj:', type: 'hint' }, { text: 'Mouse', type: 'custom' }]), snippet('setXYpos', [{ text: 'setXYpos', type: 'function' }, { text: ' x:', type: 'hint' }, { text: '0', type: 'custom' }, { text: ', y:', type: 'hint' }, { text: '0', type: 'custom' }])] },
-    { title: 'Heading', items: [snippet('turnTo', [{ text: 'turnTo', type: 'function' }, { text: ' target:', type: 'hint' }, { text: 'Mouse', type: 'custom' }])] },
-    { title: 'Physics', items: [snippet('touching', [{ text: 'touching', type: 'function' }, { text: ' target:', type: 'hint' }, { text: 'Sprite', type: 'custom' }])] }
+    { title: 'Position', items: [snippet('stepTo', [{ text: 'stepTo', type: 'function' }, { text: ' obj:', type: 'hint' }, { text: 'Mouse', type: 'identifier' }]), snippet('setXYpos', [{ text: 'setXYpos', type: 'function' }, { text: ' x:', type: 'hint' }, { text: '0', type: 'number' }, { text: ', y:', type: 'hint' }, { text: '0', type: 'number' }])] },
+    { title: 'Heading', items: [snippet('turnTo', [{ text: 'turnTo', type: 'function' }, { text: ' target:', type: 'hint' }, { text: 'Mouse', type: 'identifier' }])] },
+    { title: 'Physics', items: [snippet('touching', [{ text: 'touching', type: 'function' }, { text: ' target:', type: 'hint' }, { text: 'Sprite', type: 'identifier' }])] }
   ],
   control: [
-    { title: 'Time', items: [snippet('wait', [{ text: 'wait', type: 'function' }, { text: ' seconds:', type: 'hint' }, { text: '1', type: 'custom' }])] },
-    { title: 'Flow Control', items: [snippet('forever', [{ text: 'forever', type: 'function' }, { text: ' => {}', type: 'operator' }]), snippet('repeat', [{ text: 'repeat', type: 'function' }, { text: ' times:', type: 'hint' }, { text: '10', type: 'custom' }])] },
-    { title: 'Declaration', items: [snippet('var', [{ text: 'var', type: 'function' }, { text: ' score', type: 'custom' }])] }
+    { title: 'Time', items: [snippet('wait', [{ text: 'wait', type: 'function' }, { text: ' seconds:', type: 'hint' }, { text: '1', type: 'number' }])] },
+    { title: 'Flow Control', items: [snippet('forever', [{ text: 'forever', type: 'function' }, { text: ' => {}', type: 'operator' }]), snippet('repeat', [{ text: 'repeat', type: 'function' }, { text: ' times:', type: 'hint' }, { text: '10', type: 'number' }])] },
+    { title: 'Declaration', items: [snippet('var', [{ text: 'var', type: 'keyword' }, { text: ' score', type: 'identifier' }])] }
   ],
   sensing: [
     { title: 'Mouse', items: [snippet('mouseX', [{ text: 'mouseX', type: 'function' }]), snippet('mouseY', [{ text: 'mouseY', type: 'function' }]), snippet('mousePressed', [{ text: 'mousePressed', type: 'function' }])] },
-    { title: 'Keyboard', items: [snippet('keyPressed', [{ text: 'keyPressed', type: 'function' }, { text: ' key:', type: 'hint' }, { text: 'KeyA', type: 'custom' }])] },
+    { title: 'Keyboard', items: [snippet('keyPressed', [{ text: 'keyPressed', type: 'function' }, { text: ' key:', type: 'hint' }, { text: 'KeyA', type: 'identifier' }])] },
     { title: 'Ask', items: [snippet('ask', [{ text: 'ask', type: 'function' }, { text: ' question:', type: 'hint' }, { text: '"name?"', type: 'string' }])] }
   ],
   sound: [
     { title: 'Play / Stop', items: [snippet('play', [{ text: 'play', type: 'function' }, { text: ' name:', type: 'hint' }, { text: '"pop"', type: 'string' }]), snippet('stopAllSounds', [{ text: 'stopAllSounds', type: 'function' }])] },
-    { title: 'Volume', items: [snippet('volume', [{ text: 'volume', type: 'function' }]), snippet('setVolume', [{ text: 'setVolume', type: 'function' }, { text: ' volume:', type: 'hint' }, { text: '80', type: 'custom' }])] }
+    { title: 'Volume', items: [snippet('volume', [{ text: 'volume', type: 'function' }]), snippet('setVolume', [{ text: 'setVolume', type: 'function' }, { text: ' volume:', type: 'hint' }, { text: '80', type: 'number' }])] }
   ],
   game: [
-    { title: 'Start / Stop', items: [snippet('start', [{ text: 'start', type: 'function' }]), snippet('stop', [{ text: 'stop', type: 'function' }]), snippet('wait', [{ text: 'wait', type: 'function' }, { text: ' seconds:', type: 'hint' }, { text: '1', type: 'custom' }])] },
-    { title: 'Sprite', items: [snippet('getSprite', [{ text: 'getSprite', type: 'function' }, { text: ' name:', type: 'hint' }, { text: '"牛小七"', type: 'string' }]), snippet('cloneSprite', [{ text: 'cloneSprite', type: 'function' }, { text: ' sprite:', type: 'hint' }, { text: '牛小七', type: 'custom' }])] },
-    { title: 'Camera', items: [snippet('cameraFollow', [{ text: 'cameraFollow', type: 'function' }, { text: ' target:', type: 'hint' }, { text: '牛小七', type: 'custom' }]), snippet('cameraShake', [{ text: 'cameraShake', type: 'function' }, { text: ' strength:', type: 'hint' }, { text: '4', type: 'custom' }])] },
+    { title: 'Start / Stop', items: [snippet('start', [{ text: 'start', type: 'function' }]), snippet('stop', [{ text: 'stop', type: 'function' }]), snippet('wait', [{ text: 'wait', type: 'function' }, { text: ' seconds:', type: 'hint' }, { text: '1', type: 'number' }])] },
+    { title: 'Sprite', items: [snippet('getSprite', [{ text: 'getSprite', type: 'function' }, { text: ' name:', type: 'hint' }, { text: '"牛小七"', type: 'string' }]), snippet('cloneSprite', [{ text: 'cloneSprite', type: 'function' }, { text: ' sprite:', type: 'hint' }, { text: '牛小七', type: 'identifier' }])] },
+    { title: 'Camera', items: [snippet('cameraFollow', [{ text: 'cameraFollow', type: 'function' }, { text: ' target:', type: 'hint' }, { text: '牛小七', type: 'identifier' }]), snippet('cameraShake', [{ text: 'cameraShake', type: 'function' }, { text: ' strength:', type: 'hint' }, { text: '4', type: 'number' }])] },
     { title: 'Others', items: [snippet('timer', [{ text: 'timer', type: 'function' }]), snippet('resetTimer', [{ text: 'resetTimer', type: 'function' }]), snippet('getWidget', [{ text: 'getWidget', type: 'function' }, { text: ' name:', type: 'hint' }, { text: '"Score"', type: 'string' }])] }
   ]
 }
@@ -1364,7 +1405,7 @@ onBeforeUnmount(() => {
             <section v-for="group in visibleSnippetGroups" :key="group.title" class="event-group">
               <h3>{{ group.title }}</h3>
               <button v-for="item in group.items" :key="item.id" class="event-snippet" type="button">
-                <span v-for="(part, index) in item.parts" :key="`${item.id}-${index}`" :class="part.type && `token-${part.type}`">
+                <span v-for="(part, index) in item.parts" :key="`${item.id}-${index}`" :class="getCodeTokenClass(part.type)">
                   {{ part.text }}
                 </span>
               </button>
@@ -1374,8 +1415,12 @@ onBeforeUnmount(() => {
           <section class="code-editor" :style="codeEditorStyle" aria-label="Sprite code editor">
             <div v-for="(line, index) in codeLines" :key="index" class="code-line">
               <span class="line-number">{{ index + 1 }}</span>
-              <span class="keyword">{{ line[0] }}</span>
-              <span class="source">{{ line[1] }}</span>
+              <span class="text-[#b08a01]">{{ line[0] }}</span>
+              <span class="source-content">
+                <span v-for="(part, partIndex) in getSourceParts(line[1])" :key="`${index}-${partIndex}`" :class="getCodeTokenClass(part.type)">
+                  {{ part.text }}
+                </span>
+              </span>
             </div>
             <aside class="code-side-tools" aria-label="Code document navigation">
               <div class="code-document-tabs">
@@ -1516,23 +1561,27 @@ onBeforeUnmount(() => {
             <section class="event-group">
               <h3>Stage Events</h3>
               <button class="event-snippet" type="button">
-                <span class="token-function">onBackdrop</span><span class="token-hint"> name:</span><span class="token-string">"backdrop"</span>
+                <span :class="getCodeTokenClass('function')">onBackdrop</span><span :class="getCodeTokenClass('hint')"> name:</span><span :class="getCodeTokenClass('string')">"backdrop"</span>
               </button>
-              <button class="event-snippet" type="button"><span class="token-function">show</span></button>
-              <button class="event-snippet" type="button"><span class="token-function">hide</span></button>
+              <button class="event-snippet" type="button"><span :class="getCodeTokenClass('function')">show</span></button>
+              <button class="event-snippet" type="button"><span :class="getCodeTokenClass('function')">hide</span></button>
             </section>
           </aside>
 
           <section class="code-editor" :style="codeEditorStyle" aria-label="Stage code editor">
             <div v-if="stageCodeLines.length === 0" class="code-line">
               <span class="line-number">1</span>
-              <span class="keyword"></span>
-              <span class="source"></span>
+              <span></span>
+              <span></span>
             </div>
             <div v-for="(line, index) in stageCodeLines" v-else :key="index" class="code-line">
               <span class="line-number">{{ index + 1 }}</span>
-              <span class="keyword">{{ line[0] }}</span>
-              <span class="source">{{ line[1] }}</span>
+              <span class="text-[#b08a01]">{{ line[0] }}</span>
+              <span class="source-content">
+                <span v-for="(part, partIndex) in getSourceParts(line[1])" :key="`stage-${index}-${partIndex}`" :class="getCodeTokenClass(part.type)">
+                  {{ part.text }}
+                </span>
+              </span>
             </div>
             <aside class="code-side-tools" aria-label="Code document navigation">
               <div class="code-document-tabs">
@@ -3819,23 +3868,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.token-function,
-.token-custom {
-  color: #b08a01;
-}
-
-.token-hint {
-  color: var(--ui-color-grey-700);
-}
-
-.token-string {
-  color: #9c2c2c;
-}
-
-.token-operator {
-  color: #000;
-}
-
 .code-editor {
   position: relative;
   overflow: hidden;
@@ -3857,19 +3889,10 @@ onBeforeUnmount(() => {
   text-align: right;
 }
 
-.keyword {
-  color: #b08a01;
-}
-
-.source {
-  color: var(--ui-color-grey-1000);
+.source-content {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.source::first-letter {
-  color: #9a3131;
 }
 
 .code-side-tools {

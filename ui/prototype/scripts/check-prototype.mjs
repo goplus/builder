@@ -304,6 +304,20 @@ if (
   failures.push('editor code category rail must mirror APIReferenceUI spacing and states with Tailwind utilities')
 }
 
+if (
+  !editorPage.includes("function: 'text-[#b08a01]'") ||
+  !editorPage.includes("identifier: 'text-[#0774cd]'") ||
+  !editorPage.includes("number: 'text-[#139707]'") ||
+  !editorPage.includes("string: 'text-[#9c2c2c]'") ||
+  !editorPage.includes("keyword: 'text-[#892ba8]'") ||
+  !editorPage.includes("getSourceParts(line[1])") ||
+  editorPage.includes("class=\"token-") ||
+  editorPage.includes("`token-${part.type}`") ||
+  editorPage.includes("{ text: 'KeyA', type: 'custom' }")
+) {
+  failures.push('editor code snippets must follow the local XBuilder code theme mapping instead of ad-hoc token classes')
+}
+
 if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: var(--ui-color-grey-300);')) {
   failures.push('editor navbar must use the real grey-300 background token')
 }
