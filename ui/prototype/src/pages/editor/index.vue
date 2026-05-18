@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { getProject } from '@/apis/project'
 import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
 import PrototypeButton from '@/components/ui/PrototypeButton.vue'
+import PrototypeCard from '@/components/ui/PrototypeCard.vue'
 import PrototypeTag from '@/components/ui/PrototypeTag.vue'
 import controlIcon from '@/assets/editor/category-icons/control.svg'
 import eventIcon from '@/assets/editor/category-icons/event.svg'
@@ -1984,7 +1985,7 @@ onBeforeUnmount(() => {
       </section>
 
       <aside class="map-side">
-        <section class="map-card">
+        <PrototypeCard class="map-card">
           <header class="map-card-header">
             <h2>Global Config</h2>
             <button type="button" aria-label="Collapse global config">⌄</button>
@@ -2045,9 +2046,9 @@ onBeforeUnmount(() => {
               </span>
             </label>
           </div>
-        </section>
+        </PrototypeCard>
 
-        <section class="map-card map-sprites-card">
+        <PrototypeCard class="map-card map-sprites-card">
           <header class="map-card-header active">
             <h2>Sprites</h2>
             <button type="button" aria-label="Add sprite">+</button>
@@ -2117,7 +2118,7 @@ onBeforeUnmount(() => {
           >
             ⌃
           </button>
-        </section>
+        </PrototypeCard>
       </aside>
     </section>
   </main>
@@ -2720,9 +2721,6 @@ onBeforeUnmount(() => {
 .map-card {
   min-height: 0;
   overflow: hidden;
-  border-radius: var(--ui-border-radius-lg);
-  background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-lg);
 }
 
 .map-card-header {

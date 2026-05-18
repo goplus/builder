@@ -304,6 +304,14 @@ if (
 }
 
 if (
+  !editorPage.includes("import PrototypeCard from '@/components/ui/PrototypeCard.vue'") ||
+  !editorPage.includes('<PrototypeCard class="map-card">') ||
+  !editorPage.includes('<PrototypeCard class="map-card map-sprites-card">')
+) {
+  failures.push('editor map side cards must use the prototype card component instead of hand-rolled sections')
+}
+
+if (
   !editorPage.includes("zoom-in.svg?raw") ||
   !editorPage.includes("zoom-out.svg?raw") ||
   !editorPage.includes("zoom-reset.svg?raw") ||
