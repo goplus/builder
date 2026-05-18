@@ -43,6 +43,7 @@ const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
 const prototypeTag = read('src/components/ui/PrototypeTag.vue')
 const prototypeTab = read('src/components/ui/PrototypeTab.vue')
 const prototypeSpriteItem = read('src/components/editor/PrototypeSpriteItem.vue')
+const prototypeCardHeader = read('src/components/ui/PrototypeCardHeader.vue')
 
 for (const route of [
   '/',
@@ -80,6 +81,7 @@ for (const requiredFile of [
   'src/assets/projects/niu-run/thumbnail.jpeg',
   'src/components/project/PrototypeProjectRunner.vue',
   'src/components/editor/PrototypeSpriteItem.vue',
+  'src/components/ui/PrototypeCardHeader.vue',
   'src/components/community/home/GuestBanner.vue',
   'src/pages/community/index.vue',
   'src/pages/community/project.vue',
@@ -288,6 +290,21 @@ if (
   !prototypeTab.includes('border-grey-1000 text-grey-1000')
 ) {
   failures.push('editor tabs must use the local prototype tab component mirroring UITab states and typography')
+}
+
+if (
+  !editorPage.includes("import PrototypeCardHeader from '@/components/ui/PrototypeCardHeader.vue'") ||
+  !editorPage.includes('<PrototypeCardHeader class="panel-header justify-between gap-3">') ||
+  !editorPage.includes('<h2 class="m-0 flex-1 text-xl font-normal text-title">Preview</h2>') ||
+  !editorPage.includes('<PrototypeCardHeader class="asset-header justify-between">') ||
+  !editorPage.includes('<PrototypeCardHeader class="stage-panel-header justify-center">Stage</PrototypeCardHeader>') ||
+  !editorPage.includes('<PrototypeCardHeader class="map-card-header justify-between">') ||
+  !prototypeCardHeader.includes('h-12 items-center border-b border-grey-400 px-3 text-xl text-title') ||
+  editorPage.includes('.panel-header h2') ||
+  editorPage.includes('.asset-header h2') ||
+  editorPage.includes('.map-card-header h2')
+) {
+  failures.push('editor module headers must mirror UICardHeader typography with local PrototypeCardHeader and text-title tokens')
 }
 
 if (

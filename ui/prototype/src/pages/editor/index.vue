@@ -7,6 +7,7 @@ import PrototypeSpriteItem from '@/components/editor/PrototypeSpriteItem.vue'
 import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
 import PrototypeButton from '@/components/ui/PrototypeButton.vue'
 import PrototypeCard from '@/components/ui/PrototypeCard.vue'
+import PrototypeCardHeader from '@/components/ui/PrototypeCardHeader.vue'
 import PrototypeTab from '@/components/ui/PrototypeTab.vue'
 import PrototypeTabs from '@/components/ui/PrototypeTabs.vue'
 import PrototypeTag from '@/components/ui/PrototypeTag.vue'
@@ -1753,8 +1754,8 @@ onBeforeUnmount(() => {
 
       <aside class="preview-column">
         <section class="preview-card">
-          <header class="panel-header">
-            <h2>Preview</h2>
+          <PrototypeCardHeader class="panel-header justify-between gap-3">
+            <h2 class="m-0 flex-1 text-xl font-normal text-title">Preview</h2>
             <div class="panel-actions">
               <button class="run-button" type="button" @click="runProject">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
@@ -1765,7 +1766,7 @@ onBeforeUnmount(() => {
                 Publish
               </button>
             </div>
-          </header>
+          </PrototypeCardHeader>
 
           <div class="stage-frame">
             <template v-if="!runnerActive">
@@ -1928,8 +1929,8 @@ onBeforeUnmount(() => {
 
         <section class="asset-card">
           <div class="sprites-panel">
-            <header class="asset-header">
-              <h2>Sprites</h2>
+            <PrototypeCardHeader class="asset-header justify-between">
+              <h2 class="m-0 text-xl font-normal text-title">Sprites</h2>
               <span ref="addSpriteMenuRef" class="add-sprite-menu-wrap">
                 <button
                   type="button"
@@ -1952,7 +1953,7 @@ onBeforeUnmount(() => {
                   </button>
                 </span>
               </span>
-            </header>
+            </PrototypeCardHeader>
             <div ref="spriteMenuRef" class="sprite-list">
               <PrototypeSpriteItem
                 v-for="sprite in sprites"
@@ -1977,7 +1978,7 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="stage-panel">
-            <header class="stage-panel-header">Stage</header>
+            <PrototypeCardHeader class="stage-panel-header justify-center">Stage</PrototypeCardHeader>
             <button
               class="stage-thumb"
               :class="{ active: activeEditorTarget === 'stage' && activeStageTab === 'code' }"
@@ -2053,10 +2054,10 @@ onBeforeUnmount(() => {
 
       <aside class="map-side">
         <PrototypeCard class="map-card">
-          <header class="map-card-header">
-            <h2>Global Config</h2>
+          <PrototypeCardHeader class="map-card-header justify-between">
+            <h2 class="m-0 text-xl font-normal text-title">Global Config</h2>
             <button type="button" aria-label="Collapse global config">⌄</button>
-          </header>
+          </PrototypeCardHeader>
           <div class="map-config">
             <label>
               <span>Map size</span>
@@ -2116,10 +2117,10 @@ onBeforeUnmount(() => {
         </PrototypeCard>
 
         <PrototypeCard class="map-card map-sprites-card">
-          <header class="map-card-header active">
-            <h2>Sprites</h2>
+          <PrototypeCardHeader class="map-card-header active justify-between">
+            <h2 class="m-0 text-xl font-normal">Sprites</h2>
             <button type="button" aria-label="Add sprite">+</button>
-          </header>
+          </PrototypeCardHeader>
           <div class="map-sprite-list">
             <PrototypeSpriteItem
               v-for="sprite in sprites"
@@ -2871,23 +2872,8 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.map-card-header {
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-  padding: 0 16px;
-}
-
 .map-card-header.active {
   color: var(--ui-color-primary-main);
-}
-
-.map-card-header h2 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
 }
 
 .map-card-header button,
@@ -4031,22 +4017,6 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
 }
 
-.panel-header {
-  height: 47px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-}
-
-.panel-header h2,
-.asset-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-}
-
 .panel-actions {
   gap: 12px;
 }
@@ -4330,13 +4300,6 @@ onBeforeUnmount(() => {
   border-right: 1px solid var(--ui-color-grey-400);
 }
 
-.asset-header {
-  height: 42px;
-  justify-content: space-between;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-}
-
 .asset-header button {
   width: 28px;
   height: 28px;
@@ -4482,13 +4445,6 @@ onBeforeUnmount(() => {
 
 .stage-panel-header {
   width: 100%;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-  font-size: 18px;
-  font-weight: 500;
 }
 
 .stage-thumb {
