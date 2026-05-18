@@ -31,6 +31,10 @@ const panelStyle = computed(() => ({
   right: isOpen.value ? `${panelPosition.value.right}px` : '24px',
   bottom: isOpen.value ? `${panelPosition.value.bottom}px` : '24px'
 }))
+const panelSide = computed<'left' | 'right'>(() => {
+  const panelWidth = panelRef.value?.offsetWidth ?? 340
+  return panelPosition.value.right > (window.innerWidth - panelWidth) / 2 ? 'left' : 'right'
+})
 
 function getMockAnswer(question: string) {
   if (question.toLowerCase().includes('project')) {
@@ -220,7 +224,13 @@ onBeforeUnmount(() => {
     </div>
     <div class="footer">
       <div class="footer-wrapper">
-        <button class="fold" type="button" :aria-label="isOpen ? 'Close Copilot' : 'Open Copilot'" @click="isOpen = !isOpen">
+        <button
+          class="fold"
+          :class="{ left: isOpen && panelSide === 'left' }"
+          type="button"
+          :aria-label="isOpen ? 'Close Copilot' : 'Open Copilot'"
+          @click="isOpen = !isOpen"
+        >
           <svg v-if="isOpen" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M3.33301 3.33334L8.66634 8L3.33301 12.6667" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
@@ -486,7 +496,12 @@ textarea::placeholder {
   color: inherit;
   transition:
     background-color 0.2s ease,
-    stroke 0.2s ease;
+    stroke 0.2s ease,
+    transform 0.2s ease;
+}
+
+.fold.left {
+  transform: rotate(180deg);
 }
 
 .copilot-panel.closed .fold {
