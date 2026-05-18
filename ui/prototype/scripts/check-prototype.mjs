@@ -243,6 +243,14 @@ if (!editorPage.includes("back.svg?raw") || quickConfigBackIcon.includes('M15 18
   failures.push('editor quick config back control must use the real back icon asset')
 }
 
+if (!editorPage.includes('.stage-tools button') || !editorPage.includes('color: var(--ui-color-grey-1000);')) {
+  failures.push('editor quick config controls must use the real grey-1000 icon token')
+}
+
+if (!editorPage.includes('.stage-tools button:hover') || !editorPage.includes('color: var(--ui-color-turquoise-500);')) {
+  failures.push('editor quick config controls must use the real hover icon token')
+}
+
 for (const editorToken of ['Code', 'Costumes', 'Animations', 'Preview', 'Sprites', 'Stage']) {
   if (!editorPage.includes(editorToken)) failures.push(`editor page must include real editor surface token: ${editorToken}`)
 }

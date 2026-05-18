@@ -3668,10 +3668,12 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border-radius: var(--ui-border-radius-md);
+  color: var(--ui-color-grey-1000);
 }
 
 .stage-tools button:hover {
   background: var(--ui-color-turquoise-200);
+  color: var(--ui-color-turquoise-500);
 }
 
 .quick-config-input {
