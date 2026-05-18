@@ -19,7 +19,7 @@ defineProps<{
       </div>
       <div class="p-4">
         <div class="flex items-center gap-1">
-          <h5 class="m-0 min-w-0 shrink truncate text-lg leading-6 font-normal text-title" :title="project.title">
+          <h5 class="m-0 min-w-0 shrink truncate text-xl leading-6 font-normal text-title" :title="project.title">
             {{ project.title }}
           </h5>
         </div>
