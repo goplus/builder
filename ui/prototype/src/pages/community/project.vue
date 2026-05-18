@@ -181,6 +181,11 @@ onMounted(() => {
   font-size: 0;
 }
 
+.project-collapse-summary h5 {
+  font-size: var(--ui-font-size-xl);
+  line-height: 26px;
+}
+
 .project-collapse-icon {
   width: 20px;
   height: 20px;
