@@ -1790,7 +1790,7 @@ onBeforeUnmount(() => {
               @click="selectCodeCategory(category.id)"
             >
               <span class="block h-6 w-6" aria-hidden="true" v-html="category.icon"></span>
-              <span class="mt-0.5 text-center">{{ category.label }}</span>
+              <span class="mt-0.5 text-center text-[10px]/4">{{ category.label }}</span>
             </button>
           </aside>
 
@@ -2046,7 +2046,7 @@ onBeforeUnmount(() => {
               type="button"
             >
               <span class="block h-6 w-6" aria-hidden="true" v-html="category.icon"></span>
-              <span class="mt-0.5 text-center">{{ category.label }}</span>
+              <span class="mt-0.5 text-center text-[10px]/4">{{ category.label }}</span>
             </button>
           </aside>
 
