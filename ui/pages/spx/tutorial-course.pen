@@ -1,0 +1,397 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "VjmSA",
+      "x": -1993,
+      "y": 541,
+      "name": "Course",
+      "clip": true,
+      "width": 1440,
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "nMWfM",
+          "type": "ref",
+          "ref": "0:WiWwa",
+          "x": 0.0003717389978524254,
+          "y": 0,
+          "children": [
+            {
+              "id": "FTRY1",
+              "type": "ref",
+              "ref": "0:O7syE"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "rFKvx",
+          "name": "Content",
+          "width": "fill_container",
+          "fill": "$0:grey300",
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "gap": "$0:radius-3",
+          "padding": [
+            24,
+            210,
+            40,
+            210
+          ],
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "D70kN1",
+              "name": "Body",
+              "width": 988,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "layout": "vertical",
+              "gap": "$0:space-5",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "vg2GC",
+                  "name": "Hero",
+                  "width": 988,
+                  "fill": "$0:grey100",
+                  "cornerRadius": "$0:radius-2",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#24292f0d",
+                    "offset": {
+                      "x": 0,
+                      "y": "$0:shadow-y-2"
+                    },
+                    "blur": "$0:shadow-blur-3"
+                  },
+                  "gap": 40,
+                  "padding": [
+                    "$0:space-5",
+                    40,
+                    "$0:space-5",
+                    "$0:space-5"
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "bPQr2",
+                      "name": "Content",
+                      "width": "fill_container",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "gap": 40,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "c09Wm",
+                          "name": "Media",
+                          "clip": true,
+                          "width": 140,
+                          "height": 105,
+                          "cornerRadius": "$0:radius-1",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 0.6034482717514038
+                          },
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "McgS2",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Surface",
+                              "clip": true,
+                              "width": 140,
+                              "height": 105,
+                              "fill": "$0:grey100",
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 0.6034482717514038
+                              },
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "n7QzjK",
+                                  "x": 4.76837158203125e-7,
+                                  "y": 0.5000003576278687,
+                                  "name": "Media",
+                                  "clip": true,
+                                  "width": 140,
+                                  "height": 105,
+                                  "fill": {
+                                    "type": "image",
+                                    "enabled": true,
+                                    "url": "../../images/tutorial-background2.jpg",
+                                    "mode": "fill"
+                                  },
+                                  "stroke": {
+                                    "align": "inside",
+                                    "thickness": 0.6034482717514038
+                                  },
+                                  "layout": "none"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "I4rqZ",
+                          "name": "Info",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1
+                          },
+                          "layout": "vertical",
+                          "gap": 12,
+                          "children": [
+                            {
+                              "id": "sSLfw",
+                              "type": "ref",
+                              "ref": "0:tfxWX",
+                              "x": 0,
+                              "y": 0,
+                              "flipX": false,
+                              "flipY": false,
+                              "width": "fit_content",
+                              "height": "fit_content",
+                              "children": [
+                                {
+                                  "id": "nrORv",
+                                  "type": "ref",
+                                  "ref": "0:Lm2P8",
+                                  "content": "Code kiko：beginning",
+                                  "lineHeight": 1.4,
+                                  "flipX": false,
+                                  "flipY": false,
+                                  "width": 214,
+                                  "height": 57,
+                                  "x": 0,
+                                  "y": 0,
+                                  "textGrowth": "fixed-width",
+                                  "fontStyle": "normal",
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "iF5LX",
+                              "type": "ref",
+                              "ref": "0:tfxWX",
+                              "x": 0,
+                              "y": 41,
+                              "children": [
+                                {
+                                  "id": "v4nFJ",
+                                  "type": "ref",
+                                  "ref": "0:0rSuk",
+                                  "content": "A complete solution for adventure games that focus on storytelling and puzzles - the perfect genre for newcomers \nto game development.",
+                                  "fontStyle": "normal",
+                                  "fontWeight": "500",
+                                  "lineHeight": 1.5714285714285714,
+                                  "fill": "$0:grey900"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "dnsvO",
+                  "name": "Panel",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mAtnu",
+                      "name": "List",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "layout": "vertical",
+                      "gap": "$0:space-5",
+                      "padding": [
+                        "$0:space-2",
+                        0,
+                        32,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "li3tu",
+                          "name": "Row",
+                          "clip": true,
+                          "gap": "$0:space-5",
+                          "children": [
+                            {
+                              "id": "BQSVk",
+                              "type": "ref",
+                              "ref": "0:ZwzZD",
+                              "x": 0,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "QZad1",
+                                  "type": "ref",
+                                  "ref": "0:t9YuDK"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "qIhxK",
+                              "type": "ref",
+                              "ref": "0:ZwzZD",
+                              "x": 252,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "Kx1YX",
+                                  "type": "ref",
+                                  "ref": "0:nwpSp"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "bobY5",
+                              "type": "ref",
+                              "ref": "0:ZwzZD",
+                              "x": 504,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "Q7mm1",
+                                  "type": "ref",
+                                  "ref": "0:keUC9"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "f1kcKq",
+                              "type": "ref",
+                              "ref": "0:ZwzZD",
+                              "x": 756,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "MXqF3",
+                                  "type": "ref",
+                                  "ref": "0:D4cYI"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qV3w5",
+                          "name": "Row",
+                          "clip": true,
+                          "gap": "$0:space-5",
+                          "children": [
+                            {
+                              "id": "yyuBs",
+                              "type": "ref",
+                              "ref": "0:ZwzZD",
+                              "x": 0,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "pVcJz",
+                                  "type": "ref",
+                                  "ref": "0:t9YuDK"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "LxKJa",
+                              "type": "ref",
+                              "ref": "0:ZwzZD",
+                              "x": 252,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "NCygz",
+                                  "type": "ref",
+                                  "ref": "0:nwpSp"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "eTvSH",
+                              "type": "ref",
+                              "ref": "0:ZwzZD",
+                              "x": 504,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "shSIt",
+                                  "type": "ref",
+                                  "ref": "0:keUC9"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "bYCs8",
+                              "type": "ref",
+                              "ref": "0:ZwzZD",
+                              "x": 756,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "IB83n",
+                                  "type": "ref",
+                                  "ref": "0:D4cYI"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "0": "../../components/spx/builder-component.lib.pen"
+  }
+}
