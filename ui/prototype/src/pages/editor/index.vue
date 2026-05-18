@@ -181,6 +181,7 @@ const mapSpriteNameEditing = ref(false)
 const mapSpriteConfigExpanded = ref(true)
 const mapPhysicsEnabled = ref(true)
 const mapLayerSorting = ref<'default' | 'vertical'>('vertical')
+const mapSpritePhysicsFlags = ref<string[]>([])
 const draftMapSpriteName = ref('')
 const mapWidth = ref(480)
 const mapHeight = ref(360)
@@ -829,6 +830,41 @@ function moveSelectedSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
 function selectMapSprite(spriteId: string) {
   selectedMapSpriteId.value = spriteId
   mapSpriteConfigExpanded.value = true
+}
+
+function updateMapSpriteRotationStyle(style: RotationStyle) {
+  const sprite = selectedMapSprite.value
+  if (sprite == null) return
+  sprite.rotationStyle = style
+  if (style === 'none') {
+    sprite.heading = 90
+  } else if (style === 'left-right') {
+    sprite.heading = sprite.heading >= 0 ? 90 : -90
+  }
+  markPrototypeAction()
+}
+
+function updateMapSpriteVisibility(visible: boolean) {
+  const sprite = selectedMapSprite.value
+  if (sprite == null) return
+  sprite.hidden = !visible
+  markPrototypeAction()
+}
+
+function toggleMapSpritePhysicsFlag(flag: string) {
+  const flags = new Set(mapSpritePhysicsFlags.value)
+  if (flags.has(flag)) {
+    flags.delete(flag)
+  } else {
+    flags.add(flag)
+    if (flag === 'Gravity') flags.add('Collision')
+    if (flag === 'Immovable') {
+      flags.add('Collision')
+      flags.delete('Gravity')
+    }
+  }
+  mapSpritePhysicsFlags.value = Array.from(flags)
+  markPrototypeAction()
 }
 
 async function startProjectNameEdit() {
@@ -2091,15 +2127,87 @@ onBeforeUnmount(() => {
             </div>
             <div class="map-config-row">
               <span>Rotation</span>
-              <button type="button">Normal</button>
+              <div class="map-button-group" role="group" aria-label="Map sprite rotation style">
+                <button
+                  class="map-button-group-item"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'normal' }"
+                  type="button"
+                  aria-label="Normal rotation"
+                  @click="updateMapSpriteRotationStyle('normal')"
+                >
+                  <span v-html="rotateAroundIcon"></span>
+                </button>
+                <button
+                  class="map-button-group-item"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'left-right' }"
+                  type="button"
+                  aria-label="Left-right rotation"
+                  @click="updateMapSpriteRotationStyle('left-right')"
+                >
+                  <span v-html="leftRightIcon"></span>
+                </button>
+                <button
+                  class="map-button-group-item"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'none' }"
+                  type="button"
+                  aria-label="No rotation"
+                  @click="updateMapSpriteRotationStyle('none')"
+                >
+                  <span v-html="notRotateIcon"></span>
+                </button>
+              </div>
             </div>
             <div class="map-config-row">
               <span>Show</span>
-              <button type="button">Visible</button>
+              <div class="map-button-group" role="group" aria-label="Map sprite visibility">
+                <button
+                  class="map-button-group-item map-text-option"
+                  :class="{ active: !selectedMapSprite.hidden }"
+                  type="button"
+                  @click="updateMapSpriteVisibility(true)"
+                >
+                  Visible
+                </button>
+                <button
+                  class="map-button-group-item map-text-option"
+                  :class="{ active: selectedMapSprite.hidden }"
+                  type="button"
+                  @click="updateMapSpriteVisibility(false)"
+                >
+                  Hidden
+                </button>
+              </div>
             </div>
             <div class="map-config-row">
               <span>Physics</span>
-              <button type="button">No physics</button>
+              <div class="map-checkbox-group" role="group" aria-label="Map sprite physics">
+                <label class="map-checkbox">
+                  <input
+                    type="checkbox"
+                    :checked="mapSpritePhysicsFlags.includes('Collision')"
+                    @change="toggleMapSpritePhysicsFlag('Collision')"
+                  />
+                  <span>Collision</span>
+                </label>
+                <label class="map-checkbox">
+                  <input
+                    type="checkbox"
+                    :checked="mapSpritePhysicsFlags.includes('Gravity')"
+                    :disabled="mapSpritePhysicsFlags.includes('Immovable')"
+                    @change="toggleMapSpritePhysicsFlag('Gravity')"
+                  />
+                  <span>Gravity</span>
+                </label>
+                <label class="map-checkbox">
+                  <input
+                    type="checkbox"
+                    :checked="mapSpritePhysicsFlags.includes('Immovable')"
+                    :disabled="mapSpritePhysicsFlags.includes('Gravity')"
+                    @change="toggleMapSpritePhysicsFlag('Immovable')"
+                  />
+                  <span>Immovable</span>
+                </label>
+              </div>
             </div>
           </footer>
           <button
@@ -2736,8 +2844,7 @@ onBeforeUnmount(() => {
 }
 
 .map-card-header button,
-.map-config-title button,
-.map-config-row button {
+.map-config-title button {
   border: 0;
   background: transparent;
   color: var(--ui-color-grey-800);
@@ -2904,8 +3011,7 @@ onBeforeUnmount(() => {
   background: var(--ui-color-primary-main);
 }
 
-.map-config strong,
-.map-config-row button {
+.map-config strong {
   min-width: 126px;
   height: 30px;
   display: inline-flex;
@@ -2915,6 +3021,72 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-300);
   color: var(--ui-color-grey-1000);
   font-weight: 500;
+}
+
+.map-button-group {
+  height: 32px;
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-300);
+}
+
+.map-button-group-item {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: var(--ui-color-grey-300);
+  color: var(--ui-color-grey-1000);
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.map-button-group-item.active {
+  background: var(--ui-color-primary-200);
+  color: var(--ui-color-primary-400);
+}
+
+.map-button-group-item :deep(svg) {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.map-text-option {
+  width: auto;
+  min-width: 64px;
+  padding: 0 12px;
+  font-weight: 500;
+}
+
+.map-checkbox-group {
+  min-height: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 12px;
+}
+
+.map-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-color-grey-1000);
+  white-space: nowrap;
+}
+
+.map-checkbox input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--ui-color-primary-main);
+}
+
+.map-checkbox input:disabled + span {
+  color: var(--ui-color-grey-600);
 }
 
 .map-sprites-card {

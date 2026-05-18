@@ -307,6 +307,18 @@ if (
 }
 
 if (
+  !editorPage.includes('map-button-group') ||
+  !editorPage.includes('Map sprite rotation style') ||
+  !editorPage.includes('Map sprite visibility') ||
+  !editorPage.includes('map-checkbox-group') ||
+  editorPage.includes('<button type="button">Normal</button>') ||
+  editorPage.includes('<button type="button">Visible</button>') ||
+  editorPage.includes('<button type="button">No physics</button>')
+) {
+  failures.push('map sprite basic config must use component-library style button groups and checkboxes')
+}
+
+if (
   !editorPage.includes("activeQuickConfig === 'position'") ||
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||
