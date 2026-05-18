@@ -5466,6 +5466,98 @@ onBeforeUnmount(() => {
   color: var(--ui-color-danger-main);
 }
 
+.project-menu,
+.profile-menu,
+.animation-add-menu,
+.asset-add-menu,
+.animation-options-menu,
+.asset-options-menu,
+.quick-layer-menu,
+.add-sprite-menu,
+.sprite-options-menu {
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px;
+  box-shadow: var(--ui-box-shadow-sm);
+  overflow: hidden;
+}
+
+.project-menu-group,
+.profile-menu-group {
+  gap: 4px;
+}
+
+.project-menu-item,
+.profile-menu-user,
+.profile-menu-item,
+.animation-add-menu-item,
+.asset-add-menu-item,
+.animation-options-item,
+.asset-options-item,
+.quick-layer-menu button,
+.asset-header .add-sprite-menu-item,
+.sprite-options-item {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px 40px 8px 8px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.project-menu-item:hover,
+.profile-menu-item:hover,
+.animation-add-menu-item:hover,
+.asset-add-menu-item:hover,
+.animation-options-item:hover,
+.asset-options-item:hover:not(:disabled),
+.quick-layer-menu button:hover,
+.asset-header .add-sprite-menu-item:hover,
+.sprite-options-item:hover {
+  background: var(--ui-color-grey-300);
+}
+
+.animation-add-menu-item + .animation-add-menu-item,
+.asset-add-menu-item + .asset-add-menu-item,
+.animation-options-item + .animation-options-item,
+.asset-options-item + .asset-options-item,
+.quick-layer-menu button + button,
+.asset-header .add-sprite-menu-item + .add-sprite-menu-item,
+.sprite-options-item + .sprite-options-item {
+  position: relative;
+  margin-top: 13px;
+}
+
+.animation-add-menu-item + .animation-add-menu-item::before,
+.asset-add-menu-item + .asset-add-menu-item::before,
+.animation-options-item + .animation-options-item::before,
+.asset-options-item + .asset-options-item::before,
+.quick-layer-menu button + button::before,
+.asset-header .add-sprite-menu-item + .add-sprite-menu-item::before,
+.sprite-options-item + .sprite-options-item::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 0;
+  width: 100%;
+  border-top: 1px solid var(--ui-color-dividing-line-2);
+}
+
+.animation-options-item.danger,
+.asset-options-item.danger,
+.sprite-options-item.danger {
+  color: var(--ui-color-danger-main);
+}
+
 .hidden-mark {
   flex: 0 0 auto;
   color: var(--ui-color-grey-500);

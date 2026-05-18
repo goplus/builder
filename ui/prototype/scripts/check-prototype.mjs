@@ -455,6 +455,19 @@ if (
 }
 
 if (
+  !editorPage.includes('.project-menu,\n.profile-menu,\n.animation-add-menu,\n.asset-add-menu,\n.animation-options-menu,\n.asset-options-menu,\n.quick-layer-menu,\n.add-sprite-menu,\n.sprite-options-menu') ||
+  !editorPage.includes('box-shadow: var(--ui-box-shadow-sm);') ||
+  !editorPage.includes('overflow: hidden;') ||
+  !editorPage.includes('.project-menu-item,\n.profile-menu-user,\n.profile-menu-item,\n.animation-add-menu-item,\n.asset-add-menu-item,\n.animation-options-item,\n.asset-options-item,\n.quick-layer-menu button,\n.asset-header .add-sprite-menu-item,\n.sprite-options-item') ||
+  !editorPage.includes('padding: 8px 40px 8px 8px;') ||
+  !editorPage.includes('margin-top: 13px;') ||
+  !editorPage.includes('border-top: 1px solid var(--ui-color-dividing-line-2);') ||
+  editorPage.includes('box-shadow: var(--ui-box-shadow-md);\n}\n\n.hidden-mark')
+) {
+  failures.push('editor dropdown menus must share the local UIMenu/UIMenuItem style contract')
+}
+
+if (
   !editorPage.includes('const animationMenuOpenFor = ref<string | null>(null)') ||
   !editorPage.includes('const animationPendingRemoval = ref<AssetItem | null>(null)') ||
   !editorPage.includes('function toggleAnimationMenu(animationId: string, event: MouseEvent)') ||
