@@ -61,7 +61,7 @@ export const clone1: DefinitionDocumentationItem = {
 export const onCloned0: DefinitionDocumentationItem = {
   categories: [categories.event.sprite],
   kind: DefinitionKind.Listen,
-  hiddenFromList: true, // duplicate with `onCloned0`
+  hiddenFromList: true, // duplicate with `onCloned1`
   definition: {
     package: packageSpx,
     name: 'Sprite.onCloned',
@@ -837,7 +837,7 @@ export const glide3: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '3'
   },
-  insertSnippet: 'glide ${1:position}, ${2:1}',
+  insertSnippet: 'glide ${1:pos}, ${2:1}',
   insertSnippetParameterHints: ['pos', 'seconds'],
   overview: 'glide pos, seconds',
   detail: makeBasicMarkdownString({
