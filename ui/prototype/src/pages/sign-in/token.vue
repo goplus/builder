@@ -5,7 +5,7 @@ import { getSignedInUser } from '@/apis/user'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityFooter from '@/components/community/CommunityFooter.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
-import PrototypeCard from '@/components/ui/PrototypeCard.vue'
+import UICard from '@/components/ui/UICard.vue'
 
 const user = getSignedInUser()
 const tokenPreview = `prototype.${user.username}.offline`
@@ -19,7 +19,7 @@ onMounted(() => {
   <main class="flex min-h-screen min-w-360 flex-col bg-grey-300">
     <CommunityNavbar />
     <CenteredWrapper class="flex-1 py-10">
-      <PrototypeCard class="p-6">
+      <UICard class="p-6">
         <h1 class="m-0 text-2xl font-medium text-title">Local sign-in token</h1>
         <p class="mt-3 text-sm leading-6 text-grey-700">
           The prototype exposes a deterministic local token shape so the page can be previewed without Casdoor or backend state.
@@ -32,7 +32,7 @@ onMounted(() => {
           <dt class="text-hint-1">Token</dt>
           <dd class="m-0 rounded-sm bg-grey-300 px-3 py-2 font-mono text-title">{{ tokenPreview }}</dd>
         </dl>
-      </PrototypeCard>
+      </UICard>
     </CenteredWrapper>
     <CommunityFooter />
   </main>

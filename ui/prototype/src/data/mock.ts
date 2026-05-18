@@ -10,9 +10,7 @@ import personalInfoBackgroundImage from '@ui-images/personal-information-backgro
 import projectRunImage from '@ui-images/project-run.png'
 import spriteReviewImage from '@ui-images/sprite-review.png'
 import userBackgroundImage from '@ui-images/user-bg.png'
-import niuRunProjectFile from '@/assets/projects/niu-run/niu-run.xbp?url'
 import niuRunThumbnail from '@/assets/projects/niu-run/thumbnail.jpeg'
-import weatherggggProjectFile from '@/assets/projects/weathergggg/Weathergggg.xbp?url'
 import weatherggggThumbnail from '@/assets/projects/weathergggg/thumbnail.jpg'
 
 export type UserProfile = {
@@ -36,7 +34,6 @@ export type Project = {
   description: string
   instructions?: string
   thumbnail: string
-  projectFile?: string
   tags: string[]
   likes: number
   remixes: number
@@ -86,14 +83,6 @@ export type Release = {
 
 export type ActivityUser = UserProfile & {
   relation: 'follower' | 'following'
-}
-
-export type DocsEndpoint = {
-  method: 'GET' | 'POST'
-  path: string
-  title: string
-  description: string
-  response: string
 }
 
 export type WidgetSample = {
@@ -179,11 +168,10 @@ export const projects: Project[] = [
     title: 'Weathergggg',
     owner: users[3],
     visibility: 'public',
-    description: 'A local offline XBuilder game project loaded from the bundled Weathergggg.xbp file.',
-    instructions: 'Press Run to play this bundled local project in the prototype.',
+    description: 'A local offline XBuilder project shown with static prototype data.',
+    instructions: 'Press Run to preview the project placeholder.',
     thumbnail: weatherggggThumbnail,
-    projectFile: weatherggggProjectFile,
-    tags: ['Game', 'Local XBP', 'Offline'],
+    tags: ['Game', 'Offline'],
     likes: 412,
     remixes: 63,
     views: 5380,
@@ -200,8 +188,7 @@ export const projects: Project[] = [
     description: '被牛小花抓到你就输啦',
     instructions: '点击草地控制小牛行走',
     thumbnail: niuRunThumbnail,
-    projectFile: niuRunProjectFile,
-    tags: ['Game', 'Runner', 'Local XBP'],
+    tags: ['Game', 'Runner'],
     likes: 389,
     remixes: 57,
     views: 5010,
@@ -412,39 +399,15 @@ export const editorProject = {
   ] satisfies Sprite[]
 }
 
-export const docsEndpoints: DocsEndpoint[] = [
-  {
-    method: 'GET',
-    path: '/api/projects',
-    title: 'List projects',
-    description: 'Returns a paginated local prototype project list.',
-    response: '{ "data": [{ "name": "niu-run", "owner": "qingqing" }], "total": 1 }'
-  },
-  {
-    method: 'GET',
-    path: '/api/users/{username}',
-    title: 'Get user profile',
-    description: 'Returns a local user profile for community pages.',
-    response: '{ "username": "qingqing", "displayName": "Qingqing" }'
-  },
-  {
-    method: 'POST',
-    path: '/api/copilot/messages',
-    title: 'Generate local Copilot reply',
-    description: 'Prototype-only static response used to preserve the documentation surface.',
-    response: '{ "message": "This is a local prototype response." }'
-  }
-]
-
 export const widgetSamples: WidgetSample[] = [
   {
     id: 'runner',
-    title: 'Local SPX runner',
-    description: 'Runs the bundled niu-run project preview with local state.'
+    title: 'Project preview',
+    description: 'Shows the project preview placeholder with local state.'
   },
   {
     id: 'code-editor',
-    title: 'Local XGo code editor',
-    description: 'Shows code, diagnostics, and snippets without Monaco or LSP.'
+    title: 'Code editor preview',
+    description: 'Shows code, diagnostics, and snippets with local mock data.'
   }
 ]

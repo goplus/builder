@@ -1,6 +1,9 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
+// Prototype contract check:
+// keep this app offline and aligned with the real frontend surfaces we intentionally mirror,
+// while rejecting production-only runtime/docs/widget artifacts that should not be copied here.
 const root = new URL('..', import.meta.url).pathname
 const srcRoot = join(root, 'src')
 
@@ -42,14 +45,14 @@ const editorStatusIcon = read('src/assets/editor/ui-icons/status.svg')
 const editorSoundIcon = read('src/assets/editor/ui-icons/sound.svg')
 const editorArrowDownIcon = read('src/assets/editor/ui-icons/arrow-down.svg')
 const editorEyeOffIcon = read('src/assets/editor/ui-icons/eye-off.svg')
-const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
-const copilot = read('src/components/copilot/PrototypeCopilot.vue')
+const projectRunner = read('src/components/project/ProjectRunner.vue')
+const copilot = read('src/components/copilot/Copilot.vue')
 const communityApi = read('src/apis/community.ts')
 const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
-const prototypeTag = read('src/components/ui/PrototypeTag.vue')
-const prototypeTab = read('src/components/ui/PrototypeTab.vue')
-const prototypeSpriteItem = read('src/components/editor/PrototypeSpriteItem.vue')
-const prototypeCardHeader = read('src/components/ui/PrototypeCardHeader.vue')
+const prototypeTag = read('src/components/ui/UITag.vue')
+const prototypeTab = read('src/components/ui/UITab.vue')
+const prototypeSpriteItem = read('src/components/editor/SpriteItem.vue')
+const prototypeCardHeader = read('src/components/ui/UICardHeader.vue')
 
 for (const route of [
   '/',
@@ -69,9 +72,6 @@ for (const route of [
   '/sign-in/callback',
   '/sign-in/token',
   '/share/:owner/:name',
-  '/docs',
-  'api/:pathMatch(.*)?',
-  'ui-design',
   '/:pathMatch(.*)*'
 ]) {
   if (!router.includes(route)) failures.push(`missing route: ${route}`)
@@ -81,18 +81,16 @@ for (const requiredFile of [
   'src/apis/community.ts',
   'src/apis/project.ts',
   'src/apis/tutorials.ts',
-  'src/assets/projects/weathergggg/Weathergggg.xbp',
   'src/assets/projects/weathergggg/thumbnail.jpg',
-  'src/assets/projects/niu-run/niu-run.xbp',
   'src/assets/projects/niu-run/thumbnail.jpeg',
   'src/assets/editor/navbar-icons/tutorial.svg',
   'src/assets/editor/ui-icons/timer.svg',
   'src/assets/editor/ui-icons/status.svg',
   'src/assets/editor/ui-icons/sound.svg',
   'src/assets/editor/ui-icons/arrow-down.svg',
-  'src/components/project/PrototypeProjectRunner.vue',
-  'src/components/editor/PrototypeSpriteItem.vue',
-  'src/components/ui/PrototypeCardHeader.vue',
+  'src/components/project/ProjectRunner.vue',
+  'src/components/editor/SpriteItem.vue',
+  'src/components/ui/UICardHeader.vue',
   'src/components/community/home/GuestBanner.vue',
   'src/pages/community/index.vue',
   'src/pages/community/project.vue',
@@ -104,19 +102,54 @@ for (const requiredFile of [
   'src/pages/editor/index.vue',
   'src/pages/sign-in/callback.vue',
   'src/pages/sign-in/token.vue',
-  'src/pages/docs/api.vue',
-  'src/pages/docs/ui-design/index.vue',
   'src/pages/tutorials/course-series.vue',
-  'src/pages/tutorials/course-start.vue',
-  'src/widgets/spx-runner/SpxRunner.ce.vue',
-  'src/widgets/spx-runner/index.ts',
-  'src/widgets/xgo-code-editor/XGoCodeEditor.ce.vue',
-  'src/widgets/xgo-code-editor/index.ts'
+  'src/pages/tutorials/course-start.vue'
 ]) {
   try {
     statSync(join(root, requiredFile))
   } catch {
     failures.push(`missing file: ${requiredFile}`)
+  }
+}
+
+for (const forbiddenPath of [
+  'public/spx_2.0.0',
+  'src/assets/projects/weathergggg/Weathergggg.xbp',
+  'src/assets/projects/niu-run/niu-run.xbp',
+  'src/pages/docs',
+  'src/widgets'
+]) {
+  try {
+    statSync(join(root, forbiddenPath))
+    failures.push(`production-only prototype artifact must not exist: ${forbiddenPath}`)
+  } catch {
+    // Expected: these surfaces are intentionally not copied into the prototype.
+  }
+}
+
+if (router.includes('/docs') || router.includes('docs-api') || router.includes('docs-ui-design')) {
+  failures.push('prototype router must not include docs routes because docs are not end-user UI')
+}
+
+if (mockData.includes('.xbp') || mockData.includes('Local XBP')) {
+  failures.push('mock project data must not depend on bundled XBP files')
+}
+
+for (const renamedComponent of [
+  'PrototypeCopilot.vue',
+  'PrototypeProjectRunner.vue',
+  'PrototypeSpriteItem.vue',
+  'PrototypeButton.vue',
+  'PrototypeCard.vue',
+  'PrototypeCardHeader.vue',
+  'PrototypeTab.vue',
+  'PrototypeTabs.vue',
+  'PrototypeTag.vue'
+]) {
+  for (const sourceFile of sourceFiles) {
+    const rel = relative(root, sourceFile)
+    const text = readFileSync(sourceFile, 'utf8')
+    if (text.includes(renamedComponent)) failures.push(`component filename must not keep Prototype prefix: ${rel}`)
   }
 }
 
@@ -184,7 +217,7 @@ if (projectsSection.includes('stroke="currentColor"')) {
   failures.push('projects section more link must use real arrowRightSmall icon, not chevron stroke icon')
 }
 
-if (!app.includes('PrototypeCopilot')) {
+if (!app.includes('Copilot')) {
   failures.push('prototype must mount the offline Copilot surface globally')
 }
 
@@ -192,24 +225,15 @@ if (copilot.includes('const isOpen = ref(true)')) {
   failures.push('offline Copilot must default to collapsed so it does not cover editor panels')
 }
 
-if (!projectRunner.includes('sandbox="allow-scripts allow-same-origin"')) {
-  failures.push('project runner iframe must be sandboxed while preserving local runner script access')
-}
-
-if (projectRunner.includes("'engineres.zip'")) {
-  failures.push('project runner assetURLs must not include the redundant engineres.zip alias')
-}
-
-if (!projectRunner.includes('let fflateLoadPromise')) {
-  failures.push('project runner must share an in-flight fflate loader promise across concurrent runs')
-}
-
-if (!projectRunner.includes("engineInitialized = false\n    state.value = 'failed'")) {
-  failures.push('project runner must reset engineInitialized when run fails')
-}
-
-if (!projectRunner.includes("engineInitialized = false\n  state.value = 'initial'")) {
-  failures.push('project runner must reset engineInitialized after stop')
+if (
+  projectRunner.includes('<iframe') ||
+  projectRunner.includes('initEngine') ||
+  projectRunner.includes('loadProjectFiles') ||
+  projectRunner.includes('fetch(') ||
+  projectRunner.includes('spx_2.0.0') ||
+  projectRunner.includes('fflate')
+) {
+  failures.push('project runner must be a static offline placeholder, not a copied SPX runtime')
 }
 
 if (copilot.includes('const panelHeight =')) {
@@ -255,13 +279,7 @@ if (!styles.includes('--ui-font-size-lg: 15px;')) {
 
 for (const localProject of ['weathergggg', 'niu-run']) {
   if (!mockData.includes(`name: '${localProject}'`)) {
-    failures.push(`mock data must register local xbp project: ${localProject}`)
-  }
-}
-
-for (const expectedToken of ['projectFile', 'weatherggggProjectFile', 'niuRunProjectFile']) {
-  if (!mockData.includes(expectedToken)) {
-    failures.push(`mock data must expose local project asset token: ${expectedToken}`)
+    failures.push(`mock data must register local project: ${localProject}`)
   }
 }
 
@@ -273,13 +291,13 @@ if (!editorPage.includes("back.svg?raw") || quickConfigBackIcon.includes('M15 18
   failures.push('editor quick config back control must use the real back icon asset')
 }
 
-if (!editorPage.includes("import PrototypeButton from '@/components/ui/PrototypeButton.vue'") || !editorPage.includes('<PrototypeButton') || editorPage.includes('class="format-button" type="button"')) {
+if (!editorPage.includes("import UIButton from '@/components/ui/UIButton.vue'") || !editorPage.includes('<UIButton') || editorPage.includes('class="format-button" type="button"')) {
   failures.push('editor format action must use the prototype UI Button component')
 }
 
 if (
-  !editorPage.includes("import PrototypeTag from '@/components/ui/PrototypeTag.vue'") ||
-  !editorPage.includes('<PrototypeTag') ||
+  !editorPage.includes("import UITag from '@/components/ui/UITag.vue'") ||
+  !editorPage.includes('<UITag') ||
   editorPage.includes('project-menu-badge') ||
   editorPage.includes('.profile-menu-item span + span')
 ) {
@@ -291,10 +309,10 @@ if (!prototypeTag.includes('--ui-color-grey-900') || !prototypeTag.includes('--u
 }
 
 if (
-  !editorPage.includes("import PrototypeTabs from '@/components/ui/PrototypeTabs.vue'") ||
-  !editorPage.includes("import PrototypeTab from '@/components/ui/PrototypeTab.vue'") ||
-  !editorPage.includes('<PrototypeTabs') ||
-  !editorPage.includes('<PrototypeTab value="costumes">Costumes</PrototypeTab>') ||
+  !editorPage.includes("import UITabs from '@/components/ui/UITabs.vue'") ||
+  !editorPage.includes("import UITab from '@/components/ui/UITab.vue'") ||
+  !editorPage.includes('<UITabs') ||
+  !editorPage.includes('<UITab value="costumes">Costumes</UITab>') ||
   editorPage.includes('class="tab" :class') ||
   !prototypeTab.includes('text-xl/8') ||
   !prototypeTab.includes('text-grey-800 hover:text-grey-1000') ||
@@ -304,18 +322,18 @@ if (
 }
 
 if (
-  !editorPage.includes("import PrototypeCardHeader from '@/components/ui/PrototypeCardHeader.vue'") ||
-  !editorPage.includes('<PrototypeCardHeader class="panel-header justify-between gap-3">') ||
+  !editorPage.includes("import UICardHeader from '@/components/ui/UICardHeader.vue'") ||
+  !editorPage.includes('<UICardHeader class="panel-header justify-between gap-3">') ||
   !editorPage.includes('<h2 class="m-0 flex-1 text-xl font-normal text-title">Preview</h2>') ||
-  !editorPage.includes('<PrototypeCardHeader class="asset-header justify-between">') ||
-  !editorPage.includes('<PrototypeCardHeader class="stage-panel-header justify-center">Stage</PrototypeCardHeader>') ||
-  !editorPage.includes('<PrototypeCardHeader class="map-card-header justify-between">') ||
+  !editorPage.includes('<UICardHeader class="asset-header justify-between">') ||
+  !editorPage.includes('<UICardHeader class="stage-panel-header justify-center">Stage</UICardHeader>') ||
+  !editorPage.includes('<UICardHeader class="map-card-header justify-between">') ||
   !prototypeCardHeader.includes('h-12 items-center border-b border-grey-400 px-3 text-xl text-title') ||
   editorPage.includes('.panel-header h2') ||
   editorPage.includes('.asset-header h2') ||
   editorPage.includes('.map-card-header h2')
 ) {
-  failures.push('editor module headers must mirror UICardHeader typography with local PrototypeCardHeader and text-title tokens')
+  failures.push('editor module headers must mirror UICardHeader typography with local UICardHeader and text-title tokens')
 }
 
 if (
@@ -380,8 +398,8 @@ if (!editorPage.includes('grid-template-columns: repeat(4, 88px);') || !editorPa
 }
 
 if (
-  !editorPage.includes("import PrototypeSpriteItem from '@/components/editor/PrototypeSpriteItem.vue'") ||
-  (editorPage.match(/<PrototypeSpriteItem/g) ?? []).length < 2 ||
+  !editorPage.includes("import SpriteItem from '@/components/editor/SpriteItem.vue'") ||
+  (editorPage.match(/<SpriteItem/g) ?? []).length < 2 ||
   editorPage.includes('class="sprite-card"') ||
   !prototypeSpriteItem.includes('.prototype-sprite-item.active::before') ||
   !prototypeSpriteItem.includes('width: 88px;') ||
@@ -571,9 +589,9 @@ if (
 }
 
 if (
-  !editorPage.includes("import PrototypeCard from '@/components/ui/PrototypeCard.vue'") ||
-  !editorPage.includes('<PrototypeCard class="map-card">') ||
-  !editorPage.includes('<PrototypeCard class="map-card map-sprites-card">')
+  !editorPage.includes("import UICard from '@/components/ui/UICard.vue'") ||
+  !editorPage.includes('<UICard class="map-card">') ||
+  !editorPage.includes('<UICard class="map-card map-sprites-card">')
 ) {
   failures.push('editor map side cards must use the prototype card component instead of hand-rolled sections')
 }
@@ -636,7 +654,7 @@ for (const file of sourceFiles) {
   if (text.includes('spx-gui')) failures.push(`forbidden real frontend reference: ${rel}`)
   if (/\baxios\b/.test(text)) failures.push(`forbidden server call primitive: ${rel}`)
   if (/\bfetch\s*\(\s*['"`]https?:\/\//.test(text)) failures.push(`forbidden remote fetch call: ${rel}`)
-  if (text.includes('@scalar/api-reference')) failures.push(`docs page must use local static prototype content: ${rel}`)
+  if (text.includes('@scalar/api-reference')) failures.push(`forbidden docs runtime reference: ${rel}`)
 }
 
 if (failures.length > 0) {

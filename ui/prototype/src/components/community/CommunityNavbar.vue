@@ -8,7 +8,7 @@ import folderIcon from '@/assets/navbar-icons/folder.svg?raw'
 import newProjectIcon from '@/assets/editor/navbar-icons/new.svg'
 import openProjectIcon from '@/assets/editor/navbar-icons/open.svg'
 import { usePrototypeSignIn } from '@/composables/prototypeSignIn'
-import PrototypeButton from '@/components/ui/PrototypeButton.vue'
+import UIButton from '@/components/ui/UIButton.vue'
 
 const router = useRouter()
 const searchValue = ref('')
@@ -224,8 +224,8 @@ onBeforeUnmount(() => {
           </button>
         </header>
         <div class="mt-6 flex justify-end gap-3">
-          <PrototypeButton type="white" @click="closeSignInModal">Cancel</PrototypeButton>
-          <PrototypeButton type="primary" @click="confirmPrototypeSignIn">Continue as Qingqing</PrototypeButton>
+          <UIButton type="white" @click="closeSignInModal">Cancel</UIButton>
+          <UIButton type="primary" @click="confirmPrototypeSignIn">Continue as Qingqing</UIButton>
         </div>
       </section>
     </div>

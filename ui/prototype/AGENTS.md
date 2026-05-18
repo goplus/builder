@@ -94,6 +94,8 @@ At the same time, keep the prototype simpler than the real frontend:
 - replace business state with static data or minimal local state
 - replace real APIs with local functions returning mock data
 - replace product actions with local feedback
+- replace game/project runtime surfaces with static placeholder previews; do not copy SPX engine assets or parse XBP files
+- do not recreate `/docs/*` pages or `src/widgets/*` entry surfaces because they are not end-user prototype UI
 - omit infrastructure and edge-case handling unless it changes the visual result
 
 ## Editing Rules

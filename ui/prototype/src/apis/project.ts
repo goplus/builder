@@ -17,10 +17,6 @@ export function toggleProjectLike(project: Project, liked: boolean): Project {
   return project
 }
 
-export function hasLocalProjectFile(project: Project): project is Project & { projectFile: string } {
-  return typeof project.projectFile === 'string' && project.projectFile.length > 0
-}
-
 export function getProjectRoute(project: Project): string {
   return `/project/${encodeURIComponent(project.owner.username)}/${encodeURIComponent(project.name)}`
 }

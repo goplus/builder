@@ -128,21 +128,6 @@ const router = createRouter({
       redirect: (to) => getProjectPageRoute(to.params.owner as string, to.params.name as string)
     },
     {
-      path: '/docs',
-      children: [
-        {
-          path: 'api/:pathMatch(.*)?',
-          name: 'docs-api',
-          component: () => import('@/pages/docs/api.vue')
-        },
-        {
-          path: 'ui-design',
-          name: 'docs-ui-design',
-          component: () => import('@/pages/docs/ui-design/index.vue')
-        }
-      ]
-    },
-    {
       path: '/:pathMatch(.*)*',
       component: () => import('@/pages/404/index.vue')
     }

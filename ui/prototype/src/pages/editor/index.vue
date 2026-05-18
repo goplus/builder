@@ -3,14 +3,14 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type CSSPro
 import { useRouter } from 'vue-router'
 
 import { getProject } from '@/apis/project'
-import PrototypeSpriteItem from '@/components/editor/PrototypeSpriteItem.vue'
-import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
-import PrototypeButton from '@/components/ui/PrototypeButton.vue'
-import PrototypeCard from '@/components/ui/PrototypeCard.vue'
-import PrototypeCardHeader from '@/components/ui/PrototypeCardHeader.vue'
-import PrototypeTab from '@/components/ui/PrototypeTab.vue'
-import PrototypeTabs from '@/components/ui/PrototypeTabs.vue'
-import PrototypeTag from '@/components/ui/PrototypeTag.vue'
+import SpriteItem from '@/components/editor/SpriteItem.vue'
+import ProjectRunner from '@/components/project/ProjectRunner.vue'
+import UIButton from '@/components/ui/UIButton.vue'
+import UICard from '@/components/ui/UICard.vue'
+import UICardHeader from '@/components/ui/UICardHeader.vue'
+import UITab from '@/components/ui/UITab.vue'
+import UITabs from '@/components/ui/UITabs.vue'
+import UITag from '@/components/ui/UITag.vue'
 import controlIcon from '@/assets/editor/category-icons/control.svg?raw'
 import eventIcon from '@/assets/editor/category-icons/event.svg?raw'
 import gameIcon from '@/assets/editor/category-icons/game.svg?raw'
@@ -198,7 +198,7 @@ type EditorProjectData = {
 }
 
 const project = computed(() => getProject(props.ownerNameInput, props.projectNameInput))
-const runnerRef = ref<InstanceType<typeof PrototypeProjectRunner>>()
+const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
 const runnerActive = ref(false)
 const activeEditorTarget = ref<EditorTarget>('sprite')
 const activeEditorTab = ref<EditorTab>('code')
@@ -1633,7 +1633,7 @@ onBeforeUnmount(() => {
               >
                 <img :src="item.icon" alt="" />
                 <span>{{ item.label }}</span>
-                <PrototypeTag v-if="item.badge">{{ item.badge }}</PrototypeTag>
+                <UITag v-if="item.badge">{{ item.badge }}</UITag>
               </button>
             </div>
           </div>
@@ -1724,7 +1724,7 @@ onBeforeUnmount(() => {
               <div class="profile-menu-user" role="presentation">Qingqing</div>
               <button class="profile-menu-item" type="button" role="menuitem" @click="handleProfileMenuItem(toggleProfileLanguage)">
                 <span>Language</span>
-                <PrototypeTag>{{ profileLanguage }}</PrototypeTag>
+                <UITag>{{ profileLanguage }}</UITag>
               </button>
             </div>
             <div class="profile-menu-group">
@@ -1748,35 +1748,35 @@ onBeforeUnmount(() => {
     <section v-if="activeEditMode === 'default'" class="editor-main">
       <section class="code-card">
         <header class="code-tabs flex h-[47px] items-end border-b border-grey-400 px-2">
-          <PrototypeTabs
+          <UITabs
             v-if="activeEditorTarget === 'sprite'"
             class="h-full"
             :value="activeEditorTab"
             @update:value="(tab) => selectEditorTab(tab as EditorTab)"
           >
-            <PrototypeTab value="code">Code</PrototypeTab>
-            <PrototypeTab value="costumes">Costumes</PrototypeTab>
-            <PrototypeTab value="animations">Animations</PrototypeTab>
-          </PrototypeTabs>
-          <PrototypeTabs
+            <UITab value="code">Code</UITab>
+            <UITab value="costumes">Costumes</UITab>
+            <UITab value="animations">Animations</UITab>
+          </UITabs>
+          <UITabs
             v-else
             class="h-full"
             :value="activeStageTab"
             @update:value="(tab) => selectStage(tab as StageTab)"
           >
-            <PrototypeTab value="code">Code</PrototypeTab>
-            <PrototypeTab value="backdrops">Backdrops</PrototypeTab>
-            <PrototypeTab value="sounds">Sounds</PrototypeTab>
-            <PrototypeTab value="widgets">Widgets</PrototypeTab>
-          </PrototypeTabs>
-          <PrototypeButton
+            <UITab value="code">Code</UITab>
+            <UITab value="backdrops">Backdrops</UITab>
+            <UITab value="sounds">Sounds</UITab>
+            <UITab value="widgets">Widgets</UITab>
+          </UITabs>
+          <UIButton
             v-if="activeEditorTarget === 'sprite' ? activeEditorTab === 'code' : activeStageTab === 'code'"
             class="format-button"
             type="white"
             size="medium"
           >
             Format
-          </PrototypeButton>
+          </UIButton>
         </header>
 
         <div v-if="activeEditorTarget === 'sprite' && activeEditorTab === 'code'" class="code-body">
@@ -2246,7 +2246,7 @@ onBeforeUnmount(() => {
 
       <aside class="preview-column">
         <section class="preview-card">
-          <PrototypeCardHeader class="panel-header justify-between gap-3">
+          <UICardHeader class="panel-header justify-between gap-3">
             <h2 class="m-0 flex-1 text-xl font-normal text-title">Preview</h2>
             <div class="panel-actions">
               <button class="run-button" type="button" @click="runProject">
@@ -2258,7 +2258,7 @@ onBeforeUnmount(() => {
                 Publish
               </button>
             </div>
-          </PrototypeCardHeader>
+          </UICardHeader>
 
           <div class="stage-frame">
             <template v-if="!runnerActive">
@@ -2415,13 +2415,13 @@ onBeforeUnmount(() => {
                 </template>
               </div>
             </template>
-            <PrototypeProjectRunner v-show="runnerActive" ref="runnerRef" :project="project" :show-controls="false" />
+            <ProjectRunner v-show="runnerActive" ref="runnerRef" :project="project" :show-controls="false" />
           </div>
         </section>
 
         <section class="asset-card">
           <div class="sprites-panel">
-            <PrototypeCardHeader class="asset-header justify-between">
+            <UICardHeader class="asset-header justify-between">
               <h2 class="m-0 text-xl font-normal text-title">Sprites</h2>
               <span ref="addSpriteMenuRef" class="add-sprite-menu-wrap">
                 <button
@@ -2445,9 +2445,9 @@ onBeforeUnmount(() => {
                   </button>
                 </span>
               </span>
-            </PrototypeCardHeader>
+            </UICardHeader>
             <div ref="spriteMenuRef" class="sprite-list">
-              <PrototypeSpriteItem
+              <SpriteItem
                 v-for="sprite in sprites"
                 :key="sprite.id"
                 :sprite="sprite"
@@ -2465,12 +2465,12 @@ onBeforeUnmount(() => {
                     v-html="moreIcon"
                   ></button>
                 </template>
-              </PrototypeSpriteItem>
+              </SpriteItem>
             </div>
           </div>
 
           <div class="stage-panel">
-            <PrototypeCardHeader class="stage-panel-header justify-center">Stage</PrototypeCardHeader>
+            <UICardHeader class="stage-panel-header justify-center">Stage</UICardHeader>
             <button
               class="stage-thumb"
               :class="{ active: activeEditorTarget === 'stage' && activeStageTab === 'code' }"
@@ -2545,11 +2545,11 @@ onBeforeUnmount(() => {
       </section>
 
       <aside class="map-side">
-        <PrototypeCard class="map-card">
-          <PrototypeCardHeader class="map-card-header justify-between">
+        <UICard class="map-card">
+          <UICardHeader class="map-card-header justify-between">
             <h2 class="m-0 text-xl font-normal text-title">Global Config</h2>
             <button class="map-config-icon collapse" type="button" aria-label="Collapse global config" v-html="arrowDownIcon"></button>
-          </PrototypeCardHeader>
+          </UICardHeader>
           <div class="map-config">
             <label>
               <span>Map size</span>
@@ -2606,15 +2606,15 @@ onBeforeUnmount(() => {
               </span>
             </label>
           </div>
-        </PrototypeCard>
+        </UICard>
 
-        <PrototypeCard class="map-card map-sprites-card">
-          <PrototypeCardHeader class="map-card-header active justify-between">
+        <UICard class="map-card map-sprites-card">
+          <UICardHeader class="map-card-header active justify-between">
             <h2 class="m-0 text-xl font-normal">Sprites</h2>
             <button type="button" aria-label="Add sprite">+</button>
-          </PrototypeCardHeader>
+          </UICardHeader>
           <div class="map-sprite-list">
-            <PrototypeSpriteItem
+            <SpriteItem
               v-for="sprite in sprites"
               :key="`map-list-${sprite.id}`"
               :sprite="sprite"
@@ -2632,7 +2632,7 @@ onBeforeUnmount(() => {
                   v-html="moreIcon"
                 ></button>
               </template>
-            </PrototypeSpriteItem>
+            </SpriteItem>
           </div>
           <footer v-if="mapSpriteConfigExpanded" class="map-sprite-config">
             <div class="map-config-title">
@@ -2750,7 +2750,7 @@ onBeforeUnmount(() => {
           >
             ⌃
           </button>
-        </PrototypeCard>
+        </UICard>
       </aside>
     </section>
     <Teleport to="body">
@@ -2763,8 +2763,8 @@ onBeforeUnmount(() => {
             <span>Preserve (the costumes will be moved to the sprite's costume list)</span>
           </label>
           <div class="prototype-modal-actions">
-            <PrototypeButton type="white" size="medium" @click="cancelRemoveAnimation">Cancel</PrototypeButton>
-            <PrototypeButton type="primary" size="medium" @click="confirmRemoveAnimation">Confirm</PrototypeButton>
+            <UIButton type="white" size="medium" @click="cancelRemoveAnimation">Cancel</UIButton>
+            <UIButton type="primary" size="medium" @click="confirmRemoveAnimation">Confirm</UIButton>
           </div>
         </section>
       </div>
@@ -2789,8 +2789,8 @@ onBeforeUnmount(() => {
             <p class="prototype-field-tip">Use letters, numbers, spaces, hyphens, or underscores.</p>
             <p v-if="spriteRenameError !== ''" class="prototype-field-error">{{ spriteRenameError }}</p>
             <div class="prototype-modal-actions">
-              <PrototypeButton type="white" size="medium" @click="cancelSpriteRename">Cancel</PrototypeButton>
-              <PrototypeButton type="primary" size="medium" @click="submitSpriteRename">Confirm</PrototypeButton>
+              <UIButton type="white" size="medium" @click="cancelSpriteRename">Cancel</UIButton>
+              <UIButton type="primary" size="medium" @click="submitSpriteRename">Confirm</UIButton>
             </div>
           </form>
         </section>
@@ -2839,14 +2839,14 @@ onBeforeUnmount(() => {
                   </select>
                 </label>
               </div>
-              <PrototypeButton
+              <UIButton
                 type="primary"
                 size="large"
                 :disabled="spriteGenDescription.trim() === ''"
                 @click="generateSpriteCandidates"
               >
                 {{ spriteGenGenerated ? 'Regenerate' : 'Generate' }}
-              </PrototypeButton>
+              </UIButton>
             </form>
             <section class="sprite-gen-results" aria-label="Generated sprite candidates">
               <div v-if="!spriteGenGenerated" class="sprite-gen-empty">Generated sprite candidates will appear here.</div>
@@ -2865,8 +2865,8 @@ onBeforeUnmount(() => {
             </section>
           </div>
           <footer class="prototype-modal-actions">
-            <PrototypeButton type="white" size="medium" @click="cancelSpriteGenModal">Cancel</PrototypeButton>
-            <PrototypeButton type="primary" size="medium" :disabled="!spriteGenGenerated" @click="useGeneratedSprite">Use</PrototypeButton>
+            <UIButton type="white" size="medium" @click="cancelSpriteGenModal">Cancel</UIButton>
+            <UIButton type="primary" size="medium" :disabled="!spriteGenGenerated" @click="useGeneratedSprite">Use</UIButton>
           </footer>
         </section>
       </div>

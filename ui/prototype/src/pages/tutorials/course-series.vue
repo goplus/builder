@@ -7,7 +7,7 @@ import CommunityFooter from '@/components/community/CommunityFooter.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/common/TextView.vue'
 import CourseItem from '@/components/tutorials/CourseItem.vue'
-import PrototypeCard from '@/components/ui/PrototypeCard.vue'
+import UICard from '@/components/ui/UICard.vue'
 
 const props = defineProps<{
   courseSeriesIdInput: string
@@ -24,7 +24,7 @@ onMounted(() => {
   <main class="flex min-h-screen min-w-360 flex-col bg-grey-300">
     <CommunityNavbar />
     <CenteredWrapper size="medium" class="flex-1 py-8">
-      <PrototypeCard class="flex h-36 gap-8 bg-grey-100 p-5">
+      <UICard class="flex h-36 gap-8 bg-grey-100 p-5">
         <div class="h-full w-36 flex-none overflow-hidden rounded-sm bg-grey-300">
           <img class="size-full object-cover" :src="series.cover" :alt="series.title" />
         </div>
@@ -33,7 +33,7 @@ onMounted(() => {
           <TextView class="mt-3 max-h-15 overflow-auto" :text="series.description" />
           <div class="mt-3 text-sm text-hint-1">{{ series.total }} · {{ series.updatedAt }}</div>
         </div>
-      </PrototypeCard>
+      </UICard>
 
       <section class="mt-7">
         <h2 class="m-0 mb-4 text-xl font-normal text-title">Courses</h2>
