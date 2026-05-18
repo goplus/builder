@@ -28,8 +28,8 @@ const dragStart = ref<{
 
 const hasMessages = computed(() => messages.value.length > 0)
 const panelStyle = computed(() => ({
-  right: `${panelPosition.value.right}px`,
-  bottom: `${panelPosition.value.bottom}px`
+  right: isOpen.value ? `${panelPosition.value.right}px` : '24px',
+  bottom: isOpen.value ? `${panelPosition.value.bottom}px` : '24px'
 }))
 
 function getMockAnswer(question: string) {
@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <aside ref="panelRef" class="copilot-panel" :style="panelStyle" aria-label="Copilot">
+  <aside ref="panelRef" class="copilot-panel" :class="{ open: isOpen, closed: !isOpen }" :style="panelStyle" aria-label="Copilot">
     <div v-if="isOpen" class="body">
       <div class="body-wrapper">
         <div
@@ -251,6 +251,11 @@ onBeforeUnmount(() => {
   gap: 8px;
   align-items: stretch;
   justify-content: center;
+}
+
+.copilot-panel.closed {
+  width: auto;
+  gap: 0;
 }
 
 .body {
@@ -455,6 +460,18 @@ textarea::placeholder {
   box-shadow: var(--ui-box-shadow-control);
 }
 
+.copilot-panel.closed .footer-wrapper {
+  width: 76px;
+  height: 76px;
+  border: 2px solid #c7b6ff;
+  border-radius: 22px;
+  background: var(--ui-color-grey-100);
+  padding: 6px;
+  box-shadow:
+    0 18px 36px rgba(58, 46, 139, 0.18),
+    0 0 0 8px rgba(154, 119, 255, 0.08);
+}
+
 .fold {
   width: 28px;
   height: 28px;
@@ -472,9 +489,21 @@ textarea::placeholder {
     stroke 0.2s ease;
 }
 
+.copilot-panel.closed .fold {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  color: var(--ui-color-grey-100);
+}
+
 .fold:hover {
   stroke: var(--ui-color-primary-500);
   background: var(--ui-color-primary-200);
+}
+
+.copilot-panel.closed .fold:hover {
+  background: transparent;
+  filter: brightness(1.05);
 }
 
 .copilot-logo {
