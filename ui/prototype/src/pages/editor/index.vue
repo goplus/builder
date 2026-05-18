@@ -7,6 +7,8 @@ import PrototypeSpriteItem from '@/components/editor/PrototypeSpriteItem.vue'
 import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
 import PrototypeButton from '@/components/ui/PrototypeButton.vue'
 import PrototypeCard from '@/components/ui/PrototypeCard.vue'
+import PrototypeTab from '@/components/ui/PrototypeTab.vue'
+import PrototypeTabs from '@/components/ui/PrototypeTabs.vue'
 import PrototypeTag from '@/components/ui/PrototypeTag.vue'
 import controlIcon from '@/assets/editor/category-icons/control.svg'
 import eventIcon from '@/assets/editor/category-icons/event.svg'
@@ -1311,37 +1313,28 @@ onBeforeUnmount(() => {
 
     <section v-if="activeEditMode === 'default'" class="editor-main">
       <section class="code-card">
-        <header class="code-tabs">
-          <template v-if="activeEditorTarget === 'sprite'">
-            <button class="tab" :class="{ active: activeEditorTab === 'code' }" type="button" @click="selectEditorTab('code')">
-              Code
-            </button>
-            <button class="tab" :class="{ active: activeEditorTab === 'costumes' }" type="button" @click="selectEditorTab('costumes')">
-              Costumes
-            </button>
-            <button
-              class="tab"
-              :class="{ active: activeEditorTab === 'animations' }"
-              type="button"
-              @click="selectEditorTab('animations')"
-            >
-              Animations
-            </button>
-          </template>
-          <template v-else>
-            <button class="tab" :class="{ active: activeStageTab === 'code' }" type="button" @click="selectStage('code')">
-              Code
-            </button>
-            <button class="tab" :class="{ active: activeStageTab === 'backdrops' }" type="button" @click="selectStage('backdrops')">
-              Backdrops
-            </button>
-            <button class="tab" :class="{ active: activeStageTab === 'sounds' }" type="button" @click="selectStage('sounds')">
-              Sounds
-            </button>
-            <button class="tab" :class="{ active: activeStageTab === 'widgets' }" type="button" @click="selectStage('widgets')">
-              Widgets
-            </button>
-          </template>
+        <header class="code-tabs flex h-[47px] items-end border-b border-grey-400 px-2">
+          <PrototypeTabs
+            v-if="activeEditorTarget === 'sprite'"
+            class="h-full"
+            :value="activeEditorTab"
+            @update:value="(tab) => selectEditorTab(tab as EditorTab)"
+          >
+            <PrototypeTab value="code">Code</PrototypeTab>
+            <PrototypeTab value="costumes">Costumes</PrototypeTab>
+            <PrototypeTab value="animations">Animations</PrototypeTab>
+          </PrototypeTabs>
+          <PrototypeTabs
+            v-else
+            class="h-full"
+            :value="activeStageTab"
+            @update:value="(tab) => selectStage(tab as StageTab)"
+          >
+            <PrototypeTab value="code">Code</PrototypeTab>
+            <PrototypeTab value="backdrops">Backdrops</PrototypeTab>
+            <PrototypeTab value="sounds">Sounds</PrototypeTab>
+            <PrototypeTab value="widgets">Widgets</PrototypeTab>
+          </PrototypeTabs>
           <PrototypeButton
             v-if="activeEditorTarget === 'sprite' ? activeEditorTab === 'code' : activeStageTab === 'code'"
             class="format-button"
@@ -3256,30 +3249,6 @@ onBeforeUnmount(() => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-}
-
-.code-tabs {
-  height: 47px;
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-  padding: 0 8px;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-}
-
-.tab {
-  height: 39px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  padding: 0 8px;
-  font-size: 18px;
-  color: var(--ui-color-grey-700);
-}
-
-.tab.active {
-  color: var(--ui-color-grey-1000);
-  border-bottom-color: var(--ui-color-grey-1000);
 }
 
 .format-button {

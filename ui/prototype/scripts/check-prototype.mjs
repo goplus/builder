@@ -41,6 +41,7 @@ const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
 const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
 const prototypeTag = read('src/components/ui/PrototypeTag.vue')
+const prototypeTab = read('src/components/ui/PrototypeTab.vue')
 const prototypeSpriteItem = read('src/components/editor/PrototypeSpriteItem.vue')
 
 for (const route of [
@@ -274,6 +275,19 @@ if (
 
 if (!prototypeTag.includes('--ui-color-grey-900') || !prototypeTag.includes('--ui-color-grey-300') || !prototypeTag.includes('--ui-color-grey-400')) {
   failures.push('prototype tag must mirror the real default tag grey tokens')
+}
+
+if (
+  !editorPage.includes("import PrototypeTabs from '@/components/ui/PrototypeTabs.vue'") ||
+  !editorPage.includes("import PrototypeTab from '@/components/ui/PrototypeTab.vue'") ||
+  !editorPage.includes('<PrototypeTabs') ||
+  !editorPage.includes('<PrototypeTab value="costumes">Costumes</PrototypeTab>') ||
+  editorPage.includes('class="tab" :class') ||
+  !prototypeTab.includes('text-xl/8') ||
+  !prototypeTab.includes('text-grey-800 hover:text-grey-1000') ||
+  !prototypeTab.includes('border-grey-1000 text-grey-1000')
+) {
+  failures.push('editor tabs must use the local prototype tab component mirroring UITab states and typography')
 }
 
 if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: var(--ui-color-grey-300);')) {
