@@ -379,8 +379,8 @@ if (
   failures.push('editor code snippets must follow the local XBuilder code theme mapping instead of ad-hoc token classes')
 }
 
-if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: var(--ui-color-grey-300);')) {
-  failures.push('editor navbar must use the real grey-300 background token')
+if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: inherit;')) {
+  failures.push('editor navbar background must inherit the editor page background')
 }
 
 if (
