@@ -21,6 +21,7 @@ const failures = []
 const sourceFiles = walk(srcRoot).filter((path) => /\.(ts|vue|css)$/.test(path))
 const router = read('src/router.ts')
 const communityHome = read('src/pages/community/home.vue')
+const communityExplore = read('src/pages/community/explore.vue')
 const guestBanner = read('src/components/community/home/GuestBanner.vue')
 const navbar = read('src/components/community/CommunityNavbar.vue')
 const projectsSection = read('src/components/community/ProjectsSection.vue')
@@ -110,6 +111,18 @@ for (const signedInOnlyToken of ['Your projects', '/explore?o=following']) {
 
 if (navbar.includes('to="/explore"')) {
   failures.push('community navbar must mirror dev branch and avoid a standalone explore icon entry')
+}
+
+if (communityExplore.includes('Browse fake local projects')) {
+  failures.push('community explore header must not render prototype-only helper copy')
+}
+
+if (
+  !communityExplore.includes('border-b border-grey-400 bg-grey-100') ||
+  !communityExplore.includes('rounded-md border px-4') ||
+  !communityExplore.includes("'border-primary-main bg-primary-main text-grey-100'")
+) {
+  failures.push('community explore header filters must mirror the real CommunityHeader chip radio styling')
 }
 
 if (projectCard.includes('remixes')) {
