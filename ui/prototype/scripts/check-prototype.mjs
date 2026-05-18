@@ -426,6 +426,20 @@ if (
 }
 
 if (
+  !editorPage.includes('const addAnimationMenuOpen = ref(false)') ||
+  !editorPage.includes('function toggleAddAnimationMenu(event: MouseEvent)') ||
+  !editorPage.includes('function handleGroupCostumesAsAnimation()') ||
+  !editorPage.includes('class="animation-add-menu"') ||
+  !editorPage.includes('Group costumes as animation') ||
+  !editorPage.includes('@click.stop="toggleAddAnimationMenu"') ||
+  !editorPage.includes('role="menuitem" @click="handleGroupCostumesAsAnimation"') ||
+  !editorPage.includes('.animation-add-menu {') ||
+  !editorPage.includes("target.closest('.animation-add-menu')")
+) {
+  failures.push('editor add animation button must expose the real add-options menu and trigger group-costumes behavior')
+}
+
+if (
   !editorPage.includes("activeQuickConfig === 'position'") ||
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||

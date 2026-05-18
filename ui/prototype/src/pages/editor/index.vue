@@ -213,8 +213,10 @@ const projectMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileLanguage = ref<'English' | '中文'>('English')
 const addSpriteMenuOpen = ref(false)
+const addAnimationMenuOpen = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
 const spriteMenuPosition = ref({ top: 0, left: 0 })
+const addAnimationMenuPosition = ref({ top: 0, left: 0 })
 const codeZoom = ref(1)
 const tempCodeDocumentsOpen = ref(true)
 const saveState = ref<SaveState>('saved')
@@ -238,6 +240,7 @@ const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
 const profileMenuRef = ref<HTMLElement>()
 const addSpriteMenuRef = ref<HTMLElement>()
+const addAnimationMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
 const mapSpriteNameInputRef = ref<HTMLInputElement>()
 const saveStateTimeouts: number[] = []
@@ -986,6 +989,42 @@ function closeAddSpriteMenu() {
   addSpriteMenuOpen.value = false
 }
 
+function getAddAnimationMenuStyle(): CSSProperties {
+  return {
+    top: `${addAnimationMenuPosition.value.top}px`,
+    left: `${addAnimationMenuPosition.value.left}px`
+  }
+}
+
+function updateAddAnimationMenuPosition(trigger: HTMLElement) {
+  const rect = trigger.getBoundingClientRect()
+  const menuWidth = 240
+  const menuHeight = 44
+  const viewportPadding = 8
+  const left = Math.min(
+    Math.max(viewportPadding, rect.left),
+    Math.max(viewportPadding, window.innerWidth - menuWidth - viewportPadding)
+  )
+  const top = Math.max(viewportPadding, rect.top - menuHeight - 8)
+  addAnimationMenuPosition.value = { top, left }
+}
+
+function toggleAddAnimationMenu(event: MouseEvent) {
+  const trigger = event.currentTarget
+  if (!(trigger instanceof HTMLElement)) return
+  updateAddAnimationMenuPosition(trigger)
+  addAnimationMenuOpen.value = !addAnimationMenuOpen.value
+}
+
+function closeAddAnimationMenu() {
+  addAnimationMenuOpen.value = false
+}
+
+function handleGroupCostumesAsAnimation() {
+  closeAddAnimationMenu()
+  groupCostumesAsAnimation()
+}
+
 function getSpriteMenuStyle(): CSSProperties {
   return {
     top: `${spriteMenuPosition.value.top}px`,
@@ -1064,6 +1103,7 @@ function groupCostumesAsAnimation() {
   editorRevision.value += 1
   activeEditorTarget.value = 'sprite'
   activeEditorTab.value = 'animations'
+  closeAddAnimationMenu()
   markPrototypeAction()
 }
 
@@ -1191,6 +1231,9 @@ function handleDocumentClick(event: MouseEvent) {
   if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
   if (!profileMenuRef.value?.contains(target)) closeProfileMenu()
   if (!addSpriteMenuRef.value?.contains(target)) closeAddSpriteMenu()
+  if (!addAnimationMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.animation-add-menu'))) {
+    closeAddAnimationMenu()
+  }
   if (!spriteMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.sprite-options-menu'))) {
     closeSpriteMenu()
   }
@@ -1515,7 +1558,24 @@ onBeforeUnmount(() => {
               <img :src="animation.image" :alt="animation.name" />
               <span>{{ animation.name }}</span>
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add animation" @click="groupCostumesAsAnimation">+</button>
+            <button
+              ref="addAnimationMenuRef"
+              class="asset-add-button"
+              type="button"
+              aria-label="Add animation"
+              :aria-expanded="addAnimationMenuOpen"
+              aria-haspopup="menu"
+              @click.stop="toggleAddAnimationMenu"
+            >
+              +
+            </button>
+            <Teleport to="body">
+              <div v-if="addAnimationMenuOpen" class="animation-add-menu" :style="getAddAnimationMenuStyle()" role="menu" @click.stop>
+                <button class="animation-add-menu-item" type="button" role="menuitem" @click="handleGroupCostumesAsAnimation">
+                  Group costumes as animation
+                </button>
+              </div>
+            </Teleport>
           </aside>
           <section v-if="selectedAnimation != null" class="asset-detail" aria-label="Animation detail">
             <header class="asset-detail-header">
@@ -3428,6 +3488,37 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-100);
   color: var(--ui-color-grey-800);
   font-size: 20px;
+}
+
+.animation-add-menu {
+  position: fixed;
+  z-index: 70;
+  box-sizing: border-box;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 4px;
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.animation-add-menu-item {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: transparent;
+  padding: 8px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  text-align: left;
+}
+
+.animation-add-menu-item:hover {
+  background: var(--ui-color-grey-300);
 }
 
 .asset-detail {
