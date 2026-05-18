@@ -21,6 +21,7 @@ go.work
 # Agent workflow artifacts
 docs/superpowers/
 */docs/superpowers/
+.playwright-mcp/
 
 .idea/
 *.wasm
