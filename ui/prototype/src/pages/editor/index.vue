@@ -16,6 +16,7 @@ import soundIcon from '@/assets/editor/category-icons/sound.svg'
 import zoomInIcon from '@/assets/editor/code-editor/zoom-in.svg?raw'
 import zoomOutIcon from '@/assets/editor/code-editor/zoom-out.svg?raw'
 import zoomResetIcon from '@/assets/editor/code-editor/zoom-reset.svg?raw'
+import closeCircleIcon from '@/assets/editor/code-editor/close-circle.svg?raw'
 import backdropPanelIcon from '@/assets/editor/stage-panel/backdrop.svg?raw'
 import soundPanelIcon from '@/assets/editor/stage-panel/sound.svg?raw'
 import widgetPanelIcon from '@/assets/editor/stage-panel/widget.svg?raw'
@@ -121,6 +122,15 @@ type WidgetItem = {
 
 type CodeLine = [string, string]
 
+type CodeDocumentTab = {
+  id: string
+  label: string
+  image: string
+  active: boolean
+  kind: EditorTarget
+  spriteId?: string
+}
+
 type EditorProjectData = {
   sprites: SpriteCard[]
   costumes: AssetItem[]
@@ -153,6 +163,7 @@ const addSpriteMenuOpen = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
 const spriteMenuPosition = ref({ top: 0, left: 0 })
 const codeZoom = ref(1)
+const tempCodeDocumentsOpen = ref(true)
 const saveState = ref<SaveState>('saved')
 const editorRevision = ref(0)
 const selectedSpriteId = ref('niu-xiao-qi')
@@ -525,6 +536,51 @@ const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.i
 const spriteMenuSprite = computed(() => sprites.value.find((sprite) => sprite.id === spriteMenuOpenFor.value))
 const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
 const stageBackdrop = computed(() => selectedBackdrop.value?.image ?? project.value.thumbnail)
+const stageCompanionSprite = computed(() => sprites.value.find((sprite) => sprite.id !== selectedSprite.value?.id))
+const mainCodeDocumentTab = computed<CodeDocumentTab>(() => {
+  if (activeEditorTarget.value === 'stage') {
+    return {
+      id: 'stage',
+      label: 'Stage code',
+      image: stageBackdrop.value,
+      active: true,
+      kind: 'stage'
+    }
+  }
+  return {
+    id: selectedSprite.value?.id ?? 'sprite',
+    label: `${selectedSprite.value?.name ?? 'Sprite'} code`,
+    image: selectedSprite.value?.image ?? project.value.thumbnail,
+    active: true,
+    kind: 'sprite',
+    spriteId: selectedSprite.value?.id
+  }
+})
+const tempCodeDocumentTabs = computed<CodeDocumentTab[]>(() => {
+  if (!tempCodeDocumentsOpen.value) return []
+  const tabs: CodeDocumentTab[] = []
+  const companion = stageCompanionSprite.value
+  if (activeEditorTarget.value !== 'stage') {
+    tabs.push({
+      id: 'stage',
+      label: 'Stage code',
+      image: stageBackdrop.value,
+      active: false,
+      kind: 'stage'
+    })
+  }
+  if (companion != null && companion.id !== selectedSprite.value?.id) {
+    tabs.push({
+      id: companion.id,
+      label: `${companion.name} code`,
+      image: companion.image,
+      active: false,
+      kind: 'sprite',
+      spriteId: companion.id
+    })
+  }
+  return tabs
+})
 const selectedSpriteFrameStyle = computed(() => ({
   transform: selectedSpriteTransform(selectedSprite.value)
 }))
@@ -533,7 +589,6 @@ const codeEditorStyle = computed<CSSProperties>(() => ({
 }))
 const mapWorkspaceStyle = computed(() => ({ backgroundImage: `url(${stageBgUrl})` }))
 const mapStageStyle = computed(() => ({ backgroundImage: `url(${stageBackdrop.value})` }))
-const stageCompanionSprite = computed(() => sprites.value.find((sprite) => sprite.id !== selectedSprite.value?.id))
 const saveStateMeta = computed(() => {
   switch (saveState.value) {
     case 'pending':
@@ -649,6 +704,20 @@ function selectSprite(id = selectedSpriteId.value) {
 function selectStage(tab: StageTab = 'code') {
   activeEditorTarget.value = 'stage'
   activeStageTab.value = tab
+}
+
+function openCodeDocumentTab(tab: CodeDocumentTab) {
+  if (tab.kind === 'stage') {
+    selectStage('code')
+    return
+  }
+  if (tab.spriteId == null) return
+  selectSprite(tab.spriteId)
+  activeEditorTab.value = 'code'
+}
+
+function closeTempCodeDocuments() {
+  tempCodeDocumentsOpen.value = false
 }
 
 function selectEditMode(mode: EditMode) {
@@ -1229,11 +1298,48 @@ onBeforeUnmount(() => {
               <span class="keyword">{{ line[0] }}</span>
               <span class="source">{{ line[1] }}</span>
             </div>
-            <div class="zoom-tools">
-              <button type="button" aria-label="Zoom in" title="Zoom in" @click="zoomCodeEditor('in')" v-html="zoomInIcon"></button>
-              <button type="button" aria-label="Zoom out" title="Zoom out" @click="zoomCodeEditor('out')" v-html="zoomOutIcon"></button>
-              <button type="button" aria-label="Reset zoom" title="Reset zoom" @click="zoomCodeEditor('reset')" v-html="zoomResetIcon"></button>
-            </div>
+            <aside class="code-side-tools" aria-label="Code document navigation">
+              <div class="code-document-tabs">
+                <button
+                  class="code-document-tab active"
+                  type="button"
+                  :aria-label="mainCodeDocumentTab.label"
+                  :title="mainCodeDocumentTab.label"
+                  @click="openCodeDocumentTab(mainCodeDocumentTab)"
+                >
+                  <img :src="mainCodeDocumentTab.image" :alt="mainCodeDocumentTab.label" />
+                </button>
+                <template v-if="tempCodeDocumentTabs.length > 0">
+                  <div class="code-document-divider" aria-hidden="true"></div>
+                  <div class="code-document-temp-tabs">
+                    <button
+                      v-for="tab in tempCodeDocumentTabs"
+                      :key="tab.id"
+                      class="code-document-tab"
+                      type="button"
+                      :aria-label="tab.label"
+                      :title="tab.label"
+                      @click="openCodeDocumentTab(tab)"
+                    >
+                      <img :src="tab.image" :alt="tab.label" />
+                    </button>
+                  </div>
+                  <button
+                    class="code-document-close"
+                    type="button"
+                    aria-label="Close temporary code previews"
+                    title="Close temporary code previews"
+                    @click="closeTempCodeDocuments"
+                    v-html="closeCircleIcon"
+                  ></button>
+                </template>
+              </div>
+              <div class="zoom-tools">
+                <button type="button" aria-label="Zoom in" title="Zoom in" @click="zoomCodeEditor('in')" v-html="zoomInIcon"></button>
+                <button type="button" aria-label="Zoom out" title="Zoom out" @click="zoomCodeEditor('out')" v-html="zoomOutIcon"></button>
+                <button type="button" aria-label="Reset zoom" title="Reset zoom" @click="zoomCodeEditor('reset')" v-html="zoomResetIcon"></button>
+              </div>
+            </aside>
           </section>
         </div>
 
@@ -1349,11 +1455,48 @@ onBeforeUnmount(() => {
               <span class="keyword">{{ line[0] }}</span>
               <span class="source">{{ line[1] }}</span>
             </div>
-            <div class="zoom-tools">
-              <button type="button" aria-label="Zoom in" title="Zoom in" @click="zoomCodeEditor('in')" v-html="zoomInIcon"></button>
-              <button type="button" aria-label="Zoom out" title="Zoom out" @click="zoomCodeEditor('out')" v-html="zoomOutIcon"></button>
-              <button type="button" aria-label="Reset zoom" title="Reset zoom" @click="zoomCodeEditor('reset')" v-html="zoomResetIcon"></button>
-            </div>
+            <aside class="code-side-tools" aria-label="Code document navigation">
+              <div class="code-document-tabs">
+                <button
+                  class="code-document-tab active"
+                  type="button"
+                  :aria-label="mainCodeDocumentTab.label"
+                  :title="mainCodeDocumentTab.label"
+                  @click="openCodeDocumentTab(mainCodeDocumentTab)"
+                >
+                  <img :src="mainCodeDocumentTab.image" :alt="mainCodeDocumentTab.label" />
+                </button>
+                <template v-if="tempCodeDocumentTabs.length > 0">
+                  <div class="code-document-divider" aria-hidden="true"></div>
+                  <div class="code-document-temp-tabs">
+                    <button
+                      v-for="tab in tempCodeDocumentTabs"
+                      :key="tab.id"
+                      class="code-document-tab"
+                      type="button"
+                      :aria-label="tab.label"
+                      :title="tab.label"
+                      @click="openCodeDocumentTab(tab)"
+                    >
+                      <img :src="tab.image" :alt="tab.label" />
+                    </button>
+                  </div>
+                  <button
+                    class="code-document-close"
+                    type="button"
+                    aria-label="Close temporary code previews"
+                    title="Close temporary code previews"
+                    @click="closeTempCodeDocuments"
+                    v-html="closeCircleIcon"
+                  ></button>
+                </template>
+              </div>
+              <div class="zoom-tools">
+                <button type="button" aria-label="Zoom in" title="Zoom in" @click="zoomCodeEditor('in')" v-html="zoomInIcon"></button>
+                <button type="button" aria-label="Zoom out" title="Zoom out" @click="zoomCodeEditor('out')" v-html="zoomOutIcon"></button>
+                <button type="button" aria-label="Reset zoom" title="Reset zoom" @click="zoomCodeEditor('reset')" v-html="zoomResetIcon"></button>
+              </div>
+            </aside>
           </section>
         </div>
 
@@ -3493,7 +3636,7 @@ onBeforeUnmount(() => {
 .code-editor {
   position: relative;
   overflow: hidden;
-  padding: 14px 18px;
+  padding: 14px 66px 14px 18px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: calc(13px * var(--prototype-code-zoom, 1));
   line-height: 1.55;
@@ -3526,12 +3669,105 @@ onBeforeUnmount(() => {
   color: #9a3131;
 }
 
-.zoom-tools {
+.code-side-tools {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  inset: 12px 8px 8px auto;
+  width: 40px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.code-document-tabs {
+  min-height: 0;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: center;
+}
+
+.code-document-temp-tabs {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.code-document-temp-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.code-document-tab {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: var(--ui-color-grey-300);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.code-document-tab.active {
+  border-color: var(--ui-color-primary-500);
+  background: var(--ui-color-primary-200);
+  cursor: default;
+}
+
+.code-document-tab img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.code-document-divider {
+  width: 32px;
+  height: 1px;
+  flex: 0 0 auto;
+  margin: 12px 0;
+  background: var(--ui-color-dividing-line-2);
+}
+
+.code-document-close {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-color-grey-800);
+}
+
+.code-document-close:hover {
+  color: var(--ui-color-grey-1000);
+}
+
+.code-document-close :deep(svg) {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.zoom-tools {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
   gap: 4px;
 }
 

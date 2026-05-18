@@ -35,6 +35,7 @@ const quickConfigBackIcon = read('src/assets/editor/quick-config/back.svg')
 const codeZoomInIcon = read('src/assets/editor/code-editor/zoom-in.svg')
 const codeZoomOutIcon = read('src/assets/editor/code-editor/zoom-out.svg')
 const codeZoomResetIcon = read('src/assets/editor/code-editor/zoom-reset.svg')
+const codeCloseCircleIcon = read('src/assets/editor/code-editor/close-circle.svg')
 const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
 const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
@@ -293,6 +294,21 @@ if (
 
 if (!codeZoomInIcon.includes('11.6667 8.54167H9.79167') || !codeZoomOutIcon.includes('11.6667 8.54167H6.66667') || !codeZoomResetIcon.includes('11.6667 7.29167H6.66667')) {
   failures.push('editor code zoom icon assets must mirror the real code editor zoom icons')
+}
+
+if (
+  !editorPage.includes("close-circle.svg?raw") ||
+  !editorPage.includes('mainCodeDocumentTab') ||
+  !editorPage.includes('tempCodeDocumentTabs') ||
+  !editorPage.includes('openCodeDocumentTab') ||
+  !editorPage.includes('Close temporary code previews') ||
+  !editorPage.includes('code-document-tab active')
+) {
+  failures.push('editor code panel must include real document preview tabs above zoom controls')
+}
+
+if (!codeCloseCircleIcon.includes('M9.99984 1.0415') || !codeCloseCircleIcon.includes('fill="currentColor"')) {
+  failures.push('editor code document close icon must mirror the real close-circle icon asset')
 }
 
 if (!editorPage.includes('.stage-tools button') || !editorPage.includes('color: var(--ui-color-grey-1000);')) {
