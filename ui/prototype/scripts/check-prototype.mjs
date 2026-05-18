@@ -247,6 +247,10 @@ if (!editorPage.includes("import PrototypeButton from '@/components/ui/Prototype
   failures.push('editor format action must use the prototype UI Button component')
 }
 
+if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: var(--ui-color-grey-300);')) {
+  failures.push('editor navbar must use the real grey-300 background token')
+}
+
 if (!editorPage.includes('.stage-tools button') || !editorPage.includes('color: var(--ui-color-grey-1000);')) {
   failures.push('editor quick config controls must use the real grey-1000 icon token')
 }

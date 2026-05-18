@@ -1837,7 +1837,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
   align-items: center;
-  background: var(--ui-color-grey-100);
+  background: var(--ui-color-grey-300);
   border-bottom: 1px solid var(--ui-color-grey-400);
   padding: 0 24px;
 }
