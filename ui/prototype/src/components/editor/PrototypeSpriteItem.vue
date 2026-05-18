@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'
+
 defineProps<{
   sprite: {
     name: string
@@ -22,7 +24,13 @@ const emit = defineEmits<{
     <img :src="sprite.image" :alt="sprite.name" />
     <span class="prototype-sprite-item-title">
       <span class="prototype-sprite-item-name">{{ sprite.shortName }}</span>
-      <span v-if="sprite.hidden" class="prototype-sprite-item-hidden">⌁</span>
+      <span
+        v-if="sprite.hidden"
+        class="prototype-sprite-item-hidden"
+        aria-label="Invisible"
+        title="Invisible"
+        v-html="eyeOffIcon"
+      ></span>
     </span>
   </button>
 </template>
@@ -93,7 +101,15 @@ const emit = defineEmits<{
 
 .prototype-sprite-item-hidden {
   flex: 0 0 auto;
-  color: var(--ui-color-grey-500);
+  width: 16px;
+  height: 16px;
+  color: var(--ui-color-grey-700);
+}
+
+.prototype-sprite-item-hidden :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .prototype-sprite-item-corner {

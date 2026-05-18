@@ -41,6 +41,7 @@ const editorTimerIcon = read('src/assets/editor/ui-icons/timer.svg')
 const editorStatusIcon = read('src/assets/editor/ui-icons/status.svg')
 const editorSoundIcon = read('src/assets/editor/ui-icons/sound.svg')
 const editorArrowDownIcon = read('src/assets/editor/ui-icons/arrow-down.svg')
+const editorEyeOffIcon = read('src/assets/editor/ui-icons/eye-off.svg')
 const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
 const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
@@ -491,6 +492,18 @@ if (
   editorPage.includes("window.prompt('Rename sprite'")
 ) {
   failures.push('editor sprite rename action must use the local rename modal instead of a browser prompt')
+}
+
+if (
+  !prototypeSpriteItem.includes("import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'") ||
+  !prototypeSpriteItem.includes('v-html="eyeOffIcon"') ||
+  !prototypeSpriteItem.includes('width: 16px;') ||
+  !prototypeSpriteItem.includes('height: 16px;') ||
+  !prototypeSpriteItem.includes('color: var(--ui-color-grey-700);') ||
+  prototypeSpriteItem.includes('⌁') ||
+  !editorEyeOffIcon.includes('M20.1133 7.53809')
+) {
+  failures.push('prototype sprite hidden state must use the copied UIIcon eyeOff asset at component icon size')
 }
 
 if (
