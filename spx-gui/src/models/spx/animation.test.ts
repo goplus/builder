@@ -158,6 +158,7 @@ describe('Animation', () => {
     )
     expect(animation.sound).toBe(sounds[0].id)
   })
+
   it('should clone well', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
