@@ -111,8 +111,16 @@ onBeforeUnmount(() => {
             :aria-expanded="projectMenuOpen"
             @click.stop="toggleProjectMenu"
           >
-            <span class="size-5 overflow-visible" aria-hidden="true" v-html="folderIcon"></span>
-            <span class="ml-1 size-2" aria-hidden="true" v-html="arrowMiniIcon"></span>
+            <span
+              class="inline-flex size-5 items-center justify-center overflow-visible leading-none [&>svg]:block"
+              aria-hidden="true"
+              v-html="folderIcon"
+            ></span>
+            <span
+              class="ml-1 inline-flex size-2 items-center justify-center leading-none [&>svg]:block"
+              aria-hidden="true"
+              v-html="arrowMiniIcon"
+            ></span>
           </button>
           <div
             v-if="projectMenuOpen"
