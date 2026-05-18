@@ -18,5 +18,9 @@
 # Go workspace file
 go.work
 
+# Agent workflow artifacts
+docs/superpowers/
+*/docs/superpowers/
+
 .idea/
 *.wasm
