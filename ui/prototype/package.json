@@ -1,0 +1,11 @@
+{
+  "name": "builder-ui-prototype",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'not implemented'",
+    "build": "rm -rf dist && mkdir -p dist && cp index.html dist/index.html",
+    "preview": "echo 'not implemented'"
+  }
+}
