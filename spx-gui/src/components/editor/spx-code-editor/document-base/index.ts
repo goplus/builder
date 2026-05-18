@@ -61,10 +61,27 @@ export const clone1: DefinitionDocumentationItem = {
 export const onCloned0: DefinitionDocumentationItem = {
   categories: [categories.event.sprite],
   kind: DefinitionKind.Listen,
+  hiddenFromList: true, // duplicate with `onCloned1`
   definition: {
     package: packageSpx,
     name: 'Sprite.onCloned',
     overloadId: '0'
+  },
+  insertSnippet: 'onCloned => {\n\t$0\n}',
+  overview: 'onCloned => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Listen to sprite cloned',
+    zh: '精灵被复制时执行'
+  })
+}
+
+export const onCloned1: DefinitionDocumentationItem = {
+  categories: [categories.event.sprite],
+  kind: DefinitionKind.Listen,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onCloned',
+    overloadId: '1'
   },
   insertSnippet: 'onCloned data => {\n\t$0\n}',
   overview: 'onCloned data => {}',
@@ -74,23 +91,31 @@ export const onCloned0: DefinitionDocumentationItem = {
   })
 }
 
-export const onCloned1: DefinitionDocumentationItem = {
-  ...onCloned0,
-  hiddenFromList: true, // duplicate with `onCloned0`
+export const onTouchStart0: DefinitionDocumentationItem = {
+  categories: [categories.event.sensing],
+  kind: DefinitionKind.Listen,
+  hiddenFromList: true, // duplicate with `onTouchStart1`
   definition: {
     package: packageSpx,
-    name: 'Sprite.onCloned',
-    overloadId: '1'
-  }
+    name: 'Sprite.onTouchStart',
+    overloadId: '0'
+  },
+  insertSnippet: 'onTouchStart ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['name'],
+  overview: 'onTouchStart name, => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Listen to sprite touching another sprite with given name',
+    zh: '精灵与指定名字的其他精灵接触时执行'
+  })
 }
 
-export const onTouchStart0: DefinitionDocumentationItem = {
+export const onTouchStart1: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
     name: 'Sprite.onTouchStart',
-    overloadId: '0'
+    overloadId: '1'
   },
   insertSnippet: 'onTouchStart ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, sprite => {\n\t$0\n}',
   insertSnippetParameterHints: ['name'],
@@ -101,23 +126,31 @@ export const onTouchStart0: DefinitionDocumentationItem = {
   })
 }
 
-export const onTouchStart1: DefinitionDocumentationItem = {
-  ...onTouchStart0,
-  hiddenFromList: true, // duplicate with `onTouchStart0
+export const onTouchStart2: DefinitionDocumentationItem = {
+  categories: [categories.event.sensing],
+  kind: DefinitionKind.Listen,
+  hiddenFromList: true, // duplicate with `onTouchStart3`
   definition: {
     package: packageSpx,
     name: 'Sprite.onTouchStart',
-    overloadId: '1'
-  }
+    overloadId: '2'
+  },
+  insertSnippet: 'onTouchStart ${1:["${BUILDER_OTHER_SPRITE_NAME:S1}"]}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['names'],
+  overview: 'onTouchStart names, => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Listen to sprite touching another sprite with one of given names',
+    zh: '精灵与任一指定名字的其他精灵接触时执行，支持指定多个名字'
+  })
 }
 
-export const onTouchStart2: DefinitionDocumentationItem = {
+export const onTouchStart3: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
     name: 'Sprite.onTouchStart',
-    overloadId: '2'
+    overloadId: '3'
   },
   insertSnippet: 'onTouchStart ${1:["${BUILDER_OTHER_SPRITE_NAME:S1}"]}, sprite => {\n\t$0\n}',
   insertSnippetParameterHints: ['names'],
@@ -126,16 +159,6 @@ export const onTouchStart2: DefinitionDocumentationItem = {
     en: 'Listen to sprite touching another sprite with one of given names',
     zh: '精灵与任一指定名字的其他精灵接触时执行，支持指定多个名字'
   })
-}
-
-export const onTouchStart3: DefinitionDocumentationItem = {
-  ...onTouchStart2,
-  hiddenFromList: true, // duplicate with `onTouchStart2
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.onTouchStart',
-    overloadId: '3'
-  }
 }
 
 export const die: DefinitionDocumentationItem = {
@@ -590,12 +613,12 @@ export const stepTo2: DefinitionDocumentationItem = {
     name: 'Sprite.stepTo',
     overloadId: '2'
   },
-  insertSnippet: 'stepTo ${1:100}, ${2:100}',
-  insertSnippetParameterHints: ['x', 'y'],
-  overview: 'stepTo x, y',
+  insertSnippet: 'stepTo ${1:Mouse}',
+  insertSnippetParameterHints: ['object'],
+  overview: 'stepTo object',
   detail: makeBasicMarkdownString({
-    en: 'Step to given position. Animation for state "step" will be played',
-    zh: '行走到指定位置，自动播放“行走”状态的动画'
+    en: 'Step to the given object. Animation for state "step" will be played',
+    zh: '行走到指定对象，自动播放“行走”状态的动画'
   })
 }
 
@@ -607,12 +630,12 @@ export const stepTo3: DefinitionDocumentationItem = {
     name: 'Sprite.stepTo',
     overloadId: '3'
   },
-  insertSnippet: 'stepTo ${1:Mouse}',
-  insertSnippetParameterHints: ['object'],
-  overview: 'stepTo object',
+  insertSnippet: 'stepTo ${1:100}, ${2:100}',
+  insertSnippetParameterHints: ['x', 'y'],
+  overview: 'stepTo x, y',
   detail: makeBasicMarkdownString({
-    en: 'Step to the given object. Animation for state "step" will be played',
-    zh: '行走到指定对象，自动播放“行走”状态的动画'
+    en: 'Step to given position. Animation for state "step" will be played',
+    zh: '行走到指定位置，自动播放“行走”状态的动画'
   })
 }
 
@@ -659,12 +682,12 @@ export const stepTo6: DefinitionDocumentationItem = {
     name: 'Sprite.stepTo',
     overloadId: '6'
   },
-  insertSnippet: 'stepTo ${1:100}, ${2:100}, ${3:1}',
-  insertSnippetParameterHints: ['x', 'y', 'speed'],
-  overview: 'stepTo x, y, speed',
+  insertSnippet: 'stepTo ${1:Mouse}, ${2:1}',
+  insertSnippetParameterHints: ['object', 'speed'],
+  overview: 'stepTo object, speed',
   detail: makeBasicMarkdownString({
-    en: 'Step to given position and specify speed. Animation for state "step" will be played',
-    zh: '行走到指定位置，并指定行走速度，自动播放“行走”状态的动画'
+    en: 'Step to given object and specify the step speed. Animation for state "step" will be played',
+    zh: '行走到指定对象，并指定行走速度，自动播放“行走”状态的动画'
   })
 }
 
@@ -676,12 +699,12 @@ export const stepTo7: DefinitionDocumentationItem = {
     name: 'Sprite.stepTo',
     overloadId: '7'
   },
-  insertSnippet: 'stepTo ${1:Mouse}, ${2:1}',
-  insertSnippetParameterHints: ['object', 'speed'],
-  overview: 'stepTo object, speed',
+  insertSnippet: 'stepTo ${1:100}, ${2:100}, ${3:1}',
+  insertSnippetParameterHints: ['x', 'y', 'speed'],
+  overview: 'stepTo x, y, speed',
   detail: makeBasicMarkdownString({
-    en: 'Step to given object and specify the step speed. Animation for state "step" will be played',
-    zh: '行走到指定对象，并指定行走速度，自动播放“行走”状态的动画'
+    en: 'Step to given position and specify speed. Animation for state "step" will be played',
+    zh: '行走到指定位置，并指定行走速度，自动播放“行走”状态的动画'
   })
 }
 
@@ -728,12 +751,12 @@ export const stepToA: DefinitionDocumentationItem = {
     name: 'Sprite.stepTo',
     overloadId: 'a'
   },
-  insertSnippet: 'stepTo ${1:100}, ${2:100}, ${3:1}, ${4:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
-  insertSnippetParameterHints: ['x', 'y', 'speed', 'animation'],
-  overview: 'stepTo x, y, speed, animation',
+  insertSnippet: 'stepTo ${1:Mouse}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['object', 'speed', 'animation'],
+  overview: 'stepTo object, speed, animation',
   detail: makeBasicMarkdownString({
-    en: 'Step to given position and specify speed and animation',
-    zh: '行走到指定位置，并指定行走速度和动画'
+    en: 'Step to given object and specify speed and animation',
+    zh: '行走到指定对象，并指定行走速度和动画'
   })
 }
 
@@ -745,12 +768,12 @@ export const stepToB: DefinitionDocumentationItem = {
     name: 'Sprite.stepTo',
     overloadId: 'b'
   },
-  insertSnippet: 'stepTo ${1:Mouse}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
-  insertSnippetParameterHints: ['object', 'speed', 'animation'],
-  overview: 'stepTo object, speed, animation',
+  insertSnippet: 'stepTo ${1:100}, ${2:100}, ${3:1}, ${4:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['x', 'y', 'speed', 'animation'],
+  overview: 'stepTo x, y, speed, animation',
   detail: makeBasicMarkdownString({
-    en: 'Step to given object and specify speed and animation',
-    zh: '行走到指定对象，并指定行走速度和动画'
+    en: 'Step to given position and specify speed and animation',
+    zh: '行走到指定位置，并指定行走速度和动画'
   })
 }
 
@@ -762,23 +785,6 @@ export const glide0: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '0'
   },
-  insertSnippet: 'glide ${1:100}, ${2:100}, ${3:1}',
-  insertSnippetParameterHints: ['x', 'y', 'seconds'],
-  overview: 'glide x, y, seconds',
-  detail: makeBasicMarkdownString({
-    en: 'Glide to given position within given duration',
-    zh: '在指定时间内滑行到指定位置'
-  })
-}
-
-export const glide1: DefinitionDocumentationItem = {
-  categories: [categories.motion.position],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.glide',
-    overloadId: '1'
-  },
   insertSnippet: 'glide ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}',
   insertSnippetParameterHints: ['sprite', 'seconds'],
   overview: 'glide sprite, seconds',
@@ -788,14 +794,14 @@ export const glide1: DefinitionDocumentationItem = {
   })
 }
 
-export const glide2: DefinitionDocumentationItem = {
+export const glide1: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true, // similar to `glide1`, but `glide1` is more recommended
+  hiddenFromList: true, // similar to `glide0`, but `glide0` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.glide',
-    overloadId: '2'
+    overloadId: '1'
   },
   insertSnippet: 'glide ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
   insertSnippetParameterHints: ['name', 'seconds'],
@@ -806,13 +812,13 @@ export const glide2: DefinitionDocumentationItem = {
   })
 }
 
-export const glide3: DefinitionDocumentationItem = {
+export const glide2: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.glide',
-    overloadId: '3'
+    overloadId: '2'
   },
   insertSnippet: 'glide ${1:Mouse}, ${2:1}',
   insertSnippetParameterHints: ['object', 'seconds'],
@@ -820,6 +826,41 @@ export const glide3: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Glide to given object within given duration',
     zh: '在指定时间内滑行到指定对象'
+  })
+}
+
+export const glide3: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  hiddenFromList: true, // not included in the reference panel, keep it out of the default list
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.glide',
+    overloadId: '3'
+  },
+  insertSnippet: 'glide ${1:pos}, ${2:1}',
+  insertSnippetParameterHints: ['pos', 'seconds'],
+  overview: 'glide pos, seconds',
+  detail: makeBasicMarkdownString({
+    en: 'Glide to given position object within given duration',
+    zh: '在指定时间内滑行到指定位置对象'
+  })
+}
+
+export const glide4: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.glide',
+    overloadId: '4'
+  },
+  insertSnippet: 'glide ${1:100}, ${2:100}, ${3:1}',
+  insertSnippetParameterHints: ['x', 'y', 'seconds'],
+  overview: 'glide x, y, seconds',
+  detail: makeBasicMarkdownString({
+    en: 'Glide to given position within given duration',
+    zh: '在指定时间内滑行到指定位置'
   })
 }
 
@@ -1413,11 +1454,28 @@ export const spriteClearGraphicEffects: DefinitionDocumentationItem = {
 export const touching0: DefinitionDocumentationItem = {
   categories: [categories.sensing.distance],
   kind: DefinitionKind.Read,
-  hiddenFromList: true, // similar to `touching1`, but `touching1` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.touching',
     overloadId: '0'
+  },
+  insertSnippet: 'touching(${1:${BUILDER_OTHER_SPRITE_NAME:S1}})',
+  insertSnippetParameterHints: ['sprite'],
+  overview: 'touching(sprite)',
+  detail: makeBasicMarkdownString({
+    en: 'If sprite touching given sprite',
+    zh: '精灵是否与指定的其他精灵接触'
+  })
+}
+
+export const touching1: DefinitionDocumentationItem = {
+  categories: [categories.sensing.distance],
+  kind: DefinitionKind.Read,
+  hiddenFromList: true, // similar to `touching0`, but `touching0` is more recommended
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.touching',
+    overloadId: '1'
   },
   insertSnippet: 'touching(${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"})',
   insertSnippetParameterHints: ['name'],
@@ -1425,23 +1483,6 @@ export const touching0: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'If sprite touching another sprite with given name',
     zh: '精灵是否与指定名字的其他精灵接触'
-  })
-}
-
-export const touching1: DefinitionDocumentationItem = {
-  categories: [categories.sensing.distance],
-  kind: DefinitionKind.Read,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.touching',
-    overloadId: '1'
-  },
-  insertSnippet: 'touching(${1:${BUILDER_OTHER_SPRITE_NAME:S1}})',
-  insertSnippetParameterHints: ['sprite'],
-  overview: 'touching(sprite)',
-  detail: makeBasicMarkdownString({
-    en: 'if sprite touching given sprite',
-    zh: '精灵是否与指定的其他精灵接触'
   })
 }
 
@@ -2621,14 +2662,12 @@ export const exit0: DefinitionDocumentationItem = {
     name: 'exit',
     overloadId: '0'
   },
-  insertSnippet: 'exit ${1:0}',
-  insertSnippetParameterHints: ['code'],
-  overview: 'exit code',
+  insertSnippet: 'exit',
+  overview: 'exit',
   detail: makeBasicMarkdownString({
-    en: 'Exit the game with given code',
-    zh: '退出游戏并指定退出码'
-  }),
-  hiddenFromList: true // not recommended to use
+    en: 'Exit the game',
+    zh: '退出游戏'
+  })
 }
 
 export const exit1: DefinitionDocumentationItem = {
@@ -2639,12 +2678,14 @@ export const exit1: DefinitionDocumentationItem = {
     name: 'exit',
     overloadId: '1'
   },
-  insertSnippet: 'exit',
-  overview: 'exit',
+  insertSnippet: 'exit ${1:0}',
+  insertSnippetParameterHints: ['code'],
+  overview: 'exit code',
   detail: makeBasicMarkdownString({
-    en: 'Exit the game',
-    zh: '退出游戏'
-  })
+    en: 'Exit the game with given code',
+    zh: '退出游戏并指定退出码'
+  }),
+  hiddenFromList: true // not recommended to use
 }
 
 export const getWidget: DefinitionDocumentationItem = {
