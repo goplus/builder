@@ -46,6 +46,7 @@ const editorSoundIcon = read('src/assets/editor/ui-icons/sound.svg')
 const editorArrowDownIcon = read('src/assets/editor/ui-icons/arrow-down.svg')
 const editorEyeOffIcon = read('src/assets/editor/ui-icons/eye-off.svg')
 const editorPlusIcon = read('src/assets/editor/ui-icons/plus.svg')
+const editorPublishIcon = read('src/assets/editor/ui-icons/publish.svg')
 const projectRunner = read('src/components/project/ProjectRunner.vue')
 const copilot = read('src/components/copilot/Copilot.vue')
 const communityApi = read('src/apis/community.ts')
@@ -90,6 +91,7 @@ for (const requiredFile of [
   'src/assets/editor/ui-icons/sound.svg',
   'src/assets/editor/ui-icons/arrow-down.svg',
   'src/assets/editor/ui-icons/plus.svg',
+  'src/assets/editor/ui-icons/publish.svg',
   'src/components/project/ProjectRunner.vue',
   'src/components/editor/SpriteItem.vue',
   'src/components/ui/UICardHeader.vue',
@@ -506,6 +508,17 @@ if (
   editorPage.includes('aria-label="Add sprite"\n                  :aria-expanded="addSpriteMenuOpen"\n                  aria-haspopup="menu"\n                  @click.stop="toggleAddSpriteMenu"\n                >\n                  +')
 ) {
   failures.push('editor add sprite trigger must use the copied UIIcon plus asset with PanelHeader icon button states')
+}
+
+if (
+  !editorPage.includes("import publishActionIcon from '@/assets/editor/ui-icons/publish.svg?raw'") ||
+  !editorPage.includes('<span class="button-icon" aria-hidden="true" v-html="publishActionIcon"></span>') ||
+  !editorPage.includes('.button-icon,\n.button-icon :deep(svg)') ||
+  !editorPage.includes('width: 16px;\n  height: 16px;') ||
+  !editorPublishIcon.includes('M12.0458 1.81972') ||
+  editorPage.includes('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-7 18-4-8-8-4 19-6Z" /></svg>')
+) {
+  failures.push('editor publish action must use the copied UIIcon publish asset without hand-drawn stroke SVG')
 }
 
 if (

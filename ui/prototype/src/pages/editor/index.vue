@@ -50,6 +50,7 @@ import newProjectIcon from '@/assets/editor/navbar-icons/new.svg'
 import openProjectIcon from '@/assets/editor/navbar-icons/open.svg'
 import plusIcon from '@/assets/editor/ui-icons/plus.svg?raw'
 import projectPageIcon from '@/assets/editor/navbar-icons/project-page.svg'
+import publishActionIcon from '@/assets/editor/ui-icons/publish.svg?raw'
 import publishIcon from '@/assets/editor/navbar-icons/publish.svg'
 import removeProjectIcon from '@/assets/editor/navbar-icons/remove-project.svg'
 import savingIcon from '@/assets/editor/navbar-icons/saving.svg?raw'
@@ -2316,7 +2317,7 @@ onBeforeUnmount(() => {
                 Run
               </button>
               <button class="publish-button" type="button">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-7 18-4-8-8-4 19-6Z" /></svg>
+                <span class="button-icon" aria-hidden="true" v-html="publishActionIcon"></span>
                 Publish
               </button>
             </div>
@@ -5149,6 +5150,12 @@ onBeforeUnmount(() => {
 .run-button {
   background: var(--ui-color-primary-main);
   color: white;
+}
+
+.button-icon,
+.button-icon :deep(svg) {
+  width: 16px;
+  height: 16px;
 }
 
 .publish-button {
