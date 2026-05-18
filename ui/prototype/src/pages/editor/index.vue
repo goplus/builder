@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { getProject } from '@/apis/project'
 import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
+import PrototypeButton from '@/components/ui/PrototypeButton.vue'
 import controlIcon from '@/assets/editor/category-icons/control.svg'
 import eventIcon from '@/assets/editor/category-icons/event.svg'
 import gameIcon from '@/assets/editor/category-icons/game.svg'
@@ -1133,9 +1134,14 @@ onBeforeUnmount(() => {
               Widgets
             </button>
           </template>
-          <button v-if="activeEditorTarget === 'sprite' ? activeEditorTab === 'code' : activeStageTab === 'code'" class="format-button" type="button">
+          <PrototypeButton
+            v-if="activeEditorTarget === 'sprite' ? activeEditorTab === 'code' : activeStageTab === 'code'"
+            class="format-button"
+            type="white"
+            size="medium"
+          >
             Format
-          </button>
+          </PrototypeButton>
         </header>
 
         <div v-if="activeEditorTarget === 'sprite' && activeEditorTab === 'code'" class="code-body">
@@ -2822,13 +2828,6 @@ onBeforeUnmount(() => {
 .format-button {
   margin-left: auto;
   margin-bottom: 7px;
-  min-width: 80px;
-  height: 32px;
-  border: 1px solid var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-xl);
-  background: var(--ui-color-grey-100);
-  font-size: 14px;
-  color: var(--ui-color-grey-700);
 }
 
 .code-body {

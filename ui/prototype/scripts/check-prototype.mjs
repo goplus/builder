@@ -243,6 +243,10 @@ if (!editorPage.includes("back.svg?raw") || quickConfigBackIcon.includes('M15 18
   failures.push('editor quick config back control must use the real back icon asset')
 }
 
+if (!editorPage.includes("import PrototypeButton from '@/components/ui/PrototypeButton.vue'") || !editorPage.includes('<PrototypeButton') || editorPage.includes('class="format-button" type="button"')) {
+  failures.push('editor format action must use the prototype UI Button component')
+}
+
 if (!editorPage.includes('.stage-tools button') || !editorPage.includes('color: var(--ui-color-grey-1000);')) {
   failures.push('editor quick config controls must use the real grey-1000 icon token')
 }
