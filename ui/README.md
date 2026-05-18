@@ -48,7 +48,7 @@ The same requirement should use one issue to connect the Design PR and Code PR.
 
 `ui/prototype` is a runnable product prototype, not an isolated demo.
 
-It is used during Design PR to express product behavior, page structure, visual design, and basic interactions. See [Prototype Maintenance](skills/prototype-maintenance/SKILL.md) for detailed maintenance rules.
+It is used during Design PR to express product behavior, page structure, visual design, and basic interactions. See [`prototype/AGENTS.md`](prototype/AGENTS.md) for detailed maintenance rules.
 
 ## Quick Start
 
@@ -78,12 +78,6 @@ It is used during Design PR to express product behavior, page structure, visual 
 | [Design Asset Validation](docs/design-asset-validation.md) | `.pen` design asset tests, component library snapshots, and Git hook notes |
 | [Design to Code Mapping (Legacy)](docs/design-to-code-mapping-legacy.md) | Legacy `.pen` to `spx-gui` mapping rules |
 | [Component Docs Naming](docs/component-docs-naming.md) | Component documentation naming conventions |
-
-## Skills
-
-| Skill | Description |
-| ----- | ----------- |
-| [Prototype Maintenance](skills/prototype-maintenance/SKILL.md) | Use when maintaining `ui/prototype` and keeping it aligned with the real frontend structure, routes, and interactions |
 
 ## Tests and Validation
 

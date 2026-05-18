@@ -48,7 +48,7 @@ PR（Code 发布）
 
 `ui/prototype` 是可运行的功能原型，不是孤立 demo。
 
-它用于在 Design PR 阶段表达产品功能、页面结构、设计样式和基础交互。具体维护规则见 [Prototype Maintenance](skills/prototype-maintenance/SKILL.md)。
+它用于在 Design PR 阶段表达产品功能、页面结构、设计样式和基础交互。具体维护规则见 [`prototype/AGENTS.md`](prototype/AGENTS.md)。
 
 ## 快速开始
 
@@ -78,12 +78,6 @@ PR（Code 发布）
 | [设计资产校验](docs/design-asset-validation.md) | `.pen` 设计资产测试、组件库快照和 Git hook 说明 |
 | [设计到代码映射（旧版）](docs/design-to-code-mapping-legacy.md) | 旧版 `.pen` 到 `spx-gui` 的映射规则，历史参考 |
 | [组件文档命名](docs/component-docs-naming.md) | 组件文档命名约定 |
-
-## Skills
-
-| Skill | 说明 |
-| ----- | ---- |
-| [Prototype Maintenance](skills/prototype-maintenance/SKILL.md) | 维护 `ui/prototype` 时使用，确保 prototype 与真实前端结构、路由和交互保持一致 |
 
 ## 测试与校验
 

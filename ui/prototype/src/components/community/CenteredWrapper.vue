@@ -1,10 +1,7 @@
 <script setup lang="ts">
-const wrapperClassMap = {
-  medium: 'mx-auto w-[calc(100%-40px)] max-w-[988px]',
-  large: 'mx-auto w-[calc(100%-200px)] max-w-[1240px]'
-} as const
+import { computed } from 'vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     size?: 'medium' | 'large'
   }>(),
@@ -12,10 +9,12 @@ withDefaults(
     size: 'medium'
   }
 )
+
+const widthClass = computed(() => (props.size === 'large' ? 'w-310 desktop-large:w-373' : 'w-247 desktop-large:w-310'))
 </script>
 
 <template>
-  <section :class="wrapperClassMap[size]">
+  <section class="relative mx-auto self-center" :class="widthClass">
     <slot />
   </section>
 </template>
