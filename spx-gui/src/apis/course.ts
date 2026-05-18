@@ -27,46 +27,39 @@ export type Course = {
 
 /** Get a course by ID */
 export function getCourse(id: string, signal?: AbortSignal) {
-  return client.get(`/course/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<Course>
+  return client.get(`/courses/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<Course>
 }
 
 export type AddUpdateCourseParams = Pick<Course, 'title' | 'thumbnail' | 'entrypoint' | 'references' | 'prompt'>
 
 /** Add a new course */
 export function addCourse(params: AddUpdateCourseParams, signal?: AbortSignal) {
-  return client.post('/course', params, { signal }) as Promise<Course>
+  return client.post('/user/courses', params, { signal }) as Promise<Course>
 }
 
 /** Update an existing course */
 export function updateCourse(id: string, params: AddUpdateCourseParams, signal?: AbortSignal) {
-  return client.patch(`/course/${encodeURIComponent(id)}`, params, { signal }) as Promise<Course>
+  return client.patch(`/courses/${encodeURIComponent(id)}`, params, { signal }) as Promise<Course>
 }
 
 /** Delete a course */
 export function deleteCourse(id: string) {
-  return client.delete(`/course/${encodeURIComponent(id)}`) as Promise<void>
+  return client.delete(`/courses/${encodeURIComponent(id)}`) as Promise<void>
 }
 
-export type ListCourseParams = PaginationParams & {
+export type ListCoursesParams = PaginationParams & {
   /** Filter courses by the course series ID */
   courseSeriesID?: string
-  /**
-   * Filter courses by the owner's username.
-   * Defaults to the authenticated user if not specified. Use * to include courses from all users.
-   **/
-  owner?: string
   /** Field by which to order the results */
   orderBy?: 'createdAt' | 'updatedAt' | 'sequenceInCourseSeries'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listCourse(params: ListCourseParams, signal?: AbortSignal) {
-  return client.get('/courses/list', params, { signal }) as Promise<ByPage<Course>>
+export function listCourses(params?: ListCoursesParams, signal?: AbortSignal) {
+  return client.get('/courses', params, { signal }) as Promise<ByPage<Course>>
 }
 
-/** Get all courses that match the given filters; returns at most 100 items. */
-export async function listAllCourses(params: Omit<ListCourseParams, keyof PaginationParams>, signal?: AbortSignal) {
-  const { data } = await listCourse({ ...params, pageIndex: 1, pageSize: 100 }, signal)
-  return data
+export function listSignedInUserCourses(params?: ListCoursesParams, signal?: AbortSignal) {
+  return client.get('/user/courses', params, { signal }) as Promise<ByPage<Course>>
 }

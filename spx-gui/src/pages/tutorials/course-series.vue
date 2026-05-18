@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { ownerAll } from '@/apis/common'
-import { listCourse, type Course } from '@/apis/course'
+import { listCourses, type Course } from '@/apis/course'
 import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
@@ -66,13 +65,12 @@ const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) 
 
 const courseQuery = useQuery(
   async (ctx) => {
-    return listCourse(
+    return listCourses(
       {
         courseSeriesID: props.courseSeriesIdInput,
         pageIndex: page.value,
         pageSize: pageSize.value,
-        orderBy: 'sequenceInCourseSeries',
-        owner: ownerAll
+        orderBy: 'sequenceInCourseSeries'
       },
       ctx.signal
     )

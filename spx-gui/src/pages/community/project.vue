@@ -9,16 +9,8 @@ import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
 import { isSignInRequiredForProject } from '@/utils/project'
 import { usePageTitle } from '@/utils/utils'
-import {
-  ProjectType,
-  ownerAll,
-  recordProjectView,
-  stringifyProjectFullName,
-  stringifyRemixSource,
-  Visibility
-} from '@/apis/project'
-import { listProject } from '@/apis/project'
-import { listReleases } from '@/apis/project-release'
+import { ProjectType, listProjects, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
+import { listProjectReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
 import { useSignedInUser, useUser, isSignedIn, initiateSignIn } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getProjectPageRoute, getUserPageRoute } from '@/router'
@@ -287,8 +279,8 @@ const handleRemix = useMessageHandle(
 
 const releasesRet = useQuery(
   async () => {
-    const { data } = await listReleases({
-      projectFullName: stringifyProjectFullName(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name),
+    const { owner, name } = routeProjectIdentifier.value
+    const { data } = await listProjectReleases(owner, name, {
       orderBy: 'createdAt',
       sortOrder: 'desc',
       pageIndex: 1,
@@ -342,10 +334,9 @@ const remixNumInRow = computed(() => (isDesktopLarge.value ? 6 : 5))
 
 const remixesRet = useQuery(
   async () => {
-    const { data: projects } = await listProject({
+    const { data: projects } = await listProjects({
       type: ProjectType.Game,
       visibility: Visibility.Public,
-      owner: ownerAll,
       remixedFrom: stringifyRemixSource(routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name),
       pageIndex: 1,
       pageSize: remixNumInRow.value,

@@ -218,9 +218,9 @@ class MockMessageEventGenerator implements IMessageEventGenerator {
     this.shouldNeverComplete = shouldNeverComplete
   }
 
-  async *generateSSEMessage(
+  async *generateCopilotMessage(
     messages: apis.Message[],
-    options?: apis.GenerateSSEMessageOptions
+    options?: apis.GenerateCopilotMessageOptions
   ): AsyncIterableIterator<apis.MessageEvent> {
     const batch = this.eventBatches[this.callCount] ?? []
     this.callCount += 1
@@ -253,9 +253,9 @@ class MockSingleBatchMessageEventGenerator implements IMessageEventGenerator {
     private delay = 0
   ) {}
 
-  async *generateSSEMessage(
+  async *generateCopilotMessage(
     messages: apis.Message[],
-    options?: apis.GenerateSSEMessageOptions
+    options?: apis.GenerateCopilotMessageOptions
   ): AsyncIterableIterator<apis.MessageEvent> {
     for (const event of this.events) {
       if (options?.signal?.aborted) {
@@ -273,16 +273,16 @@ class MockSingleBatchMessageEventGenerator implements IMessageEventGenerator {
 
 class MockBatchedMessageEventGenerator implements IMessageEventGenerator {
   calls: apis.Message[][] = []
-  callOptions: Array<apis.GenerateSSEMessageOptions | null> = []
+  callOptions: Array<apis.GenerateCopilotMessageOptions | null> = []
 
   constructor(
     private eventBatches: apis.MessageEvent[][],
     private delay = 0
   ) {}
 
-  async *generateSSEMessage(
+  async *generateCopilotMessage(
     messages: apis.Message[],
-    options?: apis.GenerateSSEMessageOptions
+    options?: apis.GenerateCopilotMessageOptions
   ): AsyncIterableIterator<apis.MessageEvent> {
     this.calls.push(messages)
     this.callOptions.push(options ?? null)

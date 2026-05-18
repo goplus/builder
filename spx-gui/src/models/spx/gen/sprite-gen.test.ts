@@ -236,7 +236,7 @@ describe('SpriteGen', () => {
     await gen.genImages()
     gen.setImageIndex(0)
     await gen.prepareContent()
-    expect(vi.mocked(aigcMock.genSpriteContentSettings).mock.calls.at(-1)?.[1]).toBe('zh')
+    expect(vi.mocked(aigcMock.generateSpriteContentSettings).mock.calls.at(-1)?.[1]).toBe('zh')
   })
 
   it('should allow multiple image generations', async () => {

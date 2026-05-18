@@ -6,7 +6,12 @@ import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
-import { ProjectType, Visibility, listProject, type ListProjectParams } from '@/apis/project'
+import {
+  ProjectType,
+  listSignedInUserProjects,
+  listUserPublicProjects,
+  type ListUserPublicProjectsParams
+} from '@/apis/project'
 import { getOwnProjectEditorRoute } from '@/router'
 import { useSignedInUser, useUser } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
@@ -46,14 +51,12 @@ const order = useRouteQueryParamStrEnum('o', Order, Order.RecentlyUpdated, (kvs)
   p: null
 }))
 
-const listParams = computed<ListProjectParams>(() => {
-  const p: ListProjectParams = {
+const listParams = computed<ListUserPublicProjectsParams>(() => {
+  const p: ListUserPublicProjectsParams = {
     type: ProjectType.Game,
-    owner: props.nameInput,
     pageSize: pageSize.value,
     pageIndex: page.value
   }
-  if (!isSignedInUser.value) p.visibility = Visibility.Public
   switch (order.value) {
     case Order.RecentlyUpdated:
       p.orderBy = 'updatedAt'
@@ -67,10 +70,16 @@ const listParams = computed<ListProjectParams>(() => {
   return p
 })
 
-const queryRet = useQuery(() => listProject(listParams.value), {
-  en: 'Failed to load projects',
-  zh: '加载失败'
-})
+const queryRet = useQuery(
+  () => {
+    if (isSignedInUser.value) return listSignedInUserProjects(listParams.value)
+    return listUserPublicProjects(props.nameInput, listParams.value)
+  },
+  {
+    en: 'Failed to load projects',
+    zh: '加载失败'
+  }
+)
 
 const router = useRouter()
 const ensureSignedIn = useEnsureSignedIn()

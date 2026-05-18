@@ -159,7 +159,7 @@ import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { getProjectEditorRouteParams } from '@/utils/project-route'
 import { selectFile } from '@/utils/file'
-import { convertScratchToXbp } from '@/apis/sb2xbp'
+import { convertScratchProject } from '@/apis/project-conversion'
 import { type SpxProject } from '@/models/spx/project'
 import { useSignedInUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
@@ -275,7 +275,7 @@ const handleImportFromScratch = useMessageHandle(
 
     // upload to backend via api helper and get converted xbp blob
     const blob = await m.withLoading(
-      convertScratchToXbp(file, project.getSignal()),
+      convertScratchProject(file, project.getSignal()),
       i18n.t({ en: 'Converting Scratch project file', zh: '正在转换 Scratch 项目文件' })
     )
 

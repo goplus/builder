@@ -56,11 +56,11 @@ func WithTokenProvider(provider func() string) Option {
 
 // New creates a new [ai.Transport] suitable for standard HTTP environments. It
 // uses net/http package to make network requests. By default, it uses
-// "/api/ai/interaction" endpoint and sends no Authorization token.
+// "/api/ai-interaction" endpoint and sends no Authorization token.
 func New(opts ...Option) ai.Transport {
 	t := &httpTransport{
 		client:        http.DefaultClient,
-		endpoint:      "/api/ai/interaction",
+		endpoint:      "/api/ai-interaction",
 		tokenProvider: func() string { return "" },
 	}
 	for _, opt := range opts {
@@ -76,7 +76,7 @@ func (t *httpTransport) Interact(ctx context.Context, req ai.Request) (ai.Respon
 		return ai.Response{}, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := t.buildRequest(ctx, "POST", "/turn", reqBody)
+	httpReq, err := t.buildRequest(ctx, "POST", "/turns", reqBody)
 	if err != nil {
 		return ai.Response{}, err
 	}
@@ -103,7 +103,7 @@ func (t *httpTransport) Archive(ctx context.Context, turns []ai.Turn, existingAr
 		return ai.ArchivedHistory{}, fmt.Errorf("failed to marshal archive request: %w", err)
 	}
 
-	httpReq, err := t.buildRequest(ctx, "POST", "/archive", reqBody)
+	httpReq, err := t.buildRequest(ctx, "POST", "/archives", reqBody)
 	if err != nil {
 		return ai.ArchivedHistory{}, err
 	}

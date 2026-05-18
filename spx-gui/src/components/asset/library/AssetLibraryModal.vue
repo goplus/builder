@@ -31,7 +31,7 @@ import {
   UIModalClose,
   useConfirmDialog
 } from '@/components/ui'
-import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
+import { listAssets, listSignedInUserAssets, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
@@ -53,7 +53,6 @@ import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInp
 import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
-import { ownerAll } from '@/apis/common'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 import { initBackdropGen, initSpriteGen, type GenHelpers } from '../gen/modal'
@@ -141,11 +140,7 @@ const headerStyle = computed(() => {
 const entityMessage = computed(() => humanizeAssetType(props.type))
 
 const recommended = computed(() => searchRecommendations[props.type])
-const ownerOptions = {
-  all: ownerAll,
-  personal: undefined
-}
-const owner = ref<keyof typeof ownerOptions>('all')
+const librarySource = ref<'public' | 'personal'>('public')
 
 const page = shallowRef(1)
 const numInRow = 7
@@ -154,20 +149,20 @@ const pageSize = numInRow * numInColumn
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
 watch(
-  () => [keyword.value, owner.value],
+  () => [keyword.value, librarySource.value],
   () => (page.value = 1)
 )
 
 const queryRet = useQuery(
   () => {
-    return listAsset({
+    const params = {
       pageSize,
       pageIndex: page.value,
       type: props.type,
-      keyword: keyword.value,
-      owner: ownerOptions[owner.value],
-      visibility: owner.value === 'personal' ? undefined : Visibility.Public
-    })
+      keyword: keyword.value
+    }
+    if (librarySource.value === 'personal') return listSignedInUserAssets(params)
+    return listAssets({ ...params, visibility: Visibility.Public })
   },
   {
     en: 'Failed to list',
@@ -184,7 +179,7 @@ const isLastPage = computed(() => {
   return page.value === pageTotal.value
 })
 const shouldShowGenSuggestion = computed(() => {
-  return (resultTooFew.value || isLastPage.value) && gen.value != null && owner.value === 'all'
+  return (resultTooFew.value || isLastPage.value) && gen.value != null && librarySource.value === 'public'
 })
 const genSuggestionMessage = computed(() => {
   if (resultTooFew.value) {
@@ -393,13 +388,13 @@ const title = computed(() => {
               class="flex-[1_1_0] flex flex-col gap-5 pt-5 pl-6"
             >
               <div class="flex justify-between">
-                <UIChipRadioGroup v-model:value="owner">
-                  <UIChipRadio value="all">{{ $t({ zh: '公开素材库', en: 'Public library' }) }}</UIChipRadio>
+                <UIChipRadioGroup v-model:value="librarySource">
+                  <UIChipRadio value="public">{{ $t({ zh: '公开素材库', en: 'Public library' }) }}</UIChipRadio>
                   <UIChipRadio value="personal">{{ $t({ zh: '我的素材库', en: 'My library' }) }}</UIChipRadio>
                 </UIChipRadioGroup>
               </div>
               <ListResultWrapper :query-ret="queryRet" :height="436">
-                <template v-if="SettingsInput != null && gen != null && owner === 'all'" #empty>
+                <template v-if="SettingsInput != null && gen != null && librarySource === 'public'" #empty>
                   <div class="mx-auto h-109 flex flex-col items-center gap-6 pt-10">
                     <div class="text-grey-700">
                       <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>

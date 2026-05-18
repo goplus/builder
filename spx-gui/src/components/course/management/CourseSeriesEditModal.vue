@@ -8,7 +8,7 @@ import {
   type CourseSeries,
   type AddUpdateCourseSeriesParams
 } from '@/apis/course-series'
-import { listCourse, type Course } from '@/apis/course'
+import { listSignedInUserCourses, type Course } from '@/apis/course'
 import {
   UIFormModal,
   UIForm,
@@ -80,7 +80,7 @@ const loadCourses = useMessageHandle(
       // Load first 100 courses (should be enough for most cases).
       //
       // TODO: Consider implementing pagination or infinite scroll when there are more than 100 courses.
-      const result = await listCourse({
+      const result = await listSignedInUserCourses({
         pageSize: 100,
         orderBy: 'updatedAt',
         sortOrder: 'desc'

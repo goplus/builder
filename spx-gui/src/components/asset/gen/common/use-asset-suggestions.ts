@@ -1,7 +1,6 @@
 import { ref, shallowRef, watch, type WatchSource } from 'vue'
 import { debounce } from 'lodash'
-import { listAsset, Visibility, type AssetData, type AssetType } from '@/apis/asset'
-import { ownerAll } from '@/apis/common'
+import { listAssets, Visibility, type AssetData, type AssetType } from '@/apis/asset'
 
 export function useAssetSuggestions(type: AssetType, keyword: WatchSource<string>, enabled: WatchSource<boolean>) {
   const _keyword = ref('')
@@ -16,14 +15,13 @@ export function useAssetSuggestions(type: AssetType, keyword: WatchSource<string
     abortCtrl = ctrl
     isLoading.value = true
     try {
-      const result = await listAsset(
+      const result = await listAssets(
         {
           keyword: kw,
           type,
           pageSize: 4,
           pageIndex: 1,
-          visibility: Visibility.Public,
-          owner: ownerAll
+          visibility: Visibility.Public
         },
         ctrl.signal
       )
