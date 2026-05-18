@@ -1,14 +1,20 @@
 <script setup lang="ts">
+import loadingIcon from '@/assets/editor/ui-icons/loading.svg?raw'
+
 withDefaults(
   defineProps<{
     type?: 'primary' | 'secondary' | 'neutral' | 'white' | 'text'
     size?: 'small' | 'medium' | 'large'
     active?: boolean
+    loading?: boolean
+    disabled?: boolean
   }>(),
   {
     type: 'secondary',
     size: 'medium',
-    active: false
+    active: false,
+    loading: false,
+    disabled: false
   }
 )
 </script>
@@ -27,8 +33,15 @@ withDefaults(
       type === 'text' && 'border-transparent bg-transparent text-primary-600 hover:bg-primary-100 active:bg-primary-200',
       active && 'ring-2 ring-primary-300'
     ]"
+    :disabled="disabled || loading"
     type="button"
   >
+    <span
+      v-if="loading"
+      class="size-4 shrink-0 animate-spin"
+      aria-hidden="true"
+      v-html="loadingIcon"
+    ></span>
     <slot />
   </button>
 </template>

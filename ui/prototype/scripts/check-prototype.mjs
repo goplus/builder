@@ -47,7 +47,9 @@ const editorArrowDownIcon = read('src/assets/editor/ui-icons/arrow-down.svg')
 const editorEyeOffIcon = read('src/assets/editor/ui-icons/eye-off.svg')
 const editorPlusIcon = read('src/assets/editor/ui-icons/plus.svg')
 const editorPublishIcon = read('src/assets/editor/ui-icons/publish.svg')
+const editorLoadingIcon = read('src/assets/editor/ui-icons/loading.svg')
 const projectRunner = read('src/components/project/ProjectRunner.vue')
+const prototypeButton = read('src/components/ui/UIButton.vue')
 const copilot = read('src/components/copilot/Copilot.vue')
 const communityApi = read('src/apis/community.ts')
 const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
@@ -92,6 +94,7 @@ for (const requiredFile of [
   'src/assets/editor/ui-icons/arrow-down.svg',
   'src/assets/editor/ui-icons/plus.svg',
   'src/assets/editor/ui-icons/publish.svg',
+  'src/assets/editor/ui-icons/loading.svg',
   'src/components/project/ProjectRunner.vue',
   'src/components/editor/SpriteItem.vue',
   'src/components/ui/UICardHeader.vue',
@@ -238,6 +241,20 @@ if (
   projectRunner.includes('fflate')
 ) {
   failures.push('project runner must be a static offline placeholder, not a copied SPX runtime')
+}
+
+if (
+  !projectRunner.includes("const state = ref<'initial' | 'loading' | 'running'>('initial')") ||
+  !projectRunner.includes('const loading = computed(() => state.value === \'loading\')') ||
+  !projectRunner.includes('window.setTimeout') ||
+  !projectRunner.includes(':loading="loading"') ||
+  !prototypeButton.includes("import loadingIcon from '@/assets/editor/ui-icons/loading.svg?raw'") ||
+  !prototypeButton.includes('loading?: boolean') ||
+  !prototypeButton.includes('v-if="loading"') ||
+  !prototypeButton.includes('animate-spin') ||
+  !editorLoadingIcon.includes('M6.99975 1.74999')
+) {
+  failures.push('project runner Run button must expose a local UIButton loading animation before running')
 }
 
 if (copilot.includes('const panelHeight =')) {

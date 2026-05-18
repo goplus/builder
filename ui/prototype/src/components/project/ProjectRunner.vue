@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 
 import type { Project } from '@/data/mock'
 import UIButton from '@/components/ui/UIButton.vue'
@@ -9,14 +9,29 @@ const props = defineProps<{
   showControls?: boolean
 }>()
 
-const state = ref<'initial' | 'running'>('initial')
+const state = ref<'initial' | 'loading' | 'running'>('initial')
+let runTimer: ReturnType<typeof window.setTimeout> | null = null
+
+const loading = computed(() => state.value === 'loading')
 const running = computed(() => state.value === 'running')
 
-function run() {
-  state.value = 'running'
+async function run() {
+  if (state.value === 'loading' || state.value === 'running') return
+  state.value = 'loading'
+  await new Promise<void>((resolve) => {
+    runTimer = window.setTimeout(() => {
+      runTimer = null
+      state.value = 'running'
+      resolve()
+    }, 700)
+  })
 }
 
 function stop() {
+  if (runTimer != null) {
+    window.clearTimeout(runTimer)
+    runTimer = null
+  }
   state.value = 'initial'
 }
 
@@ -29,6 +44,10 @@ defineExpose({
   stop,
   rerun
 })
+
+onBeforeUnmount(() => {
+  if (runTimer != null) window.clearTimeout(runTimer)
+})
 </script>
 
 <template>
@@ -38,7 +57,7 @@ defineExpose({
     <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(36,41,47,0)_0%,rgba(36,41,47,0.2)_100%)]"></div>
 
     <div class="absolute inset-0 flex items-center justify-center p-6">
-      <UIButton v-if="!running" type="primary" @click="run">Run</UIButton>
+      <UIButton v-if="!running" type="primary" :loading="loading" @click="run">Run</UIButton>
       <div v-else class="rounded-md bg-grey-100/90 px-4 py-2 text-sm font-medium text-title shadow-sm">
         Prototype preview
       </div>
