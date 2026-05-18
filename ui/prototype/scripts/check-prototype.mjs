@@ -41,6 +41,7 @@ const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
 const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
 const prototypeTag = read('src/components/ui/PrototypeTag.vue')
+const prototypeSpriteItem = read('src/components/editor/PrototypeSpriteItem.vue')
 
 for (const route of [
   '/',
@@ -77,6 +78,7 @@ for (const requiredFile of [
   'src/assets/projects/niu-run/niu-run.xbp',
   'src/assets/projects/niu-run/thumbnail.jpeg',
   'src/components/project/PrototypeProjectRunner.vue',
+  'src/components/editor/PrototypeSpriteItem.vue',
   'src/components/community/home/GuestBanner.vue',
   'src/pages/community/index.vue',
   'src/pages/community/project.vue',
@@ -282,6 +284,17 @@ if (
 
 if (!editorPage.includes('grid-template-columns: repeat(4, 88px);') || !editorPage.includes('grid-auto-rows: 88px;')) {
   failures.push('editor sprites panel must keep fixed 4-column sprite item rows')
+}
+
+if (
+  !editorPage.includes("import PrototypeSpriteItem from '@/components/editor/PrototypeSpriteItem.vue'") ||
+  (editorPage.match(/<PrototypeSpriteItem/g) ?? []).length < 2 ||
+  editorPage.includes('class="sprite-card"') ||
+  !prototypeSpriteItem.includes('.prototype-sprite-item.active::before') ||
+  !prototypeSpriteItem.includes('width: 88px;') ||
+  !prototypeSpriteItem.includes('height: 88px;')
+) {
+  failures.push('editor and map sprite lists must share the prototype sprite item component')
 }
 
 if (

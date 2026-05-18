@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type CSSPro
 import { useRouter } from 'vue-router'
 
 import { getProject } from '@/apis/project'
+import PrototypeSpriteItem from '@/components/editor/PrototypeSpriteItem.vue'
 import PrototypeProjectRunner from '@/components/project/PrototypeProjectRunner.vue'
 import PrototypeButton from '@/components/ui/PrototypeButton.vue'
 import PrototypeCard from '@/components/ui/PrototypeCard.vue'
@@ -1875,21 +1876,14 @@ onBeforeUnmount(() => {
               </span>
             </header>
             <div ref="spriteMenuRef" class="sprite-list">
-              <div
+              <PrototypeSpriteItem
                 v-for="sprite in sprites"
                 :key="sprite.id"
-                class="sprite-card"
-                :class="{ active: activeEditorTarget === 'sprite' && selectedSpriteId === sprite.id }"
-                role="button"
-                tabindex="0"
-                @click="selectSprite(sprite.id)"
-                @keydown.enter.prevent="selectSprite(sprite.id)"
+                :sprite="sprite"
+                :active="activeEditorTarget === 'sprite' && selectedSpriteId === sprite.id"
+                @select="selectSprite(sprite.id)"
               >
-                <span
-                  v-if="activeEditorTarget === 'sprite' && selectedSpriteId === sprite.id"
-                  class="sprite-menu-wrap"
-                  @click.stop
-                >
+                <template v-if="activeEditorTarget === 'sprite' && selectedSpriteId === sprite.id" #corner>
                   <button
                     class="sprite-menu"
                     type="button"
@@ -1899,13 +1893,8 @@ onBeforeUnmount(() => {
                     @click="toggleSpriteMenu(sprite.id, $event)"
                     v-html="moreIcon"
                   ></button>
-                </span>
-                <img :src="sprite.image" :alt="sprite.name" />
-                <span class="sprite-title">
-                  <span class="sprite-name">{{ sprite.shortName }}</span>
-                  <span v-if="sprite.hidden" class="hidden-mark">⌁</span>
-                </span>
-              </div>
+                </template>
+              </PrototypeSpriteItem>
             </div>
           </div>
 
@@ -2054,21 +2043,25 @@ onBeforeUnmount(() => {
             <button type="button" aria-label="Add sprite">+</button>
           </header>
           <div class="map-sprite-list">
-            <button
+            <PrototypeSpriteItem
               v-for="sprite in sprites"
               :key="`map-list-${sprite.id}`"
-              class="sprite-card"
-              :class="{ active: selectedMapSpriteId === sprite.id }"
-              type="button"
-              @click="selectMapSprite(sprite.id)"
+              :sprite="sprite"
+              :active="selectedMapSpriteId === sprite.id"
+              @select="selectMapSprite(sprite.id)"
             >
-              <span v-if="selectedMapSpriteId === sprite.id" class="sprite-menu" v-html="moreIcon"></span>
-              <img :src="sprite.image" :alt="sprite.name" />
-              <span class="sprite-title">
-                <span class="sprite-name">{{ sprite.shortName }}</span>
-                <span v-if="sprite.hidden" class="hidden-mark">⌁</span>
-              </span>
-            </button>
+              <template v-if="selectedMapSpriteId === sprite.id" #corner>
+                <button
+                  class="sprite-menu"
+                  type="button"
+                  aria-label="Options button"
+                  :aria-expanded="spriteMenuOpenFor === sprite.id"
+                  aria-haspopup="menu"
+                  @click="toggleSpriteMenu(sprite.id, $event)"
+                  v-html="moreIcon"
+                ></button>
+              </template>
+            </PrototypeSpriteItem>
           </div>
           <footer v-if="mapSpriteConfigExpanded" class="map-sprite-config">
             <div class="map-config-title">
@@ -4272,76 +4265,6 @@ onBeforeUnmount(() => {
   gap: 8px;
   padding: 12px;
   overflow: auto;
-}
-
-.sprite-card {
-  position: relative;
-  box-sizing: border-box;
-  width: 88px;
-  height: 88px;
-  border: 0;
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 2px;
-  color: var(--ui-color-grey-1000);
-  cursor: pointer;
-}
-
-.sprite-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 1px solid var(--ui-color-grey-400);
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.sprite-card.active {
-  background: var(--ui-color-primary-200);
-}
-
-.sprite-card.active::before {
-  border-width: 2px;
-  border-color: var(--ui-color-primary-main);
-}
-
-.sprite-card img {
-  width: 60px;
-  height: 60px;
-  margin-bottom: 5px;
-  object-fit: contain;
-}
-
-.sprite-title {
-  display: flex;
-  width: 100%;
-  height: 22px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 6px;
-  color: var(--ui-color-grey-1000);
-  font-size: 11px;
-  line-height: 22px;
-  text-align: center;
-}
-
-.sprite-name {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sprite-menu-wrap {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  z-index: 5;
 }
 
 .sprite-menu {
