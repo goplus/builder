@@ -22,6 +22,7 @@ const sourceFiles = walk(srcRoot).filter((path) => /\.(ts|vue|css)$/.test(path))
 const router = read('src/router.ts')
 const communityHome = read('src/pages/community/home.vue')
 const communityExplore = read('src/pages/community/explore.vue')
+const communityProject = read('src/pages/community/project.vue')
 const guestBanner = read('src/components/community/home/GuestBanner.vue')
 const navbar = read('src/components/community/CommunityNavbar.vue')
 const projectsSection = read('src/components/community/ProjectsSection.vue')
@@ -129,6 +130,18 @@ if (projectCard.includes('remixes')) {
   failures.push('project card must mirror dev branch metadata and show updated time instead of remix count')
 }
 
+if (communityProject.includes('Remixed from {{ project.remixedFrom.title }}')) {
+  failures.push('project page remixed-from copy must mirror real text/link structure')
+}
+
+if (!communityProject.includes('type="primary"') || !communityProject.includes('type="secondary"') || communityProject.includes('!rounded-md')) {
+  failures.push('project page action buttons must use prototype button variants instead of ad-hoc overrides')
+}
+
+if (!communityProject.includes('release-timeline') || !communityProject.includes('group/timeline-item')) {
+  failures.push('project page release history must render timeline-style release notes')
+}
+
 if (!projectCard.includes('updatedAt')) {
   failures.push('project card must render updatedAt metadata')
 }
@@ -183,6 +196,10 @@ if (copilot.includes('const panelHeight =')) {
 
 if (!copilot.includes('let resizeTimer') || !copilot.includes('setTimeout(persistPanelPosition, 100)')) {
   failures.push('copilot resize persistence must be debounced')
+}
+
+if (!copilot.includes('right: 16, bottom: 16') || !copilot.includes('width: 64px') || !copilot.includes('height: 64px')) {
+  failures.push('copilot collapsed launcher must stay compact and inset from the viewport edge')
 }
 
 if (/if \(normalized === ''\) return projects\s*(?:\n|;)/.test(communityApi)) {

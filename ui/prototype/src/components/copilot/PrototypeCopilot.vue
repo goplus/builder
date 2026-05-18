@@ -18,7 +18,7 @@ const messages = ref<ChatMessage[]>([])
 const panelRef = ref<HTMLElement>()
 const inputRef = ref<HTMLTextAreaElement>()
 const outputRef = ref<HTMLDivElement>()
-const panelPosition = ref({ right: 10, bottom: 20 })
+const panelPosition = ref({ right: 16, bottom: 16 })
 const dragStart = ref<{
   pointerX: number
   pointerY: number
@@ -30,8 +30,8 @@ let resizeTimer: ReturnType<typeof setTimeout> | undefined
 
 const hasMessages = computed(() => messages.value.length > 0)
 const panelStyle = computed(() => ({
-  right: isOpen.value ? `${panelPosition.value.right}px` : '24px',
-  bottom: isOpen.value ? `${panelPosition.value.bottom}px` : '24px'
+  right: isOpen.value ? `${panelPosition.value.right}px` : '16px',
+  bottom: isOpen.value ? `${panelPosition.value.bottom}px` : '16px'
 }))
 const panelSide = computed<'left' | 'right'>(() => {
   const panelWidth = panelRef.value?.offsetWidth ?? 340
@@ -474,15 +474,15 @@ textarea::placeholder {
 }
 
 .copilot-panel.closed .footer-wrapper {
-  width: 76px;
-  height: 76px;
+  width: 64px;
+  height: 64px;
   border: 2px solid #c7b6ff;
-  border-radius: 22px;
+  border-radius: 18px;
   background: var(--ui-color-grey-100);
-  padding: 6px;
+  padding: 5px;
   box-shadow:
-    0 18px 36px rgba(58, 46, 139, 0.18),
-    0 0 0 8px rgba(154, 119, 255, 0.08);
+    0 12px 24px rgba(58, 46, 139, 0.16),
+    0 0 0 6px rgba(154, 119, 255, 0.08);
 }
 
 .fold {
@@ -508,9 +508,9 @@ textarea::placeholder {
 }
 
 .copilot-panel.closed .fold {
-  width: 60px;
-  height: 60px;
-  border-radius: 16px;
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
   color: var(--ui-color-grey-100);
 }
 

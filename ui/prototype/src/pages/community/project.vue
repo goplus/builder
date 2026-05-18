@@ -53,10 +53,10 @@ onMounted(() => {
           <h1 class="m-0 break-all text-2xl/[1.4] font-normal text-title">{{ project.title }}</h1>
           <RouterLink
             v-if="project.remixedFrom"
-            class="mt-2 inline-flex text-sm text-primary-600 no-underline hover:underline"
+            class="mt-2 text-sm text-grey-900 no-underline"
             :to="getProjectPageRoute(project.remixedFrom.owner, project.remixedFrom.name)"
           >
-            Remixed from {{ project.remixedFrom.title }}
+            Remixed from <span class="link-boring">{{ project.remixedFrom.title }}</span>
           </RouterLink>
 
           <div class="mt-4 flex items-center justify-between gap-4">
@@ -87,15 +87,17 @@ onMounted(() => {
 
           <div class="mt-4 flex gap-3">
             <RouterLink
-              class="inline-flex h-10 flex-[1_1_0] items-center justify-center gap-2 rounded-sm border border-transparent bg-primary-500 px-3 text-sm font-medium text-white no-underline hover:bg-primary-600"
+              class="inline-flex flex-[1_1_0] text-inherit no-underline"
               :to="getProjectEditorRoute(project)"
             >
-              <svg aria-hidden="true" viewBox="0 0 20 20" class="size-4 fill-current">
-                <path d="M13.8 2.8a1.7 1.7 0 0 1 2.4 2.4L6.9 14.5l-3.3.9.9-3.3 9.3-9.3ZM3.6 16.3h12.8a.8.8 0 0 1 0 1.6H3.6a.8.8 0 0 1 0-1.6Z" />
-              </svg>
-              Edit
+              <PrototypeButton class="w-full" type="primary" size="large">
+                <svg aria-hidden="true" viewBox="0 0 20 20" class="size-4 fill-current">
+                  <path d="M13.8 2.8a1.7 1.7 0 0 1 2.4 2.4L6.9 14.5l-3.3.9.9-3.3 9.3-9.3ZM3.6 16.3h12.8a.8.8 0 0 1 0 1.6H3.6a.8.8 0 0 1 0-1.6Z" />
+                </svg>
+                Edit
+              </PrototypeButton>
             </RouterLink>
-            <PrototypeButton class="!h-10 flex-[1_1_0] !gap-2 !rounded-md !border-transparent !bg-primary-200 !px-6 !text-lg/[24px] !font-medium !text-primary-500 hover:!bg-primary-100" @click="copyShareLink">
+            <PrototypeButton class="flex-[1_1_0]" type="secondary" size="large" @click="copyShareLink">
               <svg aria-hidden="true" viewBox="0 0 16 16" class="size-5 fill-current">
                 <path d="M11.6777 1.28516C13.0155 1.2853 14.1006 2.37024 14.1006 3.70801C14.1005 5.0457 13.0154 6.13071 11.6777 6.13086C10.9963 6.1308 10.3806 5.84854 9.94043 5.39551L6.64648 7.31836C6.70963 7.53433 6.74413 7.76266 6.74414 7.99902C6.74413 8.23526 6.70956 8.46382 6.64648 8.67969L9.94238 10.5996C10.3824 10.1481 10.9975 9.86725 11.6777 9.86719C13.0154 9.86734 14.1004 10.9524 14.1006 12.29C14.1005 13.6278 13.0154 14.7127 11.6777 14.7129C10.34 14.7128 9.25494 13.6278 9.25488 12.29C9.25491 12.0529 9.28998 11.824 9.35352 11.6074L6.05762 9.68652C5.61744 10.1393 5.00258 10.4218 4.32129 10.4219C2.98354 10.4218 1.8985 9.33678 1.89844 7.99902C1.8985 6.66127 2.98354 5.57627 4.32129 5.57617C5.00229 5.5762 5.61748 5.8581 6.05762 6.31055L9.35254 4.38867C9.28946 4.17279 9.2549 3.94426 9.25488 3.70801C9.25488 2.37022 10.34 1.28527 11.6777 1.28516ZM11.6777 11.0342C11.2397 11.0343 10.8545 11.2595 10.6299 11.5996C10.6212 11.6194 10.6117 11.6391 10.6006 11.6582C10.589 11.6781 10.575 11.6968 10.5615 11.7148C10.4725 11.8871 10.4219 12.0828 10.4219 12.29C10.4219 12.9834 10.9843 13.5458 11.6777 13.5459C12.3711 13.5457 12.9335 12.9834 12.9336 12.29C12.9334 11.5967 12.371 11.0343 11.6777 11.0342ZM4.32129 6.74316C3.62788 6.74326 3.06549 7.3056 3.06543 7.99902C3.06549 8.69244 3.62788 9.25479 4.32129 9.25488C5.01473 9.25482 5.57709 8.69246 5.57715 7.99902C5.57709 7.30558 5.01473 6.74322 4.32129 6.74316ZM11.6777 2.45215C10.9843 2.45226 10.4219 3.01455 10.4219 3.70801C10.4219 3.9322 10.482 4.142 10.585 4.32422C10.588 4.32916 10.5918 4.33478 10.5947 4.33984C10.5958 4.34163 10.5966 4.34391 10.5977 4.3457C10.8163 4.71511 11.2175 4.96379 11.6777 4.96387C12.3711 4.96372 12.9335 4.40137 12.9336 3.70801C12.9336 3.01457 12.3711 2.4523 11.6777 2.45215Z" />
               </svg>
@@ -131,13 +133,19 @@ onMounted(() => {
                   <path fill-rule="evenodd" clip-rule="evenodd" d="M11.4474 7.82134C11.7909 7.54092 12.2988 7.56097 12.6192 7.88091L19.6192 14.8809C19.961 15.2226 19.961 15.7775 19.6192 16.1192C19.2775 16.4608 18.7226 16.4609 18.381 16.1192L12.0001 9.73834L5.61925 16.1192C5.27753 16.4608 4.72264 16.4609 4.38097 16.1192C4.03982 15.7775 4.03954 15.2225 4.38097 14.8809L11.381 7.88091L11.4474 7.82134Z" fill="currentColor" />
                 </svg>
               </summary>
-              <ol class="m-0 mt-2 list-none p-0">
-                <li v-for="release in project.releaseHistory" :key="release.id" class="py-2">
-                  <div class="flex items-center justify-between">
-                    <span class="font-medium text-title">{{ release.version }}</span>
-                    <span class="text-sm text-hint-1">{{ release.createdAt }}</span>
+              <ol class="release-timeline m-0 mt-3 list-none p-0">
+                <li v-for="release in project.releaseHistory" :key="release.id" class="group/timeline-item relative">
+                  <div class="absolute top-0 bottom-0 left-1 translate-y-[5px]" aria-hidden="true">
+                    <div class="h-2 w-2 rounded-full bg-grey-500"></div>
+                    <div class="absolute top-2 bottom-0 left-1/2 w-px -translate-x-1/2 bg-grey-500 group-last/timeline-item:hidden"></div>
                   </div>
-                  <p class="mt-1 text-sm leading-5 text-grey-700">{{ release.notes }}</p>
+                  <div class="mb-3 ml-[31px]">
+                    <div class="text-xs text-hint-2">{{ release.createdAt }}</div>
+                    <p class="m-0 text-base leading-[22px] text-text">
+                      <span class="font-medium text-title">{{ release.version }}</span>
+                      <span v-if="release.notes"> · {{ release.notes }}</span>
+                    </p>
+                  </div>
                 </li>
               </ol>
             </details>
