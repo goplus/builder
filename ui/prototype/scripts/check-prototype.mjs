@@ -37,6 +37,10 @@ const codeZoomOutIcon = read('src/assets/editor/code-editor/zoom-out.svg')
 const codeZoomResetIcon = read('src/assets/editor/code-editor/zoom-reset.svg')
 const codeCloseCircleIcon = read('src/assets/editor/code-editor/close-circle.svg')
 const tutorialIcon = read('src/assets/editor/navbar-icons/tutorial.svg')
+const editorTimerIcon = read('src/assets/editor/ui-icons/timer.svg')
+const editorStatusIcon = read('src/assets/editor/ui-icons/status.svg')
+const editorSoundIcon = read('src/assets/editor/ui-icons/sound.svg')
+const editorArrowDownIcon = read('src/assets/editor/ui-icons/arrow-down.svg')
 const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
 const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
@@ -81,6 +85,10 @@ for (const requiredFile of [
   'src/assets/projects/niu-run/niu-run.xbp',
   'src/assets/projects/niu-run/thumbnail.jpeg',
   'src/assets/editor/navbar-icons/tutorial.svg',
+  'src/assets/editor/ui-icons/timer.svg',
+  'src/assets/editor/ui-icons/status.svg',
+  'src/assets/editor/ui-icons/sound.svg',
+  'src/assets/editor/ui-icons/arrow-down.svg',
   'src/components/project/PrototypeProjectRunner.vue',
   'src/components/editor/PrototypeSpriteItem.vue',
   'src/components/ui/PrototypeCardHeader.vue',
@@ -392,9 +400,29 @@ if (
   !editorPage.includes('<span class="project-name-edit-icon" v-html="editIcon"></span>') ||
   editorPage.includes('✎') ||
   !editorPage.includes('.map-config-icon.collapse :deep(svg)') ||
+  !editorPage.includes("import arrowDownIcon from '@/assets/editor/ui-icons/arrow-down.svg?raw'") ||
+  !editorPage.includes('aria-label="Collapse global config" v-html="arrowDownIcon"') ||
+  !editorPage.includes('aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false" v-html="arrowDownIcon"') ||
+  !editorArrowDownIcon.includes('M7.13182 10.2639') ||
   editorPage.includes('.map-config-icon svg {\n  width: 16px;\n  height: 16px;\n  fill: none;')
 ) {
   failures.push('editor edit icons must use the component-library edit SVG without ad-hoc stroke styling')
+}
+
+if (
+  !editorPage.includes("import settingTimerIcon from '@/assets/editor/ui-icons/timer.svg?raw'") ||
+  !editorPage.includes("import settingStatusIcon from '@/assets/editor/ui-icons/status.svg?raw'") ||
+  !editorPage.includes("import settingSoundIcon from '@/assets/editor/ui-icons/sound.svg?raw'") ||
+  !editorPage.includes('<span class="setting-icon" v-html="settingTimerIcon"></span>') ||
+  !editorPage.includes('<span class="setting-icon" v-html="settingStatusIcon"></span>') ||
+  !editorPage.includes('<span class="setting-icon" v-html="settingSoundIcon"></span>') ||
+  !editorPage.includes('color: currentColor;') ||
+  !editorTimerIcon.includes('M5.49996 2') ||
+  !editorStatusIcon.includes('M14.9163 11.0909') ||
+  !editorSoundIcon.includes('M6.66665 14.6666') ||
+  /[◷●♪⌄▣]/.test(editorPage)
+) {
+  failures.push('editor animation and panel icons must use copied UIIcon SVG assets with component token sizing and color')
 }
 
 if (

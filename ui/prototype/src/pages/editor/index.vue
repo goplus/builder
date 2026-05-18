@@ -36,6 +36,10 @@ import mapEditModeIcon from '@/assets/editor/navbar-icons/map-edit-mode.svg?raw'
 import cloudCheckIcon from '@/assets/editor/navbar-icons/cloud-check.svg?raw'
 import exportProjectIcon from '@/assets/editor/navbar-icons/export-project.svg'
 import editIcon from '@/assets/editor/quick-config/edit.svg?raw'
+import arrowDownIcon from '@/assets/editor/ui-icons/arrow-down.svg?raw'
+import settingSoundIcon from '@/assets/editor/ui-icons/sound.svg?raw'
+import settingStatusIcon from '@/assets/editor/ui-icons/status.svg?raw'
+import settingTimerIcon from '@/assets/editor/ui-icons/timer.svg?raw'
 import failedToSaveIcon from '@/assets/editor/navbar-icons/failed-to-save.svg?raw'
 import importAssetsScratchIcon from '@/assets/editor/navbar-icons/import-assets-scratch.svg'
 import importProjectIcon from '@/assets/editor/navbar-icons/import-project.svg'
@@ -1529,17 +1533,17 @@ onBeforeUnmount(() => {
               </div>
               <div class="animation-settings" aria-label="Animation settings">
                 <button class="animation-setting" type="button">
-                  <span class="setting-icon">◷</span>
+                  <span class="setting-icon" v-html="settingTimerIcon"></span>
                   <span>Duration</span>
                   <strong>{{ selectedAnimation.duration }}</strong>
                 </button>
                 <button class="animation-setting" type="button">
-                  <span class="setting-icon">●</span>
+                  <span class="setting-icon" v-html="settingStatusIcon"></span>
                   <span>Binding</span>
                   <strong>{{ selectedAnimation.binding }}</strong>
                 </button>
                 <button class="animation-setting" type="button">
-                  <span class="setting-icon">♪</span>
+                  <span class="setting-icon" v-html="settingSoundIcon"></span>
                   <span>Sound</span>
                   <strong>{{ selectedAnimation.sound }}</strong>
                 </button>
@@ -1732,7 +1736,7 @@ onBeforeUnmount(() => {
               type="button"
               @click="selectedWidgetId = widget.id"
             >
-              <span class="widget-icon">▣</span>
+              <span class="widget-icon" v-html="widgetPanelIcon"></span>
               <span>{{ widget.name }}</span>
             </button>
             <button class="asset-add-button" type="button" aria-label="Add widget">+</button>
@@ -2060,7 +2064,7 @@ onBeforeUnmount(() => {
         <PrototypeCard class="map-card">
           <PrototypeCardHeader class="map-card-header justify-between">
             <h2 class="m-0 text-xl font-normal text-title">Global Config</h2>
-            <button type="button" aria-label="Collapse global config">⌄</button>
+            <button class="map-config-icon collapse" type="button" aria-label="Collapse global config" v-html="arrowDownIcon"></button>
           </PrototypeCardHeader>
           <div class="map-config">
             <label>
@@ -2160,11 +2164,7 @@ onBeforeUnmount(() => {
               </form>
               <button class="map-config-icon" type="button" aria-label="Rename sprite" @click="startMapSpriteRename" v-html="editIcon"></button>
               <span class="map-config-title-spacer"></span>
-              <button class="map-config-icon collapse" type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false">
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="m5 8 5 5 5-5" />
-                </svg>
-              </button>
+              <button class="map-config-icon collapse" type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false" v-html="arrowDownIcon"></button>
             </div>
             <div class="map-config-grid">
               <label><span>X</span><input value="-224" readonly /></label>
@@ -3217,13 +3217,8 @@ onBeforeUnmount(() => {
 
 .map-config-icon.collapse :deep(svg),
 .map-config-icon.collapse svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  width: 16px;
+  height: 16px;
 }
 
 .map-sprite-name-form {
@@ -3396,12 +3391,18 @@ onBeforeUnmount(() => {
 .widget-icon {
   width: 44px;
   height: 44px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-primary-100);
   color: var(--ui-color-primary-main);
-  font-size: 22px;
+}
+
+.widget-icon :deep(svg) {
+  width: 30px;
+  height: 30px;
+  display: block;
 }
 
 .editor-asset-item span {
@@ -3624,7 +3625,16 @@ onBeforeUnmount(() => {
 }
 
 .setting-icon {
-  color: var(--ui-color-grey-900);
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: currentColor;
+}
+
+.setting-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .widget-detail {
