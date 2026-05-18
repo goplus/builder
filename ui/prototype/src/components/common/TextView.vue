@@ -6,7 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <p class="whitespace-pre-wrap leading-6 text-grey-800">
+  <div class="overflow-y-auto whitespace-pre-wrap break-words text-base text-text">
     {{ text && text.length > 0 ? text : placeholder }}
-  </p>
+  </div>
 </template>
