@@ -13,6 +13,9 @@ import lookIcon from '@/assets/editor/category-icons/look.svg'
 import motionIcon from '@/assets/editor/category-icons/motion.svg'
 import sensingIcon from '@/assets/editor/category-icons/sensing.svg'
 import soundIcon from '@/assets/editor/category-icons/sound.svg'
+import zoomInIcon from '@/assets/editor/code-editor/zoom-in.svg?raw'
+import zoomOutIcon from '@/assets/editor/code-editor/zoom-out.svg?raw'
+import zoomResetIcon from '@/assets/editor/code-editor/zoom-reset.svg?raw'
 import backdropPanelIcon from '@/assets/editor/stage-panel/backdrop.svg?raw'
 import soundPanelIcon from '@/assets/editor/stage-panel/sound.svg?raw'
 import widgetPanelIcon from '@/assets/editor/stage-panel/widget.svg?raw'
@@ -149,6 +152,7 @@ const profileLanguage = ref<'English' | '中文'>('English')
 const addSpriteMenuOpen = ref(false)
 const spriteMenuOpenFor = ref<string | null>(null)
 const spriteMenuPosition = ref({ top: 0, left: 0 })
+const codeZoom = ref(1)
 const saveState = ref<SaveState>('saved')
 const editorRevision = ref(0)
 const selectedSpriteId = ref('niu-xiao-qi')
@@ -524,6 +528,9 @@ const stageBackdrop = computed(() => selectedBackdrop.value?.image ?? project.va
 const selectedSpriteFrameStyle = computed(() => ({
   transform: selectedSpriteTransform(selectedSprite.value)
 }))
+const codeEditorStyle = computed<CSSProperties>(() => ({
+  '--prototype-code-zoom': codeZoom.value
+}))
 const mapWorkspaceStyle = computed(() => ({ backgroundImage: `url(${stageBgUrl})` }))
 const mapStageStyle = computed(() => ({ backgroundImage: `url(${stageBackdrop.value})` }))
 const stageCompanionSprite = computed(() => sprites.value.find((sprite) => sprite.id !== selectedSprite.value?.id))
@@ -858,6 +865,15 @@ function groupCostumesAsAnimation() {
 
 function closeSpriteMenu() {
   spriteMenuOpenFor.value = null
+}
+
+function zoomCodeEditor(direction: 'in' | 'out' | 'reset') {
+  if (direction === 'reset') {
+    codeZoom.value = 1
+    return
+  }
+  const delta = direction === 'in' ? 0.1 : -0.1
+  codeZoom.value = Math.min(1.4, Math.max(0.8, Number((codeZoom.value + delta).toFixed(2))))
 }
 
 async function handleProjectMenuItem(action: () => void | Promise<void>) {
@@ -1207,16 +1223,16 @@ onBeforeUnmount(() => {
             </section>
           </aside>
 
-          <section class="code-editor" aria-label="Sprite code editor">
+          <section class="code-editor" :style="codeEditorStyle" aria-label="Sprite code editor">
             <div v-for="(line, index) in codeLines" :key="index" class="code-line">
               <span class="line-number">{{ index + 1 }}</span>
               <span class="keyword">{{ line[0] }}</span>
               <span class="source">{{ line[1] }}</span>
             </div>
             <div class="zoom-tools">
-              <button type="button" aria-label="Zoom in">⌕</button>
-              <button type="button" aria-label="Zoom out">⌔</button>
-              <button type="button" aria-label="Reset zoom">⊜</button>
+              <button type="button" aria-label="Zoom in" title="Zoom in" @click="zoomCodeEditor('in')" v-html="zoomInIcon"></button>
+              <button type="button" aria-label="Zoom out" title="Zoom out" @click="zoomCodeEditor('out')" v-html="zoomOutIcon"></button>
+              <button type="button" aria-label="Reset zoom" title="Reset zoom" @click="zoomCodeEditor('reset')" v-html="zoomResetIcon"></button>
             </div>
           </section>
         </div>
@@ -1322,7 +1338,7 @@ onBeforeUnmount(() => {
             </section>
           </aside>
 
-          <section class="code-editor" aria-label="Stage code editor">
+          <section class="code-editor" :style="codeEditorStyle" aria-label="Stage code editor">
             <div v-if="stageCodeLines.length === 0" class="code-line">
               <span class="line-number">1</span>
               <span class="keyword"></span>
@@ -1332,6 +1348,11 @@ onBeforeUnmount(() => {
               <span class="line-number">{{ index + 1 }}</span>
               <span class="keyword">{{ line[0] }}</span>
               <span class="source">{{ line[1] }}</span>
+            </div>
+            <div class="zoom-tools">
+              <button type="button" aria-label="Zoom in" title="Zoom in" @click="zoomCodeEditor('in')" v-html="zoomInIcon"></button>
+              <button type="button" aria-label="Zoom out" title="Zoom out" @click="zoomCodeEditor('out')" v-html="zoomOutIcon"></button>
+              <button type="button" aria-label="Reset zoom" title="Reset zoom" @click="zoomCodeEditor('reset')" v-html="zoomResetIcon"></button>
             </div>
           </section>
         </div>
@@ -3474,7 +3495,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   padding: 14px 18px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 13px;
+  font-size: calc(13px * var(--prototype-code-zoom, 1));
   line-height: 1.55;
 }
 
@@ -3517,11 +3538,24 @@ onBeforeUnmount(() => {
 .zoom-tools button {
   width: 38px;
   height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--ui-color-grey-400);
   border-radius: 6px;
   background: var(--ui-color-grey-100);
-  font-size: 14px;
   color: var(--ui-color-grey-800);
+}
+
+.zoom-tools button:hover {
+  background: var(--ui-color-grey-300);
+  color: var(--ui-color-grey-1000);
+}
+
+.zoom-tools button :deep(svg) {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .preview-column {

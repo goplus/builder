@@ -32,6 +32,9 @@ const styles = read('src/styles/app.css')
 const mockData = read('src/data/mock.ts')
 const editorPage = read('src/pages/editor/index.vue')
 const quickConfigBackIcon = read('src/assets/editor/quick-config/back.svg')
+const codeZoomInIcon = read('src/assets/editor/code-editor/zoom-in.svg')
+const codeZoomOutIcon = read('src/assets/editor/code-editor/zoom-out.svg')
+const codeZoomResetIcon = read('src/assets/editor/code-editor/zoom-reset.svg')
 const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
 const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
@@ -274,6 +277,22 @@ if (
   !editorPage.includes('removeSprite')
 ) {
   failures.push('editor sprite options dropdown must escape panel clipping and keep local menu actions')
+}
+
+if (
+  !editorPage.includes("zoom-in.svg?raw") ||
+  !editorPage.includes("zoom-out.svg?raw") ||
+  !editorPage.includes("zoom-reset.svg?raw") ||
+  !editorPage.includes('zoomCodeEditor') ||
+  editorPage.includes('>⌕<') ||
+  editorPage.includes('>⌔<') ||
+  editorPage.includes('>⊜<')
+) {
+  failures.push('editor code zoom controls must use real zoom icons and local zoom actions')
+}
+
+if (!codeZoomInIcon.includes('11.6667 8.54167H9.79167') || !codeZoomOutIcon.includes('11.6667 8.54167H6.66667') || !codeZoomResetIcon.includes('11.6667 7.29167H6.66667')) {
+  failures.push('editor code zoom icon assets must mirror the real code editor zoom icons')
 }
 
 if (!editorPage.includes('.stage-tools button') || !editorPage.includes('color: var(--ui-color-grey-1000);')) {
