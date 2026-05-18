@@ -187,7 +187,7 @@ export class Animation extends Disposable {
       const sound = sounds.find((s) => s.name === soundName)
       if (sound == null) console.warn(`Sound ${soundName} not found when creating animation ${name}`)
       else soundId = sound.id
-      soundLoop = onPlay?.loop ?? onStart?.loop ?? false
+      soundLoop = onPlay?.loop ?? false
     }
     const animation = new Animation(name, {
       id: includeId ? id : undefined,

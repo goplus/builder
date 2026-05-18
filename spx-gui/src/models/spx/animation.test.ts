@@ -219,26 +219,6 @@ describe('Animation', () => {
     expect(animation.sound).toBe(sounds[0].id)
   })
 
-  it('should load soundLoop from legacy onStart.loop', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const costumes = sprite.costumes
-    const sounds = project.sounds
-
-    const [animation] = Animation.load(
-      'default',
-      {
-        frameFrom: costumes[0].name,
-        frameTo: costumes[0].name,
-        onStart: { play: sounds[0].name, loop: true }
-      },
-      costumes,
-      { sounds }
-    )
-    expect(animation.sound).toBe(sounds[0].id)
-    expect(animation.soundLoop).toBe(true)
-  })
-
   it('should clone well', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
