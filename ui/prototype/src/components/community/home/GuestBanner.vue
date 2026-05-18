@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-
 import guestBannerBg from '@/assets/community/guest-banner-bg.png'
+import { usePrototypeSignIn } from '@/composables/prototypeSignIn'
 import PrototypeButton from '@/components/ui/PrototypeButton.vue'
 import PrototypeCard from '@/components/ui/PrototypeCard.vue'
 
-const router = useRouter()
+const { openSignInModal } = usePrototypeSignIn()
 </script>
 
 <template>
@@ -20,7 +19,7 @@ const router = useRouter()
     >
       <h1 class="m-0 text-[24px]/[1.5] font-medium">Join XBuilder</h1>
       <p class="mt-2 text-sm">Build and share your projects</p>
-      <PrototypeButton class="mt-7" type="primary" @click="router.push('/sign-in/callback')">Join now</PrototypeButton>
+      <PrototypeButton class="mt-7" type="primary" @click="openSignInModal">Join now</PrototypeButton>
     </div>
   </PrototypeCard>
 </template>

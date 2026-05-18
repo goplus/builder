@@ -120,7 +120,7 @@ for (const route of ['/explore?o=likes', '/explore?o=remix']) {
   if (!communityHome.includes(route)) failures.push(`community home must use real explore route: ${route}`)
 }
 
-if (!navbar.includes('Sign in') || !navbar.includes('/sign-in/callback')) {
+if (!navbar.includes('Sign in') || !navbar.includes('openSignInModal') || !navbar.includes('role="dialog"')) {
   failures.push('community navbar must expose the real guest sign-in entry')
 }
 

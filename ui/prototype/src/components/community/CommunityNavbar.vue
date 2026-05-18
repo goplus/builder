@@ -7,6 +7,8 @@ import arrowMiniIcon from '@/assets/navbar-icons/arrow-mini.svg?raw'
 import folderIcon from '@/assets/navbar-icons/folder.svg?raw'
 import newProjectIcon from '@/assets/editor/navbar-icons/new.svg'
 import openProjectIcon from '@/assets/editor/navbar-icons/open.svg'
+import { usePrototypeSignIn } from '@/composables/prototypeSignIn'
+import PrototypeButton from '@/components/ui/PrototypeButton.vue'
 
 const router = useRouter()
 const searchValue = ref('')
@@ -14,6 +16,7 @@ const projectMenuOpen = ref(false)
 const projectMenuRef = ref<HTMLElement>()
 const projectMenuOpenTimer = ref<number | null>(null)
 const projectMenuCloseTimer = ref<number | null>(null)
+const { signInModalOpen, openSignInModal, closeSignInModal } = usePrototypeSignIn()
 
 function submitSearch(event: Event) {
   event.preventDefault()
@@ -68,18 +71,28 @@ function openPrototypeProject() {
   router.push('/user/qingqing/projects')
 }
 
+function confirmPrototypeSignIn() {
+  closeSignInModal()
+}
+
 function handleDocumentClick(event: MouseEvent) {
   const target = event.target
   if (!(target instanceof Node)) return
   if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
 }
 
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') closeSignInModal()
+}
+
 onMounted(() => {
   document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleKeydown)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleKeydown)
   clearProjectMenuTimers()
 })
 </script>
@@ -165,14 +178,53 @@ onBeforeUnmount(() => {
         </form>
 
         <div class="flex h-full items-center px-3 whitespace-nowrap">
-          <RouterLink
+          <button
             class="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-primary-200 px-4 text-base leading-[22px] text-primary-500 no-underline transition-colors hover:bg-primary-100 active:bg-primary-300 focus-visible:border-primary-700 focus-visible:outline-none"
-            to="/sign-in/callback"
+            type="button"
+            @click="openSignInModal"
           >
             Sign in
-          </RouterLink>
+          </button>
         </div>
       </div>
     </div>
   </nav>
+
+  <Teleport to="body">
+    <div
+      v-if="signInModalOpen"
+      class="fixed inset-0 z-1100 flex items-center justify-center bg-overlay-modal"
+      role="presentation"
+      @click="closeSignInModal"
+    >
+      <section
+        class="w-100 rounded-md border border-grey-300 bg-grey-100 p-6 shadow-lg"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prototype-sign-in-title"
+        @click.stop
+      >
+        <header class="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="prototype-sign-in-title" class="m-0 text-2xl font-medium text-title">Sign in to XBuilder</h2>
+            <p class="mt-2 text-sm leading-5 text-grey-700">Continue with the local prototype account.</p>
+          </div>
+          <button
+            class="inline-flex size-8 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-grey-800 hover:bg-grey-300 active:bg-grey-400 focus-visible:outline-none"
+            type="button"
+            aria-label="Close sign-in dialog"
+            @click="closeSignInModal"
+          >
+            <svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M12 4 4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+          </button>
+        </header>
+        <div class="mt-6 flex justify-end gap-3">
+          <PrototypeButton type="white" @click="closeSignInModal">Cancel</PrototypeButton>
+          <PrototypeButton type="primary" @click="confirmPrototypeSignIn">Continue as Qingqing</PrototypeButton>
+        </div>
+      </section>
+    </div>
+  </Teleport>
 </template>
