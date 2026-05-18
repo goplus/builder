@@ -4067,6 +4067,9 @@ onBeforeUnmount(() => {
 
 .sprites-panel {
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid var(--ui-color-grey-400);
 }
 
@@ -4139,9 +4142,13 @@ onBeforeUnmount(() => {
 }
 
 .sprite-list {
+  min-height: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  align-content: flex-start;
   gap: 8px;
   padding: 12px;
-  overflow: visible;
+  overflow: auto;
 }
 
 .sprite-card {

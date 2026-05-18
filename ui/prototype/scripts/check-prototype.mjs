@@ -280,6 +280,10 @@ if (
   failures.push('editor sprite options dropdown must escape panel clipping and keep local menu actions')
 }
 
+if (!editorPage.includes('flex-wrap: wrap;') || !editorPage.includes('align-content: flex-start;')) {
+  failures.push('editor sprites panel must wrap sprite cards instead of overflowing into the stage panel')
+}
+
 if (
   !editorPage.includes("zoom-in.svg?raw") ||
   !editorPage.includes("zoom-out.svg?raw") ||
