@@ -1,0 +1,367 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "eVpiL",
+      "x": -1023,
+      "y": -913,
+      "name": "CourseSeries",
+      "width": 1440,
+      "height": 1642,
+      "fill": "$P:grey100",
+      "layout": "vertical",
+      "alignItems": "center",
+      "children": [
+        {
+          "id": "ong2L",
+          "type": "ref",
+          "ref": "P:WiWwa",
+          "x": 0.00018589109107464467,
+          "y": 0,
+          "children": [
+            {
+              "id": "lGGpB",
+              "type": "ref",
+              "ref": "P:O7syE"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "2rbCt",
+          "name": "content",
+          "clip": true,
+          "width": 1440,
+          "fill": "$P:grey100",
+          "layout": "vertical",
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "Oq6Mg",
+              "type": "ref",
+              "ref": "P:ZwzZD",
+              "x": -560,
+              "y": 0,
+              "children": [
+                {
+                  "id": "Z7RBQ",
+                  "type": "ref",
+                  "ref": "P:PUcm4"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xLjDE",
+              "name": "cards",
+              "clip": true,
+              "width": "fill_container",
+              "layout": "vertical",
+              "padding": [
+                40,
+                210,
+                60,
+                210
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "group",
+                  "id": "O4P9y",
+                  "layout": "vertical",
+                  "gap": "$P:space-5",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "kFxbV",
+                      "name": "Frame 1",
+                      "clip": true,
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "id": "dbKRN",
+                          "type": "ref",
+                          "ref": "P:tfxWX",
+                          "x": 0,
+                          "y": 0,
+                          "children": [
+                            {
+                              "id": "PlSlE",
+                              "type": "ref",
+                              "ref": "P:Lm2P8",
+                              "content": "All tutorials",
+                              "lineHeight": 1.4
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ahdiv",
+                      "name": "Course container",
+                      "clip": true,
+                      "fill": "$P:grey100",
+                      "layout": "vertical",
+                      "gap": "$P:space-5",
+                      "padding": [
+                        0,
+                        0,
+                        32,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "bNCfF",
+                          "name": "Course item",
+                          "width": 988,
+                          "height": 254,
+                          "gap": "$P:space-5",
+                          "children": [
+                            {
+                              "id": "VjZwh",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 0,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "WrP3S",
+                                  "type": "ref",
+                                  "ref": "P:TlowM"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "jarKG",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 252,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "e0HVR",
+                                  "type": "ref",
+                                  "ref": "P:DyDwl"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "q0QnI",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 504,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "SECRo",
+                                  "type": "ref",
+                                  "ref": "P:TlowM"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "tVe8s",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 756,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "Bdo7b",
+                                  "type": "ref",
+                                  "ref": "P:DyDwl"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jVbYc",
+                          "name": "Course item",
+                          "width": 988,
+                          "height": 254,
+                          "gap": "$P:space-5",
+                          "children": [
+                            {
+                              "id": "j7db1V",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 0,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "dZEDP",
+                                  "type": "ref",
+                                  "ref": "P:TlowM"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "xwP2r",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 252,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "j0ZEiJ",
+                                  "type": "ref",
+                                  "ref": "P:DyDwl"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "ugjW7",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 504,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "fkarX",
+                                  "type": "ref",
+                                  "ref": "P:TlowM"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "jUfU4",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 756,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "Jiddc",
+                                  "type": "ref",
+                                  "ref": "P:DyDwl"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CdpCV",
+                          "name": "Course item",
+                          "width": 988,
+                          "height": 254,
+                          "gap": "$P:space-5",
+                          "children": [
+                            {
+                              "id": "j4EA8",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 0,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "PK13T",
+                                  "type": "ref",
+                                  "ref": "P:TlowM"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "lvB7A",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 252,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "XETEP",
+                                  "type": "ref",
+                                  "ref": "P:DyDwl"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "magsw",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 504,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "GKn2E",
+                                  "type": "ref",
+                                  "ref": "P:TlowM"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "XnZMt",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 756,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "IPfCk",
+                                  "type": "ref",
+                                  "ref": "P:DyDwl"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "HpOHP",
+                          "name": "Course item",
+                          "width": 988,
+                          "height": 254,
+                          "gap": "$P:space-5",
+                          "children": [
+                            {
+                              "id": "N1d3sf",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 0,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "QxlXb",
+                                  "type": "ref",
+                                  "ref": "P:TlowM"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "N6cN8y",
+                              "type": "ref",
+                              "ref": "P:ZwzZD",
+                              "x": 252,
+                              "y": 0,
+                              "children": [
+                                {
+                                  "id": "cLYdE",
+                                  "type": "ref",
+                                  "ref": "P:DyDwl"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "P": "../../components/spx/builder-component.lib.pen"
+  }
+}
