@@ -22,7 +22,7 @@
           "id": "ong2L",
           "type": "ref",
           "ref": "P:WiWwa",
-          "x": 0.0001975079347187812,
+          "x": 0.00018589109107464467,
           "y": 0,
           "children": [
             {
@@ -121,7 +121,7 @@
                       "ref": "P:OHwu4",
                       "x": 0.07806559948336479,
                       "y": 0,
-                      "content": "All Tutorials"
+                      "content": "change"
                     },
                     {
                       "type": "frame",
@@ -154,7 +154,12 @@
                                 {
                                   "id": "gqB7m",
                                   "type": "ref",
-                                  "ref": "P:XzIf9"
+                                  "ref": "P:XzIf9",
+                                  "descendants": {
+                                    "P:W0vhG5": {
+                                      "fill": "$P:code-operator"
+                                    }
+                                  }
                                 }
                               ]
                             },
@@ -171,7 +176,12 @@
                                 {
                                   "id": "v3LEr",
                                   "type": "ref",
-                                  "ref": "P:XzIf9"
+                                  "ref": "P:XzIf9",
+                                  "descendants": {
+                                    "P:W0vhG5": {
+                                      "fill": "$P:code-operator"
+                                    }
+                                  }
                                 }
                               ]
                             },
