@@ -950,24 +950,26 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="navbar-right">
-        <button
-          class="mode-button"
-          :class="{ active: activeEditMode === 'default' }"
-          type="button"
-          aria-label="Default mode"
-          @click="selectEditMode('default')"
-        >
-          <span v-html="defaultModeIcon"></span>
-        </button>
-        <button
-          class="mode-button"
-          :class="{ active: activeEditMode === 'map' }"
-          type="button"
-          aria-label="Map edit mode"
-          @click="selectEditMode('map')"
-        >
-          <span v-html="mapEditModeIcon"></span>
-        </button>
+        <div class="mode-button-group" role="group" aria-label="Editor mode">
+          <button
+            class="mode-button"
+            :class="{ active: activeEditMode === 'default' }"
+            type="button"
+            aria-label="Default mode"
+            @click="selectEditMode('default')"
+          >
+            <span v-html="defaultModeIcon"></span>
+          </button>
+          <button
+            class="mode-button"
+            :class="{ active: activeEditMode === 'map' }"
+            type="button"
+            aria-label="Map edit mode"
+            @click="selectEditMode('map')"
+          >
+            <span v-html="mapEditModeIcon"></span>
+          </button>
+        </div>
         <div ref="profileMenuRef" class="profile-dropdown">
           <button
             class="profile-trigger"
@@ -1913,33 +1915,46 @@ onBeforeUnmount(() => {
   }
 }
 
+.mode-button-group {
+  height: 32px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--ui-color-grey-400);
+  display: inline-flex;
+  align-items: center;
+}
+
 .mode-button {
-  width: 37px;
-  height: 30px;
+  width: 36px;
+  height: 28px;
   border-radius: 6px;
-  background: var(--ui-color-grey-200);
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .mode-button span {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: flex;
 }
 
 .mode-button :deep(svg) {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   fill: currentColor;
   stroke: none;
   animation: none;
 }
 
+.mode-button :deep(path) {
+  stroke: none;
+}
+
 .mode-button.active {
   background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-lg);
+  box-shadow: var(--ui-box-shadow-control);
 }
 
 .profile-dropdown {
