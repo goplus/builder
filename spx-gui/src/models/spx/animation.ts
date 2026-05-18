@@ -24,6 +24,8 @@ export type AnimationInits = {
   /** Duration (in seconds) for animation to be played once */
   duration?: number
   sound?: string
+  /** Whether to loop the sound; defaults to false */
+  soundLoop?: boolean
 }
 
 export type RawAnimationConfig = {
@@ -106,12 +108,19 @@ export class Animation extends Disposable {
     this.sound = soundId
   }
 
+  /** Whether to loop the sound when played; defaults to false */
+  soundLoop: boolean
+  setSoundLoop(loop: boolean) {
+    this.soundLoop = loop
+  }
+
   constructor(name: string, inits?: AnimationInits) {
     super()
     this.name = name
     this.costumes = []
     this.duration = inits?.duration ?? 0
     this.sound = inits?.sound ?? null
+    this.soundLoop = inits?.soundLoop ?? false
     this.id = inits?.id ?? nanoid()
 
     return reactive(this) as this
@@ -121,7 +130,8 @@ export class Animation extends Disposable {
     const animation = new Animation(this.name, {
       id: preserveId ? this.id : undefined,
       duration: this.duration,
-      sound: this.sound ?? undefined
+      sound: this.sound ?? undefined,
+      soundLoop: this.soundLoop
     })
     const costumes = this.costumes.map((c) => c.clone(preserveId))
     animation.setCostumes(costumes)
@@ -170,17 +180,20 @@ export class Animation extends Disposable {
     if (isLoop != null) console.warn(`unsupported field: isLoop for animation ${name}`)
     if (anitype != null) console.warn(`unsupported field: anitype for animation ${name}`)
     let soundId: string | undefined = undefined
+    let soundLoop = false
     // onPlay is the current API; onStart is legacy for backward compatibility
     const soundName = onPlay?.play ?? onStart?.play
     if (soundName != null) {
       const sound = sounds.find((s) => s.name === soundName)
       if (sound == null) console.warn(`Sound ${soundName} not found when creating animation ${name}`)
       else soundId = sound.id
+      soundLoop = onPlay?.loop ?? onStart?.loop ?? false
     }
     const animation = new Animation(name, {
       id: includeId ? id : undefined,
       duration,
-      sound: soundId
+      sound: soundId,
+      soundLoop
     })
     const animationCostumeNames = animationCostumes.map((c) => c.name)
     for (const costume of animationCostumes) {
@@ -214,8 +227,9 @@ export class Animation extends Disposable {
       frameFps: Math.ceil(this.costumes.length / this.duration)
     }
     const soundName = sounds.find((s) => s.id === this.sound)?.name
-    if (soundName) {
+    if (soundName != null) {
       config.onPlay = { play: soundName }
+      if (this.soundLoop) config.onPlay.loop = true
     }
     if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]
