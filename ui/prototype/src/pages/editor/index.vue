@@ -170,6 +170,15 @@ type SoundItem = {
   duration: string
 }
 
+type SoundEditState = {
+  left: number
+  right: number
+  gain: number
+  savedLeft: number
+  savedRight: number
+  savedGain: number
+}
+
 type WidgetItem = {
   id: string
   name: string
@@ -254,6 +263,7 @@ const selectedAnimationId = ref('niu-run')
 const selectedBackdropId = ref('grass-field')
 const selectedSoundId = ref('pop')
 const selectedWidgetId = ref('score')
+const soundEditStates = ref<Record<string, SoundEditState>>({})
 const selectedMapSpriteId = ref('niu-xiao-qi')
 const mapSpriteNameEditing = ref(false)
 const mapSpriteConfigExpanded = ref(true)
@@ -609,6 +619,31 @@ const selectedAnimation = computed(() => {
 const animationMenuAnimation = computed(() => animations.value.find((animation) => animation.id === animationMenuOpenFor.value) ?? null)
 const selectedBackdrop = computed(() => backdrops.value.find((backdrop) => backdrop.id === selectedBackdropId.value) ?? backdrops.value[0])
 const selectedSound = computed(() => sounds.value.find((sound) => sound.id === selectedSoundId.value) ?? sounds.value[0] ?? null)
+const selectedSoundEdit = computed(() => (selectedSound.value == null ? null : getSoundEditState(selectedSound.value.id)))
+const selectedSoundEditing = computed(() => {
+  const edit = selectedSoundEdit.value
+  if (edit == null) return false
+  return edit.left !== edit.savedLeft || edit.right !== edit.savedRight || edit.gain !== edit.savedGain
+})
+const selectedSoundDuration = computed(() => {
+  const sound = selectedSound.value
+  const edit = selectedSoundEdit.value
+  if (sound == null || edit == null) return ''
+  const duration = Number.parseFloat(sound.duration)
+  if (!Number.isFinite(duration)) return sound.duration
+  return `${Math.max(0.01, duration * (edit.right - edit.left)).toFixed(2)}s`
+})
+const soundWaveformRangeStyle = computed<CSSProperties>(() => {
+  const edit = selectedSoundEdit.value ?? createSoundEditState()
+  return {
+    '--sound-range-left': `${edit.left * 100}%`,
+    '--sound-range-right': `${(1 - edit.right) * 100}%`
+  }
+})
+const soundVolumeStyle = computed<CSSProperties>(() => {
+  const edit = selectedSoundEdit.value ?? createSoundEditState()
+  return { '--sound-gain': `${edit.gain * 100}%` }
+})
 const selectedWidget = computed(() => widgets.value.find((widget) => widget.id === selectedWidgetId.value) ?? widgets.value[0])
 
 const codeCategories: Array<{ id: CodeCategoryId; label: string; icon: string }> = [
@@ -1521,6 +1556,76 @@ function markPrototypeAction() {
   simulateAutoSave()
 }
 
+function createSoundEditState(): SoundEditState {
+  return {
+    left: 0,
+    right: 1,
+    gain: 0.55,
+    savedLeft: 0,
+    savedRight: 1,
+    savedGain: 0.55
+  }
+}
+
+function getSoundEditState(soundId: string) {
+  soundEditStates.value[soundId] ??= createSoundEditState()
+  return soundEditStates.value[soundId]
+}
+
+function updateSelectedSoundRange(handle: 'left' | 'right', event: PointerEvent, waveform: Element | null) {
+  const sound = selectedSound.value
+  if (sound == null) return
+  if (waveform == null) return
+  const rect = waveform.getBoundingClientRect()
+  const next = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
+  const edit = getSoundEditState(sound.id)
+  if (handle === 'left') {
+    edit.left = Number(Math.min(next, edit.right - 0.05).toFixed(2))
+  } else {
+    edit.right = Number(Math.max(next, edit.left + 0.05).toFixed(2))
+  }
+}
+
+function startSoundRangeDrag(handle: 'left' | 'right', event: PointerEvent) {
+  const waveform = (event.currentTarget as HTMLElement).closest('.sound-waveform')
+  updateSelectedSoundRange(handle, event, waveform)
+  const move = (moveEvent: PointerEvent) => updateSelectedSoundRange(handle, moveEvent, waveform)
+  const stop = () => {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', stop)
+    window.removeEventListener('pointercancel', stop)
+  }
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', stop, { once: true })
+  window.addEventListener('pointercancel', stop, { once: true })
+}
+
+function updateSelectedSoundGain(event: PointerEvent) {
+  const sound = selectedSound.value
+  if (sound == null) return
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  getSoundEditState(sound.id).gain = Number(Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)).toFixed(2))
+}
+
+function resetSelectedSoundEdit() {
+  const sound = selectedSound.value
+  if (sound == null) return
+  const edit = getSoundEditState(sound.id)
+  edit.left = edit.savedLeft
+  edit.right = edit.savedRight
+  edit.gain = edit.savedGain
+}
+
+function saveSelectedSoundEdit() {
+  const sound = selectedSound.value
+  if (sound == null) return
+  const edit = getSoundEditState(sound.id)
+  edit.savedLeft = edit.left
+  edit.savedRight = edit.right
+  edit.savedGain = edit.gain
+  markPrototypeAction()
+}
+
 function handleSpriteMenuAction(action: () => void) {
   action()
   closeSpriteMenu()
@@ -2271,18 +2376,18 @@ onBeforeUnmount(() => {
                 <h2>{{ selectedSound.name }}</h2>
                 <button type="button" aria-label="Rename sound" v-html="editIcon"></button>
               </div>
-              <div class="sound-duration">{{ selectedSound.duration }}</div>
+              <div class="sound-duration">{{ selectedSoundDuration }}</div>
             </header>
             <div class="sound-detail">
-              <div class="sound-waveform" aria-hidden="true">
+              <div class="sound-waveform" :style="soundWaveformRangeStyle" aria-label="Sound waveform trim editor">
                 <svg class="sound-waveform-canvas" viewBox="0 0 640 222" preserveAspectRatio="none">
                   <path class="waveform-shape" d="M0 111 C24 88 48 86 72 111 C96 136 120 132 144 111 C168 90 192 82 216 111 C240 140 264 136 288 111 C312 86 336 78 360 111 C384 144 408 139 432 111 C456 83 480 88 504 111 C528 134 552 126 576 111 C600 96 620 101 640 111 L640 111 C620 121 600 126 576 111 C552 96 528 88 504 111 C480 134 456 139 432 111 C408 83 384 78 360 111 C336 144 312 136 288 111 C264 86 240 82 216 111 C192 140 168 132 144 111 C120 90 96 86 72 111 C48 136 24 134 0 111 Z" />
                 </svg>
                 <div class="waveform-range-control">
                   <div class="waveform-shaded-area waveform-left-fixed"></div>
                   <div class="waveform-selection-area">
-                    <div class="waveform-control-bar waveform-left-bar"></div>
-                    <div class="waveform-control-bar waveform-right-bar"></div>
+                    <button class="waveform-control-bar waveform-left-bar" type="button" aria-label="Trim sound start" @pointerdown.prevent="startSoundRangeDrag('left', $event)"></button>
+                    <button class="waveform-control-bar waveform-right-bar" type="button" aria-label="Trim sound end" @pointerdown.prevent="startSoundRangeDrag('right', $event)"></button>
                   </div>
                   <div class="waveform-shaded-area waveform-right-fixed"></div>
                 </div>
@@ -2297,12 +2402,18 @@ onBeforeUnmount(() => {
                   <svg class="sound-volume-icon" viewBox="0 0 24 24" fill="none">
                     <path d="M7.5 6.99989H9.26697C9.74097 6.99989 10.1991 6.83177 10.5601 6.52577L14.251 3.39882C15.336 2.47982 17.001 3.25099 17.001 4.67299V19.3268C17.001 20.7488 15.336 21.521 14.251 20.601L10.5601 17.474C10.1991 17.168 9.74097 16.9999 9.26697 16.9999H7.5C6.672 16.9999 6 16.3279 6 15.4999V8.50087C6 7.67187 6.672 6.99989 7.5 6.99989Z" fill="currentColor" />
                   </svg>
-                  <div class="sound-slider-track"><span></span></div>
+                  <div class="sound-slider-track" :style="soundVolumeStyle" role="slider" aria-label="Sound volume" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round((selectedSoundEdit?.gain ?? 0) * 100)" @pointerdown="updateSelectedSoundGain">
+                    <span></span>
+                  </div>
                   <svg class="sound-volume-icon" viewBox="0 0 24 24" fill="none">
                     <path d="M3.5 6.99989H5.26697C5.74097 6.99989 6.19906 6.83177 6.56006 6.52577L10.251 3.39882C11.336 2.47982 13.001 3.25099 13.001 4.67299V19.3268C13.001 20.7488 11.336 21.521 10.251 20.601L6.56006 17.474C6.19906 17.168 5.74097 16.9999 5.26697 16.9999H3.5C2.672 16.9999 2 16.3279 2 15.4999V8.50087C2 7.67187 2.672 6.99989 3.5 6.99989ZM16.767 16.7709C18.046 15.4979 18.75 13.8029 18.75 11.9999C18.75 10.1969 18.046 8.5019 16.767 7.2289C16.473 6.9369 15.9981 6.93685 15.7061 7.23085C15.4131 7.52385 15.415 7.99988 15.708 8.29188C16.702 9.28188 17.25 10.5999 17.25 12.0009C17.25 13.4019 16.702 14.7199 15.708 15.7099C15.415 16.0019 15.4131 16.4769 15.7061 16.7709C15.8521 16.9179 16.0451 16.9918 16.2371 16.9918C16.4291 16.9898 16.62 16.9169 16.767 16.7709ZM19.067 19.82C18.875 19.82 18.682 19.747 18.536 19.6C18.244 19.307 18.244 18.832 18.538 18.539C20.287 16.795 21.25 14.4729 21.25 11.9999C21.25 9.52689 20.287 7.20583 18.538 5.46083C18.244 5.16783 18.244 4.69279 18.536 4.39979C18.828 4.10679 19.303 4.10582 19.597 4.39882C21.63 6.42682 22.75 9.12689 22.75 11.9999C22.75 14.8729 21.63 17.573 19.597 19.601C19.45 19.747 19.259 19.82 19.067 19.82Z" fill="currentColor" />
                   </svg>
                 </div>
                 <div class="sound-controls-spacer"></div>
+                <div v-if="selectedSoundEditing" class="sound-edit-actions">
+                  <UIButton type="neutral" size="medium" @click="resetSelectedSoundEdit">Cancel</UIButton>
+                  <UIButton type="primary" size="medium" @click="saveSelectedSoundEdit">Save</UIButton>
+                </div>
               </div>
             </div>
           </section>
@@ -4889,12 +5000,12 @@ onBeforeUnmount(() => {
 
 .waveform-left-fixed {
   left: -16px;
-  width: 16px;
+  width: calc(var(--sound-range-left, 0%) + 16px);
 }
 
 .waveform-right-fixed {
   right: -16px;
-  width: 16px;
+  width: calc(var(--sound-range-right, 0%) + 16px);
 }
 
 .waveform-selection-area {
@@ -4910,7 +5021,9 @@ onBeforeUnmount(() => {
   width: 16px;
   height: 100%;
   cursor: ew-resize;
+  border: 0;
   background: var(--ui-color-primary-400);
+  padding: 0;
 }
 
 .waveform-control-bar::before {
@@ -4926,11 +5039,11 @@ onBeforeUnmount(() => {
 }
 
 .waveform-left-bar {
-  left: -16px;
+  left: calc(var(--sound-range-left, 0%) - 16px);
 }
 
 .waveform-right-bar {
-  right: -16px;
+  right: calc(var(--sound-range-right, 0%) - 16px);
 }
 
 .sound-controls {
@@ -4989,17 +5102,25 @@ onBeforeUnmount(() => {
   flex: 1;
   border-radius: 999px;
   background: var(--ui-color-grey-400);
+  cursor: pointer;
 }
 
 .sound-slider-track span {
   position: absolute;
-  inset: 0 45% 0 0;
+  inset: 0 calc(100% - var(--sound-gain, 55%)) 0 0;
   border-radius: inherit;
   background: var(--ui-color-primary-main);
 }
 
 .sound-controls-spacer {
   flex: 1 1 0;
+}
+
+.sound-edit-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
 }
 
 .widget-detail label {

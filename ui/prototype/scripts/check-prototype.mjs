@@ -399,6 +399,28 @@ if (
 }
 
 if (
+  !editorPage.includes('type SoundEditState = {') ||
+  !editorPage.includes('const selectedSoundEdit = computed') ||
+  !editorPage.includes('const selectedSoundEditing = computed') ||
+  !editorPage.includes('const selectedSoundDuration = computed') ||
+  !editorPage.includes('function startSoundRangeDrag') ||
+  !editorPage.includes('function updateSelectedSoundGain') ||
+  !editorPage.includes('function resetSelectedSoundEdit') ||
+  !editorPage.includes('function saveSelectedSoundEdit') ||
+  !editorPage.includes('aria-label="Sound waveform trim editor"') ||
+  !editorPage.includes('aria-label="Trim sound start"') ||
+  !editorPage.includes('aria-label="Trim sound end"') ||
+  !editorPage.includes('role="slider" aria-label="Sound volume"') ||
+  !editorPage.includes('v-if="selectedSoundEditing" class="sound-edit-actions"') ||
+  !editorPage.includes('>Cancel</UIButton>') ||
+  !editorPage.includes('>Save</UIButton>') ||
+  !editorPage.includes('--sound-range-left') ||
+  !editorPage.includes('--sound-gain')
+) {
+  failures.push('editor sound detail must expose local waveform trim, volume editing, and Cancel/Save actions')
+}
+
+if (
   !editorPage.includes("import monitorWidgetIcon from '@/assets/editor/widget/monitor.svg?raw'") ||
   !editorPage.includes('class="editor-asset-item widget-asset-item"') ||
   !editorPage.includes('class="widget-icon" v-html="monitorWidgetIcon"') ||
