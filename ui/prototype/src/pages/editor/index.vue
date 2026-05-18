@@ -47,6 +47,12 @@ import jaimeUrl from '@/assets/projects/weathergggg/editor/jaime.png'
 import kaiUrl from '@/assets/projects/weathergggg/editor/kai.png'
 
 const backQuickIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>'
+const rotateAroundIcon =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.22562 2.20918C6.23356 1.73213 7.3608 1.56446 8.4639 1.72773C9.5671 1.89109 10.5973 2.37843 11.4239 3.12715L11.4258 3.12812C12.5806 4.18235 13.2832 5.64311 13.3868 7.20332L13.4063 7.59785L14.3467 6.56074C14.563 6.32214 14.9322 6.30446 15.1709 6.5207C15.4094 6.73702 15.4271 7.10529 15.211 7.34394L13.3311 9.41914C13.2919 9.46365 13.2464 9.50241 13.1953 9.5334C13.133 9.56822 13.0844 9.58716 13.0332 9.5998C12.852 9.6364 12.6693 9.59083 12.501 9.46601L10.42 7.58125C10.1814 7.36506 10.1631 6.99576 10.3789 6.75703C10.5952 6.51827 10.9644 6.50073 11.2032 6.71699L12.2412 7.65644L12.2227 7.27949C12.139 6.02027 11.5724 4.84152 10.6407 3.99043C9.98523 3.39685 9.16774 3.01156 8.29301 2.88203C7.41825 2.75257 6.52493 2.88563 5.72562 3.26387C4.92627 3.64224 4.25627 4.24934 3.80179 5.00801C3.34761 5.76652 3.12837 6.64255 3.17191 7.52558C3.21554 8.409 3.51984 9.26061 4.04691 9.9709C4.57392 10.681 5.30021 11.2191 6.13285 11.5168C6.96561 11.8144 7.8688 11.8579 8.7266 11.6428C9.03876 11.5648 9.35513 11.7546 9.43363 12.0666C9.51197 12.379 9.32212 12.6961 9.0098 12.7746C7.92834 13.0457 6.79016 12.9906 5.74027 12.6154C4.6903 12.24 3.77393 11.5616 3.10941 10.6662C2.44501 9.77082 2.06201 8.69777 2.00687 7.58418C1.95187 6.47053 2.22796 5.36498 2.80082 4.4084C3.3738 3.45187 4.21786 2.68629 5.22562 2.20918Z" fill="currentColor"/></svg>'
+const leftRightIcon =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8.00098 12.75C8.32303 12.75 8.58381 13.011 8.58398 13.333V14.667C8.58381 14.989 8.32303 15.25 8.00098 15.25C7.67892 15.25 7.41814 14.989 7.41797 14.667V13.333C7.41814 13.011 7.67892 12.75 8.00098 12.75ZM1.77734 4.12793C1.99532 4.03764 2.24723 4.08707 2.41406 4.25391L5.74707 7.58691C5.97488 7.81472 5.97488 8.18528 5.74707 8.41309L2.41406 11.7461C2.24723 11.9129 1.99532 11.9624 1.77734 11.8721C1.5596 11.7817 1.41797 11.5688 1.41797 11.333V4.66699C1.41797 4.4312 1.5596 4.21832 1.77734 4.12793ZM13.5879 4.25391C13.7547 4.08707 14.0066 4.03764 14.2246 4.12793C14.4424 4.21832 14.584 4.4312 14.584 4.66699V11.333C14.584 11.5688 14.4424 11.7817 14.2246 11.8721C14.0066 11.9624 13.7547 11.9129 13.5879 11.7461L10.2549 8.41309C10.0271 8.18528 10.0271 7.81472 10.2549 7.58691L13.5879 4.25391ZM8.00098 8.75C8.32303 8.75 8.58381 9.01099 8.58398 9.33301V10.667C8.58381 10.989 8.32303 11.25 8.00098 11.25C7.67892 11.25 7.41814 10.989 7.41797 10.667V9.33301C7.41814 9.01099 7.67892 8.75 8.00098 8.75ZM2.58398 9.9248L4.50879 8L2.58398 6.0752V9.9248ZM11.4932 8L13.418 9.9248V6.0752L11.4932 8ZM8.00098 4.75C8.32303 4.75 8.58381 5.01099 8.58398 5.33301V6.66699C8.58381 6.98901 8.32303 7.25 8.00098 7.25C7.67892 7.25 7.41814 6.98901 7.41797 6.66699V5.33301C7.41814 5.01099 7.67892 4.75 8.00098 4.75ZM8.00098 0.75C8.32303 0.75 8.58381 1.01099 8.58398 1.33301V2.66699C8.58381 2.98901 8.32303 3.25 8.00098 3.25C7.67892 3.25 7.41814 2.98901 7.41797 2.66699V1.33301C7.41814 1.01099 7.67892 0.75 8.00098 0.75Z" fill="currentColor"/></svg>'
+const notRotateIcon =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.6716 1.57439C11.8791 1.3282 12.2476 1.29714 12.4939 1.50408C12.7402 1.71141 12.7724 2.07983 12.5652 2.32634L2.38159 14.425C2.17418 14.6712 1.80568 14.7031 1.55933 14.4963C1.31318 14.289 1.28108 13.9205 1.48804 13.674L2.96949 11.9123C2.85671 11.78 2.74894 11.6425 2.6482 11.4992C2.01135 10.5929 1.65093 9.5125 1.61304 8.39666C1.57539 7.28099 1.86239 6.17794 2.43628 5.22869C3.01031 4.27977 3.84659 3.52551 4.83863 3.06267C5.83097 2.60002 6.93631 2.4486 8.01245 2.6281C8.75754 2.75257 9.46709 3.03187 10.0974 3.44451L11.6716 1.57439ZM5.66187 12.3322C6.4456 12.6231 7.29609 12.6751 8.10816 12.4797C8.43623 12.401 8.76509 12.6098 8.84253 12.9455C8.9194 13.2815 8.71556 13.6182 8.38745 13.6974C7.32598 13.9529 6.21341 13.8815 5.19214 13.4904C5.06643 13.4422 4.94243 13.3884 4.82105 13.3312L5.66187 12.3322ZM7.81616 3.86248C6.97848 3.72271 6.11786 3.8413 5.34546 4.20134C4.57336 4.56156 3.92214 5.1484 3.47534 5.88689C3.02859 6.62583 2.80535 7.48511 2.83472 8.35369C2.86426 9.22207 3.14479 10.0623 3.64038 10.7677C3.68453 10.8306 3.73092 10.8922 3.77808 10.9523L9.28882 4.40447C8.83683 4.13446 8.33775 3.94965 7.81616 3.86248ZM11.7439 5.10564C12.3397 6.01144 12.6918 7.07259 12.7478 8.17986L12.7576 8.46306L13.6101 7.52752C13.8403 7.27572 14.2269 7.26216 14.4734 7.49724C14.7196 7.73272 14.7332 8.12841 14.5037 8.38103L12.6453 10.4211C12.5327 10.519 12.3933 10.5871 12.2195 10.6203C12.1868 10.6214 12.1533 10.6184 12.1218 10.6144C12.0646 10.6057 12.0304 10.5967 11.9978 10.5851C11.9191 10.5511 11.8629 10.5166 11.7976 10.466L9.78882 8.549C9.54255 8.31339 9.52873 7.9168 9.75855 7.66423C9.98874 7.41218 10.3762 7.39879 10.6228 7.63396L11.5359 8.50603L11.5271 8.24431C11.4885 7.48271 11.2731 6.74817 10.9089 6.09783L11.7439 5.10564Z" fill="currentColor"/></svg>'
 
 const props = defineProps<{
   ownerNameInput: string
@@ -62,6 +68,8 @@ type SpriteCard = {
   image: string
   hidden: boolean
   size: number
+  heading: number
+  rotationStyle: RotationStyle
 }
 
 type SnippetPart = {
@@ -79,6 +87,7 @@ type EditorTab = 'code' | 'costumes' | 'animations'
 type StageTab = 'code' | 'backdrops' | 'sounds' | 'widgets'
 type EditMode = 'default' | 'map'
 type QuickConfigType = 'default' | 'position' | 'rotation' | 'size' | 'layer'
+type RotationStyle = 'normal' | 'left-right' | 'none'
 type SaveState = 'saved' | 'pending' | 'saving' | 'failed' | 'offline'
 type CodeCategoryId = 'event' | 'look' | 'motion' | 'control' | 'sensing' | 'sound' | 'game'
 
@@ -280,7 +289,9 @@ const niuRunSprites = ref<SpriteCard[]>([
     shortName: '牛小七',
     image: niuXiaoQiUrl,
     hidden: false,
-    size: 100
+    size: 100,
+    heading: 90,
+    rotationStyle: 'normal'
   },
   {
     id: 'niu-xiao-hua',
@@ -288,7 +299,9 @@ const niuRunSprites = ref<SpriteCard[]>([
     shortName: '牛小花牛小花...',
     image: niuXiaoHuaUrl,
     hidden: false,
-    size: 100
+    size: 100,
+    heading: 90,
+    rotationStyle: 'normal'
   },
   {
     id: 'flower',
@@ -296,7 +309,9 @@ const niuRunSprites = ref<SpriteCard[]>([
     shortName: '花朵花...',
     image: flowerUrl,
     hidden: true,
-    size: 100
+    size: 100,
+    heading: 90,
+    rotationStyle: 'normal'
   },
   {
     id: 'tornado',
@@ -304,7 +319,9 @@ const niuRunSprites = ref<SpriteCard[]>([
     shortName: '龙卷风...',
     image: tornadoUrl,
     hidden: true,
-    size: 100
+    size: 100,
+    heading: 90,
+    rotationStyle: 'normal'
   }
 ])
 
@@ -376,7 +393,9 @@ const weatherggggSprites = ref<SpriteCard[]>([
     shortName: 'Jaime',
     image: jaimeUrl,
     hidden: false,
-    size: 100
+    size: 100,
+    heading: 90,
+    rotationStyle: 'normal'
   },
   {
     id: 'kai',
@@ -384,7 +403,9 @@ const weatherggggSprites = ref<SpriteCard[]>([
     shortName: 'Kai',
     image: kaiUrl,
     hidden: false,
-    size: 100
+    size: 100,
+    heading: 90,
+    rotationStyle: 'normal'
   }
 ])
 
@@ -497,7 +518,7 @@ const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.i
 const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
 const stageBackdrop = computed(() => selectedBackdrop.value?.image ?? project.value.thumbnail)
 const selectedSpriteFrameStyle = computed(() => ({
-  transform: `scale(${(selectedSprite.value?.size ?? 100) / 100})`
+  transform: selectedSpriteTransform(selectedSprite.value)
 }))
 const mapWorkspaceStyle = computed(() => ({ backgroundImage: `url(${stageBgUrl})` }))
 const mapStageStyle = computed(() => ({ backgroundImage: `url(${stageBackdrop.value})` }))
@@ -636,10 +657,44 @@ function backToDefaultQuickConfig() {
   activeQuickConfig.value = 'default'
 }
 
+function selectedSpriteTransform(sprite: SpriteCard | undefined) {
+  const size = (sprite?.size ?? 100) / 100
+  const heading = sprite?.heading ?? 90
+  const rotationStyle = sprite?.rotationStyle ?? 'normal'
+  const rotation = rotationStyle === 'normal' ? heading - 90 : 0
+  const flip = rotationStyle === 'left-right' && heading < 0 ? ' scaleX(-1)' : ''
+  return `scale(${size}) rotate(${rotation}deg)${flip}`
+}
+
 function updateSelectedSpriteSize(event: Event) {
   const nextSize = Number((event.target as HTMLInputElement).value)
   if (!Number.isFinite(nextSize) || selectedSprite.value == null) return
   selectedSprite.value.size = Math.max(1, Math.min(400, Math.round(nextSize)))
+  markPrototypeAction()
+}
+
+function updateSelectedSpriteHeading(event: Event) {
+  const nextHeading = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextHeading) || selectedSprite.value == null) return
+  selectedSprite.value.heading = Math.max(-180, Math.min(180, Math.round(nextHeading)))
+  markPrototypeAction()
+}
+
+function updateSelectedSpriteRotationStyle(style: RotationStyle) {
+  const sprite = selectedSprite.value
+  if (sprite == null) return
+  sprite.rotationStyle = style
+  if (style === 'none') {
+    sprite.heading = 90
+  } else if (style === 'left-right') {
+    sprite.heading = sprite.heading >= 0 ? 90 : -90
+  }
+  markPrototypeAction()
+}
+
+function updateSelectedSpriteLeftRight(direction: 'left' | 'right') {
+  if (selectedSprite.value == null) return
+  selectedSprite.value.heading = direction === 'right' ? 90 : -90
   markPrototypeAction()
 }
 
@@ -738,7 +793,9 @@ function addLocalSprite(source: 'local' | 'library' | 'ai') {
     shortName: preset.name.length > 10 ? `${preset.name.slice(0, 8)}...` : preset.name,
     image: preset.image,
     hidden: false,
-    size: 100
+    size: 100,
+    heading: 90,
+    rotationStyle: 'normal'
   }
   sprites.value.push(sprite)
   selectedSpriteId.value = sprite.id
@@ -1413,6 +1470,69 @@ onBeforeUnmount(() => {
                     />
                     <span>%</span>
                   </label>
+                  <span class="quick-config-divider" aria-hidden="true"></span>
+                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
+                    <span v-html="backQuickIcon"></span>
+                  </button>
+                </template>
+                <template v-else-if="activeQuickConfig === 'rotation' && selectedSprite != null">
+                  <div class="rotation-style-group" role="group" aria-label="Rotation style control">
+                    <button
+                      class="rotation-style-button"
+                      :class="{ active: selectedSprite.rotationStyle === 'normal' }"
+                      type="button"
+                      aria-label="Normal rotation"
+                      @click="updateSelectedSpriteRotationStyle('normal')"
+                    >
+                      <span v-html="rotateAroundIcon"></span>
+                    </button>
+                    <button
+                      class="rotation-style-button"
+                      :class="{ active: selectedSprite.rotationStyle === 'left-right' }"
+                      type="button"
+                      aria-label="Left-right rotation"
+                      @click="updateSelectedSpriteRotationStyle('left-right')"
+                    >
+                      <span v-html="leftRightIcon"></span>
+                    </button>
+                    <button
+                      class="rotation-style-button"
+                      :class="{ active: selectedSprite.rotationStyle === 'none' }"
+                      type="button"
+                      aria-label="No rotation"
+                      @click="updateSelectedSpriteRotationStyle('none')"
+                    >
+                      <span v-html="notRotateIcon"></span>
+                    </button>
+                  </div>
+                  <label v-if="selectedSprite.rotationStyle === 'normal'" class="quick-config-input heading-input">
+                    <span>Heading</span>
+                    <input
+                      :value="selectedSprite.heading"
+                      type="number"
+                      inputmode="numeric"
+                      min="-180"
+                      max="180"
+                      aria-label="Heading input"
+                      @input="updateSelectedSpriteHeading"
+                    />
+                  </label>
+                  <div v-else-if="selectedSprite.rotationStyle === 'left-right'" class="direction-group" role="group" aria-label="Direction control">
+                    <button
+                      type="button"
+                      :class="{ active: selectedSprite.heading < 0 }"
+                      @click="updateSelectedSpriteLeftRight('left')"
+                    >
+                      Left
+                    </button>
+                    <button
+                      type="button"
+                      :class="{ active: selectedSprite.heading >= 0 }"
+                      @click="updateSelectedSpriteLeftRight('right')"
+                    >
+                      Right
+                    </button>
+                  </div>
                   <span class="quick-config-divider" aria-hidden="true"></span>
                   <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
                     <span v-html="backQuickIcon"></span>
@@ -3593,6 +3713,39 @@ onBeforeUnmount(() => {
   width: 1px;
   height: 16px;
   background: var(--ui-color-grey-400);
+}
+
+.rotation-style-group,
+.direction-group {
+  height: 32px;
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-300);
+}
+
+.rotation-style-button,
+.direction-group button {
+  background: transparent;
+}
+
+.rotation-style-button.active,
+.direction-group button.active {
+  background: var(--ui-color-primary-200);
+  color: var(--ui-color-primary-400);
+}
+
+.direction-group button {
+  width: auto;
+  min-width: 48px;
+  padding: 0 10px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.heading-input input {
+  width: 52px;
 }
 
 .quick-config-back {
