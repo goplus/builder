@@ -31,6 +31,7 @@ const app = read('src/App.vue')
 const styles = read('src/styles/app.css')
 const mockData = read('src/data/mock.ts')
 const editorPage = read('src/pages/editor/index.vue')
+const quickConfigBackIcon = read('src/assets/editor/quick-config/back.svg')
 const projectRunner = read('src/components/project/PrototypeProjectRunner.vue')
 const copilot = read('src/components/copilot/PrototypeCopilot.vue')
 const communityApi = read('src/apis/community.ts')
@@ -236,6 +237,10 @@ for (const expectedToken of ['projectFile', 'weatherggggProjectFile', 'niuRunPro
 
 if (editorPage.includes('Inspector') || editorPage.includes('Editor sprite prototype surface')) {
   failures.push('editor page must mirror the real dev editor, not the old simplified inspector prototype')
+}
+
+if (!editorPage.includes("back.svg?raw") || quickConfigBackIcon.includes('M15 18l-6-6')) {
+  failures.push('editor quick config back control must use the real back icon asset')
 }
 
 for (const editorToken of ['Code', 'Costumes', 'Animations', 'Preview', 'Sprites', 'Stage']) {

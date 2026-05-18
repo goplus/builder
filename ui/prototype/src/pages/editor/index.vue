@@ -15,6 +15,7 @@ import backdropPanelIcon from '@/assets/editor/stage-panel/backdrop.svg?raw'
 import soundPanelIcon from '@/assets/editor/stage-panel/sound.svg?raw'
 import widgetPanelIcon from '@/assets/editor/stage-panel/widget.svg?raw'
 import layerQuickIcon from '@/assets/editor/quick-config/layer.svg?raw'
+import backQuickIcon from '@/assets/editor/quick-config/back.svg?raw'
 import moreIcon from '@/assets/editor/quick-config/more.svg?raw'
 import positionQuickIcon from '@/assets/editor/quick-config/position.svg?raw'
 import resizeQuickIcon from '@/assets/editor/quick-config/resize.svg?raw'
@@ -46,7 +47,6 @@ import weatherggggBackdropUrl from '@/assets/projects/weathergggg/editor/urban1.
 import jaimeUrl from '@/assets/projects/weathergggg/editor/jaime.png'
 import kaiUrl from '@/assets/projects/weathergggg/editor/kai.png'
 
-const backQuickIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>'
 const rotateAroundIcon =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.22562 2.20918C6.23356 1.73213 7.3608 1.56446 8.4639 1.72773C9.5671 1.89109 10.5973 2.37843 11.4239 3.12715L11.4258 3.12812C12.5806 4.18235 13.2832 5.64311 13.3868 7.20332L13.4063 7.59785L14.3467 6.56074C14.563 6.32214 14.9322 6.30446 15.1709 6.5207C15.4094 6.73702 15.4271 7.10529 15.211 7.34394L13.3311 9.41914C13.2919 9.46365 13.2464 9.50241 13.1953 9.5334C13.133 9.56822 13.0844 9.58716 13.0332 9.5998C12.852 9.6364 12.6693 9.59083 12.501 9.46601L10.42 7.58125C10.1814 7.36506 10.1631 6.99576 10.3789 6.75703C10.5952 6.51827 10.9644 6.50073 11.2032 6.71699L12.2412 7.65644L12.2227 7.27949C12.139 6.02027 11.5724 4.84152 10.6407 3.99043C9.98523 3.39685 9.16774 3.01156 8.29301 2.88203C7.41825 2.75257 6.52493 2.88563 5.72562 3.26387C4.92627 3.64224 4.25627 4.24934 3.80179 5.00801C3.34761 5.76652 3.12837 6.64255 3.17191 7.52558C3.21554 8.409 3.51984 9.26061 4.04691 9.9709C4.57392 10.681 5.30021 11.2191 6.13285 11.5168C6.96561 11.8144 7.8688 11.8579 8.7266 11.6428C9.03876 11.5648 9.35513 11.7546 9.43363 12.0666C9.51197 12.379 9.32212 12.6961 9.0098 12.7746C7.92834 13.0457 6.79016 12.9906 5.74027 12.6154C4.6903 12.24 3.77393 11.5616 3.10941 10.6662C2.44501 9.77082 2.06201 8.69777 2.00687 7.58418C1.95187 6.47053 2.22796 5.36498 2.80082 4.4084C3.3738 3.45187 4.21786 2.68629 5.22562 2.20918Z" fill="currentColor"/></svg>'
 const leftRightIcon =
