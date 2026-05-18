@@ -11,6 +11,8 @@ import type { Sound } from './sound'
 type ActionConfig = {
   /** Sound name to play */
   play?: string
+  /** Whether to loop the sound; for onStart defaults to false, for onPlay defaults to true */
+  loop?: boolean
   // not supported by builder:
   costumes?: unknown
 }
