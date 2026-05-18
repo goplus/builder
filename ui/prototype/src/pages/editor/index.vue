@@ -25,6 +25,7 @@ import closeCircleIcon from '@/assets/editor/code-editor/close-circle.svg?raw'
 import backdropPanelIcon from '@/assets/editor/stage-panel/backdrop.svg?raw'
 import soundPanelIcon from '@/assets/editor/stage-panel/sound.svg?raw'
 import widgetPanelIcon from '@/assets/editor/stage-panel/widget.svg?raw'
+import monitorWidgetIcon from '@/assets/editor/widget/monitor.svg?raw'
 import layerQuickIcon from '@/assets/editor/quick-config/layer.svg?raw'
 import backQuickIcon from '@/assets/editor/quick-config/back.svg?raw'
 import moreIcon from '@/assets/editor/quick-config/more.svg?raw'
@@ -2318,7 +2319,7 @@ onBeforeUnmount(() => {
               type="button"
               @click="selectedWidgetId = widget.id"
             >
-              <span class="widget-icon" v-html="widgetPanelIcon"></span>
+              <span class="widget-icon" v-html="monitorWidgetIcon"></span>
               <span class="asset-item-title">{{ widget.name }}</span>
             </button>
             <button class="asset-add-button" type="button" aria-label="Add widget">+</button>
@@ -4378,8 +4379,7 @@ onBeforeUnmount(() => {
   object-fit: contain;
 }
 
-.sound-asset-item,
-.widget-asset-item {
+.sound-asset-item {
   justify-content: flex-start;
   gap: 0;
 }
@@ -4412,19 +4412,18 @@ onBeforeUnmount(() => {
 }
 
 .widget-icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-primary-100);
-  color: var(--ui-color-primary-main);
+  margin: 10px 0 12px;
+  color: var(--ui-color-grey-800);
 }
 
 .widget-icon :deep(svg) {
-  width: 30px;
-  height: 30px;
+  width: 100%;
+  height: 100%;
   display: block;
 }
 

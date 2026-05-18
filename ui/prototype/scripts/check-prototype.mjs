@@ -48,6 +48,7 @@ const editorEyeOffIcon = read('src/assets/editor/ui-icons/eye-off.svg')
 const editorPlusIcon = read('src/assets/editor/ui-icons/plus.svg')
 const editorPublishIcon = read('src/assets/editor/ui-icons/publish.svg')
 const editorLoadingIcon = read('src/assets/editor/ui-icons/loading.svg')
+const editorMonitorIcon = read('src/assets/editor/widget/monitor.svg')
 const projectRunner = read('src/components/project/ProjectRunner.vue')
 const prototypeButton = read('src/components/ui/UIButton.vue')
 const copilot = read('src/components/copilot/Copilot.vue')
@@ -95,6 +96,7 @@ for (const requiredFile of [
   'src/assets/editor/ui-icons/plus.svg',
   'src/assets/editor/ui-icons/publish.svg',
   'src/assets/editor/ui-icons/loading.svg',
+  'src/assets/editor/widget/monitor.svg',
   'src/components/project/ProjectRunner.vue',
   'src/components/editor/SpriteItem.vue',
   'src/components/ui/UICardHeader.vue',
@@ -394,6 +396,21 @@ if (
   /\\.editor-asset-item\\s+span\\s*\\{/.test(editorPage)
 ) {
   failures.push('editor sound asset item must preserve the UIEditorSoundItem player size and scope text styles to the title only')
+}
+
+if (
+  !editorPage.includes("import monitorWidgetIcon from '@/assets/editor/widget/monitor.svg?raw'") ||
+  !editorPage.includes('class="editor-asset-item widget-asset-item"') ||
+  !editorPage.includes('class="widget-icon" v-html="monitorWidgetIcon"') ||
+  !editorPage.includes('class="asset-item-title">{{ widget.name }}</span>') ||
+  !editorPage.includes('.widget-icon {\n  width: 40px;\n  height: 40px;') ||
+  !editorPage.includes('margin: 10px 0 12px;') ||
+  !editorPage.includes('.widget-icon :deep(svg) {\n  width: 100%;\n  height: 100%;') ||
+  editorPage.includes('.widget-icon {\n  width: 44px;') ||
+  /\\.widget-icon\\s*\\{[^}]*background: var\\(--ui-color-primary-100\\);/s.test(editorPage) ||
+  !editorMonitorIcon.includes('M27.8989 5.90625')
+) {
+  failures.push('editor widget asset item must mirror UIEditorWidgetItem with the monitor icon and component icon sizing')
 }
 
 if (
