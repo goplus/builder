@@ -347,8 +347,12 @@ if (
 if (
   !editorPage.includes('.stage-thumb.active {') ||
   !editorPage.includes('background: var(--ui-color-primary-200);') ||
-  !editorPage.includes('margin: 8px 0 10px;') ||
-  !editorPage.includes('padding: 5px 8px;') ||
+  !editorPage.includes('width: 56px;') ||
+  !editorPage.includes('height: 56px;') ||
+  !editorPage.includes('margin: 12px 0;') ||
+  !editorPage.includes('width: 44px;') ||
+  !editorPage.includes('height: 44px;') ||
+  !editorPage.includes('.stage-thumb:hover:not(.active)') ||
   !editorPage.includes('.stage-entry.active {\n  color: var(--ui-color-primary-main);') ||
   !editorPage.includes('.stage-entry:hover:not(.active)') ||
   !editorPage.includes('.stage-entry-icon {\n  width: 24px;\n  height: 24px;') ||

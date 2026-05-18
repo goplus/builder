@@ -5672,26 +5672,34 @@ onBeforeUnmount(() => {
 }
 
 .stage-thumb {
-  width: 40px;
-  height: 40px;
-  margin: 8px 0 10px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0;
   border: 1px solid var(--ui-color-grey-400);
   border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-grey-100);
-  padding: 3px;
+  padding: 2px;
+  cursor: pointer;
   transition: border-color 0.1s, background 0.1s;
 }
 
 .stage-thumb.active {
   border: 2px solid var(--ui-color-primary-main);
   background: var(--ui-color-primary-200);
-  padding: 2px;
+  padding: 0;
+}
+
+.stage-thumb:hover:not(.active) {
+  background: var(--ui-color-grey-300);
 }
 
 .stage-thumb img {
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
   object-fit: cover;
 }
 
