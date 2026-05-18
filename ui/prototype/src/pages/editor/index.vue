@@ -1346,17 +1346,17 @@ onBeforeUnmount(() => {
         </header>
 
         <div v-if="activeEditorTarget === 'sprite' && activeEditorTab === 'code'" class="code-body">
-          <aside class="category-rail" aria-label="Code categories">
+          <aside class="category-rail flex flex-none flex-col gap-3 border-r border-grey-400 px-1 py-3" aria-label="Code categories">
             <button
               v-for="category in codeCategories"
               :key="category.id"
-              class="category"
-              :class="{ active: activeCodeCategory === category.id }"
+              class="category flex h-13 w-13 cursor-pointer flex-col items-center justify-center rounded-md border-0 text-2xs transition-colors duration-100"
+              :class="activeCodeCategory === category.id ? 'bg-grey-400 text-grey-1000' : 'bg-transparent text-grey-800 hover:bg-grey-300'"
               type="button"
               @click="selectCodeCategory(category.id)"
             >
-              <img class="category-icon" :src="category.icon" alt="" />
-              <span>{{ category.label }}</span>
+              <img class="block h-6 w-6" :src="category.icon" alt="" />
+              <span class="mt-0.5 text-center">{{ category.label }}</span>
             </button>
           </aside>
 
@@ -1499,16 +1499,16 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-else-if="activeStageTab === 'code'" class="code-body">
-          <aside class="category-rail" aria-label="Code categories">
+          <aside class="category-rail flex flex-none flex-col gap-3 border-r border-grey-400 px-1 py-3" aria-label="Code categories">
             <button
               v-for="category in codeCategories"
               :key="`stage-${category.id}`"
-              class="category"
-              :class="{ active: category.id === 'event' }"
+              class="category flex h-13 w-13 cursor-pointer flex-col items-center justify-center rounded-md border-0 text-2xs transition-colors duration-100"
+              :class="category.id === 'event' ? 'bg-grey-400 text-grey-1000' : 'bg-transparent text-grey-800 hover:bg-grey-300'"
               type="button"
             >
-              <img class="category-icon" :src="category.icon" alt="" />
-              <span>{{ category.label }}</span>
+              <img class="block h-6 w-6" :src="category.icon" alt="" />
+              <span class="mt-0.5 text-center">{{ category.label }}</span>
             </button>
           </aside>
 
@@ -3785,37 +3785,6 @@ onBeforeUnmount(() => {
   100% {
     opacity: 0;
   }
-}
-
-.category-rail {
-  border-right: 1px solid var(--ui-color-grey-400);
-  padding: 13px 4px;
-}
-
-.category {
-  width: 52px;
-  height: 52px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: var(--ui-color-grey-800);
-  font-size: 12px;
-}
-
-.category.active {
-  background: var(--ui-color-grey-300);
-  color: var(--ui-color-grey-1000);
-}
-
-.category-icon {
-  width: 20px;
-  height: 20px;
-  display: block;
 }
 
 .events-list {

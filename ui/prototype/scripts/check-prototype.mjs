@@ -290,6 +290,17 @@ if (
   failures.push('editor tabs must use the local prototype tab component mirroring UITab states and typography')
 }
 
+if (
+  !editorPage.includes('category-rail flex flex-none flex-col gap-3 border-r border-grey-400 px-1 py-3') ||
+  !editorPage.includes('category flex h-13 w-13 cursor-pointer flex-col items-center justify-center rounded-md') ||
+  !editorPage.includes("'bg-grey-400 text-grey-1000'") ||
+  !editorPage.includes("'bg-transparent text-grey-800 hover:bg-grey-300'") ||
+  editorPage.includes('.category-rail {') ||
+  editorPage.includes('.category.active')
+) {
+  failures.push('editor code category rail must mirror APIReferenceUI spacing and states with Tailwind utilities')
+}
+
 if (!editorPage.includes('.editor-navbar') || !editorPage.includes('background: var(--ui-color-grey-300);')) {
   failures.push('editor navbar must use the real grey-300 background token')
 }
