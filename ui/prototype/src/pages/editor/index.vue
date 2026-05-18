@@ -214,6 +214,12 @@ const projectNameEditing = ref(false)
 const projectMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileLanguage = ref<'English' | '中文'>('English')
+const publishModalOpen = ref(false)
+const publishSubmitting = ref(false)
+const publishStatusMessage = ref('')
+const draftReleaseDescription = ref('Adjusted movement timing and refreshed the local thumbnail.')
+const draftProjectDescription = ref(project.value.description)
+const draftProjectInstructions = ref(project.value.instructions ?? '')
 const addSpriteMenuOpen = ref(false)
 const addCostumeMenuOpen = ref(false)
 const addAnimationMenuOpen = ref(false)
@@ -268,6 +274,7 @@ const spriteMenuRef = ref<HTMLElement>()
 const mapSpriteNameInputRef = ref<HTMLInputElement>()
 const spriteRenameInputRef = ref<HTMLInputElement>()
 const saveStateTimeouts: number[] = []
+let publishTimer: number | null = null
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -726,6 +733,8 @@ watch(
   (nextProject) => {
     projectDisplayName.value = nextProject.title
     draftProjectDisplayName.value = nextProject.title
+    draftProjectDescription.value = nextProject.description
+    draftProjectInstructions.value = nextProject.instructions ?? ''
     syncProjectSelection(editorProjectData.value)
   },
   { immediate: true }
@@ -782,7 +791,7 @@ const projectMenuGroups = [
   ],
   [{ id: 'export-project', label: 'Export project file', icon: exportProjectIcon, action: markPrototypeAction }],
   [
-    { id: 'publish-project', label: 'Publish project...', icon: publishIcon, action: markPrototypeAction },
+    { id: 'publish-project', label: 'Publish project...', icon: publishIcon, action: openPublishModal },
     { id: 'project-page', label: 'Open project page', icon: projectPageIcon, action: openProjectPage },
     { id: 'modify-project-name', label: 'Modify project name', icon: modifyProjectNameIcon, action: startProjectNameEdit }
   ],
@@ -1027,6 +1036,31 @@ function toggleProjectMenu() {
 
 function closeProjectMenu() {
   projectMenuOpen.value = false
+}
+
+function openPublishModal() {
+  draftReleaseDescription.value = 'Adjusted movement timing and refreshed the local thumbnail.'
+  draftProjectDescription.value = project.value.description
+  draftProjectInstructions.value = project.value.instructions ?? ''
+  publishStatusMessage.value = ''
+  publishModalOpen.value = true
+}
+
+function cancelPublishProject() {
+  if (publishSubmitting.value) return
+  publishModalOpen.value = false
+}
+
+function submitPublishProject() {
+  if (draftReleaseDescription.value.trim() === '' || publishSubmitting.value) return
+  publishSubmitting.value = true
+  publishTimer = window.setTimeout(() => {
+    publishTimer = null
+    publishSubmitting.value = false
+    publishModalOpen.value = false
+    publishStatusMessage.value = `Published ${projectDisplayName.value} to the local prototype.`
+    simulateAutoSave()
+  }, 700)
 }
 
 function toggleProfileMenu() {
@@ -1642,6 +1676,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
   snippetDragState?.target.classList.remove('dragging')
   snippetDragState = null
+  if (publishTimer != null) window.clearTimeout(publishTimer)
   clearSaveStateTimeouts()
 })
 </script>
@@ -2316,7 +2351,7 @@ onBeforeUnmount(() => {
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
                 Run
               </button>
-              <button class="publish-button" type="button">
+              <button class="publish-button" type="button" @click="openPublishModal">
                 <span class="button-icon" aria-hidden="true" v-html="publishActionIcon"></span>
                 Publish
               </button>
@@ -2479,6 +2514,9 @@ onBeforeUnmount(() => {
               </div>
             </template>
             <ProjectRunner v-show="runnerActive" ref="runnerRef" :project="project" :show-controls="false" />
+          </div>
+          <div v-if="publishStatusMessage !== ''" class="publish-toast" role="status">
+            {{ publishStatusMessage }}
           </div>
         </section>
 
@@ -2932,6 +2970,56 @@ onBeforeUnmount(() => {
             <UIButton type="white" size="medium" @click="cancelSpriteGenModal">Cancel</UIButton>
             <UIButton type="primary" size="medium" :disabled="!spriteGenGenerated" @click="useGeneratedSprite">Use</UIButton>
           </footer>
+        </section>
+      </div>
+    </Teleport>
+    <Teleport to="body">
+      <div v-if="publishModalOpen" class="prototype-modal-backdrop" role="presentation" @click.self="cancelPublishProject">
+        <section class="prototype-modal publish-modal" role="dialog" aria-modal="true" aria-labelledby="publish-project-title">
+          <h2 id="publish-project-title">Publish {{ projectDisplayName }}</h2>
+          <p>Published projects will be visible to all XBuilder users.</p>
+          <div class="publish-preview">
+            <img :src="project.thumbnail" :alt="projectDisplayName" />
+          </div>
+          <form class="prototype-form publish-form" @submit.prevent="submitPublishProject">
+            <label class="prototype-field">
+              <span>Release description</span>
+              <textarea
+                v-model="draftReleaseDescription"
+                aria-label="Release description"
+                placeholder="What is new in this release?"
+                required
+              ></textarea>
+            </label>
+            <label class="prototype-field">
+              <span>Project description</span>
+              <textarea
+                v-model="draftProjectDescription"
+                aria-label="Project description"
+                placeholder="What is this project about? How did you make it?"
+              ></textarea>
+            </label>
+            <label class="prototype-field">
+              <span>Play instructions</span>
+              <textarea
+                v-model="draftProjectInstructions"
+                aria-label="Play instructions"
+                placeholder="Tell others how to play in your project"
+              ></textarea>
+            </label>
+            <footer class="prototype-modal-actions">
+              <UIButton type="white" size="medium" :disabled="publishSubmitting" @click="cancelPublishProject">Cancel</UIButton>
+              <UIButton
+                type="primary"
+                size="medium"
+                :loading="publishSubmitting"
+                :disabled="draftReleaseDescription.trim() === ''"
+                @click="submitPublishProject"
+              >
+                Publish
+              </UIButton>
+            </footer>
+          </form>
         </section>
       </div>
     </Teleport>
@@ -3473,6 +3561,29 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: 16px;
   margin-top: 40px;
+}
+
+.publish-modal {
+  max-height: min(760px, calc(100vh - 48px));
+  overflow-y: auto;
+}
+
+.publish-preview {
+  height: 180px;
+  overflow: hidden;
+  margin: 20px 0;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-300);
+}
+
+.publish-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.publish-form {
+  gap: 16px;
 }
 
 .sprite-gen-modal {
@@ -5161,6 +5272,20 @@ onBeforeUnmount(() => {
 .publish-button {
   background: var(--ui-color-primary-100);
   color: var(--ui-color-primary-main);
+}
+
+.publish-toast {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 3;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 8px 12px;
+  color: var(--ui-color-grey-1000);
+  font-size: 13px;
+  line-height: 18px;
+  box-shadow: var(--ui-box-shadow-sm);
 }
 
 .stage-frame {

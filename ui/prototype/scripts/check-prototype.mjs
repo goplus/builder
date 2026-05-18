@@ -530,12 +530,33 @@ if (
 if (
   !editorPage.includes("import publishActionIcon from '@/assets/editor/ui-icons/publish.svg?raw'") ||
   !editorPage.includes('<span class="button-icon" aria-hidden="true" v-html="publishActionIcon"></span>') ||
+  !editorPage.includes('@click="openPublishModal"') ||
   !editorPage.includes('.button-icon,\n.button-icon :deep(svg)') ||
   !editorPage.includes('width: 16px;\n  height: 16px;') ||
   !editorPublishIcon.includes('M12.0458 1.81972') ||
   editorPage.includes('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-7 18-4-8-8-4 19-6Z" /></svg>')
 ) {
   failures.push('editor publish action must use the copied UIIcon publish asset without hand-drawn stroke SVG')
+}
+
+if (
+  !editorPage.includes('const publishModalOpen = ref(false)') ||
+  !editorPage.includes('const publishSubmitting = ref(false)') ||
+  !editorPage.includes('function openPublishModal()') ||
+  !editorPage.includes('function submitPublishProject()') ||
+  !editorPage.includes("action: openPublishModal") ||
+  !editorPage.includes('role="dialog" aria-modal="true" aria-labelledby="publish-project-title"') ||
+  !editorPage.includes('Publish {{ projectDisplayName }}') ||
+  !editorPage.includes('aria-label="Release description"') ||
+  !editorPage.includes('aria-label="Project description"') ||
+  !editorPage.includes('aria-label="Play instructions"') ||
+  !editorPage.includes(':loading="publishSubmitting"') ||
+  !editorPage.includes('class="publish-toast" role="status"') ||
+  !editorPage.includes('Published projects will be visible to all XBuilder users.') ||
+  !editorPage.includes('.publish-modal {') ||
+  !editorPage.includes('.publish-preview {')
+) {
+  failures.push('editor publish action must open a local project publish modal and complete with feedback')
 }
 
 if (
