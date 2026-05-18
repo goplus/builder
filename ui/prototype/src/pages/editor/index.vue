@@ -46,6 +46,8 @@ import weatherggggBackdropUrl from '@/assets/projects/weathergggg/editor/urban1.
 import jaimeUrl from '@/assets/projects/weathergggg/editor/jaime.png'
 import kaiUrl from '@/assets/projects/weathergggg/editor/kai.png'
 
+const backQuickIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>'
+
 const props = defineProps<{
   ownerNameInput: string
   projectNameInput: string
@@ -59,6 +61,7 @@ type SpriteCard = {
   shortName: string
   image: string
   hidden: boolean
+  size: number
 }
 
 type SnippetPart = {
@@ -75,6 +78,7 @@ type EditorTarget = 'sprite' | 'stage'
 type EditorTab = 'code' | 'costumes' | 'animations'
 type StageTab = 'code' | 'backdrops' | 'sounds' | 'widgets'
 type EditMode = 'default' | 'map'
+type QuickConfigType = 'default' | 'position' | 'rotation' | 'size' | 'layer'
 type SaveState = 'saved' | 'pending' | 'saving' | 'failed' | 'offline'
 type CodeCategoryId = 'event' | 'look' | 'motion' | 'control' | 'sensing' | 'sound' | 'game'
 
@@ -124,6 +128,7 @@ const activeEditorTab = ref<EditorTab>('code')
 const activeStageTab = ref<StageTab>('code')
 const activeCodeCategory = ref<CodeCategoryId>('event')
 const activeEditMode = ref<EditMode>('default')
+const activeQuickConfig = ref<QuickConfigType>('default')
 const projectDisplayName = ref(project.value.title)
 const draftProjectDisplayName = ref(project.value.title)
 const projectNameEditing = ref(false)
@@ -274,28 +279,32 @@ const niuRunSprites = ref<SpriteCard[]>([
     name: '牛小七',
     shortName: '牛小七',
     image: niuXiaoQiUrl,
-    hidden: false
+    hidden: false,
+    size: 100
   },
   {
     id: 'niu-xiao-hua',
     name: '牛小花牛小花牛小花牛小花牛小花牛小花',
     shortName: '牛小花牛小花...',
     image: niuXiaoHuaUrl,
-    hidden: false
+    hidden: false,
+    size: 100
   },
   {
     id: 'flower',
     name: '花朵花朵花朵花朵花朵花朵花朵花朵花朵',
     shortName: '花朵花...',
     image: flowerUrl,
-    hidden: true
+    hidden: true,
+    size: 100
   },
   {
     id: 'tornado',
     name: '龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风',
     shortName: '龙卷风...',
     image: tornadoUrl,
-    hidden: true
+    hidden: true,
+    size: 100
   }
 ])
 
@@ -366,14 +375,16 @@ const weatherggggSprites = ref<SpriteCard[]>([
     name: 'Jaime',
     shortName: 'Jaime',
     image: jaimeUrl,
-    hidden: false
+    hidden: false,
+    size: 100
   },
   {
     id: 'kai',
     name: 'Kai',
     shortName: 'Kai',
     image: kaiUrl,
-    hidden: false
+    hidden: false,
+    size: 100
   }
 ])
 
@@ -474,7 +485,7 @@ const stageEntries: Array<{ id: Exclude<StageTab, 'code'>; label: string; icon: 
   { id: 'widgets', label: 'Widgets', icon: widgetPanelIcon }
 ]
 
-const quickConfigTools = [
+const quickConfigTools: Array<{ id: QuickConfigType; label: string; icon: string }> = [
   { id: 'position', label: 'Position', icon: positionQuickIcon },
   { id: 'rotation', label: 'Rotation', icon: rotateQuickIcon },
   { id: 'size', label: 'Size', icon: resizeQuickIcon },
@@ -485,6 +496,9 @@ const selectedSprite = computed(() => sprites.value.find((sprite) => sprite.id =
 const selectedMapSprite = computed(() => sprites.value.find((sprite) => sprite.id === selectedMapSpriteId.value) ?? sprites.value[0])
 const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
 const stageBackdrop = computed(() => selectedBackdrop.value?.image ?? project.value.thumbnail)
+const selectedSpriteFrameStyle = computed(() => ({
+  transform: `scale(${(selectedSprite.value?.size ?? 100) / 100})`
+}))
 const mapWorkspaceStyle = computed(() => ({ backgroundImage: `url(${stageBgUrl})` }))
 const mapStageStyle = computed(() => ({ backgroundImage: `url(${stageBackdrop.value})` }))
 const stageCompanionSprite = computed(() => sprites.value.find((sprite) => sprite.id !== selectedSprite.value?.id))
@@ -597,6 +611,7 @@ function selectSprite(id = selectedSpriteId.value) {
   activeEditorTarget.value = 'sprite'
   selectedSpriteId.value = id
   spriteMenuOpenFor.value = null
+  activeQuickConfig.value = 'default'
 }
 
 function selectStage(tab: StageTab = 'code') {
@@ -606,6 +621,26 @@ function selectStage(tab: StageTab = 'code') {
 
 function selectEditMode(mode: EditMode) {
   activeEditMode.value = mode
+  activeQuickConfig.value = 'default'
+}
+
+function openQuickConfig(type: QuickConfigType) {
+  if (type === 'layer') {
+    markPrototypeAction()
+    return
+  }
+  activeQuickConfig.value = type
+}
+
+function backToDefaultQuickConfig() {
+  activeQuickConfig.value = 'default'
+}
+
+function updateSelectedSpriteSize(event: Event) {
+  const nextSize = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextSize) || selectedSprite.value == null) return
+  selectedSprite.value.size = Math.max(1, Math.min(400, Math.round(nextSize)))
+  markPrototypeAction()
 }
 
 function selectMapSprite(spriteId: string) {
@@ -702,7 +737,8 @@ function addLocalSprite(source: 'local' | 'library' | 'ai') {
     name: preset.name,
     shortName: preset.name.length > 10 ? `${preset.name.slice(0, 8)}...` : preset.name,
     image: preset.image,
-    hidden: false
+    hidden: false,
+    size: 100
   }
   sprites.value.push(sprite)
   selectedSpriteId.value = sprite.id
@@ -1343,7 +1379,7 @@ onBeforeUnmount(() => {
             <template v-if="!runnerActive">
               <img class="stage-backdrop" :src="stageBackdrop" alt="" />
               <img v-if="stageCompanionSprite != null" class="stage-sprite cow-flower" :src="stageCompanionSprite.image" alt="" />
-              <div v-if="selectedSprite != null" class="selected-sprite">
+              <div v-if="selectedSprite != null" class="selected-sprite" :style="selectedSpriteFrameStyle">
                 <img :src="selectedSprite.image" alt="" />
                 <span class="coordinate">-224, 74</span>
                 <span class="handle left"></span>
@@ -1351,10 +1387,42 @@ onBeforeUnmount(() => {
                 <span class="corner bottom-left"></span>
                 <span class="corner top-right"></span>
               </div>
-              <div class="stage-tools">
-                <button v-for="tool in quickConfigTools" :key="tool.id" type="button" :aria-label="tool.label">
-                  <span v-html="tool.icon"></span>
-                </button>
+              <div class="stage-tools" :class="{ expanded: activeQuickConfig !== 'default' }">
+                <template v-if="activeQuickConfig === 'default'">
+                  <button
+                    v-for="tool in quickConfigTools"
+                    :key="tool.id"
+                    type="button"
+                    :aria-label="tool.label"
+                    @click="openQuickConfig(tool.id)"
+                  >
+                    <span v-html="tool.icon"></span>
+                  </button>
+                </template>
+                <template v-else-if="activeQuickConfig === 'size' && selectedSprite != null">
+                  <label class="quick-config-input">
+                    <span>Size</span>
+                    <input
+                      :value="selectedSprite.size"
+                      type="number"
+                      inputmode="numeric"
+                      min="1"
+                      max="400"
+                      aria-label="Size input"
+                      @input="updateSelectedSpriteSize"
+                    />
+                    <span>%</span>
+                  </label>
+                  <span class="quick-config-divider" aria-hidden="true"></span>
+                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
+                    <span v-html="backQuickIcon"></span>
+                  </button>
+                </template>
+                <template v-else>
+                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
+                    <span v-html="backQuickIcon"></span>
+                  </button>
+                </template>
               </div>
             </template>
             <PrototypeProjectRunner v-show="runnerActive" ref="runnerRef" :project="project" :show-controls="false" />
@@ -3402,6 +3470,7 @@ onBeforeUnmount(() => {
   width: 105px;
   height: 105px;
   border: 1px solid var(--ui-color-primary-main);
+  transform-origin: center;
 }
 
 .selected-sprite img {
@@ -3467,6 +3536,11 @@ onBeforeUnmount(() => {
   box-shadow: var(--ui-box-shadow-lg);
 }
 
+.stage-tools.expanded {
+  gap: 4px;
+  padding: 4px;
+}
+
 .stage-tools button {
   width: 32px;
   height: 32px;
@@ -3478,6 +3552,51 @@ onBeforeUnmount(() => {
 
 .stage-tools button:hover {
   background: var(--ui-color-turquoise-200);
+}
+
+.quick-config-input {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-300);
+  padding: 0 8px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.quick-config-input input {
+  width: 44px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--ui-border-radius-sm);
+  background: var(--ui-color-grey-100);
+  color: var(--ui-color-grey-1000);
+  text-align: center;
+  font: inherit;
+  outline: none;
+}
+
+.quick-config-input input:focus {
+  box-shadow: var(--ui-box-shadow-control);
+}
+
+.quick-config-input input::-webkit-outer-spin-button,
+.quick-config-input input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.quick-config-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--ui-color-grey-400);
+}
+
+.quick-config-back {
+  color: var(--ui-color-grey-1000);
 }
 
 .stage-tools button span,
