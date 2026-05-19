@@ -60,6 +60,8 @@ const prototypeTag = read('src/components/ui/UITag.vue')
 const prototypeTab = read('src/components/ui/UITab.vue')
 const prototypeSpriteItem = read('src/components/editor/SpriteItem.vue')
 const prototypeCardHeader = read('src/components/ui/UICardHeader.vue')
+const publishProjectModal = read('src/components/editor/PublishProjectModal.vue')
+const spriteGeneratorModal = read('src/components/editor/SpriteGeneratorModal.vue')
 
 for (const route of [
   '/',
@@ -102,6 +104,8 @@ for (const requiredFile of [
   'src/assets/editor/widget/monitor.svg',
   'src/components/project/ProjectRunner.vue',
   'src/components/editor/SpriteItem.vue',
+  'src/components/editor/PublishProjectModal.vue',
+  'src/components/editor/SpriteGeneratorModal.vue',
   'src/components/ui/UICardHeader.vue',
   'src/components/community/home/GuestBanner.vue',
   'src/pages/community/index.vue',
@@ -592,21 +596,26 @@ if (
 }
 
 if (
+  !editorPage.includes("import PublishProjectModal from '@/components/editor/PublishProjectModal.vue'") ||
   !editorPage.includes('const publishModalOpen = ref(false)') ||
   !editorPage.includes('const publishSubmitting = ref(false)') ||
   !editorPage.includes('function openPublishModal()') ||
   !editorPage.includes('function submitPublishProject()') ||
   !editorPage.includes("action: openPublishModal") ||
-  !editorPage.includes('role="dialog" aria-modal="true" aria-labelledby="publish-project-title"') ||
-  !editorPage.includes('Publish {{ projectDisplayName }}') ||
-  !editorPage.includes('aria-label="Release description"') ||
-  !editorPage.includes('aria-label="Project description"') ||
-  !editorPage.includes('aria-label="Play instructions"') ||
-  !editorPage.includes(':loading="publishSubmitting"') ||
+  !editorPage.includes('<PublishProjectModal') ||
+  !editorPage.includes('@publish="submitPublishProject"') ||
+  !publishProjectModal.includes('role="dialog"') ||
+  !publishProjectModal.includes('aria-modal="true"') ||
+  !publishProjectModal.includes('aria-labelledby="publish-project-title"') ||
+  !publishProjectModal.includes('Publish {{ projectDisplayName }}') ||
+  !publishProjectModal.includes('aria-label="Release description"') ||
+  !publishProjectModal.includes('aria-label="Project description"') ||
+  !publishProjectModal.includes('aria-label="Play instructions"') ||
+  !publishProjectModal.includes(':loading="submitting"') ||
   !editorPage.includes('class="publish-toast" role="status"') ||
-  !editorPage.includes('Published projects will be visible to all XBuilder users.') ||
-  !editorPage.includes('.publish-modal {') ||
-  !editorPage.includes('.publish-preview {')
+  !publishProjectModal.includes('Published projects will be visible to all XBuilder users.') ||
+  !publishProjectModal.includes('.publish-modal {') ||
+  !publishProjectModal.includes('.publish-preview {')
 ) {
   failures.push('editor publish action must open a local project publish modal and complete with feedback')
 }
@@ -705,23 +714,30 @@ if (
 }
 
 if (
+  !editorPage.includes("import SpriteGeneratorModal, { type SpriteGeneratorResult } from '@/components/editor/SpriteGeneratorModal.vue'") ||
   !editorPage.includes('const spriteGenModalOpen = ref(false)') ||
-  !editorPage.includes('const spriteGenDescription = ref') ||
-  !editorPage.includes('const generatedSpriteCandidates = [') ||
   !editorPage.includes('function openSpriteGenModal()') ||
-  !editorPage.includes('function generateSpriteCandidates()') ||
-  !editorPage.includes('function useGeneratedSprite()') ||
+  !editorPage.includes('function addGeneratedSprite(result: SpriteGeneratorResult)') ||
+  !editorPage.includes('<SpriteGeneratorModal') ||
+  !editorPage.includes('@add-sprite="addGeneratedSprite"') ||
   !editorPage.includes('@click="openSpriteGenModal"') ||
-  !editorPage.includes('role="dialog" aria-modal="true" aria-labelledby="sprite-gen-title"') ||
-  !editorPage.includes('Sprite Generator') ||
-  !editorPage.includes('aria-label="Sprite description"') ||
-  !editorPage.includes('Generated sprite candidates') ||
-  !editorPage.includes("class=\"sprite-gen-body\" :class=\"{ 'has-preview': spriteGenGenerated }\"") ||
-  !editorPage.includes('class="sprite-gen-main-panel"') ||
-  !editorPage.includes('class="sprite-gen-preview-panel"') ||
-  editorPage.includes('Generated sprite candidates will appear here.') ||
-  !editorPage.includes('style="width: 1076px; height: 800px"') ||
-  !editorPage.includes('selectedGeneratedSpriteIndex') ||
+  !spriteGeneratorModal.includes('role="dialog"') ||
+  !spriteGeneratorModal.includes('aria-modal="true"') ||
+  !spriteGeneratorModal.includes('aria-labelledby="sprite-gen-title"') ||
+  !spriteGeneratorModal.includes('Sprite Generator') ||
+  !spriteGeneratorModal.includes('aria-label="Sprite description"') ||
+  !spriteGeneratorModal.includes('Generated sprite candidates') ||
+  !spriteGeneratorModal.includes('class="sprite-gen-body"') ||
+  !spriteGeneratorModal.includes(":class=\"{ 'has-preview': generated }\"") ||
+  !spriteGeneratorModal.includes('class="sprite-gen-main-panel"') ||
+  !spriteGeneratorModal.includes('class="sprite-gen-preview-panel"') ||
+  !spriteGeneratorModal.includes('Generated sprite content editor') ||
+  !spriteGeneratorModal.includes('Costume') ||
+  !spriteGeneratorModal.includes('Animation') ||
+  !spriteGeneratorModal.includes('Minimize') ||
+  spriteGeneratorModal.includes('Generated sprite candidates will appear here.') ||
+  !spriteGeneratorModal.includes('style="width: 1076px; height: 800px"') ||
+  !spriteGeneratorModal.includes('selectedIndex') ||
   editorPage.includes("addLocalSprite('ai')")
 ) {
   failures.push('editor Generate with AI menu item must open a local sprite generator modal and add a generated sprite')
