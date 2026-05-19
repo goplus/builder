@@ -3,6 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type CSSPro
 import { useRouter } from 'vue-router'
 
 import { getProject } from '@/apis/project'
+import PublishProjectModal from '@/components/editor/PublishProjectModal.vue'
+import SpriteGeneratorModal, { type SpriteGeneratorResult } from '@/components/editor/SpriteGeneratorModal.vue'
 import SpriteItem from '@/components/editor/SpriteItem.vue'
 import ProjectRunner from '@/components/project/ProjectRunner.vue'
 import UIButton from '@/components/ui/UIButton.vue'
@@ -40,7 +42,6 @@ import arrowMiniIcon from '@/assets/navbar-icons/arrow-mini.svg?raw'
 import exportProjectIcon from '@/assets/editor/navbar-icons/export-project.svg'
 import editIcon from '@/assets/editor/quick-config/edit.svg?raw'
 import arrowDownIcon from '@/assets/editor/ui-icons/arrow-down.svg?raw'
-import closeIcon from '@/assets/editor/ui-icons/close.svg?raw'
 import settingSoundIcon from '@/assets/editor/ui-icons/sound.svg?raw'
 import settingStatusIcon from '@/assets/editor/ui-icons/status.svg?raw'
 import settingTimerIcon from '@/assets/editor/ui-icons/timer.svg?raw'
@@ -255,9 +256,6 @@ const profileLanguage = ref<'English' | '中文'>('English')
 const publishModalOpen = ref(false)
 const publishSubmitting = ref(false)
 const publishStatusMessage = ref('')
-const draftReleaseDescription = ref('Adjusted movement timing and refreshed the local thumbnail.')
-const draftProjectDescription = ref(project.value.description)
-const draftProjectInstructions = ref(project.value.instructions ?? '')
 const addSpriteMenuOpen = ref(false)
 const addCostumeMenuOpen = ref(false)
 const addAnimationMenuOpen = ref(false)
@@ -269,12 +267,6 @@ const spritePendingRename = ref<SpriteCard | null>(null)
 const draftSpriteRenameName = ref('')
 const spriteRenameError = ref('')
 const spriteGenModalOpen = ref(false)
-const spriteGenDescription = ref('')
-const spriteGenCategory = ref('Character')
-const spriteGenStyle = ref('Cartoon')
-const spriteGenPerspective = ref('Side')
-const spriteGenGenerated = ref(false)
-const selectedGeneratedSpriteIndex = ref(0)
 const spriteMenuOpenFor = ref<string | null>(null)
 const spriteMenuPosition = ref({ top: 0, left: 0 })
 const addCostumeMenuPosition = ref({ top: 0, left: 0 })
@@ -693,12 +685,6 @@ const stageEntries: Array<{ id: Exclude<StageTab, 'code'>; label: string; icon: 
   { id: 'widgets', label: 'Widgets', icon: widgetPanelIcon }
 ]
 
-const generatedSpriteCandidates = [
-  { name: 'Generated flower sprite', image: flowerUrl },
-  { name: 'Generated calf sprite', image: niuXiaoQiUrl },
-  { name: 'Generated windy sprite', image: tornadoUrl }
-]
-
 const quickConfigTools: Array<{ id: QuickConfigType; label: string; icon: string }> = [
   { id: 'position', label: 'Position', icon: positionQuickIcon },
   { id: 'rotation', label: 'Rotation', icon: rotateQuickIcon },
@@ -798,8 +784,6 @@ watch(
   (nextProject) => {
     projectDisplayName.value = nextProject.title
     draftProjectDisplayName.value = nextProject.title
-    draftProjectDescription.value = nextProject.description
-    draftProjectInstructions.value = nextProject.instructions ?? ''
     syncProjectSelection(editorProjectData.value)
   },
   { immediate: true }
@@ -1222,9 +1206,6 @@ function closeProjectMenu() {
 }
 
 function openPublishModal() {
-  draftReleaseDescription.value = 'Adjusted movement timing and refreshed the local thumbnail.'
-  draftProjectDescription.value = project.value.description
-  draftProjectInstructions.value = project.value.instructions ?? ''
   publishStatusMessage.value = ''
   publishModalOpen.value = true
 }
@@ -1235,7 +1216,7 @@ function cancelPublishProject() {
 }
 
 function submitPublishProject() {
-  if (draftReleaseDescription.value.trim() === '' || publishSubmitting.value) return
+  if (publishSubmitting.value) return
   publishSubmitting.value = true
   publishTimer = window.setTimeout(() => {
     publishTimer = null
@@ -1484,12 +1465,6 @@ function addLocalSprite(source: 'local' | 'library') {
 
 function openSpriteGenModal() {
   spriteGenModalOpen.value = true
-  spriteGenDescription.value = ''
-  spriteGenCategory.value = 'Character'
-  spriteGenStyle.value = 'Cartoon'
-  spriteGenPerspective.value = 'Side'
-  spriteGenGenerated.value = false
-  selectedGeneratedSpriteIndex.value = 0
   closeAddSpriteMenu()
 }
 
@@ -1497,19 +1472,10 @@ function cancelSpriteGenModal() {
   spriteGenModalOpen.value = false
 }
 
-function generateSpriteCandidates() {
-  if (spriteGenDescription.value.trim() === '') return
-  spriteGenGenerated.value = true
-  selectedGeneratedSpriteIndex.value = 0
-}
-
-function useGeneratedSprite() {
-  if (!spriteGenGenerated.value) return
-  const selected = generatedSpriteCandidates[selectedGeneratedSpriteIndex.value] ?? generatedSpriteCandidates[0]
+function addGeneratedSprite(result: SpriteGeneratorResult) {
   const nextIndex = sprites.value.length + 1
-  const description = spriteGenDescription.value.trim()
-  const name = description !== '' ? description : selected.name
-  appendSprite(createSpriteCard('ai', `${name} ${nextIndex}`, selected.image))
+  const name = result.description !== '' ? result.description : result.candidate.name
+  appendSprite(createSpriteCard('ai', `${name} ${nextIndex}`, result.candidate.image))
   spriteGenModalOpen.value = false
 }
 
@@ -3204,147 +3170,21 @@ onBeforeUnmount(() => {
         </section>
       </div>
     </Teleport>
-    <Teleport to="body">
-      <div v-if="spriteGenModalOpen" class="prototype-modal-backdrop" role="presentation" @click.self="cancelSpriteGenModal">
-        <section class="prototype-modal sprite-gen-modal" style="width: 1076px; height: 800px" role="dialog" aria-modal="true" aria-labelledby="sprite-gen-title">
-          <header class="sprite-gen-header">
-            <h2 id="sprite-gen-title">Sprite Generator</h2>
-            <button type="button" aria-label="Close sprite generator" @click="cancelSpriteGenModal">×</button>
-          </header>
-          <div class="sprite-gen-body" :class="{ 'has-preview': spriteGenGenerated }">
-            <section class="sprite-gen-main-panel">
-              <form class="sprite-gen-settings" @submit.prevent="generateSpriteCandidates">
-                <label class="sprite-gen-description">
-                  <span>Description</span>
-                  <textarea
-                    v-model="spriteGenDescription"
-                    aria-label="Sprite description"
-                    placeholder="Describe a sprite to generate"
-                  ></textarea>
-                </label>
-                <div class="sprite-gen-controls">
-                  <label>
-                    <span>Category</span>
-                    <select v-model="spriteGenCategory" aria-label="Sprite category">
-                      <option>Character</option>
-                      <option>Object</option>
-                      <option>Effect</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Art style</span>
-                    <select v-model="spriteGenStyle" aria-label="Sprite art style">
-                      <option>Cartoon</option>
-                      <option>Pixel</option>
-                      <option>Watercolor</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Perspective</span>
-                    <select v-model="spriteGenPerspective" aria-label="Sprite perspective">
-                      <option>Side</option>
-                      <option>Top-down</option>
-                      <option>Front</option>
-                    </select>
-                  </label>
-                </div>
-                <UIButton
-                  type="primary"
-                  size="large"
-                  :disabled="spriteGenDescription.trim() === ''"
-                  @click="generateSpriteCandidates"
-                >
-                  {{ spriteGenGenerated ? 'Regenerate' : 'Generate' }}
-                </UIButton>
-              </form>
-              <section v-if="spriteGenGenerated" class="sprite-gen-results" aria-label="Generated sprite candidates">
-                <button
-                  v-for="(candidate, index) in generatedSpriteCandidates"
-                  :key="candidate.name"
-                  class="sprite-gen-candidate"
-                  :class="{ active: selectedGeneratedSpriteIndex === index }"
-                  type="button"
-                  @click="selectedGeneratedSpriteIndex = index"
-                >
-                  <img :src="candidate.image" :alt="candidate.name" />
-                  <span>{{ candidate.name }}</span>
-                </button>
-              </section>
-            </section>
-            <section v-if="spriteGenGenerated" class="sprite-gen-preview-panel" aria-label="Generated sprite preview">
-              <div class="sprite-gen-preview-card">
-                <img
-                  :src="(generatedSpriteCandidates[selectedGeneratedSpriteIndex] ?? generatedSpriteCandidates[0]).image"
-                  :alt="(generatedSpriteCandidates[selectedGeneratedSpriteIndex] ?? generatedSpriteCandidates[0]).name"
-                />
-                <span>{{ (generatedSpriteCandidates[selectedGeneratedSpriteIndex] ?? generatedSpriteCandidates[0]).name }}</span>
-              </div>
-            </section>
-          </div>
-          <footer class="sprite-gen-footer">
-            <UIButton type="white" size="large" @click="cancelSpriteGenModal">Cancel</UIButton>
-            <UIButton type="primary" size="large" :disabled="!spriteGenGenerated" @click="useGeneratedSprite">
-              Use
-            </UIButton>
-          </footer>
-        </section>
-      </div>
-    </Teleport>
-    <Teleport to="body">
-      <div v-if="publishModalOpen" class="prototype-modal-backdrop" role="presentation" @click.self="cancelPublishProject">
-        <section class="prototype-modal publish-modal" role="dialog" aria-modal="true" aria-labelledby="publish-project-title">
-          <header class="publish-modal-header">
-            <h2 id="publish-project-title">Publish {{ projectDisplayName }}</h2>
-            <button type="button" aria-label="Close" @click="cancelPublishProject" v-html="closeIcon"></button>
-          </header>
-          <div class="publish-modal-body">
-            <p>Published projects will be visible to all XBuilder users.</p>
-            <div class="publish-preview">
-              <img :src="project.thumbnail" :alt="projectDisplayName" />
-            </div>
-            <form class="prototype-form publish-form" @submit.prevent="submitPublishProject">
-              <label class="prototype-field">
-                <span>Release description</span>
-                <textarea
-                  v-model="draftReleaseDescription"
-                  aria-label="Release description"
-                  placeholder="What is new in this release?"
-                  required
-                ></textarea>
-              </label>
-              <label class="prototype-field">
-                <span>Project description</span>
-                <textarea
-                  v-model="draftProjectDescription"
-                  aria-label="Project description"
-                  placeholder="What is this project about? How did you make it?"
-                ></textarea>
-              </label>
-              <label class="prototype-field">
-                <span>Play instructions</span>
-                <textarea
-                  v-model="draftProjectInstructions"
-                  aria-label="Play instructions"
-                  placeholder="Tell others how to play in your project"
-                ></textarea>
-              </label>
-              <footer class="prototype-modal-actions">
-                <UIButton type="neutral" size="medium" :disabled="publishSubmitting" @click="cancelPublishProject">Cancel</UIButton>
-                <UIButton
-                  type="primary"
-                  size="medium"
-                  :loading="publishSubmitting"
-                  :disabled="draftReleaseDescription.trim() === ''"
-                  @click="submitPublishProject"
-                >
-                  Publish
-                </UIButton>
-              </footer>
-            </form>
-          </div>
-        </section>
-      </div>
-    </Teleport>
+    <SpriteGeneratorModal
+      v-if="spriteGenModalOpen"
+      @close="cancelSpriteGenModal"
+      @add-sprite="addGeneratedSprite"
+    />
+    <PublishProjectModal
+      v-if="publishModalOpen"
+      :project-display-name="projectDisplayName"
+      :thumbnail="project.thumbnail"
+      :initial-project-description="project.description"
+      :initial-project-instructions="project.instructions ?? ''"
+      :submitting="publishSubmitting"
+      @close="cancelPublishProject"
+      @publish="submitPublishProject"
+    />
   </main>
 </template>
 
@@ -3892,303 +3732,6 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: 16px;
   margin-top: 40px;
-}
-
-.publish-modal {
-  width: 560px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-  max-height: min(760px, calc(100vh - 48px));
-}
-
-.publish-modal-header {
-  flex: 0 0 56px;
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-  padding: 0 24px;
-}
-
-.publish-modal-header h2 {
-  flex: 1;
-  margin: 0;
-  color: var(--ui-color-grey-1000);
-  font-size: 20px;
-  font-weight: 400;
-  line-height: 28px;
-}
-
-.publish-modal-header button {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: var(--ui-border-radius-md);
-  background: transparent;
-  color: var(--ui-color-grey-800);
-  padding: 0;
-  cursor: pointer;
-}
-
-.publish-modal-header button:hover {
-  background: var(--ui-color-grey-300);
-  color: var(--ui-color-grey-1000);
-}
-
-.publish-modal-header button :deep(svg),
-.publish-modal-header button svg {
-  width: 20px;
-  height: 20px;
-}
-
-.publish-modal-body {
-  min-height: 0;
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 20px 24px 24px;
-}
-
-.publish-preview {
-  height: 224px;
-  overflow: hidden;
-  margin: 24px 0;
-  border-radius: var(--ui-border-radius-sm);
-  background: var(--ui-color-grey-300);
-}
-
-.publish-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.publish-form {
-  gap: 16px;
-}
-
-.sprite-gen-modal {
-  max-width: calc(100vw - 48px);
-  max-height: calc(100vh - 48px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-}
-
-.sprite-gen-header {
-  flex: 0 0 56px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--ui-color-grey-400);
-  padding: 0 24px;
-}
-
-.sprite-gen-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 26px;
-}
-
-.sprite-gen-header button {
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: var(--ui-border-radius-md);
-  background: transparent;
-  color: var(--ui-color-grey-800);
-  font-size: 24px;
-  line-height: 1;
-}
-
-.sprite-gen-header button:hover {
-  background: var(--ui-color-grey-300);
-  color: var(--ui-color-grey-1000);
-}
-
-.sprite-gen-body {
-  min-height: 0;
-  flex: 1 1 0;
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  gap: 0;
-  padding: 20px;
-}
-
-.sprite-gen-body.has-preview {
-  justify-content: flex-start;
-  gap: 20px;
-}
-
-.sprite-gen-main-panel {
-  width: 584px;
-  max-width: 100%;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 24px;
-  transition: width 0.2s ease;
-}
-
-.sprite-gen-body.has-preview .sprite-gen-main-panel {
-  width: 416px;
-  justify-content: flex-start;
-}
-
-.sprite-gen-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.sprite-gen-description {
-  min-height: 172px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border: 1px solid var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  padding: 12px;
-}
-
-.sprite-gen-description span,
-.sprite-gen-controls span {
-  color: var(--ui-color-grey-1000);
-  font-size: 14px;
-  line-height: 22px;
-}
-
-.sprite-gen-description textarea {
-  min-height: 112px;
-  flex: 1;
-  border: 0;
-  outline: 0;
-  resize: none;
-  color: var(--ui-color-grey-1000);
-  font: inherit;
-  line-height: 22px;
-}
-
-.sprite-gen-description textarea::placeholder {
-  color: var(--ui-color-grey-700);
-}
-
-.sprite-gen-controls {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.sprite-gen-controls label {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sprite-gen-controls select {
-  width: 100%;
-  height: 36px;
-  border: 1px solid var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  color: var(--ui-color-grey-1000);
-  font: inherit;
-  line-height: 22px;
-  padding: 0 12px;
-}
-
-.sprite-gen-results {
-  min-height: 170px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-content: start;
-  gap: 12px;
-}
-
-.sprite-gen-preview-panel {
-  min-width: 0;
-  flex: 1 1 auto;
-  display: grid;
-  place-items: center;
-  border-left: 1px solid var(--ui-color-grey-400);
-  padding-left: 20px;
-}
-
-.sprite-gen-preview-card {
-  width: min(100%, 440px);
-  min-height: 420px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-200);
-  padding: 24px;
-  color: var(--ui-color-grey-800);
-  font-size: 14px;
-  line-height: 22px;
-  text-align: center;
-}
-
-.sprite-gen-preview-card img {
-  max-width: 240px;
-  max-height: 280px;
-  object-fit: contain;
-}
-
-.sprite-gen-candidate {
-  min-width: 0;
-  height: 132px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border: 1px solid var(--ui-color-grey-400);
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  padding: 8px;
-  color: var(--ui-color-grey-1000);
-}
-
-.sprite-gen-candidate.active {
-  border: 2px solid var(--ui-color-primary-main);
-  background: var(--ui-color-primary-100);
-  padding: 7px;
-}
-
-.sprite-gen-candidate img {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-}
-
-.sprite-gen-candidate span {
-  width: 100%;
-  overflow: hidden;
-  margin-top: 6px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
-  line-height: 18px;
-  text-align: center;
-}
-
-.sprite-gen-footer {
-  flex: 0 0 auto;
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  border-top: 1px solid var(--ui-color-grey-400);
-  padding: 16px 24px;
 }
 
 .editor-main {
