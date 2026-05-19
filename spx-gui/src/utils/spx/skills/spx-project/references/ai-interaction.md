@@ -342,14 +342,12 @@ opponent.onErr (err) => {
     printf "AI error: %v", err
 }
 
-onStart => {
-    // Set AI opponent role
-    opponent.setRole "Tic-Tac-Toe Opponent", {
-        "Rules": "Standard Tic-Tac-Toe rules",
-        "Piece": "O",
-        "Difficulty": "Medium",
-        "Style": "Offensive",
-    }
+// Set AI opponent role during startup
+opponent.setRole "Tic-Tac-Toe Opponent", {
+    "Rules": "Standard Tic-Tac-Toe rules",
+    "Piece": "O",
+    "Difficulty": "Medium",
+    "Style": "Offensive",
 }
 
 onMsg "Player moved", => {

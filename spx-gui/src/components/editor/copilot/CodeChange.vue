@@ -11,8 +11,8 @@ export const description = 'Display a modification based on the existing code.'
 export const detailedDescription = `Display a modification based on the existing code. For example,
 
 <code-change file="NiuXiaoQi.spx" line="10" remove-line-count="2">
-onStart => {
-	say "Hello, world!"
+onClick => {
+	say "Hello!"
 }
 </code-change>
 
