@@ -20,6 +20,7 @@ You MUST follow these IMPORTANT guidelines:
   1. Variable declarations (using `var` blocks)
   2. Function definitions
   3. Event handlers (like `onStart`, `onClick`)
+  4. Optional top-level startup statements for simple initialization
 
 - **Special API Notes**
 
@@ -32,7 +33,6 @@ You MUST follow these IMPORTANT guidelines:
   - Variable blocks become fields of the object
   - Functions become methods of the object and please make sure to place the function definition before all event handlers (such as `onStart`, `onClick`)
   - Sprite can directly access the Game Field because the Sprite struct embeds the Game struct
-  - The first `var` block cannot assign values since it is compiled into struct fields, but you can define variables in first `var` block and with assign values in `onStart` event handler.
   - In particular, the `clone` command creates a copy of the current Sprite struct. If you want to get the cloned object, you can get the object through `onCloned => {object := this}`
 
     Example: Stage File Structure
@@ -127,12 +127,14 @@ You MUST follow these IMPORTANT guidelines:
   }
   ```
 
-- Put these statements at the top level of the code file:
+- Put these declarations and event-listening statements at the top level of the code file:
 
   - File-scope variable / constant definitions
   - Event-listening statements, e.g., `onMsg "m", => { ... }`, `onKey KeyUp, => { ... }`
 
-  Put other initialization logic in the callback of `onStart`.
+  For simple startup logic, you can also place sequential statements directly at the top level of the file. These top-level statements run in order, so code that appears later in the file has to wait for them. That is why a good default is to put this initialization logic near the end of the file, after the declarations and event-listening statements above, when that keeps the code easy to read.
+
+  Use `onStart` when you want startup code to run without making later code wait, or when putting startup logic in a separate `onStart` block makes the code easier to read. This is especially useful for long waits, loops, or other startup work that should not hold up other event code.
 
   RIGHT:
 
@@ -140,15 +142,26 @@ You MUST follow these IMPORTANT guidelines:
   const word = "Hello"
 
   var (
-  	count int
+  	count = 0
   )
-
-  onStart => {
-  	println word
-  }
 
   onClick => {
   	count++
+  }
+
+  println word
+  ```
+
+  ALSO RIGHT:
+
+  ```spx
+  onClick => {
+  	say "Clicked"
+  }
+
+  onStart => {
+  	wait 2
+  	say "Ready"
   }
   ```
 
@@ -171,11 +184,9 @@ You MUST follow these IMPORTANT guidelines:
   For example, if you have a sprite named `Player`, you can reference it directly from the stage or any other sprite:
 
   ```spx
-  onStart => {
-  	// You don't need to define the variable `Player` in your code, it's done by the engine
-  	println "Position of Player: " + Player.xpos + ", " + Player.ypos
-  	Player.step 100
-  }
+  // You don't need to define the variable `Player` in your code, it's done by the engine
+  println "Position of Player: " + Player.xpos + ", " + Player.ypos
+  Player.step 100
   ```
 
 - Use `broadcast`/`onMsg` to decouple interactions between sprites & stage.
