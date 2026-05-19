@@ -727,9 +727,14 @@ if (
   !spriteGeneratorModal.includes('Sprite Generator') ||
   !spriteGeneratorModal.includes('aria-label="Sprite description"') ||
   !spriteGeneratorModal.includes('Generated sprite candidates') ||
-  !spriteGeneratorModal.includes("class=\"sprite-gen-body\" :class=\"{ 'has-preview': generated }\"") ||
+  !spriteGeneratorModal.includes('class="sprite-gen-body"') ||
+  !spriteGeneratorModal.includes(":class=\"{ 'has-preview': generated }\"") ||
   !spriteGeneratorModal.includes('class="sprite-gen-main-panel"') ||
   !spriteGeneratorModal.includes('class="sprite-gen-preview-panel"') ||
+  !spriteGeneratorModal.includes('Generated sprite content editor') ||
+  !spriteGeneratorModal.includes('Costume') ||
+  !spriteGeneratorModal.includes('Animation') ||
+  !spriteGeneratorModal.includes('Minimize') ||
   spriteGeneratorModal.includes('Generated sprite candidates will appear here.') ||
   !spriteGeneratorModal.includes('style="width: 1076px; height: 800px"') ||
   !spriteGeneratorModal.includes('selectedIndex') ||
