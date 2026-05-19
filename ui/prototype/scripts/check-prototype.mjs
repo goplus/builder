@@ -44,6 +44,8 @@ const editorTimerIcon = read('src/assets/editor/ui-icons/timer.svg')
 const editorStatusIcon = read('src/assets/editor/ui-icons/status.svg')
 const editorSoundIcon = read('src/assets/editor/ui-icons/sound.svg')
 const editorArrowDownIcon = read('src/assets/editor/ui-icons/arrow-down.svg')
+const editorProjectFileIcon = read('src/assets/editor/navbar-icons/file.svg')
+const navbarArrowMiniIcon = read('src/assets/navbar-icons/arrow-mini.svg')
 const editorEyeOffIcon = read('src/assets/editor/ui-icons/eye-off.svg')
 const editorPlusIcon = read('src/assets/editor/ui-icons/plus.svg')
 const editorPublishIcon = read('src/assets/editor/ui-icons/publish.svg')
@@ -93,6 +95,7 @@ for (const requiredFile of [
   'src/assets/editor/ui-icons/status.svg',
   'src/assets/editor/ui-icons/sound.svg',
   'src/assets/editor/ui-icons/arrow-down.svg',
+  'src/assets/editor/navbar-icons/file.svg',
   'src/assets/editor/ui-icons/plus.svg',
   'src/assets/editor/ui-icons/publish.svg',
   'src/assets/editor/ui-icons/loading.svg',
@@ -626,7 +629,7 @@ if (
   !editorPage.includes('.project-menu,\n.profile-menu,\n.animation-add-menu,\n.asset-add-menu,\n.animation-options-menu,\n.asset-options-menu,\n.quick-layer-menu,\n.add-sprite-menu,\n.sprite-options-menu') ||
   !editorPage.includes('box-shadow: var(--ui-box-shadow-sm);') ||
   !editorPage.includes('overflow: hidden;') ||
-  !editorPage.includes('.project-menu-item,\n.profile-menu-user,\n.profile-menu-item,\n.animation-add-menu-item,\n.asset-add-menu-item,\n.animation-options-item,\n.asset-options-item,\n.quick-layer-menu button,\n.asset-header .add-sprite-menu-item,\n.sprite-options-item') ||
+  !editorPage.includes('.project-menu-item,\n.profile-menu-user,\n.profile-menu-item,\n.animation-add-menu-item,\n.asset-add-menu-item,\n.animation-options-item,\n.asset-options-item,\n.quick-layer-menu button,\n.asset-header .add-sprite-menu-item,\n.map-card-header .add-sprite-menu-item,\n.sprite-options-item') ||
   !editorPage.includes('padding: 8px 40px 8px 8px;') ||
   !editorPage.includes('margin-top: 13px;') ||
   !editorPage.includes('border-top: 1px solid var(--ui-color-dividing-line-2);') ||
@@ -713,6 +716,11 @@ if (
   !editorPage.includes('Sprite Generator') ||
   !editorPage.includes('aria-label="Sprite description"') ||
   !editorPage.includes('Generated sprite candidates') ||
+  !editorPage.includes("class=\"sprite-gen-body\" :class=\"{ 'has-preview': spriteGenGenerated }\"") ||
+  !editorPage.includes('class="sprite-gen-main-panel"') ||
+  !editorPage.includes('class="sprite-gen-preview-panel"') ||
+  editorPage.includes('Generated sprite candidates will appear here.') ||
+  !editorPage.includes('style="width: 1076px; height: 800px"') ||
   !editorPage.includes('selectedGeneratedSpriteIndex') ||
   editorPage.includes("addLocalSprite('ai')")
 ) {
@@ -724,9 +732,25 @@ if (
   !editorPage.includes('X position input') ||
   !editorPage.includes('Y position input') ||
   !editorPage.includes('updateSelectedSpriteX') ||
-  !editorPage.includes('selectedSpriteCoordinate')
+  !editorPage.includes('selectedSpriteCoordinate') ||
+  !editorPage.includes('getStageSpriteFrameStyle') ||
+  !editorPage.includes('startStageSpriteDrag') ||
+  !editorPage.includes('@pointerdown.stop.prevent="startStageSpriteDrag')
 ) {
-  failures.push('editor sprite quick config must support position editing and coordinate display')
+  failures.push('editor sprite quick config must support coordinate display plus direct stage positioning and dragging')
+}
+
+if (
+  !editorPage.includes('getMapSpriteFrameStyle') ||
+  !editorPage.includes('selectedMapSpriteCoordinate') ||
+  !editorPage.includes('updateSelectedMapSpriteX') ||
+  !editorPage.includes('@pointerdown.stop.prevent="startMapSpriteDrag') ||
+  editorPage.includes('class="map-sprite-coordinate">-224, 74</span>') ||
+  editorPage.includes('<label><span>X</span><input value="-224" readonly /></label>') ||
+  editorPage.includes('.map-sprite-jaime {\n  left: 41%;') ||
+  editorPage.includes('.map-sprite-kai {\n  left: 68%;')
+) {
+  failures.push('map editor sprite positions and coordinate controls must be data-driven instead of hardcoded')
 }
 
 if (
@@ -775,6 +799,25 @@ if (
 
 if (!codeCloseCircleIcon.includes('M9.99984 1.0415') || !codeCloseCircleIcon.includes('fill="currentColor"')) {
   failures.push('editor code document close icon must mirror the real close-circle icon asset')
+}
+
+if (
+  !editorPage.includes("import projectFileIcon from '@/assets/editor/navbar-icons/file.svg?raw'") ||
+  !editorPage.includes("import arrowMiniIcon from '@/assets/navbar-icons/arrow-mini.svg?raw'") ||
+  !editorPage.includes('class="project-file-icon"') ||
+  !editorPage.includes('class="project-menu-arrow"') ||
+  editorPage.includes('<span class="caret"></span>') ||
+  !editorProjectFileIcon.includes('M6.6084 1.77051') ||
+  !navbarArrowMiniIcon.includes('M5.66107 2.46085')
+) {
+  failures.push('editor project menu trigger must use the real file and arrowMini icons')
+}
+
+if (
+  !editorPage.includes('.project-menu-trigger {\n  height: 100%;\n  width: auto;\n  padding: 0 12px;\n  color: var(--ui-color-grey-1000);') ||
+  !editorPage.includes('.project-menu-trigger svg {\n  color: inherit;')
+) {
+  failures.push('editor project menu trigger icon color must use the real title token')
 }
 
 if (

@@ -35,9 +35,12 @@ import rotateQuickIcon from '@/assets/editor/quick-config/rotate.svg?raw'
 import defaultModeIcon from '@/assets/editor/navbar-icons/default-mode.svg?raw'
 import mapEditModeIcon from '@/assets/editor/navbar-icons/map-edit-mode.svg?raw'
 import cloudCheckIcon from '@/assets/editor/navbar-icons/cloud-check.svg?raw'
+import projectFileIcon from '@/assets/editor/navbar-icons/file.svg?raw'
+import arrowMiniIcon from '@/assets/navbar-icons/arrow-mini.svg?raw'
 import exportProjectIcon from '@/assets/editor/navbar-icons/export-project.svg'
 import editIcon from '@/assets/editor/quick-config/edit.svg?raw'
 import arrowDownIcon from '@/assets/editor/ui-icons/arrow-down.svg?raw'
+import closeIcon from '@/assets/editor/ui-icons/close.svg?raw'
 import settingSoundIcon from '@/assets/editor/ui-icons/sound.svg?raw'
 import settingStatusIcon from '@/assets/editor/ui-icons/status.svg?raw'
 import settingTimerIcon from '@/assets/editor/ui-icons/timer.svg?raw'
@@ -93,6 +96,28 @@ type SpriteCard = {
   rotationStyle: RotationStyle
 }
 
+type StageSpriteDragState = {
+  pointerId: number
+  startX: number
+  startY: number
+  spriteStartX: number
+  spriteStartY: number
+  sprite: SpriteCard
+  moved: boolean
+}
+
+type MapSpriteDragState = {
+  pointerId: number
+  startX: number
+  startY: number
+  spriteStartX: number
+  spriteStartY: number
+  stageWidth: number
+  stageHeight: number
+  sprite: SpriteCard
+  moved: boolean
+}
+
 type SnippetPart = {
   text: string
   type?: 'function' | 'hint' | 'string' | 'identifier' | 'number' | 'keyword' | 'custom' | 'operator'
@@ -110,6 +135,9 @@ const codeTokenClass: Record<CodeTokenType, string> = {
   custom: 'text-[#0774cd]',
   operator: 'text-grey-1000'
 }
+
+const stageSpriteScale = 0.5
+const stageSpriteOrigin = { left: 290, top: 145 }
 
 function getCodeTokenClass(type?: SnippetPart['type']) {
   return type != null ? codeTokenClass[type] : undefined
@@ -277,6 +305,7 @@ const projectNameInputRef = ref<HTMLInputElement>()
 const projectMenuRef = ref<HTMLElement>()
 const profileMenuRef = ref<HTMLElement>()
 const addSpriteMenuRef = ref<HTMLElement>()
+const mapAddSpriteMenuRef = ref<HTMLElement>()
 const addCostumeMenuRef = ref<HTMLElement>()
 const costumeMenuRef = ref<HTMLElement>()
 const addAnimationMenuRef = ref<HTMLElement>()
@@ -286,6 +315,8 @@ const mapSpriteNameInputRef = ref<HTMLInputElement>()
 const spriteRenameInputRef = ref<HTMLInputElement>()
 const saveStateTimeouts: number[] = []
 let publishTimer: number | null = null
+let stageSpriteDragState: StageSpriteDragState | null = null
+let mapSpriteDragState: MapSpriteDragState | null = null
 
 function snippet(id: string, parts: SnippetPart[]): EventSnippet {
   return { id, parts }
@@ -681,6 +712,7 @@ const spriteMenuSprite = computed(() => sprites.value.find((sprite) => sprite.id
 const visibleSnippetGroups = computed(() => categorySnippetGroups[activeCodeCategory.value])
 const stageBackdrop = computed(() => selectedBackdrop.value?.image ?? project.value.thumbnail)
 const stageCompanionSprite = computed(() => sprites.value.find((sprite) => sprite.id !== selectedSprite.value?.id))
+const stageCompanionSprites = computed(() => sprites.value.filter((sprite) => !sprite.hidden && sprite.id !== selectedSprite.value?.id))
 const mainCodeDocumentTab = computed<CodeDocumentTab>(() => {
   if (activeEditorTarget.value === 'stage') {
     return {
@@ -725,12 +757,9 @@ const tempCodeDocumentTabs = computed<CodeDocumentTab[]>(() => {
   }
   return tabs
 })
-const selectedSpriteFrameStyle = computed(() => ({
-  left: `${178 + (((selectedSprite.value?.x ?? -224) + 224) * 0.5)}px`,
-  top: `${108 - (((selectedSprite.value?.y ?? 74) - 74) * 0.5)}px`,
-  transform: selectedSpriteTransform(selectedSprite.value)
-}))
+const selectedSpriteFrameStyle = computed(() => getStageSpriteFrameStyle(selectedSprite.value))
 const selectedSpriteCoordinate = computed(() => `${selectedSprite.value?.x ?? -224}, ${selectedSprite.value?.y ?? 74}`)
+const selectedMapSpriteCoordinate = computed(() => `${selectedMapSprite.value?.x ?? -224}, ${selectedMapSprite.value?.y ?? 74}`)
 const codeEditorStyle = computed<CSSProperties>(() => ({
   '--prototype-code-zoom': codeZoom.value
 }))
@@ -936,6 +965,21 @@ function selectedSpriteTransform(sprite: SpriteCard | undefined) {
   return `scale(${size}) rotate(${rotation}deg)${flip}`
 }
 
+function getStageSpriteFrameStyle(sprite: SpriteCard | undefined): CSSProperties {
+  return {
+    left: `${stageSpriteOrigin.left + (sprite?.x ?? 0) * stageSpriteScale}px`,
+    top: `${stageSpriteOrigin.top - (sprite?.y ?? 0) * stageSpriteScale}px`,
+    transform: selectedSpriteTransform(sprite)
+  }
+}
+
+function getMapSpriteFrameStyle(sprite: SpriteCard): CSSProperties {
+  return {
+    left: `${((sprite.x + mapWidth.value / 2) / mapWidth.value) * 100}%`,
+    top: `${((mapHeight.value / 2 - sprite.y) / mapHeight.value) * 100}%`
+  }
+}
+
 function updateSelectedSpriteSize(event: Event) {
   const nextSize = Number((event.target as HTMLInputElement).value)
   if (!Number.isFinite(nextSize) || selectedSprite.value == null) return
@@ -954,6 +998,20 @@ function updateSelectedSpriteY(event: Event) {
   const nextY = Number((event.target as HTMLInputElement).value)
   if (!Number.isFinite(nextY) || selectedSprite.value == null) return
   selectedSprite.value.y = Math.max(-999, Math.min(999, Math.round(nextY)))
+  markPrototypeAction()
+}
+
+function updateSelectedMapSpriteX(event: Event) {
+  const nextX = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextX) || selectedMapSprite.value == null) return
+  selectedMapSprite.value.x = Math.max(-999, Math.min(999, Math.round(nextX)))
+  markPrototypeAction()
+}
+
+function updateSelectedMapSpriteY(event: Event) {
+  const nextY = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextY) || selectedMapSprite.value == null) return
+  selectedMapSprite.value.y = Math.max(-999, Math.min(999, Math.round(nextY)))
   markPrototypeAction()
 }
 
@@ -980,6 +1038,95 @@ function updateSelectedSpriteLeftRight(direction: 'left' | 'right') {
   if (selectedSprite.value == null) return
   selectedSprite.value.heading = direction === 'right' ? 90 : -90
   markPrototypeAction()
+}
+
+function startStageSpriteDrag(sprite: SpriteCard, event: PointerEvent) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return
+  const target = event.currentTarget
+  if (!(target instanceof HTMLElement)) return
+  selectedSpriteId.value = sprite.id
+  activeEditorTarget.value = 'sprite'
+  stageSpriteDragState = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    spriteStartX: sprite.x,
+    spriteStartY: sprite.y,
+    sprite,
+    moved: false
+  }
+  target.setPointerCapture?.(event.pointerId)
+  target.classList.add('dragging')
+}
+
+function moveStageSpriteDrag(event: PointerEvent) {
+  const dragState = stageSpriteDragState
+  if (dragState == null || dragState.pointerId !== event.pointerId) return
+  const deltaX = event.clientX - dragState.startX
+  const deltaY = event.clientY - dragState.startY
+  if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) dragState.moved = true
+  dragState.sprite.x = Math.max(-999, Math.min(999, Math.round(dragState.spriteStartX + deltaX / stageSpriteScale)))
+  dragState.sprite.y = Math.max(-999, Math.min(999, Math.round(dragState.spriteStartY - deltaY / stageSpriteScale)))
+  event.preventDefault()
+}
+
+function endStageSpriteDrag(event: PointerEvent) {
+  const dragState = stageSpriteDragState
+  if (dragState == null || dragState.pointerId !== event.pointerId) return
+  const target = event.currentTarget
+  if (target instanceof HTMLElement && target.hasPointerCapture?.(event.pointerId)) {
+    target.releasePointerCapture(event.pointerId)
+  }
+  if (target instanceof HTMLElement) target.classList.remove('dragging')
+  if (dragState.moved) markPrototypeAction()
+  stageSpriteDragState = null
+}
+
+function startMapSpriteDrag(sprite: SpriteCard, event: PointerEvent) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return
+  const target = event.currentTarget
+  if (!(target instanceof HTMLElement)) return
+  const stage = target.closest<HTMLElement>('.map-stage')
+  if (stage == null) return
+  const rect = stage.getBoundingClientRect()
+  selectedMapSpriteId.value = sprite.id
+  mapSpriteConfigExpanded.value = true
+  mapSpriteDragState = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    spriteStartX: sprite.x,
+    spriteStartY: sprite.y,
+    stageWidth: rect.width,
+    stageHeight: rect.height,
+    sprite,
+    moved: false
+  }
+  target.setPointerCapture?.(event.pointerId)
+  target.classList.add('dragging')
+}
+
+function moveMapSpriteDrag(event: PointerEvent) {
+  const dragState = mapSpriteDragState
+  if (dragState == null || dragState.pointerId !== event.pointerId) return
+  const deltaX = event.clientX - dragState.startX
+  const deltaY = event.clientY - dragState.startY
+  if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) dragState.moved = true
+  dragState.sprite.x = Math.max(-999, Math.min(999, Math.round(dragState.spriteStartX + (deltaX / dragState.stageWidth) * mapWidth.value)))
+  dragState.sprite.y = Math.max(-999, Math.min(999, Math.round(dragState.spriteStartY - (deltaY / dragState.stageHeight) * mapHeight.value)))
+  event.preventDefault()
+}
+
+function endMapSpriteDrag(event: PointerEvent) {
+  const dragState = mapSpriteDragState
+  if (dragState == null || dragState.pointerId !== event.pointerId) return
+  const target = event.currentTarget
+  if (target instanceof HTMLElement && target.hasPointerCapture?.(event.pointerId)) {
+    target.releasePointerCapture(event.pointerId)
+  }
+  if (target instanceof HTMLElement) target.classList.remove('dragging')
+  if (dragState.moved) markPrototypeAction()
+  mapSpriteDragState = null
 }
 
 function moveSelectedSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
@@ -1749,7 +1896,7 @@ function handleDocumentClick(event: MouseEvent) {
   if (!(target instanceof Node)) return
   if (!projectMenuRef.value?.contains(target)) closeProjectMenu()
   if (!profileMenuRef.value?.contains(target)) closeProfileMenu()
-  if (!addSpriteMenuRef.value?.contains(target)) closeAddSpriteMenu()
+  if (!addSpriteMenuRef.value?.contains(target) && !mapAddSpriteMenuRef.value?.contains(target)) closeAddSpriteMenu()
   if (!addCostumeMenuRef.value?.contains(target) && !(target instanceof Element && target.closest('.costume-add-menu'))) {
     closeAddCostumeMenu()
   }
@@ -1804,12 +1951,8 @@ onBeforeUnmount(() => {
             aria-haspopup="menu"
             @click.stop="toggleProjectMenu"
           >
-            <svg class="file-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path
-                d="M6.6084 1.77051C7.00493 1.77063 7.39605 1.8695 7.74512 2.05762C8.09163 2.24443 8.38686 2.51387 8.60449 2.8418L9.2793 3.8418L9.28418 3.84961C9.37032 3.98023 9.4879 4.08753 9.62598 4.16113C9.76424 4.23474 9.91955 4.27199 10.0762 4.27051H16.667C17.3023 4.27059 17.9121 4.52343 18.3613 4.97266C18.8104 5.42193 19.0625 6.03173 19.0625 6.66699V15C19.0625 15.6353 18.8105 16.245 18.3613 16.6943C17.9121 17.1436 17.3023 17.3954 16.667 17.3955H3.33301C2.69771 17.3954 2.0879 17.1436 1.63867 16.6943C1.18947 16.245 0.9375 15.6353 0.9375 15V4.16699C0.9375 3.53173 1.18957 2.92193 1.63867 2.47266C2.0879 2.02343 2.69771 1.77059 3.33301 1.77051H6.6084ZM2.39551 15C2.39551 15.2486 2.49421 15.4873 2.66992 15.6631C2.84566 15.8388 3.08448 15.9374 3.33301 15.9375H16.667C16.9155 15.9374 17.1543 15.8388 17.3301 15.6631C17.5058 15.4873 17.6045 15.2486 17.6045 15V9.0625H2.39551V15ZM3.33301 3.22949C3.08456 3.22958 2.84565 3.32729 2.66992 3.50293C2.49411 3.67875 2.39551 3.91835 2.39551 4.16699V7.60449H17.6045V6.66699C17.6045 6.41835 17.5059 6.17875 17.3301 6.00293C17.1544 5.82729 16.9154 5.72958 16.667 5.72949H10.083C9.68507 5.73215 9.29276 5.63524 8.94141 5.44824C8.59002 5.26111 8.29029 4.98894 8.07031 4.65723L7.39551 3.6582L7.39062 3.65039C7.30537 3.52117 7.18899 3.4153 7.05273 3.3418C6.91626 3.2683 6.7634 3.22957 6.6084 3.22949H3.33301Z"
-              />
-            </svg>
-            <span class="caret"></span>
+            <span class="project-file-icon" aria-hidden="true" v-html="projectFileIcon"></span>
+            <span class="project-menu-arrow" aria-hidden="true" v-html="arrowMiniIcon"></span>
           </button>
           <div v-if="projectMenuOpen" class="project-menu" role="menu" @click.stop>
             <div v-for="group in projectMenuGroups" :key="group[0]?.id" class="project-menu-group">
@@ -2473,8 +2616,33 @@ onBeforeUnmount(() => {
           <div class="stage-frame">
             <template v-if="!runnerActive">
               <img class="stage-backdrop" :src="stageBackdrop" alt="" />
-              <img v-if="stageCompanionSprite != null" class="stage-sprite cow-flower" :src="stageCompanionSprite.image" alt="" />
-              <div v-if="selectedSprite != null" class="selected-sprite" :style="selectedSpriteFrameStyle">
+              <div
+                v-for="sprite in stageCompanionSprites"
+                :key="sprite.id"
+                class="stage-sprite"
+                :style="getStageSpriteFrameStyle(sprite)"
+                role="button"
+                tabindex="0"
+                :aria-label="`Select ${sprite.name}`"
+                @click="selectSprite(sprite.id)"
+                @keydown.enter.prevent="selectSprite(sprite.id)"
+                @keydown.space.prevent="selectSprite(sprite.id)"
+                @pointerdown.stop.prevent="startStageSpriteDrag(sprite, $event)"
+                @pointermove.stop.prevent="moveStageSpriteDrag"
+                @pointerup.stop.prevent="endStageSpriteDrag"
+                @pointercancel.stop.prevent="endStageSpriteDrag"
+              >
+                <img :src="sprite.image" alt="" />
+              </div>
+              <div
+                v-if="selectedSprite != null"
+                class="selected-sprite"
+                :style="selectedSpriteFrameStyle"
+                @pointerdown.stop.prevent="startStageSpriteDrag(selectedSprite, $event)"
+                @pointermove.stop.prevent="moveStageSpriteDrag"
+                @pointerup.stop.prevent="endStageSpriteDrag"
+                @pointercancel.stop.prevent="endStageSpriteDrag"
+              >
                 <img :src="selectedSprite.image" alt="" />
                 <span class="coordinate">{{ selectedSpriteCoordinate }}</span>
                 <span class="handle left"></span>
@@ -2744,11 +2912,16 @@ onBeforeUnmount(() => {
             :key="`map-${sprite.id}`"
             class="map-sprite"
             :class="[`map-sprite-${sprite.id}`, { active: selectedMapSpriteId === sprite.id }]"
+            :style="getMapSpriteFrameStyle(sprite)"
             type="button"
             @click="selectMapSprite(sprite.id)"
+            @pointerdown.stop.prevent="startMapSpriteDrag(sprite, $event)"
+            @pointermove.stop.prevent="moveMapSpriteDrag"
+            @pointerup.stop.prevent="endMapSpriteDrag"
+            @pointercancel.stop.prevent="endMapSpriteDrag"
           >
             <img :src="sprite.image" :alt="sprite.name" />
-            <span v-if="selectedMapSpriteId === sprite.id" class="map-sprite-coordinate">-224, 74</span>
+            <span v-if="selectedMapSpriteId === sprite.id" class="map-sprite-coordinate">{{ selectedMapSpriteCoordinate }}</span>
           </button>
           <div class="map-zoom-controls">
             <button type="button" aria-label="Zoom in">+</button>
@@ -2824,8 +2997,29 @@ onBeforeUnmount(() => {
 
         <UICard class="map-card map-sprites-card">
           <UICardHeader class="map-card-header active justify-between">
-            <h2 class="m-0 text-xl font-normal">Sprites</h2>
-            <button type="button" aria-label="Add sprite">+</button>
+            <h2 class="m-0 text-xl font-normal text-title">Sprites</h2>
+            <span ref="mapAddSpriteMenuRef" class="add-sprite-menu-wrap">
+              <button
+                type="button"
+                aria-label="Add sprite"
+                :aria-expanded="addSpriteMenuOpen"
+                aria-haspopup="menu"
+                @click.stop="toggleAddSpriteMenu"
+              >
+                <span aria-hidden="true" v-html="plusIcon"></span>
+              </button>
+              <span v-if="addSpriteMenuOpen" class="add-sprite-menu" role="menu" @click.stop>
+                <button class="add-sprite-menu-item" type="button" role="menuitem" @click="addLocalSprite('local')">
+                  Select local file
+                </button>
+                <button class="add-sprite-menu-item" type="button" role="menuitem" @click="addLocalSprite('library')">
+                  Choose from asset library
+                </button>
+                <button class="add-sprite-menu-item" type="button" role="menuitem" @click="openSpriteGenModal">
+                  Generate with AI
+                </button>
+              </span>
+            </span>
           </UICardHeader>
           <div class="map-sprite-list">
             <SpriteItem
@@ -2865,8 +3059,8 @@ onBeforeUnmount(() => {
               <button class="map-config-icon collapse" type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false" v-html="arrowDownIcon"></button>
             </div>
             <div class="map-config-grid">
-              <label><span>X</span><input value="-224" readonly /></label>
-              <label><span>Y</span><input value="74" readonly /></label>
+              <label><span>X</span><input :value="selectedMapSprite.x" type="number" inputmode="numeric" @input="updateSelectedMapSpriteX" /></label>
+              <label><span>Y</span><input :value="selectedMapSprite.y" type="number" inputmode="numeric" @input="updateSelectedMapSpriteY" /></label>
               <label><span>W</span><input value="54" readonly /></label>
               <label><span>H</span><input value="60" readonly /></label>
             </div>
@@ -2923,7 +3117,7 @@ onBeforeUnmount(() => {
                 </button>
               </div>
             </div>
-            <div class="map-config-row">
+            <div v-if="mapPhysicsEnabled" class="map-config-row">
               <span>Physics</span>
               <div class="map-checkbox-group" role="group" aria-label="Map sprite physics">
                 <label class="map-checkbox">
@@ -3012,75 +3206,86 @@ onBeforeUnmount(() => {
     </Teleport>
     <Teleport to="body">
       <div v-if="spriteGenModalOpen" class="prototype-modal-backdrop" role="presentation" @click.self="cancelSpriteGenModal">
-        <section class="prototype-modal sprite-gen-modal" role="dialog" aria-modal="true" aria-labelledby="sprite-gen-title">
+        <section class="prototype-modal sprite-gen-modal" style="width: 1076px; height: 800px" role="dialog" aria-modal="true" aria-labelledby="sprite-gen-title">
           <header class="sprite-gen-header">
             <h2 id="sprite-gen-title">Sprite Generator</h2>
             <button type="button" aria-label="Close sprite generator" @click="cancelSpriteGenModal">×</button>
           </header>
-          <div class="sprite-gen-body">
-            <form class="sprite-gen-settings" @submit.prevent="generateSpriteCandidates">
-              <label class="prototype-field">
-                <span>Description</span>
-                <textarea
-                  v-model="spriteGenDescription"
-                  aria-label="Sprite description"
-                  placeholder="Describe a sprite to generate"
-                ></textarea>
-              </label>
-              <div class="sprite-gen-controls">
-                <label class="prototype-field">
-                  <span>Category</span>
-                  <select v-model="spriteGenCategory" aria-label="Sprite category">
-                    <option>Character</option>
-                    <option>Object</option>
-                    <option>Effect</option>
-                  </select>
+          <div class="sprite-gen-body" :class="{ 'has-preview': spriteGenGenerated }">
+            <section class="sprite-gen-main-panel">
+              <form class="sprite-gen-settings" @submit.prevent="generateSpriteCandidates">
+                <label class="sprite-gen-description">
+                  <span>Description</span>
+                  <textarea
+                    v-model="spriteGenDescription"
+                    aria-label="Sprite description"
+                    placeholder="Describe a sprite to generate"
+                  ></textarea>
                 </label>
-                <label class="prototype-field">
-                  <span>Art style</span>
-                  <select v-model="spriteGenStyle" aria-label="Sprite art style">
-                    <option>Cartoon</option>
-                    <option>Pixel</option>
-                    <option>Watercolor</option>
-                  </select>
-                </label>
-                <label class="prototype-field">
-                  <span>Perspective</span>
-                  <select v-model="spriteGenPerspective" aria-label="Sprite perspective">
-                    <option>Side</option>
-                    <option>Top-down</option>
-                    <option>Front</option>
-                  </select>
-                </label>
+                <div class="sprite-gen-controls">
+                  <label>
+                    <span>Category</span>
+                    <select v-model="spriteGenCategory" aria-label="Sprite category">
+                      <option>Character</option>
+                      <option>Object</option>
+                      <option>Effect</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Art style</span>
+                    <select v-model="spriteGenStyle" aria-label="Sprite art style">
+                      <option>Cartoon</option>
+                      <option>Pixel</option>
+                      <option>Watercolor</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Perspective</span>
+                    <select v-model="spriteGenPerspective" aria-label="Sprite perspective">
+                      <option>Side</option>
+                      <option>Top-down</option>
+                      <option>Front</option>
+                    </select>
+                  </label>
+                </div>
+                <UIButton
+                  type="primary"
+                  size="large"
+                  :disabled="spriteGenDescription.trim() === ''"
+                  @click="generateSpriteCandidates"
+                >
+                  {{ spriteGenGenerated ? 'Regenerate' : 'Generate' }}
+                </UIButton>
+              </form>
+              <section v-if="spriteGenGenerated" class="sprite-gen-results" aria-label="Generated sprite candidates">
+                <button
+                  v-for="(candidate, index) in generatedSpriteCandidates"
+                  :key="candidate.name"
+                  class="sprite-gen-candidate"
+                  :class="{ active: selectedGeneratedSpriteIndex === index }"
+                  type="button"
+                  @click="selectedGeneratedSpriteIndex = index"
+                >
+                  <img :src="candidate.image" :alt="candidate.name" />
+                  <span>{{ candidate.name }}</span>
+                </button>
+              </section>
+            </section>
+            <section v-if="spriteGenGenerated" class="sprite-gen-preview-panel" aria-label="Generated sprite preview">
+              <div class="sprite-gen-preview-card">
+                <img
+                  :src="(generatedSpriteCandidates[selectedGeneratedSpriteIndex] ?? generatedSpriteCandidates[0]).image"
+                  :alt="(generatedSpriteCandidates[selectedGeneratedSpriteIndex] ?? generatedSpriteCandidates[0]).name"
+                />
+                <span>{{ (generatedSpriteCandidates[selectedGeneratedSpriteIndex] ?? generatedSpriteCandidates[0]).name }}</span>
               </div>
-              <UIButton
-                type="primary"
-                size="large"
-                :disabled="spriteGenDescription.trim() === ''"
-                @click="generateSpriteCandidates"
-              >
-                {{ spriteGenGenerated ? 'Regenerate' : 'Generate' }}
-              </UIButton>
-            </form>
-            <section class="sprite-gen-results" aria-label="Generated sprite candidates">
-              <div v-if="!spriteGenGenerated" class="sprite-gen-empty">Generated sprite candidates will appear here.</div>
-              <button
-                v-for="(candidate, index) in generatedSpriteCandidates"
-                v-else
-                :key="candidate.name"
-                class="sprite-gen-candidate"
-                :class="{ active: selectedGeneratedSpriteIndex === index }"
-                type="button"
-                @click="selectedGeneratedSpriteIndex = index"
-              >
-                <img :src="candidate.image" :alt="candidate.name" />
-                <span>{{ candidate.name }}</span>
-              </button>
             </section>
           </div>
-          <footer class="prototype-modal-actions">
-            <UIButton type="white" size="medium" @click="cancelSpriteGenModal">Cancel</UIButton>
-            <UIButton type="primary" size="medium" :disabled="!spriteGenGenerated" @click="useGeneratedSprite">Use</UIButton>
+          <footer class="sprite-gen-footer">
+            <UIButton type="white" size="large" @click="cancelSpriteGenModal">Cancel</UIButton>
+            <UIButton type="primary" size="large" :disabled="!spriteGenGenerated" @click="useGeneratedSprite">
+              Use
+            </UIButton>
           </footer>
         </section>
       </div>
@@ -3088,50 +3293,55 @@ onBeforeUnmount(() => {
     <Teleport to="body">
       <div v-if="publishModalOpen" class="prototype-modal-backdrop" role="presentation" @click.self="cancelPublishProject">
         <section class="prototype-modal publish-modal" role="dialog" aria-modal="true" aria-labelledby="publish-project-title">
-          <h2 id="publish-project-title">Publish {{ projectDisplayName }}</h2>
-          <p>Published projects will be visible to all XBuilder users.</p>
-          <div class="publish-preview">
-            <img :src="project.thumbnail" :alt="projectDisplayName" />
+          <header class="publish-modal-header">
+            <h2 id="publish-project-title">Publish {{ projectDisplayName }}</h2>
+            <button type="button" aria-label="Close" @click="cancelPublishProject" v-html="closeIcon"></button>
+          </header>
+          <div class="publish-modal-body">
+            <p>Published projects will be visible to all XBuilder users.</p>
+            <div class="publish-preview">
+              <img :src="project.thumbnail" :alt="projectDisplayName" />
+            </div>
+            <form class="prototype-form publish-form" @submit.prevent="submitPublishProject">
+              <label class="prototype-field">
+                <span>Release description</span>
+                <textarea
+                  v-model="draftReleaseDescription"
+                  aria-label="Release description"
+                  placeholder="What is new in this release?"
+                  required
+                ></textarea>
+              </label>
+              <label class="prototype-field">
+                <span>Project description</span>
+                <textarea
+                  v-model="draftProjectDescription"
+                  aria-label="Project description"
+                  placeholder="What is this project about? How did you make it?"
+                ></textarea>
+              </label>
+              <label class="prototype-field">
+                <span>Play instructions</span>
+                <textarea
+                  v-model="draftProjectInstructions"
+                  aria-label="Play instructions"
+                  placeholder="Tell others how to play in your project"
+                ></textarea>
+              </label>
+              <footer class="prototype-modal-actions">
+                <UIButton type="neutral" size="medium" :disabled="publishSubmitting" @click="cancelPublishProject">Cancel</UIButton>
+                <UIButton
+                  type="primary"
+                  size="medium"
+                  :loading="publishSubmitting"
+                  :disabled="draftReleaseDescription.trim() === ''"
+                  @click="submitPublishProject"
+                >
+                  Publish
+                </UIButton>
+              </footer>
+            </form>
           </div>
-          <form class="prototype-form publish-form" @submit.prevent="submitPublishProject">
-            <label class="prototype-field">
-              <span>Release description</span>
-              <textarea
-                v-model="draftReleaseDescription"
-                aria-label="Release description"
-                placeholder="What is new in this release?"
-                required
-              ></textarea>
-            </label>
-            <label class="prototype-field">
-              <span>Project description</span>
-              <textarea
-                v-model="draftProjectDescription"
-                aria-label="Project description"
-                placeholder="What is this project about? How did you make it?"
-              ></textarea>
-            </label>
-            <label class="prototype-field">
-              <span>Play instructions</span>
-              <textarea
-                v-model="draftProjectInstructions"
-                aria-label="Play instructions"
-                placeholder="Tell others how to play in your project"
-              ></textarea>
-            </label>
-            <footer class="prototype-modal-actions">
-              <UIButton type="white" size="medium" :disabled="publishSubmitting" @click="cancelPublishProject">Cancel</UIButton>
-              <UIButton
-                type="primary"
-                size="medium"
-                :loading="publishSubmitting"
-                :disabled="draftReleaseDescription.trim() === ''"
-                @click="submitPublishProject"
-              >
-                Publish
-              </UIButton>
-            </footer>
-          </form>
         </section>
       </div>
     </Teleport>
@@ -3222,12 +3432,6 @@ onBeforeUnmount(() => {
   color: var(--ui-color-grey-500);
 }
 
-.icon-button svg.file-icon {
-  fill: currentColor;
-  stroke: none;
-  stroke-width: 0;
-}
-
 .navbar-dropdown {
   position: relative;
   height: 56px;
@@ -3239,6 +3443,23 @@ onBeforeUnmount(() => {
   height: 100%;
   width: auto;
   padding: 0 12px;
+  color: var(--ui-color-grey-1000);
+}
+
+.project-menu-trigger svg {
+  color: inherit;
+}
+
+.project-file-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+}
+
+.project-menu-arrow {
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
 }
 
 .project-menu-trigger:hover {
@@ -3308,14 +3529,6 @@ onBeforeUnmount(() => {
 .project-menu-item span:nth-of-type(1) {
   min-width: 0;
   flex: 1;
-}
-
-.caret {
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 5px solid currentColor;
 }
 
 .navbar-title {
@@ -3605,18 +3818,23 @@ onBeforeUnmount(() => {
 .prototype-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   color: var(--ui-color-grey-1000);
   font-size: 14px;
   line-height: 20px;
 }
 
+.prototype-field > span {
+  color: var(--ui-color-grey-800);
+}
+
 .prototype-field input {
-  height: 36px;
-  border: 1px solid var(--ui-color-grey-400);
+  height: 32px;
+  border: 0;
   border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  padding: 0 10px;
+  background: var(--ui-color-grey-300);
+  box-shadow: inset 0 0 0 1px var(--ui-color-grey-300);
+  padding: 0 12px;
   color: var(--ui-color-grey-1000);
   font: inherit;
   outline: none;
@@ -3624,10 +3842,11 @@ onBeforeUnmount(() => {
 
 .prototype-field textarea,
 .prototype-field select {
-  border: 1px solid var(--ui-color-grey-400);
+  border: 0;
   border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  padding: 8px 10px;
+  background: var(--ui-color-grey-300);
+  box-shadow: inset 0 0 0 1px var(--ui-color-grey-300);
+  padding: 8px 12px;
   color: var(--ui-color-grey-1000);
   font: inherit;
   outline: none;
@@ -3645,8 +3864,8 @@ onBeforeUnmount(() => {
 .prototype-field input:focus,
 .prototype-field textarea:focus,
 .prototype-field select:focus {
-  border-color: var(--ui-color-primary-main);
-  box-shadow: var(--ui-box-shadow-control);
+  background: var(--ui-color-grey-100);
+  box-shadow: inset 0 0 0 1px var(--ui-color-primary-main);
 }
 
 .prototype-field input[aria-invalid='true'] {
@@ -3676,15 +3895,68 @@ onBeforeUnmount(() => {
 }
 
 .publish-modal {
+  width: 560px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
   max-height: min(760px, calc(100vh - 48px));
+}
+
+.publish-modal-header {
+  flex: 0 0 56px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--ui-color-grey-400);
+  padding: 0 24px;
+}
+
+.publish-modal-header h2 {
+  flex: 1;
+  margin: 0;
+  color: var(--ui-color-grey-1000);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 28px;
+}
+
+.publish-modal-header button {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: transparent;
+  color: var(--ui-color-grey-800);
+  padding: 0;
+  cursor: pointer;
+}
+
+.publish-modal-header button:hover {
+  background: var(--ui-color-grey-300);
+  color: var(--ui-color-grey-1000);
+}
+
+.publish-modal-header button :deep(svg),
+.publish-modal-header button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.publish-modal-body {
+  min-height: 0;
+  flex: 1 1 auto;
   overflow-y: auto;
+  padding: 20px 24px 24px;
 }
 
 .publish-preview {
-  height: 180px;
+  height: 224px;
   overflow: hidden;
-  margin: 20px 0;
-  border-radius: var(--ui-border-radius-md);
+  margin: 24px 0;
+  border-radius: var(--ui-border-radius-sm);
   background: var(--ui-color-grey-300);
 }
 
@@ -3699,18 +3971,28 @@ onBeforeUnmount(() => {
 }
 
 .sprite-gen-modal {
-  width: min(920px, 100%);
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
 .sprite-gen-header {
+  flex: 0 0 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: -4px 0 20px;
+  border-bottom: 1px solid var(--ui-color-grey-400);
+  padding: 0 24px;
 }
 
 .sprite-gen-header h2 {
   margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
 }
 
 .sprite-gen-header button {
@@ -3730,15 +4012,73 @@ onBeforeUnmount(() => {
 }
 
 .sprite-gen-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 316px;
+  min-height: 0;
+  flex: 1 1 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  padding: 20px;
+}
+
+.sprite-gen-body.has-preview {
+  justify-content: flex-start;
+  gap: 20px;
+}
+
+.sprite-gen-main-panel {
+  width: 584px;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: 24px;
+  transition: width 0.2s ease;
+}
+
+.sprite-gen-body.has-preview .sprite-gen-main-panel {
+  width: 416px;
+  justify-content: flex-start;
 }
 
 .sprite-gen-settings {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+}
+
+.sprite-gen-description {
+  min-height: 172px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  padding: 12px;
+}
+
+.sprite-gen-description span,
+.sprite-gen-controls span {
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.sprite-gen-description textarea {
+  min-height: 112px;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  resize: none;
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+  line-height: 22px;
+}
+
+.sprite-gen-description textarea::placeholder {
+  color: var(--ui-color-grey-700);
 }
 
 .sprite-gen-controls {
@@ -3747,30 +4087,68 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-.sprite-gen-results {
-  min-height: 284px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: start;
-  gap: 12px;
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-200);
-  padding: 12px;
+.sprite-gen-controls label {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.sprite-gen-empty {
-  grid-column: 1 / -1;
+.sprite-gen-controls select {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+  line-height: 22px;
+  padding: 0 12px;
+}
+
+.sprite-gen-results {
+  min-height: 170px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 12px;
+}
+
+.sprite-gen-preview-panel {
+  min-width: 0;
+  flex: 1 1 auto;
   display: grid;
   place-items: center;
-  min-height: 260px;
-  color: var(--ui-color-grey-700);
+  border-left: 1px solid var(--ui-color-grey-400);
+  padding-left: 20px;
+}
+
+.sprite-gen-preview-card {
+  width: min(100%, 440px);
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-200);
+  padding: 24px;
+  color: var(--ui-color-grey-800);
   font-size: 14px;
+  line-height: 22px;
   text-align: center;
+}
+
+.sprite-gen-preview-card img {
+  max-width: 240px;
+  max-height: 280px;
+  object-fit: contain;
 }
 
 .sprite-gen-candidate {
   min-width: 0;
-  height: 128px;
+  height: 132px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3802,6 +4180,15 @@ onBeforeUnmount(() => {
   font-size: 12px;
   line-height: 18px;
   text-align: center;
+}
+
+.sprite-gen-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  border-top: 1px solid var(--ui-color-grey-400);
+  padding: 16px 24px;
 }
 
 .editor-main {
@@ -3861,17 +4248,22 @@ onBeforeUnmount(() => {
   border: 0;
   background: transparent;
   padding: 0;
+  cursor: grab;
   transform: translate(-50%, -50%);
+}
+
+.map-sprite.dragging {
+  cursor: grabbing;
 }
 
 .map-sprite img {
   display: block;
   object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .map-sprite-niu-xiao-qi {
-  left: 49%;
-  top: 46%;
 }
 
 .map-sprite-niu-xiao-qi img {
@@ -3879,8 +4271,6 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite-niu-xiao-hua {
-  left: 26%;
-  top: 33%;
 }
 
 .map-sprite-niu-xiao-hua img {
@@ -3888,8 +4278,6 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite-flower {
-  left: 68%;
-  top: 48%;
 }
 
 .map-sprite-flower img {
@@ -3897,8 +4285,6 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite-tornado {
-  left: 82%;
-  top: 61%;
 }
 
 .map-sprite-tornado img {
@@ -3906,8 +4292,6 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite-jaime {
-  left: 41%;
-  top: 69%;
 }
 
 .map-sprite-jaime img {
@@ -3915,8 +4299,6 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite-kai {
-  left: 68%;
-  top: 71%;
 }
 
 .map-sprite-kai img {
@@ -3997,31 +4379,51 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.map-card-header.active {
-  color: var(--ui-color-primary-main);
-}
-
 .map-card-header button,
 .map-config-title button {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
+  border-radius: 999px;
   background: transparent;
   color: var(--ui-color-grey-800);
+  padding: 0;
+}
+
+.map-card-header button:hover,
+.map-config-title button:hover {
+  background: var(--ui-color-grey-400);
+}
+
+.map-card-header button > span,
+.map-card-header button > span :deep(svg) {
+  width: 16px;
+  height: 16px;
 }
 
 .map-config {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
   padding: 16px;
 }
 
 .map-config label,
 .map-config-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   font-size: 14px;
+  line-height: 22px;
+}
+
+.map-config label > span:first-child,
+.map-config-row > span:first-child {
+  color: var(--ui-color-grey-1000);
 }
 
 .map-size-inputs {
@@ -4170,15 +4572,11 @@ onBeforeUnmount(() => {
 }
 
 .map-config strong {
-  min-width: 126px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-300);
+  min-width: 0;
   color: var(--ui-color-grey-1000);
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
 }
 
 .map-button-group {
@@ -4225,7 +4623,7 @@ onBeforeUnmount(() => {
   min-height: 32px;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px 12px;
 }
 
@@ -4272,7 +4670,7 @@ onBeforeUnmount(() => {
   bottom: 0;
   z-index: 4;
   border-top: 1px solid var(--ui-color-grey-400);
-  background: var(--ui-color-grey-200);
+  background: var(--ui-color-grey-100);
   padding: 16px;
   box-shadow: 0 -12px 24px rgb(16 24 40 / 0.08);
 }
@@ -4298,7 +4696,11 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.map-sprite-config .map-config-row + .map-config-row {
+  margin-top: 16px;
 }
 
 .map-config-name {
@@ -4364,8 +4766,8 @@ onBeforeUnmount(() => {
 .map-config-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .map-config-grid label {
@@ -4383,12 +4785,20 @@ onBeforeUnmount(() => {
 .map-config-grid input {
   min-width: 0;
   width: 100%;
-  height: 30px;
-  border: 1px solid var(--ui-color-grey-400);
+  height: 32px;
+  border: 0;
   border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  padding: 0 8px;
+  background: var(--ui-color-grey-300);
+  box-shadow: inset 0 0 0 1px var(--ui-color-grey-300);
+  padding: 0 12px;
   color: var(--ui-color-grey-1000);
+  font: inherit;
+  outline: none;
+}
+
+.map-config-grid input:focus {
+  background: var(--ui-color-grey-100);
+  box-shadow: inset 0 0 0 1px var(--ui-color-primary-main);
 }
 
 .code-card,
@@ -5434,10 +5844,25 @@ onBeforeUnmount(() => {
   position: absolute;
 }
 
-.cow-flower {
-  left: 79px;
-  top: 86px;
-  width: 64px;
+.stage-sprite {
+  width: 105px;
+  height: 105px;
+  cursor: grab;
+  transform-origin: center;
+}
+
+.stage-sprite.dragging,
+.selected-sprite.dragging {
+  cursor: grabbing;
+}
+
+.stage-sprite img {
+  position: absolute;
+  left: 24px;
+  top: 10px;
+  width: 54px;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .selected-sprite {
@@ -5446,6 +5871,7 @@ onBeforeUnmount(() => {
   width: 105px;
   height: 105px;
   border: 1px solid var(--ui-color-primary-main);
+  cursor: grab;
   transform-origin: center;
 }
 
@@ -5454,6 +5880,8 @@ onBeforeUnmount(() => {
   left: 24px;
   top: 10px;
   width: 54px;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .coordinate {
@@ -5720,7 +6148,8 @@ onBeforeUnmount(() => {
   box-shadow: var(--ui-box-shadow-md);
 }
 
-.asset-header .add-sprite-menu-item {
+.asset-header .add-sprite-menu-item,
+.map-card-header .add-sprite-menu-item {
   box-sizing: border-box;
   width: 100%;
   height: auto;
@@ -5740,7 +6169,8 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.asset-header .add-sprite-menu-item:hover {
+.asset-header .add-sprite-menu-item:hover,
+.map-card-header .add-sprite-menu-item:hover {
   background: var(--ui-color-grey-300);
 }
 
@@ -5846,6 +6276,7 @@ onBeforeUnmount(() => {
 .asset-options-item,
 .quick-layer-menu button,
 .asset-header .add-sprite-menu-item,
+.map-card-header .add-sprite-menu-item,
 .sprite-options-item {
   min-height: 40px;
   display: flex;
@@ -5871,6 +6302,7 @@ onBeforeUnmount(() => {
 .asset-options-item:hover:not(:disabled),
 .quick-layer-menu button:hover,
 .asset-header .add-sprite-menu-item:hover,
+.map-card-header .add-sprite-menu-item:hover,
 .sprite-options-item:hover {
   background: var(--ui-color-grey-300);
 }
@@ -5881,6 +6313,7 @@ onBeforeUnmount(() => {
 .asset-options-item + .asset-options-item,
 .quick-layer-menu button + button,
 .asset-header .add-sprite-menu-item + .add-sprite-menu-item,
+.map-card-header .add-sprite-menu-item + .add-sprite-menu-item,
 .sprite-options-item + .sprite-options-item {
   position: relative;
   margin-top: 13px;
@@ -5892,6 +6325,7 @@ onBeforeUnmount(() => {
 .asset-options-item + .asset-options-item::before,
 .quick-layer-menu button + button::before,
 .asset-header .add-sprite-menu-item + .add-sprite-menu-item::before,
+.map-card-header .add-sprite-menu-item + .add-sprite-menu-item::before,
 .sprite-options-item + .sprite-options-item::before {
   content: '';
   position: absolute;
@@ -5964,18 +6398,30 @@ onBeforeUnmount(() => {
 }
 
 .stage-entry {
-  width: 100%;
-  min-height: auto;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border: 0;
+  border: none;
+  border-radius: var(--ui-border-radius-md);
   color: var(--ui-color-grey-800);
-  background: transparent;
-  padding: 5px 8px;
-  transition: color 0.1s;
+  background: var(--ui-color-grey-100);
+  padding: 4px;
+  transition:
+    background-color 0.1s,
+    color 0.1s;
+}
+
+.stage-divider + .stage-entry {
+  margin-top: 12px;
+}
+
+.stage-entry + .stage-entry {
+  margin-top: 8px;
 }
 
 .stage-entry.active {
@@ -5983,6 +6429,7 @@ onBeforeUnmount(() => {
 }
 
 .stage-entry:hover:not(.active) {
+  background: var(--ui-color-grey-300);
   color: var(--ui-color-grey-900);
 }
 
@@ -6002,5 +6449,6 @@ onBeforeUnmount(() => {
 
 .stage-entry span {
   font-size: 10px;
+  line-height: 14px;
 }
 </style>
