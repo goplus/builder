@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:prototype": "node scripts/check-prototype.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.2.2",
