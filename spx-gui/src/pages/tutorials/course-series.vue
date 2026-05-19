@@ -139,7 +139,7 @@ const { fn: handleCourseClick } = useMessageHandle(
         <div v-if="courseSeries" :style="{ '--num-in-row': numInRow }">
           <ListResultWrapper :query-ret="courseQuery" :height="height">
             <template #empty="{ style }">
-              <UIEmpty size="large" img="game" :style="style">
+              <UIEmpty size="large" img="box" :style="style">
                 {{
                   $t({
                     zh: `${courseSeries.title}没有可用的课程`,

@@ -1034,7 +1034,7 @@
           <div :class="surfaceCardClass">
             <div :class="groupLabelClass">UIEmpty</div>
             <div :class="feedbackSurfaceClass">
-              <UIEmpty size="large" img="game">
+              <UIEmpty size="large" img="box">
                 {{ $t({ en: 'No tutorials yet', zh: '还没有教程' }) }}
               </UIEmpty>
             </div>
