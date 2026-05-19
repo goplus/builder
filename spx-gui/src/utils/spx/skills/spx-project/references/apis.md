@@ -25,11 +25,11 @@ onKey,"onKey KeyA, => {}",Listen to given key pressed
 onKey,"onKey [KeyA], key => {}",Listen to given keys pressed
 onMsg,"onMsg (msg, data) => {}",Listen to any message broadcasted
 onMsg,"onMsg ""ping"", => {}",Listen to specific message broadcasted
-onStart,onStart => {},Listen to game start
+onStart,onStart => {},Listen to game start. Put initialization code in `onStart` when you do not want later code to wait for it.
 onSwipe,"onSwipe Left, => {}",Listen to swipe in given direction
 pausePlaying,"pausePlaying ""s1""",Pause sound with given name
-play,"play ""s1"", true",Play sound with given name in a loop
 play,"play ""s1""",Play sound with given name
+play,"play ""s1"", true",Play sound with given name in a loop
 playAndWait,"playAndWait ""s1""",Play sound with waiting
 resumePlaying,"resumePlaying ""s1""",Resume sound with given name
 setGraphicEffect,"setGraphicEffect ColorEffect, 100",Set graphic effect of the stage
@@ -111,12 +111,12 @@ onKey,"onKey KeyA, => {}",Listen to given key pressed
 onKey,"onKey [KeyA], key => {}",Listen to given keys pressed
 onMsg,"onMsg (msg, data) => {}",Listen to any message broadcasted
 onMsg,"onMsg ""ping"", => {}",Listen to specific message broadcasted
-onStart,onStart => {},Listen to game start
+onStart,onStart => {},Listen to game start. Put initialization code in `onStart` when you do not want later code to wait for it.
 onSwipe,"onSwipe Left, => {}",Listen to swipe in given direction
 pausePlaying,"pausePlaying ""s1""",Pause sound with given name
 physicsMode,,The physics mode for the sprite
-play,"play ""s1"", true",Play sound with given name in a loop
 play,"play ""s1""",Play sound with given name
+play,"play ""s1"", true",Play sound with given name in a loop
 playAndWait,"playAndWait ""s1""",Play sound with waiting
 resumePlaying,"resumePlaying ""s1""",Resume sound with given name
 setGraphicEffect,"setGraphicEffect ColorEffect, 100",Set graphic effect of the sprite
@@ -169,8 +169,8 @@ Back,,Back
 Backward,,Backward
 Forward,,Forward
 Front,,Front
-HSB,"HSB(50, 100, 100)",Define HSB color
-HSBA,"HSBA(50, 100, 100, 100)",Define HSBA color
+hSB,"HSB(50, 100, 100)",Define HSB color
+hSBA,"HSBA(50, 100, 100, 100)",Define HSBA color
 Camera.follow,Camera.follow S1,Make the camera follow the given sprite
 Camera.setXYpos,"Camera.setXYpos 0, 0",Set the X and Y position of the camera center
 Camera.setZoom,Camera.setZoom 1,Set zoom factor of the camera

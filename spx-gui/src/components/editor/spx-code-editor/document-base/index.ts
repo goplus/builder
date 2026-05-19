@@ -2164,8 +2164,8 @@ export const gameOnStart: DefinitionDocumentationItem = {
   insertSnippet: 'onStart => {\n\t$0\n}',
   overview: 'onStart => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to game start',
-    zh: '游戏开始时执行'
+    en: 'Listen to game start. Put initialization code in `onStart` when you do not want later code to wait for it.',
+    zh: '游戏开始时执行；如果你不想让后面的代码等初始化代码执行完，可以把初始化代码放在 `onStart` 里'
   })
 }
 
@@ -2676,7 +2676,8 @@ export const gameShowVar: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Show a variable on the monitor, with the parameter being the variable name as a string',
     zh: '在监视器上显示一个变量，参数为变量名字符串'
-  })
+  }),
+  hiddenFromList: true // exists for scratch compatibility, but not recommended to use
 }
 
 export const gameHideVar: DefinitionDocumentationItem = {
@@ -2692,7 +2693,8 @@ export const gameHideVar: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Hide a variable on the monitor, with the parameter being the variable name as a string',
     zh: '在监视器上隐藏一个变量，参数为变量名字符串'
-  })
+  }),
+  hiddenFromList: true // exists for scratch compatibility, but not recommended to use
 }
 
 export const spriteShowVar: DefinitionDocumentationItem = {
