@@ -66,6 +66,7 @@ const prototypeCheckboxGroup = read('src/components/ui/UICheckboxGroup.vue')
 const prototypeModal = read('src/components/ui/UIModal.vue')
 const prototypeModalClose = read('src/components/ui/UIModalClose.vue')
 const prototypeFormModal = read('src/components/ui/UIFormModal.vue')
+const prototypeTextInput = read('src/components/ui/UITextInput.vue')
 const copilot = read('src/components/copilot/Copilot.vue')
 const communityApi = read('src/apis/community.ts')
 const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
@@ -135,6 +136,7 @@ for (const requiredFile of [
   'src/components/ui/UIModal.vue',
   'src/components/ui/UIModalClose.vue',
   'src/components/ui/UIFormModal.vue',
+  'src/components/ui/UITextInput.vue',
   'src/components/community/home/GuestBanner.vue',
   'src/pages/community/index.vue',
   'src/pages/community/project.vue',
@@ -265,13 +267,20 @@ if (
 
 if (
   !navbar.includes('placeholder="Search project"') ||
-  !navbar.includes('community-search-input') ||
-  !navbar.includes('.community-search-input {\n  font-size: 14px;\n  line-height: 22px;') ||
+  !navbar.includes('UITextInput') ||
+  !navbar.includes('clearable') ||
+  !navbar.includes('searchIcon') ||
+  navbar.includes('type="search"') ||
+  navbar.includes('community-search-input') ||
+  !prototypeTextInput.includes('.ui-text-input {\n  position: relative;') ||
+  !prototypeTextInput.includes('font-size: 14px;\n  line-height: 22px;') ||
+  !prototypeTextInput.includes('type="text"') ||
+  !prototypeTextInput.includes('ui-text-input-clear') ||
   navbar.includes('pl-7.5 text-base leading-[22px] text-text') ||
   navbar.includes('pl-7.5 text-sm leading-[22px] text-text') ||
   navbar.includes('pl-7.5 text-[14px]/[22px] text-text')
 ) {
-  failures.push('community navbar search input text must render at 14px')
+  failures.push('community navbar search must use the shared UITextInput with real icon and 14px text')
 }
 
 if (!projectsSection.includes('link-primary flex items-center text-lg')) {

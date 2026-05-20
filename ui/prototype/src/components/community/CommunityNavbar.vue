@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import logoSvg from '@/assets/navbar-logo.svg'
+import searchIcon from '@/assets/ui-icons/search.svg?raw'
 import arrowMiniIcon from '@/assets/navbar-icons/arrow-mini.svg?raw'
 import folderIcon from '@/assets/navbar-icons/folder.svg?raw'
 import newProjectIcon from '@/assets/editor/navbar-icons/new.svg'
 import openProjectIcon from '@/assets/editor/navbar-icons/open.svg'
 import UIButton from '@/components/ui/UIButton.vue'
+import UITextInput from '@/components/ui/UITextInput.vue'
 
 const router = useRouter()
 const searchValue = ref('')
@@ -21,6 +23,14 @@ function submitSearch(event: Event) {
   const keyword = searchValue.value.trim()
   router.push(keyword === '' ? '/search' : `/search?q=${encodeURIComponent(keyword)}`)
 }
+
+watch(
+  () => router.currentRoute.value,
+  (route) => {
+    searchValue.value = route.path === '/search' && typeof route.query.q === 'string' ? route.query.q : ''
+  },
+  { immediate: true }
+)
 
 function toggleProjectMenu() {
   clearProjectMenuTimers()
@@ -165,17 +175,21 @@ onBeforeUnmount(() => {
       <div class="flex min-w-0 grow basis-[40%] items-center justify-center" aria-hidden="true"></div>
 
       <div class="flex h-12 min-w-0 basis-[30%] items-center justify-end">
-        <form class="relative flex h-12 w-91 items-center px-3 py-2.25" @submit="submitSearch">
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="pointer-events-none absolute top-4.5 left-6 z-1 size-3.5 fill-none stroke-hint-1 stroke-2 [stroke-linecap:round] [stroke-linejoin:round]">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m16.5 16.5 4 4" />
-          </svg>
-          <input
-            class="community-search-input h-8 w-full rounded-md border border-grey-400 bg-grey-100 py-0 pr-3 pl-7.5 text-text outline-none placeholder:text-grey-700"
-            type="search"
+        <form class="flex h-12 w-91 items-center px-3 py-2.25" @submit="submitSearch">
+          <UITextInput
+            v-model:value="searchValue"
+            color="white"
+            clearable
             placeholder="Search project"
-            v-model="searchValue"
-          />
+          >
+            <template #prefix>
+              <span
+                class="flex size-3.5 items-center justify-center text-grey-800 [&>svg]:block [&>svg]:size-3.5"
+                aria-hidden="true"
+                v-html="searchIcon"
+              ></span>
+            </template>
+          </UITextInput>
         </form>
 
         <div class="flex h-full items-center px-3 whitespace-nowrap">
@@ -189,11 +203,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.community-search-input {
-  font-size: 14px;
-  line-height: 22px;
-}
-
 .community-sign-in-button {
   font-size: 14px;
   line-height: 22px;
