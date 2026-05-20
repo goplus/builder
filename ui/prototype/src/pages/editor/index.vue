@@ -5221,20 +5221,21 @@ onBeforeUnmount(() => {
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--ui-color-grey-1000);
+  color: inherit;
   cursor: pointer;
 }
 
-.asset-detail-rename-trigger:hover,
-.asset-detail-rename-trigger:focus-visible {
-  color: var(--ui-color-grey-900);
+.asset-detail-rename-trigger:hover .asset-detail-edit-icon,
+.asset-detail-rename-trigger:focus-visible .asset-detail-edit-icon {
+  color: var(--ui-color-grey-800);
 }
 
 .asset-detail-title {
   min-width: 0;
   margin: 0;
+  color: var(--ui-color-grey-1000);
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 24px;
   text-align: center;
 }
@@ -5243,6 +5244,8 @@ onBeforeUnmount(() => {
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
+  color: var(--ui-color-grey-900);
+  transition: color 0.2s ease;
 }
 
 .asset-detail-edit-icon :deep(svg) {
