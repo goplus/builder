@@ -1641,6 +1641,10 @@ function updateSelectedMapSpriteLeftRight(direction: 'left' | 'right') {
   markPrototypeAction()
 }
 
+function updateMapSpriteDirectionValue(value: string) {
+  updateSelectedMapSpriteLeftRight(value === 'left' ? 'left' : 'right')
+}
+
 function updateMapSpriteVisibility(visible: boolean) {
   const sprite = selectedMapSprite.value
   if (sprite == null) return
@@ -3786,23 +3790,50 @@ onBeforeUnmount(() => {
             </div>
             <div class="map-config-row">
               <span>Rotation</span>
-              <UIButtonGroup
-                class="map-button-group"
-                :value="selectedMapSprite.rotationStyle"
-                role="group"
-                aria-label="Map sprite rotation style"
-                @update:value="updateMapSpriteRotationValue"
-              >
-                <UIButtonGroupItem value="normal" aria-label="Normal rotation">
-                  <span class="map-button-group-icon" v-html="rotateAroundIcon"></span>
-                </UIButtonGroupItem>
-                <UIButtonGroupItem value="left-right" aria-label="Left-right rotation">
-                  <span class="map-button-group-icon" v-html="leftRightIcon"></span>
-                </UIButtonGroupItem>
-                <UIButtonGroupItem value="none" aria-label="No rotation">
-                  <span class="map-button-group-icon" v-html="notRotateIcon"></span>
-                </UIButtonGroupItem>
-              </UIButtonGroup>
+              <div class="map-rotation-controls">
+                <UIButtonGroup
+                  class="map-button-group"
+                  :value="selectedMapSprite.rotationStyle"
+                  role="group"
+                  aria-label="Map sprite rotation style"
+                  @update:value="updateMapSpriteRotationValue"
+                >
+                  <UIButtonGroupItem value="normal" aria-label="Normal rotation">
+                    <span class="map-button-group-icon" v-html="rotateAroundIcon"></span>
+                  </UIButtonGroupItem>
+                  <UIButtonGroupItem value="left-right" aria-label="Left-right rotation">
+                    <span class="map-button-group-icon" v-html="leftRightIcon"></span>
+                  </UIButtonGroupItem>
+                  <UIButtonGroupItem value="none" aria-label="No rotation">
+                    <span class="map-button-group-icon" v-html="notRotateIcon"></span>
+                  </UIButtonGroupItem>
+                </UIButtonGroup>
+                <label v-if="selectedMapSprite.rotationStyle !== 'left-right'" class="map-number-input map-heading-input" :class="{ disabled: selectedMapSprite.rotationStyle === 'none' }">
+                  <span class="map-number-prefix">Heading</span>
+                  <input
+                    :value="selectedMapSprite.heading"
+                    type="number"
+                    min="-180"
+                    max="180"
+                    inputmode="numeric"
+                    aria-label="Heading"
+                    :disabled="selectedMapSprite.rotationStyle === 'none'"
+                    @input="updateSelectedMapSpriteHeading"
+                  />
+                </label>
+                <UIButtonGroup
+                  v-else
+                  class="map-button-group"
+                  type="text"
+                  :value="selectedMapSprite.heading < 0 ? 'left' : 'right'"
+                  role="group"
+                  aria-label="Map sprite left-right direction"
+                  @update:value="updateMapSpriteDirectionValue"
+                >
+                  <UIButtonGroupItem value="left" aria-label="Set direction left">Left</UIButtonGroupItem>
+                  <UIButtonGroupItem value="right" aria-label="Set direction right">Right</UIButtonGroupItem>
+                </UIButtonGroup>
+              </div>
             </div>
             <div class="map-config-row">
               <span>Show</span>
@@ -4838,10 +4869,6 @@ onBeforeUnmount(() => {
   line-height: 24px;
 }
 
-.map-button-group {
-  flex: 1;
-}
-
 .map-button-group :deep(svg) {
   width: 16px;
   height: 16px;
@@ -5069,6 +5096,30 @@ onBeforeUnmount(() => {
 .map-config-grid label:focus-within {
   background: var(--ui-color-grey-100);
   box-shadow: inset 0 0 0 1px var(--ui-color-primary-main);
+}
+
+.map-number-input.disabled {
+  background: var(--ui-color-disabled-bg);
+  color: var(--ui-color-disabled-text);
+}
+
+.map-number-input.disabled .map-number-prefix,
+.map-number-input.disabled .map-number-suffix,
+.map-number-input.disabled input {
+  color: var(--ui-color-disabled-text);
+  cursor: not-allowed;
+}
+
+.map-rotation-controls {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.map-heading-input {
+  flex: 1 1 120px;
+  min-width: 0;
 }
 
 .code-card,
