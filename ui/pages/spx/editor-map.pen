@@ -4,28 +4,26 @@
     {
       "type": "frame",
       "id": "Y75XC",
-      "x": -720,
-      "y": -450,
-      "name": "page",
+      "x": -761,
+      "y": -237,
+      "name": "Map",
       "width": 1440,
       "height": 900,
       "fill": "$y:grey300",
       "layout": "vertical",
-      "gap": 20,
       "children": [
         {
-          "id": "qiNmn",
+          "id": "EATrw",
           "type": "ref",
           "ref": "y:WiWwa",
           "x": 0,
-          "y": 0,
-          "width": 1440,
-          "rotation": 0,
+          "y": 3.526068326209497e-13,
+          "rotation": -360,
           "children": [
             {
-              "id": "WIh0Y",
+              "id": "CLlx8",
               "type": "ref",
-              "ref": "y:So19f"
+              "ref": "y:FsGzC"
             }
           ]
         },
@@ -35,25 +33,32 @@
           "name": "Main Content",
           "width": "fill_container",
           "height": "fill_container",
-          "gap": 20,
+          "gap": "$y:space-4",
           "padding": [
-            0,
-            20,
-            20,
-            20
+            "$space-2",
+            "$y:space-4",
+            "$y:space-4",
+            "$y:space-4"
           ],
           "children": [
             {
               "id": "y6MgiT",
               "type": "ref",
               "ref": "y:qEHhD",
-              "x": 20,
-              "y": 0,
+              "x": 16,
+              "y": 8,
+              "height": 828,
+              "width": "fit_content",
+              "flipX": false,
+              "flipY": false,
               "children": [
                 {
-                  "id": "zOgBS",
+                  "id": "HOdJS",
                   "type": "ref",
-                  "ref": "y:ehGL5"
+                  "ref": "y:DhpBi",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fill_container"
                 }
               ]
             },
@@ -62,15 +67,16 @@
               "id": "P5f0T",
               "name": "Sidebar",
               "clip": true,
+              "width": 496,
               "height": "fill_container",
               "layout": "vertical",
-              "gap": 20,
+              "gap": "$y:space-4",
               "children": [
                 {
                   "id": "G7Xsx",
                   "type": "ref",
                   "ref": "y:Hjqqt",
-                  "x": 0,
+                  "x": 0.00536415035617273,
                   "y": 0,
                   "children": [
                     {
@@ -81,18 +87,23 @@
                   ]
                 },
                 {
-                  "id": "SO3XP",
+                  "id": "K59DL",
                   "type": "ref",
-                  "ref": "y:Hjqqt",
+                  "ref": "y:FkOMa",
+                  "height": "fit_content",
                   "x": 0,
-                  "y": 198,
-                  "children": [
-                    {
-                      "id": "D2ORVQ",
-                      "type": "ref",
-                      "ref": "y:TaNBl"
+                  "y": 202.01430432360013,
+                  "rotation": -360,
+                  "descendants": {
+                    "y:E6As2u": {
+                      "flipX": false,
+                      "flipY": false,
+                      "width": "fill_container",
+                      "height": 354,
+                      "x": 0,
+                      "y": 0
                     }
-                  ]
+                  }
                 }
               ]
             }
@@ -101,6 +112,101 @@
       ]
     }
   ],
+  "themes": {
+    "Accent": [
+      "Default"
+    ]
+  },
+  "variables": {
+    "grey400": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#eaeff3",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "radius-2": {
+      "type": "number",
+      "value": [
+        {
+          "value": 8,
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "grey100": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ffffff",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "space-1": {
+      "type": "number",
+      "value": [
+        {
+          "value": 4,
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "space-2": {
+      "type": "number",
+      "value": [
+        {
+          "value": 8,
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "grey800": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#6e7781",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "shadow-blur-1": {
+      "type": "number",
+      "value": [
+        {
+          "value": 4,
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    },
+    "grey1000": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#24292f",
+          "theme": {
+            "Accent": "Default"
+          }
+        }
+      ]
+    }
+  },
   "imports": {
     "y": "../../components/spx/builder-component.lib.pen"
   }
