@@ -3632,11 +3632,6 @@ onBeforeUnmount(() => {
               </button>
             </template>
           </div>
-          <div class="map-zoom-controls">
-            <button type="button" aria-label="Zoom in">+</button>
-            <button type="button" aria-label="Zoom out">-</button>
-            <button type="button" aria-label="Reset zoom">100%</button>
-          </div>
         </div>
       </section>
 
@@ -4626,28 +4621,6 @@ onBeforeUnmount(() => {
 .map-quick-tools button.active {
   background: var(--ui-color-primary-200);
   color: var(--ui-color-primary-400);
-}
-
-.map-zoom-controls {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 4px;
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  padding: 4px;
-  box-shadow: var(--ui-box-shadow-sm);
-}
-
-.map-zoom-controls button {
-  height: 28px;
-  min-width: 28px;
-  border: 0;
-  border-radius: var(--ui-border-radius-sm);
-  background: transparent;
-  color: var(--ui-color-grey-900);
 }
 
 .map-side {
