@@ -3656,7 +3656,7 @@ onBeforeUnmount(() => {
         Animation {{ animationPendingRemoval.name }} will be removed. Do you want to preserve the costumes?
       </p>
       <UICheckbox v-model:checked="preserveRemovedAnimationFrames" class="prototype-checkbox">
-        <span>Preserve (the costumes will be moved to the sprite's costume list)</span>
+        Preserve (the costumes will be moved to the sprite's costume list)
       </UICheckbox>
       <div class="prototype-modal-actions">
         <UIButton type="white" size="medium" @click="cancelRemoveAnimation">Cancel</UIButton>
@@ -4156,9 +4156,6 @@ onBeforeUnmount(() => {
 }
 
 .prototype-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin-top: 20px;
 }
 
