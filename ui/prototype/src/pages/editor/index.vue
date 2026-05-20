@@ -409,6 +409,7 @@ const selectedSoundId = ref('pop')
 const selectedWidgetId = ref('score')
 const soundEditStates = ref<Record<string, SoundEditState>>({})
 const selectedMapSpriteId = ref('niu-xiao-qi')
+const mapGlobalConfigCollapsed = ref(false)
 const mapSpriteNameEditing = ref(false)
 const mapSpriteConfigExpanded = ref(true)
 const mapPhysicsEnabled = ref(true)
@@ -3434,9 +3435,16 @@ onBeforeUnmount(() => {
         <UICard class="map-card">
           <UICardHeader class="map-card-header justify-between">
             <h2 class="m-0 text-xl font-normal text-title">Global Config</h2>
-            <button class="map-config-icon collapse" type="button" aria-label="Collapse global config" v-html="arrowDownIcon"></button>
+            <button
+              class="map-config-icon collapse"
+              :class="{ collapsed: mapGlobalConfigCollapsed }"
+              type="button"
+              aria-label="Collapse global config" v-html="arrowDownIcon"
+              :title="mapGlobalConfigCollapsed ? 'Expand' : 'Collapse'"
+              @click="mapGlobalConfigCollapsed = !mapGlobalConfigCollapsed"
+            ></button>
           </UICardHeader>
-          <div class="map-config">
+          <div v-if="!mapGlobalConfigCollapsed" class="map-config">
             <label>
               <span>Map size</span>
               <span class="map-size-inputs">
@@ -4451,6 +4459,7 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-400);
 }
 
+.map-card-header button :deep(svg),
 .map-card-header button > span,
 .map-card-header button > span :deep(svg) {
   width: 16px;
@@ -4767,6 +4776,16 @@ onBeforeUnmount(() => {
 .map-config-icon.collapse svg {
   width: 16px;
   height: 16px;
+}
+
+.map-config-icon.collapse {
+  transition:
+    color 0.15s ease,
+    transform 0.3s ease;
+}
+
+.map-config-icon.collapse.collapsed {
+  transform: rotate(180deg);
 }
 
 .map-sprite-name-form {
