@@ -8,8 +8,9 @@ import { Costume } from './costume'
 import { Sound } from './sound'
 import { Animation } from './animation'
 
-vi.mock('@/apis/ai-description', () => ({
-  generateAIDescription: vi.fn().mockResolvedValue('Mocked AI description for testing')
+vi.mock('@/apis/aigc', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/apis/aigc')>()),
+  generateProjectDescription: vi.fn().mockResolvedValue('Mocked project description for testing')
 }))
 
 function mockFile(name = 'mocked') {

@@ -3,7 +3,13 @@ import { computed } from 'vue'
 import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { ProjectType, Visibility, listProject, ownerAll } from '@/apis/project'
+import {
+  ProjectType,
+  listSignedInUserProjects,
+  listUserLikedProjects,
+  listUserPublicProjects,
+  type ListUserPublicProjectsParams
+} from '@/apis/project'
 import { useSignedInUser, useUser } from '@/stores/user'
 import { UICard, useResponsive } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
@@ -36,14 +42,16 @@ const projectsRoute = computed(() => {
 
 const projectsRet = useQuery(
   async () => {
-    const { data: projects } = await listProject({
+    const params: ListUserPublicProjectsParams = {
       type: ProjectType.Game,
-      owner: props.nameInput,
       pageIndex: 1,
       pageSize: numInRow.value,
       orderBy: 'updatedAt',
       sortOrder: 'desc'
-    })
+    }
+    const { data: projects } = isSignedInUser.value
+      ? await listSignedInUserProjects(params)
+      : await listUserPublicProjects(props.nameInput, params)
     return projects
   },
   { en: 'Failed to load projects', zh: '加载失败' }
@@ -55,11 +63,8 @@ const likesRoute = computed(() => {
 
 const likesRet = useQuery(
   async () => {
-    const { data: likes } = await listProject({
+    const { data: likes } = await listUserLikedProjects(props.nameInput, {
       type: ProjectType.Game,
-      visibility: Visibility.Public,
-      owner: ownerAll,
-      liker: props.nameInput,
       orderBy: 'likedAt',
       sortOrder: 'desc',
       pageIndex: 1,

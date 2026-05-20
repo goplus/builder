@@ -13,7 +13,15 @@ import {
   useForm,
   useConfirmDialog
 } from '@/components/ui'
-import { type AssetData, addAsset, listAsset, Visibility, AssetType, getAsset, updateAsset } from '@/apis/asset'
+import {
+  type AssetData,
+  addAsset,
+  listSignedInUserAssets,
+  Visibility,
+  AssetType,
+  getAsset,
+  updateAsset
+} from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { Backdrop } from '@/models/spx/backdrop'
 import { Sound } from '@/models/spx/sound'
@@ -148,7 +156,7 @@ async function addAssetWithPartialData({
   files,
   filesHash
 }: PartialAssetData) {
-  const { data: assets } = await listAsset({
+  const { data: assets } = await listSignedInUserAssets({
     pageSize: 1, // we only need to know if the asset with the same filesHash exists
     pageIndex: 1,
     type,

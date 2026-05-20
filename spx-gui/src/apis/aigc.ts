@@ -183,15 +183,15 @@ export type TaskParams<T extends TaskType = TaskType> = {
 }[T]
 
 export function createTask<T extends TaskType>(type: T, params: TaskParams<T>, signal?: AbortSignal): Promise<Task<T>> {
-  return client.post('/aigc/task', { type, parameters: params }, { signal }) as Promise<Task<T>>
+  return client.post('/aigc/tasks', { type, parameters: params }, { signal }) as Promise<Task<T>>
 }
 
 export function getTask(taskID: string, signal?: AbortSignal): Promise<Task> {
-  return client.get(`/aigc/task/${encodeURIComponent(taskID)}`, undefined, { signal }) as Promise<Task>
+  return client.get(`/aigc/tasks/${encodeURIComponent(taskID)}`, undefined, { signal }) as Promise<Task>
 }
 
 export function cancelTask(taskID: string, signal?: AbortSignal): Promise<Task> {
-  return client.post(`/aigc/task/${encodeURIComponent(taskID)}/cancellation`, undefined, { signal }) as Promise<Task>
+  return client.put(`/aigc/tasks/${encodeURIComponent(taskID)}/cancellation`, undefined, { signal }) as Promise<Task>
 }
 
 export const enum TaskEventType {
@@ -239,9 +239,20 @@ export type TaskEvent<T extends TaskType = TaskType> =
   | TaskEventFailed
 
 export function subscribeTaskEvents(taskID: string, signal?: AbortSignal): AsyncGenerator<TaskEvent> {
-  return client.getJSONSSE(`/aigc/task/${encodeURIComponent(taskID)}/events`, undefined, {
+  return client.getJSONSSE(`/aigc/tasks/${encodeURIComponent(taskID)}/events`, undefined, {
     signal
   }) as AsyncGenerator<TaskEvent>
+}
+
+export async function generateProjectDescription(content: string, knowledge: string, signal?: AbortSignal) {
+  const result = (await client.post(
+    '/aigc/project-descriptions',
+    { content, knowledge },
+    { signal, timeout: 60 * 1000 }
+  )) as {
+    description: string
+  }
+  return result.description
 }
 
 // TODO: merge with `AssetType`
@@ -269,7 +280,7 @@ export function enrichAssetSettings(
   params: EnrichAssetSettingsParams,
   signal?: AbortSignal
 ): Promise<EnrichAssetSettingsResult> {
-  return client.post('/aigc/asset-settings/enrichment', params, {
+  return client.post('/aigc/asset-settings-enrichments', params, {
     signal,
     timeout: 60 * 1000
   }) as Promise<EnrichAssetSettingsResult>
@@ -281,13 +292,13 @@ export type SpriteContentSettings = {
   animationBindings: Partial<Record<State, string>>
 }
 
-export function genSpriteContentSettings(
+export function generateSpriteContentSettings(
   settings: SpriteSettings,
   lang?: Lang,
   signal?: AbortSignal
 ): Promise<SpriteContentSettings> {
   return client.post(
-    '/aigc/sprite/content-settings',
+    '/aigc/sprite-content-settings',
     { settings, lang },
     { signal, timeout: 60 * 1000 }
   ) as Promise<SpriteContentSettings>
@@ -386,5 +397,5 @@ export type AssetAdoptionParams = {
 }
 
 export function adoptAsset(params: AssetAdoptionParams, signal?: AbortSignal) {
-  return client.post('/aigc/asset-adoption', params, { signal }) as Promise<void>
+  return client.post('/aigc/asset-adoptions', params, { signal }) as Promise<void>
 }

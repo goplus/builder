@@ -46,10 +46,10 @@ func WithTokenProvider(provider func() string) Option {
 
 // New creates a new [ai.Transport] suitable for Wasm environments. It uses
 // JavaScript interop (syscall/js) to make network requests. By default, it uses
-// "/api/ai/interaction" endpoint and sends no Authorization token.
+// "/api/ai-interaction" endpoint and sends no Authorization token.
 func New(opts ...Option) ai.Transport {
 	t := &wasmTransport{
-		endpoint:      "/api/ai/interaction",
+		endpoint:      "/api/ai-interaction",
 		tokenProvider: func() string { return "" },
 	}
 	for _, opt := range opts {
@@ -66,7 +66,7 @@ func (t *wasmTransport) Interact(ctx context.Context, req ai.Request) (ai.Respon
 	}
 
 	var resp ai.Response
-	if err := t.fetchAndParse(ctx, "/turn", reqBody, &resp); err != nil {
+	if err := t.fetchAndParse(ctx, "/turns", reqBody, &resp); err != nil {
 		return ai.Response{}, err
 	}
 	return resp, nil
@@ -83,7 +83,7 @@ func (t *wasmTransport) Archive(ctx context.Context, turns []ai.Turn, existingAr
 	}
 
 	var resp ai.ArchivedHistory
-	if err := t.fetchAndParse(ctx, "/archive", reqBody, &resp); err != nil {
+	if err := t.fetchAndParse(ctx, "/archives", reqBody, &resp); err != nil {
 		return ai.ArchivedHistory{}, err
 	}
 	return resp, nil

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { JSONSSEEvent } from './common/client'
 import { client } from './common'
-import { ToolType, generateSSEMessage, type MessageEvent, type Tool } from './copilot'
+import { ToolType, generateCopilotMessage, type MessageEvent, type Tool } from './copilot'
 
 vi.mock('./common', () => ({
   client: {
@@ -25,7 +25,7 @@ async function collectMessageEvents(stream: AsyncIterableIterator<MessageEvent>)
   return events
 }
 
-describe('generateSSEMessage', () => {
+describe('generateCopilotMessage', () => {
   const mockedPostJSONSSE = vi.mocked(client.postJSONSSE)
 
   beforeEach(() => {
@@ -61,7 +61,7 @@ describe('generateSSEMessage', () => {
       ])
     )
 
-    const events = await collectMessageEvents(generateSSEMessage([]))
+    const events = await collectMessageEvents(generateCopilotMessage([]))
 
     expect(events).toEqual([
       {
@@ -104,7 +104,7 @@ describe('generateSSEMessage', () => {
       ])
     )
 
-    const events = await collectMessageEvents(generateSSEMessage([]))
+    const events = await collectMessageEvents(generateCopilotMessage([]))
 
     expect(events).toEqual([
       {
@@ -154,10 +154,10 @@ describe('generateSSEMessage', () => {
       ])
     )
 
-    await collectMessageEvents(generateSSEMessage([], { tools }))
+    await collectMessageEvents(generateCopilotMessage([], { tools }))
 
     expect(mockedPostJSONSSE).toHaveBeenCalledWith(
-      '/copilot/sse/message',
+      '/copilot/messages',
       {
         messages: [],
         tools

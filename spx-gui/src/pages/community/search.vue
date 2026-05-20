@@ -68,7 +68,7 @@ export const searchKeywordQueryParamName = 'q'
 import { computed } from 'vue'
 import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
 import { useQuery } from '@/utils/query'
-import { ProjectType, Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
+import { ProjectType, Visibility, listProjects, type ListProjectsParams } from '@/apis/project'
 import { usePageTitle } from '@/utils/utils'
 import { UISelect, UISelectOption, UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -100,11 +100,10 @@ const order = useRouteQueryParamStrEnum('o', Order, Order.RecentlyUpdated, (kvs)
 
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize.value))
 
-const listParams = computed<ListProjectParams>(() => {
-  const p: ListProjectParams = {
+const listParams = computed<ListProjectsParams>(() => {
+  const p: ListProjectsParams = {
     type: ProjectType.Game,
     visibility: Visibility.Public,
-    owner: ownerAll,
     pageSize: pageSize.value,
     pageIndex: page.value
   }
@@ -126,7 +125,7 @@ const listParams = computed<ListProjectParams>(() => {
   return p
 })
 
-const queryRet = useQuery(() => listProject(listParams.value), {
+const queryRet = useQuery(() => listProjects(listParams.value), {
   en: 'Failed to search projects',
   zh: '搜索项目失败'
 })

@@ -54,23 +54,23 @@ describe('Client', () => {
 
   describe('path-based moved conflicts', () => {
     it('should surface the moved conflict without retrying', async () => {
-      fetchMock.mockResolvedValueOnce(makeMovedResponse('/project/john/demo/view'))
+      fetchMock.mockResolvedValueOnce(makeMovedResponse('/projects/john/demo/views'))
 
       try {
-        await client.post('/project/John/demo/view')
+        await client.post('/projects/John/demo/views')
         throw new Error('expected moved conflict')
       } catch (e) {
         expect(e).toBeInstanceOf(ApiException)
         expect(e).toMatchObject({
           code: ApiExceptionCode.errorResourceMoved,
           meta: {
-            path: '/project/john/demo/view'
+            path: '/projects/john/demo/views'
           }
         })
       }
 
       expect(fetchMock).toHaveBeenCalledTimes(1)
-      expect(new URL((fetchMock.mock.calls[0]![0] as Request).url).pathname).toBe('/project/John/demo/view')
+      expect(new URL((fetchMock.mock.calls[0]![0] as Request).url).pathname).toBe('/projects/John/demo/views')
     })
   })
 

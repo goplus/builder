@@ -60,30 +60,8 @@ export type AssetData = {
   visibility: Visibility
 }
 
-export type AddAssetParams = Prettify<
-  Pick<
-    AssetData,
-    'displayName' | 'type' | 'category' | 'description' | 'extraSettings' | 'files' | 'filesHash' | 'visibility'
-  >
->
-
-export function addAsset(params: AddAssetParams) {
-  return client.post('/asset', params) as Promise<AssetData>
-}
-
-export type UpdateAssetParams = AddAssetParams
-
-export function updateAsset(id: string, params: UpdateAssetParams) {
-  return client.patch(`/asset/${encodeURIComponent(id)}`, params) as Promise<AssetData>
-}
-
-export function deleteAsset(id: string) {
-  return client.delete(`/asset/${encodeURIComponent(id)}`) as Promise<void>
-}
-
-export type ListAssetParams = PaginationParams & {
+export type ListAssetsParams = PaginationParams & {
   keyword?: string
-  owner?: string
   type?: AssetType
   /** @deprecated Not recommended for use as the field `category` is deprecated. */
   category?: string
@@ -93,14 +71,35 @@ export type ListAssetParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listAsset(params?: ListAssetParams, signal?: AbortSignal) {
-  return client.get('/assets/list', params, { signal }) as Promise<ByPage<AssetData>>
+export function listAssets(params?: ListAssetsParams, signal?: AbortSignal) {
+  return client.get('/assets', params, { signal }) as Promise<ByPage<AssetData>>
+}
+
+export function listSignedInUserAssets(params?: ListAssetsParams, signal?: AbortSignal) {
+  return client.get('/user/assets', params, { signal }) as Promise<ByPage<AssetData>>
+}
+
+export type AddAssetParams = Prettify<
+  Pick<
+    AssetData,
+    'displayName' | 'type' | 'category' | 'description' | 'extraSettings' | 'files' | 'filesHash' | 'visibility'
+  >
+>
+
+export function addAsset(params: AddAssetParams) {
+  return client.post('/user/assets', params) as Promise<AssetData>
 }
 
 export function getAsset(id: string) {
-  return client.get(`/asset/${encodeURIComponent(id)}`) as Promise<AssetData>
+  return client.get(`/assets/${encodeURIComponent(id)}`) as Promise<AssetData>
 }
 
-export function increaseAssetClickCount(id: string) {
-  return client.post(`/asset/${encodeURIComponent(id)}/click`) as Promise<void>
+export type UpdateAssetParams = AddAssetParams
+
+export function updateAsset(id: string, params: UpdateAssetParams) {
+  return client.patch(`/assets/${encodeURIComponent(id)}`, params) as Promise<AssetData>
+}
+
+export function deleteAsset(id: string) {
+  return client.delete(`/assets/${encodeURIComponent(id)}`) as Promise<void>
 }

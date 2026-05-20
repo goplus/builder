@@ -11,7 +11,7 @@ export type ProjectRelease = {
   projectFullName: string
   /** Unique name of the project release, adhering to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). */
   name: string
-  /** rief description of the release. */
+  /** Brief description of the release. */
   description: string
   /** File paths and their corresponding universal URLs associated with the release. */
   files: FileCollection
@@ -21,20 +21,29 @@ export type ProjectRelease = {
   remixCount: number
 }
 
-export type CreateReleaseParams = Pick<ProjectRelease, 'projectFullName' | 'name' | 'description' | 'thumbnail'>
+export type CreateProjectReleaseParams = Pick<ProjectRelease, 'name' | 'description' | 'thumbnail'>
 
-export function createRelease(params: CreateReleaseParams) {
-  return client.post('/project-release', params) as Promise<ProjectRelease>
+export function createProjectRelease(owner: string, project: string, params: CreateProjectReleaseParams) {
+  return client.post(
+    `/projects/${encodeURIComponent(owner)}/${encodeURIComponent(project)}/releases`,
+    params
+  ) as Promise<ProjectRelease>
 }
 
-export type ListReleasesParams = PaginationParams & {
-  projectFullName?: string
+export type ListProjectReleasesParams = PaginationParams & {
   orderBy?: 'createdAt' | 'updatedAt' | 'remixCount'
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listReleases(params: ListReleasesParams, signal?: AbortSignal) {
-  return client.get(`/project-releases/list`, params, { signal }) as Promise<ByPage<ProjectRelease>>
+export function listProjectReleases(
+  owner: string,
+  project: string,
+  params?: ListProjectReleasesParams,
+  signal?: AbortSignal
+) {
+  return client.get(`/projects/${encodeURIComponent(owner)}/${encodeURIComponent(project)}/releases`, params, {
+    signal
+  }) as Promise<ByPage<ProjectRelease>>
 }
 
 export function parseProjectReleaseFullName(fullName: string) {

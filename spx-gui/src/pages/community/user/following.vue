@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { listUsers } from '@/apis/user'
+import { listUserFollowing } from '@/apis/user'
 import { useUser } from '@/stores/user'
 import { UIPagination } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -29,8 +29,7 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 
 const queryRet = useQuery(
   () =>
-    listUsers({
-      follower: props.nameInput,
+    listUserFollowing(props.nameInput, {
       orderBy: 'followedAt',
       sortOrder: 'desc',
       pageSize,
