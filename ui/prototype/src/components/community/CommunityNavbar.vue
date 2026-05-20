@@ -181,13 +181,9 @@ onBeforeUnmount(() => {
         </form>
 
         <div class="flex h-full items-center px-3 whitespace-nowrap">
-          <button
-            class="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-primary-200 px-4 text-base leading-[22px] text-primary-500 no-underline transition-colors hover:bg-primary-100 active:bg-primary-300 focus-visible:border-primary-700 focus-visible:outline-none"
-            type="button"
-            @click="openSignInModal"
-          >
+          <UIButton class="community-sign-in-button" type="secondary" @click="openSignInModal">
             Sign in
-          </button>
+          </UIButton>
         </div>
       </div>
     </div>
@@ -234,6 +230,11 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .community-search-input {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.community-sign-in-button {
   font-size: 14px;
   line-height: 22px;
 }
