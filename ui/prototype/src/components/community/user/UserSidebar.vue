@@ -45,8 +45,12 @@ const icons = {
         ></span>
         <span>{{ tab.label }}</span>
       </span>
-      <svg aria-hidden="true" viewBox="0 0 20 20" class="size-3 flex-none rotate-90 fill-current text-grey-800">
-        <path d="M10 13.2 4.8 8l1.13-1.13L10 10.93l4.07-4.06L15.2 8 10 13.2Z" />
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="size-3 flex-none rotate-90 fill-current text-grey-800">
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M11.4474 7.82134C11.7909 7.54092 12.2988 7.56097 12.6192 7.88091L19.6192 14.8809C19.961 15.2226 19.961 15.7775 19.6192 16.1192C19.2775 16.4608 18.7226 16.4609 18.381 16.1192L12.0001 9.73834L5.61925 16.1192C5.27753 16.4608 4.72264 16.4609 4.38097 16.1192C4.03982 15.7775 4.03954 15.2225 4.38097 14.8809L11.381 7.88091L11.4474 7.82134Z"
+        />
       </svg>
     </RouterLink>
   </nav>
