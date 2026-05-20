@@ -318,10 +318,7 @@ function handleQuickConfigToolClick(tool: { id: string }) {
 }
 
 .stage-sprite {
-  width: 105px;
-  height: 105px;
   cursor: grab;
-  transform-origin: center;
 }
 
 .stage-sprite.dragging,
@@ -336,21 +333,17 @@ function handleQuickConfigToolClick(tool: { id: string }) {
 .stage-sprite img,
 .selected-sprite img {
   position: absolute;
-  left: 24px;
-  top: 10px;
-  width: 54px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
 }
 
 .selected-sprite {
-  left: 178px;
-  top: 108px;
-  width: 105px;
-  height: 105px;
   border: 1px solid var(--ui-color-primary-main);
   cursor: grab;
-  transform-origin: center;
 }
 
 .coordinate {
@@ -399,12 +392,14 @@ function handleQuickConfigToolClick(tool: { id: string }) {
 
 .handle.left {
   left: -10px;
-  top: 42px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .handle.right {
   right: -10px;
-  top: 42px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .selected-sprite .handle-arrow {

@@ -111,6 +111,9 @@ type SpriteCard = {
   name: string
   shortName: string
   image: string
+  costumeWidth: number
+  costumeHeight: number
+  bitmapResolution: number
   hidden: boolean
   x: number
   y: number
@@ -173,6 +176,28 @@ const codeTokenClass: Record<CodeTokenType, string> = {
 
 const stageSpriteScale = 0.5
 const stageSpriteOrigin = { left: 290, top: 145 }
+const defaultSpriteCostume = {
+  width: 512,
+  height: 512,
+  bitmapResolution: 8
+}
+const spriteCostumeByImage: Record<string, { width: number; height: number; bitmapResolution: number }> = {
+  [niuXiaoQiUrl]: defaultSpriteCostume,
+  [niuXiaoHuaUrl]: defaultSpriteCostume,
+  [flowerUrl]: defaultSpriteCostume,
+  [tornadoUrl]: { width: 256, height: 256, bitmapResolution: 4 },
+  [jaimeUrl]: { width: 126, height: 312, bitmapResolution: 2 },
+  [kaiUrl]: { width: 138, height: 320, bitmapResolution: 2 }
+}
+
+function getSpriteCostumeProps(image: string) {
+  const costume = spriteCostumeByImage[image] ?? defaultSpriteCostume
+  return {
+    costumeWidth: costume.width,
+    costumeHeight: costume.height,
+    bitmapResolution: costume.bitmapResolution
+  }
+}
 const apiHoverDocs: Record<string, ApiHoverDoc> = {
   onMsg: {
     overview: 'onMsg msg, => {}',
@@ -552,6 +577,7 @@ const niuRunSprites = ref<SpriteCard[]>([
     name: '牛小七',
     shortName: '牛小七',
     image: niuXiaoQiUrl,
+    ...getSpriteCostumeProps(niuXiaoQiUrl),
     hidden: false,
     x: -224,
     y: 74,
@@ -564,6 +590,7 @@ const niuRunSprites = ref<SpriteCard[]>([
     name: '牛小花牛小花牛小花牛小花牛小花牛小花',
     shortName: '牛小花牛小花...',
     image: niuXiaoHuaUrl,
+    ...getSpriteCostumeProps(niuXiaoHuaUrl),
     hidden: false,
     x: -130,
     y: 94,
@@ -576,6 +603,7 @@ const niuRunSprites = ref<SpriteCard[]>([
     name: '花朵花朵花朵花朵花朵花朵花朵花朵花朵',
     shortName: '花朵花...',
     image: flowerUrl,
+    ...getSpriteCostumeProps(flowerUrl),
     hidden: true,
     x: 0,
     y: 0,
@@ -588,6 +616,7 @@ const niuRunSprites = ref<SpriteCard[]>([
     name: '龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风',
     shortName: '龙卷风...',
     image: tornadoUrl,
+    ...getSpriteCostumeProps(tornadoUrl),
     hidden: true,
     x: 120,
     y: -20,
@@ -664,6 +693,7 @@ const weatherggggSprites = ref<SpriteCard[]>([
     name: 'Jaime',
     shortName: 'Jaime',
     image: jaimeUrl,
+    ...getSpriteCostumeProps(jaimeUrl),
     hidden: false,
     x: -80,
     y: 40,
@@ -676,6 +706,7 @@ const weatherggggSprites = ref<SpriteCard[]>([
     name: 'Kai',
     shortName: 'Kai',
     image: kaiUrl,
+    ...getSpriteCostumeProps(kaiUrl),
     hidden: false,
     x: 80,
     y: 40,
@@ -1233,16 +1264,35 @@ function selectedSpriteFrameTransform(sprite: SpriteCard | undefined) {
   return `scale(${size}) rotate(${rotation}deg)`
 }
 
+function getSpriteCostumeGeometry(sprite: SpriteCard | undefined) {
+  const bitmapResolution = sprite?.bitmapResolution || defaultSpriteCostume.bitmapResolution
+  const width = (sprite?.costumeWidth ?? defaultSpriteCostume.width) / bitmapResolution
+  const height = (sprite?.costumeHeight ?? defaultSpriteCostume.height) / bitmapResolution
+  return {
+    width,
+    height,
+    pivotX: width / 2,
+    pivotY: height / 2
+  }
+}
+
 function getStageSpriteImageStyle(sprite: SpriteCard | undefined): CSSProperties {
   return {
-    transform: sprite?.rotationStyle === 'left-right' && (sprite.heading ?? 90) < 0 ? 'scaleX(-1)' : undefined
+    transform: sprite?.rotationStyle === 'left-right' && (sprite.heading ?? 90) < 0 ? 'scaleX(-1)' : undefined,
+    transformOrigin: 'center'
   }
 }
 
 function getStageSpriteFrameStyle(sprite: SpriteCard | undefined): CSSProperties {
+  const geometry = getSpriteCostumeGeometry(sprite)
+  const stageX = stageSpriteOrigin.left + (sprite?.x ?? 0) * stageSpriteScale
+  const stageY = stageSpriteOrigin.top - (sprite?.y ?? 0) * stageSpriteScale
   return {
-    left: `${stageSpriteOrigin.left + (sprite?.x ?? 0) * stageSpriteScale}px`,
-    top: `${stageSpriteOrigin.top - (sprite?.y ?? 0) * stageSpriteScale}px`,
+    left: `${stageX - geometry.pivotX}px`,
+    top: `${stageY - geometry.pivotY}px`,
+    width: `${geometry.width}px`,
+    height: `${geometry.height}px`,
+    transformOrigin: `${geometry.pivotX}px ${geometry.pivotY}px`,
     transform: selectedSpriteFrameTransform(sprite)
   }
 }
@@ -1394,7 +1444,9 @@ function moveSelectedSpriteResize(event: PointerEvent) {
   const signX = resizeState.corner.endsWith('right') ? 1 : -1
   const signY = resizeState.corner.startsWith('bottom') ? 1 : -1
   const signedDelta = (signX * deltaX + signY * deltaY) / 2
-  const nextSize = resizeState.spriteStartSize + (signedDelta / 105) * 100
+  const geometry = getSpriteCostumeGeometry(resizeState.sprite)
+  const resizeBase = Math.max(1, (geometry.width + geometry.height) / 2)
+  const nextSize = resizeState.spriteStartSize + (signedDelta / resizeBase) * 100
   resizeState.sprite.size = Math.max(1, Math.min(400, Math.round(nextSize)))
   event.preventDefault()
 }
@@ -1789,6 +1841,7 @@ function createSpriteCard(source: string, name: string, image: string): SpriteCa
     name,
     shortName: name.length > 10 ? `${name.slice(0, 8)}...` : name,
     image,
+    ...getSpriteCostumeProps(image),
     hidden: false,
     x: -224,
     y: 74,
