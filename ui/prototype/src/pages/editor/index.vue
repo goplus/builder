@@ -5537,6 +5537,12 @@ onBeforeUnmount(() => {
   color: var(--ui-color-primary-main);
 }
 
+.animation-add-sound-choice .sound-choice-icon {
+  width: 24px;
+  height: 24px;
+  margin-top: 0;
+}
+
 .animation-setting-actions {
   display: flex;
   justify-content: flex-end;
