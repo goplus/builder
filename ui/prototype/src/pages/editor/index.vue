@@ -412,6 +412,7 @@ const selectedMapSpriteId = ref('niu-xiao-qi')
 const mapGlobalConfigCollapsed = ref(false)
 const mapSpriteNameEditing = ref(false)
 const mapSpriteConfigExpanded = ref(true)
+const activeMapQuickConfig = ref<QuickConfigType>('default')
 const mapPhysicsEnabled = ref(true)
 const mapLayerSorting = ref<'default' | 'vertical'>('vertical')
 const mapSpritePhysicsFlags = ref<string[]>([])
@@ -927,6 +928,16 @@ const selectedSpriteFrameStyle = computed(() => getStageSpriteFrameStyle(selecte
 const selectedSpriteImageStyle = computed(() => getStageSpriteImageStyle(selectedSprite.value))
 const selectedSpriteCoordinate = computed(() => `${selectedSprite.value?.x ?? -224}, ${selectedSprite.value?.y ?? 74}`)
 const selectedMapSpriteCoordinate = computed(() => `${selectedMapSprite.value?.x ?? -224}, ${selectedMapSprite.value?.y ?? 74}`)
+const mapQuickConfigStyle = computed<CSSProperties>(() => {
+  const sprite = selectedMapSprite.value
+  if (sprite == null) return {}
+  const left = ((sprite.x + mapWidth.value / 2) / mapWidth.value) * 100
+  const top = ((mapHeight.value / 2 - sprite.y) / mapHeight.value) * 100
+  return {
+    left: `${left}%`,
+    top: `clamp(30px, calc(${top}% + 48px), calc(100% - 78px))`
+  }
+})
 const codeBodyStyle = computed<CSSProperties>(() => ({
   '--prototype-snippet-sidebar-width': `${snippetSidebarWidth.value}px`,
   userSelect: snippetSidebarResizing.value ? 'none' : undefined
@@ -1317,9 +1328,18 @@ function getStageSpriteFrameStyle(sprite: SpriteCard | undefined): CSSProperties
 }
 
 function getMapSpriteFrameStyle(sprite: SpriteCard): CSSProperties {
+  const rotation = sprite.rotationStyle === 'normal' ? sprite.heading - 90 : 0
   return {
     left: `${((sprite.x + mapWidth.value / 2) / mapWidth.value) * 100}%`,
-    top: `${((mapHeight.value / 2 - sprite.y) / mapHeight.value) * 100}%`
+    top: `${((mapHeight.value / 2 - sprite.y) / mapHeight.value) * 100}%`,
+    transform: `translate(-50%, -50%) scale(${sprite.size / 100}) rotate(${rotation}deg)`
+  }
+}
+
+function getMapSpriteImageStyle(sprite: SpriteCard): CSSProperties {
+  return {
+    transform: sprite.rotationStyle === 'left-right' && sprite.heading < 0 ? 'scaleX(-1)' : undefined,
+    transformOrigin: 'center'
   }
 }
 
@@ -1355,6 +1375,20 @@ function updateSelectedMapSpriteY(event: Event) {
   const nextY = Number((event.target as HTMLInputElement).value)
   if (!Number.isFinite(nextY) || selectedMapSprite.value == null) return
   selectedMapSprite.value.y = Math.max(-999, Math.min(999, Math.round(nextY)))
+  markPrototypeAction()
+}
+
+function updateSelectedMapSpriteSize(event: Event) {
+  const nextSize = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextSize) || selectedMapSprite.value == null) return
+  selectedMapSprite.value.size = Math.max(1, Math.min(400, Math.round(nextSize)))
+  markPrototypeAction()
+}
+
+function updateSelectedMapSpriteHeading(event: Event) {
+  const nextHeading = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextHeading) || selectedMapSprite.value == null) return
+  selectedMapSprite.value.heading = Math.max(-180, Math.min(180, Math.round(nextHeading)))
   markPrototypeAction()
 }
 
@@ -1529,6 +1563,18 @@ function endMapSpriteDrag(event: PointerEvent) {
   mapSpriteDragState = null
 }
 
+function openMapQuickConfig(type: QuickConfigType) {
+  if (type === 'layer' && activeMapQuickConfig.value === 'layer') {
+    activeMapQuickConfig.value = 'default'
+    return
+  }
+  activeMapQuickConfig.value = type
+}
+
+function backToDefaultMapQuickConfig() {
+  activeMapQuickConfig.value = 'default'
+}
+
 function moveSelectedSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
   const sprite = selectedSprite.value
   if (sprite == null) return
@@ -1548,9 +1594,29 @@ function moveSelectedSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
   markPrototypeAction()
 }
 
+function moveSelectedMapSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
+  const sprite = selectedMapSprite.value
+  if (sprite == null) return
+  const index = sprites.value.findIndex((item) => item.id === sprite.id)
+  if (index < 0) return
+  const [item] = sprites.value.splice(index, 1)
+  if (direction === 'top') {
+    sprites.value.push(item)
+  } else if (direction === 'bottom') {
+    sprites.value.unshift(item)
+  } else if (direction === 'up') {
+    sprites.value.splice(Math.min(index + 1, sprites.value.length), 0, item)
+  } else {
+    sprites.value.splice(Math.max(index - 1, 0), 0, item)
+  }
+  activeMapQuickConfig.value = 'default'
+  markPrototypeAction()
+}
+
 function selectMapSprite(spriteId: string) {
   selectedMapSpriteId.value = spriteId
   mapSpriteConfigExpanded.value = true
+  activeMapQuickConfig.value = 'default'
 }
 
 function updateMapSpriteRotationStyle(style: RotationStyle) {
@@ -1567,6 +1633,12 @@ function updateMapSpriteRotationStyle(style: RotationStyle) {
 
 function updateMapSpriteRotationValue(value: string) {
   updateMapSpriteRotationStyle(value as RotationStyle)
+}
+
+function updateSelectedMapSpriteLeftRight(direction: 'left' | 'right') {
+  if (selectedMapSprite.value == null) return
+  selectedMapSprite.value.heading = direction === 'right' ? 90 : -90
+  markPrototypeAction()
 }
 
 function updateMapSpriteVisibility(visible: boolean) {
@@ -3420,9 +3492,146 @@ onBeforeUnmount(() => {
             @pointerup.stop.prevent="endMapSpriteDrag"
             @pointercancel.stop.prevent="endMapSpriteDrag"
           >
-            <img :src="sprite.image" :alt="sprite.name" />
+            <img :src="sprite.image" :alt="sprite.name" :style="getMapSpriteImageStyle(sprite)" />
             <span v-if="selectedMapSpriteId === sprite.id" class="map-sprite-coordinate">{{ selectedMapSpriteCoordinate }}</span>
           </button>
+          <div
+            v-if="selectedMapSprite != null"
+            class="stage-tools map-quick-tools"
+            :class="{ expanded: activeMapQuickConfig !== 'default' && activeMapQuickConfig !== 'layer' }"
+            :style="mapQuickConfigStyle"
+          >
+            <template v-if="activeMapQuickConfig === 'default' || activeMapQuickConfig === 'layer'">
+              <button
+                v-for="tool in quickConfigTools"
+                :key="`map-${tool.id}`"
+                type="button"
+                :aria-label="tool.label"
+                :class="{ active: activeMapQuickConfig === tool.id }"
+                @click="openMapQuickConfig(tool.id)"
+              >
+                <span v-html="tool.icon"></span>
+              </button>
+              <div v-if="activeMapQuickConfig === 'layer'" class="quick-layer-menu" role="menu" aria-label="Map layer order options">
+                <button type="button" role="menuitem" @click="moveSelectedMapSpriteLayer('up')">Bring forward</button>
+                <button type="button" role="menuitem" @click="moveSelectedMapSpriteLayer('top')">Bring to front</button>
+                <button type="button" role="menuitem" @click="moveSelectedMapSpriteLayer('down')">Send backward</button>
+                <button type="button" role="menuitem" @click="moveSelectedMapSpriteLayer('bottom')">Send to back</button>
+              </div>
+            </template>
+            <template v-else-if="activeMapQuickConfig === 'size'">
+              <label class="quick-config-input">
+                <span>Size</span>
+                <input
+                  :value="selectedMapSprite.size"
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  max="400"
+                  aria-label="Map sprite size input"
+                  @input="updateSelectedMapSpriteSize"
+                />
+                <span>%</span>
+              </label>
+              <span class="quick-config-divider" aria-hidden="true"></span>
+              <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultMapQuickConfig">
+                <span v-html="backQuickIcon"></span>
+              </button>
+            </template>
+            <template v-else-if="activeMapQuickConfig === 'position'">
+              <label class="quick-config-input position-input">
+                <span>X</span>
+                <input
+                  :value="selectedMapSprite.x"
+                  type="number"
+                  inputmode="numeric"
+                  min="-999"
+                  max="999"
+                  aria-label="Map sprite X position input"
+                  @input="updateSelectedMapSpriteX"
+                />
+              </label>
+              <label class="quick-config-input position-input">
+                <span>Y</span>
+                <input
+                  :value="selectedMapSprite.y"
+                  type="number"
+                  inputmode="numeric"
+                  min="-999"
+                  max="999"
+                  aria-label="Map sprite Y position input"
+                  @input="updateSelectedMapSpriteY"
+                />
+              </label>
+              <span class="quick-config-divider" aria-hidden="true"></span>
+              <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultMapQuickConfig">
+                <span v-html="backQuickIcon"></span>
+              </button>
+            </template>
+            <template v-else-if="activeMapQuickConfig === 'rotation'">
+              <div class="rotation-style-group" role="group" aria-label="Map sprite rotation style control">
+                <button
+                  class="rotation-style-button"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'normal' }"
+                  type="button"
+                  aria-label="Normal rotation"
+                  @click="updateMapSpriteRotationStyle('normal')"
+                >
+                  <span v-html="rotateAroundIcon"></span>
+                </button>
+                <button
+                  class="rotation-style-button"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'left-right' }"
+                  type="button"
+                  aria-label="Left-right rotation"
+                  @click="updateMapSpriteRotationStyle('left-right')"
+                >
+                  <span v-html="leftRightIcon"></span>
+                </button>
+                <button
+                  class="rotation-style-button"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'none' }"
+                  type="button"
+                  aria-label="No rotation"
+                  @click="updateMapSpriteRotationStyle('none')"
+                >
+                  <span v-html="notRotateIcon"></span>
+                </button>
+              </div>
+              <label v-if="selectedMapSprite.rotationStyle === 'normal'" class="quick-config-input heading-input">
+                <span>Heading</span>
+                <input
+                  :value="selectedMapSprite.heading"
+                  type="number"
+                  inputmode="numeric"
+                  min="-180"
+                  max="180"
+                  aria-label="Map sprite heading input"
+                  @input="updateSelectedMapSpriteHeading"
+                />
+              </label>
+              <div v-else-if="selectedMapSprite.rotationStyle === 'left-right'" class="direction-group" role="group" aria-label="Map sprite direction control">
+                <button
+                  type="button"
+                  :class="{ active: selectedMapSprite.heading < 0 }"
+                  @click="updateSelectedMapSpriteLeftRight('left')"
+                >
+                  Left
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: selectedMapSprite.heading >= 0 }"
+                  @click="updateSelectedMapSpriteLeftRight('right')"
+                >
+                  Right
+                </button>
+              </div>
+              <span class="quick-config-divider" aria-hidden="true"></span>
+              <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultMapQuickConfig">
+                <span v-html="backQuickIcon"></span>
+              </button>
+            </template>
+          </div>
           <div class="map-zoom-controls">
             <button type="button" aria-label="Zoom in">+</button>
             <button type="button" aria-label="Zoom out">-</button>
@@ -4404,6 +4613,19 @@ onBeforeUnmount(() => {
   padding: 3px 7px;
   font-size: 12px;
   white-space: nowrap;
+}
+
+.map-quick-tools {
+  z-index: 6;
+  left: 50%;
+  top: 50%;
+  bottom: auto;
+  transform: translateX(-50%);
+}
+
+.map-quick-tools button.active {
+  background: var(--ui-color-primary-200);
+  color: var(--ui-color-primary-400);
 }
 
 .map-zoom-controls {
