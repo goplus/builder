@@ -52,8 +52,7 @@ const navbarArrowMiniIcon = read('src/assets/navbar-icons/arrow-mini.svg')
 const editorEyeOffIcon = read('src/assets/editor/ui-icons/eye-off.svg')
 const editorEyeIcon = read('src/assets/editor/ui-icons/eye.svg')
 const editorEyeSlashIcon = read('src/assets/editor/ui-icons/eye-slash.svg')
-const transformerFlipArrow = read('src/assets/editor/custom-transformer/transformer-flip-arrow.png')
-const transformerFlipArrowDisabled = read('src/assets/editor/custom-transformer/transformer-flip-arrow-disabled.png')
+const transformerLeftRightIcon = read('src/assets/editor/custom-transformer/left-right.svg')
 const editorPlusIcon = read('src/assets/editor/ui-icons/plus.svg')
 const editorPublishIcon = read('src/assets/editor/ui-icons/publish.svg')
 const editorLoadingIcon = read('src/assets/editor/ui-icons/loading.svg')
@@ -1165,15 +1164,15 @@ if (!editorPreviewPanel.includes('.stage-tools button:hover') || !editorPreviewP
 }
 
 if (
-  !transformerFlipArrow.includes('PNG') ||
-  !transformerFlipArrowDisabled.includes('PNG') ||
-  !editorPreviewPanel.includes("import transformerFlipArrowUrl from '@/assets/editor/custom-transformer/transformer-flip-arrow.png'") ||
-  !editorPreviewPanel.includes("import transformerFlipArrowDisabledUrl from '@/assets/editor/custom-transformer/transformer-flip-arrow-disabled.png'") ||
+  !transformerLeftRightIcon.includes('<svg') ||
+  !transformerLeftRightIcon.includes('fill="currentColor"') ||
+  !editorPreviewPanel.includes("import leftRightIcon from '@/assets/editor/custom-transformer/left-right.svg?raw'") ||
   !editorPreviewPanel.includes('class="handle left"') ||
   !editorPreviewPanel.includes('class="handle right"') ||
   !editorPreviewPanel.includes('ctx.switchSelectedSpriteDirection') ||
   !editorPreviewPanel.includes('class="handle-arrow"') ||
   !editorPreviewPanel.includes('class="handle-arrow disabled"') ||
+  !editorPreviewPanel.includes('v-html="leftRightIcon"') ||
   !editorPreviewPanel.includes('width: 20px;') ||
   !editorPreviewPanel.includes('.selected-sprite .handle-arrow {') ||
   !editorPreviewPanel.includes("v-for=\"corner in ['top-left', 'top-right', 'bottom-left', 'bottom-right']\"") ||

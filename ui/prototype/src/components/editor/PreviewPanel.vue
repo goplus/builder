@@ -4,8 +4,7 @@ import { nextTick, ref } from 'vue'
 import ProjectRunner from '@/components/project/ProjectRunner.vue'
 import UIButton from '@/components/ui/UIButton.vue'
 import UICardHeader from '@/components/ui/UICardHeader.vue'
-import transformerFlipArrowDisabledUrl from '@/assets/editor/custom-transformer/transformer-flip-arrow-disabled.png'
-import transformerFlipArrowUrl from '@/assets/editor/custom-transformer/transformer-flip-arrow.png'
+import leftRightIcon from '@/assets/editor/custom-transformer/left-right.svg?raw'
 
 const props = defineProps<{
   ctx: any
@@ -84,7 +83,7 @@ function handleQuickConfigToolClick(tool: { id: string }) {
                   @pointerdown.stop.prevent
                   @click.stop="ctx.switchSelectedSpriteDirection('left')"
                 >
-                  <img class="handle-arrow" :src="transformerFlipArrowUrl" alt="" aria-hidden="true" />
+                  <span class="handle-arrow" aria-hidden="true" v-html="leftRightIcon"></span>
                 </button>
                 <button
                   class="handle right"
@@ -95,7 +94,7 @@ function handleQuickConfigToolClick(tool: { id: string }) {
                   @pointerdown.stop.prevent
                   @click.stop="ctx.switchSelectedSpriteDirection('right')"
                 >
-                  <img class="handle-arrow disabled" :src="transformerFlipArrowDisabledUrl" alt="" aria-hidden="true" />
+                  <span class="handle-arrow disabled" aria-hidden="true" v-html="leftRightIcon"></span>
                 </button>
                 <button
                   v-for="corner in ['top-left', 'top-right', 'bottom-left', 'bottom-right']"
@@ -403,16 +402,19 @@ function handleQuickConfigToolClick(tool: { id: string }) {
 }
 
 .selected-sprite .handle-arrow {
-  position: static;
-  width: 6px;
-  height: 8px;
-  transform: rotate(180deg);
-  user-select: none;
-  -webkit-user-drag: none;
+  display: inline-flex;
+  width: 12px;
+  height: 12px;
+  color: var(--ui-color-grey-1000);
+}
+
+.selected-sprite .handle-arrow :deep(svg) {
+  width: 12px;
+  height: 12px;
 }
 
 .selected-sprite .handle-arrow.disabled {
-  transform: none;
+  color: var(--ui-color-grey-700);
 }
 
 .corner.top-left {
