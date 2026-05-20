@@ -6809,6 +6809,8 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-100);
   padding: 8px;
   box-shadow: var(--ui-box-shadow-sm);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -6829,7 +6831,10 @@ onBeforeUnmount(() => {
 .map-card-header .add-sprite-menu-item,
 .sprite-options-item {
   min-height: 40px;
+  box-sizing: border-box;
+  width: 100%;
   display: flex;
+  position: relative;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
@@ -6882,7 +6887,9 @@ onBeforeUnmount(() => {
   top: -7px;
   left: 0;
   width: 100%;
+  height: 0;
   border-top: 1px solid var(--ui-color-dividing-line-2);
+  pointer-events: none;
 }
 
 .animation-options-item.danger,
