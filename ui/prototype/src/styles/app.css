@@ -116,8 +116,8 @@
     --ui-color-overlay-modal: rgb(36 41 47 / 0.48);
     --ui-color-title: var(--ui-color-grey-1000);
     --ui-color-text: var(--ui-color-grey-1000);
-    --ui-color-hint-1: var(--ui-color-grey-700);
-    --ui-color-hint-2: var(--ui-color-grey-900);
+    --ui-color-hint-1: var(--ui-color-grey-800);
+    --ui-color-hint-2: var(--ui-color-grey-700);
     --ui-color-dividing-line-1: rgb(36 41 47 / 0.12);
     --ui-color-dividing-line-2: var(--ui-color-grey-400);
     --ui-color-border: var(--ui-color-grey-500);

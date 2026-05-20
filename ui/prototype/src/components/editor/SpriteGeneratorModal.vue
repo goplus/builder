@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 
 import UIButton from '@/components/ui/UIButton.vue'
+import UIModal from '@/components/ui/UIModal.vue'
+import UIModalClose from '@/components/ui/UIModalClose.vue'
 import animationIcon from '@/assets/editor/sprite-generator/animation.svg?raw'
-import closeIcon from '@/assets/editor/ui-icons/close.svg?raw'
 import costumeIcon from '@/assets/editor/sprite-generator/costume.svg?raw'
 import editIcon from '@/assets/editor/ui-icons/edit.svg?raw'
 import moreIcon from '@/assets/editor/ui-icons/more.svg?raw'
@@ -39,6 +40,14 @@ const perspective = ref('Side')
 const generated = ref(false)
 const selectedIndex = ref(0)
 const phase = ref<'settings' | 'content'>('settings')
+type GeneratorParamKey = 'category' | 'artStyle' | 'perspective'
+
+const openParamMenu = ref<GeneratorParamKey | null>(null)
+const generatorParamOptions: Record<GeneratorParamKey, string[]> = {
+  category: ['Character', 'Object', 'Effect'],
+  artStyle: ['Cartoon', 'Pixel', 'Watercolor'],
+  perspective: ['Side', 'Top-down', 'Front']
+}
 
 const candidates: GeneratedSpriteCandidate[] = [
   { name: 'Generated flower sprite', image: flowerUrl },
@@ -52,6 +61,7 @@ function generateCandidates() {
   if (description.value.trim() === '') return
   generated.value = true
   selectedIndex.value = 0
+  closeParamMenu()
 }
 
 function openContentPhase() {
@@ -66,21 +76,35 @@ function addGeneratedSprite() {
     candidate: selectedCandidate.value
   })
 }
+
+function toggleParamMenu(menu: GeneratorParamKey) {
+  openParamMenu.value = openParamMenu.value === menu ? null : menu
+}
+
+function closeParamMenu() {
+  openParamMenu.value = null
+}
+
+function selectParam(menu: GeneratorParamKey, value: string) {
+  if (menu === 'category') category.value = value
+  if (menu === 'artStyle') artStyle.value = value
+  if (menu === 'perspective') perspective.value = value
+  closeParamMenu()
+}
 </script>
 
 <template>
-  <Teleport to="body">
-    <div class="prototype-modal-backdrop" role="presentation" @click.self="emit('close')">
-      <section
-        class="prototype-modal sprite-gen-modal"
-        style="width: 1076px; height: 800px"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="sprite-gen-title"
-      >
+  <UIModal
+    class="sprite-gen-modal"
+    style="width: 1076px; height: 800px"
+    aria-labelledby="sprite-gen-title"
+    :visible="true"
+    @update:visible="emit('close')"
+    @click="closeParamMenu"
+  >
         <header class="sprite-gen-header">
           <h2 id="sprite-gen-title">Sprite Generator</h2>
-          <button type="button" aria-label="Close sprite generator" @click="emit('close')" v-html="closeIcon"></button>
+          <UIModalClose aria-label="Close sprite generator" @click="emit('close')" />
         </header>
         <div
           v-if="phase === 'settings'"
@@ -101,33 +125,90 @@ function addGeneratedSprite() {
                 ></textarea>
                 <div class="sprite-gen-description-footer">
                   <div class="sprite-gen-controls">
-                    <label>
-                      <img class="sprite-gen-control-icon" :src="categoryIconUrl" alt="" aria-hidden="true" />
-                      <span>Category</span>
-                      <select v-model="category" aria-label="Sprite category">
-                        <option>Character</option>
-                        <option>Object</option>
-                        <option>Effect</option>
-                      </select>
-                    </label>
-                    <label>
-                      <img class="sprite-gen-control-icon" :src="artStyleIconUrl" alt="" aria-hidden="true" />
-                      <span>Art style</span>
-                      <select v-model="artStyle" aria-label="Sprite art style">
-                        <option>Cartoon</option>
-                        <option>Pixel</option>
-                        <option>Watercolor</option>
-                      </select>
-                    </label>
-                    <label>
-                      <img class="sprite-gen-control-icon" :src="perspectiveIconUrl" alt="" aria-hidden="true" />
-                      <span>Perspective</span>
-                      <select v-model="perspective" aria-label="Sprite perspective">
-                        <option>Side</option>
-                        <option>Top-down</option>
-                        <option>Front</option>
-                      </select>
-                    </label>
+                    <div class="sprite-gen-param-control">
+                      <button
+                        type="button"
+                        class="sprite-gen-param-trigger"
+                        :aria-expanded="openParamMenu === 'category'"
+                        aria-haspopup="menu"
+                        aria-label="Sprite category"
+                        @click.stop="toggleParamMenu('category')"
+                      >
+                        <img class="sprite-gen-control-icon" :src="categoryIconUrl" alt="" aria-hidden="true" />
+                        <span>Category</span>
+                      </button>
+                      <div v-if="openParamMenu === 'category'" class="sprite-gen-param-menu" role="menu" @click.stop>
+                        <button
+                          v-for="option in generatorParamOptions.category"
+                          :key="option"
+                          class="sprite-gen-param-option"
+                          :class="{ active: category === option }"
+                          type="button"
+                          role="menuitemradio"
+                          :aria-checked="category === option"
+                          @click="selectParam('category', option)"
+                        >
+                          <span class="sprite-gen-param-check" aria-hidden="true">{{ category === option ? '✓' : '' }}</span>
+                          <span>{{ option }}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="sprite-gen-param-control">
+                      <button
+                        type="button"
+                        class="sprite-gen-param-trigger"
+                        :aria-expanded="openParamMenu === 'artStyle'"
+                        aria-haspopup="menu"
+                        aria-label="Sprite art style"
+                        @click.stop="toggleParamMenu('artStyle')"
+                      >
+                        <img class="sprite-gen-control-icon" :src="artStyleIconUrl" alt="" aria-hidden="true" />
+                        <span>Art style</span>
+                      </button>
+                      <div v-if="openParamMenu === 'artStyle'" class="sprite-gen-param-menu" role="menu" @click.stop>
+                        <button
+                          v-for="option in generatorParamOptions.artStyle"
+                          :key="option"
+                          class="sprite-gen-param-option"
+                          :class="{ active: artStyle === option }"
+                          type="button"
+                          role="menuitemradio"
+                          :aria-checked="artStyle === option"
+                          @click="selectParam('artStyle', option)"
+                        >
+                          <span class="sprite-gen-param-check" aria-hidden="true">{{ artStyle === option ? '✓' : '' }}</span>
+                          <span>{{ option }}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="sprite-gen-param-control">
+                      <button
+                        type="button"
+                        class="sprite-gen-param-trigger"
+                        :aria-expanded="openParamMenu === 'perspective'"
+                        aria-haspopup="menu"
+                        aria-label="Sprite perspective"
+                        @click.stop="toggleParamMenu('perspective')"
+                      >
+                        <img class="sprite-gen-control-icon" :src="perspectiveIconUrl" alt="" aria-hidden="true" />
+                        <span>Perspective</span>
+                      </button>
+                      <div v-if="openParamMenu === 'perspective'" class="sprite-gen-param-menu" role="menu" @click.stop>
+                        <button
+                          v-for="option in generatorParamOptions.perspective"
+                          :key="option"
+                          class="sprite-gen-param-option"
+                          :class="{ active: perspective === option }"
+                          type="button"
+                          role="menuitemradio"
+                          :aria-checked="perspective === option"
+                          @click="selectParam('perspective', option)"
+                        >
+                          <span class="sprite-gen-param-check" aria-hidden="true">{{ perspective === option ? '✓' : '' }}</span>
+                          <span>{{ option }}</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   <UIButton
                     class="sprite-gen-action"
@@ -243,28 +324,10 @@ function addGeneratedSprite() {
             </template>
           </UIButton>
         </footer>
-      </section>
-    </div>
-  </Teleport>
+  </UIModal>
 </template>
 
 <style scoped>
-.prototype-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 120;
-  display: grid;
-  place-items: center;
-  background: rgb(31 41 55 / 36%);
-  padding: 24px;
-}
-
-.prototype-modal {
-  border-radius: var(--ui-border-radius-lg);
-  background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-lg);
-}
-
 .sprite-gen-modal {
   position: relative;
   max-width: calc(100vw - 48px);
@@ -290,31 +353,6 @@ function addGeneratedSprite() {
   font-size: 20px;
   font-weight: 400;
   line-height: 28px;
-}
-
-.sprite-gen-header button {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--ui-color-grey-800);
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.sprite-gen-header button :deep(svg) {
-  width: 20px;
-  height: 20px;
-}
-
-.sprite-gen-header button:hover {
-  background: var(--ui-color-grey-300);
-  color: var(--ui-color-grey-1000);
 }
 
 .sprite-gen-body {
@@ -414,7 +452,7 @@ function addGeneratedSprite() {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
 }
 
 .sprite-gen-body.has-preview .sprite-gen-controls {
@@ -422,23 +460,37 @@ function addGeneratedSprite() {
   gap: 8px;
 }
 
-.sprite-gen-controls label {
+.sprite-gen-param-control {
   position: relative;
+  flex: 0 0 auto;
+}
+
+.sprite-gen-param-trigger {
   min-width: 0;
-  height: 36px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   border: 1px solid var(--ui-color-grey-400);
   border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-grey-100);
   color: var(--ui-color-grey-900);
   font-size: 14px;
   line-height: 22px;
-  padding: 0 12px;
+  padding: 0 8px 0 4px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.sprite-gen-body.has-preview .sprite-gen-controls label {
+.sprite-gen-param-trigger:hover,
+.sprite-gen-param-trigger[aria-expanded='true'] {
+  background: var(--ui-color-grey-200);
+  border-color: var(--ui-color-grey-500);
+}
+
+.sprite-gen-body.has-preview .sprite-gen-param-trigger {
   width: 32px;
   height: 32px;
   justify-content: center;
@@ -446,7 +498,7 @@ function addGeneratedSprite() {
   padding: 0;
 }
 
-.sprite-gen-body.has-preview .sprite-gen-controls label > span {
+.sprite-gen-body.has-preview .sprite-gen-param-trigger > span {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -455,21 +507,61 @@ function addGeneratedSprite() {
   white-space: nowrap;
 }
 
-.sprite-gen-controls select {
+.sprite-gen-param-menu {
   position: absolute;
-  inset: 0;
-  opacity: 0;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 5;
+  min-width: 156px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-lg);
+  background: var(--ui-color-grey-100);
+  box-shadow: var(--ui-box-shadow-lg);
+  padding: 8px;
+}
+
+.sprite-gen-param-option {
+  width: 100%;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--ui-border-radius-md);
+  background: transparent;
+  color: var(--ui-color-grey-900);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: left;
+  padding: 0 10px 0 8px;
   cursor: pointer;
 }
 
-.sprite-gen-control-icon {
+.sprite-gen-param-option:hover,
+.sprite-gen-param-option.active {
+  background: var(--ui-color-grey-300);
+}
+
+.sprite-gen-param-check {
   width: 16px;
-  height: 16px;
+  flex: 0 0 16px;
+  color: var(--ui-color-turquoise-500);
+  font-size: 14px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.sprite-gen-control-icon {
+  width: 24px;
+  height: 24px;
   display: inline-grid;
   place-items: center;
   color: var(--ui-color-grey-800);
   font-size: 15px;
-  line-height: 16px;
+  line-height: 24px;
 }
 
 .sprite-gen-body.has-preview .sprite-gen-control-icon {

@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
             <path d="m16.5 16.5 4 4" />
           </svg>
           <input
-            class="h-8 w-full rounded-md border border-grey-400 bg-grey-100 py-0 pr-3 pl-7.5 text-base leading-[22px] text-text outline-none placeholder:text-grey-700"
+            class="community-search-input h-8 w-full rounded-md border border-grey-400 bg-grey-100 py-0 pr-3 pl-7.5 text-text outline-none placeholder:text-grey-700"
             type="search"
             placeholder="Search project"
             v-model="searchValue"
@@ -231,3 +231,10 @@ onBeforeUnmount(() => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.community-search-input {
+  font-size: 14px;
+  line-height: 22px;
+}
+</style>

@@ -19,7 +19,7 @@ const { openSignInModal } = usePrototypeSignIn()
     >
       <h1 class="m-0 text-[24px]/[1.5] font-medium">Join XBuilder</h1>
       <p class="mt-2 text-sm">Build and share your projects</p>
-      <UIButton class="mt-7" type="primary" @click="openSignInModal">Join now</UIButton>
+      <UIButton class="mt-7" type="primary" size="large" @click="openSignInModal">Join now</UIButton>
     </div>
   </UICard>
 </template>
