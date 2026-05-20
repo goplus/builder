@@ -3771,20 +3771,17 @@ onBeforeUnmount(() => {
             </div>
             <div class="map-config-grid">
               <label class="map-number-input">
-                <span>X</span>
+                <span class="map-number-prefix">X</span>
                 <input :value="selectedMapSprite.x" type="number" inputmode="numeric" aria-label="X position" @input="updateSelectedMapSpriteX" />
               </label>
               <label class="map-number-input">
-                <span>Y</span>
+                <span class="map-number-prefix">Y</span>
                 <input :value="selectedMapSprite.y" type="number" inputmode="numeric" aria-label="Y position" @input="updateSelectedMapSpriteY" />
               </label>
               <label class="map-number-input">
-                <span>W</span>
-                <input value="54" readonly aria-label="Width" />
-              </label>
-              <label class="map-number-input">
-                <span>H</span>
-                <input value="60" readonly aria-label="Height" />
+                <span class="map-number-prefix">Size</span>
+                <input :value="selectedMapSprite.size" type="number" min="1" max="400" inputmode="numeric" aria-label="Size percentage" @input="updateSelectedMapSpriteSize" />
+                <span class="map-number-suffix">%</span>
               </label>
             </div>
             <div class="map-config-row">
@@ -5021,7 +5018,7 @@ onBeforeUnmount(() => {
 
 .map-config-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -5030,22 +5027,37 @@ onBeforeUnmount(() => {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  height: 32px;
   border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-grey-300);
   box-shadow: inset 0 0 0 1px var(--ui-color-grey-300);
   padding: 0 12px;
+  color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 22px;
 }
 
-.map-number-input span {
+.map-number-prefix,
+.map-number-suffix {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--ui-color-grey-800);
+}
+
+.map-number-prefix {
+  margin-right: 8px;
+}
+
+.map-number-suffix {
+  margin-left: 4px;
 }
 
 .map-config-grid input {
   min-width: 0;
   width: 100%;
-  height: 32px;
+  height: inherit;
   border: 0;
   background: transparent;
   padding: 0;
