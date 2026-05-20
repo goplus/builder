@@ -2835,7 +2835,7 @@ onBeforeUnmount(() => {
               aria-haspopup="menu"
               @click.stop="toggleAddCostumeMenu"
             >
-              +
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
             </button>
             <Teleport to="body">
               <div v-if="addCostumeMenuOpen" class="costume-add-menu asset-add-menu" :style="getAddCostumeMenuStyle()" role="menu" @click.stop>
@@ -2908,7 +2908,7 @@ onBeforeUnmount(() => {
               aria-haspopup="menu"
               @click.stop="toggleAddAnimationMenu"
             >
-              +
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
             </button>
             <Teleport to="body">
               <div v-if="addAnimationMenuOpen" class="animation-add-menu" :style="getAddAnimationMenuStyle()" role="menu" @click.stop>
@@ -3168,7 +3168,9 @@ onBeforeUnmount(() => {
               <img :src="backdrop.image" :alt="backdrop.name" />
               <span class="asset-item-title" :title="backdrop.name">{{ backdrop.name }}</span>
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add backdrop">+</button>
+            <button class="asset-add-button" type="button" aria-label="Add backdrop">
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
+            </button>
           </aside>
           <section class="asset-detail" aria-label="Backdrop detail">
             <header class="asset-detail-header">
@@ -3200,7 +3202,9 @@ onBeforeUnmount(() => {
               </span>
               <span class="asset-item-title" :title="sound.name">{{ sound.name }}</span>
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add sound">+</button>
+            <button class="asset-add-button" type="button" aria-label="Add sound">
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
+            </button>
           </aside>
           <section v-if="selectedSound != null" class="asset-detail" aria-label="Sound detail">
             <header class="sound-detail-title">
@@ -3267,7 +3271,9 @@ onBeforeUnmount(() => {
               <span class="widget-icon" v-html="monitorWidgetIcon"></span>
               <span class="asset-item-title" :title="widget.name">{{ widget.name }}</span>
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add widget">+</button>
+            <button class="asset-add-button" type="button" aria-label="Add widget">
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
+            </button>
           </aside>
           <section class="asset-detail" aria-label="Widget detail">
             <header class="asset-detail-header">
@@ -5023,12 +5029,25 @@ onBeforeUnmount(() => {
   width: calc(100% + 20px);
   margin: auto -10px -12px;
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-top: 1px solid var(--ui-color-grey-400);
   border-radius: 0 0 0 var(--ui-border-radius-md);
   background: var(--ui-color-grey-100);
   color: var(--ui-color-grey-800);
-  font-size: 20px;
+}
+
+.asset-add-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.asset-add-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .animation-add-menu {
