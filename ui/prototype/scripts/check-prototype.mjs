@@ -488,9 +488,15 @@ if (!copilot.includes('let resizeTimer') || !copilot.includes('setTimeout(persis
 }
 
 if (
-  !copilot.includes("right: isOpen.value ? `${panelPosition.value.right}px` : '-340px'") ||
-  !copilot.includes('class="copilot-trigger right visible group') ||
+  !copilot.includes("const panelState = ref<'left' | 'right'>('right')") ||
+  !copilot.includes("handleDragStart(targetName: 'trigger' | 'panel', event: PointerEvent)") ||
+  !copilot.includes("panelState.value = event.clientX < window.innerWidth / 2 ? 'left' : 'right'") ||
+  !copilot.includes('class="copilot-trigger visible group') ||
+  !copilot.includes("@pointerdown.prevent=\"handleDragStart('trigger', $event)\"") ||
+  !copilot.includes("@pointerdown.prevent=\"handleDragStart('panel', $event)\"") ||
   !copilot.includes("-translate-x-full") ||
+  !copilot.includes('translate-x-full') ||
+  !copilot.includes("h-[62px]") ||
   !copilot.includes("bg-[linear-gradient(90deg,#c390ff_0%,#72bbff_100%)]") ||
   copilot.includes('<style scoped>') ||
   copilot.includes('.copilot-panel.closed .footer-wrapper') ||
