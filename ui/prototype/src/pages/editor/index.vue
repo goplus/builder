@@ -4429,6 +4429,7 @@ onBeforeUnmount(() => {
 .map-card {
   min-height: 0;
   overflow: hidden;
+  border: 0;
 }
 
 .map-card-header button,
