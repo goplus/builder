@@ -643,6 +643,24 @@ const niuRunAnimations: AssetItem[] = [
     duration: '0.8s',
     binding: '1',
     sound: 'None'
+  },
+  {
+    id: 'niu-idle',
+    name: '待机',
+    image: niuXiaoQiUrl,
+    frames: [niuXiaoQiUrl, niuXiaoQiUrl],
+    duration: '0.6s',
+    binding: '1',
+    sound: 'None'
+  },
+  {
+    id: 'niu-jump',
+    name: '跳跃',
+    image: niuXiaoHuaUrl,
+    frames: [niuXiaoQiUrl, niuXiaoHuaUrl, niuXiaoQiUrl],
+    duration: '0.9s',
+    binding: '1',
+    sound: 'jump'
   }
 ]
 

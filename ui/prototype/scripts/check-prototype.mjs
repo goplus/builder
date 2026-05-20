@@ -346,6 +346,16 @@ if (
   failures.push('editor asset item titles must use the shared non-clipped title treatment')
 }
 
+if (
+  !editorPage.includes("id: 'niu-run'") ||
+  !editorPage.includes("id: 'niu-idle'") ||
+  !editorPage.includes("id: 'niu-jump'") ||
+  !editorPage.includes("name: '待机'") ||
+  !editorPage.includes("name: '跳跃'")
+) {
+  failures.push('niu-run prototype must show multiple local animations in the animation list')
+}
+
 for (const hoverToken of [
   'const apiHoverDocs',
   'function showCodeApiHover',
