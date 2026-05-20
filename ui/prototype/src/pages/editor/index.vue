@@ -5000,11 +5000,11 @@ onBeforeUnmount(() => {
 
 .asset-item-menu {
   position: absolute;
-  top: -10px;
-  right: -10px;
+  top: -6px;
+  right: -6px;
   z-index: 2;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
   border: 0;
