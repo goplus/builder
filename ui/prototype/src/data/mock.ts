@@ -369,6 +369,294 @@ export const courseSeries: CourseSeries[] = [
         completed: false
       }
     ]
+  },
+  {
+    id: 'map-adventure',
+    title: 'Map Adventure Basics',
+    description: 'Build a top-down playground with stage positioning and sprite layers.',
+    total: '7 Total',
+    updatedAt: '3 weeks ago',
+    cover: aiTopDownImage,
+    courses: [
+      {
+        id: 'place-sprites',
+        title: 'Place Sprites on the Map',
+        summary: 'Use X and Y values to arrange sprites on a playable map.',
+        duration: '9 min',
+        completed: false
+      },
+      {
+        id: 'layer-order',
+        title: 'Control Layer Order',
+        summary: 'Bring sprites forward or send them back to compose the scene.',
+        duration: '10 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'side-scroller',
+    title: 'Side Scroller Starter',
+    description: 'Create a running game with direction changes, movement, and obstacles.',
+    total: '9 Total',
+    updatedAt: '1 month ago',
+    cover: aiSideScrollingImage,
+    courses: [
+      {
+        id: 'runner-motion',
+        title: 'Runner Motion',
+        summary: 'Move a character across the stage with keyboard events.',
+        duration: '12 min',
+        completed: false
+      },
+      {
+        id: 'jump-obstacles',
+        title: 'Jump Over Obstacles',
+        summary: 'Add simple timing and obstacle interactions.',
+        duration: '14 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'pixel-art',
+    title: 'Pixel Art Workshop',
+    description: 'Design pixel-style characters and use them in a small interactive scene.',
+    total: '5 Total',
+    updatedAt: '1 month ago',
+    cover: aiPixelImage,
+    courses: [
+      {
+        id: 'pixel-character',
+        title: 'Draw a Pixel Character',
+        summary: 'Create a compact sprite with a readable silhouette.',
+        duration: '8 min',
+        completed: false
+      },
+      {
+        id: 'pixel-stage',
+        title: 'Build a Pixel Stage',
+        summary: 'Match sprite scale with a simple pixel backdrop.',
+        duration: '11 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'sound-effects',
+    title: 'Sound Effects Studio',
+    description: 'Add sound cues to make actions, collisions, and wins feel clear.',
+    total: '6 Total',
+    updatedAt: '5 weeks ago',
+    cover: monitorImage,
+    courses: [
+      {
+        id: 'add-sounds',
+        title: 'Add Action Sounds',
+        summary: 'Bind short sounds to events and preview them in the editor.',
+        duration: '9 min',
+        completed: false
+      },
+      {
+        id: 'sound-feedback',
+        title: 'Use Sound Feedback',
+        summary: 'Use audio cues to confirm progress and mistakes.',
+        duration: '10 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'weather-story',
+    title: 'Weather Story Maker',
+    description: 'Tell a story by switching backdrops, sprite looks, and sounds.',
+    total: '8 Total',
+    updatedAt: '5 weeks ago',
+    cover: backdropImage,
+    courses: [
+      {
+        id: 'backdrop-flow',
+        title: 'Backdrop Flow',
+        summary: 'Use backdrop changes to move between story moments.',
+        duration: '12 min',
+        completed: false
+      },
+      {
+        id: 'weather-effects',
+        title: 'Weather Effects',
+        summary: 'Add wind, rain, and sunshine as stage reactions.',
+        duration: '13 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'sprite-rescue',
+    title: 'Sprite Rescue Mission',
+    description: 'Create a simple rescue game using messages and touch events.',
+    total: '7 Total',
+    updatedAt: '6 weeks ago',
+    cover: projectRunImage,
+    courses: [
+      {
+        id: 'rescue-target',
+        title: 'Set a Rescue Target',
+        summary: 'Choose the sprite that players need to reach.',
+        duration: '8 min',
+        completed: false
+      },
+      {
+        id: 'broadcast-win',
+        title: 'Broadcast a Win',
+        summary: 'Send a message when the target is rescued.',
+        duration: '11 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'keyboard-control',
+    title: 'Keyboard Control Lab',
+    description: 'Practice key events and build reliable controls for a character.',
+    total: '10 Total',
+    updatedAt: '6 weeks ago',
+    cover: niuRunThumbnail,
+    courses: [
+      {
+        id: 'arrow-keys',
+        title: 'Arrow Key Movement',
+        summary: 'Move a sprite in four directions with key events.',
+        duration: '10 min',
+        completed: false
+      },
+      {
+        id: 'turning',
+        title: 'Turn and Face',
+        summary: 'Flip direction and keep movement readable.',
+        duration: '12 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'collectible-game',
+    title: 'Collectible Game Kit',
+    description: 'Build a game where players collect items and track progress.',
+    total: '9 Total',
+    updatedAt: '2 months ago',
+    cover: weatherggggThumbnail,
+    courses: [
+      {
+        id: 'spawn-items',
+        title: 'Spawn Items',
+        summary: 'Place collectible sprites around the stage.',
+        duration: '9 min',
+        completed: false
+      },
+      {
+        id: 'score-widget',
+        title: 'Score Widget',
+        summary: 'Use a widget to show how many items were collected.',
+        duration: '12 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'message-events',
+    title: 'Message Events Practice',
+    description: 'Coordinate sprites with broadcasts and message handlers.',
+    total: '6 Total',
+    updatedAt: '2 months ago',
+    cover: builderUsageImage,
+    courses: [
+      {
+        id: 'broadcast',
+        title: 'Broadcast a Message',
+        summary: 'Trigger another sprite with a message event.',
+        duration: '8 min',
+        completed: false
+      },
+      {
+        id: 'wait-message',
+        title: 'Wait for a Reply',
+        summary: 'Chain events so sprites react in sequence.',
+        duration: '10 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'mini-platformer',
+    title: 'Mini Platformer',
+    description: 'Use gravity, collision, and movement to make a tiny platform game.',
+    total: '12 Total',
+    updatedAt: '2 months ago',
+    cover: aiSideScrollingImage,
+    courses: [
+      {
+        id: 'gravity',
+        title: 'Turn on Gravity',
+        summary: 'Configure physics and test falling movement.',
+        duration: '12 min',
+        completed: false
+      },
+      {
+        id: 'platform-collision',
+        title: 'Platform Collision',
+        summary: 'Keep the character standing on stage objects.',
+        duration: '15 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'ai-sprite-generator',
+    title: 'AI Sprite Generator',
+    description: 'Generate sprite ideas and prepare them for a playable scene.',
+    total: '5 Total',
+    updatedAt: '3 months ago',
+    cover: spriteReviewImage,
+    courses: [
+      {
+        id: 'write-prompt',
+        title: 'Write a Prompt',
+        summary: 'Describe a sprite with category, style, and perspective.',
+        duration: '7 min',
+        completed: false
+      },
+      {
+        id: 'use-generated-sprite',
+        title: 'Use the Generated Sprite',
+        summary: 'Add the new sprite to a project and test its size.',
+        duration: '10 min',
+        completed: false
+      }
+    ]
+  },
+  {
+    id: 'publish-polish',
+    title: 'Publish and Polish',
+    description: 'Prepare a finished project with a title, thumbnail, and instructions.',
+    total: '8 Total',
+    updatedAt: '3 months ago',
+    cover: personalInfoBackgroundImage,
+    courses: [
+      {
+        id: 'project-page',
+        title: 'Project Page Details',
+        summary: 'Write instructions and notes before publishing.',
+        duration: '9 min',
+        completed: false
+      },
+      {
+        id: 'thumbnail-check',
+        title: 'Thumbnail Check',
+        summary: 'Review the project thumbnail and preview state.',
+        duration: '8 min',
+        completed: false
+      }
+    ]
   }
 ]
 
