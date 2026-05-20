@@ -4651,6 +4651,7 @@ onBeforeUnmount(() => {
 }
 
 .map-card-header button:hover,
+.map-card-header button[aria-expanded='true'],
 .map-config-title button:hover {
   background: var(--ui-color-grey-400);
 }
@@ -4660,6 +4661,8 @@ onBeforeUnmount(() => {
 .map-card-header button > span :deep(svg) {
   width: 16px;
   height: 16px;
+  display: block;
+  line-height: 0;
 }
 
 .map-config {
@@ -6652,6 +6655,10 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-400);
 }
 
+.asset-header button[aria-expanded='true'] {
+  background: var(--ui-color-grey-400);
+}
+
 .asset-header button:active {
   background: var(--ui-color-grey-500);
 }
@@ -6664,6 +6671,8 @@ onBeforeUnmount(() => {
 .asset-header button > span :deep(svg) {
   width: 16px;
   height: 16px;
+  display: block;
+  line-height: 0;
 }
 
 .add-sprite-menu-wrap {
