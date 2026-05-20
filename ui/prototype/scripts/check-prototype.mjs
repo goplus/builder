@@ -293,7 +293,9 @@ for (const flipToken of [
   'Set direction left',
   'Set direction right',
   'getStageSpriteImageStyle',
-  ':style="ctx.selectedSpriteImageStyle"'
+  ':style="ctx.selectedSpriteImageStyle"',
+  '<span v-if="ctx.selectedSprite != null" class="coordinate">{{ ctx.selectedSpriteCoordinate }}</span>',
+  'transform: translateX(-50%);'
 ]) {
   if (!editorPreviewSurface.includes(flipToken)) {
     failures.push(`editor selected sprite side handles must switch left/right direction token: ${flipToken}`)

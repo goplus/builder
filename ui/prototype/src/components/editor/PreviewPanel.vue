@@ -75,7 +75,6 @@ function handleQuickConfigToolClick(tool: { id: string }) {
                 @pointercancel.stop.prevent="ctx.endStageSpriteDrag"
               >
                 <img :src="ctx.selectedSprite.image" alt="" :style="ctx.selectedSpriteImageStyle" />
-                <span class="coordinate">{{ ctx.selectedSpriteCoordinate }}</span>
                 <button
                   class="handle left"
                   :class="{ active: ctx.selectedSprite.rotationStyle === 'left-right' && ctx.selectedSprite.heading < 0 }"
@@ -111,6 +110,7 @@ function handleQuickConfigToolClick(tool: { id: string }) {
                   @pointercancel.stop.prevent="ctx.endSelectedSpriteResize"
                 ></button>
               </div>
+              <span v-if="ctx.selectedSprite != null" class="coordinate">{{ ctx.selectedSpriteCoordinate }}</span>
               <div class="stage-tools" :class="{ expanded: ctx.activeQuickConfig !== 'default' && ctx.activeQuickConfig !== 'layer' }">
                 <template v-if="ctx.activeQuickConfig === 'default' || ctx.activeQuickConfig === 'layer'">
                   <button
@@ -355,8 +355,10 @@ function handleQuickConfigToolClick(tool: { id: string }) {
 
 .coordinate {
   position: absolute;
-  top: -28px;
-  right: -18px;
+  top: 108px;
+  left: 50%;
+  z-index: 4;
+  transform: translateX(-50%);
   border-radius: 3px;
   background: rgb(89 117 66 / 0.78);
   color: white;
