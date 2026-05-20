@@ -3563,7 +3563,7 @@ onBeforeUnmount(() => {
               </form>
               <button class="map-config-icon" type="button" aria-label="Rename sprite" @click="startMapSpriteRename" v-html="editIcon"></button>
               <span class="map-config-title-spacer"></span>
-              <button class="map-config-icon collapse" type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false" v-html="arrowDownIcon"></button>
+              <button class="map-config-icon collapse" type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false" v-html="arrowDownIcon" title="Collapse"></button>
             </div>
             <div class="map-config-grid">
               <label class="map-number-input">
@@ -3640,9 +3640,10 @@ onBeforeUnmount(() => {
             class="map-config-expand"
             type="button"
             aria-label="Expand sprite config"
+            title="Expand"
             @click="mapSpriteConfigExpanded = true"
           >
-            ⌃
+            <span class="map-config-expand-icon" aria-hidden="true" v-html="arrowDownIcon"></span>
           </button>
         </UICard>
       </aside>
@@ -4721,6 +4722,17 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-300);
   color: var(--ui-color-grey-900);
   box-shadow: var(--ui-box-shadow-sm);
+}
+
+.map-config-expand-icon,
+.map-config-expand-icon :deep(svg) {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.map-config-expand-icon {
+  transform: rotate(180deg);
 }
 
 .map-config-title {
