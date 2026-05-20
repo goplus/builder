@@ -4690,8 +4690,9 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 8px;
-  padding: 12px;
+  padding: 12px 0 12px 12px;
   overflow: auto;
+  scrollbar-width: thin;
 }
 
 .map-sprite-config {
