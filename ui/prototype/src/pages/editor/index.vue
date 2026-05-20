@@ -4745,6 +4745,7 @@ onBeforeUnmount(() => {
   --ui-switch-offset: 2px;
   min-width: var(--ui-switch-rail-width);
   height: var(--ui-switch-rail-height);
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   justify-content: center;
