@@ -99,7 +99,7 @@ const { fn: handleCourseClick } = useMessageHandle(
     <!-- TODO: Temporarily import the community component -->
     <CommunityNavbar />
 
-    <CenteredWrapper size="medium" class="my-6">
+    <CenteredWrapper size="medium" class="my-6 flex-1">
       <UICard class="h-[145px] flex gap-10 bg-grey-100 p-5">
         <UILoading v-if="courseSeriesIsLoading" cover mask="solid" />
         <UIError v-else-if="courseSeriesError != null" :retry="courseSeriesRefetch">
