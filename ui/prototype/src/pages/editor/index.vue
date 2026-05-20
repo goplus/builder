@@ -4875,6 +4875,12 @@ onBeforeUnmount(() => {
   display: block;
 }
 
+.map-config-row .map-button-group {
+  width: max-content;
+  justify-self: start;
+  display: inline-flex;
+}
+
 .map-button-group-icon {
   width: 16px;
   height: 16px;
