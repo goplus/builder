@@ -63,7 +63,7 @@ function handleQuickConfigToolClick(tool: { id: string }) {
                 @pointerup.stop.prevent="ctx.endStageSpriteDrag"
                 @pointercancel.stop.prevent="ctx.endStageSpriteDrag"
               >
-                <img :src="sprite.image" alt="" />
+                <img :src="sprite.image" alt="" :style="ctx.getStageSpriteImageStyle(sprite)" />
               </div>
               <div
                 v-if="ctx.selectedSprite != null"
@@ -74,7 +74,7 @@ function handleQuickConfigToolClick(tool: { id: string }) {
                 @pointerup.stop.prevent="ctx.endStageSpriteDrag"
                 @pointercancel.stop.prevent="ctx.endStageSpriteDrag"
               >
-                <img :src="ctx.selectedSprite.image" alt="" />
+                <img :src="ctx.selectedSprite.image" alt="" :style="ctx.selectedSpriteImageStyle" />
                 <span class="coordinate">{{ ctx.selectedSpriteCoordinate }}</span>
                 <button
                   class="handle left"

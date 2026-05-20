@@ -291,7 +291,9 @@ for (const flipToken of [
   'switchSelectedSpriteDirection',
   '@click.stop="ctx.switchSelectedSpriteDirection',
   'Set direction left',
-  'Set direction right'
+  'Set direction right',
+  'getStageSpriteImageStyle',
+  ':style="ctx.selectedSpriteImageStyle"'
 ]) {
   if (!editorPreviewSurface.includes(flipToken)) {
     failures.push(`editor selected sprite side handles must switch left/right direction token: ${flipToken}`)

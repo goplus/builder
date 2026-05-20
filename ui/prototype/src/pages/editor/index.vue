@@ -874,6 +874,7 @@ const tempCodeDocumentTabs = computed<CodeDocumentTab[]>(() => {
   return tabs
 })
 const selectedSpriteFrameStyle = computed(() => getStageSpriteFrameStyle(selectedSprite.value))
+const selectedSpriteImageStyle = computed(() => getStageSpriteImageStyle(selectedSprite.value))
 const selectedSpriteCoordinate = computed(() => `${selectedSprite.value?.x ?? -224}, ${selectedSprite.value?.y ?? 74}`)
 const selectedMapSpriteCoordinate = computed(() => `${selectedMapSprite.value?.x ?? -224}, ${selectedMapSprite.value?.y ?? 74}`)
 const codeBodyStyle = computed<CSSProperties>(() => ({
@@ -1224,20 +1225,25 @@ function backToDefaultQuickConfig() {
   activeQuickConfig.value = 'default'
 }
 
-function selectedSpriteTransform(sprite: SpriteCard | undefined) {
+function selectedSpriteFrameTransform(sprite: SpriteCard | undefined) {
   const size = (sprite?.size ?? 100) / 100
   const heading = sprite?.heading ?? 90
   const rotationStyle = sprite?.rotationStyle ?? 'normal'
   const rotation = rotationStyle === 'normal' ? heading - 90 : 0
-  const flip = rotationStyle === 'left-right' && heading < 0 ? ' scaleX(-1)' : ''
-  return `scale(${size}) rotate(${rotation}deg)${flip}`
+  return `scale(${size}) rotate(${rotation}deg)`
+}
+
+function getStageSpriteImageStyle(sprite: SpriteCard | undefined): CSSProperties {
+  return {
+    transform: sprite?.rotationStyle === 'left-right' && (sprite.heading ?? 90) < 0 ? 'scaleX(-1)' : undefined
+  }
 }
 
 function getStageSpriteFrameStyle(sprite: SpriteCard | undefined): CSSProperties {
   return {
     left: `${stageSpriteOrigin.left + (sprite?.x ?? 0) * stageSpriteScale}px`,
     top: `${stageSpriteOrigin.top - (sprite?.y ?? 0) * stageSpriteScale}px`,
-    transform: selectedSpriteTransform(sprite)
+    transform: selectedSpriteFrameTransform(sprite)
   }
 }
 
@@ -2332,6 +2338,7 @@ const previewPanelContext = reactive({
   endStageSpriteDrag,
   endSelectedSpriteResize,
   getStageSpriteFrameStyle,
+  getStageSpriteImageStyle,
   leftRightIcon,
   moveSelectedSpriteLayer,
   moveSelectedSpriteResize,
@@ -2349,6 +2356,7 @@ const previewPanelContext = reactive({
   selectedSprite,
   selectedSpriteCoordinate,
   selectedSpriteFrameStyle,
+  selectedSpriteImageStyle,
   stageBackdrop,
   stageCompanionSprites,
   startSelectedSpriteResize,
