@@ -1,4 +1,430 @@
 {
   "version": "2.11",
-  "children": []
+  "children": [
+    {
+      "type": "frame",
+      "id": "y4UkBw",
+      "x": -538,
+      "y": -400,
+      "name": "LibraryEmpty",
+      "width": 1076,
+      "height": 800,
+      "fill": {
+        "type": "color",
+        "color": "$7:grey100",
+        "enabled": false
+      },
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "vertical",
+      "gap": "$7:radius-3",
+      "children": [
+        {
+          "type": "frame",
+          "id": "ve8l5",
+          "name": "Surface",
+          "clip": true,
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "$7:grey100",
+          "cornerRadius": "$7:border-radius-2",
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#24292f14",
+            "offset": {
+              "x": 0,
+              "y": "$7:shadow-y-1"
+            },
+            "blur": "$7:shadow-blur-2"
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "hil5z",
+              "name": "Header",
+              "width": "fill_container",
+              "height": 56,
+              "fill": "$7:grey100",
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "$7:grey400"
+              },
+              "layout": "vertical",
+              "gap": "$7:radius-3",
+              "padding": [
+                "$7:space-4",
+                "$7:space-6"
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "w15nMU",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": 547,
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "qUrZz",
+                      "type": "ref",
+                      "ref": "7:tfxWX",
+                      "x": 0,
+                      "y": 0.9999999999999858,
+                      "children": [
+                        {
+                          "id": "h2m2Fq",
+                          "type": "ref",
+                          "ref": "7:OHwu4",
+                          "content": "Choose a sprite"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yf3B2",
+                      "name": "Actions",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "gap": "$7:space-3",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "g3Tw6a",
+                          "name": "IconAction",
+                          "width": 28,
+                          "height": 28,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1.959999918937683
+                          },
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "id": "z1xGR5",
+                              "type": "ref",
+                              "ref": "7:1xCKp",
+                              "x": 6,
+                              "y": 6,
+                              "children": [
+                                {
+                                  "id": "d4QOrN",
+                                  "type": "ref",
+                                  "ref": "7:aoj3Q",
+                                  "descendants": {
+                                    "7:Y2JaM": {
+                                      "fill": "$7:grey800"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "SINzk",
+              "name": "Content",
+              "width": "fill_container",
+              "height": "fill_container",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "qzzyy",
+                  "name": "SearchPanel",
+                  "clip": true,
+                  "width": 1076,
+                  "height": 180,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "qhm8H",
+                      "type": "ref",
+                      "ref": "7:CXIi6",
+                      "x": 0,
+                      "y": 1,
+                      "children": [
+                        {
+                          "id": "d72oR",
+                          "type": "ref",
+                          "ref": "7:q7tbN"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ttHv3",
+                      "x": 0,
+                      "y": 27,
+                      "name": "Search",
+                      "clip": true,
+                      "width": 1076,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "layout": "vertical",
+                      "gap": "$7:space-5",
+                      "padding": [
+                        "$7:space-5",
+                        "$7:space-6"
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "A7zT6V",
+                          "type": "ref",
+                          "ref": "7:V6jio",
+                          "x": 248,
+                          "y": 20,
+                          "width": "fit_content",
+                          "children": [
+                            {
+                              "id": "WfNle",
+                              "type": "ref",
+                              "ref": "7:iiEqm",
+                              "width": 580,
+                              "descendants": {
+                                "7:Ub95Z": {
+                                  "content": "Little boy"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "lFh6h",
+                          "type": "ref",
+                          "ref": "7:r6nGfv",
+                          "x": 380,
+                          "y": 80,
+                          "children": [
+                            {
+                              "id": "tdxKN",
+                              "type": "ref",
+                              "ref": "7:gKJmL"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "GX47c",
+                  "name": "Tabs",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": "$7:radius-3",
+                  "padding": [
+                    "$7:space-5",
+                    "$7:space-6"
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "nQylg",
+                      "name": "TabsGroup",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "gap": "$7:space-3",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "AMWtS",
+                          "type": "ref",
+                          "ref": "7:z8hcSb",
+                          "x": 0,
+                          "y": 0,
+                          "children": [
+                            {
+                              "id": "Cvtyh",
+                              "type": "ref",
+                              "ref": "7:JwST5",
+                              "descendants": {
+                                "7:LOmxV": {
+                                  "content": "Public library"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "rU5BM",
+                          "type": "ref",
+                          "ref": "7:z8hcSb",
+                          "x": 132,
+                          "y": 0,
+                          "children": [
+                            {
+                              "id": "Vlj4s",
+                              "type": "ref",
+                              "ref": "7:vN0Kk",
+                              "descendants": {
+                                "7:aoHIs": {
+                                  "content": "My library"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zc69R",
+                  "name": "Callout",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "layout": "vertical",
+                  "gap": "$7:space-6",
+                  "padding": [
+                    80,
+                    0
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "uO3Y8",
+                      "type": "ref",
+                      "ref": "7:tfxWX",
+                      "x": 311,
+                      "y": 80,
+                      "children": [
+                        {
+                          "id": "D6sUc",
+                          "type": "ref",
+                          "ref": "7:OHwu4",
+                          "content": "No assets found for “Little Boy”. Try generating one with AI!",
+                          "fill": "$7:grey700"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "Qhy8N",
+                      "type": "ref",
+                      "ref": "7:ZfY6M",
+                      "x": 246,
+                      "y": 130.0000000000001,
+                      "children": [
+                        {
+                          "id": "XaBLX",
+                          "type": "ref",
+                          "ref": "7:onm6V",
+                          "descendants": {
+                            "7:C7rIG": {
+                              "content": "Little boy"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "q35bEq",
+                  "name": "Footer",
+                  "width": "fill_container",
+                  "fill": "$7:grey100",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": "$7:space-4",
+                  "padding": [
+                    "$7:space-5",
+                    "$7:space-6"
+                  ],
+                  "justifyContent": "end",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "cuWeT",
+                      "type": "ref",
+                      "ref": "7:z8hcSb",
+                      "x": 965,
+                      "y": 20,
+                      "children": [
+                        {
+                          "id": "lDjhb",
+                          "type": "ref",
+                          "ref": "7:vN0Kk",
+                          "flipX": false,
+                          "flipY": false,
+                          "width": "fit_content",
+                          "height": 40,
+                          "x": 0,
+                          "y": 0,
+                          "descendants": {
+                            "7:aoHIs": {
+                              "fill": "$7:grey600",
+                              "content": "Confirm"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "7": "../../components/spx/builder-component.lib.pen"
+  }
 }
