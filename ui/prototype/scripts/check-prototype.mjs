@@ -59,6 +59,8 @@ const centeredWrapper = read('src/components/community/CenteredWrapper.vue')
 const prototypeTag = read('src/components/ui/UITag.vue')
 const prototypeTab = read('src/components/ui/UITab.vue')
 const prototypeSpriteItem = read('src/components/editor/SpriteItem.vue')
+const prototypeUIEditorSpriteItem = read('src/components/editor/UIEditorSpriteItem.vue')
+const prototypeUIBlockItem = read('src/components/editor/UIBlockItem.vue')
 const prototypeCardHeader = read('src/components/ui/UICardHeader.vue')
 const publishProjectModal = read('src/components/editor/PublishProjectModal.vue')
 const spriteGeneratorModal = read('src/components/editor/SpriteGeneratorModal.vue')
@@ -512,11 +514,14 @@ if (
   !editorPage.includes("import SpriteItem from '@/components/editor/SpriteItem.vue'") ||
   (editorPage.match(/<SpriteItem/g) ?? []).length < 2 ||
   editorPage.includes('class="sprite-card"') ||
-  !prototypeSpriteItem.includes('.prototype-sprite-item.active::before') ||
-  !prototypeSpriteItem.includes('width: 88px;') ||
-  !prototypeSpriteItem.includes('height: 88px;')
+  !prototypeSpriteItem.includes("import UIEditorSpriteItem from '@/components/editor/UIEditorSpriteItem.vue'") ||
+  !prototypeSpriteItem.includes('<UIEditorSpriteItem') ||
+  prototypeSpriteItem.includes('.prototype-sprite-item {') ||
+  !prototypeUIEditorSpriteItem.includes("import UIBlockItem from '@/components/editor/UIBlockItem.vue'") ||
+  !prototypeUIBlockItem.includes('width: 88px;') ||
+  !prototypeUIBlockItem.includes('height: 88px;')
 ) {
-  failures.push('editor and map sprite lists must share the prototype sprite item component')
+  failures.push('editor and map sprite lists must share SpriteItem, and SpriteItem must reuse UIEditorSpriteItem')
 }
 
 if (
@@ -702,15 +707,18 @@ if (
 }
 
 if (
-  !prototypeSpriteItem.includes("import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'") ||
-  !prototypeSpriteItem.includes('v-html="eyeOffIcon"') ||
-  !prototypeSpriteItem.includes('width: 16px;') ||
-  !prototypeSpriteItem.includes('height: 16px;') ||
-  !prototypeSpriteItem.includes('color: var(--ui-color-grey-700);') ||
+  !prototypeUIEditorSpriteItem.includes("import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'") ||
+  !prototypeUIEditorSpriteItem.includes('<slot name="img" :style="imgStyle"') ||
+  !prototypeUIEditorSpriteItem.includes('v-html="eyeOffIcon"') ||
+  !prototypeUIEditorSpriteItem.includes('width: 76px;') ||
+  !prototypeUIEditorSpriteItem.includes('gap: 2px;') ||
+  !prototypeUIEditorSpriteItem.includes('width: 14px;') ||
+  !prototypeUIEditorSpriteItem.includes('height: 14px;') ||
+  !prototypeUIEditorSpriteItem.includes('color: var(--ui-color-grey-700);') ||
   prototypeSpriteItem.includes('⌁') ||
   !editorEyeOffIcon.includes('M20.1133 7.53809')
 ) {
-  failures.push('prototype sprite hidden state must use the copied UIIcon eyeOff asset at component icon size')
+  failures.push('prototype UIEditorSpriteItem must provide the shared 76px title row and copied eyeOff asset')
 }
 
 if (
