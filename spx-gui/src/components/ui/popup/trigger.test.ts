@@ -17,6 +17,17 @@ describe('resolveTriggerElement', () => {
     expect(resolveTriggerElement({ $el: anchor })).toBe(trigger)
   })
 
+  it('limits component root anchor sibling lookahead', () => {
+    const container = document.createElement('div')
+    const anchor = document.createComment('leading template comment')
+    const trigger = document.createElement('button')
+
+    container.append(anchor, ...Array.from({ length: 5 }, () => document.createTextNode(' ')), trigger)
+    document.body.append(container)
+
+    expect(resolveTriggerElement({ $el: anchor })).toBeNull()
+  })
+
   it('resolves SVG component roots directly as trigger elements', () => {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 

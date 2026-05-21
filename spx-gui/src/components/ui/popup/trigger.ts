@@ -41,17 +41,19 @@ export function resolveTriggerElement(target: PopupTriggerTarget) {
   return null
 }
 
+const COMPONENT_ROOT_ANCHOR_LOOKAHEAD_LIMIT = 5
+
 function resolveElementFromComponentRoot(root: Node | undefined) {
   if (root instanceof Element) return root
   if (root == null || (root.nodeType !== Node.COMMENT_NODE && root.nodeType !== Node.TEXT_NODE)) return null
 
-  // In Vue dev mode, comments in a component template can be preserved as DOM
-  // anchors. In that case a component public instance may expose `$el` as the
-  // leading comment/text node rather than the actual single rendered element.
-  // Walk forward to the first real Element so popup triggers keep working
-  // with components like UIIcon whose template contains leading comments.
-  let current = root?.nextSibling ?? null
-  while (current != null) {
+  // Some Vue compiler/dev configurations can preserve leading template
+  // comments/text as DOM anchors. In that case a component public instance may
+  // expose `$el` as the anchor node rather than the actual rendered element.
+  // Walk forward a few siblings to recover the element while bounding the work
+  // done by template-ref callbacks on repeated updates.
+  let current = root.nextSibling
+  for (let i = 0; current != null && i < COMPONENT_ROOT_ANCHOR_LOOKAHEAD_LIMIT; i++) {
     if (current instanceof Element) return current
     current = current.nextSibling
   }
