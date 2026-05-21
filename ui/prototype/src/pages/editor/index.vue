@@ -1074,6 +1074,7 @@ type SnippetDragState = {
 }
 
 let snippetDragState: SnippetDragState | null = null
+let cleanupSnippetSidebarResizeListeners: (() => void) | null = null
 
 function startSnippetHorizontalDrag(event: PointerEvent) {
   const target = event.currentTarget
@@ -1116,6 +1117,7 @@ function startSnippetSidebarResize(event: MouseEvent) {
   const codeBody = event.currentTarget.closest('.code-body')
   if (!(codeBody instanceof HTMLElement)) return
   event.preventDefault()
+  cleanupSnippetSidebarResize()
   snippetSidebarResizing.value = true
   const initialClientX = event.clientX
   const initialWidth = snippetSidebarWidth.value
@@ -1127,13 +1129,21 @@ function startSnippetSidebarResize(event: MouseEvent) {
   }
 
   function endResizing() {
-    snippetSidebarResizing.value = false
+    cleanupSnippetSidebarResize()
+  }
+
+  cleanupSnippetSidebarResizeListeners = () => {
     window.removeEventListener('mousemove', handleMouseMove)
     window.removeEventListener('mouseup', endResizing)
   }
-
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('mouseup', endResizing)
+}
+
+function cleanupSnippetSidebarResize() {
+  snippetSidebarResizing.value = false
+  cleanupSnippetSidebarResizeListeners?.()
+  cleanupSnippetSidebarResizeListeners = null
 }
 
 function getApiHoverDoc(apiName: string) {
@@ -2550,7 +2560,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
   snippetDragState?.target.classList.remove('dragging')
   snippetDragState = null
-  snippetSidebarResizing.value = false
+  cleanupSnippetSidebarResize()
   if (publishTimer != null) window.clearTimeout(publishTimer)
   clearSaveStateTimeouts()
 })

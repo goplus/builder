@@ -1206,7 +1206,8 @@ if (
   !editorPreviewPanel.includes('v-html="leftRightIcon"') ||
   !editorPreviewPanel.includes('width: 20px;') ||
   !editorPreviewPanel.includes('.selected-sprite .handle-arrow {') ||
-  !editorPreviewPanel.includes("v-for=\"corner in ['top-left', 'top-right', 'bottom-left', 'bottom-right']\"") ||
+  !editorPreviewPanel.includes("const resizeCorners: StageSpriteResizeCorner[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right']") ||
+  !editorPreviewPanel.includes('v-for="corner in resizeCorners"') ||
   !editorPreviewPanel.includes('ctx.startSelectedSpriteResize(corner, $event)') ||
   !editorPreviewPanel.includes('ctx.moveSelectedSpriteResize') ||
   !editorPreviewPanel.includes('ctx.endSelectedSpriteResize') ||

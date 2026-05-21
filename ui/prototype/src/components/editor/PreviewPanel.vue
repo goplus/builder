@@ -1,16 +1,83 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, type CSSProperties } from 'vue'
 
 import ProjectRunner from '@/components/project/ProjectRunner.vue'
 import UIButton from '@/components/ui/UIButton.vue'
 import UICardHeader from '@/components/ui/UICardHeader.vue'
 import leftRightIcon from '@/assets/editor/custom-transformer/left-right.svg?raw'
+import type { Project } from '@/data/mock'
+
+type RotationStyle = 'normal' | 'left-right' | 'none'
+type QuickConfigType = 'default' | 'position' | 'rotation' | 'size' | 'layer'
+type StageSpriteResizeCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+
+type SpriteCard = {
+  id: string
+  name: string
+  shortName: string
+  image: string
+  costumeWidth: number
+  costumeHeight: number
+  bitmapResolution: number
+  hidden: boolean
+  size: number
+  x: number
+  y: number
+  heading: number
+  rotationStyle: RotationStyle
+}
+
+type QuickConfigTool = {
+  id: QuickConfigType
+  label: string
+  icon: string
+}
+
+export type PreviewPanelContext = {
+  activeQuickConfig: QuickConfigType
+  backQuickIcon: string
+  leftRightIcon: string
+  notRotateIcon: string
+  publishActionIcon: string
+  publishStatusMessage: string
+  quickConfigTools: QuickConfigTool[]
+  rotateAroundIcon: string
+  runnerActive: boolean
+  selectedSprite: SpriteCard | undefined
+  selectedSpriteCoordinate: string
+  selectedSpriteFrameStyle: CSSProperties
+  selectedSpriteImageStyle: CSSProperties
+  stageBackdrop: string
+  stageCompanionSprites: SpriteCard[]
+  project: Project
+  backToDefaultQuickConfig: () => void
+  endSelectedSpriteResize: (event: PointerEvent) => void
+  endStageSpriteDrag: (event: PointerEvent) => void
+  getStageSpriteFrameStyle: (sprite: SpriteCard | undefined) => CSSProperties
+  getStageSpriteImageStyle: (sprite: SpriteCard | undefined) => CSSProperties
+  moveSelectedSpriteLayer: (direction: 'up' | 'down' | 'top' | 'bottom') => void
+  moveSelectedSpriteResize: (event: PointerEvent) => void
+  moveStageSpriteDrag: (event: PointerEvent) => void
+  openPublishModal: () => void
+  openQuickConfig: (type: QuickConfigType) => void
+  selectSprite: (id: string) => void
+  startSelectedSpriteResize: (corner: StageSpriteResizeCorner, event: PointerEvent) => void
+  startStageSpriteDrag: (sprite: SpriteCard, event: PointerEvent) => void
+  switchSelectedSpriteDirection: (direction: 'left' | 'right') => void
+  updateSelectedSpriteHeading: (event: Event) => void
+  updateSelectedSpriteLeftRight: (direction: 'left' | 'right') => void
+  updateSelectedSpriteRotationStyle: (style: RotationStyle) => void
+  updateSelectedSpriteSize: (event: Event) => void
+  updateSelectedSpriteX: (event: Event) => void
+  updateSelectedSpriteY: (event: Event) => void
+}
 
 const props = defineProps<{
-  ctx: any
+  ctx: PreviewPanelContext
 }>()
 
 const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
+const resizeCorners: StageSpriteResizeCorner[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
 
 async function runProject() {
   props.ctx.runnerActive = true
@@ -18,7 +85,7 @@ async function runProject() {
   await runnerRef.value?.run()
 }
 
-function handleQuickConfigToolClick(tool: { id: string }) {
+function handleQuickConfigToolClick(tool: QuickConfigTool) {
   if (tool.id === 'layer' && props.ctx.activeQuickConfig === 'layer') {
     props.ctx.backToDefaultQuickConfig()
     return
@@ -97,7 +164,7 @@ function handleQuickConfigToolClick(tool: { id: string }) {
                   <span class="handle-arrow disabled" aria-hidden="true" v-html="leftRightIcon"></span>
                 </button>
                 <button
-                  v-for="corner in ['top-left', 'top-right', 'bottom-left', 'bottom-right']"
+                  v-for="corner in resizeCorners"
                   :key="corner"
                   class="corner"
                   :class="corner"
