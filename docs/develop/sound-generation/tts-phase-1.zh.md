@@ -136,7 +136,7 @@ export type SpeechSoundSettings = {
 继续沿用统一任务接口：
 
 ```http
-POST /aigc/task
+POST /aigc/tasks
 Content-Type: application/json
 ```
 

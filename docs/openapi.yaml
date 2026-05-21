@@ -4972,8 +4972,8 @@ components:
                 - ui
                 - unspecified
 
-    AIGCSoundCategory:
-      description: Category of the generated sound asset.
+    SoundCategory:
+      description: Category of sound asset.
       type: string
       enum:
         - voice
@@ -5049,7 +5049,7 @@ components:
           examples:
             - 主角的一句开心问候
         category:
-          $ref: "#/components/schemas/AIGCSoundCategory"
+          $ref: "#/components/schemas/SoundCategory"
 
     AIGCSpeechSoundSettings:
       description: |

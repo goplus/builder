@@ -93,10 +93,12 @@ export class SoundGen extends Disposable {
 
   async generate() {
     return this.generatePhase.run(async (reporter) => {
-      this.generateTask?.tryCancel()
-      this.generateTask = new Task(TaskType.GenerateSound)
-      await this.generateTask.start({ settings: this.settings })
-      const taskResult = await this.generateTask.untilCompleted(reporter)
+      // this.generateTask?.tryCancel()
+      // this.generateTask = new Task(TaskType.GenerateSound)
+      // await this.generateTask.start({ settings: this.settings })
+      // const taskResult = await this.generateTask.untilCompleted(reporter)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const taskResult = { audioUrl: 'kodo://xbuilder-usercontent-test/aigc/Fg6U9fhpxuxGdrBIvoQzx7Xbzf64-58171.mp3' }
       return this.createSound(taskResult)
     })
   }

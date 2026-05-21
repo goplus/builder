@@ -65,6 +65,16 @@ const handleUse = useMessageHandle(
     zh: '采用声音失败'
   }
 )
+
+const submitText = computed(() => {
+  if (props.gen.generateState.status === 'running') {
+    return { en: 'Generating...', zh: '生成中...' }
+  }
+  if (props.gen.result == null) {
+    return { en: 'Generate', zh: '生成' }
+  }
+  return { en: 'Regenerate', zh: '重新生成' }
+})
 </script>
 
 <template>
@@ -78,7 +88,7 @@ const handleUse = useMessageHandle(
           <label class="text-base font-semibold">{{ $t({ en: 'Name', zh: '声音名称' }) }}</label>
           <UITextInput
             :value="gen.settings.name"
-            :placeholder="$t({ en: 'e.g. greeting', zh: '例如：问侯' })"
+            :placeholder="$t({ en: 'e.g. greeting', zh: '例如：问候' })"
             @update:value="gen.setSettings({ name: $event })"
           />
         </div>
@@ -188,12 +198,7 @@ const handleUse = useMessageHandle(
           :loading="handleGenerate.isLoading.value"
           @click="handleGenerate.fn"
         >
-          {{
-            $t({
-              en: gen.generateState.status === 'initial' ? 'Generate' : 'Regenerate',
-              zh: gen.generateState.status === 'initial' ? '生成' : '重新生成'
-            })
-          }}
+          {{ $t(submitText) }}
         </UIButton>
         <UIButton
           type="primary"
