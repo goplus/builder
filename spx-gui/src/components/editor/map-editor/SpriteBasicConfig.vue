@@ -10,7 +10,7 @@ import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDire
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
 import SpritePhysics from '@/components/editor/common/config/sprite/SpritePhysics.vue'
 import { UIButton, UIIcon, UITooltip, useModal } from '@/components/ui'
-import SpriteCollisionEditorModal from '../sprite/SpriteCollisionEditorModal.vue'
+import PivotCollisionEditorModal from '../sprite/PivotCollisionEditorModal.vue'
 import { useRenameSprite } from '@/components/asset'
 import AssetName from '@/components/asset/AssetName.vue'
 
@@ -29,18 +29,22 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
   zh: '重命名精灵失败'
 }).fn
 
-const isCollisionSettingsEnabled = computed(() => {
+const isCollisionEditingEnabled = computed(() => {
   if (!props.project.stage.physics.enabled) return false
   if (props.sprite.physicsMode === PhysicsMode.NoPhysics) return false
   return true
 })
 
-const editSpriteCollision = useModal(SpriteCollisionEditorModal)
-const handleEditCollision = useMessageHandle(
-  () => editSpriteCollision({ sprite: props.sprite, project: props.project }),
+const editPivotCollision = useModal(PivotCollisionEditorModal)
+const handleEditPivot = useMessageHandle(
+  () =>
+    editPivotCollision({
+      sprite: props.sprite,
+      enableCollisionEditing: isCollisionEditingEnabled.value
+    }),
   {
-    en: 'Failed to update sprite collision',
-    zh: '更新精灵碰撞失败'
+    en: 'Failed to update sprite pivot or collision',
+    zh: '更新精灵参考点或碰撞体失败'
   }
 ).fn
 </script>
@@ -87,9 +91,26 @@ const handleEditCollision = useMessageHandle(
       <div class="mr-4 whitespace-nowrap">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
       <SpritePhysics :sprite="sprite" :project="project" />
     </div>
-    <div v-if="isCollisionSettingsEnabled" class="flex items-center">
-      <div class="mr-4 whitespace-nowrap">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
-      <UIButton shape="square" icon="setting" type="white" @click="handleEditCollision"></UIButton>
+    <div class="flex items-center">
+      <UITooltip>
+        {{
+          $t({
+            en: `Set the pivot point of the sprite${isCollisionEditingEnabled ? ' and adjust the collision area' : ''}`,
+            zh: `设置精灵的坐标基准${isCollisionEditingEnabled ? '，并调整可发生碰撞的范围' : ''}`
+          })
+        }}
+        <template #trigger>
+          <div class="mr-4 whitespace-nowrap">
+            {{
+              $t({
+                en: `Pivot${isCollisionEditingEnabled ? ' & collision ' : ' '}settings`,
+                zh: `参考点${isCollisionEditingEnabled ? '和碰撞体' : ''}设置`
+              })
+            }}
+          </div>
+        </template>
+      </UITooltip>
+      <UIButton shape="square" icon="setting" type="white" @click="handleEditPivot"></UIButton>
     </div>
   </div>
 </template>
