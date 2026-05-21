@@ -15,6 +15,9 @@
     <UIMenuItem v-radar="{ name: 'Record sound', desc: 'Click to record a new sound' }" @click="handleRecord">
       {{ $t({ en: 'Record', zh: '录音' }) }}
     </UIMenuItem>
+    <UIMenuItem v-radar="{ name: 'Generate sound', desc: 'Click to generate a sound with AI' }" @click="handleGenerate">
+      {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
+    </UIMenuItem>
   </UIMenu>
 </template>
 
@@ -22,7 +25,12 @@
 import { UIMenu, UIMenuItem } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
-import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
+import {
+  useAddAssetFromLibrary,
+  useAddSoundFromLocalFile,
+  useAddSoundByRecording,
+  useSoundGenModal
+} from '@/components/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import type { SoundsEditorState } from './sounds-editor-state'
 
@@ -65,6 +73,21 @@ const handleRecord = useMessageHandle(
   {
     en: 'Failed to record sound',
     zh: '录音失败'
+  }
+).fn
+
+const invokeSoundGenModal = useSoundGenModal()
+const handleGenerate = useMessageHandle(
+  async () => {
+    const sound = await invokeSoundGenModal(editorCtx.project)
+    await editorCtx.state.history.doAction({ name: { en: 'Add sound', zh: '添加声音' } }, () => {
+      editorCtx.project.addSound(sound)
+    })
+    props.state.select(sound.id)
+  },
+  {
+    en: 'Failed to generate sound',
+    zh: '生成声音失败'
   }
 ).fn
 </script>

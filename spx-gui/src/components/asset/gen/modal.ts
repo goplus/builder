@@ -4,6 +4,7 @@ import { I18n } from '@/utils/i18n'
 import type { SpxProject } from '@/models/spx/project'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
+import { SoundGen } from '@/models/spx/gen/sound-gen'
 import type { AssetGenModel } from '@/models/spx/common/asset'
 
 export interface GenHelpers {
@@ -35,6 +36,16 @@ export function initSpriteGen(i18n: I18n, project: SpxProject, helpers: GenHelpe
 /** Init a backdrop-gen instance for asset generation modals, and handle its lifecycle properly. */
 export function initBackdropGen(i18n: I18n, project: SpxProject, onCleanup: OnCleanup) {
   const g = new BackdropGen(i18n, project)
+  onCleanup(() => {
+    g.cancel()
+    g.dispose()
+  })
+  return g
+}
+
+/** Init a sound-gen instance for asset generation modals, and handle its lifecycle properly. */
+export function initSoundGen(onCleanup: OnCleanup) {
+  const g = new SoundGen()
   onCleanup(() => {
     g.cancel()
     g.dispose()
