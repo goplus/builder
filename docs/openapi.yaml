@@ -4948,7 +4948,7 @@ components:
       type: object
       required:
         - token
-        - expires
+        - expiresAt
         - maxSize
         - bucket
         - region
@@ -4958,12 +4958,12 @@ components:
           type: string
           examples:
             - MY_ACCESS_KEY:wQ4ofysef1R7IKnrziqtomqyDvI=:eyJzY29wZSI6Im15LWJ1Y2tldDpzdW5mbG93ZXIuanBnIiwiZGVhZGxpbmUiOjE0NTE0OTEyMDAsInJldHVybkJvZHkiOiJ7XCJuYW1lXCI6JChmbmFtZSksXCJzaXplXCI6JChmc2l6ZSksXCJ3XCI6JChpbWFnZUluZm8ud2lkdGgpLFwiaFwiOiQoaW1hZ2VJbmZvLmhlaWdodCksXCJoYXNoXCI6JChldGFnKX0ifQ==
-        expires:
-          description: Expiration time of the upload token in seconds.
-          type: integer
-          format: int64
+        expiresAt:
+          description: Expiration timestamp of the upload token.
+          type: string
+          format: date-time
           examples:
-            - 1800
+            - 2006-01-02T15:04:05+07:00
         maxSize:
           description: Maximum allowed file size in bytes.
           type: integer

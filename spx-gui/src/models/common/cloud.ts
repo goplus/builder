@@ -336,24 +336,29 @@ const uploadToKodo = (file: File, signal?: AbortSignal) =>
     return stringifyKodoUrl(bucket, parsed.key)
   })
 
-type UploadSession = Omit<RawUploadSession, 'expires'> & {
+type CachedUploadSession = Omit<RawUploadSession, 'expiresAt'> & {
   /** Timestamp (ms) after which the uptoken is considered expired */
   expiresAt: number
 }
 
-let uploadSession: UploadSession | null = null
-let fetchingUploadSession: Promise<UploadSession> | null = null
+let cachedUploadSession: CachedUploadSession | null = null
+let fetchingCachedUploadSession: Promise<CachedUploadSession> | null = null
 
 async function getUploadSessionWithCache() {
-  if (uploadSession != null && uploadSession.expiresAt > Date.now()) return uploadSession
-  if (fetchingUploadSession != null) return fetchingUploadSession
-  return (fetchingUploadSession = createUploadSession().then(({ expires, ...others }) => {
-    const bufferTime = 5 * 60 * 1000 // refresh uptoken 5min before it expires
-    const expiresAt = Date.now() + expires * 1000 - bufferTime
-    uploadSession = { ...others, expiresAt: expiresAt }
-    fetchingUploadSession = null
-    return uploadSession
-  }))
+  if (cachedUploadSession != null && cachedUploadSession.expiresAt > Date.now()) return cachedUploadSession
+  if (fetchingCachedUploadSession != null) return fetchingCachedUploadSession
+  return (fetchingCachedUploadSession = createUploadSession()
+    .then(({ expiresAt: rawExpiresAt, ...others }) => {
+      const uploadTokenRefreshBuffer = 5 * 60 * 1000
+      const rawExpiresAtMs = Date.parse(rawExpiresAt)
+      if (!Number.isFinite(rawExpiresAtMs)) throw new Error(`invalid upload session expiresAt: ${rawExpiresAt}`)
+      const expiresAt = rawExpiresAtMs - uploadTokenRefreshBuffer
+      cachedUploadSession = { ...others, expiresAt }
+      return cachedUploadSession
+    })
+    .finally(() => {
+      fetchingCachedUploadSession = null
+    }))
 }
 
 async function validateFileSizeForUpload(files: globalThis.File[]) {
