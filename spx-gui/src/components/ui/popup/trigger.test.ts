@@ -1,3 +1,5 @@
+import { mount } from '@vue/test-utils'
+import { createCommentVNode, defineComponent, Fragment, h } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import { resolveTriggerElement } from './trigger'
 
@@ -6,26 +8,30 @@ describe('resolveTriggerElement', () => {
     document.body.innerHTML = ''
   })
 
-  it('resolves a component root comment anchor to the following Element', () => {
-    const container = document.createElement('div')
-    const anchor = document.createComment('leading template comment')
-    const trigger = document.createElement('button')
+  it('throws for component roots that start with a comment anchor', () => {
+    const Trigger = defineComponent({
+      render() {
+        return h(Fragment, [createCommentVNode('leading template comment'), h('button', { 'data-test-id': 'trigger' })])
+      }
+    })
+    const wrapper = mount(Trigger, { attachTo: document.body })
 
-    container.append(anchor, trigger)
-    document.body.append(container)
-
-    expect(resolveTriggerElement({ $el: anchor })).toBe(trigger)
+    expect(() => resolveTriggerElement(wrapper.vm)).toThrow(
+      'Popup trigger component must render exactly one element root'
+    )
   })
 
-  it('limits component root anchor sibling lookahead', () => {
-    const container = document.createElement('div')
-    const anchor = document.createComment('leading template comment')
-    const trigger = document.createElement('button')
+  it('throws for text-only component roots', () => {
+    const Trigger = defineComponent({
+      render() {
+        return 'Text trigger'
+      }
+    })
+    const wrapper = mount(Trigger, { attachTo: document.body })
 
-    container.append(anchor, ...Array.from({ length: 5 }, () => document.createTextNode(' ')), trigger)
-    document.body.append(container)
-
-    expect(resolveTriggerElement({ $el: anchor })).toBeNull()
+    expect(() => resolveTriggerElement(wrapper.vm)).toThrow(
+      'Popup trigger component must render exactly one element root'
+    )
   })
 
   it('resolves SVG component roots directly as trigger elements', () => {
@@ -34,12 +40,14 @@ describe('resolveTriggerElement', () => {
     expect(resolveTriggerElement({ $el: svg })).toBe(svg)
   })
 
-  it('does not resolve descendants for non-anchor component roots', () => {
+  it('throws for non-element component roots', () => {
     const documentFragment = document.createDocumentFragment()
     const trigger = document.createElement('button')
 
     documentFragment.append(trigger)
 
-    expect(resolveTriggerElement({ $el: documentFragment })).toBeNull()
+    expect(() => resolveTriggerElement({ $el: documentFragment })).toThrow(
+      'Popup trigger component must render exactly one element root'
+    )
   })
 })

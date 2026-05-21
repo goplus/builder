@@ -37,25 +37,10 @@ export function resolveTriggerElement(target: PopupTriggerTarget) {
       return triggerEl.value instanceof Element ? triggerEl.value : null
     }
   }
-  if ('$el' in target) return resolveElementFromComponentRoot(target.$el)
-  return null
-}
-
-const COMPONENT_ROOT_ANCHOR_LOOKAHEAD_LIMIT = 5
-
-function resolveElementFromComponentRoot(root: Node | undefined) {
-  if (root instanceof Element) return root
-  if (root == null || (root.nodeType !== Node.COMMENT_NODE && root.nodeType !== Node.TEXT_NODE)) return null
-
-  // Some Vue compiler/dev configurations can preserve leading template
-  // comments/text as DOM anchors. In that case a component public instance may
-  // expose `$el` as the anchor node rather than the actual rendered element.
-  // Walk forward a few siblings to recover the element while bounding the work
-  // done by template-ref callbacks on repeated updates.
-  let current = root.nextSibling
-  for (let i = 0; current != null && i < COMPONENT_ROOT_ANCHOR_LOOKAHEAD_LIMIT; i++) {
-    if (current instanceof Element) return current
-    current = current.nextSibling
+  if ('$el' in target) {
+    if (target.$el == null) return null
+    if (target.$el instanceof Element) return target.$el
+    throw new Error('Popup trigger component must render exactly one element root')
   }
   return null
 }
