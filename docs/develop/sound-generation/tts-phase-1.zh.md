@@ -1,4 +1,4 @@
-# Sound 一期 TTS 接口设计
+# Sound 一期 TTS 功能 & 接口设计
 
 本文档用于对齐 `builder`（前端）与 `builder-backend`（服务端）的 Sound 生成功能设计。
 
@@ -11,10 +11,9 @@
 
 - `cosyvoice-v3.5-flash` / `cosyvoice-v3.5-plus` **没有系统音色**
 - 必须先通过**声音设计/复刻**生成 voice_id，后续语音合成时再把该 voice_id 作为 `voice` 参数使用
-- 模型本身通常可以根据 `text` 推断基础情绪和表达方式
 - 一期前端只选择 `性别 + 年龄段`，服务端为每个桶位固定维护一个默认音色
-- 前端更适合暴露开放的 `instruction` 作为补充说明，而不是固定枚举的 `emotion` / `useCase`
-- `rate` / `pitch` 虽然底层支持较大范围调节，但前端应收敛为少量合理档位，避免生成结果失真
+- 模型本身通常可以根据 `text` 推断基础情绪和表达方式，可以附带可选的 `instruction` 作为补充说明，而不是用固定枚举的 `emotion` / `useCase` 等
+- 暂不开放 `rate / pitch / volume` 等参数，后续根据需求再评估是否增加“基础参数调整”功能
 
 这样可以最大程度贴合 CosyVoice v3.5 的真实能力边界，同时保持前端心智简洁。
 
@@ -34,8 +33,6 @@ Sound TTS 的前端公开协议只保留这些字段：
   - `voiceGender`：声音性别（男 / 女）
   - `voiceAgeGroup`：声音年龄段（儿童 / 青年 / 中年 / 老年）
   - `instruction`：补充“希望怎么说”“更偏什么感觉”“面向谁说”等开放信息
-  - `rate`：语速档位
-  - `pitch`：音调档位
 
 ### 1.2 前端不包含这些底层字段
 
@@ -77,8 +74,6 @@ Sound TTS 的前端公开协议只保留这些字段：
 
 - 音效生成（Sound Effect）
 - 背景音乐生成（Background Music）
-- 公开供应商底层参数，如原始 `voice_id`、连续数值级 `rate` / `pitch`
-- 公开 provider / model / voiceId 选择
 - 将生成结果自动入库到公共素材库
 
 ---
@@ -87,9 +82,8 @@ Sound TTS 的前端公开协议只保留这些字段：
 
 1. **前端讲用户语言，后端讲供应商语言。**
 2. **前端只选性别与年龄桶位，不直接接触 voice_id。**
-3. **运行时暴露稳定的可控项：性别、年龄段、开放 `instruction`、有限档位的 `rate / pitch`。**
-4. **生成结果仍沿用现有 `/aigc/task` 异步任务体系。**
-5. **前端只保留手动选择，不做本地或服务端推荐。**
+3. **前端只暴露最小化的选项：性别、年龄段、开放 `instruction`。**
+4. **生成结果沿用现有 `/aigc/task` 异步任务体系。**
 
 ---
 
@@ -108,7 +102,6 @@ export type SoundVoiceAgeGroup = 'child' | 'youth' | 'middle-aged' | 'senior'
 - 服务端内部按 `男 / 女 × 儿童 / 青年 / 中年 / 老年` 维护 8 个基础桶位
 - 每个桶位在一期只对应一个固定默认音色
 - 前端暴露的是桶位维度，不暴露供应商原始 `voice_id`
-- `rate / pitch` 虽然在协议里仍然使用 number，但前端只提供固定几档可选值
 - 这些固定选项由前端直接内置，不再单独提供“获取可选项”的接口
 - 前端所有可控项都由用户手动选择，不再引入推荐值
 
@@ -124,8 +117,6 @@ export type SpeechSoundSettings = {
     voiceGender: SoundVoiceGender
     voiceAgeGroup: SoundVoiceAgeGroup
     instruction?: string
-    rate?: number
-    pitch?: number
   }
 }
 ```
@@ -135,17 +126,6 @@ export type SpeechSoundSettings = {
 - `voiceGender / voiceAgeGroup` 用于选定基础音色桶位
 - `text` 暂定限制为最多 200 个字符，避免长文本导致生成用时过长
 - `instruction` 限制为最多 50 个字符，不超过 CosyVoice 可接受的长度范围
-- 协议字段 `rate / pitch` 使用 number；前端通过固定档位映射到这些数值
-
-前端固定档位映射如下：
-
-| UI 档位 | `rate` | `pitch` |
-| --- | --- | --- |
-| 低 / 慢 | `0.8` | `0.85` |
-| 稍低 / 稍慢 | `0.9` | `0.95` |
-| 标准 | `1.0` | `1.0` |
-| 稍高 / 稍快 | `1.1` | `1.05` |
-| 高 / 快 | `1.2` | `1.15` |
 
 ---
 
@@ -174,9 +154,7 @@ Content-Type: application/json
         "text": "你好，我们出发吧！",
         "voiceGender": "female",
         "voiceAgeGroup": "youth",
-        "instruction": "像在提醒队友准备出发，语气轻快一点",
-        "rate": 1.1,
-        "pitch": 1.05
+        "instruction": "像在提醒队友准备出发，语气轻快一点"
       }
     }
   }
@@ -200,11 +178,10 @@ UI 顺序：
 1. 输入素材名称
 2. 输入要说的话
 3. 选择声音性别 / 年龄段
-4. 选择语速 / 音调档位
-5. 按需补充 `instruction`
-6. 点击生成
-7. 试听生成结果
-8. 采用到项目
+4. 按需补充 `instruction`
+5. 点击生成
+6. 试听生成结果
+7. 采用到项目
 
 ---
 
@@ -227,7 +204,7 @@ builder-backend/internal/aigc/sound/base_voice_inventory.json
 
 其中：
 
-- `voice_id` 来自 CosyVoice 声音设计接口
+- `voice_id` 来自阿里百炼账号下已设计/复刻的可用于 CosyVoice `target_model` 的音色
 - `voice_gender + voice_age_group` 共同决定一个基础音色桶位
 
 建议：
@@ -241,26 +218,13 @@ builder-backend/internal/aigc/sound/base_voice_inventory.json
 服务端收到请求后完成：
 
 1. 根据 `voiceGender + voiceAgeGroup` 选定基础音色桶位对应的固定 `voice_id`
-2. 根据 `text / instruction / rate / pitch` 等信息生成最终调用参数
+2. 根据 `text / instruction` 等信息生成最终调用参数
 3. 调用供应商生成音频
 4. 上传对象存储并写回 task result
 
-例如：
-
-- `male + middle-aged` -> `cosyvoice-v3.5-plus` 的中年男声默认 `voice_id`
-- `female + youth` -> `cosyvoice-v3.5-plus` 的青年女声默认 `voice_id`
-
-然后再根据：
-
-- `text`
-- `instruction`
-- `rate`
-- `pitch`
-
-生成最终调用参数。默认值策略：
+调用参数默认值策略：
 
 - `instruction` 为空时，仅基于 `text` 做自然表达
-- `rate / pitch` 缺省时使用 `1.0`
 - 输出格式固定用 `mp3`
 - 其它参数不指定，使用 CosyVoice 默认值
 

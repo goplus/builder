@@ -17,13 +17,13 @@ const emit = defineEmits<{
   resolved: [Sound]
 }>()
 
+const maxSpeechTextLength = 200
+const maxInstructionLength = 50
+
 type SelectOption<T> = {
   value: T
   label: LocaleMessage
 }
-
-const maxSpeechTextLength = 200
-const maxInstructionLength = 50
 
 const voiceGenderOptions: Array<SelectOption<SoundVoiceGender>> = [
   { value: 'male', label: { en: 'Male', zh: '男声' } },
@@ -35,21 +35,6 @@ const voiceAgeGroupOptions: Array<SelectOption<SoundVoiceAgeGroup>> = [
   { value: 'youth', label: { en: 'Youth', zh: '青年' } },
   { value: 'middle-aged', label: { en: 'Middle-aged', zh: '中年' } },
   { value: 'senior', label: { en: 'Senior', zh: '老年' } }
-]
-
-const presetRateOptions: Array<SelectOption<number>> = [
-  { value: 0.8, label: { en: 'Slow', zh: '慢' } },
-  { value: 0.9, label: { en: 'Slightly slow', zh: '稍慢' } },
-  { value: 1.0, label: { en: 'Standard', zh: '标准' } },
-  { value: 1.1, label: { en: 'Slightly fast', zh: '稍快' } },
-  { value: 1.2, label: { en: 'Fast', zh: '快' } }
-]
-const presetPitchOptions: Array<SelectOption<number>> = [
-  { value: 0.85, label: { en: 'Low', zh: '低' } },
-  { value: 0.95, label: { en: 'Slightly low', zh: '稍低' } },
-  { value: 1.0, label: { en: 'Standard', zh: '标准' } },
-  { value: 1.05, label: { en: 'Slightly high', zh: '稍高' } },
-  { value: 1.15, label: { en: 'High', zh: '高' } }
 ]
 
 const [resultSrc] = useFileUrl(() => props.gen.result?.file ?? null)
@@ -107,14 +92,14 @@ const handleUse = useMessageHandle(
           </div>
           <UITextInput
             type="textarea"
-            :rows="3"
+            :rows="5"
             :value="gen.settings.speechSettings.text"
             :placeholder="$t({ en: 'Enter the speech text to synthesize', zh: '输入要合成的语音文本' })"
             @update:value="gen.setSettings({ speechSettings: { text: $event.slice(0, maxSpeechTextLength) } })"
           />
         </div>
 
-        <div class="grid gap-2">
+        <div class="grid gap-3">
           <label class="text-base font-semibold">{{ $t({ en: 'Speech settings', zh: '声音设定' }) }}</label>
           <div class="flex flex-col gap-3">
             <div class="flex items-start gap-4">
@@ -152,40 +137,6 @@ const handleUse = useMessageHandle(
                 </UIButtonGroupItem>
               </UIButtonGroup>
             </div>
-            <div class="flex items-start gap-4">
-              <label class="pt-1.5 text-sm text-grey-800">{{ $t({ en: 'Speed', zh: '语速' }) }}</label>
-              <UIButtonGroup
-                :value="String(gen.settings.speechSettings.rate ?? 1.0)"
-                class="max-w-full"
-                @update:value="(value) => gen.setSettings({ speechSettings: { rate: Number(value) } })"
-              >
-                <UIButtonGroupItem
-                  v-for="option in presetRateOptions"
-                  :key="option.value"
-                  :value="String(option.value)"
-                  class="w-auto px-3 text-sm whitespace-nowrap"
-                >
-                  {{ $t(option.label) }}
-                </UIButtonGroupItem>
-              </UIButtonGroup>
-            </div>
-            <div class="flex items-start gap-4">
-              <label class="pt-1.5 text-sm text-grey-800">{{ $t({ en: 'Pitch', zh: '音调' }) }}</label>
-              <UIButtonGroup
-                :value="String(gen.settings.speechSettings.pitch ?? 1.0)"
-                class="max-w-full"
-                @update:value="(value) => gen.setSettings({ speechSettings: { pitch: Number(value) } })"
-              >
-                <UIButtonGroupItem
-                  v-for="option in presetPitchOptions"
-                  :key="option.value"
-                  :value="String(option.value)"
-                  class="w-auto px-3 text-sm whitespace-nowrap"
-                >
-                  {{ $t(option.label) }}
-                </UIButtonGroupItem>
-              </UIButtonGroup>
-            </div>
             <div class="flex flex-col gap-2">
               <div class="flex items-center justify-between">
                 <label class="text-sm text-grey-800">{{ $t({ en: 'Instruction', zh: '补充说明' }) }}</label>
@@ -195,12 +146,12 @@ const handleUse = useMessageHandle(
               </div>
               <UITextInput
                 type="textarea"
-                :rows="2"
+                :rows="3"
                 :value="gen.settings.speechSettings.instruction ?? ''"
                 :placeholder="
                   $t({
                     en: 'Add extra information such as role, emotion, context, speaking style, etc. For example: The tone should be lively and playful, with a clear smile, making the voice sound full of energy and sunshine.',
-                    zh: '可补充角色、情绪、语境、说话风格等信息，例如：语气要显得活泼俏皮，带着明显的笑意，让声音听起来充满朝气与阳光。'
+                    zh: '可描述角色、情绪、语境、说话风格等信息，例如：语气要显得活泼俏皮，带着明显的笑意，让声音听起来充满朝气与阳光。'
                   })
                 "
                 @update:value="

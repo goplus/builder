@@ -81,8 +81,6 @@ export type SpeechSettings = {
   voiceGender: SoundVoiceGender
   voiceAgeGroup: SoundVoiceAgeGroup
   instruction?: string
-  rate?: number
-  pitch?: number
 }
 
 export type SpeechSoundSettings = SoundSettingsBase & {

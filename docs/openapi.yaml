@@ -2832,7 +2832,18 @@ paths:
                           default: 1
                           examples:
                             - 4
-                    - title: generateSound
+                - title: generateSound
+                  type: object
+                  required:
+                    - type
+                    - parameters
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - generateSound
+                    parameters:
+                      description: Parameters for speech sound generation.
                       type: object
                       required:
                         - settings
@@ -5018,22 +5029,6 @@ components:
           maxLength: 50
           examples:
             - 像在提醒队友准备出发，语气轻快一点
-        rate:
-          description: Optional speech-rate multiplier passed to synthesis. `1.0` means natural speed.
-          type: number
-          format: float
-          minimum: 0.5
-          maximum: 2.0
-          examples:
-            - 1.1
-        pitch:
-          description: Optional pitch multiplier passed to synthesis. `1.0` means natural pitch.
-          type: number
-          format: float
-          minimum: 0.5
-          maximum: 2.0
-          examples:
-            - 1.05
 
     AIGCSoundBaseSettings:
       description: Base settings shared by all sound-generation requests.

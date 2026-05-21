@@ -43,9 +43,7 @@ export class SoundGen extends Disposable {
         text: '',
         voiceGender: 'male',
         voiceAgeGroup: 'youth',
-        instruction: '',
-        rate: 1,
-        pitch: 1
+        instruction: ''
       }
     }
     this.generateTask = inits.generateTask ?? null
