@@ -27,7 +27,7 @@ const imgStyle: CSSProperties = {
       {{ name }}
       <template v-if="visible === false" #suffix>
         <span
-          class="size-3.5 flex-none cursor-auto text-grey-700"
+          class="inline-flex size-3.5 flex-none cursor-auto items-center justify-center text-grey-700 [&>svg]:block [&>svg]:size-full"
           role="img"
           aria-label="Invisible"
           title="Invisible"
