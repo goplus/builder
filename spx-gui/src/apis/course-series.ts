@@ -1,4 +1,4 @@
-import { client, type ByPage, type PaginationParams, ownerAll } from './common'
+import { client, type ByPage, type PaginationParams } from './common'
 
 export type CourseSeries = {
   /** Unique identifier */
@@ -31,7 +31,7 @@ export type AddUpdateCourseSeriesParams = Pick<
 
 /** Add a new course series */
 export function addCourseSeries(params: AddUpdateCourseSeriesParams, signal?: AbortSignal) {
-  return client.post('/course-series', params, { signal }) as Promise<CourseSeries>
+  return client.post('/user/course-series', params, { signal }) as Promise<CourseSeries>
 }
 
 /** Update an existing course series */
@@ -49,19 +49,12 @@ export type ListCourseSeriesParams = PaginationParams & {
   orderBy?: 'createdAt' | 'updatedAt' | 'order'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
-  /** Filter by owner username */
-  owner?: string
 }
 
 export function listCourseSeries(params?: ListCourseSeriesParams, signal?: AbortSignal) {
-  return client.get('/course-serieses/list', params, { signal }) as Promise<ByPage<CourseSeries>>
+  return client.get('/course-series', params, { signal }) as Promise<ByPage<CourseSeries>>
 }
 
-/** List all course series (owned by all users) by order. 100 items at most. */
-export async function listAllCourseSeriesByOrder(signal?: AbortSignal) {
-  const result = await listCourseSeries(
-    { owner: ownerAll, pageIndex: 1, pageSize: 100, orderBy: 'order', sortOrder: 'asc' },
-    signal
-  )
-  return result.data
+export function listSignedInUserCourseSeries(params?: ListCourseSeriesParams, signal?: AbortSignal) {
+  return client.get('/user/course-series', params, { signal }) as Promise<ByPage<CourseSeries>>
 }

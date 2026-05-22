@@ -10,8 +10,6 @@ export type ByPage<T> = {
   data: T[]
 }
 
-export const ownerAll = '*'
-
 export enum Visibility {
   Private = 'private',
   Public = 'public'

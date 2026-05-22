@@ -46,7 +46,6 @@ import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 import TutorialsBanner from '@/components/tutorials/TutorialsBanner.vue'
-import { ownerAll } from '@/apis/common'
 import { useRouteQueryParamInt } from '@/utils/route'
 
 usePageTitle({
@@ -68,7 +67,6 @@ const courseSeriesQuery = useQuery(
   (ctx) =>
     listCourseSeries(
       {
-        owner: ownerAll,
         pageIndex: page.value,
         pageSize: pageSize.value,
         orderBy: 'order',

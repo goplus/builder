@@ -132,7 +132,7 @@ type State =
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { computed, onBeforeUnmount, onUnmounted, ref, shallowReactive, shallowRef, watch } from 'vue'
-import { spxVersion } from '@/utils/env'
+import { apiBaseUrl, spxVersion } from '@/utils/env'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
 import { useFileUrl } from '@/utils/file'
@@ -142,11 +142,12 @@ import type { Files } from '@/models/common/file'
 import { hashFiles } from '@/models/common/hash'
 import type { SpxProject } from '@/models/spx/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
-import { apiBaseUrl } from '@/utils/env'
 import { ensureAccessToken } from '@/stores/user'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
 import errorBgUrl from './error-bg.svg'
+
+const aiInteractionEndpoint = `${apiBaseUrl}/ai-interaction`
 
 const props = defineProps<{ project: SpxProject }>()
 
@@ -251,7 +252,7 @@ async function prepareAIInteraction(
   if (engineInitPromise == null) throw new Error('engineInitPromise expected')
   await engineInitPromise
   iframeWindow.xbuilder_set_ai_description(aiDescription)
-  iframeWindow.xbuilder_set_ai_interaction_api_endpoint(apiBaseUrl + '/ai/interaction')
+  iframeWindow.xbuilder_set_ai_interaction_api_endpoint(aiInteractionEndpoint)
   iframeWindow.xbuilder_set_ai_interaction_api_token_provider(async () => (await ensureAccessToken()) ?? '')
   reporter.report(1)
   return

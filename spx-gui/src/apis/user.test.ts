@@ -41,7 +41,7 @@ describe('isUsernameTaken', () => {
   it('should return false when the username is not found', async () => {
     mockedGet.mockRejectedValueOnce(
       new ApiException(ApiExceptionCode.errorNotFound, 'Not found', {
-        req: new Request('https://api.example.com/user/john', { method: 'GET' })
+        req: new Request('https://api.example.com/users/john', { method: 'GET' })
       })
     )
 

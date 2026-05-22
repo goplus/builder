@@ -10,8 +10,9 @@ import { ProjectType } from '@/apis/project'
 import { load, save } from './xbp'
 import { unzip, zip } from '@/utils/zip'
 
-vi.mock('@/apis/ai-description', () => ({
-  generateAIDescription: vi.fn().mockResolvedValue('Mocked AI description for testing')
+vi.mock('@/apis/aigc', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/apis/aigc')>()),
+  generateProjectDescription: vi.fn().mockResolvedValue('Mocked project description for testing')
 }))
 
 function mockFile(name = 'mocked', type = 'text/plain') {

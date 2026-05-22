@@ -8,8 +8,9 @@ import { Costume } from './costume'
 import { Sound } from './sound'
 import { Animation } from './animation'
 
-vi.mock('@/apis/ai-description', () => ({
-  generateAIDescription: vi.fn().mockResolvedValue('Mocked AI description for testing')
+vi.mock('@/apis/aigc', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/apis/aigc')>()),
+  generateProjectDescription: vi.fn().mockResolvedValue('Mocked project description for testing')
 }))
 
 function mockFile(name = 'mocked') {
@@ -128,15 +129,102 @@ describe('Animation', () => {
     })[0].builder_id
     expect(exportedId).toBeUndefined()
   })
+
+  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
+  it.skip('should export sound binding using onPlay', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    animation.setSound(project.sounds[0].id)
+
+    const [config] = animation.export('', { sounds: project.sounds })
+    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: false })
+    expect(config.onStart).toBeUndefined()
+  })
+
+  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
+  it.skip('should export loop: true in onPlay when soundLoop is true', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    animation.setSound(project.sounds[0].id)
+    animation.setSoundLoop(true)
+
+    const [config] = animation.export('', { sounds: project.sounds })
+    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
+  })
+
+  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
+  it.skip('should load soundLoop from onPlay.loop', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const costumes = sprite.costumes
+    const sounds = project.sounds
+
+    const [animation] = Animation.load(
+      'default',
+      {
+        frameFrom: costumes[0].name,
+        frameTo: costumes[0].name,
+        onPlay: { play: sounds[0].name, loop: true }
+      },
+      costumes,
+      { sounds }
+    )
+    expect(animation.sound).toBe(sounds[0].id)
+    expect(animation.soundLoop).toBe(true)
+  })
+
+  it('should default soundLoop to false when loop field is absent', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const costumes = sprite.costumes
+    const sounds = project.sounds
+
+    const [animation] = Animation.load(
+      'default',
+      {
+        frameFrom: costumes[0].name,
+        frameTo: costumes[0].name,
+        onPlay: { play: sounds[0].name }
+      },
+      costumes,
+      { sounds }
+    )
+    expect(animation.soundLoop).toBe(false)
+  })
+
+  it('should load sound binding from legacy onStart for backward compatibility', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const costumes = sprite.costumes
+    const sounds = project.sounds
+
+    const [animation] = Animation.load(
+      'default',
+      {
+        frameFrom: costumes[0].name,
+        frameTo: costumes[0].name,
+        onStart: { play: sounds[0].name }
+      },
+      costumes,
+      { sounds }
+    )
+    expect(animation.sound).toBe(sounds[0].id)
+    expect(animation.soundLoop).toBe(false)
+  })
+
   it('should clone well', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
+    animation.setSoundLoop(true)
     const clonedAnimation = animation.clone()
     expect(clonedAnimation.id).not.toBe(animation.id)
     expect(clonedAnimation.name).toBe(animation.name)
     expect(clonedAnimation.duration).toBe(animation.duration)
     expect(clonedAnimation.sound).toBe(animation.sound)
+    expect(clonedAnimation.soundLoop).toBe(animation.soundLoop)
     expect(clonedAnimation.costumes.length).toBe(animation.costumes.length)
     for (let i = 0; i < clonedAnimation.costumes.length; i++) {
       expect(clonedAnimation.costumes[i].id).not.toBe(animation.costumes[i].id)

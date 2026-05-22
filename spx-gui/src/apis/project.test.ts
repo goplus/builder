@@ -5,7 +5,7 @@ import { isProjectNameTaken, updateProject } from './project'
 
 function makeMovedException(canonical: MovedResourceCanonical) {
   return new ApiException(ApiExceptionCode.errorResourceMoved, 'Resource moved', {
-    req: new Request('https://api.example.com/project/John/Demo', { method: 'PATCH' }),
+    req: new Request('https://api.example.com/projects/John/Demo', { method: 'PATCH' }),
     meta: canonical
   })
 }
@@ -23,7 +23,7 @@ describe('updateProject', () => {
 
   it('should retry once with the canonical project route', async () => {
     mockedPatch
-      .mockRejectedValueOnce(makeMovedException({ path: '/project/john/demo', owner: 'john', name: 'demo' }))
+      .mockRejectedValueOnce(makeMovedException({ path: '/projects/john/demo', owner: 'john', name: 'demo' }))
       .mockResolvedValueOnce({
         owner: 'john',
         name: 'demo'
@@ -36,12 +36,12 @@ describe('updateProject', () => {
       name: 'demo'
     })
     expect(mockedPatch).toHaveBeenCalledTimes(2)
-    expect(mockedPatch.mock.calls[0]![0]).toBe('/project/John/Demo')
-    expect(mockedPatch.mock.calls[1]![0]).toBe('/project/john/demo')
+    expect(mockedPatch.mock.calls[0]![0]).toBe('/projects/John/Demo')
+    expect(mockedPatch.mock.calls[1]![0]).toBe('/projects/john/demo')
   })
 
   it('should surface moved errors without canonical project route fields', async () => {
-    const movedError = makeMovedException({ path: '/project/john/demo' })
+    const movedError = makeMovedException({ path: '/projects/john/demo' })
     mockedPatch.mockRejectedValueOnce(movedError)
 
     await expect(updateProject('John', 'Demo', { displayName: 'Demo' })).rejects.toBe(movedError)
@@ -50,7 +50,7 @@ describe('updateProject', () => {
   })
 
   it('should surface moved errors with empty canonical project route fields', async () => {
-    const movedError = makeMovedException({ path: '/project/john/demo', owner: '', name: 'demo' })
+    const movedError = makeMovedException({ path: '/projects/john/demo', owner: '', name: 'demo' })
     mockedPatch.mockRejectedValueOnce(movedError)
 
     await expect(updateProject('John', 'Demo', { displayName: 'Demo' })).rejects.toBe(movedError)
@@ -100,7 +100,7 @@ describe('isProjectNameTaken', () => {
   it('should return false when the project route is not found', async () => {
     mockedGet.mockRejectedValueOnce(
       new ApiException(ApiExceptionCode.errorNotFound, 'Not found', {
-        req: new Request('https://api.example.com/project/john/demo', { method: 'GET' })
+        req: new Request('https://api.example.com/projects/john/demo', { method: 'GET' })
       })
     )
 

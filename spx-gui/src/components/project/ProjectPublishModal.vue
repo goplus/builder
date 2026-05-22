@@ -4,12 +4,11 @@ import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { Visibility } from '@/apis/common'
-import { createRelease } from '@/apis/project-release'
+import { createProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, saveFile } from '@/models/common/cloud'
 import type { SpxProject } from '@/models/spx/project'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
-import { stringifyProjectFullName } from '@/apis/project'
 import stageBg from '@/assets/images/stage-bg.svg'
 
 const props = defineProps<{
@@ -73,8 +72,7 @@ const handleSubmit = useMessageHandle(
     const saved = await cloudHelpers.save(serialized)
     project.setMetadata(saved.metadata)
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
-    await createRelease({
-      projectFullName: stringifyProjectFullName(project.owner!, project.name!),
+    await createProjectRelease(project.owner!, project.name!, {
       name: generateReleaseName(),
       description: form.value.releaseDescription,
       thumbnail: thumbnailUniversalUrl

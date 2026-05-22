@@ -119,7 +119,7 @@
 import { computed } from 'vue'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { ExploreOrder, ProjectType, exploreProjects, listProject } from '@/apis/project'
+import { ExploreOrder, ProjectType, exploreProjects, listSignedInUserProjects } from '@/apis/project'
 import { getExploreRoute, getUserPageRoute } from '@/router'
 import { isSignedIn, useSignedInUser } from '@/stores/user'
 import { useResponsive } from '@/components/ui'
@@ -143,7 +143,7 @@ const myProjectsRoute = computed(() => {
 const myProjects = useQuery(
   async () => {
     if (!isSignedIn()) return []
-    const { data: projects } = await listProject({
+    const { data: projects } = await listSignedInUserProjects({
       type: ProjectType.Game,
       pageIndex: 1,
       pageSize: numInRow.value,

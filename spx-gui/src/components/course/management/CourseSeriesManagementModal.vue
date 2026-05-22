@@ -3,7 +3,7 @@ import { computed, shallowRef } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { listCourseSeries, deleteCourseSeries, type CourseSeries } from '@/apis/course-series'
+import { listSignedInUserCourseSeries, deleteCourseSeries, type CourseSeries } from '@/apis/course-series'
 import {
   UIIcon,
   UIPagination,
@@ -33,7 +33,7 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 
 const queryRet = useQuery(
   () => {
-    return listCourseSeries({
+    return listSignedInUserCourseSeries({
       pageSize,
       pageIndex: page.value,
       orderBy: 'order',

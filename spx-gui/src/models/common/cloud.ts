@@ -15,7 +15,7 @@ import {
   type UpdateProjectParams,
   updateProject
 } from '@/apis/project'
-import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
+import { createFileURLSignatures, createUploadSession, type UploadSession as RawUploadSession } from '@/apis/file'
 import { DefaultException, TimeoutException } from '@/utils/exception'
 import { getUphostsByRegion } from '@/utils/kodo'
 import type { Metadata, PartialMetadata, ProjectSerialized } from '../project'
@@ -235,7 +235,7 @@ export const universalUrlToWebUrl = (() => {
       const currentBatch = Array.from(batch)
       batch.clear()
       batchPromise = null
-      return makeObjectUrls(currentBatch)
+      return createFileURLSignatures(currentBatch)
     }
     return async (universalUrl: UniversalUrl) => {
       batch.add(universalUrl)
@@ -302,7 +302,7 @@ const uploadToKodoController = new ConcurrencyLimitController(20)
 const uploadToKodo = (file: File, signal?: AbortSignal) =>
   uploadToKodoController.run<UniversalUrl>(async () => {
     const ab = await file.arrayBuffer(signal)
-    const { token, maxSize, bucket, region } = await getUpInfoWithCache()
+    const { token, maxSize, bucket, region } = await getUploadSessionWithCache()
     signal?.throwIfAborted()
     if (ab.byteLength > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
     const task = createDirectUploadTask(
@@ -336,33 +336,38 @@ const uploadToKodo = (file: File, signal?: AbortSignal) =>
     return stringifyKodoUrl(bucket, parsed.key)
   })
 
-type UpInfo = Omit<RawUpInfo, 'expires'> & {
+type CachedUploadSession = Omit<RawUploadSession, 'expiresAt'> & {
   /** Timestamp (ms) after which the uptoken is considered expired */
   expiresAt: number
 }
 
-let upInfo: UpInfo | null = null
-let fetchingUpInfo: Promise<UpInfo> | null = null
+let cachedUploadSession: CachedUploadSession | null = null
+let fetchingCachedUploadSession: Promise<CachedUploadSession> | null = null
 
-async function getUpInfoWithCache() {
-  if (upInfo != null && upInfo.expiresAt > Date.now()) return upInfo
-  if (fetchingUpInfo != null) return fetchingUpInfo
-  return (fetchingUpInfo = getUpInfo().then(({ expires, ...others }) => {
-    const bufferTime = 5 * 60 * 1000 // refresh uptoken 5min before it expires
-    const expiresAt = Date.now() + expires * 1000 - bufferTime
-    upInfo = { ...others, expiresAt: expiresAt }
-    fetchingUpInfo = null
-    return upInfo
-  }))
+async function getUploadSessionWithCache() {
+  if (cachedUploadSession != null && cachedUploadSession.expiresAt > Date.now()) return cachedUploadSession
+  if (fetchingCachedUploadSession != null) return fetchingCachedUploadSession
+  return (fetchingCachedUploadSession = createUploadSession()
+    .then(({ expiresAt: rawExpiresAt, ...others }) => {
+      const uploadTokenRefreshBuffer = 5 * 60 * 1000
+      const rawExpiresAtMs = Date.parse(rawExpiresAt)
+      if (!Number.isFinite(rawExpiresAtMs)) throw new Error(`invalid upload session expiresAt: ${rawExpiresAt}`)
+      const expiresAt = rawExpiresAtMs - uploadTokenRefreshBuffer
+      cachedUploadSession = { ...others, expiresAt }
+      return cachedUploadSession
+    })
+    .finally(() => {
+      fetchingCachedUploadSession = null
+    }))
 }
 
 async function validateFileSizeForUpload(files: globalThis.File[]) {
-  const upInfo = await getUpInfoWithCache()
+  const uploadSession = await getUploadSessionWithCache()
   const oversizedFileNames = Array.from(files!)
-    .filter((file) => file.size > upInfo.maxSize)
+    .filter((file) => file.size > uploadSession.maxSize)
     .map((file) => file.name)
   if (oversizedFileNames.length > 0) {
-    const maxSizeText = humanizeFileSize(upInfo.maxSize)
+    const maxSizeText = humanizeFileSize(uploadSession.maxSize)
     throw new DefaultException({
       en: `File ${oversizedFileNames.join(', ')} size exceeds limit (max ${maxSizeText.en})`,
       zh: `文件 ${oversizedFileNames.join('、')} 尺寸超限（最大 ${maxSizeText.zh}）`

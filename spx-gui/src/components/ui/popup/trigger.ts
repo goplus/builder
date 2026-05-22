@@ -15,13 +15,13 @@ import {
 // UITooltip or UIDropdown still serve as another popup's trigger, which is how
 // compositions like UIDropdownWithTooltip keep anchoring to the real DOM node.
 export type PopupTriggerHandle = {
-  triggerEl: HTMLElement | Ref<HTMLElement | null> | null
+  triggerEl: Element | Ref<Element | null> | null
 }
 
-export type PopupTriggerTarget = Element | PopupTriggerHandle | { $el?: Element } | null
+export type PopupTriggerTarget = Element | PopupTriggerHandle | { $el?: Node } | null
 
 /**
- * Normalize popup trigger refs to the concrete HTMLElement used by positioning
+ * Normalize popup trigger refs to the concrete Element used by positioning
  * and stack logic. This accepts native elements, component instances exposing
  * `triggerEl`, and component instances exposing `$el`. `triggerEl` is
  * preferred for popup wrapper components because their public instance or root
@@ -29,15 +29,19 @@ export type PopupTriggerTarget = Element | PopupTriggerHandle | { $el?: Element 
  */
 export function resolveTriggerElement(target: PopupTriggerTarget) {
   if (target == null) return null
-  if (target instanceof HTMLElement) return target
+  if (target instanceof Element) return target
   if ('triggerEl' in target) {
     const triggerEl = target.triggerEl
-    if (triggerEl instanceof HTMLElement) return triggerEl
+    if (triggerEl instanceof Element) return triggerEl
     if (triggerEl != null && typeof triggerEl === 'object' && 'value' in triggerEl) {
-      return triggerEl.value instanceof HTMLElement ? triggerEl.value : null
+      return triggerEl.value instanceof Element ? triggerEl.value : null
     }
   }
-  if ('$el' in target) return target.$el instanceof HTMLElement ? target.$el : null
+  if ('$el' in target) {
+    if (target.$el == null) return null
+    if (target.$el instanceof Element) return target.$el
+    throw new Error('Popup trigger component must render exactly one element root')
+  }
   return null
 }
 

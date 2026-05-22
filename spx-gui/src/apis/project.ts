@@ -1,17 +1,11 @@
 import dayjs from 'dayjs'
 import type { FileCollection, ByPage, PaginationParams, Perspective, ArtStyle } from './common'
-import { client, Visibility, ownerAll, timeStringify } from './common'
+import { client, Visibility, timeStringify } from './common'
 import { ApiException, ApiExceptionCode, type MovedResourceCanonical } from './common/exception'
 import { parseProjectReleaseFullName, stringifyProjectReleaseFullName, type ProjectRelease } from './project-release'
 import type { Prettify } from '@/utils/types'
 
-export { Visibility, ownerAll }
-
-export enum ProjectDataType {
-  Sprite = 0,
-  Backdrop = 1,
-  Sound = 2
-}
+export { Visibility }
 
 export enum ProjectType {
   /** 2D game project based on spx. */
@@ -99,7 +93,7 @@ export type AddProjectParams = Prettify<
 >
 
 export function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
-  return client.post('/project', params, { signal }) as Promise<ProjectData>
+  return client.post('/user/projects', params, { signal }) as Promise<ProjectData>
 }
 
 export type UpdateProjectParams = Prettify<
@@ -124,7 +118,7 @@ export function updateProject(owner: string, name: string, params: UpdateProject
 }
 
 function updateProjectOnce(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
-  return client.patch(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
+  return client.patch(`/projects/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
     signal
   }) as Promise<ProjectData>
 }
@@ -138,45 +132,78 @@ function getMovedProjectIdentifier(err: unknown): { owner: string; name: string 
 }
 
 export function deleteProject(owner: string, name: string) {
-  return client.delete(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`) as Promise<void>
+  return client.delete(`/projects/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`) as Promise<void>
 }
 
-export type ListProjectParams = PaginationParams & {
-  /**
-   * Filter projects by the owner's username.
-   * Defaults to the authenticated user if not specified. Use * to include projects from all users.
-   **/
-  owner?: string
+type ListProjectsOrderBy =
+  | 'createdAt'
+  | 'updatedAt'
+  | 'likeCount'
+  | 'remixCount'
+  | 'recentLikeCount'
+  | 'recentRemixCount'
+
+type ListProjectsBaseParams = PaginationParams & {
   /** Filter remixed projects by the full name of the source project or project release */
   remixedFrom?: string
   /** Filter projects by display name or name pattern */
   keyword?: string
-  /** Filter projects by visibility */
-  visibility?: Visibility
   /** Filter projects by type */
   type?: ProjectType
-  /** Filter projects liked by the specified user */
-  liker?: string
   /** Filter projects that were created after this timestamp */
   createdAfter?: string
   /** Filter projects that gained new likes after this timestamp */
   likesReceivedAfter?: string
   /** Filter projects that were remixed after this timestamp */
   remixesReceivedAfter?: string
-  /** If filter projects created by followees of logged-in user */
-  fromFollowees?: boolean
-  /** Field by which to order the results */
-  orderBy?: 'createdAt' | 'updatedAt' | 'likeCount' | 'remixCount' | 'recentLikeCount' | 'recentRemixCount' | 'likedAt'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listProject(params?: ListProjectParams) {
-  return client.get('/projects/list', params) as Promise<ByPage<ProjectData>>
+export type ListProjectsParams = ListProjectsBaseParams & {
+  /** Filter projects by visibility */
+  visibility?: Visibility
+  /** If filter projects created by followees of logged-in user */
+  fromFollowees?: boolean
+  /** Field by which to order the results */
+  orderBy?: ListProjectsOrderBy
+}
+
+export type ListSignedInUserProjectsParams = ListProjectsBaseParams & {
+  /** Filter projects by visibility */
+  visibility?: Visibility
+  /** Field by which to order the results */
+  orderBy?: ListProjectsOrderBy
+}
+
+export type ListUserPublicProjectsParams = ListProjectsBaseParams & {
+  /** Field by which to order the results */
+  orderBy?: ListProjectsOrderBy
+}
+
+export type ListUserLikedProjectsParams = ListProjectsBaseParams & {
+  /** Field by which to order the results */
+  orderBy?: ListProjectsOrderBy | 'likedAt'
+}
+
+export function listProjects(params?: ListProjectsParams) {
+  return client.get('/projects', params) as Promise<ByPage<ProjectData>>
+}
+
+export function listSignedInUserProjects(params?: ListSignedInUserProjectsParams) {
+  return client.get('/user/projects', params) as Promise<ByPage<ProjectData>>
+}
+
+export function listUserPublicProjects(username: string, params?: ListUserPublicProjectsParams) {
+  return client.get(`/users/${encodeURIComponent(username)}/projects`, params) as Promise<ByPage<ProjectData>>
+}
+
+export function listUserLikedProjects(username: string, params?: ListUserLikedProjectsParams) {
+  return client.get(`/users/${encodeURIComponent(username)}/liked-projects`, params) as Promise<ByPage<ProjectData>>
 }
 
 export function getProject(owner: string, name: string, signal?: AbortSignal) {
-  return client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, undefined, {
+  return client.get(`/projects/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, undefined, {
     signal
   }) as Promise<ProjectData>
 }
@@ -207,9 +234,8 @@ export type ExploreParams = {
 export async function exploreProjects({ order, count, type }: ExploreParams) {
   // count within the last 6 months
   const countAfter = timeStringify(dayjs().subtract(6, 'month').valueOf())
-  const p: ListProjectParams = {
+  const p: ListProjectsParams = {
     visibility: Visibility.Public,
-    owner: ownerAll,
     type,
     pageSize: count,
     pageIndex: 1
@@ -232,13 +258,13 @@ export async function exploreProjects({ order, count, type }: ExploreParams) {
       p.sortOrder = 'desc'
       break
   }
-  const listResult = await listProject(p)
+  const listResult = await listProjects(p)
   return listResult.data
 }
 
 /** Record a view for the given project */
 export function recordProjectView(owner: string, name: string) {
-  return client.post(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/view`) as Promise<void>
+  return client.post(`/projects/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/views`) as Promise<void>
 }
 
 /**
@@ -247,7 +273,7 @@ export function recordProjectView(owner: string, name: string) {
  */
 export async function isLiking(owner: string, name: string) {
   try {
-    await client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`)
+    await client.get(`/user/liked-projects/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`)
     return true
   } catch (e) {
     if (e instanceof ApiException) {
@@ -262,11 +288,11 @@ export async function isLiking(owner: string, name: string) {
 }
 
 export function likeProject(owner: string, name: string) {
-  return client.post(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`) as Promise<void>
+  return client.put(`/user/liked-projects/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`) as Promise<void>
 }
 
 export function unlikeProject(owner: string, name: string) {
-  return client.delete(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`) as Promise<void>
+  return client.delete(`/user/liked-projects/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`) as Promise<void>
 }
 
 export function parseProjectFullName(fullName: string) {

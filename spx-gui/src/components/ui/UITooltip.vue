@@ -78,7 +78,7 @@ function updateVisible(visible: boolean) {
   internalVisibleRef.value = visible
 }
 
-function setTriggerRef(target: Element | { $el?: Element } | null) {
+function setTriggerRef(target: Element | { $el?: Node } | null) {
   triggerRef.value = resolveTriggerElement(target)
 }
 

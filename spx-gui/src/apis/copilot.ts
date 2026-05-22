@@ -84,23 +84,20 @@ export type Tool = {
   function: FunctionDefinition
 }
 
-export type GenerateMessageOptions = {
+export type GenerateCopilotMessageOptions = {
   signal?: AbortSignal
-}
-
-export type GenerateSSEMessageOptions = GenerateMessageOptions & {
   tools?: Tool[]
 }
 
 const timeout = 15 * 1000
 
-export async function* generateSSEMessage(
+export async function* generateCopilotMessage(
   messages: Message[],
-  options?: GenerateSSEMessageOptions
+  options?: GenerateCopilotMessageOptions
 ): AsyncIterableIterator<MessageEvent> {
   try {
     const stream = client.postJSONSSE(
-      '/copilot/sse/message',
+      '/copilot/messages',
       { messages, tools: options?.tools },
       {
         timeout: timeout,
