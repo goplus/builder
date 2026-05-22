@@ -15,6 +15,7 @@ import UICardHeader from '@/components/ui/UICardHeader.vue'
 import UITab from '@/components/ui/UITab.vue'
 import UITabs from '@/components/ui/UITabs.vue'
 import UITag from '@/components/ui/UITag.vue'
+import UIEditorBackdropItem from '@/components/ui/block-items/UIEditorBackdropItem.vue'
 import controlIcon from '@/assets/editor/category-icons/control.svg?raw'
 import eventIcon from '@/assets/editor/category-icons/event.svg?raw'
 import gameIcon from '@/assets/editor/category-icons/game.svg?raw'
@@ -2423,17 +2424,14 @@ onBeforeUnmount(() => {
 
         <div v-else-if="activeStageTab === 'backdrops'" class="asset-editor-body">
           <aside class="asset-editor-list" aria-label="Backdrops list">
-            <button
+            <UIEditorBackdropItem
               v-for="backdrop in backdrops"
               :key="backdrop.id"
-              class="editor-asset-item"
-              :class="{ active: selectedBackdropId === backdrop.id }"
-              type="button"
+              :img-src="backdrop.image"
+              :name="backdrop.name"
+              :selected="selectedBackdropId === backdrop.id"
               @click="selectedBackdropId = backdrop.id"
-            >
-              <img :src="backdrop.image" :alt="backdrop.name" />
-              <span class="asset-item-title">{{ backdrop.name }}</span>
-            </button>
+            ></UIEditorBackdropItem>
             <button class="asset-add-button" type="button" aria-label="Add backdrop">+</button>
           </aside>
           <section class="asset-detail" aria-label="Backdrop detail">
