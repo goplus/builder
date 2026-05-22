@@ -4,12 +4,17 @@ import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'
 import UIBlockItem from '@/components/ui/block-items/UIBlockItem.vue'
 import UIBlockItemTitle from '@/components/ui/block-items/UIBlockItemTitle.vue'
 
-defineProps<{
-  name: string
-  title?: string
-  selected?: boolean
-  visible?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    name: string
+    title?: string
+    selected?: boolean
+    visible?: boolean | null
+  }>(),
+  {
+    visible: null
+  }
+)
 
 const imgStyle: CSSProperties = {
   width: '60px',
