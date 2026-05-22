@@ -9,8 +9,8 @@ import { UniversalUrlScheme, parseUniversalUrl } from '@/utils/universal-url'
 export type UploadSession = {
   /** Uptoken */
   token: string
-  /** Valid time for uptoken, unit: second */
-  expires: number
+  /** Expiration timestamp for uptoken */
+  expiresAt: string
   /** Maximum file size allowed in bytes */
   maxSize: number
   /** Bucket name */
