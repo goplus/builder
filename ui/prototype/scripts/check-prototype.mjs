@@ -11,6 +11,14 @@ function read(path) {
   return readFileSync(join(root, path), 'utf8')
 }
 
+function readOptional(path) {
+  try {
+    return read(path)
+  } catch {
+    return ''
+  }
+}
+
 function walk(dir) {
   return readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry)
@@ -61,6 +69,9 @@ const prototypeTab = read('src/components/ui/UITab.vue')
 const prototypeSpriteItem = read('src/components/editor/SpriteItem.vue')
 const prototypeUIEditorSpriteItem = read('src/components/editor/UIEditorSpriteItem.vue')
 const prototypeUIBlockItem = read('src/components/editor/UIBlockItem.vue')
+const prototypeUIBlockItemTitle = readOptional('src/components/editor/UIBlockItemTitle.vue')
+const prototypeCostumeItem = readOptional('src/components/editor/CostumeItem.vue')
+const prototypeAnimationItem = readOptional('src/components/editor/AnimationItem.vue')
 const prototypeCardHeader = read('src/components/ui/UICardHeader.vue')
 const publishProjectModal = read('src/components/editor/PublishProjectModal.vue')
 const spriteGeneratorModal = read('src/components/editor/SpriteGeneratorModal.vue')
@@ -518,6 +529,7 @@ if (
   !prototypeSpriteItem.includes('<UIEditorSpriteItem') ||
   prototypeSpriteItem.includes('.prototype-sprite-item {') ||
   !prototypeUIEditorSpriteItem.includes("import UIBlockItem from '@/components/editor/UIBlockItem.vue'") ||
+  !prototypeUIEditorSpriteItem.includes("import UIBlockItemTitle from '@/components/editor/UIBlockItemTitle.vue'") ||
   !prototypeUIBlockItem.includes('width: 88px;') ||
   !prototypeUIBlockItem.includes('height: 88px;')
 ) {
@@ -708,17 +720,27 @@ if (
 
 if (
   !prototypeUIEditorSpriteItem.includes("import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'") ||
-  !prototypeUIEditorSpriteItem.includes('<slot name="img" :style="imgStyle"') ||
+  !prototypeUIEditorSpriteItem.includes('<slot name="img"') ||
+  !prototypeUIEditorSpriteItem.includes('imgStyle') ||
+  !prototypeUIEditorSpriteItem.includes('<UIBlockItemTitle') ||
+  !prototypeUIEditorSpriteItem.includes('#suffix') ||
   !prototypeUIEditorSpriteItem.includes('v-html="eyeOffIcon"') ||
-  !prototypeUIEditorSpriteItem.includes('width: 76px;') ||
-  !prototypeUIEditorSpriteItem.includes('gap: 2px;') ||
-  !prototypeUIEditorSpriteItem.includes('width: 14px;') ||
-  !prototypeUIEditorSpriteItem.includes('height: 14px;') ||
-  !prototypeUIEditorSpriteItem.includes('color: var(--ui-color-grey-700);') ||
+  !prototypeUIBlockItemTitle.includes('text-ellipsis') ||
   prototypeSpriteItem.includes('⌁') ||
   !editorEyeOffIcon.includes('M20.1133 7.53809')
 ) {
-  failures.push('prototype UIEditorSpriteItem must provide the shared 76px title row and copied eyeOff asset')
+  failures.push('prototype UIEditorSpriteItem must share title styling through UIBlockItemTitle and the copied eyeOff asset')
+}
+
+if (
+  !editorPage.includes("import CostumeItem from '@/components/editor/CostumeItem.vue'") ||
+  !editorPage.includes("import AnimationItem from '@/components/editor/AnimationItem.vue'") ||
+  !editorPage.includes('<CostumeItem') ||
+  !editorPage.includes('<AnimationItem') ||
+  !prototypeCostumeItem.includes("import UIEditorSpriteItem from '@/components/editor/UIEditorSpriteItem.vue'") ||
+  !prototypeAnimationItem.includes("import UIEditorSpriteItem from '@/components/editor/UIEditorSpriteItem.vue'")
+) {
+  failures.push('editor costume and animation lists must use item components based on UIEditorSpriteItem')
 }
 
 if (

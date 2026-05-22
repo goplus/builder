@@ -5,6 +5,8 @@ import { useRouter } from 'vue-router'
 import { getProject } from '@/apis/project'
 import PublishProjectModal from '@/components/editor/PublishProjectModal.vue'
 import SpriteGeneratorModal, { type SpriteGeneratorResult } from '@/components/editor/SpriteGeneratorModal.vue'
+import AnimationItem from '@/components/editor/AnimationItem.vue'
+import CostumeItem from '@/components/editor/CostumeItem.vue'
 import SpriteItem from '@/components/editor/SpriteItem.vue'
 import ProjectRunner from '@/components/project/ProjectRunner.vue'
 import UIButton from '@/components/ui/UIButton.vue'
@@ -2168,27 +2170,25 @@ onBeforeUnmount(() => {
 
         <div v-else-if="activeEditorTarget === 'sprite' && activeEditorTab === 'costumes'" class="asset-editor-body">
           <aside class="asset-editor-list" aria-label="Costumes list">
-            <div
+            <CostumeItem
               v-for="costume in costumes"
               :key="costume.id"
-              class="editor-asset-item"
-              :class="{ active: selectedCostumeId === costume.id, 'costume-asset-item': true }"
+              :costume="costume"
+              :active="selectedCostumeId === costume.id"
+              @select="selectedCostumeId = costume.id"
             >
-              <button class="asset-select-button" type="button" @click="selectedCostumeId = costume.id">
-                <img :src="costume.image" :alt="costume.name" />
-                <span class="asset-item-title">{{ costume.name }}</span>
-              </button>
-              <button
-                v-if="selectedCostumeId === costume.id"
-                class="asset-item-menu"
-                type="button"
-                aria-label="Costume options"
-                :aria-expanded="costumeMenuOpenFor === costume.id"
-                aria-haspopup="menu"
-                @click.stop="toggleCostumeMenu(costume.id, $event)"
-                v-html="moreIcon"
-              ></button>
-            </div>
+              <template v-if="selectedCostumeId === costume.id" #corner>
+                <button
+                  class="asset-item-menu"
+                  type="button"
+                  aria-label="Costume options"
+                  :aria-expanded="costumeMenuOpenFor === costume.id"
+                  aria-haspopup="menu"
+                  @click.stop="toggleCostumeMenu(costume.id, $event)"
+                  v-html="moreIcon"
+                ></button>
+              </template>
+            </CostumeItem>
             <Teleport to="body">
               <div
                 v-if="costumeMenuCostume != null"
@@ -2247,27 +2247,25 @@ onBeforeUnmount(() => {
 
         <div v-else-if="activeEditorTarget === 'sprite'" class="asset-editor-body">
           <aside class="asset-editor-list" aria-label="Animations list">
-            <div
+            <AnimationItem
               v-for="animation in animations"
               :key="animation.id"
-              class="editor-asset-item"
-              :class="{ active: selectedAnimationId === animation.id, 'animation-asset-item': true }"
+              :animation="animation"
+              :active="selectedAnimationId === animation.id"
+              @select="selectedAnimationId = animation.id"
             >
-              <button class="asset-select-button" type="button" @click="selectedAnimationId = animation.id">
-                <img :src="animation.image" :alt="animation.name" />
-                <span class="asset-item-title">{{ animation.name }}</span>
-              </button>
-              <button
-                v-if="selectedAnimationId === animation.id"
-                class="asset-item-menu"
-                type="button"
-                aria-label="Animation options"
-                :aria-expanded="animationMenuOpenFor === animation.id"
-                aria-haspopup="menu"
-                @click.stop="toggleAnimationMenu(animation.id, $event)"
-                v-html="moreIcon"
-              ></button>
-            </div>
+              <template v-if="selectedAnimationId === animation.id" #corner>
+                <button
+                  class="asset-item-menu"
+                  type="button"
+                  aria-label="Animation options"
+                  :aria-expanded="animationMenuOpenFor === animation.id"
+                  aria-haspopup="menu"
+                  @click.stop="toggleAnimationMenu(animation.id, $event)"
+                  v-html="moreIcon"
+                ></button>
+              </template>
+            </AnimationItem>
             <Teleport to="body">
               <div
                 v-if="animationMenuAnimation != null"
