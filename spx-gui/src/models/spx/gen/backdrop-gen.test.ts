@@ -4,6 +4,7 @@ import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
 import { TaskStatus, TaskType } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
+import * as fileHelpers from '@/models/common/file'
 import { sndFiles } from '@/models/common/test'
 import { GenState } from '@/components/editor/gen'
 import { makeSpxProject } from '../common/test'
@@ -11,6 +12,8 @@ import { BackdropGen } from './backdrop-gen'
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
+// TODO: Consider replacing this spy by pre-filling file.meta.imgSize in test fixtures.
+vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
 
 describe('BackdropGen', () => {
   beforeEach(() => {

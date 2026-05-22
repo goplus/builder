@@ -14,6 +14,7 @@ import type { AnimationGen } from './animation-gen'
 import { SpriteGen } from './sprite-gen'
 
 const aigcMock = setupAigcMock()
+// TODO: Consider replacing this spy by pre-filling file.meta.imgSize in test fixtures.
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
 
 async function finishCostumeGen(name: string, gen: CostumeGen) {

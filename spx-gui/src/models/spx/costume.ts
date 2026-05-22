@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { nanoid } from 'nanoid'
 
+import { isSvgMimeType } from '@/utils/file'
 import { extname, resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
 import { File, type Files, getImageSize } from '../common/file'
@@ -147,7 +148,7 @@ export class Costume {
   static async create(nameBase: string, file: File, inits?: CostumeInits) {
     const adaptedFile = await adaptImg(file)
     return new Costume(getCostumeName(null, nameBase), adaptedFile, {
-      bitmapResolution: /svg/.test(file.type) ? 1 : 2,
+      bitmapResolution: isSvgMimeType(file.type) ? 1 : 2,
       ...inits
     })
   }

@@ -162,7 +162,11 @@ const importSound = async (asset: ExportedScratchSound) => {
 const importBackdrop = async (asset: ExportedScratchCostume) => {
   const file = scratchToSpxFile(asset)
   const backdrop = await Backdrop.create(asset.name, file, {
-    bitmapResolution: asset.bitmapResolution
+    bitmapResolution: asset.bitmapResolution,
+    pivot: {
+      x: asset.rotationCenterX / asset.bitmapResolution,
+      y: asset.rotationCenterY / asset.bitmapResolution
+    }
   })
   props.project.stage.addBackdrop(backdrop)
   return backdrop

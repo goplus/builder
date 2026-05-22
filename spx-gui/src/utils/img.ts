@@ -1,4 +1,5 @@
 import { Disposable } from '@/utils/disposable'
+import { isSvgMimeType } from '@/utils/file'
 import { getImgDrawingCtx } from './canvas'
 
 /** Convert arbitrary-type (supported by current browser) image content to another type. */
@@ -13,7 +14,7 @@ export function convertImg(
     const img = new Image()
     img.onload = async () => {
       let size = { width: img.naturalWidth, height: img.naturalHeight }
-      if (input.type === 'image/svg+xml') {
+      if (isSvgMimeType(input.type)) {
         const svgText = await input.text()
         size = await getSVGSize(svgText)
       }
@@ -87,7 +88,7 @@ export async function getContentBoundingRect(imgBlob: Blob): Promise<Rect> {
     img.onload = async () => {
       try {
         let size = { width: img.naturalWidth, height: img.naturalHeight }
-        if (imgBlob.type === 'image/svg+xml') {
+        if (isSvgMimeType(imgBlob.type)) {
           const svgText = await imgBlob.text()
           size = await getSVGSize(svgText)
         }
