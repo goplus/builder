@@ -17,7 +17,11 @@ const rootClass = computed(() => [
 
 <template>
   <div :class="rootClass">
-    <span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap" :title="title">
+    <span
+      class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+      :class="{ 'text-left': slots.suffix != null }"
+      :title="title"
+    >
       <slot></slot>
     </span>
     <slot v-if="slots.suffix != null" name="suffix"></slot>
