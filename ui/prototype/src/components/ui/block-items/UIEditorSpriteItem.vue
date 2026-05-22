@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
 import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'
-import UIBlockItem from '@/components/editor/UIBlockItem.vue'
-import UIBlockItemTitle from '@/components/editor/UIBlockItemTitle.vue'
+import UIBlockItem from '@/components/ui/block-items/UIBlockItem.vue'
+import UIBlockItemTitle from '@/components/ui/block-items/UIBlockItemTitle.vue'
 
 defineProps<{
   name: string
