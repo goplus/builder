@@ -1,14 +1,13 @@
 <template>
-  <button
+  <div
     class="ui-block-item"
     :class="{
       'ui-block-item-active': active,
       'ui-block-item-interactive': interactive
     }"
-    type="button"
   >
     <slot />
-  </button>
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -9,9 +9,9 @@ const props = defineProps<{
 
 const slots = useSlots()
 const rootClass = computed(() => [
-  'flex items-center text-center text-title',
+  'flex w-full items-center gap-2 px-1.5 text-center text-title',
   props.size === 'large' ? 'h-5 text-sm' : 'h-5.5 text-2xs',
-  props.class ?? 'w-full gap-2 px-1.5'
+  props.class
 ])
 </script>
 
