@@ -10,18 +10,22 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
 
+import { cn, type ClassValue } from '../utils'
+
 const props = defineProps<{
   size: 'medium' | 'large'
   title: string
-  class?: string
+  class?: ClassValue
 }>()
 
 const slots = useSlots()
-const rootClass = computed(() => [
-  'flex items-center text-title',
-  props.size === 'large'
-    ? 'h-5 w-full gap-2 px-1.5 text-center text-sm'
-    : ['h-5.5 w-[76px] gap-0.5 px-0 text-2xs', slots.suffix != null ? 'text-left' : 'text-center'],
-  props.class
-])
+const rootClass = computed(() =>
+  cn(
+    'flex items-center text-title',
+    props.size === 'large'
+      ? 'h-5 w-full gap-2 px-1.5 text-center text-sm'
+      : ['h-5.5 w-[76px] gap-0.5 px-0 text-2xs', slots.suffix != null ? 'text-left' : 'text-center'],
+    props.class
+  )
+)
 </script>

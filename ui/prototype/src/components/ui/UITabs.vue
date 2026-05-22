@@ -18,10 +18,12 @@ export function useUITabsCtx() {
 <script setup lang="ts">
 import { computed, provide } from 'vue'
 
+import { cn, type ClassValue } from './utils'
+
 const props = withDefaults(
   defineProps<{
     value: string
-    class?: string
+    class?: ClassValue
   }>(),
   {
     class: ''
@@ -38,10 +40,12 @@ provide(prototypeTabsCtxKey, {
     emit('update:value', value)
   }
 })
+
+const rootClass = computed(() => cn('m-0 flex min-w-0 list-none overflow-hidden px-2', props.class))
 </script>
 
 <template>
-  <ul class="m-0 flex min-w-0 list-none overflow-hidden px-2" :class="props.class">
+  <ul :class="rootClass">
     <slot />
   </ul>
 </template>

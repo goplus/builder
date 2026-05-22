@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
-import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'
 import UIBlockItem from '@/components/ui/block-items/UIBlockItem.vue'
 import UIBlockItemTitle from '@/components/ui/block-items/UIBlockItemTitle.vue'
+import UIIcon from '@/components/ui/icons/UIIcon.vue'
 
 withDefaults(
   defineProps<{
@@ -31,13 +31,13 @@ const imgStyle: CSSProperties = {
     <UIBlockItemTitle size="medium" :title="title ?? name">
       {{ name }}
       <template v-if="visible === false" #suffix>
-        <span
-          class="inline-flex size-3.5 flex-none cursor-auto items-center justify-center text-grey-700 [&>svg]:block [&>svg]:size-full"
+        <UIIcon
+          class="size-3.5 flex-none cursor-auto text-grey-700"
+          type="eyeOff"
           role="img"
           aria-label="Invisible"
           title="Invisible"
-          v-html="eyeOffIcon"
-        ></span>
+        />
       </template>
     </UIBlockItemTitle>
     <slot></slot>
