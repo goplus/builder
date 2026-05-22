@@ -4609,7 +4609,7 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite.active {
-  outline: 1px solid var(--ui-color-primary-main);
+  outline: 2px solid var(--ui-color-primary-main);
   outline-offset: 6px;
 }
 
@@ -6483,7 +6483,8 @@ onBeforeUnmount(() => {
   top: 108px;
   width: 105px;
   height: 105px;
-  border: 1px solid var(--ui-color-primary-main);
+  box-sizing: border-box;
+  border: 2px solid var(--ui-color-primary-main);
   cursor: grab;
   transform-origin: center;
 }

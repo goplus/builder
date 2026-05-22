@@ -6,6 +6,7 @@ import UIBlockItemTitle from '@/components/editor/UIBlockItemTitle.vue'
 
 defineProps<{
   name: string
+  color?: string
   title?: string
   selected?: boolean
   visible?: boolean
@@ -21,7 +22,11 @@ const imgStyle: CSSProperties = {
 
 <template>
   <UIBlockItem :active="selected">
-    <slot name="img" :style="imgStyle"></slot>
+    <slot name="img" :style="imgStyle">
+      <div class="mt-1.5 mb-[5px] grid size-[60px] place-items-center rounded-md bg-grey-300">
+        <div class="size-10 rounded-full border-4 border-white shadow-sm" :style="{ backgroundColor: color }"></div>
+      </div>
+    </slot>
 
     <UIBlockItemTitle class="gap-0.5 px-1" size="medium" :title="title ?? name">
       {{ name }}

@@ -11,6 +11,14 @@ function read(path) {
   return readFileSync(join(root, path), 'utf8')
 }
 
+function readOptional(path) {
+  try {
+    return read(path)
+  } catch {
+    return ''
+  }
+}
+
 function walk(dir) {
   return readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry)
@@ -75,6 +83,8 @@ const prototypeTab = read('src/components/ui/UITab.vue')
 const prototypeBlockItem = read('src/components/editor/UIBlockItem.vue')
 const prototypeBlockItemTitle = read('src/components/editor/UIBlockItemTitle.vue')
 const prototypeEditorSpriteItem = read('src/components/editor/UIEditorSpriteItem.vue')
+const prototypeCostumeItem = read('src/components/editor/CostumeItem.vue')
+const prototypeAnimationItem = read('src/components/editor/AnimationItem.vue')
 const prototypeSpriteItem = read('src/components/editor/SpriteItem.vue')
 const editorPreviewPanel = read('src/components/editor/PreviewPanel.vue')
 const editorPreviewSurface = `${editorPage}\n${editorPreviewPanel}`
@@ -129,7 +139,10 @@ for (const requiredFile of [
   'src/assets/editor/ui-icons/loading.svg',
   'src/assets/editor/widget/monitor.svg',
   'src/components/project/ProjectRunner.vue',
+  'src/components/editor/UIBlockItem.vue',
   'src/components/editor/SpriteItem.vue',
+  'src/components/editor/UIBlockItemTitle.vue',
+  'src/components/editor/UIEditorSpriteItem.vue',
   'src/components/editor/PublishProjectModal.vue',
   'src/components/editor/SpriteGeneratorModal.vue',
   'src/components/ui/UICardHeader.vue',
@@ -350,13 +363,15 @@ if (!editorPage.includes('.format-button {\n  margin-left: auto;\n  margin-botto
 }
 
 if (
-  !editorPage.includes(':title="costume.name"') ||
-  !editorPage.includes(':title="animation.name"') ||
+  !prototypeCostumeItem.includes(':title="costume.name"') ||
+  !prototypeAnimationItem.includes(':title="animation.name"') ||
   !editorPage.includes(':title="backdrop.name"') ||
   !editorPage.includes(':title="sound.name"') ||
   !editorPage.includes(':title="widget.name"') ||
-  !editorPage.includes('.editor-asset-item .asset-item-title {\n  width: 100%;\n  min-height: 16px;') ||
-  !editorPage.includes('line-height: 16px;')
+  !prototypeBlockItemTitle.includes('w-full') ||
+  !prototypeBlockItemTitle.includes('text-ellipsis') ||
+  !prototypeBlockItemTitle.includes('whitespace-nowrap') ||
+  !prototypeBlockItemTitle.includes(':title="title"')
 ) {
   failures.push('editor asset item titles must use the shared non-clipped title treatment')
 }
@@ -758,11 +773,25 @@ if (
   !editorPage.includes("import SpriteItem from '@/components/editor/SpriteItem.vue'") ||
   (editorPage.match(/<SpriteItem/g) ?? []).length < 2 ||
   editorPage.includes('class="sprite-card"') ||
+  prototypeBlockItem.includes('<button') ||
+  !prototypeBlockItem.includes('<div') ||
+  !prototypeBlockItem.includes('.ui-block-item-active::before') ||
+  !prototypeBlockItem.includes('border-width: 2px;') ||
   !prototypeSpriteItem.includes("import UIEditorSpriteItem from '@/components/editor/UIEditorSpriteItem.vue'") ||
   !prototypeSpriteItem.includes('<UIEditorSpriteItem') ||
-  prototypeSpriteItem.includes("import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'")
+  prototypeSpriteItem.includes("import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'") ||
+  prototypeSpriteItem.includes('.prototype-sprite-item-title') ||
+  !prototypeEditorSpriteItem.includes("import UIBlockItem from '@/components/editor/UIBlockItem.vue'") ||
+  !prototypeEditorSpriteItem.includes("import UIBlockItemTitle from '@/components/editor/UIBlockItemTitle.vue'") ||
+  !prototypeEditorSpriteItem.includes('<UIBlockItem :active="selected">') ||
+  !prototypeEditorSpriteItem.includes('<UIBlockItemTitle') ||
+  !prototypeBlockItemTitle.includes('w-full') ||
+  !prototypeBlockItemTitle.includes('items-center') ||
+  !prototypeBlockItemTitle.includes('px-1') ||
+  prototypeEditorSpriteItem.includes('w-[76px]') ||
+  prototypeEditorSpriteItem.includes('width: calc(100% - 8px);')
 ) {
-  failures.push('editor and map sprite lists must share the prototype sprite item component and reuse UIEditorSpriteItem')
+  failures.push('editor and map sprite lists must share SpriteItem, and shared UIBlockItem must render a div with a 2px active pseudo-border')
 }
 
 if (
@@ -1007,25 +1036,19 @@ if (
 }
 
 if (
-  prototypeBlockItem.includes('<button') ||
-  !prototypeBlockItem.includes('<div') ||
-  !prototypeBlockItem.includes('.ui-block-item-active::before') ||
-  !prototypeBlockItem.includes('border-width: 2px;')
-) {
-  failures.push('prototype UIBlockItem must mirror the real block item root and keep a 2px active pseudo-border')
-}
-
-if (
-  !prototypeBlockItemTitle.includes('w-full') ||
-  !prototypeBlockItemTitle.includes('px-1.5') ||
-  !prototypeEditorSpriteItem.includes('<UIBlockItemTitle class="gap-0.5 px-1"') ||
-  prototypeEditorSpriteItem.includes('w-[76px]') ||
-  prototypeEditorSpriteItem.includes('width: 76px') ||
-  prototypeEditorSpriteItem.includes('width: calc(100% - 8px)') ||
+  !prototypeEditorSpriteItem.includes("import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'") ||
+  !prototypeEditorSpriteItem.includes('v-html="eyeOffIcon"') ||
+  !prototypeEditorSpriteItem.includes(':title="title ?? name"') ||
+  !prototypeEditorSpriteItem.includes('aria-label="Invisible"') ||
+  prototypeEditorSpriteItem.includes('title="Invisible"') ||
+  !prototypeEditorSpriteItem.includes('gap-0.5') ||
+  !prototypeEditorSpriteItem.includes('px-1') ||
   prototypeEditorSpriteItem.includes('px-0') ||
-  prototypeEditorSpriteItem.includes('title="Invisible"')
+  prototypeEditorSpriteItem.includes('w-[76px]') ||
+  prototypeEditorSpriteItem.includes('⌁') ||
+  !editorEyeOffIcon.includes('M20.1133 7.53809')
 ) {
-  failures.push('prototype UIEditorSpriteItem title row must use width 100% with 4px padding and no hidden-icon tooltip override')
+  failures.push('prototype sprite hidden state must use the copied UIIcon eyeOff asset with a shared width-100, 4px-padded title row')
 }
 
 if (
@@ -1076,16 +1099,19 @@ if (
   !editorPreviewSurface.includes('updateSelectedSpriteX') ||
   !editorPreviewSurface.includes('selectedSpriteCoordinate') ||
   !editorPreviewSurface.includes('getStageSpriteFrameStyle') ||
+  !editorPreviewSurface.includes('.selected-sprite {') ||
+  !editorPreviewSurface.includes('border: 2px solid var(--ui-color-primary-main);') ||
   !editorPreviewSurface.includes('startStageSpriteDrag') ||
   !editorPreviewSurface.includes('@pointerdown.stop.prevent="ctx.startStageSpriteDrag')
 ) {
-  failures.push('editor sprite quick config must support coordinate display plus direct stage positioning and dragging')
+  failures.push('editor sprite quick config must support coordinate display plus direct stage positioning, dragging, and a 2px selected sprite border')
 }
 
 if (
   !editorPage.includes('getMapSpriteFrameStyle') ||
   !editorPage.includes('selectedMapSpriteCoordinate') ||
   !editorPage.includes('updateSelectedMapSpriteX') ||
+  !editorPage.includes('.map-sprite.active {\n  outline: 2px solid var(--ui-color-primary-main);') ||
   !editorPage.includes('@pointerdown.stop.prevent="startMapSpriteDrag') ||
   !editorPage.includes('class="map-number-input"') ||
   !editorPage.includes('aria-label="X position"') ||
@@ -1096,7 +1122,7 @@ if (
   editorPage.includes('.map-sprite-jaime {\n  left: 41%;') ||
   editorPage.includes('.map-sprite-kai {\n  left: 68%;')
 ) {
-  failures.push('map editor sprite positions and coordinate controls must be data-driven with input-internal prefix keys')
+  failures.push('map editor sprite positions and coordinate controls must be data-driven with input-internal prefix keys and a 2px active sprite outline')
 }
 
 if (
