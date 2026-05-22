@@ -256,6 +256,6 @@ function handleClick() {
     @click="handleClick"
   />
   <v-group v-if="pivotMarkerGroupConfig != null" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
-    <PivotMarker primary-color="#CBD2D8" />
+    <PivotMarker primary-color="#CBD2D8" :opacity="0.9" />
   </v-group>
 </template>

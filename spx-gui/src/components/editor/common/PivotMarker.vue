@@ -8,10 +8,12 @@ const props = withDefaults(
   defineProps<{
     size?: number
     primaryColor: string
+    opacity?: number
     showHitArea?: boolean
   }>(),
   {
     size: 16,
+    opacity: 1,
     showHitArea: false
   }
 )
@@ -27,6 +29,7 @@ const drawingGroupConfig = computed<GroupConfig>(() => {
       x: scale,
       y: scale
     },
+    opacity: props.opacity,
     listening: false
   }
 })
