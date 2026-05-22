@@ -167,16 +167,72 @@ function handlePivotCircleGroupDragEnd(e: KonvaEventObject<unknown>) {
   pivotPos.value = { x: e.target.x(), y: e.target.y() }
 }
 
-const pivotCircleConfig = computed(
+const pivotMarkerSize = 16
+const pivotMarkerViewBoxSize = 24
+
+const pivotMarkerDrawingGroupConfig = computed<GroupConfig>(() => {
+  const scale = pivotMarkerSize / pivotMarkerViewBoxSize
+  return {
+    x: (-pivotMarkerViewBoxSize / 2) * scale,
+    y: (-pivotMarkerViewBoxSize / 2) * scale,
+    scale: {
+      x: scale,
+      y: scale
+    },
+    listening: false
+  }
+})
+
+const pivotMarkerHitConfig = computed<CircleConfig>(
   () =>
     ({
-      radius: 8,
-      fill: 'rgba(10, 165, 190, 1)',
-      stroke: '#fff',
+      radius: pivotMarkerSize / 2,
+      fill: 'rgba(0, 0, 0, 0.01)'
+    }) satisfies CircleConfig
+)
+
+const pivotMarkerCircleConfig = computed<CircleConfig>(
+  () =>
+    ({
+      x: pivotMarkerViewBoxSize / 2,
+      y: pivotMarkerViewBoxSize / 2,
+      radius: 9,
+      fill: 'white',
+      listening: false
+    }) satisfies CircleConfig
+)
+
+const pivotMarkerOuterTabConfigs = computed<RectConfig[]>(
+  () =>
+    [
+      { x: 0, y: 10, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
+      { x: 20, y: 10, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
+      { x: 10, y: 0, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
+      { x: 10, y: 20, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false }
+    ] satisfies RectConfig[]
+)
+
+const pivotMarkerInnerShapeConfigs = computed<RectConfig[]>(
+  () =>
+    [
+      { x: 1, y: 11, width: 4, height: 2, cornerRadius: 1, fill: '#36C2CF', listening: false },
+      { x: 19, y: 11, width: 4, height: 2, cornerRadius: 1, fill: '#36C2CF', listening: false },
+      { x: 11, y: 1, width: 2, height: 4, cornerRadius: 1, fill: '#36C2CF', listening: false },
+      { x: 11, y: 19, width: 2, height: 4, cornerRadius: 1, fill: '#36C2CF', listening: false },
+      { x: 9, y: 11, width: 6, height: 2, cornerRadius: 1, fill: '#36C2CF', listening: false },
+      { x: 11, y: 9, width: 2, height: 6, cornerRadius: 1, fill: '#36C2CF', listening: false }
+    ] satisfies RectConfig[]
+)
+
+const pivotMarkerRingConfig = computed<CircleConfig>(
+  () =>
+    ({
+      x: pivotMarkerViewBoxSize / 2,
+      y: pivotMarkerViewBoxSize / 2,
+      radius: 7,
+      stroke: '#36C2CF',
       strokeWidth: 2,
-      shadowColor: 'rgba(51, 51, 51, 0.2)',
-      shadowBlur: 4,
-      shadowOffset: { x: 0, y: 2 }
+      listening: false
     }) satisfies CircleConfig
 )
 
@@ -334,8 +390,22 @@ const { fn: handleConfirm } = useMessageHandle(
             <v-custom-transformer ref="colliderRectTransformer" :config="colliderRectTransformerConfig" />
           </template>
           <v-group :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
+            <v-circle :config="pivotMarkerHitConfig" />
+            <v-group :config="pivotMarkerDrawingGroupConfig">
+              <v-circle :config="pivotMarkerCircleConfig" />
+              <v-rect
+                v-for="(config, idx) in pivotMarkerOuterTabConfigs"
+                :key="`pivot-outer-${idx}`"
+                :config="config"
+              />
+              <v-rect
+                v-for="(config, idx) in pivotMarkerInnerShapeConfigs"
+                :key="`pivot-inner-${idx}`"
+                :config="config"
+              />
+              <v-circle :config="pivotMarkerRingConfig" />
+            </v-group>
             <v-text :config="pivotTitleConfig" />
-            <v-circle :config="pivotCircleConfig" />
           </v-group>
         </v-layer>
       </v-stage>

@@ -563,6 +563,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             :selected="selectedSprite?.id === localConfig.id"
             :project="props.project"
             :map-size="mapSize"
+            :map-scale="mapScale"
             :node-ready-map="nodeReadyMap"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
