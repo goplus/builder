@@ -24,7 +24,7 @@ const rootClass = computed(() =>
     'flex items-center text-title',
     props.size === 'large'
       ? 'h-5 w-full gap-2 px-1.5 text-center text-sm'
-      : ['h-5.5 w-full gap-0.5 px-1 text-2xs', slots.suffix != null ? 'text-left' : 'text-center'],
+      : 'h-5.5 w-full gap-0.5 px-1 text-center text-2xs',
     props.class
   )
 )
