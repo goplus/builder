@@ -89,7 +89,6 @@ const router = useRouter()
 type SpriteCard = {
   id: string
   name: string
-  shortName: string
   image: string
   hidden: boolean
   x: number
@@ -428,7 +427,6 @@ const niuRunSprites = ref<SpriteCard[]>([
   {
     id: 'niu-xiao-qi',
     name: '牛小七',
-    shortName: '牛小七',
     image: niuXiaoQiUrl,
     hidden: false,
     x: -224,
@@ -440,7 +438,6 @@ const niuRunSprites = ref<SpriteCard[]>([
   {
     id: 'niu-xiao-hua',
     name: '牛小花牛小花牛小花牛小花牛小花牛小花',
-    shortName: '牛小花牛小花...',
     image: niuXiaoHuaUrl,
     hidden: false,
     x: -130,
@@ -452,7 +449,6 @@ const niuRunSprites = ref<SpriteCard[]>([
   {
     id: 'flower',
     name: '花朵花朵花朵花朵花朵花朵花朵花朵花朵',
-    shortName: '花朵花...',
     image: flowerUrl,
     hidden: true,
     x: 0,
@@ -464,7 +460,6 @@ const niuRunSprites = ref<SpriteCard[]>([
   {
     id: 'tornado',
     name: '龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风',
-    shortName: '龙卷风...',
     image: tornadoUrl,
     hidden: true,
     x: 120,
@@ -540,7 +535,6 @@ const weatherggggSprites = ref<SpriteCard[]>([
   {
     id: 'jaime',
     name: 'Jaime',
-    shortName: 'Jaime',
     image: jaimeUrl,
     hidden: false,
     x: -80,
@@ -552,7 +546,6 @@ const weatherggggSprites = ref<SpriteCard[]>([
   {
     id: 'kai',
     name: 'Kai',
-    shortName: 'Kai',
     image: kaiUrl,
     hidden: false,
     x: 80,
@@ -1434,7 +1427,6 @@ function createSpriteCard(source: string, name: string, image: string): SpriteCa
   const sprite: SpriteCard = {
     id: `${source}-sprite-${Date.now()}`,
     name,
-    shortName: name.length > 10 ? `${name.slice(0, 8)}...` : name,
     image,
     hidden: false,
     x: -224,
@@ -1763,7 +1755,6 @@ function duplicateSprite(sprite: SpriteCard) {
     ...sprite,
     id: `${sprite.id}-copy-${Date.now()}`,
     name: `${sprite.name} ${copyIndex}`,
-    shortName: `${sprite.shortName} ${copyIndex}`,
     hidden: false
   }
   const sourceIndex = sprites.value.findIndex((item) => item.id === sprite.id)
@@ -1810,7 +1801,6 @@ function submitSpriteRename() {
     return
   }
   sprite.name = nextName
-  sprite.shortName = nextName.length > 10 ? `${nextName.slice(0, 8)}...` : nextName
   cancelSpriteRename()
   markPrototypeAction()
 }
@@ -1839,7 +1829,6 @@ function submitMapSpriteRename() {
     return
   }
   sprite.name = nextName
-  sprite.shortName = nextName.length > 10 ? `${nextName.slice(0, 8)}...` : nextName
   cancelMapSpriteRename()
 }
 
