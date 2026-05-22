@@ -7,7 +7,6 @@ import type { KonvaEventObject } from 'konva/lib/Node'
 import type { GroupConfig } from 'konva/lib/Group'
 import type { LayerConfig } from 'konva/lib/Layer'
 import type { Rect, RectConfig } from 'konva/lib/shapes/Rect'
-import type { CircleConfig } from 'konva/lib/shapes/Circle'
 import { useAsyncComputed } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useFileImg } from '@/utils/file'
@@ -17,6 +16,7 @@ import { toNativeFile } from '@/models/common/file'
 import { CollisionShapeType, type Sprite } from '@/models/spx/sprite'
 import type { Pivot as CostumePivot } from '@/models/spx/costume'
 import type { CustomTransformer, CustomTransformerConfig } from '../common/viewer/custom-transformer'
+import PivotMarker from '../common/PivotMarker.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
@@ -64,10 +64,6 @@ const colliderPos = ref({ x: 0, y: 0 })
 async function resetValues() {
   const sprite = props.sprite
   pivotPos.value = defaultCostume.value.pivot
-  if (!props.enableCollisionEditing) {
-    dirty.value = false
-    return
-  }
   switch (sprite.collisionShapeType) {
     case CollisionShapeType.None:
     case CollisionShapeType.Auto: {
@@ -104,7 +100,7 @@ watch(
   { flush: 'sync' }
 )
 
-watch([() => props.sprite, () => props.enableCollisionEditing], resetValues, { immediate: true })
+watch(() => props.sprite, resetValues, { immediate: true })
 
 const stageScale = computed(() => {
   if (canvasSize.value == null || wrapperSize.value == null) return 1
@@ -166,75 +162,6 @@ const pivotGroupConfig = computed(() => {
 function handlePivotCircleGroupDragEnd(e: KonvaEventObject<unknown>) {
   pivotPos.value = { x: e.target.x(), y: e.target.y() }
 }
-
-const pivotMarkerSize = 16
-const pivotMarkerViewBoxSize = 24
-
-const pivotMarkerDrawingGroupConfig = computed<GroupConfig>(() => {
-  const scale = pivotMarkerSize / pivotMarkerViewBoxSize
-  return {
-    x: (-pivotMarkerViewBoxSize / 2) * scale,
-    y: (-pivotMarkerViewBoxSize / 2) * scale,
-    scale: {
-      x: scale,
-      y: scale
-    },
-    listening: false
-  }
-})
-
-const pivotMarkerHitConfig = computed<CircleConfig>(
-  () =>
-    ({
-      radius: pivotMarkerSize / 2,
-      fill: 'rgba(0, 0, 0, 0.01)'
-    }) satisfies CircleConfig
-)
-
-const pivotMarkerCircleConfig = computed<CircleConfig>(
-  () =>
-    ({
-      x: pivotMarkerViewBoxSize / 2,
-      y: pivotMarkerViewBoxSize / 2,
-      radius: 9,
-      fill: 'white',
-      listening: false
-    }) satisfies CircleConfig
-)
-
-const pivotMarkerOuterTabConfigs = computed<RectConfig[]>(
-  () =>
-    [
-      { x: 0, y: 10, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
-      { x: 20, y: 10, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
-      { x: 10, y: 0, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
-      { x: 10, y: 20, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false }
-    ] satisfies RectConfig[]
-)
-
-const pivotMarkerInnerShapeConfigs = computed<RectConfig[]>(
-  () =>
-    [
-      { x: 1, y: 11, width: 4, height: 2, cornerRadius: 1, fill: '#36C2CF', listening: false },
-      { x: 19, y: 11, width: 4, height: 2, cornerRadius: 1, fill: '#36C2CF', listening: false },
-      { x: 11, y: 1, width: 2, height: 4, cornerRadius: 1, fill: '#36C2CF', listening: false },
-      { x: 11, y: 19, width: 2, height: 4, cornerRadius: 1, fill: '#36C2CF', listening: false },
-      { x: 9, y: 11, width: 6, height: 2, cornerRadius: 1, fill: '#36C2CF', listening: false },
-      { x: 11, y: 9, width: 2, height: 6, cornerRadius: 1, fill: '#36C2CF', listening: false }
-    ] satisfies RectConfig[]
-)
-
-const pivotMarkerRingConfig = computed<CircleConfig>(
-  () =>
-    ({
-      x: pivotMarkerViewBoxSize / 2,
-      y: pivotMarkerViewBoxSize / 2,
-      radius: 7,
-      stroke: '#36C2CF',
-      strokeWidth: 2,
-      listening: false
-    }) satisfies CircleConfig
-)
 
 const pivotTitleConfig = computed(
   () =>
@@ -338,9 +265,10 @@ const { fn: handleConfirm } = useMessageHandle(
         sprite.applyCostumesPivotChange(dPivot)
 
         if (!props.enableCollisionEditing) {
-          // Even when collision editing is hidden, keep any existing collider aligned with the
-          // artwork after the pivot moves. Otherwise re-enabling physics later would reveal a
-          // collider that has drifted relative to the sprite image.
+          // Even when collision editing is hidden, keep any persisted collision pivot aligned
+          // with the artwork after the sprite pivot moves. This intentionally includes Auto
+          // shapes as well, since Auto still carries a stored collisionPivot even though its
+          // bounds are derived from costume content.
           if (sprite.collisionShapeType !== CollisionShapeType.None) {
             sprite.setCollisionPivot({
               x: sprite.collisionPivot.x - dPivot.x,
@@ -390,21 +318,7 @@ const { fn: handleConfirm } = useMessageHandle(
             <v-custom-transformer ref="colliderRectTransformer" :config="colliderRectTransformerConfig" />
           </template>
           <v-group :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
-            <v-circle :config="pivotMarkerHitConfig" />
-            <v-group :config="pivotMarkerDrawingGroupConfig">
-              <v-circle :config="pivotMarkerCircleConfig" />
-              <v-rect
-                v-for="(config, idx) in pivotMarkerOuterTabConfigs"
-                :key="`pivot-outer-${idx}`"
-                :config="config"
-              />
-              <v-rect
-                v-for="(config, idx) in pivotMarkerInnerShapeConfigs"
-                :key="`pivot-inner-${idx}`"
-                :config="config"
-              />
-              <v-circle :config="pivotMarkerRingConfig" />
-            </v-group>
+            <PivotMarker primary-color="#36C2CF" :show-hit-area="true" />
             <v-text :config="pivotTitleConfig" />
           </v-group>
         </v-layer>

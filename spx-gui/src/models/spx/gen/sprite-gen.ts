@@ -141,6 +141,7 @@ export class SpriteGen extends Disposable {
   // infer it after the generated default costume image is available.
   private async inferPivotDelta(costume: Costume): Promise<CostumePivot | null> {
     if (!shouldUseFeetPivot(this.settings.category, this.settings.perspective)) return null
+    if (costume.bitmapResolution <= 0) return null
     const rect = await getContentBoundingRect(await toNativeFile(costume.img))
     if (rect.width <= 0 || rect.height <= 0) return null
     return {
@@ -331,7 +332,7 @@ export class SpriteGen extends Disposable {
       defaultCostumeGen.setImage(image)
       const defaultCostume = await defaultCostumeGen.finish()
       this.costumes.push(defaultCostumeGen)
-      // Cache the inferred delta here so `finish()` can stay synchronous while still using image analysis.
+      // Pre-compute the inferred delta here so `finish()` can stay synchronous while still using image analysis.
       // We also persist this value to survive export/load before the sprite is finally adopted.
       this.inferredPivotDelta = await this.inferPivotDelta(defaultCostume)
 
@@ -540,7 +541,7 @@ export class SpriteGen extends Disposable {
     if (imageIndex != null) inits.imageIndex = imageIndex
     if (selectedItem != null) inits.selectedItem = selectedItem
     if (animationGenIdBindings != null) inits.animationGenIdBindings = animationGenIdBindings
-    if (inferredPivotDelta != null) inits.inferredPivotDelta = inferredPivotDelta
+    if (isFiniteCostumePivot(inferredPivotDelta)) inits.inferredPivotDelta = inferredPivotDelta
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (genImagesTaskSerialized != null) inits.genImagesTask = Task.load(genImagesTaskSerialized)
     if (genImagesPhaseSerialized != null) {
@@ -667,4 +668,10 @@ function shouldUseFeetPivot(category: SpriteCategory, perspective: Perspective) 
     category === SpriteCategory.Character &&
     [Perspective.SideScrolling, Perspective.AngledTopDown].includes(perspective)
   )
+}
+
+function isFiniteCostumePivot(value: unknown): value is CostumePivot {
+  if (typeof value !== 'object' || value == null || Array.isArray(value)) return false
+  const { x, y } = value as Partial<Record<'x' | 'y', unknown>>
+  return typeof x === 'number' && Number.isFinite(x) && typeof y === 'number' && Number.isFinite(y)
 }

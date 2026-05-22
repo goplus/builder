@@ -1,10 +1,8 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watchEffect } from 'vue'
+import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Group, GroupConfig } from 'konva/lib/Group'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
-import type { CircleConfig } from 'konva/lib/shapes/Circle'
-import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { SpxProject } from '@/models/spx/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading } from '@/models/spx/sprite'
 import type { Size } from '@/models/common'
@@ -14,6 +12,7 @@ import { cancelBubble, getNodeId } from './common'
 import type { SpriteLocalConfig } from './quick-config/utils'
 import type { TransformOp } from './custom-transformer'
 import type Konva from 'konva'
+import PivotMarker from '../PivotMarker.vue'
 
 const props = defineProps<{
   localConfig: SpriteLocalConfig
@@ -79,11 +78,19 @@ onMounted(() => {
   }
 })
 
-watchEffect(() => {
-  const pivotMarkerNode = pivotMarkerRef.value?.getNode()
-  if (!props.selected || pivotMarkerNode == null || pivotMarkerNode.getParent() == null) return
-  pivotMarkerNode.zIndex(props.project.zorder.length)
-})
+// Keep the selected sprite's pivot marker above all sprite nodes.
+watch(
+  [() => props.selected, () => props.project.zorder.length, pivotMarkerRef],
+  () => {
+    if (!props.selected) return
+    const pivotMarkerNode = pivotMarkerRef.value?.getNode()
+    if (pivotMarkerNode == null || pivotMarkerNode.getParent() == null) return
+    const zIndex = props.project.zorder.length
+    if (pivotMarkerNode.zIndex() === zIndex) return
+    pivotMarkerNode.zIndex(zIndex)
+  },
+  { immediate: true }
+)
 
 function keepNodePivotPosition(node: Konva.Node) {
   const snapshot = snapshotRef.value
@@ -202,9 +209,6 @@ const config = computed<ImageConfig>(() => {
   return config
 })
 
-const pivotMarkerSize = 16
-const pivotMarkerViewBoxSize = 24
-
 const pivotMarkerGroupConfig = computed<GroupConfig | null>(() => {
   if (!props.selected) return null
   return {
@@ -216,61 +220,6 @@ const pivotMarkerGroupConfig = computed<GroupConfig | null>(() => {
     listening: false
   } satisfies GroupConfig
 })
-
-const pivotMarkerDrawingGroupConfig = computed<GroupConfig>(() => {
-  const scale = pivotMarkerSize / pivotMarkerViewBoxSize
-  return {
-    x: (-pivotMarkerViewBoxSize / 2) * scale,
-    y: (-pivotMarkerViewBoxSize / 2) * scale,
-    scale: { x: scale, y: scale },
-    listening: false
-  }
-})
-
-const pivotMarkerCircleConfig = computed<CircleConfig>(
-  () =>
-    ({
-      x: pivotMarkerViewBoxSize / 2,
-      y: pivotMarkerViewBoxSize / 2,
-      radius: 9,
-      fill: 'white',
-      listening: false
-    }) satisfies CircleConfig
-)
-
-const pivotMarkerOuterTabConfigs = computed<RectConfig[]>(
-  () =>
-    [
-      { x: 0, y: 10, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
-      { x: 20, y: 10, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
-      { x: 10, y: 0, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false },
-      { x: 10, y: 20, width: 4, height: 4, cornerRadius: 2, fill: 'white', listening: false }
-    ] satisfies RectConfig[]
-)
-
-const pivotMarkerInnerShapeConfigs = computed<RectConfig[]>(
-  () =>
-    [
-      { x: 1, y: 11, width: 4, height: 2, cornerRadius: 1, fill: '#CBD2D8', listening: false },
-      { x: 19, y: 11, width: 4, height: 2, cornerRadius: 1, fill: '#CBD2D8', listening: false },
-      { x: 11, y: 1, width: 2, height: 4, cornerRadius: 1, fill: '#CBD2D8', listening: false },
-      { x: 11, y: 19, width: 2, height: 4, cornerRadius: 1, fill: '#CBD2D8', listening: false },
-      { x: 9, y: 11, width: 6, height: 2, cornerRadius: 1, fill: '#CBD2D8', listening: false },
-      { x: 11, y: 9, width: 2, height: 6, cornerRadius: 1, fill: '#CBD2D8', listening: false }
-    ] satisfies RectConfig[]
-)
-
-const pivotMarkerRingConfig = computed<CircleConfig>(
-  () =>
-    ({
-      x: pivotMarkerViewBoxSize / 2,
-      y: pivotMarkerViewBoxSize / 2,
-      radius: 7,
-      stroke: '#CBD2D8',
-      strokeWidth: 2,
-      listening: false
-    }) satisfies CircleConfig
-)
 
 function toPosition(node: Konva.Node) {
   const { mapSize } = props
@@ -307,19 +256,6 @@ function handleClick() {
     @click="handleClick"
   />
   <v-group v-if="pivotMarkerGroupConfig != null" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
-    <v-group :config="pivotMarkerDrawingGroupConfig">
-      <v-circle :config="pivotMarkerCircleConfig" />
-      <v-rect
-        v-for="(rectConfig, idx) in pivotMarkerOuterTabConfigs"
-        :key="`pivot-outer-${idx}`"
-        :config="rectConfig"
-      />
-      <v-rect
-        v-for="(rectConfig, idx) in pivotMarkerInnerShapeConfigs"
-        :key="`pivot-inner-${idx}`"
-        :config="rectConfig"
-      />
-      <v-circle :config="pivotMarkerRingConfig" />
-    </v-group>
+    <PivotMarker primary-color="#CBD2D8" />
   </v-group>
 </template>
