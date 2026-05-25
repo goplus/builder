@@ -101,7 +101,20 @@
                             {
                               "id": "a59apd",
                               "type": "ref",
-                              "ref": "o:dz726"
+                              "ref": "o:dz726",
+                              "fill": "$o:grey100",
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1,
+                                "fill": "$o:grey400"
+                              },
+                              "width": 32,
+                              "height": 32,
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "gap": "$o:space-1",
+                              "padding": "$o:space-2"
                             }
                           ]
                         },
