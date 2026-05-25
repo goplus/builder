@@ -11,8 +11,6 @@ import type { Sound } from './sound'
 type ActionConfig = {
   /** Sound name to play */
   play?: string
-  /** Whether to loop the sound; for onStart defaults to false, for onPlay defaults to true */
-  loop?: boolean
   // not supported by builder:
   costumes?: unknown
 }
@@ -184,18 +182,19 @@ export class Animation extends Disposable {
     if (anitype != null) console.warn(`unsupported field: anitype for animation ${name}`)
     let soundId: string | undefined = undefined
     let soundMode = AnimationSoundMode.Complete
-    const soundBinding =
-      onPlay?.play != null
-        ? { soundName: onPlay.play, mode: AnimationSoundMode.FollowAnimation }
-        : onStart?.play != null
-          ? { soundName: onStart.play, mode: AnimationSoundMode.Complete }
-          : null
-    if (soundBinding != null) {
-      const sound = sounds.find((s) => s.name === soundBinding.soundName)
-      if (sound == null) console.warn(`Sound ${soundBinding.soundName} not found when creating animation ${name}`)
+    let soundName: string | undefined = undefined
+    if (onPlay?.play != null) {
+      soundName = onPlay.play
+      soundMode = AnimationSoundMode.FollowAnimation
+    } else if (onStart?.play != null) {
+      soundName = onStart.play
+      soundMode = AnimationSoundMode.Complete
+    }
+    if (soundName != null) {
+      const sound = sounds.find((s) => s.name === soundName)
+      if (sound == null) console.warn(`Sound ${soundName} not found when creating animation ${name}`)
       else {
         soundId = sound.id
-        soundMode = soundBinding.mode
       }
     }
     const animation = new Animation(name, {

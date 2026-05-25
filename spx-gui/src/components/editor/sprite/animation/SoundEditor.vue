@@ -42,14 +42,44 @@
         </UIMenu>
       </UIDropdown>
     </ul>
-    <UIRadioGroup v-if="selected != null" v-model:value="selectedMode" class="mt-4 flex-col items-start gap-3">
-      <UIRadio :value="AnimationSoundMode.Complete">
-        {{ $t({ en: 'Play once', zh: '完整播放一次' }) }}
-      </UIRadio>
-      <UIRadio :value="AnimationSoundMode.FollowAnimation">
-        {{ $t({ en: 'Follow animation', zh: '跟随动画播放' }) }}
-      </UIRadio>
-    </UIRadioGroup>
+    <UIButtonGroup
+      v-if="selected != null"
+      v-radar="{
+        name: 'Animation sound playback mode control',
+        desc: 'Control to choose animation sound playback mode'
+      }"
+      type="text"
+      class="mt-4"
+      :value="selectedMode"
+      @update:value="(mode) => (selectedMode = mode as AnimationSoundMode)"
+    >
+      <UITooltip>
+        {{
+          $t({
+            en: 'Play the sound once and let it complete independently of the animation',
+            zh: '声音播放一次，并独立于动画完整播放'
+          })
+        }}
+        <template #trigger>
+          <UIButtonGroupItem :value="AnimationSoundMode.Complete">
+            {{ $t({ en: 'Play once', zh: '播放一次' }) }}
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+      <UITooltip>
+        {{
+          $t({
+            en: 'Play the sound with the animation and stop it when the animation stops',
+            zh: '声音跟随动画播放，并在动画停止时停止'
+          })
+        }}
+        <template #trigger>
+          <UIButtonGroupItem :value="AnimationSoundMode.FollowAnimation">
+            {{ $t({ en: 'Follow animation', zh: '跟随动画' }) }}
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+    </UIButtonGroup>
   </UIDropdownForm>
 </template>
 
@@ -63,8 +93,9 @@ import {
   UIMenuItem,
   UIBlockItem,
   UIIcon,
-  UIRadioGroup,
-  UIRadio
+  UIButtonGroup,
+  UIButtonGroupItem,
+  UITooltip
 } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from '@/components/editor/stage/sound/SoundItem.vue'
