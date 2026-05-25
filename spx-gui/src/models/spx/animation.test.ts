@@ -6,7 +6,7 @@ import { SpxProject } from './project'
 import { Sprite } from './sprite'
 import { Costume } from './costume'
 import { Sound } from './sound'
-import { Animation } from './animation'
+import { Animation, AnimationSoundMode } from './animation'
 
 vi.mock('@/apis/aigc', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/apis/aigc')>()),
@@ -130,49 +130,30 @@ describe('Animation', () => {
     expect(exportedId).toBeUndefined()
   })
 
-  it('should export sound binding using onPlay', () => {
+  it('should export complete sound binding using onStart', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
     animation.setSound(project.sounds[0].id)
 
     const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: false })
+    expect(config.onStart).toEqual({ play: project.sounds[0].name })
+    expect(config.onPlay).toBeUndefined()
+  })
+
+  it('should export follow-animation sound binding using onPlay', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    animation.setSound(project.sounds[0].id)
+    animation.setSoundMode(AnimationSoundMode.FollowAnimation)
+
+    const [config] = animation.export('', { sounds: project.sounds })
+    expect(config.onPlay).toEqual({ play: project.sounds[0].name })
     expect(config.onStart).toBeUndefined()
   })
 
-  it('should export loop: true in onPlay when soundLoop is true', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].id)
-    animation.setSoundLoop(true)
-
-    const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
-  })
-
-  it('should load soundLoop from onPlay.loop', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const costumes = sprite.costumes
-    const sounds = project.sounds
-
-    const [animation] = Animation.load(
-      'default',
-      {
-        frameFrom: costumes[0].name,
-        frameTo: costumes[0].name,
-        onPlay: { play: sounds[0].name, loop: true }
-      },
-      costumes,
-      { sounds }
-    )
-    expect(animation.sound).toBe(sounds[0].id)
-    expect(animation.soundLoop).toBe(true)
-  })
-
-  it('should default soundLoop to false when loop field is absent', () => {
+  it('should load follow-animation sound mode from onPlay', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const costumes = sprite.costumes
@@ -188,29 +169,11 @@ describe('Animation', () => {
       costumes,
       { sounds }
     )
-    expect(animation.soundLoop).toBe(false)
+    expect(animation.sound).toBe(sounds[0].id)
+    expect(animation.soundMode).toBe(AnimationSoundMode.FollowAnimation)
   })
 
-  it('should preserve non-loop sound binding through project export and load', async () => {
-    const project = makeProject()
-    const animation = project.sprites[0].animations[0]
-    animation.setSound(project.sounds[0].id)
-    animation.setSoundLoop(false)
-
-    const { metadata, files } = await project.export()
-    const spriteConfig = (await toConfig(files['assets/sprites/MySprite/index.json']!)) as {
-      fAnimations: Record<string, { onPlay?: unknown; onStart?: unknown }>
-    }
-    expect(spriteConfig.fAnimations.default.onPlay).toEqual({ play: project.sounds[0].name, loop: false })
-    expect(spriteConfig.fAnimations.default.onStart).toBeUndefined()
-
-    const newProject = new SpxProject()
-    await newProject.load({ metadata, files })
-    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].id)
-    expect(newProject.sprites[0].animations[0].soundLoop).toBe(false)
-  })
-
-  it('should load sound binding from legacy onStart for backward compatibility', () => {
+  it('should load complete sound mode from onStart', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const costumes = sprite.costumes
@@ -226,21 +189,57 @@ describe('Animation', () => {
       costumes,
       { sounds }
     )
-    expect(animation.sound).toBe(sounds[0].id)
-    expect(animation.soundLoop).toBe(false)
+    expect(animation.soundMode).toBe(AnimationSoundMode.Complete)
+  })
+
+  it('should preserve complete sound binding through project export and load', async () => {
+    const project = makeProject()
+    const animation = project.sprites[0].animations[0]
+    animation.setSound(project.sounds[0].id)
+
+    const { metadata, files } = await project.export()
+    const spriteConfig = (await toConfig(files['assets/sprites/MySprite/index.json']!)) as {
+      fAnimations: Record<string, { onPlay?: unknown; onStart?: unknown }>
+    }
+    expect(spriteConfig.fAnimations.default.onStart).toEqual({ play: project.sounds[0].name })
+    expect(spriteConfig.fAnimations.default.onPlay).toBeUndefined()
+
+    const newProject = new SpxProject()
+    await newProject.load({ metadata, files })
+    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].id)
+    expect(newProject.sprites[0].animations[0].soundMode).toBe(AnimationSoundMode.Complete)
+  })
+
+  it('should preserve follow-animation sound binding through project export and load', async () => {
+    const project = makeProject()
+    const animation = project.sprites[0].animations[0]
+    animation.setSound(project.sounds[0].id)
+    animation.setSoundMode(AnimationSoundMode.FollowAnimation)
+
+    const { metadata, files } = await project.export()
+    const spriteConfig = (await toConfig(files['assets/sprites/MySprite/index.json']!)) as {
+      fAnimations: Record<string, { onPlay?: unknown; onStart?: unknown }>
+    }
+    expect(spriteConfig.fAnimations.default.onPlay).toEqual({ play: project.sounds[0].name })
+    expect(spriteConfig.fAnimations.default.onStart).toBeUndefined()
+
+    const newProject = new SpxProject()
+    await newProject.load({ metadata, files })
+    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].id)
+    expect(newProject.sprites[0].animations[0].soundMode).toBe(AnimationSoundMode.FollowAnimation)
   })
 
   it('should clone well', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
-    animation.setSoundLoop(true)
+    animation.setSoundMode(AnimationSoundMode.FollowAnimation)
     const clonedAnimation = animation.clone()
     expect(clonedAnimation.id).not.toBe(animation.id)
     expect(clonedAnimation.name).toBe(animation.name)
     expect(clonedAnimation.duration).toBe(animation.duration)
     expect(clonedAnimation.sound).toBe(animation.sound)
-    expect(clonedAnimation.soundLoop).toBe(animation.soundLoop)
+    expect(clonedAnimation.soundMode).toBe(animation.soundMode)
     expect(clonedAnimation.costumes.length).toBe(animation.costumes.length)
     for (let i = 0; i < clonedAnimation.costumes.length; i++) {
       expect(clonedAnimation.costumes[i].id).not.toBe(animation.costumes[i].id)

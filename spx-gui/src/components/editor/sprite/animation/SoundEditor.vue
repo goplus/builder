@@ -42,13 +42,30 @@
         </UIMenu>
       </UIDropdown>
     </ul>
+    <UIRadioGroup v-if="selected != null" v-model:value="selectedMode" class="mt-4 flex-col items-start gap-3">
+      <UIRadio :value="AnimationSoundMode.Complete">
+        {{ $t({ en: 'Play once', zh: '完整播放一次' }) }}
+      </UIRadio>
+      <UIRadio :value="AnimationSoundMode.FollowAnimation">
+        {{ $t({ en: 'Follow animation', zh: '跟随动画播放' }) }}
+      </UIRadio>
+    </UIRadioGroup>
   </UIDropdownForm>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Animation } from '@/models/spx/animation'
-import { UIDropdownForm, UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
+import { AnimationSoundMode, type Animation } from '@/models/spx/animation'
+import {
+  UIDropdownForm,
+  UIDropdown,
+  UIMenu,
+  UIMenuItem,
+  UIBlockItem,
+  UIIcon,
+  UIRadioGroup,
+  UIRadio
+} from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from '@/components/editor/stage/sound/SoundItem.vue'
 import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
@@ -67,15 +84,21 @@ const editorCtx = useEditorCtx()
 
 const actionName = { en: 'Select sound', zh: '选择声音' }
 const selected = ref(props.animation.sound)
+const selectedMode = ref(props.animation.soundMode)
+function selectSound(sound: string) {
+  if (selected.value == null) selectedMode.value = AnimationSoundMode.Complete
+  selected.value = sound
+}
 async function handleSoundClick(sound: string) {
-  selected.value = selected.value === sound ? null : sound
+  if (selected.value === sound) selected.value = null
+  else selectSound(sound)
 }
 
 const addFromLocalFile = useAddSoundFromLocalFile()
 const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const sound = await addFromLocalFile(editorCtx.project)
-    selected.value = sound.id
+    selectSound(sound.id)
   },
   {
     en: 'Failed to add sound from local file',
@@ -87,7 +110,7 @@ const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sounds = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
-    selected.value = sounds[0].id
+    selectSound(sounds[0].id)
   },
   { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
 ).fn
@@ -96,13 +119,16 @@ const addSoundFromRecording = useAddSoundByRecording()
 const handleRecord = useMessageHandle(
   async () => {
     const sound = await addSoundFromRecording(editorCtx.project)
-    selected.value = sound.id
+    selectSound(sound.id)
   },
   { en: 'Failed to record sound', zh: '录音失败' }
 ).fn
 
 async function handleConfirm() {
-  await editorCtx.state.history.doAction({ name: actionName }, () => props.animation.setSound(selected.value))
+  await editorCtx.state.history.doAction({ name: actionName }, () => {
+    props.animation.setSound(selected.value)
+    props.animation.setSoundMode(selectedMode.value)
+  })
   emit('close')
 }
 </script>

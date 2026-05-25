@@ -1,11 +1,11 @@
 import { reactive } from 'vue'
+import { nanoid } from 'nanoid'
 
 import { Disposable } from '@/utils/disposable'
 import { ensureValidCostumeName, getAnimationName, validateAnimationName } from './common/asset-name'
 import type { Files } from '../common/file'
 import type { Costume, RawCostumeConfig, Pivot as CostumePivot } from './costume'
 import type { Sprite } from './sprite'
-import { nanoid } from 'nanoid'
 import type { Sound } from './sound'
 
 type ActionConfig = {
@@ -19,13 +19,17 @@ type ActionConfig = {
 
 export const defaultFps = 10
 
+export enum AnimationSoundMode {
+  Complete = 'complete',
+  FollowAnimation = 'followAnimation'
+}
+
 export type AnimationInits = {
   id?: string
   /** Duration (in seconds) for animation to be played once */
   duration?: number
   sound?: string
-  /** Whether to loop the sound; defaults to false */
-  soundLoop?: boolean
+  soundMode?: AnimationSoundMode
 }
 
 export type RawAnimationConfig = {
@@ -108,10 +112,9 @@ export class Animation extends Disposable {
     this.sound = soundId
   }
 
-  /** Whether to loop the sound when played; defaults to false */
-  soundLoop: boolean
-  setSoundLoop(loop: boolean) {
-    this.soundLoop = loop
+  soundMode: AnimationSoundMode
+  setSoundMode(mode: AnimationSoundMode) {
+    this.soundMode = mode
   }
 
   constructor(name: string, inits?: AnimationInits) {
@@ -120,7 +123,7 @@ export class Animation extends Disposable {
     this.costumes = []
     this.duration = inits?.duration ?? 0
     this.sound = inits?.sound ?? null
-    this.soundLoop = inits?.soundLoop ?? false
+    this.soundMode = inits?.soundMode ?? AnimationSoundMode.Complete
     this.id = inits?.id ?? nanoid()
 
     return reactive(this) as this
@@ -131,7 +134,7 @@ export class Animation extends Disposable {
       id: preserveId ? this.id : undefined,
       duration: this.duration,
       sound: this.sound ?? undefined,
-      soundLoop: this.soundLoop
+      soundMode: this.soundMode
     })
     const costumes = this.costumes.map((c) => c.clone(preserveId))
     animation.setCostumes(costumes)
@@ -180,22 +183,26 @@ export class Animation extends Disposable {
     if (isLoop != null) console.warn(`unsupported field: isLoop for animation ${name}`)
     if (anitype != null) console.warn(`unsupported field: anitype for animation ${name}`)
     let soundId: string | undefined = undefined
-    let soundLoop = false
-    // onPlay is the current API; onStart is legacy for backward compatibility
-    const soundName = onPlay?.play ?? onStart?.play
-    if (soundName != null) {
-      const sound = sounds.find((s) => s.name === soundName)
-      if (sound == null) console.warn(`Sound ${soundName} not found when creating animation ${name}`)
+    let soundMode = AnimationSoundMode.Complete
+    const soundBinding =
+      onPlay?.play != null
+        ? { soundName: onPlay.play, mode: AnimationSoundMode.FollowAnimation }
+        : onStart?.play != null
+          ? { soundName: onStart.play, mode: AnimationSoundMode.Complete }
+          : null
+    if (soundBinding != null) {
+      const sound = sounds.find((s) => s.name === soundBinding.soundName)
+      if (sound == null) console.warn(`Sound ${soundBinding.soundName} not found when creating animation ${name}`)
       else {
         soundId = sound.id
-        soundLoop = onPlay?.loop ?? false
+        soundMode = soundBinding.mode
       }
     }
     const animation = new Animation(name, {
       id: includeId ? id : undefined,
       duration,
       sound: soundId,
-      soundLoop
+      soundMode
     })
     const animationCostumeNames = animationCostumes.map((c) => c.name)
     for (const costume of animationCostumes) {
@@ -230,7 +237,8 @@ export class Animation extends Disposable {
     }
     const soundName = sounds.find((s) => s.id === this.sound)?.name
     if (soundName != null) {
-      config.onPlay = { play: soundName, loop: this.soundLoop }
+      if (this.soundMode === AnimationSoundMode.FollowAnimation) config.onPlay = { play: soundName }
+      else config.onStart = { play: soundName }
     }
     if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]
