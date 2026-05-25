@@ -42,7 +42,7 @@
         </UIMenu>
       </UIDropdown>
     </ul>
-    <div v-if="selected != null" class="mt-4 flex items-center justify-between gap-3 border-t border-grey-400 pt-3">
+    <div class="mt-4 flex items-center justify-between gap-3 border-t border-grey-400 pt-3">
       <span class="flex-none text-xs font-medium text-grey-800">
         {{ $t({ en: 'Sound behavior', zh: '声音方式' }) }}
       </span>
