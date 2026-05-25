@@ -124,13 +124,13 @@
                           "type": "ref",
                           "ref": "u:tfxWX",
                           "x": 40,
-                          "y": 2.9999999999999822,
+                          "y": 2.999999999999984,
                           "children": [
                             {
                               "id": "czQAo",
                               "type": "ref",
                               "ref": "u:OHwu4",
-                              "content": "Generate backdrop"
+                              "content": "Generate sprite"
                             }
                           ]
                         }
@@ -373,7 +373,7 @@
                               "id": "t7WUE",
                               "type": "ref",
                               "ref": "u:tfxWX",
-                              "x": 107.5,
+                              "x": 125.5,
                               "y": 152,
                               "name": "Description",
                               "children": [
@@ -381,7 +381,7 @@
                                   "id": "m0UFH",
                                   "type": "ref",
                                   "ref": "u:tUGoQ",
-                                  "content": "Please select your preferred background or generate a new one.",
+                                  "content": "Please select your preferred sprite or generate a new one.",
                                   "fill": "$u:grey700"
                                 }
                               ]
@@ -418,27 +418,25 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "id": "k9XFr",
+                      "id": "J0ygV",
                       "type": "ref",
-                      "ref": "u:z8hcSb",
-                      "x": 981,
-                      "y": 20,
-                      "height": "fit_content",
+                      "ref": "u:xaXOy",
+                      "x": 969.9906170619741,
+                      "y": 20.01923965000463,
+                      "rotation": 0.013443301886444383,
                       "children": [
                         {
-                          "id": "iTYL4",
+                          "id": "c99jaN",
                           "type": "ref",
-                          "ref": "u:vN0Kk",
-                          "flipX": false,
-                          "flipY": false,
-                          "width": "fit_content",
-                          "height": 40,
-                          "x": 0,
-                          "y": 0,
+                          "ref": "u:12Br9",
+                          "fill": "$u:grey300",
                           "descendants": {
-                            "u:aoHIs": {
+                            "u:NO1ia": {
+                              "enabled": false
+                            },
+                            "u:MsZgb": {
                               "fill": "$u:grey600",
-                              "content": "Apply"
+                              "content": "Next"
                             }
                           }
                         }

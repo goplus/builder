@@ -271,30 +271,22 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "id": "KiPzy",
+                      "id": "OVGuA",
                       "type": "ref",
-                      "ref": "o:z8hcSb",
-                      "x": 988,
+                      "ref": "o:xaXOy",
+                      "x": 970,
                       "y": 20,
-                      "flipX": false,
-                      "flipY": false,
-                      "width": "fit_content",
-                      "height": 40,
                       "children": [
                         {
-                          "id": "L3AE4I",
+                          "id": "x2r55",
                           "type": "ref",
-                          "ref": "o:vN0Kk",
-                          "flipX": false,
-                          "flipY": false,
-                          "width": "fit_content",
-                          "height": 40,
-                          "x": 0,
-                          "y": 0,
+                          "ref": "o:jKbg2",
                           "descendants": {
-                            "o:aoHIs": {
-                              "content": "Next",
-                              "fill": "$o:grey600"
+                            "o:UpdAd": {
+                              "enabled": false
+                            },
+                            "o:Md1KP": {
+                              "content": "Next"
                             }
                           }
                         }
@@ -600,6 +592,79 @@
       ]
     }
   ],
+  "themes": {
+    "u:Accent": [
+      "Default"
+    ]
+  },
+  "variables": {
+    "u:grey300": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#f6f8fa",
+          "theme": {
+            "u:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "u:radius-2": {
+      "type": "number",
+      "value": [
+        {
+          "value": 8,
+          "theme": {
+            "u:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "u:space-2": {
+      "type": "number",
+      "value": [
+        {
+          "value": 8,
+          "theme": {
+            "u:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "u:space-6": {
+      "type": "number",
+      "value": [
+        {
+          "value": 24,
+          "theme": {
+            "u:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "u:grey100": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ffffff",
+          "theme": {
+            "u:Accent": "Default"
+          }
+        }
+      ]
+    },
+    "u:grey600": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#CBD2D8",
+          "theme": {
+            "u:Accent": "Default"
+          }
+        }
+      ]
+    }
+  },
   "imports": {
     "o": "../../components/spx/builder-component.lib.pen"
   }
