@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { nanoid } from 'nanoid'
 
+import { isSvgMimeType } from '@/utils/file'
 import { extname, resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
 import { File, type Files, getImageSize } from '../common/file'
@@ -33,12 +34,14 @@ export type RawCostumeConfig = Omit<CostumeInits, 'id' | 'pivot'> & {
    * Offset on x-axis of the costume pivot from left-top corner of the image.
    * Positive value means right direction, negative means left direction.
    * Note: This value is relative to the costume's raw size and is not divided by bitmapResolution;
+   * for SVG, this image-top-left-based value differs from Scratch's rotationCenterX which is based on viewBox origin.
    */
   x?: number
   /**
    * Offset on y-axis of the costume pivot from left-top corner of the image.
    * Positive value means down direction, negative means up direction.
    * Note: This value is relative to the costume's raw size and is not divided by bitmapResolution;
+   * for SVG, this image-top-left-based value differs from Scratch's rotationCenterY which is based on viewBox origin.
    */
   y?: number
   builder_id?: string
@@ -147,7 +150,7 @@ export class Costume {
   static async create(nameBase: string, file: File, inits?: CostumeInits) {
     const adaptedFile = await adaptImg(file)
     return new Costume(getCostumeName(null, nameBase), adaptedFile, {
-      bitmapResolution: /svg/.test(file.type) ? 1 : 2,
+      bitmapResolution: isSvgMimeType(file.type) ? 1 : 2,
       ...inits
     })
   }

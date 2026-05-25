@@ -1,19 +1,36 @@
 import { reactive } from 'vue'
 import { nanoid } from 'nanoid'
+import { isSvgMimeType } from '@/utils/file'
 import { extname, resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
-import type { File, Files } from '../common/file'
+import { getImageSize, type File, type Files } from '../common/file'
 import { getBackdropName, validateBackdropName } from './common/asset-name'
 import type { AssetMetadata } from './common/asset'
+import type { Pivot } from './costume'
 import type { Stage } from './stage'
 
 export type BackdropInits = {
   id?: string
+  pivot?: Pivot
   bitmapResolution?: number
   assetMetadata?: AssetMetadata
 }
 
-export type RawBackdropConfig = Omit<BackdropInits, 'id' | 'assetMetadata'> & {
+export type RawBackdropConfig = Omit<BackdropInits, 'id' | 'assetMetadata' | 'pivot'> & {
+  /**
+   * Offset on x-axis of the backdrop pivot from left-top corner of the image.
+   * Positive value means right direction, negative means left direction.
+   * Note: This value is relative to the backdrop's raw size and is not divided by bitmapResolution;
+   * for SVG, this image-top-left-based value differs from Scratch's rotationCenterX which is based on viewBox origin.
+   */
+  x?: number
+  /**
+   * Offset on y-axis of the backdrop pivot from left-top corner of the image.
+   * Positive value means down direction, negative means up direction.
+   * Note: This value is relative to the backdrop's raw size and is not divided by bitmapResolution;
+   * for SVG, this image-top-left-based value differs from Scratch's rotationCenterY which is based on viewBox origin.
+   */
+  y?: number
   builder_id?: string
   builder_assetMetadata?: AssetMetadata
   name?: string
@@ -22,6 +39,12 @@ export type RawBackdropConfig = Omit<BackdropInits, 'id' | 'assetMetadata'> & {
   imageWidth?: number
   /* Optional image height for engine performance optimization */
   imageHeight?: number
+  /**
+   * @deprecated Legacy compatibility field produced by old Builder backdrop export behavior
+   * that reused costume logic. This is not part of SPX behavior/spec.
+   * Used only when loading historical Builder data.
+   */
+  faceRight?: number
 }
 
 const backdropAssetPath = 'assets'
@@ -53,9 +76,26 @@ export class Backdrop {
     this.img = img
   }
 
+  pivot: Pivot
+  setPivot(pivot: Pivot) {
+    this.pivot = pivot
+  }
+
   bitmapResolution: number
   setBitmapResolution(bitmapResolution: number) {
     this.bitmapResolution = bitmapResolution
+  }
+
+  async getRawSize() {
+    return getImageSize(this.img)
+  }
+
+  async getSize() {
+    const rawSize = await this.getRawSize()
+    return {
+      width: rawSize.width / this.bitmapResolution,
+      height: rawSize.height / this.bitmapResolution
+    }
   }
 
   assetMetadata: AssetMetadata | null
@@ -66,6 +106,7 @@ export class Backdrop {
   constructor(name: string, file: File, inits?: BackdropInits) {
     this.name = name
     this.img = file
+    this.pivot = inits?.pivot ?? { x: 0, y: 0 }
     this.bitmapResolution = inits?.bitmapResolution ?? 1
     this.id = inits?.id ?? nanoid()
     this.assetMetadata = inits?.assetMetadata ?? null
@@ -76,26 +117,42 @@ export class Backdrop {
    * Create instance with default inits
    * NOTE: the "default" means default behavior for builder, not the default behavior of spx
    */
-  static async create(nameBase: string, file: File, inits?: BackdropInits) {
+  static async create(nameBase: string, file: File, { bitmapResolution, pivot, ...extraInits }: BackdropInits = {}) {
     const adaptedFile = await adaptImg(file)
+    if (bitmapResolution == null) {
+      bitmapResolution = isSvgMimeType(file.type) ? 1 : 2
+    }
+    if (pivot == null) {
+      const size = await getImageSize(adaptedFile)
+      pivot = {
+        x: size.width / bitmapResolution / 2,
+        y: size.height / bitmapResolution / 2
+      }
+    }
     return new Backdrop(getBackdropName(null, nameBase), adaptedFile, {
-      bitmapResolution: /svg/.test(file.type) ? 1 : 2,
-      ...inits
+      ...extraInits,
+      bitmapResolution,
+      pivot
     })
   }
 
   clone(preserveId = false) {
     return new Backdrop(this.name, this.img, {
       id: preserveId ? this.id : undefined,
+      pivot: this.pivot,
       bitmapResolution: this.bitmapResolution,
       assetMetadata: this.assetMetadata ?? undefined
     })
   }
 
-  static load(
+  static async load(
     {
       name,
       path,
+      x,
+      y,
+      faceRight,
+      bitmapResolution = 1,
       builder_id: id,
       builder_assetMetadata: assetMetadata,
       imageWidth,
@@ -112,8 +169,25 @@ export class Backdrop {
     if (imageWidth != null && imageHeight != null && file.meta.imgSize == null) {
       file.meta.imgSize = { width: imageWidth, height: imageHeight }
     }
+    // Compatibility: some legacy backdrop data was exported via costume logic and may carry
+    // meaningless x/y = 0 together with a numeric faceRight. In this case, ignore x/y and
+    // derive pivot from image size.
+    const isLegacyMeaninglessPivot = typeof faceRight === 'number' && x === 0 && y === 0
+    const usePivotFromConfig = x != null && y != null && !isLegacyMeaninglessPivot
+    let pivot: Pivot
+    if (usePivotFromConfig) {
+      pivot = { x: x / bitmapResolution, y: y / bitmapResolution }
+    } else {
+      const size = await getImageSize(file)
+      pivot = {
+        x: size.width / bitmapResolution / 2,
+        y: size.height / bitmapResolution / 2
+      }
+    }
     return new Backdrop(name, file, {
       ...inits,
+      bitmapResolution,
+      pivot,
       id: includeId ? id : undefined,
       assetMetadata: includeAssetMetadata ? assetMetadata : undefined
     })
@@ -126,6 +200,8 @@ export class Backdrop {
   }: BackdropExportLoadOptions = {}): [RawBackdropConfig, Files] {
     const filename = this.name + extname(this.img.name)
     const config: RawBackdropConfig = {
+      x: this.pivot.x * this.bitmapResolution,
+      y: this.pivot.y * this.bitmapResolution,
       bitmapResolution: this.bitmapResolution,
       name: this.name,
       path: filename
