@@ -42,44 +42,47 @@
         </UIMenu>
       </UIDropdown>
     </ul>
-    <UIButtonGroup
-      v-if="selected != null"
-      v-radar="{
-        name: 'Animation sound playback mode control',
-        desc: 'Control to choose animation sound playback mode'
-      }"
-      type="text"
-      class="mt-4"
-      :value="selectedMode"
-      @update:value="(mode) => (selectedMode = mode as AnimationSoundMode)"
-    >
-      <UITooltip>
-        {{
-          $t({
-            en: 'Play the sound once and let it complete independently of the animation',
-            zh: '声音播放一次，并独立于动画完整播放'
-          })
-        }}
-        <template #trigger>
-          <UIButtonGroupItem :value="AnimationSoundMode.Complete">
-            {{ $t({ en: 'Play once', zh: '播放一次' }) }}
-          </UIButtonGroupItem>
-        </template>
-      </UITooltip>
-      <UITooltip>
-        {{
-          $t({
-            en: 'Play the sound with the animation and stop it when the animation stops',
-            zh: '声音跟随动画播放，并在动画停止时停止'
-          })
-        }}
-        <template #trigger>
-          <UIButtonGroupItem :value="AnimationSoundMode.FollowAnimation">
-            {{ $t({ en: 'Follow animation', zh: '跟随动画' }) }}
-          </UIButtonGroupItem>
-        </template>
-      </UITooltip>
-    </UIButtonGroup>
+    <div v-if="selected != null" class="mt-4 flex items-center justify-between gap-3 border-t border-grey-400 pt-3">
+      <span class="flex-none text-xs font-medium text-grey-800">
+        {{ $t({ en: 'Sound behavior', zh: '声音方式' }) }}
+      </span>
+      <UIButtonGroup
+        v-radar="{
+          name: 'Animation sound playback mode control',
+          desc: 'Control to choose animation sound playback mode'
+        }"
+        type="text"
+        :value="selectedMode"
+        @update:value="(mode) => (selectedMode = mode as AnimationSoundMode)"
+      >
+        <UITooltip>
+          {{
+            $t({
+              en: 'Play the sound once and let it complete independently of the animation',
+              zh: '声音播放一次，并独立于动画完整播放'
+            })
+          }}
+          <template #trigger>
+            <UIButtonGroupItem :value="AnimationSoundMode.Complete">
+              {{ $t({ en: 'Play once', zh: '播放一次' }) }}
+            </UIButtonGroupItem>
+          </template>
+        </UITooltip>
+        <UITooltip>
+          {{
+            $t({
+              en: 'Play the sound with the animation and stop it when the animation stops',
+              zh: '声音跟随动画播放，并在动画停止时停止'
+            })
+          }}
+          <template #trigger>
+            <UIButtonGroupItem :value="AnimationSoundMode.FollowAnimation">
+              {{ $t({ en: 'Follow animation', zh: '跟随动画' }) }}
+            </UIButtonGroupItem>
+          </template>
+        </UITooltip>
+      </UIButtonGroup>
+    </div>
   </UIDropdownForm>
 </template>
 
