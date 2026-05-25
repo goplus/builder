@@ -1,7 +1,7 @@
 import { nextTick } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { delayFile } from '@/utils/test'
-import { fromText, type Files } from '../common/file'
+import { fromText, toConfig, type Files } from '../common/file'
 import { SpxProject } from './project'
 import { Sprite } from './sprite'
 import { Costume } from './costume'
@@ -130,8 +130,7 @@ describe('Animation', () => {
     expect(exportedId).toBeUndefined()
   })
 
-  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
-  it.skip('should export sound binding using onPlay', () => {
+  it('should export sound binding using onPlay', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
@@ -142,8 +141,7 @@ describe('Animation', () => {
     expect(config.onStart).toBeUndefined()
   })
 
-  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
-  it.skip('should export loop: true in onPlay when soundLoop is true', () => {
+  it('should export loop: true in onPlay when soundLoop is true', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
@@ -154,8 +152,7 @@ describe('Animation', () => {
     expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
   })
 
-  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
-  it.skip('should load soundLoop from onPlay.loop', () => {
+  it('should load soundLoop from onPlay.loop', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const costumes = sprite.costumes
@@ -192,6 +189,25 @@ describe('Animation', () => {
       { sounds }
     )
     expect(animation.soundLoop).toBe(false)
+  })
+
+  it('should preserve non-loop sound binding through project export and load', async () => {
+    const project = makeProject()
+    const animation = project.sprites[0].animations[0]
+    animation.setSound(project.sounds[0].id)
+    animation.setSoundLoop(false)
+
+    const { metadata, files } = await project.export()
+    const spriteConfig = (await toConfig(files['assets/sprites/MySprite/index.json']!)) as {
+      fAnimations: Record<string, { onPlay?: unknown; onStart?: unknown }>
+    }
+    expect(spriteConfig.fAnimations.default.onPlay).toEqual({ play: project.sounds[0].name, loop: false })
+    expect(spriteConfig.fAnimations.default.onStart).toBeUndefined()
+
+    const newProject = new SpxProject()
+    await newProject.load({ metadata, files })
+    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].id)
+    expect(newProject.sprites[0].animations[0].soundLoop).toBe(false)
   })
 
   it('should load sound binding from legacy onStart for backward compatibility', () => {
