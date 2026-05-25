@@ -69,6 +69,8 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { Costume } from '@/models/spx/costume'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
+import { isSvgMimeType } from '@/utils/file'
+import { getSVGViewBoxRect } from '@/utils/img'
 import type { ExportedScratchCostume, ExportedScratchSound, ExportedScratchSprite } from '@/utils/scratch'
 import { type SpxProject } from '@/models/spx/project'
 import type { AssetModel } from '@/models/spx/common/asset'
@@ -131,17 +133,33 @@ const selectBackdrop = (backdrop: ExportedScratchCostume) => {
 const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
   return fromBlob(`${scratchFile.name}.${scratchFile.extension}`, scratchFile.blob)
 }
+
+async function getPivotFromScratchCostume(asset: ExportedScratchCostume) {
+  let x = asset.rotationCenterX
+  let y = asset.rotationCenterY
+  // Scratch stores SVG rotation centers in the SVG viewBox coordinate space.
+  // Builder/SPX uses image-top-left as pivot origin, so subtract viewBox origin for SVG.
+  if (isSvgMimeType(asset.blob.type)) {
+    const svgText = await asset.blob.text()
+    const viewBoxRect = getSVGViewBoxRect(svgText)
+    x -= viewBoxRect.x
+    y -= viewBoxRect.y
+  }
+  return {
+    x: x / asset.bitmapResolution,
+    y: y / asset.bitmapResolution
+  }
+}
+
 const importSprite = async (asset: ExportedScratchSprite) => {
   const costumes = await Promise.all(
-    asset.costumes.map((costume) =>
-      Costume.create(costume.name, scratchToSpxFile(costume), {
+    asset.costumes.map(async (costume) => {
+      const pivot = await getPivotFromScratchCostume(costume)
+      return Costume.create(costume.name, scratchToSpxFile(costume), {
         bitmapResolution: costume.bitmapResolution,
-        pivot: {
-          x: costume.rotationCenterX / costume.bitmapResolution,
-          y: costume.rotationCenterY / costume.bitmapResolution
-        }
+        pivot
       })
-    )
+    })
   )
   const sprite = Sprite.create(asset.name)
   for (const costume of costumes) {
@@ -161,12 +179,10 @@ const importSound = async (asset: ExportedScratchSound) => {
 
 const importBackdrop = async (asset: ExportedScratchCostume) => {
   const file = scratchToSpxFile(asset)
+  const pivot = await getPivotFromScratchCostume(asset)
   const backdrop = await Backdrop.create(asset.name, file, {
     bitmapResolution: asset.bitmapResolution,
-    pivot: {
-      x: asset.rotationCenterX / asset.bitmapResolution,
-      y: asset.rotationCenterY / asset.bitmapResolution
-    }
+    pivot
   })
   props.project.stage.addBackdrop(backdrop)
   return backdrop

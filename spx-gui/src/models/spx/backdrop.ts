@@ -17,7 +17,19 @@ export type BackdropInits = {
 }
 
 export type RawBackdropConfig = Omit<BackdropInits, 'id' | 'assetMetadata' | 'pivot'> & {
+  /**
+   * Offset on x-axis of the backdrop pivot from left-top corner of the image.
+   * Positive value means right direction, negative means left direction.
+   * Note: This value is relative to the backdrop's raw size and is not divided by bitmapResolution;
+   * for SVG, this image-top-left-based value differs from Scratch's rotationCenterX which is based on viewBox origin.
+   */
   x?: number
+  /**
+   * Offset on y-axis of the backdrop pivot from left-top corner of the image.
+   * Positive value means down direction, negative means up direction.
+   * Note: This value is relative to the backdrop's raw size and is not divided by bitmapResolution;
+   * for SVG, this image-top-left-based value differs from Scratch's rotationCenterY which is based on viewBox origin.
+   */
   y?: number
   builder_id?: string
   builder_assetMetadata?: AssetMetadata
