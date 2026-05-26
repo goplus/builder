@@ -18,13 +18,13 @@ const emit = defineEmits<{
 <template>
   <UIFormModal
     :radar="{
-      name: `Sprite pivot${collisionEditingEnabled ? ' & collision ' : ' '}modal`,
+      name: `Sprite pivot${collisionEditingEnabled ? ' and collision ' : ' '}modal`,
       desc: `Modal for editing sprite pivot${collisionEditingEnabled ? ' and collision ' : ' '}settings.`
     }"
     style="width: 712px"
     :title="
       $t({
-        en: `Sprite pivot${collisionEditingEnabled ? ' & collision ' : ' '}editor`,
+        en: `Sprite pivot${collisionEditingEnabled ? ' and collision ' : ' '}editor`,
         zh: `精灵参考点${collisionEditingEnabled ? '和碰撞体' : ''}编辑器`
       })
     "

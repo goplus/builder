@@ -21,7 +21,7 @@ defineProps<{
       <MapPhysicsInput :project="project" />
     </div>
     <div v-if="project.stage.physics.enabled" class="flex items-center">
-      <div class="mr-4 whitespace-nowrap">{{ $t({ en: 'Layer Sorting', zh: '层级排序' }) }}</div>
+      <div class="mr-4 whitespace-nowrap">{{ $t({ en: 'Layer sorting', zh: '层级排序' }) }}</div>
       <MapLayerSortInput :project="project" />
     </div>
   </div>

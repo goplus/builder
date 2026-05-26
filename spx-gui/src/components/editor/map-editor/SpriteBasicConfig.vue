@@ -106,7 +106,7 @@ const handleEditPivot = useMessageHandle(
       <div class="mr-4 whitespace-nowrap">
         {{
           $t({
-            en: `Pivot${isCollisionEditingEnabled ? ' & collision' : ''}`,
+            en: `Pivot${isCollisionEditingEnabled ? ' and collision' : ''}`,
             zh: `参考点${isCollisionEditingEnabled ? '和碰撞体' : ''}`
           })
         }}

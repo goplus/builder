@@ -254,11 +254,10 @@ const { fn: savePivotAndCollision } = useMessageHandle(
     await editorCtx.state.history.doAction(
       { name: { en: 'Update sprite pivot and collision', zh: '更新精灵参考点和碰撞体' } },
       () => {
-        const dPivot = {
+        sprite.applyCostumesPivotChange({
           x: pivotPos.value.x - defaultCostume.pivot.x,
           y: pivotPos.value.y - defaultCostume.pivot.y
-        }
-        sprite.applyCostumesPivotChange(dPivot)
+        })
         sprite.setCollisionPivot({
           x: colliderPos.value.x + colliderSize.value.width / 2 - pivotPos.value.x,
           y: -(colliderPos.value.y + colliderSize.value.height / 2 - pivotPos.value.y)
@@ -278,6 +277,7 @@ const { fn: savePivotAndCollision } = useMessageHandle(
     zh: '更新精灵参考点和碰撞体成功'
   }
 )
+
 const { fn: savePivot } = useMessageHandle(
   async () => {
     const sprite = props.sprite

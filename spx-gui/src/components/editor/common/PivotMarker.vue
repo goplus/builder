@@ -35,7 +35,7 @@ const hitConfig = computed<CircleConfig>(
   () =>
     ({
       radius: props.size / 2,
-      fill: 'rgba(0, 0, 0, 0.01)'
+      fill: 'rgba(0, 0, 0, 0)'
     }) satisfies CircleConfig
 )
 
