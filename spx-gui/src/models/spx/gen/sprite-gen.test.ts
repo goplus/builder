@@ -128,7 +128,7 @@ describe('SpriteGen', () => {
     await finishAnimationGen('jump', animationJumpGen)
 
     // Finish the whole sprite generation
-    const sprite = gen.finish()
+    const sprite = await gen.finish()
     expect(sprite.name).toBe('UpdatedSprite')
     expect(sprite.assetMetadata?.description).toBe('Updated description for A brave knight')
     expect(sprite.assetMetadata?.extraSettings).toEqual({
@@ -326,7 +326,7 @@ describe('SpriteGen', () => {
     await gen1.genImages()
     gen1.setImageIndex(0)
     await gen1.prepareContent()
-    const sprite1 = gen1.finish()
+    const sprite1 = await gen1.finish()
     expect(sprite1.rotationStyle).toBe(RotationStyle.LeftRight)
 
     // Test AngledTopDown perspective -> LeftRight rotation style
@@ -336,7 +336,7 @@ describe('SpriteGen', () => {
     await gen2.genImages()
     gen2.setImageIndex(0)
     await gen2.prepareContent()
-    const sprite2 = gen2.finish()
+    const sprite2 = await gen2.finish()
     expect(sprite2.rotationStyle).toBe(RotationStyle.LeftRight)
 
     // Test Unspecified perspective -> Normal rotation style
@@ -346,11 +346,11 @@ describe('SpriteGen', () => {
     await gen3.genImages()
     gen3.setImageIndex(0)
     await gen3.prepareContent()
-    const sprite3 = gen3.finish()
+    const sprite3 = await gen3.finish()
     expect(sprite3.rotationStyle).toBe(RotationStyle.Normal)
   })
 
-  it('should infer feet pivot and auto collision for generated character sprites', async () => {
+  it('should infer feet pivot for generated character sprites', async () => {
     const getContentBoundingRect = vi.spyOn(imgHelpers, 'getContentBoundingRect').mockResolvedValue({
       x: 10,
       y: 8,
@@ -382,8 +382,9 @@ describe('SpriteGen', () => {
         await finishAnimationGen(animationGen.name, animationGen)
       }
 
-      const sprite = gen.finish()
-      expect(sprite.collisionShapeType).toBe(CollisionShapeType.Auto)
+      const sprite = await gen.finish()
+      expect(getContentBoundingRect).toHaveBeenCalledTimes(1)
+      expect(toNativeFile).toHaveBeenCalledTimes(1)
       expect(sprite.defaultCostume?.pivot).toEqual({ x: 10, y: 19 })
       expect(sprite.costumes.map((costume) => costume.pivot)).toEqual([
         { x: 10, y: 19 },

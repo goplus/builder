@@ -18,7 +18,7 @@ import {
   adoptAsset
 } from '@/apis/aigc'
 import { SpxProject } from '../project'
-import { CollisionShapeType, RotationStyle, Sprite, State } from '../sprite'
+import { RotationStyle, Sprite, State } from '../sprite'
 import { Costume, type Pivot as CostumePivot } from '../costume'
 import type { Animation } from '../animation'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
@@ -56,7 +56,6 @@ export type SpriteGenInits = {
   imageIndex?: number | null
   selectedItem?: SpriteGenSelected | null
   animationGenIdBindings?: Partial<Record<State, string>>
-  inferredPivotDelta?: CostumePivot | null
   enrichPhase?: Phase<SpriteSettings>
   genImagesTask?: Task<TaskType.GenerateCostume>
   genImagesPhase?: Phase<File[]>
@@ -88,7 +87,6 @@ export class SpriteGen extends Disposable {
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
   private animationGenIdBindings: Partial<Record<State, string>> = {}
-  private inferredPivotDelta: CostumePivot | null = null
 
   constructor(i18n: I18n, project: SpxProject, inits: SpriteGenInits | string = {}) {
     super()
@@ -105,7 +103,6 @@ export class SpriteGen extends Disposable {
     this.costumes = inits.costumes ?? []
     this.animations = inits.animations ?? []
     this.animationGenIdBindings = inits.animationGenIdBindings ?? {}
-    this.inferredPivotDelta = inits.inferredPivotDelta ?? null
     this.settings = {
       name: '',
       category: SpriteCategory.Unspecified,
@@ -130,24 +127,10 @@ export class SpriteGen extends Disposable {
 
   /** Create a sprite instance based on current settings. */
   private createSprite() {
-    const { name, perspective, category } = this.settings
+    const { name, perspective } = this.settings
     return Sprite.create(name, '', {
-      rotationStyle: rotationStyleForPerspective(perspective),
-      collisionShapeType: collisionShapeTypeForCategory(category)
+      rotationStyle: rotationStyleForPerspective(perspective)
     })
-  }
-
-  // Pivot belongs to costumes rather than sprite, so unlike rotation/collision defaults we can only
-  // infer it after the generated default costume image is available.
-  private async inferPivotDelta(costume: Costume): Promise<CostumePivot | null> {
-    if (!shouldUseFeetPivot(this.settings.category, this.settings.perspective)) return null
-    if (costume.bitmapResolution <= 0) return null
-    const rect = await getContentBoundingRect(await toNativeFile(costume.img))
-    if (rect.width <= 0 || rect.height <= 0) return null
-    return {
-      x: (rect.x + rect.width / 2) / costume.bitmapResolution - costume.pivot.x,
-      y: (rect.y + rect.height) / costume.bitmapResolution - costume.pivot.y
-    }
   }
 
   private parent: SpriteLikeParent | null = null
@@ -332,9 +315,6 @@ export class SpriteGen extends Disposable {
       defaultCostumeGen.setImage(image)
       const defaultCostume = await defaultCostumeGen.finish()
       this.costumes.push(defaultCostumeGen)
-      // Pre-compute the inferred delta here so `finish()` can stay synchronous while still using image analysis.
-      // We also persist this value to survive export/load before the sprite is finally adopted.
-      this.inferredPivotDelta = await this.inferPivotDelta(defaultCostume)
 
       // Generate additional costumes & animations
       const settings = await generateSpriteContentSettings(this.settings, this.i18n.lang.value)
@@ -440,7 +420,7 @@ export class SpriteGen extends Disposable {
     this.selectedItem = item
   }
 
-  finish() {
+  async finish() {
     const previewSprite = this.previewSprite
     const sprite = this.createSprite()
     for (const gen of this.costumes) {
@@ -456,10 +436,13 @@ export class SpriteGen extends Disposable {
       sprite.addAnimation(animation)
       sprite.setAnimationBoundStates(animation.id, boundStates)
     }
-    if (this.inferredPivotDelta != null) {
-      // Apply once on the final sprite so all generated costumes, including animation frames,
-      // receive the same inferred pivot adjustment.
-      sprite.applyCostumesPivotChange(this.inferredPivotDelta)
+    if (shouldUseFeetPivot(this.settings.category, this.settings.perspective) && sprite.defaultCostume != null) {
+      const inferredPivotDelta = await getFeetPivotDelta(sprite.defaultCostume)
+      if (inferredPivotDelta != null) {
+        // Apply once on the final sprite so all generated costumes, including animation frames,
+        // receive the same inferred pivot adjustment.
+        sprite.applyCostumesPivotChange(inferredPivotDelta)
+      }
     }
     sprite.setAssetMetadata({
       description: this.settings.description,
@@ -523,7 +506,6 @@ export class SpriteGen extends Disposable {
       imageIndex,
       selectedItem,
       animationGenIdBindings,
-      inferredPivotDelta,
       enrichPhaseSerialized,
       genImagesTaskSerialized,
       genImagesPhaseSerialized,
@@ -541,7 +523,6 @@ export class SpriteGen extends Disposable {
     if (imageIndex != null) inits.imageIndex = imageIndex
     if (selectedItem != null) inits.selectedItem = selectedItem
     if (animationGenIdBindings != null) inits.animationGenIdBindings = animationGenIdBindings
-    if (isFiniteCostumePivot(inferredPivotDelta)) inits.inferredPivotDelta = inferredPivotDelta
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (genImagesTaskSerialized != null) inits.genImagesTask = Task.load(genImagesTaskSerialized)
     if (genImagesPhaseSerialized != null) {
@@ -591,7 +572,6 @@ export class SpriteGen extends Disposable {
       id: this.id,
       settings: this.settings,
       animationGenIdBindings: this.animationGenIdBindings,
-      inferredPivotDelta: this.inferredPivotDelta,
       enrichPhaseSerialized: this.enrichPhase.export(),
       genImagesTaskSerialized: this.genImagesTask?.export(),
       genImagesPhaseSerialized: mapPhaseResult(this.genImagesPhase.export(), (result) =>
@@ -647,22 +627,6 @@ function rotationStyleForPerspective(perspective: Perspective): RotationStyle {
   }
 }
 
-function collisionShapeTypeForCategory(category: SpriteCategory): CollisionShapeType {
-  switch (category) {
-    case SpriteCategory.Character:
-      return CollisionShapeType.Auto
-    // The `Item` category is too broad to decide whether generated items should behave
-    // like collectible props, physical obstacles, or purely decorative assets, so this
-    // remains a product decision instead of an automatic default.
-    case SpriteCategory.Item:
-    case SpriteCategory.Effect:
-    case SpriteCategory.UI:
-    case SpriteCategory.Unspecified:
-    default:
-      return CollisionShapeType.None
-  }
-}
-
 function shouldUseFeetPivot(category: SpriteCategory, perspective: Perspective) {
   return (
     category === SpriteCategory.Character &&
@@ -670,8 +634,12 @@ function shouldUseFeetPivot(category: SpriteCategory, perspective: Perspective) 
   )
 }
 
-function isFiniteCostumePivot(value: unknown): value is CostumePivot {
-  if (typeof value !== 'object' || value == null || Array.isArray(value)) return false
-  const { x, y } = value as Partial<Record<'x' | 'y', unknown>>
-  return typeof x === 'number' && Number.isFinite(x) && typeof y === 'number' && Number.isFinite(y)
+async function getFeetPivotDelta(costume: Costume): Promise<CostumePivot | null> {
+  if (costume.bitmapResolution <= 0) return null
+  const rect = await getContentBoundingRect(await toNativeFile(costume.img))
+  if (rect.width <= 0 || rect.height <= 0) return null
+  return {
+    x: (rect.x + rect.width / 2) / costume.bitmapResolution - costume.pivot.x,
+    y: (rect.y + rect.height) / costume.bitmapResolution - costume.pivot.y
+  }
 }
