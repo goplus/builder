@@ -11,7 +11,7 @@
       <UITooltip v-for="item in backdropModeItems" :key="item.mode">
         {{ $t(item.tips) }}
         <template #trigger>
-          <UIButtonGroupItem :value="item.mode">
+          <UIButtonGroupItem :value="item.mode" :aria-label="$t(item.label)">
             <UIIcon :type="item.icon" />
           </UIButtonGroupItem>
         </template>
@@ -29,6 +29,7 @@ const backdropModeItems = [
   {
     mode: MapMode.repeat,
     icon: 'backdropTile',
+    label: { en: 'Tile', zh: '平铺' },
     tips: {
       en: 'The image will be tiled (repeated) to fill the stage',
       zh: '图片会平铺（重复）以填满舞台'
@@ -37,6 +38,7 @@ const backdropModeItems = [
   {
     mode: MapMode.fillRatio,
     icon: 'backdropScale',
+    label: { en: 'Scale', zh: '缩放' },
     tips: {
       en: 'The image will be proportionally scaled to cover the stage; some parts may be cropped',
       zh: '图片会被按比例缩放，以覆盖舞台；图片的某些部分可能会被裁剪'
@@ -45,12 +47,13 @@ const backdropModeItems = [
   {
     mode: MapMode.actualSize,
     icon: 'backdropOriginal',
+    label: { en: 'Original', zh: '原图' },
     tips: {
       en: 'The image will be aligned to the stage center without scaling or tiling',
       zh: '图片会以原始尺寸显示，并与舞台中心对齐，不缩放也不平铺'
     }
   }
-] satisfies Array<{ mode: MapMode; icon: IconType; tips: LocaleMessage }>
+] satisfies Array<{ mode: MapMode; icon: IconType; label: LocaleMessage; tips: LocaleMessage }>
 
 const handleUpdateMapMode = (mode: MapMode) => {
   editorCtx.state.history.doAction({ name: { en: 'Update backdrop mode', zh: '修改背景模式' } }, () => {
