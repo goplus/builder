@@ -1,6 +1,6 @@
 <template>
   <v-group v-if="pivotMarkerGroupConfig != null" :config="pivotMarkerGroupConfig">
-    <PivotMarker primary-color="#CBD2D8" :opacity="0.9" />
+    <PivotMarker :interactive="false" />
   </v-group>
   <v-custom-transformer ref="transformer" :config="config" />
 </template>

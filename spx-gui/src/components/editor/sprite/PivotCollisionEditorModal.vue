@@ -5,7 +5,7 @@ import PivotCollisionEditor from './PivotCollisionEditor.vue'
 
 defineProps<{
   sprite: Sprite
-  enableCollisionEditing: boolean
+  collisionEditingEnabled: boolean
   visible: boolean
 }>()
 
@@ -18,14 +18,14 @@ const emit = defineEmits<{
 <template>
   <UIFormModal
     :radar="{
-      name: `Sprite Pivot${enableCollisionEditing ? ' & Collision ' : ' '}Modal`,
-      desc: `Modal for editing sprite pivot${enableCollisionEditing ? ' and collision ' : ' '}settings.`
+      name: `Sprite pivot${collisionEditingEnabled ? ' & collision ' : ' '}modal`,
+      desc: `Modal for editing sprite pivot${collisionEditingEnabled ? ' and collision ' : ' '}settings.`
     }"
     style="width: 712px"
     :title="
       $t({
-        en: `Sprite Pivot${enableCollisionEditing ? ' & Collision ' : ' '}Editor`,
-        zh: `精灵参考点${enableCollisionEditing ? '和碰撞体' : ''}编辑器`
+        en: `Sprite pivot${collisionEditingEnabled ? ' & collision ' : ' '}editor`,
+        zh: `精灵参考点${collisionEditingEnabled ? '和碰撞体' : ''}编辑器`
       })
     "
     :visible="visible"
@@ -34,7 +34,7 @@ const emit = defineEmits<{
     <PivotCollisionEditor
       style="height: 456px"
       :sprite="sprite"
-      :enable-collision-editing="enableCollisionEditing"
+      :collision-editing-enabled="collisionEditingEnabled"
       @update-success="emit('resolved')"
     />
   </UIFormModal>

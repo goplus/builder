@@ -36,15 +36,26 @@ const isCollisionEditingEnabled = computed(() => {
 })
 
 const editPivotCollision = useModal(PivotCollisionEditorModal)
-const handleEditPivot = useMessageHandle(
+const handleEditPivotCollision = useMessageHandle(
   () =>
     editPivotCollision({
       sprite: props.sprite,
-      enableCollisionEditing: isCollisionEditingEnabled.value
+      collisionEditingEnabled: true
     }),
   {
     en: 'Failed to update sprite pivot or collision',
     zh: '更新精灵参考点或碰撞体失败'
+  }
+).fn
+const handleEditPivot = useMessageHandle(
+  () =>
+    editPivotCollision({
+      sprite: props.sprite,
+      collisionEditingEnabled: false
+    }),
+  {
+    en: 'Failed to update sprite pivot',
+    zh: '更新精灵参考点失败'
   }
 ).fn
 </script>
@@ -92,25 +103,40 @@ const handleEditPivot = useMessageHandle(
       <SpritePhysics :sprite="sprite" :project="project" />
     </div>
     <div class="flex items-center">
-      <UITooltip>
+      <div class="mr-4 whitespace-nowrap">
         {{
           $t({
-            en: `Set the pivot point of the sprite${isCollisionEditingEnabled ? ' and adjust the collision area' : ''}`,
-            zh: `设置精灵的坐标基准${isCollisionEditingEnabled ? '，并调整可发生碰撞的范围' : ''}`
+            en: `Pivot${isCollisionEditingEnabled ? ' & collision' : ''}`,
+            zh: `参考点${isCollisionEditingEnabled ? '和碰撞体' : ''}`
           })
         }}
-        <template #trigger>
-          <div class="mr-4 whitespace-nowrap">
-            {{
-              $t({
-                en: `Pivot${isCollisionEditingEnabled ? ' & collision ' : ' '}settings`,
-                zh: `参考点${isCollisionEditingEnabled ? '和碰撞体' : ''}设置`
-              })
-            }}
-          </div>
-        </template>
-      </UITooltip>
-      <UIButton shape="square" icon="setting" type="white" @click="handleEditPivot"></UIButton>
+      </div>
+      <template v-if="isCollisionEditingEnabled">
+        <UITooltip>
+          {{
+            $t({
+              en: 'Set the pivot point of the sprite and adjust the collision area',
+              zh: '设置精灵的坐标基准，并调整可发生碰撞的范围'
+            })
+          }}
+          <template #trigger>
+            <UIButton shape="square" icon="setting" type="white" @click="handleEditPivotCollision"></UIButton>
+          </template>
+        </UITooltip>
+      </template>
+      <template v-else>
+        <UITooltip>
+          {{
+            $t({
+              en: 'Set the pivot point of the sprite',
+              zh: '设置精灵的坐标基准'
+            })
+          }}
+          <template #trigger>
+            <UIButton shape="square" icon="setting" type="white" @click="handleEditPivot"></UIButton>
+          </template>
+        </UITooltip>
+      </template>
     </div>
   </div>
 </template>

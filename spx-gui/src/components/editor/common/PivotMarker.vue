@@ -7,18 +7,15 @@ import type { RectConfig } from 'konva/lib/shapes/Rect'
 const props = withDefaults(
   defineProps<{
     size?: number
-    primaryColor: string
-    opacity?: number
-    showHitArea?: boolean
+    interactive: boolean
   }>(),
   {
-    size: 16,
-    opacity: 1,
-    showHitArea: false
+    size: 16
   }
 )
 
 const markerViewBoxSize = 24
+const primaryColor = computed(() => (props.interactive ? '#36C2CF' : '#CBD2D8'))
 
 const drawingGroupConfig = computed<GroupConfig>(() => {
   const scale = props.size / markerViewBoxSize
@@ -29,7 +26,7 @@ const drawingGroupConfig = computed<GroupConfig>(() => {
       x: scale,
       y: scale
     },
-    opacity: props.opacity,
+    opacity: props.interactive ? 1 : 0.9,
     listening: false
   }
 })
@@ -66,12 +63,12 @@ const outerTabConfigs = computed<RectConfig[]>(
 const innerShapeConfigs = computed<RectConfig[]>(
   () =>
     [
-      { x: 1, y: 11, width: 4, height: 2, cornerRadius: 1, fill: props.primaryColor, listening: false },
-      { x: 19, y: 11, width: 4, height: 2, cornerRadius: 1, fill: props.primaryColor, listening: false },
-      { x: 11, y: 1, width: 2, height: 4, cornerRadius: 1, fill: props.primaryColor, listening: false },
-      { x: 11, y: 19, width: 2, height: 4, cornerRadius: 1, fill: props.primaryColor, listening: false },
-      { x: 9, y: 11, width: 6, height: 2, cornerRadius: 1, fill: props.primaryColor, listening: false },
-      { x: 11, y: 9, width: 2, height: 6, cornerRadius: 1, fill: props.primaryColor, listening: false }
+      { x: 1, y: 11, width: 4, height: 2, cornerRadius: 1, fill: primaryColor.value, listening: false },
+      { x: 19, y: 11, width: 4, height: 2, cornerRadius: 1, fill: primaryColor.value, listening: false },
+      { x: 11, y: 1, width: 2, height: 4, cornerRadius: 1, fill: primaryColor.value, listening: false },
+      { x: 11, y: 19, width: 2, height: 4, cornerRadius: 1, fill: primaryColor.value, listening: false },
+      { x: 9, y: 11, width: 6, height: 2, cornerRadius: 1, fill: primaryColor.value, listening: false },
+      { x: 11, y: 9, width: 2, height: 6, cornerRadius: 1, fill: primaryColor.value, listening: false }
     ] satisfies RectConfig[]
 )
 
@@ -81,7 +78,7 @@ const ringConfig = computed<CircleConfig>(
       x: markerViewBoxSize / 2,
       y: markerViewBoxSize / 2,
       radius: 7,
-      stroke: props.primaryColor,
+      stroke: primaryColor.value,
       strokeWidth: 2,
       listening: false
     }) satisfies CircleConfig
@@ -89,7 +86,7 @@ const ringConfig = computed<CircleConfig>(
 </script>
 
 <template>
-  <v-circle v-if="showHitArea" :config="hitConfig" />
+  <v-circle v-if="interactive" :config="hitConfig" />
   <v-group :config="drawingGroupConfig">
     <v-circle :config="circleConfig" />
     <v-rect v-for="(rectConfig, idx) in outerTabConfigs" :key="`pivot-outer-${idx}`" :config="rectConfig" />
