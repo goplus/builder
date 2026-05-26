@@ -1,7 +1,6 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import type { Group, GroupConfig } from 'konva/lib/Group'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { SpxProject } from '@/models/spx/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading } from '@/models/spx/sprite'
@@ -12,14 +11,12 @@ import { cancelBubble, getNodeId } from './common'
 import type { SpriteLocalConfig } from './quick-config/utils'
 import type { TransformOp } from './custom-transformer'
 import type Konva from 'konva'
-import PivotMarker from '../PivotMarker.vue'
 
 const props = defineProps<{
   localConfig: SpriteLocalConfig
   selected: boolean
   project: SpxProject
   mapSize: Size
-  mapScale?: number
   nodeReadyMap: Map<string, boolean>
 }>()
 
@@ -45,7 +42,6 @@ const emit = defineEmits<{
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
-const pivotMarkerRef = ref<KonvaNodeInstance<Group>>()
 const costume = computed(() => props.localConfig.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const [image, imageLoading] = useFileImg(() => costume.value?.img)
@@ -54,7 +50,6 @@ const rawSize = useAsyncComputedLegacy(async () => costume.value?.getRawSize() ?
 const nodeId = computed(() => getNodeId(props.localConfig))
 
 const snapshotRef = ref<ConfigGetter | null>(null)
-const effectiveMapScale = computed(() => (props.mapScale == null ? 1 : props.mapScale))
 const configGetter = computed(() => {
   if (snapshotRef.value != null) return snapshotRef.value
   return props.localConfig
@@ -78,20 +73,10 @@ onMounted(() => {
   }
 })
 
-// Keep the selected sprite's pivot marker above all sprite nodes.
-watch(
-  [() => props.selected, () => props.project.zorder.length, pivotMarkerRef],
-  () => {
-    if (!props.selected) return
-    const pivotMarkerNode = pivotMarkerRef.value?.getNode()
-    if (pivotMarkerNode == null || pivotMarkerNode.getParent() == null) return
-    const zIndex = props.project.zorder.length
-    if (pivotMarkerNode.zIndex() === zIndex) return
-    pivotMarkerNode.zIndex(zIndex)
-  },
-  { immediate: true }
-)
-
+// Konva Transformer mutates the live node position based on the node's geometric center directly
+// and does not support using a custom sprite pivot as the transform origin.
+// To keep scale/rotate behavior aligned with quick config, we immediately restore the node to the
+// pivot position captured at transform start instead of waiting for a later reactive re-render.
 function keepNodePivotPosition(node: Konva.Node) {
   const snapshot = snapshotRef.value
   if (snapshot == null) return
@@ -209,18 +194,6 @@ const config = computed<ImageConfig>(() => {
   return config
 })
 
-const pivotMarkerGroupConfig = computed<GroupConfig | null>(() => {
-  if (!props.selected) return null
-  return {
-    x: props.mapSize.width / 2 + props.localConfig.x,
-    y: props.mapSize.height / 2 - props.localConfig.y,
-    visible: props.localConfig.visible,
-    scaleX: 1 / effectiveMapScale.value,
-    scaleY: 1 / effectiveMapScale.value,
-    listening: false
-  } satisfies GroupConfig
-})
-
 function toPosition(node: Konva.Node) {
   const { mapSize } = props
   const x = round(node.x() - mapSize.width / 2)
@@ -255,7 +228,4 @@ function handleClick() {
     @transformend="handleTransformEnd"
     @click="handleClick"
   />
-  <v-group v-if="pivotMarkerGroupConfig != null" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
-    <PivotMarker primary-color="#CBD2D8" :opacity="0.9" />
-  </v-group>
 </template>
