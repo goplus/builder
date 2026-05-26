@@ -71,13 +71,13 @@
         <UITooltip>
           {{
             $t({
-              en: 'Play the sound with the animation and stop it when the animation stops',
-              zh: '声音跟随动画播放，并在动画停止时停止'
+              en: 'Loop the sound during each animation playback and stop it when the animation stops',
+              zh: '声音在动画的单次播放周期内循环播放，并在动画停止时停止'
             })
           }}
           <template #trigger>
             <UIButtonGroupItem :value="AnimationSoundMode.FollowAnimation">
-              {{ $t({ en: 'Follow animation', zh: '跟随动画' }) }}
+              {{ $t({ en: 'Loop with animation', zh: '随动画循环' }) }}
             </UIButtonGroupItem>
           </template>
         </UITooltip>
