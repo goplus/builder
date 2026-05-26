@@ -34,8 +34,8 @@ export type UserCapabilities = {
   canUsePremiumLLM: boolean
 }
 
-export function getUser(name: string): Promise<User> {
-  return client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>
+export function getUser(username: string): Promise<User> {
+  return client.get(`/users/${encodeURIComponent(username)}`) as Promise<User>
 }
 
 export async function isUsernameTaken(username: string) {
@@ -58,19 +58,23 @@ export function updateSignedInUser(params: UpdateSignedInUserParams) {
   return client.patch(`/user`, params) as Promise<SignedInUser>
 }
 
-export type ListUserParams = PaginationParams & {
-  /** Filter users who are being followed by the specified user */
-  follower?: string
-  /** Filter users who are following the specified user */
-  followee?: string
+type ListUserFollowRelationsParams = PaginationParams & {
   /** Field by which to order the results */
   orderBy?: 'createdAt' | 'updatedAt' | 'followedAt'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listUsers(params: ListUserParams) {
-  return client.get('/users/list', params) as Promise<ByPage<User>>
+export type ListUserFollowersParams = ListUserFollowRelationsParams
+
+export type ListUserFollowingParams = ListUserFollowRelationsParams
+
+export function listUserFollowers(username: string, params?: ListUserFollowersParams) {
+  return client.get(`/users/${encodeURIComponent(username)}/followers`, params) as Promise<ByPage<User>>
+}
+
+export function listUserFollowing(username: string, params?: ListUserFollowingParams) {
+  return client.get(`/users/${encodeURIComponent(username)}/following`, params) as Promise<ByPage<User>>
 }
 
 /**
@@ -79,7 +83,7 @@ export function listUsers(params: ListUserParams) {
  */
 export async function isFollowing(username: string) {
   try {
-    await client.get(`/user/${encodeURIComponent(username)}/following`)
+    await client.get(`/user/following/${encodeURIComponent(username)}`)
     return true
   } catch (e) {
     if (e instanceof ApiException) {
@@ -94,9 +98,9 @@ export async function isFollowing(username: string) {
 }
 
 export function follow(username: string) {
-  return client.post(`/user/${encodeURIComponent(username)}/following`) as Promise<void>
+  return client.put(`/user/following/${encodeURIComponent(username)}`) as Promise<void>
 }
 
 export function unfollow(username: string) {
-  return client.delete(`/user/${encodeURIComponent(username)}/following`) as Promise<void>
+  return client.delete(`/user/following/${encodeURIComponent(username)}`) as Promise<void>
 }

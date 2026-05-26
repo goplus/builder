@@ -1,6 +1,6 @@
 import { nextTick } from 'vue'
 import { describe, it, expect } from 'vitest'
-import { Stage } from './stage'
+import { MapMode, Stage } from './stage'
 import { Monitor } from './widget/monitor'
 import { Backdrop } from './backdrop'
 import { File } from '../common/file'
@@ -329,5 +329,27 @@ describe('Stage', () => {
     })
     stage.addWidgetAfter(widget3, widget1.id)
     expect(stage.widgets.map((w) => w.id)).toEqual([widget1.id, widget3.id, widget2.id])
+  })
+
+  it('should preserve actualSize map mode when loading and exporting', async () => {
+    const stage = await Stage.load(
+      {
+        map: {
+          width: 480,
+          height: 360,
+          mode: 'actualSize'
+        }
+      },
+      {}
+    )
+
+    expect(stage.mapMode).toBe(MapMode.actualSize)
+
+    const [stageConfig] = stage.export()
+    expect(stageConfig.map).toEqual({
+      width: 480,
+      height: 360,
+      mode: 'actualSize'
+    })
   })
 })

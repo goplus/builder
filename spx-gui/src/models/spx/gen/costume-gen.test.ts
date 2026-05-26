@@ -12,6 +12,7 @@ import { CostumeGen } from './costume-gen'
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
+// TODO: Consider replacing this spy by pre-filling file.meta.imgSize in test fixtures.
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
 
 describe('CostumeGen', () => {

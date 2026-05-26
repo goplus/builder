@@ -8,7 +8,7 @@ import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import {
   enrichSpriteSettings,
   type SpriteSettings,
-  genSpriteContentSettings,
+  generateSpriteContentSettings,
   type CostumeSettings,
   Facing,
   TaskType,
@@ -319,7 +319,7 @@ export class SpriteGen extends Disposable {
       this.costumes.push(defaultCostumeGen)
 
       // Generate additional costumes & animations
-      const settings = await genSpriteContentSettings(this.settings, this.i18n.lang.value)
+      const settings = await generateSpriteContentSettings(this.settings, this.i18n.lang.value)
       this.costumes.push(
         ...settings.costumes.map(
           (s) => new CostumeGen(this.i18n, this, project, { settings: s, referenceCostumeId: defaultCostume.id })

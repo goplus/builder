@@ -44,7 +44,7 @@ type MockableMethod =
   | 'enrichCostumeSettings'
   | 'enrichAnimationSettings'
   | 'enrichSpriteSettings'
-  | 'genSpriteContentSettings'
+  | 'generateSpriteContentSettings'
   | 'createTask'
   | 'getTask'
   | 'cancelTask'
@@ -93,8 +93,8 @@ export class MockAigcApis {
     vi.mocked(aigcApis.enrichAnimationSettings).mockImplementation(this.enrichAnimationSettings)
     this.enrichSpriteSettings = vi.fn(this.enrichSpriteSettings.bind(this))
     vi.mocked(aigcApis.enrichSpriteSettings).mockImplementation(this.enrichSpriteSettings)
-    this.genSpriteContentSettings = vi.fn(this.genSpriteContentSettings.bind(this))
-    vi.mocked(aigcApis.genSpriteContentSettings).mockImplementation(this.genSpriteContentSettings)
+    this.generateSpriteContentSettings = vi.fn(this.generateSpriteContentSettings.bind(this))
+    vi.mocked(aigcApis.generateSpriteContentSettings).mockImplementation(this.generateSpriteContentSettings)
     // `as` preserve the generic method signature because vi.fn widens it to Task<TaskType>.
     this.createTask = vi.fn(this.createTask.bind(this)) as typeof this.createTask
     vi.mocked(aigcApis.createTask).mockImplementation(this.createTask)
@@ -183,8 +183,8 @@ export class MockAigcApis {
     return this.enrichAssetSettings(AIGCAssetType.Sprite, input, settings) as SpriteSettings
   }
 
-  async genSpriteContentSettings(settings: SpriteSettings, _lang?: aigcApis.Lang): Promise<SpriteContentSettings> {
-    this.checkAndThrowError('genSpriteContentSettings')
+  async generateSpriteContentSettings(settings: SpriteSettings, _lang?: aigcApis.Lang): Promise<SpriteContentSettings> {
+    this.checkAndThrowError('generateSpriteContentSettings')
     return {
       costumes: [
         {

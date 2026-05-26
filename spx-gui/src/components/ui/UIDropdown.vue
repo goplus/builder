@@ -126,7 +126,7 @@ function setVisible(visible: boolean) {
 
 provide(dropdownCtrlKey, { setVisible })
 
-function setTriggerRef(target: Element | { $el?: Element } | null) {
+function setTriggerRef(target: Element | { $el?: Node } | null) {
   triggerRef.value = resolveTriggerElement(target)
 }
 
@@ -271,7 +271,7 @@ function renderTriggerNode() {
   return renderPopupTrigger(slots.trigger?.(), triggerProps.value)
 }
 
-function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: HTMLElement | null, contentEl: HTMLElement | null) {
+function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: Element | null, contentEl: HTMLElement | null) {
   const path = typeof event.composedPath === 'function' ? event.composedPath() : []
   if (triggerEl != null && path.includes(triggerEl)) return true
   if (contentEl != null && path.includes(contentEl)) return true

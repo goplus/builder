@@ -1,6 +1,5 @@
-<!-- TODO: review root background color and promote it to a shared UI token if it becomes reused. -->
 <template>
-  <section class="min-h-full w-full flex flex-col bg-[#f1f5f7]">
+  <section class="min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
       <EditorNavbar :project="state?.project ?? null" :state="state" />
     </header>

@@ -12,7 +12,7 @@ import Mutex from '@/utils/mutex'
 import { Cancelled, capture } from '@/utils/exception'
 import { getSpxProjectKnowledge } from '@/utils/spx'
 import { ProjectType, Visibility, type ProjectExtraSettings } from '@/apis/project'
-import { generateAIDescription } from '@/apis/ai-description'
+import { generateProjectDescription } from '@/apis/aigc'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from './common/asset-name'
@@ -554,7 +554,7 @@ export class SpxProject extends Disposable implements IProject {
       try {
         const content = await this.serializeForAI()
         const spxKnowledge = getSpxProjectKnowledge()
-        this.aiDescription = await generateAIDescription(content, spxKnowledge, signal)
+        this.aiDescription = await generateProjectDescription(content, spxKnowledge, signal)
         this.aiDescriptionHash = currentHash
       } catch (e) {
         if (e instanceof Cancelled) throw e

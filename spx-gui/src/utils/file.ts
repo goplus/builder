@@ -45,6 +45,10 @@ export function getExtFromMime(mime: string) {
   return mime2Ext[mime]
 }
 
+export function isSvgMimeType(type: string) {
+  return type === 'image/svg+xml'
+}
+
 export const imgExts = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'bmp']
 export const audioExts = ['wav', 'mp3', 'ogg', 'webm']
 

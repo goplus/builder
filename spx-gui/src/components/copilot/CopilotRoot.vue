@@ -20,7 +20,13 @@ import { createBuiltInSkillRegistry } from './skills/built-in'
 const listProjectsParamsSchema = z.object({
   owner: z
     .string()
-    .describe("The owner's username. Defaults to the current-signed-in user. Use * to include projects from all users"),
+    .regex(/^[A-Za-z0-9_-]{1,100}$/)
+    .optional()
+    .describe('Username whose public projects should be listed. Omit it to list projects owned by the signed-in user'),
+  allUsers: z
+    .boolean()
+    .optional()
+    .describe('List projects visible to the current session across all users. Do not use this with owner'),
   keyword: z.string().optional().describe('Keyword in the project display name or project name'),
   pageSize: z.number().describe('Number of projects to return per page'),
   pageIndex: z.number().describe('Page index, starting from 1')
@@ -28,10 +34,21 @@ const listProjectsParamsSchema = z.object({
 
 const listProjectsTool: ToolDefinition = {
   name: 'list_projects',
-  description: 'List all projects for a user.',
+  description:
+    'List projects. Omit owner to list projects owned by the signed-in user, including private projects. ' +
+    'Set allUsers to true to list visible projects across all users. Set owner to a username to list public projects owned by that user.',
   parameters: listProjectsParamsSchema,
-  async implementation(params: z.infer<typeof listProjectsParamsSchema>) {
-    const { total, data } = await projectApis.listProject(params)
+  async implementation({ owner, allUsers, ...params }: z.infer<typeof listProjectsParamsSchema>) {
+    if (allUsers && owner != null) throw new Error('owner cannot be used with allUsers')
+    let result: Awaited<ReturnType<typeof projectApis.listProjects>>
+    if (allUsers) {
+      result = await projectApis.listProjects(params)
+    } else if (owner == null) {
+      result = await projectApis.listSignedInUserProjects(params)
+    } else {
+      result = await projectApis.listUserPublicProjects(owner, params)
+    }
+    const { total, data } = result
     return { total, data: data.map((project) => [project.owner, project.name].map(encodeURIComponent).join('/')) }
   }
 }

@@ -4,7 +4,7 @@ import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { listAsset, AssetType, type AssetData, Visibility, updateAsset, deleteAsset } from '@/apis/asset'
+import { listSignedInUserAssets, AssetType, type AssetData, Visibility, updateAsset, deleteAsset } from '@/apis/asset'
 import { humanizeAssetType } from '@/models/spx/common/asset'
 import {
   UITextInput,
@@ -76,7 +76,7 @@ watch(
 const queryRet = useQuery(
   () => {
     const c = category.value.value
-    return listAsset({
+    return listSignedInUserAssets({
       pageSize,
       pageIndex: page.value,
       type: props.type,

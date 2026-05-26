@@ -3,11 +3,10 @@ import type { LocaleMessage } from '@/utils/i18n'
 import { AssetType, type AssetData } from '@/apis/asset'
 import { Sound } from '../sound'
 import { Sprite } from '../sprite'
-import { Costume } from '../costume'
 import { Backdrop, type BackdropInits } from '../backdrop'
 import type { SpriteGen } from '../gen/sprite-gen'
 import type { BackdropGen } from '../gen/backdrop-gen'
-import { fromBlob, fromConfig, toConfig } from '../../common/file'
+import { fromConfig, toConfig } from '../../common/file'
 import { getFiles, saveFiles } from '../../common/cloud'
 import { resourceBackdropName, resourceSoundName, resourceSpriteName } from './resource'
 
@@ -91,7 +90,7 @@ export async function asset2Backdrop({ files: fileCollection, ...metadata }: Ass
   const configFile = files[virtualBackdropConfigFileName]
   if (configFile == null) throw new Error('no config file found')
   const config = (await toConfig(configFile)) as BackdropInits
-  const backdrop = Backdrop.load(config, files, { includeId: false, includeAssetMetadata: false })
+  const backdrop = await Backdrop.load(config, files, { includeId: false, includeAssetMetadata: false })
   backdrop.setAssetMetadata(metadata)
   return backdrop
 }
@@ -115,44 +114,4 @@ export async function asset2Sound({ files: fileCollection, ...metadata }: AssetD
   const sound = sounds[0]
   sound.setAssetMetadata(metadata)
   return sound
-}
-
-export async function genSpriteFromCanvas(name: string, width: number, height: number, color: string) {
-  const canvas = await genAssetFromCanvas(name, width, height, color)
-  const sprite = Sprite.create(name)
-  const costume = new Costume(name, canvas)
-  sprite.addCostume(costume)
-  return sprite
-}
-
-export async function genBackdropFromCanvas(name: string, width: number, height: number, color: string) {
-  const canvas = await genAssetFromCanvas(name, width, height, color)
-  const backdrop = await Backdrop.create(name, canvas)
-  return backdrop
-}
-
-export async function genAssetFromCanvas(name: string, width: number, height: number, color: string) {
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')!
-
-  // check if the name ends with .png
-  const filename = name.toLowerCase().endsWith('.png') ? name : `${name}.png`
-  // Set canvas dimensions
-  canvas.width = width
-  canvas.height = height
-
-  // Draw a square
-  ctx.fillStyle = color
-  ctx.fillRect(0, 0, width, height)
-
-  // Convert canvas to Blob
-  const blob = await new Promise<Blob>((resolve) => {
-    canvas.toBlob((blob) => {
-      resolve(blob!)
-    }, 'image/png')
-  })
-
-  // Create file from Blob
-  const file = fromBlob(filename, blob)
-  return file
 }

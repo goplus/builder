@@ -1,16 +1,16 @@
 /**
- * @desc util-related APIs of spx-backend
+ * @desc File-related APIs of spx-backend
  */
 
 import { usercontentBaseUrl, usercontentBucket } from '@/utils/env'
 import { client, type UniversalUrl, type UniversalToWebUrlMap } from './common'
 import { UniversalUrlScheme, parseUniversalUrl } from '@/utils/universal-url'
 
-export type UpInfo = {
+export type UploadSession = {
   /** Uptoken */
   token: string
-  /** Valid time for uptoken, unit: second */
-  expires: number
+  /** Expiration timestamp for uptoken */
+  expiresAt: string
   /** Maximum file size allowed in bytes */
   maxSize: number
   /** Bucket name */
@@ -19,14 +19,15 @@ export type UpInfo = {
   region: string
 }
 
-export function getUpInfo() {
-  return client.get('/util/upinfo') as Promise<UpInfo>
+export function createUploadSession() {
+  return client.post('/upload-sessions') as Promise<UploadSession>
 }
 
-export async function makeObjectUrls(objects: UniversalUrl[]): Promise<UniversalToWebUrlMap> {
+export async function createFileURLSignatures(objects: UniversalUrl[]): Promise<UniversalToWebUrlMap> {
+  // TODO(#1598): Restore the `/file-url-signatures` call after signed file URLs are fixed.
   return workAroundIssue1598(objects)
 
-  // const result = (await client.post('/util/fileurls', { objects: objects })) as { objectUrls: UniversalToWebUrlMap }
+  // const result = (await client.post('/file-url-signatures', { objects })) as { objectUrls: UniversalToWebUrlMap }
   // return result.objectUrls
 }
 

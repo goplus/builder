@@ -144,7 +144,7 @@ export enum RoundState {
 }
 
 export interface IMessageEventGenerator {
-  generateSSEMessage: typeof apis.generateSSEMessage
+  generateCopilotMessage: typeof apis.generateCopilotMessage
 }
 
 // NOTE: Keep backward compatibility of `RoundExported` to avoid errors when loading old sessions.
@@ -319,7 +319,7 @@ export class Round {
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
       const toolCalls: Array<ToolCallDraft | null> = []
-      const result = this.copilot.generator.generateSSEMessage(sampledApiMessages, {
+      const result = this.copilot.generator.generateCopilotMessage(sampledApiMessages, {
         signal: this.ctrl.signal,
         tools: this.copilot.getTools().map(toApiTool)
       })

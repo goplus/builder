@@ -13,7 +13,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 
 type ResolvedPopupState = {
   visible: boolean
-  reference: HTMLElement | VirtualElement | null
+  reference: Element | VirtualElement | null
   floatingEl: HTMLElement | null
   arrowEl: HTMLElement | null
   placement: PopupPlacement
@@ -55,7 +55,7 @@ export type UseFloatingPopupOptions = {
 }
 
 export function useFloatingPopup(options: UseFloatingPopupOptions) {
-  const referenceRef = ref<HTMLElement | null>(null)
+  const referenceRef = ref<Element | null>(null)
   const floatingRef = ref<HTMLElement | null>(null)
   const arrowRef = ref<HTMLElement | null>(null)
   const floatingStyle = ref<CSSProperties | null>(null)
@@ -130,7 +130,7 @@ export function useFloatingPopup(options: UseFloatingPopupOptions) {
 
 function resolvePopupState(
   options: UseFloatingPopupOptions,
-  referenceEl: HTMLElement | null,
+  referenceEl: Element | null,
   floatingEl: HTMLElement | null,
   arrowEl: HTMLElement | null
 ): ResolvedPopupState {
@@ -236,7 +236,7 @@ export function createVirtualAnchor(anchor: PopupVirtualAnchor): VirtualElement 
   }
 }
 
-function resolveReferenceElement(referenceEl: HTMLElement | null, virtualAnchor: PopupVirtualAnchor | null) {
+function resolveReferenceElement(referenceEl: Element | null, virtualAnchor: PopupVirtualAnchor | null) {
   if (virtualAnchor != null) return createVirtualAnchor(virtualAnchor)
   return referenceEl
 }

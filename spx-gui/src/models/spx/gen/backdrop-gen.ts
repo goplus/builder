@@ -261,7 +261,9 @@ export class BackdropGen extends Disposable {
         )
       )
     }
-    if (resultConfig != null) inits.result = Backdrop.load(resultConfig, files, { assetPath: `${assetsPath}/result` })
+    if (resultConfig != null) {
+      inits.result = await Backdrop.load(resultConfig, files, { assetPath: `${assetsPath}/result` })
+    }
     const gen = new BackdropGen(i18n, project, inits)
     gen.restoreGenerateTask()
     return gen
