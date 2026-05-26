@@ -104,9 +104,11 @@ export class CompletionProvider implements ICompletionProvider {
         const defId = item.data?.definition
         const definition = defId != null ? await this.documentBase.getDocumentation(defId) : null
 
-        // Skip APIs from framework packages without documentation — assumed not recommended
+        // Skip undocumented framework APIs because they are treated as not recommended.
+        // Kwarg snippets are synthesized from call-site context and have no documentation entry by design.
         const classFrameworkPkg = this.classFramework.pkgPaths[0]
-        if (defId != null && defId.package === classFrameworkPkg && definition == null) return null
+        const isUndocumentedFrameworkItem = defId != null && defId.package === classFrameworkPkg && definition == null
+        if (isUndocumentedFrameworkItem && !isKwargCompletionItem(result)) return null
         if (definition != null && definition.hiddenFromList) return null
 
         if (definition != null) {
@@ -136,4 +138,9 @@ export class CompletionProvider implements ICompletionProvider {
     )
     return maybeItems.filter((item) => item != null) as CompletionItem[]
   }
+}
+
+// XGo LSP kwarg completions are snippets with insertText of the form `<label> = ${1:}`.
+function isKwargCompletionItem(item: CompletionItem) {
+  return item.insertTextFormat === InsertTextFormat.Snippet && item.insertText.startsWith(`${item.label} = `)
 }
