@@ -73,17 +73,6 @@ onMounted(() => {
   }
 })
 
-// Konva Transformer mutates the live node position based on the node's geometric center directly
-// and does not support using a custom sprite pivot as the transform origin.
-// To keep scale/rotate behavior aligned with quick config, we immediately restore the node to the
-// pivot position captured at transform start instead of waiting for a later reactive re-render.
-function keepNodePivotPosition(node: Konva.Node) {
-  const snapshot = snapshotRef.value
-  if (snapshot == null) return
-  node.x(props.mapSize.width / 2 + snapshot.x)
-  node.y(props.mapSize.height / 2 - snapshot.y)
-}
-
 function updateLocalConfigByShape(node: Konva.Node) {
   if (!props.selected) return
   const localConfig = props.localConfig
@@ -98,7 +87,6 @@ function updateLocalConfigByShape(node: Konva.Node) {
     localConfig.setHeading(heading)
     emit('updateTransformOp', 'rotate')
   }
-  keepNodePivotPosition(node)
   // Sprite's pivot causes x or y to change when size or heading changes, so they need to be updated together
   const { x, y } = toPosition(node)
   if (oldX !== x || oldY !== y) {
@@ -108,7 +96,6 @@ function updateLocalConfigByShape(node: Konva.Node) {
 }
 
 function syncLocalConfigByShape(node: Konva.Node) {
-  keepNodePivotPosition(node)
   const localConfig = props.localConfig
   localConfig.setSize(toSize(node))
   localConfig.setHeading(toHeading(node))

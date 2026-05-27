@@ -16,7 +16,7 @@ import { toNativeFile } from '@/models/common/file'
 import { CollisionShapeType, type Sprite } from '@/models/spx/sprite'
 import type { Pivot as CostumePivot } from '@/models/spx/costume'
 import type { CustomTransformer, CustomTransformerConfig } from '../common/viewer/custom-transformer'
-import PivotMarker from '../common/PivotMarker.vue'
+import { getPivotMarkerConfigs } from '../common/pivot-marker'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
@@ -159,6 +159,8 @@ const pivotGroupConfig = computed(() => {
   } satisfies GroupConfig
 })
 
+const pivotMarkerConfigs = getPivotMarkerConfigs({ interactive: true })
+
 function handlePivotCircleGroupDragEnd(e: KonvaEventObject<unknown>) {
   pivotPos.value = { x: e.target.x(), y: e.target.y() }
 }
@@ -212,7 +214,7 @@ const colliderRectTransformer = ref<KonvaNodeInstance<CustomTransformer>>()
 
 const colliderRectTransformerConfig = computed<CustomTransformerConfig>(() => ({
   rotationStyle: 'none',
-  centeredScaling: false,
+  scaleOrigin: 'opposite-anchor',
   keepRatio: false
 }))
 
@@ -336,7 +338,12 @@ const { fn: savePivot } = useMessageHandle(
             <v-custom-transformer ref="colliderRectTransformer" :config="colliderRectTransformerConfig" />
           </template>
           <v-group :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
-            <PivotMarker :interactive="true" />
+            <v-group :config="pivotMarkerConfigs.drawingGroup">
+              <template v-for="(shape, idx) in pivotMarkerConfigs.shapes" :key="`pivot-marker-${idx}`">
+                <v-circle v-if="shape.kind === 'circle'" :config="shape.config" />
+                <v-rect v-else :config="shape.config" />
+              </template>
+            </v-group>
             <v-text :config="pivotTitleConfig" />
           </v-group>
         </v-layer>

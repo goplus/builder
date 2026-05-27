@@ -1,7 +1,4 @@
 <template>
-  <v-group v-if="pivotMarkerGroupConfig != null" :config="pivotMarkerGroupConfig">
-    <PivotMarker :interactive="false" />
-  </v-group>
   <v-custom-transformer ref="transformer" :config="config" />
 </template>
 
@@ -10,11 +7,9 @@ import { computed, nextTick, ref, watchEffect } from 'vue'
 import { debounce } from 'lodash'
 import type Konva from 'konva'
 import type { Node } from 'konva/lib/Node'
-import type { GroupConfig } from 'konva/lib/Group'
 import { Sprite } from '@/models/spx/sprite'
 import type { Widget } from '@/models/spx/widget'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
-import PivotMarker from '../PivotMarker.vue'
 import { getNodeId } from './common'
 
 const props = defineProps<{
@@ -27,27 +22,25 @@ const emit = defineEmits<{
 }>()
 
 const transformer = ref<KonvaNodeInstance<CustomTransformer>>()
-const pivotMarkerPos = ref<{ x: number; y: number } | null>(null)
 
 const config = computed<CustomTransformerConfig>(() => {
   if (props.target instanceof Sprite) {
     return {
       rotationStyle: props.target.rotationStyle,
-      centeredScaling: true
+      // SpriteNode maps the costume pivot to the Konva node origin via offsetX/offsetY,
+      // so the bound node's origin is exactly the sprite pivot in stage coordinates.
+      scaleOrigin: 'node-origin',
+      rotationOrigin: 'node-origin',
+      originMarker: 'scaleOrigin'
     }
   }
   return {
     rotationStyle: 'none',
-    centeredScaling: false
-  }
-})
-
-const pivotMarkerGroupConfig = computed<GroupConfig | null>(() => {
-  if (!(props.target instanceof Sprite) || pivotMarkerPos.value == null) return null
-  return {
-    x: pivotMarkerPos.value.x,
-    y: pivotMarkerPos.value.y,
-    listening: false
+    scaleOrigin: 'opposite-anchor',
+    // The same transformer instance is reused when selection switches from a sprite to a widget.
+    // Reset sprite-only origin attrs explicitly so no pivot marker/origin behavior leaks into widgets.
+    rotationOrigin: 'center',
+    originMarker: undefined
   }
 })
 
@@ -80,54 +73,10 @@ function setupKeyboardMovement(stage: Konva.Stage, selectedNode: Node) {
   }
 }
 
-// The selected sprite node lives in the map/content layer, while the pivot marker is rendered
-// alongside the transformer in an overlay layer. Convert the sprite's absolute position back
-// into the overlay layer's local coordinates before placing the marker.
-function updatePivotMarkerPos(node: Node) {
-  const pos = node.getAbsolutePosition()
-  const overlayLayer = transformer.value?.getNode().getParent()
-  if (overlayLayer == null) {
-    pivotMarkerPos.value = { x: pos.x, y: pos.y }
-    return
-  }
-  const overlayLocalPos = overlayLayer.getAbsoluteTransform().copy().invert().point(pos)
-  pivotMarkerPos.value = {
-    x: overlayLocalPos.x,
-    y: overlayLocalPos.y
-  }
-}
-
-// Re-sample the selected node once per frame while it stays selected. This is simpler than
-// wiring every possible Konva transform/parent change event, and keeps the overlay marker in
-// sync with sprite moves, map pan/zoom, and pivot-related node updates.
-function setupPivotMarkerSync(selectedNode: Node) {
-  if (!(props.target instanceof Sprite)) {
-    pivotMarkerPos.value = null
-    return () => {}
-  }
-
-  let stopped = false
-  let rafId: number | null = null
-
-  const sync = () => {
-    updatePivotMarkerPos(selectedNode)
-    if (stopped) return
-    rafId = requestAnimationFrame(sync)
-  }
-
-  sync()
-
-  return () => {
-    stopped = true
-    if (rafId != null) cancelAnimationFrame(rafId)
-  }
-}
-
 watchEffect(async (onCleanup) => {
   if (transformer.value == null) return
   const transformerNode = transformer.value.getNode()
   transformerNode.nodes([])
-  pivotMarkerPos.value = null
   if (props.target == null) return
   const nodeId = getNodeId(props.target)
   // Wait for node ready, so that Konva can get correct node size
@@ -141,7 +90,6 @@ watchEffect(async (onCleanup) => {
   emit('selectedNode', selectedNode)
 
   onCleanup(setupKeyboardMovement(stage, selectedNode))
-  onCleanup(setupPivotMarkerSync(selectedNode))
 })
 
 defineExpose({
