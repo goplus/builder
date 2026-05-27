@@ -248,7 +248,17 @@
                                     {
                                       "id": "cvnMc",
                                       "type": "ref",
-                                      "ref": "g:t6rbC"
+                                      "ref": "g:t6rbC",
+                                      "effect": {
+                                        "type": "shadow",
+                                        "shadowType": "outer",
+                                        "color": "#24292f14",
+                                        "offset": {
+                                          "x": 0,
+                                          "y": "$g:shadow-y-1"
+                                        },
+                                        "blur": "$g:shadow-blur-2"
+                                      }
                                     }
                                   ]
                                 },

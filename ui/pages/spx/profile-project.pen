@@ -379,7 +379,17 @@
                                         {
                                           "id": "xyit7",
                                           "type": "ref",
-                                          "ref": "u:t6rbC"
+                                          "ref": "u:t6rbC",
+                                          "effect": {
+                                            "type": "shadow",
+                                            "shadowType": "outer",
+                                            "color": "#24292f14",
+                                            "offset": {
+                                              "x": 0,
+                                              "y": "$u:shadow-y-1"
+                                            },
+                                            "blur": "$u:shadow-blur-2"
+                                          }
                                         }
                                       ]
                                     },
