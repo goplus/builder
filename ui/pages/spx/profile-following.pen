@@ -1,0 +1,337 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "zSR8j",
+      "x": -720,
+      "y": -538.5,
+      "name": "ProfileFollowing",
+      "width": 1440,
+      "fill": "$d:grey300",
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "q9m2o",
+          "type": "ref",
+          "ref": "d:WiWwa",
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "children": [
+            {
+              "id": "EO6rW",
+              "type": "ref",
+              "ref": "d:O7syE"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LJvkR",
+          "name": "Body",
+          "width": 1440,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "gap": "$d:radius-3",
+          "padding": [
+            "$d:space-6",
+            210,
+            40,
+            210
+          ],
+          "justifyContent": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "ikbCi",
+              "name": "Content",
+              "width": 1240,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "layout": "vertical",
+              "gap": "$d:space-5",
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "EUYyr",
+                  "type": "ref",
+                  "ref": "d:uyN2t",
+                  "x": 0,
+                  "y": 3.0371240618854357e-13,
+                  "children": [
+                    {
+                      "id": "Y4l2Wz",
+                      "type": "ref",
+                      "ref": "d:gqX4A"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "JOBY5",
+                  "name": "Body",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": "$d:space-5",
+                  "children": [
+                    {
+                      "id": "s6UrPL",
+                      "type": "ref",
+                      "ref": "d:qli5Z",
+                      "x": 0,
+                      "y": 0,
+                      "rotation": 0,
+                      "children": [
+                        {
+                          "id": "lj6C0",
+                          "type": "ref",
+                          "ref": "d:hqiqp",
+                          "descendants": {
+                            "d:N4dzG": {
+                              "fill": "$d:grey100"
+                            },
+                            "d:ulYCt": {
+                              "fill": "$d:grey500"
+                            },
+                            "d:2X6ZJ": {
+                              "fill": "$d:grey800"
+                            },
+                            "d:tj3Zs": {
+                              "fill": "$d:grey900"
+                            },
+                            "d:DocHl": {
+                              "fill": "$d:turquoise100"
+                            },
+                            "d:7Okcj": {
+                              "fill": "$d:turquoise300"
+                            },
+                            "d:7DgIh": {
+                              "fill": "$d:turquoise500",
+                              "stroke": {
+                                "align": "center",
+                                "thickness": 0.30000001192092896,
+                                "fill": "$d:turquoise500"
+                              }
+                            },
+                            "d:BlfbW": {
+                              "fill": "$d:turquoise500"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Mbx3n",
+                      "name": "Content",
+                      "width": "fill_container",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "layout": "vertical",
+                      "gap": "$d:space-5",
+                      "justifyContent": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "rYuoR",
+                          "name": "Surface",
+                          "clip": true,
+                          "width": "fill_container",
+                          "fill": "$d:grey100",
+                          "cornerRadius": "$d:border-radius-1",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1
+                          },
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#24292f0d",
+                            "offset": {
+                              "x": 0,
+                              "y": "$d:shadow-y-2"
+                            },
+                            "blur": "$d:shadow-blur-3"
+                          },
+                          "layout": "vertical",
+                          "gap": "$d:space-5",
+                          "padding": [
+                            "$d:space-5",
+                            "$d:space-4"
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "bp6U6",
+                              "name": "Header",
+                              "width": "fill_container",
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": {
+                                  "bottom": 1
+                                }
+                              },
+                              "gap": "$d:space-1",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "id": "qCFlf",
+                                  "type": "ref",
+                                  "ref": "d:tfxWX",
+                                  "x": 0,
+                                  "y": 0,
+                                  "children": [
+                                    {
+                                      "id": "r0cQeI",
+                                      "type": "ref",
+                                      "ref": "d:OHwu4",
+                                      "content": "Users I'm following"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Q2L1IJ",
+                              "name": "Content",
+                              "height": 524,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1
+                              },
+                              "layout": "vertical",
+                              "children": [
+                                {
+                                  "id": "D9Ovi0",
+                                  "type": "ref",
+                                  "ref": "d:uyN2t",
+                                  "x": 0,
+                                  "y": 2.3905105519356336e-13,
+                                  "children": [
+                                    {
+                                      "id": "MjbkM",
+                                      "type": "ref",
+                                      "ref": "d:Cg6uf"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "OMHJN",
+                                  "type": "ref",
+                                  "ref": "d:uyN2t",
+                                  "x": 0,
+                                  "y": 94.00000000000051,
+                                  "children": [
+                                    {
+                                      "id": "IKMnl",
+                                      "type": "ref",
+                                      "ref": "d:Cg6uf"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "Sn53b",
+                                  "type": "ref",
+                                  "ref": "d:uyN2t",
+                                  "x": 0,
+                                  "y": 188.00000000000077,
+                                  "children": [
+                                    {
+                                      "id": "OOX2E",
+                                      "type": "ref",
+                                      "ref": "d:Cg6uf"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "S2EeZg",
+                                  "type": "ref",
+                                  "ref": "d:uyN2t",
+                                  "x": 0,
+                                  "y": 282.000000000001,
+                                  "children": [
+                                    {
+                                      "id": "S5zhM",
+                                      "type": "ref",
+                                      "ref": "d:Cg6uf",
+                                      "descendants": {
+                                        "d:hwIqW": {
+                                          "enabled": true
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "E4Sqq",
+                                  "type": "ref",
+                                  "ref": "d:uyN2t",
+                                  "x": 0,
+                                  "y": 376.0000000000013,
+                                  "children": [
+                                    {
+                                      "id": "fotob",
+                                      "type": "ref",
+                                      "ref": "d:Cg6uf",
+                                      "descendants": {
+                                        "d:hwIqW": {
+                                          "enabled": false
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "R95YqO",
+                                  "type": "ref",
+                                  "ref": "d:uyN2t",
+                                  "x": 0,
+                                  "y": 448.00000000000153,
+                                  "children": [
+                                    {
+                                      "id": "GsTvr",
+                                      "type": "ref",
+                                      "ref": "d:Cg6uf",
+                                      "descendants": {
+                                        "d:hwIqW": {
+                                          "enabled": false
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "d": "../../components/spx/builder-component.lib.pen"
+  }
+}
