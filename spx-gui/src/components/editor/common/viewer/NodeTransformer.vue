@@ -27,20 +27,12 @@ const config = computed<CustomTransformerConfig>(() => {
   if (props.target instanceof Sprite) {
     return {
       rotationStyle: props.target.rotationStyle,
-      // SpriteNode maps the costume pivot to the Konva node origin via offsetX/offsetY,
-      // so the bound node's origin is exactly the sprite pivot in stage coordinates.
-      scaleOrigin: 'node-origin',
-      rotationOrigin: 'node-origin',
-      originMarker: 'scaleOrigin'
+      centeredScaling: true
     }
   }
   return {
     rotationStyle: 'none',
-    scaleOrigin: 'opposite-anchor',
-    // The same transformer instance is reused when selection switches from a sprite to a widget.
-    // Reset sprite-only origin attrs explicitly so no pivot marker/origin behavior leaks into widgets.
-    rotationOrigin: 'center',
-    originMarker: undefined
+    centeredScaling: false
   }
 })
 

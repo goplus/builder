@@ -214,7 +214,7 @@ const colliderRectTransformer = ref<KonvaNodeInstance<CustomTransformer>>()
 
 const colliderRectTransformerConfig = computed<CustomTransformerConfig>(() => ({
   rotationStyle: 'none',
-  scaleOrigin: 'opposite-anchor',
+  centeredScaling: false,
   keepRatio: false
 }))
 

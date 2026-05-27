@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watchEffect } from 'vue'
+import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
+import type { Group, GroupConfig } from 'konva/lib/Group'
 import type { SpxProject } from '@/models/spx/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading } from '@/models/spx/sprite'
 import type { Size } from '@/models/common'
@@ -10,15 +11,22 @@ import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
 import type { SpriteLocalConfig } from './quick-config/utils'
 import type { TransformOp } from './custom-transformer'
+import { getPivotMarkerConfigs } from '../pivot-marker'
 import type Konva from 'konva'
 
-const props = defineProps<{
-  localConfig: SpriteLocalConfig
-  selected: boolean
-  project: SpxProject
-  mapSize: Size
-  nodeReadyMap: Map<string, boolean>
-}>()
+const props = withDefaults(
+  defineProps<{
+    localConfig: SpriteLocalConfig
+    selected: boolean
+    project: SpxProject
+    mapSize: Size
+    nodeReadyMap: Map<string, boolean>
+    mapScale?: number
+  }>(),
+  {
+    mapScale: 1
+  }
+)
 
 export type CameraScrollNotifyFn = (
   /** Delta of camera position (in game) change */
@@ -73,6 +81,42 @@ onMounted(() => {
   }
 })
 
+// Keep the selected-only pivot marker inside SpriteNode instead of NodeTransformer. SpriteNode already
+// maps the sprite pivot to the Konva node origin with offsetX/offsetY, so the marker can simply use
+// the same local position as the sprite node. This is a small, low-risk patch compared with teaching
+// CustomTransformer to support custom transform origins via Konva internal method overrides.
+const pivotMarkerRef = ref<KonvaNodeInstance<Group>>()
+
+// Keep the selected sprite's pivot marker above all sprite nodes.
+watch(
+  [() => props.selected, () => props.project.zorder.length, pivotMarkerRef],
+  () => {
+    if (!props.selected) return
+    const pivotMarkerNode = pivotMarkerRef.value?.getNode()
+    if (pivotMarkerNode == null || pivotMarkerNode.getParent() == null) return
+    const zIndex = props.project.zorder.length
+    if (pivotMarkerNode.zIndex() === zIndex) return
+    pivotMarkerNode.zIndex(zIndex)
+  },
+  { immediate: true }
+)
+
+/**
+ * Konva Transformer mutates the live node position directly and does not support using
+ * a custom sprite pivot as the transform origin. Its scale/rotate interaction is based on
+ * the node's geometric center rather than our sprite pivot semantics.
+ *
+ * To keep scale/rotate behavior aligned with quick config, we immediately restore the
+ * node to the pivot position captured at transform start instead of waiting for a later
+ * reactive re-render.
+ */
+function keepNodePivotPosition(node: Konva.Node) {
+  const snapshot = snapshotRef.value
+  if (snapshot == null) return
+  node.x(props.mapSize.width / 2 + snapshot.x)
+  node.y(props.mapSize.height / 2 - snapshot.y)
+}
+
 function updateLocalConfigByShape(node: Konva.Node) {
   if (!props.selected) return
   const localConfig = props.localConfig
@@ -87,6 +131,7 @@ function updateLocalConfigByShape(node: Konva.Node) {
     localConfig.setHeading(heading)
     emit('updateTransformOp', 'rotate')
   }
+  keepNodePivotPosition(node)
   // Sprite's pivot causes x or y to change when size or heading changes, so they need to be updated together
   const { x, y } = toPosition(node)
   if (oldX !== x || oldY !== y) {
@@ -96,6 +141,7 @@ function updateLocalConfigByShape(node: Konva.Node) {
 }
 
 function syncLocalConfigByShape(node: Konva.Node) {
+  keepNodePivotPosition(node)
   const localConfig = props.localConfig
   localConfig.setSize(toSize(node))
   localConfig.setHeading(toHeading(node))
@@ -181,6 +227,20 @@ const config = computed<ImageConfig>(() => {
   return config
 })
 
+// In map mode SpriteNode is rendered inside the scaled map layer, so the marker would be
+// zoomed together with the map. Apply the inverse map scale to keep its screen size fixed.
+const pivotMarkerGroupConfig = computed<GroupConfig>(() => {
+  const { x, y } = props.localConfig
+  const scale = 1 / props.mapScale
+  return {
+    x: props.mapSize.width / 2 + x,
+    y: props.mapSize.height / 2 - y,
+    scale: { x: scale, y: scale },
+    listening: false
+  }
+})
+const pivotMarkerConfigs = getPivotMarkerConfigs({ interactive: false })
+
 function toPosition(node: Konva.Node) {
   const { mapSize } = props
   const x = round(node.x() - mapSize.width / 2)
@@ -215,4 +275,12 @@ function handleClick() {
     @transformend="handleTransformEnd"
     @click="handleClick"
   />
+  <v-group v-if="selected" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
+    <v-group :config="pivotMarkerConfigs.drawingGroup">
+      <template v-for="(shape, idx) in pivotMarkerConfigs.shapes" :key="`sprite-pivot-marker-${idx}`">
+        <v-circle v-if="shape.kind === 'circle'" :config="shape.config" />
+        <v-rect v-else :config="shape.config" />
+      </template>
+    </v-group>
+  </v-group>
 </template>
