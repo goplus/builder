@@ -2,11 +2,12 @@
   <UIDropdownForm
     v-radar="{ name: 'Sound editor dropdown form', desc: 'Dropdown form for selecting animation sound' }"
     :title="$t(actionName)"
-    style="width: 320px; max-height: 400px"
+    class="relative"
+    style="width: 408px; max-height: 400px"
     @cancel="emit('close')"
     @confirm="handleConfirm"
   >
-    <ul class="flex-[1_1_0] flex flex-wrap content-start gap-3">
+    <ul class="flex-[1_1_0] flex flex-wrap content-start gap-2">
       <SoundItem
         v-for="sound in editorCtx.project.sounds"
         :key="sound.id"
@@ -42,13 +43,49 @@
         </UIMenu>
       </UIDropdown>
     </ul>
+    <div v-if="selected != null" class="absolute bottom-4 left-4 flex h-8 items-center gap-2">
+      <span class="text-base text-grey-900">
+        {{ $t({ en: 'Playback', zh: '播放' }) }}
+      </span>
+      <UITooltip :delay="0">
+        {{ $t(playbackTooltip) }}
+        <template #trigger>
+          <UISelect
+            v-radar="{
+              name: 'Animation sound playback selector',
+              desc: 'Select how the selected sound plays with the animation'
+            }"
+            :value="selectedPlayback"
+            class="w-[118px] px-3"
+            @update:value="handlePlaybackUpdate"
+          >
+            <UISelectOption value="once">
+              {{ $t({ en: 'One', zh: '一次' }) }}
+            </UISelectOption>
+            <UISelectOption value="follow-animation">
+              {{ $t({ en: 'Follow animation', zh: '跟随动画' }) }}
+            </UISelectOption>
+          </UISelect>
+        </template>
+      </UITooltip>
+    </div>
   </UIDropdownForm>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Animation } from '@/models/spx/animation'
-import { UIDropdownForm, UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
+import {
+  UIDropdownForm,
+  UIDropdown,
+  UIMenu,
+  UIMenuItem,
+  UIBlockItem,
+  UIIcon,
+  UISelect,
+  UISelectOption,
+  UITooltip
+} from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from '@/components/editor/stage/sound/SoundItem.vue'
 import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
@@ -67,15 +104,34 @@ const editorCtx = useEditorCtx()
 
 const actionName = { en: 'Select sound', zh: '选择声音' }
 const selected = ref(props.animation.sound)
+type Playback = 'once' | 'follow-animation'
+const selectedPlayback = ref<Playback>(props.animation.soundLoop ? 'follow-animation' : 'once')
+const playbackTooltip = computed(() =>
+  selectedPlayback.value === 'follow-animation'
+    ? { en: 'Follow animation', zh: '跟随动画' }
+    : { en: 'Play Once', zh: '播放一次' }
+)
+
+function selectSound(sound: string) {
+  if (selected.value == null) selectedPlayback.value = 'once'
+  selected.value = sound
+}
+
+function handlePlaybackUpdate(playback: string | null) {
+  if (playback !== 'once' && playback !== 'follow-animation') return
+  selectedPlayback.value = playback
+}
+
 async function handleSoundClick(sound: string) {
-  selected.value = selected.value === sound ? null : sound
+  if (selected.value === sound) selected.value = null
+  else selectSound(sound)
 }
 
 const addFromLocalFile = useAddSoundFromLocalFile()
 const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const sound = await addFromLocalFile(editorCtx.project)
-    selected.value = sound.id
+    selectSound(sound.id)
   },
   {
     en: 'Failed to add sound from local file',
@@ -87,7 +143,7 @@ const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sounds = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
-    selected.value = sounds[0].id
+    selectSound(sounds[0].id)
   },
   { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
 ).fn
@@ -96,13 +152,16 @@ const addSoundFromRecording = useAddSoundByRecording()
 const handleRecord = useMessageHandle(
   async () => {
     const sound = await addSoundFromRecording(editorCtx.project)
-    selected.value = sound.id
+    selectSound(sound.id)
   },
   { en: 'Failed to record sound', zh: '录音失败' }
 ).fn
 
 async function handleConfirm() {
-  await editorCtx.state.history.doAction({ name: actionName }, () => props.animation.setSound(selected.value))
+  await editorCtx.state.history.doAction({ name: actionName }, () => {
+    props.animation.setSound(selected.value)
+    props.animation.setSoundLoop(selectedPlayback.value === 'follow-animation')
+  })
   emit('close')
 }
 </script>
