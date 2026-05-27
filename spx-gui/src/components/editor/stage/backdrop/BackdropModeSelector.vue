@@ -9,11 +9,42 @@
       :value="editorCtx.project.stage.mapMode"
       @update:value="(v) => handleUpdateMapMode(v as MapMode)"
     >
-      <UITooltip v-for="item in backdropModeItems" :key="item.mode">
-        {{ $t(item.tips) }}
+      <UITooltip>
+        {{
+          $t({
+            en: 'The image will be tiled (repeated) to fill the stage',
+            zh: '图片会平铺（重复）以填满舞台'
+          })
+        }}
         <template #trigger>
-          <UIButtonGroupItem :value="item.mode" :aria-label="$t(item.label)">
-            <UIIcon :type="item.icon" />
+          <UIButtonGroupItem :value="MapMode.repeat" :aria-label="$t({ en: 'Tile', zh: '平铺' })">
+            <UIIcon type="backdropTile" />
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+      <UITooltip>
+        {{
+          $t({
+            en: 'The image will be proportionally scaled to cover the stage; some parts may be cropped',
+            zh: '图片会被按比例缩放，以覆盖舞台；图片的某些部分可能会被裁剪'
+          })
+        }}
+        <template #trigger>
+          <UIButtonGroupItem :value="MapMode.fillRatio" :aria-label="$t({ en: 'Scale', zh: '缩放' })">
+            <UIIcon type="backdropScale" />
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+      <UITooltip>
+        {{
+          $t({
+            en: 'The image will be aligned to the stage center without scaling or tiling',
+            zh: '图片会以原始尺寸显示，并与舞台中心对齐，不缩放也不平铺'
+          })
+        }}
+        <template #trigger>
+          <UIButtonGroupItem :value="MapMode.actualSize" :aria-label="$t({ en: 'Original', zh: '原图' })">
+            <UIIcon type="backdropOriginal" />
           </UIButtonGroupItem>
         </template>
       </UITooltip>
@@ -21,40 +52,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { UITooltip, UIButtonGroup, UIButtonGroupItem, UIIcon, type IconType } from '@/components/ui'
+import { UITooltip, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { MapMode } from '@/models/spx/stage'
-import type { LocaleMessage } from '@/utils/i18n'
-
-const backdropModeItems = [
-  {
-    mode: MapMode.repeat,
-    icon: 'backdropTile',
-    label: { en: 'Tile', zh: '平铺' },
-    tips: {
-      en: 'The image will be tiled (repeated) to fill the stage',
-      zh: '图片会平铺（重复）以填满舞台'
-    }
-  },
-  {
-    mode: MapMode.fillRatio,
-    icon: 'backdropScale',
-    label: { en: 'Scale', zh: '缩放' },
-    tips: {
-      en: 'The image will be proportionally scaled to cover the stage; some parts may be cropped',
-      zh: '图片会被按比例缩放，以覆盖舞台；图片的某些部分可能会被裁剪'
-    }
-  },
-  {
-    mode: MapMode.actualSize,
-    icon: 'backdropOriginal',
-    label: { en: 'Original', zh: '原图' },
-    tips: {
-      en: 'The image will be aligned to the stage center without scaling or tiling',
-      zh: '图片会以原始尺寸显示，并与舞台中心对齐，不缩放也不平铺'
-    }
-  }
-] satisfies Array<{ mode: MapMode; icon: IconType; label: LocaleMessage; tips: LocaleMessage }>
 
 const handleUpdateMapMode = (mode: MapMode) => {
   editorCtx.state.history.doAction({ name: { en: 'Update backdrop mode', zh: '修改背景模式' } }, () => {
