@@ -7,7 +7,6 @@ import type { KonvaEventObject } from 'konva/lib/Node'
 import type { GroupConfig } from 'konva/lib/Group'
 import type { LayerConfig } from 'konva/lib/Layer'
 import type { Rect, RectConfig } from 'konva/lib/shapes/Rect'
-import type { CircleConfig } from 'konva/lib/shapes/Circle'
 import { useAsyncComputed } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useFileImg } from '@/utils/file'
@@ -17,15 +16,15 @@ import { toNativeFile } from '@/models/common/file'
 import { CollisionShapeType, type Sprite } from '@/models/spx/sprite'
 import type { Pivot as CostumePivot } from '@/models/spx/costume'
 import type { CustomTransformer, CustomTransformerConfig } from '../common/viewer/custom-transformer'
+import { getPivotMarkerConfigs } from '../common/pivot-marker'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import type { SpxProject } from '@/models/spx/project'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
-  project: SpxProject
   sprite: Sprite
+  collisionEditingEnabled: boolean
 }>()
 
 const emits = defineEmits<{
@@ -160,22 +159,11 @@ const pivotGroupConfig = computed(() => {
   } satisfies GroupConfig
 })
 
+const pivotMarkerConfigs = getPivotMarkerConfigs({ interactive: true })
+
 function handlePivotCircleGroupDragEnd(e: KonvaEventObject<unknown>) {
   pivotPos.value = { x: e.target.x(), y: e.target.y() }
 }
-
-const pivotCircleConfig = computed(
-  () =>
-    ({
-      radius: 8,
-      fill: 'rgba(10, 165, 190, 1)',
-      stroke: '#fff',
-      strokeWidth: 2,
-      shadowColor: 'rgba(51, 51, 51, 0.2)',
-      shadowBlur: 4,
-      shadowOffset: { x: 0, y: 2 }
-    }) satisfies CircleConfig
-)
 
 const pivotTitleConfig = computed(
   () =>
@@ -259,33 +247,73 @@ function handleColliderRectTransformEnd(e: KonvaEventObject<unknown>) {
   node.scaleY(1)
 }
 
-const { fn: handleConfirm } = useMessageHandle(
+const { fn: savePivotAndCollision } = useMessageHandle(
   async () => {
     const sprite = props.sprite
     const defaultCostume = props.sprite.defaultCostume
     if (defaultCostume == null) throw new Error('Sprite has no default costume')
 
-    await editorCtx.state.history.doAction({ name: { en: 'Update sprite collision', zh: '更新精灵碰撞' } }, () => {
-      sprite.applyCostumesPivotChange({
+    await editorCtx.state.history.doAction(
+      { name: { en: 'Update sprite pivot and collision', zh: '更新精灵参考点和碰撞体' } },
+      () => {
+        sprite.applyCostumesPivotChange({
+          x: pivotPos.value.x - defaultCostume.pivot.x,
+          y: pivotPos.value.y - defaultCostume.pivot.y
+        })
+        sprite.setCollisionPivot({
+          x: colliderPos.value.x + colliderSize.value.width / 2 - pivotPos.value.x,
+          y: -(colliderPos.value.y + colliderSize.value.height / 2 - pivotPos.value.y)
+        })
+        sprite.setCollisionShapeRect(colliderSize.value.width, colliderSize.value.height)
+      }
+    )
+    dirty.value = false
+    emits('updateSuccess')
+  },
+  {
+    en: 'Failed to update sprite pivot or collision',
+    zh: '更新精灵参考点或碰撞体失败'
+  },
+  {
+    en: 'Save sprite pivot and collision successfully',
+    zh: '更新精灵参考点和碰撞体成功'
+  }
+)
+
+const { fn: savePivot } = useMessageHandle(
+  async () => {
+    const sprite = props.sprite
+    const defaultCostume = props.sprite.defaultCostume
+    if (defaultCostume == null) throw new Error('Sprite has no default costume')
+
+    await editorCtx.state.history.doAction({ name: { en: 'Update sprite pivot', zh: '更新精灵参考点' } }, () => {
+      const dPivot = {
         x: pivotPos.value.x - defaultCostume.pivot.x,
         y: pivotPos.value.y - defaultCostume.pivot.y
-      })
-      sprite.setCollisionPivot({
-        x: colliderPos.value.x + colliderSize.value.width / 2 - pivotPos.value.x,
-        y: -(colliderPos.value.y + colliderSize.value.height / 2 - pivotPos.value.y)
-      })
-      sprite.setCollisionShapeRect(colliderSize.value.width, colliderSize.value.height)
+      }
+      sprite.applyCostumesPivotChange(dPivot)
+
+      // Even when collision editing is hidden, keep any persisted collision pivot aligned
+      // with the artwork after the sprite pivot moves. This intentionally includes Auto
+      // shapes as well, since Auto still carries a stored collisionPivot even though its
+      // bounds are derived from costume content.
+      if (sprite.collisionShapeType !== CollisionShapeType.None) {
+        sprite.setCollisionPivot({
+          x: sprite.collisionPivot.x - dPivot.x,
+          y: sprite.collisionPivot.y + dPivot.y
+        })
+      }
     })
     dirty.value = false
     emits('updateSuccess')
   },
   {
-    en: 'Failed to update sprite collision',
-    zh: '更新精灵碰撞失败'
+    en: 'Failed to update sprite pivot',
+    zh: '更新精灵参考点失败'
   },
   {
-    en: 'Save sprite collision successfully',
-    zh: '更新精灵碰撞成功'
+    en: 'Save sprite pivot successfully',
+    zh: '更新精灵参考点成功'
   }
 )
 </script>
@@ -297,28 +325,51 @@ const { fn: handleConfirm } = useMessageHandle(
       <v-stage v-if="stageConfig != null" :config="stageConfig">
         <v-layer v-if="layerConfig != null" :config="layerConfig">
           <v-image v-if="imgConfig != null" :config="imgConfig" />
-          <v-text ref="colliderTitle" :config="colliderTitleConfig" />
-          <v-rect
-            ref="colliderRect"
-            :config="colliderRectConfig"
-            @dragmove="syncColliderTitlePos"
-            @dragend="handleColliderRectDragEnd"
-            @transform="syncColliderTitlePos"
-            @transformend="handleColliderRectTransformEnd"
-          />
-          <v-custom-transformer ref="colliderRectTransformer" :config="colliderRectTransformerConfig" />
+          <template v-if="collisionEditingEnabled">
+            <v-text ref="colliderTitle" :config="colliderTitleConfig" />
+            <v-rect
+              ref="colliderRect"
+              :config="colliderRectConfig"
+              @dragmove="syncColliderTitlePos"
+              @dragend="handleColliderRectDragEnd"
+              @transform="syncColliderTitlePos"
+              @transformend="handleColliderRectTransformEnd"
+            />
+            <v-custom-transformer ref="colliderRectTransformer" :config="colliderRectTransformerConfig" />
+          </template>
           <v-group :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
+            <v-group :config="pivotMarkerConfigs.drawingGroup">
+              <template v-for="(shape, idx) in pivotMarkerConfigs.shapes" :key="`pivot-marker-${idx}`">
+                <v-circle v-if="shape.kind === 'circle'" :config="shape.config" />
+                <v-rect v-else :config="shape.config" />
+              </template>
+            </v-group>
             <v-text :config="pivotTitleConfig" />
-            <v-circle :config="pivotCircleConfig" />
           </v-group>
         </v-layer>
       </v-stage>
     </div>
     <UIButton
-      v-radar="{ name: 'Save button', desc: 'Click to save sprite collision' }"
+      v-if="collisionEditingEnabled"
+      v-radar="{
+        name: 'Save button',
+        desc: 'Click to save sprite pivot and collision'
+      }"
       type="green"
       :disabled="!dirty"
-      @click="handleConfirm"
+      @click="savePivotAndCollision"
+    >
+      {{ $t({ en: 'Save', zh: '保存' }) }}
+    </UIButton>
+    <UIButton
+      v-else
+      v-radar="{
+        name: 'Save button',
+        desc: 'Click to save sprite pivot'
+      }"
+      type="green"
+      :disabled="!dirty"
+      @click="savePivot"
     >
       {{ $t({ en: 'Save', zh: '保存' }) }}
     </UIButton>

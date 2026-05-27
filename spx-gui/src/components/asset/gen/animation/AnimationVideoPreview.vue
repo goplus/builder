@@ -17,9 +17,8 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
   /** Latest requested preview seek time in ms while a browser seek may still be in flight. */
   let pendingSeekTime: number | null = null
 
-  function flushPendingSeek() {
-    const video = videoRef.value
-    if (video == null || pendingSeekTime == null || video.seeking) return
+  function flushPendingSeek(video: HTMLVideoElement) {
+    if (pendingSeekTime == null) return
     const nextTime = pendingSeekTime
     pendingSeekTime = null
     video.currentTime = nextTime / 1000
@@ -29,7 +28,9 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
     const nextTime = Math.max(0, timeInMs)
     currentTime.value = nextTime
     pendingSeekTime = nextTime
-    flushPendingSeek()
+    const video = videoRef.value
+    if (video == null || video.seeking) return
+    flushPendingSeek(video)
   }
 
   function pausePlayback() {
@@ -67,21 +68,19 @@ function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchS
     { immediate: true }
   )
 
-  function handleLoadedMetadata() {
-    const video = videoRef.value
-    if (video == null) return
-    duration.value = Number.isFinite(video.duration) ? Math.round(video.duration * 1000) : 0
-  }
-
   watch(
     videoRef,
     (video, _, onCleanup) => {
       if (video == null) return
+      const handleLoadedMetadata = () => {
+        duration.value = Number.isFinite(video.duration) ? Math.round(video.duration * 1000) : 0
+      }
       video.addEventListener('loadedmetadata', handleLoadedMetadata)
-      video.addEventListener('seeked', flushPendingSeek)
+      const handleSeeked = () => flushPendingSeek(video)
+      video.addEventListener('seeked', handleSeeked)
       onCleanup(() => {
         video.removeEventListener('loadedmetadata', handleLoadedMetadata)
-        video.removeEventListener('seeked', flushPendingSeek)
+        video.removeEventListener('seeked', handleSeeked)
       })
     },
     { immediate: true }

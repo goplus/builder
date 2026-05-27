@@ -563,6 +563,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             :selected="selectedSprite?.id === localConfig.id"
             :project="props.project"
             :map-size="mapSize"
+            :map-scale="mapScale"
             :node-ready-map="nodeReadyMap"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
@@ -582,7 +583,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     </v-stage>
     <div v-if="!loading && localConfigRef != null" class="absolute left-0 top-0">
       <QuickConfigWrapper ref="quickConfigRef">
-        <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
+        <SpriteQuickConfig :local-config="localConfigRef" :project="project" />
       </QuickConfigWrapper>
     </div>
 
