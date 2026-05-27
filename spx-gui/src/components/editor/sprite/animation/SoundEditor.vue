@@ -56,6 +56,7 @@
               desc: 'Select how the selected sound plays with the animation'
             }"
             :value="selectedPlayback"
+            class="min-w-[80px]"
             @update:value="handlePlaybackUpdate"
           >
             <UISelectOption value="once">

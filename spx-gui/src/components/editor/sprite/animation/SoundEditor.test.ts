@@ -112,6 +112,7 @@ describe('SoundEditor', () => {
     await nextTick()
 
     expect(wrapper.text()).toContain('Playback')
+    expect(wrapper.get('.ui-select').classes()).toContain('min-w-[80px]')
     expect(wrapper.get('select').text()).toContain('One')
     expect(wrapper.get('select').text()).toContain('Loop')
     expect(wrapper.text()).toContain('Play Once')
