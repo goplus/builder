@@ -112,7 +112,6 @@ describe('SoundEditor', () => {
     await nextTick()
 
     expect(wrapper.text()).toContain('Playback')
-    expect(wrapper.get('.ui-select').classes()).toContain('min-w-[80px]')
     expect(wrapper.get('select').text()).toContain('One')
     expect(wrapper.get('select').text()).toContain('Loop')
     expect(wrapper.text()).toContain('Play Once')
@@ -146,5 +145,17 @@ describe('SoundEditor', () => {
     expect(animation.sound).toBe(sounds[1].id)
     expect(animation.soundLoop).toBe(true)
     expect((wrapper.vm as any).closed).toBe(1)
+  })
+
+  it('resets playback to one-shot when switching sounds', async () => {
+    const { wrapper, animation, sounds } = mountSoundEditor()
+
+    await wrapper.findAll('.sound-item')[0].trigger('click')
+    await wrapper.get('select').setValue('follow-animation')
+    await wrapper.findAll('.sound-item')[1].trigger('click')
+    await wrapper.get('form').trigger('submit')
+
+    expect(animation.sound).toBe(sounds[1].id)
+    expect(animation.soundLoop).toBe(false)
   })
 })

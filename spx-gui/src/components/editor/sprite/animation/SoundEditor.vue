@@ -114,7 +114,7 @@ const playbackTooltip = computed(() =>
 )
 
 function selectSound(sound: string) {
-  if (selected.value == null) selectedPlayback.value = 'once'
+  if (selected.value !== sound) selectedPlayback.value = 'once'
   selected.value = sound
 }
 
