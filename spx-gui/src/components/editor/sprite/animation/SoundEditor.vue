@@ -56,14 +56,13 @@
               desc: 'Select how the selected sound plays with the animation'
             }"
             :value="selectedPlayback"
-            class="w-[118px] px-3"
             @update:value="handlePlaybackUpdate"
           >
             <UISelectOption value="once">
               {{ $t({ en: 'One', zh: '一次' }) }}
             </UISelectOption>
             <UISelectOption value="follow-animation">
-              {{ $t({ en: 'Follow animation', zh: '跟随动画' }) }}
+              {{ $t({ en: 'Loop', zh: '循环' }) }}
             </UISelectOption>
           </UISelect>
         </template>
@@ -108,7 +107,7 @@ type Playback = 'once' | 'follow-animation'
 const selectedPlayback = ref<Playback>(props.animation.soundLoop ? 'follow-animation' : 'once')
 const playbackTooltip = computed(() =>
   selectedPlayback.value === 'follow-animation'
-    ? { en: 'Follow animation', zh: '跟随动画' }
+    ? { en: 'Loop with Animation', zh: '随动画循环' }
     : { en: 'Play Once', zh: '播放一次' }
 )
 

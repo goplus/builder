@@ -113,7 +113,12 @@ describe('SoundEditor', () => {
 
     expect(wrapper.text()).toContain('Playback')
     expect(wrapper.get('select').text()).toContain('One')
-    expect(wrapper.get('select').text()).toContain('Follow animation')
+    expect(wrapper.get('select').text()).toContain('Loop')
+    expect(wrapper.text()).toContain('Play Once')
+
+    await wrapper.get('select').setValue('follow-animation')
+
+    expect(wrapper.text()).toContain('Loop with Animation')
   })
 
   it('saves selected sound and one-shot playback on confirm', async () => {
