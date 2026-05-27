@@ -32,7 +32,16 @@ export type TransformerOrigin =
 
 export type CustomTransformerConfig = {
   rotationStyle?: 'none' | 'normal' | 'left-right'
+  /**
+   * Origin used while scaling.
+   *
+   * Note: `'node-origin'` only takes effect when the transformer has exactly one bound node,
+   * `keepRatio` is `true`, and the user drags a corner anchor (top-left/top-right/bottom-left/bottom-right).
+   * In any other combination it silently falls back to Konva's native behavior
+   * (`'opposite-anchor'` / `'center'` according to `centeredScaling`).
+   */
   scaleOrigin?: TransformerOrigin
+  /** Origin used while rotating. `'node-origin'` requires exactly one bound node. */
   rotationOrigin?: Exclude<TransformerOrigin, 'opposite-anchor'>
   originMarker?: 'scaleOrigin' | 'rotationOrigin'
 } & Pick<TransformerConfig, 'keepRatio'>
@@ -177,21 +186,27 @@ export class CustomTransformer extends Konva.Transformer {
   rotationStyle(attr?: CustomTransformerConfig['rotationStyle']): CustomTransformerConfig['rotationStyle'] {
     if (!attr) return this.getAttr('rotationStyle')
     this.setAttr('rotationStyle', attr)
+    return attr
   }
 
   scaleOrigin(attr?: CustomTransformerConfig['scaleOrigin']): CustomTransformerConfig['scaleOrigin'] {
-    if (attr == null) return this.attrs.scaleOrigin
+    // Treat any explicit argument (including `undefined`) as a setter call so callers can clear
+    // the attribute via the typed API instead of going through `setAttrs`.
+    if (arguments.length === 0) return this.attrs.scaleOrigin
     this.setAttr('scaleOrigin', attr)
+    return attr
   }
 
   rotationOrigin(attr?: CustomTransformerConfig['rotationOrigin']): CustomTransformerConfig['rotationOrigin'] {
-    if (attr == null) return this.attrs.rotationOrigin
+    if (arguments.length === 0) return this.attrs.rotationOrigin
     this.setAttr('rotationOrigin', attr)
+    return attr
   }
 
   originMarker(attr?: CustomTransformerConfig['originMarker']): CustomTransformerConfig['originMarker'] {
-    if (attr == null) return this.attrs.originMarker
+    if (arguments.length === 0) return this.attrs.originMarker
     this.setAttr('originMarker', attr)
+    return attr
   }
 
   private currentScaleOrigin(): TransformerOrigin {
@@ -372,6 +387,11 @@ export class CustomTransformer extends Konva.Transformer {
   private adjustScaleBox(newBox: TransformerBox, oldBox: TransformerBox): TransformerBox {
     const scaleOrigin = this.currentScaleOrigin()
     if (!this.isSingleNodeOrigin(scaleOrigin) || this._movingAnchorName == null) return newBox
+    // The recomputation below assumes a fixed aspect ratio (`keepRatio: true`). Without it the
+    // sprite's width/height would need to be derived from two independent rays from the origin,
+    // which the current single-anchor projection cannot represent. Fall back to Konva's native
+    // behavior in that case rather than silently distorting the box.
+    if (!this.keepRatio()) return newBox
     const anchorRatio = cornerAnchorRatios[this._movingAnchorName]
     if (anchorRatio == null || oldBox.width === 0 || oldBox.height === 0) return newBox
     const originRatio = this.resolveOriginRatio(oldBox, scaleOrigin)
@@ -467,6 +487,11 @@ export class CustomTransformer extends Konva.Transformer {
     if (originRatio == null) return
     // Capture the initial pointer angle around the fixed origin. Rotation updates use this baseline
     // instead of Konva's center-based rotater delta.
+    //
+    // Note: `originAbs` here is a snapshot in stage screen coordinates at mousedown. If the stage
+    // is panned/zoomed mid-rotation (e.g. camera follow, wheel zoom), this snapshot becomes stale
+    // and the pivot would drift. The current editor does not move the stage during a rotation
+    // gesture, so we accept this trade-off in exchange for cheaper math.
     const originAbs = boxLocalToAbsolute(box, {
       x: box.width * originRatio.x,
       y: box.height * originRatio.y
@@ -520,6 +545,11 @@ export class CustomTransformer extends Konva.Transformer {
     this.originMarkerNode.setAttrs({
       x: box.width * originRatio.x,
       y: box.height * originRatio.y,
+      // Counter-rotate so the marker stays visually upright regardless of the transformer rotation.
+      // Note: when the bound sprite is left-right flipped (scaleY: -1 + rotation: -180), Konva does
+      // not apply the scaleY flip to transformer children, so the marker ends up rotated +180 here.
+      // The current pivot icon is rotationally symmetric so the difference is invisible; if the
+      // icon ever becomes asymmetric, this needs to also consider the bound node's effective flip.
       rotation: -this.rotation(),
       visible: true
     })
