@@ -2,7 +2,6 @@
   <UIDropdownForm
     v-radar="{ name: 'Sound editor dropdown form', desc: 'Dropdown form for selecting animation sound' }"
     :title="$t(actionName)"
-    class="relative"
     style="width: 408px; max-height: 400px"
     @cancel="emit('close')"
     @confirm="handleConfirm"
@@ -43,32 +42,34 @@
         </UIMenu>
       </UIDropdown>
     </ul>
-    <div v-if="selected != null" class="absolute bottom-4 left-4 flex h-8 items-center gap-2">
-      <span class="text-base text-grey-900">
-        {{ $t({ en: 'Playback', zh: '播放' }) }}
-      </span>
-      <UITooltip :delay="0">
-        {{ $t(playbackTooltip) }}
-        <template #trigger>
-          <UISelect
-            v-radar="{
-              name: 'Animation sound playback selector',
-              desc: 'Select how the selected sound plays with the animation'
-            }"
-            :value="selectedPlayback"
-            class="min-w-[80px]"
-            @update:value="handlePlaybackUpdate"
-          >
-            <UISelectOption value="once">
-              {{ $t({ en: 'One', zh: '一次' }) }}
-            </UISelectOption>
-            <UISelectOption value="follow-animation">
-              {{ $t({ en: 'Loop', zh: '循环' }) }}
-            </UISelectOption>
-          </UISelect>
-        </template>
-      </UITooltip>
-    </div>
+    <template #footer-left>
+      <div v-if="selected != null" class="flex h-8 items-center gap-2">
+        <span class="text-base text-grey-900">
+          {{ $t({ en: 'Playback', zh: '播放' }) }}
+        </span>
+        <UITooltip :delay="0">
+          {{ $t(playbackTooltip) }}
+          <template #trigger>
+            <UISelect
+              v-radar="{
+                name: 'Animation sound playback selector',
+                desc: 'Select how the selected sound plays with the animation'
+              }"
+              :value="selectedPlayback"
+              class="min-w-[80px]"
+              @update:value="handlePlaybackUpdate"
+            >
+              <UISelectOption value="once">
+                {{ $t({ en: 'One', zh: '一次' }) }}
+              </UISelectOption>
+              <UISelectOption value="follow-animation">
+                {{ $t({ en: 'Loop', zh: '循环' }) }}
+              </UISelectOption>
+            </UISelect>
+          </template>
+        </UITooltip>
+      </div>
+    </template>
   </UIDropdownForm>
 </template>
 
