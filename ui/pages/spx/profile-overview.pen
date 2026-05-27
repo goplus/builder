@@ -19,8 +19,9 @@
           "id": "bo4L3",
           "type": "ref",
           "ref": "g:WiWwa",
-          "x": 0.0003717389978524254,
+          "x": 0,
           "y": 0,
+          "rotation": 0,
           "children": [
             {
               "id": "T4XHYS",
@@ -90,8 +91,8 @@
                       "type": "ref",
                       "ref": "g:qli5Z",
                       "x": 0,
-                      "y": 5.192502428384778e-14,
-                      "rotation": 1.4033418597069752e-14,
+                      "y": 0,
+                      "rotation": 0,
                       "name": "Menu/Panel/Default",
                       "children": [
                         {

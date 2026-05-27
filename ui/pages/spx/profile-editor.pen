@@ -501,16 +501,16 @@
                                   "clip": true,
                                   "width": "fill_container",
                                   "height": 32,
-                                  "fill": "#f6f8faff",
-                                  "cornerRadius": 8,
+                                  "fill": "$R:grey300",
+                                  "cornerRadius": "$R:border-radius-1",
                                   "stroke": {
                                     "align": "inside",
                                     "thickness": 1
                                   },
-                                  "gap": 8,
+                                  "gap": "$R:space-2",
                                   "padding": [
                                     5,
-                                    12
+                                    "$R:space-3"
                                   ],
                                   "alignItems": "center",
                                   "children": [
@@ -605,7 +605,7 @@
                                     "align": "inside",
                                     "thickness": 1
                                   },
-                                  "gap": 8,
+                                  "gap": "$R:space-2",
                                   "padding": [
                                     5,
                                     "$R:space-3"
@@ -636,7 +636,7 @@
                                               "id": "L6N5z",
                                               "type": "ref",
                                               "ref": "R:0rSuk",
-                                              "content": "All the world’s a stage, and all the men and women merely players. They\n have their exits and their entrances; and one man in his time plays many\n parts.",
+                                              "content": "All the world’s a stage, and all the men and women merely players. They\nhave their exits and their entrances; and one man in his time plays many\nparts.",
                                               "fill": "$R:grey1000"
                                             }
                                           ]
@@ -684,6 +684,11 @@
                       "id": "P1zp0",
                       "type": "ref",
                       "ref": "R:vN0Kk",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$R:grey400"
+                      },
                       "descendants": {
                         "R:aoHIs": {
                           "content": "Cancel"
