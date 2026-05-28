@@ -47,7 +47,7 @@
         <span class="text-base text-grey-900">
           {{ $t({ en: 'Playback', zh: '播放' }) }}
         </span>
-        <UITooltip :delay="0">
+        <UITooltip>
           {{ $t(playbackTooltip) }}
           <template #trigger>
             <UISelect
