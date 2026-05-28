@@ -17,9 +17,11 @@ type ActionConfig = {
 
 export const defaultFps = 10
 
-export enum AnimationSoundMode {
-  Complete = 'complete',
-  FollowAnimation = 'followAnimation'
+export enum AnimationSoundPlayback {
+  /** Play once and let the sound complete independently of the animation. */
+  Once = 'once',
+  /** Loop during each animation playback and stop when the animation stops. */
+  Loop = 'loop'
 }
 
 export type AnimationInits = {
@@ -27,7 +29,7 @@ export type AnimationInits = {
   /** Duration (in seconds) for animation to be played once */
   duration?: number
   sound?: string
-  soundMode?: AnimationSoundMode
+  soundPlayback?: AnimationSoundPlayback
 }
 
 export type RawAnimationConfig = {
@@ -110,9 +112,9 @@ export class Animation extends Disposable {
     this.sound = soundId
   }
 
-  soundMode: AnimationSoundMode
-  setSoundMode(mode: AnimationSoundMode) {
-    this.soundMode = mode
+  soundPlayback: AnimationSoundPlayback
+  setSoundPlayback(playback: AnimationSoundPlayback) {
+    this.soundPlayback = playback
   }
 
   constructor(name: string, inits?: AnimationInits) {
@@ -121,7 +123,7 @@ export class Animation extends Disposable {
     this.costumes = []
     this.duration = inits?.duration ?? 0
     this.sound = inits?.sound ?? null
-    this.soundMode = inits?.soundMode ?? AnimationSoundMode.Complete
+    this.soundPlayback = inits?.soundPlayback ?? AnimationSoundPlayback.Once
     this.id = inits?.id ?? nanoid()
 
     return reactive(this) as this
@@ -132,7 +134,7 @@ export class Animation extends Disposable {
       id: preserveId ? this.id : undefined,
       duration: this.duration,
       sound: this.sound ?? undefined,
-      soundMode: this.soundMode
+      soundPlayback: this.soundPlayback
     })
     const costumes = this.costumes.map((c) => c.clone(preserveId))
     animation.setCostumes(costumes)
@@ -181,14 +183,14 @@ export class Animation extends Disposable {
     if (isLoop != null) console.warn(`unsupported field: isLoop for animation ${name}`)
     if (anitype != null) console.warn(`unsupported field: anitype for animation ${name}`)
     let soundId: string | undefined = undefined
-    let soundMode = AnimationSoundMode.Complete
+    let soundPlayback = AnimationSoundPlayback.Once
     let soundName: string | undefined = undefined
     if (onPlay?.play != null) {
       soundName = onPlay.play
-      soundMode = AnimationSoundMode.FollowAnimation
+      soundPlayback = AnimationSoundPlayback.Loop
     } else if (onStart?.play != null) {
       soundName = onStart.play
-      soundMode = AnimationSoundMode.Complete
+      soundPlayback = AnimationSoundPlayback.Once
     }
     if (soundName != null) {
       const sound = sounds.find((s) => s.name === soundName)
@@ -201,7 +203,7 @@ export class Animation extends Disposable {
       id: includeId ? id : undefined,
       duration,
       sound: soundId,
-      soundMode
+      soundPlayback
     })
     const animationCostumeNames = animationCostumes.map((c) => c.name)
     for (const costume of animationCostumes) {
@@ -236,7 +238,7 @@ export class Animation extends Disposable {
     }
     const soundName = sounds.find((s) => s.id === this.sound)?.name
     if (soundName != null) {
-      if (this.soundMode === AnimationSoundMode.FollowAnimation) config.onPlay = { play: soundName }
+      if (this.soundPlayback === AnimationSoundPlayback.Loop) config.onPlay = { play: soundName }
       else config.onStart = { play: soundName }
     }
     if (includeId) config.builder_id = this.id

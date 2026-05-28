@@ -50,7 +50,7 @@
         <UITooltip>
           {{
             $t(
-              selectedMode === AnimationSoundMode.FollowAnimation
+              selectedPlayback === AnimationSoundPlayback.Loop
                 ? {
                     en: 'Loop the sound during each animation playback and stop it when the animation stops',
                     zh: '声音在动画的单次播放周期内循环播放，并在动画停止时停止'
@@ -67,15 +67,15 @@
                 name: 'Animation sound playback selector',
                 desc: 'Select how the selected sound plays with the animation'
               }"
-              :value="selectedMode"
+              :value="selectedPlayback"
               :disabled="selected == null"
               class="min-w-[80px]"
               @update:value="handlePlaybackUpdate"
             >
-              <UISelectOption :value="AnimationSoundMode.Complete">
+              <UISelectOption :value="AnimationSoundPlayback.Once">
                 {{ $t({ en: 'Once', zh: '一次' }) }}
               </UISelectOption>
-              <UISelectOption :value="AnimationSoundMode.FollowAnimation">
+              <UISelectOption :value="AnimationSoundPlayback.Loop">
                 {{ $t({ en: 'Loop', zh: '循环' }) }}
               </UISelectOption>
             </UISelect>
@@ -88,7 +88,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { AnimationSoundMode, type Animation } from '@/models/spx/animation'
+import { AnimationSoundPlayback, type Animation } from '@/models/spx/animation'
 import {
   UIDropdownForm,
   UIDropdown,
@@ -118,16 +118,16 @@ const editorCtx = useEditorCtx()
 
 const actionName = { en: 'Select sound', zh: '选择声音' }
 const selected = ref(props.animation.sound)
-const selectedMode = ref(props.animation.soundMode)
+const selectedPlayback = ref(props.animation.soundPlayback)
 
 function selectSound(sound: string) {
-  if (selected.value == null) selectedMode.value = AnimationSoundMode.Complete
+  if (selected.value == null) selectedPlayback.value = AnimationSoundPlayback.Once
   selected.value = sound
 }
 
-function handlePlaybackUpdate(mode: string | null) {
-  if (mode !== AnimationSoundMode.Complete && mode !== AnimationSoundMode.FollowAnimation) return
-  selectedMode.value = mode
+function handlePlaybackUpdate(playback: string | null) {
+  if (playback !== AnimationSoundPlayback.Once && playback !== AnimationSoundPlayback.Loop) return
+  selectedPlayback.value = playback
 }
 
 async function handleSoundClick(sound: string) {
@@ -168,7 +168,7 @@ const handleRecord = useMessageHandle(
 async function handleConfirm() {
   await editorCtx.state.history.doAction({ name: actionName }, () => {
     props.animation.setSound(selected.value)
-    props.animation.setSoundMode(selectedMode.value)
+    props.animation.setSoundPlayback(selectedPlayback.value)
   })
   emit('close')
 }
