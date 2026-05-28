@@ -120,11 +120,6 @@ const actionName = { en: 'Select sound', zh: '选择声音' }
 const selected = ref(props.animation.sound)
 const selectedPlayback = ref(props.animation.soundPlayback)
 
-function selectSound(sound: string) {
-  if (selected.value == null) selectedPlayback.value = AnimationSoundPlayback.Once
-  selected.value = sound
-}
-
 function handlePlaybackUpdate(playback: string | null) {
   if (playback !== AnimationSoundPlayback.Once && playback !== AnimationSoundPlayback.Loop) return
   selectedPlayback.value = playback
@@ -132,14 +127,14 @@ function handlePlaybackUpdate(playback: string | null) {
 
 async function handleSoundClick(sound: string) {
   if (selected.value === sound) selected.value = null
-  else selectSound(sound)
+  else selected.value = sound
 }
 
 const addFromLocalFile = useAddSoundFromLocalFile()
 const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const sound = await addFromLocalFile(editorCtx.project)
-    selectSound(sound.id)
+    selected.value = sound.id
   },
   {
     en: 'Failed to add sound from local file',
@@ -151,7 +146,7 @@ const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sounds = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
-    selectSound(sounds[0].id)
+    selected.value = sounds[0].id
   },
   { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
 ).fn
@@ -160,7 +155,7 @@ const addSoundFromRecording = useAddSoundByRecording()
 const handleRecord = useMessageHandle(
   async () => {
     const sound = await addSoundFromRecording(editorCtx.project)
-    selectSound(sound.id)
+    selected.value = sound.id
   },
   { en: 'Failed to record sound', zh: '录音失败' }
 ).fn
