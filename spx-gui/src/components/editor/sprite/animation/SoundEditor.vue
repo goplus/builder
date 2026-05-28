@@ -48,7 +48,19 @@
           {{ $t({ en: 'Playback', zh: '播放' }) }}
         </span>
         <UITooltip>
-          {{ $t(playbackTooltip) }}
+          {{
+            $t(
+              selectedMode === AnimationSoundMode.FollowAnimation
+                ? {
+                    en: 'Loop the sound during each animation playback and stop it when the animation stops',
+                    zh: '声音在动画的单次播放周期内循环播放，并在动画停止时停止'
+                  }
+                : {
+                    en: 'Play the sound once and let it complete independently of the animation',
+                    zh: '声音播放一次，并独立于动画完整播放'
+                  }
+            )
+          }}
           <template #trigger>
             <UISelect
               v-radar="{
@@ -61,7 +73,7 @@
               @update:value="handlePlaybackUpdate"
             >
               <UISelectOption :value="AnimationSoundMode.Complete">
-                {{ $t({ en: 'One', zh: '一次' }) }}
+                {{ $t({ en: 'Once', zh: '一次' }) }}
               </UISelectOption>
               <UISelectOption :value="AnimationSoundMode.FollowAnimation">
                 {{ $t({ en: 'Loop', zh: '循环' }) }}
@@ -75,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { AnimationSoundMode, type Animation } from '@/models/spx/animation'
 import {
   UIDropdownForm,
@@ -107,17 +119,6 @@ const editorCtx = useEditorCtx()
 const actionName = { en: 'Select sound', zh: '选择声音' }
 const selected = ref(props.animation.sound)
 const selectedMode = ref(props.animation.soundMode)
-const playbackTooltip = computed(() =>
-  selectedMode.value === AnimationSoundMode.FollowAnimation
-    ? {
-        en: 'Loop the sound during each animation playback and stop it when the animation stops',
-        zh: '声音在动画的单次播放周期内循环播放，并在动画停止时停止'
-      }
-    : {
-        en: 'Play the sound once and let it complete independently of the animation',
-        zh: '声音播放一次，并独立于动画完整播放'
-      }
-)
 
 function selectSound(sound: string) {
   if (selected.value == null) selectedMode.value = AnimationSoundMode.Complete
