@@ -43,7 +43,7 @@
       </UIDropdown>
     </ul>
     <template #footer-left>
-      <div class="flex h-8 items-center gap-2">
+      <div v-if="selected != null" class="flex h-8 items-center gap-2">
         <span class="text-base text-grey-900">
           {{ $t({ en: 'Playback', zh: '播放' }) }}
         </span>
@@ -68,7 +68,6 @@
                 desc: 'Select how the selected sound plays with the animation'
               }"
               :value="selectedPlayback"
-              :disabled="selected == null"
               class="min-w-[80px]"
               @update:value="handlePlaybackUpdate"
             >
