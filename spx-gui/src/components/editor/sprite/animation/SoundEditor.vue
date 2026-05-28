@@ -2,11 +2,11 @@
   <UIDropdownForm
     v-radar="{ name: 'Sound editor dropdown form', desc: 'Dropdown form for selecting animation sound' }"
     :title="$t(actionName)"
-    style="width: 320px; max-height: 400px"
+    style="width: 408px; max-height: 400px"
     @cancel="emit('close')"
     @confirm="handleConfirm"
   >
-    <ul class="flex-[1_1_0] flex flex-wrap content-start gap-3">
+    <ul class="flex-[1_1_0] flex flex-wrap content-start gap-2">
       <SoundItem
         v-for="sound in editorCtx.project.sounds"
         :key="sound.id"
@@ -42,52 +42,40 @@
         </UIMenu>
       </UIDropdown>
     </ul>
-    <div class="mt-4 flex items-center justify-between gap-3 border-t border-grey-400 pt-3">
-      <span class="flex-none text-xs font-medium text-grey-800">
-        {{ $t({ en: 'Sound behavior', zh: '声音方式' }) }}
-      </span>
-      <UIButtonGroup
-        v-radar="{
-          name: 'Animation sound playback mode control',
-          desc: 'Control to choose animation sound playback mode'
-        }"
-        type="text"
-        :value="selectedMode"
-        @update:value="(mode) => (selectedMode = mode as AnimationSoundMode)"
-      >
+    <template #footer-left>
+      <div class="flex h-8 items-center gap-2">
+        <span class="text-base text-grey-900">
+          {{ $t({ en: 'Playback', zh: '播放' }) }}
+        </span>
         <UITooltip>
-          {{
-            $t({
-              en: 'Play the sound once and let it complete independently of the animation',
-              zh: '声音播放一次，并独立于动画完整播放'
-            })
-          }}
+          {{ $t(playbackTooltip) }}
           <template #trigger>
-            <UIButtonGroupItem :value="AnimationSoundMode.Complete">
-              {{ $t({ en: 'Play once', zh: '播放一次' }) }}
-            </UIButtonGroupItem>
+            <UISelect
+              v-radar="{
+                name: 'Animation sound playback selector',
+                desc: 'Select how the selected sound plays with the animation'
+              }"
+              :value="selectedMode"
+              :disabled="selected == null"
+              class="min-w-[80px]"
+              @update:value="handlePlaybackUpdate"
+            >
+              <UISelectOption :value="AnimationSoundMode.Complete">
+                {{ $t({ en: 'One', zh: '一次' }) }}
+              </UISelectOption>
+              <UISelectOption :value="AnimationSoundMode.FollowAnimation">
+                {{ $t({ en: 'Loop', zh: '循环' }) }}
+              </UISelectOption>
+            </UISelect>
           </template>
         </UITooltip>
-        <UITooltip>
-          {{
-            $t({
-              en: 'Loop the sound during each animation playback and stop it when the animation stops',
-              zh: '声音在动画的单次播放周期内循环播放，并在动画停止时停止'
-            })
-          }}
-          <template #trigger>
-            <UIButtonGroupItem :value="AnimationSoundMode.FollowAnimation">
-              {{ $t({ en: 'Loop with animation', zh: '随动画循环' }) }}
-            </UIButtonGroupItem>
-          </template>
-        </UITooltip>
-      </UIButtonGroup>
-    </div>
+      </div>
+    </template>
   </UIDropdownForm>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { AnimationSoundMode, type Animation } from '@/models/spx/animation'
 import {
   UIDropdownForm,
@@ -96,8 +84,8 @@ import {
   UIMenuItem,
   UIBlockItem,
   UIIcon,
-  UIButtonGroup,
-  UIButtonGroupItem,
+  UISelect,
+  UISelectOption,
   UITooltip
 } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -119,10 +107,28 @@ const editorCtx = useEditorCtx()
 const actionName = { en: 'Select sound', zh: '选择声音' }
 const selected = ref(props.animation.sound)
 const selectedMode = ref(props.animation.soundMode)
+const playbackTooltip = computed(() =>
+  selectedMode.value === AnimationSoundMode.FollowAnimation
+    ? {
+        en: 'Loop the sound during each animation playback and stop it when the animation stops',
+        zh: '声音在动画的单次播放周期内循环播放，并在动画停止时停止'
+      }
+    : {
+        en: 'Play the sound once and let it complete independently of the animation',
+        zh: '声音播放一次，并独立于动画完整播放'
+      }
+)
+
 function selectSound(sound: string) {
   if (selected.value == null) selectedMode.value = AnimationSoundMode.Complete
   selected.value = sound
 }
+
+function handlePlaybackUpdate(mode: string | null) {
+  if (mode !== AnimationSoundMode.Complete && mode !== AnimationSoundMode.FollowAnimation) return
+  selectedMode.value = mode
+}
+
 async function handleSoundClick(sound: string) {
   if (selected.value === sound) selected.value = null
   else selectSound(sound)
