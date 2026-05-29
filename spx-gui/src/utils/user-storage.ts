@@ -31,9 +31,14 @@ function createUserScopeValue<T>(user: string, value: T): UserScopeValue<T> {
 
 // private
 function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
-  // Ideally user-scoped storage would use a canonical signed-in username. We currently use the
-  // unresolved signed-in username as a temporary fallback because this scope needs to be computed
-  // synchronously from locally available session state.
+  // User-scoped storage needs a session scope that can be computed synchronously from local state,
+  // so it currently uses `getUnresolvedSignedInUsername()` as a temporary fallback instead of
+  // awaiting canonical signed-in user data from the backend.
+  //
+  // TODO: Remove this fallback only after all callers that need user-scoped storage can provide a
+  // canonical user scope without synchronous username lookup. In practice that means first moving
+  // those flows to an async boundary where canonical signed-in user data is already available, then
+  // threading that canonical scope into storage instead of deriving it here.
   const scope = computed(() => getUnresolvedSignedInUsername() ?? unauthorized)
   const counter = ref(0)
   return computed<T>({

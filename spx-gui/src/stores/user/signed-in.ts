@@ -20,8 +20,14 @@ const userState = reactive({
   accessTokenExpiresAt: null as number | null,
   refreshToken: null as string | null,
   /**
-   * User name cached from signed-in user data, or null if not available.
-   * This is only a hint and should not be treated as canonical backend-confirmed identity.
+   * Username cached from canonical signed-in user data, or null if not available.
+   *
+   * This value is only a local synchronous hint. It must not be treated as canonical
+   * backend-confirmed identity for ownership, permissions, or other behavior-sensitive logic.
+   *
+   * It cannot be removed yet because some synchronous boundaries still need a session-scoped
+   * username before canonical signed-in user data can be awaited, such as temporary router
+   * self-route derivation and user-scoped storage fallback.
    */
   username: null as string | null
 })
@@ -46,6 +52,13 @@ function handleTokenResponse(resp: TokenResponse) {
   userState.refreshToken = resp.refresh_token
 }
 
+/**
+ * Refresh the local cached username from canonical signed-in user data.
+ *
+ * This exists only to keep temporary synchronous username consumers working after sign-in or
+ * manual token changes. The fetched user data is canonical; the cached `userState.username`
+ * written here is not.
+ */
 async function syncSignedInUsername() {
   if (userState.accessToken == null) {
     userState.username = null
@@ -135,12 +148,12 @@ export function isSignedIn(): boolean {
 /**
  * Returns the current signed-in username from locally available auth state only.
  *
- * The returned value is unresolved: it comes from locally cached signed-in user data,
- * and should not be treated as canonical backend-confirmed identity.
+ * The returned value is unresolved: it comes from local cached state and may lag behind the
+ * canonical signed-in user returned by the backend.
  *
- * Use this only at boundaries that need a synchronous identity hint, such as cache keys, route
- * derivation, or other session-scoping data. Do not use it for behavior-sensitive checks like
- * ownership, permissions, or other logic that should depend on canonical backend data.
+ * Use this only at boundaries that need a synchronous session-scoped identity hint, such as
+ * temporary route derivation or user-scoped storage. Do not use it for behavior-sensitive checks
+ * like ownership, permissions, or other logic that should depend on canonical backend data.
  */
 export function getUnresolvedSignedInUsername(): string | null {
   if (!isSignedIn()) return null
