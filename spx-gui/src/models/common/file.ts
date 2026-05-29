@@ -5,7 +5,7 @@
  */
 
 import { markRaw } from 'vue'
-import { getMimeFromExt } from '@/utils/file'
+import { getMimeFromExt, isSvgMimeType } from '@/utils/file'
 import { getSVGSize } from '@/utils/img'
 import { extname } from '@/utils/path'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
@@ -205,7 +205,7 @@ async function getBitmapImageSize(bitmapImgFile: File) {
 export async function getImageSize(file: File): Promise<Size> {
   if (file.meta.imgSize != null) return file.meta.imgSize
   let size: Size
-  if (file.type === 'image/svg+xml') {
+  if (isSvgMimeType(file.type)) {
     const svgText = await toText(file)
     size = await getSVGSize(svgText)
   } else {

@@ -250,8 +250,13 @@ watchEffect(() => {
   })
 })
 
-const konvaBackdropConfig = computed(() => {
+const konvaBackdropRectConfig = computed(() => {
   if (backdropImg.value == null || stageConfig.value == null) {
+    return null
+  }
+
+  const backdrop = props.project.stage.defaultBackdrop
+  if (backdrop == null) {
     return null
   }
 
@@ -281,18 +286,28 @@ const konvaBackdropConfig = computed(() => {
       fillPatternScaleY: scale
     }
   } else if (props.project.stage.mapMode === MapMode.repeat) {
-    const offsetX = (stageWidth - imageWidth) / 2
-    const offsetY = (stageHeight - imageHeight) / 2
-
+    const patternScale = 1 / backdrop.bitmapResolution
     return {
       fillPatternImage: backdropImg.value,
       width: stageWidth,
       height: stageHeight,
       fillPatternRepeat: 'repeat',
-      fillPatternX: offsetX,
-      fillPatternY: offsetY,
-      fillPatternScaleX: 1,
-      fillPatternScaleY: 1
+      fillPatternX: 0,
+      fillPatternY: 0,
+      fillPatternScaleX: patternScale,
+      fillPatternScaleY: patternScale
+    }
+  } else if (props.project.stage.mapMode === MapMode.actualSize) {
+    const patternScale = 1 / backdrop.bitmapResolution
+    return {
+      fillPatternImage: backdropImg.value,
+      width: stageWidth,
+      height: stageHeight,
+      fillPatternRepeat: 'no-repeat',
+      fillPatternX: stageWidth / 2 - backdrop.pivot.x,
+      fillPatternY: stageHeight / 2 - backdrop.pivot.y,
+      fillPatternScaleX: patternScale,
+      fillPatternScaleY: patternScale
     }
   }
   console.warn('Unsupported map mode:', props.project.stage.mapMode)
@@ -532,7 +547,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
-        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
+        <v-rect v-if="konvaBackdropRectConfig" :config="konvaBackdropRectConfig"></v-rect>
         <DecoratorNode
           v-for="(decorator, idx) in props.project.tilemap?.decorators ?? []"
           :key="idx"
@@ -548,6 +563,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             :selected="selectedSprite?.id === localConfig.id"
             :project="props.project"
             :map-size="mapSize"
+            :map-scale="mapScale"
             :node-ready-map="nodeReadyMap"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
@@ -567,7 +583,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     </v-stage>
     <div v-if="!loading && localConfigRef != null" class="absolute left-0 top-0">
       <QuickConfigWrapper ref="quickConfigRef">
-        <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
+        <SpriteQuickConfig :local-config="localConfigRef" :project="project" />
       </QuickConfigWrapper>
     </div>
 

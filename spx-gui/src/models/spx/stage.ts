@@ -329,7 +329,9 @@ export class Stage extends Disposable {
       layerSortMode,
       extraConfig
     })
-    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
+    const backdrops = await Promise.all(
+      (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
+    )
     for (const backdrop of backdrops) {
       stage.addBackdrop(backdrop)
     }
@@ -378,15 +380,17 @@ export class Stage extends Disposable {
   }
 }
 
-// In Builder we only support repeat and fillRatio
+// In Builder we support repeat, fillRatio, and actualSize.
 export enum MapMode {
   // fill = 'fill',
   repeat = 'repeat',
-  fillRatio = 'fillRatio'
+  fillRatio = 'fillRatio',
+  actualSize = 'actualSize'
   // fillCut = 'fillCut'
 }
 
 function getMapMode(mode?: string): MapMode {
   if (mode === 'repeat') return MapMode.repeat
+  if (mode === 'actualSize') return MapMode.actualSize
   return MapMode.fillRatio
 }
