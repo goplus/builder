@@ -1,7 +1,6 @@
 import { reactive, watchEffect, computed } from 'vue'
 import Sdk from 'casdoor-js-sdk'
 import { casdoorConfig } from '@/utils/env'
-import { jwtDecode } from 'jwt-decode'
 import { useQueryWithCache, useQueryCache, useQuery, composeQuery } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/user'
@@ -21,7 +20,7 @@ const userState = reactive({
   accessTokenExpiresAt: null as number | null,
   refreshToken: null as string | null,
   /**
-   * User name parsed from access token, or null if not available.
+   * User name cached from signed-in user data, or null if not available.
    * This is only a hint and should not be treated as canonical backend-confirmed identity.
    */
   username: null as string | null
@@ -41,21 +40,20 @@ interface TokenResponse {
   refresh_token: string
 }
 
-function decodeUsernameFromAccessToken(accessToken: string): string | null {
-  try {
-    const decoded = jwtDecode<{ name?: unknown }>(accessToken)
-    if (typeof decoded.name !== 'string' || decoded.name === '') return null
-    return decoded.name
-  } catch {
-    return null
-  }
-}
-
 function handleTokenResponse(resp: TokenResponse) {
   userState.accessToken = resp.access_token
   userState.accessTokenExpiresAt = resp.expires_in ? Date.now() + resp.expires_in * 1000 : null
   userState.refreshToken = resp.refresh_token
-  userState.username = decodeUsernameFromAccessToken(resp.access_token)
+}
+
+async function syncSignedInUsername() {
+  if (userState.accessToken == null) {
+    userState.username = null
+    return null
+  }
+  const user = await apis.getSignedInUser()
+  userState.username = user.username
+  return user
 }
 
 export function initiateSignIn(
@@ -72,13 +70,14 @@ export function initiateSignIn(
 export async function completeSignIn() {
   const resp = await casdoorSdk.exchangeForAccessToken()
   handleTokenResponse(resp)
+  await syncSignedInUsername()
 }
 
-export function signInWithAccessToken(accessToken: string) {
+export async function signInWithAccessToken(accessToken: string) {
   userState.accessToken = accessToken
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
-  userState.username = decodeUsernameFromAccessToken(accessToken)
+  await syncSignedInUsername()
 }
 
 export function signOut() {
@@ -136,7 +135,7 @@ export function isSignedIn(): boolean {
 /**
  * Returns the current signed-in username from locally available auth state only.
  *
- * The returned value is unresolved: it comes from the access token,
+ * The returned value is unresolved: it comes from locally cached signed-in user data,
  * and should not be treated as canonical backend-confirmed identity.
  *
  * Use this only at boundaries that need a synchronous identity hint, such as cache keys, route
@@ -145,27 +144,20 @@ export function isSignedIn(): boolean {
  */
 export function getUnresolvedSignedInUsername(): string | null {
   if (!isSignedIn()) return null
-  if (userState.username != null) return userState.username
-  if (userState.accessToken == null) return null
-  const username = decodeUsernameFromAccessToken(userState.accessToken)
-  if (username == null) return null
-  userState.username = username
-  return username
+  return userState.username
 }
 
 const signedInUserStaleTime = 60 * 1000 // 1min
-
-function getSignedInUserQueryKey() {
-  return [...getUserQueryKey(getUnresolvedSignedInUsername() ?? ''), 'signed-in']
-}
+const signedInUserQueryKey = ['signed-in-user']
 
 function useSignedInUserQuery() {
-  const queryKey = computed(() => getSignedInUserQueryKey())
   return useQueryWithCache({
-    queryKey: queryKey,
+    queryKey: signedInUserQueryKey,
     async queryFn() {
       if (!isSignedIn()) throw new Error('User not signed in')
-      return apis.getSignedInUser()
+      const user = await apis.getSignedInUser()
+      userState.username = user.username
+      return user
     },
     failureSummaryMessage: {
       en: 'Failed to load signed-in user information',
@@ -188,8 +180,8 @@ export type SignedInState =
 /**
  * Get the signed-in state, including whether the user is signed in and the signed-in user information if available.
  * Suitable for scenarios like:
- * - callers need to known whether the user is signed in or not
- * - callers need to acccess the loading or error state of the signed-in user query
+ * - callers need to know whether the user is signed in or not
+ * - callers need to access the loading or error state of the signed-in user query
  */
 export function useSignedInStateQuery() {
   const signedInUserQuery = useSignedInUserQuery()
@@ -218,9 +210,9 @@ export function useUpdateSignedInUser() {
     async function updateSignedInUser(
       params: Pick<apis.UpdateSignedInUserParams, 'displayName' | 'avatar' | 'description'>
     ) {
-      const unresolvedUsername = getUnresolvedSignedInUsername()
       const updated = await apis.updateSignedInUser(params)
-      if (unresolvedUsername != null) queryCache.invalidate(getUserQueryKey(unresolvedUsername))
+      userState.username = updated.username
+      queryCache.invalidate(signedInUserQueryKey)
       queryCache.invalidate(getUserQueryKey(updated.username))
       return updated
     },
@@ -238,10 +230,11 @@ export function useModifySignedInUsername() {
 
   return useAction(
     async function modifySignedInUsername(newUsername: string) {
-      const oldUsername = getUnresolvedSignedInUsername()
-      if (oldUsername == null) throw new Error('Signed-in username is not available')
+      const currentUser = await apis.getSignedInUser()
+      const oldUsername = currentUser.username
 
       const updated = await apis.updateSignedInUser({ username: newUsername })
+      queryCache.invalidate(signedInUserQueryKey)
       queryCache.invalidate(getUserQueryKey(oldUsername))
       queryCache.invalidate(getUserQueryKey(updated.username))
       signOut()

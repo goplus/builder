@@ -25,16 +25,14 @@
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >
-          {{ buttonText }}
+          {{ $t({ en: 'Sign in', zh: '登录' }) }}
         </UIButton>
       </footer>
     </UIForm>
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { jwtDecode } from 'jwt-decode'
 import { useI18n } from '@/utils/i18n'
 import { usePageTitle } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
@@ -51,36 +49,17 @@ usePageTitle(title)
 const router = useRouter()
 const i18n = useI18n()
 
-const username = ref<string | null>(null)
-const buttonText = computed(() => {
-  if (username.value == null) return i18n.t({ en: 'Sign in', zh: '登录' })
-  return i18n.t({
-    en: `Sign in as ${username.value}`,
-    zh: `以 ${username.value} 登录`
-  })
-})
-
 const form = useForm({
   token: ['', validateToken]
 })
 
 function validateToken(token: string) {
-  username.value = null
   token = token.trim()
   if (token === '')
     return i18n.t({
       en: 'Token is required',
       zh: '请提供 Token'
     })
-  try {
-    const decoded = jwtDecode<{ name: string }>(token)
-    username.value = decoded.name
-  } catch (e) {
-    return i18n.t({
-      en: 'Invalid token: ' + e,
-      zh: '无效的 Token：' + e
-    })
-  }
 }
 
 function handleCancel() {
@@ -90,7 +69,7 @@ function handleCancel() {
 const handleSubmit = useMessageHandle(
   async () => {
     const token = form.value.token.trim()
-    signInWithAccessToken(token)
+    await signInWithAccessToken(token)
     router.push('/')
   },
   {
