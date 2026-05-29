@@ -1,6 +1,7 @@
-import { reactive, watchEffect, computed } from 'vue'
+import { reactive, watchEffect, computed, ref } from 'vue'
 import Sdk from 'casdoor-js-sdk'
 import { casdoorConfig } from '@/utils/env'
+import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { useQueryWithCache, useQueryCache, useQuery, composeQuery } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/user'
@@ -53,20 +54,53 @@ function handleTokenResponse(resp: TokenResponse) {
 }
 
 /**
+ * Local scope for the signed-in user query key and other async signed-in-user sync writes.
+ *
+ * This is bumped whenever local auth state switches to a new sign-in session boundary, such as
+ * sign-in or sign-out, so stale async results from an older local session cannot write back into
+ * the current signed-in session state.
+ */
+const signedInUserQueryScope = ref(0)
+
+function bumpSignedInUserQueryScope() {
+  signedInUserQueryScope.value++
+  return signedInUserQueryScope.value
+}
+
+function syncCachedSignedInUsername(username: string | null, scope: number = signedInUserQueryScope.value) {
+  if (scope !== signedInUserQueryScope.value) return
+  userState.username = username
+}
+
+/**
  * Refresh the local cached username from canonical signed-in user data.
  *
  * This exists only to keep temporary synchronous username consumers working after sign-in or
  * manual token changes. The fetched user data is canonical; the cached `userState.username`
  * written here is not.
+ *
+ * If canonical signed-in user loading fails with an auth error, local auth state is cleared and
+ * the error is re-thrown. For transient failures, auth state is kept, the local username hint is
+ * cleared, and the error is swallowed.
  */
-async function syncSignedInUsername() {
+async function syncSignedInUsername(scope: number = signedInUserQueryScope.value) {
   if (userState.accessToken == null) {
-    userState.username = null
+    syncCachedSignedInUsername(null, scope)
     return null
   }
-  const user = await apis.getSignedInUser()
-  userState.username = user.username
-  return user
+  try {
+    const user = await apis.getSignedInUser()
+    syncCachedSignedInUsername(user.username, scope)
+    return user
+  } catch (error) {
+    syncCachedSignedInUsername(null, scope)
+    if (error instanceof ApiException && error.code === ApiExceptionCode.errorUnauthorized) {
+      signOut()
+      throw error
+    }
+    console.error('failed to sync signed-in username hint', error)
+    return null
+  }
 }
 
 export function initiateSignIn(
@@ -83,21 +117,24 @@ export function initiateSignIn(
 export async function completeSignIn() {
   const resp = await casdoorSdk.exchangeForAccessToken()
   handleTokenResponse(resp)
-  await syncSignedInUsername()
+  const scope = bumpSignedInUserQueryScope()
+  await syncSignedInUsername(scope)
 }
 
 export async function signInWithAccessToken(accessToken: string) {
   userState.accessToken = accessToken
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
-  await syncSignedInUsername()
+  const scope = bumpSignedInUserQueryScope()
+  await syncSignedInUsername(scope)
 }
 
 export function signOut() {
+  const scope = bumpSignedInUserQueryScope()
   userState.accessToken = null
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
-  userState.username = null
+  syncCachedSignedInUsername(null, scope)
 }
 
 const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
@@ -161,16 +198,14 @@ export function getUnresolvedSignedInUsername(): string | null {
 }
 
 const signedInUserStaleTime = 60 * 1000 // 1min
-const signedInUserQueryKey = ['signed-in-user']
+const signedInUserQueryKey = computed(() => ['signed-in-user', signedInUserQueryScope.value])
 
 function useSignedInUserQuery() {
   return useQueryWithCache({
     queryKey: signedInUserQueryKey,
     async queryFn() {
       if (!isSignedIn()) throw new Error('User not signed in')
-      const user = await apis.getSignedInUser()
-      userState.username = user.username
-      return user
+      return apis.getSignedInUser()
     },
     failureSummaryMessage: {
       en: 'Failed to load signed-in user information',
@@ -199,8 +234,13 @@ export type SignedInState =
 export function useSignedInStateQuery() {
   const signedInUserQuery = useSignedInUserQuery()
   return useQuery<SignedInState>(async (ctx) => {
-    if (!isSignedIn()) return { isSignedIn: false, user: null }
+    if (!isSignedIn()) {
+      syncCachedSignedInUsername(null)
+      return { isSignedIn: false, user: null }
+    }
+    const scope = signedInUserQueryScope.value
     const user = await composeQuery(ctx, signedInUserQuery)
+    syncCachedSignedInUsername(user.username, scope)
     return { isSignedIn: true, user }
   })
 }
@@ -224,8 +264,8 @@ export function useUpdateSignedInUser() {
       params: Pick<apis.UpdateSignedInUserParams, 'displayName' | 'avatar' | 'description'>
     ) {
       const updated = await apis.updateSignedInUser(params)
-      userState.username = updated.username
-      queryCache.invalidate(signedInUserQueryKey)
+      syncCachedSignedInUsername(updated.username)
+      queryCache.invalidate(signedInUserQueryKey.value)
       queryCache.invalidate(getUserQueryKey(updated.username))
       return updated
     },
@@ -247,7 +287,7 @@ export function useModifySignedInUsername() {
       const oldUsername = currentUser.username
 
       const updated = await apis.updateSignedInUser({ username: newUsername })
-      queryCache.invalidate(signedInUserQueryKey)
+      queryCache.invalidate(signedInUserQueryKey.value)
       queryCache.invalidate(getUserQueryKey(oldUsername))
       queryCache.invalidate(getUserQueryKey(updated.username))
       signOut()
