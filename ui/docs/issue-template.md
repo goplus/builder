@@ -1,5 +1,15 @@
 # Issue 模板（Issue Template）
 
+本文档的说明文字使用中文；issue 标题、段落标题和模板正文默认使用英文，以便直接复制到 GitHub issue。
+
+## 文档范围
+
+本文档定义 GitHub issue 的标题、字段语义和正文模板，用于让设计问题、体验目标、探索方向和验收条件在进入 Design PR 或 Demo PR 前保持清晰。
+
+## 非目标
+
+本文档不定义 PR 标题与描述格式，不定义 Git 操作步骤，也不替代产品需求文档、设计资产规范或后续生产实现方案。
+
 ## 写作原则
 
 - 标题直接描述用户目标或需要改善的体验，不写内部实现细节。
@@ -19,6 +29,18 @@
 - `Allow users to ...`
 - `Clarify ...`
 - `Fix ...`
+
+## 字段语义
+
+| 字段 | 作用 |
+| ---- | ---- |
+| Background | 提供问题发生的上下文，不写解决方案细节。 |
+| Problem | 描述用户面对的问题或体验断点。 |
+| What Needs Improvement | 说明需要改善的方向，但不提前锁死实现方式。 |
+| Expected Outcome | 从用户视角描述完成后的状态。 |
+| Product Tension | 说明探索型 issue 中的目标、约束或取舍。 |
+| Questions To Explore | 收敛当前需要回答的问题，避免把不确定内容写成结论。 |
+| Acceptance Criteria | 用于明确执行型 issue 的验收条件。 |
 
 ## 标准模板
 

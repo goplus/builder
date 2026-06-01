@@ -1,6 +1,6 @@
 # Git 协作操作指南（Git Collaboration Guide）
 
-本文档定义 UI 设计研发工作流中常见 Git 与 GitHub 操作的执行步骤。它是操作指南，不替代 Git 概念学习，也不定义 Design PR、Demo PR 或 Code PR 的交付边界。
+本文档定义 UI 设计研发工作流中常见 Git 与 GitHub 操作的执行步骤。它是操作指南，不替代 Git 概念学习，也不定义 Design PR、Demo PR 或后续生产实现的交付边界。
 
 ## 适用范围
 
@@ -70,7 +70,7 @@ git switch ui
 git merge upstream/ui
 ```
 
-如果当前工作基于真实前端开发分支，应将 `ui` 替换为对应目标分支，例如 `dev`。
+如果当前工作基于后续生产实现分支，应将 `ui` 替换为对应目标分支，例如 `dev`。
 
 同步后再推送到自己的 origin：
 
@@ -80,19 +80,27 @@ git push origin ui
 
 ## 基于 issue 创建工作分支
 
-工作分支应从最新目标分支创建。
+工作分支应从最新目标分支创建。分支名应优先以 issue 编号作为主键，便于从本地分支、远端分支、PR 和 issue 之间建立稳定对应关系。
 
 ```bash
 git switch ui
-git switch -c <branch-name>
+git switch -c issue-111
 ```
 
-分支名应能对应 issue 或工作内容，例如：
+如果同一个 issue 只需要一个 PR，分支名可直接使用 issue 编号：
 
 ```text
-design/issue-1234-notification-banner
-demo/issue-1234-notification-banner
+issue-111
 ```
+
+如果同一个 issue 需要拆出 Design PR 和 Demo PR，可以在 issue 编号前增加职责前缀：
+
+```text
+design/issue-111
+demo/issue-111
+```
+
+分支名可以在 issue 编号后追加简短描述，但不应省略 issue 编号。不要使用只能表达工作内容、无法对应 issue 的分支名。
 
 ## 提交 commit
 
@@ -139,9 +147,10 @@ git push
 - base repository 是 upstream。
 - base branch 是目标分支，例如 `ui` 或 `dev`。
 - compare branch 是 origin 中自己的工作分支。
-- PR 描述关联对应 issue，并说明 Design PR、Demo PR 或 Code PR 的职责。
+- PR 描述关联对应 issue，并说明 Design PR 或 Demo PR 的职责。
+- PR 描述中的 issue 编号应与分支名中的 issue 编号一致，例如分支 `design/issue-111` 对应 PR 描述中的 `Related to #111`、`Updates #111` 或 `Closes #111`。
 
-Design PR、Demo PR 和 Code PR 的标题与描述格式见：[PR 模板（Design PR Template）](./pr-template.md)。
+Design PR 和 Demo PR 的标题与描述格式见：[PR 模板（Design and Demo PR Template）](./pr-template.md)。
 
 ## 查看 PR 与 review
 

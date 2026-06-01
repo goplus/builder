@@ -4,17 +4,17 @@
 
 ## 定义与范围
 
-设计研发协作准入准备关注协作者是否理解设计资产、分支、PR、review、demo 验证和 Code PR 交接之间的关系。
+设计研发协作准入准备关注协作者是否理解设计资产、分支、PR、review、demo 验证和后续生产实现交接之间的关系。
 
-设计研发协作者指参与产品设计、用户体验设计、内容表达、体验验证或设计资产维护，但不承担真实前端生产代码实现责任的协作者。
+设计研发协作者指参与产品设计、用户体验设计、内容表达、体验验证或设计资产维护，但不承担后续生产实现责任的协作者。下文简称协作者。
 
 本文档适用于需要让设计师、产品经理、体验研究人员、内容协作者等角色参与 UI 设计研发工作流的项目。
 
 ## 非目标
 
-本文档不定义 Git 或 GitHub 的完整教学内容，不定义从 issue 到 demo 的操作流程，不定义设计资产（当前仓库为 Pencil 文件）的文件规范，也不定义生产前端实现规则。
+本文档不定义 Git 或 GitHub 的完整教学内容，不定义从 issue 到 demo 的操作流程，不定义设计资产（当前仓库为 Pencil 文件）的文件规范，也不定义后续生产实现规则。
 
-本文档不要求设计研发协作者掌握完整前端开发能力，不要求其独立完成生产代码实现，也不要求其承担 Code PR 的工程质量责任。
+本文档不要求设计研发协作者掌握完整前端开发能力，不要求其独立完成生产代码实现，也不要求其承担后续生产实现的工程质量责任。
 
 ## 准入能力模型
 
@@ -51,9 +51,9 @@
 协作者应具备以下判断能力：
 
 - 能找到并阅读当前 issue。
-- 能区分当前改动属于设计资产、demo 验证还是生产实现，并理解它们分别由 Design PR、Demo PR 和 Code PR 承接。
+- 能区分当前改动属于设计资产、demo 验证还是后续生产实现，并理解设计研发工作流主要由 Design PR 和 Demo PR 承接。
 - 能判断当前设计工作是否需要 demo 验证；当设计资产（当前仓库为 Pencil 文件）无法充分表达关键交互或设计表达时，应提供 demo 验证。
-- 能把同一个需求下的 issue、Design PR、Demo PR 和 Code PR 关联起来。
+- 能把同一个需求下的 issue、Design PR、Demo PR 和后续生产实现承接信息关联起来。
 
 ### 4. 交付自查
 
@@ -68,7 +68,7 @@
 
 开始进入具体 issue 前，协作者应能够：
 
-- 说明 `dev`、`ui`、Design PR、Demo PR 和 Code PR 的关系。
+- 说明 `ui` 分支、Design PR、Demo PR 和后续生产实现之间的关系。
 - 基于 issue 判断当前工作涉及设计资产、demo 验证还是生产实现。
 - 按设计审查清单完成自查，并提供 demo 验证入口或验证说明。
 - 区分应进入仓库历史的内容和临时验证上下文。
@@ -81,4 +81,4 @@
 - Git 协作操作指南：[Git 协作操作指南（Git Collaboration Guide）](./git-collaboration-guide.zh.md)
 - 设计自查标准：[设计审查清单（Design Review Checklist）](./design-review-checklist.md)
 - Issue 编写规则：[Issue 模板（Issue Template）](./issue-template.md)
-- Design PR 编写规则：[PR 模板（Design PR Template）](./pr-template.md)
+- PR 编写规则：[PR 模板（Design and Demo PR Template）](./pr-template.md)

@@ -13,6 +13,14 @@
 - 组件、结构、插槽、展示区不再混用命名方式
 - 后续批量检索、迁移、自动化校验都有稳定边界
 
+## 文档范围
+
+本文档定义文件系统资源、Pencil 设计节点、Pencil 变量和页面 `.pen` 引用方式的命名规则。
+
+## 非目标
+
+本文档不定义 Pencil 文件组织方式，不定义设计审查标准，也不替代 [Pencil 文件规范（Pencil Guidelines）](./pencil-guidelines.zh.md) 或 [设计资产校验（Design Asset Validation）](./design-asset-validation.md)。
+
 ## 1. `ui/docs` 与 `ui/images`
 
 `ui/docs` 与 `ui/images` 面向文件系统、路径和资源引用，统一使用 `kebab-case`。
