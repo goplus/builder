@@ -1,12 +1,12 @@
 import { nextTick } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { delayFile } from '@/utils/test'
-import { fromText, type Files } from '../common/file'
+import { fromText, toConfig, type Files } from '../common/file'
 import { SpxProject } from './project'
 import { Sprite } from './sprite'
 import { Costume } from './costume'
 import { Sound } from './sound'
-import { Animation } from './animation'
+import { Animation, AnimationSoundPlayback } from './animation'
 
 vi.mock('@/apis/aigc', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/apis/aigc')>()),
@@ -130,52 +130,30 @@ describe('Animation', () => {
     expect(exportedId).toBeUndefined()
   })
 
-  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
-  it.skip('should export sound binding using onPlay', () => {
+  it('should export once sound playback using onStart', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
     animation.setSound(project.sounds[0].id)
 
     const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: false })
+    expect(config.onStart).toEqual({ play: project.sounds[0].name })
+    expect(config.onPlay).toBeUndefined()
+  })
+
+  it('should export loop sound playback using onPlay', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    animation.setSound(project.sounds[0].id)
+    animation.setSoundPlayback(AnimationSoundPlayback.Loop)
+
+    const [config] = animation.export('', { sounds: project.sounds })
+    expect(config.onPlay).toEqual({ play: project.sounds[0].name })
     expect(config.onStart).toBeUndefined()
   })
 
-  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
-  it.skip('should export loop: true in onPlay when soundLoop is true', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].id)
-    animation.setSoundLoop(true)
-
-    const [config] = animation.export('', { sounds: project.sounds })
-    expect(config.onPlay).toEqual({ play: project.sounds[0].name, loop: true })
-  })
-
-  // Temporary skip until goplus/spx#1574 is fixed and animation export switches back from onStart to onPlay.
-  it.skip('should load soundLoop from onPlay.loop', () => {
-    const project = makeProject()
-    const sprite = project.sprites[0]
-    const costumes = sprite.costumes
-    const sounds = project.sounds
-
-    const [animation] = Animation.load(
-      'default',
-      {
-        frameFrom: costumes[0].name,
-        frameTo: costumes[0].name,
-        onPlay: { play: sounds[0].name, loop: true }
-      },
-      costumes,
-      { sounds }
-    )
-    expect(animation.sound).toBe(sounds[0].id)
-    expect(animation.soundLoop).toBe(true)
-  })
-
-  it('should default soundLoop to false when loop field is absent', () => {
+  it('should load loop sound playback from onPlay', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const costumes = sprite.costumes
@@ -191,10 +169,11 @@ describe('Animation', () => {
       costumes,
       { sounds }
     )
-    expect(animation.soundLoop).toBe(false)
+    expect(animation.sound).toBe(sounds[0].id)
+    expect(animation.soundPlayback).toBe(AnimationSoundPlayback.Loop)
   })
 
-  it('should load sound binding from legacy onStart for backward compatibility', () => {
+  it('should load once sound playback from onStart', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const costumes = sprite.costumes
@@ -210,21 +189,57 @@ describe('Animation', () => {
       costumes,
       { sounds }
     )
-    expect(animation.sound).toBe(sounds[0].id)
-    expect(animation.soundLoop).toBe(false)
+    expect(animation.soundPlayback).toBe(AnimationSoundPlayback.Once)
+  })
+
+  it('should preserve once sound playback through project export and load', async () => {
+    const project = makeProject()
+    const animation = project.sprites[0].animations[0]
+    animation.setSound(project.sounds[0].id)
+
+    const { metadata, files } = await project.export()
+    const spriteConfig = (await toConfig(files['assets/sprites/MySprite/index.json']!)) as {
+      fAnimations: Record<string, { onPlay?: unknown; onStart?: unknown }>
+    }
+    expect(spriteConfig.fAnimations.default.onStart).toEqual({ play: project.sounds[0].name })
+    expect(spriteConfig.fAnimations.default.onPlay).toBeUndefined()
+
+    const newProject = new SpxProject()
+    await newProject.load({ metadata, files })
+    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].id)
+    expect(newProject.sprites[0].animations[0].soundPlayback).toBe(AnimationSoundPlayback.Once)
+  })
+
+  it('should preserve loop sound playback through project export and load', async () => {
+    const project = makeProject()
+    const animation = project.sprites[0].animations[0]
+    animation.setSound(project.sounds[0].id)
+    animation.setSoundPlayback(AnimationSoundPlayback.Loop)
+
+    const { metadata, files } = await project.export()
+    const spriteConfig = (await toConfig(files['assets/sprites/MySprite/index.json']!)) as {
+      fAnimations: Record<string, { onPlay?: unknown; onStart?: unknown }>
+    }
+    expect(spriteConfig.fAnimations.default.onPlay).toEqual({ play: project.sounds[0].name })
+    expect(spriteConfig.fAnimations.default.onStart).toBeUndefined()
+
+    const newProject = new SpxProject()
+    await newProject.load({ metadata, files })
+    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].id)
+    expect(newProject.sprites[0].animations[0].soundPlayback).toBe(AnimationSoundPlayback.Loop)
   })
 
   it('should clone well', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
-    animation.setSoundLoop(true)
+    animation.setSoundPlayback(AnimationSoundPlayback.Loop)
     const clonedAnimation = animation.clone()
     expect(clonedAnimation.id).not.toBe(animation.id)
     expect(clonedAnimation.name).toBe(animation.name)
     expect(clonedAnimation.duration).toBe(animation.duration)
     expect(clonedAnimation.sound).toBe(animation.sound)
-    expect(clonedAnimation.soundLoop).toBe(animation.soundLoop)
+    expect(clonedAnimation.soundPlayback).toBe(animation.soundPlayback)
     expect(clonedAnimation.costumes.length).toBe(animation.costumes.length)
     for (let i = 0; i < clonedAnimation.costumes.length; i++) {
       expect(clonedAnimation.costumes[i].id).not.toBe(animation.costumes[i].id)
