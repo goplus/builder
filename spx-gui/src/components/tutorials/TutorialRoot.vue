@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { useIsRouteLoaded } from '@/utils/route-loading'
+import { useSignedInStateQuery } from '@/stores/user'
 
 import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
 
@@ -16,8 +17,15 @@ const i18n = useI18n()
 const copilot = useCopilot()
 const router = useRouter()
 const isRouteLoaded = useIsRouteLoaded()
+const signedInStateQuery = useSignedInStateQuery()
 
-const tutorial = new Tutorial(copilot, router, isRouteLoaded)
+const tutorialStorageScope = computed(() => {
+  const signedInState = signedInStateQuery.data.value
+  if (signedInState == null) return undefined
+  return signedInState.isSignedIn ? signedInState.user.username : null
+})
+
+const tutorial = new Tutorial(copilot, router, isRouteLoaded, tutorialStorageScope)
 
 // TODO: ensure `RegExp.escape` available & use `RegExp.escape` instead
 const tutorialCourseSuccessPattern = new RegExp(`<${tutorialCourseSuccess.tagName.replace('-', '\\-')}\\b`)

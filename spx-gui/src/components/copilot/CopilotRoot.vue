@@ -1,7 +1,7 @@
 <script lang="ts">
 import { z } from 'zod'
 import { debounce } from 'lodash'
-import { onBeforeUnmount, onUnmounted, toValue, watch, type WatchSource } from 'vue'
+import { computed, onBeforeUnmount, onUnmounted, toValue, watch, type WatchSource } from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
@@ -160,16 +160,46 @@ const messageEvents = useMessageEvents()
 const signedInStateQuery = useSignedInStateQuery()
 const skillRegistry = createBuiltInSkillRegistry()
 const copilot = new Copilot(skillRegistry)
-const sessionStorageRef = userSessionStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
 
-copilot.syncSessionWith({
+// Copilot session storage remains user-scoped, but the scope now comes from resolved signed-in
+// state instead of unresolved cached username hints. Scope semantics intentionally follow
+// `UserStorageScopeValue` from `user-storage.ts`, including the transient `undefined` startup
+// window before canonical signed-in state resolves.
+const copilotStorageScope = computed(() => {
+  const signedInState = signedInStateQuery.data.value
+  if (signedInState == null) return undefined
+  return signedInState.isSignedIn ? signedInState.user.username : null
+})
+const sessionStorageRef = userSessionStorageRef<SessionExported | null>(
+  'spx-gui-copilot-session',
+  null,
+  copilotStorageScope
+)
+
+const syncCopilotSessionStorage = {
   get() {
     return sessionStorageRef.value
   },
-  set(value) {
+  set(value: SessionExported | null) {
     sessionStorageRef.value = value
   }
-})
+}
+
+let hasConnectedCopilotSessionStorage = false
+watch(
+  copilotStorageScope,
+  (scope) => {
+    // `copilot.syncSessionWith(...)` eagerly loads persisted session data only once when wired up.
+    // If we connect it while scope is still `undefined`, `userSessionStorageRef` intentionally
+    // returns the initial value and Copilot would miss the saved session permanently for this page
+    // load. So wait until the storage scope is resolved as either signed-in (`string`) or guest
+    // (`null`), then connect exactly once.
+    if (scope === undefined || hasConnectedCopilotSessionStorage) return
+    copilot.syncSessionWith(syncCopilotSessionStorage)
+    hasConnectedCopilotSessionStorage = true
+  },
+  { immediate: true }
+)
 
 onUnmounted(() => {
   copilot.dispose()

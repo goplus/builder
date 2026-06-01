@@ -3,7 +3,7 @@ import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
 import { timeout, until } from '@/utils/utils'
-import { userSessionStorageRef } from '@/utils/user-storage'
+import { userSessionStorageRef, type UserStorageScope } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
 import type { Course } from '@/apis/course'
@@ -36,14 +36,18 @@ export function isTutorialTopic(topic: Topic): topic is TutorialTopic {
 }
 
 export class Tutorial {
-  private course = userSessionStorageRef<Course | null>('spx-gui-tutorial-course', null)
-  private series = userSessionStorageRef<CourseSeries | null>('spx-gui-tutorial-series', null)
+  private course
+  private series
 
   constructor(
     private copilot: Copilot,
     private router: Router,
-    private isRouteLoaded: Ref<boolean>
-  ) {}
+    private isRouteLoaded: Ref<boolean>,
+    storageScope: UserStorageScope
+  ) {
+    this.course = userSessionStorageRef<Course | null>('spx-gui-tutorial-course', null, storageScope)
+    this.series = userSessionStorageRef<CourseSeries | null>('spx-gui-tutorial-series', null, storageScope)
+  }
 
   get currentCourse(): Course | null {
     return this.course.value
