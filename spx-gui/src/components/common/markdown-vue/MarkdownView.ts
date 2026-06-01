@@ -1,5 +1,7 @@
 import { computed, defineComponent, h, type VNode, type Component } from 'vue'
 import { fromMarkdown } from 'mdast-util-from-markdown'
+import { gfmTable } from 'micromark-extension-gfm-table'
+import { gfmTableFromMarkdown } from 'mdast-util-gfm-table'
 import { html, find } from 'property-information'
 import type * as hast from 'hast'
 import { toHast } from 'mdast-util-to-hast'
@@ -184,7 +186,10 @@ function parseMarkdown({ value, components }: Props): hast.Nodes {
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
   value = preprocessSelfClosingComponents(value, customTagNames)
   value = preprocessIncompleteTags(value, customTagNames)
-  const mdast = fromMarkdown(value)
+  const mdast = fromMarkdown(value, {
+    extensions: [gfmTable()],
+    mdastExtensions: [gfmTableFromMarkdown()]
+  })
   const hast = toHast(mdast, { allowDangerousHtml: true })
   const rawProcessed = raw(hast, { tagfilter: false })
   const sanitizeSchema = getSanitizeSchema(customComponents)
