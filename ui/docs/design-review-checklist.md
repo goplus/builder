@@ -2,6 +2,16 @@
 
 本文档用于设计提交前自检，确保设计完整、清晰、可实现。
 
+## 文档范围
+
+本文档定义设计提交前的质量自查问题，重点检查设计表达是否完整、交互是否清晰、状态是否覆盖、文案是否一致，以及关键设计决策是否可追溯。
+
+本文档不定义 Pencil 文件组织、资源引用、命名规则或自动化校验机制。Pencil 文件规范见 [Pencil 文件规范（Pencil Guidelines）](./pencil-guidelines.zh.md)，设计资产校验机制见 [设计资产校验（Design Asset Validation）](./design-asset-validation.md)，命名规则见 [设计资产命名（Design Asset Naming）](./design-asset-naming.md)。
+
+## 使用边界
+
+本清单用于提交 Design PR 或 Demo PR 前的人工自查。它不能替代 PR review，也不能替代真实前端实现阶段的代码评审、测试和生产验收。
+
 ## 组件与规范
 
 - [ ] 是否优先复用 Design System 组件？

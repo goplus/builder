@@ -1,8 +1,8 @@
-# UI 设计研发工作流（Design Engineering Workflow）
+# UI 设计研发协作入口（Design Engineering Collaboration Entry）
 
 ## 定义与范围
 
-本文档定义 UI 设计研发工作流（Design Engineering Workflow）的目标、边界、协作链路和相关文档关系。
+本文档是 `ui/` 目录的设计研发协作入口，用于定义 UI 设计研发工作流（Design Engineering Workflow）的目标、边界、协作链路和相关文档关系。
 
 该工作流适用于需要衔接产品设计、用户体验设计与前端工程协作的项目。
 
@@ -88,6 +88,7 @@ Code PR
 | 文档 | 说明 |
 | ---- | ---- |
 | [设计研发协作准入准备](docs/design-engineering-onboarding.zh.md) | 设计研发协作者进入工作流前需要完成的概念、工具和协作准备 |
+| [Git 协作操作指南](docs/git-collaboration-guide.zh.md) | 基于 fork、branch、commit、push 和 PR 的具体协作操作步骤 |
 | [设计到 Demo 工作流](docs/design-to-demo-workflow.zh.md) | 从 issue 到设计资产、Design PR、Demo PR 和 Code PR 承接的操作流程 |
 | [Pencil 文件规范](docs/pencil-guidelines.zh.md) | 设计资产文件命名、组织、引用和 Figma 搬运规则 |
 | [Issue 模板](docs/issue-template.md) | GitHub issue 的结构模板 |

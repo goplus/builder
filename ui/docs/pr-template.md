@@ -54,7 +54,7 @@
 
 Required when this PR changes `ui/**/*.pen` or `ui/images/*`.
 
-- [ ] Checked affected `.pen` files against [Design Asset Validation](ui/docs/design-asset-validation.md)
+- [ ] Checked affected `.pen` files against [Design Asset Validation](./design-asset-validation.md)
 - [ ] Confirmed page `.pen` files reuse the component library instead of copying local tokens, fonts, or components
 - [ ] Confirmed new or changed resources are under `ui/images/` and can be traced from the related `.pen` files
 ```
@@ -89,7 +89,7 @@ Remind users to refresh page for latest version.
 
 ### Design Asset Validation
 
-- [x] Checked affected `.pen` files against [Design Asset Validation](ui/docs/design-asset-validation.md)
+- [x] Checked affected `.pen` files against [Design Asset Validation](./design-asset-validation.md)
 - [x] Confirmed page `.pen` files reuse the component library instead of copying local tokens, fonts, or components
 - [x] Confirmed new or changed resources are under `ui/images/` and can be traced from the related `.pen` files
 ```
