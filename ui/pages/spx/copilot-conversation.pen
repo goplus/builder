@@ -1,0 +1,402 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "EVab1",
+      "x": -7.592736864159178,
+      "y": -210.9484614689968,
+      "name": "CopilotConversation",
+      "width": 340,
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "vertical",
+      "gap": "$H:space-2",
+      "children": [
+        {
+          "type": "frame",
+          "id": "de9T2",
+          "name": "Surface",
+          "clip": true,
+          "width": "fill_container",
+          "fill": "$H:grey100",
+          "cornerRadius": "$H:border-radius-2",
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": {
+              "type": "gradient",
+              "gradientType": "linear",
+              "enabled": true,
+              "rotation": -270.00000005692806,
+              "size": {
+                "height": 1
+              },
+              "colors": [
+                {
+                  "color": "#c390ffff",
+                  "position": 0
+                },
+                {
+                  "color": "#72bbffff",
+                  "position": 1
+                }
+              ],
+              "center": {
+                "x": 0.49999999950320895,
+                "y": 0.5000003172770562
+              }
+            }
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000d",
+            "offset": {
+              "x": 0,
+              "y": "$H:shadow-y-3"
+            },
+            "blur": "$H:shadow-blur-4",
+            "spread": 8
+          },
+          "layout": "vertical",
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "jmoSb",
+              "type": "ref",
+              "ref": "H:L2oW9",
+              "x": 0,
+              "y": 0,
+              "children": [
+                {
+                  "id": "TIUn4",
+                  "type": "ref",
+                  "ref": "H:nxMzA"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "O45OnR",
+              "name": "Body",
+              "clip": true,
+              "width": 340,
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "$H:purple300"
+              },
+              "layout": "vertical",
+              "gap": "$H:space-4",
+              "padding": [
+                "$H:space-3",
+                "$H:space-4",
+                "$H:space-4",
+                "$H:space-4"
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "R7Nku",
+                  "name": "Content",
+                  "width": 308,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "layout": "vertical",
+                  "gap": "$H:space-3",
+                  "children": [
+                    {
+                      "id": "xsg44",
+                      "type": "ref",
+                      "ref": "H:lE3p0",
+                      "x": 0,
+                      "y": 0,
+                      "children": [
+                        {
+                          "id": "BSAm8",
+                          "type": "ref",
+                          "ref": "H:P228e",
+                          "content": " Return to the code editor to start coding. Click on",
+                          "fill": "$H:grey900"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TKmq6",
+                      "name": "HighlightLink",
+                      "clip": true,
+                      "gap": "$H:space-1",
+                      "children": [
+                        {
+                          "id": "RZWpi",
+                          "type": "ref",
+                          "ref": "H:lE3p0",
+                          "x": 0,
+                          "y": 0,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": {
+                              "bottom": 1
+                            },
+                            "fill": "$H:turquoise500"
+                          },
+                          "children": [
+                            {
+                              "id": "cZ4Wf",
+                              "type": "ref",
+                              "ref": "H:P228e",
+                              "content": "second line",
+                              "fill": "$H:turquoise500",
+                              "effect": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "WxefF",
+                          "type": "ref",
+                          "ref": "H:lE3p0",
+                          "x": 76,
+                          "y": 0,
+                          "children": [
+                            {
+                              "id": "wckGs",
+                              "type": "ref",
+                              "ref": "H:P228e",
+                              "content": "to edit it.",
+                              "fill": "$H:grey900",
+                              "x": 0,
+                              "y": 0
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "T36W5",
+                      "type": "ref",
+                      "ref": "H:lE3p0",
+                      "x": 0,
+                      "y": 68,
+                      "children": [
+                        {
+                          "id": "IyqZw",
+                          "type": "ref",
+                          "ref": "H:P228e",
+                          "content": "Next, we need to complete the following steps:",
+                          "fill": "$H:grey900",
+                          "x": 0,
+                          "y": 0
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "po1is",
+                      "name": "StepList",
+                      "width": "fill_container",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "layout": "vertical",
+                      "gap": "$H:space-2",
+                      "children": [
+                        {
+                          "id": "Q9VNUL",
+                          "type": "ref",
+                          "ref": "H:lE3p0",
+                          "x": 0,
+                          "y": 0,
+                          "children": [
+                            {
+                              "id": "m7jarH",
+                              "type": "ref",
+                              "ref": "H:P228e",
+                              "content": "1. xxxxxxxxxxx",
+                              "fill": "$H:grey900",
+                              "x": 0,
+                              "y": 0
+                            }
+                          ]
+                        },
+                        {
+                          "id": "ApJh0",
+                          "type": "ref",
+                          "ref": "H:lE3p0",
+                          "x": 0,
+                          "y": 30,
+                          "children": [
+                            {
+                              "id": "mbShh",
+                              "type": "ref",
+                              "ref": "H:P228e",
+                              "content": "2. xxxxxxxxxxx",
+                              "fill": "$H:grey900",
+                              "x": 0,
+                              "y": 0
+                            }
+                          ]
+                        },
+                        {
+                          "id": "dUWyL",
+                          "type": "ref",
+                          "ref": "H:lE3p0",
+                          "x": 0,
+                          "y": 60,
+                          "children": [
+                            {
+                              "id": "mDcDq",
+                              "type": "ref",
+                              "ref": "H:P228e",
+                              "content": "3. xxxxxxxxxxx",
+                              "fill": "$H:grey900",
+                              "x": 0,
+                              "y": 0
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "xutiO",
+                      "type": "ref",
+                      "ref": "H:MvbVf",
+                      "x": 0,
+                      "y": 196,
+                      "children": [
+                        {
+                          "id": "P8JixI",
+                          "type": "ref",
+                          "ref": "H:SAyOH"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "OC5jS",
+                  "name": "Actions",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": "$H:space-2",
+                  "children": [
+                    {
+                      "id": "oMsJ8",
+                      "type": "ref",
+                      "ref": "H:z8hcSb",
+                      "x": 0,
+                      "y": 0,
+                      "children": [
+                        {
+                          "id": "CTL1i",
+                          "type": "ref",
+                          "ref": "H:vN0Kk",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$H:grey400"
+                          },
+                          "descendants": {
+                            "H:aoHIs": {
+                              "content": "Explain More"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "cGE6W",
+                      "type": "ref",
+                      "ref": "H:z8hcSb",
+                      "x": 127,
+                      "y": 0,
+                      "children": [
+                        {
+                          "id": "G4CuDv",
+                          "type": "ref",
+                          "ref": "H:vN0Kk",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$H:grey400"
+                          },
+                          "descendants": {
+                            "H:aoHIs": {
+                              "content": "Next Step"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "VmJ7A",
+              "type": "ref",
+              "ref": "H:v6bX84",
+              "x": 0,
+              "y": 450.0000009536743,
+              "children": [
+                {
+                  "id": "ui1C8",
+                  "type": "ref",
+                  "ref": "H:rnjXi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "WhAfw",
+          "name": "Handle",
+          "width": "fill_container",
+          "height": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "gap": "$H:radius-3",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "euXgJ",
+              "type": "ref",
+              "ref": "H:elYOY",
+              "x": 122,
+              "y": 0,
+              "flipX": false,
+              "flipY": false,
+              "width": 96,
+              "height": "fit_content",
+              "children": [
+                {
+                  "id": "yELqc",
+                  "type": "ref",
+                  "ref": "H:j9lKP"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "H": "../../components/spx/builder-component.lib.pen"
+  }
+}
