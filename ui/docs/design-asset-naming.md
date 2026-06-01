@@ -1,4 +1,4 @@
-# Component Naming Rules
+# 设计资产命名（Design Asset Naming）
 
 本文统一约束四类对象：
 
@@ -27,7 +27,7 @@
 示例：
 
 ```text
-component-docs-naming.md
+design-asset-naming.md
 sprite-card-default.png
 add-sprite-item-medium-active.png
 card-widget-item-medium-hover.png
@@ -392,11 +392,7 @@ mask-2
 - 页面只保留页面结构和组件实例，不保留从组件库复制出来的本地 token、字体或主题
 - 页面里引用组件库变量或组件时必须使用 import alias 作用域，例如 `$a:grey300` 或 `a:<reusable-id>`
 - 页面 `.pen` 的 `themes`、`variables`、`fonts` 预期为空或不存在
-- 修改组件库或引用组件库的页面后，运行：
-
-```bash
-npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/design-asset-conformance.test.ts --run
-```
+- 修改组件库或引用组件库的页面后，按 [设计资产校验（Design Asset Validation）](./design-asset-validation.md) 执行自查或校验。
 
 ---
 

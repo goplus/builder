@@ -1,6 +1,18 @@
-# Design Asset Validation
+# 设计资产校验（Design Asset Validation）
 
 本文档记录 `ui/` 设计资产的校验与保护机制。
+
+## 文档范围
+
+本文档说明 `ui/` 目录下设计资产的校验目标、提交前自查口径和自动化缺口。它不定义设计审查标准，也不替代 Pencil 文件规范。
+
+本文档回答以下问题：
+
+- 设计资产校验覆盖哪些文件？
+- 当前哪些检查依赖人工自查，哪些检查尚未接入自动化机制？
+- 没有自动化校验时，如何降低遗漏检查的风险？
+- 设计资产校验失败后应该修设计资产、组件库、资源引用，还是修校验规则？
+- 本文档和设计审查清单的边界是什么？
 
 ## 适用范围
 
@@ -10,11 +22,7 @@
 - `ui/pages/spx/*.pen`
 - `ui/images/*` 中被 `.pen` 文件引用的字体和图片资源
 
-对应测试位于：
-
-```text
-ui/tests/pen/design-asset-conformance.test.ts
-```
+当前仓库未启用 `ui/tests/pen/` 自动化测试，也未在 `spx-gui/package.json` 中配置 `validate:pen`、`snapshot:pen` 或 `watch:pen-snapshot` 命令。本文档以设计资产校验目标和提交前自查口径为准；若后续恢复自动化测试或快照机制，应同步补充测试路径、运行命令和触发条件。
 
 ## 校验目标
 
@@ -29,63 +37,47 @@ ui/tests/pen/design-asset-conformance.test.ts
 
 ## 手动校验
 
-在仓库根目录运行：
+现阶段校验以设计审查清单和文件结构检查为主：
 
-```bash
-npm --prefix spx-gui run test -- --root .. --no-cache ui/tests/pen/design-asset-conformance.test.ts --run
-```
+- 对照 [设计审查清单（Design Review Checklist）](./design-review-checklist.md) 检查设计完整性。
+- 对照 [Pencil 文件规范（Pencil Guidelines）](./pencil-guidelines.zh.md) 检查命名、组织和引用规则。
+- 检查新增资源是否位于 `ui/images/`，并能被相关 `.pen` 文件追溯引用。
+- 检查页面级 `.pen` 是否优先引用组件库，而不是复制局部 token、字体或组件。
 
-如果当前 `spx-gui` 依赖未安装，需要先安装依赖。只修复依赖时使用：
+如需恢复自动化校验，应重新建立测试文件、运行命令和提交前触发入口，并在本文档中记录。
 
-```bash
-npm install --ignore-scripts
-```
+## 防遗漏机制
 
-避免普通 `npm install` 触发 `postinstall` 下载运行时资源。
+在自动化校验恢复前，设计资产检查依赖 Design PR 的显式自查和 review 阻断。
+
+- 如果 PR 修改了 `ui/**/*.pen` 或 `ui/images/*`，PR 描述必须保留并勾选设计资产校验项。
+- reviewer 应检查 PR 描述中是否说明已对照本文档完成自查；如果缺失，应要求补充后再继续 review。
+- 如果变更涉及 `ui/components/spx/builder-component.lib.pen`，PR 描述应明确说明组件库 token、组件引用或资源引用的影响范围。
+- 如果作者无法判断某项是否适用，应在 PR 描述中写明不确定点，而不是直接跳过。
+
+该机制不能替代自动化校验，但能让遗漏风险在 PR 创建和 review 阶段暴露。
 
 ## 组件库快照
 
-为降低 `builder-component.lib.pen` 本地误操作或异常退出导致的数据丢失风险，仓库提供组件库快照机制。
+当前仓库没有可运行的组件库快照脚本。若后续恢复快照机制，快照应只用于降低 `builder-component.lib.pen` 本地误操作或异常退出导致的数据丢失风险。
 
-常用命令在 `spx-gui/` 目录执行：
+快照只用于恢复和排查，不参与当前设计主源判断。不要修改快照来伪造设计资产已对齐。
 
-```bash
-npm run snapshot:pen
-npm run watch:pen-snapshot
-```
+## 自动化校验
 
-- `snapshot:pen`：手动创建一次组件库快照。
-- `watch:pen-snapshot`：监听组件库文件变更，并持续写入快照。
+当前仓库没有可运行的 `.pen` 自动化校验入口，也没有提交前 hook 或 CI workflow 在检查 `ui/**/*.pen`。
 
-快照目录：
+如果后续恢复自动化校验，应在本节记录：
 
-```text
-ui/components/spx/.snapshots/
-```
-
-快照只用于恢复和排查，不参与当前设计主源判断。
-
-## Git Hook
-
-仓库提供提交前校验。首次使用前在 `spx-gui/` 目录运行：
-
-```bash
-npm run setup:githooks
-```
-
-安装后，每次提交只要包含 staged 的 `ui/**/*.pen` 文件，就会执行设计资产校验。
-
-如果 staged 文件包含 `ui/components/spx/builder-component.lib.pen`，hook 还会额外创建一次组件库快照。
-
-也可以手动运行提交前校验：
-
-```bash
-npm run validate:pen
-```
+- 测试文件路径。
+- 本地运行命令。
+- 提交前 hook 触发条件。
+- CI workflow 触发条件。
+- 校验失败后的处理方式。
 
 ## 维护原则
 
-- 测试文件应保留在 `ui/tests/pen/`，因为它验证的是 `ui/` 下的设计资产。
-- 不要把设计资产测试放入 `spx-gui/src`，它不是前端业务单元测试。
-- 不要修改 `.snapshots` 来伪造设计资产已对齐。
-- 如果测试失败，应优先修正活跃 `.pen` 文件、组件库 token 或引用关系。
+- 如果恢复设计资产自动化测试，测试应验证 `ui/` 下的设计资产边界，不应混入前端业务单元测试。
+- 自动化恢复前，Design PR 模板中的设计资产校验项是防遗漏入口。
+- 如果校验失败，应优先修正活跃 `.pen` 文件、组件库 token 或引用关系。
+- 如果校验规则与当前工作流不一致，应先更新规则和文档，再要求设计资产按新规则执行。

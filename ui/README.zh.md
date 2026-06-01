@@ -1,84 +1,97 @@
-# UI 设计工程系统
+# UI 设计研发工作流（Design Engineering Workflow）
 
-这是一个「设计工程系统」，而不仅仅是存放设计稿的目录。
+## 定义与范围
 
-通过引入设计左移（Shift Left in Design）理念，设计被纳入工程主流程，使设计资产具备可版本化、可审查、可追溯、可复用、可自动校验的特性。设计师交付的不只是静态设计稿，还包括可运行、可体验、便于前端迁移的 prototype，让设计结果更接近最终实现，而不是停留在静态表达。
+本文档定义 UI 设计研发工作流（Design Engineering Workflow）的目标、边界、协作链路和相关文档关系。
 
-目标是提升团队的端到端试错能力，让问题尽量在设计阶段暴露，而不是等到开发或上线后再修复。
+该工作流适用于需要衔接产品设计、用户体验设计与前端工程协作的项目。
 
-## 目录结构
+它将设计资产管理、交互验证和工程交接准备前置到设计阶段，使设计能够以可版本化、可审查、可追溯的方式进入工程协作流程。
 
-```text
-ui/
-├── components/          # 可复用设计组件
-│   └── spx/
-│       └── builder-component.lib.pen
-├── pages/               # 页面级 Pencil 设计文件
-│   └── spx/
-│       ├── community-*.pen
-│       ├── editor-*.pen
-│       └── tutorial.pen
-├── prototype/           # 可运行前端原型
-├── docs/                # 工作流、模板和设计规范文档
-├── skills/              # 面向 AI Agent 的任务技能
-├── images/              # 字体、图片和设计素材
-└── tests/               # 设计资产校验测试
-    └── pen/
-```
+在当前仓库中，该工作流通过 `ui/` 目录管理设计资产（当前仓库为 Pencil 文件）、规范文档和协作约定。本文档不定义具体产品需求、Pencil 文件格式或真实前端实现规则。
 
-## 核心工作流
+## 问题背景
 
-当前推荐流程：
+在传统设计研发流程中，设计问题往往要到前端实现或 Code Review 阶段才暴露。此时团队已经进入真实工程实现阶段，任何交互、结构或设计表达上的返工，都会同时增加设计研发协作者和前端工程师的协作成本。
+
+本文讨论的设计问题包括交互路径不完整、状态覆盖不足、页面结构与真实实现不一致、设计资产无法追溯，以及设计意图在交付时缺少可验证表达。这类问题之所以常在 Code Review 阶段暴露，是因为静态设计稿难以完整表达交互状态和实现约束，前端工程师往往需要在真实代码中补足解释、取舍和验证工作。
+
+因此，本文关注的是协作边界与交付物边界：设计阶段应交付什么、验证什么、保留什么，以及哪些内容应由后续真实前端实现承接。
+
+## 核心思想
+
+本文中的「设计左移」指将原本容易发生在前端实现阶段的设计理解、交互验证和设计到代码的翻译工作，提前到设计阶段完成。
+
+设计左移的目标不是让设计研发协作者承担真实前端生产代码实现责任，而是让设计意图在进入真实前端实现前，已经具备可讨论、可验证和可交接的表达形式。
+
+通过引入设计左移，设计被纳入工程主流程，使设计资产具备可版本化、可审查、可追溯、可复用、可校验的特性。其目标是在设计阶段尽早暴露并修正问题，降低后续前端实现和工程集成阶段的返工成本。
+
+## 协作链路
+
+设计研发工作流的主链路如下：
 
 ```text
 Issue
   ↓
-PR（Design 发布）
+Design PR
   ↓
-PR（Code 发布）
+Demo PR
+  ↓
+Code PR
 ```
 
-- Issue：记录需求背景、问题、预期结果和验收标准。
-- Design PR：提交 Pencil 文件和 `ui/prototype` 改动，让设计和产品功能可以在 prototype 中体验。
-- Code PR：基于 Design PR 的 prototype 迁移样式，并补齐真实业务逻辑。
+各对象的职责与合并语义见「交付边界」。同一个需求应通过同一个 issue 关联 Design PR、Demo PR 和 Code PR。
 
-同一个需求应通过同一个 issue 关联 Design PR 和 Code PR。
+完整操作步骤见 [设计到 Demo 工作流](docs/design-to-demo-workflow.zh.md)。
 
-## Prototype
+## 交付边界
 
-`ui/prototype` 是可运行的功能原型，不是孤立 demo。
+| 对象 | 职责 | 合并语义 |
+| ---- | ---- | -------- |
+| Issue | 记录需求背景、问题、预期结果和验收标准。 | 不承载代码或设计资产。 |
+| Design PR | 提交设计资产（当前仓库为 Pencil 文件），说明设计意图、变更范围和验证方式。 | 合并前只保留预期进入仓库历史的设计资产。 |
+| Demo PR | 提供 demo 代码、预览环境、截图或验证记录，用于验证关键交互或设计表达。 | 默认不合并；必要上下文通过 PR 说明、预览环境、截图或验证记录保留。 |
+| Code PR | 基于 Design PR 和 Demo PR 中验证过的设计意图完成真实前端实现。 | 按真实前端工程标准合并。 |
 
-它用于在 Design PR 阶段表达产品功能、页面结构、设计样式和基础交互。具体维护规则见 [`prototype/AGENTS.md`](prototype/AGENTS.md)。
+## 目录职责
 
-## 快速开始
+`ui/` 目录中的内容按职责划分如下：
 
-### 设计师
+- `components/`、`pages/`：设计资产（当前仓库为 Pencil 文件）。
+- `images/`：字体、字体图标、图片和设计素材。
+- `docs/`：工作流、模板和设计规范文档。
+- `AGENTS.md`：面向 AI Agent 的 `ui/` 目录工作规则。
+
+## 参与角色
+
+### 设计研发协作者
+
+设计研发协作者指参与产品设计、用户体验设计、内容表达、体验验证或设计资产维护，但不承担真实前端生产代码实现责任的协作者。完整定义、能力要求和准备事项见 [设计研发协作准入准备](docs/design-engineering-onboarding.zh.md)。
+
+进入工作流前，应先完成该文档中的准入要求。
 
 1. 使用组件库：[`components/spx/builder-component.lib.pen`](components/spx/builder-component.lib.pen)
-2. 在 `pages/spx/` 中维护页面级 Pencil 文件。
-3. 在 `prototype/` 中同步可运行的页面和交互改动。
-4. 通过 Design PR 提交 `.pen` 和 prototype 改动。
+2. 在 `pages/spx/` 中维护页面级设计资产（当前仓库为 Pencil 文件）。
+3. 通过 Design PR 提交设计资产改动。
+4. 需要验证关键交互时，通过 Demo PR 提供 demo 代码和预览上下文。
 
 ### 开发者
 
 1. 阅读需求 issue 和 Design PR。
-2. 对照 `pages/spx/*.pen` 理解设计目标。
-3. 运行 `ui/prototype` 体验产品功能和样式改动。
-4. 在 Code PR 中迁移样式并补齐生产业务逻辑。
+2. 参考已验证的 demo 表达理解关键交互与设计目标。
+3. 在 Code PR 中完成真实前端实现，并补齐生产业务逻辑。
 
-## 文档
+开发实现前应优先阅读对应 issue、Design PR 和 demo 验证说明。
+
+## 文档关系
 
 | 文档 | 说明 |
 | ---- | ---- |
-| [团队工作流](docs/team-workflow.md) | 当前推荐的 Issue → Design PR → Code PR 协作流程 |
-| [团队工作流程（旧版）](docs/team-workflow-legacy.md) | 旧版协作流程，仅作历史参考 |
-| [Issue 模板](docs/issue-template.md) | AI 生成 GitHub issue 的结构模板 |
-| [PR 模板](docs/pr-template.md) | Design PR 标题和描述格式 |
-| [设计审查清单](docs/design-review-checklist.md) | 提交前检查清单 |
-| [设计资产校验](docs/design-asset-validation.md) | `.pen` 设计资产测试、组件库快照和 Git hook 说明 |
-| [设计到代码映射（旧版）](docs/design-to-code-mapping-legacy.md) | 旧版 `.pen` 到 `spx-gui` 的映射规则，历史参考 |
-| [组件文档命名](docs/component-docs-naming.md) | 组件文档命名约定 |
-
-## 测试与校验
-
-`ui/tests/pen/` 存放设计资产校验测试，用于保护组件库和页面级 Pencil 文件。详细说明见 [设计资产校验](docs/design-asset-validation.md)。
+| [设计研发协作准入准备](docs/design-engineering-onboarding.zh.md) | 设计研发协作者进入工作流前需要完成的概念、工具和协作准备 |
+| [设计到 Demo 工作流](docs/design-to-demo-workflow.zh.md) | 从 issue 到设计资产、Design PR、Demo PR 和 Code PR 承接的操作流程 |
+| [Pencil 文件规范](docs/pencil-guidelines.zh.md) | 设计资产文件命名、组织、引用和 Figma 搬运规则 |
+| [Issue 模板](docs/issue-template.md) | GitHub issue 的结构模板 |
+| [PR 模板](docs/pr-template.md) | GitHub Design PR 的标题和描述模板 |
+| [设计审查清单](docs/design-review-checklist.md) | 设计提交前的质量检查标准 |
+| [设计资产校验](docs/design-asset-validation.md) | `.pen` 设计资产校验目标、组件库快照和自查口径 |
+| [设计资产命名](docs/design-asset-naming.md) | 组件、设计资产和文档命名约定 |

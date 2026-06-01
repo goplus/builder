@@ -1,4 +1,4 @@
-# Issue Template
+# Issue 模板（Issue Template）
 
 ## 写作原则
 
@@ -121,9 +121,9 @@ Users should be able to ...
 - [ ] Criteria 3
 ```
 
-## AI 生成规则
+## 使用规则
 
-当用户提供需求背景后，AI 应按下面顺序生成 issue：
+使用本文模板编写 issue 时，应按下面顺序处理：
 
 1. 判断需求是探索型还是明确执行型。
 2. 生成一个清晰的英文标题。

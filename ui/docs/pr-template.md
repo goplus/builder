@@ -1,4 +1,4 @@
-# Design PR Template
+# PR 模板（Design PR Template）
 
 ## 标题规范
 
@@ -8,7 +8,7 @@
 |---------------|----------------|
 | `[Page]`      | 页面级设计变更 |
 | `[Component]` | 组件级变更     |
-| `[Docs]`      | 文档、流程、模板或 skill 变更 |
+| `[Docs]`      | 文档、流程、模板或工作规则变更 |
 
 | Type      | 说明               |
 |-----------|--------------------|
@@ -49,6 +49,14 @@
 
 - [ ] Yes
 - [ ] No
+
+### Design Asset Validation
+
+Required when this PR changes `ui/**/*.pen` or `ui/images/*`.
+
+- [ ] Checked affected `.pen` files against [Design Asset Validation](ui/docs/design-asset-validation.md)
+- [ ] Confirmed page `.pen` files reuse the component library instead of copying local tokens, fonts, or components
+- [ ] Confirmed new or changed resources are under `ui/images/` and can be traced from the related `.pen` files
 ```
 
 ## 完整示例
@@ -78,4 +86,10 @@ Remind users to refresh page for latest version.
 
 - [ ] Yes
 - [x] No
+
+### Design Asset Validation
+
+- [x] Checked affected `.pen` files against [Design Asset Validation](ui/docs/design-asset-validation.md)
+- [x] Confirmed page `.pen` files reuse the component library instead of copying local tokens, fonts, or components
+- [x] Confirmed new or changed resources are under `ui/images/` and can be traced from the related `.pen` files
 ```
