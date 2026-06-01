@@ -1,0 +1,223 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "vVxlX",
+      "x": -170,
+      "y": -109,
+      "name": "CopilotPrompt",
+      "width": 340,
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "vertical",
+      "gap": "$x:space-2",
+      "children": [
+        {
+          "type": "frame",
+          "id": "giU1r",
+          "name": "Surface",
+          "clip": true,
+          "width": "fill_container",
+          "fill": "$x:grey100",
+          "cornerRadius": "$x:space-3",
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": {
+              "type": "gradient",
+              "gradientType": "linear",
+              "enabled": true,
+              "rotation": -270.00000005692806,
+              "size": {
+                "height": 1
+              },
+              "colors": [
+                {
+                  "color": "#c390ffff",
+                  "position": 0
+                },
+                {
+                  "color": "#72bbffff",
+                  "position": 1
+                }
+              ],
+              "center": {
+                "x": 0.49999999950320895,
+                "y": 0.5000003172770562
+              }
+            }
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000d",
+            "offset": {
+              "x": 0,
+              "y": "$x:shadow-y-3"
+            },
+            "blur": "$x:shadow-blur-4",
+            "spread": 8
+          },
+          "layout": "vertical",
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "MsEHp",
+              "type": "ref",
+              "ref": "x:L2oW9",
+              "x": 0,
+              "y": 0,
+              "name": "Handle",
+              "children": [
+                {
+                  "id": "uIsao",
+                  "type": "ref",
+                  "ref": "x:nxMzA"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Nl3Yo",
+              "name": "Body",
+              "clip": true,
+              "width": 340,
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "$x:purple300"
+              },
+              "layout": "vertical",
+              "gap": "$x:space-4",
+              "padding": [
+                "$x:space-3",
+                "$x:space-4",
+                "$x:space-4",
+                "$x:space-4"
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "c1Eba3",
+                  "name": "Info",
+                  "width": 308,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "id": "P1mEL",
+                      "type": "ref",
+                      "ref": "x:lE3p0",
+                      "x": 0,
+                      "y": 0,
+                      "children": [
+                        {
+                          "id": "O3ZYU",
+                          "type": "ref",
+                          "ref": "x:P228e",
+                          "content": "Please sign in  to  continue.",
+                          "fill": "$x:grey800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EGR3B",
+                  "name": "Actions",
+                  "width": "fill_container",
+                  "cornerRadius": 999,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "zwKQ2",
+                      "type": "ref",
+                      "ref": "x:z8hcSb",
+                      "x": 0,
+                      "y": 0,
+                      "children": [
+                        {
+                          "id": "WqnWP",
+                          "type": "ref",
+                          "ref": "x:JwST5",
+                          "descendants": {
+                            "x:LOmxV": {
+                              "content": "Sign in"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "D0Wm7",
+              "type": "ref",
+              "ref": "x:v6bX84",
+              "x": 0,
+              "y": 112.00000095367432,
+              "name": "Composer",
+              "children": [
+                {
+                  "id": "e35VeV",
+                  "type": "ref",
+                  "ref": "x:kZRHM"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Z9AaW",
+          "name": "Footer",
+          "width": "fill_container",
+          "height": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "gap": "$x:radius-3",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "RtnNs",
+              "type": "ref",
+              "ref": "x:elYOY",
+              "x": 152,
+              "y": 0,
+              "name": "FoldAction",
+              "children": [
+                {
+                  "id": "OVoZM",
+                  "type": "ref",
+                  "ref": "x:lEey5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "x": "../../components/spx/builder-component.lib.pen"
+  }
+}
