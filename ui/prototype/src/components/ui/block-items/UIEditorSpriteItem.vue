@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
-import eyeOffIcon from '@/assets/editor/ui-icons/eye-off.svg?raw'
-import UIBlockItem from '@/components/editor/UIBlockItem.vue'
-import UIBlockItemTitle from '@/components/editor/UIBlockItemTitle.vue'
+import UIBlockItem from '@/components/ui/block-items/UIBlockItem.vue'
+import UIBlockItemTitle from '@/components/ui/block-items/UIBlockItemTitle.vue'
+import UIIcon from '@/components/ui/icons/UIIcon.vue'
 
-defineProps<{
-  name: string
-  title?: string
-  selected?: boolean
-  visible?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    name: string
+    title?: string
+    selected?: boolean
+    visible?: boolean | null
+  }>(),
+  {
+    visible: null
+  }
+)
 
 const imgStyle: CSSProperties = {
   width: '60px',
@@ -23,15 +28,16 @@ const imgStyle: CSSProperties = {
   <UIBlockItem :active="selected">
     <slot name="img" :style="imgStyle"></slot>
 
-    <UIBlockItemTitle class="gap-0.5 px-1" size="medium" :title="title ?? name">
+    <UIBlockItemTitle size="medium" :title="title ?? name">
       {{ name }}
       <template v-if="visible === false" #suffix>
-        <span
+        <UIIcon
           class="size-3.5 flex-none cursor-auto text-grey-700"
+          type="eyeOff"
           role="img"
           aria-label="Invisible"
-          v-html="eyeOffIcon"
-        ></span>
+          title="Invisible"
+        />
       </template>
     </UIBlockItemTitle>
     <slot></slot>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import UIEditorSpriteItem from '@/components/editor/UIEditorSpriteItem.vue'
+import UIEditorSpriteItem from '@/components/ui/block-items/UIEditorSpriteItem.vue'
 
 defineProps<{
   animation: {

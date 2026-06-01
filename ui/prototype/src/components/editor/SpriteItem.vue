@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import UIEditorSpriteItem from '@/components/editor/UIEditorSpriteItem.vue'
+import UIEditorSpriteItem from '@/components/ui/block-items/UIEditorSpriteItem.vue'
 
 defineProps<{
   sprite: {
     name: string
-    shortName: string
     image: string
     hidden: boolean
   }
@@ -17,7 +16,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UIEditorSpriteItem :name="sprite.shortName" :title="sprite.name" :selected="active" :visible="!sprite.hidden" @click="emit('select')">
+  <UIEditorSpriteItem :name="sprite.name" :selected="active" :visible="!sprite.hidden" @click="emit('select')">
     <template #img="{ style }">
       <img :src="sprite.image" :alt="sprite.name" :style="style" />
     </template>
