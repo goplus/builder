@@ -11,6 +11,7 @@ import { createProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, createFileWithUniversalUrl, saveFile } from '@/models/common/cloud'
 import { File as LazyFile } from '@/models/common/file'
 import { xbpHelpers } from '@/models/common/xbp'
+import type { PartialMetadata } from '@/models/project'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
@@ -281,17 +282,15 @@ async function importProject(
   const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
   const owner = existingProject?.owner ?? signedInUsername
   const name = existingProject?.name ?? project.name
-  const sourceMetadata = { ...serialized.metadata }
-  delete sourceMetadata.id
-  const metadata = {
-    ...sourceMetadata,
+  const metadata: PartialMetadata = {
+    ...serialized.metadata,
+    id: existingProject?.id,
     owner,
     name,
     displayName: serialized.metadata.displayName ?? project.name,
     type: serialized.metadata.type ?? ProjectType.Game,
     visibility: Visibility.Public
   }
-  if (existingProject != null) metadata.id = existingProject.id
 
   await cloudHelpers.save({ metadata, files: serialized.files }, signal)
   const metadataUpdates: UpdateProjectParams = {}
