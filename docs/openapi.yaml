@@ -5223,33 +5223,12 @@ components:
             $ref: "#/components/schemas/MovedResourceError"
     Unauthorized:
       description: Unauthorized. Authentication required.
-    OAuthInvalidBearerToken:
-      description: OAuth bearer token authentication failed.
-      headers:
-        WWW-Authenticate:
-          description: Bearer token authentication challenge.
-          schema:
-            type: string
-            examples:
-              - Bearer realm="XBuilder Account"
-              - Bearer realm="XBuilder Account", error="invalid_token"
     OAuthError:
       description: OAuth error response.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
-    OAuthUnsupportedMediaType:
-      description: OAuth request content type is not supported.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/OAuthError"
-          examples:
-            invalidContentType:
-              value:
-                error: invalid_request
-                error_description: "invalid content type: expected application/x-www-form-urlencoded"
     OAuthInvalidClient:
       description: OAuth client authentication failed.
       headers:
@@ -5263,6 +5242,16 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
+    OAuthInvalidBearerToken:
+      description: OAuth bearer token authentication failed.
+      headers:
+        WWW-Authenticate:
+          description: Bearer token authentication challenge.
+          schema:
+            type: string
+            examples:
+              - Bearer realm="XBuilder Account"
+              - Bearer realm="XBuilder Account", error="invalid_token"
     OAuthInsufficientScope:
       description: OAuth bearer token does not have the required scope.
       headers:
@@ -5272,6 +5261,15 @@ components:
             type: string
             examples:
               - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:read"
+    OAuthUnsupportedMediaType:
+      description: |
+        OAuth form request content type is not supported.
+
+        The server returns an OAuth `invalid_request` error before reading form-body OAuth parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OAuthError"
 
   schemas:
     Model:
