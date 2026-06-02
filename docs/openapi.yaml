@@ -18,7 +18,10 @@ paths:
       tags:
         - Account
       summary: List identity providers
-      description: Retrieve identity providers available for hosted sign-in.
+      description: |
+        Retrieve identity providers available for hosted sign-in.
+
+        Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
       security: []
       parameters:
         - name: clientID
@@ -56,7 +59,10 @@ paths:
       tags:
         - Account
       summary: Start identity provider authorization
-      description: Redirect the user to the provider authorization endpoint for the current hosted sign-in flow.
+      description: |
+        Redirect the user to the provider authorization endpoint for the current hosted sign-in flow.
+
+        Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
       security: []
       parameters:
         - name: provider
@@ -134,7 +140,7 @@ paths:
           description: Redirect back to hosted sign-in.
           headers:
             Location:
-              description: Hosted sign-in URL.
+              description: Hosted sign-in URL containing the original `clientID` and `requestURI`.
               schema:
                 type: string
                 format: uri
@@ -192,7 +198,7 @@ paths:
           description: Redirect back to hosted sign-in.
           headers:
             Location:
-              description: Hosted sign-in URL.
+              description: Hosted sign-in URL containing the original `clientID` and `requestURI`.
               schema:
                 type: string
                 format: uri
@@ -311,9 +317,10 @@ paths:
         The `request_uri` value must reference a valid pushed authorization request bound to the `client_id`.
 
         If no valid account session is available or hosted interaction is required, this endpoint redirects to hosted
-        sign-in. After account and app authorization is resolved, the authorization response redirects to the app
-        callback with an authorization code and the original `state`, or with OAuth error parameters and the original
-        `state`.
+        sign-in. The hosted sign-in URL carries `clientID` and `requestURI` query parameters for Account Web.
+
+        After account and app authorization is resolved, the authorization response redirects to the app callback with
+        an authorization code and the original `state`, or with OAuth error parameters and the original `state`.
       security: []
       parameters:
         - name: client_id
@@ -334,10 +341,15 @@ paths:
               - urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
       responses:
         "302":
-          description: Redirect to the app callback with an authorization code or OAuth error parameters.
+          description: |
+            Redirect to hosted sign-in, or to the app callback with an authorization code or OAuth error parameters.
           headers:
             Location:
-              description: App callback URL.
+              description: |
+                Hosted sign-in URL or app callback URL.
+
+                Hosted sign-in URLs contain `clientID` and `requestURI`. App callback URLs contain `code` and `state`,
+                or OAuth error parameters and `state`.
               schema:
                 type: string
                 format: uri
