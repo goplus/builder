@@ -4,6 +4,7 @@ import { computed, nextTick, onMounted, reactive, ref, shallowRef, watch, watchE
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
+import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
@@ -248,6 +249,15 @@ watchEffect(() => {
   img.addEventListener('load', () => {
     backdropImg.value = img
   })
+})
+
+const konvaStageBackgroundRectConfig = computed(() => {
+  return {
+    // Keep the stage white base aligned with SPX when there is no backdrop or the backdrop is transparent.
+    width: mapSize.value.width,
+    height: mapSize.value.height,
+    fill: '#fff'
+  } satisfies RectConfig
 })
 
 const konvaBackdropRectConfig = computed(() => {
@@ -547,6 +557,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
+        <v-rect :config="konvaStageBackgroundRectConfig"></v-rect>
         <v-rect v-if="konvaBackdropRectConfig" :config="konvaBackdropRectConfig"></v-rect>
         <DecoratorNode
           v-for="(decorator, idx) in props.project.tilemap?.decorators ?? []"
