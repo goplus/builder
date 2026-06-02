@@ -298,11 +298,16 @@ async function importProject(
   if (serialized.metadata.instructions != null) metadataUpdates.instructions = serialized.metadata.instructions
   if (serialized.metadata.extraSettings != null) metadataUpdates.extraSettings = serialized.metadata.extraSettings
   if (Object.keys(metadataUpdates).length > 0) await updateProject(owner, name, metadataUpdates, signal)
-  await createProjectRelease(owner, name, {
-    name: generateReleaseName(),
-    description: `Imported from course series "${manifest.courseSeries.title}"`,
-    thumbnail: ''
-  })
+  await createProjectRelease(
+    owner,
+    name,
+    {
+      name: generateReleaseName(),
+      description: `Imported from course series "${manifest.courseSeries.title}"`,
+      thumbnail: ''
+    },
+    signal
+  )
   return `${owner}/${name}`
 }
 

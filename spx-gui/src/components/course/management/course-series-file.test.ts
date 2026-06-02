@@ -202,10 +202,13 @@ describe('exportCourseSeriesFile', () => {
 
 describe('importCourseSeriesFile', () => {
   it('rewrites exact editor project segment and preserves local order', async () => {
+    const ctrl = new AbortController()
+
     await importCourseSeriesFile(
       existingSeries,
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
-      'alice'
+      'alice',
+      ctrl.signal
     )
 
     expect(addCourse).toHaveBeenCalledWith(
@@ -216,7 +219,7 @@ describe('importCourseSeriesFile', () => {
         references: [{ type: 'project', fullName: 'alice/RefProject' }],
         prompt: 'Imported prompt'
       },
-      undefined
+      ctrl.signal
     )
     expect(updateCourseSeries).toHaveBeenCalledWith(
       existingSeries.id,
@@ -224,7 +227,15 @@ describe('importCourseSeriesFile', () => {
         order: existingSeries.order,
         courseIDs: ['imported-course']
       }),
-      undefined
+      ctrl.signal
+    )
+    expect(createProjectRelease).toHaveBeenCalledWith(
+      'alice',
+      'EntryProject',
+      expect.objectContaining({
+        description: 'Imported from course series "Imported series"'
+      }),
+      ctrl.signal
     )
   })
 
