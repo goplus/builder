@@ -293,6 +293,8 @@ paths:
           $ref: "#/components/responses/OAuthError"
         "401":
           $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
 
   /account/oauth/authorize:
     get:
@@ -381,6 +383,8 @@ paths:
           $ref: "#/components/responses/OAuthError"
         "401":
           $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
 
   /account/oauth/introspect:
     post:
@@ -424,6 +428,8 @@ paths:
           $ref: "#/components/responses/OAuthError"
         "401":
           $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
 
   /account/oauth/revoke:
     post:
@@ -452,6 +458,8 @@ paths:
           $ref: "#/components/responses/OAuthError"
         "401":
           $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
 
   /account/user:
     get:
@@ -5231,6 +5239,17 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
+    OAuthUnsupportedMediaType:
+      description: OAuth request content type is not supported.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OAuthError"
+          examples:
+            invalidContentType:
+              value:
+                error: invalid_request
+                error_description: "invalid content type: expected application/x-www-form-urlencoded"
     OAuthInvalidClient:
       description: OAuth client authentication failed.
       headers:
