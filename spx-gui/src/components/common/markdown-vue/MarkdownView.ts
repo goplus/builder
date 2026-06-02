@@ -8,6 +8,9 @@ import { toHast } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
 import { defaultSchema, sanitize, type Schema as SanitizeSchema } from 'hast-util-sanitize'
 
+const markdownExtensions = [gfmTable()]
+const mdastExtensions = [gfmTableFromMarkdown()]
+
 export type Components = {
   /** Component for rendering code blocks */
   codeBlock?: Component
@@ -187,8 +190,8 @@ function parseMarkdown({ value, components }: Props): hast.Nodes {
   value = preprocessSelfClosingComponents(value, customTagNames)
   value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value, {
-    extensions: [gfmTable()],
-    mdastExtensions: [gfmTableFromMarkdown()]
+    extensions: markdownExtensions,
+    mdastExtensions
   })
   const hast = toHast(mdast, { allowDangerousHtml: true })
   const rawProcessed = raw(hast, { tagfilter: false })
