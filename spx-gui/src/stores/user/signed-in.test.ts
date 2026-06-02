@@ -68,22 +68,6 @@ describe('signed-in user query key scope', () => {
   })
 
   it('should change the signed-in user query key across sign-in and sign-out transitions', async () => {
-    getSignedInUser.mockResolvedValue({
-      id: 'user-id',
-      createdAt: '2025-01-01T00:00:00Z',
-      updatedAt: '2025-01-01T00:00:00Z',
-      username: 'alice',
-      displayName: 'Alice',
-      avatar: '',
-      description: '',
-      plan: 'free',
-      capabilities: {
-        canManageAssets: false,
-        canManageCourses: false,
-        canUsePremiumLLM: false
-      }
-    })
-
     const userStore = await import('./signed-in')
 
     withSetup(() => userStore.useSignedInUser())
@@ -102,27 +86,25 @@ describe('signed-in user query key scope', () => {
     expect(queryKey.value).toEqual(['signed-in-user', 2])
   })
 
-  it('should keep auth state when syncing username hint fails transiently during sign-in', async () => {
+  it('should not eagerly validate token by fetching signed-in user during sign-in', async () => {
     const userStore = await import('./signed-in')
-
-    getSignedInUser.mockRejectedValueOnce(new Error('network error'))
 
     await expect(userStore.signInWithAccessToken('token-a')).resolves.toBeUndefined()
     expect(userStore.isSignedIn()).toBe(true)
-    expect(userStore.getUnresolvedSignedInUsername()).toBe(null)
+    expect(getSignedInUser).not.toHaveBeenCalled()
   })
 
-  it('should still fail sign-in and clear auth state on unauthorized username sync', async () => {
+  it('should not bump auth-session scope when resolving access token for a guest session', async () => {
     const userStore = await import('./signed-in')
-    const { ApiException, ApiExceptionCode } = await import('@/apis/common/exception')
-    const unauthorizedError = new ApiException(ApiExceptionCode.errorUnauthorized, 'Unauthorized', {
-      req: new Request('https://api.example.com/user', { method: 'GET' })
-    })
 
-    getSignedInUser.mockRejectedValueOnce(unauthorizedError)
+    withSetup(() => userStore.useSignedInUser())
+    let queryKey = useVueQueryMock.mock.lastCall?.[0]?.queryKey
+    expect(queryKey.value).toEqual(['signed-in-user', 0])
 
-    await expect(userStore.signInWithAccessToken('token-a')).rejects.toBe(unauthorizedError)
-    expect(userStore.isSignedIn()).toBe(false)
-    expect(userStore.getUnresolvedSignedInUsername()).toBe(null)
+    await expect(userStore.ensureAccessToken()).resolves.toBeNull()
+
+    withSetup(() => userStore.useSignedInUser())
+    queryKey = useVueQueryMock.mock.lastCall?.[0]?.queryKey
+    expect(queryKey.value).toEqual(['signed-in-user', 0])
   })
 })
