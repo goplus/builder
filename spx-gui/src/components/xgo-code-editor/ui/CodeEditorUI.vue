@@ -13,7 +13,7 @@ export function useCodeEditorUICtx() {
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
-import { computedShallowReactive, localStorageRef, untilNotNull, untilTaskScheduled } from '@/utils/utils'
+import { computedShallowReactive, untilNotNull, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { useI18n } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/xgo'
@@ -36,6 +36,7 @@ import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
+import { userLocalStorageRef } from '@/utils/user-storage'
 
 const props = defineProps<{
   codeFilePath: string
@@ -68,50 +69,8 @@ const uiRef = computed(() => {
   return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, rename)
 })
 
-type LegacyUserScopedStorageValue<T> = {
-  __user__: string
-  __value__: T
-}
-
-function isLegacyUserScopedStorageValue<T>(value: unknown): value is LegacyUserScopedStorageValue<T> {
-  return (
-    value != null &&
-    typeof value === 'object' &&
-    '__user__' in value &&
-    typeof value.__user__ === 'string' &&
-    '__value__' in value
-  )
-}
-
-/**
- * Read a plain browser-scoped editor preference from localStorage.
- *
- * These editor UI preferences are no longer isolated by signed-in username. To avoid dropping
- * existing user-scoped values from older builds, this helper unwraps the legacy
- * `{ __user__, __value__ }` format once and rewrites it into the plain value format used by
- * `localStorageRef`.
- */
-function editorPreferenceLocalStorageRef<T>(key: string, initialValue: T) {
-  const storedValue = localStorage.getItem(key)
-  if (storedValue != null) {
-    try {
-      const parsedValue = JSON.parse(storedValue)
-      if (isLegacyUserScopedStorageValue<T>(parsedValue)) {
-        if (parsedValue.__value__ === initialValue) {
-          localStorage.removeItem(key)
-        } else {
-          localStorage.setItem(key, JSON.stringify(parsedValue.__value__))
-        }
-      }
-    } catch {
-      // Ignore malformed legacy data here and let `localStorageRef` fall back to its normal read path.
-    }
-  }
-  return localStorageRef(key, initialValue)
-}
-
 const initialFontSize = 12
-const fontSize = editorPreferenceLocalStorageRef('spx-gui-code-font-size', initialFontSize)
+const fontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
@@ -222,7 +181,7 @@ const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
-const sidebarWidth = editorPreferenceLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
+const sidebarWidth = userLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
 const isResizing = ref(false)
 
 watchEffect((onCleanup) => {

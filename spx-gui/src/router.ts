@@ -2,7 +2,7 @@ import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import type { ExploreOrder } from './apis/project'
-import { initiateSignIn, isSignedIn } from './stores/user'
+import { initiateSignIn, isSignedIn, getUnresolvedSignedInUsername } from './stores/user'
 
 export function getProjectEditorRoute(ownerName: string, projectName: string, publish = false) {
   ownerName = encodeURIComponent(ownerName)
@@ -11,8 +11,14 @@ export function getProjectEditorRoute(ownerName: string, projectName: string, pu
 }
 
 export function getOwnProjectEditorRoute(projectName: string, publish = false) {
-  projectName = encodeURIComponent(projectName)
-  return publish ? `/editor/${projectName}?publish` : `/editor/${projectName}`
+  // TODO: Remove this helper after splitting "open my project editor" into two layers:
+  // - a pure self-entry route builder like `/editor/:projectName`
+  // - async resolution of the canonical signed-in user at that route boundary
+  // Then navigate to `/editor/:owner/:project` with backend-confirmed signed-in user data,
+  // instead of deriving owner name from unresolved local auth state synchronously.
+  const username = getUnresolvedSignedInUsername()
+  if (username == null) throw new Error('User not signed in')
+  return getProjectEditorRoute(username, projectName, publish)
 }
 
 export function getProjectPageRoute(owner: string, name: string) {
@@ -133,8 +139,22 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/editor/:projectNameInput',
-    component: () => import('@/pages/editor/entry.vue'),
-    props: true
+    redirect(to) {
+      const { projectNameInput } = to.params
+      // TODO: Replace this synchronous redirect with an async entry boundary (for example `beforeEnter`) that:
+      // - checks/initiates sign-in
+      // - awaits canonical signed-in user data
+      // - redirects to `/editor/:owner/:project`
+      // That would let router stop depending on unresolved local username hints here.
+      const username = getUnresolvedSignedInUsername()
+      // Route with `redirect` will not trigger the global `beforeEach` guard,
+      // so we need to check sign-in status here.
+      if (username == null) {
+        initiateSignIn()
+        throw new Error('User not signed in') // prevent router from redirecting
+      }
+      return getProjectEditorRoute(username, projectNameInput as string)
+    }
   },
   {
     path: '/sign-in/callback',

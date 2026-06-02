@@ -1,5 +1,6 @@
 import { reactive, watchEffect, computed, ref } from 'vue'
 import Sdk from 'casdoor-js-sdk'
+import { Client } from '@/apis/common/client'
 import { casdoorConfig } from '@/utils/env'
 import { useQueryWithCache, useQueryCache, useQuery, composeQuery } from '@/utils/query'
 import { useAction } from '@/utils/exception'
@@ -18,16 +19,14 @@ const userStateStorageKey = 'spx-user'
 const userState = reactive({
   accessToken: null as string | null,
   accessTokenExpiresAt: null as number | null,
-  refreshToken: null as string | null
+  refreshToken: null as string | null,
+  username: null as string | null
 })
 
 export function initUserState() {
   const stored = localStorage.getItem(userStateStorageKey)
   if (stored != null) {
-    const parsed = JSON.parse(stored)
-    userState.accessToken = parsed.accessToken ?? null
-    userState.accessTokenExpiresAt = parsed.accessTokenExpiresAt ?? null
-    userState.refreshToken = parsed.refreshToken ?? null
+    Object.assign(userState, JSON.parse(stored))
   }
   watchEffect(() => localStorage.setItem(userStateStorageKey, JSON.stringify(userState)))
 }
@@ -38,10 +37,19 @@ interface TokenResponse {
   refresh_token: string
 }
 
-function handleTokenResponse(resp: TokenResponse) {
+async function fetchSignedInUsernameByAccessToken(accessToken: string) {
+  const client = new Client()
+  client.setTokenProvider(async () => accessToken)
+  const user = (await client.get('/user')) as SignedInUser
+  return user.username
+}
+
+async function handleTokenResponse(resp: TokenResponse) {
+  const username = await fetchSignedInUsernameByAccessToken(resp.access_token)
   userState.accessToken = resp.access_token
   userState.accessTokenExpiresAt = resp.expires_in ? Date.now() + resp.expires_in * 1000 : null
   userState.refreshToken = resp.refresh_token
+  userState.username = username
 }
 
 /**
@@ -71,14 +79,16 @@ export function initiateSignIn(
 
 export async function completeSignIn() {
   const resp = await casdoorSdk.exchangeForAccessToken()
-  handleTokenResponse(resp)
+  await handleTokenResponse(resp)
   bumpAuthSessionScope()
 }
 
 export async function signInWithAccessToken(accessToken: string) {
+  const username = await fetchSignedInUsernameByAccessToken(accessToken)
   userState.accessToken = accessToken
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
+  userState.username = username
   bumpAuthSessionScope()
 }
 
@@ -95,6 +105,7 @@ export function signOut() {
   userState.accessToken = null
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
+  userState.username = null
 }
 
 const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
@@ -111,7 +122,7 @@ export async function ensureAccessToken(): Promise<string | null> {
   tokenRefreshPromise = (async () => {
     try {
       const resp = await casdoorSdk.refreshAccessToken(userState.refreshToken!)
-      handleTokenResponse(resp)
+      await handleTokenResponse(resp)
     } catch (e) {
       console.error('failed to refresh access token', e)
       throw e
@@ -139,6 +150,21 @@ function isAccessTokenValid(): boolean {
 
 export function isSignedIn(): boolean {
   return isAccessTokenValid() || userState.refreshToken != null
+}
+
+/**
+ * Returns the current signed-in username from locally available auth state only.
+ *
+ * The returned value is unresolved: it comes from local cached state and may lag behind the
+ * canonical signed-in user returned by the backend.
+ *
+ * Use this only at boundaries that need a synchronous session-scoped identity hint, such as
+ * temporary route derivation or user-scoped storage. Do not use it for behavior-sensitive checks
+ * like ownership, permissions, or other logic that should depend on canonical backend data.
+ */
+export function getUnresolvedSignedInUsername(): string | null {
+  if (!isSignedIn()) return null
+  return userState.username
 }
 
 const signedInUserStaleTime = 60 * 1000 // 1min

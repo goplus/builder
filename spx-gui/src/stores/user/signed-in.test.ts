@@ -6,6 +6,7 @@ const exchangeForAccessToken = vi.fn()
 const refreshAccessToken = vi.fn()
 const signinRedirect = vi.fn()
 const getSignedInUser = vi.fn()
+const clientGet = vi.fn()
 const useVueQueryMock = vi.fn()
 
 class MockCasdoorSdk {
@@ -24,6 +25,15 @@ class MockCasdoorSdk {
 
 vi.mock('casdoor-js-sdk', () => ({
   default: MockCasdoorSdk
+}))
+
+const Client = vi.fn(function MockClient(this: { get: typeof clientGet; setTokenProvider: ReturnType<typeof vi.fn> }) {
+  this.get = clientGet
+  this.setTokenProvider = vi.fn()
+})
+
+vi.mock('@/apis/common/client', () => ({
+  Client
 }))
 
 vi.mock('@/apis/user', async (importOriginal) => {
@@ -50,6 +60,8 @@ describe('signed-in user query key scope', () => {
     refreshAccessToken.mockReset()
     signinRedirect.mockReset()
     getSignedInUser.mockReset()
+    clientGet.mockReset()
+    Client.mockClear()
     useVueQueryMock.mockReset()
     useVueQueryMock.mockReturnValue({
       isLoading: ref(false),
@@ -69,6 +81,7 @@ describe('signed-in user query key scope', () => {
 
   it('should change the signed-in user query key across sign-in and sign-out transitions', async () => {
     const userStore = await import('./signed-in')
+    clientGet.mockResolvedValue({ username: 'alice' })
 
     withSetup(() => userStore.useSignedInUser())
     expect(useVueQueryMock).toHaveBeenLastCalledWith(expect.objectContaining({ queryKey: expect.any(Object) }))
@@ -86,11 +99,14 @@ describe('signed-in user query key scope', () => {
     expect(queryKey.value).toEqual(['signed-in-user', 2])
   })
 
-  it('should not eagerly validate token by fetching signed-in user during sign-in', async () => {
+  it('should resolve username from the access token when signing in with a token', async () => {
     const userStore = await import('./signed-in')
+    clientGet.mockResolvedValue({ username: 'alice' })
 
     await expect(userStore.signInWithAccessToken('token-a')).resolves.toBeUndefined()
     expect(userStore.isSignedIn()).toBe(true)
+    expect(userStore.getUnresolvedSignedInUsername()).toBe('alice')
+    expect(clientGet).toHaveBeenCalledWith('/user')
     expect(getSignedInUser).not.toHaveBeenCalled()
   })
 
