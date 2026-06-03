@@ -96,8 +96,8 @@ flowchart LR
 
     Provider["External identity provider"]
 
-    XBuilder -->|hosted sign-in| AccountWeb
-    SiblingApp -->|hosted sign-in| AccountWeb
+    XBuilder -->|hosted interaction| AccountWeb
+    SiblingApp -->|hosted interaction| AccountWeb
     AccountWeb -->|same-origin facade<br/>/api/*| AccountAPI
     XBuilder -->|product requests| XBuilderBackend
     SiblingApp -->|product requests| AppBackend
@@ -220,11 +220,11 @@ Regardless of the model, product authorization for first-party apps is still own
 product authorization system. Account sessions, Account-issued app-scoped OAuth tokens, and app sessions should not
 encode roles, memberships, workspaces, seats, or product permissions.
 
-First-party app SSO should use OAuth 2.0 authorization code flow. The user-facing hosted sign-in entry is
-`account.xbuilder.com/sign-in`, not XBuilder Account API. First-party app frontends can enter this page through their
-own OAuth facade. Hosted sign-in handles account resolution, user creation, third-party identity binding, and app
-callback. It can also host interactions such as profile completion, account-linking confirmation, and identity conflict
-handling.
+First-party app SSO should use OAuth 2.0 authorization code flow. First-party app frontends should start the flow
+through their own OAuth facade instead of calling XBuilder Account API directly. XBuilder Account can complete an OAuth
+authorization request directly, or enter `account.xbuilder.com/sign-in` when Account Web needs to participate. Hosted
+sign-in can host third-party identity sign-in, admin-managed password sign-in, profile completion, account-linking
+confirmation, identity conflict handling, and other hosted interactions.
 
 Public and confidential apps must both use PKCE in authorization code flow. Public apps do not rely on app secrets.
 Confidential apps may also use app secrets as OAuth client credentials for backend token exchange. Secret values should
@@ -237,9 +237,9 @@ Account remains the authoritative source for these fields.
 
 ## Sign-in integration model
 
-XBuilder Account provides unified hosted sign-in at `account.xbuilder.com/sign-in`. Hosted sign-in uses
-`account.xbuilder.com/api/*` as a same-origin API facade. The facade forwards to `api.xbuilder.com/account/*`. For
-example, `account.xbuilder.com/api/user` maps to `api.xbuilder.com/account/user`, and
+XBuilder Account provides hosted sign-in for interactions that need Account Web at `account.xbuilder.com/sign-in`.
+Hosted sign-in uses `account.xbuilder.com/api/*` as a same-origin API facade. The facade forwards to
+`api.xbuilder.com/account/*`. For example, `account.xbuilder.com/api/user` maps to `api.xbuilder.com/account/user`, and
 `account.xbuilder.com/api/oauth/token` maps to `api.xbuilder.com/account/oauth/token`. `api.xbuilder.com/account/*` is
 the authoritative XBuilder Account API entry point.
 
@@ -257,19 +257,21 @@ flowchart LR
     AccountAPI["Account API<br/>api.xbuilder.com/account/*"]
     Provider["External identity provider"]
 
-    App -->|open hosted sign-in| AccountWeb
+    App -->|OAuth facade| AppBackend
+    AppBackend -->|OAuth / Account API calls| AccountAPI
+    AccountAPI -->|hosted interaction when needed| AccountWeb
     AccountWeb -->|same-origin API calls| AccountFacade
     AccountFacade -->|forwards| AccountAPI
-    AccountAPI -->|provider authorize| Provider
+    AccountAPI -->|provider authorize or verification| Provider
     Provider -->|provider callback| AccountAPI
-    AccountWeb -->|app callback| App
+    AccountAPI -->|app callback| App
     App -->|product requests| AppBackend
-    AppBackend -->|Account API calls| AccountAPI
 ```
 
-Ordinary Web apps and native iOS or Android apps can both use hosted sign-in. Native apps should enter
-`account.xbuilder.com/sign-in` through the system browser or system authentication session, such as
-`ASWebAuthenticationSession` or Chrome Custom Tabs. They should not use embedded WebView.
+Ordinary Web apps and native iOS or Android apps can use hosted sign-in when hosted interaction is needed or when the
+app chooses hosted provider acquisition. Native apps should enter `account.xbuilder.com/sign-in` through the system
+browser or system authentication session, such as `ASWebAuthenticationSession` or Chrome Custom Tabs. They should not
+use embedded WebView.
 
 Provider credential acquisition has two ways:
 
@@ -281,10 +283,12 @@ Provider credential acquisition has two ways:
 Provider credential handoff is suitable for WeChat Mini Program `wx.login()` codes, Apple authorization codes, Google
 server auth codes, and similar cases. The client can pass the credential to XBuilder Account through PAR extension
 parameters such as `xbuilder_provider` and `xbuilder_provider_code`. This only replaces the upstream provider web
-authorize stage. It does not replace the XBuilder Account sign-in flow. Regardless of whether the credential comes from
-hosted provider acquisition or handoff, XBuilder Account should use the same account resolution, user creation, and
-third-party identity binding logic. If profile completion, account-linking confirmation, or identity conflict handling
-is required, these interactions should happen inside hosted sign-in.
+authorize stage. It does not replace XBuilder Account's account resolution, user creation, third-party identity binding,
+or the OAuth authorization code flow. Regardless of whether the credential comes from hosted provider acquisition or
+handoff, XBuilder Account should use the same account resolution, user creation, and third-party identity binding logic.
+If handoff is enough to resolve the account and no hosted interaction is needed, the OAuth authorization request
+completes directly and returns to the app callback. If profile completion, account-linking confirmation, identity
+conflict handling, or reauthentication is required, these interactions should happen inside hosted sign-in.
 
 Provider credential handoff errors should be returned through the PAR or authorize flow as OAuth errors. Expired,
 consumed, provider-mismatched, or unknown provider codes must not produce usable `request_uri` values. XBuilder Account
@@ -304,28 +308,39 @@ backend. Product APIs must verify the token client/app and must not only check t
 
 The two models share the same frontend-facing OAuth flow. The app frontend faces the app backend's OAuth facade. The app
 backend can transparently forward XBuilder Account's OAuth token response, or it can convert the Account token response
-into an app-owned session in its own `/oauth/token`. The flow is:
+into an app-owned session in its own `/oauth/token`. Hosted sign-in is the interaction branch used when Account Web
+needs to participate. It is not required for every provider credential handoff. The flow is:
 
 ```mermaid
 sequenceDiagram
     participant App as App frontend
     participant Backend as App backend
-    participant UserAgent as Browser / system auth session
+    participant Runtime as App runtime / user agent
     participant AccountWeb as Account Web
+    participant AccountFacade as Account Web API facade
     participant AccountAPI as XBuilder Account API
 
-    App->>Backend: POST /oauth/par with PKCE challenge
+    App->>Backend: POST /oauth/par with PKCE challenge and optional provider code
     Backend->>AccountAPI: Forward PAR request
     AccountAPI-->>Backend: Return request_uri
     Backend-->>App: Return request_uri
-    App->>UserAgent: Open app /oauth/authorize with request_uri
-    UserAgent->>Backend: GET /oauth/authorize facade
-    Backend-->>UserAgent: Redirect to Account hosted sign-in
-    UserAgent->>AccountWeb: Complete hosted sign-in
-    AccountWeb->>AccountAPI: Resolve account and app authorization
-    AccountAPI-->>AccountWeb: Return callback URL with authorization code
-    AccountWeb->>UserAgent: Redirect to app callback
-    UserAgent->>App: Deliver authorization code and state
+    App->>Runtime: Open or request app /oauth/authorize with request_uri
+    Runtime->>Backend: GET /oauth/authorize facade
+    Backend->>AccountAPI: Forward authorize request
+    alt Account resolved without hosted interaction
+        AccountAPI-->>Backend: Return app callback Location with code and state
+        Backend-->>Runtime: Redirect to app callback
+    else Hosted interaction required
+        AccountAPI-->>Backend: Return hosted sign-in Location
+        Backend-->>Runtime: Redirect to Account hosted sign-in
+        Runtime->>AccountWeb: Complete hosted interaction
+        AccountWeb-->>Runtime: Navigate to authorize continuation
+        Runtime->>AccountFacade: GET /api/oauth/authorize with client_id and request_uri
+        AccountFacade->>AccountAPI: Forward authorize request
+        AccountAPI-->>AccountFacade: Return app callback Location with code and state
+        AccountFacade-->>Runtime: Redirect to app callback
+    end
+    Runtime->>App: Deliver authorization code and state
     App->>Backend: POST /oauth/token with code and PKCE verifier
     Backend->>AccountAPI: Exchange code with PKCE verifier and client credentials when confidential
     AccountAPI-->>Backend: Return Account-issued app-scoped OAuth tokens
@@ -343,6 +358,11 @@ sequenceDiagram
     Backend->>AccountAPI: GET /account/user when account fields are needed
     AccountAPI-->>Backend: Return account user
 ```
+
+If provider credential handoff is enough to resolve the account and no hosted interaction is needed,
+`/account/oauth/authorize` returns the app callback directly. Constrained runtimes such as WeChat Mini Programs can
+handle this step inside application code. If authorize returns hosted sign-in or another interaction URL, the app
+frontend should open that URL to complete the interaction.
 
 In Account-issued token model, the app backend does not maintain XBuilder Account token state for that user. It can use
 its own `/oauth/*` as a transparent OAuth facade forwarding to `api.xbuilder.com/account/oauth/*`. The app frontend
@@ -407,7 +427,7 @@ after a 401. If a product request returns 401, the app frontend should refresh a
 once. Concurrent refresh attempts in the same frontend runtime must be merged. When multiple Web tabs share the same
 sign-in state, they should coordinate which tab performs refresh and sync token updates through `BroadcastChannel` or
 `storage` events to avoid concurrent use of the same rotating refresh token. If refresh fails, the app frontend should
-clear local product API tokens and the current user cache, then enter hosted sign-in again.
+clear local product API tokens and the current user cache, then enter the OAuth sign-in flow again.
 
 OAuth token revocation is used to revoke Account-issued app-scoped OAuth tokens or refresh tokens. `app_grant` validity
 is determined by the related token family and app status. When `app_grant` needs to be revoked, the refresh token family
@@ -417,24 +437,26 @@ are owned by each app backend.
 
 ## Key flows
 
-### Third-party identity hosted sign-in completion flow
+### Third-party identity SSO completion flow
 
-1. XBuilder Account verifies the provider credential and uses the stable provider subject to find or create
+1. App frontend starts an OAuth authorization request through the app backend's OAuth facade. The request can carry
+   provider credential handoff through PAR or later enter hosted provider acquisition
+2. XBuilder Account verifies the provider credential and uses the stable provider subject to find or create
    `user_identity` and the linked `user`
-2. If profile completion, account-linking confirmation, or identity conflict handling is needed, XBuilder Account
-   completes these steps in the hosted sign-in page
-3. XBuilder Account creates or reuses account session
-4. XBuilder Account returns authorization code and OAuth state to the app callback according to the OAuth authorization
+3. If the account is resolved and no hosted interaction is needed, XBuilder Account completes the OAuth authorization
+   request and must not create an account session
+4. If profile completion, account-linking confirmation, identity conflict handling, or reauthentication is needed,
+   XBuilder Account completes these steps in the hosted sign-in page and creates or reuses an account session
+5. XBuilder Account returns authorization code and OAuth state to the app callback according to the OAuth authorization
    request
-5. App frontend submits the authorization code and PKCE verifier to the app backend's OAuth token endpoint
-6. App backend uses these parameters, with client credentials for confidential apps, to complete token exchange with
+6. App frontend submits the authorization code and PKCE verifier to the app backend's OAuth token endpoint
+7. App backend uses these parameters, with client credentials for confidential apps, to complete token exchange with
    XBuilder Account
-7. In Account-issued token model, app backend returns Account-issued app-scoped OAuth tokens to the frontend. App
+8. In Account-issued token model, app backend returns Account-issued app-scoped OAuth tokens to the frontend. App
    backend validates the token through token introspection and obtains stable `user.id`. When account fields are needed,
    it can call `GET /account/user`
-8. In App-owned session model, app backend stores the XBuilder Account grant state and token state needed to access
-   Account API on behalf of the user, creates its own app session, and returns app-issued session tokens to the
-   frontend
+9. In App-owned session model, app backend stores the XBuilder Account grant state and token state needed to access
+   Account API on behalf of the user, creates its own app session, and returns app-issued session tokens to the frontend
 
 ### Username and password sign-in
 
@@ -549,6 +571,13 @@ POST /account/oauth/revoke
 - `GET /account/oauth/authorize` is a PAR-only OAuth authorization endpoint. It only accepts `client_id` and
   `request_uri`. Authorization request parameters such as `response_type`, `redirect_uri`, `scope`, `state`, and
   `code_challenge` must be submitted through `POST /account/oauth/par` first
+- `GET /account/oauth/authorize` expresses the next step through `Location`. The account can be resolved from an account
+  session or from provider credential handoff in PAR. When the account is resolved and no hosted interaction is needed,
+  the next step is the app callback. When the account cannot be resolved or hosted interaction is needed, the next step
+  is hosted sign-in
+- `GET /account/oauth/authorize` must not pass flow state to hosted sign-in through `Set-Cookie` or other response
+  headers. Hosted sign-in receives context through `clientID` and `requestURI`. Concrete state is stored in server-side
+  `auth_flow`
 - `POST /account/oauth/token` is used for authorization code exchange and refresh token exchange
 - `POST /account/oauth/introspect` is an RFC 7662 token introspection endpoint and is only callable by authenticated app
   backends
@@ -666,17 +695,18 @@ When app backends accept Account-issued app-scoped OAuth tokens as product API c
 active status, token subject, and token client/app. Product API credentials must not be shared across apps.
 
 Account session is only used for hosted sign-in and SSO continuity. It should not be passed through URLs, `postMessage`,
-or untrusted iframes, and should not be directly read or persisted by app frontends. Mutation endpoints authenticated by
-Account Web cookies should validate `Origin` or use equivalent CSRF protection.
+or untrusted iframes, and should not be directly read or persisted by app frontends. `/account/oauth/authorize` must
+not set the account session cookie. Mutation endpoints authenticated by Account Web cookies should validate `Origin` or
+use equivalent CSRF protection.
 
 `account:user:read` only authorizes access to `GET /account/user`. It does not authorize third-party identity
 management, account session management, account field updates, or admin capabilities. These operations should be handled
 by Account Web with cookie authentication or by Admin API.
 
-When native iOS or Android apps host sign-in, they should use the system browser or system authentication session, such
-as `ASWebAuthenticationSession` or Chrome Custom Tabs. They should not use embedded WebView. Restricted runtimes such as
-WeChat Mini Programs can use provider credential handoff to pass short-lived provider codes to XBuilder Account. They
-should not pass long-lived tokens through URLs or `postMessage`.
+When native iOS or Android apps use hosted sign-in, they should use the system browser or system authentication session,
+such as `ASWebAuthenticationSession` or Chrome Custom Tabs. They should not use embedded WebView. Restricted runtimes
+such as WeChat Mini Programs can use provider credential handoff to pass short-lived provider codes to XBuilder Account.
+They should not pass long-lived tokens through URLs or `postMessage`.
 
 Provider credential handoff only allows short-lived, one-time, immediately consumable authorization-code-like provider
 credentials. Allowed examples include WeChat Mini Program `wx.login()` code, Apple authorization code, and Google server
@@ -717,10 +747,10 @@ tokens. `spx-gui` can keep the Bearer request model, but the Bearer value should
 | Account API | XBuilder Account API on `api.xbuilder.com/account/*` |
 | OAuth client | OAuth client role. In this product context, it corresponds to `app` |
 | OAuth facade | OAuth-compatible endpoints exposed by an app backend to its own frontend, then internally integrated with XBuilder Account |
-| Hosted sign-in | Unified sign-in entry provided by `account.xbuilder.com/sign-in`. It hosts third-party identity sign-in, admin-managed password sign-in, post-handoff interactions, profile completion, account-linking confirmation, identity conflict handling, and app callback |
+| Hosted sign-in | Unified sign-in entry provided by `account.xbuilder.com/sign-in`. When Account Web needs to participate, it hosts third-party identity sign-in, admin-managed password sign-in, post-handoff interactions, profile completion, account-linking confirmation, and identity conflict handling. It can continue OAuth authorization requests with `clientID` and `requestURI` |
 | Hosted provider acquisition | Hosted sign-in obtains provider credential through provider web authorize and callback |
 | Provider credential handoff | The client passes a short-lived provider code to XBuilder Account through PAR for consumption |
-| Hosted interaction | Profile completion, account-linking confirmation, or identity conflict handling in XBuilder Account hosted sign-in |
+| Hosted interaction | Profile completion, account-linking confirmation, identity conflict handling, or reauthentication in XBuilder Account hosted sign-in |
 | Account session | Account session owned by XBuilder Account for hosted sign-in and SSO continuity |
 | Account-issued app-scoped OAuth token | Opaque OAuth token issued by XBuilder Account to a concrete app. It can be used as the app's product API Bearer token |
 | Account-issued token model | Model where a first-party app directly uses Account-issued app-scoped OAuth token as product API credential |
