@@ -199,7 +199,7 @@ flowchart LR
 Provider credential acquisition 有两种方式：
 
 - Hosted provider acquisition：Hosted sign-in 将用户跳转到 provider authorize 页面，并通过 provider callback 获得 provider credential。
-- Provider credential handoff：客户端把预先获得的短生命周期 provider code 交给 hosted sign-in 消费。
+- Provider credential handoff：客户端把预先获得的短生命周期 provider code 通过 PAR 交给 XBuilder Account 消费。
 
 Provider credential handoff 适用于微信小程序 `wx.login()` code、Apple authorization code 或 Google server auth code 等场景。客户端可以通过 PAR extension parameters 将 credential 交给 XBuilder Account，例如 `xbuilder_provider` 和 `xbuilder_provider_code`。该方式只替换上游 provider web authorize 阶段，不替换 XBuilder Account 的账号登录流程。无论 credential 来自 hosted provider acquisition 还是 handoff，XBuilder Account 都应使用同一套账号解析、用户创建和第三方身份绑定逻辑。如果需要补充信息、确认账号绑定或处理身份冲突，这些交互应在 hosted sign-in 页面内完成。
 
@@ -363,7 +363,7 @@ POST /account/identity-providers/{provider}/callback
 
 - 这些 endpoints 由 XBuilder Account backend 提供，主要供 `account.xbuilder.com/sign-in` 使用
 - `GET /account/identity-providers` 根据 app context 返回当前可用于 hosted sign-in 的 identity providers
-- `GET /account/identity-providers/{provider}/authorize` 用于 hosted sign-in 中未通过 provider credential handoff 提供 provider code 时的 provider redirect
+- `GET /account/identity-providers/{provider}/authorize` 用于当前 flow 未通过 provider credential handoff 提供 provider code 时的 provider redirect
 - Provider callback 需要同时支持 GET 和 POST，因为具体 HTTP method 取决于 provider response mode，例如 Sign in with Apple 的 `form_post` 场景会使用 POST callback
 - Provider callback 应依赖 provider redirect state 进行回调关联和 CSRF 防护，不应套用普通前端 CSRF token 校验
 
@@ -482,7 +482,7 @@ Account session 只用于 hosted sign-in 和 SSO 连续性。它不应通过 URL
 
 `account:user:read` 只授权访问 `GET /account/user`，不授权第三方身份管理、account session 管理、账号字段更新或 admin 能力。这些操作应由 Account Web 使用 cookie 认证完成，或由 Admin API 承载。
 
-Native iOS/Android apps 承载 hosted sign-in 时应使用系统浏览器或系统认证会话，例如 `ASWebAuthenticationSession` 或 Chrome Custom Tabs，不应使用 embedded WebView。微信小程序等无法使用系统浏览器的受限运行环境，可以通过 provider credential handoff 向 hosted sign-in 传递短生命周期 provider code，不应通过 URL 或 `postMessage` 传递长期 token。
+Native iOS/Android apps 承载 hosted sign-in 时应使用系统浏览器或系统认证会话，例如 `ASWebAuthenticationSession` 或 Chrome Custom Tabs，不应使用 embedded WebView。微信小程序等无法使用系统浏览器的受限运行环境，可以通过 provider credential handoff 将短生命周期 provider code 传递给 XBuilder Account，不应通过 URL 或 `postMessage` 传递长期 token。
 
 Provider credential handoff 只允许使用短生命周期、一次性、可立即消费的 authorization-code-like provider credential。允许的例子包括微信小程序 `wx.login()` code、Apple authorization code 和 Google server auth code。不应通过 provider credential handoff 传递 provider access token、provider refresh token、ID token、`session_key`、account session token、app access token、app refresh token、app secret 或其他长期 secret。XBuilder Account 读取 provider code 后应立即消费，不应持久化或返回给 frontend。
 
@@ -511,9 +511,9 @@ Casdoor 来源的身份标识只应用作一次性迁移映射键，不应保留
 | Account API | `api.xbuilder.com/account/*` 上的 XBuilder Account API |
 | OAuth client | OAuth 协议中的 client 角色，在本文产品语境中对应 `app` |
 | OAuth facade | App backend 暴露给自己 frontend 的 OAuth-compatible endpoints，内部再对接 XBuilder Account |
-| Hosted sign-in | `account.xbuilder.com/sign-in` 提供的统一登录入口，承载第三方身份登录、管理员托管密码登录、provider credential handoff、补充信息、账号绑定确认、身份冲突处理和 app callback |
+| Hosted sign-in | `account.xbuilder.com/sign-in` 提供的统一登录入口，承载第三方身份登录、管理员托管密码登录、handoff 后续交互、补充信息、账号绑定确认、身份冲突处理和 app callback |
 | Hosted provider acquisition | Hosted sign-in 通过 provider web authorize 和 callback 获得 provider credential 的方式 |
-| Provider credential handoff | 客户端将短生命周期 provider code 交给 hosted sign-in 消费的方式 |
+| Provider credential handoff | 客户端将短生命周期 provider code 通过 PAR 交给 XBuilder Account 消费的方式 |
 | Hosted interaction | XBuilder Account hosted sign-in 页面中的补充信息、账号绑定确认或身份冲突处理等交互 |
 | Account session | XBuilder Account 拥有的账号 session，用于 hosted sign-in 和 SSO 连续性 |
 | Account-issued app-scoped OAuth token | XBuilder Account 签发给某个具体 app 的 opaque OAuth token，可作为该 app 的产品 API Bearer token |
