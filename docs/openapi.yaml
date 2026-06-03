@@ -218,9 +218,9 @@ paths:
       description: |
         Create a pushed authorization request for an app using OAuth 2.0 PAR.
 
-        The requested redirect URI must exactly match the app allowlist. Provider credential handoff codes, when supplied,
-        must be valid, unexpired, unused, and match the requested provider. Invalid provider codes must not produce usable
-        `request_uri` values.
+        The requested redirect URI must exactly match the app allowlist. Provider credential handoff codes, when
+        supplied, must be valid, unexpired, unused, and match the requested provider. Invalid provider codes must not
+        produce usable `request_uri` values.
 
         The returned `request_uri` is an opaque, short-lived, single-use reference and is not a dereferenceable URL.
       security:
@@ -307,7 +307,7 @@ paths:
       operationId: authorizeAccountOAuthApp
       tags:
         - Account OAuth
-      summary: Authorize an app
+      summary: Handle an OAuth authorization request
       description: |
         Start or complete the OAuth authorization code flow for a registered app.
 
@@ -316,11 +316,15 @@ paths:
 
         The `request_uri` value must reference a valid pushed authorization request bound to the `client_id`.
 
-        If no valid account session is available or hosted interaction is required, this endpoint redirects to hosted
-        sign-in. The hosted sign-in URL carries `clientID` and `requestURI` query parameters for Account Web.
+        The account can be resolved from an account session or from provider credential handoff stored in the pushed
+        authorization request.
 
-        After account and app authorization is resolved, the authorization response redirects to the app callback with
-        an authorization code and the original `state`, or with OAuth error parameters and the original `state`.
+        If the account cannot be resolved or hosted interaction is required, this endpoint redirects to hosted sign-in.
+        The hosted sign-in URL carries `clientID` and `requestURI` query parameters for Account Web.
+
+        After the account is resolved and the OAuth authorization request can be completed, the authorization response
+        redirects to the app callback with an authorization code and the original `state`, or with OAuth error
+        parameters and the original `state`.
       security: []
       parameters:
         - name: client_id
@@ -354,12 +358,6 @@ paths:
                 type: string
                 format: uri
                 minLength: 1
-            Set-Cookie:
-              description: |
-                Sets the `__Host-xbuilder-account-session` cookie when provider credential handoff creates an account
-                session.
-              schema:
-                type: string
         "400":
           $ref: "#/components/responses/OAuthError"
 
@@ -373,8 +371,8 @@ paths:
         Create or refresh Account-issued app-scoped OAuth tokens.
 
         Authorization code exchange validates the redirect URI and PKCE verifier. Refresh token exchange rotates the
-        refresh token. Reuse of a rotated refresh token is treated as a replay signal and revokes the corresponding token
-        family or grant.
+        refresh token. Reuse of a rotated refresh token is treated as a replay signal and revokes the corresponding
+        token family or grant.
       security:
         - oauthClientSecretBasic: []
         - {}
@@ -506,8 +504,8 @@ paths:
         - Account
       summary: Update the current account user
       description: |
-        Update user fields managed by XBuilder Account for the current user. Cookie-authenticated mutations must validate
-        Origin or use equivalent CSRF protection.
+        Update user fields managed by XBuilder Account for the current user. Cookie-authenticated mutations must
+        validate Origin or use equivalent CSRF protection.
       security:
         - accountSessionCookie: []
       requestBody:
