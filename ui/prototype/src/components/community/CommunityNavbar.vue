@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import logoSvg from '@/assets/navbar-logo.svg'
+import searchIcon from '@/assets/ui-icons/search.svg?raw'
 import arrowMiniIcon from '@/assets/navbar-icons/arrow-mini.svg?raw'
 import folderIcon from '@/assets/navbar-icons/folder.svg?raw'
 import newProjectIcon from '@/assets/editor/navbar-icons/new.svg'
 import openProjectIcon from '@/assets/editor/navbar-icons/open.svg'
-import { usePrototypeSignIn } from '@/composables/prototypeSignIn'
 import UIButton from '@/components/ui/UIButton.vue'
+import UITextInput from '@/components/ui/UITextInput.vue'
 
 const router = useRouter()
 const searchValue = ref('')
@@ -16,13 +17,20 @@ const projectMenuOpen = ref(false)
 const projectMenuRef = ref<HTMLElement>()
 const projectMenuOpenTimer = ref<number | null>(null)
 const projectMenuCloseTimer = ref<number | null>(null)
-const { signInModalOpen, openSignInModal, closeSignInModal } = usePrototypeSignIn()
 
 function submitSearch(event: Event) {
   event.preventDefault()
   const keyword = searchValue.value.trim()
   router.push(keyword === '' ? '/search' : `/search?q=${encodeURIComponent(keyword)}`)
 }
+
+watch(
+  () => router.currentRoute.value,
+  (route) => {
+    searchValue.value = route.path === '/search' && typeof route.query.q === 'string' ? route.query.q : ''
+  },
+  { immediate: true }
+)
 
 function toggleProjectMenu() {
   clearProjectMenuTimers()
@@ -71,8 +79,9 @@ function openPrototypeProject() {
   router.push('/user/qingqing/projects')
 }
 
-function confirmPrototypeSignIn() {
-  closeSignInModal()
+function openPrototypeSignIn() {
+  const returnTo = router.currentRoute.value.fullPath
+  router.push(`/sign-in/token?returnTo=${encodeURIComponent(returnTo)}`)
 }
 
 function handleDocumentClick(event: MouseEvent) {
@@ -84,7 +93,6 @@ function handleDocumentClick(event: MouseEvent) {
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     closeProjectMenu()
-    closeSignInModal()
   }
 }
 
@@ -167,67 +175,36 @@ onBeforeUnmount(() => {
       <div class="flex min-w-0 grow basis-[40%] items-center justify-center" aria-hidden="true"></div>
 
       <div class="flex h-12 min-w-0 basis-[30%] items-center justify-end">
-        <form class="relative flex h-12 w-91 items-center px-3 py-2.25" @submit="submitSearch">
-          <svg aria-hidden="true" viewBox="0 0 24 24" class="pointer-events-none absolute top-4.5 left-6 z-1 size-3.5 fill-none stroke-hint-1 stroke-2 [stroke-linecap:round] [stroke-linejoin:round]">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m16.5 16.5 4 4" />
-          </svg>
-          <input
-            class="h-8 w-full rounded-md border border-grey-400 bg-grey-100 py-0 pr-3 pl-7.5 text-base leading-[22px] text-text outline-none placeholder:text-grey-700"
-            type="search"
+        <form class="flex h-12 w-91 items-center px-3 py-2.25" @submit="submitSearch">
+          <UITextInput
+            v-model:value="searchValue"
+            color="white"
+            clearable
             placeholder="Search project"
-            v-model="searchValue"
-          />
+          >
+            <template #prefix>
+              <span
+                class="flex size-3.5 items-center justify-center text-grey-800 [&>svg]:block [&>svg]:size-3.5"
+                aria-hidden="true"
+                v-html="searchIcon"
+              ></span>
+            </template>
+          </UITextInput>
         </form>
 
         <div class="flex h-full items-center px-3 whitespace-nowrap">
-          <button
-            class="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-primary-200 px-4 text-base leading-[22px] text-primary-500 no-underline transition-colors hover:bg-primary-100 active:bg-primary-300 focus-visible:border-primary-700 focus-visible:outline-none"
-            type="button"
-            @click="openSignInModal"
-          >
+          <UIButton class="community-sign-in-button" type="secondary" @click="openPrototypeSignIn">
             Sign in
-          </button>
+          </UIButton>
         </div>
       </div>
     </div>
   </nav>
-
-  <Teleport to="body">
-    <div
-      v-if="signInModalOpen"
-      class="fixed inset-0 z-1100 flex items-center justify-center bg-overlay-modal"
-      role="presentation"
-      @click="closeSignInModal"
-    >
-      <section
-        class="w-100 rounded-md border border-grey-300 bg-grey-100 p-6 shadow-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="prototype-sign-in-title"
-        @click.stop
-      >
-        <header class="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="prototype-sign-in-title" class="m-0 text-2xl font-medium text-title">Sign in to XBuilder</h2>
-            <p class="mt-2 text-sm leading-5 text-grey-700">Continue with the local prototype account.</p>
-          </div>
-          <button
-            class="inline-flex size-8 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-grey-800 hover:bg-grey-300 active:bg-grey-400 focus-visible:outline-none"
-            type="button"
-            aria-label="Close sign-in dialog"
-            @click="closeSignInModal"
-          >
-            <svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M12 4 4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-            </svg>
-          </button>
-        </header>
-        <div class="mt-6 flex justify-end gap-3">
-          <UIButton type="white" @click="closeSignInModal">Cancel</UIButton>
-          <UIButton type="primary" @click="confirmPrototypeSignIn">Continue as Qingqing</UIButton>
-        </div>
-      </section>
-    </div>
-  </Teleport>
 </template>
+
+<style scoped>
+.community-sign-in-button {
+  font-size: 14px;
+  line-height: 22px;
+}
+</style>

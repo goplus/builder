@@ -1,17 +1,26 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type CSSProperties } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, type CSSProperties } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getProject } from '@/apis/project'
+import AssetPanel from '@/components/editor/AssetPanel.vue'
+import EditorNavbar from '@/components/editor/EditorNavbar.vue'
+import MapEditorPanel from '@/components/editor/MapEditorPanel.vue'
+import PreviewPanel from '@/components/editor/PreviewPanel.vue'
 import PublishProjectModal from '@/components/editor/PublishProjectModal.vue'
 import SpriteGeneratorModal, { type SpriteGeneratorResult } from '@/components/editor/SpriteGeneratorModal.vue'
 import AnimationItem from '@/components/editor/AnimationItem.vue'
 import CostumeItem from '@/components/editor/CostumeItem.vue'
 import SpriteItem from '@/components/editor/SpriteItem.vue'
-import ProjectRunner from '@/components/project/ProjectRunner.vue'
+import UIBlockItem from '@/components/editor/UIBlockItem.vue'
 import UIButton from '@/components/ui/UIButton.vue'
+import UIButtonGroup from '@/components/ui/UIButtonGroup.vue'
+import UIButtonGroupItem from '@/components/ui/UIButtonGroupItem.vue'
+import UICheckbox from '@/components/ui/UICheckbox.vue'
+import UICheckboxGroup from '@/components/ui/UICheckboxGroup.vue'
 import UICard from '@/components/ui/UICard.vue'
 import UICardHeader from '@/components/ui/UICardHeader.vue'
+import UIFormModal from '@/components/ui/UIFormModal.vue'
 import UITab from '@/components/ui/UITab.vue'
 import UITabs from '@/components/ui/UITabs.vue'
 import UITag from '@/components/ui/UITag.vue'
@@ -43,7 +52,12 @@ import projectFileIcon from '@/assets/editor/navbar-icons/file.svg?raw'
 import arrowMiniIcon from '@/assets/navbar-icons/arrow-mini.svg?raw'
 import exportProjectIcon from '@/assets/editor/navbar-icons/export-project.svg'
 import editIcon from '@/assets/editor/quick-config/edit.svg?raw'
+import animationStateDefaultIcon from '@/assets/editor/animation-state/default.svg?raw'
+import animationStateDieIcon from '@/assets/editor/animation-state/die.svg?raw'
+import animationStateStepIcon from '@/assets/editor/animation-state/step.svg?raw'
 import arrowDownIcon from '@/assets/editor/ui-icons/arrow-down.svg?raw'
+import eyeIcon from '@/assets/editor/ui-icons/eye.svg?raw'
+import eyeSlashIcon from '@/assets/editor/ui-icons/eye-slash.svg?raw'
 import settingSoundIcon from '@/assets/editor/ui-icons/sound.svg?raw'
 import settingStatusIcon from '@/assets/editor/ui-icons/status.svg?raw'
 import settingTimerIcon from '@/assets/editor/ui-icons/timer.svg?raw'
@@ -79,6 +93,12 @@ const leftRightIcon =
 const notRotateIcon =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.6716 1.57439C11.8791 1.3282 12.2476 1.29714 12.4939 1.50408C12.7402 1.71141 12.7724 2.07983 12.5652 2.32634L2.38159 14.425C2.17418 14.6712 1.80568 14.7031 1.55933 14.4963C1.31318 14.289 1.28108 13.9205 1.48804 13.674L2.96949 11.9123C2.85671 11.78 2.74894 11.6425 2.6482 11.4992C2.01135 10.5929 1.65093 9.5125 1.61304 8.39666C1.57539 7.28099 1.86239 6.17794 2.43628 5.22869C3.01031 4.27977 3.84659 3.52551 4.83863 3.06267C5.83097 2.60002 6.93631 2.4486 8.01245 2.6281C8.75754 2.75257 9.46709 3.03187 10.0974 3.44451L11.6716 1.57439ZM5.66187 12.3322C6.4456 12.6231 7.29609 12.6751 8.10816 12.4797C8.43623 12.401 8.76509 12.6098 8.84253 12.9455C8.9194 13.2815 8.71556 13.6182 8.38745 13.6974C7.32598 13.9529 6.21341 13.8815 5.19214 13.4904C5.06643 13.4422 4.94243 13.3884 4.82105 13.3312L5.66187 12.3322ZM7.81616 3.86248C6.97848 3.72271 6.11786 3.8413 5.34546 4.20134C4.57336 4.56156 3.92214 5.1484 3.47534 5.88689C3.02859 6.62583 2.80535 7.48511 2.83472 8.35369C2.86426 9.22207 3.14479 10.0623 3.64038 10.7677C3.68453 10.8306 3.73092 10.8922 3.77808 10.9523L9.28882 4.40447C8.83683 4.13446 8.33775 3.94965 7.81616 3.86248ZM11.7439 5.10564C12.3397 6.01144 12.6918 7.07259 12.7478 8.17986L12.7576 8.46306L13.6101 7.52752C13.8403 7.27572 14.2269 7.26216 14.4734 7.49724C14.7196 7.73272 14.7332 8.12841 14.5037 8.38103L12.6453 10.4211C12.5327 10.519 12.3933 10.5871 12.2195 10.6203C12.1868 10.6214 12.1533 10.6184 12.1218 10.6144C12.0646 10.6057 12.0304 10.5967 11.9978 10.5851C11.9191 10.5511 11.8629 10.5166 11.7976 10.466L9.78882 8.549C9.54255 8.31339 9.52873 7.9168 9.75855 7.66423C9.98874 7.41218 10.3762 7.39879 10.6228 7.63396L11.5359 8.50603L11.5271 8.24431C11.4885 7.48271 11.2731 6.74817 10.9089 6.09783L11.7439 5.10564Z" fill="currentColor"/></svg>'
 
+const animationBoundStateOptions = [
+  { id: 'default', label: 'Default', icon: animationStateDefaultIcon },
+  { id: 'step', label: 'Step', icon: animationStateStepIcon },
+  { id: 'die', label: 'Die', icon: animationStateDieIcon }
+]
+
 const props = defineProps<{
   ownerNameInput: string
   projectNameInput: string
@@ -91,6 +111,9 @@ type SpriteCard = {
   name: string
   shortName: string
   image: string
+  costumeWidth: number
+  costumeHeight: number
+  bitmapResolution: number
   hidden: boolean
   x: number
   y: number
@@ -105,6 +128,18 @@ type StageSpriteDragState = {
   startY: number
   spriteStartX: number
   spriteStartY: number
+  sprite: SpriteCard
+  moved: boolean
+}
+
+type StageSpriteResizeCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+
+type StageSpriteResizeState = {
+  pointerId: number
+  startX: number
+  startY: number
+  spriteStartSize: number
+  corner: StageSpriteResizeCorner
   sprite: SpriteCard
   moved: boolean
 }
@@ -141,6 +176,66 @@ const codeTokenClass: Record<CodeTokenType, string> = {
 
 const stageSpriteScale = 0.5
 const stageSpriteOrigin = { left: 290, top: 145 }
+const defaultSpriteCostume = {
+  width: 512,
+  height: 512,
+  bitmapResolution: 8
+}
+const spriteCostumeByImage: Record<string, { width: number; height: number; bitmapResolution: number }> = {
+  [niuXiaoQiUrl]: defaultSpriteCostume,
+  [niuXiaoHuaUrl]: defaultSpriteCostume,
+  [flowerUrl]: defaultSpriteCostume,
+  [tornadoUrl]: { width: 256, height: 256, bitmapResolution: 4 },
+  [jaimeUrl]: { width: 126, height: 312, bitmapResolution: 2 },
+  [kaiUrl]: { width: 138, height: 320, bitmapResolution: 2 }
+}
+
+function getSpriteCostumeProps(image: string) {
+  const costume = spriteCostumeByImage[image] ?? defaultSpriteCostume
+  return {
+    costumeWidth: costume.width,
+    costumeHeight: costume.height,
+    bitmapResolution: costume.bitmapResolution
+  }
+}
+const apiHoverDocs: Record<string, ApiHoverDoc> = {
+  onMsg: {
+    overview: 'onMsg msg, => {}',
+    detail: 'Listen to specific message broadcasted'
+  },
+  onClick: {
+    overview: 'onClick => {}',
+    detail: 'Listen to sprite clicked'
+  },
+  onKey: {
+    overview: 'onKey key, => {}',
+    detail: 'Listen to keyboard key pressed'
+  },
+  onTouchStart: {
+    overview: 'onTouchStart name, sprite => {}',
+    detail: 'Listen to touching a specific sprite'
+  },
+  turnTo: {
+    overview: 'turnTo target',
+    detail: 'Turn toward another object or the mouse pointer'
+  },
+  stepTo: {
+    overview: 'stepTo obj',
+    detail: 'Move one step toward another object or the mouse pointer'
+  },
+  stopped: {
+    overview: 'stopped',
+    detail: 'Whether this sprite has stopped its current behavior'
+  },
+  show: {
+    overview: 'show',
+    detail: 'Show the current stage object'
+  },
+  onBackdrop: {
+    overview: 'onBackdrop name, => {}',
+    detail: 'Listen to switching to a specific backdrop'
+  }
+}
 
 function getCodeTokenClass(type?: SnippetPart['type']) {
   return type != null ? codeTokenClass[type] : undefined
@@ -173,6 +268,7 @@ function getSourceParts(source: string): SnippetPart[] {
 type EventSnippet = {
   id: string
   parts: SnippetPart[]
+  insertText?: string
 }
 
 type EditorTarget = 'sprite' | 'stage'
@@ -180,6 +276,7 @@ type EditorTab = 'code' | 'costumes' | 'animations'
 type StageTab = 'code' | 'backdrops' | 'sounds' | 'widgets'
 type EditMode = 'default' | 'map'
 type QuickConfigType = 'default' | 'position' | 'rotation' | 'size' | 'layer'
+type AnimationSetting = 'duration' | 'binding' | 'sound'
 type RotationStyle = 'normal' | 'left-right' | 'none'
 type SaveState = 'saved' | 'pending' | 'saving' | 'failed' | 'offline'
 type CodeCategoryId = 'event' | 'look' | 'motion' | 'control' | 'sensing' | 'sound' | 'game'
@@ -218,6 +315,24 @@ type WidgetItem = {
 
 type CodeLine = [string, string]
 
+type ApiHoverDoc = {
+  overview: string
+  detail: string
+}
+
+type CodeApiHoverState = ApiHoverDoc & {
+  left: number
+  top: number
+  width: number
+}
+
+type AssetRenameKind = 'costume' | 'animation' | 'backdrop' | 'sound' | 'widget'
+
+type AssetRenameTarget = {
+  kind: AssetRenameKind
+  item: AssetItem | SoundItem | WidgetItem
+}
+
 type CodeDocumentTab = {
   id: string
   label: string
@@ -241,7 +356,6 @@ type EditorProjectData = {
 }
 
 const project = computed(() => getProject(props.ownerNameInput, props.projectNameInput))
-const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
 const runnerActive = ref(false)
 const activeEditorTarget = ref<EditorTarget>('sprite')
 const activeEditorTab = ref<EditorTab>('code')
@@ -263,8 +377,15 @@ const addCostumeMenuOpen = ref(false)
 const addAnimationMenuOpen = ref(false)
 const costumeMenuOpenFor = ref<string | null>(null)
 const animationMenuOpenFor = ref<string | null>(null)
+const activeAnimationSetting = ref<AnimationSetting | null>(null)
+const draftAnimationDuration = ref('0.8')
+const draftAnimationBoundStates = ref<string[]>([])
+const draftAnimationSoundId = ref<string | null>(null)
 const animationPendingRemoval = ref<AssetItem | null>(null)
 const preserveRemovedAnimationFrames = ref(false)
+const assetPendingRename = ref<AssetRenameTarget | null>(null)
+const draftAssetRenameName = ref('')
+const assetRenameError = ref('')
 const spritePendingRename = ref<SpriteCard | null>(null)
 const draftSpriteRenameName = ref('')
 const spriteRenameError = ref('')
@@ -276,6 +397,7 @@ const costumeMenuPosition = ref({ top: 0, left: 0 })
 const addAnimationMenuPosition = ref({ top: 0, left: 0 })
 const animationMenuPosition = ref({ top: 0, left: 0 })
 const codeZoom = ref(1)
+const codeApiHover = ref<CodeApiHoverState | null>(null)
 const tempCodeDocumentsOpen = ref(true)
 const saveState = ref<SaveState>('saved')
 const editorRevision = ref(0)
@@ -287,8 +409,10 @@ const selectedSoundId = ref('pop')
 const selectedWidgetId = ref('score')
 const soundEditStates = ref<Record<string, SoundEditState>>({})
 const selectedMapSpriteId = ref('niu-xiao-qi')
+const mapGlobalConfigCollapsed = ref(false)
 const mapSpriteNameEditing = ref(false)
 const mapSpriteConfigExpanded = ref(true)
+const activeMapQuickConfig = ref<QuickConfigType>('default')
 const mapPhysicsEnabled = ref(true)
 const mapLayerSorting = ref<'default' | 'vertical'>('vertical')
 const mapSpritePhysicsFlags = ref<string[]>([])
@@ -307,47 +431,57 @@ const animationMenuRef = ref<HTMLElement>()
 const spriteMenuRef = ref<HTMLElement>()
 const mapSpriteNameInputRef = ref<HTMLInputElement>()
 const spriteRenameInputRef = ref<HTMLInputElement>()
+const assetRenameInputRef = ref<HTMLInputElement>()
+const snippetResizeHandleRef = ref<HTMLDivElement>()
 const saveStateTimeouts: number[] = []
 let publishTimer: number | null = null
 let stageSpriteDragState: StageSpriteDragState | null = null
+let stageSpriteResizeState: StageSpriteResizeState | null = null
 let mapSpriteDragState: MapSpriteDragState | null = null
+const ddiDragFormat = 'application/builder-definition-documentation-item'
+const minSnippetSidebarWidth = 160
+const minCodeEditorWidth = 200
+const snippetSidebarWidth = ref(280)
+const snippetSidebarResizing = ref(false)
 
-function snippet(id: string, parts: SnippetPart[]): EventSnippet {
-  return { id, parts }
+function snippet(id: string, parts: SnippetPart[], insertText?: string): EventSnippet {
+  return { id, parts, insertText }
 }
 
 const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items: EventSnippet[] }>> = {
   event: [
     {
       title: 'Game Events',
-      items: [snippet('onStart', [{ text: 'onStart', type: 'function' }, { text: ' => {}', type: 'operator' }])]
+      items: [snippet('onStart', [{ text: 'onStart', type: 'function' }, { text: ' => {}', type: 'operator' }], 'onStart => {\n\n}')]
     },
     {
       title: 'Sensing Events',
       items: [
-        snippet('onClick', [{ text: 'onClick', type: 'function' }, { text: ' => {}', type: 'operator' }]),
+        snippet('onClick', [{ text: 'onClick', type: 'function' }, { text: ' => {}', type: 'operator' }], 'onClick => {\n\n}'),
         snippet('onKey', [
           { text: 'onKey', type: 'function' },
           { text: ' key:', type: 'hint' },
           { text: 'KeyA', type: 'identifier' },
           { text: ', => {}', type: 'operator' }
-        ]),
+        ], 'onKey key:KeyA, => {\n\n}'),
         snippet('onSwipe', [
           { text: 'onSwipe', type: 'function' },
           { text: ' direction:', type: 'hint' },
           { text: 'left', type: 'identifier' },
-          { text: ',...', type: 'operator' }
-        ]),
+          { text: ', => {}', type: 'operator' }
+        ], 'onSwipe direction:left, => {\n\n}'),
         snippet('onTouchStart-name', [
           { text: 'onTouchStart', type: 'function' },
           { text: ' name:', type: 'hint' },
-          { text: '"牛小...', type: 'string' }
-        ]),
+          { text: '"牛小花"', type: 'string' },
+          { text: ', sprite => {}', type: 'operator' }
+        ], 'onTouchStart name:"牛小花", sprite => {\n\n}'),
         snippet('onTouchStart-names', [
           { text: 'onTouchStart', type: 'function' },
           { text: ' names:', type: 'hint' },
-          { text: '["牛...', type: 'string' }
-        ])
+          { text: '["牛小花"]', type: 'string' },
+          { text: ', sprite => {}', type: 'operator' }
+        ], 'onTouchStart names:["牛小花"], sprite => {\n\n}')
       ]
     },
     {
@@ -361,7 +495,7 @@ const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items
         snippet('broadcastAndWait', [
           { text: 'broadcastAndWait', type: 'function' },
           { text: ' msg:', type: 'hint' },
-          { text: '"p...', type: 'string' }
+          { text: '"ping"', type: 'string' }
         ]),
         snippet('onMsg', [
           { text: 'onMsg', type: 'function' },
@@ -387,7 +521,7 @@ const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items
         snippet('onBackdrop', [
           { text: 'onBackdrop', type: 'function' },
           { text: ' name:', type: 'hint' },
-          { text: '"backdr...', type: 'string' }
+          { text: '"backdrop"', type: 'string' }
         ])
       ]
     }
@@ -424,12 +558,28 @@ const categorySnippetGroups: Record<CodeCategoryId, Array<{ title: string; items
   ]
 }
 
+const stageSnippetGroups = [
+  {
+    title: 'Stage Events',
+    items: [
+      snippet('stage-onBackdrop', [
+        { text: 'onBackdrop', type: 'function' },
+        { text: ' name:', type: 'hint' },
+        { text: '"backdrop"', type: 'string' }
+      ], 'onBackdrop name:"backdrop", => {\n\n}'),
+      snippet('stage-show', [{ text: 'show', type: 'function' }], 'show'),
+      snippet('stage-hide', [{ text: 'hide', type: 'function' }], 'hide')
+    ]
+  }
+]
+
 const niuRunSprites = ref<SpriteCard[]>([
   {
     id: 'niu-xiao-qi',
     name: '牛小七',
     shortName: '牛小七',
     image: niuXiaoQiUrl,
+    ...getSpriteCostumeProps(niuXiaoQiUrl),
     hidden: false,
     x: -224,
     y: 74,
@@ -442,6 +592,7 @@ const niuRunSprites = ref<SpriteCard[]>([
     name: '牛小花牛小花牛小花牛小花牛小花牛小花',
     shortName: '牛小花牛小花...',
     image: niuXiaoHuaUrl,
+    ...getSpriteCostumeProps(niuXiaoHuaUrl),
     hidden: false,
     x: -130,
     y: 94,
@@ -454,6 +605,7 @@ const niuRunSprites = ref<SpriteCard[]>([
     name: '花朵花朵花朵花朵花朵花朵花朵花朵花朵',
     shortName: '花朵花...',
     image: flowerUrl,
+    ...getSpriteCostumeProps(flowerUrl),
     hidden: true,
     x: 0,
     y: 0,
@@ -466,6 +618,7 @@ const niuRunSprites = ref<SpriteCard[]>([
     name: '龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风龙卷风',
     shortName: '龙卷风...',
     image: tornadoUrl,
+    ...getSpriteCostumeProps(tornadoUrl),
     hidden: true,
     x: 120,
     y: -20,
@@ -492,6 +645,24 @@ const niuRunAnimations: AssetItem[] = [
     duration: '0.8s',
     binding: '1',
     sound: 'None'
+  },
+  {
+    id: 'niu-idle',
+    name: '待机',
+    image: niuXiaoQiUrl,
+    frames: [niuXiaoQiUrl, niuXiaoQiUrl],
+    duration: '0.6s',
+    binding: '1',
+    sound: 'None'
+  },
+  {
+    id: 'niu-jump',
+    name: '跳跃',
+    image: niuXiaoHuaUrl,
+    frames: [niuXiaoQiUrl, niuXiaoHuaUrl, niuXiaoQiUrl],
+    duration: '0.9s',
+    binding: '1',
+    sound: 'jump'
   }
 ]
 
@@ -542,6 +713,7 @@ const weatherggggSprites = ref<SpriteCard[]>([
     name: 'Jaime',
     shortName: 'Jaime',
     image: jaimeUrl,
+    ...getSpriteCostumeProps(jaimeUrl),
     hidden: false,
     x: -80,
     y: 40,
@@ -554,6 +726,7 @@ const weatherggggSprites = ref<SpriteCard[]>([
     name: 'Kai',
     shortName: 'Kai',
     image: kaiUrl,
+    ...getSpriteCostumeProps(kaiUrl),
     hidden: false,
     x: 80,
     y: 40,
@@ -632,8 +805,14 @@ const animations = computed(() => editorProjectData.value.animations)
 const backdrops = computed(() => editorProjectData.value.backdrops)
 const sounds = computed(() => editorProjectData.value.sounds)
 const widgets = computed(() => editorProjectData.value.widgets)
-const codeLines = computed(() => editorProjectData.value.codeLines)
-const stageCodeLines = computed(() => editorProjectData.value.stageCodeLines)
+const codeLines = computed(() => {
+  editorRevision.value
+  return [...editorProjectData.value.codeLines]
+})
+const stageCodeLines = computed(() => {
+  editorRevision.value
+  return [...editorProjectData.value.stageCodeLines]
+})
 
 const selectedCostume = computed(() => costumes.value.find((costume) => costume.id === selectedCostumeId.value) ?? costumes.value[0])
 const costumeMenuCostume = computed(() => costumes.value.find((costume) => costume.id === costumeMenuOpenFor.value) ?? null)
@@ -746,11 +925,35 @@ const tempCodeDocumentTabs = computed<CodeDocumentTab[]>(() => {
   return tabs
 })
 const selectedSpriteFrameStyle = computed(() => getStageSpriteFrameStyle(selectedSprite.value))
+const selectedSpriteImageStyle = computed(() => getStageSpriteImageStyle(selectedSprite.value))
 const selectedSpriteCoordinate = computed(() => `${selectedSprite.value?.x ?? -224}, ${selectedSprite.value?.y ?? 74}`)
 const selectedMapSpriteCoordinate = computed(() => `${selectedMapSprite.value?.x ?? -224}, ${selectedMapSprite.value?.y ?? 74}`)
+const mapQuickConfigStyle = computed<CSSProperties>(() => {
+  const sprite = selectedMapSprite.value
+  if (sprite == null) return {}
+  const left = ((sprite.x + mapWidth.value / 2) / mapWidth.value) * 100
+  const top = ((mapHeight.value / 2 - sprite.y) / mapHeight.value) * 100
+  return {
+    left: `${left}%`,
+    top: `clamp(30px, calc(${top}% + 48px), calc(100% - 78px))`
+  }
+})
+const codeBodyStyle = computed<CSSProperties>(() => ({
+  '--prototype-snippet-sidebar-width': `${snippetSidebarWidth.value}px`,
+  userSelect: snippetSidebarResizing.value ? 'none' : undefined
+}))
 const codeEditorStyle = computed<CSSProperties>(() => ({
   '--prototype-code-zoom': codeZoom.value
 }))
+const codeHoverCardStyle = computed<CSSProperties>(() => {
+  const hover = codeApiHover.value
+  if (hover == null) return {}
+  return {
+    left: `${hover.left}px`,
+    top: `${hover.top}px`,
+    minWidth: `${Math.max(220, hover.width)}px`
+  }
+})
 const mapWorkspaceStyle = computed(() => ({ backgroundImage: `url(${stageBgUrl})` }))
 const mapStageStyle = computed(() => ({ backgroundImage: `url(${stageBackdrop.value})` }))
 const saveStateMeta = computed(() => {
@@ -790,6 +993,10 @@ watch(
   },
   { immediate: true }
 )
+
+watch(selectedAnimationId, () => {
+  closeAnimationSetting()
+})
 
 function clearSaveStateTimeouts() {
   saveStateTimeouts.splice(0).forEach((timeoutId) => {
@@ -867,10 +1074,12 @@ type SnippetDragState = {
 }
 
 let snippetDragState: SnippetDragState | null = null
+let cleanupSnippetSidebarResizeListeners: (() => void) | null = null
 
 function startSnippetHorizontalDrag(event: PointerEvent) {
   const target = event.currentTarget
   if (!(target instanceof HTMLElement)) return
+  if (event.target instanceof Element && event.target.closest('.event-snippet') != null) return
   if (event.pointerType === 'mouse' && event.button !== 0) return
   if (target.scrollWidth <= target.clientWidth) return
   snippetDragState = {
@@ -901,6 +1110,151 @@ function endSnippetHorizontalDrag(event: PointerEvent) {
   }
   dragState.target.classList.remove('dragging')
   snippetDragState = null
+}
+
+function startSnippetSidebarResize(event: MouseEvent) {
+  if (!(event.currentTarget instanceof HTMLElement)) return
+  const codeBody = event.currentTarget.closest('.code-body')
+  if (!(codeBody instanceof HTMLElement)) return
+  event.preventDefault()
+  cleanupSnippetSidebarResize()
+  snippetSidebarResizing.value = true
+  const initialClientX = event.clientX
+  const initialWidth = snippetSidebarWidth.value
+  const maxWidth = Math.max(minSnippetSidebarWidth, codeBody.clientWidth - 60 - minCodeEditorWidth)
+
+  function handleMouseMove(moveEvent: MouseEvent) {
+    const offset = moveEvent.clientX - initialClientX
+    snippetSidebarWidth.value = Math.min(Math.max(minSnippetSidebarWidth, initialWidth + offset), maxWidth)
+  }
+
+  function endResizing() {
+    cleanupSnippetSidebarResize()
+  }
+
+  cleanupSnippetSidebarResizeListeners = () => {
+    window.removeEventListener('mousemove', handleMouseMove)
+    window.removeEventListener('mouseup', endResizing)
+  }
+  window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('mouseup', endResizing)
+}
+
+function cleanupSnippetSidebarResize() {
+  snippetSidebarResizing.value = false
+  cleanupSnippetSidebarResizeListeners?.()
+  cleanupSnippetSidebarResizeListeners = null
+}
+
+function getApiHoverDoc(apiName: string) {
+  return apiHoverDocs[apiName.trim()] ?? null
+}
+
+function showCodeApiHover(event: MouseEvent | FocusEvent, apiName: string) {
+  const doc = getApiHoverDoc(apiName)
+  if (doc == null || !(event.currentTarget instanceof HTMLElement)) {
+    codeApiHover.value = null
+    return
+  }
+  const rect = event.currentTarget.getBoundingClientRect()
+  codeApiHover.value = {
+    ...doc,
+    left: rect.left,
+    top: rect.bottom + 4,
+    width: rect.width
+  }
+}
+
+function hideCodeApiHover() {
+  codeApiHover.value = null
+}
+
+function getSnippetOverview(item: EventSnippet) {
+  return item.parts.map((part) => part.text).join('')
+}
+
+function getSnippetApiName(item: EventSnippet) {
+  return item.parts.find((part) => part.type === 'function')?.text ?? item.id
+}
+
+function getSnippetInsertText(item: EventSnippet) {
+  return item.insertText ?? getSnippetOverview(item)
+}
+
+function handleSnippetDragStart(event: DragEvent, item: EventSnippet) {
+  if (event.dataTransfer == null) return
+  const overview = getSnippetOverview(item)
+  const insertSnippet = getSnippetInsertText(item)
+  event.dataTransfer.effectAllowed = 'copy'
+  event.dataTransfer.setData('text/plain', overview)
+  event.dataTransfer.setData(
+    ddiDragFormat,
+    JSON.stringify({
+      id: item.id,
+      overview,
+      insertSnippet
+    })
+  )
+  if (event.currentTarget instanceof HTMLElement) {
+    event.currentTarget.classList.add('before-dragging')
+  }
+}
+
+function handleSnippetDragEnd(event: DragEvent) {
+  if (event.currentTarget instanceof HTMLElement) {
+    event.currentTarget.classList.remove('before-dragging')
+  }
+}
+
+function parseSnippetCodeLines(source: string): CodeLine[] {
+  return source.split('\n').map((line) => {
+    if (line.trim().length === 0) return ['', '']
+    const match = line.match(/^(\s*[A-Za-z_][A-Za-z0-9_]*|\s*})(.*)$/)
+    if (match == null) return ['', line]
+    return [match[1], match[2].trimStart()]
+  })
+}
+
+function getCodeDropIndex(event: DragEvent) {
+  const editor = event.currentTarget
+  if (!(editor instanceof HTMLElement)) return 0
+  const lines = Array.from(editor.querySelectorAll<HTMLElement>('.code-line'))
+  const hoveredLineIndex = lines.findIndex((line) => {
+    const rect = line.getBoundingClientRect()
+    return event.clientY < rect.top + rect.height / 2
+  })
+  return hoveredLineIndex >= 0 ? hoveredLineIndex : lines.length
+}
+
+function insertSnippetIntoCode(snippetSource: string, index: number) {
+  const lines = activeEditorTarget.value === 'sprite' ? editorProjectData.value.codeLines : editorProjectData.value.stageCodeLines
+  const normalizedIndex = Math.max(0, Math.min(index, lines.length))
+  const insertedLines = parseSnippetCodeLines(snippetSource)
+  lines.splice(normalizedIndex, 0, ...insertedLines)
+  editorRevision.value += 1
+  markPrototypeAction()
+}
+
+function handleCodeEditorDragOver(event: DragEvent) {
+  if (event.dataTransfer == null) return
+  event.dataTransfer.dropEffect = 'copy'
+}
+
+function handleCodeEditorDrop(event: DragEvent) {
+  if (event.dataTransfer == null) return
+  const ddiRaw = event.dataTransfer.getData(ddiDragFormat)
+  let snippetSource = ''
+  if (ddiRaw !== '') {
+    try {
+      const ddi = JSON.parse(ddiRaw) as { insertSnippet?: string; overview?: string }
+      snippetSource = ddi.insertSnippet ?? ddi.overview ?? ''
+    } catch {
+      snippetSource = ''
+    }
+  }
+  if (snippetSource === '') snippetSource = event.dataTransfer.getData('text/plain')
+  if (snippetSource === '') return
+  insertSnippetIntoCode(snippetSource, getCodeDropIndex(event))
 }
 
 function selectSprite(id = selectedSpriteId.value) {
@@ -942,27 +1296,60 @@ function backToDefaultQuickConfig() {
   activeQuickConfig.value = 'default'
 }
 
-function selectedSpriteTransform(sprite: SpriteCard | undefined) {
+function selectedSpriteFrameTransform(sprite: SpriteCard | undefined) {
   const size = (sprite?.size ?? 100) / 100
   const heading = sprite?.heading ?? 90
   const rotationStyle = sprite?.rotationStyle ?? 'normal'
   const rotation = rotationStyle === 'normal' ? heading - 90 : 0
-  const flip = rotationStyle === 'left-right' && heading < 0 ? ' scaleX(-1)' : ''
-  return `scale(${size}) rotate(${rotation}deg)${flip}`
+  return `scale(${size}) rotate(${rotation}deg)`
+}
+
+function getSpriteCostumeGeometry(sprite: SpriteCard | undefined) {
+  const bitmapResolution = sprite?.bitmapResolution || defaultSpriteCostume.bitmapResolution
+  const width = (sprite?.costumeWidth ?? defaultSpriteCostume.width) / bitmapResolution
+  const height = (sprite?.costumeHeight ?? defaultSpriteCostume.height) / bitmapResolution
+  return {
+    width,
+    height,
+    pivotX: width / 2,
+    pivotY: height / 2
+  }
+}
+
+function getStageSpriteImageStyle(sprite: SpriteCard | undefined): CSSProperties {
+  return {
+    transform: sprite?.rotationStyle === 'left-right' && (sprite.heading ?? 90) < 0 ? 'scaleX(-1)' : undefined,
+    transformOrigin: 'center'
+  }
 }
 
 function getStageSpriteFrameStyle(sprite: SpriteCard | undefined): CSSProperties {
+  const geometry = getSpriteCostumeGeometry(sprite)
+  const stageX = stageSpriteOrigin.left + (sprite?.x ?? 0) * stageSpriteScale
+  const stageY = stageSpriteOrigin.top - (sprite?.y ?? 0) * stageSpriteScale
   return {
-    left: `${stageSpriteOrigin.left + (sprite?.x ?? 0) * stageSpriteScale}px`,
-    top: `${stageSpriteOrigin.top - (sprite?.y ?? 0) * stageSpriteScale}px`,
-    transform: selectedSpriteTransform(sprite)
+    left: `${stageX - geometry.pivotX}px`,
+    top: `${stageY - geometry.pivotY}px`,
+    width: `${geometry.width}px`,
+    height: `${geometry.height}px`,
+    transformOrigin: `${geometry.pivotX}px ${geometry.pivotY}px`,
+    transform: selectedSpriteFrameTransform(sprite)
   }
 }
 
 function getMapSpriteFrameStyle(sprite: SpriteCard): CSSProperties {
+  const rotation = sprite.rotationStyle === 'normal' ? sprite.heading - 90 : 0
   return {
     left: `${((sprite.x + mapWidth.value / 2) / mapWidth.value) * 100}%`,
-    top: `${((mapHeight.value / 2 - sprite.y) / mapHeight.value) * 100}%`
+    top: `${((mapHeight.value / 2 - sprite.y) / mapHeight.value) * 100}%`,
+    transform: `translate(-50%, -50%) scale(${sprite.size / 100}) rotate(${rotation}deg)`
+  }
+}
+
+function getMapSpriteImageStyle(sprite: SpriteCard): CSSProperties {
+  return {
+    transform: sprite.rotationStyle === 'left-right' && sprite.heading < 0 ? 'scaleX(-1)' : undefined,
+    transformOrigin: 'center'
   }
 }
 
@@ -1001,6 +1388,20 @@ function updateSelectedMapSpriteY(event: Event) {
   markPrototypeAction()
 }
 
+function updateSelectedMapSpriteSize(event: Event) {
+  const nextSize = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextSize) || selectedMapSprite.value == null) return
+  selectedMapSprite.value.size = Math.max(1, Math.min(400, Math.round(nextSize)))
+  markPrototypeAction()
+}
+
+function updateSelectedMapSpriteHeading(event: Event) {
+  const nextHeading = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(nextHeading) || selectedMapSprite.value == null) return
+  selectedMapSprite.value.heading = Math.max(-180, Math.min(180, Math.round(nextHeading)))
+  markPrototypeAction()
+}
+
 function updateSelectedSpriteHeading(event: Event) {
   const nextHeading = Number((event.target as HTMLInputElement).value)
   if (!Number.isFinite(nextHeading) || selectedSprite.value == null) return
@@ -1023,6 +1424,14 @@ function updateSelectedSpriteRotationStyle(style: RotationStyle) {
 function updateSelectedSpriteLeftRight(direction: 'left' | 'right') {
   if (selectedSprite.value == null) return
   selectedSprite.value.heading = direction === 'right' ? 90 : -90
+  markPrototypeAction()
+}
+
+function switchSelectedSpriteDirection(direction: 'left' | 'right') {
+  const sprite = selectedSprite.value
+  if (sprite == null) return
+  sprite.rotationStyle = 'left-right'
+  sprite.heading = direction === 'right' ? 90 : -90
   markPrototypeAction()
 }
 
@@ -1066,6 +1475,55 @@ function endStageSpriteDrag(event: PointerEvent) {
   if (target instanceof HTMLElement) target.classList.remove('dragging')
   if (dragState.moved) markPrototypeAction()
   stageSpriteDragState = null
+}
+
+function startSelectedSpriteResize(corner: StageSpriteResizeCorner, event: PointerEvent) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return
+  const sprite = selectedSprite.value
+  const target = event.currentTarget
+  if (sprite == null || !(target instanceof HTMLElement)) return
+  selectedSpriteId.value = sprite.id
+  activeEditorTarget.value = 'sprite'
+  activeQuickConfig.value = 'size'
+  stageSpriteResizeState = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    spriteStartSize: sprite.size,
+    corner,
+    sprite,
+    moved: false
+  }
+  target.setPointerCapture?.(event.pointerId)
+  target.classList.add('resizing')
+}
+
+function moveSelectedSpriteResize(event: PointerEvent) {
+  const resizeState = stageSpriteResizeState
+  if (resizeState == null || resizeState.pointerId !== event.pointerId) return
+  const deltaX = event.clientX - resizeState.startX
+  const deltaY = event.clientY - resizeState.startY
+  if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) resizeState.moved = true
+  const signX = resizeState.corner.endsWith('right') ? 1 : -1
+  const signY = resizeState.corner.startsWith('bottom') ? 1 : -1
+  const signedDelta = (signX * deltaX + signY * deltaY) / 2
+  const geometry = getSpriteCostumeGeometry(resizeState.sprite)
+  const resizeBase = Math.max(1, (geometry.width + geometry.height) / 2)
+  const nextSize = resizeState.spriteStartSize + (signedDelta / resizeBase) * 100
+  resizeState.sprite.size = Math.max(1, Math.min(400, Math.round(nextSize)))
+  event.preventDefault()
+}
+
+function endSelectedSpriteResize(event: PointerEvent) {
+  const resizeState = stageSpriteResizeState
+  if (resizeState == null || resizeState.pointerId !== event.pointerId) return
+  const target = event.currentTarget
+  if (target instanceof HTMLElement && target.hasPointerCapture?.(event.pointerId)) {
+    target.releasePointerCapture(event.pointerId)
+  }
+  if (target instanceof HTMLElement) target.classList.remove('resizing')
+  if (resizeState.moved) markPrototypeAction()
+  stageSpriteResizeState = null
 }
 
 function startMapSpriteDrag(sprite: SpriteCard, event: PointerEvent) {
@@ -1115,6 +1573,18 @@ function endMapSpriteDrag(event: PointerEvent) {
   mapSpriteDragState = null
 }
 
+function openMapQuickConfig(type: QuickConfigType) {
+  if (type === 'layer' && activeMapQuickConfig.value === 'layer') {
+    activeMapQuickConfig.value = 'default'
+    return
+  }
+  activeMapQuickConfig.value = type
+}
+
+function backToDefaultMapQuickConfig() {
+  activeMapQuickConfig.value = 'default'
+}
+
 function moveSelectedSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
   const sprite = selectedSprite.value
   if (sprite == null) return
@@ -1134,9 +1604,29 @@ function moveSelectedSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
   markPrototypeAction()
 }
 
+function moveSelectedMapSpriteLayer(direction: 'up' | 'top' | 'down' | 'bottom') {
+  const sprite = selectedMapSprite.value
+  if (sprite == null) return
+  const index = sprites.value.findIndex((item) => item.id === sprite.id)
+  if (index < 0) return
+  const [item] = sprites.value.splice(index, 1)
+  if (direction === 'top') {
+    sprites.value.push(item)
+  } else if (direction === 'bottom') {
+    sprites.value.unshift(item)
+  } else if (direction === 'up') {
+    sprites.value.splice(Math.min(index + 1, sprites.value.length), 0, item)
+  } else {
+    sprites.value.splice(Math.max(index - 1, 0), 0, item)
+  }
+  activeMapQuickConfig.value = 'default'
+  markPrototypeAction()
+}
+
 function selectMapSprite(spriteId: string) {
   selectedMapSpriteId.value = spriteId
   mapSpriteConfigExpanded.value = true
+  activeMapQuickConfig.value = 'default'
 }
 
 function updateMapSpriteRotationStyle(style: RotationStyle) {
@@ -1151,6 +1641,20 @@ function updateMapSpriteRotationStyle(style: RotationStyle) {
   markPrototypeAction()
 }
 
+function updateMapSpriteRotationValue(value: string) {
+  updateMapSpriteRotationStyle(value as RotationStyle)
+}
+
+function updateSelectedMapSpriteLeftRight(direction: 'left' | 'right') {
+  if (selectedMapSprite.value == null) return
+  selectedMapSprite.value.heading = direction === 'right' ? 90 : -90
+  markPrototypeAction()
+}
+
+function updateMapSpriteDirectionValue(value: string) {
+  updateSelectedMapSpriteLeftRight(value === 'left' ? 'left' : 'right')
+}
+
 function updateMapSpriteVisibility(visible: boolean) {
   const sprite = selectedMapSprite.value
   if (sprite == null) return
@@ -1158,17 +1662,23 @@ function updateMapSpriteVisibility(visible: boolean) {
   markPrototypeAction()
 }
 
-function toggleMapSpritePhysicsFlag(flag: string) {
-  const flags = new Set(mapSpritePhysicsFlags.value)
-  if (flags.has(flag)) {
-    flags.delete(flag)
-  } else {
-    flags.add(flag)
-    if (flag === 'Gravity') flags.add('Collision')
-    if (flag === 'Immovable') {
-      flags.add('Collision')
-      flags.delete('Gravity')
-    }
+function updateMapSpriteVisibilityValue(value: string) {
+  updateMapSpriteVisibility(value === 'visible')
+}
+
+function updateMapSpritePhysicsFlags(checked: string[]) {
+  const flags = new Set<string>()
+  if (checked.includes('Collision')) {
+    flags.add('Collision')
+  }
+  if (checked.includes('Gravity')) {
+    flags.add('Collision')
+    flags.add('Gravity')
+  }
+  if (checked.includes('Immovable')) {
+    flags.add('Collision')
+    flags.add('Immovable')
+    flags.delete('Gravity')
   }
   mapSpritePhysicsFlags.value = Array.from(flags)
   markPrototypeAction()
@@ -1436,6 +1946,7 @@ function createSpriteCard(source: string, name: string, image: string): SpriteCa
     name,
     shortName: name.length > 10 ? `${name.slice(0, 8)}...` : name,
     image,
+    ...getSpriteCostumeProps(image),
     hidden: false,
     x: -224,
     y: 74,
@@ -1549,10 +2060,7 @@ function duplicateCostume(costume: AssetItem) {
 }
 
 function renameCostume(costume: AssetItem) {
-  const nextName = window.prompt('Rename costume', costume.name)?.trim()
-  if (!nextName || nextName === costume.name) return
-  costume.name = nextName
-  markPrototypeAction()
+  startAssetRename('costume', costume)
 }
 
 function removeCostume(costume: AssetItem) {
@@ -1587,10 +2095,131 @@ function duplicateAnimation(animation: AssetItem) {
 }
 
 function renameAnimation(animation: AssetItem) {
-  const nextName = window.prompt('Rename animation', animation.name)?.trim()
-  if (!nextName || nextName === animation.name) return
-  animation.name = nextName
+  startAssetRename('animation', animation)
+}
+
+function openAnimationSetting(setting: AnimationSetting) {
+  const animation = selectedAnimation.value
+  if (animation == null) return
+  if (activeAnimationSetting.value === setting) {
+    activeAnimationSetting.value = null
+    return
+  }
+  draftAnimationDuration.value = getAnimationDurationSeconds(animation.duration)
+  draftAnimationBoundStates.value = getDefaultAnimationBoundStates(animation.binding)
+  draftAnimationSoundId.value = getAnimationSoundId(animation.sound)
+  activeAnimationSetting.value = setting
+}
+
+function closeAnimationSetting() {
+  activeAnimationSetting.value = null
+}
+
+function getAnimationDurationSeconds(duration: string | undefined) {
+  const seconds = Number.parseFloat(duration ?? '')
+  return Number.isFinite(seconds) ? seconds.toFixed(2).replace(/\.?0+$/, '') : '0.8'
+}
+
+function getDefaultAnimationBoundStates(binding: string | undefined) {
+  const count = Math.max(0, Math.min(3, Number.parseInt(binding ?? '0', 10) || 0))
+  return ['default', 'step', 'die'].slice(0, count)
+}
+
+function getAnimationSoundId(soundName: string | undefined) {
+  if (soundName == null || soundName === 'None') return null
+  return sounds.value.find((sound) => sound.name === soundName || sound.id === soundName)?.id ?? null
+}
+
+function toggleAnimationBoundState(state: string) {
+  draftAnimationBoundStates.value = draftAnimationBoundStates.value.includes(state)
+    ? draftAnimationBoundStates.value.filter((item) => item !== state)
+    : [...draftAnimationBoundStates.value, state]
+}
+
+function selectAnimationSound(soundId: string | null) {
+  draftAnimationSoundId.value = draftAnimationSoundId.value === soundId ? null : soundId
+}
+
+function confirmAnimationSetting() {
+  const animation = selectedAnimation.value
+  const setting = activeAnimationSetting.value
+  if (animation == null || setting == null) return
+  if (setting === 'duration') {
+    const seconds = Math.max(0.01, Number.parseFloat(draftAnimationDuration.value) || 0.01)
+    animation.duration = `${Number(seconds.toFixed(2))}s`
+  } else if (setting === 'binding') {
+    animation.binding = String(draftAnimationBoundStates.value.length)
+  } else {
+    const sound = sounds.value.find((item) => item.id === draftAnimationSoundId.value)
+    animation.sound = sound?.name ?? 'None'
+  }
   editorRevision.value += 1
+  closeAnimationSetting()
+  markPrototypeAction()
+}
+
+function renameBackdrop(backdrop: AssetItem) {
+  startAssetRename('backdrop', backdrop)
+}
+
+function renameSound(sound: SoundItem) {
+  startAssetRename('sound', sound)
+}
+
+function renameWidget(widget: WidgetItem) {
+  startAssetRename('widget', widget)
+}
+
+async function startAssetRename(kind: AssetRenameKind, item: AssetItem | SoundItem | WidgetItem) {
+  assetPendingRename.value = { kind, item }
+  draftAssetRenameName.value = item.name
+  assetRenameError.value = ''
+  await nextTick()
+  assetRenameInputRef.value?.focus()
+  assetRenameInputRef.value?.select()
+}
+
+function cancelAssetRename() {
+  assetPendingRename.value = null
+  draftAssetRenameName.value = ''
+  assetRenameError.value = ''
+}
+
+function validateAssetRename(nextName: string, target: AssetRenameTarget) {
+  if (nextName.length === 0) return 'Name is required.'
+  const list = getAssetRenameList(target.kind)
+  if (list.some((item) => item.id !== target.item.id && item.name === nextName)) return 'Name already exists.'
+  return ''
+}
+
+function getAssetRenameList(kind: AssetRenameKind) {
+  if (kind === 'costume') return costumes.value
+  if (kind === 'animation') return animations.value
+  if (kind === 'backdrop') return backdrops.value
+  if (kind === 'sound') return sounds.value
+  return widgets.value
+}
+
+function getAssetRenameTip(kind: AssetRenameKind) {
+  return `The ${kind} name should be non-empty string with length no longer than 100.`
+}
+
+function submitAssetRename() {
+  const target = assetPendingRename.value
+  if (target == null) return
+  const nextName = draftAssetRenameName.value.trim()
+  const error = validateAssetRename(nextName, target)
+  if (error !== '') {
+    assetRenameError.value = error
+    return
+  }
+  if (nextName === target.item.name) {
+    cancelAssetRename()
+    return
+  }
+  target.item.name = nextName
+  editorRevision.value += 1
+  cancelAssetRename()
   markPrototypeAction()
 }
 
@@ -1859,6 +2488,46 @@ function removeSprite(sprite: SpriteCard) {
   markPrototypeAction()
 }
 
+
+const previewPanelContext = reactive({
+  activeQuickConfig,
+  backQuickIcon,
+  backToDefaultQuickConfig,
+  endStageSpriteDrag,
+  endSelectedSpriteResize,
+  getStageSpriteFrameStyle,
+  getStageSpriteImageStyle,
+  leftRightIcon,
+  moveSelectedSpriteLayer,
+  moveSelectedSpriteResize,
+  moveStageSpriteDrag,
+  notRotateIcon,
+  openPublishModal,
+  openQuickConfig,
+  project,
+  publishActionIcon,
+  publishStatusMessage,
+  quickConfigTools,
+  rotateAroundIcon,
+  runnerActive,
+  selectSprite,
+  selectedSprite,
+  selectedSpriteCoordinate,
+  selectedSpriteFrameStyle,
+  selectedSpriteImageStyle,
+  stageBackdrop,
+  stageCompanionSprites,
+  startSelectedSpriteResize,
+  startStageSpriteDrag,
+  switchSelectedSpriteDirection,
+  updateSelectedSpriteHeading,
+  updateSelectedSpriteLeftRight,
+  updateSelectedSpriteRotationStyle,
+  updateSelectedSpriteSize,
+  updateSelectedSpriteX,
+  updateSelectedSpriteY
+})
+
 function handleDocumentClick(event: MouseEvent) {
   const target = event.target
   if (!(target instanceof Node)) return
@@ -1882,12 +2551,6 @@ function handleDocumentClick(event: MouseEvent) {
   }
 }
 
-async function runProject() {
-  runnerActive.value = true
-  await nextTick()
-  await runnerRef.value?.run()
-}
-
 onMounted(() => {
   document.title = `Edit ${project.value.title} - XBuilder`
   document.addEventListener('click', handleDocumentClick)
@@ -1897,6 +2560,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
   snippetDragState?.target.classList.remove('dragging')
   snippetDragState = null
+  cleanupSnippetSidebarResize()
   if (publishTimer != null) window.clearTimeout(publishTimer)
   clearSaveStateTimeouts()
 })
@@ -1904,7 +2568,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="prototype-editor min-w-360 bg-[#f1f5f7] text-grey-1000">
-    <header class="editor-navbar">
+    <EditorNavbar>
       <div class="navbar-left">
         <RouterLink class="brand" to="/" aria-label="XBuilder home">
           <img src="@/assets/navbar-logo.svg" alt="XBuilder" />
@@ -2044,7 +2708,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </div>
-    </header>
+    </EditorNavbar>
 
     <section v-if="activeEditMode === 'default'" class="editor-main">
       <section class="code-card">
@@ -2080,7 +2744,12 @@ onBeforeUnmount(() => {
           </UIButton>
         </header>
 
-        <div v-if="activeEditorTarget === 'sprite' && activeEditorTab === 'code'" class="code-body">
+        <div
+          v-if="activeEditorTarget === 'sprite' && activeEditorTab === 'code'"
+          class="code-body"
+          :class="{ resizing: snippetSidebarResizing }"
+          :style="codeBodyStyle"
+        >
           <aside class="category-rail flex flex-none flex-col gap-3 border-r border-grey-400 px-1 py-3" aria-label="Code categories">
             <button
               v-for="category in codeCategories"
@@ -2105,7 +2774,20 @@ onBeforeUnmount(() => {
           >
             <section v-for="group in visibleSnippetGroups" :key="group.title" class="event-group">
               <h3>{{ group.title }}</h3>
-              <button v-for="item in group.items" :key="item.id" class="event-snippet" type="button">
+              <button
+                v-for="item in group.items"
+                :key="item.id"
+                class="event-snippet"
+                type="button"
+                draggable="true"
+                @dragstart="handleSnippetDragStart($event, item)"
+                @dragend="handleSnippetDragEnd"
+                @mouseenter="showCodeApiHover($event, getSnippetApiName(item))"
+                @mouseleave="hideCodeApiHover"
+                @focus="showCodeApiHover($event, getSnippetApiName(item))"
+                @blur="hideCodeApiHover"
+                @click="insertSnippetIntoCode(getSnippetInsertText(item), codeLines.length)"
+              >
                 <span v-for="(part, index) in item.parts" :key="`${item.id}-${index}`" :class="getCodeTokenClass(part.type)">
                   {{ part.text }}
                 </span>
@@ -2113,11 +2795,27 @@ onBeforeUnmount(() => {
             </section>
           </aside>
 
-          <section class="code-editor" :style="codeEditorStyle" aria-label="Sprite code editor">
-            <div v-for="(line, index) in codeLines" :key="index" class="code-line">
+          <div
+            ref="snippetResizeHandleRef"
+            class="snippet-resize-handle"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize API Reference sidebar"
+            title="Resize API Reference sidebar"
+            @mousedown="startSnippetSidebarResize"
+          ></div>
+
+          <section
+            class="code-editor"
+            :style="codeEditorStyle"
+            aria-label="Sprite code editor"
+            @dragover.prevent="handleCodeEditorDragOver"
+            @drop.prevent="handleCodeEditorDrop"
+          >
+            <div v-for="(line, index) in codeLines" :key="index" class="code-line" @mouseleave="hideCodeApiHover">
               <span class="line-number">{{ index + 1 }}</span>
-              <span class="text-[#b08a01]">{{ line[0] }}</span>
-              <span class="source-content">
+              <span class="code-api-token text-[#b08a01]" @mouseenter="showCodeApiHover($event, line[0])" @focus="showCodeApiHover($event, line[0])" @blur="hideCodeApiHover" tabindex="0">{{ line[0] }}</span>
+              <span class="source-content" @mouseenter="showCodeApiHover($event, line[0])">
                 <span v-for="(part, partIndex) in getSourceParts(line[1])" :key="`${index}-${partIndex}`" :class="getCodeTokenClass(part.type)">
                   {{ part.text }}
                 </span>
@@ -2224,7 +2922,7 @@ onBeforeUnmount(() => {
               aria-haspopup="menu"
               @click.stop="toggleAddCostumeMenu"
             >
-              +
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
             </button>
             <Teleport to="body">
               <div v-if="addCostumeMenuOpen" class="costume-add-menu asset-add-menu" :style="getAddCostumeMenuStyle()" role="menu" @click.stop>
@@ -2236,8 +2934,10 @@ onBeforeUnmount(() => {
           </aside>
           <section class="asset-detail" aria-label="Costume detail">
             <header class="asset-detail-header">
-              <h2>{{ selectedCostume.name }}</h2>
-              <button type="button" aria-label="Rename costume" @click="renameCostume(selectedCostume)" v-html="editIcon"></button>
+              <button class="asset-detail-rename-trigger" type="button" :aria-label="`Rename costume ${selectedCostume.name}`" title="Rename" @click="renameCostume(selectedCostume)">
+                <span class="asset-detail-title">{{ selectedCostume.name }}</span>
+                <span class="asset-detail-edit-icon" v-html="editIcon"></span>
+              </button>
             </header>
             <div class="costume-preview">
               <img :src="selectedCostume.image" :alt="selectedCostume.name" />
@@ -2295,7 +2995,7 @@ onBeforeUnmount(() => {
               aria-haspopup="menu"
               @click.stop="toggleAddAnimationMenu"
             >
-              +
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
             </button>
             <Teleport to="body">
               <div v-if="addAnimationMenuOpen" class="animation-add-menu" :style="getAddAnimationMenuStyle()" role="menu" @click.stop>
@@ -2307,8 +3007,10 @@ onBeforeUnmount(() => {
           </aside>
           <section v-if="selectedAnimation != null" class="asset-detail" aria-label="Animation detail">
             <header class="asset-detail-header">
-              <h2>{{ selectedAnimation.name }}</h2>
-              <button type="button" aria-label="Rename animation" @click="renameAnimation(selectedAnimation)" v-html="editIcon"></button>
+              <button class="asset-detail-rename-trigger" type="button" :aria-label="`Rename animation ${selectedAnimation.name}`" title="Rename" @click="renameAnimation(selectedAnimation)">
+                <span class="asset-detail-title">{{ selectedAnimation.name }}</span>
+                <span class="asset-detail-edit-icon" v-html="editIcon"></span>
+              </button>
             </header>
             <div class="animation-detail-content">
               <div class="animation-player">
@@ -2319,28 +3021,107 @@ onBeforeUnmount(() => {
                   :alt="selectedAnimation.name"
                 />
               </div>
-              <div class="animation-settings" aria-label="Animation settings">
-                <button class="animation-setting" type="button">
-                  <span class="setting-icon" v-html="settingTimerIcon"></span>
-                  <span>Duration</span>
-                  <strong>{{ selectedAnimation.duration }}</strong>
-                </button>
-                <button class="animation-setting" type="button">
-                  <span class="setting-icon" v-html="settingStatusIcon"></span>
-                  <span>Binding</span>
-                  <strong>{{ selectedAnimation.binding }}</strong>
-                </button>
-                <button class="animation-setting" type="button">
-                  <span class="setting-icon" v-html="settingSoundIcon"></span>
-                  <span>Sound</span>
-                  <strong>{{ selectedAnimation.sound }}</strong>
-                </button>
+              <div class="animation-settings-shell">
+                <div class="animation-settings" aria-label="Animation settings">
+                  <button
+                    class="animation-setting"
+                    :class="{ active: activeAnimationSetting === 'duration' }"
+                    type="button"
+                    aria-haspopup="dialog"
+                    :aria-expanded="activeAnimationSetting === 'duration'"
+                    @click="openAnimationSetting('duration')"
+                  >
+                    <span class="setting-icon" v-html="settingTimerIcon"></span>
+                    <span>Duration</span>
+                    <strong>{{ selectedAnimation.duration }}</strong>
+                  </button>
+                  <button
+                    class="animation-setting"
+                    :class="{ active: activeAnimationSetting === 'binding' }"
+                    type="button"
+                    aria-haspopup="dialog"
+                    :aria-expanded="activeAnimationSetting === 'binding'"
+                    @click="openAnimationSetting('binding')"
+                  >
+                    <span class="setting-icon" v-html="settingStatusIcon"></span>
+                    <span>Binding</span>
+                    <strong>{{ selectedAnimation.binding }}</strong>
+                  </button>
+                  <button
+                    class="animation-setting"
+                    :class="{ active: activeAnimationSetting === 'sound' }"
+                    type="button"
+                    aria-haspopup="dialog"
+                    :aria-expanded="activeAnimationSetting === 'sound'"
+                    @click="openAnimationSetting('sound')"
+                  >
+                    <span class="setting-icon" v-html="settingSoundIcon"></span>
+                    <span>Sound</span>
+                    <strong>{{ selectedAnimation.sound }}</strong>
+                  </button>
+                </div>
+                <section v-if="activeAnimationSetting != null" class="animation-setting-popover" role="dialog" aria-modal="false" @keydown.esc.prevent="closeAnimationSetting">
+                  <h3>
+                    {{
+                      activeAnimationSetting === 'duration'
+                        ? 'Adjust animation duration'
+                        : activeAnimationSetting === 'binding'
+                          ? 'Bind state'
+                          : 'Select sound'
+                    }}
+                  </h3>
+                  <label v-if="activeAnimationSetting === 'duration'" class="animation-duration-editor">
+                    <span>Duration</span>
+                    <input v-model="draftAnimationDuration" type="number" min="0.01" step="0.01" aria-label="Animation duration" />
+                    <span>s</span>
+                  </label>
+                  <div v-else-if="activeAnimationSetting === 'binding'" class="animation-bound-state-editor">
+                    <UIBlockItem
+                      v-for="state in animationBoundStateOptions"
+                      :key="state.id"
+                      :active="draftAnimationBoundStates.includes(state.id)"
+                      @click="toggleAnimationBoundState(state.id)"
+                    >
+                      <span class="bound-state-icon" v-html="state.icon"></span>
+                      <span class="bound-state-label">{{ state.label }}</span>
+                      <span v-if="draftAnimationBoundStates.includes(state.id)" class="bound-state-check">✓</span>
+                    </UIBlockItem>
+                  </div>
+                  <div v-else class="animation-sound-editor">
+                    <UIBlockItem :active="draftAnimationSoundId == null" @click="selectAnimationSound(null)">
+                      <span class="sound-choice-icon" v-html="settingSoundIcon"></span>
+                      <span class="sound-choice-label">None</span>
+                    </UIBlockItem>
+                    <UIBlockItem
+                      v-for="sound in sounds"
+                      :key="sound.id"
+                      :active="draftAnimationSoundId === sound.id"
+                      @click="selectAnimationSound(sound.id)"
+                    >
+                      <span class="sound-choice-icon" v-html="settingSoundIcon"></span>
+                      <span class="sound-choice-label">{{ sound.name }}</span>
+                      <span class="sound-choice-duration">{{ sound.duration }}</span>
+                    </UIBlockItem>
+                    <UIBlockItem class="animation-add-sound-choice">
+                      <span class="sound-choice-icon" v-html="plusIcon"></span>
+                    </UIBlockItem>
+                  </div>
+                  <div class="animation-setting-actions">
+                    <UIButton type="neutral" size="medium" @click="closeAnimationSetting">Cancel</UIButton>
+                    <UIButton type="primary" size="medium" @click="confirmAnimationSetting">Confirm</UIButton>
+                  </div>
+                </section>
               </div>
             </div>
           </section>
         </div>
 
-        <div v-else-if="activeStageTab === 'code'" class="code-body">
+        <div
+          v-else-if="activeStageTab === 'code'"
+          class="code-body"
+          :class="{ resizing: snippetSidebarResizing }"
+          :style="codeBodyStyle"
+        >
           <aside class="category-rail flex flex-none flex-col gap-3 border-r border-grey-400 px-1 py-3" aria-label="Code categories">
             <button
               v-for="category in codeCategories"
@@ -2362,26 +3143,55 @@ onBeforeUnmount(() => {
             @pointerup="endSnippetHorizontalDrag"
             @pointercancel="endSnippetHorizontalDrag"
           >
-            <section class="event-group">
-              <h3>Stage Events</h3>
-              <button class="event-snippet" type="button">
-                <span :class="getCodeTokenClass('function')">onBackdrop</span><span :class="getCodeTokenClass('hint')"> name:</span><span :class="getCodeTokenClass('string')">"backdrop"</span>
+            <section v-for="group in stageSnippetGroups" :key="group.title" class="event-group">
+              <h3>{{ group.title }}</h3>
+              <button
+                v-for="item in group.items"
+                :key="item.id"
+                class="event-snippet"
+                type="button"
+                draggable="true"
+                @dragstart="handleSnippetDragStart($event, item)"
+                @dragend="handleSnippetDragEnd"
+                @mouseenter="showCodeApiHover($event, getSnippetApiName(item))"
+                @mouseleave="hideCodeApiHover"
+                @focus="showCodeApiHover($event, getSnippetApiName(item))"
+                @blur="hideCodeApiHover"
+                @click="insertSnippetIntoCode(getSnippetInsertText(item), stageCodeLines.length)"
+              >
+                <span v-for="(part, index) in item.parts" :key="`${item.id}-${index}`" :class="getCodeTokenClass(part.type)">
+                  {{ part.text }}
+                </span>
               </button>
-              <button class="event-snippet" type="button"><span :class="getCodeTokenClass('function')">show</span></button>
-              <button class="event-snippet" type="button"><span :class="getCodeTokenClass('function')">hide</span></button>
             </section>
           </aside>
 
-          <section class="code-editor" :style="codeEditorStyle" aria-label="Stage code editor">
+          <div
+            ref="snippetResizeHandleRef"
+            class="snippet-resize-handle"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize API Reference sidebar"
+            title="Resize API Reference sidebar"
+            @mousedown="startSnippetSidebarResize"
+          ></div>
+
+          <section
+            class="code-editor"
+            :style="codeEditorStyle"
+            aria-label="Stage code editor"
+            @dragover.prevent="handleCodeEditorDragOver"
+            @drop.prevent="handleCodeEditorDrop"
+          >
             <div v-if="stageCodeLines.length === 0" class="code-line">
               <span class="line-number">1</span>
               <span></span>
               <span></span>
             </div>
-            <div v-for="(line, index) in stageCodeLines" v-else :key="index" class="code-line">
+            <div v-for="(line, index) in stageCodeLines" v-else :key="index" class="code-line" @mouseleave="hideCodeApiHover">
               <span class="line-number">{{ index + 1 }}</span>
-              <span class="text-[#b08a01]">{{ line[0] }}</span>
-              <span class="source-content">
+              <span class="code-api-token text-[#b08a01]" @mouseenter="showCodeApiHover($event, line[0])" @focus="showCodeApiHover($event, line[0])" @blur="hideCodeApiHover" tabindex="0">{{ line[0] }}</span>
+              <span class="source-content" @mouseenter="showCodeApiHover($event, line[0])">
                 <span v-for="(part, partIndex) in getSourceParts(line[1])" :key="`stage-${index}-${partIndex}`" :class="getCodeTokenClass(part.type)">
                   {{ part.text }}
                 </span>
@@ -2443,14 +3253,18 @@ onBeforeUnmount(() => {
               @click="selectedBackdropId = backdrop.id"
             >
               <img :src="backdrop.image" :alt="backdrop.name" />
-              <span class="asset-item-title">{{ backdrop.name }}</span>
+              <span class="asset-item-title" :title="backdrop.name">{{ backdrop.name }}</span>
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add backdrop">+</button>
+            <button class="asset-add-button" type="button" aria-label="Add backdrop">
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
+            </button>
           </aside>
           <section class="asset-detail" aria-label="Backdrop detail">
             <header class="asset-detail-header">
-              <h2>{{ selectedBackdrop.name }}</h2>
-              <button type="button" aria-label="Rename backdrop" v-html="editIcon"></button>
+              <button class="asset-detail-rename-trigger" type="button" :aria-label="`Rename backdrop ${selectedBackdrop.name}`" title="Rename" @click="renameBackdrop(selectedBackdrop)">
+                <span class="asset-detail-title">{{ selectedBackdrop.name }}</span>
+                <span class="asset-detail-edit-icon" v-html="editIcon"></span>
+              </button>
             </header>
             <div class="backdrop-preview">
               <img :src="selectedBackdrop.image" :alt="selectedBackdrop.name" />
@@ -2473,15 +3287,19 @@ onBeforeUnmount(() => {
                   <path d="M19.661 14.8859L9.58496 21.0519C7.57996 22.2789 5.00098 20.8398 5.00098 18.4938V6.50477C5.00098 4.15877 7.57996 2.71991 9.58496 3.94691L19.661 10.1129C21.446 11.2059 21.446 13.7939 19.661 14.8859Z" fill="currentColor" />
                 </svg>
               </span>
-              <span class="asset-item-title">{{ sound.name }}</span>
+              <span class="asset-item-title" :title="sound.name">{{ sound.name }}</span>
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add sound">+</button>
+            <button class="asset-add-button" type="button" aria-label="Add sound">
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
+            </button>
           </aside>
           <section v-if="selectedSound != null" class="asset-detail" aria-label="Sound detail">
             <header class="sound-detail-title">
               <div class="asset-detail-header">
-                <h2>{{ selectedSound.name }}</h2>
-                <button type="button" aria-label="Rename sound" v-html="editIcon"></button>
+                <button class="asset-detail-rename-trigger" type="button" :aria-label="`Rename sound ${selectedSound.name}`" title="Rename" @click="renameSound(selectedSound)">
+                  <span class="asset-detail-title">{{ selectedSound.name }}</span>
+                  <span class="asset-detail-edit-icon" v-html="editIcon"></span>
+                </button>
               </div>
               <div class="sound-duration">{{ selectedSoundDuration }}</div>
             </header>
@@ -2538,14 +3356,18 @@ onBeforeUnmount(() => {
               @click="selectedWidgetId = widget.id"
             >
               <span class="widget-icon" v-html="monitorWidgetIcon"></span>
-              <span class="asset-item-title">{{ widget.name }}</span>
+              <span class="asset-item-title" :title="widget.name">{{ widget.name }}</span>
             </button>
-            <button class="asset-add-button" type="button" aria-label="Add widget">+</button>
+            <button class="asset-add-button" type="button" aria-label="Add widget">
+              <span class="asset-add-icon" aria-hidden="true" v-html="plusIcon"></span>
+            </button>
           </aside>
           <section class="asset-detail" aria-label="Widget detail">
             <header class="asset-detail-header">
-              <h2>{{ selectedWidget.name }}</h2>
-              <button type="button" aria-label="Rename widget" v-html="editIcon"></button>
+              <button class="asset-detail-rename-trigger" type="button" :aria-label="`Rename widget ${selectedWidget.name}`" title="Rename" @click="renameWidget(selectedWidget)">
+                <span class="asset-detail-title">{{ selectedWidget.name }}</span>
+                <span class="asset-detail-edit-icon" v-html="editIcon"></span>
+              </button>
             </header>
             <div class="widget-detail">
               <label>
@@ -2562,209 +3384,9 @@ onBeforeUnmount(() => {
       </section>
 
       <aside class="preview-column">
-        <section class="preview-card">
-          <UICardHeader class="panel-header justify-between gap-3">
-            <h2 class="m-0 flex-1 text-xl font-normal text-title">Preview</h2>
-            <div class="panel-actions">
-              <button class="run-button" type="button" @click="runProject">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
-                Run
-              </button>
-              <button class="publish-button" type="button" @click="openPublishModal">
-                <span class="button-icon" aria-hidden="true" v-html="publishActionIcon"></span>
-                Publish
-              </button>
-            </div>
-          </UICardHeader>
+        <PreviewPanel :ctx="previewPanelContext" />
 
-          <div class="stage-frame">
-            <template v-if="!runnerActive">
-              <img class="stage-backdrop" :src="stageBackdrop" alt="" />
-              <div
-                v-for="sprite in stageCompanionSprites"
-                :key="sprite.id"
-                class="stage-sprite"
-                :style="getStageSpriteFrameStyle(sprite)"
-                role="button"
-                tabindex="0"
-                :aria-label="`Select ${sprite.name}`"
-                @click="selectSprite(sprite.id)"
-                @keydown.enter.prevent="selectSprite(sprite.id)"
-                @keydown.space.prevent="selectSprite(sprite.id)"
-                @pointerdown.stop.prevent="startStageSpriteDrag(sprite, $event)"
-                @pointermove.stop.prevent="moveStageSpriteDrag"
-                @pointerup.stop.prevent="endStageSpriteDrag"
-                @pointercancel.stop.prevent="endStageSpriteDrag"
-              >
-                <img :src="sprite.image" alt="" />
-              </div>
-              <div
-                v-if="selectedSprite != null"
-                class="selected-sprite"
-                :style="selectedSpriteFrameStyle"
-                @pointerdown.stop.prevent="startStageSpriteDrag(selectedSprite, $event)"
-                @pointermove.stop.prevent="moveStageSpriteDrag"
-                @pointerup.stop.prevent="endStageSpriteDrag"
-                @pointercancel.stop.prevent="endStageSpriteDrag"
-              >
-                <img :src="selectedSprite.image" alt="" />
-                <span class="coordinate">{{ selectedSpriteCoordinate }}</span>
-                <span class="handle left"></span>
-                <span class="handle right"></span>
-                <span class="corner bottom-left"></span>
-                <span class="corner top-right"></span>
-              </div>
-              <div class="stage-tools" :class="{ expanded: activeQuickConfig !== 'default' }">
-                <template v-if="activeQuickConfig === 'default'">
-                  <button
-                    v-for="tool in quickConfigTools"
-                    :key="tool.id"
-                    type="button"
-                    :aria-label="tool.label"
-                    @click="openQuickConfig(tool.id)"
-                  >
-                    <span v-html="tool.icon"></span>
-                  </button>
-                </template>
-                <template v-else-if="activeQuickConfig === 'size' && selectedSprite != null">
-                  <label class="quick-config-input">
-                    <span>Size</span>
-                    <input
-                      :value="selectedSprite.size"
-                      type="number"
-                      inputmode="numeric"
-                      min="1"
-                      max="400"
-                      aria-label="Size input"
-                      @input="updateSelectedSpriteSize"
-                    />
-                    <span>%</span>
-                  </label>
-                  <span class="quick-config-divider" aria-hidden="true"></span>
-                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
-                    <span v-html="backQuickIcon"></span>
-                  </button>
-                </template>
-                <template v-else-if="activeQuickConfig === 'position' && selectedSprite != null">
-                  <label class="quick-config-input position-input">
-                    <span>X</span>
-                    <input
-                      :value="selectedSprite.x"
-                      type="number"
-                      inputmode="numeric"
-                      min="-999"
-                      max="999"
-                      aria-label="X position input"
-                      @input="updateSelectedSpriteX"
-                    />
-                  </label>
-                  <label class="quick-config-input position-input">
-                    <span>Y</span>
-                    <input
-                      :value="selectedSprite.y"
-                      type="number"
-                      inputmode="numeric"
-                      min="-999"
-                      max="999"
-                      aria-label="Y position input"
-                      @input="updateSelectedSpriteY"
-                    />
-                  </label>
-                  <span class="quick-config-divider" aria-hidden="true"></span>
-                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
-                    <span v-html="backQuickIcon"></span>
-                  </button>
-                </template>
-                <template v-else-if="activeQuickConfig === 'rotation' && selectedSprite != null">
-                  <div class="rotation-style-group" role="group" aria-label="Rotation style control">
-                    <button
-                      class="rotation-style-button"
-                      :class="{ active: selectedSprite.rotationStyle === 'normal' }"
-                      type="button"
-                      aria-label="Normal rotation"
-                      @click="updateSelectedSpriteRotationStyle('normal')"
-                    >
-                      <span v-html="rotateAroundIcon"></span>
-                    </button>
-                    <button
-                      class="rotation-style-button"
-                      :class="{ active: selectedSprite.rotationStyle === 'left-right' }"
-                      type="button"
-                      aria-label="Left-right rotation"
-                      @click="updateSelectedSpriteRotationStyle('left-right')"
-                    >
-                      <span v-html="leftRightIcon"></span>
-                    </button>
-                    <button
-                      class="rotation-style-button"
-                      :class="{ active: selectedSprite.rotationStyle === 'none' }"
-                      type="button"
-                      aria-label="No rotation"
-                      @click="updateSelectedSpriteRotationStyle('none')"
-                    >
-                      <span v-html="notRotateIcon"></span>
-                    </button>
-                  </div>
-                  <label v-if="selectedSprite.rotationStyle === 'normal'" class="quick-config-input heading-input">
-                    <span>Heading</span>
-                    <input
-                      :value="selectedSprite.heading"
-                      type="number"
-                      inputmode="numeric"
-                      min="-180"
-                      max="180"
-                      aria-label="Heading input"
-                      @input="updateSelectedSpriteHeading"
-                    />
-                  </label>
-                  <div v-else-if="selectedSprite.rotationStyle === 'left-right'" class="direction-group" role="group" aria-label="Direction control">
-                    <button
-                      type="button"
-                      :class="{ active: selectedSprite.heading < 0 }"
-                      @click="updateSelectedSpriteLeftRight('left')"
-                    >
-                      Left
-                    </button>
-                    <button
-                      type="button"
-                      :class="{ active: selectedSprite.heading >= 0 }"
-                      @click="updateSelectedSpriteLeftRight('right')"
-                    >
-                      Right
-                    </button>
-                  </div>
-                  <span class="quick-config-divider" aria-hidden="true"></span>
-                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
-                    <span v-html="backQuickIcon"></span>
-                  </button>
-                </template>
-                <template v-else-if="activeQuickConfig === 'layer' && selectedSprite != null">
-                  <div class="quick-layer-menu" role="menu" aria-label="Layer order options">
-                    <button type="button" role="menuitem" @click="moveSelectedSpriteLayer('up')">Bring forward</button>
-                    <button type="button" role="menuitem" @click="moveSelectedSpriteLayer('top')">Bring to front</button>
-                    <button type="button" role="menuitem" @click="moveSelectedSpriteLayer('down')">Send backward</button>
-                    <button type="button" role="menuitem" @click="moveSelectedSpriteLayer('bottom')">Send to back</button>
-                  </div>
-                  <span class="quick-config-divider" aria-hidden="true"></span>
-                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
-                    <span v-html="backQuickIcon"></span>
-                  </button>
-                </template>
-                <template v-else>
-                  <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultQuickConfig">
-                    <span v-html="backQuickIcon"></span>
-                  </button>
-                </template>
-              </div>
-            </template>
-            <ProjectRunner v-show="runnerActive" ref="runnerRef" :project="project" :show-controls="false" />
-          </div>
-          <div v-if="publishStatusMessage !== ''" class="publish-toast" role="status">
-            {{ publishStatusMessage }}
-          </div>
-        </section>
-
-        <section class="asset-card">
+        <AssetPanel>
           <div class="sprites-panel">
             <UICardHeader class="asset-header justify-between">
               <h2 class="m-0 text-xl font-normal text-title">Sprites</h2>
@@ -2838,7 +3460,7 @@ onBeforeUnmount(() => {
               <span>{{ entry.label }}</span>
             </button>
           </div>
-        </section>
+        </AssetPanel>
         <Teleport to="body">
           <div
             v-if="spriteMenuSprite != null"
@@ -2867,7 +3489,7 @@ onBeforeUnmount(() => {
       </aside>
     </section>
 
-    <section v-else class="map-editor-main">
+    <MapEditorPanel v-else>
       <section class="map-workspace" :style="mapWorkspaceStyle">
         <div class="map-stage" :style="mapStageStyle">
           <img class="map-backdrop" :src="stageBackdrop" alt="" />
@@ -2884,13 +3506,145 @@ onBeforeUnmount(() => {
             @pointerup.stop.prevent="endMapSpriteDrag"
             @pointercancel.stop.prevent="endMapSpriteDrag"
           >
-            <img :src="sprite.image" :alt="sprite.name" />
+            <img :src="sprite.image" :alt="sprite.name" :style="getMapSpriteImageStyle(sprite)" />
             <span v-if="selectedMapSpriteId === sprite.id" class="map-sprite-coordinate">{{ selectedMapSpriteCoordinate }}</span>
           </button>
-          <div class="map-zoom-controls">
-            <button type="button" aria-label="Zoom in">+</button>
-            <button type="button" aria-label="Zoom out">-</button>
-            <button type="button" aria-label="Reset zoom">100%</button>
+          <div
+            v-if="selectedMapSprite != null"
+            class="stage-tools map-quick-tools"
+            :class="{ expanded: activeMapQuickConfig !== 'default' && activeMapQuickConfig !== 'layer' }"
+            :style="mapQuickConfigStyle"
+          >
+            <template v-if="activeMapQuickConfig === 'default' || activeMapQuickConfig === 'layer'">
+              <button
+                v-for="tool in quickConfigTools"
+                :key="`map-${tool.id}`"
+                type="button"
+                :aria-label="tool.label"
+                :class="{ active: activeMapQuickConfig === tool.id }"
+                @click="openMapQuickConfig(tool.id)"
+              >
+                <span v-html="tool.icon"></span>
+              </button>
+              <div v-if="activeMapQuickConfig === 'layer'" class="quick-layer-menu" role="menu" aria-label="Map layer order options">
+                <button type="button" role="menuitem" @click="moveSelectedMapSpriteLayer('up')">Bring forward</button>
+                <button type="button" role="menuitem" @click="moveSelectedMapSpriteLayer('top')">Bring to front</button>
+                <button type="button" role="menuitem" @click="moveSelectedMapSpriteLayer('down')">Send backward</button>
+                <button type="button" role="menuitem" @click="moveSelectedMapSpriteLayer('bottom')">Send to back</button>
+              </div>
+            </template>
+            <template v-else-if="activeMapQuickConfig === 'size'">
+              <label class="quick-config-input">
+                <span>Size</span>
+                <input
+                  :value="selectedMapSprite.size"
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  max="400"
+                  aria-label="Map sprite size input"
+                  @input="updateSelectedMapSpriteSize"
+                />
+                <span>%</span>
+              </label>
+              <span class="quick-config-divider" aria-hidden="true"></span>
+              <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultMapQuickConfig">
+                <span v-html="backQuickIcon"></span>
+              </button>
+            </template>
+            <template v-else-if="activeMapQuickConfig === 'position'">
+              <label class="quick-config-input position-input">
+                <span>X</span>
+                <input
+                  :value="selectedMapSprite.x"
+                  type="number"
+                  inputmode="numeric"
+                  min="-999"
+                  max="999"
+                  aria-label="Map sprite X position input"
+                  @input="updateSelectedMapSpriteX"
+                />
+              </label>
+              <label class="quick-config-input position-input">
+                <span>Y</span>
+                <input
+                  :value="selectedMapSprite.y"
+                  type="number"
+                  inputmode="numeric"
+                  min="-999"
+                  max="999"
+                  aria-label="Map sprite Y position input"
+                  @input="updateSelectedMapSpriteY"
+                />
+              </label>
+              <span class="quick-config-divider" aria-hidden="true"></span>
+              <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultMapQuickConfig">
+                <span v-html="backQuickIcon"></span>
+              </button>
+            </template>
+            <template v-else-if="activeMapQuickConfig === 'rotation'">
+              <div class="rotation-style-group" role="group" aria-label="Map sprite rotation style control">
+                <button
+                  class="rotation-style-button"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'normal' }"
+                  type="button"
+                  aria-label="Normal rotation"
+                  @click="updateMapSpriteRotationStyle('normal')"
+                >
+                  <span v-html="rotateAroundIcon"></span>
+                </button>
+                <button
+                  class="rotation-style-button"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'left-right' }"
+                  type="button"
+                  aria-label="Left-right rotation"
+                  @click="updateMapSpriteRotationStyle('left-right')"
+                >
+                  <span v-html="leftRightIcon"></span>
+                </button>
+                <button
+                  class="rotation-style-button"
+                  :class="{ active: selectedMapSprite.rotationStyle === 'none' }"
+                  type="button"
+                  aria-label="No rotation"
+                  @click="updateMapSpriteRotationStyle('none')"
+                >
+                  <span v-html="notRotateIcon"></span>
+                </button>
+              </div>
+              <label v-if="selectedMapSprite.rotationStyle === 'normal'" class="quick-config-input heading-input">
+                <span>Heading</span>
+                <input
+                  :value="selectedMapSprite.heading"
+                  type="number"
+                  inputmode="numeric"
+                  min="-180"
+                  max="180"
+                  aria-label="Map sprite heading input"
+                  @input="updateSelectedMapSpriteHeading"
+                />
+              </label>
+              <div v-else-if="selectedMapSprite.rotationStyle === 'left-right'" class="direction-group" role="group" aria-label="Map sprite direction control">
+                <button
+                  type="button"
+                  :class="{ active: selectedMapSprite.heading < 0 }"
+                  @click="updateSelectedMapSpriteLeftRight('left')"
+                >
+                  Left
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: selectedMapSprite.heading >= 0 }"
+                  @click="updateSelectedMapSpriteLeftRight('right')"
+                >
+                  Right
+                </button>
+              </div>
+              <span class="quick-config-divider" aria-hidden="true"></span>
+              <button class="quick-config-back" type="button" aria-label="Back" @click="backToDefaultMapQuickConfig">
+                <span v-html="backQuickIcon"></span>
+              </button>
+            </template>
           </div>
         </div>
       </section>
@@ -2899,9 +3653,16 @@ onBeforeUnmount(() => {
         <UICard class="map-card">
           <UICardHeader class="map-card-header justify-between">
             <h2 class="m-0 text-xl font-normal text-title">Global Config</h2>
-            <button class="map-config-icon collapse" type="button" aria-label="Collapse global config" v-html="arrowDownIcon"></button>
+            <button
+              class="map-config-icon collapse"
+              :class="{ collapsed: mapGlobalConfigCollapsed }"
+              type="button"
+              aria-label="Collapse global config" v-html="arrowDownIcon"
+              :title="mapGlobalConfigCollapsed ? 'Expand' : 'Collapse'"
+              @click="mapGlobalConfigCollapsed = !mapGlobalConfigCollapsed"
+            ></button>
           </UICardHeader>
-          <div class="map-config">
+          <div v-if="!mapGlobalConfigCollapsed" class="map-config">
             <label>
               <span>Map size</span>
               <span class="map-size-inputs">
@@ -3020,97 +3781,100 @@ onBeforeUnmount(() => {
               </form>
               <button class="map-config-icon" type="button" aria-label="Rename sprite" @click="startMapSpriteRename" v-html="editIcon"></button>
               <span class="map-config-title-spacer"></span>
-              <button class="map-config-icon collapse" type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false" v-html="arrowDownIcon"></button>
+              <button class="map-config-icon collapse" type="button" aria-label="Collapse sprite config" @click="mapSpriteConfigExpanded = false" v-html="arrowDownIcon" title="Collapse"></button>
             </div>
             <div class="map-config-grid">
-              <label><span>X</span><input :value="selectedMapSprite.x" type="number" inputmode="numeric" @input="updateSelectedMapSpriteX" /></label>
-              <label><span>Y</span><input :value="selectedMapSprite.y" type="number" inputmode="numeric" @input="updateSelectedMapSpriteY" /></label>
-              <label><span>W</span><input value="54" readonly /></label>
-              <label><span>H</span><input value="60" readonly /></label>
+              <label class="map-number-input">
+                <span class="map-number-prefix">X</span>
+                <input :value="selectedMapSprite.x" type="number" inputmode="numeric" aria-label="X position" @input="updateSelectedMapSpriteX" />
+              </label>
+              <label class="map-number-input">
+                <span class="map-number-prefix">Y</span>
+                <input :value="selectedMapSprite.y" type="number" inputmode="numeric" aria-label="Y position" @input="updateSelectedMapSpriteY" />
+              </label>
+              <label class="map-number-input">
+                <span class="map-number-prefix">Size</span>
+                <input :value="selectedMapSprite.size" type="number" min="1" max="400" inputmode="numeric" aria-label="Size percentage" @input="updateSelectedMapSpriteSize" />
+                <span class="map-number-suffix">%</span>
+              </label>
             </div>
             <div class="map-config-row">
               <span>Rotation</span>
-              <div class="map-button-group" role="group" aria-label="Map sprite rotation style">
-                <button
-                  class="map-button-group-item"
-                  :class="{ active: selectedMapSprite.rotationStyle === 'normal' }"
-                  type="button"
-                  aria-label="Normal rotation"
-                  @click="updateMapSpriteRotationStyle('normal')"
+              <div class="map-rotation-controls">
+                <UIButtonGroup
+                  class="map-button-group"
+                  :value="selectedMapSprite.rotationStyle"
+                  role="group"
+                  aria-label="Map sprite rotation style"
+                  @update:value="updateMapSpriteRotationValue"
                 >
-                  <span v-html="rotateAroundIcon"></span>
-                </button>
-                <button
-                  class="map-button-group-item"
-                  :class="{ active: selectedMapSprite.rotationStyle === 'left-right' }"
-                  type="button"
-                  aria-label="Left-right rotation"
-                  @click="updateMapSpriteRotationStyle('left-right')"
+                  <UIButtonGroupItem value="normal" aria-label="Normal rotation">
+                    <span class="map-button-group-icon" v-html="rotateAroundIcon"></span>
+                  </UIButtonGroupItem>
+                  <UIButtonGroupItem value="left-right" aria-label="Left-right rotation">
+                    <span class="map-button-group-icon" v-html="leftRightIcon"></span>
+                  </UIButtonGroupItem>
+                  <UIButtonGroupItem value="none" aria-label="No rotation">
+                    <span class="map-button-group-icon" v-html="notRotateIcon"></span>
+                  </UIButtonGroupItem>
+                </UIButtonGroup>
+                <label v-if="selectedMapSprite.rotationStyle !== 'left-right'" class="map-number-input map-heading-input" :class="{ disabled: selectedMapSprite.rotationStyle === 'none' }">
+                  <span class="map-number-prefix">Heading</span>
+                  <input
+                    :value="selectedMapSprite.heading"
+                    type="number"
+                    min="-180"
+                    max="180"
+                    inputmode="numeric"
+                    aria-label="Heading"
+                    :disabled="selectedMapSprite.rotationStyle === 'none'"
+                    @input="updateSelectedMapSpriteHeading"
+                  />
+                </label>
+                <UIButtonGroup
+                  v-else
+                  class="map-button-group"
+                  type="text"
+                  :value="selectedMapSprite.heading < 0 ? 'left' : 'right'"
+                  role="group"
+                  aria-label="Map sprite left-right direction"
+                  @update:value="updateMapSpriteDirectionValue"
                 >
-                  <span v-html="leftRightIcon"></span>
-                </button>
-                <button
-                  class="map-button-group-item"
-                  :class="{ active: selectedMapSprite.rotationStyle === 'none' }"
-                  type="button"
-                  aria-label="No rotation"
-                  @click="updateMapSpriteRotationStyle('none')"
-                >
-                  <span v-html="notRotateIcon"></span>
-                </button>
+                  <UIButtonGroupItem value="left" aria-label="Set direction left">Left</UIButtonGroupItem>
+                  <UIButtonGroupItem value="right" aria-label="Set direction right">Right</UIButtonGroupItem>
+                </UIButtonGroup>
               </div>
             </div>
             <div class="map-config-row">
               <span>Show</span>
-              <div class="map-button-group" role="group" aria-label="Map sprite visibility">
-                <button
-                  class="map-button-group-item map-text-option"
-                  :class="{ active: !selectedMapSprite.hidden }"
-                  type="button"
-                  @click="updateMapSpriteVisibility(true)"
-                >
-                  Visible
-                </button>
-                <button
-                  class="map-button-group-item map-text-option"
-                  :class="{ active: selectedMapSprite.hidden }"
-                  type="button"
-                  @click="updateMapSpriteVisibility(false)"
-                >
-                  Hidden
-                </button>
-              </div>
+              <UIButtonGroup
+                class="map-button-group"
+                :value="selectedMapSprite.hidden ? 'hidden' : 'visible'"
+                role="group"
+                aria-label="Map sprite visibility"
+                @update:value="updateMapSpriteVisibilityValue"
+              >
+                <UIButtonGroupItem value="visible" aria-label="Show sprite">
+                  <span class="map-button-group-icon" v-html="eyeIcon"></span>
+                </UIButtonGroupItem>
+                <UIButtonGroupItem value="hidden" aria-label="Hide sprite">
+                  <span class="map-button-group-icon" v-html="eyeSlashIcon"></span>
+                </UIButtonGroupItem>
+              </UIButtonGroup>
             </div>
             <div v-if="mapPhysicsEnabled" class="map-config-row">
               <span>Physics</span>
-              <div class="map-checkbox-group" role="group" aria-label="Map sprite physics">
-                <label class="map-checkbox">
-                  <input
-                    type="checkbox"
-                    :checked="mapSpritePhysicsFlags.includes('Collision')"
-                    @change="toggleMapSpritePhysicsFlag('Collision')"
-                  />
-                  <span>Collision</span>
-                </label>
-                <label class="map-checkbox">
-                  <input
-                    type="checkbox"
-                    :checked="mapSpritePhysicsFlags.includes('Gravity')"
-                    :disabled="mapSpritePhysicsFlags.includes('Immovable')"
-                    @change="toggleMapSpritePhysicsFlag('Gravity')"
-                  />
-                  <span>Gravity</span>
-                </label>
-                <label class="map-checkbox">
-                  <input
-                    type="checkbox"
-                    :checked="mapSpritePhysicsFlags.includes('Immovable')"
-                    :disabled="mapSpritePhysicsFlags.includes('Gravity')"
-                    @change="toggleMapSpritePhysicsFlag('Immovable')"
-                  />
-                  <span>Immovable</span>
-                </label>
-              </div>
+              <UICheckboxGroup class="map-checkbox-group" aria-label="Map sprite physics" :value="mapSpritePhysicsFlags" @update:value="updateMapSpritePhysicsFlags">
+                <UICheckbox class="map-checkbox" value="Collision" :disabled="mapSpritePhysicsFlags.includes('Gravity') || mapSpritePhysicsFlags.includes('Immovable')">
+                  <div>Collision</div>
+                </UICheckbox>
+                <UICheckbox class="map-checkbox" value="Gravity" :disabled="mapSpritePhysicsFlags.includes('Immovable')">
+                  <div>Gravity</div>
+                </UICheckbox>
+                <UICheckbox class="map-checkbox" value="Immovable" :disabled="mapSpritePhysicsFlags.includes('Gravity')">
+                  <div>Immovable</div>
+                </UICheckbox>
+              </UICheckboxGroup>
             </div>
           </footer>
           <button
@@ -3118,56 +3882,92 @@ onBeforeUnmount(() => {
             class="map-config-expand"
             type="button"
             aria-label="Expand sprite config"
+            title="Expand"
             @click="mapSpriteConfigExpanded = true"
           >
-            ⌃
+            <span class="map-config-expand-icon" aria-hidden="true" v-html="arrowDownIcon"></span>
           </button>
         </UICard>
       </aside>
-    </section>
-    <Teleport to="body">
-      <div v-if="animationPendingRemoval != null" class="prototype-modal-backdrop" role="presentation" @click.self="cancelRemoveAnimation">
-        <section class="prototype-modal" role="dialog" aria-modal="true" aria-labelledby="remove-animation-title">
-          <h2 id="remove-animation-title">Remove animation</h2>
-          <p>Animation {{ animationPendingRemoval.name }} will be removed. Do you want to preserve the costumes?</p>
-          <label class="prototype-checkbox">
-            <input v-model="preserveRemovedAnimationFrames" type="checkbox" />
-            <span>Preserve (the costumes will be moved to the sprite's costume list)</span>
-          </label>
-          <div class="prototype-modal-actions">
-            <UIButton type="white" size="medium" @click="cancelRemoveAnimation">Cancel</UIButton>
-            <UIButton type="primary" size="medium" @click="confirmRemoveAnimation">Confirm</UIButton>
-          </div>
-        </section>
+    </MapEditorPanel>
+    <div v-if="codeApiHover != null" class="code-hover-card" :style="codeHoverCardStyle" role="tooltip">
+      <div class="code-hover-card-content">
+        <code>{{ codeApiHover.overview }}</code>
+        <p>{{ codeApiHover.detail }}</p>
       </div>
-    </Teleport>
-    <Teleport to="body">
-      <div v-if="spritePendingRename != null" class="prototype-modal-backdrop" role="presentation" @click.self="cancelSpriteRename">
-        <section class="prototype-modal" role="dialog" aria-modal="true" aria-labelledby="rename-sprite-title">
-          <h2 id="rename-sprite-title">Rename</h2>
-          <form class="prototype-form" @submit.prevent="submitSpriteRename">
-            <label class="prototype-field">
-              <span>Name</span>
-              <input
-                ref="spriteRenameInputRef"
-                v-model="draftSpriteRenameName"
-                type="text"
-                aria-label="Sprite name"
-                :aria-invalid="spriteRenameError !== ''"
-                @input="spriteRenameError = ''"
-                @keydown.esc.prevent="cancelSpriteRename"
-              />
-            </label>
-            <p class="prototype-field-tip">Use letters, numbers, spaces, hyphens, or underscores.</p>
-            <p v-if="spriteRenameError !== ''" class="prototype-field-error">{{ spriteRenameError }}</p>
-            <div class="prototype-modal-actions">
-              <UIButton type="white" size="medium" @click="cancelSpriteRename">Cancel</UIButton>
-              <UIButton type="primary" size="medium" @click="submitSpriteRename">Confirm</UIButton>
-            </div>
-          </form>
-        </section>
+    </div>
+    <UIFormModal
+      v-if="animationPendingRemoval != null"
+      style="width: 560px"
+      title="Remove animation"
+      :visible="animationPendingRemoval != null"
+      @update:visible="cancelRemoveAnimation"
+    >
+      <p class="prototype-modal-copy">
+        Animation {{ animationPendingRemoval.name }} will be removed. Do you want to preserve the costumes?
+      </p>
+      <UICheckbox v-model:checked="preserveRemovedAnimationFrames" class="prototype-checkbox">
+        Preserve (the costumes will be moved to the sprite's costume list)
+      </UICheckbox>
+      <div class="prototype-modal-actions">
+        <UIButton type="white" size="medium" @click="cancelRemoveAnimation">Cancel</UIButton>
+        <UIButton type="primary" size="medium" @click="confirmRemoveAnimation">Confirm</UIButton>
       </div>
-    </Teleport>
+    </UIFormModal>
+    <UIFormModal
+      v-if="spritePendingRename != null"
+      style="width: 512px"
+      title="Rename"
+      :visible="spritePendingRename != null"
+      @update:visible="cancelSpriteRename"
+    >
+      <form class="prototype-form" @submit.prevent="submitSpriteRename">
+        <label class="prototype-field">
+          <input
+            ref="spriteRenameInputRef"
+            v-model="draftSpriteRenameName"
+            type="text"
+            aria-label="Sprite name"
+            :aria-invalid="spriteRenameError !== ''"
+            @input="spriteRenameError = ''"
+            @keydown.esc.prevent="cancelSpriteRename"
+          />
+        </label>
+        <p class="prototype-field-tip">The sprite name can only contain letters, digits, and the character _.</p>
+        <p v-if="spriteRenameError !== ''" class="prototype-field-error">{{ spriteRenameError }}</p>
+        <div class="prototype-modal-actions">
+          <UIButton type="white" size="medium" @click="cancelSpriteRename">Cancel</UIButton>
+          <UIButton type="primary" size="medium" @click="submitSpriteRename">Confirm</UIButton>
+        </div>
+      </form>
+    </UIFormModal>
+    <UIFormModal
+      v-if="assetPendingRename != null"
+      style="width: 512px"
+      title="Rename"
+      :visible="assetPendingRename != null"
+      @update:visible="cancelAssetRename"
+    >
+      <form class="prototype-form" @submit.prevent="submitAssetRename">
+        <label class="prototype-field">
+          <input
+            ref="assetRenameInputRef"
+            v-model="draftAssetRenameName"
+            type="text"
+            :aria-label="assetPendingRename.kind === 'costume' ? 'Costume name' : 'Animation name'"
+            :aria-invalid="assetRenameError !== ''"
+            @input="assetRenameError = ''"
+            @keydown.esc.prevent="cancelAssetRename"
+          />
+        </label>
+        <p class="prototype-field-tip">{{ getAssetRenameTip(assetPendingRename.kind) }}</p>
+        <p v-if="assetRenameError !== ''" class="prototype-field-error">{{ assetRenameError }}</p>
+        <div class="prototype-modal-actions">
+          <UIButton type="white" size="medium" @click="cancelAssetRename">Cancel</UIButton>
+          <UIButton type="primary" size="medium" @click="submitAssetRename">Confirm</UIButton>
+        </div>
+      </form>
+    </UIFormModal>
     <SpriteGeneratorModal
       v-if="spriteGenModalOpen"
       @close="cancelSpriteGenModal"
@@ -3599,33 +4399,7 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-300);
 }
 
-.prototype-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 120;
-  display: grid;
-  place-items: center;
-  background: rgb(31 41 55 / 36%);
-  padding: 24px;
-}
-
-.prototype-modal {
-  width: min(560px, 100%);
-  border-radius: var(--ui-border-radius-lg);
-  background: var(--ui-color-grey-100);
-  padding: 24px;
-  box-shadow: var(--ui-box-shadow-lg);
-}
-
-.prototype-modal h2 {
-  margin: 0 0 16px;
-  color: var(--ui-color-grey-1000);
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 28px;
-}
-
-.prototype-modal p {
+.prototype-modal-copy {
   margin: 0;
   color: var(--ui-color-grey-1000);
   font-size: 14px;
@@ -3633,19 +4407,7 @@ onBeforeUnmount(() => {
 }
 
 .prototype-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin-top: 20px;
-  color: var(--ui-color-grey-1000);
-  font-size: 14px;
-  line-height: 22px;
-}
-
-.prototype-checkbox input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--ui-color-primary-main);
 }
 
 .prototype-form {
@@ -3718,7 +4480,7 @@ onBeforeUnmount(() => {
 }
 
 .prototype-field-tip {
-  color: var(--ui-color-grey-700);
+  color: var(--ui-color-hint-1);
 }
 
 .prototype-field-error {
@@ -3847,7 +4609,7 @@ onBeforeUnmount(() => {
 }
 
 .map-sprite.active {
-  outline: 1px solid var(--ui-color-primary-main);
+  outline: 2px solid var(--ui-color-primary-main);
   outline-offset: 6px;
 }
 
@@ -3886,26 +4648,17 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.map-zoom-controls {
-  position: absolute;
+.map-quick-tools {
+  z-index: 6;
   left: 50%;
-  bottom: 18px;
+  top: 50%;
+  bottom: auto;
   transform: translateX(-50%);
-  display: flex;
-  gap: 4px;
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  padding: 4px;
-  box-shadow: var(--ui-box-shadow-sm);
 }
 
-.map-zoom-controls button {
-  height: 28px;
-  min-width: 28px;
-  border: 0;
-  border-radius: var(--ui-border-radius-sm);
-  background: transparent;
-  color: var(--ui-color-grey-900);
+.map-quick-tools button.active {
+  background: var(--ui-color-primary-200);
+  color: var(--ui-color-primary-400);
 }
 
 .map-side {
@@ -3918,6 +4671,7 @@ onBeforeUnmount(() => {
 .map-card {
   min-height: 0;
   overflow: hidden;
+  border: 0;
 }
 
 .map-card-header button,
@@ -3935,14 +4689,18 @@ onBeforeUnmount(() => {
 }
 
 .map-card-header button:hover,
+.map-card-header button[aria-expanded='true'],
 .map-config-title button:hover {
   background: var(--ui-color-grey-400);
 }
 
+.map-card-header button :deep(svg),
 .map-card-header button > span,
 .map-card-header button > span :deep(svg) {
   width: 16px;
   height: 16px;
+  display: block;
+  line-height: 0;
 }
 
 .map-config {
@@ -4028,6 +4786,7 @@ onBeforeUnmount(() => {
   --ui-switch-offset: 2px;
   min-width: var(--ui-switch-rail-width);
   height: var(--ui-switch-rail-height);
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4120,43 +4879,28 @@ onBeforeUnmount(() => {
   line-height: 24px;
 }
 
-.map-button-group {
-  height: 32px;
-  display: inline-flex;
-  overflow: hidden;
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-300);
-}
-
-.map-button-group-item {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  background: var(--ui-color-grey-300);
-  color: var(--ui-color-grey-1000);
-  transition:
-    background-color 0.2s,
-    color 0.2s;
-}
-
-.map-button-group-item.active {
-  background: var(--ui-color-primary-200);
-  color: var(--ui-color-primary-400);
-}
-
-.map-button-group-item :deep(svg) {
+.map-button-group :deep(svg) {
   width: 16px;
   height: 16px;
   display: block;
 }
 
+.map-config-row .map-button-group {
+  width: max-content;
+  justify-self: start;
+  display: inline-flex;
+}
+
+.map-button-group-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .map-text-option {
-  width: auto;
   min-width: 64px;
-  padding: 0 12px;
   font-weight: 500;
 }
 
@@ -4169,21 +4913,7 @@ onBeforeUnmount(() => {
 }
 
 .map-checkbox {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ui-color-grey-1000);
   white-space: nowrap;
-}
-
-.map-checkbox input {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--ui-color-primary-main);
-}
-
-.map-checkbox input:disabled + span {
-  color: var(--ui-color-grey-600);
 }
 
 .map-sprites-card {
@@ -4200,8 +4930,9 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 8px;
-  padding: 12px;
+  padding: 12px 0 12px 12px;
   overflow: auto;
+  scrollbar-width: thin;
 }
 
 .map-sprite-config {
@@ -4232,6 +4963,17 @@ onBeforeUnmount(() => {
   box-shadow: var(--ui-box-shadow-sm);
 }
 
+.map-config-expand-icon,
+.map-config-expand-icon :deep(svg) {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.map-config-expand-icon {
+  transform: rotate(180deg);
+}
+
 .map-config-title {
   height: 28px;
   display: flex;
@@ -4251,6 +4993,9 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
 }
 
 .map-config-title-spacer {
@@ -4285,6 +5030,16 @@ onBeforeUnmount(() => {
   height: 16px;
 }
 
+.map-config-icon.collapse {
+  transition:
+    color 0.15s ease,
+    transform 0.3s ease;
+}
+
+.map-config-icon.collapse.collapsed {
+  transform: rotate(180deg);
+}
+
 .map-sprite-name-form {
   min-width: 0;
   max-width: 16em;
@@ -4306,7 +5061,7 @@ onBeforeUnmount(() => {
 
 .map-config-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -4315,31 +5070,72 @@ onBeforeUnmount(() => {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.map-config-grid span {
-  width: 16px;
-  color: var(--ui-color-grey-800);
-}
-
-.map-config-grid input {
-  min-width: 0;
-  width: 100%;
   height: 32px;
-  border: 0;
   border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-grey-300);
   box-shadow: inset 0 0 0 1px var(--ui-color-grey-300);
   padding: 0 12px;
   color: var(--ui-color-grey-1000);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.map-number-prefix,
+.map-number-suffix {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ui-color-grey-800);
+}
+
+.map-number-prefix {
+  margin-right: 8px;
+}
+
+.map-number-suffix {
+  margin-left: 4px;
+}
+
+.map-config-grid input {
+  min-width: 0;
+  width: 100%;
+  height: inherit;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ui-color-grey-1000);
   font: inherit;
   outline: none;
 }
 
-.map-config-grid input:focus {
+.map-config-grid label:focus-within {
   background: var(--ui-color-grey-100);
   box-shadow: inset 0 0 0 1px var(--ui-color-primary-main);
+}
+
+.map-number-input.disabled {
+  background: var(--ui-color-disabled-bg);
+  color: var(--ui-color-disabled-text);
+}
+
+.map-number-input.disabled .map-number-prefix,
+.map-number-input.disabled .map-number-suffix,
+.map-number-input.disabled input {
+  color: var(--ui-color-disabled-text);
+  cursor: not-allowed;
+}
+
+.map-rotation-controls {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.map-heading-input {
+  flex: 1 1 120px;
+  min-width: 0;
 }
 
 .code-card,
@@ -4360,13 +5156,20 @@ onBeforeUnmount(() => {
 .format-button {
   margin-left: auto;
   margin-bottom: 7px;
+  font-size: 14px;
+  line-height: 22px;
 }
 
 .code-body {
   min-height: 0;
   flex: 1;
   display: grid;
-  grid-template-columns: 60px 219px minmax(0, 1fr);
+  grid-template-columns: 60px var(--prototype-snippet-sidebar-width) minmax(0, 1fr);
+  position: relative;
+}
+
+.code-body.resizing {
+  cursor: col-resize;
 }
 
 .asset-editor-body {
@@ -4429,7 +5232,7 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: inherit;
   background: transparent;
-  padding: 2px;
+  padding: 0;
   color: inherit;
   font: inherit;
 }
@@ -4491,14 +5294,14 @@ onBeforeUnmount(() => {
 
 .editor-asset-item .asset-item-title {
   width: 100%;
-  height: 22px;
+  min-height: 16px;
   overflow: hidden;
   padding: 0 6px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 11px;
-  line-height: 22px;
+  line-height: 16px;
 }
 
 .animation-asset-item,
@@ -4508,11 +5311,11 @@ onBeforeUnmount(() => {
 
 .asset-item-menu {
   position: absolute;
-  top: -10px;
-  right: -10px;
+  top: -6px;
+  right: -6px;
   z-index: 2;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
   border: 0;
@@ -4534,12 +5337,25 @@ onBeforeUnmount(() => {
   width: calc(100% + 20px);
   margin: auto -10px -12px;
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-top: 1px solid var(--ui-color-grey-400);
   border-radius: 0 0 0 var(--ui-border-radius-md);
   background: var(--ui-color-grey-100);
   color: var(--ui-color-grey-800);
-  font-size: 20px;
+}
+
+.asset-add-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.asset-add-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .animation-add-menu {
@@ -4706,24 +5522,44 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
-.asset-detail-header h2 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-  text-align: center;
-}
-
-.asset-detail-header button {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 auto;
+.asset-detail-rename-trigger {
+  max-width: 100%;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--ui-color-grey-900);
+  color: inherit;
+  cursor: pointer;
 }
 
-.asset-detail-header button :deep(svg) {
+.asset-detail-rename-trigger:hover .asset-detail-edit-icon,
+.asset-detail-rename-trigger:focus-visible .asset-detail-edit-icon {
+  color: var(--ui-color-grey-800);
+}
+
+.asset-detail-title {
+  min-width: 0;
+  margin: 0;
+  color: var(--ui-color-grey-1000);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  text-align: center;
+}
+
+.asset-detail-edit-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--ui-color-grey-900);
+  transition: color 0.2s ease;
+}
+
+.asset-detail-edit-icon :deep(svg) {
   width: 14px;
   height: 14px;
   display: block;
@@ -4838,13 +5674,16 @@ onBeforeUnmount(() => {
   animation-delay: 1.2s;
 }
 
-.animation-settings {
+.animation-settings-shell {
+  position: relative;
   display: flex;
   justify-content: center;
 }
 
 .animation-settings {
   align-self: center;
+  display: flex;
+  align-items: center;
   gap: 4px;
   border-radius: var(--ui-border-radius-md);
   background: var(--ui-color-grey-100);
@@ -4862,8 +5701,17 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   padding: 0 12px;
-  color: var(--ui-color-grey-1000);
+  color: var(--ui-color-grey-900);
   font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.animation-setting.active {
+  background: var(--ui-color-primary-200);
+  color: var(--ui-color-primary-main);
 }
 
 .animation-setting strong {
@@ -4890,6 +5738,145 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.animation-setting-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 20;
+  width: 320px;
+  max-height: 400px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: var(--ui-border-radius-lg);
+  background: var(--ui-color-grey-100);
+  padding: 16px;
+  color: var(--ui-color-grey-1000);
+  box-shadow: var(--ui-box-shadow-md);
+}
+
+.animation-setting-popover h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.animation-duration-editor {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--ui-color-grey-900);
+  font-size: 14px;
+}
+
+.animation-duration-editor input {
+  min-width: 0;
+  height: 32px;
+  border: 1px solid var(--ui-color-grey-500);
+  border-radius: var(--ui-border-radius-sm);
+  background: var(--ui-color-grey-100);
+  padding: 0 8px;
+  color: var(--ui-color-grey-1000);
+  font: inherit;
+  outline: none;
+}
+
+.animation-duration-editor input:focus {
+  border-color: var(--ui-color-primary-main);
+}
+
+.animation-bound-state-editor,
+.animation-sound-editor {
+  min-height: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 12px;
+  overflow: auto;
+}
+
+.animation-bound-state-editor {
+  overflow: visible;
+}
+
+.bound-state-icon,
+.sound-choice-icon {
+  margin-top: 10px;
+  color: var(--ui-color-grey-900);
+}
+
+.bound-state-icon {
+  width: 56px;
+  height: 56px;
+  margin-top: 4px;
+}
+
+.sound-choice-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.bound-state-icon :deep(svg),
+.sound-choice-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.bound-state-label,
+.sound-choice-label {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 4px 6px 0;
+  color: var(--ui-color-grey-1000);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bound-state-check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--ui-color-primary-main);
+  color: var(--ui-color-grey-100);
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.sound-choice-duration {
+  margin-top: 2px;
+  color: var(--ui-color-grey-800);
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.animation-add-sound-choice {
+  justify-content: center;
+  color: var(--ui-color-primary-main);
+}
+
+.animation-add-sound-choice .sound-choice-icon {
+  width: 24px;
+  height: 24px;
+  margin-top: 0;
+}
+
+.animation-setting-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .widget-detail {
@@ -5102,6 +6089,8 @@ onBeforeUnmount(() => {
 }
 
 .events-list {
+  grid-column: 2;
+  grid-row: 1;
   border-right: 1px solid var(--ui-color-grey-400);
   padding: 15px 16px;
   overflow-x: auto;
@@ -5109,6 +6098,25 @@ onBeforeUnmount(() => {
   cursor: grab;
   scrollbar-width: none;
   touch-action: pan-y;
+}
+
+.snippet-resize-handle {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  position: relative;
+  z-index: 5;
+  width: 12px;
+  height: 100%;
+  margin-left: -6px;
+  margin-right: -6px;
+  cursor: col-resize;
+  transition: background 0.16s ease;
+}
+
+.snippet-resize-handle:hover,
+.code-body.resizing .snippet-resize-handle {
+  background: rgba(15, 23, 42, 0.08);
 }
 
 .events-list.dragging {
@@ -5121,34 +6129,55 @@ onBeforeUnmount(() => {
 }
 
 .event-group {
-  min-width: max-content;
-  border-bottom: 1px dashed var(--ui-color-grey-400);
-  padding-bottom: 12px;
-  margin-bottom: 12px;
+  min-width: 0;
+  border-bottom: 1px dashed var(--ui-color-grey-500);
+  padding-bottom: 20px;
 }
 
 .event-group h3 {
-  margin: 0 0 14px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 12px 0;
+  background: var(--ui-color-grey-100);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--ui-color-grey-600);
 }
 
 .event-snippet {
   display: block;
   width: max-content;
+  max-width: 100%;
   min-width: 100%;
   border: 0;
   background: transparent;
-  padding: 5px 6px;
+  padding: 2px 6px 1px;
   text-align: left;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
   color: #000;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: grab;
+}
+
+.event-snippet + .event-snippet {
+  margin-top: 8px;
+}
+
+.event-snippet.before-dragging {
+  background: rgba(203, 213, 225, 0.55);
+}
+
+.event-snippet:active {
+  cursor: grabbing;
 }
 
 .code-editor {
+  grid-column: 3;
   position: relative;
   overflow: hidden;
   padding: 14px 66px 14px 18px;
@@ -5169,10 +6198,53 @@ onBeforeUnmount(() => {
   text-align: right;
 }
 
+.code-api-token {
+  border-radius: 2px;
+  outline: none;
+  cursor: help;
+}
+
+.code-api-token:hover,
+.code-api-token:focus-visible {
+  background: var(--ui-color-grey-600);
+}
+
 .source-content {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: help;
+}
+
+.code-hover-card {
+  position: fixed;
+  z-index: 60;
+  max-width: 360px;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  box-shadow: var(--ui-box-shadow-lg);
+  color: var(--ui-color-grey-1000);
+  pointer-events: none;
+}
+
+.code-hover-card-content {
+  padding: 6px 8px;
+}
+
+.code-hover-card code {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ui-color-grey-1000);
+}
+
+.code-hover-card p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ui-color-grey-900);
 }
 
 .code-side-tools {
@@ -5411,7 +6483,8 @@ onBeforeUnmount(() => {
   top: 108px;
   width: 105px;
   height: 105px;
-  border: 1px solid var(--ui-color-primary-main);
+  box-sizing: border-box;
+  border: 2px solid var(--ui-color-primary-main);
   cursor: grab;
   transform-origin: center;
 }
@@ -5445,6 +6518,16 @@ onBeforeUnmount(() => {
   background: white;
   border: 1px solid var(--ui-color-grey-400);
   box-shadow: var(--ui-box-shadow-sm);
+}
+
+.handle {
+  padding: 0;
+  cursor: pointer;
+}
+
+.handle.active {
+  background: var(--ui-color-primary-main);
+  border-color: var(--ui-color-primary-main);
 }
 
 .handle.left {
@@ -5652,6 +6735,10 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-400);
 }
 
+.asset-header button[aria-expanded='true'] {
+  background: var(--ui-color-grey-400);
+}
+
 .asset-header button:active {
   background: var(--ui-color-grey-500);
 }
@@ -5664,6 +6751,8 @@ onBeforeUnmount(() => {
 .asset-header button > span :deep(svg) {
   width: 16px;
   height: 16px;
+  display: block;
+  line-height: 0;
 }
 
 .add-sprite-menu-wrap {
@@ -5800,6 +6889,8 @@ onBeforeUnmount(() => {
   background: var(--ui-color-grey-100);
   padding: 8px;
   box-shadow: var(--ui-box-shadow-sm);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -5820,7 +6911,10 @@ onBeforeUnmount(() => {
 .map-card-header .add-sprite-menu-item,
 .sprite-options-item {
   min-height: 40px;
+  box-sizing: border-box;
+  width: 100%;
   display: flex;
+  position: relative;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
@@ -5873,7 +6967,9 @@ onBeforeUnmount(() => {
   top: -7px;
   left: 0;
   width: 100%;
+  height: 0;
   border-top: 1px solid var(--ui-color-dividing-line-2);
+  pointer-events: none;
 }
 
 .animation-options-item.danger,

@@ -15,7 +15,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UIEditorSpriteItem :name="animation.name" :selected="active" @click="emit('select')">
+  <UIEditorSpriteItem :name="animation.name" :title="animation.name" :selected="active" @click="emit('select')">
     <template #img="{ style }">
       <img :src="animation.image" :alt="animation.name" :style="style" />
     </template>
