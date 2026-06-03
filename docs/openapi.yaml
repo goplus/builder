@@ -172,27 +172,35 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              type: object
-              required:
-                - state
-              anyOf:
-                - required:
+              oneOf:
+                - title: Authorization code callback
+                  type: object
+                  required:
                     - code
-                - required:
+                    - state
+                  properties:
+                    code:
+                      description: Provider authorization code.
+                      type: string
+                      minLength: 1
+                    state:
+                      description: Provider callback state.
+                      type: string
+                      minLength: 1
+                - title: OAuth error callback
+                  type: object
+                  required:
+                    - state
                     - error
-              properties:
-                code:
-                  description: Provider authorization code.
-                  type: string
-                  minLength: 1
-                state:
-                  description: Provider callback state.
-                  type: string
-                  minLength: 1
-                error:
-                  description: Provider error code.
-                  type: string
-                  minLength: 1
+                  properties:
+                    state:
+                      description: Provider callback state.
+                      type: string
+                      minLength: 1
+                    error:
+                      description: Provider error code.
+                      type: string
+                      minLength: 1
       responses:
         "302":
           description: Redirect back to hosted sign-in.
@@ -6595,9 +6603,11 @@ components:
         - role
       additionalProperties: false
       anyOf:
-        - required:
+        - title: Text content message
+          required:
             - content
-        - required:
+        - title: Tool-call message
+          required:
             - toolCalls
           properties:
             toolCalls:
