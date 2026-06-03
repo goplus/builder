@@ -5611,7 +5611,6 @@ components:
         - updatedAt
         - lastUsedAt
         - expiresAt
-        - current
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -5631,11 +5630,6 @@ components:
           format: date-time
           examples:
             - 2006-01-02T15:04:05+07:00
-        current:
-          description: Whether this is the current account session.
-          type: boolean
-          examples:
-            - true
         userAgent:
           description: User agent associated with the account session.
           type:
@@ -5672,7 +5666,6 @@ components:
         - updatedAt
         - lastUsedAt
         - expiresAt
-        - current
         - user
       properties:
         id:
@@ -5685,8 +5678,6 @@ components:
           $ref: "#/components/schemas/AccountSession/properties/lastUsedAt"
         expiresAt:
           $ref: "#/components/schemas/AccountSession/properties/expiresAt"
-        current:
-          $ref: "#/components/schemas/AccountSession/properties/current"
         user:
           $ref: "#/components/schemas/AccountUser"
         userAgent:
