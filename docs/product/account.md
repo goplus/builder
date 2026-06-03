@@ -275,8 +275,8 @@ Provider credential acquisition has two ways:
 
 - Hosted provider acquisition: hosted sign-in redirects the user to the provider authorize page and obtains the provider
   credential through the provider callback
-- Provider credential handoff: the client passes a short-lived provider code obtained beforehand to hosted sign-in for
-  consumption
+- Provider credential handoff: the client passes a short-lived provider code obtained beforehand to XBuilder Account
+  through PAR for consumption
 
 Provider credential handoff is suitable for WeChat Mini Program `wx.login()` codes, Apple authorization codes, Google
 server auth codes, and similar cases. The client can pass the credential to XBuilder Account through PAR extension
@@ -522,7 +522,7 @@ POST /account/identity-providers/{provider}/callback
 
 - These endpoints are provided by XBuilder Account backend and are mainly used by `account.xbuilder.com/sign-in`
 - `GET /account/identity-providers` returns identity providers available for hosted sign-in according to app context
-- `GET /account/identity-providers/{provider}/authorize` is used for provider redirect when hosted sign-in did not
+- `GET /account/identity-providers/{provider}/authorize` is used for provider redirect when the current flow did not
   receive a provider code through provider credential handoff
 - Provider callback needs to support both GET and POST because the concrete HTTP method depends on provider response
   mode. For example, Sign in with Apple's `form_post` scenario uses POST callback
@@ -675,7 +675,7 @@ by Account Web with cookie authentication or by Admin API.
 
 When native iOS or Android apps host sign-in, they should use the system browser or system authentication session, such
 as `ASWebAuthenticationSession` or Chrome Custom Tabs. They should not use embedded WebView. Restricted runtimes such as
-WeChat Mini Programs can use provider credential handoff to pass short-lived provider codes to hosted sign-in. They
+WeChat Mini Programs can use provider credential handoff to pass short-lived provider codes to XBuilder Account. They
 should not pass long-lived tokens through URLs or `postMessage`.
 
 Provider credential handoff only allows short-lived, one-time, immediately consumable authorization-code-like provider
@@ -717,9 +717,9 @@ tokens. `spx-gui` can keep the Bearer request model, but the Bearer value should
 | Account API | XBuilder Account API on `api.xbuilder.com/account/*` |
 | OAuth client | OAuth client role. In this product context, it corresponds to `app` |
 | OAuth facade | OAuth-compatible endpoints exposed by an app backend to its own frontend, then internally integrated with XBuilder Account |
-| Hosted sign-in | Unified sign-in entry provided by `account.xbuilder.com/sign-in`. It hosts third-party identity sign-in, admin-managed password sign-in, provider credential handoff, profile completion, account-linking confirmation, identity conflict handling, and app callback |
+| Hosted sign-in | Unified sign-in entry provided by `account.xbuilder.com/sign-in`. It hosts third-party identity sign-in, admin-managed password sign-in, post-handoff interactions, profile completion, account-linking confirmation, identity conflict handling, and app callback |
 | Hosted provider acquisition | Hosted sign-in obtains provider credential through provider web authorize and callback |
-| Provider credential handoff | The client passes a short-lived provider code to hosted sign-in for consumption |
+| Provider credential handoff | The client passes a short-lived provider code to XBuilder Account through PAR for consumption |
 | Hosted interaction | Profile completion, account-linking confirmation, or identity conflict handling in XBuilder Account hosted sign-in |
 | Account session | Account session owned by XBuilder Account for hosted sign-in and SSO continuity |
 | Account-issued app-scoped OAuth token | Opaque OAuth token issued by XBuilder Account to a concrete app. It can be used as the app's product API Bearer token |
