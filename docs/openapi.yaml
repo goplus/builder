@@ -584,15 +584,8 @@ paths:
               password:
                 summary: Password sign-in
                 value:
-                  method: password
                   username: john
                   password: <your-password>
-              providerCode:
-                summary: Provider credential handoff
-                value:
-                  method: providerCode
-                  provider: github
-                  providerCode: provider-auth-code
       responses:
         "201":
           description: Account session created.
@@ -5657,29 +5650,12 @@ components:
             - "null"
 
     CreateAccountSessionRequest:
-      description: Request to create an account session for hosted sign-in.
-      oneOf:
-        - $ref: "#/components/schemas/CreatePasswordAccountSessionRequest"
-        - $ref: "#/components/schemas/CreateProviderCodeAccountSessionRequest"
-      discriminator:
-        propertyName: method
-        mapping:
-          password: "#/components/schemas/CreatePasswordAccountSessionRequest"
-          providerCode: "#/components/schemas/CreateProviderCodeAccountSessionRequest"
-
-    CreatePasswordAccountSessionRequest:
       type: object
       description: Request to create an account session with an administrator-managed password.
       required:
-        - method
         - username
         - password
       properties:
-        method:
-          description: Account session creation method.
-          type: string
-          enum:
-            - password
         username:
           description: Username for password sign-in.
           $ref: "#/components/schemas/AccountUser/properties/username"
@@ -5688,27 +5664,6 @@ components:
           type: string
           minLength: 1
           maxLength: 128
-
-    CreateProviderCodeAccountSessionRequest:
-      type: object
-      description: Request to create an account session with a provider credential handoff code.
-      required:
-        - method
-        - provider
-        - providerCode
-      properties:
-        method:
-          description: Account session creation method.
-          type: string
-          enum:
-            - providerCode
-        provider:
-          description: Identity provider used for provider credential handoff.
-          $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
-        providerCode:
-          description: Short-lived provider code to consume.
-          type: string
-          minLength: 1
 
     CurrentAccountSession:
       type: object
