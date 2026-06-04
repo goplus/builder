@@ -1,7 +1,6 @@
 import { reactive, watchEffect, computed } from 'vue'
 import Sdk from 'casdoor-js-sdk'
 import { casdoorConfig } from '@/utils/env'
-import { jwtDecode } from 'jwt-decode'
 import { useQueryWithCache, useQueryCache, useQuery, composeQuery } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/user'
@@ -20,10 +19,6 @@ const userState = reactive({
   accessToken: null as string | null,
   accessTokenExpiresAt: null as number | null,
   refreshToken: null as string | null,
-  /**
-   * User name parsed from access token, or null if not available.
-   * This is only a hint and should not be treated as canonical backend-confirmed identity.
-   */
   username: null as string | null
 })
 
@@ -41,21 +36,21 @@ interface TokenResponse {
   refresh_token: string
 }
 
-function decodeUsernameFromAccessToken(accessToken: string): string | null {
-  try {
-    const decoded = jwtDecode<{ name?: unknown }>(accessToken)
-    if (typeof decoded.name !== 'string' || decoded.name === '') return null
-    return decoded.name
-  } catch {
-    return null
-  }
+async function fetchSignedInUsernameByAccessToken(accessToken: string) {
+  const user = await apis.getSignedInUser({
+    headers: new Headers({
+      Authorization: `Bearer ${accessToken}`
+    })
+  })
+  return user.username
 }
 
-function handleTokenResponse(resp: TokenResponse) {
+async function handleTokenResponse(resp: TokenResponse) {
+  const username = await fetchSignedInUsernameByAccessToken(resp.access_token)
   userState.accessToken = resp.access_token
   userState.accessTokenExpiresAt = resp.expires_in ? Date.now() + resp.expires_in * 1000 : null
   userState.refreshToken = resp.refresh_token
-  userState.username = decodeUsernameFromAccessToken(resp.access_token)
+  userState.username = username
 }
 
 export function initiateSignIn(
@@ -71,14 +66,15 @@ export function initiateSignIn(
 
 export async function completeSignIn() {
   const resp = await casdoorSdk.exchangeForAccessToken()
-  handleTokenResponse(resp)
+  await handleTokenResponse(resp)
 }
 
-export function signInWithAccessToken(accessToken: string) {
+export async function signInWithAccessToken(accessToken: string) {
+  const username = await fetchSignedInUsernameByAccessToken(accessToken)
   userState.accessToken = accessToken
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
-  userState.username = decodeUsernameFromAccessToken(accessToken)
+  userState.username = username
 }
 
 export function signOut() {
@@ -103,7 +99,7 @@ export async function ensureAccessToken(): Promise<string | null> {
   tokenRefreshPromise = (async () => {
     try {
       const resp = await casdoorSdk.refreshAccessToken(userState.refreshToken!)
-      handleTokenResponse(resp)
+      await handleTokenResponse(resp)
     } catch (e) {
       console.error('failed to refresh access token', e)
       throw e
@@ -136,25 +132,30 @@ export function isSignedIn(): boolean {
 /**
  * Returns the current signed-in username from locally available auth state only.
  *
- * The returned value is unresolved: it comes from the access token,
- * and should not be treated as canonical backend-confirmed identity.
+ * The returned value is unresolved: it comes from local cached state and may lag behind the
+ * canonical signed-in user returned by the backend.
  *
- * Use this only at boundaries that need a synchronous identity hint, such as cache keys, route
- * derivation, or other session-scoping data. Do not use it for behavior-sensitive checks like
- * ownership, permissions, or other logic that should depend on canonical backend data.
+ * Use this only at boundaries that need a synchronous session-scoped identity hint, such as
+ * temporary route derivation or user-scoped storage. Do not use it for behavior-sensitive checks
+ * like ownership, permissions, or other logic that should depend on canonical backend data.
  */
 export function getUnresolvedSignedInUsername(): string | null {
   if (!isSignedIn()) return null
-  if (userState.username != null) return userState.username
-  if (userState.accessToken == null) return null
-  const username = decodeUsernameFromAccessToken(userState.accessToken)
-  if (username == null) return null
-  userState.username = username
-  return username
+  return userState.username
 }
 
 const signedInUserStaleTime = 60 * 1000 // 1min
 
+/**
+ * TODO: This query key still depends on `getUnresolvedSignedInUsername()`, which is only a local
+ * username hint rather than a canonical auth-session identifier.
+ *
+ * Current limitations:
+ * - auth-session changes do not change the key if the unresolved username stays the same
+ * - different sessions for the same username may therefore reuse the same cache entry
+ *
+ * A later cleanup should replace this with a dedicated auth-session-scoping key.
+ */
 function getSignedInUserQueryKey() {
   return [...getUserQueryKey(getUnresolvedSignedInUsername() ?? ''), 'signed-in']
 }
@@ -162,7 +163,7 @@ function getSignedInUserQueryKey() {
 function useSignedInUserQuery() {
   const queryKey = computed(() => getSignedInUserQueryKey())
   return useQueryWithCache({
-    queryKey: queryKey,
+    queryKey,
     async queryFn() {
       if (!isSignedIn()) throw new Error('User not signed in')
       return apis.getSignedInUser()
@@ -188,8 +189,8 @@ export type SignedInState =
 /**
  * Get the signed-in state, including whether the user is signed in and the signed-in user information if available.
  * Suitable for scenarios like:
- * - callers need to known whether the user is signed in or not
- * - callers need to acccess the loading or error state of the signed-in user query
+ * - callers need to know whether the user is signed in or not
+ * - callers need to access the loading or error state of the signed-in user query
  */
 export function useSignedInStateQuery() {
   const signedInUserQuery = useSignedInUserQuery()

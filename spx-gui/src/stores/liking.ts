@@ -2,7 +2,7 @@ import { computed, toRef, type WatchSource } from 'vue'
 import { useQueryWithCache, useQueryCache } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/project'
-import { getUnresolvedSignedInUsername, isSignedIn } from './user'
+import { isSignedIn, useSignedInUser } from './user'
 
 function getLikingQueryKey(signedInUsernameInput: string | null, owner: string, name: string) {
   return ['liking', signedInUsernameInput, owner, name]
@@ -12,9 +12,10 @@ const staleTime = 5 * 60 * 1000 // 5min
 
 export function useIsLikingProject(project: WatchSource<{ owner: string; name: string }>) {
   const projectRef = toRef(project)
+  const signedInUser = useSignedInUser()
   const queryKey = computed(() => {
     const { owner, name } = projectRef.value
-    return getLikingQueryKey(getUnresolvedSignedInUsername(), owner, name)
+    return getLikingQueryKey(signedInUser.value?.username ?? null, owner, name)
   })
   return useQueryWithCache({
     queryKey,
@@ -29,10 +30,11 @@ export function useIsLikingProject(project: WatchSource<{ owner: string; name: s
 
 export function useLikeProject() {
   const queryCache = useQueryCache()
+  const signedInUser = useSignedInUser()
   return useAction(
     async function likeProject(owner: string, name: string) {
       await apis.likeProject(owner, name)
-      const queryKey = getLikingQueryKey(getUnresolvedSignedInUsername(), owner, name)
+      const queryKey = getLikingQueryKey(signedInUser.value?.username ?? null, owner, name)
       queryCache.invalidateWithOptimisticValue(queryKey, true)
     },
     { en: 'Failed to like', zh: '标记喜欢失败' }
@@ -41,10 +43,11 @@ export function useLikeProject() {
 
 export function useUnlikeProject() {
   const queryCache = useQueryCache()
+  const signedInUser = useSignedInUser()
   return useAction(
     async function unlikeProject(owner: string, name: string) {
       await apis.unlikeProject(owner, name)
-      const queryKey = getLikingQueryKey(getUnresolvedSignedInUsername(), owner, name)
+      const queryKey = getLikingQueryKey(signedInUser.value?.username ?? null, owner, name)
       queryCache.invalidateWithOptimisticValue(queryKey, false)
     },
     { en: 'Failed to unlike', zh: '取消喜欢失败' }
