@@ -1,4 +1,4 @@
-import { reactive, watchEffect, computed, ref } from 'vue'
+import { reactive, watchEffect, computed } from 'vue'
 import Sdk from 'casdoor-js-sdk'
 import { casdoorConfig } from '@/utils/env'
 import { useQueryWithCache, useQueryCache, useQuery, composeQuery } from '@/utils/query'
@@ -53,23 +53,6 @@ async function handleTokenResponse(resp: TokenResponse) {
   userState.username = username
 }
 
-/**
- * Monotonic local auth-session version for signed-in-user queries and derived async reads.
- *
- * This is bumped whenever local auth state crosses a session boundary, such as sign-in or sign-out.
- *
- * It is intentionally different from imperative cache invalidation:
- * - the version becomes part of the query key, so each auth session gets an isolated cache entry
- * - derived async reads can compare the captured version before/after awaiting, which prevents stale
- *   results from an older auth session from being consumed in the current one
- */
-const authSessionVersion = ref(0)
-
-function bumpAuthSessionVersion() {
-  authSessionVersion.value++
-  return authSessionVersion.value
-}
-
 export function initiateSignIn(
   returnTo: string = window.location.pathname + window.location.search + window.location.hash
 ) {
@@ -84,7 +67,6 @@ export function initiateSignIn(
 export async function completeSignIn() {
   const resp = await casdoorSdk.exchangeForAccessToken()
   await handleTokenResponse(resp)
-  bumpAuthSessionVersion()
 }
 
 export async function signInWithAccessToken(accessToken: string) {
@@ -93,19 +75,9 @@ export async function signInWithAccessToken(accessToken: string) {
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
   userState.username = username
-  bumpAuthSessionVersion()
-}
-
-function hasLocalAuthState() {
-  return userState.accessToken != null || userState.accessTokenExpiresAt != null || userState.refreshToken != null
 }
 
 export function signOut() {
-  // `ensureAccessToken()` is also used by guest/public API requests. If we are already effectively
-  // signed out, returning early avoids bumping `authSessionVersion` for those requests, which would
-  // otherwise retrigger signed-in-state consumers and can cascade into startup update loops.
-  if (!hasLocalAuthState()) return
-  bumpAuthSessionVersion()
   userState.accessToken = null
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
@@ -120,6 +92,7 @@ export async function ensureAccessToken(): Promise<string | null> {
 
   if (tokenRefreshPromise != null) return tokenRefreshPromise
   if (userState.refreshToken == null) {
+    signOut()
     return null
   }
 
@@ -172,11 +145,28 @@ export function getUnresolvedSignedInUsername(): string | null {
 }
 
 const signedInUserStaleTime = 60 * 1000 // 1min
-const signedInUserQueryKey = computed(() => ['signed-in-user', authSessionVersion.value])
+
+/**
+ * TODO: This query key still depends on `getUnresolvedSignedInUsername()`, which is only a local
+ * username hint rather than a canonical backend-confirmed session identifier.
+ *
+ * Current limitations of this scheme:
+ * - if the auth session changes while the unresolved username stays the same, the query key does not change
+ * - different auth sessions for the same username can therefore reuse the same cache entry
+ * - derived async reads cannot tell whether a resolved signed-in user still belongs to the current
+ *   auth session after awaiting
+ *
+ * Keep this behavior for now, but a later cleanup should replace this with a dedicated auth-session
+ * version or another canonical session-scoping key.
+ */
+function getSignedInUserQueryKey() {
+  return [...getUserQueryKey(getUnresolvedSignedInUsername() ?? ''), 'signed-in']
+}
 
 function useSignedInUserQuery() {
+  const queryKey = computed(() => getSignedInUserQueryKey())
   return useQueryWithCache({
-    queryKey: signedInUserQueryKey,
+    queryKey,
     async queryFn() {
       if (!isSignedIn()) throw new Error('User not signed in')
       return apis.getSignedInUser()
@@ -209,9 +199,10 @@ export function useSignedInStateQuery() {
   const signedInUserQuery = useSignedInUserQuery()
   return useQuery<SignedInState>(async (ctx) => {
     if (!isSignedIn()) return { isSignedIn: false, user: null }
-    const version = authSessionVersion.value
+    // TODO: Potential race: auth state may change while awaiting `composeQuery(...)`, so the
+    // resolved user may no longer belong to the current session. A later cleanup should add a
+    // dedicated auth-session-scoping signal/version to discard stale results.
     const user = await composeQuery(ctx, signedInUserQuery)
-    if (version !== authSessionVersion.value) return { isSignedIn: false, user: null }
     return { isSignedIn: true, user }
   })
 }
@@ -234,8 +225,9 @@ export function useUpdateSignedInUser() {
     async function updateSignedInUser(
       params: Pick<apis.UpdateSignedInUserParams, 'displayName' | 'avatar' | 'description'>
     ) {
+      const unresolvedUsername = getUnresolvedSignedInUsername()
       const updated = await apis.updateSignedInUser(params)
-      queryCache.invalidate(signedInUserQueryKey.value)
+      if (unresolvedUsername != null) queryCache.invalidate(getUserQueryKey(unresolvedUsername))
       queryCache.invalidate(getUserQueryKey(updated.username))
       return updated
     },
@@ -249,9 +241,16 @@ export function useUpdateSignedInUser() {
  * Typically the caller may want to reload the route to trigger navigation guards or initiate sign-in manually.
  */
 export function useModifySignedInUsername() {
+  const queryCache = useQueryCache()
+
   return useAction(
     async function modifySignedInUsername(newUsername: string) {
+      const oldUsername = getUnresolvedSignedInUsername()
+      if (oldUsername == null) throw new Error('Signed-in username is not available')
+
       const updated = await apis.updateSignedInUser({ username: newUsername })
+      queryCache.invalidate(getUserQueryKey(oldUsername))
+      queryCache.invalidate(getUserQueryKey(updated.username))
       signOut()
       return updated
     },
