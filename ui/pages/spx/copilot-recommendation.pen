@@ -1,0 +1,356 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "KnHoD",
+      "x": -170,
+      "y": -196,
+      "name": "CopilotRecommendation",
+      "width": 340,
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "vertical",
+      "gap": "$N:space-2",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "B9eHAj",
+          "name": "Surface",
+          "clip": true,
+          "width": "fill_container",
+          "fill": "$N:grey100",
+          "cornerRadius": "$N:border-radius-2",
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": {
+              "type": "gradient",
+              "gradientType": "linear",
+              "enabled": true,
+              "rotation": -270.00000005692806,
+              "size": {
+                "height": 1
+              },
+              "colors": [
+                {
+                  "color": "#c390ffff",
+                  "position": 0
+                },
+                {
+                  "color": "#72bbffff",
+                  "position": 1
+                }
+              ],
+              "center": {
+                "x": 0.49999999950320895,
+                "y": 0.5000003172770562
+              }
+            }
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000d",
+            "offset": {
+              "x": 0,
+              "y": "$N:shadow-y-3"
+            },
+            "blur": "$N:shadow-blur-4",
+            "spread": 8
+          },
+          "layout": "vertical",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "w39XE",
+              "name": "Body",
+              "width": "fill_container",
+              "cornerRadius": [
+                16,
+                16,
+                0,
+                0
+              ],
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "$N:purple300"
+              },
+              "layout": "vertical",
+              "gap": "$N:space-3",
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "X9rVy",
+                  "type": "ref",
+                  "ref": "N:L2oW9",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Handle",
+                  "children": [
+                    {
+                      "id": "Z8Ai88",
+                      "type": "ref",
+                      "ref": "N:nxMzA"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "fbtqf",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "layout": "vertical",
+                  "gap": "$N:space-6",
+                  "padding": [
+                    0,
+                    "$N:space-6",
+                    "$N:space-6",
+                    "$N:space-6"
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "KuXma",
+                      "name": "Intro",
+                      "width": "fill_container",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "layout": "vertical",
+                      "gap": "$N:space-1",
+                      "children": [
+                        {
+                          "id": "NqsVX",
+                          "type": "ref",
+                          "ref": "N:tfxWX",
+                          "x": 0,
+                          "y": 0,
+                          "children": [
+                            {
+                              "id": "QKo6K",
+                              "type": "ref",
+                              "ref": "N:Lm2P8",
+                              "content": "Hi,friend",
+                              "lineHeight": 1.4,
+                              "fontStyle": "normal",
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "ZgQ6Y",
+                          "type": "ref",
+                          "ref": "N:lE3p0",
+                          "x": 0,
+                          "y": 32,
+                          "children": [
+                            {
+                              "id": "h4anWm",
+                              "type": "ref",
+                              "ref": "N:P228e",
+                              "content": "If you have any questions, just ask!",
+                              "fill": "$N:grey700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Q2h3h",
+                      "name": "RecommendationList",
+                      "width": "fill_container",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1
+                      },
+                      "layout": "vertical",
+                      "gap": "$N:space-2",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "AkWr0",
+                          "name": "RecommendationItem",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$N:grey100",
+                          "cornerRadius": "$N:border-radius-1",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$N:grey400"
+                          },
+                          "gap": "$N:space-1",
+                          "padding": [
+                            5,
+                            "$N:space-3"
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "id": "DBZcR",
+                              "type": "ref",
+                              "ref": "N:tfxWX",
+                              "x": 12,
+                              "y": 10,
+                              "children": [
+                                {
+                                  "id": "tGtDy",
+                                  "type": "ref",
+                                  "ref": "N:qjr9H",
+                                  "content": "How to create my first game project ?",
+                                  "fill": "$N:grey900"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ZtvCK",
+                          "name": "RecommendationItem",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$N:grey100",
+                          "cornerRadius": "$N:border-radius-1",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$N:grey400"
+                          },
+                          "gap": "$N:space-1",
+                          "padding": [
+                            5,
+                            "$N:space-3"
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "id": "zC1Li",
+                              "type": "ref",
+                              "ref": "N:tfxWX",
+                              "x": 12,
+                              "y": 10,
+                              "children": [
+                                {
+                                  "id": "DdHga",
+                                  "type": "ref",
+                                  "ref": "N:qjr9H",
+                                  "content": "How can I make my Sprite move ?",
+                                  "fill": "$N:grey900"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mWu1F",
+                          "name": "RecommendationItem",
+                          "width": "fill_container",
+                          "height": 62,
+                          "fill": "$N:grey100",
+                          "cornerRadius": "$N:space-2",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$N:grey400"
+                          },
+                          "gap": "$N:space-1",
+                          "padding": [
+                            5,
+                            "$N:space-3"
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "id": "kxC41",
+                              "type": "ref",
+                              "ref": "N:tfxWX",
+                              "x": 12,
+                              "y": 11,
+                              "children": [
+                                {
+                                  "id": "xiLkU",
+                                  "type": "ref",
+                                  "ref": "N:qjr9H",
+                                  "content": "How to play sounds and animations in the\ngame?",
+                                  "fill": "$N:grey900",
+                                  "textAlign": "left"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "HM2iI",
+              "type": "ref",
+              "ref": "N:v6bX84",
+              "x": 0,
+              "y": 286.0000009536743,
+              "name": "Composer",
+              "children": [
+                {
+                  "id": "t7zwII",
+                  "type": "ref",
+                  "ref": "N:kZRHM"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "KMKku",
+          "name": "Footer",
+          "width": "fill_container",
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "gap": "$N:radius-3",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "A58P74",
+              "type": "ref",
+              "ref": "N:elYOY",
+              "x": 152,
+              "y": 0,
+              "name": "TutorialAction",
+              "children": [
+                {
+                  "id": "IIzhD",
+                  "type": "ref",
+                  "ref": "N:lEey5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "N": "../../components/spx/builder-component.lib.pen"
+  }
+}

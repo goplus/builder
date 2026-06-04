@@ -1,0 +1,171 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "Io8FW",
+      "x": -170,
+      "y": -96,
+      "name": "CopilotError",
+      "width": 340,
+      "stroke": {
+        "align": "inside",
+        "thickness": 1
+      },
+      "layout": "vertical",
+      "gap": "$l:space-2",
+      "children": [
+        {
+          "type": "frame",
+          "id": "Zsn3f",
+          "name": "Surface",
+          "clip": true,
+          "width": "fill_container",
+          "fill": "$l:grey100",
+          "cornerRadius": "$l:border-radius-2",
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": {
+              "type": "gradient",
+              "gradientType": "linear",
+              "enabled": true,
+              "rotation": -270.00000005692806,
+              "size": {
+                "height": 1
+              },
+              "colors": [
+                {
+                  "color": "#c390ffff",
+                  "position": 0
+                },
+                {
+                  "color": "#72bbffff",
+                  "position": 1
+                }
+              ],
+              "center": {
+                "x": 0.49999999950320895,
+                "y": 0.5000003172770562
+              }
+            }
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000d",
+            "offset": {
+              "x": 0,
+              "y": "$l:shadow-y-3"
+            },
+            "blur": "$l:shadow-blur-4",
+            "spread": 8
+          },
+          "layout": "vertical",
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "YKVfn",
+              "type": "ref",
+              "ref": "l:L2oW9",
+              "x": 0,
+              "y": 0,
+              "children": [
+                {
+                  "id": "c05vdd",
+                  "type": "ref",
+                  "ref": "l:nxMzA"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "POs5I",
+              "name": "Body",
+              "clip": true,
+              "width": 340,
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1
+                },
+                "fill": "$l:purple300"
+              },
+              "layout": "vertical",
+              "gap": "$l:space-4",
+              "padding": [
+                "$l:space-3",
+                "$l:space-4",
+                "$l:space-4",
+                "$l:space-4"
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "id": "s8g7ZB",
+                  "type": "ref",
+                  "ref": "l:vybBL",
+                  "x": 16,
+                  "y": 12,
+                  "children": [
+                    {
+                      "id": "kqx8p",
+                      "type": "ref",
+                      "ref": "l:lqZJ7"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "RM7iQ",
+              "type": "ref",
+              "ref": "l:v6bX84",
+              "x": 0,
+              "y": 86.00000095367439,
+              "children": [
+                {
+                  "id": "Uv0IA",
+                  "type": "ref",
+                  "ref": "l:kZRHM"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LZ49W",
+          "name": "Handle",
+          "width": "fill_container",
+          "height": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "gap": "$l:radius-3",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "Gt1xS",
+              "type": "ref",
+              "ref": "l:elYOY",
+              "x": 152,
+              "y": 0,
+              "children": [
+                {
+                  "id": "gbBLz",
+                  "type": "ref",
+                  "ref": "l:lEey5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "l": "../../components/spx/builder-component.lib.pen"
+  }
+}
