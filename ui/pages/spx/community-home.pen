@@ -1,5 +1,5 @@
 {
-  "version": "2.11",
+  "version": "2.13",
   "children": [
     {
       "type": "frame",
@@ -37,10 +37,6 @@
           "name": "Body",
           "width": 1440,
           "fill": "$r:grey300",
-          "stroke": {
-            "align": "inside",
-            "thickness": 1
-          },
           "layout": "vertical",
           "children": [
             {
@@ -48,10 +44,6 @@
               "id": "ft4bi",
               "name": "Content",
               "width": 1440,
-              "stroke": {
-                "align": "inside",
-                "thickness": 1
-              },
               "layout": "vertical",
               "padding": [
                 20,
@@ -66,10 +58,6 @@
                   "type": "frame",
                   "id": "wARjE",
                   "name": "MainContent",
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1
-                  },
                   "layout": "vertical",
                   "gap": 40,
                   "padding": [
@@ -176,9 +164,18 @@
                               ]
                             },
                             {
-                              "id": "63l61",
+                              "id": "CPBuk",
                               "type": "ref",
-                              "ref": "r:NLe4X"
+                              "ref": "r:Yiz2W",
+                              "x": 640,
+                              "y": 20,
+                              "children": [
+                                {
+                                  "id": "BbWh1",
+                                  "type": "ref",
+                                  "ref": "r:ZcEnB"
+                                }
+                              ]
                             }
                           ]
                         }
@@ -241,8 +238,8 @@
                                   "id": "z0Zfj",
                                   "type": "ref",
                                   "ref": "r:bW00p",
-                                  "x": 75,
-                                  "y": 3,
+                                  "x": 81,
+                                  "y": 4,
                                   "children": [
                                     {
                                       "id": "VRKyf",
@@ -403,8 +400,8 @@
                                   "id": "zEEOW",
                                   "type": "ref",
                                   "ref": "r:bW00p",
-                                  "x": 75,
-                                  "y": 3,
+                                  "x": 81,
+                                  "y": 4,
                                   "children": [
                                     {
                                       "id": "wjUCT",
@@ -565,8 +562,8 @@
                                   "id": "QVEy0",
                                   "type": "ref",
                                   "ref": "r:bW00p",
-                                  "x": 75,
-                                  "y": 3,
+                                  "x": 81,
+                                  "y": 4,
                                   "children": [
                                     {
                                       "id": "oHlBb",
