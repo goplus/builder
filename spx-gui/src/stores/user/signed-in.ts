@@ -148,16 +148,13 @@ const signedInUserStaleTime = 60 * 1000 // 1min
 
 /**
  * TODO: This query key still depends on `getUnresolvedSignedInUsername()`, which is only a local
- * username hint rather than a canonical backend-confirmed session identifier.
+ * username hint rather than a canonical auth-session identifier.
  *
- * Current limitations of this scheme:
- * - if the auth session changes while the unresolved username stays the same, the query key does not change
- * - different auth sessions for the same username can therefore reuse the same cache entry
- * - derived async reads cannot tell whether a resolved signed-in user still belongs to the current
- *   auth session after awaiting
+ * Current limitations:
+ * - auth-session changes do not change the key if the unresolved username stays the same
+ * - different sessions for the same username may therefore reuse the same cache entry
  *
- * Keep this behavior for now, but a later cleanup should replace this with a dedicated auth-session
- * version or another canonical session-scoping key.
+ * A later cleanup should replace this with a dedicated auth-session-scoping key.
  */
 function getSignedInUserQueryKey() {
   return [...getUserQueryKey(getUnresolvedSignedInUsername() ?? ''), 'signed-in']
@@ -199,9 +196,6 @@ export function useSignedInStateQuery() {
   const signedInUserQuery = useSignedInUserQuery()
   return useQuery<SignedInState>(async (ctx) => {
     if (!isSignedIn()) return { isSignedIn: false, user: null }
-    // TODO: Potential race: auth state may change while awaiting `composeQuery(...)`, so the
-    // resolved user may no longer belong to the current session. A later cleanup should add a
-    // dedicated auth-session-scoping signal/version to discard stale results.
     const user = await composeQuery(ctx, signedInUserQuery)
     return { isSignedIn: true, user }
   })
