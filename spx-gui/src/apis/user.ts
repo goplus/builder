@@ -48,8 +48,8 @@ export async function isUsernameTaken(username: string) {
   }
 }
 
-export function getSignedInUser(): Promise<SignedInUser> {
-  return client.get(`/user`) as Promise<SignedInUser>
+export function getSignedInUser(options?: { headers?: Headers }): Promise<SignedInUser> {
+  return client.get(`/user`, undefined, options) as Promise<SignedInUser>
 }
 
 export type UpdateSignedInUserParams = Partial<Pick<User, 'username' | 'displayName' | 'avatar' | 'description'>>

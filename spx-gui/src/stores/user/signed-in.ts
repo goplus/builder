@@ -1,6 +1,5 @@
 import { reactive, watchEffect, computed, ref } from 'vue'
 import Sdk from 'casdoor-js-sdk'
-import { Client } from '@/apis/common/client'
 import { casdoorConfig } from '@/utils/env'
 import { useQueryWithCache, useQueryCache, useQuery, composeQuery } from '@/utils/query'
 import { useAction } from '@/utils/exception'
@@ -38,9 +37,11 @@ interface TokenResponse {
 }
 
 async function fetchSignedInUsernameByAccessToken(accessToken: string) {
-  const client = new Client()
-  client.setTokenProvider(async () => accessToken)
-  const user = (await client.get('/user')) as SignedInUser
+  const user = await apis.getSignedInUser({
+    headers: new Headers({
+      Authorization: `Bearer ${accessToken}`
+    })
+  })
   return user.username
 }
 
@@ -53,17 +54,20 @@ async function handleTokenResponse(resp: TokenResponse) {
 }
 
 /**
- * Local auth-session scope for signed-in-user queries and derived async reads.
+ * Monotonic local auth-session version for signed-in-user queries and derived async reads.
  *
- * This is bumped whenever local auth state crosses a session boundary, such as sign-in or sign-out,
- * so cached data and in-flight async results from an older local auth session are not consumed in the
- * current session.
+ * This is bumped whenever local auth state crosses a session boundary, such as sign-in or sign-out.
+ *
+ * It is intentionally different from imperative cache invalidation:
+ * - the version becomes part of the query key, so each auth session gets an isolated cache entry
+ * - derived async reads can compare the captured version before/after awaiting, which prevents stale
+ *   results from an older auth session from being consumed in the current one
  */
-const authSessionScope = ref(0)
+const authSessionVersion = ref(0)
 
-function bumpAuthSessionScope() {
-  authSessionScope.value++
-  return authSessionScope.value
+function bumpAuthSessionVersion() {
+  authSessionVersion.value++
+  return authSessionVersion.value
 }
 
 export function initiateSignIn(
@@ -80,7 +84,7 @@ export function initiateSignIn(
 export async function completeSignIn() {
   const resp = await casdoorSdk.exchangeForAccessToken()
   await handleTokenResponse(resp)
-  bumpAuthSessionScope()
+  bumpAuthSessionVersion()
 }
 
 export async function signInWithAccessToken(accessToken: string) {
@@ -89,7 +93,7 @@ export async function signInWithAccessToken(accessToken: string) {
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
   userState.username = username
-  bumpAuthSessionScope()
+  bumpAuthSessionVersion()
 }
 
 function hasLocalAuthState() {
@@ -98,10 +102,10 @@ function hasLocalAuthState() {
 
 export function signOut() {
   // `ensureAccessToken()` is also used by guest/public API requests. If we are already effectively
-  // signed out, returning early avoids bumping `authSessionScope` for those requests, which would
+  // signed out, returning early avoids bumping `authSessionVersion` for those requests, which would
   // otherwise retrigger signed-in-state consumers and can cascade into startup update loops.
   if (!hasLocalAuthState()) return
-  bumpAuthSessionScope()
+  bumpAuthSessionVersion()
   userState.accessToken = null
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
@@ -168,7 +172,7 @@ export function getUnresolvedSignedInUsername(): string | null {
 }
 
 const signedInUserStaleTime = 60 * 1000 // 1min
-const signedInUserQueryKey = computed(() => ['signed-in-user', authSessionScope.value])
+const signedInUserQueryKey = computed(() => ['signed-in-user', authSessionVersion.value])
 
 function useSignedInUserQuery() {
   return useQueryWithCache({
@@ -205,9 +209,9 @@ export function useSignedInStateQuery() {
   const signedInUserQuery = useSignedInUserQuery()
   return useQuery<SignedInState>(async (ctx) => {
     if (!isSignedIn()) return { isSignedIn: false, user: null }
-    const scope = authSessionScope.value
+    const version = authSessionVersion.value
     const user = await composeQuery(ctx, signedInUserQuery)
-    if (scope !== authSessionScope.value) return { isSignedIn: false, user: null }
+    if (version !== authSessionVersion.value) return { isSignedIn: false, user: null }
     return { isSignedIn: true, user }
   })
 }
@@ -245,17 +249,9 @@ export function useUpdateSignedInUser() {
  * Typically the caller may want to reload the route to trigger navigation guards or initiate sign-in manually.
  */
 export function useModifySignedInUsername() {
-  const queryCache = useQueryCache()
-
   return useAction(
     async function modifySignedInUsername(newUsername: string) {
-      const currentUser = await apis.getSignedInUser()
-      const oldUsername = currentUser.username
-
       const updated = await apis.updateSignedInUser({ username: newUsername })
-      queryCache.invalidate(signedInUserQueryKey.value)
-      queryCache.invalidate(getUserQueryKey(oldUsername))
-      queryCache.invalidate(getUserQueryKey(updated.username))
       signOut()
       return updated
     },
