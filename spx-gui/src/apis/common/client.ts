@@ -109,6 +109,27 @@ export class Client {
     return new Request(url, { method, headers, body })
   }
 
+  /** Prepare request object, encoding payload as application/x-www-form-urlencoded */
+  private async prepareFormRequest(path: string, payload: QueryParams, options?: RequestOptions): Promise<Request> {
+    const traceData = Sentry.getTraceData()
+    const sentryTraceHeader = traceData['sentry-trace']
+    const sentryBaggageHeader = traceData['baggage']
+    const url = this.baseUrl + path
+    const method = options?.method ?? 'POST'
+    const body = new URLSearchParams()
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value != null) body.append(key, `${value}`)
+    })
+    const token = await this.tokenProvider()
+    options?.signal?.throwIfAborted()
+    const headers = options?.headers ?? new Headers()
+    headers.set('Content-Type', 'application/x-www-form-urlencoded')
+    if (token != null) headers.set('Authorization', `Bearer ${token}`)
+    if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
+    if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
+    return new Request(url, { method, headers, body: body.toString() })
+  }
+
   /** Perform request object and handle errors */
   private async doRequest(req: Request, options?: RequestOptions): Promise<Response> {
     const timeout = options?.timeout ?? this.defaultTimeout
@@ -138,6 +159,17 @@ export class Client {
     const resp = await this.doRequest(req, options)
     if (resp.status === 204) return null
     return resp.json()
+  }
+
+  /** Do a form request, parsing response body as JSON when present */
+  private async requestForm(path: string, payload: QueryParams, options?: RequestOptions): Promise<unknown> {
+    const req = await this.prepareFormRequest(path, payload, options)
+    const resp = await this.doRequest(req, options)
+    if (resp.status === 204) return null
+    const contentType = resp.headers.get('Content-Type') ?? ''
+    if (contentType.includes('application/json')) return resp.json()
+    const text = await resp.text()
+    return text === '' ? null : text
   }
 
   private async requestBinary(path: string, payload: FormData, options?: RequestOptions) {
@@ -200,6 +232,10 @@ export class Client {
 
   post(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
     return this.requestJSON(path, payload, { ...options, method: 'POST' })
+  }
+
+  postForm(path: string, payload: QueryParams, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestForm(path, payload, { ...options, method: 'POST' })
   }
 
   postBinary(path: string, payload: FormData, options?: Omit<RequestOptions, 'method'>) {

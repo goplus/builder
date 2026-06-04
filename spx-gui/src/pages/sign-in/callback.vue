@@ -5,19 +5,15 @@
 </template>
 <script setup lang="ts">
 import { usePageTitle } from '@/utils/utils'
-import { completeSignIn } from '@/stores/user'
+import { completeAuthorizationCodeSignIn } from '@/stores/user'
 
 const title = { en: 'Signing in...', zh: '登录中...' }
 
 usePageTitle(title)
 
 try {
-  const params = new URLSearchParams(location.search)
-
-  await completeSignIn()
-
-  const returnTo = params.get('returnTo')
-  window.location.replace(returnTo != null ? returnTo : '/')
+  const { returnTo } = await completeAuthorizationCodeSignIn()
+  window.location.replace(returnTo !== '' ? returnTo : '/')
 } catch (e) {
   console.error('failed to complete sign-in', e)
   window.location.replace('/')

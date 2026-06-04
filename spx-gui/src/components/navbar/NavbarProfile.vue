@@ -77,7 +77,7 @@ import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
-import { initiateSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
+import { initiateSignIn, revokeTokens, useSignedInStateQuery } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
@@ -117,8 +117,8 @@ const manageCourses = useMessageHandle(manageCoursesFn).fn
 const manageCourseSeriesFn = useCourseSeriesManagement()
 const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
 
-function handleSignOut() {
-  signOut()
+async function handleSignOut() {
+  await revokeTokens()
   router.go(0) // Reload the page to trigger navigation guards.
 }
 </script>

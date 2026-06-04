@@ -95,6 +95,34 @@ describe('Client', () => {
     })
   })
 
+  describe('form requests', () => {
+    it('should submit application/x-www-form-urlencoded payloads', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+
+      await client.postForm('/account/oauth/token', {
+        grant_type: 'refresh_token',
+        client_id: 'client-1',
+        refresh_token: 'refresh-1'
+      })
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      const request = fetchMock.mock.calls[0]![0] as Request
+      expect(request.headers.get('Content-Type')).toBe('application/x-www-form-urlencoded')
+      expect(await request.text()).toBe('grant_type=refresh_token&client_id=client-1&refresh_token=refresh-1')
+    })
+
+    it('should allow empty successful responses for form-encoded endpoints', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
+
+      await expect(
+        client.postForm('/account/oauth/revoke', {
+          client_id: 'client-1',
+          token: 'token-1'
+        })
+      ).resolves.toBeNull()
+    })
+  })
+
   describe('default fetch binding', () => {
     it('should call the global fetch with the global receiver when fetchFn is not injected', async () => {
       const globalFetchMock = vi.fn(function (this: typeof globalThis, _req: RequestInfo | URL, _init?: RequestInit) {

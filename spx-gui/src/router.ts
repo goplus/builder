@@ -150,7 +150,7 @@ const routes: Array<RouteRecordRaw> = [
       // Route with `redirect` will not trigger the global `beforeEach` guard,
       // so we need to check sign-in status here.
       if (username == null) {
-        initiateSignIn()
+        void initiateSignIn()
         throw new Error('User not signed in') // prevent router from redirecting
       }
       return getProjectEditorRoute(username, projectNameInput as string)
@@ -195,7 +195,8 @@ const router = createRouter({
 export const initRouter = (app: App) => {
   router.beforeEach((to, _, next) => {
     if (to.meta.requiresSignIn && !isSignedIn()) {
-      initiateSignIn()
+      void initiateSignIn(to.fullPath)
+      next(false)
     } else {
       next()
     }
