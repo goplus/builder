@@ -224,6 +224,18 @@ describe('MarkdownView', () => {
     })
     expect(result).toBe('<div><h1>Hello World</h1></div>')
   })
+  it('should render GFM tables', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `| Name | Value |
+| ---- | ----- |
+| Foo | Bar |`
+      }
+    })
+    expect(result).toContain(
+      '<table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody><tr><td>Foo</td><td>Bar</td></tr></tbody></table>'
+    )
+  })
   it('should handle custom components', async () => {
     const testComp1 = {
       template: '<div class="test-comp-1">{{content}}</div>',
