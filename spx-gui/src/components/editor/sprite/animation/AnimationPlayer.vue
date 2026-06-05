@@ -12,7 +12,7 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watchEffect } from 'vue'
 import { registerPlayer as registerAudioPlayer } from '@/utils/player-registry'
-import { useActivated } from '@/utils/utils'
+import { timeout, useActivated } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
 import { AnimationSoundPlayback } from '@/models/spx/animation'
 import type { Costume } from '@/models/spx/costume'
@@ -74,23 +74,18 @@ function playAudioWithPlaybackOnce(audio: HTMLAudioElement, duration: number, si
     const newAudio = new Audio(audio.src)
     newAudio.muted = mutedRef.value
     audios.add(newAudio)
-    newAudio.addEventListener('ended', () => audios.delete(newAudio), { once: true })
-    signal.addEventListener(
-      'abort',
-      () => {
-        newAudio.pause()
-        audios.delete(newAudio)
-      },
-      { once: true }
-    )
-    setTimeout(
-      () => {
-        // Stop the newAudio after some time to prevent too many overlapping audios
-        newAudio.pause()
-        audios.delete(newAudio)
-      },
-      duration * 1000 * concurrentAudioLimit
-    )
+
+    const ctrl = new AbortController()
+    function stopAndCleanup() {
+      if (ctrl.signal.aborted) return
+      ctrl.abort(new Cancelled('stop and cleanup'))
+      newAudio.pause()
+      audios.delete(newAudio)
+    }
+    newAudio.addEventListener('ended', stopAndCleanup, { signal: ctrl.signal })
+    signal.addEventListener('abort', stopAndCleanup, { signal: ctrl.signal })
+    // Stop the newAudio after some time to prevent too many overlapping audios
+    timeout(duration * 1000 * concurrentAudioLimit, ctrl.signal).then(stopAndCleanup)
     newAudio.play()
   }
   playOnce()
