@@ -1,98 +1,26 @@
 # 产品设计工程化工作流
 
-> 文档类型：Workflow Overview / 总纲
-> 稳定性：长期稳定
-> 适用范围：产品设计、UI 设计、体验验证、设计资产管理和产品设计共识形成
-> 当前试验场：XBuilder 项目
-> 何时阅读：首次加入工作流、理解协作边界、定位其他文档时
-> 维护原则：本文只描述长期原则、协作结构和文档地图；具体工具操作由 `docs/` 下的专题文档承载。
-
-## 这套工作流是什么
+## 定位
 
 产品设计工程化工作流，是一套以「设计左移」为核心的协作方法：把设计意图从静态稿和口头说明，转化为可版本化、可评审、可验证、可交接的协作资产。
 
-这里的「设计左移」，不是让非研发角色承担生产代码责任，而是在研发正式投入前，先完成设计资产整理、状态覆盖、关键体验验证和验证范围说明，提前暴露并处理原本可能在实现、联调或上线前才出现的体验问题。
+「设计左移」不是让非研发角色承担生产代码责任，而是在研发正式投入前，先完成设计资产整理、状态覆盖、关键体验验证和验证范围说明。
 
-它适用于产品设计、UI 设计、体验设计等需要通过界面、交互和状态表达产品判断的工作场景。XBuilder 是当前阶段的主要试验场；Pencil、GitHub、AI Agent 和 Demo 都只是阶段性工具或手段，长期保留的是这套协作结构本身。
+XBuilder 是当前阶段的主要试验场。Pencil、GitHub 和 AI Agent 是当前工具或载体，长期保留的是基于 Git 的版本化协作结构，以及设计进入生产实现前必须完成的 Demo 验证环节。
 
-## 为什么需要这套工作流
-
-传统设计交付常常依赖静态稿、截图和口头说明。它可以表达视觉结果，但很难完整表达用户路径、交互反馈、复杂状态、异常场景和设计取舍。
-
-这会带来三个问题：
-
-1. 设计意图难以验证
-   方案看起来成立，但真正操作时可能暴露路径断点、状态缺失、反馈不清或体验节奏不对。
-
-2. 协作过程难以追溯
-   设计修改、评审意见、取舍原因和版本变化分散在聊天、会议和个人文件里，后续很难回看。
-
-3. 生产实现难以承接
-   研发在实现阶段需要补足大量设计判断，容易产生理解偏差，也会把体验问题推迟到联调或上线前才暴露。
-
-因此，设计左移的价值不在于让设计、产品或内容角色承担研发责任，而是把需要团队判断的产品体验问题，前置到设计资产整理、设计评审和体验验证阶段。研发正式投入前，团队应先对方案目标、关键路径、状态范围和后续实现责任形成共识。
+本工作流不按固定岗位拆分责任。协作者可能同时承担设计资产维护、Demo 验证、评审和交接说明等协作动作；因此文档按协作阶段和产物类型组织，而不是按岗位组织。
 
 ## 适用范围
 
-这套工作流适用于所有需要通过界面、交互和状态表达产品体验的项目，例如 Web 产品、App 产品、SaaS 后台、开发者工具、AI 原生产品、教育产品、内容创作工具、官网、活动页和智能硬件配套应用。
+适用于需要通过界面、交互和状态表达产品判断的工作，例如产品设计、UI 设计、体验设计、设计资产管理和体验验证。
 
-项目不必须使用 Pencil，不必须使用 GitHub，也不要求每个需求都产出 Demo。只要项目需要多人协作、管理设计资产、验证关键体验，并把设计意图稳定交接给后续实现人员，就可以采用这套工作流。
+长期原则不绑定 Pencil 或 GitHub，未来可以替换为更成熟的 Design to Code 工具或其他协作平台。
 
-XBuilder 承担的是「落地试验」角色：在一个真实、复杂、长期演进的产品中验证流程、模板、工具边界和团队协作方式。XBuilder 中沉淀出的经验，应逐步抽象为可迁移到其他产品设计和 UI 设计项目的通用工作流。
+当前 XBuilder 落地以 Pencil、GitHub PR 和 Git 为主要载体；适用于需要多人协作、管理设计资产、验证关键体验，并把设计意图交接给后续实现人员的项目。
 
-## 长期原则
+进入这条工作流的设计需求，必须经过 Demo PR 验证。Demo PR 的实现深度和覆盖范围可以随设计风险调整，但不能用截图、录屏、PR 说明或 checklist 替代。
 
-下面这些原则不依赖某个具体工具。Pencil 可以替换，Figma 可以替换，未来也可能出现新的 Design-to-Code 工具；但这些原则应该保留。
-
-### 1. 设计资产需要版本化
-
-重要设计资产不应只存在于个人电脑、聊天记录、临时截图或某个工具的草稿区里。
-
-凡是会影响产品体验、页面结构、组件状态和后续实现的设计，都应该进入版本管理，并能追溯到具体 issue、PR、讨论和决策。
-
-版本化不是为了增加流程，而是为了让团队知道：这次改了什么、为什么改、影响了哪些页面和组件、谁审查过、后续由谁承接。
-
-### 2. 设计变更需要可审查
-
-设计审查不只是判断「好不好看」。在 XBuilder 中，设计审查至少应该覆盖：
-
-- 用户路径是否成立；
-- 页面状态是否完整；
-- 交互反馈是否清晰；
-- 组件是否优先复用；
-- 设计系统是否一致；
-- 文案与标点是否统一；
-- 异常情况是否考虑；
-- 后续实现人员是否能理解设计意图。
-
-因此，重要设计变更应通过 Design PR 进入 review，而不是只在聊天中发送截图。
-
-### 3. 关键交互需要可验证
-
-静态设计稿很难完整表达复杂交互。涉及拖拽、展开收起、浮层、面板避让、AI 生成中、失败重试、状态切换等内容时，必要时需要通过 demo 验证。
-
-Demo 的目的不是生产上线，而是验证设计意图。它可以表达关键交互、页面状态、动效、布局变化和用户路径，但不承担真实数据、权限、持久化、完整异常兜底或生产级代码质量。
-
-Demo PR 默认保持 draft，避免 demo 代码被误合并进主分支。
-
-### 4. 设计交付需要可交接
-
-一项设计工作完成后，后续生产实现人员应该能够通过 issue、Design PR、Demo PR、预览环境和 PR 描述理解：
-
-- 这个需求要解决什么问题；
-- 设计资产改了哪里；
-- 关键交互是什么；
-- demo 验证了什么；
-- 哪些内容只是 demo 表达；
-- 哪些内容需要生产实现继续承接。
-
-交接不是额外动作，而是设计工作的一部分。
-
-### 5. 工具可以变化，协作结构要稳定
-
-当前阶段，Pencil 是设计资产载体，Git 是版本管理方式，GitHub 是协作平台。未来工具可以变化，但工作流结构应保持稳定。
-
-稳定的是：
+## 核心链路
 
 ```text
 Issue
@@ -104,70 +32,37 @@ Demo PR
 后续生产实现
 ```
 
-工具是阶段性的，工作流是长期资产。
-
-
-## 协作链路
-
-### Issue
-
-Issue 定义问题上下文，包括背景、目标、用户问题、验收方向和相关讨论。它是后续设计资产、体验验证和生产实现承接的主索引。
-
-### Design PR
-
-Design PR 提交设计资产改动，说明设计意图、改动范围、关联 Issue 和自查结果。它的重点是让设计资产进入仓库历史，并接受评审。
-
-### Demo PR
-Demo PR 提交体验验证改动，说明验证目标、验证范围、预览入口、关联 Issue 和后续处理事项。它的重点是让关键交互、动态状态或页面路径被真实体验，并帮助团队在生产实现前形成产品设计共识。
-
-Demo PR 默认保持 Draft 状态。它用于验证设计判断和记录验证结论，不作为正式生产代码合并依据。
-
-### 后续生产实现
-
-后续生产实现由研发人员基于 Issue、Design PR、体验验证结论和交接说明继续完成。该阶段需要处理真实数据、权限、状态管理、异常兜底、工程结构、测试和上线要求。
+- Issue：定义问题、背景、目标、验收方向和相关材料。
+- Design PR：提交设计资产，说明设计意图、改动范围和自查结果。
+- Demo PR：提供可运行 Demo，说明验证范围、预览入口和后续承接事项。默认保持 Draft。
+- 后续生产实现：基于已验证的设计意图完成真实数据、权限、状态管理、异常兜底、测试和上线。
 
 ## 文档地图
 
 | 文档 | 类型 | 稳定性 | 作用 |
 | ---- | ---- | ------ | ---- |
-| [design-engineering-onboarding.zh.md](docs/design-engineering-onboarding.zh.md) | Onboarding | 长期稳定，随团队实践微调 | 说明加入工作流前需要理解什么、阅读顺序是什么、最低准入任务是什么。 |
+| [design-engineering-onboarding.zh.md](docs/design-engineering-onboarding.zh.md) | Onboarding | 长期稳定，随团队实践微调 | 说明参与工作流前需要理解的概念、具备的基础能力和准入完成标准。 |
 | [design-to-validation-workflow.zh.md](docs/design-to-validation-workflow.zh.md) | Workflow | 长期稳定 | 定义从 Issue 到 Design PR、Demo PR、后续生产实现的主流程和边界。 |
-| [git-collaboration-guide.zh.md](docs/git-collaboration-guide.zh.md) | Tool Guide | 理念长期稳定，命令可随实践更新 | 说明 Git 在工作流中的意义，以及当前分支、Commit、PR 的操作方式。 |
-| [pencil-guidelines.zh.md](docs/pencil-guidelines.zh.md) | Tool Guide | 随工具更新 | 说明当前阶段 Pencil 作为设计资产载体时的使用规范。 |
-| [figma-to-pencil-migration.zh.md](docs/figma-to-pencil-migration.zh.md) | Tool Guide | 随 Figma、Pencil 与设计工具链更新 | 说明从 Figma 迁移到 Pencil 时的变量、布局、Slot、跨文件引用、资源和自查规则。 |
-| [design-asset-naming.zh.md](docs/design-asset-naming.zh.md) | Standard | 通用规则长期稳定，工具专属规则可更新 | 说明设计资产、文件、组件、节点、资源的命名方式，以及中英文术语大小写规则。 |
-| [design-review-checklist.zh.md](docs/design-review-checklist.zh.md) | Checklist | 随设计系统和产品复杂度微调 | 检查设计表达质量，不检查文件组织。 |
-| [design-asset-review-checklist.zh.md](docs/design-asset-review-checklist.zh.md) | Checklist | 随仓库结构和工具微调 | 检查设计资产是否适合进入仓库历史，不判断具体设计方案优劣。 |
-| [issue-template.zh.md](docs/issue-template.zh.md) | Template | 随 GitHub 协作方式微调 | 说明 Issue 的写作方式和可复制模板。 |
-| [pr-template.zh.md](docs/pr-template.zh.md) | Template | 随 PR 协作方式微调 | 说明 Design PR / Demo PR 的写作方式和可复制模板。 |
+| [git-collaboration-guide.zh.md](docs/git-collaboration-guide.zh.md) | Tool Guide | Git 协作理念长期稳定，具体命令可随团队工具更新 | 说明 Git 同步、分支、Commit、Push、PR 和评审修改的操作方式。 |
+| [pencil-guidelines.zh.md](docs/pencil-guidelines.zh.md) | Guideline | 随 Pencil 和设计工具链更新 | 说明 Pencil 设计资产类型、文件职责、Slot、状态表达和入库边界。 |
+| [figma-to-pencil-migration.zh.md](docs/figma-to-pencil-migration.zh.md) | Tool Guide | 随 Figma、Pencil 与设计工具链更新 | 说明从 Figma 迁移到 Pencil 的准备、规则、排查和提交前检查。 |
+| [design-asset-naming.zh.md](docs/design-asset-naming.zh.md) | Standard | 通用命名原则长期稳定，Pencil 专属命名可随工具更新 | 说明设计资产、文件、组件、节点、资源和术语的命名方式。 |
+| [design-asset-review-checklist.zh.md](docs/design-asset-review-checklist.zh.md) | Checklist | 随仓库结构和工具实践微调 | 检查设计资产是否适合进入仓库历史，不判断具体设计方案质量。 |
+| [design-review-checklist.zh.md](docs/design-review-checklist.zh.md) | Checklist | 随设计系统和产品复杂度微调 | 检查设计表达质量，不检查 Pencil 文件组织、资源路径和命名细节。 |
+| [issue-template.zh.md](docs/issue-template.zh.md) | Template | 随 GitHub 协作方式微调 | 提供 AI Agent 生成 Issue 所需字段。 |
+| [pr-template.zh.md](docs/pr-template.zh.md) | Template | 随 GitHub 协作方式微调 | 提供 AI Agent 生成 PR 描述所需字段。 |
 
-## 推荐阅读顺序
+## 阅读顺序
 
-首次加入工作流时，建议按下面顺序阅读：
-
-1. 阅读本文，理解工作流目标、长期原则和文档关系。
+1. 阅读本文，理解工作流定位和文档关系。
 2. 阅读 [产品设计工程化协作准入准备](docs/design-engineering-onboarding.zh.md)，确认最低准入能力。
 3. 阅读 [设计到体验验证工作流](docs/design-to-validation-workflow.zh.md)，理解 Issue、Design PR、Demo PR 和后续生产实现的关系。
-4. 阅读 [Git 协作操作指南](docs/git-collaboration-guide.zh.md)，完成分支创建、Commit 和 PR 的基本操作。
+4. 阅读 [Git 协作操作指南](docs/git-collaboration-guide.zh.md)，完成分支创建、Commit、Push 和 PR 的基本操作。
 5. 如果当前项目使用 Pencil，阅读 [Pencil 设计资产规范](docs/pencil-guidelines.zh.md)。
 6. 如果需要从 Figma 迁移设计稿，阅读 [Figma 到 Pencil 迁移指南](docs/figma-to-pencil-migration.zh.md)。
-7. 在提交前使用 [设计审查清单](docs/design-review-checklist.zh.md) 和 [设计资产审查清单](docs/design-asset-review-checklist.zh.md) 自查。
+7. 提交前阅读 [设计资产命名](docs/design-asset-naming.zh.md)，确认文件、节点、资源和术语命名。
+8. 提交前使用 [设计资产审查清单](docs/design-asset-review-checklist.zh.md) 和 [设计审查清单](docs/design-review-checklist.zh.md) 自查。
 
-## 不在本文定义范围内的内容
+## 不在本文定义范围内
 
 本文不定义具体产品需求、后端逻辑、生产代码测试与合并规则、完整前端架构规范，也不提供 Pencil、Git、Figma 或其他工具的完整功能教学。
-
-这些内容应由专门文档承载。本文只定义产品设计工程化工作流的长期结构。
-
-## 文档维护原则
-
-维护这组文档时，按下面规则处理：
-
-- README 只写长期原则、协作边界和文档地图；
-- 流程文档写阶段、对象、责任和交付物；
-- 工具文档写当前工具实践，并明确哪些内容可能随工具变化；
-- 检查清单用于提交前自查和评审，不承担概念教学；
-- 模板用于复制到 Issue 或 PR，不写过多解释；
-- 工具发生变化时，先保留工作流原则，再替换工具实践。
-
-这套文档的目标不是把流程写复杂，而是以设计左移为核心，让产品设计、UI 设计和体验验证具备工程级的可靠性：可版本化、可审查、可验证、可交接、可继承。
