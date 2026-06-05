@@ -89,7 +89,7 @@ export type GenerateCopilotMessageOptions = {
   tools?: Tool[]
 }
 
-const timeout = 15 * 1000
+const timeout = 20 * 1000
 
 export async function* generateCopilotMessage(
   messages: Message[],
@@ -100,7 +100,7 @@ export async function* generateCopilotMessage(
       '/copilot/messages',
       { messages, tools: options?.tools },
       {
-        timeout: timeout,
+        timeout,
         signal: options?.signal
       }
     )

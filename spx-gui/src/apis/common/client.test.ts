@@ -112,4 +112,20 @@ describe('Client', () => {
       expect(globalFetchMock).toHaveBeenCalledTimes(1)
     })
   })
+
+  describe('explicit authorization headers', () => {
+    it('should preserve an explicit Authorization header instead of overwriting it with the token provider', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ username: 'alice' }), { status: 200 }))
+      const tokenProvider = vi.fn(async () => 'shared-token')
+      client.setTokenProvider(tokenProvider)
+
+      await client.get('/user', undefined, {
+        headers: new Headers({ Authorization: 'Bearer direct-token' })
+      })
+
+      const req = fetchMock.mock.calls[0]?.[0] as Request
+      expect(req.headers.get('Authorization')).toBe('Bearer direct-token')
+      expect(tokenProvider).toHaveBeenCalledTimes(0)
+    })
+  })
 })
