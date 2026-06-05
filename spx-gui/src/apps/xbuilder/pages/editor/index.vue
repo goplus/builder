@@ -40,7 +40,7 @@ class LocalCache implements ILocalCache {
 import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useSignedInStateQuery } from '@/stores/user'
-import { getProjectEditorRoute } from '@/router'
+import { getProjectEditorRoute } from '../../router'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 import {
   getProjectEditorRouteParams,

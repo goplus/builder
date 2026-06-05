@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getUserPageRoute } from '@/router'
+import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { UICard } from '@/components/ui'
 import UserSidebarItem from './UserSidebarItem.vue'
 

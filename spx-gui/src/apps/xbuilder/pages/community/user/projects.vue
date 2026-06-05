@@ -12,7 +12,7 @@ import {
   listUserPublicProjects,
   type ListUserPublicProjectsParams
 } from '@/apis/project'
-import { getOwnProjectEditorRoute } from '@/router'
+import { getOwnProjectEditorRoute } from '../../../router'
 import { useSignedInUser, useUser } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
 import { useCreateProject } from '@/components/project'

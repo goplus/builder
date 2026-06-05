@@ -140,60 +140,54 @@ sequenceDiagram
     Browser->>App: Deliver code,state
 ```
 
-### 1.4 当前页面结构
+### 1.4 当前目录结构
 
-当前实现已经把 `Account Web` 作为 `spx-gui` 内的独立入口落地，而不是继续依赖 Casdoor 项目。
+实现完成后对新增文件做了目录整理，`Account Web` 和主站入口各自独立在 `apps/` 下。
 
 ```text
-spx-gui/src/
-├── apps/
-│   └── account/
-│       ├── main.ts
-│       ├── App.vue
-│       ├── router.ts
-│       └── pages/
-│           └── sign-in.vue
-├── apis/
-│   └── account-session.ts
-├── utils/
-│   └── account/
-│       └── sign-in.ts
-└── components/
-    └── sign-in/
-        ├── assets/
-        │   └── logo.svg
-        ├── AccountSessionSection.vue
-        ├── InputWithIcon.vue
-        ├── LoginButton.vue
-        ├── LoginForm.vue
-        ├── LoginOptionsSection.vue
-        ├── UsernamePasswordLink.vue
-        ├── PasswordLoginSection/
-        │   ├── PasswordLoginSection.vue
-        │   ├── eye.svg
-        │   ├── eye-off.svg
-        │   ├── lock.svg
-        │   └── user.svg
-        ├── ProviderLoginButton/
-        │   ├── ProviderLoginButton.vue
-        │   ├── github-colorful.svg
-        │   ├── github-monochrome.svg
-        │   ├── google-colorful.svg
-        │   ├── google-monochrome.svg
-        │   ├── qq-colorful.svg
-        │   ├── qq-monochrome.svg
-        │   ├── wechat-colorful.svg
-        │   ├── wechat-monochrome.svg
-        │   ├── x-colorful.svg
-        │   └── x-monochrome.svg
-        ├── XBuilderLoginPagePc/
-        │   ├── XBuilderLoginPagePc.vue
-        │   ├── bg.svg
-        │   └── illustration.svg
-        └── XBuilderLoginPageMobile/
-            ├── XBuilderLoginPageMobile.vue
-            ├── bg-mobile.svg
-            └── illustration-mobile.svg
+spx-gui/
+├── index.html                       # 主站 HTML 入口
+├── account.html                     # Account Web 独立 HTML 入口
+├── vite.config.ts                   # 主站构建配置
+├── vite.config.account-web.ts       # Account Web 构建配置
+└── src/
+    ├── apps/
+    │   ├── account/                 # Account Web 入口
+    │   │   ├── main.ts
+    │   │   ├── App.vue
+    │   │   ├── router.ts
+    │   │   └── pages/
+    │   │       └── sign-in.vue
+    │   └── xbuilder/                # 主站入口
+    │       ├── main.ts
+    │       ├── App.vue
+    │       ├── router.ts
+    │       └── pages/
+    │           ├── community/       # 首页 / 探索 / 搜索 / 用户 / 项目
+    │           ├── editor/
+    │           ├── tutorials/
+    │           ├── docs/
+    │           ├── 404/
+    │           └── sign-in/         # callback.vue / token.vue
+    ├── apis/
+    │   ├── account-session.ts       # Account Web 登录页 session API
+    │   └── account-oauth.ts         # 主站 OAuth 客户端
+    ├── utils/
+    │   └── account/
+    │       └── sign-in.ts           # Account Web 登录页工具
+    ├── components/
+    │   └── sign-in/                 # Account Web 登录页 UI 组件
+    │       ├── assets/logo.svg
+    │       ├── AccountSessionSection.vue
+    │       ├── LoginForm.vue
+    │       ├── LoginOptionsSection.vue
+    │       ├── PasswordLoginSection/
+    │       ├── ProviderLoginButton/
+    │       ├── XBuilderLoginPagePc/
+    │       └── XBuilderLoginPageMobile/
+    ├── stores/user/
+    │   └── signed-in.ts             # 主站 OAuth 登录态
+    └── setup.ts                     # 共享初始化（app 无关）
 ```
 
 ### 1.5 当前实现涉及的文件
@@ -233,9 +227,9 @@ spx-gui/src/
   - 封装 `POST /account/oauth/par`、`POST /account/oauth/token`、`POST /account/oauth/revoke`
 - `spx-gui/src/stores/user/signed-in.ts`
   - 主站切到新的 Account OAuth 流程
-- `spx-gui/src/pages/sign-in/callback.vue`
+- `spx-gui/src/apps/xbuilder/pages/sign-in/callback.vue`
   - callback 页改为处理 authorization code exchange
-- `spx-gui/src/router.ts`
+- `spx-gui/src/apps/xbuilder/router.ts`
   - `requiresSignIn` 场景改为走新的 `initiateSignIn()`
 
 ### 1.6 接口清单
@@ -327,7 +321,7 @@ sequenceDiagram
   - 增加 `refreshAccessToken()`：用 `refresh_token` 调 `POST /account/oauth/token`
   - 增加 `revokeTokens()`：调用 `POST /account/oauth/revoke`
 
-- `spx-gui/src/pages/sign-in/callback.vue`
+- `spx-gui/src/apps/xbuilder/pages/sign-in/callback.vue`
   - 从只做 Casdoor `exchangeForAccessToken()`
   - 改为：读取 `code/state` → 校验 state → 读取 PKCE verifier → 调 token exchange → 恢复 `returnTo`
 
@@ -339,17 +333,19 @@ sequenceDiagram
 
 #### 小范围联动
 
-- `spx-gui/src/router.ts`
+- `spx-gui/src/apps/xbuilder/router.ts`
   - 保留 `/sign-in/callback`
   - `requiresSignIn` 场景改为走新的 `initiateSignIn()`
 
-- `spx-gui/src/pages/sign-in/token.vue`
+- `spx-gui/src/apps/xbuilder/pages/sign-in/token.vue`
   - 当前是 JWT token 手动粘贴登录页
   - 若不再需要调试入口，可标记废弃或后续删除
 
 - `spx-gui/package.json`
   - 已移除 `casdoor-js-sdk`
   - 已移除 `jwt-decode`
+
+> **目录调整**：实现完成后将主站入口（`main.ts`、`App.vue`、`router.ts`、`pages/`）移入 `src/apps/xbuilder/`，与 Account Web 的 `src/apps/account/` 平级。`setup.ts` 同步解耦了对 router 的硬依赖，改为由各 app 入口自行提供。详见 [1.4 当前目录结构](#14-当前目录结构)。
 
 ### 2.5 推荐实现拆分
 
@@ -438,9 +434,9 @@ sequenceDiagram
 - [x] 用 `POST /account/oauth/token` 完成 code exchange
 - [x] 用 `POST /account/oauth/token` 完成 refresh token exchange
 - [x] 在 `/sign-in/callback` 页面接入新 callback 收尾逻辑
-- [x] 在 `router.ts` 中让 `requiresSignIn` 走新的 `initiateSignIn()`
+- [x] 在 `spx-gui/src/apps/xbuilder/router.ts` 中让 `requiresSignIn` 走新的 `initiateSignIn()`
 - [x] 更新 `env.ts`，移除 `VITE_CASDOOR_*`
-- [ ] 评估并处理 `src/pages/sign-in/token.vue`
+- [ ] 评估并处理 `src/apps/xbuilder/pages/sign-in/token.vue`
 - [x] 移除 `package.json` 中的 `casdoor-js-sdk`
 - [x] 移除 `package.json` 中的 `jwt-decode`
 

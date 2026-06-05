@@ -93,7 +93,7 @@ export default defineConfigWithVueTs(
 
   {
     name: 'app/pages-rules',
-    files: ['src/pages/**/*.vue'],
+    files: ['src/apps/xbuilder/pages/**/*.vue'],
     rules: {
       // Page components will not be used by name in other components' template.
       // Disable this rule to simplify naming of page components.

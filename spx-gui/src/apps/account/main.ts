@@ -14,6 +14,11 @@ import { defaultLang } from '@/utils/env'
 import App from './App.vue'
 import router from './router'
 
+// TODO: Consider using @/setup's setup() and configureApp() for initialization
+// once we determine which parts of the shared bootstrap are needed.
+// Currently dayjs, i18n, and router are set up locally because Account Web
+// does not need VueKonva, Sentry, VueQuery, VueRadar, or other xbuilder plugins.
+
 function initDayjs() {
   dayjs.extend(localizedFormat)
   dayjs.extend(relativeTime)

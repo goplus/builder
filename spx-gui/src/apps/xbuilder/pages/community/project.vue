@@ -13,7 +13,7 @@ import { ProjectType, listProjects, recordProjectView, stringifyRemixSource, Vis
 import { listProjectReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
 import { useSignedInUser, useUser, isSignedIn, initiateSignIn } from '@/stores/user'
-import { getOwnProjectEditorRoute, getProjectEditorRoute, getProjectPageRoute, getUserPageRoute } from '@/router'
+import { getOwnProjectEditorRoute, getProjectEditorRoute, getProjectPageRoute, getUserPageRoute } from '../../router'
 import {
   UIIcon,
   UILoading,

@@ -30,7 +30,7 @@ import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from '@/utils/i18n'
 import { useInstallRouteLoading } from '@/utils/route-loading'
 import { isMobile } from '@/utils/ua'
-import { getUIConfig } from './setup'
+import { getUIConfig } from '@/setup'
 
 const MobileReminder = defineAsyncComponent(() => import('@/components/app/device-check/MobileReminder.vue'))
 

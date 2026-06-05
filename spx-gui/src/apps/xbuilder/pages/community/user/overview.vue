@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getUserPageRoute } from '@/router'
+import { getUserPageRoute } from '../../../router'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import {
