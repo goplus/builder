@@ -85,6 +85,7 @@ onMounted(() => {
 // maps the sprite pivot to the Konva node origin with offsetX/offsetY, so the marker can simply use
 // the same local position as the sprite node. This is a small, low-risk patch compared with teaching
 // CustomTransformer to support custom transform origins via Konva internal method overrides.
+// TODO: Consider moving this marker into NodeTransformer so editor-only overlays share one hiding path.
 const pivotMarkerRef = ref<KonvaNodeInstance<Group>>()
 
 // Keep the selected sprite's pivot marker above all sprite nodes.
@@ -262,6 +263,17 @@ function toSize(node: Konva.Node) {
 function handleClick() {
   emit('selected')
 }
+
+defineExpose({
+  async withPivotMarkerHidden<T>(callback: () => T | Promise<T>): Promise<Awaited<T>> {
+    pivotMarkerRef.value?.getNode().hide()
+    try {
+      return await callback()
+    } finally {
+      pivotMarkerRef.value?.getNode().show()
+    }
+  }
+})
 </script>
 
 <template>
