@@ -48,7 +48,18 @@ export async function isUsernameTaken(username: string) {
   }
 }
 
-export function getSignedInUser(options?: { headers?: Headers }): Promise<SignedInUser> {
+export function getSignedInUser(
+  /** Optional access token for authentication */
+  token?: string
+): Promise<SignedInUser> {
+  const options =
+    token == null
+      ? undefined
+      : {
+          headers: new Headers({
+            Authorization: `Bearer ${token}`
+          })
+        }
   return client.get(`/user`, undefined, options) as Promise<SignedInUser>
 }
 

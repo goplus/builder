@@ -85,6 +85,13 @@ export class Client {
   private fetchFn: typeof fetch
   private defaultTimeout = 10 * 1000 // 10 seconds
 
+  private async injectAuthorization(headers: Headers) {
+    if (headers.has('Authorization')) return
+    const token = await this.tokenProvider()
+    if (token == null) return
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
   /** Prepare request object, stringifying payload as JSON */
   private async prepareJSONRequest(path: string, payload: unknown, options?: RequestOptions): Promise<Request> {
     const traceData = Sentry.getTraceData()
@@ -93,11 +100,10 @@ export class Client {
     const url = this.baseUrl + path
     const method = options?.method ?? 'GET'
     const body = payload != null ? JSON.stringify(payload) : null
-    const token = await this.tokenProvider()
-    options?.signal?.throwIfAborted()
     const headers = options?.headers ?? new Headers()
+    await this.injectAuthorization(headers)
+    options?.signal?.throwIfAborted()
     if (body != null) headers.set('Content-Type', 'application/json')
-    if (token != null && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
     if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
     if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
     return new Request(url, { method, headers, body })
@@ -140,10 +146,9 @@ export class Client {
     const sentryBaggageHeader = traceData['baggage']
     const url = this.baseUrl + path
     const method = options?.method ?? 'GET'
-    const token = await this.tokenProvider()
-    options?.signal?.throwIfAborted()
     const headers = options?.headers ?? new Headers()
-    if (token != null && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
+    await this.injectAuthorization(headers)
+    options?.signal?.throwIfAborted()
     if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
     if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
     const req = new Request(url, { method, headers, body: payload })
