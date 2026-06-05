@@ -1,3 +1,14 @@
+/**
+ * Utilities for the Account Web sign-in page.
+ *
+ * These are used by the sign-in page (apps/account/) to parse OAuth context
+ * from query parameters, build authorize URLs, and track pending
+ * authorization state in sessionStorage.
+ *
+ * This file is specific to the Account Web sign-in flow and is not used by
+ * the main xbuilder.com OAuth client logic.
+ */
+
 export interface OAuthContext {
   clientId: string
   requestUri: string

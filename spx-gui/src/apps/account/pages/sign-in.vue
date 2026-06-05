@@ -18,10 +18,10 @@
 import { UIError } from '@/components/ui'
 import { usePageTitle } from '@/utils/utils'
 import { isMobile } from '@/utils/ua'
-import { parseOAuthContext } from '@/account-web/utils/oauth'
+import { parseOAuthContext } from '@/utils/account/sign-in'
 
-import XBuilderLoginPageMobile from '@/account-web/components/login/XBuilderLoginPageMobile.vue'
-import XBuilderLoginPagePc from '@/account-web/components/login/XBuilderLoginPagePc.vue'
+import XBuilderLoginPageMobile from '@/components/sign-in/XBuilderLoginPageMobile/XBuilderLoginPageMobile.vue'
+import XBuilderLoginPagePc from '@/components/sign-in/XBuilderLoginPagePc/XBuilderLoginPagePc.vue'
 
 const mobile = isMobile()
 const authContext = parseOAuthContext()

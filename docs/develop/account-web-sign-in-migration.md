@@ -145,52 +145,82 @@ sequenceDiagram
 当前实现已经把 `Account Web` 作为 `spx-gui` 内的独立入口落地，而不是继续依赖 Casdoor 项目。
 
 ```text
-spx-gui/src/account-web/
-├── main.ts
-├── App.vue
-├── pages/
-│   └── sign-in.vue
+spx-gui/src/
+├── apps/
+│   └── account/
+│       ├── main.ts
+│       ├── App.vue
+│       ├── router.ts
+│       └── pages/
+│           └── sign-in.vue
 ├── apis/
-│   └── account.ts
+│   └── account-session.ts
 ├── utils/
-│   └── oauth.ts
+│   └── account/
+│       └── sign-in.ts
 └── components/
-    └── login/
+    └── sign-in/
+        ├── assets/
+        │   └── logo.svg
         ├── AccountSessionSection.vue
         ├── InputWithIcon.vue
         ├── LoginButton.vue
         ├── LoginForm.vue
         ├── LoginOptionsSection.vue
-        ├── PasswordLoginSection.vue
-        ├── ProviderLoginButton.vue
         ├── UsernamePasswordLink.vue
-        ├── XBuilderLoginPageMobile.vue
-        └── XBuilderLoginPagePc.vue
+        ├── PasswordLoginSection/
+        │   ├── PasswordLoginSection.vue
+        │   ├── eye.svg
+        │   ├── eye-off.svg
+        │   ├── lock.svg
+        │   └── user.svg
+        ├── ProviderLoginButton/
+        │   ├── ProviderLoginButton.vue
+        │   ├── github-colorful.svg
+        │   ├── github-monochrome.svg
+        │   ├── google-colorful.svg
+        │   ├── google-monochrome.svg
+        │   ├── qq-colorful.svg
+        │   ├── qq-monochrome.svg
+        │   ├── wechat-colorful.svg
+        │   ├── wechat-monochrome.svg
+        │   ├── x-colorful.svg
+        │   └── x-monochrome.svg
+        ├── XBuilderLoginPagePc/
+        │   ├── XBuilderLoginPagePc.vue
+        │   ├── bg.svg
+        │   └── illustration.svg
+        └── XBuilderLoginPageMobile/
+            ├── XBuilderLoginPageMobile.vue
+            ├── bg-mobile.svg
+            └── illustration-mobile.svg
 ```
 
 ### 1.5 当前实现涉及的文件
 
 #### 已新增
 
-- `spx-gui/sign-in/index.html`
-  - `Account Web` 独立 HTML 入口
-- `spx-gui/src/account-web/main.ts`
+- `spx-gui/account.html`
+  - `Account Web` 独立 HTML 入口（与 `index.html` 平级）
+- `spx-gui/src/apps/account/main.ts`
   - `Account Web` 独立入口
-- `spx-gui/src/account-web/App.vue`
+- `spx-gui/src/apps/account/App.vue`
   - `Account Web` 根组件
-- `spx-gui/src/account-web/pages/sign-in.vue`
+- `spx-gui/src/apps/account/router.ts`
+  - `Account Web` 路由
+- `spx-gui/src/apps/account/pages/sign-in.vue`
   - 登录页，承载状态机
-- `spx-gui/src/account-web/apis/account.ts`
+- `spx-gui/src/apis/account-session.ts`
   - 封装 `GET/DELETE /account/session`、`GET /account/identity-providers`、`POST /account/session`
-- `spx-gui/src/account-web/utils/oauth.ts`
+- `spx-gui/src/utils/account/sign-in.ts`
   - 解析 `client_id`、`request_uri`，拼接同源 `/api/oauth/authorize` 和 provider authorize URL，并维护 pending authorization 标记
-- `spx-gui/src/account-web/components/login/AccountSessionSection.vue`
+- `spx-gui/src/components/sign-in/AccountSessionSection.vue`
   - 展示当前账号、继续登录、切换账号
-- `spx-gui/src/account-web/components/login/LoginOptionsSection.vue`
+- `spx-gui/src/components/sign-in/LoginOptionsSection.vue`
   - provider 按钮列表和用户名密码入口
-- `spx-gui/src/account-web/components/login/PasswordLoginSection.vue`
+- `spx-gui/src/components/sign-in/PasswordLoginSection/PasswordLoginSection.vue`
   - 用户名密码登录表单
-- `spx-gui/src/account-web/components/login/LoginForm.vue`
+- `spx-gui/src/components/sign-in/LoginForm.vue`
   - 登录页状态机与 API 调用编排
 - `spx-gui/vite.config.account-web.ts`
   - `Account Web` 独立构建配置、同源 `/api` 代理和 Vercel rewrite

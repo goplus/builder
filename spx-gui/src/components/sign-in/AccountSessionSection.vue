@@ -28,8 +28,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { CurrentAccountSession } from '@/account-web/apis/account'
-import LoginButton from '@/account-web/components/login/LoginButton.vue'
+import type { CurrentAccountSession } from '@/apis/account-session'
+import LoginButton from './LoginButton.vue'
 import { useAvatarUrl } from '@/stores/user/avatar'
 
 const props = defineProps<{

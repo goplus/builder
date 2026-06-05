@@ -30,14 +30,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import eyeIconUrl from '@/account-web/assets/icons/eye.svg'
-import eyeOffIconUrl from '@/account-web/assets/icons/eye-off.svg'
-import lockIconUrl from '@/account-web/assets/icons/lock.svg'
-import userIconUrl from '@/account-web/assets/icons/user.svg'
-import type { PasswordSignInPayload } from '@/account-web/apis/account'
+import eyeIconUrl from './eye.svg'
+import eyeOffIconUrl from './eye-off.svg'
+import lockIconUrl from './lock.svg'
+import userIconUrl from './user.svg'
+import type { PasswordSignInPayload } from '@/apis/account-session'
 import { useI18n } from '@/utils/i18n'
 
-import InputWithIcon from './InputWithIcon.vue'
+import InputWithIcon from '../InputWithIcon.vue'
 
 const props = defineProps<{
   submit: (payload: PasswordSignInPayload) => Promise<void>

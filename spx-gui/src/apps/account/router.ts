@@ -11,7 +11,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: accountWebRoutePaths.signIn,
-    component: () => import('@/account-web/pages/sign-in.vue')
+    component: () => import('@/apps/account/pages/sign-in.vue')
   },
   {
     path: '/:pathMatch(.*)*',

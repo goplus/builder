@@ -11,9 +11,9 @@
 </template>
 
 <script setup lang="ts">
-import type { OAuthContext } from '@/account-web/utils/oauth'
-import logoUrl from '@/account-web/assets/logo.svg'
-import LoginForm from './LoginForm.vue'
+import type { OAuthContext } from '@/utils/account/sign-in'
+import logoUrl from '@/components/sign-in/assets/logo.svg'
+import LoginForm from '../LoginForm.vue'
 
 defineProps<{
   authContext: OAuthContext
@@ -25,7 +25,7 @@ defineProps<{
   width: 100%;
   min-height: 100vh;
   background-color: #eff3fd;
-  background-image: url('../../assets/bg-mobile.svg');
+  background-image: url('./bg-mobile.svg');
   background-position: center;
   background-size: 100%;
   background-repeat: no-repeat;
@@ -38,7 +38,7 @@ defineProps<{
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-image: url('../../assets/illustration-mobile.svg');
+  background-image: url('./illustration-mobile.svg');
   background-position: top;
   background-size: 100%;
   background-repeat: no-repeat;

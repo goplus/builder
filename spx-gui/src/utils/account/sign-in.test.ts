@@ -8,9 +8,9 @@ import {
   markPendingAuthorization,
   parseOAuthContext,
   type OAuthContext
-} from './oauth'
+} from './sign-in'
 
-describe('account-web oauth utils', () => {
+describe('account-web sign-in utils', () => {
   const context: OAuthContext = {
     clientId: 'xbuilder',
     requestUri: 'urn:example:request:123'

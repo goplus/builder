@@ -54,8 +54,8 @@ import {
   getCurrentAccountSession,
   getIdentityProviders,
   type PasswordSignInPayload
-} from '@/account-web/apis/account'
-import type { CurrentAccountSession, IdentityProvider } from '@/account-web/apis/account'
+} from '@/apis/account-session'
+import type { CurrentAccountSession, IdentityProvider } from '@/apis/account-session'
 import {
   buildIdentityProviderAuthorizeUrl,
   buildOAuthAuthorizeUrl,
@@ -63,12 +63,12 @@ import {
   getOAuthError,
   hasPendingAuthorization,
   markPendingAuthorization
-} from '@/account-web/utils/oauth'
-import type { OAuthContext } from '@/account-web/utils/oauth'
+} from '@/utils/account/sign-in'
+import type { OAuthContext } from '@/utils/account/sign-in'
 
 import AccountSessionSection from './AccountSessionSection.vue'
 import LoginOptionsSection from './LoginOptionsSection.vue'
-import PasswordLoginSection from './PasswordLoginSection.vue'
+import PasswordLoginSection from './PasswordLoginSection/PasswordLoginSection.vue'
 
 const props = defineProps<{
   authContext: OAuthContext

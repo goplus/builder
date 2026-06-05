@@ -1,6 +1,20 @@
+/**
+ * API client for Account Web sign-in page session management.
+ *
+ * These are used by the sign-in page (apps/account/) to interact with
+ * the Account API for session operations — checking current session,
+ * signing in with password, listing identity providers, and clearing
+ * the session on account switch.
+ *
+ * This file is specific to the Account Web sign-in flow and is not used by
+ * the main xbuilder.com OAuth client logic (see account-oauth.ts for that).
+ */
+
 import { Client } from '@/apis/common/client'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import type { OAuthContext } from '../utils/oauth'
+import type { OAuthContext } from '@/utils/account/sign-in'
+
+const client = new Client({ baseUrl: '/api' })
 
 export interface AccountUser {
   id: string
@@ -23,22 +37,6 @@ export interface CurrentAccountSession {
   ipAddress?: string | null
 }
 
-export interface IdentityProvider {
-  name: string
-  displayName: string
-  enabled: boolean
-}
-
-interface IdentityProviderListResponse {
-  data: IdentityProvider[]
-}
-
-function filterEnabledIdentityProviders(providers: IdentityProvider[]): IdentityProvider[] {
-  return providers.filter((provider) => provider.enabled)
-}
-
-const client = new Client({ baseUrl: '/api' })
-
 function isUnauthorizedError(error: unknown) {
   return (
     (error instanceof ApiException && error.code === ApiExceptionCode.errorUnauthorized) ||
@@ -59,6 +57,16 @@ export async function deleteCurrentAccountSession(): Promise<void> {
   await client.delete('/session')
 }
 
+export interface IdentityProvider {
+  name: string
+  displayName: string
+  enabled: boolean
+}
+
+interface IdentityProviderListResponse {
+  data: IdentityProvider[]
+}
+
 export async function getIdentityProviders(context?: OAuthContext): Promise<IdentityProvider[]> {
   const response = (await client.get(
     '/identity-providers',
@@ -69,7 +77,7 @@ export async function getIdentityProviders(context?: OAuthContext): Promise<Iden
           requestURI: context.requestUri
         }
   )) as IdentityProviderListResponse
-  return filterEnabledIdentityProviders(response.data)
+  return response.data.filter((provider) => provider.enabled)
 }
 
 export interface PasswordSignInPayload {

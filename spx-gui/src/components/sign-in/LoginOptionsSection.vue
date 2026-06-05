@@ -13,9 +13,9 @@
 </template>
 
 <script setup lang="ts">
-import type { IdentityProvider } from '@/account-web/apis/account'
+import type { IdentityProvider } from '@/apis/account-session'
 
-import ProviderLoginButton from './ProviderLoginButton.vue'
+import ProviderLoginButton from './ProviderLoginButton/ProviderLoginButton.vue'
 import UsernamePasswordLink from './UsernamePasswordLink.vue'
 
 withDefaults(

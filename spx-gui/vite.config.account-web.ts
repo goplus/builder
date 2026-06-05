@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
@@ -18,15 +19,31 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       {
-        name: 'account-web-dev-sign-in-path',
+        name: 'account-web-rename-output-html',
+        apply: 'build',
+        closeBundle() {
+          const from = resolve('dist/account.html')
+          const to = resolve('dist/index.html')
+          if (fs.existsSync(from)) fs.renameSync(from, to)
+        }
+      },
+      {
+        name: 'account-web-dev-spa-fallback',
         configureServer(server) {
-          server.middlewares.use((req, res, next) => {
+          server.middlewares.use((req, _res, next) => {
             if (req.url == null) return next()
-            const url = new URL(req.url, 'http://localhost')
-            if (url.pathname !== '/sign-in') return next()
-            res.statusCode = 302
-            res.setHeader('Location', `/sign-in/${url.search}`)
-            res.end()
+            const pathname = new URL(req.url, 'http://localhost').pathname
+            // Skip Vite internal requests
+            if (pathname.startsWith('/@')) return next()
+            // Skip requests for static assets (have file extensions)
+            if (pathname.includes('.')) return next()
+            // Skip API proxy requests
+            if (pathname.startsWith('/api/')) return next()
+            // Skip the entry HTML itself
+            if (pathname === '/account.html') return next()
+            // SPA fallback: serve account.html for unmatched HTML routes (e.g. /sign-in)
+            req.url = '/account.html'
+            next()
           })
         }
       },
@@ -68,7 +85,7 @@ export default defineConfig(({ mode }) => {
           },
           {
             source: '/(.*)',
-            destination: '/sign-in/index.html'
+            destination: '/index.html'
           }
         ]
       })
@@ -79,11 +96,12 @@ export default defineConfig(({ mode }) => {
         '@docs': resolve('../docs')
       }
     },
+    publicDir: false,
     build: {
       target: browserslistToEsbuild(),
       rolldownOptions: {
         input: {
-          'sign-in': resolve('sign-in/index.html')
+          'sign-in': resolve('account.html')
         },
         output: {
           entryFileNames: 'assets/[name]-[hash].js'
