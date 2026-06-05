@@ -37,11 +37,7 @@ interface TokenResponse {
 }
 
 async function fetchSignedInUsernameByAccessToken(accessToken: string) {
-  const user = await apis.getSignedInUser({
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`
-    })
-  })
+  const user = await apis.getSignedInUser(accessToken)
   return user.username
 }
 
@@ -99,6 +95,11 @@ export async function ensureAccessToken(): Promise<string | null> {
   tokenRefreshPromise = (async () => {
     try {
       const resp = await casdoorSdk.refreshAccessToken(userState.refreshToken!)
+      if ('error' in resp && typeof resp.error === 'string') {
+        // If refreshing failed, `casdoorSdk.refreshAccessToken` returns an object with field `error` and `error_description`
+        // instead of throwing an error. We have to check this manually and throw an error to be handled by callers.
+        throw new Error(`Failed to refresh access token: ${resp.error} (${(resp as any).error_description})`)
+      }
       await handleTokenResponse(resp)
     } catch (e) {
       console.error('failed to refresh access token', e)
