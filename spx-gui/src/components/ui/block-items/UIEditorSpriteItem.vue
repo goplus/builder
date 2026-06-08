@@ -4,7 +4,11 @@
     <UIBlockItemTitle size="medium" :title="name">
       {{ name }}
       <template v-if="visible === false" #suffix>
-        <UIIcon class="cursor-auto text-grey-700" type="eyeOff" :title="$t({ en: 'Invisible', zh: '不可见' })" />
+        <UIIcon
+          class="size-3.5 flex-none cursor-auto text-grey-700"
+          type="eyeOff"
+          :title="$t({ en: 'Invisible', zh: '不可见' })"
+        />
       </template>
     </UIBlockItemTitle>
     <slot></slot>
@@ -33,7 +37,7 @@ const props = withDefaults(
 const selected = computed(() => props.selectable && props.selectable.selected)
 
 const imgStyle: CSSProperties = {
-  marginBottom: '5px',
+  marginBottom: '2px',
   height: '60px',
   width: '60px'
 }
