@@ -32,6 +32,7 @@
         <v-group>
           <SpriteNode
             v-for="localConfig in visibleSpriteLocalConfigs"
+            ref="spriteNodeRefs"
             :key="localConfig.id"
             :local-config="localConfig"
             :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
@@ -138,6 +139,7 @@ const mapRef = ref<{
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
+const spriteNodeRefs = ref<(InstanceType<typeof SpriteNode> | null)[]>([])
 const nodeReadyMap = reactive(new Map<string, boolean>())
 const mousePos = ref<Pos | null>(null)
 
@@ -509,20 +511,28 @@ function ensureCanTakeScreenshot() {
   if (!canTakeScreenshot.value) throw new Error('stage viewer is not renderable for screenshot')
 }
 
+const selectedSpriteNode = computed(() => {
+  const selectedSpriteId = editorCtx.state.selectedSprite?.id
+  if (selectedSpriteId == null) return null
+  const idx = visibleSpriteLocalConfigs.value.findIndex(({ id }) => id === selectedSpriteId)
+  return spriteNodeRefs.value[idx] ?? null
+})
+
 async function takeScreenshot(name: string, signal?: AbortSignal) {
   ensureCanTakeScreenshot()
   const stage = await untilNotNull(stageRef, signal)
   const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
   await until(() => !loading.value, signal)
   ensureCanTakeScreenshot()
-  // Omit transform control when taking screenshot
-  const blob = await nodeTransformer.withHidden(
-    () =>
-      stage.getStage().toBlob({
-        mimeType: 'image/jpeg',
-        // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
-        imageSmoothingEnabled: false
-      }) as Promise<Blob>
+  const takeBlob = () =>
+    stage.getStage().toBlob({
+      mimeType: 'image/jpeg',
+      // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
+      imageSmoothingEnabled: false
+    }) as Promise<Blob>
+  // Omit editor-only controls when taking screenshot.
+  const blob = await nodeTransformer.withHidden(() =>
+    selectedSpriteNode.value == null ? takeBlob() : selectedSpriteNode.value.withPivotMarkerHidden(takeBlob)
   )
   return fromBlob(`${name}.jpg`, blob)
 }

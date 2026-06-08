@@ -88,11 +88,13 @@ defineExpose({
   getNode() {
     return transformer.value?.getNode()
   },
-  withHidden<T>(callback: () => T): T {
+  async withHidden<T>(callback: () => T | Promise<T>): Promise<Awaited<T>> {
     transformer.value?.getNode().hide()
-    const ret = callback()
-    transformer.value?.getNode().show()
-    return ret
+    try {
+      return await callback()
+    } finally {
+      transformer.value?.getNode().show()
+    }
   }
 })
 </script>
