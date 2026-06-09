@@ -11,6 +11,11 @@ export function getProjectEditorRoute(ownerName: string, projectName: string, pu
 }
 
 export function getOwnProjectEditorRoute(projectName: string, publish = false) {
+  // TODO: Remove this helper after splitting "open my project editor" into two layers:
+  // - a pure self-entry route builder like `/editor/:projectName`
+  // - async resolution of the canonical signed-in user at that route boundary
+  // Then navigate to `/editor/:owner/:project` with backend-confirmed signed-in user data,
+  // instead of deriving owner name from unresolved local auth state synchronously.
   const username = getUnresolvedSignedInUsername()
   if (username == null) throw new Error('User not signed in')
   return getProjectEditorRoute(username, projectName, publish)
@@ -136,6 +141,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/editor/:projectNameInput',
     redirect(to) {
       const { projectNameInput } = to.params
+      // TODO: Replace this synchronous redirect with an async entry boundary (for example `beforeEnter`) that:
+      // - checks/initiates sign-in
+      // - awaits canonical signed-in user data
+      // - redirects to `/editor/:owner/:project`
+      // That would let router stop depending on unresolved local username hints here.
       const username = getUnresolvedSignedInUsername()
       // Route with `redirect` will not trigger the global `beforeEach` guard,
       // so we need to check sign-in status here.

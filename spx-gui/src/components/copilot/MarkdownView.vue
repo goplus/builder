@@ -148,6 +148,43 @@ const components = computed(() => getComponents(copilot))
   overflow-wrap: break-word;
 }
 
+.markdown-view :deep(table) {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--ui-color-grey-500);
+  border-radius: 12px;
+  line-height: 1.69231;
+}
+
+.markdown-view :deep(thead) {
+  background: var(--ui-color-grey-300);
+}
+
+.markdown-view :deep(th),
+.markdown-view :deep(td) {
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-right: 1px solid var(--ui-color-grey-500);
+  border-bottom: 1px solid var(--ui-color-grey-500);
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.markdown-view :deep(th) {
+  font-weight: bold;
+}
+
+.markdown-view :deep(tr > :last-child) {
+  border-right: none;
+}
+
+.markdown-view :deep(tbody tr:last-child > *) {
+  border-bottom: none;
+}
+
 .markdown-view :deep(strong) {
   font-weight: bold;
 }
