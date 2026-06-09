@@ -100,9 +100,7 @@ describe('signed-in user store', () => {
     await expect(userStore.signInWithAccessToken('token-a')).resolves.toBeUndefined()
     expect(userStore.isSignedIn()).toBe(true)
     expect(userStore.getUnresolvedSignedInUsername()).toBe('alice')
-    expect(getSignedInUser).toHaveBeenCalledWith({
-      headers: new Headers({ Authorization: 'Bearer token-a' })
-    })
+    expect(getSignedInUser).toHaveBeenCalledWith('token-a')
   })
 
   it('should keep the guest signed-in user query key when resolving access token for a guest session', async () => {
@@ -138,9 +136,7 @@ describe('signed-in user store', () => {
     })
     expect(exchangeAuthorizationCode).toHaveBeenCalledWith('code-a', 'verifier-a')
     expect(userStore.isSignedIn()).toBe(true)
-    expect(getSignedInUser).toHaveBeenCalledWith({
-      headers: new Headers({ Authorization: 'Bearer token-a' })
-    })
+    expect(getSignedInUser).toHaveBeenCalledWith('token-a')
     expect(sessionStorage.getItem(pendingAuthorizationStorageKey)).toBe(null)
   })
 
