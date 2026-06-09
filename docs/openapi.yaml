@@ -226,9 +226,10 @@ paths:
       description: |
         Create a pushed authorization request for an app using OAuth 2.0 PAR.
 
-        The requested redirect URI must exactly match the app allowlist. Provider credential handoff codes, when
-        supplied, must be valid, unexpired, unused, and match the requested provider. Invalid provider codes must not
-        produce usable `request_uri` values.
+        The requested redirect URI must exactly match the app allowlist.
+
+        Provider credential handoff codes, when supplied, must be valid, unexpired, unused, and match the requested
+        provider. Invalid provider codes must not produce usable `request_uri` values.
 
         The returned `request_uri` is an opaque, short-lived, single-use reference and is not a dereferenceable URL.
       security:
@@ -360,8 +361,9 @@ paths:
               description: |
                 Hosted sign-in URL or app callback URL.
 
-                Hosted sign-in URLs contain `clientID` and `requestURI`. App callback URLs contain `code` and `state`,
-                or OAuth error parameters and `state`.
+                Hosted sign-in URLs contain `clientID` and `requestURI`.
+
+                App callback URLs contain `code` and `state`, or OAuth error parameters and `state`.
               schema:
                 type: string
                 format: uri
@@ -378,9 +380,10 @@ paths:
       description: |
         Create or refresh Account-issued app-scoped OAuth tokens.
 
-        Authorization code exchange validates the redirect URI and PKCE verifier. Refresh token exchange rotates the
-        refresh token. Reuse of a rotated refresh token is treated as a replay signal and revokes the corresponding
-        token family or grant.
+        Authorization code exchange validates the redirect URI and PKCE verifier.
+
+        Refresh token exchange rotates the refresh token. Reuse of a rotated refresh token is treated as a replay signal
+        and revokes the corresponding token family or grant.
       security:
         - oauthClientSecretBasic: []
         - {}
@@ -512,8 +515,9 @@ paths:
         - Account
       summary: Update the current account user
       description: |
-        Update user fields managed by XBuilder Account for the current user. Cookie-authenticated mutations must
-        validate Origin or use equivalent CSRF protection.
+        Update writable user fields managed by XBuilder Account for the current user.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
         - accountSessionCookie: []
       requestBody:
@@ -524,12 +528,8 @@ paths:
               type: object
               minProperties: 1
               properties:
-                username:
-                  $ref: "#/components/schemas/AccountUser/properties/username"
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
-                avatar:
-                  $ref: "#/components/schemas/AccountUser/properties/avatar"
       responses:
         "200":
           description: Account user updated.
@@ -539,6 +539,47 @@ paths:
                 $ref: "#/components/schemas/AccountUser"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /account/user/avatar:
+    put:
+      operationId: updateAccountUserAvatar
+      tags:
+        - Account
+      summary: Update the current account user avatar
+      description: |
+        Upload and replace the avatar image managed by XBuilder Account for the current user.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
+      security:
+        - accountSessionCookie: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: Avatar image file.
+                  type: string
+                  format: binary
+                  maxLength: 5242880
+            encoding:
+              file:
+                contentType: image/png
+      responses:
+        "204":
+          description: Account user avatar updated.
+        "400":
+          description: Invalid request parameters.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: Avatar image file is too large.
+        "415":
+          description: Avatar image file type is not supported.
 
   /account/user/identities:
     get:
@@ -631,8 +672,9 @@ paths:
         - Account
       summary: Delete the current account session
       description: |
-        Revoke the current account session. Cookie-authenticated mutations must validate Origin or use equivalent CSRF
-        protection.
+        Revoke the current account session.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
         - accountSessionCookie: []
       responses:
@@ -683,8 +725,9 @@ paths:
         - Account
       summary: Delete current account sessions
       description: |
-        Revoke all account sessions of the current user. Cookie-authenticated mutations must validate Origin or use
-        equivalent CSRF protection.
+        Revoke all account sessions of the current user.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
         - accountSessionCookie: []
       responses:
@@ -705,8 +748,9 @@ paths:
         - Account
       summary: Delete an account session of the current user
       description: |
-        Revoke an account session owned by the current user. Cookie-authenticated mutations must validate Origin or use
-        equivalent CSRF protection.
+        Revoke an account session owned by the current user.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
         - accountSessionCookie: []
       parameters:
@@ -4395,8 +4439,6 @@ paths:
                   $ref: "#/components/schemas/AccountUser/properties/username"
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
-                avatar:
-                  $ref: "#/components/schemas/AccountUser/properties/avatar"
                 password:
                   description: Optional administrator-managed password for the new user.
                   type: string
@@ -4468,12 +4510,8 @@ paths:
               type: object
               minProperties: 1
               properties:
-                username:
-                  $ref: "#/components/schemas/AccountUser/properties/username"
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
-                avatar:
-                  $ref: "#/components/schemas/AccountUser/properties/avatar"
       responses:
         "200":
           description: Account user updated.
@@ -4487,6 +4525,56 @@ paths:
           description: Insufficient permissions to perform this operation.
         "404":
           description: Account user not found.
+
+  /admin/account/users/{userID}/avatar:
+    put:
+      operationId: updateAdminAccountUserAvatar
+      tags:
+        - Account Admin
+      summary: Update an account user avatar as admin
+      description: |
+        Upload and replace an account user's avatar image.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose avatar is updated.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: Avatar image file.
+                  type: string
+                  format: binary
+                  maxLength: 5242880
+            encoding:
+              file:
+                contentType: image/png
+      responses:
+        "204":
+          description: Account user avatar updated.
+        "400":
+          description: Invalid request parameters.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+        "413":
+          description: Avatar image file is too large.
+        "415":
+          description: Avatar image file type is not supported.
 
   /admin/account/users/{userID}/password:
     put:
@@ -4870,6 +4958,8 @@ paths:
               properties:
                 displayName:
                   $ref: "#/components/schemas/AccountApp/properties/displayName"
+                status:
+                  $ref: "#/components/schemas/AccountApp/properties/status"
                 redirectURIs:
                   $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
                 allowedOrigins:
@@ -4877,48 +4967,6 @@ paths:
       responses:
         "200":
           description: Account app updated.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AccountApp"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          description: Insufficient permissions to perform this operation.
-        "404":
-          description: Account app not found.
-
-  /admin/account/apps/{appID}/status:
-    put:
-      operationId: updateAdminAccountAppStatus
-      tags:
-        - Account Admin
-      summary: Update an account app status as admin
-      description: |
-        Enable or disable an account app.
-
-        Requires the `accountAdmin` role.
-      parameters:
-        - name: appID
-          description: ID of the app whose status is updated.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - status
-              properties:
-                status:
-                  $ref: "#/components/schemas/AccountApp/properties/status"
-      responses:
-        "200":
-          description: Account app status updated.
           content:
             application/json:
               schema:
@@ -5192,9 +5240,11 @@ components:
       in: cookie
       name: __Host-xbuilder-account-session
       description: |
-        Account session cookie used by Account Web. The cookie must be `HttpOnly`, `Secure`, `SameSite=Lax`, use
-        `Path=/`, and omit `Domain`. Cookie-authenticated mutation endpoints must validate Origin or use equivalent CSRF
-        protection.
+        Account session cookie used by Account Web.
+
+        The cookie must be `HttpOnly`, `Secure`, `SameSite=Lax`, use `Path=/`, and omit `Domain`.
+
+        Cookie-authenticated mutation endpoints must validate Origin or use equivalent CSRF protection.
     oauthClientSecretBasic:
       type: http
       scheme: basic
@@ -5428,7 +5478,7 @@ components:
           type: string
           format: uri
           examples:
-            - https://avatars.githubusercontent.com/u/10137?v=4
+            - https://avatars.example.com/users/10137.png
         description:
           description: Brief bio or description of the user.
           type: string
@@ -5538,7 +5588,12 @@ components:
         displayName:
           $ref: "#/components/schemas/User/properties/displayName"
         avatar:
-          $ref: "#/components/schemas/User/properties/avatar"
+          description: Public HTTP URL of the user's avatar image.
+          type: string
+          format: uri
+          pattern: "^https?://"
+          examples:
+            - https://avatars.example.com/users/10137.png
 
     AccountIdentityProvider:
       type: object

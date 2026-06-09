@@ -64,9 +64,9 @@ standard parameter names, such as `client_id`, `client_secret`, `redirect_uri`, 
 
 XBuilder Account can reuse the existing `user` table, but the account system boundary is not the same as the physical
 table boundary. Account API only exposes user fields owned by the account system, such as `id`, `username`,
-`displayName`, and `avatar`. Writable fields are defined by concrete endpoints. `description`, `roles`, `plan`,
-`capabilities`, statistics fields, and product fields belong to the XBuilder product or authorization system. They are
-not exposed or managed by XBuilder Account API.
+`displayName`, and `avatar`. `avatar` is returned as a displayable HTTP URL. Writable fields are defined by concrete
+endpoints. `description`, `roles`, `plan`, `capabilities`, statistics fields, and product fields belong to the XBuilder
+product or authorization system. They are not exposed or managed by XBuilder Account API.
 
 `auth_flow` is a logical concept. It only defines lifecycle and security semantics, and it does not constrain physical
 storage. Provider redirect state, pushed authorization request, authorization code, PKCE challenge, and provider code
@@ -232,8 +232,9 @@ only be returned when they are created.
 
 After sibling app frontends finish sign-in, they should only call their own backends. They should not rely on XBuilder
 Account APIs for ordinary product requests. Sibling apps should use `user.id` as the stable account reference. Mutable
-account fields such as `username`, `displayName`, and `avatar` may be cached by sibling apps for display, but XBuilder
-Account remains the authoritative source for these fields.
+account fields such as `username`, `displayName`, and `avatar` may be cached by sibling apps for display. `username` is
+a mutable account handle and must not be used as a stable identity. XBuilder Account remains the authoritative source
+for these fields.
 
 ## Sign-in integration model
 
@@ -588,6 +589,7 @@ POST /account/oauth/revoke
 ```http
 GET    /account/user
 PATCH  /account/user
+PUT    /account/user/avatar
 GET    /account/user/identities
 
 POST   /account/session
@@ -602,10 +604,13 @@ DELETE /account/sessions/{sessionID}
   session cookie. App backends can access it with an Account-issued app-scoped OAuth token that has `account:user:read`
   scope
 - `PATCH /account/user` only allows Account Web access with account session cookie, and updates writable account fields
+- `PUT /account/user/avatar` only allows Account Web access with account session cookie, and uploads and replaces the
+  avatar image through `multipart/form-data`
 - `GET /account/user` and `PATCH /account/user` do not expose or update XBuilder product fields such as `description`
 - `GET /account/user/identities` returns the current user's third-party identities
-- `account:user:read` only authorizes `GET /account/user`. It does not authorize `GET /account/user/identities`, account
-  session endpoints, mutation endpoints, or admin endpoints
+- `account:user:read` only authorizes `GET /account/user`. It does not authorize `PATCH /account/user`,
+  `PUT /account/user/avatar`, `GET /account/user/identities`, account session endpoints, mutation endpoints, or admin
+  endpoints
 - `POST /account/session` is called by Account Web to submit sign-in credentials. The backend validates the credentials
   before creating the current account session
 - `GET /account/session` and `DELETE /account/session` manage the current account session used by hosted sign-in
@@ -620,6 +625,7 @@ POST   /admin/account/users
 GET    /admin/account/users/{userID}
 PATCH  /admin/account/users/{userID}
 
+PUT    /admin/account/users/{userID}/avatar
 PUT    /admin/account/users/{userID}/password
 DELETE /admin/account/users/{userID}/password
 
@@ -634,7 +640,6 @@ GET    /admin/account/apps
 POST   /admin/account/apps
 GET    /admin/account/apps/{appID}
 PATCH  /admin/account/apps/{appID}
-PUT    /admin/account/apps/{appID}/status
 
 GET    /admin/account/apps/{appID}/secrets
 POST   /admin/account/apps/{appID}/secrets
