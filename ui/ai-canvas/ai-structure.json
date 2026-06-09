@@ -1,0 +1,3573 @@
+{
+  "metadata": {
+    "exportedAt": "2026-02-06T02:29:55.359Z",
+    "componentName": "AI 画布",
+    "totalElements": 204,
+    "nestingDepth": 8,
+    "plugin": "Figma to JSON Exporter"
+  },
+  "designTokens": {
+    "colors": {
+      "color-rgb(244, 250, 255)": "rgb(244, 250, 255)",
+      "color-rgb(234, 239, 243)": "rgb(234, 239, 243)",
+      "color-rgb(255, 255, 255)": "rgb(255, 255, 255)",
+      "color-rgb(0, 0, 0)": "rgb(0, 0, 0)",
+      "color-rgb(36, 41, 47)": "rgb(36, 41, 47)",
+      "color-rgb(63, 205, 217)": "rgb(63, 205, 217)",
+      "color-rgb(87, 96, 106)": "rgb(87, 96, 106)",
+      "color-rgb(11, 192, 207)": "rgb(11, 192, 207)"
+    },
+    "fonts": {
+      "source-han-sans-sc-vf": {
+        "family": "Source Han Sans SC VF",
+        "sizes": {
+          "size-13": "13px"
+        },
+        "weights": {
+          "weight-500": "500"
+        }
+      }
+    },
+    "spacing": {
+      "padding-top-12": "12px",
+      "padding-right-4": "4px",
+      "padding-bottom-12": "12px",
+      "padding-left-4": "4px",
+      "gap-20": "20px",
+      "padding-top-4": "4px",
+      "padding-right-16": "16px",
+      "padding-bottom-4": "4px",
+      "padding-left-16": "16px",
+      "gap-16": "16px",
+      "gap-2": "2px",
+      "padding-right-12": "12px",
+      "padding-left-12": "12px",
+      "padding-right-20": "20px",
+      "padding-left-20": "20px",
+      "gap-12": "12px",
+      "padding-top-18": "18px",
+      "padding-right-6": "6px",
+      "padding-bottom-18": "18px",
+      "padding-left-6": "6px",
+      "gap-5": "5px",
+      "padding-top-9": "9px",
+      "padding-right-24": "24px",
+      "padding-bottom-9": "9px",
+      "padding-left-24": "24px",
+      "gap-8": "8px",
+      "padding-top-8": "8px",
+      "padding-right-8": "8px",
+      "padding-bottom-8": "8px",
+      "padding-left-8": "8px",
+      "gap-6": "6px"
+    },
+    "effects": {
+      "shadow-24-4": {
+        "x": 0,
+        "y": 4,
+        "blur": 24,
+        "color": "rgba(36, 41, 47, 0.07999999821186066)"
+      }
+    }
+  },
+  "structure": {
+    "name": "ai---",
+    "type": "FRAME",
+    "size": {
+      "w": 1440,
+      "h": 900
+    },
+    "styles": {
+      "bg": "rgb(244, 250, 255)",
+      "layout": {
+        "direction": "row",
+        "gap": 0,
+        "align": {
+          "main": "start",
+          "cross": "start"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "--",
+        "type": "FRAME",
+        "size": {
+          "w": 1440,
+          "h": 900
+        },
+        "styles": {
+          "layout": {
+            "direction": "row",
+            "gap": 0,
+            "align": {
+              "main": "start",
+              "cross": "start"
+            }
+          }
+        },
+        "children": [
+          {
+            "name": "vector",
+            "type": "VECTOR",
+            "size": {
+              "w": 1429,
+              "h": 887
+            },
+            "styles": {
+              "bg": "rgb(234, 239, 243)"
+            }
+          }
+        ]
+      },
+      {
+        "name": "frame",
+        "type": "FRAME",
+        "size": {
+          "w": 60,
+          "h": 732
+        },
+        "styles": {
+          "bg": "rgb(255, 255, 255)",
+          "border": {
+            "width": 1,
+            "color": "rgb(234, 239, 243)"
+          },
+          "radius": 12,
+          "shadow": {
+            "x": 0,
+            "y": 4,
+            "blur": 24,
+            "color": "rgba(36, 41, 47, 0.07999999821186066)"
+          },
+          "layout": {
+            "direction": "column",
+            "gap": 20,
+            "align": {
+              "main": "start",
+              "cross": "center"
+            },
+            "padding": [
+              12,
+              4,
+              12,
+              4
+            ]
+          }
+        },
+        "children": [
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004933",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame-162824",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "column",
+                        "gap": 2,
+                        "align": {
+                          "main": "center",
+                          "cross": "center"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "frame",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 22,
+                          "h": 22
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "row",
+                            "gap": 0,
+                            "align": {
+                              "main": "start",
+                              "cross": "start"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 15,
+                              "h": 18
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 7,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 7,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004934",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 13,
+                          "h": 18
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 6,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 6,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 6,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004935",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame-1000004924",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "frame",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 20,
+                          "h": 20
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "row",
+                            "gap": 0,
+                            "align": {
+                              "main": "start",
+                              "cross": "start"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 15,
+                              "h": 15
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 4,
+                              "h": 5
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 15,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 4
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 4
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004923",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 18
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 4,
+                          "h": 9
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004925",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 17,
+                          "h": 17
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 5,
+                          "h": 5
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 11,
+                          "h": 8
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004926",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 11
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 5,
+                          "h": 5
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004927",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "mask-group",
+                        "type": "GROUP",
+                        "size": {
+                          "w": 22,
+                          "h": 22
+                        },
+                        "children": [
+                          {
+                            "name": "group",
+                            "type": "GROUP",
+                            "size": {
+                              "w": 22,
+                              "h": 22
+                            },
+                            "children": [
+                              {
+                                "name": "vector",
+                                "type": "VECTOR",
+                                "size": {
+                                  "w": 22,
+                                  "h": 22
+                                },
+                                "styles": {
+                                  "bg": "rgb(0, 0, 0)"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "name": "group",
+                            "type": "GROUP",
+                            "size": {
+                              "w": 17,
+                              "h": 17
+                            },
+                            "children": [
+                              {
+                                "name": "vector",
+                                "type": "VECTOR",
+                                "size": {
+                                  "w": 17,
+                                  "h": 8
+                                },
+                                "styles": {
+                                  "border": {
+                                    "width": 2,
+                                    "color": "rgb(110, 119, 129)"
+                                  }
+                                }
+                              },
+                              {
+                                "name": "vector",
+                                "type": "VECTOR",
+                                "size": {
+                                  "w": 8,
+                                  "h": 4
+                                },
+                                "styles": {
+                                  "border": {
+                                    "width": 2,
+                                    "color": "rgb(110, 119, 129)"
+                                  }
+                                }
+                              },
+                              {
+                                "name": "vector",
+                                "type": "VECTOR",
+                                "size": {
+                                  "w": 0,
+                                  "h": 12
+                                },
+                                "styles": {
+                                  "border": {
+                                    "width": 2,
+                                    "color": "rgb(110, 119, 129)"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004928",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 17,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 13,
+                          "h": 13
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "vector",
+                    "type": "VECTOR",
+                    "size": {
+                      "w": 17,
+                      "h": 20
+                    },
+                    "styles": {
+                      "border": {
+                        "width": 2,
+                        "color": "rgb(110, 119, 129)"
+                      }
+                    }
+                  },
+                  {
+                    "name": "vector",
+                    "type": "VECTOR",
+                    "size": {
+                      "w": 8,
+                      "h": 3
+                    },
+                    "styles": {
+                      "border": {
+                        "width": 2,
+                        "color": "rgb(110, 119, 129)"
+                      }
+                    }
+                  },
+                  {
+                    "name": "vector",
+                    "type": "VECTOR",
+                    "size": {
+                      "w": 0,
+                      "h": 5
+                    },
+                    "styles": {
+                      "border": {
+                        "width": 2,
+                        "color": "rgb(110, 119, 129)"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004929",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 5,
+                          "h": 3
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 5,
+                          "h": 3
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 11,
+                          "h": 3
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 11,
+                          "h": 16
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004930",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 15,
+                          "h": 13
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 4,
+                          "h": 9
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 3,
+                          "h": 5
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004931",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 3
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 3
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 3
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004932",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 17,
+                          "h": 8
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 8,
+                          "h": 4
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 0,
+                          "h": 12
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "group-3",
+        "type": "GROUP",
+        "size": {
+          "w": 210,
+          "h": 161
+        },
+        "children": [
+          {
+            "name": "rectangle-1",
+            "type": "RECTANGLE",
+            "size": {
+              "w": 210,
+              "h": 161
+            },
+            "styles": {
+              "bg": "rgb(36, 41, 47)",
+              "border": {
+                "width": 1,
+                "color": "rgb(87, 96, 106)"
+              },
+              "radius": 8
+            }
+          },
+          {
+            "name": "rectangle-2",
+            "type": "RECTANGLE",
+            "size": {
+              "w": 194,
+              "h": 113
+            },
+            "styles": {
+              "bg": "rgb(234, 239, 243)",
+              "border": {
+                "width": 1,
+                "color": "rgb(87, 96, 106)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "frame",
+        "type": "FRAME",
+        "size": {
+          "w": 60,
+          "h": 604
+        },
+        "styles": {
+          "bg": "rgb(255, 255, 255)",
+          "border": {
+            "width": 1,
+            "color": "rgb(234, 239, 243)"
+          },
+          "radius": 12,
+          "shadow": {
+            "x": 0,
+            "y": 4,
+            "blur": 24,
+            "color": "rgba(36, 41, 47, 0.07999999821186066)"
+          },
+          "layout": {
+            "direction": "column",
+            "gap": 20,
+            "align": {
+              "main": "start",
+              "cross": "center"
+            },
+            "padding": [
+              12,
+              12,
+              12,
+              12
+            ]
+          }
+        },
+        "children": [
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004947",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 6,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 2,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 14,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 2,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "line-1",
+            "type": "LINE",
+            "size": {
+              "w": 36,
+              "h": 0
+            },
+            "styles": {
+              "border": {
+                "width": 1,
+                "color": "rgb(234, 239, 243)"
+              }
+            }
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004946",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 16,
+                          "h": 17
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "bg": "rgb(63, 205, 217)",
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004945",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 17,
+                          "h": 19
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(255, 255, 255)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "line-2",
+            "type": "LINE",
+            "size": {
+              "w": 36,
+              "h": 0
+            },
+            "styles": {
+              "border": {
+                "width": 1,
+                "color": "rgb(234, 239, 243)"
+              }
+            }
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004944",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 3,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 3,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004943",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 3,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 3,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004942",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 4,
+                          "h": 4
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 2,
+                          "h": 2
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 2,
+                          "h": 2
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 11,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 11,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 11,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004941",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame-1000004940",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "frame",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 22,
+                          "h": 22
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "row",
+                            "gap": 0,
+                            "align": {
+                              "main": "start",
+                              "cross": "start"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 15,
+                              "h": 15
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 6,
+                              "h": 6
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 0,
+                              "h": 3
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            }
+                          },
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 3,
+                              "h": 0
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(110, 119, 129)"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004939",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 15
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 3,
+                          "h": 6
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 6,
+                          "h": 0
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004938",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 15,
+                          "h": 18
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 2,
+                          "h": 5
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 2,
+                          "h": 5
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 5,
+                          "h": 5
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "navigation-left-navigation-button",
+            "type": "FRAME",
+            "size": {
+              "w": 36,
+              "h": 36
+            },
+            "styles": {
+              "radius": 8,
+              "layout": {
+                "direction": "row",
+                "gap": 16,
+                "align": {
+                  "main": "center",
+                  "cross": "center"
+                },
+                "padding": [
+                  4,
+                  16,
+                  4,
+                  16
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "frame-1000004937",
+                "type": "FRAME",
+                "size": {
+                  "w": 24,
+                  "h": 24
+                },
+                "styles": {
+                  "layout": {
+                    "direction": "row",
+                    "gap": 0,
+                    "align": {
+                      "main": "start",
+                      "cross": "start"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "frame",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 22,
+                      "h": 22
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 18,
+                          "h": 18
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      },
+                      {
+                        "name": "vector",
+                        "type": "VECTOR",
+                        "size": {
+                          "w": 5,
+                          "h": 5
+                        },
+                        "styles": {
+                          "border": {
+                            "width": 2,
+                            "color": "rgb(110, 119, 129)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "frame-1000004916",
+        "type": "FRAME",
+        "size": {
+          "w": 1440,
+          "h": 40
+        },
+        "styles": {
+          "layout": {
+            "direction": "row",
+            "gap": 12,
+            "align": {
+              "main": "space-between",
+              "cross": "center"
+            },
+            "padding": [
+              0,
+              20,
+              0,
+              20
+            ]
+          }
+        },
+        "children": [
+          {
+            "name": "frame-1000004917",
+            "type": "FRAME",
+            "size": {
+              "w": 462,
+              "h": 40
+            },
+            "styles": {
+              "layout": {
+                "direction": "row",
+                "gap": 12,
+                "align": {
+                  "main": "start",
+                  "cross": "center"
+                }
+              }
+            },
+            "children": [
+              {
+                "name": "button",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "1",
+                "type": "FRAME",
+                "size": {
+                  "w": 146,
+                  "h": 40
+                },
+                "styles": {
+                  "bg": "rgb(255, 255, 255)",
+                  "radius": 8,
+                  "shadow": {
+                    "x": 0,
+                    "y": 4,
+                    "blur": 24,
+                    "color": "rgba(36, 41, 47, 0.07999999821186066)"
+                  },
+                  "layout": {
+                    "direction": "row",
+                    "gap": 5,
+                    "align": {
+                      "main": "center",
+                      "cross": "center"
+                    },
+                    "padding": [
+                      18,
+                      6,
+                      18,
+                      6
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "name": "xbuilder-wordlogo-xbuilder-wordlogo-white",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  },
+                  {
+                    "name": "frame-1000004936",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 24,
+                      "h": 24
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "icon-caret-down-filled",
+                        "type": "INSTANCE",
+                        "size": {
+                          "w": 0,
+                          "h": 0
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "button",
+                "type": "FRAME",
+                "size": {
+                  "w": 148,
+                  "h": 40
+                },
+                "styles": {
+                  "bg": "rgb(255, 255, 255)",
+                  "border": {
+                    "width": 1,
+                    "color": "rgb(234, 239, 243)"
+                  },
+                  "radius": 8,
+                  "shadow": {
+                    "x": 0,
+                    "y": 4,
+                    "blur": 24,
+                    "color": "rgba(36, 41, 47, 0.07999999821186066)"
+                  },
+                  "layout": {
+                    "direction": "row",
+                    "gap": 8,
+                    "align": {
+                      "main": "center",
+                      "cross": "center"
+                    },
+                    "padding": [
+                      9,
+                      24,
+                      9,
+                      24
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "name": "----",
+                    "type": "TEXT",
+                    "size": {
+                      "w": 52,
+                      "h": 20
+                    },
+                    "content": "图片生成",
+                    "styles": {
+                      "bg": "rgb(87, 96, 106)",
+                      "text": {
+                        "family": "Source Han Sans SC VF",
+                        "size": 13,
+                        "weight": "500",
+                        "align": "left"
+                      }
+                    }
+                  },
+                  {
+                    "name": "tag",
+                    "type": "INSTANCE",
+                    "size": {
+                      "w": 0,
+                      "h": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "button",
+                "type": "FRAME",
+                "size": {
+                  "w": 144,
+                  "h": 40
+                },
+                "styles": {
+                  "bg": "rgb(255, 255, 255)",
+                  "border": {
+                    "width": 1,
+                    "color": "rgb(255, 255, 255)"
+                  },
+                  "radius": 8,
+                  "shadow": {
+                    "x": 0,
+                    "y": 4,
+                    "blur": 24,
+                    "color": "rgba(36, 41, 47, 0.07999999821186066)"
+                  },
+                  "layout": {
+                    "direction": "row",
+                    "gap": 8,
+                    "align": {
+                      "main": "center",
+                      "cross": "center"
+                    },
+                    "padding": [
+                      9,
+                      24,
+                      9,
+                      24
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "name": "icon-check-m-filled",
+                    "type": "FRAME",
+                    "size": {
+                      "w": 20,
+                      "h": 20
+                    },
+                    "styles": {
+                      "layout": {
+                        "direction": "row",
+                        "gap": 0,
+                        "align": {
+                          "main": "start",
+                          "cross": "start"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "frame",
+                        "type": "FRAME",
+                        "size": {
+                          "w": 20,
+                          "h": 20
+                        },
+                        "styles": {
+                          "layout": {
+                            "direction": "row",
+                            "gap": 0,
+                            "align": {
+                              "main": "start",
+                              "cross": "start"
+                            }
+                          }
+                        },
+                        "children": [
+                          {
+                            "name": "vector",
+                            "type": "VECTOR",
+                            "size": {
+                              "w": 13,
+                              "h": 8
+                            },
+                            "styles": {
+                              "border": {
+                                "width": 2,
+                                "color": "rgb(11, 192, 207)"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "------",
+                    "type": "TEXT",
+                    "size": {
+                      "w": 68,
+                      "h": 20
+                    },
+                    "content": "已保存 刚刚",
+                    "styles": {
+                      "bg": "rgb(11, 192, 207)",
+                      "text": {
+                        "family": "Source Han Sans SC VF",
+                        "size": 13,
+                        "weight": "500",
+                        "align": "left"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "button",
+            "type": "INSTANCE",
+            "size": {
+              "w": 0,
+              "h": 0
+            }
+          }
+        ]
+      },
+      {
+        "name": "frame-1000004880",
+        "type": "FRAME",
+        "size": {
+          "w": 180,
+          "h": 154
+        },
+        "styles": {
+          "layout": {
+            "direction": "column",
+            "gap": 8,
+            "align": {
+              "main": "start",
+              "cross": "start"
+            }
+          }
+        },
+        "children": [
+          {
+            "name": "list-expand-list",
+            "type": "FRAME",
+            "size": {
+              "w": 180,
+              "h": 154
+            },
+            "styles": {
+              "bg": "rgb(255, 255, 255)",
+              "radius": 8,
+              "shadow": {
+                "x": 0,
+                "y": 4,
+                "blur": 24,
+                "color": "rgba(36, 41, 47, 0.07999999821186066)"
+              },
+              "layout": {
+                "direction": "column",
+                "gap": 6,
+                "align": {
+                  "main": "center",
+                  "cross": "start"
+                },
+                "padding": [
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "children": [
+              {
+                "name": "-list-select",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "-list-select",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "-list-select",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "-list-select",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              },
+              {
+                "name": "-list-select",
+                "type": "INSTANCE",
+                "size": {
+                  "w": 0,
+                  "h": 0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "components": 0,
+    "instances": 10,
+    "frames": 85,
+    "texts": 2,
+    "hasAutoLayout": true,
+    "hasEffects": true
+  }
+}
