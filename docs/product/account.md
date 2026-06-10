@@ -299,9 +299,9 @@ must consume provider codes atomically with recording consumption state to avoid
 
 XBuilder Account OAuth endpoints live under `api.xbuilder.com/account/oauth/*`. They only host OAuth and OAuth RFC
 extension protocol endpoints, and issue Account-issued app-scoped OAuth tokens. The token subject is stable `user.id`,
-and the token client is the concrete `app`. This document only defines the `account:user:read` Account API scope, which
-allows app backends to access `GET /account/user` with an Account-issued app-scoped OAuth token. This scope does not
-express product authorization state or any app's product API permissions.
+and the token client is the concrete `app`. This document defines Account API scopes for reading the current account
+user and updating `displayName` and `avatar`. These scopes do not express product authorization state or any app's
+product API permissions.
 
 Account-issued app-scoped OAuth tokens can be used as product API credentials for the corresponding app. Whether a
 product API accepts the token depends on the app bound to the token and the authentication policy of the product
@@ -370,8 +370,10 @@ its own `/oauth/*` as a transparent OAuth facade forwarding to `api.xbuilder.com
 still receives Account-issued app-scoped OAuth tokens. When receiving product requests, the app backend should use
 `/account/oauth/introspect` to validate the token and verify that the token is bound to the current app. When account
 fields are needed, the app backend can use `GET /account/user` to fetch the minimum account user fields if the token has
-the `account:user:read` scope. Third-party identities and account session management are not part of the default Account
-API surface for app-scoped OAuth tokens.
+the `account:user:read` scope. When a sibling app provides product-local UI for editing `displayName` or `avatar`, the
+app backend can use `PATCH /account/user` and `PUT /account/user/avatar` only if the token has the `account:user:write`
+scope. Third-party identities and account session management are not part of the Account API surface for app-scoped
+OAuth tokens.
 
 `xbuilder.com` can also use Account-issued token model. For XBuilder product APIs, the token client/app should be
 `xbuilder`. After `api.xbuilder.com` accepts the token, it should use XBuilder Authorization and resource rules to
@@ -564,6 +566,8 @@ POST /account/oauth/revoke
 
 - OAuth protocol parameters should use standard names, such as `client_id`, `redirect_uri`, `request_uri`, `state`,
   `code`, `grant_type`, `code_challenge`, and `code_verifier`
+- `scope` uses the OAuth space-delimited scope string format. Supported Account API scopes are `account:user:read` and
+  `account:user:write`
 - Confidential clients use `client_secret_basic` authentication
 - Public clients use `client_id` in token exchange, revocation, or other requests that need client identification
 - `POST /account/oauth/par` creates pushed authorization requests and can carry provider credential handoff through
@@ -603,14 +607,17 @@ DELETE /account/sessions/{sessionID}
 - `GET /account/user` returns user fields owned by the current account system. Account Web can access it with account
   session cookie. App backends can access it with an Account-issued app-scoped OAuth token that has `account:user:read`
   scope
-- `PATCH /account/user` only allows Account Web access with account session cookie, and updates writable account fields
-- `PUT /account/user/avatar` only allows Account Web access with account session cookie, and uploads and replaces the
-  avatar image through `multipart/form-data`
+- `PATCH /account/user` updates writable account fields. Account Web can access it with account session cookie. App
+  backends can access it with an Account-issued app-scoped OAuth token that has `account:user:write` scope
+- `PUT /account/user/avatar` uploads and replaces the avatar image through `multipart/form-data`. Account Web can
+  access it with account session cookie. App backends can access it with an Account-issued app-scoped OAuth token that
+  has `account:user:write` scope
 - `GET /account/user` and `PATCH /account/user` do not expose or update XBuilder product fields such as `description`
 - `GET /account/user/identities` returns the current user's third-party identities
-- `account:user:read` only authorizes `GET /account/user`. It does not authorize `PATCH /account/user`,
-  `PUT /account/user/avatar`, `GET /account/user/identities`, account session endpoints, mutation endpoints, or admin
-  endpoints
+- `account:user:read` only authorizes `GET /account/user`
+- `account:user:write` only authorizes `PATCH /account/user` and `PUT /account/user/avatar`. It does not authorize
+  `username`, third-party identity management, account session management, password management, product authorization,
+  or admin capabilities
 - `POST /account/session` is called by Account Web to submit sign-in credentials. The backend validates the credentials
   before creating the current account session
 - `GET /account/session` and `DELETE /account/session` manage the current account session used by hosted sign-in
@@ -704,9 +711,10 @@ or untrusted iframes, and should not be directly read or persisted by app fronte
 not set the account session cookie. Mutation endpoints authenticated by Account Web cookies should validate `Origin` or
 use equivalent CSRF protection.
 
-`account:user:read` only authorizes access to `GET /account/user`. It does not authorize third-party identity
-management, account session management, account field updates, or admin capabilities. These operations should be handled
-by Account Web with cookie authentication or by Admin API.
+`account:user:read` only authorizes access to `GET /account/user`. `account:user:write` only authorizes
+`PATCH /account/user` and `PUT /account/user/avatar`. It does not authorize `username`, third-party identity management,
+account session management, password management, product authorization, or admin capabilities. Those operations should
+be handled by Account Web with cookie authentication or by Admin API.
 
 When native iOS or Android apps use hosted sign-in, they should use the system browser or system authentication session,
 such as `ASWebAuthenticationSession` or Chrome Custom Tabs. They should not use embedded WebView. Restricted runtimes
@@ -762,6 +770,7 @@ tokens. `spx-gui` can keep the Bearer request model, but the Bearer value should
 | App-owned session model | Model where a first-party app backend creates, refreshes, validates, and revokes app session itself |
 | App grant | Authorization relationship for a `user` to let an `app` access XBuilder Account |
 | `account:user:read` | Account API scope allowing Account-issued OAuth tokens to access `GET /account/user` |
+| `account:user:write` | Account API scope allowing Account-issued OAuth tokens to access `PATCH /account/user` and `PUT /account/user/avatar` |
 | Opaque token | Random token that encodes no business semantics and must be resolved by the server |
 | Token introspection | RFC 7662 token validation protocol for querying opaque token validity and metadata |
 | Authorization code | Short-lived one-time code returned to the app after first-party app SSO completes |

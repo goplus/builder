@@ -208,7 +208,7 @@ Provider credential handoff 的错误应通过 PAR 或 authorize 流程返回 OA
 
 ## OAuth 与产品 API 接入
 
-XBuilder Account 的 OAuth endpoints 位于 `api.xbuilder.com/account/oauth/*`。它们只承载 OAuth 和 OAuth RFC 扩展协议端点，并签发 Account-issued app-scoped OAuth tokens。Token subject 是稳定的 `user.id`，token client 是具体 `app`。本文只定义 `account:user:read` Account API scope，用于允许 app backend 通过 Account-issued app-scoped OAuth token 访问 `GET /account/user`。该 scope 不表达产品授权状态，也不表达任何 app 的产品 API 权限。
+XBuilder Account 的 OAuth endpoints 位于 `api.xbuilder.com/account/oauth/*`。它们只承载 OAuth 和 OAuth RFC 扩展协议端点，并签发 Account-issued app-scoped OAuth tokens。Token subject 是稳定的 `user.id`，token client 是具体 `app`。本文定义用于读取当前账号用户，以及更新 `displayName` 和 `avatar` 的 Account API scopes。这些 scopes 不表达产品授权状态，也不表达任何 app 的产品 API 权限。
 
 Account-issued app-scoped OAuth token 可以作为对应 app 的产品 API credential。产品 API 是否接受该 token，取决于 token 绑定的 app 和该产品 backend 的鉴权策略。产品 API 必须校验 token client/app，不应只校验 token active。
 
@@ -264,7 +264,7 @@ sequenceDiagram
 
 Provider credential handoff 如果已足够解析账号且不需要 hosted interaction，`/account/oauth/authorize` 直接返回 app callback。微信小程序等受限运行环境可以在程序内部处理这一跳。如果 authorize 返回 hosted sign-in 或其他交互 URL，app frontend 应打开该 URL 完成交互。
 
-在 Account-issued token model 中，app backend 不维护该用户的 XBuilder Account token 状态。它可以把自己的 `/oauth/*` 作为透明 OAuth facade 转发到 `api.xbuilder.com/account/oauth/*`。App frontend 拿到的仍然是 Account-issued app-scoped OAuth token。App backend 应在收到产品请求时使用 `/account/oauth/introspect` 校验 token，并校验 token 绑定的 app 与当前 app 一致。需要账号字段时，app backend 可以在 token 具备 `account:user:read` scope 时使用 `GET /account/user` 获取当前账号的最小用户信息。第三方身份和 account session 管理不属于 app-scoped OAuth token 的默认 Account API surface。
+在 Account-issued token model 中，app backend 不维护该用户的 XBuilder Account token 状态。它可以把自己的 `/oauth/*` 作为透明 OAuth facade 转发到 `api.xbuilder.com/account/oauth/*`。App frontend 拿到的仍然是 Account-issued app-scoped OAuth token。App backend 应在收到产品请求时使用 `/account/oauth/introspect` 校验 token，并校验 token 绑定的 app 与当前 app 一致。需要账号字段时，app backend 可以在 token 具备 `account:user:read` scope 时使用 `GET /account/user` 获取当前账号的最小用户信息。Sibling app 提供产品内 `displayName` 或 `avatar` 编辑 UI 时，app backend 只有在 token 具备 `account:user:write` scope 时才能使用 `PATCH /account/user` 和 `PUT /account/user/avatar`。第三方身份和 account session 管理不属于 app-scoped OAuth token 的 Account API surface。
 
 `xbuilder.com` 也可以使用 Account-issued token model。对 XBuilder 产品 API 来说，token client/app 应为 `xbuilder`。`api.xbuilder.com` 接受该 token 后，应通过 XBuilder Authorization 和资源规则判断 projects、assets、courses、AI interaction 等产品权限，而不是用 `account:user:read` 表达这些产品权限。
 
@@ -392,6 +392,7 @@ POST /account/oauth/revoke
 ```
 
 - OAuth protocol parameters 应使用标准名称，例如 `client_id`、`redirect_uri`、`request_uri`、`state`、`code`、`grant_type`、`code_challenge` 和 `code_verifier`
+- `scope` 使用 OAuth 空格分隔 scope string 格式。目前支持的 Account API scopes 是 `account:user:read` 和 `account:user:write`
 - Confidential client 使用 `client_secret_basic` 认证
 - Public client 在 token exchange 或 revocation 等需要标识 client 的请求中使用 `client_id`
 - `POST /account/oauth/par` 创建 pushed authorization request，并可通过 `xbuilder_provider` 和 `xbuilder_provider_code` 承载 provider credential handoff。它返回的 `request_uri` 是 opaque、短生命周期、单次使用的 reference，不是可访问 URL
@@ -419,11 +420,12 @@ DELETE /account/sessions/{sessionID}
 ```
 
 - `GET /account/user` 返回当前账号系统拥有的用户字段。Account Web 可以使用 account session cookie 访问。App backend 可以使用具备 `account:user:read` scope 的 Account-issued app-scoped OAuth token 访问
-- `PATCH /account/user` 只允许 Account Web 使用 account session cookie 调用，用于更新可写账号字段
-- `PUT /account/user/avatar` 只允许 Account Web 使用 account session cookie 调用，用于通过 `multipart/form-data` 上传并替换头像图片
+- `PATCH /account/user` 更新可写账号字段。Account Web 可以使用 account session cookie 访问。App backend 可以使用具备 `account:user:write` scope 的 Account-issued app-scoped OAuth token 访问
+- `PUT /account/user/avatar` 通过 `multipart/form-data` 上传并替换头像图片。Account Web 可以使用 account session cookie 访问。App backend 可以使用具备 `account:user:write` scope 的 Account-issued app-scoped OAuth token 访问
 - `GET /account/user` 和 `PATCH /account/user` 不暴露或更新 `description` 等 XBuilder 产品字段
 - `GET /account/user/identities` 返回当前用户的第三方身份
-- `account:user:read` 只授权 `GET /account/user`，不授权 `PATCH /account/user`、`PUT /account/user/avatar`、`GET /account/user/identities`、account session endpoints、mutation endpoints 或 admin endpoints
+- `account:user:read` 只授权 `GET /account/user`
+- `account:user:write` 只授权 `PATCH /account/user` 和 `PUT /account/user/avatar`。它不授权 `username`、第三方身份管理、account session 管理、密码管理、产品授权或 admin 能力
 - `POST /account/session` 由 Account Web 调用，用于提交登录凭证，并由后端校验后创建当前 account session
 - `GET /account/session` 和 `DELETE /account/session` 管理 hosted sign-in 使用的当前 account session
 - `GET /account/sessions`、`DELETE /account/sessions` 和 `DELETE /account/sessions/{sessionID}` 管理当前用户的 account sessions
@@ -498,7 +500,7 @@ App backend 接受 Account-issued app-scoped OAuth token 作为产品 API creden
 
 Account session 只用于 hosted sign-in 和 SSO 连续性。它不应通过 URL、`postMessage` 或不受信任 iframe 传递，也不应被 app frontend 直接读取或持久化。`/account/oauth/authorize` 不得设置 account session cookie。Account Web 使用 cookie 鉴权的 mutation endpoints 应校验 `Origin` 或使用等价 CSRF 防护。
 
-`account:user:read` 只授权访问 `GET /account/user`，不授权第三方身份管理、account session 管理、账号字段更新或 admin 能力。这些操作应由 Account Web 使用 cookie 认证完成，或由 Admin API 承载。
+`account:user:read` 只授权访问 `GET /account/user`。`account:user:write` 只授权 `PATCH /account/user` 和 `PUT /account/user/avatar`。它不授权 `username`、第三方身份管理、account session 管理、密码管理、产品授权或 admin 能力。这些操作应由 Account Web 使用 cookie 认证完成，或由 Admin API 承载。
 
 Native iOS/Android apps 使用 hosted sign-in 时应使用系统浏览器或系统认证会话，例如 `ASWebAuthenticationSession` 或 Chrome Custom Tabs，不应使用 embedded WebView。微信小程序等无法使用系统浏览器的受限运行环境，可以通过 provider credential handoff 将短生命周期 provider code 传递给 XBuilder Account，不应通过 URL 或 `postMessage` 传递长期 token。
 
@@ -539,6 +541,7 @@ Casdoor 来源的身份标识只应用作一次性迁移映射键，不应保留
 | App-owned session model | 自有 app backend 自己创建、刷新、校验和撤销 app session 的模型 |
 | App grant | 某个 `user` 授权某个 `app` 访问 XBuilder Account 的授权关系 |
 | `account:user:read` | 允许使用 Account-issued app-scoped OAuth token 访问 `GET /account/user` 的 Account API scope |
+| `account:user:write` | 允许使用 Account-issued app-scoped OAuth token 访问 `PATCH /account/user` 和 `PUT /account/user/avatar` 的 Account API scope |
 | Opaque token | 不编码业务语义的随机 token，需由服务端解析 |
 | Token introspection | RFC 7662 定义的 token 校验协议，用于由服务端查询 opaque token 是否有效及其元数据 |
 | Authorization code | 自有 app SSO 完成后返回给 app 的短生命周期一次性 code，用于后续 exchange |
