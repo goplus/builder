@@ -16,8 +16,11 @@ async function createCodeChallenge(codeVerifier: string) {
 }
 
 export type PKCEAuthorizationRequest = {
+  /** CSRF protection value echoed by the authorization callback. */
   state: string
+  /** PKCE code verifier kept on the client and later sent to the token endpoint. */
   codeVerifier: string
+  /** S256 PKCE code challenge sent with the authorization request. */
   codeChallenge: string
 }
 
@@ -30,7 +33,9 @@ export async function createPKCEAuthorizationRequest(): Promise<PKCEAuthorizatio
 }
 
 export type OAuthCallbackParams = {
+  /** Authorization code returned by the authorization server. */
   code: string
+  /** State returned by the authorization server; must match the pending authorization state. */
   state: string
 }
 
@@ -44,8 +49,11 @@ export function parseOAuthCallbackParams(search: string): OAuthCallbackParams {
 }
 
 export type PendingOAuthAuthorization<TData extends object> = {
+  /** State sent with the authorization request. */
   state: string
+  /** PKCE verifier paired with the challenge sent in the authorization request. */
   codeVerifier: string
+  /** App-specific data that needs to survive the redirect round trip. */
   data: TData
 }
 
@@ -73,66 +81,106 @@ export function createPendingOAuthAuthorizationStorage<TData extends object>(sto
 }
 
 export type OAuthPARParams = {
+  /** OAuth client id issued by the authorization server. */
   client_id: string
+  /** Exact redirect URI used for both authorization and token exchange. */
   redirect_uri: string
+  /** CSRF protection value to be returned by the authorization callback. */
   state: string
+  /** S256 PKCE code challenge. */
   code_challenge: string
+  /** UI locales hint, formatted as a space-separated BCP47 language tag list. */
+  ui_locales?: string
 }
 
 export type OAuthPARResponse = {
+  /** PAR request URI used as request_uri in the front-channel authorization request. */
   request_uri: string
+  /** Seconds until the request_uri expires, if provided by the authorization server. */
   expires_in?: number | null
 }
 
 export type OAuthAuthorizeParams = {
+  /** OAuth client id issued by the authorization server. */
   client_id: string
+  /** PAR request URI returned by the pushed authorization request endpoint. */
   request_uri: string
 }
 
 export type OAuthExchangeTokenParams = {
+  /** OAuth client id issued by the authorization server. */
   client_id: string
+  /** Redirect URI from the authorization request; OAuth servers usually require an exact match. */
   redirect_uri: string
+  /** Authorization code returned by the callback. */
   code: string
+  /** PKCE verifier paired with the original code challenge. */
   code_verifier: string
 }
 
 export type OAuthRefreshTokenParams = {
+  /** OAuth client id issued by the authorization server. */
   client_id: string
+  /** Refresh token previously returned by the token endpoint. */
   refresh_token: string
 }
 
 export type OAuthTokenResponse = {
+  /** Access token returned by the token endpoint. */
   access_token: string
+  /** Access token lifetime in seconds. */
   expires_in: number
+  /** Refresh token, when the authorization server issues one. */
   refresh_token?: string | null
+  /** OAuth token type, usually Bearer. */
   token_type?: string
+  /** Granted scope string, if returned by the authorization server. */
   scope?: string
 }
 
 export type OAuthRevokeTokenParams = {
+  /** OAuth client id issued by the authorization server. */
   client_id: string
+  /** Access or refresh token to revoke. */
   token: string
 }
 
 export type OAuthAPIs = {
+  /** Create a pushed authorization request and return the request URI for the authorize URL. */
   createPAR(params: OAuthPARParams): Promise<OAuthPARResponse>
+  /** Build the browser-facing authorization URL. */
   buildAuthorizeUrl(params: OAuthAuthorizeParams): string
+  /** Exchange an authorization callback code for tokens. */
   exchangeToken(params: OAuthExchangeTokenParams): Promise<OAuthTokenResponse>
+  /** Refresh an access token using a refresh token. */
   refreshToken(params: OAuthRefreshTokenParams): Promise<OAuthTokenResponse>
+  /** Revoke an access or refresh token. */
   revokeToken(params: OAuthRevokeTokenParams): Promise<void>
 }
 
 export type OAuthFlowConfig = {
+  /** OAuth client id issued by the authorization server. */
   clientId: string
+  /** Redirect URI registered with the authorization server and used during token exchange. */
   redirectUri: string
+  /** Session storage key used for pending authorization state. */
   pendingAuthorizationStorageKey?: string
 }
 
 export type OAuthAuthorizationResult = {
+  /** URL that the browser should navigate to in order to continue authorization. */
   authorizeUrl: string
 }
 
+export type CreateOAuthAuthorizationOptions<ExtraData extends object> = {
+  /** Extra data to store until the OAuth callback returns */
+  data: ExtraData
+  /** Preferred UI locales for hosted sign-in */
+  uiLocales?: string
+}
+
 export type OAuthCallbackResult<ExtraData extends object> = {
+  /** Token response obtained from the authorization server. */
   token: OAuthTokenResponse
   /** Extra data associated with the OAuth authorization */
   extraData: ExtraData
@@ -149,13 +197,15 @@ export class OAuthFlow<ExtraData extends object = object> {
     this.pas = createPendingOAuthAuthorizationStorage(pendingAuthorizationStorageKey)
   }
 
-  async createAuthorization(data: ExtraData): Promise<OAuthAuthorizationResult> {
+  async createAuthorization(options: CreateOAuthAuthorizationOptions<ExtraData>): Promise<OAuthAuthorizationResult> {
+    const { data, uiLocales } = options
     const { state, codeVerifier, codeChallenge } = await createPKCEAuthorizationRequest()
     const response = await this.apis.createPAR({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
       state,
-      code_challenge: codeChallenge
+      code_challenge: codeChallenge,
+      ui_locales: uiLocales
     })
     this.pas.write({ state, codeVerifier, data })
     const authorizeUrl = this.apis.buildAuthorizeUrl({

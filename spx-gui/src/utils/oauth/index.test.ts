@@ -83,7 +83,7 @@ describe('oauth utils', () => {
     const apis = createOAuthAPIs()
     const flow = createOAuthFlow(apis)
 
-    const result = await flow.createAuthorization({ returnTo: '/projects' })
+    const result = await flow.createAuthorization({ data: { returnTo: '/projects' } })
     const pending = pendingAuthorizationStorage.read()
     if (pending == null) throw new Error('missing test pending authorization')
 
@@ -103,10 +103,27 @@ describe('oauth utils', () => {
     expect(pending.data).toEqual({ returnTo: '/projects' })
   })
 
+  it('passes UI locales when creating oauth authorization', async () => {
+    const apis = createOAuthAPIs()
+    const flow = createOAuthFlow(apis)
+
+    await flow.createAuthorization({ data: { returnTo: '/projects' }, uiLocales: 'zh' })
+    const pending = pendingAuthorizationStorage.read()
+    if (pending == null) throw new Error('missing test pending authorization')
+
+    expect(apis.createPAR).toHaveBeenCalledWith({
+      client_id: 'client-1',
+      redirect_uri: 'https://app.example.com/sign-in/callback',
+      state: pending.state,
+      code_challenge: expect.any(String),
+      ui_locales: 'zh'
+    })
+  })
+
   it('completes oauth authorization by exchanging callback code for token', async () => {
     const apis = createOAuthAPIs()
     const flow = createOAuthFlow(apis)
-    await flow.createAuthorization({ returnTo: '/projects' })
+    await flow.createAuthorization({ data: { returnTo: '/projects' } })
     const pending = pendingAuthorizationStorage.read()
     if (pending == null) throw new Error('missing test pending authorization')
 
@@ -127,7 +144,7 @@ describe('oauth utils', () => {
 
   it('rejects oauth callback when state does not match pending authorization', async () => {
     const flow = createOAuthFlow(createOAuthAPIs())
-    await flow.createAuthorization({ returnTo: '/projects' })
+    await flow.createAuthorization({ data: { returnTo: '/projects' } })
 
     await expect(flow.completeAuthorization('?code=code-1&state=other-state')).rejects.toThrow('OAuth state mismatch')
   })
