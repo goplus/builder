@@ -493,8 +493,8 @@ paths:
 
         Account Web may authenticate with an account session cookie.
 
-        App backends may authenticate with an Account-issued app-scoped OAuth access token with the
-        `account:user:read` Account API scope.
+        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:read`
+        Account API scope.
       security:
         - accountSessionCookie: []
         - bearerAuth: []
@@ -506,7 +506,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/AccountUser"
         "401":
-          $ref: "#/components/responses/OAuthInvalidBearerToken"
+          $ref: "#/components/responses/AccountUnauthorized"
         "403":
           $ref: "#/components/responses/OAuthInsufficientScope"
     patch:
@@ -517,9 +517,15 @@ paths:
       description: |
         Update writable user fields managed by XBuilder Account for the current user.
 
+        Account Web may authenticate with an account session cookie.
+
+        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:write`
+        Account API scope.
+
         Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
         - accountSessionCookie: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -538,7 +544,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/AccountUser"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/AccountUnauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
 
   /account/user/avatar:
     put:
@@ -549,9 +557,15 @@ paths:
       description: |
         Upload and replace the avatar image managed by XBuilder Account for the current user.
 
+        Account Web may authenticate with an account session cookie.
+
+        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:write`
+        Account API scope.
+
         Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
         - accountSessionCookie: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -575,7 +589,9 @@ paths:
         "400":
           description: Invalid request parameters.
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/AccountUnauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
         "413":
           description: Avatar image file is too large.
         "415":
@@ -5303,16 +5319,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
-    OAuthInvalidBearerToken:
-      description: OAuth bearer token authentication failed.
-      headers:
-        WWW-Authenticate:
-          description: Bearer token authentication challenge.
-          schema:
-            type: string
-            examples:
-              - Bearer realm="XBuilder Account"
-              - Bearer realm="XBuilder Account", error="invalid_token"
     OAuthInsufficientScope:
       description: OAuth bearer token does not have the required scope.
       headers:
@@ -5322,6 +5328,7 @@ components:
             type: string
             examples:
               - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:read"
+              - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:write"
     OAuthUnsupportedMediaType:
       description: |
         OAuth form request content type is not supported.
@@ -5331,6 +5338,20 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
+    AccountUnauthorized:
+      description: |
+        Account authentication is required.
+
+        The request may authenticate with an account session cookie or an OAuth bearer token. When OAuth bearer token
+        authentication fails, the response includes `WWW-Authenticate`.
+      headers:
+        WWW-Authenticate:
+          description: Bearer token challenge returned for OAuth bearer token authentication failures.
+          schema:
+            type: string
+            examples:
+              - Bearer realm="XBuilder Account"
+              - Bearer realm="XBuilder Account", error="invalid_token"
 
   schemas:
     Model:
@@ -5879,12 +5900,14 @@ components:
       pattern: "^[A-Za-z0-9._~-]{43,128}$"
 
     OAuthScope:
-      description: Account API OAuth scope supported by XBuilder Account.
+      description: Space-delimited Account API OAuth scopes supported by XBuilder Account.
       type: string
-      enum:
-        - account:user:read
+      minLength: 1
+      pattern: "^(account:user:read|account:user:write|account:user:read account:user:write|account:user:write account:user:read)$"
       examples:
         - account:user:read
+        - account:user:write
+        - account:user:read account:user:write
 
     OAuthPushedAuthorizationResponse:
       type: object
