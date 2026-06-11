@@ -1,0 +1,145 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { getUserPageRoute } from '../../../router'
+import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
+import {
+  ProjectType,
+  listSignedInUserProjects,
+  listUserLikedProjects,
+  listUserPublicProjects,
+  type ListUserPublicProjectsParams
+} from '@/apis/project'
+import { useSignedInUser, useUser } from '@/stores/user'
+import { UICard, useResponsive } from '@/components/ui'
+import ProjectsSection from '@/components/community/ProjectsSection.vue'
+import ProjectItem from '@/components/project/ProjectItem.vue'
+import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
+
+const props = defineProps<{
+  nameInput: string
+}>()
+
+const isDesktopLarge = useResponsive('desktop-large')
+const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
+const { data: user } = useUser(() => props.nameInput)
+const signedInUser = useSignedInUser()
+const isSignedInUser = computed(() => user.value != null && user.value.username === signedInUser.value?.username)
+
+usePageTitle(() => {
+  if (user.value == null) return null
+  return {
+    en: `User ${user.value.displayName}`,
+    zh: `用户 ${user.value.displayName}`
+  }
+})
+
+const projectsRoute = computed(() => {
+  const projectsNum = projectsRet.data.value?.length ?? 0
+  if (projectsNum === 0) return null
+  return getUserPageRoute(props.nameInput, 'projects')
+})
+
+const projectsRet = useQuery(
+  async () => {
+    const params: ListUserPublicProjectsParams = {
+      type: ProjectType.Game,
+      pageIndex: 1,
+      pageSize: numInRow.value,
+      orderBy: 'updatedAt',
+      sortOrder: 'desc'
+    }
+    const { data: projects } = isSignedInUser.value
+      ? await listSignedInUserProjects(params)
+      : await listUserPublicProjects(props.nameInput, params)
+    return projects
+  },
+  { en: 'Failed to load projects', zh: '加载失败' }
+)
+
+const likesRoute = computed(() => {
+  return getUserPageRoute(props.nameInput, 'likes')
+})
+
+const likesRet = useQuery(
+  async () => {
+    const { data: likes } = await listUserLikedProjects(props.nameInput, {
+      type: ProjectType.Game,
+      orderBy: 'likedAt',
+      sortOrder: 'desc',
+      pageIndex: 1,
+      pageSize: numInRow.value
+    })
+    return likes
+  },
+  { en: 'Failed to load likes', zh: '加载失败' }
+)
+</script>
+
+<template>
+  <div class="flex flex-col gap-5">
+    <UICard class="px-4">
+      <ProjectsSection
+        v-radar="{ name: 'User projects', desc: 'Section showing user\'s projects' }"
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="projectsRet"
+        :link-to="projectsRoute"
+      >
+        <template #title>
+          {{
+            $t({
+              en: 'My projects',
+              zh: '我的项目'
+            })
+          }}
+        </template>
+        <template #link>
+          {{
+            $t({
+              en: 'View all',
+              zh: '查看所有'
+            })
+          }}
+        </template>
+        <template v-if="isSignedInUser" #empty="emptyProps">
+          <MyProjectsEmpty :style="emptyProps.style" />
+        </template>
+        <ProjectItem
+          v-for="project in projectsRet.data.value"
+          :key="project.id"
+          context="mine"
+          :project="project"
+          @removed="projectsRet.refetch()"
+        />
+      </ProjectsSection>
+    </UICard>
+    <UICard class="px-4">
+      <ProjectsSection
+        v-radar="{ name: 'User liked projects', desc: 'Section showing projects liked by this user' }"
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="likesRet"
+        :link-to="likesRoute"
+      >
+        <template #title>
+          {{
+            $t({
+              en: 'Projects I like',
+              zh: '我喜欢的项目'
+            })
+          }}
+        </template>
+        <template #link>
+          {{
+            $t({
+              en: 'View all',
+              zh: '查看所有'
+            })
+          }}
+        </template>
+        <ProjectItem v-for="project in likesRet.data.value" :key="project.id" :project="project" />
+      </ProjectsSection>
+    </UICard>
+  </div>
+</template>
