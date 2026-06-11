@@ -1,8 +1,9 @@
 import { reactive, watchEffect, computed } from 'vue'
-import { accountOAuthClientId as oauthClientId } from '@/utils/env'
+import { accountOAuthClientId as oauthClientId, defaultLang } from '@/utils/env'
 import { composeQuery, useQuery, useQueryCache, useQueryWithCache } from '@/utils/query'
 import { capture, useAction } from '@/utils/exception'
 import { OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
+import { normalizeLang } from '@/utils/i18n'
 import * as userApis from '@/apis/user'
 import { accountOAuthApisForXBuilder as oauthApis } from '@/apis/account/oauth'
 import { getUserQueryKey } from './query-keys'
@@ -51,7 +52,12 @@ async function handleTokenResponse(resp: OAuthTokenResponse) {
 export async function initiateSignIn(
   returnTo: string = window.location.pathname + window.location.search + window.location.hash
 ) {
-  const { authorizeUrl } = await oauthFlow.createAuthorization({ returnTo })
+  const { authorizeUrl } = await oauthFlow.createAuthorization({
+    data: { returnTo },
+    // TODO: Avoid reaching into the UI language persistence detail here. The sign-in
+    // flow should receive the current UI language from the app-level i18n state instead.
+    uiLocales: normalizeLang(localStorage.getItem('spx-gui-language') ?? defaultLang)
+  })
   window.location.assign(authorizeUrl)
 }
 

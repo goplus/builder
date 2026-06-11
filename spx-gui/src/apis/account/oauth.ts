@@ -20,6 +20,7 @@ export type PARParams = {
   redirect_uri: string
   state: string
   code_challenge: string
+  ui_locales?: string
 }
 
 export type PARResponse = {

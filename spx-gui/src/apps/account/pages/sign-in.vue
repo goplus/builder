@@ -16,8 +16,14 @@
 <script setup lang="ts">
 import { UIError } from '@/components/ui'
 import { usePageTitle } from '@/utils/utils'
+import { normalizeLang, useI18n } from '@/utils/i18n'
 import type { OAuthRequest } from '@/apis/account'
 import SignIn from '@/components/account/sign-in/SignIn.vue'
+
+const i18n = useI18n()
+
+const uiLocales = new URLSearchParams(window.location.search).get('uiLocales')?.trim()
+if (uiLocales != null && uiLocales !== '') i18n.setLang(normalizeLang(uiLocales))
 
 function parseRequest(): OAuthRequest | null {
   const params = new URLSearchParams(window.location.search)
