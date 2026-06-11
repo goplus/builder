@@ -140,7 +140,7 @@ paths:
           description: Redirect back to hosted sign-in.
           headers:
             Location:
-              description: Hosted sign-in URL containing the original `clientID` and `requestURI`.
+              description: Hosted sign-in URL containing the original `clientID`, `requestURI`, and optional `uiLocales`.
               schema:
                 type: string
                 format: uri
@@ -206,7 +206,7 @@ paths:
           description: Redirect back to hosted sign-in.
           headers:
             Location:
-              description: Hosted sign-in URL containing the original `clientID` and `requestURI`.
+              description: Hosted sign-in URL containing the original `clientID`, `requestURI`, and optional `uiLocales`.
               schema:
                 type: string
                 format: uri
@@ -290,6 +290,18 @@ paths:
                   description: OAuth scope requested by the app.
                   allOf:
                     - $ref: "#/components/schemas/OAuthScope"
+                ui_locales:
+                  description: |
+                    Preferred UI locales for hosted sign-in, using space-separated BCP 47 language tags.
+
+                    The server uses a supported locale from this list when possible and may fall back to a default
+                    locale.
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                  pattern: "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*(?: [A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*)*$"
+                  examples:
+                    - zh-CN zh en
                 xbuilder_provider:
                   description: Identity provider used for provider credential handoff.
                   $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
@@ -329,7 +341,8 @@ paths:
         authorization request.
 
         If the account cannot be resolved or hosted interaction is required, this endpoint redirects to hosted sign-in.
-        The hosted sign-in URL carries `clientID` and `requestURI` query parameters for Account Web.
+        The hosted sign-in URL carries `clientID`, `requestURI`, and optional `uiLocales` query parameters for Account
+        Web.
 
         After the account is resolved and the OAuth authorization request can be completed, the authorization response
         redirects to the app callback with an authorization code and the original `state`, or with OAuth error
@@ -361,7 +374,7 @@ paths:
               description: |
                 Hosted sign-in URL or app callback URL.
 
-                Hosted sign-in URLs contain `clientID` and `requestURI`.
+                Hosted sign-in URLs contain `clientID`, `requestURI`, and optional `uiLocales`.
 
                 App callback URLs contain `code` and `state`, or OAuth error parameters and `state`.
               schema:

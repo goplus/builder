@@ -564,15 +564,17 @@ POST /account/oauth/introspect
 POST /account/oauth/revoke
 ```
 
-- OAuth protocol parameters should use standard names, such as `client_id`, `redirect_uri`, `request_uri`, `state`,
-  `code`, `grant_type`, `code_challenge`, and `code_verifier`
+- OAuth protocol parameters should use standard or registered parameter names, such as `client_id`, `redirect_uri`,
+  `request_uri`, `state`, `code`, `grant_type`, `code_challenge`, `code_verifier`, and `ui_locales`
 - `scope` uses the OAuth space-delimited scope string format. Supported Account API scopes are `account:user:read` and
   `account:user:write`
 - Confidential clients use `client_secret_basic` authentication
 - Public clients use `client_id` in token exchange, revocation, or other requests that need client identification
 - `POST /account/oauth/par` creates pushed authorization requests and can carry provider credential handoff through
-  `xbuilder_provider` and `xbuilder_provider_code`. Its returned `request_uri` is an opaque, short-lived, single-use
-  reference, not a dereferenceable URL
+  `xbuilder_provider` and `xbuilder_provider_code`. It can also carry hosted sign-in language preference through
+  `ui_locales`. The server uses a supported locale from this list when possible and may fall back to a default locale.
+  This parameter only affects UI and does not participate in authentication or authorization. Its returned `request_uri`
+  is an opaque, short-lived, single-use reference, not a dereferenceable URL
 - `GET /account/oauth/authorize` is a PAR-only OAuth authorization endpoint. It only accepts `client_id` and
   `request_uri`. Authorization request parameters such as `response_type`, `redirect_uri`, `scope`, `state`, and
   `code_challenge` must be submitted through `POST /account/oauth/par` first
@@ -581,8 +583,8 @@ POST /account/oauth/revoke
   the next step is the app callback. When the account cannot be resolved or hosted interaction is needed, the next step
   is hosted sign-in
 - `GET /account/oauth/authorize` must not pass flow state to hosted sign-in through `Set-Cookie` or other response
-  headers. Hosted sign-in receives context through `clientID` and `requestURI`. Concrete state is stored in server-side
-  `auth_flow`
+  headers. Hosted sign-in receives context through `clientID`, `requestURI`, and optional `uiLocales`. Concrete state is
+  stored in server-side `auth_flow`
 - `POST /account/oauth/token` is used for authorization code exchange and refresh token exchange
 - `POST /account/oauth/introspect` is an RFC 7662 token introspection endpoint and is only callable by authenticated app
   backends
@@ -760,7 +762,7 @@ tokens. `spx-gui` can keep the Bearer request model, but the Bearer value should
 | Account API | XBuilder Account API on `api.xbuilder.com/account/*` |
 | OAuth client | OAuth client role. In this product context, it corresponds to `app` |
 | OAuth facade | OAuth-compatible endpoints exposed by an app backend to its own frontend, then internally integrated with XBuilder Account |
-| Hosted sign-in | Unified sign-in entry provided by `account.xbuilder.com/sign-in`. When Account Web needs to participate, it hosts third-party identity sign-in, admin-managed password sign-in, post-handoff interactions, profile completion, account-linking confirmation, and identity conflict handling. It can continue OAuth authorization requests with `clientID` and `requestURI` |
+| Hosted sign-in | Unified sign-in entry provided by `account.xbuilder.com/sign-in`. When Account Web needs to participate, it hosts third-party identity sign-in, admin-managed password sign-in, post-handoff interactions, profile completion, account-linking confirmation, and identity conflict handling. It can continue OAuth authorization requests with `clientID`, `requestURI`, and optional `uiLocales` |
 | Hosted provider acquisition | Hosted sign-in obtains provider credential through provider web authorize and callback |
 | Provider credential handoff | The client passes a short-lived provider code to XBuilder Account through PAR for consumption |
 | Hosted interaction | Profile completion, account-linking confirmation, identity conflict handling, or reauthentication in XBuilder Account hosted sign-in |

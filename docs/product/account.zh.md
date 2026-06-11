@@ -391,14 +391,14 @@ POST /account/oauth/introspect
 POST /account/oauth/revoke
 ```
 
-- OAuth protocol parameters 应使用标准名称，例如 `client_id`、`redirect_uri`、`request_uri`、`state`、`code`、`grant_type`、`code_challenge` 和 `code_verifier`
+- OAuth 协议参数应使用标准或已注册的参数名，例如 `client_id`、`redirect_uri`、`request_uri`、`state`、`code`、`grant_type`、`code_challenge`、`code_verifier` 和 `ui_locales`
 - `scope` 使用 OAuth 空格分隔 scope string 格式。目前支持的 Account API scopes 是 `account:user:read` 和 `account:user:write`
 - Confidential client 使用 `client_secret_basic` 认证
 - Public client 在 token exchange 或 revocation 等需要标识 client 的请求中使用 `client_id`
-- `POST /account/oauth/par` 创建 pushed authorization request，并可通过 `xbuilder_provider` 和 `xbuilder_provider_code` 承载 provider credential handoff。它返回的 `request_uri` 是 opaque、短生命周期、单次使用的 reference，不是可访问 URL
+- `POST /account/oauth/par` 创建 pushed authorization request，并可通过 `xbuilder_provider` 和 `xbuilder_provider_code` 承载 provider credential handoff。它也可以通过 `ui_locales` 携带 hosted sign-in 语言偏好。服务端会尽可能从列表中选择支持的语言，也可以回退到默认语言。该参数只影响 UI，不参与 authentication 或 authorization。它返回的 `request_uri` 是 opaque、短生命周期、单次使用的 reference，不是可访问 URL
 - `GET /account/oauth/authorize` 是 PAR-only OAuth authorization endpoint，只接受 `client_id` 和 `request_uri`。`response_type`、`redirect_uri`、`scope`、`state`、`code_challenge` 等 authorization request parameters 必须先通过 `POST /account/oauth/par` 提交
 - `GET /account/oauth/authorize` 通过 `Location` 表达下一跳。账号可由 account session 或 PAR 中的 provider credential handoff 解析。账号已解析且不需要 hosted interaction 时，下一跳是 app callback。账号无法解析或需要 hosted interaction 时，下一跳是 hosted sign-in
-- `GET /account/oauth/authorize` 不得通过 `Set-Cookie` 或其他响应头向 hosted sign-in 传递流程状态。Hosted sign-in 需要的上下文通过 `clientID` 和 `requestURI` 传递，具体状态保存在服务端 `auth_flow` 中
+- `GET /account/oauth/authorize` 不得通过 `Set-Cookie` 或其他响应头向 hosted sign-in 传递流程状态。Hosted sign-in 需要的上下文通过 `clientID`、`requestURI` 和可选的 `uiLocales` 传递，具体状态保存在服务端 `auth_flow` 中
 - `POST /account/oauth/token` 用于 authorization code exchange 和 refresh token exchange
 - `POST /account/oauth/introspect` 是 RFC 7662 token introspection endpoint，只允许已认证的 app backend 调用
 - `POST /account/oauth/revoke` 撤销 Account-issued app-scoped OAuth token 或 refresh token
@@ -531,7 +531,7 @@ Casdoor 来源的身份标识只应用作一次性迁移映射键，不应保留
 | Account API | `api.xbuilder.com/account/*` 上的 XBuilder Account API |
 | OAuth client | OAuth 协议中的 client 角色，在本文产品语境中对应 `app` |
 | OAuth facade | App backend 暴露给自己 frontend 的 OAuth-compatible endpoints，内部再对接 XBuilder Account |
-| Hosted sign-in | `account.xbuilder.com/sign-in` 提供的统一登录入口，在需要 Account Web 介入时承载第三方身份登录、管理员托管密码登录、handoff 后续交互、补充信息、账号绑定确认和身份冲突处理，并可通过 `clientID` 和 `requestURI` 续接 OAuth authorization request |
+| Hosted sign-in | `account.xbuilder.com/sign-in` 提供的统一登录入口，在需要 Account Web 介入时承载第三方身份登录、管理员托管密码登录、handoff 后续交互、补充信息、账号绑定确认和身份冲突处理，并可通过 `clientID`、`requestURI` 和可选的 `uiLocales` 续接 OAuth authorization request |
 | Hosted provider acquisition | Hosted sign-in 通过 provider web authorize 和 callback 获得 provider credential 的方式 |
 | Provider credential handoff | 客户端将短生命周期 provider code 通过 PAR 交给 XBuilder Account 消费的方式 |
 | Hosted interaction | XBuilder Account hosted sign-in 页面中的补充信息、账号绑定确认、身份冲突处理或重新认证等交互 |
