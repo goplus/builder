@@ -1,20 +1,21 @@
 import { reactive, watchEffect, computed } from 'vue'
-import Sdk from 'casdoor-js-sdk'
-import { casdoorConfig } from '@/utils/env'
-import { useQueryWithCache, useQueryCache, useQuery, composeQuery } from '@/utils/query'
-import { useAction } from '@/utils/exception'
-import * as apis from '@/apis/user'
+import { accountOAuthClientId as oauthClientId } from '@/utils/env'
+import { composeQuery, useQuery, useQueryCache, useQueryWithCache } from '@/utils/query'
+import { capture, useAction } from '@/utils/exception'
+import { OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
+import * as userApis from '@/apis/user'
+import { accountOAuthApisForXBuilder as oauthApis } from '@/apis/account/oauth'
 import { getUserQueryKey } from './query-keys'
 
-export type SignedInUser = apis.SignedInUser
-
-const casdoorAuthRedirectPath = '/sign-in/callback'
-const casdoorSdk = new Sdk({
-  ...casdoorConfig,
-  redirectPath: casdoorAuthRedirectPath
-})
+export type SignedInUser = userApis.SignedInUser
 
 const userStateStorageKey = 'spx-user'
+
+const oauthFlow = new OAuthFlow<{ returnTo: string }>(oauthApis, {
+  clientId: oauthClientId,
+  redirectUri: `${window.location.origin}/sign-in/callback`
+})
+
 const userState = reactive({
   accessToken: null as string | null,
   accessTokenExpiresAt: null as number | null,
@@ -25,99 +26,89 @@ const userState = reactive({
 export function initUserState() {
   const stored = localStorage.getItem(userStateStorageKey)
   if (stored != null) {
-    Object.assign(userState, JSON.parse(stored))
+    try {
+      Object.assign(userState, JSON.parse(stored))
+    } catch {
+      localStorage.removeItem(userStateStorageKey)
+    }
   }
   watchEffect(() => localStorage.setItem(userStateStorageKey, JSON.stringify(userState)))
 }
 
-interface TokenResponse {
-  access_token: string
-  expires_in: number
-  refresh_token: string
-}
-
-async function fetchSignedInUsernameByAccessToken(accessToken: string) {
-  const user = await apis.getSignedInUser(accessToken)
+async function getSignedInUsernameByAccessToken(accessToken: string) {
+  const user = await userApis.getSignedInUser(accessToken)
   return user.username
 }
 
-async function handleTokenResponse(resp: TokenResponse) {
-  const username = await fetchSignedInUsernameByAccessToken(resp.access_token)
+async function handleTokenResponse(resp: OAuthTokenResponse) {
+  const username = await getSignedInUsernameByAccessToken(resp.access_token)
   userState.accessToken = resp.access_token
-  userState.accessTokenExpiresAt = resp.expires_in ? Date.now() + resp.expires_in * 1000 : null
-  userState.refreshToken = resp.refresh_token
+  userState.accessTokenExpiresAt = resp.expires_in != null ? Date.now() + resp.expires_in * 1000 : null
+  userState.refreshToken = resp.refresh_token ?? null
   userState.username = username
 }
 
-export function initiateSignIn(
+export async function initiateSignIn(
   returnTo: string = window.location.pathname + window.location.search + window.location.hash
 ) {
-  // Workaround for casdoor-js-sdk not supporting override of `redirectPath` in `signin_redirect`.
-  const casdoorSdk = new Sdk({
-    ...casdoorConfig,
-    redirectPath: `${casdoorAuthRedirectPath}?returnTo=${encodeURIComponent(returnTo)}`
-  })
-  casdoorSdk.signin_redirect()
+  const { authorizeUrl } = await oauthFlow.createAuthorization({ returnTo })
+  window.location.assign(authorizeUrl)
 }
 
-export async function completeSignIn() {
-  const resp = await casdoorSdk.exchangeForAccessToken()
-  await handleTokenResponse(resp)
+export async function completeSignIn(search: string) {
+  const { token, extraData } = await oauthFlow.completeAuthorization(search)
+  await handleTokenResponse(token)
+  return extraData
 }
 
 export async function signInWithAccessToken(accessToken: string) {
-  const username = await fetchSignedInUsernameByAccessToken(accessToken)
+  const username = await getSignedInUsernameByAccessToken(accessToken)
   userState.accessToken = accessToken
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
   userState.username = username
 }
 
-export function signOut() {
+function clearUserState() {
   userState.accessToken = null
   userState.accessTokenExpiresAt = null
   userState.refreshToken = null
   userState.username = null
 }
 
-const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
-let tokenRefreshPromise: Promise<string | null> | null = null
+export async function signOut() {
+  const { accessToken, refreshToken } = userState
+  clearUserState()
+  await Promise.all(
+    [accessToken, refreshToken].filter((token) => token != null).map((token) => oauthFlow.revokeToken(token))
+  ).catch((e) => capture(e, 'Failed to revoke tokens during sign out'))
+}
+
+let tokenRefreshPromise: Promise<void> | null = null
 
 export async function ensureAccessToken(): Promise<string | null> {
   if (isAccessTokenValid()) return userState.accessToken
-
-  if (tokenRefreshPromise != null) return tokenRefreshPromise
   if (userState.refreshToken == null) {
-    signOut()
+    clearUserState()
     return null
   }
-
-  tokenRefreshPromise = (async () => {
-    try {
-      const resp = await casdoorSdk.refreshAccessToken(userState.refreshToken!)
-      if ('error' in resp && typeof resp.error === 'string') {
-        // If refreshing failed, `casdoorSdk.refreshAccessToken` returns an object with field `error` and `error_description`
-        // instead of throwing an error. We have to check this manually and throw an error to be handled by callers.
-        throw new Error(`Failed to refresh access token: ${resp.error} (${(resp as any).error_description})`)
-      }
-      await handleTokenResponse(resp)
-    } catch (e) {
-      console.error('failed to refresh access token', e)
-      throw e
-    }
-
-    // Due to casdoor-js-sdk's lack of error handling, we must check if the access token is valid after calling
-    // `casdoorSdk.refreshAccessToken`. The token might still be invalid if, e.g., the server has already revoked
-    // the refresh token. We can't do anything but sign out the user in such cases.
-    if (!isAccessTokenValid()) {
-      signOut()
-      return null
-    }
-
-    return userState.accessToken
-  })()
-  return tokenRefreshPromise.finally(() => (tokenRefreshPromise = null))
+  if (tokenRefreshPromise == null) {
+    tokenRefreshPromise = oauthFlow
+      .refreshToken(userState.refreshToken)
+      .then(handleTokenResponse)
+      .catch((e) => {
+        capture(e, 'Failed to refresh access token')
+        clearUserState()
+      })
+      .finally(() => {
+        tokenRefreshPromise = null
+      })
+  }
+  await tokenRefreshPromise
+  return userState.accessToken
 }
+
+const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
 
 function isAccessTokenValid(): boolean {
   return !!(
@@ -167,7 +158,7 @@ function useSignedInUserQuery() {
     queryKey,
     async queryFn() {
       if (!isSignedIn()) throw new Error('User not signed in')
-      return apis.getSignedInUser()
+      return userApis.getSignedInUser()
     },
     failureSummaryMessage: {
       en: 'Failed to load signed-in user information',
@@ -218,10 +209,10 @@ export function useUpdateSignedInUser() {
 
   return useAction(
     async function updateSignedInUser(
-      params: Pick<apis.UpdateSignedInUserParams, 'displayName' | 'avatar' | 'description'>
+      params: Pick<userApis.UpdateSignedInUserParams, 'displayName' | 'avatar' | 'description'>
     ) {
       const unresolvedUsername = getUnresolvedSignedInUsername()
-      const updated = await apis.updateSignedInUser(params)
+      const updated = await userApis.updateSignedInUser(params)
       if (unresolvedUsername != null) queryCache.invalidate(getUserQueryKey(unresolvedUsername))
       queryCache.invalidate(getUserQueryKey(updated.username))
       return updated
@@ -243,10 +234,10 @@ export function useModifySignedInUsername() {
       const oldUsername = getUnresolvedSignedInUsername()
       if (oldUsername == null) throw new Error('Signed-in username is not available')
 
-      const updated = await apis.updateSignedInUser({ username: newUsername })
+      const updated = await userApis.updateSignedInUser({ username: newUsername })
       queryCache.invalidate(getUserQueryKey(oldUsername))
       queryCache.invalidate(getUserQueryKey(updated.username))
-      signOut()
+      await signOut()
       return updated
     },
     { en: 'Failed to modify username', zh: '修改用户名失败' }

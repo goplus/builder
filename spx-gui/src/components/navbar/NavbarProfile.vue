@@ -75,7 +75,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
-import { getUserPageRoute } from '@/router'
+import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { initiateSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
@@ -117,8 +117,8 @@ const manageCourses = useMessageHandle(manageCoursesFn).fn
 const manageCourseSeriesFn = useCourseSeriesManagement()
 const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
 
-function handleSignOut() {
-  signOut()
+async function handleSignOut() {
+  await signOut()
   router.go(0) // Reload the page to trigger navigation guards.
 }
 </script>

@@ -11,7 +11,6 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import 'dayjs/locale/zh'
 
-import { initRouter } from './router'
 import { initUserState, ensureAccessToken } from './stores/user'
 import { client } from './apis/common'
 import { CustomTransformer } from './components/editor/common/viewer/custom-transformer'
@@ -109,8 +108,7 @@ export function setup() {
 }
 
 /** Configure the Vue app by installing plugins, etc. */
-export function configureApp(app: VueApp, routerEnabled = true) {
-  const router = routerEnabled ? initRouter(app) : undefined
+export function configureApp(app: VueApp, router?: Router) {
   initSentry(app, router)
   initI18n(app)
   app.use(VueKonva as any, {

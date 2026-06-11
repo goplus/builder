@@ -9,7 +9,7 @@ customElements.define(
   'spx-runner',
   defineCustomElement(spxRunner, {
     configureApp(app) {
-      configureApp(app, false /* disable router in widget */)
+      configureApp(app)
     }
   })
 )
