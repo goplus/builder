@@ -182,6 +182,39 @@ const routes: Array<RouteRecordRaw> = [
     ]
   },
   {
+    path: '/admin',
+    component: () => import('./pages/admin/index.vue'),
+    meta: { requiresSignIn: true },
+    children: [
+      {
+        path: '',
+        redirect: '/admin/audit-logs'
+      },
+      {
+        path: 'users',
+        component: () => import('./pages/admin/users.vue')
+      },
+      {
+        path: 'users/:userID',
+        component: () => import('./pages/admin/user.vue'),
+        props: true
+      },
+      {
+        path: 'apps',
+        component: () => import('./pages/admin/apps.vue')
+      },
+      {
+        path: 'apps/:appID',
+        component: () => import('./pages/admin/app.vue'),
+        props: true
+      },
+      {
+        path: 'audit-logs',
+        component: () => import('./pages/admin/audit-logs.vue')
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     component: () => import('./pages/404/index.vue')
   }
