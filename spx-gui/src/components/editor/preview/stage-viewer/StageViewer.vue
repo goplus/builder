@@ -32,7 +32,7 @@
         <v-group>
           <SpriteNode
             v-for="localConfig in visibleSpriteLocalConfigs"
-            ref="spriteNodeRefs"
+            :ref="el => { if (el) spriteNodeRefs.set(localConfig.id, el as any); else spriteNodeRefs.delete(localConfig.id) }"
             :key="localConfig.id"
             :local-config="localConfig"
             :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
@@ -139,7 +139,7 @@ const mapRef = ref<{
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
-const spriteNodeRefs = ref<(InstanceType<typeof SpriteNode> | null)[]>([])
+const spriteNodeRefs = ref(new Map<string, InstanceType<typeof SpriteNode>>())
 const nodeReadyMap = reactive(new Map<string, boolean>())
 const mousePos = ref<Pos | null>(null)
 
@@ -514,8 +514,7 @@ function ensureCanTakeScreenshot() {
 const selectedSpriteNode = computed(() => {
   const selectedSpriteId = editorCtx.state.selectedSprite?.id
   if (selectedSpriteId == null) return null
-  const idx = visibleSpriteLocalConfigs.value.findIndex(({ id }) => id === selectedSpriteId)
-  return spriteNodeRefs.value[idx] ?? null
+  return spriteNodeRefs.value.get(selectedSpriteId) ?? null
 })
 
 async function takeScreenshot(name: string, signal?: AbortSignal) {
