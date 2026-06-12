@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getUserPageRoute } from '@/router'
+import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { useUser } from '@/stores/user'
 
 const props = defineProps<{

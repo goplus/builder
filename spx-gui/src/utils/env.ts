@@ -13,14 +13,6 @@ export const usercontentBaseUrl = import.meta.env.VITE_USERCONTENT_BASE_URL as s
 export const usercontentBucket = import.meta.env.VITE_USERCONTENT_BUCKET as string
 export const usercontentUploadBaseUrl = import.meta.env.VITE_USERCONTENT_UPLOAD_BASE_URL as string
 
-// Casdoor configurations
-export const casdoorConfig = {
-  serverUrl: import.meta.env.VITE_CASDOOR_ENDPOINT as string,
-  clientId: import.meta.env.VITE_CASDOOR_CLIENT_ID as string,
-  organizationName: import.meta.env.VITE_CASDOOR_ORGANIZATION_NAME as string,
-  appName: import.meta.env.VITE_CASDOOR_APP_NAME as string
-}
-
 /**
  * If we should disable features that rely on AIGC service.
  * For now AIGC service is not ready for production. We disable it until it's ready.
@@ -55,3 +47,6 @@ export const showTutorialsEntry = import.meta.env.VITE_SHOW_TUTORIALS_ENTRY === 
 
 /** Default language, e.g. `en`, `zh` */
 export const defaultLang = (import.meta.env.VITE_DEFAULT_LANG as string) || 'en'
+
+/** OAuth client id issued for xbuilder by account */
+export const accountOAuthClientId = import.meta.env.VITE_ACCOUNT_OAUTH_CLIENT_ID as string
