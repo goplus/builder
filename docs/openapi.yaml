@@ -595,7 +595,7 @@ paths:
                   maxLength: 5242880
             encoding:
               file:
-                contentType: image/png
+                contentType: image/png, image/jpeg
       responses:
         "204":
           description: Account user avatar updated.
@@ -4588,7 +4588,7 @@ paths:
                   maxLength: 5242880
             encoding:
               file:
-                contentType: image/png
+                contentType: image/png, image/jpeg
       responses:
         "204":
           description: Account user avatar updated.
