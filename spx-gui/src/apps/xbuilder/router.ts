@@ -1,8 +1,8 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { searchKeywordQueryParamName } from './pages/community/search.vue'
 import type { ExploreOrder } from '@/apis/project'
 import { initiateSignIn, isSignedIn, getUnresolvedSignedInUsername } from '@/stores/user'
+import { searchKeywordQueryParamName } from './pages/community/search.vue'
 
 export function getProjectEditorRoute(ownerName: string, projectName: string, publish = false) {
   ownerName = encodeURIComponent(ownerName)

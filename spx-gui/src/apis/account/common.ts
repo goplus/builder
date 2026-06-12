@@ -42,7 +42,7 @@ export type AccountUserIdentity = AccountModel & {
   avatar?: string | null
 }
 
-export type AccountSessionBase = AccountModel & {
+export type AccountSession = AccountModel & {
   /** Timestamp when the account session was last used */
   lastUsedAt: string
   /** Expiration timestamp */

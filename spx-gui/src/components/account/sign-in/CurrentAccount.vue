@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { AccountSession } from '@/apis/account'
+import type { CurrentAccountSession } from '@/apis/account'
 import { UIFullWidthButton } from '@/components/ui'
 import { useAvatarUrl } from '@/stores/user/avatar'
 
 const props = defineProps<{
-  session: AccountSession
+  session: CurrentAccountSession
   switching: boolean
 }>()
 

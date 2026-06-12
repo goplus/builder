@@ -90,9 +90,10 @@ export class Client {
     return new URL(concated, window.location.origin)
   }
 
-  private async injectAuthorization(headers: Headers) {
+  private async injectAuthorization(headers: Headers, signal?: AbortSignal) {
     if (headers.has('Authorization')) return
     const token = await this.tokenProvider()
+    signal?.throwIfAborted()
     if (token == null) return
     headers.set('Authorization', `Bearer ${token}`)
   }
@@ -106,8 +107,7 @@ export class Client {
     const method = options?.method ?? 'GET'
     const body = payload != null ? JSON.stringify(payload) : null
     const headers = options?.headers ?? new Headers()
-    await this.injectAuthorization(headers)
-    options?.signal?.throwIfAborted()
+    await this.injectAuthorization(headers, options?.signal)
     if (body != null) headers.set('Content-Type', 'application/json')
     if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
     if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
@@ -123,13 +123,11 @@ export class Client {
     const method = options?.method ?? 'POST'
     const body = new URLSearchParams()
     Object.entries(payload).forEach(([key, value]) => {
-      if (value != null) body.append(key, `${value}`)
+      if (value != null) body.append(key, value + '')
     })
-    const token = await this.tokenProvider()
-    options?.signal?.throwIfAborted()
     const headers = options?.headers ?? new Headers()
+    await this.injectAuthorization(headers, options?.signal)
     headers.set('Content-Type', 'application/x-www-form-urlencoded')
-    if (token != null) headers.set('Authorization', `Bearer ${token}`)
     if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
     if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
     return new Request(url, { method, headers, body: body.toString() })
@@ -173,8 +171,7 @@ export class Client {
     if (resp.status === 204) return null
     const contentType = resp.headers.get('Content-Type') ?? ''
     if (contentType.includes('application/json')) return resp.json()
-    const text = await resp.text()
-    return text === '' ? null : text
+    return resp.text()
   }
 
   private async requestBinary(path: string, payload: FormData, options?: RequestOptions) {
@@ -184,8 +181,7 @@ export class Client {
     const url = this.baseUrl + path
     const method = options?.method ?? 'GET'
     const headers = options?.headers ?? new Headers()
-    await this.injectAuthorization(headers)
-    options?.signal?.throwIfAborted()
+    await this.injectAuthorization(headers, options?.signal)
     if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
     if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
     const req = new Request(url, { method, headers, body: payload })

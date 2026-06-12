@@ -72,7 +72,7 @@ watch(sessionQuery.data, (session) => {
   }
 })
 
-const handleSwitchAccount = useMessageHandle(
+const { fn: handleSwitchAccount, isLoading: isSwitchingAccount } = useMessageHandle(
   async () => {
     await deleteSession()
     showPasswordForm.value = false
@@ -86,12 +86,12 @@ function handleSignInWithProvider(provider: IdentityProvider) {
   window.location.assign(buildIdentityProviderAuthorizeUrl(provider.name, props.request))
 }
 
-const handleSignInWithPasswordSubmit = useMessageHandle(
+const { fn: handleSignInWithPasswordSubmit, isLoading: isSubmittingSignInWithPassword } = useMessageHandle(
   async (payload: PasswordSignInPayload) => {
     await createSessionWithPassword(payload)
     completeSignInWithCurrentAccount()
   },
-  { en: 'Failed to sign in with password', zh: '使用用户名密码登录失败' }
+  { en: 'Failed to sign in', zh: '登录失败' }
 )
 </script>
 
@@ -124,9 +124,9 @@ const handleSignInWithPasswordSubmit = useMessageHandle(
       <CurrentAccount
         v-if="sessionQuery.data.value != null"
         :session="sessionQuery.data.value"
-        :switching="handleSwitchAccount.isLoading.value"
+        :switching="isSwitchingAccount"
         @continue="completeSignInWithCurrentAccount"
-        @switch-account="handleSwitchAccount.fn"
+        @switch-account="handleSwitchAccount"
       />
 
       <div v-else-if="!showPasswordForm" class="self-stretch flex flex-col items-center gap-5">
@@ -135,7 +135,7 @@ const handleSignInWithPasswordSubmit = useMessageHandle(
           :key="provider.name"
           :provider="provider"
           :primary="index === 0"
-          :disabled="handleSwitchAccount.isLoading.value || handleSignInWithPasswordSubmit.isLoading.value"
+          :disabled="isSwitchingAccount || isSubmittingSignInWithPassword"
           @click="handleSignInWithProvider(provider)"
         />
         <a
@@ -156,7 +156,11 @@ const handleSignInWithPasswordSubmit = useMessageHandle(
         </a>
       </div>
 
-      <PasswordSection v-else :submit="handleSignInWithPasswordSubmit.fn" />
+      <PasswordSection
+        v-else
+        :is-submitting="isSubmittingSignInWithPassword"
+        @submit="handleSignInWithPasswordSubmit"
+      />
     </template>
   </div>
 </template>

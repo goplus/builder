@@ -1,15 +1,3 @@
-/**
- * API client for the main xbuilder.com OAuth flow.
- *
- * These are used by the main site's sign-in flow (stores/user/signed-in.ts
- * and pages/sign-in/callback.vue) to interact with the Account OAuth
- * endpoints — pushed authorization request (PAR), authorization code
- * exchange, token refresh, and token revocation.
- *
- * This file is for the main site's OAuth client. For the Account Web sign-in
- * page session API, see index.ts.
- */
-
 import { Client } from '@/apis/common/client'
 import { apiBaseUrl } from '@/utils/env'
 import type { OAuthAPIs } from '@/utils/oauth'

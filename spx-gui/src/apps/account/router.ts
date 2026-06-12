@@ -1,22 +1,17 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
-export const accountWebRoutePaths = {
-  home: '/',
-  signIn: '/sign-in'
-} as const
-
 const routes: Array<RouteRecordRaw> = [
   {
-    path: accountWebRoutePaths.home,
+    path: '/',
     component: () => import('./pages/home.vue')
   },
   {
-    path: accountWebRoutePaths.signIn,
+    path: '/sign-in',
     component: () => import('./pages/sign-in.vue')
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: accountWebRoutePaths.home
+    redirect: '/'
   }
 ]
 

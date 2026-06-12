@@ -1,8 +1,10 @@
 import { client, type ByPage, type PaginationParams } from '@/apis/common'
 import type {
   AccountApp,
+  AccountAppClientType,
   AccountAppSecret,
-  AccountSessionBase,
+  AccountAppStatus,
+  AccountSession,
   AccountUser,
   AccountUserIdentity,
   CreatedAccountAppSecret
@@ -11,12 +13,11 @@ import type {
 export type {
   AccountApp,
   AccountAppSecret,
+  AccountSession,
   AccountUser,
   AccountUserIdentity,
   CreatedAccountAppSecret
 } from '@/apis/account/common'
-
-export type AccountSession = AccountSessionBase
 
 type SortOrder = 'asc' | 'desc'
 
@@ -119,7 +120,7 @@ export type CreateAccountAppParams = {
   /** Display name of the app */
   displayName: string
   /** OAuth client type of the app */
-  clientType: AccountApp['clientType']
+  clientType: AccountAppClientType
   /** Allowed redirect URIs */
   redirectURIs: string[]
   /** Allowed web origins */
@@ -138,7 +139,7 @@ export type UpdateAccountAppParams = {
   /** Display name of the app */
   displayName?: string
   /** App status */
-  status?: AccountApp['status']
+  status?: AccountAppStatus
   /** Allowed redirect URIs */
   redirectURIs?: string[]
   /** Allowed web origins */

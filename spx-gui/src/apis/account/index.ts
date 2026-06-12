@@ -1,7 +1,8 @@
 // Account APIs for app account.
 
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { accountClient, type AccountIdentityProvider, type AccountSessionBase, type AccountUser } from './common'
+import { accountClient, type AccountIdentityProvider, type AccountSession, type AccountUser } from './common'
+import { DefaultException } from '@/utils/exception/base'
 
 export type { AccountUser }
 
@@ -10,23 +11,16 @@ export type OAuthRequest = {
   requestUri: string
 }
 
-export type AccountSession = AccountSessionBase & {
+export type CurrentAccountSession = AccountSession & {
   current: boolean
   user: AccountUser
 }
 
-function isUnauthorizedError(error: unknown) {
-  return (
-    (error instanceof ApiException && error.code === ApiExceptionCode.errorUnauthorized) ||
-    (error instanceof Error && error.message.includes('status 401 for api call:'))
-  )
-}
-
-export async function getSession(): Promise<AccountSession | null> {
+export async function getSession(): Promise<CurrentAccountSession | null> {
   try {
-    return (await accountClient.get('/session')) as AccountSession
+    return (await accountClient.get('/session')) as CurrentAccountSession
   } catch (error) {
-    if (isUnauthorizedError(error)) return null
+    if (error instanceof ApiException && error.code === ApiExceptionCode.errorUnauthorized) return null
     throw error
   }
 }
@@ -40,12 +34,22 @@ export type PasswordSignInPayload = {
   password: string
 }
 
-export async function createSessionWithPassword(payload: PasswordSignInPayload): Promise<AccountSession> {
-  return (await accountClient.post('/session', {
-    method: 'password',
-    username: payload.username,
-    password: payload.password
-  })) as AccountSession
+export async function createSessionWithPassword(payload: PasswordSignInPayload): Promise<CurrentAccountSession> {
+  return (await accountClient
+    .post('/session', {
+      method: 'password',
+      username: payload.username,
+      password: payload.password
+    })
+    .catch((e) => {
+      if (e instanceof ApiException && e.code === ApiExceptionCode.errorUnauthorized) {
+        throw new DefaultException({
+          en: 'Invalid username or password',
+          zh: '用户名或密码错误'
+        })
+      }
+      throw e
+    })) as CurrentAccountSession
 }
 
 export type IdentityProvider = AccountIdentityProvider

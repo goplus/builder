@@ -110,17 +110,6 @@ describe('Client', () => {
       expect(request.headers.get('Content-Type')).toBe('application/x-www-form-urlencoded')
       expect(await request.text()).toBe('grant_type=refresh_token&client_id=client-1&refresh_token=refresh-1')
     })
-
-    it('should allow empty successful responses for form-encoded endpoints', async () => {
-      fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
-
-      await expect(
-        client.postForm('/account/oauth/revoke', {
-          client_id: 'client-1',
-          token: 'token-1'
-        })
-      ).resolves.toBeNull()
-    })
   })
 
   describe('default fetch binding', () => {

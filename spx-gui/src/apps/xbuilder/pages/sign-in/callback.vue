@@ -13,7 +13,7 @@ usePageTitle(title)
 
 try {
   const { returnTo } = await completeSignIn(window.location.search)
-  window.location.replace(returnTo !== '' ? returnTo : '/')
+  window.location.replace(returnTo)
 } catch (e) {
   console.error('failed to complete sign-in', e)
   window.location.replace('/')

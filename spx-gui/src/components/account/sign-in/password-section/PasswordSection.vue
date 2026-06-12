@@ -10,13 +10,16 @@ import eyeOffIconUrl from './eye-off.svg'
 import lockIconUrl from './lock.svg'
 import userIconUrl from './user.svg'
 
-const props = defineProps<{
-  submit: (payload: PasswordSignInPayload) => Promise<void>
+defineProps<{
+  isSubmitting: boolean
+}>()
+
+const emit = defineEmits<{
+  submit: [payload: PasswordSignInPayload]
 }>()
 
 const { t } = useI18n()
 const showPassword = ref(false)
-const isSubmitting = ref(false)
 
 const form = useForm({
   username: ['', validateUsername],
@@ -52,12 +55,7 @@ function toggleShowPassword() {
 }
 
 async function handleSubmit() {
-  isSubmitting.value = true
-  try {
-    await props.submit({ username: form.value.username.trim(), password: form.value.password })
-  } finally {
-    isSubmitting.value = false
-  }
+  emit('submit', { username: form.value.username.trim(), password: form.value.password })
 }
 </script>
 

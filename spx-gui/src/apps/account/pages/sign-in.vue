@@ -14,26 +14,34 @@
 </template>
 
 <script setup lang="ts">
-import { UIError } from '@/components/ui'
-import { usePageTitle } from '@/utils/utils'
+import { computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
 import { normalizeLang, useI18n } from '@/utils/i18n'
+import { usePageTitle } from '@/utils/utils'
 import type { OAuthRequest } from '@/apis/account'
 import SignIn from '@/components/account/sign-in/SignIn.vue'
+import { UIError } from '@/components/ui'
 
+const route = useRoute()
 const i18n = useI18n()
 
-const uiLocales = new URLSearchParams(window.location.search).get('uiLocales')?.trim()
-if (uiLocales != null && uiLocales !== '') i18n.setLang(normalizeLang(uiLocales))
+watch(
+  () => route.query.uiLocales,
+  (uiLocales) => {
+    if (typeof uiLocales === 'string' && uiLocales.trim() !== '') {
+      i18n.setLang(normalizeLang(uiLocales))
+    }
+  },
+  { immediate: true }
+)
 
-function parseRequest(): OAuthRequest | null {
-  const params = new URLSearchParams(window.location.search)
-  const clientId = params.get('clientID')?.trim() ?? ''
-  const requestUri = params.get('requestURI')?.trim() ?? ''
+const request = computed<OAuthRequest | null>(() => {
+  const clientId = typeof route.query.clientID === 'string' ? route.query.clientID.trim() : ''
+  const requestUri = typeof route.query.requestURI === 'string' ? route.query.requestURI.trim() : ''
   if (clientId === '' || requestUri === '') return null
   return { clientId, requestUri }
-}
-
-const request = parseRequest()
+})
 
 usePageTitle({ en: 'Sign in', zh: '登录' })
 </script>

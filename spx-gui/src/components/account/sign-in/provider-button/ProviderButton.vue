@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import type { IdentityProvider } from '@/apis/account'
 import type { LocaleMessage } from '@/utils/i18n'
+import { spacingLocaleZhMessage } from '@/utils/utils'
 import { UIFullWidthButton } from '@/components/ui'
 
 import googleProviderLogoColorful from './google-colorful.svg'
@@ -72,11 +73,10 @@ const logo = computed(() => {
 
 const signInMessage = computed<LocaleMessage>(() => {
   const { displayName } = props.provider
-  const zhSep = /^[a-zA-Z]+$/.test(displayName) ? ' ' : ''
-  return {
+  return spacingLocaleZhMessage({
     en: `Sign in with ${displayName}`,
-    zh: ['使用', displayName, '登录'].join(zhSep)
-  }
+    zh: `使用${displayName}登录`
+  })
 })
 </script>
 

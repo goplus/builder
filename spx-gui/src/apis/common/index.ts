@@ -47,14 +47,6 @@ export const client = new Client({
   baseUrl: apiBaseUrl
 })
 
-/**
- * A credentialless client instance for app XBuilder to make requests to spx-backend APIs.
- * This client is not expected to have a token provider set, so no credentials will be included in requests.
- */
-export const credentiallessClient = new Client({
-  baseUrl: apiBaseUrl
-})
-
 /** Art style indicates the visual style or aesthetic approach used in the creation of graphics */
 export const enum ArtStyle {
   /** Pixel Art is a form of digital art where images are created and edited at the pixel level, often characterized by its blocky appearance and limited color palettes. */
