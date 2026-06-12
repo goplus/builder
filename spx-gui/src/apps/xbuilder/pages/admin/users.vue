@@ -1,0 +1,166 @@
+<template>
+  <section class="min-w-0">
+    <div class="mb-4 flex items-end justify-between gap-4">
+      <div>
+        <h2 class="m-0 text-xl font-semibold text-title">{{ $t({ en: 'Users', zh: '用户' }) }}</h2>
+        <p class="m-0 mt-1 text-sm text-grey-800">
+          {{ $t({ en: 'Browse and create Account users.', zh: '浏览和创建账号用户。' }) }}
+        </p>
+      </div>
+      <UIButton v-if="canManageAccount" type="primary" @click="showCreateForm = !showCreateForm">
+        {{ showCreateForm ? $t({ en: 'Cancel', zh: '取消' }) : $t({ en: 'Create user', zh: '创建用户' }) }}
+      </UIButton>
+    </div>
+
+    <form
+      v-if="canManageAccount && showCreateForm"
+      class="mb-5 rounded-lg bg-white p-5 shadow-sm"
+      @submit.prevent="handleCreateUser.fn"
+    >
+      <div class="grid grid-cols-3 gap-4">
+        <label class="flex flex-col gap-1 text-sm text-grey-900">
+          {{ $t({ en: 'Username', zh: '用户名' }) }}
+          <UITextInput v-model:value="createForm.username" required />
+        </label>
+        <label class="flex flex-col gap-1 text-sm text-grey-900">
+          {{ $t({ en: 'Display name', zh: '显示名称' }) }}
+          <UITextInput v-model:value="createForm.displayName" required />
+        </label>
+        <label class="flex flex-col gap-1 text-sm text-grey-900">
+          {{ $t({ en: 'Initial password', zh: '初始密码' }) }}
+          <UITextInput v-model:value="createForm.password" type="password" />
+        </label>
+      </div>
+      <div class="mt-4 flex justify-end">
+        <UIButton html-type="submit" type="primary" :loading="handleCreateUser.isLoading.value">
+          {{ $t({ en: 'Create', zh: '创建' }) }}
+        </UIButton>
+      </div>
+    </form>
+
+    <UIError v-if="!canManageAccount" class="py-12">
+      {{ $t({ en: 'Access denied', zh: '没有访问权限' }) }}
+      <template #sub-message>
+        {{
+          $t({
+            en: 'Managing Account users requires Account admin permission.',
+            zh: '管理账号用户需要账号管理员权限。'
+          })
+        }}
+      </template>
+    </UIError>
+
+    <div v-else class="rounded-lg bg-white shadow-sm">
+      <div class="border-b border-grey-300 px-5 py-3 flex items-center justify-between">
+        <div class="text-sm text-grey-800">
+          {{ $t({ en: 'Search is not available yet.', zh: '暂不支持搜索。' }) }}
+        </div>
+        <div class="flex items-center gap-2">
+          <UISelect v-model:value="sortOrder" class="w-32">
+            <UISelectOption value="desc">{{ $t({ en: 'Newest', zh: '最新' }) }}</UISelectOption>
+            <UISelectOption value="asc">{{ $t({ en: 'Oldest', zh: '最早' }) }}</UISelectOption>
+          </UISelect>
+          <UIButton type="secondary" size="small" @click="usersQuery.refetch">
+            {{ $t({ en: 'Refresh', zh: '刷新' }) }}
+          </UIButton>
+        </div>
+      </div>
+      <UILoading v-if="usersQuery.isLoading.value" class="my-16" />
+      <UIError v-else-if="usersQuery.error.value != null" class="py-12">
+        {{ $t(usersQuery.error.value.userMessage) }}
+      </UIError>
+      <table v-else class="w-full border-collapse text-left text-sm">
+        <thead class="text-grey-800">
+          <tr class="border-b border-grey-300">
+            <th class="px-5 py-3 font-medium">{{ $t({ en: 'User', zh: '用户' }) }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t({ en: 'ID', zh: 'ID' }) }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t({ en: 'Created', zh: '创建时间' }) }}</th>
+            <th class="px-5 py-3 font-medium"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="user in usersQuery.data.value?.data ?? []" :key="user.id" class="border-b border-grey-200">
+            <td class="px-5 py-3">
+              <div class="flex items-center gap-3">
+                <img :src="user.avatar" class="h-9 w-9 rounded-full bg-grey-300 object-cover" />
+                <div>
+                  <div class="font-medium text-title">{{ user.displayName }}</div>
+                  <div class="text-grey-800">{{ user.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-5 py-3 font-mono text-xs text-grey-800">{{ user.id }}</td>
+            <td class="px-5 py-3 text-grey-900">{{ formatTime(user.createdAt) }}</td>
+            <td class="px-5 py-3 text-right">
+              <RouterLink class="text-primary-main no-underline" :to="`/admin/users/${encodeURIComponent(user.id)}`">
+                {{ $t({ en: 'Open', zh: '打开' }) }}
+              </RouterLink>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="px-5 py-4 flex justify-center">
+        <UIPagination v-show="pageTotal > 1" v-model:current="page" :total="pageTotal" />
+      </div>
+    </div>
+  </section>
+</template>
+
+<script setup lang="ts">
+import { computed, reactive, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+
+import { useMessageHandle } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
+import { useSignedInStateQuery } from '@/stores/user'
+import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption, UITextInput } from '@/components/ui'
+import * as accountAdminApis from '@/apis/admin/account'
+import { formatTime } from './common'
+
+const signedInStateQuery = useSignedInStateQuery()
+const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
+
+const pageSize = 20
+const page = ref(1)
+const sortOrder = ref<'asc' | 'desc'>('desc')
+const showCreateForm = ref(false)
+
+const createForm = reactive({
+  username: '',
+  displayName: '',
+  password: ''
+})
+
+// TODO: Add username/display-name search after the admin users API supports it.
+const usersQuery = useQuery(
+  async () => {
+    if (!canManageAccount.value) return { total: 0, data: [] }
+    return accountAdminApis.listAccountUsers({
+      pageIndex: page.value,
+      pageSize,
+      orderBy: 'createdAt',
+      sortOrder: sortOrder.value
+    })
+  },
+  { en: 'Failed to load Account users', zh: '加载账号用户失败' }
+)
+
+const pageTotal = computed(() => Math.ceil((usersQuery.data.value?.total ?? 0) / pageSize))
+
+const handleCreateUser = useMessageHandle(
+  async () => {
+    await accountAdminApis.createAccountUser({
+      username: createForm.username.trim(),
+      displayName: createForm.displayName.trim(),
+      ...(createForm.password.trim() === '' ? {} : { password: createForm.password })
+    })
+    createForm.username = ''
+    createForm.displayName = ''
+    createForm.password = ''
+    showCreateForm.value = false
+    usersQuery.refetch()
+  },
+  { en: 'Failed to create Account user', zh: '创建账号用户失败' },
+  { en: 'Account user created', zh: '账号用户已创建' }
+)
+</script>

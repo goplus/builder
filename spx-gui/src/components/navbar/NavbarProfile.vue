@@ -63,6 +63,11 @@
           {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
         </UIMenuItem>
       </UIMenuGroup>
+      <UIMenuGroup v-if="canUseAccountAdmin">
+        <UIMenuItem @click="handleAccountAdmin">
+          {{ $t({ en: 'Account admin', zh: '账号管理' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
@@ -93,6 +98,11 @@ const i18n = useI18n()
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
+const canUseAccountAdmin = computed(
+  () =>
+    signedInUser.value?.capabilities.canManageAccount === true ||
+    signedInUser.value?.capabilities.canManageAuthorization === true
+)
 const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
@@ -106,6 +116,10 @@ function handleUserPage() {
 
 function handleProjects() {
   router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
+}
+
+function handleAccountAdmin() {
+  router.push('/admin')
 }
 
 const manageAssetLibrary = useAssetLibraryManagement()
