@@ -32,12 +32,7 @@
         <v-group>
           <SpriteNode
             v-for="localConfig in visibleSpriteLocalConfigs"
-            :ref="
-              (el) => {
-                if (el) spriteNodeRefs.set(localConfig.id, el as any)
-                else spriteNodeRefs.delete(localConfig.id)
-              }
-            "
+            :ref="setSpriteNodeRef(localConfig.id)"
             :key="localConfig.id"
             :local-config="localConfig"
             :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
@@ -91,7 +86,7 @@
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, reactive, ref, shallowReactive, shallowRef, watch, watchEffect, type ComponentPublicInstance } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { StageConfig } from 'konva/lib/Stage'
@@ -144,7 +139,15 @@ const mapRef = ref<{
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
-const spriteNodeRefs = ref(new Map<string, InstanceType<typeof SpriteNode>>())
+const spriteNodeRefs = shallowReactive(new Map<string, InstanceType<typeof SpriteNode>>())
+
+function setSpriteNodeRef(id: string) {
+  return (el: Element | ComponentPublicInstance | null) => {
+    if (el != null) spriteNodeRefs.set(id, el as InstanceType<typeof SpriteNode>)
+    else spriteNodeRefs.delete(id)
+  }
+}
+
 const nodeReadyMap = reactive(new Map<string, boolean>())
 const mousePos = ref<Pos | null>(null)
 
@@ -519,7 +522,7 @@ function ensureCanTakeScreenshot() {
 const selectedSpriteNode = computed(() => {
   const selectedSpriteId = editorCtx.state.selectedSprite?.id
   if (selectedSpriteId == null) return null
-  return spriteNodeRefs.value.get(selectedSpriteId) ?? null
+  return spriteNodeRefs.get(selectedSpriteId) ?? null
 })
 
 async function takeScreenshot(name: string, signal?: AbortSignal) {
