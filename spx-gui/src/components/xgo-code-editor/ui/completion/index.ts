@@ -10,8 +10,10 @@ import { InsertTextFormat, type CompletionContext, type CompletionItem } from '.
 export * from '../../completion'
 
 export type InternalCompletionItem = CompletionItem & {
-  /** Fuzzy score */
+  /** Fuzzy score used for filtering and sorting */
   score: FuzzyScore | null
+  /** Fuzzy score used for label highlighting */
+  labelScore: FuzzyScore | null
   /** Index in original list */
   originalIdx: number
 }
@@ -100,7 +102,12 @@ export class CompletionController extends Emitter<{
       const word = textDocument.getWordAtPosition(position)
       const wordStart = word != null ? { line: position.line, column: word.startColumn } : position
       if (this.completion.textDocument === textDocument && positionEq(this.completion.wordStart, wordStart)) {
-        // cursor moved within the same word
+        // Workaround until incomplete CompletionList support is added. See #3256.
+        // textEdit ranges are computed for the request position and become stale as typing continues.
+        if (this.completion.items.some((item) => item.textEdit != null)) {
+          this.startCompletion()
+          return
+        }
         this.refilterCompletion(position)
         return
       }
@@ -114,6 +121,20 @@ export class CompletionController extends Emitter<{
     if (this.completion == null) return
     const { wordStart, position } = this.completion
     if (!positionEq(cursorPosition, position)) return
+    if (item.textEdit != null) {
+      switch (item.insertTextFormat) {
+        case InsertTextFormat.PlainText:
+          await this.ui.insertText(item.textEdit.newText, item.textEdit.range)
+          break
+        case InsertTextFormat.Snippet: {
+          const parsed = this.ui.parseSnippet(item.textEdit.newText)
+          await this.ui.insertSnippet(parsed.toTextmateString(), item.textEdit.range)
+          break
+        }
+      }
+      this.stopCompletion()
+      return
+    }
     const range = { start: wordStart, end: position }
     // TODO: Support newly inserted functionality (for input helper) here
     switch (item.insertTextFormat) {
@@ -220,13 +241,14 @@ function compareItems(a: InternalCompletionItem, b: InternalCompletionItem) {
 }
 
 function filterAndSort(items: CompletionItem[], word: string): InternalCompletionItem[] {
-  if (word === '') return items.map((item, i) => ({ ...item, score: null, originalIdx: i }))
+  if (word === '') return items.map((item, i) => ({ ...item, score: null, labelScore: null, originalIdx: i }))
   const wordLow = word.toLowerCase()
   const result: InternalCompletionItem[] = []
   items.forEach((item, i) => {
-    const score = fuzzyScore(word, wordLow, 0, item.label, item.label.toLowerCase(), 0)
+    const score = fuzzyScore(word, wordLow, 0, item.filterSortText, item.filterSortText.toLowerCase(), 0)
     if (score == null) return
-    result.push({ ...item, score, originalIdx: i })
+    const labelScore = item.filterSortText === item.label ? score : null
+    result.push({ ...item, score, labelScore, originalIdx: i })
   })
   result.sort(compareItems)
   return result
