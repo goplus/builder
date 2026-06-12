@@ -32,7 +32,12 @@
         <v-group>
           <SpriteNode
             v-for="localConfig in visibleSpriteLocalConfigs"
-            :ref="el => { if (el) spriteNodeRefs.set(localConfig.id, el as any); else spriteNodeRefs.delete(localConfig.id) }"
+            :ref="
+              (el) => {
+                if (el) spriteNodeRefs.set(localConfig.id, el as any)
+                else spriteNodeRefs.delete(localConfig.id)
+              }
+            "
             :key="localConfig.id"
             :local-config="localConfig"
             :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
