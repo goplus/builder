@@ -9,6 +9,7 @@ import {
   client,
   type FileCollection,
   Perspective,
+  SoundCategory,
   SpriteCategory,
   type UniversalUrl
 } from './common'
@@ -65,12 +66,38 @@ export type BackdropSettings = {
   perspective: Perspective
 }
 
+export type SoundVoiceGender = 'male' | 'female'
+
+export type SoundVoiceAgeGroup = 'child' | 'youth' | 'middle-aged' | 'senior'
+
+export type SoundSettingsBase = {
+  name: string
+  description: string
+  category: SoundCategory
+}
+
+export type SpeechSettings = {
+  text: string
+  voiceGender: SoundVoiceGender
+  voiceAgeGroup: SoundVoiceAgeGroup
+  instruction?: string
+}
+
+export type SpeechSoundSettings = SoundSettingsBase & {
+  category: SoundCategory.Voice
+  speechSettings: SpeechSettings
+}
+
+// TODO: support more sound types in the future
+export type SoundSettings = SpeechSoundSettings
+
 export const enum TaskType {
   RemoveBackground = 'removeBackground',
   GenerateCostume = 'generateCostume',
   GenerateAnimationVideo = 'generateAnimationVideo',
   ExtractVideoFrames = 'extractVideoFrames',
-  GenerateBackdrop = 'generateBackdrop'
+  GenerateBackdrop = 'generateBackdrop',
+  GenerateSound = 'generateSound'
 }
 
 export const enum TaskStatus {
@@ -120,12 +147,17 @@ export type TaskResultGenerateBackdrop = {
   imageUrls: UniversalUrl[]
 }
 
+export type TaskResultGenerateSound = {
+  audioUrl: UniversalUrl
+}
+
 export type TaskResult<T extends TaskType = TaskType> = {
   [TaskType.RemoveBackground]: TaskResultRemoveBackground
   [TaskType.GenerateCostume]: TaskResultGenerateCostume
   [TaskType.GenerateAnimationVideo]: TaskResultGenerateAnimationVideo
   [TaskType.ExtractVideoFrames]: TaskResultExtractVideoFrames
   [TaskType.GenerateBackdrop]: TaskResultGenerateBackdrop
+  [TaskType.GenerateSound]: TaskResultGenerateSound
 }[T]
 
 export type Task<T extends TaskType = TaskType> = {
@@ -174,12 +206,17 @@ export type TaskParamsGenerateBackdrop = {
   n: number
 }
 
+export type TaskParamsGenerateSound = {
+  settings: SoundSettings
+}
+
 export type TaskParams<T extends TaskType = TaskType> = {
   [TaskType.RemoveBackground]: TaskParamsRemoveBackground
   [TaskType.GenerateCostume]: TaskParamsGenerateCostume
   [TaskType.GenerateAnimationVideo]: TaskParamsGenerateAnimationVideo
   [TaskType.ExtractVideoFrames]: TaskParamsExtractVideoFrames
   [TaskType.GenerateBackdrop]: TaskParamsGenerateBackdrop
+  [TaskType.GenerateSound]: TaskParamsGenerateSound
 }[T]
 
 export function createTask<T extends TaskType>(type: T, params: TaskParams<T>, signal?: AbortSignal): Promise<Task<T>> {

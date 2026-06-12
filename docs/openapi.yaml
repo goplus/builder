@@ -3466,6 +3466,7 @@ paths:
         | `generateAnimationVideo` | Generate animation video |
         | `extractVideoFrames` | Extract frames from video |
         | `generateBackdrop` | Generate backdrop image |
+        | `generateSound` | Generate sound asset (TTS in current MVP) |
 
         Quota and rate limits:
 
@@ -3621,6 +3622,24 @@ paths:
                           default: 1
                           examples:
                             - 4
+                - title: generateSound
+                  type: object
+                  required:
+                    - type
+                    - parameters
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - generateSound
+                    parameters:
+                      description: Parameters for speech sound generation.
+                      type: object
+                      required:
+                        - settings
+                      properties:
+                        settings:
+                          $ref: "#/components/schemas/AIGCSpeechSoundSettings"
       responses:
         "202":
           description: Task accepted and queued for processing.
@@ -7054,6 +7073,7 @@ components:
             - generateAnimationVideo
             - extractVideoFrames
             - generateBackdrop
+            - generateSound
           examples:
             - removeBackground
         status:
@@ -7122,6 +7142,15 @@ components:
                   items:
                     type: string
                     format: uri
+            - title: generateSound
+              type: object
+              required:
+                - audioUrl
+              properties:
+                audioUrl:
+                  description: Universal URL of the generated audio file (e.g. kodo://bucket/key).
+                  type: string
+                  format: uri
         error:
           description: Error details. Only available when status is failed.
           type: object
@@ -7288,6 +7317,106 @@ components:
               enum:
                 - ui
                 - unspecified
+
+    SoundCategory:
+      description: Category of sound asset.
+      type: string
+      enum:
+        - voice
+        - effect
+        - music
+        - ambience
+        - other
+      examples:
+        - voice
+
+    AIGCSoundVoiceGender:
+      description: Gender bucket of the generated voice.
+      type: string
+      enum:
+        - male
+        - female
+      examples:
+        - female
+
+    AIGCSoundVoiceAgeGroup:
+      description: Age bucket of the generated voice.
+      type: string
+      enum:
+        - child
+        - youth
+        - middle-aged
+        - senior
+      examples:
+        - middle-aged
+
+    AIGCSpeechSettings:
+      description: Speech-specific generation settings.
+      type: object
+      required:
+        - text
+        - voiceGender
+        - voiceAgeGroup
+      properties:
+        text:
+          description: Text to synthesize into speech.
+          type: string
+          minLength: 1
+          maxLength: 200
+          examples:
+            - 你好，我们出发吧！
+        voiceGender:
+          $ref: "#/components/schemas/AIGCSoundVoiceGender"
+        voiceAgeGroup:
+          $ref: "#/components/schemas/AIGCSoundVoiceAgeGroup"
+        instruction:
+          description: Optional free-form instruction describing how the speech should be delivered.
+          type: string
+          maxLength: 50
+          examples:
+            - 像在提醒队友准备出发，语气轻快一点
+
+    AIGCSoundBaseSettings:
+      description: Base settings shared by all sound-generation requests.
+      type: object
+      required:
+        - name
+        - description
+        - category
+      properties:
+        name:
+          description: Name of the resulting Sound asset.
+          type: string
+          examples:
+            - hero-hello
+        description:
+          description: Description of the resulting Sound asset.
+          type: string
+          examples:
+            - 主角的一句开心问候
+        category:
+          $ref: "#/components/schemas/SoundCategory"
+
+    AIGCSpeechSoundSettings:
+      description: |
+        Settings for generating a speech sound asset.
+
+        This is the only supported sound-generation request type in the current MVP.
+      allOf:
+        - $ref: "#/components/schemas/AIGCSoundBaseSettings"
+        - type: object
+          required:
+            - speechSettings
+          properties:
+            category:
+              description: Category of the resulting Sound asset. Fixed to `voice` for speech generation.
+              type: string
+              enum:
+                - voice
+              examples:
+                - voice
+            speechSettings:
+              $ref: "#/components/schemas/AIGCSpeechSettings"
 
     UpInfo:
       description: Upload credentials and configuration.
