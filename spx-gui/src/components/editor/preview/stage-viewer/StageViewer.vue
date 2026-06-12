@@ -86,7 +86,16 @@
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, reactive, ref, shallowReactive, shallowRef, watch, watchEffect, type ComponentPublicInstance } from 'vue'
+import {
+  computed,
+  reactive,
+  ref,
+  shallowReactive,
+  shallowRef,
+  watch,
+  watchEffect,
+  type ComponentPublicInstance
+} from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { StageConfig } from 'konva/lib/Stage'
