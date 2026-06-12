@@ -46,7 +46,7 @@ metadata:
   name: builder-account
   namespace: builder
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: 300m
+    nginx.ingress.kubernetes.io/proxy-body-size: 5m
     nginx.ingress.kubernetes.io/proxy-buffering: 'off'
     nginx.ingress.kubernetes.io/proxy-http-version: '1.1'
     nginx.ingress.kubernetes.io/proxy-request-buffering: 'off'
