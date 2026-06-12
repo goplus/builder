@@ -28,6 +28,6 @@ jobs:
             NODE_ENV=staging
           provenance: false
           sbom: false
-          push: ${{ github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'acc') }}
+          push: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
           tags: |
-            ghcr.io/${{ github.repository }}/account:${{ github.ref_name == 'acc' && 'acc' || 'dev' }}
+            ghcr.io/${{ github.repository }}/account:dev
