@@ -1,23 +1,28 @@
 <template>
   <section class="min-w-0">
-    <div class="mb-4 flex items-end justify-between gap-4">
+    <div class="mb-5 flex items-end justify-between gap-4">
       <div>
         <h2 class="m-0 text-xl font-semibold text-title">{{ $t({ en: 'Users', zh: '用户' }) }}</h2>
         <p class="m-0 mt-1 text-sm text-grey-800">
           {{ $t({ en: 'Browse and create Account users.', zh: '浏览和创建账号用户。' }) }}
         </p>
       </div>
-      <UIButton v-if="canManageAccount" type="primary" @click="showCreateForm = !showCreateForm">
+      <UIButton
+        v-if="canManageAccount"
+        :icon="showCreateForm ? 'close' : 'plus'"
+        :type="showCreateForm ? 'white' : 'primary'"
+        @click="showCreateForm = !showCreateForm"
+      >
         {{ showCreateForm ? $t({ en: 'Cancel', zh: '取消' }) : $t({ en: 'Create user', zh: '创建用户' }) }}
       </UIButton>
     </div>
 
     <form
       v-if="canManageAccount && showCreateForm"
-      class="mb-5 rounded-lg bg-white p-5 shadow-sm"
+      class="mb-5 rounded-lg border border-grey-400 bg-white p-5"
       @submit.prevent="handleCreateUser.fn"
     >
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 gap-4 tablet:grid-cols-3">
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Username', zh: '用户名' }) }}
           <UITextInput v-model:value="createForm.username" required />
@@ -50,17 +55,22 @@
       </template>
     </UIError>
 
-    <div v-else class="rounded-lg bg-white shadow-sm">
-      <div class="border-b border-grey-300 px-5 py-3 flex items-center justify-between">
+    <div v-else class="overflow-hidden rounded-lg border border-grey-400 bg-white">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-grey-300 bg-grey-100 px-5 py-3">
         <div class="text-sm text-grey-800">
-          {{ $t({ en: 'Search is not available yet.', zh: '暂不支持搜索。' }) }}
+          {{
+            $t({
+              en: `${usersQuery.data.value?.total ?? 0} users`,
+              zh: `共 ${usersQuery.data.value?.total ?? 0} 位用户`
+            })
+          }}
         </div>
         <div class="flex items-center gap-2">
           <UISelect v-model:value="sortOrder" class="w-32">
             <UISelectOption value="desc">{{ $t({ en: 'Newest', zh: '最新' }) }}</UISelectOption>
             <UISelectOption value="asc">{{ $t({ en: 'Oldest', zh: '最早' }) }}</UISelectOption>
           </UISelect>
-          <UIButton type="secondary" size="small" @click="usersQuery.refetch">
+          <UIButton icon="reload" type="white" @click="usersQuery.refetch">
             {{ $t({ en: 'Refresh', zh: '刷新' }) }}
           </UIButton>
         </div>
@@ -69,36 +79,53 @@
       <UIError v-else-if="usersQuery.error.value != null" class="py-12">
         {{ $t(usersQuery.error.value.userMessage) }}
       </UIError>
-      <table v-else class="w-full border-collapse text-left text-sm">
-        <thead class="text-grey-800">
-          <tr class="border-b border-grey-300">
-            <th class="px-5 py-3 font-medium">{{ $t({ en: 'User', zh: '用户' }) }}</th>
-            <th class="px-5 py-3 font-medium">{{ $t({ en: 'ID', zh: 'ID' }) }}</th>
-            <th class="px-5 py-3 font-medium">{{ $t({ en: 'Created', zh: '创建时间' }) }}</th>
-            <th class="px-5 py-3 font-medium"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in usersQuery.data.value?.data ?? []" :key="user.id" class="border-b border-grey-200">
-            <td class="px-5 py-3">
-              <div class="flex items-center gap-3">
-                <img :src="user.avatar" class="h-9 w-9 rounded-full bg-grey-300 object-cover" />
-                <div>
-                  <div class="font-medium text-title">{{ user.displayName }}</div>
-                  <div class="text-grey-800">{{ user.username }}</div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full min-w-full border-collapse text-left text-sm tablet:min-w-[760px]">
+          <thead class="bg-grey-200 text-grey-800">
+            <tr class="border-b border-grey-300">
+              <th class="px-5 py-3 font-medium">{{ $t({ en: 'User', zh: '用户' }) }}</th>
+              <th class="hidden px-5 py-3 font-medium tablet:table-cell">{{ $t({ en: 'ID', zh: 'ID' }) }}</th>
+              <th class="hidden px-5 py-3 font-medium tablet:table-cell">
+                {{ $t({ en: 'Created', zh: '创建时间' }) }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="user in usersQuery.data.value?.data ?? []"
+              :key="user.id"
+              class="border-b border-grey-200 transition-colors last:border-b-0 hover:bg-grey-100"
+            >
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-200 font-semibold text-primary-main"
+                  >
+                    {{ getAvatarFallbackText(user.displayName) }}
+                    <img
+                      :src="user.avatar"
+                      crossorigin="anonymous"
+                      class="absolute inset-0 h-full w-full object-cover"
+                      @error="hideBrokenImage"
+                    />
+                  </div>
+                  <div>
+                    <RouterLink
+                      class="font-medium text-title no-underline hover:text-primary-main hover:underline"
+                      :to="`/admin/users/${encodeURIComponent(user.id)}`"
+                    >
+                      {{ user.displayName }}
+                    </RouterLink>
+                    <div class="text-grey-800">{{ user.username }}</div>
+                  </div>
                 </div>
-              </div>
-            </td>
-            <td class="px-5 py-3 font-mono text-xs text-grey-800">{{ user.id }}</td>
-            <td class="px-5 py-3 text-grey-900">{{ formatTime(user.createdAt) }}</td>
-            <td class="px-5 py-3 text-right">
-              <RouterLink class="text-primary-main no-underline" :to="`/admin/users/${encodeURIComponent(user.id)}`">
-                {{ $t({ en: 'Open', zh: '打开' }) }}
-              </RouterLink>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+              <td class="hidden px-5 py-3 font-mono text-xs text-grey-800 tablet:table-cell">{{ user.id }}</td>
+              <td class="hidden px-5 py-3 text-grey-900 tablet:table-cell">{{ formatTime(user.createdAt) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div class="px-5 py-4 flex justify-center">
         <UIPagination v-show="pageTotal > 1" v-model:current="page" :total="pageTotal" />
       </div>
@@ -107,8 +134,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, reactive, ref, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
@@ -118,6 +145,7 @@ import * as accountAdminApis from '@/apis/admin/account'
 import { formatTime } from './common'
 
 const signedInStateQuery = useSignedInStateQuery()
+const router = useRouter()
 const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
 
 const pageSize = 20
@@ -130,6 +158,14 @@ const createForm = reactive({
   displayName: '',
   password: ''
 })
+
+function getAvatarFallbackText(displayName: string) {
+  return displayName.trim().charAt(0).toUpperCase() || '?'
+}
+
+function hideBrokenImage(event: Event) {
+  ;(event.currentTarget as HTMLImageElement).style.display = 'none'
+}
 
 // TODO: Add username/display-name search after the admin users API supports it.
 const usersQuery = useQuery(
@@ -147,18 +183,18 @@ const usersQuery = useQuery(
 
 const pageTotal = computed(() => Math.ceil((usersQuery.data.value?.total ?? 0) / pageSize))
 
+watch(sortOrder, () => {
+  page.value = 1
+})
+
 const handleCreateUser = useMessageHandle(
   async () => {
-    await accountAdminApis.createAccountUser({
+    const user = await accountAdminApis.createAccountUser({
       username: createForm.username.trim(),
       displayName: createForm.displayName.trim(),
       ...(createForm.password.trim() === '' ? {} : { password: createForm.password })
     })
-    createForm.username = ''
-    createForm.displayName = ''
-    createForm.password = ''
-    showCreateForm.value = false
-    usersQuery.refetch()
+    await router.push(`/admin/users/${encodeURIComponent(user.id)}`)
   },
   { en: 'Failed to create Account user', zh: '创建账号用户失败' },
   { en: 'Account user created', zh: '账号用户已创建' }

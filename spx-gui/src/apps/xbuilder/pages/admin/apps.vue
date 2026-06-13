@@ -1,25 +1,30 @@
 <template>
   <section class="min-w-0">
-    <div class="mb-4 flex items-end justify-between gap-4">
+    <div class="mb-5 flex items-end justify-between gap-4">
       <div>
         <h2 class="m-0 text-xl font-semibold text-title">{{ $t({ en: 'OAuth apps', zh: 'OAuth 应用' }) }}</h2>
         <p class="m-0 mt-1 text-sm text-grey-800">
           {{ $t({ en: 'Manage registered OAuth apps.', zh: '管理已注册的 OAuth 应用。' }) }}
         </p>
       </div>
-      <UIButton v-if="canManageAccount" type="primary" @click="showCreateForm = !showCreateForm">
+      <UIButton
+        v-if="canManageAccount"
+        :icon="showCreateForm ? 'close' : 'plus'"
+        :type="showCreateForm ? 'white' : 'primary'"
+        @click="showCreateForm = !showCreateForm"
+      >
         {{ showCreateForm ? $t({ en: 'Cancel', zh: '取消' }) : $t({ en: 'Create app', zh: '创建应用' }) }}
       </UIButton>
     </div>
 
     <form
       v-if="canManageAccount && showCreateForm"
-      class="mb-5 rounded-lg bg-white p-5 shadow-sm"
+      class="mb-5 rounded-lg border border-grey-400 bg-white p-5"
       @submit.prevent="handleCreateApp.fn"
     >
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4 tablet:grid-cols-2">
         <label class="flex flex-col gap-1 text-sm text-grey-900">
-          {{ $t({ en: 'Name', zh: '名称' }) }}
+          {{ $t({ en: 'App name', zh: '应用名称' }) }}
           <UITextInput v-model:value="createForm.name" required />
         </label>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
@@ -29,11 +34,11 @@
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Client type', zh: '客户端类型' }) }}
           <UISelect v-model:value="createForm.clientType">
-            <UISelectOption value="public">public</UISelectOption>
-            <UISelectOption value="confidential">confidential</UISelectOption>
+            <UISelectOption value="public">{{ $t(accountAppClientTypeLabels.public) }}</UISelectOption>
+            <UISelectOption value="confidential">{{ $t(accountAppClientTypeLabels.confidential) }}</UISelectOption>
           </UISelect>
         </label>
-        <div></div>
+        <div class="hidden tablet:block"></div>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Redirect URIs', zh: '回调 URI' }) }}
           <UITextInput v-model:value="createForm.redirectURIs" type="textarea" :rows="4" />
@@ -62,47 +67,74 @@
       </template>
     </UIError>
 
-    <div v-else class="rounded-lg bg-white shadow-sm">
-      <div class="border-b border-grey-300 px-5 py-3 flex items-center justify-end gap-2">
-        <UISelect v-model:value="sortOrder" class="w-32">
-          <UISelectOption value="desc">{{ $t({ en: 'Newest', zh: '最新' }) }}</UISelectOption>
-          <UISelectOption value="asc">{{ $t({ en: 'Oldest', zh: '最早' }) }}</UISelectOption>
-        </UISelect>
-        <UIButton type="secondary" size="small" @click="appsQuery.refetch">
-          {{ $t({ en: 'Refresh', zh: '刷新' }) }}
-        </UIButton>
+    <div v-else class="overflow-hidden rounded-lg border border-grey-400 bg-white">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-grey-300 bg-grey-100 px-5 py-3">
+        <div class="text-sm text-grey-800">
+          {{
+            $t({ en: `${appsQuery.data.value?.total ?? 0} apps`, zh: `共 ${appsQuery.data.value?.total ?? 0} 个应用` })
+          }}
+        </div>
+        <div class="flex items-center gap-2">
+          <UISelect v-model:value="sortOrder" class="w-32">
+            <UISelectOption value="desc">{{ $t({ en: 'Newest', zh: '最新' }) }}</UISelectOption>
+            <UISelectOption value="asc">{{ $t({ en: 'Oldest', zh: '最早' }) }}</UISelectOption>
+          </UISelect>
+          <UIButton icon="reload" type="white" @click="appsQuery.refetch">
+            {{ $t({ en: 'Refresh', zh: '刷新' }) }}
+          </UIButton>
+        </div>
       </div>
       <UILoading v-if="appsQuery.isLoading.value" class="my-16" />
       <UIError v-else-if="appsQuery.error.value != null" class="py-12">
         {{ $t(appsQuery.error.value.userMessage) }}
       </UIError>
-      <table v-else class="w-full border-collapse text-left text-sm">
-        <thead class="text-grey-800">
-          <tr class="border-b border-grey-300">
-            <th class="px-5 py-3 font-medium">{{ $t({ en: 'App', zh: '应用' }) }}</th>
-            <th class="px-5 py-3 font-medium">{{ $t({ en: 'Type', zh: '类型' }) }}</th>
-            <th class="px-5 py-3 font-medium">{{ $t({ en: 'Status', zh: '状态' }) }}</th>
-            <th class="px-5 py-3 font-medium">{{ $t({ en: 'Created', zh: '创建时间' }) }}</th>
-            <th class="px-5 py-3 font-medium"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="app in appsQuery.data.value?.data ?? []" :key="app.id" class="border-b border-grey-200">
-            <td class="px-5 py-3">
-              <div class="font-medium text-title">{{ app.displayName }}</div>
-              <div class="font-mono text-xs text-grey-800">{{ app.name }}</div>
-            </td>
-            <td class="px-5 py-3">{{ app.clientType }}</td>
-            <td class="px-5 py-3">{{ app.status }}</td>
-            <td class="px-5 py-3">{{ formatTime(app.createdAt) }}</td>
-            <td class="px-5 py-3 text-right">
-              <RouterLink class="text-primary-main no-underline" :to="`/admin/apps/${encodeURIComponent(app.id)}`">
-                {{ $t({ en: 'Open', zh: '打开' }) }}
-              </RouterLink>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full min-w-full border-collapse text-left text-sm tablet:min-w-[760px]">
+          <thead class="bg-grey-200 text-grey-800">
+            <tr class="border-b border-grey-300">
+              <th class="px-5 py-3 font-medium">{{ $t({ en: 'App', zh: '应用' }) }}</th>
+              <th class="hidden px-5 py-3 font-medium tablet:table-cell">
+                {{ $t({ en: 'Client type', zh: '客户端类型' }) }}
+              </th>
+              <th class="px-5 py-3 font-medium">{{ $t({ en: 'Availability', zh: '可用状态' }) }}</th>
+              <th class="hidden px-5 py-3 font-medium tablet:table-cell">
+                {{ $t({ en: 'Created', zh: '创建时间' }) }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="app in appsQuery.data.value?.data ?? []"
+              :key="app.id"
+              class="border-b border-grey-200 transition-colors last:border-b-0 hover:bg-grey-100"
+            >
+              <td class="px-5 py-3">
+                <RouterLink
+                  class="font-medium text-title no-underline hover:text-primary-main hover:underline"
+                  :to="`/admin/apps/${encodeURIComponent(app.id)}`"
+                >
+                  {{ app.displayName }}
+                </RouterLink>
+                <div class="font-mono text-xs text-grey-800">{{ app.name }}</div>
+              </td>
+              <td class="hidden px-5 py-3 tablet:table-cell">
+                <span class="rounded bg-grey-300 px-2 py-1 text-xs text-grey-900">
+                  {{ $t(accountAppClientTypeLabels[app.clientType]) }}
+                </span>
+              </td>
+              <td class="px-5 py-3">
+                <span
+                  class="inline-flex rounded px-2 py-1 text-xs font-medium"
+                  :class="app.status === 'active' ? 'bg-green-100 text-green-600' : 'bg-grey-300 text-grey-800'"
+                >
+                  {{ $t(accountAppStatusLabels[app.status]) }}
+                </span>
+              </td>
+              <td class="hidden px-5 py-3 tablet:table-cell">{{ formatTime(app.createdAt) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div class="px-5 py-4 flex justify-center">
         <UIPagination v-show="pageTotal > 1" v-model:current="page" :total="pageTotal" />
       </div>
@@ -111,17 +143,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, reactive, ref, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption, UITextInput } from '@/components/ui'
 import * as accountAdminApis from '@/apis/admin/account'
-import { formatTime, parseLines } from './common'
+import { accountAppClientTypeLabels, accountAppStatusLabels, formatTime, parseLines } from './common'
 
 const signedInStateQuery = useSignedInStateQuery()
+const router = useRouter()
 const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
 
 const pageSize = 20
@@ -152,22 +185,20 @@ const appsQuery = useQuery(
 
 const pageTotal = computed(() => Math.ceil((appsQuery.data.value?.total ?? 0) / pageSize))
 
+watch(sortOrder, () => {
+  page.value = 1
+})
+
 const handleCreateApp = useMessageHandle(
   async () => {
-    await accountAdminApis.createAccountApp({
+    const app = await accountAdminApis.createAccountApp({
       name: createForm.name.trim(),
       displayName: createForm.displayName.trim(),
       clientType: createForm.clientType,
       redirectURIs: parseLines(createForm.redirectURIs),
       allowedOrigins: parseLines(createForm.allowedOrigins)
     })
-    createForm.name = ''
-    createForm.displayName = ''
-    createForm.clientType = 'public'
-    createForm.redirectURIs = ''
-    createForm.allowedOrigins = ''
-    showCreateForm.value = false
-    appsQuery.refetch()
+    await router.push(`/admin/apps/${encodeURIComponent(app.id)}`)
   },
   { en: 'Failed to create Account app', zh: '创建账号应用失败' },
   { en: 'Account app created', zh: '账号应用已创建' }

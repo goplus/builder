@@ -188,7 +188,7 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        redirect: '/admin/audit-logs'
+        redirect: '/admin/users'
       },
       {
         path: 'users',
