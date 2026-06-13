@@ -102,6 +102,43 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).toContain('Dropdown content')
   })
 
+  it('supports opening by either hover or click', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () =>
+                h(
+                  UIDropdown,
+                  { trigger: 'hover-click' },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger' }, 'Open'),
+                    default: () => h('div', 'Dropdown content')
+                  }
+                )
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const dropdown = wrapper.getComponent(UIDropdown)
+    const trigger = wrapper.get('[data-test-id="trigger"]')
+    const popupContainer = wrapper.get('[data-test-id="popup-container"]')
+
+    await trigger.trigger('click')
+    await flushDropdown()
+    expect(popupContainer.text()).toContain('Dropdown content')
+
+    dropdown.vm.setVisible(false)
+    await flushDropdown()
+    await trigger.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(100)
+    await flushDropdown()
+    expect(popupContainer.text()).toContain('Dropdown content')
+  })
+
   it('cancels a pending hover open when it becomes disabled before the delay elapses', async () => {
     const wrapper = mount(
       defineComponent({

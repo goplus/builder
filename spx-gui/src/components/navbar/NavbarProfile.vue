@@ -63,6 +63,11 @@
           {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
         </UIMenuItem>
       </UIMenuGroup>
+      <UIMenuGroup v-if="canUseAccountAdmin">
+        <UIMenuItem @click="handleAccountAdmin">
+          {{ $t({ en: 'Account admin', zh: '账号管理' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
@@ -75,7 +80,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
-import { getUserPageRoute } from '@/router'
+import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { initiateSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
@@ -93,6 +98,11 @@ const i18n = useI18n()
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
+const canUseAccountAdmin = computed(
+  () =>
+    signedInUser.value?.capabilities.canManageAccount === true ||
+    signedInUser.value?.capabilities.canManageAuthorization === true
+)
 const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
@@ -108,6 +118,10 @@ function handleProjects() {
   router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
 }
 
+function handleAccountAdmin() {
+  router.push('/admin')
+}
+
 const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
 
@@ -117,8 +131,8 @@ const manageCourses = useMessageHandle(manageCoursesFn).fn
 const manageCourseSeriesFn = useCourseSeriesManagement()
 const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
 
-function handleSignOut() {
-  signOut()
+async function handleSignOut() {
+  await signOut()
   router.go(0) // Reload the page to trigger navigation guards.
 }
 </script>

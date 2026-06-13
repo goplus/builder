@@ -7,7 +7,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import browserslistToEsbuild from 'browserslist-to-esbuild'
 
-import { createVercelOutputPlugin } from './vercel-output-plugin.js'
+import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
+import { createVercelOutputPlugin } from './build/vite-plugins/vercel-output-plugin.js'
 
 const resolve = (dir: string) => path.join(__dirname, dir)
 
@@ -28,6 +29,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
+      createAppHtmlEntryPlugin(resolve('src/apps/xbuilder/index.html')),
       vue(),
       tailwindcss(),
       ViteEjsPlugin(),

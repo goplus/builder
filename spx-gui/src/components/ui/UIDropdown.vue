@@ -17,7 +17,7 @@ export type Placement = Extract<
   PopupPlacement,
   'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end'
 >
-export type TriggerType = 'click' | 'hover' | 'manual'
+export type TriggerType = 'click' | 'hover' | 'hover-click' | 'manual'
 export type Pos = {
   x: number
   y: number
@@ -160,28 +160,28 @@ function scheduleClose() {
 }
 
 function handleTriggerClick() {
-  if (props.trigger !== 'click' || props.disabled) return
+  if ((props.trigger !== 'click' && props.trigger !== 'hover-click') || props.disabled) return
   setVisible(true)
 }
 
 function handleTriggerMouseenter() {
-  if (props.trigger !== 'hover' || props.disabled) return
+  if ((props.trigger !== 'hover' && props.trigger !== 'hover-click') || props.disabled) return
   scheduleOpen()
 }
 
 function handleTriggerMouseleave() {
-  if (props.trigger !== 'hover') return
+  if (props.trigger !== 'hover' && props.trigger !== 'hover-click') return
   scheduleClose()
 }
 
 function handleContentMouseenter() {
-  if (props.trigger !== 'hover' || props.disabled) return
+  if ((props.trigger !== 'hover' && props.trigger !== 'hover-click') || props.disabled) return
   clearTimer(hoverCloseTimerRef)
   setVisible(true)
 }
 
 function handleContentMouseleave() {
-  if (props.trigger !== 'hover') return
+  if (props.trigger !== 'hover' && props.trigger !== 'hover-click') return
   scheduleClose()
 }
 
@@ -258,6 +258,14 @@ const triggerProps = computed(() => {
   if (props.trigger === 'hover') {
     return {
       ...common,
+      onMouseenter: handleTriggerMouseenter,
+      onMouseleave: handleTriggerMouseleave
+    }
+  }
+  if (props.trigger === 'hover-click') {
+    return {
+      ...common,
+      onClick: handleTriggerClick,
       onMouseenter: handleTriggerMouseenter,
       onMouseleave: handleTriggerMouseleave
     }

@@ -97,7 +97,7 @@ function handleExit() {
 <style>
 /*
  * Declare the layer order inside the widget stylesheet entry before importing app.css.
- * The widget renders in its own shadow root, so the document-level workaround in index.html
+ * The widget renders in its own shadow root, so the document-level workaround in the app HTML entry
  * does not apply here; this prelude must be parsed inside the widget stylesheet itself.
  * See: https://github.com/vitejs/vite/issues/21903
  */
