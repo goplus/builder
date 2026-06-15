@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 import { UIBackdropItem, UICornerIcon } from '@/components/ui'
-import { useFileUrl } from '@/utils/file'
+import { useImgFileUrl } from '@/utils/img'
 import type { AssetData } from '@/apis/asset'
 import { asset2Backdrop } from '@/models/spx/common/asset'
 import { useAsyncComputedLegacy } from '@/utils/utils'
@@ -22,5 +22,5 @@ const props = defineProps<{
 }>()
 
 const backdrop = useAsyncComputedLegacy(() => asset2Backdrop(props.asset))
-const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
+const [imgSrc, imgLoading] = useImgFileUrl(() => backdrop.value?.img)
 </script>

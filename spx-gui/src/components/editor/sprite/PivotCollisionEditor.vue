@@ -9,7 +9,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import type { Rect, RectConfig } from 'konva/lib/shapes/Rect'
 import { useAsyncComputed } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
-import { useFileImg } from '@/utils/file'
+import { useImgFileImg } from '@/utils/img'
 import { useContentSize } from '@/utils/dom'
 import { getContentBoundingRect } from '@/utils/img'
 import { toNativeFile } from '@/models/common/file'
@@ -42,7 +42,7 @@ const defaultCostume = computed(() => {
   if (c == null) throw new Error('Sprite has no default costume')
   return c
 })
-const [image] = useFileImg(() => defaultCostume.value.img)
+const [image] = useImgFileImg(() => defaultCostume.value.img)
 const costumeSize = useAsyncComputed(() => defaultCostume.value.getSize())
 const canvasSize = computed(() => {
   if (costumeSize.value == null) return null

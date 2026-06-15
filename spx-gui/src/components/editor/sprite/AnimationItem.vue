@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { UIImg, UIEditorSpriteItem, useModal } from '@/components/ui'
-import { useFileUrl } from '@/utils/file'
+import { useImgFileUrl } from '@/utils/img'
 import { useHovered } from '@/utils/dom'
 import type { Animation } from '@/models/spx/animation'
 import { useMessageHandle } from '@/utils/exception'
@@ -27,7 +27,7 @@ const props = withDefaults(
 )
 
 const editorCtx = useEditorCtx()
-const [imgSrc, imgLoading] = useFileUrl(() => props.animation.costumes[0].img)
+const [imgSrc, imgLoading] = useImgFileUrl(() => props.animation.costumes[0].img)
 
 const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)

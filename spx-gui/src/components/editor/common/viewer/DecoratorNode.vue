@@ -4,7 +4,7 @@ import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { Size } from '@/models/common'
 import type { Decorator } from '@/models/spx/tilemap'
 import { normalizeDegree } from '@/utils/utils'
-import { useFileImg } from '@/utils/file'
+import { useImgFileImg } from '@/utils/img'
 
 const props = defineProps<{
   decorator: Decorator
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 // TODO: loading (ready) state for decorator?
 
-const [image] = useFileImg(() => props.decorator.img)
+const [image] = useImgFileImg(() => props.decorator.img)
 
 const config = computed<ImageConfig>(() => {
   const { position, rotation, scale, pivot } = props.decorator

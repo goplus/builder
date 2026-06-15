@@ -9,7 +9,7 @@ import type { RectConfig } from 'konva/lib/shapes/Rect'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import { useFileUrl } from '@/utils/file'
+import { useImgFileUrl } from '@/utils/img'
 import { until, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import type { SpxProject } from '@/models/spx/project'
@@ -241,7 +241,7 @@ function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
 }
 
 const backdropImg = ref<HTMLImageElement | null>(null)
-const [backdropSrc, backdropSrcLoading] = useFileUrl(() => props.project.stage.defaultBackdrop?.img)
+const [backdropSrc, backdropSrcLoading] = useImgFileUrl(() => props.project.stage.defaultBackdrop?.img)
 watchEffect(() => {
   if (backdropSrc.value == null) return
   const img = new Image()

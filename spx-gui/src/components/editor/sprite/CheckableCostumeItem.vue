@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { useFileUrl } from '@/utils/file'
+import { useImgFileUrl } from '@/utils/img'
 import type { Costume } from '@/models/spx/costume'
 import { UIImg, UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
 
@@ -17,5 +17,5 @@ const props = defineProps<{
   checked: boolean
 }>()
 
-const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
+const [imgSrc, imgLoading] = useImgFileUrl(() => props.costume.img)
 </script>

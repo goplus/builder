@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useHovered } from '@/utils/dom'
-import { useFileUrl } from '@/utils/file'
+import { useImgFileUrl } from '@/utils/img'
 import { useAsyncComputedLegacy } from '@/utils/utils'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sprite } from '@/models/spx/common/asset'
@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const sprite = useAsyncComputedLegacy(() => asset2Sprite(props.asset))
-const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.defaultCostume?.img)
+const [imgSrc, imgLoading] = useImgFileUrl(() => sprite.value?.defaultCostume?.img)
 const name = computed(() => props.asset.displayName)
 const wrapperRef = ref<InstanceType<typeof UISpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)

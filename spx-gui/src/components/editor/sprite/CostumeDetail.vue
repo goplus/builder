@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 import { UIImg } from '@/components/ui'
-import { useFileUrl } from '@/utils/file'
+import { useImgFileUrl } from '@/utils/img'
 import type { Costume } from '@/models/spx/costume'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
@@ -22,5 +22,5 @@ const emit = defineEmits<{
   rename: []
 }>()
 
-const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
+const [imgSrc, imgLoading] = useImgFileUrl(() => props.costume.img)
 </script>

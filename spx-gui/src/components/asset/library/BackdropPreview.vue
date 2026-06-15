@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { useAsyncComputedLegacy } from '@/utils/utils'
-import { useFileUrl } from '@/utils/file'
+import { useImgFileUrl } from '@/utils/img'
 import type { AssetData } from '@/apis/asset'
 import { asset2Backdrop } from '@/models/spx/common/asset'
 import { Backdrop } from '@/models/spx/backdrop'
@@ -18,5 +18,5 @@ const backdrop = useAsyncComputedLegacy(async () => {
   if (props.backdrop instanceof Backdrop) return props.backdrop
   return asset2Backdrop(props.backdrop)
 })
-const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
+const [imgSrc, imgLoading] = useImgFileUrl(() => backdrop.value?.img)
 </script>

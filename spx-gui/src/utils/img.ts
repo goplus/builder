@@ -1,6 +1,10 @@
+import { computed, ref, watch, type WatchSource } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { isSvgMimeType } from '@/utils/file'
+import type { File } from '@/models/common/file'
+import { Cancelled } from '@/utils/exception'
 import { getImgDrawingCtx } from './canvas'
+import { injectScratchFontsIntoSvg } from './scratch-font'
 
 /** Convert arbitrary-type (supported by current browser) image content to another type. */
 export function convertImg(
@@ -152,4 +156,119 @@ function findContentBounds(imageData: ImageData): Rect {
     width: maxX - minX + 1,
     height: maxY - minY + 1
   }
+}
+
+/**
+ * Get a display URL for an image file, with Scratch built-in font injection for SVG assets.
+ *
+ * SVG blobs loaded as CSS background-image or <img src> cannot reference external resources
+ * (including page-level @font-face definitions). This composable handles SVG files by reading
+ * their text content, embedding required Scratch font data as inline @font-face data URIs, and
+ * creating a new blob URL from the modified SVG. Non-SVG files get a plain blob URL as usual.
+ *
+ * Use this composable in rendering contexts (costume previews, backdrop previews, sprite
+ * thumbnails) that display image assets and need correct Scratch font rendering in edit mode.
+ * For non-image files (audio, JSON) continue using `useFileUrl` from `@/utils/file`.
+ */
+export function useImgFileUrl(fileSource: WatchSource<File | undefined | null>) {
+  const urlRef = ref<string | null>(null)
+  const loadingRef = ref(false)
+
+  watch(
+    fileSource,
+    (file, _, onCleanup) => {
+      if (file == null) {
+        urlRef.value = null
+        return
+      }
+      loadingRef.value = true
+      let cancelled = false
+      let revokeUrl: (() => void) | null = null
+
+      onCleanup(() => {
+        cancelled = true
+        urlRef.value = null
+        revokeUrl?.()
+      })
+
+      const run = async () => {
+        if (!isSvgMimeType(file.type)) {
+          // Non-SVG: delegate to the standard file URL mechanism.
+          return file.url((cleanup) => {
+            if (cancelled) {
+              cleanup()
+              return
+            }
+            revokeUrl = cleanup
+          })
+        }
+
+        // SVG: read the text, inject Scratch fonts, create a new blob URL.
+        const ab = await file.arrayBuffer()
+        if (cancelled) return null
+        const svgText = new TextDecoder().decode(ab)
+        const injected = await injectScratchFontsIntoSvg(svgText)
+        if (cancelled) return null
+        const blob = new Blob([injected], { type: 'image/svg+xml' })
+        const url = URL.createObjectURL(blob)
+        revokeUrl = () => URL.revokeObjectURL(url)
+        return url
+      }
+
+      run()
+        .then((url) => {
+          if (cancelled || url == null) return
+          urlRef.value = url
+        })
+        .catch((e) => {
+          if (e instanceof Cancelled) return
+          throw e
+        })
+        .finally(() => {
+          loadingRef.value = false
+        })
+    },
+    { immediate: true }
+  )
+
+  return [urlRef, loadingRef] as const
+}
+
+/**
+ * Get an HTMLImageElement for an image file, with Scratch built-in font injection for SVG assets.
+ * Behaves like `useFileImg` from `@/utils/file` but uses `useImgFileUrl` internally so SVG
+ * costumes and backdrops with Scratch fonts render correctly in canvas (Konva) contexts.
+ */
+export function useImgFileImg(fileSource: WatchSource<File | undefined | null>) {
+  const [urlRef, urlLoadingRef] = useImgFileUrl(fileSource)
+  const imgRef = ref<HTMLImageElement | null>(null)
+  const imgLoadingRef = ref(false)
+  watch(urlRef, (url, _, onCleanup) => {
+    onCleanup(() => {
+      imgRef.value?.remove()
+      imgRef.value = null
+    })
+    if (url != null) {
+      imgLoadingRef.value = true
+      const img = new window.Image()
+      img.addEventListener(
+        'load',
+        () => {
+          imgRef.value = img
+          imgLoadingRef.value = false
+        },
+        { once: true }
+      )
+      img.addEventListener(
+        'error',
+        () => {
+          imgLoadingRef.value = false
+        },
+        { once: true }
+      )
+      img.src = url
+    }
+  })
+  const loading = computed(() => urlLoadingRef.value || imgLoadingRef.value)
+  return [imgRef, loading] as const
 }
