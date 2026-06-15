@@ -2,7 +2,6 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
-import os from 'node:os'
 import path from 'node:path'
 import { Buffer } from 'node:buffer'
 import type { Plugin, ViteDevServer } from 'vite'
@@ -49,7 +48,9 @@ export function createBrowserHijackPlugin(options: BrowserHijackPluginOptions): 
           })
           .catch((error: unknown) => {
             if (stopped) return
-            server.config.logger.error(`Failed to start browser hijack: ${error instanceof Error ? error.message : String(error)}`)
+            server.config.logger.error(
+              `Failed to start browser hijack: ${error instanceof Error ? error.message : String(error)}`
+            )
           })
       })
       server.httpServer?.once('close', () => {
@@ -60,17 +61,25 @@ export function createBrowserHijackPlugin(options: BrowserHijackPluginOptions): 
   }
 }
 
-async function startBrowserHijack(server: ViteDevServer, options: BrowserHijackPluginOptions, isStopped: () => boolean) {
+async function startBrowserHijack(
+  server: ViteDevServer,
+  options: BrowserHijackPluginOptions,
+  isStopped: () => boolean
+) {
   const devOrigin = server.resolvedUrls?.local[0]?.replace(/\/$/, '') ?? `http://localhost:${server.config.server.port}`
   const hijackedOrigin = options.origin
   const remoteDebuggingPort = options.remoteDebuggingPort ?? defaultRemoteDebuggingPort
   const portState = await checkRemoteDebuggingPort(remoteDebuggingPort)
   if (portState === 'available') {
-    server.config.logger.info(`Browser hijack Chrome command:\n${createChromeCommand(options, remoteDebuggingPort)}`)
+    server.config.logger.info(
+      `Browser hijack Chrome command:\n${createChromeCommand(options, remoteDebuggingPort, server.config.root)}`
+    )
   } else {
     server.config.logger.info(`Browser hijack reusing Chrome remote debugging port ${remoteDebuggingPort}`)
     if ((await getCDPTargets(remoteDebuggingPort)).length === 0) {
-      server.config.logger.info(`Browser hijack is waiting for a Chrome page target. Open ${options.chromeStartURL} in that Chrome instance.`)
+      server.config.logger.info(
+        `Browser hijack is waiting for a Chrome page target. Open ${options.chromeStartURL} in that Chrome instance.`
+      )
     }
   }
   const hijackedURLPatterns = options.routes.map((route) => `${hijackedOrigin.replace(/\/$/, '')}${route}*`)
@@ -104,10 +113,10 @@ async function startBrowserHijack(server: ViteDevServer, options: BrowserHijackP
   }
 }
 
-function createChromeCommand(options: BrowserHijackPluginOptions, remoteDebuggingPort: number) {
+function createChromeCommand(options: BrowserHijackPluginOptions, remoteDebuggingPort: number, projectRoot: string) {
   const executable = findChromeExecutable()
-  const userDataDirPrefix = 'browser-hijack-chrome-'
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), userDataDirPrefix))
+  const userDataDir = path.join(projectRoot, 'node_modules/.cache/browser-hijack-chrome')
+  fs.mkdirSync(userDataDir, { recursive: true })
   const args = [
     `--remote-debugging-port=${remoteDebuggingPort}`,
     `--user-data-dir=${userDataDir}`,
