@@ -1,7 +1,11 @@
 <template>
   <div class="flex-[1_1_0] flex">
     <div class="flex-none flex flex-col border-r border-dividing-line-2">
-      <div ref="itemsWrapper" v-radar="listRadarInfo" class="items flex-[1_1_0] flex flex-col gap-2 overflow-y-auto">
+      <div
+        ref="itemsWrapper"
+        v-radar="listRadarInfo"
+        class="items mx-0.5 flex-[1_1_0] flex flex-col gap-2 overflow-y-auto"
+      >
         <slot></slot>
       </div>
       <UIDropdownWithTooltip>
@@ -80,7 +84,9 @@ useDragSortable(sortableList, itemsWrapper, {
 
 <style scoped>
 .items {
-  padding: 12px;
+  /* Keep horizontal padding within the SortableJS drag-end threshold. */
+  /* The extra 2px visual spacing comes from the wrapper margin above. */
+  padding: 12px 10px;
 }
 
 .items:deep(.sortable-ghost-item) {
