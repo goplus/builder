@@ -39,6 +39,12 @@ Keep import statements in order:
 	- Enum names and enum members
 	- Vue component names
 
+### Browser Storage Keys
+
+* Prefix new `localStorage` and `sessionStorage` keys with `builder-`.
+* Use the remainder of the key to identify the owning feature and stored state, for example `builder-user` or `builder-account-pending-authorization`.
+* Migrate existing keys gradually when changing their owning storage logic. Do not rename unrelated existing keys solely for consistency.
+
 ### Identifier Resolution
 
 When working with backend unique string identifiers such as `username`, project owner, and project name, distinguish unresolved identifiers from canonical identifiers.
