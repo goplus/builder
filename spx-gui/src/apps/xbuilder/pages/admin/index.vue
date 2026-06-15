@@ -23,10 +23,10 @@ const navItems = computed(() => [
   ...(canManageAccount.value
     ? [
         { to: '/admin/users', label: { en: 'Users', zh: '用户' } },
-        { to: '/admin/apps', label: { en: 'OAuth apps', zh: 'OAuth 应用' } }
+        { to: '/admin/apps', label: { en: 'OAuth apps', zh: 'OAuth 应用' } },
+        { to: '/admin/audit-logs', label: { en: 'Audit logs', zh: '审计日志' } }
       ]
-    : []),
-  { to: '/admin/audit-logs', label: { en: 'Audit logs', zh: '审计日志' } }
+    : [])
 ])
 </script>
 
