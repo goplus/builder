@@ -193,7 +193,8 @@ export class OAuthFlow<ExtraData extends object = object> {
     private apis: OAuthAPIs,
     private config: OAuthFlowConfig
   ) {
-    const pendingAuthorizationStorageKey = config.pendingAuthorizationStorageKey ?? 'spx-gui-pending-authorization'
+    const pendingAuthorizationStorageKey =
+      config.pendingAuthorizationStorageKey ?? 'builder-pending-oauth-authorization'
     this.pas = createPendingOAuthAuthorizationStorage(pendingAuthorizationStorageKey)
   }
 

@@ -10,7 +10,7 @@ import { getUserQueryKey } from './query-keys'
 
 export type SignedInUser = userApis.SignedInUser
 
-const userStateStorageKey = 'spx-user'
+const userStateStorageKey = 'builder-user'
 
 const oauthFlow = new OAuthFlow<{ returnTo: string }>(oauthApis, {
   clientId: oauthClientId,

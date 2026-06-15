@@ -1,6 +1,6 @@
 <script lang="ts">
 function getPendingAuthorizationKey(request: OAuthRequest) {
-  return `account-pending-authorization:${request.clientId}:${request.requestUri}`
+  return `builder-account-pending-authorization:${request.clientId}:${request.requestUri}`
 }
 
 function hasPendingAuthorization(request: OAuthRequest) {

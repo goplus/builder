@@ -4,7 +4,17 @@ on:
   pull_request:
 jobs:
   publish-docker-image:
+    name: Publish ${{ matrix.name }} Docker image
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: Builder
+            dockerfile: ./spx-gui/build/Dockerfile
+            tag: ghcr.io/${{ github.repository }}:dev
+          - name: Account
+            dockerfile: ./spx-gui/build/Dockerfile.account
+            tag: ghcr.io/${{ github.repository }}/account:dev
     steps:
       - name: Check out code
         uses: actions/checkout@v6
@@ -20,11 +30,11 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: ./spx-gui/build/Dockerfile
+          file: ${{ matrix.dockerfile }}
           build-args: |
             NODE_ENV=staging
           provenance: false
           sbom: false
           push: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
           tags: |
-            ghcr.io/${{github.repository}}:dev
+            ${{ matrix.tag }}

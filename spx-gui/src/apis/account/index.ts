@@ -12,7 +12,6 @@ export type OAuthRequest = {
 }
 
 export type CurrentAccountSession = AccountSession & {
-  current: boolean
   user: AccountUser
 }
 
