@@ -1,3 +1,65 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useNetwork } from '@/utils/network'
+import { useMessageHandle } from '@/utils/exception'
+import { getUserPageRoute } from '@/apps/xbuilder/router'
+import { AssetType } from '@/apis/asset'
+import { initiateSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
+import { useAvatarUrl } from '@/stores/user/avatar'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
+import { useAssetLibraryManagement } from '@/components/asset'
+import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
+import { useI18n } from '@/utils/i18n'
+import enSvg from './icons/en.svg?raw'
+import zhSvg from './icons/zh.svg?raw'
+
+const { isOnline } = useNetwork()
+const router = useRouter()
+const i18n = useI18n()
+
+const signedInStateQuery = useSignedInStateQuery()
+const loading = computed(() => signedInStateQuery.isLoading.value)
+const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
+const canUseAccountAdmin = computed(
+  () =>
+    signedInUser.value?.capabilities.canManageAccount === true ||
+    signedInUser.value?.capabilities.canManageAuthorization === true
+)
+const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
+
+const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
+function toggleLang() {
+  i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
+}
+
+function handleUserPage() {
+  router.push(getUserPageRoute(signedInUser.value!.username))
+}
+
+function handleProjects() {
+  router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
+}
+
+function handleAccountAdmin() {
+  router.push('/admin')
+}
+
+const manageAssetLibrary = useAssetLibraryManagement()
+const manageAssets = useMessageHandle(manageAssetLibrary).fn
+
+const manageCoursesFn = useCourseManagement()
+const manageCourses = useMessageHandle(manageCoursesFn).fn
+
+const manageCourseSeriesFn = useCourseSeriesManagement()
+const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
+
+async function handleSignOut() {
+  await signOut()
+  router.go(0) // Reload the page to trigger navigation guards.
+}
+</script>
+
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div v-if="!loading && signedInUser == null" class="h-full flex items-center px-3 whitespace-nowrap">
@@ -63,65 +125,17 @@
           {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
         </UIMenuItem>
       </UIMenuGroup>
+      <UIMenuGroup v-if="canUseAccountAdmin">
+        <UIMenuItem @click="handleAccountAdmin">
+          {{ $t({ en: 'Account admin', zh: '账号管理' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
     </UIMenu>
   </UIDropdown>
 </template>
-
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useNetwork } from '@/utils/network'
-import { useMessageHandle } from '@/utils/exception'
-import { getUserPageRoute } from '@/apps/xbuilder/router'
-import { AssetType } from '@/apis/asset'
-import { initiateSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
-import { useAvatarUrl } from '@/stores/user/avatar'
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
-import { useAssetLibraryManagement } from '@/components/asset'
-import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
-import { useI18n } from '@/utils/i18n'
-import enSvg from './icons/en.svg?raw'
-import zhSvg from './icons/zh.svg?raw'
-
-const { isOnline } = useNetwork()
-const router = useRouter()
-const i18n = useI18n()
-
-const signedInStateQuery = useSignedInStateQuery()
-const loading = computed(() => signedInStateQuery.isLoading.value)
-const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
-const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
-
-const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
-function toggleLang() {
-  i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
-}
-
-function handleUserPage() {
-  router.push(getUserPageRoute(signedInUser.value!.username))
-}
-
-function handleProjects() {
-  router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
-}
-
-const manageAssetLibrary = useAssetLibraryManagement()
-const manageAssets = useMessageHandle(manageAssetLibrary).fn
-
-const manageCoursesFn = useCourseManagement()
-const manageCourses = useMessageHandle(manageCoursesFn).fn
-
-const manageCourseSeriesFn = useCourseSeriesManagement()
-const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
-
-async function handleSignOut() {
-  await signOut()
-  router.go(0) // Reload the page to trigger navigation guards.
-}
-</script>
 
 <style scoped>
 .lang-switch-icon :deep(svg) {

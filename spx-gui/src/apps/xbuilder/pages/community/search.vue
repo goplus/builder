@@ -72,7 +72,7 @@ import { ProjectType, Visibility, listProjects, type ListProjectsParams } from '
 import { usePageTitle } from '@/utils/utils'
 import { UISelect, UISelectOption, UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
-import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import CommunityHeader from '@/components/community/CommunityHeader.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 

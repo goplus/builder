@@ -1,3 +1,12 @@
+<script setup lang="ts">
+import { UIDropdown, UIIcon } from '@/components/ui'
+import type { RadarNodeMeta } from '@/utils/radar'
+
+defineProps<{
+  triggerRadar: RadarNodeMeta
+}>()
+</script>
+
 <template>
   <UIDropdown placement="bottom-start">
     <template #trigger>
@@ -9,12 +18,3 @@
     <slot></slot>
   </UIDropdown>
 </template>
-
-<script setup lang="ts">
-import { UIDropdown, UIIcon } from '@/components/ui'
-import type { RadarNodeMeta } from '@/utils/radar'
-
-defineProps<{
-  triggerRadar: RadarNodeMeta
-}>()
-</script>

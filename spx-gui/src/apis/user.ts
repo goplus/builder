@@ -26,6 +26,10 @@ export type SignedInUser = User & {
 }
 
 export type UserCapabilities = {
+  /** Whether user can manage XBuilder Account resources */
+  canManageAccount: boolean
+  /** Whether user can manage XBuilder Authorization resources */
+  canManageAuthorization: boolean
   /** Whether user can manage asset library */
   canManageAssets: boolean
   /** Whether user can manage courses and course series */

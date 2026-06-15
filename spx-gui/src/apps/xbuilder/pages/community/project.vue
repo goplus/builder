@@ -29,7 +29,7 @@ import {
   useResponsive,
   UITooltip
 } from '@/components/ui'
-import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
