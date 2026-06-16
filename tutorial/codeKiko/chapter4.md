@@ -43,18 +43,14 @@
 
 **初始代码：**
 ```
-onStart => {
-    var x float64 = 100
-    step x
-}
+var x float64 = 100
+step x
 ```
 
 **修改后的代码：**
 ```
-onStart => {
-    var x float64 = 160
-    step x
-}
+var x float64 = 160
+step x
 ```
 
 #### 代码详解
@@ -123,10 +119,8 @@ step x
 **完整执行流程**
 
 ```
-onStart => {
-    var x float64 = 160  // 第1步：创建变量x，存入160
-    step x               // 第2步：读取x的值（160），前进160步
-}
+var x float64 = 160  // 第1步：创建变量x，存入160
+step x               // 第2步：读取x的值（160），前进160步
 ```
 
 1. 程序执行第一行：创建变量 `x`，存入值 `160`
@@ -141,13 +135,11 @@ onStart => {
 
 **不用变量：**
 ```
-onStart => {
-    step 160
-    turn Right
-    step 160
-    turn Right
-    step 160
-}
+step 160
+turn Right
+step 160
+turn Right
+step 160
 ```
 
 如果要把所有的 `160` 改成 `200`：
@@ -157,14 +149,12 @@ onStart => {
 
 **使用变量：**
 ```
-onStart => {
-    var distance float64 = 160
-    step distance
-    turn Right
-    step distance
-    turn Right
-    step distance
-}
+var distance float64 = 160
+step distance
+turn Right
+step distance
+turn Right
+step distance
 ```
 
 如果要改变距离：
@@ -342,15 +332,13 @@ var isGameOver bool = false
 定义变量后，可以在任何地方使用它：
 
 ```
-onStart => {
-    var distance float64 = 160
-    
-    // 用在 step 命令中
-    step distance
-    
-    // 用在 turn 命令中（假设 distance 是角度）
-    // turn distance
-}
+var distance float64 = 160
+
+// 用在 step 命令中
+step distance
+
+// 用在 turn 命令中（假设 distance 是角度）
+// turn distance
 ```
 
 **多次使用同一个变量**
@@ -358,15 +346,13 @@ onStart => {
 变量可以被多次使用：
 
 ```
-onStart => {
-    var distance float64 = 100
-    
-    step distance      // 第1次使用：走100步
-    turn Right
-    step distance      // 第2次使用：再走100步
-    turn Right
-    step distance      // 第3次使用：再走100步
-}
+var distance float64 = 100
+
+step distance      // 第1次使用：走100步
+turn Right
+step distance      // 第2次使用：再走100步
+turn Right
+step distance      // 第3次使用：再走100步
 ```
 
 每次使用 `distance` 时，计算机都会读取它存储的值（100）。
@@ -392,14 +378,14 @@ step distance
 
 **局部变量**
 
-在 `onStart` 中定义的变量是**局部变量**：
+在代码块（例如循环体 `=> {}`）中定义的变量是**局部变量**：
 
 ```
-onStart => {
+repeat 3, => {
     var x float64 = 160  // 局部变量
     step x
 }
-// 这里不能使用 x，因为它只在 onStart 内部有效
+// 这里不能使用 x，因为它只在循环体内部有效
 ```
 
 局部变量的特点：
@@ -515,12 +501,10 @@ x = x + 1  // x 现在是 6
 
 **完整代码：**
 ```
-onStart => {
-    var n int = 3
-    repeat n, => {
-        turn -60
-        step 100
-    }
+var n int = 3
+repeat n, => {
+    turn -60
+    step 100
 }
 ```
 
@@ -576,12 +560,10 @@ repeat n, => {  // 使用变量
 让我们看看代码是如何执行的：
 
 ```
-onStart => {
-    var n int = 3        // 第1步：创建变量n，值为3
-    repeat n, => {       // 第2步：读取n的值（3），循环3次
-        turn -60         // 第3步：每次循环执行这两行
-        step 100
-    }
+var n int = 3        // 第1步：创建变量n，值为3
+repeat n, => {       // 第2步：读取n的值（3），循环3次
+    turn -60         // 第3步：每次循环执行这两行
+    step 100
 }
 ```
 
@@ -703,17 +685,15 @@ var n = 5  // 编译器自动推断为 int
 **技巧 4：把相关的变量放在一起**
 
 ```
-onStart => {
-    // 图形参数
-    var sides = 5
-    var sideLength = 100
-    var turnAngle = -72
-    
-    // 绘制图形
-    repeat sides, => {
-        turn turnAngle
-        step sideLength
-    }
+// 图形参数
+var sides = 5
+var sideLength = 100
+var turnAngle = -72
+
+// 绘制图形
+repeat sides, => {
+    turn turnAngle
+    step sideLength
 }
 ```
 
@@ -792,12 +772,10 @@ repeat sides, => {
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-21/sprites/Kiko/code
 
 ```
-onStart => {
-    var stepN float64 = 100
-    repeat 3, => {
-        turn Left
-        step stepN
-    }
+var stepN float64 = 100
+repeat 3, => {
+    turn Left
+    step stepN
 }
 ```
 
@@ -840,33 +818,29 @@ onStart => {
 
 **初始代码：**
 ```
-onStart => {
-    var x float64 = 145
+var x float64 = 145
 
-    repeat 3, => {
-        turn Right
-        step x
-        step -x
-        turn Left
-        step 161
-        x = x + 10
-    }
+repeat 3, => {
+    turn Right
+    step x
+    step -x
+    turn Left
+    step 161
+    x = x + 10
 }
 ```
 
 **修改后的代码：**
 ```
-onStart => {
-    var x float64 = 145
+var x float64 = 145
 
-    repeat 3, => {
-        turn Right
-        step x
-        step -x
-        turn Left
-        step 161
-        x = x + 70
-    }
+repeat 3, => {
+    turn Right
+    step x
+    step -x
+    turn Left
+    step 161
+    x = x + 70
 }
 ```
 
