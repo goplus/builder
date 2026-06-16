@@ -4416,7 +4416,7 @@ paths:
           schema:
             type: string
             examples:
-              - foo
+              - john
         - name: orderBy
           description: Field by which to order the results.
           in: query
