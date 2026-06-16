@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { debounce } from 'lodash'
+import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 import { useMessageHandle } from '@/utils/exception'
@@ -57,16 +58,16 @@ watch(sortOrder, () => {
   page.value = 1
 })
 
-function handleSearchUsers() {
-  keyword.value = keywordInput.value.trim()
+const updateKeyword = debounce(() => {
+  const nextKeyword = keywordInput.value.trim()
+  if (keyword.value === nextKeyword) return
+  keyword.value = nextKeyword
   page.value = 1
-}
+}, 300)
 
-function handleClearSearch() {
-  keywordInput.value = ''
-  keyword.value = ''
-  page.value = 1
-}
+watch(keywordInput, updateKeyword)
+
+onUnmounted(() => updateKeyword.cancel())
 
 const handleCreateUser = useMessageHandle(
   async () => {
@@ -150,19 +151,12 @@ const handleCreateUser = useMessageHandle(
           }}
         </div>
         <div class="flex flex-wrap items-center justify-end gap-2">
-          <form class="flex min-w-0 items-center gap-2" @submit.prevent="handleSearchUsers">
-            <UITextInput
-              v-model:value="keywordInput"
-              class="w-64 max-w-full"
-              :placeholder="$t({ en: 'Username or display name', zh: '用户名或显示名称' })"
-            />
-            <UIButton html-type="submit" type="white">
-              {{ $t({ en: 'Search', zh: '搜索' }) }}
-            </UIButton>
-            <UIButton v-if="keyword !== ''" type="white" @click="handleClearSearch">
-              {{ $t({ en: 'Clear', zh: '清空' }) }}
-            </UIButton>
-          </form>
+          <UITextInput
+            v-model:value="keywordInput"
+            clearable
+            class="w-64 max-w-full"
+            :placeholder="$t({ en: 'Username or display name', zh: '用户名或显示名称' })"
+          />
           <UISelect v-model:value="sortOrder" class="w-32">
             <UISelectOption value="desc">{{ $t({ en: 'Newest', zh: '最新' }) }}</UISelectOption>
             <UISelectOption value="asc">{{ $t({ en: 'Oldest', zh: '最早' }) }}</UISelectOption>
