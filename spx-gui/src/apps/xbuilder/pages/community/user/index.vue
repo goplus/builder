@@ -3,7 +3,7 @@ import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUser } from '@/stores/user'
 import { UIError } from '@/components/ui'
-import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import UserHeader from '@/components/community/user/UserHeader.vue'
 import UserSidebar from '@/components/community/user/sidebar/UserSidebar.vue'
 

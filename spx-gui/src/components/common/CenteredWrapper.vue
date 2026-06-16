@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-// different size of centered-content for different pages
 type Size = 'medium' | 'large'
 
 const props = withDefaults(

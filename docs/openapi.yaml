@@ -5587,10 +5587,22 @@ components:
       type: object
       description: User permission capabilities.
       required:
+        - canManageAccount
+        - canManageAuthorization
         - canManageAssets
         - canManageCourses
         - canUsePremiumLLM
       properties:
+        canManageAccount:
+          description: Whether the user can manage user accounts.
+          type: boolean
+          examples:
+            - true
+        canManageAuthorization:
+          description: Whether the user can manage user authorizations.
+          type: boolean
+          examples:
+            - true
         canManageAssets:
           description: Whether the user can manage asset library.
           type: boolean

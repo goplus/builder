@@ -88,8 +88,8 @@ or backend trust rules.
 ## How the Hijack Works
 
 1. Start the Account Vite dev server.
-2. If the Chrome debugging port is free, the plugin prints a Chrome command
-   containing `--remote-debugging-port=9223` and a temporary user data dir.
+2. If the Chrome debugging port is free, the plugin prints a command for
+   launching Chrome with remote debugging enabled.
 3. The developer runs that command manually.
 4. The plugin connects to Chrome page targets through CDP.
 5. It enables the CDP `Fetch` domain for selected remote URL patterns.
