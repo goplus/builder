@@ -4410,6 +4410,13 @@ paths:
 
         Requires the `accountAdmin` role.
       parameters:
+        - name: keyword
+          description: Filter account users by username or display name (nickname).
+          in: query
+          schema:
+            type: string
+            examples:
+              - nighca
         - name: orderBy
           description: Field by which to order the results.
           in: query
