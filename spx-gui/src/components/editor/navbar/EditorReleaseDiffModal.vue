@@ -81,7 +81,10 @@ watchEffect(() => {
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Release diff modal', desc: 'Modal for previewing code differences between a release and the current project' }"
+    :radar="{
+      name: 'Release diff modal',
+      desc: 'Modal for previewing code differences between a release and the current project'
+    }"
     :title="title"
     :visible="visible"
     :style="{ width: '900px' }"
@@ -96,11 +99,7 @@ watchEffect(() => {
           v-for="(resource, index) in resources"
           :key="index"
           class="rounded px-3 py-2 text-left text-sm transition-colors"
-          :class="
-            selectedIndex === index
-              ? 'bg-primary-500 text-white'
-              : 'text-grey-900 hover:bg-grey-400'
-          "
+          :class="selectedIndex === index ? 'bg-primary-500 text-white' : 'text-grey-900 hover:bg-grey-400'"
           @click="selectedIndex = index"
         >
           {{ resource.label }}

@@ -93,7 +93,10 @@ function handleConfirmCancel() {
   <!-- 3-action confirmation dialog -->
   <UIFormModal
     v-else
-    :radar="{ name: 'Release checkout confirm modal', desc: 'Modal for confirming checkout action after selecting a release' }"
+    :radar="{
+      name: 'Release checkout confirm modal',
+      desc: 'Modal for confirming checkout action after selecting a release'
+    }"
     :title="$t({ en: 'Checkout release', zh: '检出版本' })"
     :visible="visible"
     :style="{ width: '480px' }"

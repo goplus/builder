@@ -8,8 +8,7 @@ import { toText } from '@/models/common/file'
 import { stageCodeFilePaths } from '@/models/spx/stage'
 import type { SpxProject } from '@/models/spx/project'
 import { useMessageHandle } from '@/utils/exception'
-import { useConfirmDialogWithResult } from '@/components/ui'
-import { useMessage } from '@/components/ui'
+import { useConfirmDialogWithResult, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import type { EditorState } from '../editor-state'
 import EditorReleaseSelectorModal from './EditorReleaseSelectorModal.vue'
@@ -182,14 +181,15 @@ const diffTitle = computed(() => {
   return t({ en: `Diff: ${release.name}`, zh: `差异预览：${release.name}` })
 })
 
-const selectorTitle = computed(() =>
-  t({ en: 'Checkout release...', zh: '检出版本...' })
-)
+const selectorTitle = computed(() => t({ en: 'Checkout release...', zh: '检出版本...' }))
 </script>
 
 <template>
   <button
-    v-radar="{ name: 'Checkout release button', desc: 'Click to open release selector and checkout a historical release' }"
+    v-radar="{
+      name: 'Checkout release button',
+      desc: 'Click to open release selector and checkout a historical release'
+    }"
     class="flex h-full items-center gap-1.5 border-none bg-transparent px-3 text-sm text-grey-900 outline-none hover:bg-grey-400 cursor-pointer"
     @click="handleOpen"
   >
