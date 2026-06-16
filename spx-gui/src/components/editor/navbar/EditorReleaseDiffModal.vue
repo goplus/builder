@@ -262,12 +262,12 @@ const DiffResourceItem = defineComponent({
       <!-- Resource navigation sidebar -->
       <div class="flex w-44 shrink-0 flex-col gap-2 overflow-y-auto border-r border-grey-300 px-3 py-4">
         <button
-          v-for="(resource, index) in resources"
-          :key="`${resource.kind}-${resource.label}-${index}`"
+          v-for="(resourceItem, index) in resources"
+          :key="`${resourceItem.kind}-${resourceItem.label}-${index}`"
           class="release-diff-resource-button"
           @click="handleSelectResource(index)"
         >
-          <DiffResourceItem :resource="resource" :selected="selectedIndex === index" />
+          <DiffResourceItem :resource="resourceItem" :selected="selectedIndex === index" />
         </button>
       </div>
 
