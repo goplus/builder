@@ -94,6 +94,7 @@
       <div v-if="project != null" class="flex items-center justify-center gap-2">
         <EditorProjectDisplayName :project="project" />
         <EditorAutoSaveStateIcon :editing="state?.editing ?? null" />
+        <EditorCheckoutReleaseButton v-if="isDeveloperMode && canManageProject" :project="project" :state="state" />
       </div>
     </template>
     <template #right>
@@ -175,7 +176,9 @@ import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue
 import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
 import EditorAutoSaveStateIcon from './EditorAutoSaveStateIcon.vue'
 import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
+import EditorCheckoutReleaseButton from './EditorCheckoutReleaseButton.vue'
 import { EditMode, type EditorState } from '../editor-state'
+import { isDeveloperMode } from '@/utils/developer-mode'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
