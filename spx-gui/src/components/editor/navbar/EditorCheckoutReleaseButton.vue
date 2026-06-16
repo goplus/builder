@@ -77,7 +77,8 @@ async function buildDiffResources(release: ProjectRelease): Promise<DiffResource
     kind: 'stage',
     label: t({ en: 'Stage', zh: '舞台' }),
     original: project.stage.code,
-    modified: releaseStageCode
+    modified: releaseStageCode,
+    thumbnailFile: project.stage.defaultBackdrop?.img ?? null
   })
 
   // Sprites code diff — use current project's sprites as reference
@@ -93,7 +94,8 @@ async function buildDiffResources(release: ProjectRelease): Promise<DiffResource
       kind: 'sprite',
       label: spriteName,
       original: sprite.code,
-      modified: releaseCode
+      modified: releaseCode,
+      thumbnailFile: sprite.defaultCostume?.img ?? null
     })
   }
 
