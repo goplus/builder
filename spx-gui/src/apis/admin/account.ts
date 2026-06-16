@@ -22,6 +22,8 @@ export type {
 type SortOrder = 'asc' | 'desc'
 
 export type ListAccountUsersParams = PaginationParams & {
+  /** Filter account users by username or display name pattern */
+  keyword?: string
   /** Field by which to order the results */
   orderBy?: 'createdAt' | 'updatedAt'
   /** Order in which to sort the results */

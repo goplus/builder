@@ -16,6 +16,8 @@ const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.cap
 const pageSize = 20
 const page = ref(1)
 const sortOrder = ref<'asc' | 'desc'>('desc')
+const keywordInput = ref('')
+const keyword = ref('')
 const showCreateForm = ref(false)
 
 const createForm = reactive({
@@ -32,16 +34,19 @@ function hideBrokenImage(event: Event) {
   ;(event.currentTarget as HTMLImageElement).style.display = 'none'
 }
 
-// TODO: Add username/display-name search after the admin users API supports it.
 const usersQuery = useQuery(
   async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
-    return accountAdminApis.listAccountUsers({
+    const params: accountAdminApis.ListAccountUsersParams = {
       pageIndex: page.value,
       pageSize,
       orderBy: 'createdAt',
       sortOrder: sortOrder.value
-    })
+    }
+    if (keyword.value !== '') {
+      params.keyword = keyword.value
+    }
+    return accountAdminApis.listAccountUsers(params)
   },
   { en: 'Failed to load Account users', zh: '加载账号用户失败' }
 )
@@ -51,6 +56,17 @@ const pageTotal = computed(() => Math.ceil((usersQuery.data.value?.total ?? 0) /
 watch(sortOrder, () => {
   page.value = 1
 })
+
+function handleSearchUsers() {
+  keyword.value = keywordInput.value.trim()
+  page.value = 1
+}
+
+function handleClearSearch() {
+  keywordInput.value = ''
+  keyword.value = ''
+  page.value = 1
+}
 
 const handleCreateUser = useMessageHandle(
   async () => {
@@ -133,7 +149,20 @@ const handleCreateUser = useMessageHandle(
             })
           }}
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <form class="flex min-w-0 items-center gap-2" @submit.prevent="handleSearchUsers">
+            <UITextInput
+              v-model:value="keywordInput"
+              class="w-64 max-w-full"
+              :placeholder="$t({ en: 'Username or display name', zh: '用户名或显示名称' })"
+            />
+            <UIButton html-type="submit" type="white">
+              {{ $t({ en: 'Search', zh: '搜索' }) }}
+            </UIButton>
+            <UIButton v-if="keyword !== ''" type="white" @click="handleClearSearch">
+              {{ $t({ en: 'Clear', zh: '清空' }) }}
+            </UIButton>
+          </form>
           <UISelect v-model:value="sortOrder" class="w-32">
             <UISelectOption value="desc">{{ $t({ en: 'Newest', zh: '最新' }) }}</UISelectOption>
             <UISelectOption value="asc">{{ $t({ en: 'Oldest', zh: '最早' }) }}</UISelectOption>
