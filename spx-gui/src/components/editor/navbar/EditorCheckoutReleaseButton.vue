@@ -4,7 +4,6 @@ import { computed, ref } from 'vue'
 import type { ProjectRelease } from '@/apis/project-release'
 import { listProjectReleases } from '@/apis/project-release'
 import { getFiles } from '@/models/common/cloud'
-import type { File } from '@/models/common/file'
 import { toText } from '@/models/common/file'
 import { stageCodeFilePaths } from '@/models/spx/stage'
 import type { SpxProject } from '@/models/spx/project'
@@ -63,42 +62,36 @@ function handleSelectorCancelled() {
   selectorVisible.value = false
 }
 
-async function buildDiffResources(release: ProjectRelease): Promise<DiffResource[]> {
+function buildDiffResources(release: ProjectRelease): DiffResource[] {
   const project = props.project
   const releaseFiles = getFiles(release.files)
   const resources: DiffResource[] = []
 
-  // Stage code diff
-  let releaseStageCode = ''
+  // Stage code diff (lazy-load release side)
   const releaseStageFile = stageCodeFilePaths.map((p) => releaseFiles[p]).find((f) => f != null)
-  if (releaseStageFile != null) {
-    releaseStageCode = await toText(releaseStageFile)
-  }
   resources.push({
     kind: 'stage',
     label: t({ en: 'Stage', zh: '舞台' }),
     original: project.stage.code,
-    modified: releaseStageCode,
-    thumbnailFile: (project.stage.defaultBackdrop?.img ?? null) as File | null
+    modified: null,
+    loadModified: async () => (releaseStageFile == null ? '' : await toText(releaseStageFile))
   })
 
-  // Sprites code diff — use current project's sprites as reference
-  for (const sprite of project.sprites) {
-    const spriteName = sprite.name
-    const spriteCodePath = `${spriteName}.spx`
-    let releaseCode = ''
-    const releaseCodeFile = releaseFiles[spriteCodePath]
-    if (releaseCodeFile != null) {
-      releaseCode = await toText(releaseCodeFile)
-    }
-    resources.push({
-      kind: 'sprite',
-      label: spriteName,
-      original: sprite.code,
-      modified: releaseCode,
-      thumbnailFile: (sprite.defaultCostume?.img ?? null) as File | null
+  // Sprites code diff — use current project's sprites as reference, lazy-load release side
+  resources.push(
+    ...project.sprites.map((sprite) => {
+      const spriteName = sprite.name
+      const spriteCodePath = `${spriteName}.spx`
+      const releaseCodeFile = releaseFiles[spriteCodePath]
+      return {
+        kind: 'sprite' as const,
+        label: spriteName,
+        original: sprite.code,
+        modified: null,
+        loadModified: async () => (releaseCodeFile == null ? '' : await toText(releaseCodeFile))
+      }
     })
-  }
+  )
 
   return resources
 }
@@ -138,10 +131,7 @@ const handleSelectorAction = useMessageHandle(
     } else {
       // Build diff resources and open diff modal
       pendingRelease.value = release
-      diffResources.value = await m.withLoading(
-        buildDiffResources(release),
-        t({ en: 'Loading diff...', zh: '加载差异中...' })
-      )
+      diffResources.value = buildDiffResources(release)
       selectorVisible.value = false
       diffVisible.value = true
     }
@@ -202,15 +192,11 @@ const selectorTitle = computed(() => t({ en: 'Checkout release...', zh: '检出�
   >
     <svg viewBox="0 0 16 16" aria-hidden="true" class="h-4 w-4 flex-none text-current">
       <path
-        d="M2 11.5V13h12V3h-1.5v6.2l-2.9-2.9-2.2 2.2-2.2-2.2-3.7 3.7z"
-        fill="none"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="1.2"
+        d="M5 3.5a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0zm0 9a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0zm6-6a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0z"
+        fill="currentColor"
       />
       <path
-        d="M3.5 10.2l2.2-2.2 2.2 2.2 2.2-2.2 2.4 2.4"
+        d="M7.5 5v6m0-3h4"
         fill="none"
         stroke="currentColor"
         stroke-linecap="round"
