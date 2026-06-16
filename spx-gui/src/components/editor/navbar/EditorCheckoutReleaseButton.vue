@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import type { ProjectRelease } from '@/apis/project-release'
 import { listProjectReleases } from '@/apis/project-release'
 import { getFiles } from '@/models/common/cloud'
+import type { File } from '@/models/common/file'
 import { toText } from '@/models/common/file'
 import { stageCodeFilePaths } from '@/models/spx/stage'
 import type { SpxProject } from '@/models/spx/project'
@@ -78,7 +79,7 @@ async function buildDiffResources(release: ProjectRelease): Promise<DiffResource
     label: t({ en: 'Stage', zh: '舞台' }),
     original: project.stage.code,
     modified: releaseStageCode,
-    thumbnailFile: project.stage.defaultBackdrop?.img ?? null
+    thumbnailFile: (project.stage.defaultBackdrop?.img ?? null) as File | null
   })
 
   // Sprites code diff — use current project's sprites as reference
@@ -95,7 +96,7 @@ async function buildDiffResources(release: ProjectRelease): Promise<DiffResource
       label: spriteName,
       original: sprite.code,
       modified: releaseCode,
-      thumbnailFile: sprite.defaultCostume?.img ?? null
+      thumbnailFile: (sprite.defaultCostume?.img ?? null) as File | null
     })
   }
 
