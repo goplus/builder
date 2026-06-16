@@ -6,6 +6,8 @@ import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { selectFile } from '@/utils/file'
 import {
   addCourseSeries,
+  courseSeriesDescriptionMaxLength,
+  courseSeriesTitleMaxLength,
   updateCourseSeries,
   type CourseSeries,
   type AddUpdateCourseSeriesParams
@@ -60,7 +62,11 @@ const form = useForm({
     '',
     (v: string) => {
       if (v === '') return i18n.t({ en: 'Please enter series title', zh: '请输入系列标题' })
-      if (v.length > 200) return i18n.t({ en: 'Title too long (max 200 chars)', zh: '标题过长（最多200字符）' })
+      if (v.length > courseSeriesTitleMaxLength)
+        return i18n.t({
+          en: `Title too long (max ${courseSeriesTitleMaxLength} chars)`,
+          zh: `标题过长（最多 ${courseSeriesTitleMaxLength} 字符）`
+        })
       return null
     }
   ],
@@ -71,7 +77,17 @@ const form = useForm({
       return null
     }
   ],
-  description: [''],
+  description: [
+    '',
+    (v: string) => {
+      if (v.length > courseSeriesDescriptionMaxLength)
+        return i18n.t({
+          en: `Description too long (max ${courseSeriesDescriptionMaxLength} chars)`,
+          zh: `描述过长（最多 ${courseSeriesDescriptionMaxLength} 字符）`
+        })
+      return null
+    }
+  ],
   order: [1],
   courseIDs: [
     [] as string[],

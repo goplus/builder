@@ -50,7 +50,7 @@ defineExpose({ focus })
           ref="textareaRef"
           v-model="inputStr"
           class="absolute h-full w-full resize-none border-none bg-transparent p-0 text-title outline-none placeholder:text-hint-2"
-          rows="1"
+          :rows="1"
           :disabled="loading"
           :placeholder="$t(placeholder)"
           @keypress.enter.prevent="handleSubmit"

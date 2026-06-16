@@ -1,5 +1,7 @@
 import { client, type ByPage, type FileCollection, type PaginationParams } from './common'
 
+export const projectReleaseDescriptionMaxLength = 400
+
 export type ProjectRelease = {
   /** Unique identifier */
   id: string

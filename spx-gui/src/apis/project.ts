@@ -7,6 +7,10 @@ import type { Prettify } from '@/utils/types'
 
 export { Visibility }
 
+export const projectDisplayNameMaxLength = 100
+export const projectDescriptionMaxLength = 400
+export const projectInstructionsMaxLength = 400
+
 export enum ProjectType {
   /** 2D game project based on spx. */
   Game = 'game'
@@ -142,6 +146,8 @@ type ListProjectsOrderBy =
   | 'remixCount'
   | 'recentLikeCount'
   | 'recentRemixCount'
+
+export const projectSearchKeywordMaxLength = 100
 
 type ListProjectsBaseParams = PaginationParams & {
   /** Filter remixed projects by the full name of the source project or project release */

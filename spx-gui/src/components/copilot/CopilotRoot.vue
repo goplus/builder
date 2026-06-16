@@ -8,6 +8,7 @@ import { useI18n, type I18n } from '@/utils/i18n'
 import { escapeHTML, unicodeSafeSlice, until } from '@/utils/utils'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 import * as projectApis from '@/apis/project'
+import { projectSearchKeywordMaxLength } from '@/apis/project'
 import { useMessageEvents, useModalEvents } from '@/components/ui'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as pageLink from './markdown-elements/PageLink'
@@ -27,7 +28,11 @@ const listProjectsParamsSchema = z.object({
     .boolean()
     .optional()
     .describe('List projects visible to the current session across all users. Do not use this with owner'),
-  keyword: z.string().optional().describe('Keyword in the project display name or project name'),
+  keyword: z
+    .string()
+    .max(projectSearchKeywordMaxLength)
+    .optional()
+    .describe('Keyword in the project display name or project name'),
   pageSize: z.number().describe('Number of projects to return per page'),
   pageIndex: z.number().describe('Page index, starting from 1')
 })

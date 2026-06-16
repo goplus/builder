@@ -1030,6 +1030,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: visibility
@@ -1203,6 +1204,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: visibility
@@ -1366,7 +1368,10 @@ paths:
           description: Filter assets by display name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Asset/properties/displayName"
+            type: string
+            maxLength: 100
+            examples:
+              - NiuXiaoQi
         - name: type
           description: Filter assets by type.
           in: query
@@ -1879,6 +1884,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: type
@@ -1972,6 +1978,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: type
@@ -2055,7 +2062,10 @@ paths:
           description: Filter assets by display name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Asset/properties/displayName"
+            type: string
+            maxLength: 100
+            examples:
+              - NiuXiaoQi
         - name: type
           description: Filter assets by type.
           in: query
@@ -2242,6 +2252,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: visibility
@@ -2648,7 +2659,10 @@ paths:
           description: Filter assets by display name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Asset/properties/displayName"
+            type: string
+            maxLength: 100
+            examples:
+              - NiuXiaoQi
         - name: type
           description: Filter assets by type.
           in: query
@@ -4415,6 +4429,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - john
         - name: orderBy
@@ -5523,6 +5538,7 @@ components:
         description:
           description: Brief bio or description of the user.
           type: string
+          maxLength: 200
           examples:
             - Two giants live in Britain's land...
         plan:
@@ -6357,11 +6373,13 @@ components:
         description:
           description: Brief description of the project.
           type: string
+          maxLength: 400
           examples:
             - NiuXiaoQi in your area.
         instructions:
           description: Instructions on how to interact with the project.
           type: string
+          maxLength: 400
           examples:
             - Just run it.
         extraSettings:
@@ -6441,6 +6459,7 @@ components:
         name:
           description: Unique name of the project release, adhering to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
           type: string
+          maxLength: 255
           pattern: '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
           examples:
             - v1.2.3
@@ -6448,6 +6467,7 @@ components:
           description: Brief description of the release.
           type: string
           minLength: 1
+          maxLength: 400
           examples:
             - First release.
         files:
@@ -6461,9 +6481,14 @@ components:
           $ref: "#/components/schemas/Project/properties/remixCount"
 
     ProjectReleaseFullName:
-      description: Full name of a project release in the format `owner/project/release`.
+      description: |
+        Full name of a project release in the format `owner/project/release`.
+
+        `maxLength` is derived from 100-character owner and project names, two `/` separators, and a 255-character
+        release name.
       type: string
       minLength: 10
+      maxLength: 457
       pattern: '^[A-Za-z0-9_-]{1,100}/[A-Za-z0-9_-]{1,100}/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
       examples:
         - john/NiuXiaoQi/v1.2.3
@@ -6597,6 +6622,7 @@ components:
         prompt:
           description: Prompt text for the course (used for copilot assistance).
           type: string
+          maxLength: 4000
           examples:
             - Learn the basics of XGo programming language
 
@@ -6659,6 +6685,7 @@ components:
         description:
           description: Description of the course series.
           type: string
+          maxLength: 400
           examples:
             - A series of courses on XBuilder programming.
         courseIDs:
