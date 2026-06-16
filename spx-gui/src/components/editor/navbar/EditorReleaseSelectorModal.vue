@@ -70,7 +70,7 @@ function handleConfirmCancel() {
       <UIError v-else-if="error != null" :retry="undefined">
         {{ $t({ en: 'Failed to load releases', zh: '加载版本列表失败' }) }}
       </UIError>
-      <UIEmpty v-else-if="releases.length === 0">
+      <UIEmpty v-else-if="releases.length === 0" size="small">
         {{ $t({ en: 'No releases found', zh: '暂无发布版本' }) }}
       </UIEmpty>
       <ul v-else class="flex flex-col gap-2">
