@@ -41,7 +41,7 @@ async function loadReleases() {
   try {
     const result = await listProjectReleases(owner, name, {
       pageSize: 50,
-      pageIndex: 0,
+      pageIndex: 1,
       orderBy: 'createdAt',
       sortOrder: 'desc'
     })
@@ -74,6 +74,7 @@ async function buildDiffResources(release: ProjectRelease): Promise<DiffResource
     releaseStageCode = await toText(releaseStageFile)
   }
   resources.push({
+    kind: 'stage',
     label: t({ en: 'Stage', zh: '舞台' }),
     original: project.stage.code,
     modified: releaseStageCode
@@ -89,6 +90,7 @@ async function buildDiffResources(release: ProjectRelease): Promise<DiffResource
       releaseCode = await toText(releaseCodeFile)
     }
     resources.push({
+      kind: 'sprite',
       label: spriteName,
       original: sprite.code,
       modified: releaseCode
@@ -190,10 +192,29 @@ const selectorTitle = computed(() => t({ en: 'Checkout release...', zh: '检出�
       name: 'Checkout release button',
       desc: 'Click to open release selector and checkout a historical release'
     }"
-    class="flex h-full items-center gap-1.5 border-none bg-transparent px-3 text-sm text-grey-900 outline-none hover:bg-grey-400 cursor-pointer"
+    :aria-label="$t({ en: 'Checkout release...', zh: '检出版本...' })"
+    :title="$t({ en: 'Checkout release...', zh: '检出版本...' })"
+    class="flex h-full items-center justify-center border-none bg-transparent px-3 text-grey-900 outline-none hover:bg-grey-400 cursor-pointer"
     @click="handleOpen"
   >
-    {{ $t({ en: 'Checkout release...', zh: '检出版本...' }) }}
+    <svg viewBox="0 0 16 16" aria-hidden="true" class="h-4 w-4 flex-none text-current">
+      <path
+        d="M2 11.5V13h12V3h-1.5v6.2l-2.9-2.9-2.2 2.2-2.2-2.2-3.7 3.7z"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.2"
+      />
+      <path
+        d="M3.5 10.2l2.2-2.2 2.2 2.2 2.2-2.2 2.4 2.4"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.2"
+      />
+    </svg>
   </button>
 
   <EditorReleaseSelectorModal
