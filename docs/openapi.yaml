@@ -4989,8 +4989,8 @@ paths:
       description: |
         Create an Account-issued OAuth token associated with an account user app grant.
 
-        For the first version, this endpoint creates an access token only. The created token is not issued with a
-        refresh token and cannot be refreshed. The token value is only returned once in the creation response.
+        Currently, this endpoint creates access tokens only. The created token is not issued with a refresh token and
+        cannot be refreshed. The token value is only returned once in the creation response.
 
         The token scope is an Account OAuth scope inherited from the app grant. It does not necessarily describe the
         downstream product API capability that will be exercised with the token. Product API usage is valid only for
@@ -6257,6 +6257,14 @@ components:
         scope:
           description: Account OAuth scope associated with the token.
           $ref: "#/components/schemas/OAuthScope"
+        remark:
+          description: Administrator-provided remark for maintaining the token.
+          type:
+            - string
+            - "null"
+          maxLength: 200
+          examples:
+            - Used for SPX API testing
         expiresAt:
           description: Expiration timestamp.
           type: string
@@ -6292,30 +6300,30 @@ components:
       type: object
       description: Request to create an Account-issued OAuth token for an app grant.
       required:
+        - tokenType
         - expiresAt
       properties:
         tokenType:
           description: |
             OAuth token type to create.
 
-            The first version supports creating access tokens only.
+            Currently, only `accessToken` is supported.
           type: string
           enum:
             - accessToken
-          default: accessToken
           examples:
             - accessToken
-        scope:
-          description: |
-            Account OAuth scope of the created token.
-
-            The requested scope must be covered by the app grant scope. When omitted, the app grant scope is used.
-          $ref: "#/components/schemas/OAuthScope"
+        remark:
+          description: Administrator-provided remark for maintaining the token.
+          type: string
+          maxLength: 200
+          examples:
+            - Used for SPX API testing
         expiresAt:
           description: |
             Expiration timestamp of the created token.
 
-            The server must enforce a maximum token lifetime, for example 365 days from creation.
+            The server must reject expiration timestamps later than 365 days from creation.
           type: string
           format: date-time
           examples:
