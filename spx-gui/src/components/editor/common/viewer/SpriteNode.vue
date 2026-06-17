@@ -7,7 +7,7 @@ import type { SpxProject } from '@/models/spx/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading } from '@/models/spx/sprite'
 import type { Size } from '@/models/common'
 import { normalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
-import { useFileImg } from '@/utils/file'
+import { useRenderableImage } from '@/utils/img-rendering'
 import { cancelBubble, getNodeId } from './common'
 import type { SpriteLocalConfig } from './quick-config/utils'
 import type { TransformOp } from './custom-transformer'
@@ -52,7 +52,7 @@ const emit = defineEmits<{
 const nodeRef = ref<KonvaNodeInstance<Image>>()
 const costume = computed(() => props.localConfig.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
-const [image, imageLoading] = useFileImg(() => costume.value?.img)
+const [image, imageLoading] = useRenderableImage(() => costume.value?.img)
 const rawSize = useAsyncComputedLegacy(async () => costume.value?.getRawSize() ?? null)
 
 const nodeId = computed(() => getNodeId(props.localConfig))

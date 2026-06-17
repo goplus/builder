@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { Visibility } from '@/apis/common'
 import { createProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, saveFile } from '@/models/common/cloud'
@@ -22,7 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
+const [thumbnailUrl, thumbnailUrlLoading] = useRenderableImageUrl(() => props.project.thumbnail)
 
 /** If this is the first time the project is published */
 const firstTime = props.project.releaseCount === 0

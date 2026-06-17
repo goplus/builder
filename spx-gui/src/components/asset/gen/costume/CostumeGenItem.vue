@@ -10,13 +10,13 @@ export function isCostumesLoading(gens: CostumeGen[]) {
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { UIBlockItemTitle, UIImg } from '@/components/ui'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import CornerMenu from '@/components/editor/common/CornerMenu.vue'
 import RenameMenuItem from '@/components/editor/common/corner-menu-item/RenameMenuItem.vue'
 import RemoveMenuItem from '@/components/editor/common/corner-menu-item/RemoveMenuItem.vue'
 import GenItem from '../common/GenItem.vue'
-import { useFileUrl } from '@/utils/file'
 import costumeSVG from '../common/costume.svg?raw'
 
 export type Operable = {
@@ -37,7 +37,7 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const [url, imageLoading] = useFileUrl(() => props.gen.image)
+const [url, imageLoading] = useRenderableImageUrl(() => props.gen.image)
 
 const isLoading = computed(() => isCostumeLoading(props.gen) || imageLoading.value)
 const highlight = computed(() => props.gen.generateState.status === 'finished')

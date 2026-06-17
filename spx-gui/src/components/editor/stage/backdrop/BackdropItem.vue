@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIEditorBackdropItem } from '@/components/ui'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import type { Backdrop } from '@/models/spx/backdrop'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import CornerMenu from '../../common/CornerMenu.vue'
@@ -28,7 +28,7 @@ const props = withDefaults(
 )
 
 const editorCtx = useEditorCtx()
-const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
+const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.backdrop.img)
 
 const radarNodeMeta = computed(() => {
   const name = `Backdrop item "${props.backdrop.name}"`
