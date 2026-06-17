@@ -44,6 +44,8 @@
     "cropperjs": "^2.1.0",
     "csv-stringify": "^6.5.2",
     "dayjs": "^1.11.10",
+    "diff": "^7.0.0",
+    "@types/diff": "^7.0.2",
     "eslint": "^9.39.1",
     "eslint-plugin-compat": "^6.0.2",
     "eslint-plugin-vue": "^10.6.2",
