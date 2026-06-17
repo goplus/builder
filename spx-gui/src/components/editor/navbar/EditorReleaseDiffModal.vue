@@ -1,8 +1,10 @@
 <!-- Diff preview modal: shows code differences between a release and the current project, per Stage/Sprite -->
 <script setup lang="ts">
 import { computed, defineComponent, h, ref, watch } from 'vue'
+import { diffLines } from 'diff'
 import { getCleanupSignal } from '@/utils/disposable'
 import { UIButton, UIFormModal } from '@/components/ui'
+import CodeView from '@/components/common/CodeView.vue'
 
 export type DiffResource = {
   kind: 'stage' | 'sprite'
@@ -51,75 +53,112 @@ type DiffRow = {
 }
 
 function buildDiffRows(original: string, modified: string): DiffRow[] {
-  const originalLines = original.split(/\r?\n/)
-  const modifiedLines = modified.split(/\r?\n/)
   const rows: DiffRow[] = []
 
-  let i = 0
-  let j = 0
+  let originalLineNumber = 1
+  let modifiedLineNumber = 1
+  const changes = diffLines(original, modified)
 
-  while (i < originalLines.length || j < modifiedLines.length) {
-    const currentOriginal = originalLines[i]
-    const currentModified = modifiedLines[j]
+  const getChunkLines = (value: string) => {
+    const lines = value.split('\n')
+    if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop()
+    return lines
+  }
 
-    if (currentOriginal != null && currentModified != null && currentOriginal === currentModified) {
+  for (let idx = 0; idx < changes.length; idx += 1) {
+    const change = changes[idx]
+    const next = changes[idx + 1]
+    const lines = getChunkLines(change.value)
+
+    if (change.removed && next?.added) {
+      const nextLines = getChunkLines(next.value)
+      const maxLines = Math.max(lines.length, nextLines.length)
+      for (let lineIndex = 0; lineIndex < maxLines; lineIndex += 1) {
+        const originalLine = lines[lineIndex] ?? ''
+        const modifiedLine = nextLines[lineIndex] ?? ''
+        rows.push({
+          originalNumber: lines[lineIndex] == null ? '' : String(originalLineNumber),
+          modifiedNumber: nextLines[lineIndex] == null ? '' : String(modifiedLineNumber),
+          originalText: originalLine,
+          modifiedText: modifiedLine,
+          rowClass: 'release-diff-row-change',
+          originalClass: lines[lineIndex] == null ? '' : 'release-diff-line-delete',
+          modifiedClass: nextLines[lineIndex] == null ? '' : 'release-diff-line-add'
+        })
+        if (lines[lineIndex] != null) originalLineNumber += 1
+        if (nextLines[lineIndex] != null) modifiedLineNumber += 1
+      }
+      idx += 1
+      continue
+    }
+
+    if (change.added && next?.removed) {
+      const nextLines = getChunkLines(next.value)
+      const maxLines = Math.max(nextLines.length, lines.length)
+      for (let lineIndex = 0; lineIndex < maxLines; lineIndex += 1) {
+        const originalLine = nextLines[lineIndex] ?? ''
+        const modifiedLine = lines[lineIndex] ?? ''
+        rows.push({
+          originalNumber: nextLines[lineIndex] == null ? '' : String(originalLineNumber),
+          modifiedNumber: lines[lineIndex] == null ? '' : String(modifiedLineNumber),
+          originalText: originalLine,
+          modifiedText: modifiedLine,
+          rowClass: 'release-diff-row-change',
+          originalClass: nextLines[lineIndex] == null ? '' : 'release-diff-line-delete',
+          modifiedClass: lines[lineIndex] == null ? '' : 'release-diff-line-add'
+        })
+        if (nextLines[lineIndex] != null) originalLineNumber += 1
+        if (lines[lineIndex] != null) modifiedLineNumber += 1
+      }
+      idx += 1
+      continue
+    }
+
+    if (change.added) {
+      for (const line of lines) {
+        rows.push({
+          originalNumber: '',
+          modifiedNumber: String(modifiedLineNumber),
+          originalText: '',
+          modifiedText: line,
+          rowClass: 'release-diff-row-add',
+          originalClass: '',
+          modifiedClass: 'release-diff-line-add'
+        })
+        modifiedLineNumber += 1
+      }
+      continue
+    }
+
+    if (change.removed) {
+      for (const line of lines) {
+        rows.push({
+          originalNumber: String(originalLineNumber),
+          modifiedNumber: '',
+          originalText: line,
+          modifiedText: '',
+          rowClass: 'release-diff-row-delete',
+          originalClass: 'release-diff-line-delete',
+          modifiedClass: ''
+        })
+        originalLineNumber += 1
+      }
+      continue
+    }
+
+    for (const line of lines) {
       rows.push({
-        originalNumber: String(i + 1),
-        modifiedNumber: String(j + 1),
-        originalText: currentOriginal,
-        modifiedText: currentModified,
+        originalNumber: String(originalLineNumber),
+        modifiedNumber: String(modifiedLineNumber),
+        originalText: line,
+        modifiedText: line,
         rowClass: 'release-diff-row-equal',
         originalClass: '',
         modifiedClass: ''
       })
-      i += 1
-      j += 1
-      continue
+      originalLineNumber += 1
+      modifiedLineNumber += 1
     }
-
-    const nextOriginal = originalLines[i + 1]
-    const nextModified = modifiedLines[j + 1]
-
-    if (currentOriginal != null && currentModified != null && nextOriginal === currentModified) {
-      rows.push({
-        originalNumber: String(i + 1),
-        modifiedNumber: '',
-        originalText: currentOriginal,
-        modifiedText: '',
-        rowClass: 'release-diff-row-delete',
-        originalClass: 'release-diff-line-delete',
-        modifiedClass: ''
-      })
-      i += 1
-      continue
-    }
-
-    if (currentOriginal != null && currentModified != null && currentOriginal === nextModified) {
-      rows.push({
-        originalNumber: '',
-        modifiedNumber: String(j + 1),
-        originalText: '',
-        modifiedText: currentModified,
-        rowClass: 'release-diff-row-add',
-        originalClass: '',
-        modifiedClass: 'release-diff-line-add'
-      })
-      j += 1
-      continue
-    }
-
-    rows.push({
-      originalNumber: currentOriginal == null ? '' : String(i + 1),
-      modifiedNumber: currentModified == null ? '' : String(j + 1),
-      originalText: currentOriginal ?? '',
-      modifiedText: currentModified ?? '',
-      rowClass: 'release-diff-row-change',
-      originalClass: currentOriginal == null ? '' : 'release-diff-line-delete',
-      modifiedClass: currentModified == null ? '' : 'release-diff-line-add'
-    })
-
-    if (currentOriginal != null) i += 1
-    if (currentModified != null) j += 1
   }
 
   return rows
@@ -289,11 +328,19 @@ const DiffResourceItem = defineComponent({
             <div v-for="(row, index) in diffRows" :key="index" class="release-diff-row" :class="row.rowClass">
               <div class="release-diff-cell">
                 <span class="release-diff-line-number">{{ row.originalNumber }}</span>
-                <pre class="release-diff-line-text" :class="row.originalClass">{{ row.originalText }}</pre>
+                <div class="release-diff-line-text" :class="row.originalClass">
+                  <CodeView mode="inline" language="xgo" class="release-diff-line-code">
+                    {{ row.originalText === '' ? ' ' : row.originalText }}
+                  </CodeView>
+                </div>
               </div>
               <div class="release-diff-cell">
                 <span class="release-diff-line-number">{{ row.modifiedNumber }}</span>
-                <pre class="release-diff-line-text" :class="row.modifiedClass">{{ row.modifiedText }}</pre>
+                <div class="release-diff-line-text" :class="row.modifiedClass">
+                  <CodeView mode="inline" language="xgo" class="release-diff-line-code">
+                    {{ row.modifiedText === '' ? ' ' : row.modifiedText }}
+                  </CodeView>
+                </div>
               </div>
             </div>
           </div>
@@ -476,6 +523,10 @@ const DiffResourceItem = defineComponent({
   width: 100%;
   padding: 4px 10px;
   overflow-x: auto;
+}
+
+.release-diff-line-code {
+  display: block;
   white-space: pre;
   font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
   font-size: 12px;
