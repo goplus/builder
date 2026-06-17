@@ -4831,6 +4831,8 @@ paths:
       description: |
         Retrieve a list of app grants of an account user.
 
+        Revoked grants are included in the response.
+
         Requires the `accountAdmin` role.
       parameters:
         - name: userID
@@ -5032,10 +5034,10 @@ paths:
 
   /admin/account/users/{userID}/grants/{grantID}/tokens/{tokenID}:
     delete:
-      operationId: deleteAdminAccountUserGrantToken
+      operationId: revokeAdminAccountUserGrantToken
       tags:
         - Account Admin
-      summary: Delete account app grant token as admin
+      summary: Revoke account app grant token as admin
       description: |
         Revoke an Account-issued OAuth token associated with an account user app grant.
 
@@ -5045,26 +5047,26 @@ paths:
         Requires the `accountAdmin` role.
       parameters:
         - name: userID
-          description: ID of the user whose app grant token is deleted.
+          description: ID of the user whose app grant token is revoked.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
         - name: grantID
-          description: ID of the app grant whose token is deleted.
+          description: ID of the app grant whose token is revoked.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
         - name: tokenID
-          description: ID of the app grant token to delete.
+          description: ID of the app grant token to revoke.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
       responses:
         "204":
-          description: Account app grant token deleted.
+          description: Account app grant token revoked.
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6250,14 +6252,17 @@ components:
           examples:
             - accessToken
         tokenFamilyID:
-          description: Token family identifier used to group refresh token rotations.
+          description: |
+            Token family identifier.
+
+            All token types are assigned a family ID. For refresh tokens, the family ID groups refresh token rotations.
           type: string
           minLength: 1
         scope:
           description: Account OAuth scope associated with the token.
           $ref: "#/components/schemas/OAuthScope"
         remark:
-          description: Human-readable remark describing the token.
+          description: Human-readable remark describing the token. Empty when no remark is set.
           type: string
           maxLength: 200
           examples:
@@ -6277,7 +6282,7 @@ components:
           examples:
             - 2006-01-02T15:04:05+07:00
         consumedAt:
-          description: Timestamp when the refresh token was consumed during rotation.
+          description: Timestamp when the refresh token was consumed during rotation. Always null for access tokens.
           type:
             - string
             - "null"
@@ -6295,7 +6300,10 @@ components:
 
     CreateAccountAppTokenRequest:
       type: object
-      description: Request to create an Account-issued OAuth token for an app grant.
+      description: |
+        Request to create an Account-issued OAuth token for an app grant.
+
+        The token scope is inherited from the associated app grant and cannot be overridden.
       required:
         - tokenType
         - expiresAt
@@ -6311,7 +6319,7 @@ components:
           examples:
             - accessToken
         remark:
-          description: Human-readable remark describing the token.
+          description: Human-readable remark describing the token. When omitted, an empty remark is used.
           type: string
           maxLength: 200
           examples:
@@ -6324,7 +6332,7 @@ components:
           type: string
           format: date-time
           examples:
-            - 2006-07-01T00:00:00+07:00
+            - 2027-01-15T00:00:00Z
 
     CreatedAccountAppToken:
       description: Account app token created response including the one-time token value.
