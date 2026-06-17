@@ -77,7 +77,8 @@ function buildDiffResources(release: ProjectRelease): DiffResource[] {
     loadModified: async () => (releaseStageFile == null ? '' : await toText(releaseStageFile))
   })
 
-  // Sprites code diff — use current project's sprites as reference, lazy-load release side
+  // Sprites in current project — diff against release side
+  const currentSpriteNames = new Set(project.sprites.map((s) => s.name))
   resources.push(
     ...project.sprites.map((sprite) => {
       const spriteName = sprite.name
@@ -87,6 +88,24 @@ function buildDiffResources(release: ProjectRelease): DiffResource[] {
         kind: 'sprite' as const,
         label: spriteName,
         original: sprite.code,
+        modified: null,
+        loadModified: async () => (releaseCodeFile == null ? '' : await toText(releaseCodeFile))
+      }
+    })
+  )
+
+  // Sprites that exist in the release but not in the current project (deleted locally)
+  const releaseOnlySpriteNames = Object.keys(releaseFiles)
+    .filter((path) => path.endsWith('.spx') && !stageCodeFilePaths.includes(path))
+    .map((path) => path.slice(0, -4)) // strip ".spx"
+    .filter((name) => !currentSpriteNames.has(name))
+  resources.push(
+    ...releaseOnlySpriteNames.map((spriteName) => {
+      const releaseCodeFile = releaseFiles[`${spriteName}.spx`]
+      return {
+        kind: 'sprite' as const,
+        label: spriteName,
+        original: '',
         modified: null,
         loadModified: async () => (releaseCodeFile == null ? '' : await toText(releaseCodeFile))
       }
