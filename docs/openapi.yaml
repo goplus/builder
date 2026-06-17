@@ -4992,10 +4992,6 @@ paths:
         Currently, this endpoint creates access tokens only. The created token is not issued with a refresh token and
         cannot be refreshed. The token value is only returned once in the creation response.
 
-        The token scope is an Account OAuth scope inherited from the app grant. It does not necessarily describe the
-        downstream product API capability that will be exercised with the token. Product API usage is valid only for
-        apps integrated through the Account-issued token model.
-
         Requires the `accountAdmin` role.
       parameters:
         - name: userID
@@ -6231,6 +6227,7 @@ components:
         - tokenType
         - tokenFamilyID
         - scope
+        - remark
         - expiresAt
       properties:
         id:
@@ -6259,9 +6256,7 @@ components:
           $ref: "#/components/schemas/OAuthScope"
         remark:
           description: Administrator-provided remark for maintaining the token.
-          type:
-            - string
-            - "null"
+          type: string
           maxLength: 200
           examples:
             - Used for SPX API testing
@@ -6341,6 +6336,8 @@ components:
               description: One-time token value. This value is not returned again after creation.
               type: string
               minLength: 1
+              examples:
+                - xb_at_2L5f8xQy...
 
     CreatedAccountAppSecret:
       description: OAuth client secret created response including the one-time secret value.
