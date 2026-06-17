@@ -4829,9 +4829,7 @@ paths:
         - Account Admin
       summary: List account user app grants as admin
       description: |
-        Retrieve a list of app grants of an account user.
-
-        Revoked grants are included in the response.
+        Retrieve a list of active app grants of an account user.
 
         Requires the `accountAdmin` role.
       parameters:
