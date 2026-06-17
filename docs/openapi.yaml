@@ -4992,6 +4992,8 @@ paths:
         Currently, this endpoint creates access tokens only. The created token is not issued with a refresh token and
         cannot be refreshed. The token value is only returned once in the creation response.
 
+        The token scope is an Account OAuth scope inherited from the app grant.
+
         Requires the `accountAdmin` role.
       parameters:
         - name: userID
