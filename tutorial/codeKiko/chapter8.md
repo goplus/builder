@@ -31,7 +31,7 @@ step 50
 
 这就是**事件驱动编程**（Event-Driven Programming）。我们先从最熟悉的"游戏开始"事件 `onStart` 讲起。
 
-### 8.1 认识 onStart
+### 8.1 我的第一个事件 onStart
 
 #### 学习目标
 
