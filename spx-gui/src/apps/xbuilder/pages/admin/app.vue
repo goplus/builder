@@ -341,8 +341,8 @@ function deleteSecret(secretID: string) {
                 <div>{{ $t({ en: 'Redirect URI patterns', zh: '回调 URI 模式' }) }}</div>
                 <div class="flex flex-col gap-2 rounded-md border border-grey-300 bg-grey-100 px-3 py-2">
                   <code
-                    v-for="pattern in app.redirectURIPatterns"
-                    :key="pattern"
+                    v-for="(pattern, index) in app.redirectURIPatterns"
+                    :key="index"
                     class="break-all font-mono text-xs text-title"
                   >
                     {{ pattern }}
