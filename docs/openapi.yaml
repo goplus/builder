@@ -6257,7 +6257,7 @@ components:
           description: Account OAuth scope associated with the token.
           $ref: "#/components/schemas/OAuthScope"
         remark:
-          description: Administrator-provided remark for maintaining the token.
+          description: Human-readable remark describing the token.
           type: string
           maxLength: 200
           examples:
@@ -6311,7 +6311,7 @@ components:
           examples:
             - accessToken
         remark:
-          description: Administrator-provided remark for maintaining the token.
+          description: Human-readable remark describing the token.
           type: string
           maxLength: 200
           examples:
