@@ -47,12 +47,15 @@ function handleSignInWithPassword() {
   showPasswordForm.value = true
 }
 
+const isRedirectingToApp = ref(false)
+
 function completeSignInWithCurrentAccount() {
   clearPendingAuthorization(props.request)
   const authorizeUrl = accountOAuthApis.buildAuthorizeUrl({
     client_id: props.request.clientId,
     request_uri: props.request.requestUri
   })
+  isRedirectingToApp.value = true
   window.location.assign(authorizeUrl)
 }
 
@@ -61,7 +64,11 @@ const idpsQuery = useQuery(() => getIdentityProviders(props.request), {
   en: 'Failed to get identity providers',
   zh: '获取身份提供商列表失败'
 })
-const initialization = useQuery((ctx) => Promise.all([composeQuery(ctx, sessionQuery), composeQuery(ctx, idpsQuery)]), {
+const {
+  isLoading: isInitializing,
+  error: initializationError,
+  refetch: reinitialize
+} = useQuery((ctx) => Promise.all([composeQuery(ctx, sessionQuery), composeQuery(ctx, idpsQuery)]), {
   en: 'Failed to initialize sign-in form',
   zh: '初始化登录表单失败'
 })
@@ -81,8 +88,11 @@ const { fn: handleSwitchAccount, isLoading: isSwitchingAccount } = useMessageHan
   { en: 'Failed to switch account', zh: '切换账号失败' }
 )
 
+const isRedirectingToProvider = ref(false)
+
 function handleSignInWithProvider(provider: IdentityProvider) {
   markPendingAuthorization(props.request)
+  isRedirectingToProvider.value = true
   window.location.assign(buildIdentityProviderAuthorizeUrl(provider.name, props.request))
 }
 
@@ -98,21 +108,19 @@ const { fn: handleSignInWithPasswordSubmit, isLoading: isSubmittingSignInWithPas
 <template>
   <div class="self-stretch">
     <div
-      v-if="initialization.isLoading.value"
+      v-if="isInitializing || isRedirectingToProvider || isRedirectingToApp"
       class="min-h-45 self-stretch flex flex-col items-center justify-center gap-6"
     >
       <UILoading />
       <p class="m-0 text-grey-800">
-        {{ $t({ en: 'Loading sign-in options…', zh: '正在加载登录选项…' }) }}
+        <template v-if="isRedirectingToProvider || isRedirectingToApp">
+          {{ $t({ en: 'Redirecting…', zh: '正在跳转…' }) }}
+        </template>
       </p>
     </div>
 
-    <UIError
-      v-else-if="initialization.error.value != null"
-      class="mb-2 min-h-50 rounded-lg px-6"
-      :retry="initialization.refetch"
-    >
-      {{ $t(initialization.error.value.userMessage) }}
+    <UIError v-else-if="initializationError != null" class="mb-2 min-h-50 rounded-lg px-6" :retry="reinitialize">
+      {{ $t(initializationError.userMessage) }}
     </UIError>
 
     <template v-else>

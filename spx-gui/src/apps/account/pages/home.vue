@@ -1,7 +1,7 @@
 <template>
   <main class="flex min-h-screen items-center justify-center bg-grey-100 px-6 py-10">
     <section class="w-full max-w-120 rounded-lg border border-grey-300 bg-white px-8 py-7 shadow-sm">
-      <h1 class="m-0 text-2xl font-semibold text-title">{{ $t({ en: 'Account', zh: '账号' }) }}</h1>
+      <h1 class="m-0 text-2xl font-semibold text-title">{{ $t({ en: 'XBuilder Account', zh: 'XBuilder 账号' }) }}</h1>
 
       <div v-if="isLoading" class="mt-8 flex flex-col items-center gap-4 py-10 text-grey-800">
         <UILoading />
@@ -17,8 +17,8 @@
         <p class="mt-2 mb-0 text-grey-800">
           {{
             $t({
-              en: 'There is no active account session in this browser.',
-              zh: '当前浏览器中没有有效的账号登录状态。'
+              en: 'There is no active account session.',
+              zh: '没有有效的账号登录状态。'
             })
           }}
         </p>
@@ -70,5 +70,5 @@ const initial = computed(() =>
   session.value == null ? '?' : session.value.user.displayName.trim().charAt(0).toUpperCase() || '?'
 )
 
-usePageTitle({ en: 'Account', zh: '账号' })
+usePageTitle({ en: 'XBuilder Account', zh: 'XBuilder 账号' })
 </script>
