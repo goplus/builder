@@ -108,15 +108,15 @@ const { fn: handleSignInWithPasswordSubmit, isLoading: isSubmittingSignInWithPas
       class="min-h-45 self-stretch flex flex-col items-center justify-center gap-6"
     >
       <UILoading />
-      <p class="m-0 text-grey-800">
+      <p
+        v-if="isRedirectingToProvider || isRedirectingToApp"
+        class="m-0 text-grey-800"
+      >
         <template v-if="isRedirectingToProvider">
           {{ $t({ en: 'Redirecting…', zh: '正在跳转…' }) }}
         </template>
         <template v-else-if="isRedirectingToApp">
-          {{ $t({ en: 'Signing in…', zh: '正在登录…' }) }}
-        </template>
-        <template v-else-if="isInitializing">
-          {{ $t({ en: 'Loading sign-in options…', zh: '正在加载登录选项…' }) }}
+          {{ $t({ en: 'Redirecting…', zh: '正在跳转…' }) }}
         </template>
       </p>
     </div>
