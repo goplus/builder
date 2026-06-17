@@ -4822,6 +4822,258 @@ paths:
         "404":
           description: Account user not found.
 
+  /admin/account/users/{userID}/grants:
+    get:
+      operationId: listAdminAccountUserGrants
+      tags:
+        - Account Admin
+      summary: List account user app grants as admin
+      description: |
+        Retrieve a list of app grants of an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose app grants are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - lastUsedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountAppGrant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+
+  /admin/account/users/{userID}/grants/{grantID}:
+    get:
+      operationId: getAdminAccountUserGrant
+      tags:
+        - Account Admin
+      summary: Get account user app grant as admin
+      description: |
+        Retrieve an app grant of an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose app grant is retrieved.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: grantID
+          description: ID of the app grant to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAppGrant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user or app grant not found.
+
+  /admin/account/users/{userID}/grants/{grantID}/tokens:
+    get:
+      operationId: listAdminAccountUserGrantTokens
+      tags:
+        - Account Admin
+      summary: List account app grant tokens as admin
+      description: |
+        Retrieve active Account-issued OAuth tokens associated with an account user app grant.
+
+        Tokens are active only when they are not expired, not revoked, and, for refresh tokens, not consumed.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose app grant tokens are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: grantID
+          description: ID of the app grant whose tokens are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: tokenType
+          description: Filter tokens by OAuth token type.
+          in: query
+          schema:
+            $ref: "#/components/schemas/AccountAppToken/properties/tokenType"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountAppToken"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user or app grant not found.
+    post:
+      operationId: createAdminAccountUserGrantToken
+      tags:
+        - Account Admin
+      summary: Create account app grant token as admin
+      description: |
+        Create an Account-issued OAuth token associated with an account user app grant.
+
+        For the first version, this endpoint creates an access token only. The created token is not issued with a
+        refresh token and cannot be refreshed. The token value is only returned once in the creation response.
+
+        The token scope is an Account OAuth scope inherited from the app grant. It does not necessarily describe the
+        downstream product API capability that will be exercised with the token. Product API usage is valid only for
+        apps integrated through the Account-issued token model.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose app grant token is created.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: grantID
+          description: ID of the app grant whose token is created.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountAppTokenRequest"
+      responses:
+        "201":
+          description: Account app grant token created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedAccountAppToken"
+        "400":
+          description: Invalid request parameters.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user or app grant not found.
+
+  /admin/account/users/{userID}/grants/{grantID}/tokens/{tokenID}:
+    delete:
+      operationId: deleteAdminAccountUserGrantToken
+      tags:
+        - Account Admin
+      summary: Delete account app grant token as admin
+      description: |
+        Revoke an Account-issued OAuth token associated with an account user app grant.
+
+        Revocation follows the existing Account OAuth token semantics. Revoking a refresh token revokes the token family;
+        revoking an access token revokes that access token.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose app grant token is deleted.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: grantID
+          description: ID of the app grant whose token is deleted.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: tokenID
+          description: ID of the app grant token to delete.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account app grant token deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user, app grant, or token not found.
+
   /admin/account/sessions/{sessionID}:
     delete:
       operationId: deleteAdminAccountSession
@@ -5920,6 +6172,167 @@ components:
           maxLength: 100
           examples:
             - production
+
+    AccountAppGrant:
+      type: object
+      description: Authorization grant from an account user to an account app.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - appID
+        - userID
+        - scope
+        - app
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        appID:
+          description: ID of the app authorized by the user.
+          $ref: "#/components/schemas/Model/properties/id"
+        userID:
+          description: ID of the user who authorized the app.
+          $ref: "#/components/schemas/Model/properties/id"
+        scope:
+          description: Account OAuth scope granted to the app.
+          $ref: "#/components/schemas/OAuthScope"
+        app:
+          description: App authorized by the user.
+          $ref: "#/components/schemas/AccountApp"
+        lastUsedAt:
+          description: Timestamp when the app grant was last used.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        revokedAt:
+          description: Timestamp when the app grant was revoked.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - null
+
+    AccountAppToken:
+      type: object
+      description: Account-issued app-scoped OAuth token metadata.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - grantID
+        - tokenType
+        - tokenFamilyID
+        - scope
+        - expiresAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        grantID:
+          description: ID of the app grant associated with the token.
+          $ref: "#/components/schemas/Model/properties/id"
+        tokenType:
+          description: OAuth token type.
+          type: string
+          enum:
+            - accessToken
+            - refreshToken
+          examples:
+            - accessToken
+        tokenFamilyID:
+          description: Token family identifier used to group refresh token rotations.
+          type: string
+          minLength: 1
+        scope:
+          description: Account OAuth scope associated with the token.
+          $ref: "#/components/schemas/OAuthScope"
+        expiresAt:
+          description: Expiration timestamp.
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        lastUsedAt:
+          description: Timestamp when the token was last used.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        consumedAt:
+          description: Timestamp when the refresh token was consumed during rotation.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - null
+        revokedAt:
+          description: Timestamp when the token was revoked.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - null
+
+    CreateAccountAppTokenRequest:
+      type: object
+      description: Request to create an Account-issued OAuth token for an app grant.
+      required:
+        - expiresAt
+      properties:
+        tokenType:
+          description: |
+            OAuth token type to create.
+
+            The first version supports creating access tokens only.
+          type: string
+          enum:
+            - accessToken
+          default: accessToken
+          examples:
+            - accessToken
+        scope:
+          description: |
+            Account OAuth scope of the created token.
+
+            The requested scope must be covered by the app grant scope. When omitted, the app grant scope is used.
+          $ref: "#/components/schemas/OAuthScope"
+        expiresAt:
+          description: |
+            Expiration timestamp of the created token.
+
+            The server must enforce a maximum token lifetime, for example 365 days from creation.
+          type: string
+          format: date-time
+          examples:
+            - 2006-07-01T00:00:00+07:00
+
+    CreatedAccountAppToken:
+      description: Account app token created response including the one-time token value.
+      allOf:
+        - $ref: "#/components/schemas/AccountAppToken"
+        - type: object
+          required:
+            - value
+          properties:
+            value:
+              description: One-time token value. This value is not returned again after creation.
+              type: string
+              minLength: 1
 
     CreatedAccountAppSecret:
       description: OAuth client secret created response including the one-time secret value.
