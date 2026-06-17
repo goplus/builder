@@ -18,6 +18,11 @@ export const accountAppRedirectURIsTip: LocaleMessage = {
   zh: '本应用完成授权后，Account 可以将用户重定向到的地址。每行一个 URI，服务端进行精确匹配；生产环境 Web URI 必须使用 HTTPS。'
 }
 
+export const accountAppRedirectURIPatternsTip: LocaleMessage = {
+  en: 'Read-only wildcard patterns for controlled preview or non-production callback hosts. Exact redirect URIs remain the primary allowlist. Patterns are managed outside the public Admin API and cannot be changed here.',
+  zh: '用于受控预览或非生产回调域名的只读通配模式。精确回调 URI 仍是主要 allowlist；这组模式不通过公开 Admin API 管理，也不能在这里修改。'
+}
+
 export const accountAppAllowedOriginsTip: LocaleMessage = {
   en: 'Origins allowed to host Account Web and receive identity provider callbacks for this app. Enter one origin per line, such as https://account.example.com. Do not include a path, query, or fragment.',
   zh: '允许承载 Account Web 并接收本应用第三方身份提供商回调的 Origin。每行一个，例如 https://account.example.com；不要包含路径、查询参数或 fragment。'

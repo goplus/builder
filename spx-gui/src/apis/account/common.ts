@@ -68,6 +68,8 @@ export type AccountApp = AccountModel & {
   status: AccountAppStatus
   /** Allowed redirect URIs */
   redirectURIs: string[]
+  /** Read-only allowed redirect URI patterns */
+  redirectURIPatterns: string[]
   /** Allowed web origins */
   allowedOrigins: string[]
 }
