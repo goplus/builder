@@ -13,6 +13,7 @@ import * as accountAdminApis from '@/apis/admin/account'
 import {
   accountAppAllowedOriginsTip,
   accountAppClientTypeLabels,
+  accountAppRedirectURIPatternsTip,
   accountAppRedirectURIsTip,
   accountAppStatusLabels,
   formatTime,
@@ -336,6 +337,19 @@ function deleteSecret(secretID: string) {
                 <UITextInput v-model:value="redirectURIs" type="textarea" :rows="5" />
                 <span class="text-xs text-grey-700">{{ $t(accountAppRedirectURIsTip) }}</span>
               </label>
+              <div v-if="app.redirectURIPatterns.length > 0" class="flex flex-col gap-2 text-sm text-grey-900">
+                <div>{{ $t({ en: 'Redirect URI patterns', zh: '回调 URI 模式' }) }}</div>
+                <div class="flex flex-col gap-2 rounded-md border border-grey-300 bg-grey-100 px-3 py-2">
+                  <code
+                    v-for="(pattern, index) in app.redirectURIPatterns"
+                    :key="index"
+                    class="break-all font-mono text-xs text-title"
+                  >
+                    {{ pattern }}
+                  </code>
+                </div>
+                <span class="text-xs text-grey-700">{{ $t(accountAppRedirectURIPatternsTip) }}</span>
+              </div>
               <label class="flex flex-col gap-1 text-sm text-grey-900">
                 {{ $t({ en: 'Allowed origins', zh: '允许的 Origin' }) }}
                 <UITextInput v-model:value="allowedOrigins" type="textarea" :rows="4" />
