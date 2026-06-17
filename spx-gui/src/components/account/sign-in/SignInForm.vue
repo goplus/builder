@@ -64,7 +64,11 @@ const idpsQuery = useQuery(() => getIdentityProviders(props.request), {
   en: 'Failed to get identity providers',
   zh: '获取身份提供商列表失败'
 })
-const { isLoading: isInitializing, error: initializationError, refetch: reinitialize } = useQuery((ctx) => Promise.all([composeQuery(ctx, sessionQuery), composeQuery(ctx, idpsQuery)]), {
+const {
+  isLoading: isInitializing,
+  error: initializationError,
+  refetch: reinitialize
+} = useQuery((ctx) => Promise.all([composeQuery(ctx, sessionQuery), composeQuery(ctx, idpsQuery)]), {
   en: 'Failed to initialize sign-in form',
   zh: '初始化登录表单失败'
 })
@@ -108,24 +112,14 @@ const { fn: handleSignInWithPasswordSubmit, isLoading: isSubmittingSignInWithPas
       class="min-h-45 self-stretch flex flex-col items-center justify-center gap-6"
     >
       <UILoading />
-      <p
-        v-if="isRedirectingToProvider || isRedirectingToApp"
-        class="m-0 text-grey-800"
-      >
-        <template v-if="isRedirectingToProvider">
-          {{ $t({ en: 'Redirecting…', zh: '正在跳转…' }) }}
-        </template>
-        <template v-else-if="isRedirectingToApp">
+      <p class="m-0 text-grey-800">
+        <template v-if="isRedirectingToProvider || isRedirectingToApp">
           {{ $t({ en: 'Redirecting…', zh: '正在跳转…' }) }}
         </template>
       </p>
     </div>
 
-    <UIError
-      v-else-if="initializationError != null"
-      class="mb-2 min-h-50 rounded-lg px-6"
-      :retry="reinitialize"
-    >
+    <UIError v-else-if="initializationError != null" class="mb-2 min-h-50 rounded-lg px-6" :retry="reinitialize">
       {{ $t(initializationError.userMessage) }}
     </UIError>
 
