@@ -200,6 +200,11 @@ const routes: Array<RouteRecordRaw> = [
         props: true
       },
       {
+        path: 'users/:userID/app-grants/:grantID',
+        component: () => import('./pages/admin/grant.vue'),
+        props: true
+      },
+      {
         path: 'apps',
         component: () => import('./pages/admin/apps.vue')
       },

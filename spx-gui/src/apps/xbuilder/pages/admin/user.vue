@@ -101,6 +101,19 @@ const sessionsQuery = useQuery(
   { en: 'Failed to load Account user sessions', zh: '加载账号用户会话失败' }
 )
 
+const grantsQuery = useQuery(
+  async () => {
+    if (!canManageAccount.value) return { total: 0, data: [] }
+    return accountAdminApis.listAccountUserAppGrants(props.userID, {
+      pageIndex: 1,
+      pageSize: 100,
+      orderBy: 'lastUsedAt',
+      sortOrder: 'desc'
+    })
+  },
+  { en: 'Failed to load Account user app grants', zh: '加载账号用户应用授权失败' }
+)
+
 const authorizationQuery = useQuery(
   async () => {
     if (!canManageAuthorization.value) return null
@@ -207,6 +220,7 @@ function refetchAll() {
   userQuery.refetch()
   identitiesQuery.refetch()
   sessionsQuery.refetch()
+  grantsQuery.refetch()
   authorizationQuery.refetch()
 }
 
@@ -705,6 +719,73 @@ function deleteAllSessions() {
           </section>
         </div>
       </div>
+
+      <section class="rounded-lg border border-grey-400 bg-white p-5">
+        <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 class="m-0 text-lg font-semibold text-title">
+              {{ $t({ en: 'Authorized apps', zh: '已授权应用' }) }}
+            </h3>
+            <p class="m-0 mt-1 text-sm text-grey-800">
+              {{
+                $t({
+                  en: `${grantsQuery.data.value?.total ?? 0} active app grants`,
+                  zh: `共 ${grantsQuery.data.value?.total ?? 0} 个生效应用授权`
+                })
+              }}
+            </p>
+          </div>
+          <UIButton icon="reload" type="white" size="small" @click="grantsQuery.refetch">
+            {{ $t({ en: 'Refresh', zh: '刷新' }) }}
+          </UIButton>
+        </div>
+        <UILoading v-if="grantsQuery.isLoading.value" class="my-10" />
+        <UIError v-else-if="grantsQuery.error.value != null" class="py-8">
+          {{ $t(grantsQuery.error.value.userMessage) }}
+        </UIError>
+        <div v-else class="overflow-x-auto">
+          <table v-if="(grantsQuery.data.value?.data.length ?? 0) > 0" class="w-full min-w-[780px] text-left text-sm">
+            <thead class="border-y border-grey-300 bg-grey-200 text-grey-800">
+              <tr>
+                <th class="px-4 py-3 font-medium">{{ $t({ en: 'App', zh: '应用' }) }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t({ en: 'Scope', zh: '授权范围' }) }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t({ en: 'Last used', zh: '最后使用' }) }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t({ en: 'Authorized', zh: '授权时间' }) }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="grant in grantsQuery.data.value?.data ?? []"
+                :key="grant.id"
+                class="border-b border-grey-300 last:border-b-0"
+              >
+                <td class="px-4 py-3">
+                  <RouterLink
+                    class="font-medium text-title no-underline hover:text-primary-main hover:underline"
+                    :to="`/admin/users/${encodeURIComponent(user.id)}/app-grants/${encodeURIComponent(grant.id)}`"
+                  >
+                    {{ grant.app.displayName }}
+                  </RouterLink>
+                  <div class="font-mono text-xs text-grey-800">{{ grant.app.name }}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1">
+                    <code class="rounded bg-grey-200 px-2 py-1 font-mono text-xs text-title">{{ grant.scope }}</code>
+                    <CopyButton :value="grant.scope" :label="{ en: 'Copy grant scope', zh: '复制授权范围' }" />
+                  </div>
+                </td>
+                <td class="whitespace-nowrap px-4 py-3 text-grey-900">
+                  {{ grant.lastUsedAt == null ? '-' : formatTime(grant.lastUsedAt) }}
+                </td>
+                <td class="whitespace-nowrap px-4 py-3 text-grey-900">{{ formatTime(grant.createdAt) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="py-8 text-center text-grey-800">
+            {{ $t({ en: 'No active app grants', zh: '暂无生效应用授权' }) }}
+          </div>
+        </div>
+      </section>
 
       <section class="rounded-lg border border-grey-400 bg-white p-5">
         <div class="mb-4 flex flex-wrap items-start justify-between gap-3">

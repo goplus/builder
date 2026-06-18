@@ -2,24 +2,34 @@ import { client, type ByPage, type PaginationParams } from '@/apis/common'
 import type {
   AccountApp,
   AccountAppClientType,
+  AccountAppGrant,
   AccountAppSecret,
   AccountAppStatus,
+  AccountAppToken,
+  AccountAppTokenType,
   AccountSession,
   AccountUser,
   AccountUserIdentity,
-  CreatedAccountAppSecret
+  CreatedAccountAppSecret,
+  CreatedAccountAppToken
 } from '@/apis/account/common'
 
 export type {
   AccountApp,
+  AccountAppGrant,
   AccountAppSecret,
+  AccountAppToken,
+  AccountAppTokenType,
   AccountSession,
   AccountUser,
   AccountUserIdentity,
-  CreatedAccountAppSecret
+  CreatedAccountAppSecret,
+  CreatedAccountAppToken
 } from '@/apis/account/common'
 
 type SortOrder = 'asc' | 'desc'
+
+export const accountAppTokenNameMaxLength = 100
 
 export type ListAccountUsersParams = PaginationParams & {
   /** Filter account users by username or display name pattern */
@@ -103,6 +113,60 @@ export function deleteAccountUserSessions(userID: string) {
 
 export function deleteAccountSession(sessionID: string) {
   return client.delete(`/admin/account/sessions/${encodeURIComponent(sessionID)}`) as Promise<void>
+}
+
+export type ListAccountUserAppGrantsParams = PaginationParams & {
+  /** Field by which to order the results */
+  orderBy?: 'createdAt' | 'updatedAt' | 'lastUsedAt'
+  /** Order in which to sort the results */
+  sortOrder?: SortOrder
+}
+
+export function listAccountUserAppGrants(userID: string, params?: ListAccountUserAppGrantsParams) {
+  return client.get(`/admin/account/users/${encodeURIComponent(userID)}/app-grants`, params) as Promise<
+    ByPage<AccountAppGrant>
+  >
+}
+
+export function getAccountAppGrant(appGrantID: string) {
+  return client.get(`/admin/account/app-grants/${encodeURIComponent(appGrantID)}`) as Promise<AccountAppGrant>
+}
+
+export type ListAccountAppGrantTokensParams = PaginationParams & {
+  /** Filter tokens by OAuth token type */
+  tokenType?: AccountAppTokenType
+  /** Field by which to order the results */
+  orderBy?: 'createdAt'
+  /** Order in which to sort the results */
+  sortOrder?: SortOrder
+}
+
+export function listAccountAppGrantTokens(appGrantID: string, params?: ListAccountAppGrantTokensParams) {
+  return client.get(`/admin/account/app-grants/${encodeURIComponent(appGrantID)}/tokens`, params) as Promise<
+    ByPage<AccountAppToken>
+  >
+}
+
+export type CreateAccountAppGrantTokenParams = {
+  /** OAuth token type to create */
+  tokenType: 'accessToken'
+  /** Human-readable token name */
+  name: string
+  /** Expiration timestamp */
+  expiresAt: string
+}
+
+export function createAccountAppGrantToken(appGrantID: string, params: CreateAccountAppGrantTokenParams) {
+  return client.post(
+    `/admin/account/app-grants/${encodeURIComponent(appGrantID)}/tokens`,
+    params
+  ) as Promise<CreatedAccountAppToken>
+}
+
+export function deleteAccountAppGrantToken(appGrantID: string, tokenID: string) {
+  return client.delete(
+    `/admin/account/app-grants/${encodeURIComponent(appGrantID)}/tokens/${encodeURIComponent(tokenID)}`
+  ) as Promise<void>
 }
 
 export type ListAccountAppsParams = PaginationParams & {
