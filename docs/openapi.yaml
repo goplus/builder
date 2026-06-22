@@ -589,10 +589,12 @@ paths:
                 - file
               properties:
                 file:
-                  description: Avatar image file.
+                  description: |
+                    Avatar image file.
+
+                    Maximum size is 5 MiB (5242880 bytes).
                   type: string
                   format: binary
-                  maxLength: 5242880
             encoding:
               file:
                 contentType: image/png, image/jpeg
@@ -837,14 +839,6 @@ paths:
                   $ref: "#/components/schemas/User/properties/username"
                 displayName:
                   $ref: "#/components/schemas/User/properties/displayName"
-                avatar:
-                  description: New avatar Kodo universal URL of the authenticated user.
-                  allOf:
-                    - $ref: "#/components/schemas/User/properties/avatar"
-                    - minLength: 1
-                      pattern: "^kodo://[^/?#@:]+/[^?#]+$"
-                      examples:
-                        - kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
                 description:
                   $ref: "#/components/schemas/User/properties/description"
       responses:
@@ -856,6 +850,44 @@ paths:
                 $ref: "#/components/schemas/AuthenticatedUser"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /user/avatar:
+    put:
+      operationId: updateAuthenticatedUserAvatar
+      tags:
+        - Users
+      summary: Update the authenticated user avatar
+      description: Upload and replace the avatar image of the authenticated user.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: |
+                    Avatar image file.
+
+                    Maximum size is 5 MiB (5242880 bytes).
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: image/png, image/jpeg
+      responses:
+        "204":
+          description: Authenticated user avatar updated.
+        "400":
+          description: Invalid request parameters.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: Avatar image file is too large.
+        "415":
+          description: Avatar image file type is not supported.
 
   /user/followers:
     get:
@@ -3953,7 +3985,7 @@ paths:
         Image requirements:
 
         - Format: PNG only (`image/png`)
-        - Maximum image size: 5 MB after decoding the base64 content
+        - Maximum image size: 5 MiB (5242880 bytes) after decoding the base64 content
         - Images must be provided as base64-encoded data URLs
         - Other formats must be converted to PNG before sending
 
@@ -4397,10 +4429,12 @@ paths:
                 - file
               properties:
                 file:
-                  description: Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`. Maximum size is 64 MiB.
+                  description: |
+                    Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`.
+
+                    Maximum size is 64 MiB (67108864 bytes).
                   type: string
                   format: binary
-                  maxLength: 67108864
       responses:
         "200":
           description: Conversion successful. Returns a zip archive containing the XBP project file.
@@ -4604,10 +4638,12 @@ paths:
                 - file
               properties:
                 file:
-                  description: Avatar image file.
+                  description: |
+                    Avatar image file.
+
+                    Maximum size is 5 MiB (5242880 bytes).
                   type: string
                   format: binary
-                  maxLength: 5242880
             encoding:
               file:
                 contentType: image/png, image/jpeg
@@ -7444,7 +7480,7 @@ components:
             All images must be provided as PNG format. If you have images in other formats (SVG, JPEG, WebP),
             convert them to PNG before sending.
 
-            Maximum image size: 5 MB (after decoding the base64 content).
+            Maximum image size: 5 MiB (5242880 bytes) after decoding the base64 content.
 
             Format: `data:image/png;base64,<base64_data>`
           type: string

@@ -80,8 +80,8 @@ function validateAvatarInputFile(file: globalThis.File) {
 
   if (file.size > maxAvatarInputFileSize) {
     throw new DefaultException({
-      en: 'Avatar image must be 50 MiB or smaller',
-      zh: '头像图片不能超过 50 MiB'
+      en: 'Avatar image must be 50 MB or smaller',
+      zh: '头像图片不能超过 50 MB'
     })
   }
 }
