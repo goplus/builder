@@ -39,6 +39,12 @@ Keep import statements in order:
 	- Enum names and enum members
 	- Vue component names
 
+### Browser Storage Keys
+
+* Prefix new `localStorage` and `sessionStorage` keys with `builder-`.
+* Use the remainder of the key to identify the owning feature and stored state, for example `builder-user` or `builder-account-pending-authorization`.
+* Migrate existing keys gradually when changing their owning storage logic. Do not rename unrelated existing keys solely for consistency.
+
 ### Identifier Resolution
 
 When working with backend unique string identifiers such as `username`, project owner, and project name, distinguish unresolved identifiers from canonical identifiers.
@@ -83,6 +89,8 @@ When working with backend unique string identifiers such as `username`, project 
 ## Vue Component Development
 
 * Generate accessibility info for interactive elements using `v-radar` directive.
+* Keep Vue SFC sections in this logical order when applicable: optional `<script>`, `<script setup>`, `<template>`, then optional `<style>`.
+* Use the optional `<script>` section for definitions that belong to the same component but can be reused across multiple component instances, such as constants or helper functions.
 
 ## Styling Preferences
 

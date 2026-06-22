@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-account:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.11.1
+          cache: npm
+          cache-dependency-path: spx-gui/package-lock.json
+
+      - name: Install Node modules
+        working-directory: spx-gui
+        run: npm ci --prefer-offline
+
+      - name: Build account frontend
+        working-directory: spx-gui
+        run: npm run build:account
+
+      - name: Deploy builder_account
+        uses: ./.github/actions/deploy
+        with:
+          token: ${{ secrets.GOPLUS_DEPLOY_TOKEN }}
+          app-id: ${{ vars.BUILDER_ACCOUNT_APP_ID }}
+          package-name: builder_account
+          package-dir: ${{ github.workspace }}/spx-gui/dist
+
+      - name: Build account frontend for mainland China deployment
+        working-directory: spx-gui
+        run: NODE_ENV=production.cn npm run build:account
+
+      - name: Deploy builder_account_cn
+        uses: ./.github/actions/deploy
+        with:
+          token: ${{ secrets.GOPLUS_DEPLOY_TOKEN }}
+          app-id: ${{ vars.BUILDER_ACCOUNT_CN_APP_ID }}
+          package-name: builder_account
+          package-dir: ${{ github.workspace }}/spx-gui/dist

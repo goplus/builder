@@ -17,7 +17,7 @@ customElements.define(
   'unstable-xgo-code-editor',
   defineCustomElement(xgoCodeEditor, {
     configureApp(app) {
-      configureApp(app, false /* disable router in widget */)
+      configureApp(app)
     }
   })
 )

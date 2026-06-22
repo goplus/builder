@@ -595,7 +595,7 @@ paths:
                   maxLength: 5242880
             encoding:
               file:
-                contentType: image/png
+                contentType: image/png, image/jpeg
       responses:
         "204":
           description: Account user avatar updated.
@@ -4410,6 +4410,13 @@ paths:
 
         Requires the `accountAdmin` role.
       parameters:
+        - name: keyword
+          description: Filter account users by username or display name pattern.
+          in: query
+          schema:
+            type: string
+            examples:
+              - john
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -4588,7 +4595,7 @@ paths:
                   maxLength: 5242880
             encoding:
               file:
-                contentType: image/png
+                contentType: image/png, image/jpeg
       responses:
         "204":
           description: Account user avatar updated.
@@ -5580,10 +5587,22 @@ components:
       type: object
       description: User permission capabilities.
       required:
+        - canManageAccount
+        - canManageAuthorization
         - canManageAssets
         - canManageCourses
         - canUsePremiumLLM
       properties:
+        canManageAccount:
+          description: Whether the user can manage user accounts.
+          type: boolean
+          examples:
+            - true
+        canManageAuthorization:
+          description: Whether the user can manage user authorizations.
+          type: boolean
+          examples:
+            - true
         canManageAssets:
           description: Whether the user can manage asset library.
           type: boolean
@@ -5794,6 +5813,7 @@ components:
         - clientType
         - status
         - redirectURIs
+        - redirectURIPatterns
         - allowedOrigins
       properties:
         id:
@@ -5845,6 +5865,31 @@ components:
           items:
             type: string
             format: uri
+        redirectURIPatterns:
+          description: |
+            Allowed redirect URI patterns.
+
+            **Exact redirect URIs remain the primary allowlist.**
+
+            Wildcard patterns should be reserved for controlled preview or non-production callback hosts because broad
+            redirect matching can increase open redirect risk.
+
+            Pattern rules:
+
+            - The pattern must be an absolute `http` or `https` URL.
+            - The pattern must contain at most one `*`.
+            - The wildcard must be located in a subdomain within the hostname.
+            - The wildcard must be located in the subdomain furthest from the root domain.
+            - The wildcard may be prefixed or suffixed with valid hostname characters.
+            - The wildcard matches only one hostname label and does not match `.`.
+            - All non-host components, including path and query, are matched exactly.
+            - Fragments are not allowed.
+          readOnly: true
+          type: array
+          items:
+            type: string
+          examples:
+            - - https://app-*.example.com/oauth/callback
         allowedOrigins:
           description: |
             Allowed web origins.

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>XBuilder Account</title>
+    <link rel="icon" href="/src/assets/logo.svg" />
+
+    <style>
+      /*
+       * Declare the layer order at the document entry instead of inside app.css.
+       * Vite may reorder extracted CSS in the final bundle, so the prelude needs
+       * to be parsed before any layered rules for the order to stay deterministic.
+       * See: https://github.com/vitejs/vite/issues/21903
+       */
+      @layer theme, base, components, utilities;
+
+      html,
+      body,
+      #app {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/apps/account/main.ts"></script>
+  </body>
+</html>

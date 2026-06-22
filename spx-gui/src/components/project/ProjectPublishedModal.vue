@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { UIButton, UIFormModal, UITextInput, UILink } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { getProjectPageRoute } from '@/router'
+import { getProjectPageRoute } from '@/apps/xbuilder/router'
 import { SpxProject } from '@/models/spx/project'
 
 const props = defineProps<{
