@@ -45,6 +45,10 @@ jobs:
           package-name: builder_account
           package-dir: ${{ github.workspace }}/spx-gui/dist
 
+      - name: Build account frontend for mainland China deployment
+        working-directory: spx-gui
+        run: NODE_ENV=production.cn npm run build:account
+
       - name: Deploy builder_account_cn
         uses: ./.github/actions/deploy
         with:
