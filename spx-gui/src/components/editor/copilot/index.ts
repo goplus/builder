@@ -20,6 +20,7 @@ import {
 } from '../spx-code-editor'
 import * as codeLink from './CodeLink'
 import * as codeChange from './CodeChange.vue'
+import * as apiReferenceFilter from './ApiReferenceFilter'
 import CodeBlock from './CodeBlock.vue'
 
 class Retriever {
@@ -288,6 +289,15 @@ export function useSpxEditorCopilot(): void {
   d.addDisposer(copilot.registerTool(new GetCodeDiagnosticsTool(codeEditor)))
   d.addDisposer(
     copilot.registerCustomElement({
+      tagName: apiReferenceFilter.tagName,
+      description: apiReferenceFilter.detailedDescription,
+      attributes: apiReferenceFilter.attributes,
+      isRaw: apiReferenceFilter.isRaw,
+      component: apiReferenceFilter.default
+    })
+  )
+  d.addDisposer(
+    copilot.registerCustomElement({
       tagName: codeLink.tagName,
       description: codeLink.detailedDescription,
       attributes: codeLink.attributes,
@@ -314,6 +324,15 @@ export function useSpxEditorCopilot(): void {
         return [skillXgoLanguage, skillSpxProject]
       }
     })
+  )
+
+  // The API reference filter is transient state scoped to a copilot session: clear it whenever the
+  // session ends or switches (e.g. a tutorial course finishes), so a filter never leaks past its context.
+  d.addDisposer(
+    watch(
+      () => copilot.currentSession,
+      () => codeEditor.setAPIReferenceFilter(null)
+    )
   )
 
   watch(

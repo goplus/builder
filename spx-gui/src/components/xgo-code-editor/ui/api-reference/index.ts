@@ -27,6 +27,21 @@ export class APIReferenceController extends Disposable {
     return this.itemsMgr.result.data
   }
 
+  /**
+   * Items after applying `codeEditor.apiReferenceFilter`. This is a synchronous derivation
+   * over the already-loaded `items`, so filter changes update the UI reactively without
+   * re-running the async provider. Falls back to the full list when the filter matches
+   * nothing, to avoid leaving the panel empty.
+   */
+  get filteredItems() {
+    const items = this.items
+    if (items == null) return null
+    const filter = this.ui.codeEditor.apiReferenceFilter
+    if (filter == null) return items
+    const filtered = items.filter(filter)
+    return filtered.length > 0 ? filtered : items
+  }
+
   get error() {
     return this.itemsMgr.result.error
   }
