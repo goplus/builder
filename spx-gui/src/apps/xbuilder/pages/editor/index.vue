@@ -215,6 +215,7 @@ onBeforeRouteLeave(async () => {
  * If it is OK to leave, return true, otherwise return false.
  */
 async function checkChangesNotToBeSaved(es: EditorState) {
+  if (tutorial.consumeSkipLeaveConfirm()) return true
   const hasEdits = es.editing.mode === EditingMode.EffectFree && es.editing.dirty
   if (!hasEdits) return true
   const inTutorial = tutorial.currentCourse != null
