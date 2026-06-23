@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { defineComponent, onMounted, watch } from 'vue'
+import { defineComponent, watch } from 'vue'
 import { useCodeEditorRef, parseDefinitionName } from '@/components/xgo-code-editor'
 
 export const tagName = 'api-reference-filter'
@@ -51,11 +51,9 @@ export default defineComponent<Props>(
       })
     }
 
-    onMounted(apply)
-    // The editor may become available later than this element; apply again once it is ready.
-    watch(codeEditorRef, (codeEditor) => {
-      if (codeEditor != null) apply()
-    })
+    // Re-apply on initial render, when the editor becomes available (it may mount later than this
+    // element), and when the copilot updates the element with a new `names` prop.
+    watch([codeEditorRef, () => props.names], apply, { immediate: true })
 
     return function render() {
       return null
