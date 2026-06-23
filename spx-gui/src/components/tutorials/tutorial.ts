@@ -15,6 +15,13 @@ import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from 
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 
+// Max age (ms) for a `requestSkipLeaveConfirm` request to still suppress the editor's
+// leave confirmation. Time-bound so a request that is never consumed cannot get "stuck":
+// some navigations (e.g. editor -> editor route updates, or starting a course from a
+// non-editor page) never reach the editor's `onBeforeRouteLeave`, and an un-expiring
+// flag would otherwise suppress a later, genuine leave confirmation.
+const skipLeaveConfirmTimeout = 1000
+
 export function useTutorial() {
   const tutorial = inject(tutorialKey)
   if (tutorial == null) {
@@ -61,16 +68,16 @@ export class Tutorial {
     this.abandonPredictionCountRef.value = 0
   }
 
-  // One-shot flag to skip the editor's leave confirmation on the next navigation.
-  // Used when leaving the editor is an explicit, expected action (e.g. clicking
-  // "back to course series" in the course success modal), making a confirm redundant.
-  private skipLeaveConfirmOnce = false
+  // Skip the editor's leave confirmation for the navigation that immediately follows an
+  // explicit, expected action (e.g. clicking "back to course series" in the success modal,
+  // or starting a course). Time-bound via `skipLeaveConfirmTimeout` so it cannot get stuck.
+  private skipLeaveConfirmRequestedAt = 0
   requestSkipLeaveConfirm() {
-    this.skipLeaveConfirmOnce = true
+    this.skipLeaveConfirmRequestedAt = Date.now()
   }
   consumeSkipLeaveConfirm() {
-    const skip = this.skipLeaveConfirmOnce
-    this.skipLeaveConfirmOnce = false
+    const skip = Date.now() - this.skipLeaveConfirmRequestedAt < skipLeaveConfirmTimeout
+    this.skipLeaveConfirmRequestedAt = 0
     return skip
   }
 
