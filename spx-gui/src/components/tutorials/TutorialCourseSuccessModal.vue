@@ -39,6 +39,7 @@ function handleCancel() {
 
 function handleBackToCourseSeries() {
   emit('cancelled')
+  props.tutorial.requestSkipLeaveConfirm()
   router.push(`/course-series/${props.series.id}`)
 }
 
