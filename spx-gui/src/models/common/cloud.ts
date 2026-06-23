@@ -1,5 +1,4 @@
 import { createDirectUploadTask } from 'qiniu-js'
-import { usercontentBaseUrl } from '@/utils/env'
 import { filename } from '@/utils/path'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
 import { mergeSignals } from '@/utils/disposable'
@@ -26,8 +25,24 @@ import { getUniversalUrlScheme, stringifyDataUrl, stringifyKodoUrl, UniversalUrl
 
 export type PreferPublishedContent = boolean | ((project: ProjectData) => boolean | Promise<boolean>)
 
+export type CloudHelpersConfig = {
+  baseUrl: string
+  bucket: string
+}
+
 /** Helpers for cloud storage of project data. */
 export class CloudHelpers {
+  private config: CloudHelpersConfig | null = null
+
+  setConfig(config: CloudHelpersConfig) {
+    this.config = config
+  }
+
+  private ensureConfig() {
+    if (this.config == null) throw new Error('Cloud helpers config is not set')
+    return this.config
+  }
+
   load(
     owner: string,
     name: string,
@@ -39,8 +54,18 @@ export class CloudHelpers {
   save({ metadata, files }: ProjectSerialized, signal?: AbortSignal) {
     return save(metadata, files, signal)
   }
+
+  universalUrlToWebUrl(universalUrl: UniversalUrl) {
+    return universalUrlToWebUrlImpl(universalUrl, this.ensureConfig())
+  }
+
+  clearUniversalUrlCache() {
+    universalUrlCache.clear()
+  }
 }
 
+// TODO: Exported functions in this module that depend on `cloudHelpers` directly or indirectly
+// should be moved onto `CloudHelpers` and consumed through a configured helpers instance.
 export const cloudHelpers = new CloudHelpers()
 
 async function load(
@@ -170,7 +195,7 @@ function getUniversalUrl(file: File): UniversalUrl | null {
 
 export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
   const file = new File(name, async (signal) => {
-    const webUrl = await universalUrlToWebUrl(url)
+    const webUrl = await cloudHelpers.universalUrlToWebUrl(url)
     signal?.throwIfAborted()
     return fetchFile(webUrl, signal)
   })
@@ -204,70 +229,67 @@ const fetchFile = (url: WebUrl, signal?: AbortSignal) =>
 
 export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
   const universalUrl = await saveFile(file, signal)
-  return universalUrlToWebUrl(universalUrl)
+  return cloudHelpers.universalUrlToWebUrl(universalUrl)
 }
 
-export const universalUrlToWebUrl = (() => {
-  const cache = (() => {
-    type Entry = { webUrl: WebUrl; cachedAt: number }
-    const entries = new Map<UniversalUrl, Entry>()
-    const ttl = 60 * 60 * 1000 // 1 hour in milliseconds
-    const isFresh = (entry: Entry) => Date.now() - entry.cachedAt < ttl
-    return {
-      get: (universalUrl: UniversalUrl) => {
-        const entry = entries.get(universalUrl)
-        if (entry != null) {
-          if (isFresh(entry)) return entry.webUrl
-          entries.delete(universalUrl)
-        }
-        return null
-      },
-      set: (universalUrl: UniversalUrl, webUrl: WebUrl) => entries.set(universalUrl, { webUrl, cachedAt: Date.now() }),
-      clear: () => entries.clear()
-    }
-  })()
+type UniversalUrlCacheEntry = { webUrl: WebUrl; cachedAt: number }
 
-  const makeObjectUrl = (() => {
-    const batch = new Set<UniversalUrl>()
-    const batchDelay = 15 // 15ms
-    let batchPromise: Promise<UniversalToWebUrlMap> | null = null
-    const processBatch = () => {
-      const currentBatch = Array.from(batch)
-      batch.clear()
-      batchPromise = null
-      return createFileURLSignatures(currentBatch)
-    }
-    return async (universalUrl: UniversalUrl) => {
-      batch.add(universalUrl)
-      if (batchPromise == null) {
-        batchPromise = new Promise((resolve) => setTimeout(() => resolve(processBatch()), batchDelay))
+const universalUrlCache = (() => {
+  const entries = new Map<UniversalUrl, UniversalUrlCacheEntry>()
+  const ttl = 60 * 60 * 1000 // 1 hour in milliseconds
+  const isFresh = (entry: UniversalUrlCacheEntry) => Date.now() - entry.cachedAt < ttl
+  return {
+    get: (universalUrl: UniversalUrl) => {
+      const entry = entries.get(universalUrl)
+      if (entry != null) {
+        if (isFresh(entry)) return entry.webUrl
+        entries.delete(universalUrl)
       }
-      const objectUrls = await batchPromise
-      return objectUrls[universalUrl]
-    }
-  })()
-
-  const fn = async (universalUrl: UniversalUrl): Promise<WebUrl> => {
-    const scheme = getUniversalUrlScheme(universalUrl)
-    if (scheme !== UniversalUrlScheme.Kodo) return universalUrl
-
-    const cached = cache.get(universalUrl)
-    if (cached != null) return cached
-
-    const webUrl = await makeObjectUrl(universalUrl)
-    if (!webUrl.startsWith(usercontentBaseUrl)) {
-      console.warn(`\
-Expect webUrl (${webUrl}) to start with usercontentBaseUrl (${usercontentBaseUrl}). \
-The env variable \`VITE_USERCONTENT_BASE_URL\` may be misconfigured. \
-See details in file \`.env\`.
-`)
-    }
-    cache.set(universalUrl, webUrl)
-    return webUrl
+      return null
+    },
+    set: (universalUrl: UniversalUrl, webUrl: WebUrl) => entries.set(universalUrl, { webUrl, cachedAt: Date.now() }),
+    clear: () => entries.clear()
   }
-  fn.clearCache = cache.clear
-  return fn
 })()
+
+const makeObjectUrl = (() => {
+  const batch = new Set<UniversalUrl>()
+  const batchDelay = 15 // 15ms
+  let batchPromise: Promise<UniversalToWebUrlMap> | null = null
+  const processBatch = (config: CloudHelpersConfig) => {
+    const currentBatch = Array.from(batch)
+    batch.clear()
+    batchPromise = null
+    return createFileURLSignatures(currentBatch, config)
+  }
+  return async (universalUrl: UniversalUrl, config: CloudHelpersConfig) => {
+    batch.add(universalUrl)
+    if (batchPromise == null) {
+      batchPromise = new Promise((resolve) => setTimeout(() => resolve(processBatch(config)), batchDelay))
+    }
+    const objectUrls = await batchPromise
+    return objectUrls[universalUrl]
+  }
+})()
+
+async function universalUrlToWebUrlImpl(universalUrl: UniversalUrl, config: CloudHelpersConfig): Promise<WebUrl> {
+  const scheme = getUniversalUrlScheme(universalUrl)
+  if (scheme !== UniversalUrlScheme.Kodo) return universalUrl
+
+  const cached = universalUrlCache.get(universalUrl)
+  if (cached != null) return cached
+
+  const webUrl = await makeObjectUrl(universalUrl, config)
+  if (!webUrl.startsWith(config.baseUrl)) {
+    console.warn(`\
+Expect webUrl (${webUrl}) to start with usercontentBaseUrl (${config.baseUrl}). \
+The env variable \`VITE_USERCONTENT_BASE_URL\` may be misconfigured. \
+See details in file \`src/apps/xbuilder/.env\`.
+`)
+  }
+  universalUrlCache.set(universalUrl, webUrl)
+  return webUrl
+}
 
 /** Save file to cloud and return its universal URL */
 export async function saveFile(file: File, signal?: AbortSignal) {

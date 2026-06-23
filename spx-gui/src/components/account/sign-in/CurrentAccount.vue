@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import type { CurrentAccountSession } from '@/apis/account'
 import { UIFullWidthButton } from '@/components/ui'
-import { useAvatarUrl } from '@/stores/user/avatar'
+import { useExternalUrl } from '@/utils/utils'
 
 const props = defineProps<{
   session: CurrentAccountSession
@@ -15,7 +15,7 @@ defineEmits<{
   switchAccount: []
 }>()
 
-const avatarUrl = useAvatarUrl(() => props.session.user.avatar)
+const avatarUrl = useExternalUrl(() => props.session.user.avatar)
 const avatarFallbackText = computed(() => props.session.user.displayName.trim().charAt(0).toUpperCase() || '?')
 </script>
 

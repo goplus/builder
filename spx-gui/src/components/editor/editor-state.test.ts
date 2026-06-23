@@ -10,16 +10,15 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { Monitor } from '@/models/spx/widget/monitor'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
-import type { CloudHelpers } from '@/models/common/cloud'
 import { mockFile } from '@/models/common/test'
 import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
 import type { SignedInState } from '@/stores/user'
 import type * as editing from './editing'
 import { EditorState, type IRouter, type Selected } from './editor-state'
 
-function makeCloudHelpers(): CloudHelpers {
+function makeCloudHelpers(): editing.CloudHelpers {
   return {
-    load: vi.fn().mockResolvedValue({ metadata: {}, files: {} }),
+    load: vi.fn().mockResolvedValue({ metadata: { owner: 'test-owner', name: 'test-project' }, files: {} }),
     save: vi.fn().mockResolvedValue({ metadata: {}, files: {} })
   }
 }
@@ -121,7 +120,7 @@ function makeEditorState(
   project: SpxProject = makeEmptyProject(),
   isOnline: WatchSource<boolean> = ref(true),
   signedInStateQuery: QueryRet<SignedInState> = makeSignedInStateQuery(makeSignedInState('user')),
-  cloudHelpers: CloudHelpers = makeCloudHelpers(),
+  cloudHelpers: editing.CloudHelpers = makeCloudHelpers(),
   localCache: editing.ILocalCache = makeLocalCache()
 ): EditorState {
   return new EditorState(createI18n({ lang: 'en' }), project, isOnline, signedInStateQuery, cloudHelpers, localCache)

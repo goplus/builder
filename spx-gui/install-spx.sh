@@ -3,7 +3,7 @@ set -e
 
 cd "$(dirname "$0")"
 
-# Keep this version in sync with `VITE_SPX_VERSION` in `.env`.
+# Keep this version in sync with `VITE_SPX_VERSION` in `src/apps/xbuilder/.env`.
 SPX_VERSION="2.0.4"
 
 SPX_NAME="spx_${SPX_VERSION}"

@@ -6,12 +6,13 @@ import { setWasmUrl as setDotLottieWasmUrl } from '@lottiefiles/dotlottie-vue'
 
 import { client } from '@/apis/common'
 import { CustomTransformer } from '@/components/editor/common/viewer/custom-transformer'
-import { ensureAccessToken, initUserState } from '@/stores/user'
+import { ensureAccessToken } from '@/stores/user'
 import { createAppState } from '@/utils/app-state'
 import { initDeveloperMode } from '@/utils/developer-mode'
 import { createRadar } from '@/utils/radar'
 import { createSpotlight } from '@/utils/spotlight'
 
+import type { SentryConfig } from './sentry'
 import { initDayjs } from './dayjs'
 import { initI18n } from './i18n'
 import { initSentry } from './sentry'
@@ -32,14 +33,18 @@ export function setup() {
   initDotLottie()
   initDayjs()
   initApiClient()
-  initUserState()
   initDeveloperMode()
 }
 
+export type AppConfig = {
+  defaultLang: string
+  sentry: SentryConfig
+}
+
 /** Configure the Vue app by installing plugins, etc. */
-export function configureApp(app: VueApp, router?: Router) {
-  initSentry(app, router)
-  initI18n(app)
+export function configureApp(app: VueApp, router: Router | undefined, config: AppConfig) {
+  initSentry(app, router, config.sentry)
+  initI18n(app, config.defaultLang)
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }
   })

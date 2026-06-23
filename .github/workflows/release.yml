@@ -47,7 +47,7 @@ jobs:
 
       - name: Build account frontend for mainland China deployment
         working-directory: spx-gui
-        run: NODE_ENV=production.cn npm run build:account
+        run: VITE_MODE=production-cn npm run build:account
 
       - name: Deploy builder_account_cn
         uses: ./.github/actions/deploy

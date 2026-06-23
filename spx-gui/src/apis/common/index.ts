@@ -1,4 +1,3 @@
-import { apiBaseUrl } from '@/utils/env'
 import { Client } from './client'
 
 export type PaginationParams = {
@@ -44,13 +43,9 @@ export function timeStringify(time: number) {
 
 /**
  * The default client instance for app XBuilder to make requests to spx-backend APIs.
- * Requests made through this client will have the base URL set to `apiBaseUrl` from environment variables.
- * The token provider is expected to be set separately on app initialization (see details in setup.ts)
- * so credentials will be included in requests.
+ * The base URL and token provider are expected to be configured on app initialization.
  */
-export const client = new Client({
-  baseUrl: apiBaseUrl
-})
+export const client = new Client()
 
 /** Art style indicates the visual style or aesthetic approach used in the creation of graphics */
 export const enum ArtStyle {

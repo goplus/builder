@@ -5,7 +5,7 @@ import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
-import { initiateSignIn, signOut, useSignedInStateQuery } from '@/stores/user'
+import { signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
@@ -17,6 +17,7 @@ import zhSvg from './icons/zh.svg?raw'
 const { isOnline } = useNetwork()
 const router = useRouter()
 const i18n = useI18n()
+const signIn = useSignIn()
 
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
@@ -67,7 +68,7 @@ async function handleSignOut() {
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
-      @click="initiateSignIn()"
+      @click="signIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>

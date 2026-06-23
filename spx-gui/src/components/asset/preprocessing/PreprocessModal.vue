@@ -105,7 +105,6 @@
 import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { stripExt } from '@/utils/path'
 import type { LocaleMessage } from '@/utils/i18n'
-import { disableAIGC } from '@/utils/env'
 import { Costume } from '@/models/spx/costume'
 import { File } from '@/models/common/file'
 import { UIButton, UIFormModal } from '@/components/ui'
@@ -122,8 +121,10 @@ import removeBackgroundThumbnail from './remove-background/thumbnail.svg'
 import { saveFiles } from '@/models/common/cloud'
 import { useMessageHandle } from '@/utils/exception'
 import { useNetwork } from '@/utils/network'
+import { useDisableAIGC } from './config'
 
 const { isOnline } = useNetwork()
+const disableAIGC = useDisableAIGC()
 
 const props = withDefaults(
   defineProps<{

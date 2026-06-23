@@ -1,14 +1,19 @@
 <script lang="ts">
 const ispxWasmUrl = new URL('@/assets/wasm/ispx.wasm', import.meta.url).href
-const runnerBaseUrl = `/spx_${spxVersion}`
-const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
 
-const assetURLs = {
-  // TODO: include these assets as "static asset" to generate immutable URLs
-  'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
-  'ispx.wasm': ispxWasmUrl,
-  'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
-  'engine.zip': `${runnerBaseUrl}/engine.zip`
+function getProjectRunnerBaseUrl(spxVersion: string) {
+  return `/spx_${spxVersion}`
+}
+
+function getProjectRunnerAssetURLs(spxVersion: string) {
+  const runnerBaseUrl = getProjectRunnerBaseUrl(spxVersion)
+  return {
+    // TODO: include these assets as "static asset" to generate immutable URLs
+    'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
+    'ispx.wasm': ispxWasmUrl,
+    'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
+    'engine.zip': `${runnerBaseUrl}/engine.zip`
+  }
 }
 
 // Log levels defined in spx/godot.editor.js
@@ -96,8 +101,8 @@ function uiUpdated(signal?: AbortSignal) {
 }
 
 // TODO: consider to call prefetch in some global place
-export function prefetchProjectRunnerAssets() {
-  Object.values(assetURLs).forEach((url) => {
+export function prefetchProjectRunnerAssets(spxVersion: string) {
+  Object.values(getProjectRunnerAssetURLs(spxVersion)).forEach((url) => {
     // Use `<link rel=prefetch>` instead of `<link rel=preload>`:
     // * `preload` indicates higher priority than `prefetch`. Preloaded content are expected to be used soon. For example, chrome will warn if the preloaded content is not used within 3 or 5 seconds. While project here will not be run until the user clicks some "run" button.
     // * `preload` results are not shared across different documents, while the iframe content is a different document. The "preloading" is meaningful only when the HTTP cache is shared, which is more like the case of `prefetch`.
@@ -132,7 +137,6 @@ type State =
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { computed, onBeforeUnmount, onUnmounted, ref, shallowReactive, shallowRef, watch } from 'vue'
-import { apiBaseUrl, spxVersion } from '@/utils/env'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
@@ -145,9 +149,15 @@ import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { ensureAccessToken } from '@/stores/user'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
+import { client } from '@/apis/common'
 import errorBgUrl from './error-bg.svg'
+import { useSpxVersion } from './config'
 
-const aiInteractionEndpoint = `${apiBaseUrl}/ai-interaction`
+const spxVersion = useSpxVersion()
+const runnerBaseUrl = getProjectRunnerBaseUrl(spxVersion)
+const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
+const aiInteractionEndpoint = client.urlFor('/ai-interaction').toString()
+const assetURLs = getProjectRunnerAssetURLs(spxVersion)
 
 const props = defineProps<{ project: SpxProject }>()
 

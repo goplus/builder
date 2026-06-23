@@ -6,6 +6,7 @@ import { initDayjs } from '@/setup/dayjs'
 import { initI18n } from '@/setup/i18n'
 import { initSentry } from '@/setup/sentry'
 
+import * as env from './env'
 import App from './App.vue'
 import router from './router'
 
@@ -15,7 +16,7 @@ import router from './router'
 initDayjs()
 
 const app = createApp(App)
-initSentry(app, router)
-initI18n(app)
+initSentry(app, router, env.sentry)
+initI18n(app, env.defaultLang)
 app.use(router)
 app.mount('#app')

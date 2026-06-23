@@ -1,9 +1,9 @@
 import '@/polyfills'
 import { defineCustomElement } from 'vue'
-import { setup, configureApp } from '@/setup'
+import { setupXBuilder, configureXBuilderApp } from '../../setup'
 import xgoCodeEditor from './XGoCodeEditor.ce.vue'
 
-setup()
+setupXBuilder()
 
 // Keep the `unstable-` prefix for now because this widget API is still being validated.
 // At this stage it mainly exists to prove the embedding flow works and to verify the feature behavior.
@@ -17,7 +17,7 @@ customElements.define(
   'unstable-xgo-code-editor',
   defineCustomElement(xgoCodeEditor, {
     configureApp(app) {
-      configureApp(app)
+      configureXBuilderApp(app)
     }
   })
 )

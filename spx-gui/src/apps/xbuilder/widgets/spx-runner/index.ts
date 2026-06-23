@@ -1,15 +1,15 @@
 import '@/polyfills'
 import { defineCustomElement } from 'vue'
-import { setup, configureApp } from '@/setup'
+import { setupXBuilder, configureXBuilderApp } from '../../setup'
 import spxRunner from './SpxRunner.ce.vue'
 
-setup()
+setupXBuilder()
 
 customElements.define(
   'spx-runner',
   defineCustomElement(spxRunner, {
     configureApp(app) {
-      configureApp(app)
+      configureXBuilderApp(app)
     }
   })
 )

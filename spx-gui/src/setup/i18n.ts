@@ -1,12 +1,11 @@
 import { watchEffect, type App as VueApp } from 'vue'
 
 import type { Config as UIConfig } from '@/components/ui'
-import { defaultLang } from '@/utils/env'
 import { createI18n, type I18n, normalizeLang } from '@/utils/i18n'
 
 const langLocalStorageKey = 'spx-gui-language'
 
-export function initI18n(app: VueApp) {
+export function initI18n(app: VueApp, defaultLang: string) {
   const lang = localStorage.getItem(langLocalStorageKey) ?? defaultLang
   const i18n = createI18n({ lang: normalizeLang(lang) })
   const stop = watchEffect(() => {

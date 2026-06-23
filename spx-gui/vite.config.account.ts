@@ -9,15 +9,16 @@ import { createBrowserHijackPlugin } from './build/vite-plugins/browser-hijack-p
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
 
 const resolve = (dir: string) => path.join(__dirname, dir)
+const accountEnvDir = resolve('src/apps/account')
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-  const accountWebOrigin = env.VITE_ACCOUNT_WEB_ORIGIN ?? ''
-  const accountAPIProxyTarget = env.VITE_ACCOUNT_API_PROXY_TARGET ?? ''
+  const env = loadEnv(mode, accountEnvDir, '')
+  const accountWebOrigin = env.VITE_WEB_ORIGIN ?? ''
+  const accountAPIProxyTarget = env.VITE_API_PROXY_TARGET ?? ''
 
   const accountBrowserHijackPlugins: Plugin[] = []
   if (mode === 'development') {
-    if (accountWebOrigin === '') throw new Error('VITE_ACCOUNT_WEB_ORIGIN is required for Account development')
+    if (accountWebOrigin === '') throw new Error('VITE_WEB_ORIGIN is required for Account development')
     accountBrowserHijackPlugins.push(
       createBrowserHijackPlugin({
         origin: accountWebOrigin,
@@ -29,7 +30,7 @@ export default defineConfig(({ mode }) => {
 
   const proxy: Record<string, ProxyOptions> = {}
   if (accountAPIProxyTarget !== '') {
-    if (accountWebOrigin === '') throw new Error('VITE_ACCOUNT_WEB_ORIGIN is required for Account API proxy')
+    if (accountWebOrigin === '') throw new Error('VITE_WEB_ORIGIN is required for Account API proxy')
     const accountWebURL = new URL(accountWebOrigin)
     proxy['/api'] = {
       target: accountAPIProxyTarget,
@@ -49,6 +50,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    envDir: accountEnvDir,
     plugins: [
       ...accountBrowserHijackPlugins,
       createAppHtmlEntryPlugin(resolve('src/apps/account/index.html')),

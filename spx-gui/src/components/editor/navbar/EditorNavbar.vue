@@ -165,9 +165,9 @@ import { type SpxProject } from '@/models/spx/project'
 import { useSignedInUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/apps/xbuilder/router'
-import { showTutorialsEntry } from '@/utils/env'
 import { useModifyProjectName, usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
+import { useCommunityConfig } from '@/components/community/config'
 import { xbpHelpers } from '@/models/common/xbp'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
@@ -190,6 +190,8 @@ import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
 import defaultModeSvg from './icons/default-mode.svg?raw'
 import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
+
+const { showTutorialsEntry } = useCommunityConfig()
 
 const props = defineProps<{
   project: SpxProject | null

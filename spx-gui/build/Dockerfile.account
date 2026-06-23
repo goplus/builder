@@ -12,7 +12,7 @@ RUN npm install --ignore-scripts
 
 COPY spx-gui .
 
-ARG NODE_ENV
+ARG VITE_MODE
 
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build:account
