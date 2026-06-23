@@ -101,7 +101,7 @@ const props = withDefaults(
     readonly?: boolean
     placeholder?: string
     autofocus?: boolean
-    rows?: number | string
+    rows?: number
   }>(),
   {
     type: undefined,

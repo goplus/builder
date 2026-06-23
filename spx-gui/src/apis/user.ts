@@ -1,6 +1,9 @@
 import { client, type ByPage, type PaginationParams } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
 
+export const userDisplayNameMaxLength = 100
+export const userDescriptionMaxLength = 200
+
 export type User = {
   /** Unique identifier */
   id: string

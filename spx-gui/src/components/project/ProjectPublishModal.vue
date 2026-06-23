@@ -4,7 +4,8 @@ import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { Visibility } from '@/apis/common'
-import { createProjectRelease } from '@/apis/project-release'
+import { projectDescriptionMaxLength, projectInstructionsMaxLength } from '@/apis/project'
+import { createProjectRelease, projectReleaseDescriptionMaxLength } from '@/apis/project-release'
 import { cloudHelpers, saveFile } from '@/models/common/cloud'
 import type { SpxProject } from '@/models/spx/project'
 import { isProjectUsingAIInteraction } from '@/utils/project'
@@ -37,18 +38,28 @@ if (firstTime) {
 
 const form = useForm({
   releaseDescription: [defaultDescription, validateReleaseDescription],
-  projectDescription: [props.project.description ?? '', validateText],
-  projectInstructions: [props.project.instructions ?? '', validateText]
+  projectDescription: [
+    props.project.description ?? '',
+    (val: string) => validateText(val, projectDescriptionMaxLength)
+  ],
+  projectInstructions: [
+    props.project.instructions ?? '',
+    (val: string) => validateText(val, projectInstructionsMaxLength)
+  ]
 })
 
-function validateText(val: string) {
-  if (val.length > 400) return t({ en: 'The input must be 400 characters or fewer', zh: '输入不能超过 400 字' })
+function validateText(val: string, maxLength: number) {
+  if (val.length > maxLength)
+    return t({
+      en: `The input must be ${maxLength} characters or fewer`,
+      zh: `输入不能超过 ${maxLength} 字`
+    })
   return null
 }
 
 function validateReleaseDescription(val: string) {
   if (val.trim() === '') return t({ en: 'Release description is required', zh: '发布内容不能为空' })
-  return validateText(val)
+  return validateText(val, projectReleaseDescriptionMaxLength)
 }
 
 function handleCancel() {
