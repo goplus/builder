@@ -58,6 +58,7 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
+import { useTutorial } from '@/components/tutorials/tutorial'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -84,6 +85,7 @@ const i18n = useI18n()
 const { t } = i18n
 const { isOnline } = useNetwork()
 const m = useMessage()
+const tutorial = useTutorial()
 
 const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: string): Promise<boolean> => {
   return confirm({
@@ -215,15 +217,21 @@ onBeforeRouteLeave(async () => {
 async function checkChangesNotToBeSaved(es: EditorState) {
   const hasEdits = es.editing.mode === EditingMode.EffectFree && es.editing.dirty
   if (!hasEdits) return true
+  const inTutorial = tutorial.currentCourse != null
   return confirm({
     title: t({
       en: 'Leave editor',
       zh: '离开编辑器'
     }),
-    content: t({
-      en: `Project edits will not be saved if you leave now. Are you sure to leave?`,
-      zh: `若现在离开，对项目的修改将不会被保存。确定要离开吗？`
-    }),
+    content: inTutorial
+      ? t({
+          en: `Tutorial edits will not be saved if you leave now. Are you sure to leave?`,
+          zh: `教程中的修改不会被保存，确认要离开吗？`
+        })
+      : t({
+          en: `Project edits will not be saved if you leave now. Are you sure to leave?`,
+          zh: `若现在离开，对项目的修改将不会被保存。确定要离开吗？`
+        }),
     cancelText: t({
       en: 'Keep editing',
       zh: '继续编辑'
