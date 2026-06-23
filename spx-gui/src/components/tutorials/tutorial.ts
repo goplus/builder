@@ -61,6 +61,19 @@ export class Tutorial {
     this.abandonPredictionCountRef.value = 0
   }
 
+  // One-shot flag to skip the editor's leave confirmation on the next navigation.
+  // Used when leaving the editor is an explicit, expected action (e.g. clicking
+  // "back to course series" in the course success modal), making a confirm redundant.
+  private skipLeaveConfirmOnce = false
+  requestSkipLeaveConfirm() {
+    this.skipLeaveConfirmOnce = true
+  }
+  consumeSkipLeaveConfirm() {
+    const skip = this.skipLeaveConfirmOnce
+    this.skipLeaveConfirmOnce = false
+    return skip
+  }
+
   async startCourse(course: Course, series: CourseSeries): Promise<void> {
     try {
       this.copilot.endCurrentSession()
@@ -71,6 +84,10 @@ export class Tutorial {
       const { entrypoint } = course
 
       if (entrypoint) {
+        // A course entrypoint may point to a non-editor route. Navigating away from the
+        // editor would otherwise trigger its leave confirmation, but starting a course is
+        // an explicit, expected action, so skip the confirmation for this navigation.
+        this.requestSkipLeaveConfirm()
         await this.router.push(entrypoint)
         await until(this.isRouteLoaded)
         await timeout(100) // Wait for detailed UI rendering
