@@ -2,13 +2,13 @@
 import { UIImg } from '@/components/ui'
 import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackground.vue'
 import type { File } from '@/models/common/file'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 
 const props = defineProps<{
   file: File | null
 }>()
 
-const [fileUrl, fileUrlLoading] = useFileUrl(() => props.file)
+const [fileUrl, fileUrlLoading] = useRenderableImageUrl(() => props.file)
 </script>
 
 <template>

@@ -6,7 +6,7 @@
 
 <script lang="ts" setup>
 import { computed, effect, ref } from 'vue'
-import { useFileImg } from '@/utils/file'
+import { useRenderableImage } from '@/utils/img-rendering'
 import { useContentSize } from '@/utils/dom'
 import { getImgDrawingCtx } from '@/utils/canvas'
 import type { File } from '@/models/common/file'
@@ -28,7 +28,7 @@ const wrapperStyle = computed(() => ({
 }))
 const wrapperRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const [imgRef] = useFileImg(() => props.file)
+const [imgRef] = useRenderableImage(() => props.file)
 
 const wrapperSize = useContentSize(wrapperRef)
 const maxWidthRef = computed(() => wrapperSize.value?.width)

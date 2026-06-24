@@ -135,7 +135,7 @@ import { computed, onBeforeUnmount, onUnmounted, ref, shallowReactive, shallowRe
 import { apiBaseUrl, spxVersion } from '@/utils/env'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
 import type { Files } from '@/models/common/file'
@@ -156,7 +156,7 @@ const emit = defineEmits<{
   exit: [code: number]
 }>()
 
-const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
+const [thumbnailUrl, thumbnailUrlLoading] = useRenderableImageUrl(() => props.project.thumbnail)
 const state = shallowRef<State>({ type: 'initial' })
 const runnerIframeRef = ref<HTMLIFrameElement>()
 const runnerIframeWindowRef = ref<RunnerIframeWindow | null>(null)
