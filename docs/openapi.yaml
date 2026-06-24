@@ -6216,6 +6216,12 @@ components:
         grantID:
           description: ID of the app grant associated with the token.
           $ref: "#/components/schemas/Model/properties/id"
+        name:
+          description: Human-readable token name.
+          type: string
+          maxLength: 100
+          examples:
+            - SPX API testing
         tokenType:
           description: OAuth token type.
           type: string
@@ -6227,13 +6233,6 @@ components:
         scope:
           description: Account OAuth scope associated with the token.
           $ref: "#/components/schemas/OAuthScope"
-        name:
-          description: Human-readable token name.
-          type: string
-          minLength: 1
-          maxLength: 100
-          examples:
-            - SPX API testing
         expiresAt:
           description: Expiration timestamp.
           type: string
@@ -6276,6 +6275,13 @@ components:
         - name
         - expiresAt
       properties:
+        name:
+          description: Human-readable token name.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - SPX API testing
         tokenType:
           description: |
             OAuth token type to create.
@@ -6286,13 +6292,6 @@ components:
             - accessToken
           examples:
             - accessToken
-        name:
-          description: Human-readable token name.
-          type: string
-          minLength: 1
-          maxLength: 100
-          examples:
-            - SPX API testing
         expiresAt:
           description: |
             Expiration timestamp of the created token.
