@@ -4822,9 +4822,9 @@ paths:
         "404":
           description: Account user not found.
 
-  /admin/account/users/{userID}/grants:
+  /admin/account/users/{userID}/app-grants:
     get:
-      operationId: listAdminAccountUserGrants
+      operationId: listAdminAccountUserAppGrants
       tags:
         - Account Admin
       summary: List account user app grants as admin
@@ -4878,24 +4878,18 @@ paths:
         "404":
           description: Account user not found.
 
-  /admin/account/users/{userID}/grants/{grantID}:
+  /admin/account/app-grants/{appGrantID}:
     get:
-      operationId: getAdminAccountUserGrant
+      operationId: getAdminAccountAppGrant
       tags:
         - Account Admin
-      summary: Get account user app grant as admin
+      summary: Get account app grant as admin
       description: |
-        Retrieve an app grant of an account user.
+        Retrieve an app grant.
 
         Requires the `accountAdmin` role.
       parameters:
-        - name: userID
-          description: ID of the user whose app grant is retrieved.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: grantID
+        - name: appGrantID
           description: ID of the app grant to get.
           in: path
           required: true
@@ -4913,28 +4907,22 @@ paths:
         "403":
           description: Insufficient permissions to perform this operation.
         "404":
-          description: Account user or app grant not found.
+          description: Account app grant not found.
 
-  /admin/account/users/{userID}/grants/{grantID}/tokens:
+  /admin/account/app-grants/{appGrantID}/tokens:
     get:
-      operationId: listAdminAccountUserGrantTokens
+      operationId: listAdminAccountAppGrantTokens
       tags:
         - Account Admin
       summary: List account app grant tokens as admin
       description: |
-        Retrieve active Account-issued OAuth tokens associated with an account user app grant.
+        Retrieve active Account-issued OAuth tokens associated with an account app grant.
 
         Tokens are active only when they are not expired, not revoked, and, for refresh tokens, not consumed.
 
         Requires the `accountAdmin` role.
       parameters:
-        - name: userID
-          description: ID of the user whose app grant tokens are listed.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: grantID
+        - name: appGrantID
           description: ID of the app grant whose tokens are listed.
           in: path
           required: true
@@ -4980,14 +4968,14 @@ paths:
         "403":
           description: Insufficient permissions to perform this operation.
         "404":
-          description: Account user or app grant not found.
+          description: Account app grant not found.
     post:
-      operationId: createAdminAccountUserGrantToken
+      operationId: createAdminAccountAppGrantToken
       tags:
         - Account Admin
       summary: Create account app grant token as admin
       description: |
-        Create an Account-issued OAuth token associated with an account user app grant.
+        Create an Account-issued OAuth token associated with an account app grant.
 
         Currently, this endpoint creates access tokens only. The created token is not issued with a refresh token and
         cannot be refreshed. The token value is only returned once in the creation response.
@@ -4996,13 +4984,7 @@ paths:
 
         Requires the `accountAdmin` role.
       parameters:
-        - name: userID
-          description: ID of the user whose app grant token is created.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: grantID
+        - name: appGrantID
           description: ID of the app grant whose token is created.
           in: path
           required: true
@@ -5028,29 +5010,23 @@ paths:
         "403":
           description: Insufficient permissions to perform this operation.
         "404":
-          description: Account user or app grant not found.
+          description: Account app grant not found.
 
-  /admin/account/users/{userID}/grants/{grantID}/tokens/{tokenID}:
+  /admin/account/app-grants/{appGrantID}/tokens/{tokenID}:
     delete:
-      operationId: revokeAdminAccountUserGrantToken
+      operationId: deleteAdminAccountAppGrantToken
       tags:
         - Account Admin
       summary: Revoke account app grant token as admin
       description: |
-        Revoke an Account-issued OAuth token associated with an account user app grant.
+        Revoke an Account-issued OAuth token associated with an account app grant.
 
-        Revocation follows the existing Account OAuth token semantics. Revoking a refresh token revokes the token family;
-        revoking an access token revokes that access token.
+        Revocation follows the existing Account OAuth token semantics. Revoking a refresh token follows refresh-token
+        rotation semantics; revoking an access token revokes that access token.
 
         Requires the `accountAdmin` role.
       parameters:
-        - name: userID
-          description: ID of the user whose app grant token is revoked.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: grantID
+        - name: appGrantID
           description: ID of the app grant whose token is revoked.
           in: path
           required: true
@@ -5070,7 +5046,7 @@ paths:
         "403":
           description: Insufficient permissions to perform this operation.
         "404":
-          description: Account user, app grant, or token not found.
+          description: Account app grant or token not found.
 
   /admin/account/sessions/{sessionID}:
     delete:
@@ -6227,9 +6203,8 @@ components:
         - updatedAt
         - grantID
         - tokenType
-        - tokenFamilyID
         - scope
-        - remark
+        - name
         - expiresAt
       properties:
         id:
@@ -6249,22 +6224,16 @@ components:
             - refreshToken
           examples:
             - accessToken
-        tokenFamilyID:
-          description: |
-            Token family identifier.
-
-            All token types are assigned a family ID. For refresh tokens, the family ID groups refresh token rotations.
-          type: string
-          minLength: 1
         scope:
           description: Account OAuth scope associated with the token.
           $ref: "#/components/schemas/OAuthScope"
-        remark:
-          description: Human-readable remark describing the token. Empty when no remark is set.
+        name:
+          description: Human-readable token name.
           type: string
-          maxLength: 200
+          minLength: 1
+          maxLength: 100
           examples:
-            - Used for SPX API testing
+            - SPX API testing
         expiresAt:
           description: Expiration timestamp.
           type: string
@@ -6304,6 +6273,7 @@ components:
         The token scope is inherited from the associated app grant and cannot be overridden.
       required:
         - tokenType
+        - name
         - expiresAt
       properties:
         tokenType:
@@ -6316,12 +6286,13 @@ components:
             - accessToken
           examples:
             - accessToken
-        remark:
-          description: Human-readable remark describing the token. When omitted, an empty remark is used.
+        name:
+          description: Human-readable token name.
           type: string
-          maxLength: 200
+          minLength: 1
+          maxLength: 100
           examples:
-            - Used for SPX API testing
+            - SPX API testing
         expiresAt:
           description: |
             Expiration timestamp of the created token.
