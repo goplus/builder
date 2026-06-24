@@ -69,7 +69,7 @@ export class Tutorial {
   }
 
   // Skip the editor's leave confirmation for the navigation that immediately follows an
-  // explicit, expected action (e.g. clicking "back to course series" in the success modal,
+  // explicit, expected action (e.g. clicking "Back to series courses" in the success modal,
   // or starting a course). Time-bound via `skipLeaveConfirmTimeout` so it cannot get stuck.
   private skipLeaveConfirmRequestedAt = 0
   requestSkipLeaveConfirm() {

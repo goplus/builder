@@ -37,11 +37,19 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function handleBackToCourseSeries() {
-  emit('cancelled')
-  props.tutorial.requestSkipLeaveConfirm()
-  router.push(`/course-series/${props.series.id}`)
-}
+const { fn: handleBackToCourseSeries } = useMessageHandle(
+  async () => {
+    // Request the skip before anything else so the time-bound window isn't shortened
+    // by work in the `cancelled` handler.
+    props.tutorial.requestSkipLeaveConfirm()
+    emit('cancelled')
+    await router.push(`/course-series/${props.series.id}`)
+  },
+  {
+    en: 'Failed to go back to course series',
+    zh: '返回系列课程失败'
+  }
+)
 
 const hasNextCourse = computed(() => {
   const currentCourse = props.course
@@ -98,7 +106,7 @@ const { fn: handleStartNextCourse } = useMessageHandle(
 
         <div class="mt-10 w-full flex flex-col gap-5">
           <UIButton type="neutral" size="large" @click="handleBackToCourseSeries">
-            {{ $t({ zh: '返回系列课程', en: 'Back to Series Courses' }) }}
+            {{ $t({ zh: '返回系列课程', en: 'Back to series courses' }) }}
           </UIButton>
           <UIButton v-if="hasNextCourse" size="large" @click="handleStartNextCourse">
             {{ $t({ zh: '学习下一个课程', en: 'Learn next course' }) }}
