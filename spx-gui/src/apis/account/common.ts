@@ -118,7 +118,7 @@ export type AccountAppToken = AccountModel & {
   expiresAt: string
   /** Timestamp when the token was last used */
   lastUsedAt?: string | null
-  /** Timestamp when the refresh token was consumed during rotation */
+  /** Timestamp when this token was consumed during refresh-token rotation. Applies to refresh tokens only. */
   consumedAt?: string | null
   /** Timestamp when the token was revoked */
   revokedAt?: string | null

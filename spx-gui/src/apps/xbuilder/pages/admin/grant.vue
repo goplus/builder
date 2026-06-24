@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { useSignedInStateQuery } from '@/stores/user'
-import { UIButton, UIError, UILoading, UISelect, UISelectOption, UITextInput, useConfirmDialog } from '@/components/ui'
+import {
+  UIButton,
+  UIError,
+  UILoading,
+  UIPagination,
+  UISelect,
+  UISelectOption,
+  UITextInput,
+  useConfirmDialog
+} from '@/components/ui'
 import CopyButton from '@/components/common/CopyButton.vue'
 import UIIcon from '@/components/ui/icons/UIIcon.vue'
 import * as accountAdminApis from '@/apis/admin/account'
@@ -43,13 +52,15 @@ const grant = computed(() => grantQuery.data.value)
 const app = computed(() => grant.value?.app ?? null)
 const appFallbackText = computed(() => app.value?.displayName.trim().charAt(0).toUpperCase() || '?')
 
+const tokensPageSize = 20
+const tokensPage = ref(1)
 const tokenTypeFilter = ref<'all' | accountAdminApis.AccountAppTokenType>('accessToken')
 const tokensQuery = useQuery(
   async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
     return accountAdminApis.listAccountAppGrantTokens(props.grantID, {
-      pageIndex: 1,
-      pageSize: 100,
+      pageIndex: tokensPage.value,
+      pageSize: tokensPageSize,
       orderBy: 'createdAt',
       sortOrder: 'desc',
       tokenType: tokenTypeFilter.value === 'all' ? undefined : tokenTypeFilter.value
@@ -57,13 +68,17 @@ const tokensQuery = useQuery(
   },
   { en: 'Failed to load Account app grant tokens', zh: '加载账号应用授权 token 失败' }
 )
+const tokensPageTotal = computed(() => Math.ceil((tokensQuery.data.value?.total ?? 0) / tokensPageSize))
+watch(tokenTypeFilter, () => {
+  tokensPage.value = 1
+})
 
 const showCreateForm = ref(false)
 const tokenName = ref('')
 const createdToken = ref<accountAdminApis.CreatedAccountAppToken | null>(null)
 const minExpiresAtInput = ref(formatDateTimeLocal(dayjs()))
 const maxExpiresAtInput = ref(formatDateTimeLocal(dayjs().add(365, 'day')))
-const expiresAtInput = ref(formatDateTimeLocal(dayjs().add(6, 'month')))
+const expiresAtInput = ref(formatDateTimeLocal(defaultTokenExpiresAt()))
 const isCreateTokenValid = computed(
   () =>
     tokenName.value.trim() !== '' &&
@@ -76,6 +91,10 @@ function formatDateTimeLocal(value: dayjs.Dayjs) {
   return value.format('YYYY-MM-DDTHH:mm')
 }
 
+function defaultTokenExpiresAt() {
+  return dayjs().add(6, 'month')
+}
+
 function refreshTokenExpirationBounds(now = dayjs()) {
   minExpiresAtInput.value = formatDateTimeLocal(now)
   maxExpiresAtInput.value = formatDateTimeLocal(now.add(maxTokenLifetimeDays, 'day'))
@@ -84,6 +103,7 @@ function refreshTokenExpirationBounds(now = dayjs()) {
 function setTokenExpiration(days: number) {
   const now = dayjs()
   refreshTokenExpirationBounds(now)
+  // Keep preset expiry safely below the server's exact maximum lifetime boundary.
   const buffer = days >= maxTokenLifetimeDays ? 1 : 0
   expiresAtInput.value = formatDateTimeLocal(now.add(days, 'day').subtract(buffer, 'minute'))
 }
@@ -98,7 +118,7 @@ function resetCreateTokenForm() {
   showCreateForm.value = false
   tokenName.value = ''
   refreshTokenExpirationBounds()
-  expiresAtInput.value = formatDateTimeLocal(dayjs().add(6, 'month'))
+  expiresAtInput.value = formatDateTimeLocal(defaultTokenExpiresAt())
 }
 
 function toggleCreateTokenForm() {
@@ -487,6 +507,12 @@ function dismissCreatedToken() {
           <div v-else class="py-8 text-center text-grey-800">
             {{ $t({ en: 'No active tokens', zh: '暂无有效 token' }) }}
           </div>
+          <UIPagination
+            v-show="tokensPageTotal > 1"
+            v-model:current="tokensPage"
+            class="mt-5 justify-center"
+            :total="tokensPageTotal"
+          />
         </div>
       </section>
     </div>

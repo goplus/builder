@@ -29,6 +29,7 @@ export type {
 
 type SortOrder = 'asc' | 'desc'
 
+/** Maximum allowed length for an app token name. */
 export const accountAppTokenNameMaxLength = 100
 
 export type ListAccountUsersParams = PaginationParams & {
@@ -150,7 +151,7 @@ export function listAccountAppGrantTokens(appGrantID: string, params?: ListAccou
 export type CreateAccountAppGrantTokenParams = {
   /** OAuth token type to create */
   tokenType: 'accessToken'
-  /** Human-readable token name */
+  /** Human-readable token name. Maximum length: accountAppTokenNameMaxLength. */
   name: string
   /** Expiration timestamp */
   expiresAt: string

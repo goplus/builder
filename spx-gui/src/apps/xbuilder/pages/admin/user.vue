@@ -37,6 +37,7 @@ import {
   UICheckboxGroup,
   UIError,
   UILoading,
+  UIPagination,
   UIRadio,
   UIRadioGroup,
   UITextInput
@@ -101,18 +102,21 @@ const sessionsQuery = useQuery(
   { en: 'Failed to load Account user sessions', zh: '加载账号用户会话失败' }
 )
 
+const grantsPageSize = 20
+const grantsPage = ref(1)
 const grantsQuery = useQuery(
   async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
     return accountAdminApis.listAccountUserAppGrants(props.userID, {
-      pageIndex: 1,
-      pageSize: 100,
+      pageIndex: grantsPage.value,
+      pageSize: grantsPageSize,
       orderBy: 'lastUsedAt',
       sortOrder: 'desc'
     })
   },
   { en: 'Failed to load Account user app grants', zh: '加载账号用户应用授权失败' }
 )
+const grantsPageTotal = computed(() => Math.ceil((grantsQuery.data.value?.total ?? 0) / grantsPageSize))
 
 const authorizationQuery = useQuery(
   async () => {
@@ -784,6 +788,12 @@ function deleteAllSessions() {
           <div v-else class="py-8 text-center text-grey-800">
             {{ $t({ en: 'No active app grants', zh: '暂无生效应用授权' }) }}
           </div>
+          <UIPagination
+            v-show="grantsPageTotal > 1"
+            v-model:current="grantsPage"
+            class="mt-5 justify-center"
+            :total="grantsPageTotal"
+          />
         </div>
       </section>
 
