@@ -8,6 +8,35 @@ info:
     **The API endpoints documented here are not yet stable and may change or break without notice. Use them at your own
     risk.**
 
+    ## Error responses
+
+    Most non-OAuth JSON endpoints return the shared `APIError` body for non-2xx responses:
+
+    ```json
+    {
+      "code": 40001,
+      "msg": "Invalid args"
+    }
+    ```
+
+    The first three digits of `code` match the HTTP status code. Clients should branch on `code` and HTTP status.
+
+    The `msg` field is a developer-facing diagnostic string and is not a stable programmatic contract. It may contain
+    safe validation details, but it must not contain stack traces, internal exception text, credentials, or other
+    sensitive implementation details.
+
+    Backend implementations should use the codes defined by `ErrorCode` and should add a new documented code before
+    exposing a new machine-readable error condition.
+
+    OAuth protocol error responses use the `OAuthError` body instead of `APIError`.
+
+    Moved-resource redirects return `301` with `Location` for `GET` and `HEAD`, while moved-resource write requests
+    return `409` with `MovedResourceError`.
+
+    Server-Sent Events endpoints may emit a stream-level `error` event after the HTTP response has already started.
+
+    Quota and rate-limit responses include `Retry-After` when the server can compute a retry time.
+
 security:
   - bearerAuth: []
 
@@ -19,7 +48,7 @@ paths:
         - Account
       summary: List identity providers
       description: |
-        Retrieve identity providers available for hosted sign-in.
+        Retrieve a list of identity providers available for hosted sign-in.
 
         Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
       security: []
@@ -52,6 +81,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountIdentityProvider"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /account/identity-providers/{provider}/authorize:
     get:
@@ -96,7 +127,7 @@ paths:
                 format: uri
                 minLength: 1
         "400":
-          description: Invalid hosted sign-in request.
+          $ref: "#/components/responses/BadRequest"
 
   /account/identity-providers/{provider}/callback:
     get:
@@ -105,9 +136,12 @@ paths:
         - Account
       summary: Handle identity provider callback
       description: |
-        Handle the identity provider callback for hosted sign-in. Callback state is used to associate the provider
-        response with the hosted sign-in flow and provide CSRF protection. The provider callback includes either an
-        authorization code or an OAuth error.
+        Handle the identity provider callback for hosted sign-in.
+
+        Callback state is used to associate the provider response with the hosted sign-in flow and provide CSRF
+        protection.
+
+        The provider callback includes either an authorization code or an OAuth error.
       security: []
       parameters:
         - name: provider
@@ -140,7 +174,7 @@ paths:
           description: Redirect back to hosted sign-in.
           headers:
             Location:
-              description: Hosted sign-in URL containing the original `clientID`, `requestURI`, and optional `uiLocales`.
+              description: Hosted sign-in URL with the original `clientID`, `requestURI`, and optional `uiLocales`.
               schema:
                 type: string
                 format: uri
@@ -150,15 +184,20 @@ paths:
                 Sets the `__Host-xbuilder-account-session` cookie when the provider callback creates an account session.
               schema:
                 type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
     post:
       operationId: submitAccountIdentityProviderCallback
       tags:
         - Account
       summary: Submit identity provider callback
       description: |
-        Handle identity provider callbacks that use form post response mode. These external callbacks use the OAuth
-        state parameter for CSRF protection instead of a same-site web CSRF token. The provider callback includes either
-        an authorization code or an OAuth error.
+        Handle identity provider callbacks that use form post response mode.
+
+        These external callbacks use the OAuth state parameter for CSRF protection instead of a same-site web CSRF
+        token.
+
+        The provider callback includes either an authorization code or an OAuth error.
       security: []
       parameters:
         - name: provider
@@ -206,7 +245,7 @@ paths:
           description: Redirect back to hosted sign-in.
           headers:
             Location:
-              description: Hosted sign-in URL containing the original `clientID`, `requestURI`, and optional `uiLocales`.
+              description: Hosted sign-in URL with the original `clientID`, `requestURI`, and optional `uiLocales`.
               schema:
                 type: string
                 format: uri
@@ -216,6 +255,8 @@ paths:
                 Sets the `__Host-xbuilder-account-session` cookie when the provider callback creates an account session.
               schema:
                 type: string
+        "400":
+          $ref: "#/components/responses/BadRequestForIdentityProviderFormPostCallback"
 
   /account/oauth/par:
     post:
@@ -556,10 +597,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/AccountUnauthorized"
         "403":
-          $ref: "#/components/responses/OAuthInsufficientScope"
+          $ref: "#/components/responses/AccountForbidden"
 
   /account/user/avatar:
     put:
@@ -602,15 +645,15 @@ paths:
         "204":
           description: Account user avatar updated.
         "400":
-          description: Invalid request parameters.
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/AccountUnauthorized"
         "403":
-          $ref: "#/components/responses/OAuthInsufficientScope"
+          $ref: "#/components/responses/AccountForbidden"
         "413":
-          description: Avatar image file is too large.
+          $ref: "#/components/responses/ContentTooLarge"
         "415":
-          description: Avatar image file type is not supported.
+          $ref: "#/components/responses/UnsupportedMediaType"
 
   /account/user/identities:
     get:
@@ -641,6 +684,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountUserIdentity"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -678,8 +723,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CurrentAccountSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     get:
       operationId: getAccountSession
       tags:
@@ -718,6 +767,8 @@ paths:
                 type: string
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /account/sessions:
     get:
@@ -748,6 +799,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
     delete:
@@ -771,6 +824,8 @@ paths:
                 type: string
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /account/sessions/{sessionID}:
     delete:
@@ -799,10 +854,14 @@ paths:
               description: Clears the `__Host-xbuilder-account-session` cookie when the deleted session is current.
               schema:
                 type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account session not found.
+          $ref: "#/components/responses/NotFound"
 
   /user:
     get:
@@ -848,6 +907,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthenticatedUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -881,13 +942,13 @@ paths:
         "204":
           description: Authenticated user avatar updated.
         "400":
-          description: Invalid request parameters.
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "413":
-          description: Avatar image file is too large.
+          $ref: "#/components/responses/ContentTooLarge"
         "415":
-          description: Avatar image file type is not supported.
+          $ref: "#/components/responses/UnsupportedMediaType"
 
   /user/followers:
     get:
@@ -895,7 +956,7 @@ paths:
       tags:
         - Users
       summary: List followers of the authenticated user
-      description: Retrieve users who follow the authenticated user.
+      description: Retrieve a list of users who follow the authenticated user.
       parameters:
         - name: orderBy
           description: Field by which to order the results.
@@ -929,6 +990,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -938,7 +1001,7 @@ paths:
       tags:
         - Users
       summary: List users followed by the authenticated user
-      description: Retrieve users followed by the authenticated user.
+      description: Retrieve a list of users followed by the authenticated user.
       parameters:
         - name: orderBy
           description: Field by which to order the results.
@@ -972,6 +1035,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -994,10 +1059,12 @@ paths:
           description: The authenticated user follows the specified user.
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
-          description: The target user does not exist, or the authenticated user does not follow the target user.
+          $ref: "#/components/responses/NotFound"
     put:
       operationId: followUser
       tags:
@@ -1014,8 +1081,12 @@ paths:
       responses:
         "204":
           description: Successfully followed the user, or the relationship already existed.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/ResourceMoved"
     delete:
@@ -1034,8 +1105,12 @@ paths:
       responses:
         "204":
           description: Successfully unfollowed the user, or the relationship did not exist.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/ResourceMoved"
 
@@ -1128,6 +1203,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
@@ -1199,19 +1276,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "409":
-          description: |
-            Returned when `remixSource` references a moved project or project release.
-
-            The response includes a `canonical` payload for the route-derived fields in `remixSource`.
-
-            Clients may update the request and resubmit it explicitly.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MovedResourceError"
+          $ref: "#/components/responses/ResourceMoved"
 
   /user/liked-projects:
     get:
@@ -1219,7 +1289,7 @@ paths:
       tags:
         - Projects
       summary: List projects liked by the authenticated user
-      description: Retrieve projects liked by the authenticated user.
+      description: Retrieve a list of projects liked by the authenticated user.
       parameters:
         - name: remixedFrom
           description: |
@@ -1303,6 +1373,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -1331,10 +1403,12 @@ paths:
           description: The project is liked by the authenticated user.
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
-          description: The project does not exist, or the authenticated user has not liked the project.
+          $ref: "#/components/responses/NotFound"
     put:
       operationId: likeProject
       tags:
@@ -1357,8 +1431,12 @@ paths:
       responses:
         "204":
           description: Successfully liked the project, or the relationship already existed.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/ResourceMoved"
     delete:
@@ -1383,8 +1461,12 @@ paths:
       responses:
         "204":
           description: Successfully unliked the project, or the relationship did not exist.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/ResourceMoved"
 
@@ -1456,6 +1538,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Asset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
@@ -1518,10 +1602,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
 
   /user/courses:
     get:
@@ -1529,7 +1615,7 @@ paths:
       tags:
         - Courses
       summary: List courses owned by the authenticated user
-      description: Retrieve courses owned by the authenticated user.
+      description: Retrieve a list of courses owned by the authenticated user.
       parameters:
         - name: courseSeriesID
           description: Filter courses by the course series ID.
@@ -1568,6 +1654,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
@@ -1620,10 +1708,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
 
   /user/course-series:
     get:
@@ -1631,7 +1721,7 @@ paths:
       tags:
         - Course Series
       summary: List course series owned by the authenticated user
-      description: Retrieve course series owned by the authenticated user.
+      description: Retrieve a list of course series owned by the authenticated user.
       parameters:
         - name: orderBy
           description: Field by which to order the results.
@@ -1665,6 +1755,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/CourseSeries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
@@ -1715,10 +1807,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CourseSeries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
 
   /users:
     get:
@@ -1760,6 +1854,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /users/{username}:
     get:
@@ -1785,6 +1881,10 @@ paths:
                 $ref: "#/components/schemas/User"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /users/{username}/followers:
     get:
@@ -1792,7 +1892,7 @@ paths:
       tags:
         - Users
       summary: List followers of a user
-      description: Retrieve users who follow the specified user.
+      description: Retrieve a list of users who follow the specified user.
       security: []
       parameters:
         - name: username
@@ -1835,6 +1935,10 @@ paths:
                       $ref: "#/components/schemas/User"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /users/{username}/following:
     get:
@@ -1842,7 +1946,7 @@ paths:
       tags:
         - Users
       summary: List users followed by a user
-      description: Retrieve users followed by the specified user.
+      description: Retrieve a list of users followed by the specified user.
       security: []
       parameters:
         - name: username
@@ -1885,6 +1989,10 @@ paths:
                       $ref: "#/components/schemas/User"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /users/{username}/projects:
     get:
@@ -1892,7 +2000,7 @@ paths:
       tags:
         - Projects
       summary: List public projects owned by a user
-      description: Retrieve public projects owned by the specified user.
+      description: Retrieve a list of public projects owned by the specified user.
       security: []
       parameters:
         - name: username
@@ -1979,6 +2087,10 @@ paths:
                       $ref: "#/components/schemas/Project"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /users/{username}/liked-projects:
     get:
@@ -1986,7 +2098,7 @@ paths:
       tags:
         - Projects
       summary: List projects liked by a user
-      description: Retrieve public projects liked by the specified user.
+      description: Retrieve a list of public projects liked by the specified user.
       security: []
       parameters:
         - name: username
@@ -2074,6 +2186,10 @@ paths:
                       $ref: "#/components/schemas/Project"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /users/{username}/assets:
     get:
@@ -2081,7 +2197,7 @@ paths:
       tags:
         - Assets
       summary: List public assets owned by a user
-      description: Retrieve public assets owned by the specified user.
+      description: Retrieve a list of public assets owned by the specified user.
       security: []
       parameters:
         - name: username
@@ -2147,6 +2263,10 @@ paths:
                       $ref: "#/components/schemas/Asset"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /users/{username}/courses:
     get:
@@ -2154,7 +2274,7 @@ paths:
       tags:
         - Courses
       summary: List courses owned by a user
-      description: Retrieve courses owned by the specified user.
+      description: Retrieve a list of courses owned by the specified user.
       security: []
       parameters:
         - name: username
@@ -2202,6 +2322,10 @@ paths:
                       $ref: "#/components/schemas/Course"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /users/{username}/course-series:
     get:
@@ -2209,7 +2333,7 @@ paths:
       tags:
         - Course Series
       summary: List course series owned by a user
-      description: Retrieve course series owned by the specified user.
+      description: Retrieve a list of course series owned by the specified user.
       security: []
       parameters:
         - name: username
@@ -2252,6 +2376,10 @@ paths:
                       $ref: "#/components/schemas/CourseSeries"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /projects:
     get:
@@ -2262,9 +2390,12 @@ paths:
       description: |
         Retrieve a list of projects visible to the request.
 
-        Anonymous requests return public projects. Authenticated requests return public projects and the authenticated
-        user's own projects when no visibility filter is provided. A non-public visibility filter requires
-        authentication and is scoped to the authenticated user's own projects.
+        Visibility rules:
+
+        - Anonymous requests return public projects.
+        - Authenticated requests return public projects and the authenticated user's own projects when no visibility
+          filter is provided.
+        - A non-public visibility filter requires authentication and is scoped to the authenticated user's own projects.
       security:
         - {}
         - bearerAuth: []
@@ -2359,6 +2490,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -2394,8 +2527,14 @@ paths:
                 $ref: "#/components/schemas/Project"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     patch:
       operationId: updateProject
       tags:
@@ -2447,8 +2586,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/ResourceMoved"
     delete:
@@ -2473,8 +2618,14 @@ paths:
       responses:
         "204":
           description: Successfully deleted the project.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/ResourceMoved"
 
@@ -2501,8 +2652,12 @@ paths:
       responses:
         "204":
           description: Successfully recorded the project view.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/ResourceMoved"
 
@@ -2563,8 +2718,14 @@ paths:
                       $ref: "#/components/schemas/ProjectRelease"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     post:
       operationId: createProjectRelease
       tags:
@@ -2616,19 +2777,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProjectRelease"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
-          description: |
-            Returned when the project path references a moved project.
-
-            The response includes a `canonical` payload for the project route.
-
-            Clients may update the request and resubmit it explicitly.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MovedResourceError"
+          $ref: "#/components/responses/ResourceMoved"
 
   /projects/{owner}/{project}/releases/{release}:
     get:
@@ -2668,8 +2826,14 @@ paths:
                 $ref: "#/components/schemas/ProjectRelease"
         "301":
           $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /assets:
     get:
@@ -2680,9 +2844,12 @@ paths:
       description: |
         Retrieve a list of assets visible to the request.
 
-        Anonymous requests return public assets. Authenticated requests return public assets and the authenticated
-        user's own assets when no visibility filter is provided. A non-public visibility filter requires authentication
-        and is scoped to the authenticated user's own assets.
+        Visibility rules:
+
+        - Anonymous requests return public assets.
+        - Authenticated requests return public assets and the authenticated user's own assets when no visibility filter
+          is provided.
+        - A non-public visibility filter requires authentication and is scoped to the authenticated user's own assets.
       security:
         - {}
         - bearerAuth: []
@@ -2747,6 +2914,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Asset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -2774,8 +2943,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     patch:
       operationId: updateAsset
       tags:
@@ -2826,10 +3001,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
       operationId: deleteAsset
       tags:
@@ -2846,8 +3025,14 @@ paths:
       responses:
         "204":
           description: Successfully deleted the asset.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /courses:
     get:
@@ -2897,6 +3082,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /courses/{courseID}:
     get:
@@ -2922,6 +3109,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
     patch:
       operationId: updateCourse
       tags:
@@ -2965,10 +3156,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
       operationId: deleteCourse
       tags:
@@ -2990,10 +3185,14 @@ paths:
       responses:
         "204":
           description: Successfully deleted the course.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /course-series:
     get:
@@ -3038,6 +3237,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/CourseSeries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /course-series/{courseSeriesID}:
     get:
@@ -3063,6 +3264,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CourseSeries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
     patch:
       operationId: updateCourseSeries
       tags:
@@ -3106,10 +3311,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CourseSeries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
       operationId: deleteCourseSeries
       tags:
@@ -3131,10 +3340,14 @@ paths:
       responses:
         "204":
           description: Successfully deleted the course series.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /copilot/messages:
     post:
@@ -3146,6 +3359,10 @@ paths:
         Generate a structured SSE stream message by sending a list of input messages.
 
         The response is a Server-Sent Events stream where each `data:` line contains a single JSON object.
+
+        Before the stream is established, authentication, request validation, quota or rate-limit failures, and provider
+        stream setup failures use the normal JSON `APIError` responses. After the stream has started, provider streaming
+        failures are delivered as terminal `error` events.
 
         Event semantics:
 
@@ -3164,7 +3381,8 @@ paths:
         - Each message consumes 1 quota from the authenticated user's allowance.
         - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
         - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -3181,7 +3399,7 @@ paths:
             text/event-stream:
               schema:
                 type: string
-                description: Server-Sent Events stream containing `text_delta`, `tool_call_delta`, `done`, and `error` events.
+                description: SSE stream containing `text_delta`, `tool_call_delta`, `done`, and `error` events.
               examples:
                 textOnly:
                   summary: Text-only assistant response
@@ -3210,22 +3428,14 @@ paths:
                   value: |
                     event: error
                     data: {"reason":"streamFailed","message":"stream failed"}
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /ai-interaction/turns:
     post:
@@ -3234,14 +3444,15 @@ paths:
         - AI Interaction
       summary: Perform an AI interaction turn
       description: |
-        Send a message and context to the AI, receive a response including text and an optional command.
+        Send a message and context to the AI and receive a response that includes text and an optional command.
 
         Quota and rate limits:
 
         - Each turn consumes 1 quota from the authenticated user's AI interaction turn allowance.
         - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
         - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -3366,8 +3577,11 @@ paths:
                   description: |
                     Current turn number in a multi-turn interaction sequence.
 
-                    A value of 0 means this is the initial turn from user input. Values greater than 0 indicate
-                    continuation turns where the AI continues the current interaction sequence based on command outcomes.
+                    Turn values:
+
+                    - 0 means this is the initial turn from user input.
+                    - Values greater than 0 indicate continuation turns where the AI continues the current interaction
+                      sequence based on command outcomes.
                   type: integer
                   format: int32
                   minimum: 0
@@ -3402,22 +3616,14 @@ paths:
                       - Row: 1
                         Col: 1
                         Result: ""
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /ai-interaction/archives:
     post:
@@ -3433,7 +3639,8 @@ paths:
         - Each archive request consumes 1 quota from the authenticated user's AI interaction archive allowance.
         - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
         - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -3472,22 +3679,14 @@ paths:
                     type: string
                     examples:
                       - "Complete conversation summary including new turns..."
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /aigc/tasks:
     post:
@@ -3499,8 +3698,7 @@ paths:
         Create an asynchronous AIGC task for resource-intensive generation and media-processing operations such as image
         generation, video generation, background removal, and video frame extraction.
 
-        Task-based generation and media-processing operations are processed asynchronously. Use the returned task ID to
-        poll for status via `GET /aigc/tasks/{taskID}` or subscribe to real-time updates via
+        Use the returned task ID to poll for status via `GET /aigc/tasks/{taskID}` or subscribe to real-time updates via
         `GET /aigc/tasks/{taskID}/events`.
 
         Supported task types:
@@ -3624,7 +3822,7 @@ paths:
                             - 0
                             - 1500
                         duration:
-                          description: Duration in milliseconds of the segment to extract frames from. Precision is 100ms.
+                          description: Segment extraction duration in milliseconds. Precision is 100ms.
                           type: integer
                           minimum: 0
                           multipleOf: 100
@@ -3684,23 +3882,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/AIGCTask"
         "400":
-          description: Invalid task type or parameters.
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions or quota.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          description: Too many requests.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /aigc/tasks/{taskID}:
     get:
@@ -3709,7 +3897,7 @@ paths:
         - AIGC
       summary: Get AIGC task status
       description: |
-        Get the current status of an AIGC task.
+        Retrieve the current status of an AIGC task.
 
         Poll this endpoint to check if the task is complete. For real-time updates, use the SSE endpoint
         `GET /aigc/tasks/{taskID}/events` instead.
@@ -3727,10 +3915,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AIGCTask"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
-          description: Task not found.
+          $ref: "#/components/responses/NotFound"
 
   /aigc/tasks/{taskID}/events:
     get:
@@ -3741,9 +3931,13 @@ paths:
       description: |
         Subscribe to real-time task status updates via Server-Sent Events.
 
-        The first event is always a `snapshot` containing the current task state. This eliminates the need to call
-        `GET /aigc/tasks/{taskID}` separately and avoids race conditions between fetching current state and subscribing
-        to updates.
+        Before the stream is established, request validation, authentication, and task lookup failures use the normal
+        JSON `APIError` responses. After the stream has started, task failures are delivered as `failed` events and
+        transport failures close the connection.
+
+        For an established stream, the first event is always a `snapshot` containing the current task state. This
+        eliminates the need to call `GET /aigc/tasks/{taskID}` separately and avoids race conditions between fetching
+        current state and subscribing to updates.
 
         The connection remains open until the task completes, is cancelled, or fails. If the task is already in a
         terminal state when connecting, the `snapshot` event will contain the final state and the connection will close
@@ -3825,10 +4019,12 @@ paths:
               schema:
                 type: string
                 description: Server-Sent Events stream.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
-          description: Task not found.
+          $ref: "#/components/responses/NotFound"
 
   /aigc/tasks/{taskID}/cancellation:
     put:
@@ -3838,9 +4034,6 @@ paths:
       summary: Cancel an AIGC task
       description: |
         Cancel a pending or processing AIGC task.
-
-        If subscribed via `GET /aigc/tasks/{taskID}/events`, a `cancelling` event will be emitted when cancellation
-        begins, followed by a `cancelled` event when complete.
 
         Cancellation rules:
 
@@ -3857,6 +4050,9 @@ paths:
 
         - Tasks cancelled from `pending` status receive a full quota refund.
         - Tasks cancelled from `processing` status do not receive a refund because resources are already consumed.
+
+        If subscribed via `GET /aigc/tasks/{taskID}/events`, a `cancelling` event will be emitted when cancellation
+        begins, followed by a `cancelled` event when complete.
       parameters:
         - name: taskID
           description: The task ID to cancel.
@@ -3871,29 +4067,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AIGCTask"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
-          description: Task not found.
+          $ref: "#/components/responses/NotFound"
         "409":
-          description: Task cannot be cancelled because it has already completed or failed.
+          $ref: "#/components/responses/Conflict"
 
   /aigc/project-descriptions:
     post:
       operationId: generateProjectDescription
       tags:
         - AIGC
-      summary: Generate project description
+      summary: Generate a project description
       description: |
-        Generate an AI-powered descriptive summary of a game from the player's perspective based on provided game content
-        such as spx source code and project structure.
+        Generate an AI-powered descriptive summary of a game from the player's perspective based on provided game
+        content such as spx source code and project structure.
 
         Quota and rate limits:
 
         - Each request consumes 1 quota from the authenticated user's AI description allowance.
         - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
         - Quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -3904,7 +4103,7 @@ paths:
                 - content
               properties:
                 content:
-                  description: The game content to generate a description for, such as spx source code or project structure.
+                  description: Game content to summarize, such as spx source code or project structure.
                   type: string
                   minLength: 1
                   maxLength: 150000
@@ -3948,46 +4147,40 @@ paths:
                     examples:
                       - |
                         This is a Tic-Tac-Toe game played on a 3x3 grid. The player uses `X` marks while the AI opponent
-                        uses `O` marks. Players take turns placing their marks in empty squares, with the goal of getting
-                        three marks in a row horizontally, vertically, or diagonally. The game supports mouse click
-                        interaction. Click on an empty square to place your mark. The game ends when either player
+                        uses `O` marks. Players take turns placing their marks in empty squares, with the goal of
+                        getting three marks in a row horizontally, vertically, or diagonally. The game supports mouse
+                        click interaction. Click on an empty square to place your mark. The game ends when either player
                         achieves three in a row or the board is completely filled.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /aigc/asset-descriptions:
     post:
       operationId: generateAssetDescription
       tags:
         - AIGC
-      summary: Generate asset description
+      summary: Generate an asset description
       description: |
         Generate a description for an asset using AI based on the provided text prompt and image input.
 
         This endpoint accepts multimodal input to generate a contextual description suitable for embedding and search
-        operations. The text prompt typically includes the asset's display name and additional context about how the
-        description will be used.
+        operations.
+
+        The text prompt typically includes the asset's display name and additional context about how the description
+        will be used.
 
         Image requirements:
 
-        - Format: PNG only (`image/png`)
-        - Maximum image size: 5 MiB after decoding the base64 content
-        - Images must be provided as base64-encoded data URLs
-        - Other formats must be converted to PNG before sending
+        - The image format must be PNG (`image/png`).
+        - The maximum image size is 5 MiB after decoding the base64 content.
+        - Images must be provided as base64-encoded data URLs.
+        - Other formats must be converted to PNG before sending.
 
         Quota and rate limits:
 
@@ -4041,23 +4234,13 @@ paths:
                     examples:
                       - "A powerful rotating column of air extending from a thunderstorm to the ground, characterized by its distinctive funnel shape and destructive force."
         "400":
-          description: Invalid request parameters.
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions or quota to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /aigc/asset-adoptions:
     post:
@@ -4067,6 +4250,7 @@ paths:
       summary: Adopt an AIGC-generated asset
       description: |
         Record that an AIGC-generated asset has been adopted.
+
         The backend verifies task ownership and file provenance and may publish the adopted asset to the public library.
       requestBody:
         required: true
@@ -4119,11 +4303,11 @@ paths:
         "204":
           description: Asset adoption recorded.
         "400":
-          description: Invalid parameters.
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions for given tasks.
+          $ref: "#/components/responses/Forbidden"
 
   /aigc/asset-settings-enrichments:
     post:
@@ -4215,8 +4399,9 @@ paths:
                 lang:
                   description: |
                     Language the AI should use for all generated text.
-                    When provided, the output strictly follows this language regardless of the input language.
-                    When omitted, the AI infers language from the user input.
+
+                    - When provided, the output strictly follows this language regardless of the input language.
+                    - When omitted, the AI infers language from the user input.
                   type: string
                   enum:
                     - en
@@ -4232,22 +4417,14 @@ paths:
                   - $ref: "#/components/schemas/AIGCCostumeSettings"
                   - $ref: "#/components/schemas/AIGCAnimationSettings"
                   - $ref: "#/components/schemas/AIGCBackdropSettings"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions or quota.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          description: Too many requests.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /aigc/sprite-content-settings:
     post:
@@ -4276,8 +4453,9 @@ paths:
                 lang:
                   description: |
                     Language the AI should use for all generated text.
-                    When provided, the output strictly follows this language regardless of the input language.
-                    When omitted, the AI infers language from the user input.
+
+                    - When provided, the output strictly follows this language regardless of the input language.
+                    - When omitted, the AI infers language from the user input.
                   type: string
                   enum:
                     - en
@@ -4307,8 +4485,12 @@ paths:
                   animationBindings:
                     description: |
                       Recommended mapping from sprite state enum values to animation names.
-                      Keys are sprite state enum values; values are animation name strings that should match the `name`
-                      field from the animations array, omitted if no animation is bound to that state.
+
+                      Keys and values:
+
+                      - Keys are sprite state enum values.
+                      - Values are animation name strings that should match the `name` field from the animations array.
+                      - Omit a state when no animation is bound to it.
                     type: object
                     additionalProperties: false
                     properties:
@@ -4321,22 +4503,14 @@ paths:
                     example:
                       default: "idle"
                       step: "walk"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions or quota.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the long-window quota limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          description: Too many requests.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying after hitting the short-window rate limit.
-              schema:
-                type: integer
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /upload-sessions:
     post:
@@ -4404,6 +4578,8 @@ paths:
                       format: uri
                     examples:
                       - kodo://xbuilder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://xbuilder-usercontent-test.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /project-conversions:
     post:
@@ -4446,6 +4622,12 @@ paths:
               examples:
                 xbpFile:
                   summary: Example XBP zip file
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+        "501":
+          $ref: "#/components/responses/UnsupportedScratchFeature"
 
   /admin/account/users:
     get:
@@ -4497,10 +4679,12 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
     post:
       operationId: createAdminAccountUser
       tags:
@@ -4536,10 +4720,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
 
   /admin/account/users/{userID}:
     get:
@@ -4565,12 +4751,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
     patch:
       operationId: updateAdminAccountUser
       tags:
@@ -4604,12 +4792,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/users/{userID}/avatar:
     put:
@@ -4651,17 +4841,17 @@ paths:
         "204":
           description: Account user avatar updated.
         "400":
-          description: Invalid request parameters.
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
         "413":
-          description: Avatar image file is too large.
+          $ref: "#/components/responses/ContentTooLarge"
         "415":
-          description: Avatar image file type is not supported.
+          $ref: "#/components/responses/UnsupportedMediaType"
 
   /admin/account/users/{userID}/password:
     put:
@@ -4697,12 +4887,14 @@ paths:
       responses:
         "204":
           description: Password credential set.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
     delete:
       operationId: deleteAdminAccountUserPassword
       tags:
@@ -4722,12 +4914,14 @@ paths:
       responses:
         "204":
           description: Password credential deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/users/{userID}/identities:
     get:
@@ -4765,12 +4959,14 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountUserIdentity"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/users/{userID}/identities/{identityID}:
     delete:
@@ -4798,12 +4994,14 @@ paths:
       responses:
         "204":
           description: Account user identity deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user or identity not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/users/{userID}/sessions:
     get:
@@ -4841,12 +5039,14 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
     delete:
       operationId: deleteAdminAccountUserSessions
       tags:
@@ -4866,12 +5066,14 @@ paths:
       responses:
         "204":
           description: Account user sessions deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/users/{userID}/app-grants:
     get:
@@ -4922,21 +5124,23 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountAppGrant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account user not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/app-grants/{appGrantID}:
     get:
       operationId: getAdminAccountAppGrant
       tags:
         - Account Admin
-      summary: Get account app grant as admin
+      summary: Get an account app grant as admin
       description: |
-        Retrieve an app grant.
+        Retrieve an account app grant.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -4953,12 +5157,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountAppGrant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app grant not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/app-grants/{appGrantID}/tokens:
     get:
@@ -4967,7 +5173,7 @@ paths:
         - Account Admin
       summary: List account app grant tokens as admin
       description: |
-        Retrieve active Account-issued OAuth tokens associated with an account app grant.
+        Retrieve a list of active Account-issued OAuth tokens for an account app grant.
 
         Tokens are active only when they are not expired, not revoked, and, for refresh tokens, not consumed.
 
@@ -5014,24 +5220,28 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountAppToken"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app grant not found.
+          $ref: "#/components/responses/NotFound"
     post:
       operationId: createAdminAccountAppGrantToken
       tags:
         - Account Admin
-      summary: Create account app grant token as admin
+      summary: Create an account app grant token as admin
       description: |
-        Create an Account-issued OAuth token associated with an account app grant.
+        Create an Account-issued OAuth token for an account app grant.
+
+        The token inherits its Account OAuth scope from the app grant.
 
         Currently, this endpoint creates access tokens only. The created token is not issued with a refresh token and
-        cannot be refreshed. The token value is only returned once in the creation response.
+        cannot be refreshed.
 
-        The token scope is an Account OAuth scope inherited from the app grant.
+        The token value is only returned once in the creation response.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5049,31 +5259,30 @@ paths:
               $ref: "#/components/schemas/CreateAccountAppTokenRequest"
       responses:
         "201":
-          description: Account app grant token created.
+          description: Account app token created.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/CreatedAccountAppToken"
         "400":
-          description: Invalid request parameters.
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app grant not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/app-grants/{appGrantID}/tokens/{tokenID}:
     delete:
       operationId: deleteAdminAccountAppGrantToken
       tags:
         - Account Admin
-      summary: Revoke account app grant token as admin
+      summary: Delete an account app grant token as admin
       description: |
-        Revoke an Account-issued OAuth token associated with an account app grant.
+        Revoke an Account-issued OAuth token for an account app grant.
 
-        Revocation follows the existing Account OAuth token semantics. Revoking a refresh token follows refresh-token
-        rotation semantics; revoking an access token revokes that access token.
+        Revoking a refresh token revokes its token family. Revoking an access token revokes only that access token.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5084,20 +5293,22 @@ paths:
           schema:
             $ref: "#/components/schemas/Model/properties/id"
         - name: tokenID
-          description: ID of the app grant token to revoke.
+          description: ID of the app token to revoke.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
       responses:
         "204":
-          description: Account app grant token revoked.
+          description: Account app token revoked.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app grant or token not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/sessions/{sessionID}:
     delete:
@@ -5119,12 +5330,14 @@ paths:
       responses:
         "204":
           description: Account session deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account session not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/apps:
     get:
@@ -5133,7 +5346,7 @@ paths:
         - Account Admin
       summary: List account apps as admin
       description: |
-        Retrieve account apps registered for first-party app SSO.
+        Retrieve a list of account apps registered for first-party app SSO.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5168,10 +5381,12 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountApp"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
     post:
       operationId: createAdminAccountApp
       tags:
@@ -5210,10 +5425,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountApp"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
 
   /admin/account/apps/{appID}:
     get:
@@ -5239,12 +5456,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountApp"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app not found.
+          $ref: "#/components/responses/NotFound"
     patch:
       operationId: updateAdminAccountApp
       tags:
@@ -5284,12 +5503,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountApp"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/apps/{appID}/secrets:
     get:
@@ -5327,12 +5548,14 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AccountAppSecret"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app not found.
+          $ref: "#/components/responses/NotFound"
     post:
       operationId: createAdminAccountAppSecret
       tags:
@@ -5367,12 +5590,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CreatedAccountAppSecret"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/account/apps/{appID}/secrets/{secretID}:
     delete:
@@ -5400,12 +5625,14 @@ paths:
       responses:
         "204":
           description: Account app secret deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Account app or secret not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/authorization/users/{userID}:
     get:
@@ -5431,12 +5658,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserAuthorization"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: User authorization not found.
+          $ref: "#/components/responses/NotFound"
     patch:
       operationId: updateAdminUserAuthorization
       tags:
@@ -5472,12 +5701,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserAuthorization"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: User authorization not found.
+          $ref: "#/components/responses/NotFound"
 
   /admin/audit-logs:
     get:
@@ -5486,7 +5717,7 @@ paths:
         - Admin Audit
       summary: List audit logs as admin
       description: |
-        Retrieve admin audit logs.
+        Retrieve a list of admin audit logs.
 
         Requires admin permissions. Backend RBAC determines which audit events are visible to the current admin user.
       parameters:
@@ -5532,10 +5763,12 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AuditLog"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions to perform this operation.
+          $ref: "#/components/responses/Forbidden"
 
 components:
   securitySchemes:
@@ -5584,21 +5817,231 @@ components:
             example: no-cache
     ResourceMoved:
       description: |
-        Requested resource moved to its canonical route.
+        Requested resource moved to its canonical route. Returned on non-`GET` and non-`HEAD` requests.
 
-        Returned on non-`GET` and non-`HEAD` requests.
-
-        The response includes a `canonical` payload with the canonical route.
-
-        Clients may update the request and resubmit it explicitly.
+        The response includes a `canonical` payload with the canonical route. Clients may update the request and
+        resubmit it explicitly.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/MovedResourceError"
+    BadRequest:
+      description: Invalid request syntax, parameters, or body.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            invalidArgs:
+              value:
+                code: 40001
+                msg: Invalid args
+    BadRequestForIdentityProviderFormPostCallback:
+      description: |
+        Invalid identity provider form-post callback request.
+
+        Response body shapes:
+
+        - `APIError` for path, provider error, and callback parameter validation failures
+        - `OAuthError` for malformed form bodies parsed by the OAuth form parser
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/APIError"
+              - $ref: "#/components/schemas/OAuthError"
+          examples:
+            invalidCallbackRequest:
+              summary: Invalid callback request
+              value:
+                code: 40001
+                msg: invalid provider
+            invalidFormBody:
+              summary: Malformed form body
+              value:
+                error: invalid_request
+                error_description: invalid form body
     Unauthorized:
-      description: Unauthorized. Authentication required.
+      description: Authentication is required or the supplied bearer token is invalid.
+      headers:
+        WWW-Authenticate:
+          description: Authentication challenge.
+          schema:
+            type: string
+            examples:
+              - Bearer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            unauthorized:
+              value:
+                code: 40100
+                msg: Unauthorized
+    Forbidden:
+      description: The authenticated principal does not have permission to perform this operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            forbidden:
+              value:
+                code: 40300
+                msg: Forbidden
+    QuotaExceeded:
+      description: The authenticated user exceeded a long-window quota for this operation.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            quotaExceeded:
+              value:
+                code: 40301
+                msg: aigc:image quota exceeded
+    ForbiddenOrQuotaExceeded:
+      description: |
+        The authenticated principal does not have permission to perform this operation, or a long-window quota was
+        exceeded.
+
+        When `code` is `40301`, `Retry-After` is included if the server can compute a retry time.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying after a quota failure.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            forbidden:
+              value:
+                code: 40300
+                msg: Forbidden
+            quotaExceeded:
+              value:
+                code: 40301
+                msg: aigc:image quota exceeded
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            notFound:
+              value:
+                code: 40400
+                msg: Not found
+    Conflict:
+      description: The request conflicts with the current resource state.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            conflict:
+              value:
+                code: 40900
+                msg: Conflict
+    ContentTooLarge:
+      description: The request or uploaded content exceeds the allowed size.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            contentTooLarge:
+              value:
+                code: 41300
+                msg: Content too large
+    UnsupportedMediaType:
+      description: The request or uploaded content type is not supported.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            unsupportedMediaType:
+              value:
+                code: 41500
+                msg: Unsupported media type
+    TooManyRequests:
+      description: Too many requests.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            tooManyRequests:
+              value:
+                code: 42900
+                msg: Too many requests
+    RateLimitExceeded:
+      description: The authenticated user exceeded a short-window rate limit for this operation.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            rateLimitExceeded:
+              value:
+                code: 42901
+                msg: aigc:image rate limit exceeded
+    InternalServerError:
+      description: An internal server error occurred.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            internalServerError:
+              value:
+                code: 50000
+                msg: Internal server error
+    UnsupportedScratchFeature:
+      description: The uploaded Scratch project uses a feature that cannot be converted.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            unsupportedScratchFeature:
+              value:
+                code: 50101
+                msg: Unsupported scratch feature
     OAuthError:
       description: OAuth error response.
+      headers:
+        Cache-Control:
+          description: OAuth error responses are not cacheable.
+          schema:
+            type: string
+            example: no-store
+        Pragma:
+          description: OAuth error responses are not cacheable by HTTP/1.0 caches.
+          schema:
+            type: string
+            example: no-cache
       content:
         application/json:
           schema:
@@ -5606,12 +6049,22 @@ components:
     OAuthInvalidClient:
       description: OAuth client authentication failed.
       headers:
+        Cache-Control:
+          description: OAuth error responses are not cacheable.
+          schema:
+            type: string
+            example: no-store
+        Pragma:
+          description: OAuth error responses are not cacheable by HTTP/1.0 caches.
+          schema:
+            type: string
+            example: no-cache
         WWW-Authenticate:
           description: Client authentication challenge.
           schema:
             type: string
             examples:
-              - Basic realm="XBuilder Account"
+              - Basic realm="XBuilder Account", error="invalid_client"
       content:
         application/json:
           schema:
@@ -5626,11 +6079,53 @@ components:
             examples:
               - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:read"
               - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:write"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            insufficientScope:
+              value:
+                code: 40300
+                msg: Forbidden
+    AccountForbidden:
+      description: |
+        Account request is forbidden.
+
+        Bearer-token requests may lack the required scope. Cookie-authenticated mutation requests may fail Origin
+        validation.
+      headers:
+        WWW-Authenticate:
+          description: Bearer token insufficient scope challenge, when bearer authentication was used.
+          schema:
+            type: string
+            examples:
+              - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:write"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            forbidden:
+              value:
+                code: 40300
+                msg: Forbidden
     OAuthUnsupportedMediaType:
       description: |
         OAuth form request content type is not supported.
 
         The server returns an OAuth `invalid_request` error before reading form-body OAuth parameters.
+      headers:
+        Cache-Control:
+          description: OAuth error responses are not cacheable.
+          schema:
+            type: string
+            example: no-store
+        Pragma:
+          description: OAuth error responses are not cacheable by HTTP/1.0 caches.
+          schema:
+            type: string
+            example: no-cache
       content:
         application/json:
           schema:
@@ -5639,16 +6134,31 @@ components:
       description: |
         Account authentication is required.
 
-        The request may authenticate with an account session cookie or an OAuth bearer token. When OAuth bearer token
-        authentication fails, the response includes `WWW-Authenticate`.
+        The request may authenticate with an account session cookie or an OAuth bearer token.
+
+        The response includes `WWW-Authenticate`.
+
+        Challenge values:
+
+        - Missing credentials use the generic `Bearer` challenge.
+        - Invalid bearer tokens use a realm-specific `invalid_token` challenge.
       headers:
         WWW-Authenticate:
-          description: Bearer token challenge returned for OAuth bearer token authentication failures.
+          description: Bearer token challenge.
           schema:
             type: string
             examples:
-              - Bearer realm="XBuilder Account"
+              - Bearer
               - Bearer realm="XBuilder Account", error="invalid_token"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          examples:
+            unauthorized:
+              value:
+                code: 40100
+                msg: Unauthorized
 
   schemas:
     Model:
@@ -5680,15 +6190,33 @@ components:
           examples:
             - 2006-01-02T15:04:05+07:00
 
+    ByPage:
+      description: Paginated response wrapper.
+      type: object
+      required:
+        - total
+        - data
+      properties:
+        total:
+          description: Total number of result items in the result set.
+          type: integer
+          format: int64
+          minimum: 0
+        data:
+          description: Array of result items.
+          type: array
+          items:
+            type: object
+
     MovedResourceCanonical:
       description: |
         Canonical route information for a moved resource.
 
-        User routes include `path` and `username`.
+        Route fields:
 
-        Project routes include `path`, `owner`, and `name`.
-
-        Project release routes include `path`, `owner`, `name`, and `release`.
+        - User routes include `path` and `username`.
+        - Project routes include `path`, `owner`, and `name`.
+        - Project release routes include `path`, `owner`, `name`, and `release`.
       type: object
       required:
         - path
@@ -5721,8 +6249,73 @@ components:
           examples:
             - v1.2.3
 
+    ErrorCode:
+      description: |
+        Stable machine-readable error code for the shared `APIError` envelope.
+
+        The first three digits match the HTTP status code. Clients should branch on this field instead of parsing `msg`.
+
+        | Code | HTTP status | Default msg | Meaning |
+        |------|-------------|-------------|---------|
+        | 40001 | 400 | Invalid args | Invalid request syntax, parameters, or body. |
+        | 40100 | 401 | Unauthorized | Authentication is required or invalid. |
+        | 40300 | 403 | Forbidden | The authenticated principal lacks permission. |
+        | 40301 | 403 | Quota exceeded | A long-window quota was exceeded. |
+        | 40400 | 404 | Not found | The requested resource was not found. |
+        | 40900 | 409 | Conflict | The request conflicts with current resource state. |
+        | 40901 | 409 | Resource moved | The request used a historical resource route. |
+        | 41300 | 413 | Content too large | Request or uploaded content exceeds the allowed size. |
+        | 41500 | 415 | Unsupported media type | Request or uploaded content type is not supported. |
+        | 42900 | 429 | Too many requests | Generic request throttling. |
+        | 42901 | 429 | Rate limit exceeded | A short-window rate limit was exceeded. |
+        | 50000 | 500 | Internal server error | An unexpected server-side failure occurred. |
+        | 50101 | 501 | Unsupported scratch feature | Scratch conversion hit an unsupported feature. |
+      type: integer
+      format: int32
+      enum:
+        - 40001
+        - 40100
+        - 40300
+        - 40301
+        - 40400
+        - 40900
+        - 40901
+        - 41300
+        - 41500
+        - 42900
+        - 42901
+        - 50000
+        - 50101
+      examples:
+        - 40001
+
+    APIError:
+      description: |
+        Shared error payload for most non-OAuth JSON endpoints.
+
+        `msg` is a safe, developer-facing diagnostic string. It is not localized and is not stable enough for
+        programmatic handling.
+
+        User-facing clients should map `code` to their own localized copy.
+      type: object
+      required:
+        - code
+        - msg
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        msg:
+          description: Safe developer-facing diagnostic message.
+          type: string
+          minLength: 1
+          examples:
+            - Invalid args
+
     MovedResourceError:
-      description: Error payload for a moved resource route.
+      description: |
+        Error payload for a moved resource route.
+
+        This follows the `APIError` envelope and adds `canonical` route metadata.
       type: object
       required:
         - code
@@ -5792,11 +6385,12 @@ components:
           examples:
             - John Doe
         avatar:
-          description: Public URL or universal URL of the user's avatar image.
+          description: Public HTTP URL or Kodo universal URL of the user's avatar image.
           type: string
           format: uri
           examples:
             - https://avatars.example.com/users/10137.png
+            - kodo://xbuilder-usercontent-test/files/avatar.png
         description:
           description: Brief bio or description of the user.
           type: string
@@ -5853,14 +6447,6 @@ components:
             **This field is only present for the authenticated user's own profile.**
           $ref: "#/components/schemas/UserCapabilities"
 
-    AuthenticatedUser:
-      description: Authenticated user account information.
-      allOf:
-        - $ref: "#/components/schemas/User"
-        - type: object
-          required:
-            - capabilities
-
     UserCapabilities:
       type: object
       description: User permission capabilities.
@@ -5896,6 +6482,14 @@ components:
           type: boolean
           examples:
             - true
+
+    AuthenticatedUser:
+      description: Authenticated user account information.
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          required:
+            - capabilities
 
     AccountUser:
       description: User fields exposed by XBuilder Account.
@@ -6199,6 +6793,19 @@ components:
           examples:
             - production
 
+    CreatedAccountAppSecret:
+      description: Response returned after creating an OAuth client secret, including the one-time secret value.
+      allOf:
+        - $ref: "#/components/schemas/AccountAppSecret"
+        - type: object
+          required:
+            - value
+          properties:
+            value:
+              description: One-time app secret value.
+              type: string
+              minLength: 1
+
     AccountAppGrant:
       type: object
       description: Authorization grant from an account user to an account app.
@@ -6355,7 +6962,7 @@ components:
             - 2027-01-15T00:00:00Z
 
     CreatedAccountAppToken:
-      description: Account app token created response including the one-time token value.
+      description: Response returned after creating an Account app token, including the one-time token value.
       allOf:
         - $ref: "#/components/schemas/AccountAppToken"
         - type: object
@@ -6368,19 +6975,6 @@ components:
               minLength: 1
               examples:
                 - xb_at_2L5f8xQy...
-
-    CreatedAccountAppSecret:
-      description: OAuth client secret created response including the one-time secret value.
-      allOf:
-        - $ref: "#/components/schemas/AccountAppSecret"
-        - type: object
-          required:
-            - value
-          properties:
-            value:
-              description: One-time app secret value.
-              type: string
-              minLength: 1
 
     OAuthClientID:
       description: OAuth client ID of the app.
@@ -6889,7 +7483,7 @@ components:
           description: Full name of the project that the release is associated with, in the format `owner/project`.
           $ref: "#/components/schemas/ProjectFullName"
         name:
-          description: Unique name of the project release, adhering to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
+          description: Project release name following [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
           type: string
           maxLength: 255
           pattern: '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
@@ -7248,6 +7842,49 @@ components:
         content:
           $ref: "#/components/schemas/CopilotMessageContent"
 
+    CopilotTool:
+      description: Tool available for copilot to use.
+      type: object
+      required:
+        - type
+        - function
+      properties:
+        type:
+          description: Type of the tool.
+          type: string
+          enum:
+            - function
+          examples:
+            - function
+        function:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              description: Name of the function.
+              type: string
+              maxLength: 64
+              pattern: "^[a-zA-Z0-9_-]{1,64}$"
+              examples:
+                - create_project
+            description:
+              description: Description of the function.
+              type: string
+              examples:
+                - create project
+            parameters:
+              description: JSON Schema object that describes the function parameters.
+              type: object
+              examples:
+                - type: object
+                  properties:
+                    name:
+                      type: string
+                  required:
+                    - name
+                  additionalProperties: false
+
     CopilotMessageRequest:
       description: Request payload for copilot message generation endpoints.
       type: object
@@ -7428,49 +8065,6 @@ components:
           type: string
           examples:
             - stream failed
-
-    CopilotTool:
-      description: Tool available for copilot to use.
-      type: object
-      required:
-        - type
-        - function
-      properties:
-        type:
-          description: Type of the tool.
-          type: string
-          enum:
-            - function
-          examples:
-            - function
-        function:
-          type: object
-          required:
-            - name
-          properties:
-            name:
-              description: Name of the function.
-              type: string
-              maxLength: 64
-              pattern: "^[a-zA-Z0-9_-]{1,64}$"
-              examples:
-                - create_project
-            description:
-              description: Description of the function.
-              type: string
-              examples:
-                - create project
-            parameters:
-              description: JSON Schema object that describes the function parameters.
-              type: object
-              examples:
-                - type: object
-                  properties:
-                    name:
-                      type: string
-                  required:
-                    - name
-                  additionalProperties: false
 
     AIInteractionTurn:
       description: Single turn in an AI interaction session.
@@ -7744,7 +8338,7 @@ components:
         - type: object
           properties:
             referenceImageUrl:
-              description: Universal URL of the reference image to guide the costume generation (e.g. kodo://bucket/key).
+              description: Universal URL of the costume reference image (e.g. kodo://bucket/key).
               type:
                 - string
                 - "null"
@@ -7768,7 +8362,7 @@ components:
             - loopMode
           properties:
             referenceFrameUrl:
-              description: Universal URL of the reference frame image to guide the animation generation (e.g. kodo://bucket/key).
+              description: Universal URL of the animation reference frame image (e.g. kodo://bucket/key).
               type:
                 - string
                 - "null"
@@ -7792,44 +8386,6 @@ components:
               enum:
                 - ui
                 - unspecified
-
-    UpInfo:
-      description: Upload credentials and configuration.
-      type: object
-      required:
-        - token
-        - expiresAt
-        - maxSize
-        - bucket
-        - region
-      properties:
-        token:
-          description: Upload token used for authenticating upload requests.
-          type: string
-          examples:
-            - MY_ACCESS_KEY:wQ4ofysef1R7IKnrziqtomqyDvI=:eyJzY29wZSI6Im15LWJ1Y2tldDpzdW5mbG93ZXIuanBnIiwiZGVhZGxpbmUiOjE0NTE0OTEyMDAsInJldHVybkJvZHkiOiJ7XCJuYW1lXCI6JChmbmFtZSksXCJzaXplXCI6JChmc2l6ZSksXCJ3XCI6JChpbWFnZUluZm8ud2lkdGgpLFwiaFwiOiQoaW1hZ2VJbmZvLmhlaWdodCksXCJoYXNoXCI6JChldGFnKX0ifQ==
-        expiresAt:
-          description: Expiration timestamp of the upload token.
-          type: string
-          format: date-time
-          examples:
-            - 2006-01-02T15:04:05+07:00
-        maxSize:
-          description: Maximum allowed file size in bytes.
-          type: integer
-          format: int64
-          examples:
-            - 26214400
-        bucket:
-          description: Name of the Qiniu Kodo bucket where files will be uploaded.
-          type: string
-          examples:
-            - xbuilder-usercontent-test
-        region:
-          description: Region of the Qiniu Kodo bucket.
-          type: string
-          examples:
-            - z0
 
     InputText:
       description: Text input for multimodal content.
@@ -7873,12 +8429,11 @@ components:
           description: |
             Base64-encoded PNG image data URL.
 
-            All images must be provided as PNG format. If you have images in other formats (SVG, JPEG, WebP),
-            convert them to PNG before sending.
+            Data URL requirements:
 
-            Maximum image size: 5 MiB after decoding the base64 content.
-
-            Format: `data:image/png;base64,<base64_data>`
+            - The format must be `data:image/png;base64,<base64_data>`.
+            - The maximum image size is 5 MiB after decoding the base64 content.
+            - Other formats such as SVG, JPEG, or WebP must be converted to PNG before sending.
           type: string
           format: uri
           minLength: 1
@@ -7886,23 +8441,43 @@ components:
           examples:
             - "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
-    ByPage:
-      description: Paginated response wrapper.
+    UpInfo:
+      description: Upload credentials and configuration.
       type: object
       required:
-        - total
-        - data
+        - token
+        - expiresAt
+        - maxSize
+        - bucket
+        - region
       properties:
-        total:
-          description: Total number of result items in the result set.
+        token:
+          description: Upload token used for authenticating upload requests.
+          type: string
+          examples:
+            - MY_ACCESS_KEY:wQ4ofysef1R7IKnrziqtomqyDvI=:eyJzY29wZSI6Im15LWJ1Y2tldDpzdW5mbG93ZXIuanBnIiwiZGVhZGxpbmUiOjE0NTE0OTEyMDAsInJldHVybkJvZHkiOiJ7XCJuYW1lXCI6JChmbmFtZSksXCJzaXplXCI6JChmc2l6ZSksXCJ3XCI6JChpbWFnZUluZm8ud2lkdGgpLFwiaFwiOiQoaW1hZ2VJbmZvLmhlaWdodCksXCJoYXNoXCI6JChldGFnKX0ifQ==
+        expiresAt:
+          description: Expiration timestamp of the upload token.
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        maxSize:
+          description: Maximum allowed file size in bytes.
           type: integer
           format: int64
-          minimum: 0
-        data:
-          description: Array of result items.
-          type: array
-          items:
-            type: object
+          examples:
+            - 26214400
+        bucket:
+          description: Name of the Qiniu Kodo bucket where files will be uploaded.
+          type: string
+          examples:
+            - xbuilder-usercontent-test
+        region:
+          description: Region of the Qiniu Kodo bucket.
+          type: string
+          examples:
+            - z0
 
   parameters:
     SortOrder:

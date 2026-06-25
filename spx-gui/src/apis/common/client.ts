@@ -5,42 +5,80 @@
 import * as Sentry from '@sentry/vue'
 import dayjs from 'dayjs'
 import { getTimeoutSignal, mergeSignals } from '@/utils/disposable'
-import { ApiException, ApiExceptionCode, type MovedResourceCanonical, type QuotaExceededMeta } from './exception'
+import {
+  ApiException,
+  ApiExceptionCode,
+  OAuthException,
+  type MovedResourceCanonical,
+  type RetryAfterMeta
+} from './exception'
 import { parseSSE, type SSEEvent } from './sse'
 
 /** Response body when exception encountered for API calling */
 export type ApiExceptionPayload = {
-  /** Code for program comsuming */
+  /** Code for program consuming */
   code: number
   /** Message for developer reading */
   msg: string
   canonical?: MovedResourceCanonical
 }
 
+/** Response body when OAuth exception encountered for API calling */
+export type OAuthExceptionPayload = {
+  /** OAuth error code */
+  error: string
+  /** Message for developer reading */
+  error_description?: string
+  /** URI for human-readable error information */
+  error_uri?: string
+}
+
 function isApiExceptionPayload(body: any): body is ApiExceptionPayload {
   return body && typeof body.code === 'number' && typeof body.msg === 'string'
 }
 
-function getQuotaExceededMeta(headers: Headers): QuotaExceededMeta {
+function isOAuthExceptionPayload(body: any): body is OAuthExceptionPayload {
+  return (
+    body &&
+    typeof body.error === 'string' &&
+    (body.error_description == null || typeof body.error_description === 'string') &&
+    (body.error_uri == null || typeof body.error_uri === 'string')
+  )
+}
+
+function getRetryAfterMeta(headers: Headers): RetryAfterMeta {
   const retryAfter = headers.get('Retry-After')
-  let date
-  if (retryAfter != null) {
-    const seconds = Number(retryAfter)
-    date = Number.isFinite(seconds) ? dayjs().add(seconds, 's') : dayjs(retryAfter)
+  if (retryAfter == null || retryAfter.trim() === '') {
+    return {
+      retryAfter: null
+    }
   }
+
+  const seconds = Number(retryAfter)
+  const date = Number.isFinite(seconds) ? dayjs().add(seconds, 's') : dayjs(retryAfter)
   return {
-    retryAfter: date?.isValid() ? date.valueOf() : null
+    retryAfter: date.isValid() ? date.valueOf() : null
   }
 }
 
 function getApiExceptionMeta(code: number, resp: Response, payload: ApiExceptionPayload): unknown {
   switch (code) {
     case ApiExceptionCode.errorQuotaExceeded:
-      return getQuotaExceededMeta(resp.headers)
+    case ApiExceptionCode.errorTooManyRequests:
+    case ApiExceptionCode.errorRateLimitExceeded:
+      return getRetryAfterMeta(resp.headers)
     case ApiExceptionCode.errorResourceMoved:
       return payload.canonical ?? null
     default:
       return null
+  }
+}
+
+async function readErrorPayload(resp: Response): Promise<unknown> {
+  try {
+    return await resp.json()
+  } catch {
+    return null
   }
 }
 
@@ -139,21 +177,19 @@ export class Client {
     const [timeoutSignal, cancelTimeout] = getTimeoutSignal(timeout)
     const signal = mergeSignals(timeoutSignal, options?.signal)
     const resp = await this.fetchFn(req, { signal }).finally(cancelTimeout)
-    if (!resp.ok) {
-      let payload: ApiExceptionPayload | undefined
-      try {
-        const body = await resp.json()
-        if (isApiExceptionPayload(body)) payload = body
-      } catch {
-        // ignore
-      }
-      if (payload == null) throw new Error(`status ${resp.status} for api call: ${req.url.slice(0, 200)}`)
+    if (resp.ok) return resp
+
+    const payload = await readErrorPayload(resp)
+    if (isApiExceptionPayload(payload)) {
       throw new ApiException(payload.code, payload.msg, {
         req,
         meta: getApiExceptionMeta(payload.code, resp, payload)
       })
     }
-    return resp
+    if (isOAuthExceptionPayload(payload)) {
+      throw new OAuthException(payload.error, payload.error_description ?? null, payload.error_uri ?? null, { req })
+    }
+    throw new Error(`status ${resp.status} for api call: ${req.url.slice(0, 200)}`)
   }
 
   /** Do a JSON request, parsing response body as JSON */
