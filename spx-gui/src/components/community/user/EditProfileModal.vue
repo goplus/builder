@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { userDescriptionMaxLength, userDisplayNameMaxLength, type User } from '@/apis/user'
 import { selectFile } from '@/utils/file'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { humanizeFileSize } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import {
   UIButton,
@@ -79,9 +80,10 @@ function validateAvatarInputFile(file: globalThis.File) {
   }
 
   if (file.size > maxAvatarInputFileSize) {
+    const maxSizeText = humanizeFileSize(maxAvatarInputFileSize)
     throw new DefaultException({
-      en: 'Avatar image must be 50 MiB or smaller',
-      zh: '头像图片不能超过 50 MiB'
+      en: `Avatar image must be ${maxSizeText.en} or smaller`,
+      zh: `头像图片不能超过 ${maxSizeText.zh}`
     })
   }
 }

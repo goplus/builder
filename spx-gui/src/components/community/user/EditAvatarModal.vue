@@ -6,6 +6,7 @@ import { fromBlob } from '@/models/common/file'
 import { saveFile } from '@/models/common/cloud'
 import { UIButton, UIFormModal } from '@/components/ui'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { humanizeFileSize } from '@/utils/utils'
 import { useUpdateSignedInUser } from '@/stores/user'
 import AvatarZoomSlider from './AvatarZoomSlider.vue'
 
@@ -348,9 +349,10 @@ const handleConfirm = useMessageHandle(
     })
     const blob = await canvasToBlob(canvas)
     if (blob.size > maxAvatarFileSize) {
+      const maxSizeText = humanizeFileSize(maxAvatarFileSize)
       throw new DefaultException({
-        en: 'Avatar image must be 5 MiB or smaller',
-        zh: '头像图片不能超过 5 MiB'
+        en: `Avatar image must be ${maxSizeText.en} or smaller`,
+        zh: `头像图片不能超过 ${maxSizeText.zh}`
       })
     }
     const avatar = await saveFile(fromBlob('avatar.png', blob))

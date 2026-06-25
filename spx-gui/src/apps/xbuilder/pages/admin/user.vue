@@ -413,7 +413,7 @@ function deleteAllSessions() {
                   }}
                   <input class="hidden" type="file" accept="image/png,image/jpeg" @change="handleAvatarFile" />
                 </label>
-                <div class="text-center text-xs text-grey-700">PNG / JPG, ≤ 5 MiB</div>
+                <div class="text-center text-xs text-grey-700">PNG / JPG, ≤ 5 MB</div>
               </div>
               <form class="flex min-w-0 flex-col gap-5" @submit.prevent="handleUpdateUser.fn">
                 <div class="grid grid-cols-1 gap-4 tablet:grid-cols-2">
