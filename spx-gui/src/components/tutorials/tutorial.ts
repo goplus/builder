@@ -6,6 +6,7 @@ import { timeout, until } from '@/utils/utils'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
@@ -14,13 +15,6 @@ import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
-
-// Max age (ms) for a `requestSkipLeaveConfirm` request to still suppress the editor's
-// leave confirmation. Time-bound so a request that is never consumed cannot get "stuck":
-// some navigations (e.g. editor -> editor route updates, or starting a course from a
-// non-editor page) never reach the editor's `onBeforeRouteLeave`, and an un-expiring
-// flag would otherwise suppress a later, genuine leave confirmation.
-const skipLeaveConfirmTimeout = 1000
 
 export function useTutorial() {
   const tutorial = inject(tutorialKey)
@@ -68,19 +62,6 @@ export class Tutorial {
     this.abandonPredictionCountRef.value = 0
   }
 
-  // Skip the editor's leave confirmation for the navigation that immediately follows an
-  // explicit, expected action (e.g. clicking "Back to series courses" in the success modal,
-  // or starting a course). Time-bound via `skipLeaveConfirmTimeout` so it cannot get stuck.
-  private skipLeaveConfirmRequestedAt = 0
-  requestSkipLeaveConfirm() {
-    this.skipLeaveConfirmRequestedAt = Date.now()
-  }
-  consumeSkipLeaveConfirm() {
-    const skip = Date.now() - this.skipLeaveConfirmRequestedAt < skipLeaveConfirmTimeout
-    this.skipLeaveConfirmRequestedAt = 0
-    return skip
-  }
-
   async startCourse(course: Course, series: CourseSeries): Promise<void> {
     try {
       this.copilot.endCurrentSession()
@@ -94,7 +75,7 @@ export class Tutorial {
         // A course entrypoint may point to a non-editor route. Navigating away from the
         // editor would otherwise trigger its leave confirmation, but starting a course is
         // an explicit, expected action, so skip the confirmation for this navigation.
-        this.requestSkipLeaveConfirm()
+        editorLeaveConfirm.requestSkipOnce()
         await this.router.push(entrypoint)
         await until(this.isRouteLoaded)
         await timeout(100) // Wait for detailed UI rendering
