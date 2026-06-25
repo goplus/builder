@@ -214,9 +214,7 @@ export function useUpdateSignedInUser() {
   const queryCache = useQueryCache()
 
   return useAction(
-    async function updateSignedInUser(
-      params: Pick<userApis.UpdateSignedInUserParams, 'displayName' | 'avatar' | 'description'>
-    ) {
+    async function updateSignedInUser(params: Pick<userApis.UpdateSignedInUserParams, 'displayName' | 'description'>) {
       const unresolvedUsername = getUnresolvedSignedInUsername()
       const updated = await userApis.updateSignedInUser(params)
       if (unresolvedUsername != null) queryCache.invalidate(getUserQueryKey(unresolvedUsername))
@@ -224,6 +222,22 @@ export function useUpdateSignedInUser() {
       return updated
     },
     { en: 'Failed to update profile', zh: '更新个人信息失败' }
+  )
+}
+
+export function useUpdateSignedInUserAvatar() {
+  const queryCache = useQueryCache()
+
+  return useAction(
+    async function updateSignedInUserAvatar(file: File) {
+      const unresolvedUsername = getUnresolvedSignedInUsername()
+      await userApis.updateSignedInUserAvatar(file)
+      const updated = await userApis.getSignedInUser()
+      if (unresolvedUsername != null) queryCache.invalidate(getUserQueryKey(unresolvedUsername))
+      queryCache.invalidate(getUserQueryKey(updated.username))
+      return updated
+    },
+    { en: 'Failed to update avatar', zh: '更新头像失败' }
   )
 }
 
