@@ -7,6 +7,7 @@ import { useIsRouteLoaded } from '@/utils/route-loading'
 import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
@@ -27,7 +28,15 @@ watch(
   (currentCourse, _, onCleanup) => {
     if (currentCourse == null) return
 
+    // Drive the editor's leave confirmation with tutorial-specific copy while a course is
+    // active; the editor exposes the override and stays unaware of tutorials.
+    editorLeaveConfirm.setMessageOverride({
+      en: 'Tutorial edits will not be saved if you leave now. Are you sure to leave?',
+      zh: '教程中的修改不会被保存，确认要离开吗？'
+    })
+
     const disposers = [
+      () => editorLeaveConfirm.setMessageOverride(null),
       copilot.registerCustomElement({
         tagName: tutorialCourseSuccess.tagName,
         description: tutorialCourseSuccess.detailedDescription,
