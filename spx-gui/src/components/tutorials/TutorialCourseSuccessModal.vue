@@ -8,6 +8,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 
 import { UIButton, UIImg, UIModal, UIModalClose } from '@/components/ui'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import successImg from './success.png'
 
@@ -41,7 +42,7 @@ const { fn: handleBackToCourseSeries } = useMessageHandle(
   async () => {
     // Request the skip before anything else so the time-bound window isn't shortened
     // by work in the `cancelled` handler.
-    props.tutorial.requestSkipLeaveConfirm()
+    editorLeaveConfirm.requestSkipOnce()
     emit('cancelled')
     await router.push(`/course-series/${props.series.id}`)
   },
