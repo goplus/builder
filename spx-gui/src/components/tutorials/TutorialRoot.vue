@@ -8,6 +8,7 @@ import { useRadar } from '@/utils/radar'
 import { provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { RoundState } from '@/components/copilot/copilot'
 import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
 import { stringifyDefinitionId, useCodeEditorRef } from '@/components/xgo-code-editor'
@@ -220,6 +221,12 @@ watch(
   (currentCourse, _, onCleanup) => {
     if (currentCourse == null) return
 
+    // Use tutorial-specific copy while a course is active; the editor stays unaware of tutorials.
+    editorLeaveConfirm.setMessageOverride({
+      en: 'Tutorial edits will not be saved if you leave now. Are you sure to leave?',
+      zh: '教程中的修改不会被保存，确认要离开吗？'
+    })
+
     // The course author declares the workspace setup statically (see `extractCourseConfig`); it is
     // applied once here, not driven by the copilot at runtime.
     const courseConfig = extractCourseConfig(currentCourse.prompt)
@@ -236,6 +243,7 @@ watch(
     tutorial.setCurrentIntervention(intervention)
 
     const disposers = [
+      () => editorLeaveConfirm.setMessageOverride(null),
       intervention.start(),
       // Registers the guidance elements (guide modal, spotlight, video) and toggles the editor
       // code guides according to the intervention level — a hard boundary on what the copilot

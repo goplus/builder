@@ -178,6 +178,8 @@ export class Tutorial {
       const { entrypoint } = course
 
       if (entrypoint) {
+        // Starting a course is an explicit navigation and should not trigger the editor leave confirmation.
+        editorLeaveConfirm.requestSkipOnce()
         await this.router.push(entrypoint)
         await until(this.isRouteLoaded)
         await timeout(100) // Wait for detailed UI rendering
