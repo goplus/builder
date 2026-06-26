@@ -17,7 +17,7 @@ jobs:
             tag: ghcr.io/${{ github.repository }}/account:dev
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Log in to GitHub Container Registry

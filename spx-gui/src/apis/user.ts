@@ -1,6 +1,9 @@
 import { client, type ByPage, type PaginationParams } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
 
+export const userDisplayNameMaxLength = 100
+export const userDescriptionMaxLength = 200
+
 export type User = {
   /** Unique identifier */
   id: string
@@ -67,10 +70,16 @@ export function getSignedInUser(
   return client.get(`/user`, undefined, options) as Promise<SignedInUser>
 }
 
-export type UpdateSignedInUserParams = Partial<Pick<User, 'username' | 'displayName' | 'avatar' | 'description'>>
+export type UpdateSignedInUserParams = Partial<Pick<User, 'username' | 'displayName' | 'description'>>
 
 export function updateSignedInUser(params: UpdateSignedInUserParams) {
   return client.patch(`/user`, params) as Promise<SignedInUser>
+}
+
+export async function updateSignedInUserAvatar(file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  await client.putBinary('/user/avatar', form)
 }
 
 type ListUserFollowRelationsParams = PaginationParams & {

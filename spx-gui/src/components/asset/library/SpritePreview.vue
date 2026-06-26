@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { useAsyncComputedLegacy } from '@/utils/utils'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sprite } from '@/models/spx/common/asset'
 import { Sprite } from '@/models/spx/sprite'
@@ -18,5 +18,5 @@ const sprite = useAsyncComputedLegacy(async () => {
   if (props.sprite instanceof Sprite) return props.sprite
   return asset2Sprite(props.sprite)
 })
-const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.defaultCostume?.img)
+const [imgSrc, imgLoading] = useRenderableImageUrl(() => sprite.value?.defaultCostume?.img)
 </script>

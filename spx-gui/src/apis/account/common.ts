@@ -88,6 +88,47 @@ export type CreatedAccountAppSecret = AccountAppSecret & {
   value: string
 }
 
+export type AccountAppGrant = AccountModel & {
+  /** ID of the app authorized by the user */
+  appID: string
+  /** ID of the user who authorized the app */
+  userID: string
+  /** Account OAuth scope granted to the app */
+  scope: string
+  /** App authorized by the user */
+  app: AccountApp
+  /** Timestamp when the app grant was last used */
+  lastUsedAt?: string | null
+  /** Timestamp when the app grant was revoked */
+  revokedAt?: string | null
+}
+
+export type AccountAppTokenType = 'accessToken' | 'refreshToken'
+
+export type AccountAppToken = AccountModel & {
+  /** ID of the app grant associated with the token */
+  grantID: string
+  /** OAuth token type */
+  tokenType: AccountAppTokenType
+  /** Account OAuth scope associated with the token */
+  scope: string
+  /** Human-readable token name */
+  name: string
+  /** Expiration timestamp */
+  expiresAt: string
+  /** Timestamp when the token was last used */
+  lastUsedAt?: string | null
+  /** Timestamp when this token was consumed during refresh-token rotation. Applies to refresh tokens only. */
+  consumedAt?: string | null
+  /** Timestamp when the token was revoked */
+  revokedAt?: string | null
+}
+
+export type CreatedAccountAppToken = AccountAppToken & {
+  /** One-time token value */
+  value: string
+}
+
 /**
  * Default client for the Account app to call its own APIs. These APIs:
  * - use the same origin as the page, under the `/api` path prefix

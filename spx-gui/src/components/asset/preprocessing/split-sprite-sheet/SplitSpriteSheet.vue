@@ -17,7 +17,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { untilNotNull, memoizeAsync } from '@/utils/utils'
-import { useFileImg } from '@/utils/file'
+import { useRenderableImage } from '@/utils/img-rendering'
 import { sleep } from '@/utils/test'
 import { stripExt } from '@/utils/path'
 import { getImgDrawingCtx } from '@/utils/canvas'
@@ -35,7 +35,7 @@ const maxGridSize = 50
 
 // SplitSpriteSheet is supposed to take at most one file
 const file = computed(() => props.input[0])
-const [imgRef] = useFileImg(file)
+const [imgRef] = useRenderableImage(file)
 const bgColorRef = ref<Color | null>(null)
 const rowNum = ref(1)
 const colNum = ref(1)

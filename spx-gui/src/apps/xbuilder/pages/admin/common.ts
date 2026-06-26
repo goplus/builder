@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 
 import type { LocaleMessage } from '@/utils/i18n'
-import type { AccountAppClientType, AccountAppStatus } from '@/apis/account/common'
+import type { AccountAppClientType, AccountAppStatus, AccountAppTokenType } from '@/apis/account/common'
 
 export const accountAppClientTypeLabels: Record<AccountAppClientType, LocaleMessage> = {
   public: { en: 'Public client', zh: '公共客户端' },
@@ -11,6 +11,11 @@ export const accountAppClientTypeLabels: Record<AccountAppClientType, LocaleMess
 export const accountAppStatusLabels: Record<AccountAppStatus, LocaleMessage> = {
   active: { en: 'Active', zh: '已启用' },
   disabled: { en: 'Disabled', zh: '已停用' }
+}
+
+export const accountAppTokenTypeLabels: Record<AccountAppTokenType, LocaleMessage> = {
+  accessToken: { en: 'Access token', zh: 'Access token' },
+  refreshToken: { en: 'Refresh token', zh: 'Refresh token' }
 }
 
 export const accountAppRedirectURIsTip: LocaleMessage = {
