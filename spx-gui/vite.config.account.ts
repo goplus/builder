@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => {
       // Let http-proxy use the target host for HTTPS connection setup and certificate validation.
       // The headers seen by the backend are still overwritten below to match Account Web origin.
       changeOrigin: true,
+      rewrite: (path: string) => path.replace(/^\/api/, ''),
       configure(proxy) {
         proxy.on('proxyReq', (proxyReq) => {
           proxyReq.setHeader('Host', accountWebURL.host)
