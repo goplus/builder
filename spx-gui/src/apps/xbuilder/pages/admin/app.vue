@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
 import { useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIError, UILoading, UISwitch, UITextInput } from '@/components/ui'
 import CopyButton from '@/components/common/CopyButton.vue'
@@ -39,6 +40,14 @@ const appQuery = useQuery(
   }
 )
 const app = computed(() => appQuery.data.value)
+usePageTitle(() =>
+  app.value == null
+    ? { en: 'OAuth app', zh: 'OAuth 应用' }
+    : [
+        { en: app.value.displayName, zh: app.value.displayName },
+        { en: 'OAuth app', zh: 'OAuth 应用' }
+      ]
+)
 
 const displayName = ref('')
 const status = ref<accountAdminApis.AccountApp['status']>('active')

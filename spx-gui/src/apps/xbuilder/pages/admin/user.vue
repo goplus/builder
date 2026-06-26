@@ -30,6 +30,8 @@ import { RouterLink } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
+import { SortOrder } from '@/apis/common'
 import { useSignedInStateQuery } from '@/stores/user'
 import {
   UIButton,
@@ -71,6 +73,14 @@ const userQuery = useQuery(
 )
 const user = computed(() => userQuery.data.value)
 const avatarFallbackText = computed(() => user.value?.displayName.trim().charAt(0).toUpperCase() || '?')
+usePageTitle(() =>
+  user.value == null
+    ? { en: 'User', zh: '用户' }
+    : [
+        { en: user.value.displayName, zh: user.value.displayName },
+        { en: 'User', zh: '用户' }
+      ]
+)
 
 const displayName = ref('')
 watch(
@@ -111,7 +121,7 @@ const grantsQuery = useQuery(
       pageIndex: grantsPage.value,
       pageSize: grantsPageSize,
       orderBy: 'lastUsedAt',
-      sortOrder: 'desc'
+      sortOrder: SortOrder.Desc
     })
   },
   { en: 'Failed to load Account user app grants', zh: '加载账号用户应用授权失败' }

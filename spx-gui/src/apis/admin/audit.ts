@@ -1,6 +1,4 @@
-import { client, type ByPage, type PaginationParams } from '@/apis/common'
-
-type SortOrder = 'asc' | 'desc'
+import { client, SortOrder, type ByPage, type PaginationParams } from '@/apis/common'
 
 export type AuditLog = {
   /** Unique identifier */
