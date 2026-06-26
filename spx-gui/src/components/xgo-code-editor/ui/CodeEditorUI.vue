@@ -34,6 +34,7 @@ import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
 import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
+import CodeGuideUI from './code-guide/CodeGuideUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
@@ -126,6 +127,12 @@ async function handleMonacoEditorDrop(e: DragEvent) {
   const target = ui.editor.getTargetAtClientPoint(e.clientX, e.clientY)
   if (target == null || target.position == null) return
   const position = fromMonacoPosition(target.position)
+  // When dropping onto a blank but indented line (e.g. the line opened for a drag hint), land after the
+  // existing indentation so the inserted code keeps that indent instead of jumping to the line start.
+  const targetLineContent = ui.activeTextDocument?.getLineContent(position.line) ?? ''
+  if (targetLineContent !== '' && targetLineContent.trim() === '') {
+    position.column = targetLineContent.length + 1
+  }
   const range = { start: position, end: position }
   const ddi = getDdiDragData(e.dataTransfer)
   if (ddi != null) {
@@ -273,6 +280,7 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
+    <CodeGuideUI :controller="uiRef.codeGuideController" />
     <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
       <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
