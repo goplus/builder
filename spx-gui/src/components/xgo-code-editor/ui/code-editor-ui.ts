@@ -33,6 +33,7 @@ import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPositio
 import { InputHelperController, type InternalInputSlot } from './input-helper'
 import { InlayHintController } from './inlay-hint'
 import { DropIndicatorController } from './drop-indicator'
+import { CodeGuideController, type CodeGuide } from './code-guide'
 import { SnippetParser } from './snippet'
 import {
   CopilotExplainKind,
@@ -55,6 +56,7 @@ export * from './input-helper'
 export * from './inlay-hint'
 export * from '../copilot'
 export * from './drop-indicator'
+export * from './code-guide'
 export type { ISnippetVariablesProvider } from './snippet'
 
 export interface ICodeEditorUIController {
@@ -77,6 +79,15 @@ export interface ICodeEditorUIController {
   open(textDocument: TextDocumentIdentifier, range: Range): void
 
   insertBlockText(text: string, range?: Range): Promise<void>
+
+  /** Show an in-editor copilot guide (drag target / type-along ghost / deletion highlight). Returns the guide ID. */
+  showGuide(guide: CodeGuide): string
+  /** Clear the active guide. When `id` is given, only clears if it matches the active guide. */
+  clearGuide(id?: string): void
+  /** Subscribe to guide completion. Returns an unsubscribe function. */
+  onGuideCompleted(cb: (id: string) => void): () => void
+  /** Subscribe to a guide being cleared/displaced. Returns an unsubscribe function. */
+  onGuideCleared(cb: (id: string) => void): () => void
 
   dispose(): void
 }
@@ -175,7 +186,21 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   inputHelperController = new InputHelperController(this)
   inlayHintController = new InlayHintController(this)
   dropIndicatorController = new DropIndicatorController(this)
+  codeGuideController = new CodeGuideController(this)
   snippetParser = new SnippetParser(this)
+
+  showGuide(guide: CodeGuide): string {
+    return this.codeGuideController.setGuide(guide)
+  }
+  clearGuide(id?: string): void {
+    this.codeGuideController.clearGuide(id)
+  }
+  onGuideCompleted(cb: (id: string) => void): () => void {
+    return this.codeGuideController.on('completed', ({ id }) => cb(id))
+  }
+  onGuideCleared(cb: (id: string) => void): () => void {
+    return this.codeGuideController.on('cleared', ({ id }) => cb(id))
+  }
 
   /** Temporary text document IDs */
   private tempTextDocumentIds = shallowReactive<TextDocumentIdentifier[]>([])
@@ -718,6 +743,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
 
   dispose() {
     this.snippetParser.dispose()
+    this.codeGuideController.dispose()
     this.dropIndicatorController.dispose()
     this.inlayHintController.dispose()
     this.inputHelperController.dispose()
