@@ -7,6 +7,7 @@ import type { Prettify } from '@/utils/types'
 
 export { Visibility }
 
+export const projectNameMaxLength = 100
 export const projectDisplayNameMaxLength = 100
 export const projectDescriptionMaxLength = 400
 export const projectInstructionsMaxLength = 400

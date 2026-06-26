@@ -13,6 +13,8 @@ import { client, Visibility } from './common'
 
 export { Visibility }
 
+export const assetDisplayNameMaxLength = 100
+
 export enum AssetType {
   Sprite = 'sprite',
   Backdrop = 'backdrop',

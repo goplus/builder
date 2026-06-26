@@ -20,6 +20,7 @@
       :disabled="props.disabled"
       :readonly="props.readonly"
       :rows="props.rows"
+      :maxlength="props.maxlength"
       @input="handleTextInput"
       @focus="handleFocus"
       @blur="handleBlur"
@@ -36,6 +37,7 @@
       :type="inputType"
       :disabled="props.disabled"
       :readonly="props.readonly"
+      :maxlength="props.maxlength"
       @input="handleTextInput"
       @focus="handleFocus"
       @blur="handleBlur"
@@ -102,6 +104,7 @@ const props = withDefaults(
     placeholder?: string
     autofocus?: boolean
     rows?: number
+    maxlength?: number
   }>(),
   {
     type: undefined,
@@ -112,7 +115,8 @@ const props = withDefaults(
     readonly: false,
     placeholder: undefined,
     autofocus: false,
-    rows: 3
+    rows: 3,
+    maxlength: undefined
   }
 )
 
