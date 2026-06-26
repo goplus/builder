@@ -7,6 +7,7 @@ import { type SpxProject } from '@/models/spx/project'
 import { useSignedInUser, useUser } from '@/stores/user'
 import { projectDisplayNameMaxLength } from '@/apis/project'
 import { UIIcon, UITextInput } from '@/components/ui'
+import { getApiStringLength } from '@/utils/utils'
 
 const props = defineProps<{
   project: SpxProject
@@ -74,7 +75,7 @@ const handleSubmit = useMessageHandle(
       reset()
       return
     }
-    if (newName.length > projectDisplayNameMaxLength) {
+    if (getApiStringLength(newName) > projectDisplayNameMaxLength) {
       throw new DefaultException({
         en: `The project display name must be ${projectDisplayNameMaxLength} characters or fewer`,
         zh: `项目显示名不能超过 ${projectDisplayNameMaxLength} 字`

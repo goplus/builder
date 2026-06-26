@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
+import { getApiStringLength } from '@/utils/utils'
 import { useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIError, UILoading, UISwitch, UITextInput } from '@/components/ui'
 import CopyButton from '@/components/common/CopyButton.vue'
@@ -50,6 +51,7 @@ const savedRedirectURIs = ref<string[]>([])
 const savedAllowedOrigins = ref<string[]>([])
 const appUpdatedAt = ref('')
 const appFallbackText = computed(() => displayName.value.trim().charAt(0).toUpperCase() || '?')
+const trimmedDisplayName = computed(() => displayName.value.trim())
 
 watch(
   app,
@@ -71,8 +73,12 @@ watch(
 const parsedRedirectURIs = computed(() => parseLines(redirectURIs.value))
 const parsedAllowedOrigins = computed(() => parseLines(allowedOrigins.value))
 const isActive = computed(() => status.value === 'active')
+const isDisplayNameTooLong = computed(
+  () => getApiStringLength(trimmedDisplayName.value) > accountAdminApis.accountAppDisplayNameMaxLength
+)
+const isDisplayNameValid = computed(() => trimmedDisplayName.value !== '' && !isDisplayNameTooLong.value)
 const isIdentityChanged = computed(
-  () => displayName.value.trim() !== '' && displayName.value.trim() !== savedDisplayName.value
+  () => isDisplayNameValid.value && trimmedDisplayName.value !== savedDisplayName.value
 )
 const isStatusChanged = computed(() => status.value !== savedStatus.value)
 const areEndpointsChanged = computed(
@@ -105,13 +111,18 @@ function refetchAll() {
 
 const handleUpdateIdentity = useMessageHandle(
   async () => {
-    const updated = await accountAdminApis.updateAccountApp(props.appID, { displayName: displayName.value.trim() })
+    const updated = await accountAdminApis.updateAccountApp(props.appID, { displayName: trimmedDisplayName.value })
     savedDisplayName.value = updated.displayName
     appUpdatedAt.value = updated.updatedAt
   },
   { en: 'Failed to update Account app', zh: '更新账号应用失败' },
   { en: 'App identity updated', zh: '应用信息已更新' }
 )
+
+function submitIdentityUpdate() {
+  if (!isIdentityChanged.value) return
+  handleUpdateIdentity.fn()
+}
 
 const handleUpdateEndpoints = useMessageHandle(
   async () => {
@@ -139,10 +150,15 @@ const handleUpdateStatus = useMessageHandle(
 
 const secretName = ref('')
 const createdSecret = ref<accountAdminApis.CreatedAccountAppSecret | null>(null)
+const trimmedSecretName = computed(() => secretName.value.trim())
+const isSecretNameTooLong = computed(
+  () => getApiStringLength(trimmedSecretName.value) > accountAdminApis.accountAppSecretNameMaxLength
+)
+const isSecretNameValid = computed(() => trimmedSecretName.value !== '' && !isSecretNameTooLong.value)
 
 const handleCreateSecret = useMessageHandle(
   async () => {
-    const secret = await accountAdminApis.createAccountAppSecret(props.appID, { name: secretName.value.trim() })
+    const secret = await accountAdminApis.createAccountAppSecret(props.appID, { name: trimmedSecretName.value })
     createdSecret.value = secret
     secretName.value = ''
     secretsQuery.refetch()
@@ -150,6 +166,11 @@ const handleCreateSecret = useMessageHandle(
   { en: 'Failed to create Account app secret', zh: '创建账号应用密钥失败' },
   { en: 'Account app secret created', zh: '账号应用密钥已创建' }
 )
+
+function submitSecretCreation() {
+  if (!isSecretNameValid.value) return
+  handleCreateSecret.fn()
+}
 
 const handleCopySecret = useMessageHandle(
   () => navigator.clipboard.writeText(createdSecret.value!.value),
@@ -257,7 +278,7 @@ function deleteSecret(secretID: string) {
                 }}
               </p>
             </div>
-            <form class="flex flex-col gap-5" @submit.prevent="handleUpdateIdentity.fn">
+            <form class="flex flex-col gap-5" @submit.prevent="submitIdentityUpdate">
               <div class="grid grid-cols-1 gap-4 tablet:grid-cols-2">
                 <div class="text-sm">
                   <div class="text-grey-800">{{ $t({ en: 'App name', zh: '应用名称' }) }}</div>
@@ -268,7 +289,15 @@ function deleteSecret(secretID: string) {
                 </div>
                 <label class="flex flex-col gap-1 text-sm text-grey-900">
                   {{ $t({ en: 'Display name', zh: '显示名称' }) }}
-                  <UITextInput v-model:value="displayName" maxlength="100" />
+                  <UITextInput v-model:value="displayName" />
+                  <span v-if="isDisplayNameTooLong" class="text-xs text-danger-500">
+                    {{
+                      $t({
+                        en: `Display name is too long (maximum is ${accountAdminApis.accountAppDisplayNameMaxLength} characters)`,
+                        zh: `显示名称长度超出限制（最多 ${accountAdminApis.accountAppDisplayNameMaxLength} 个字符）`
+                      })
+                    }}
+                  </span>
                 </label>
                 <div class="text-sm">
                   <div class="text-grey-800">{{ $t({ en: 'Client ID', zh: '客户端 ID' }) }}</div>
@@ -452,11 +481,19 @@ function deleteSecret(secretID: string) {
             </div>
 
             <template v-else>
-              <form class="mb-4 flex flex-col gap-3" @submit.prevent="handleCreateSecret.fn">
+              <form class="mb-4 flex flex-col gap-3" @submit.prevent="submitSecretCreation">
                 <label class="flex flex-col gap-1 text-sm text-grey-900">
                   {{ $t({ en: 'New secret name', zh: '新密钥名称' }) }}
-                  <UITextInput v-model:value="secretName" maxlength="100" />
-                  <span class="text-xs text-grey-700">
+                  <UITextInput v-model:value="secretName" />
+                  <span v-if="isSecretNameTooLong" class="text-xs text-danger-500">
+                    {{
+                      $t({
+                        en: `Secret name is too long (maximum is ${accountAdminApis.accountAppSecretNameMaxLength} characters)`,
+                        zh: `密钥名称长度超出限制（最多 ${accountAdminApis.accountAppSecretNameMaxLength} 个字符）`
+                      })
+                    }}
+                  </span>
+                  <span v-else class="text-xs text-grey-700">
                     {{
                       $t({
                         en: 'Use a name that identifies where the secret is deployed.',
@@ -468,7 +505,7 @@ function deleteSecret(secretID: string) {
                 <UIButton
                   html-type="submit"
                   type="primary"
-                  :disabled="secretName.trim() === ''"
+                  :disabled="!isSecretNameValid"
                   :loading="handleCreateSecret.isLoading.value"
                 >
                   {{ $t({ en: 'Create secret', zh: '创建密钥' }) }}

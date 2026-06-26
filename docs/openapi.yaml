@@ -592,7 +592,7 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB (5242880 bytes).
+                    Maximum size is 5 MiB.
                   type: string
                   format: binary
             encoding:
@@ -871,7 +871,7 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB (5242880 bytes).
+                    Maximum size is 5 MiB.
                   type: string
                   format: binary
             encoding:
@@ -3985,7 +3985,7 @@ paths:
         Image requirements:
 
         - Format: PNG only (`image/png`)
-        - Maximum image size: 5 MiB (5242880 bytes) after decoding the base64 content
+        - Maximum image size: 5 MiB after decoding the base64 content
         - Images must be provided as base64-encoded data URLs
         - Other formats must be converted to PNG before sending
 
@@ -4432,7 +4432,7 @@ paths:
                   description: |
                     Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`.
 
-                    Maximum size is 64 MiB (67108864 bytes).
+                    Maximum size is 64 MiB.
                   type: string
                   format: binary
       responses:
@@ -4641,7 +4641,7 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB (5242880 bytes).
+                    Maximum size is 5 MiB.
                   type: string
                   format: binary
             encoding:
@@ -7876,7 +7876,7 @@ components:
             All images must be provided as PNG format. If you have images in other formats (SVG, JPEG, WebP),
             convert them to PNG before sending.
 
-            Maximum image size: 5 MiB (5242880 bytes) after decoding the base64 content.
+            Maximum image size: 5 MiB after decoding the base64 content.
 
             Format: `data:image/png;base64,<base64_data>`
           type: string

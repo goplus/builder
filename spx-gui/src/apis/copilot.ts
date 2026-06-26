@@ -5,6 +5,8 @@
 import type { JsonSchema7Type } from 'zod-to-json-schema'
 import { client } from './common'
 
+export const copilotMessageContentMaxLength = 40000
+
 export enum ToolType {
   Function = 'function'
 }
