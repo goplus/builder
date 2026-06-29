@@ -4,6 +4,7 @@ import { userDescriptionMaxLength, userDisplayNameMaxLength, type User } from '@
 import { selectFile } from '@/utils/file'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
+import { getApiStringLength } from '@/utils/utils'
 import {
   UIButton,
   UIForm,
@@ -48,7 +49,7 @@ const form = useForm({
 function validateDisplayName(val: string) {
   const trimmed = val.trim()
   if (trimmed === '') return t({ en: 'The name must not be blank', zh: '名字不可为空' })
-  if (trimmed.length > userDisplayNameMaxLength)
+  if (getApiStringLength(trimmed) > userDisplayNameMaxLength)
     return t({
       en: `The name must be ${userDisplayNameMaxLength} characters or fewer`,
       zh: `名字不能超过 ${userDisplayNameMaxLength} 字`
@@ -58,7 +59,7 @@ function validateDisplayName(val: string) {
 
 function validateDescription(val: string) {
   const trimmed = val.trim()
-  if (trimmed.length > userDescriptionMaxLength)
+  if (getApiStringLength(trimmed) > userDescriptionMaxLength)
     return t({
       en: `The description must be ${userDescriptionMaxLength} characters or fewer`,
       zh: `个人简介不能超过 ${userDescriptionMaxLength} 字`

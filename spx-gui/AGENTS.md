@@ -26,6 +26,15 @@ Keep import statements in order:
 2. Internal libraries: from base to specific, e.g., from `utils` to `models` to `components`
 3. Local files: relative paths starting with `./` or `../`
 
+### API String Length Validation
+
+* For API string `minLength` / `maxLength` constraints from `docs/openapi.yaml`, use `getApiStringLength` from
+  `@/utils/utils` to count Unicode code points. Avoid `string.length`, HTML `maxlength`, or `z.string().max()` for
+  those code point limits.
+* Count the exact string value submitted to the API. If an input is trimmed before submission, trim before counting.
+* Exceptions: use byte or source-file-size checks for explicit byte or payload-size limits. For values proven ASCII-only
+  by a pattern or parser, `string.length` is acceptable.
+
 ### Asset URLs
 
 * For widget-safe full asset URLs, use `new URL('...', import.meta.url).href` instead of `import x from './file.ext?url'`.

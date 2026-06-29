@@ -498,9 +498,15 @@ export function assertNever(input: never): never {
   throw new Error(`Unreachable code reached with input: ${input}`)
 }
 
+/** Return the string length using the same Unicode code point semantics as API string length constraints. */
+export function getApiStringLength(value: string) {
+  return Array.from(value).length
+}
+
 /**
  * Safely slice a string by Unicode code points.
- * This prevents breaking surrogate pairs and combining characters.
+ * This prevents breaking surrogate pairs.
+ * Grapheme-cluster boundaries are not preserved.
  * Use this instead of `str.slice(start, end)` when these conditions are met:
  * - The string may include non-BMP characters (e.g., emojis), especially when it is provided by the user
  * - And you are not sure if slicing positions (start / end) are at valid code point boundaries, especially when they are fixed numbers

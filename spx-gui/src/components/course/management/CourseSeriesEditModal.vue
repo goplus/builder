@@ -4,6 +4,7 @@ import saveAs from 'file-saver'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { selectFile } from '@/utils/file'
+import { getApiStringLength } from '@/utils/utils'
 import {
   addCourseSeries,
   courseSeriesDescriptionMaxLength,
@@ -62,7 +63,7 @@ const form = useForm({
     '',
     (v: string) => {
       if (v === '') return i18n.t({ en: 'Please enter series title', zh: '请输入系列标题' })
-      if (v.length > courseSeriesTitleMaxLength)
+      if (getApiStringLength(v) > courseSeriesTitleMaxLength)
         return i18n.t({
           en: `Title too long (max ${courseSeriesTitleMaxLength} chars)`,
           zh: `标题过长（最多 ${courseSeriesTitleMaxLength} 字符）`
@@ -80,7 +81,7 @@ const form = useForm({
   description: [
     '',
     (v: string) => {
-      if (v.length > courseSeriesDescriptionMaxLength)
+      if (getApiStringLength(v) > courseSeriesDescriptionMaxLength)
         return i18n.t({
           en: `Description too long (max ${courseSeriesDescriptionMaxLength} chars)`,
           zh: `描述过长（最多 ${courseSeriesDescriptionMaxLength} 字符）`

@@ -4,6 +4,7 @@ import {
   isImage,
   isSound,
   normalizeDegree,
+  getApiStringLength,
   memoizeAsync,
   localStorageRef,
   humanizeListWithLimit,
@@ -88,6 +89,17 @@ describe('normalizeDegree', () => {
     expect(normalizeDegree(-360)).toBe(0)
     expect(normalizeDegree(-450)).toBe(-90)
     expect(normalizeDegree(-720)).toBe(0)
+  })
+})
+
+describe('getApiStringLength', () => {
+  it('should count Unicode code points', () => {
+    expect(getApiStringLength('abc')).toBe(3)
+    expect(getApiStringLength('\u4f60\u597d')).toBe(2)
+    expect(getApiStringLength('\u{1f600}')).toBe(1)
+    expect(getApiStringLength('\u00e9')).toBe(1)
+    // Precomposed and decomposed forms render the same but have different code point counts.
+    expect(getApiStringLength('e\u0301')).toBe(2)
   })
 })
 
