@@ -6400,12 +6400,12 @@ components:
           examples:
             - John Doe
         avatar:
-          description: Public HTTP URL or Kodo universal URL of the user's avatar image.
+          description: Public HTTP URL of the user's avatar image.
           type: string
           format: uri
+          pattern: "^https?://"
           examples:
             - https://avatars.example.com/users/10137.png
-            - kodo://xbuilder-usercontent-test/files/avatar.png
         description:
           description: Brief bio or description of the user.
           type: string
