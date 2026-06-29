@@ -16,7 +16,7 @@ export type User = {
   username: string
   /** Display name of the user */
   displayName: string
-  /** URL of the user's avatar image */
+  /** Public HTTP URL of the user's avatar image */
   avatar: string
   /** Brief bio or description of the user */
   description: string

@@ -11,7 +11,7 @@ function createSignedInUser(username: string): SignedInUser {
     updatedAt: '2025-01-01T00:00:00Z',
     username,
     displayName: username,
-    avatar: '',
+    avatar: 'https://example.com/avatar.png',
     description: '',
     plan: 'free',
     capabilities: {
