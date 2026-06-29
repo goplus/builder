@@ -635,7 +635,12 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB.
+                    Avatar requirements:
+
+                    - The image format must be PNG (`image/png`) or JPEG (`image/jpeg`).
+                    - The maximum file size is 5 MiB.
+
+                    Uploaded avatars are normalized to a 512x512 PNG. Upload a square image for best visual quality.
                   type: string
                   format: binary
             encoding:
@@ -932,7 +937,12 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB.
+                    Avatar requirements:
+
+                    - The image format must be PNG (`image/png`) or JPEG (`image/jpeg`).
+                    - The maximum file size is 5 MiB.
+
+                    Uploaded avatars are normalized to a 512x512 PNG. Upload a square image for best visual quality.
                   type: string
                   format: binary
             encoding:
@@ -4831,7 +4841,12 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB.
+                    Avatar requirements:
+
+                    - The image format must be PNG (`image/png`) or JPEG (`image/jpeg`).
+                    - The maximum file size is 5 MiB.
+
+                    Uploaded avatars are normalized to a 512x512 PNG. Upload a square image for best visual quality.
                   type: string
                   format: binary
             encoding:
