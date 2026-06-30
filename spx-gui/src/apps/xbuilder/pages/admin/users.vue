@@ -3,14 +3,24 @@ import { debounce } from 'lodash'
 import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
-import { useMessageHandle } from '@/utils/exception'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { SortOrder } from '@/apis/common'
 import { useSignedInStateQuery } from '@/stores/user'
-import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption, UITextInput } from '@/components/ui'
+import {
+  UIButton,
+  UIError,
+  UILoading,
+  UIPagination,
+  UISelect,
+  UISelectOption,
+  UITextInput,
+  useModal
+} from '@/components/ui'
 import * as accountAdminApis from '@/apis/admin/account'
+import AccountUserImportModal from '@/components/account/admin/account-user-import/AccountUserImportModal.vue'
 import { formatTime } from './common'
 
 const signedInStateQuery = useSignedInStateQuery()
@@ -24,6 +34,7 @@ const sortOrder = useRouteQueryParamStrEnum('order', SortOrder, SortOrder.Desc, 
 const keyword = useRouteQueryParamStr('q', '', resetPage)
 const keywordInput = ref(keyword.value)
 const showCreateForm = ref(false)
+const invokeAccountUserImportModal = useModal(AccountUserImportModal)
 
 const createForm = reactive({
   username: '',
@@ -75,15 +86,26 @@ usePageTitle({ en: 'Users', zh: '用户' })
 
 const handleCreateUser = useMessageHandle(
   async () => {
-    const user = await accountAdminApis.createAccountUser({
-      username: createForm.username.trim(),
-      displayName: createForm.displayName.trim(),
-      ...(createForm.password.trim() === '' ? {} : { password: createForm.password })
-    })
+    const username = createForm.username.trim()
+    const displayName = createForm.displayName.trim() || username
+    const password = createForm.password.trim()
+    if (username === '') throw new DefaultException({ en: 'Username is required', zh: '用户名不能为空' })
+    if (displayName === '') throw new DefaultException({ en: 'Display name is required', zh: '显示名称不能为空' })
+    if (password === '') throw new DefaultException({ en: 'Password is required', zh: '密码不能为空' })
+
+    const user = await accountAdminApis.createAccountUser({ username, displayName, password })
     await router.push(`/admin/users/${encodeURIComponent(user.id)}`)
   },
   { en: 'Failed to create Account user', zh: '创建账号用户失败' },
   { en: 'Account user created', zh: '账号用户已创建' }
+)
+
+const handleImportUsers = useMessageHandle(
+  async () => {
+    await invokeAccountUserImportModal({})
+    void usersQuery.refetch()
+  },
+  { en: 'Failed to import Account users', zh: '导入账号用户失败' }
 )
 </script>
 
@@ -96,14 +118,18 @@ const handleCreateUser = useMessageHandle(
           {{ $t({ en: 'Browse and create Account users.', zh: '浏览和创建账号用户。' }) }}
         </p>
       </div>
-      <UIButton
-        v-if="canManageAccount"
-        :icon="showCreateForm ? 'close' : 'plus'"
-        :type="showCreateForm ? 'white' : 'primary'"
-        @click="showCreateForm = !showCreateForm"
-      >
-        {{ showCreateForm ? $t({ en: 'Cancel', zh: '取消' }) : $t({ en: 'Create user', zh: '创建用户' }) }}
-      </UIButton>
+      <div v-if="canManageAccount" class="flex flex-wrap justify-end gap-2">
+        <UIButton type="white" icon="file" :loading="handleImportUsers.isLoading.value" @click="handleImportUsers.fn">
+          {{ $t({ en: 'Import users', zh: '导入用户' }) }}
+        </UIButton>
+        <UIButton
+          :icon="showCreateForm ? 'close' : 'plus'"
+          :type="showCreateForm ? 'white' : 'primary'"
+          @click="showCreateForm = !showCreateForm"
+        >
+          {{ showCreateForm ? $t({ en: 'Cancel', zh: '取消' }) : $t({ en: 'Create user', zh: '创建用户' }) }}
+        </UIButton>
+      </div>
     </div>
 
     <form
@@ -118,11 +144,14 @@ const handleCreateUser = useMessageHandle(
         </label>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Display name', zh: '显示名称' }) }}
-          <UITextInput v-model:value="createForm.displayName" required />
+          <UITextInput v-model:value="createForm.displayName" />
+          <span class="text-xs text-grey-700">
+            {{ $t({ en: 'Leave empty to use username.', zh: '留空则使用用户名。' }) }}
+          </span>
         </label>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Initial password', zh: '初始密码' }) }}
-          <UITextInput v-model:value="createForm.password" type="password" />
+          <UITextInput v-model:value="createForm.password" type="password" required />
         </label>
       </div>
       <div class="mt-4 flex justify-end">
