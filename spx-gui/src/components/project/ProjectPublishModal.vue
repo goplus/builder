@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { getApiStringLength } from '@/utils/utils'
 import { Visibility } from '@/apis/common'
 import { projectDescriptionMaxLength, projectInstructionsMaxLength } from '@/apis/project'
 import { createProjectRelease, projectReleaseDescriptionMaxLength } from '@/apis/project-release'
@@ -49,7 +50,7 @@ const form = useForm({
 })
 
 function validateText(val: string, maxLength: number) {
-  if (val.length > maxLength)
+  if (getApiStringLength(val) > maxLength)
     return t({
       en: `The input must be ${maxLength} characters or fewer`,
       zh: `输入不能超过 ${maxLength} 字`

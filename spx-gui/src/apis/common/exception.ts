@@ -21,17 +21,34 @@ export class ApiException extends Exception {
   }
 }
 
+export class OAuthException extends Exception {
+  name = 'OAuthException'
+  userMessage = null
+
+  constructor(
+    public error: string,
+    public errorDescription: string | null,
+    public errorUri: string | null,
+    { req }: { req: Request }
+  ) {
+    super(`[${error}] ${errorDescription ?? error} (${req.method} ${req.url.slice(0, 200)})`)
+  }
+}
+
 export enum ApiExceptionCode {
   errorInvalidArgs = 40001,
   errorUnauthorized = 40100,
   errorForbidden = 40300,
   errorQuotaExceeded = 40301,
   errorNotFound = 40400,
+  errorConflict = 40900,
   errorResourceMoved = 40901,
+  errorContentTooLarge = 41300,
+  errorUnsupportedMediaType = 41500,
   errorTooManyRequests = 42900,
   errorRateLimitExceeded = 42901,
-  errorScratchFeatureNotSupported = 50101,
-  errorUnknown = 50000
+  errorInternalServerError = 50000,
+  errorScratchFeatureNotSupported = 50101
 }
 
 export type MovedResourceCanonical = {
@@ -42,13 +59,27 @@ export type MovedResourceCanonical = {
   release?: string
 }
 
-export type QuotaExceededMeta = {
-  // milliseconds or null
+export type RetryAfterMeta = {
+  // Unix timestamp in milliseconds, or null when no valid retry time is available.
   retryAfter: number | null
 }
 
+export type QuotaExceededMeta = RetryAfterMeta
+
+export function isRetryAfterMeta(code: number, meta: unknown): meta is RetryAfterMeta {
+  if (meta == null || typeof meta !== 'object') return false
+  if (!('retryAfter' in meta)) return false
+  const { retryAfter } = meta as RetryAfterMeta
+  return (
+    (retryAfter == null || typeof retryAfter === 'number') &&
+    (code === ApiExceptionCode.errorQuotaExceeded ||
+      code === ApiExceptionCode.errorTooManyRequests ||
+      code === ApiExceptionCode.errorRateLimitExceeded)
+  )
+}
+
 export function isQuotaExceededMeta(code: number, meta: unknown): meta is QuotaExceededMeta {
-  return code === ApiExceptionCode.errorQuotaExceeded && meta != null
+  return code === ApiExceptionCode.errorQuotaExceeded && isRetryAfterMeta(code, meta)
 }
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
@@ -72,9 +103,21 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
     en: 'resource not exist',
     zh: '资源不存在'
   },
+  [ApiExceptionCode.errorConflict]: {
+    en: 'resource conflict',
+    zh: '资源状态冲突'
+  },
   [ApiExceptionCode.errorResourceMoved]: {
     en: 'resource moved',
     zh: '资源已迁移'
+  },
+  [ApiExceptionCode.errorContentTooLarge]: {
+    en: 'content too large',
+    zh: '内容过大'
+  },
+  [ApiExceptionCode.errorUnsupportedMediaType]: {
+    en: 'unsupported media type',
+    zh: '不支持的内容类型'
   },
   [ApiExceptionCode.errorTooManyRequests]: {
     en: 'too many requests',
@@ -84,12 +127,12 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
     en: 'rate limit exceeded, please retry later',
     zh: '触发频率限制，请稍后重试'
   },
+  [ApiExceptionCode.errorInternalServerError]: {
+    en: 'something wrong with the server',
+    zh: '服务器出问题了'
+  },
   [ApiExceptionCode.errorScratchFeatureNotSupported]: {
     en: 'Some Scratch features are not supported yet',
     zh: '部分 Scratch 特性暂不支持'
-  },
-  [ApiExceptionCode.errorUnknown]: {
-    en: 'something wrong with the server',
-    zh: '服务器出问题了'
   }
 }

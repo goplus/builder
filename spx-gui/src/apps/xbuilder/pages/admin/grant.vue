@@ -6,6 +6,7 @@ import { RouterLink } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
+import { getApiStringLength } from '@/utils/utils'
 import { useSignedInStateQuery } from '@/stores/user'
 import {
   UIButton,
@@ -53,6 +54,7 @@ const app = computed(() => grant.value?.app ?? null)
 const appFallbackText = computed(() => app.value?.displayName.trim().charAt(0).toUpperCase() || '?')
 
 const tokensPageSize = 20
+const maxTokenLifetimeDays = 365
 const tokensPage = ref(1)
 const tokenTypeFilter = ref<'all' | accountAdminApis.AccountAppTokenType>('accessToken')
 const tokensQuery = useQuery(
@@ -66,7 +68,7 @@ const tokensQuery = useQuery(
       tokenType: tokenTypeFilter.value === 'all' ? undefined : tokenTypeFilter.value
     })
   },
-  { en: 'Failed to load Account app grant tokens', zh: '加载账号应用授权 token 失败' }
+  { en: 'Failed to load Account app grant tokens', zh: '加载账号应用授权 Token 失败' }
 )
 const tokensPageTotal = computed(() => Math.ceil((tokensQuery.data.value?.total ?? 0) / tokensPageSize))
 watch(tokenTypeFilter, () => {
@@ -75,17 +77,17 @@ watch(tokenTypeFilter, () => {
 
 const showCreateForm = ref(false)
 const tokenName = ref('')
+const trimmedTokenName = computed(() => tokenName.value.trim())
 const createdToken = ref<accountAdminApis.CreatedAccountAppToken | null>(null)
 const minExpiresAtInput = ref(formatDateTimeLocal(dayjs()))
-const maxExpiresAtInput = ref(formatDateTimeLocal(dayjs().add(365, 'day')))
+const maxExpiresAtInput = ref(formatDateTimeLocal(dayjs().add(maxTokenLifetimeDays, 'day')))
 const expiresAtInput = ref(formatDateTimeLocal(defaultTokenExpiresAt()))
-const isCreateTokenValid = computed(
-  () =>
-    tokenName.value.trim() !== '' &&
-    tokenName.value.length <= accountAdminApis.accountAppTokenNameMaxLength &&
-    expiresAtInput.value !== ''
+const isTokenNameTooLong = computed(
+  () => getApiStringLength(trimmedTokenName.value) > accountAdminApis.accountAppTokenNameMaxLength
 )
-const maxTokenLifetimeDays = 365
+const isCreateTokenValid = computed(
+  () => trimmedTokenName.value !== '' && !isTokenNameTooLong.value && expiresAtInput.value !== ''
+)
 
 function formatDateTimeLocal(value: dayjs.Dayjs) {
   return value.format('YYYY-MM-DDTHH:mm')
@@ -134,7 +136,7 @@ const handleCreateToken = useMessageHandle(
   async () => {
     const token = await accountAdminApis.createAccountAppGrantToken(props.grantID, {
       tokenType: 'accessToken',
-      name: tokenName.value.trim(),
+      name: trimmedTokenName.value,
       expiresAt: dayjs(expiresAtInput.value).toISOString()
     })
     createdToken.value = token
@@ -143,6 +145,11 @@ const handleCreateToken = useMessageHandle(
   { en: 'Failed to create Access token', zh: '创建 Access token 失败' },
   { en: 'Access token created', zh: 'Access token 已创建' }
 )
+
+function submitTokenCreation() {
+  if (!isCreateTokenValid.value) return
+  handleCreateToken.fn()
+}
 
 const handleCopyCreatedToken = useMessageHandle(
   () => navigator.clipboard.writeText(createdToken.value!.value),
@@ -154,16 +161,16 @@ const handleRevokeToken = useMessageHandle(
   async (tokenID: string) => {
     await confirm({
       type: 'warning',
-      title: i18n.t({ en: 'Revoke token', zh: '撤销 token' }),
-      content: i18n.t({ en: 'Are you sure to revoke this token?', zh: '确定要撤销此 token 吗？' }),
+      title: i18n.t({ en: 'Revoke token', zh: '撤销 Token' }),
+      content: i18n.t({ en: 'Are you sure to revoke this token?', zh: '确定要撤销此 Token 吗？' }),
       confirmText: i18n.t({ en: 'Revoke', zh: '撤销' })
     })
     await accountAdminApis.deleteAccountAppGrantToken(props.grantID, tokenID)
     if (createdToken.value?.id === tokenID) createdToken.value = null
     tokensQuery.refetch()
   },
-  { en: 'Failed to revoke token', zh: '撤销 token 失败' },
-  { en: 'Token revoked', zh: 'token 已撤销' }
+  { en: 'Failed to revoke token', zh: '撤销 Token 失败' },
+  { en: 'Token revoked', zh: 'Token 已撤销' }
 ).fn
 
 function dismissCreatedToken() {
@@ -324,7 +331,7 @@ function dismissCreatedToken() {
                   {{
                     $t({
                       en: 'Creates an Access token under this grant. The token value is shown only once.',
-                      zh: '基于此授权创建 Access token。token 值只会展示一次。'
+                      zh: '基于此授权创建 Access token。Token 值只会展示一次。'
                     })
                   }}
                 </p>
@@ -343,16 +350,24 @@ function dismissCreatedToken() {
             <form
               v-if="showCreateForm && createdToken == null"
               class="flex flex-col gap-4"
-              @submit.prevent="handleCreateToken.fn"
+              @submit.prevent="submitTokenCreation"
             >
               <label class="flex flex-col gap-1 text-sm text-grey-900">
                 {{ $t({ en: 'Name', zh: '名称' }) }}
-                <UITextInput v-model:value="tokenName" :maxlength="accountAdminApis.accountAppTokenNameMaxLength" />
-                <span class="text-xs text-grey-700">
+                <UITextInput v-model:value="tokenName" />
+                <span v-if="isTokenNameTooLong" class="text-xs text-danger-500">
+                  {{
+                    $t({
+                      en: `Token name is too long (maximum is ${accountAdminApis.accountAppTokenNameMaxLength} characters)`,
+                      zh: `Token 名称长度超出限制（最多 ${accountAdminApis.accountAppTokenNameMaxLength} 个字符）`
+                    })
+                  }}
+                </span>
+                <span v-else class="text-xs text-grey-700">
                   {{
                     $t({
                       en: "Use a short name describing this token's purpose.",
-                      zh: '用简短名称说明这个 token 的用途。'
+                      zh: '用简短名称说明这个 Token 的用途。'
                     })
                   }}
                 </span>
@@ -396,13 +411,13 @@ function dismissCreatedToken() {
 
             <div v-if="createdToken != null" class="mt-4 rounded-md border border-yellow-300 bg-yellow-100 p-4">
               <div class="font-medium text-title">
-                {{ $t({ en: 'Copy this token now', zh: '请立即复制此 token' }) }}
+                {{ $t({ en: 'Copy this token now', zh: '请立即复制此 Token' }) }}
               </div>
               <p class="m-0 mt-1 text-sm text-grey-900">
                 {{
                   $t({
                     en: 'The token value will not be shown again after this message is closed.',
-                    zh: '关闭此提示后将无法再次查看该 token 值。'
+                    zh: '关闭此提示后将无法再次查看该 Token 值。'
                   })
                 }}
               </p>
@@ -418,7 +433,7 @@ function dismissCreatedToken() {
                   :loading="handleCopyCreatedToken.isLoading.value"
                   @click="handleCopyCreatedToken.fn"
                 >
-                  {{ $t({ en: 'Copy token', zh: '复制 token' }) }}
+                  {{ $t({ en: 'Copy token', zh: '复制 Token' }) }}
                 </UIButton>
                 <UIButton type="primary" size="small" @click="dismissCreatedToken">
                   {{ $t({ en: 'I have saved it', zh: '我已保存' }) }}
@@ -433,20 +448,20 @@ function dismissCreatedToken() {
         <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 class="m-0 text-lg font-semibold text-title">
-              {{ $t({ en: 'Active tokens', zh: '有效 token' }) }}
+              {{ $t({ en: 'Active tokens', zh: '有效 Token' }) }}
             </h3>
             <p class="m-0 mt-1 text-sm text-grey-800">
               {{
                 $t({
                   en: `${tokensQuery.data.value?.total ?? 0} active tokens`,
-                  zh: `共 ${tokensQuery.data.value?.total ?? 0} 个有效 token`
+                  zh: `共 ${tokensQuery.data.value?.total ?? 0} 个有效 Token`
                 })
               }}
             </p>
           </div>
           <div class="flex items-center gap-2">
             <UISelect v-model:value="tokenTypeFilter" class="w-36">
-              <UISelectOption value="all">{{ $t({ en: 'All tokens', zh: '全部 token' }) }}</UISelectOption>
+              <UISelectOption value="all">{{ $t({ en: 'All tokens', zh: '全部 Token' }) }}</UISelectOption>
               <UISelectOption value="accessToken">{{ $t(accountAppTokenTypeLabels.accessToken) }}</UISelectOption>
               <UISelectOption value="refreshToken">{{ $t(accountAppTokenTypeLabels.refreshToken) }}</UISelectOption>
             </UISelect>
@@ -482,7 +497,7 @@ function dismissCreatedToken() {
                 <td class="px-4 py-3 font-mono text-xs text-grey-700">
                   <div class="flex items-center gap-1">
                     <span>{{ token.id }}</span>
-                    <CopyButton :value="token.id" :label="{ en: 'Copy token ID', zh: '复制 token ID' }" />
+                    <CopyButton :value="token.id" :label="{ en: 'Copy token ID', zh: '复制 Token ID' }" />
                   </div>
                 </td>
                 <td class="whitespace-nowrap px-4 py-3 text-grey-900">
@@ -505,7 +520,7 @@ function dismissCreatedToken() {
             </tbody>
           </table>
           <div v-else class="py-8 text-center text-grey-800">
-            {{ $t({ en: 'No active tokens', zh: '暂无有效 token' }) }}
+            {{ $t({ en: 'No active tokens', zh: '暂无有效 Token' }) }}
           </div>
           <UIPagination
             v-show="tokensPageTotal > 1"

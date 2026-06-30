@@ -27,10 +27,11 @@ export type {
   CreatedAccountAppToken
 } from '@/apis/account/common'
 
-type SortOrder = 'asc' | 'desc'
-
-/** Maximum allowed length for an app token name. */
 export const accountAppTokenNameMaxLength = 100
+export const accountAppDisplayNameMaxLength = 100
+export const accountAppSecretNameMaxLength = 100
+
+type SortOrder = 'asc' | 'desc'
 
 export type ListAccountUsersParams = PaginationParams & {
   /** Filter account users by username or display name pattern */

@@ -9,10 +9,11 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { isProjectNameTaken, updateProject } from '@/apis/project'
+import { isProjectNameTaken, projectNameMaxLength, updateProject } from '@/apis/project'
 import type { SpxProject } from '@/models/spx/project'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
+import { getApiStringLength } from '@/utils/utils'
 
 const props = defineProps<{
   project: SpxProject
@@ -64,10 +65,10 @@ async function validateName(name: string): Promise<FormValidationResult> {
       zh: '项目名仅可包含字母、数字以及字符 - 和 _。'
     })
 
-  if (name.length > 100)
+  if (getApiStringLength(name) > projectNameMaxLength)
     return t({
-      en: 'The project name is too long (maximum is 100 characters)',
-      zh: '项目名长度超出限制（最多 100 个字符）'
+      en: `The project name is too long (maximum is ${projectNameMaxLength} characters)`,
+      zh: `项目名长度超出限制（最多 ${projectNameMaxLength} 个字符）`
     })
 
   if (name.toLowerCase() === currentName.value.toLowerCase()) return
