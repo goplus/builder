@@ -3,7 +3,7 @@ import { debounce } from 'lodash'
 import { computed, onUnmounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
-import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
@@ -87,10 +87,10 @@ usePageTitle({ en: 'Users', zh: '用户' })
 const handleCreateUser = useMessageHandle(
   async () => {
     const username = createForm.username.trim()
+    if (username === '') throw new DefaultException({ en: 'Username is required', zh: '用户名不能为空' })
+
     const displayName = createForm.displayName.trim() || username
     const password = createForm.password.trim()
-    if (username === '') throw new DefaultException({ en: 'Username is required', zh: '用户名不能为空' })
-    if (displayName === '') throw new DefaultException({ en: 'Display name is required', zh: '显示名称不能为空' })
     if (password === '') throw new DefaultException({ en: 'Password is required', zh: '密码不能为空' })
 
     const user = await accountAdminApis.createAccountUser({ username, displayName, password })
@@ -100,13 +100,15 @@ const handleCreateUser = useMessageHandle(
   { en: 'Account user created', zh: '账号用户已创建' }
 )
 
-const handleImportUsers = useMessageHandle(
-  async () => {
+async function handleImportUsers() {
+  try {
     await invokeAccountUserImportModal({})
+  } catch (e) {
+    if (!(e instanceof Cancelled)) throw e
+  } finally {
     void usersQuery.refetch()
-  },
-  { en: 'Failed to import Account users', zh: '导入账号用户失败' }
-)
+  }
+}
 </script>
 
 <template>
@@ -119,7 +121,7 @@ const handleImportUsers = useMessageHandle(
         </p>
       </div>
       <div v-if="canManageAccount" class="flex flex-wrap justify-end gap-2">
-        <UIButton type="white" icon="file" :loading="handleImportUsers.isLoading.value" @click="handleImportUsers.fn">
+        <UIButton type="white" icon="file" @click="handleImportUsers">
           {{ $t({ en: 'Import users', zh: '导入用户' }) }}
         </UIButton>
         <UIButton

@@ -31,7 +31,9 @@ alice,Alice
 `)
 
     expect(result.rows).toEqual([])
-    expect(result.errors).toEqual([{ line: 1, message: 'Missing required column: password' }])
+    expect(result.errors).toEqual([
+      { line: 1, message: { en: 'Missing required column: password', zh: '缺少必需列：password' } }
+    ])
   })
 
   it('uses username as display name when display name is empty or absent', () => {
@@ -54,9 +56,8 @@ bob,Bob,
 `)
 
     expect(result.errors).toEqual([
-      { line: 2, message: 'Username is required' },
-      { line: 2, message: 'Display name is required' },
-      { line: 3, message: 'Password is required' }
+      { line: 2, message: { en: 'Username is required', zh: '用户名不能为空' } },
+      { line: 3, message: { en: 'Password is required', zh: '密码不能为空' } }
     ])
   })
 
@@ -66,6 +67,8 @@ alice,Alice,pass123
 alice,Alice 2,pass456
 `)
 
-    expect(result.errors).toEqual([{ line: 3, message: 'Duplicate username with line 2' }])
+    expect(result.errors).toEqual([
+      { line: 3, message: { en: 'Duplicate username with line 2', zh: '用户名与第 2 行重复' } }
+    ])
   })
 })

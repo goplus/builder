@@ -1,4 +1,5 @@
 import { parse } from 'csv-parse/browser/esm/sync'
+import type { LocaleMessage } from '@/utils/i18n'
 
 export type AccountUserImportRow = {
   line: number
@@ -9,7 +10,7 @@ export type AccountUserImportRow = {
 
 export type AccountUserImportError = {
   line: number | null
-  message: string
+  message: LocaleMessage
 }
 
 export type AccountUserImportParseResult = {
@@ -26,12 +27,14 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
   } catch (e) {
     return {
       rows: [],
-      errors: [{ line: null, message: e instanceof Error ? e.message : 'Invalid CSV file' }]
+      errors: [
+        { line: null, message: { en: e instanceof Error ? e.message : 'Invalid CSV file', zh: 'CSV 文件格式错误' } }
+      ]
     }
   }
 
   if (records.length === 0) {
-    return { rows: [], errors: [{ line: null, message: 'CSV file is empty' }] }
+    return { rows: [], errors: [{ line: null, message: { en: 'CSV file is empty', zh: 'CSV 文件为空' } }] }
   }
 
   const headers = records[0].map((header) => header.trim())
@@ -40,7 +43,15 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
   if (missingHeaders.length > 0) {
     return {
       rows: [],
-      errors: [{ line: 1, message: `Missing required column: ${missingHeaders.join(', ')}` }]
+      errors: [
+        {
+          line: 1,
+          message: {
+            en: `Missing required column: ${missingHeaders.join(', ')}`,
+            zh: `缺少必需列：${missingHeaders.join(', ')}`
+          }
+        }
+      ]
     }
   }
 
@@ -54,13 +65,18 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
     const displayName = readCell(record, headerIndex.displayName) || username
     const password = readCell(record, headerIndex.password)
 
-    if (username === '') errors.push({ line, message: 'Username is required' })
-    if (displayName === '') errors.push({ line, message: 'Display name is required' })
-    if (password === '') errors.push({ line, message: 'Password is required' })
+    if (username === '') errors.push({ line, message: { en: 'Username is required', zh: '用户名不能为空' } })
+    if (password === '') errors.push({ line, message: { en: 'Password is required', zh: '密码不能为空' } })
 
     const previousLine = usernameLines.get(username)
     if (username !== '' && previousLine != null) {
-      errors.push({ line, message: `Duplicate username with line ${previousLine}` })
+      errors.push({
+        line,
+        message: {
+          en: `Duplicate username with line ${previousLine}`,
+          zh: `用户名与第 ${previousLine} 行重复`
+        }
+      })
     }
     if (username !== '') usernameLines.set(username, line)
 
@@ -68,12 +84,13 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
   })
 
   if (rows.length === 0) {
-    errors.push({ line: null, message: 'CSV file has no user rows' })
+    errors.push({ line: null, message: { en: 'CSV file has no user rows', zh: 'CSV 文件没有用户行' } })
   }
 
   return { rows, errors }
 }
 
-function readCell(record: string[], index: number) {
+function readCell(record: string[], index: number | undefined) {
+  if (index == null) return ''
   return (record[index] ?? '').trim()
 }

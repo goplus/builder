@@ -6,7 +6,7 @@ import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { UIButton, UIError, UIIcon, UILoading, UIModal, UIModalClose } from '@/components/ui'
 import * as accountAdminApis from '@/apis/admin/account'
-import { parseAccountUserImportCsv, type AccountUserImportRow } from './csv'
+import { parseAccountUserImportCsv, type AccountUserImportError, type AccountUserImportRow } from './csv'
 
 type ImportStatus = 'pending' | 'creating' | 'created' | 'failed'
 
@@ -128,6 +128,14 @@ function getErrorMessage(e: unknown) {
   if (e instanceof Error) return e.message
   return String(e)
 }
+
+function formatImportError(error: AccountUserImportError) {
+  if (error.line == null) return error.message
+  return {
+    en: `Line ${error.line}: ${error.message.en}`,
+    zh: `第 ${error.line} 行：${error.message.zh}`
+  }
+}
 </script>
 
 <template>
@@ -190,11 +198,7 @@ function getErrorMessage(e: unknown) {
         <template #sub-message>
           <div class="mt-3 space-y-1 text-left">
             <div v-for="(error, index) in parseErrors" :key="index">
-              {{
-                error.line == null
-                  ? error.message
-                  : $t({ en: `Line ${error.line}: ${error.message}`, zh: `第 ${error.line} 行：${error.message}` })
-              }}
+              {{ $t(formatImportError(error)) }}
             </div>
           </div>
         </template>
