@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import saveAs from 'file-saver'
 import { computed, ref, watch } from 'vue'
 
 import { Exception, capture } from '@/utils/exception'
@@ -63,14 +64,7 @@ function chooseFile() {
 
 function downloadExampleCsv() {
   const csv = 'username,displayName,password\nsample-user,Sample User,YOUR_PASSWORD_HERE\n'
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
-  const link = document.createElement('a')
-  link.href = url
-  link.download = 'account-users-example.csv'
-  document.body.append(link)
-  link.click()
-  link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'account-users-example.csv')
 }
 
 function handleFileChange(event: Event) {
