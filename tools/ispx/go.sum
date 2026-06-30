@@ -15,8 +15,8 @@ github.com/goplus/reflectx v1.7.0 h1:52l0Si+vDc6CvT7Y+h47h2QUs5HQp6qxPlmvLsMzo38
 github.com/goplus/reflectx v1.7.0/go.mod h1:EXX8KSPTmnb2W1PfyVkDC0Qwet0lYX2h2/S06Vhwrhw=
 github.com/goplus/spbase v0.1.0 h1:JNZ0D/65DerYyv9/9IfrXHZZbd0WNK0jHiVvgCtZhwY=
 github.com/goplus/spbase v0.1.0/go.mod h1:brnD3OJnHtipqob2IsJ3/QzGBf+eOnqXNnHGKpv1irQ=
-github.com/goplus/spx/v2 v2.0.3 h1:Qb3n2/B04lsbOgLSZEXGYhOiPyGgWrRFhSU1+srSCdg=
-github.com/goplus/spx/v2 v2.0.3/go.mod h1:mF2kCvUNw97ku2PYHMEwbCENv24b5EwnlXOLiVMRbHM=
+github.com/goplus/spx/v2 v2.0.4 h1:4hyCM5XH3DMRjFeoTxCndrqcFZTeCWHkEicyp7wYTSs=
+github.com/goplus/spx/v2 v2.0.4/go.mod h1:mF2kCvUNw97ku2PYHMEwbCENv24b5EwnlXOLiVMRbHM=
 github.com/goplus/xgo v1.7.2-0.20260414235301-df19f4a1b7c2 h1:kXIGYlJUTii+7nv1XTKR0ctMZSeTcgYMoQuEexZPr7A=
 github.com/goplus/xgo v1.7.2-0.20260414235301-df19f4a1b7c2/go.mod h1:fX3+ZaYEzBE6qkgFcJx83D6DbUo/vMO8Y1Allydy2ws=
 github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e h1:D0bJD+4O3G4izvrQUmzCL80zazlN7EwJ0PPDhpJWC/I=
