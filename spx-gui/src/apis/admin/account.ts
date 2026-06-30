@@ -1,4 +1,4 @@
-import { client, type ByPage, type PaginationParams } from '@/apis/common'
+import { client, SortOrder, type ByPage, type PaginationParams } from '@/apis/common'
 import type {
   AccountApp,
   AccountAppClientType,
@@ -26,8 +26,6 @@ export type {
   CreatedAccountAppSecret,
   CreatedAccountAppToken
 } from '@/apis/account/common'
-
-type SortOrder = 'asc' | 'desc'
 
 /** Maximum allowed length for an app token name. */
 export const accountAppTokenNameMaxLength = 100

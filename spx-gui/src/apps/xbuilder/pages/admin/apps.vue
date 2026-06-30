@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
+import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
+import { usePageTitle } from '@/utils/utils'
+import { SortOrder } from '@/apis/common'
 import { useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption, UITextInput } from '@/components/ui'
 import * as accountAdminApis from '@/apis/admin/account'
@@ -21,8 +24,9 @@ const router = useRouter()
 const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
 
 const pageSize = 20
-const page = ref(1)
-const sortOrder = ref<'asc' | 'desc'>('desc')
+const page = useRouteQueryParamInt('p', 1)
+const resetPage = (query: Partial<Record<string, string | null>>) => ({ ...query, p: null })
+const sortOrder = useRouteQueryParamStrEnum('order', SortOrder, SortOrder.Desc, resetPage)
 const showCreateForm = ref(false)
 
 const createForm = reactive({
@@ -48,9 +52,7 @@ const appsQuery = useQuery(
 
 const pageTotal = computed(() => Math.ceil((appsQuery.data.value?.total ?? 0) / pageSize))
 
-watch(sortOrder, () => {
-  page.value = 1
-})
+usePageTitle({ en: 'OAuth apps', zh: 'OAuth 应用' })
 
 const handleCreateApp = useMessageHandle(
   async () => {

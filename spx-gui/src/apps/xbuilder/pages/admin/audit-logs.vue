@@ -1,25 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 
 import { useQuery } from '@/utils/query'
+import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
+import { usePageTitle } from '@/utils/utils'
+import { SortOrder } from '@/apis/common'
 import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption } from '@/components/ui'
 import * as auditApis from '@/apis/admin/audit'
 import { formatJSON, formatTime } from './common'
 
 const pageSize = 20
-const page = ref(1)
-const sortOrder = ref<'asc' | 'desc'>('desc')
-const createdAfter = ref('')
-const createdBefore = ref('')
-
-watch([sortOrder, createdAfter, createdBefore], () => {
-  page.value = 1
-})
-
-function clearFilters() {
-  createdAfter.value = ''
-  createdBefore.value = ''
-}
+const page = useRouteQueryParamInt('p', 1)
+const resetPage = (query: Partial<Record<string, string | null>>) => ({ ...query, p: null })
+const sortOrder = useRouteQueryParamStrEnum('order', SortOrder, SortOrder.Desc, resetPage)
+const createdAfter = useRouteQueryParamStr('from', '', resetPage)
+const createdBefore = useRouteQueryParamStr('to', '', resetPage)
 
 function hasMetadata(value: unknown) {
   return value != null && typeof value === 'object' && Object.keys(value).length > 0
@@ -27,7 +22,9 @@ function hasMetadata(value: unknown) {
 
 function toISOString(value: string) {
   if (value === '') return undefined
-  return new Date(value).toISOString()
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return undefined
+  return date.toISOString()
 }
 
 const auditLogsQuery = useQuery(
@@ -44,6 +41,8 @@ const auditLogsQuery = useQuery(
 )
 
 const pageTotal = computed(() => Math.ceil((auditLogsQuery.data.value?.total ?? 0) / pageSize))
+
+usePageTitle({ en: 'Audit logs', zh: '审计日志' })
 </script>
 
 <template>
@@ -62,7 +61,7 @@ const pageTotal = computed(() => Math.ceil((auditLogsQuery.data.value?.total ?? 
 
     <div class="overflow-hidden rounded-lg border border-grey-400 bg-white">
       <div
-        class="grid grid-cols-1 gap-3 border-b border-grey-300 bg-grey-100 px-5 py-4 tablet:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_128px_auto]"
+        class="grid grid-cols-1 gap-3 border-b border-grey-300 bg-grey-100 px-5 py-4 tablet:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_128px]"
       >
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Created after', zh: '开始时间' }) }}
@@ -84,14 +83,6 @@ const pageTotal = computed(() => Math.ceil((auditLogsQuery.data.value?.total ?? 
           <UISelectOption value="desc">{{ $t({ en: 'Newest', zh: '最新' }) }}</UISelectOption>
           <UISelectOption value="asc">{{ $t({ en: 'Oldest', zh: '最早' }) }}</UISelectOption>
         </UISelect>
-        <UIButton
-          type="white"
-          class="self-end"
-          :disabled="createdAfter === '' && createdBefore === ''"
-          @click="clearFilters"
-        >
-          {{ $t({ en: 'Clear', zh: '清空' }) }}
-        </UIButton>
       </div>
 
       <UILoading v-if="auditLogsQuery.isLoading.value" class="my-16" />

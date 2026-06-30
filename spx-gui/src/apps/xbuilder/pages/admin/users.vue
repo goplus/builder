@@ -5,6 +5,9 @@ import { RouterLink, useRouter } from 'vue-router'
 
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
+import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
+import { usePageTitle } from '@/utils/utils'
+import { SortOrder } from '@/apis/common'
 import { useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption, UITextInput } from '@/components/ui'
 import * as accountAdminApis from '@/apis/admin/account'
@@ -15,10 +18,11 @@ const router = useRouter()
 const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
 
 const pageSize = 20
-const page = ref(1)
-const sortOrder = ref<'asc' | 'desc'>('desc')
-const keywordInput = ref('')
-const keyword = ref('')
+const page = useRouteQueryParamInt('p', 1)
+const resetPage = (query: Partial<Record<string, string | null>>) => ({ ...query, p: null })
+const sortOrder = useRouteQueryParamStrEnum('order', SortOrder, SortOrder.Desc, resetPage)
+const keyword = useRouteQueryParamStr('q', '', resetPage)
+const keywordInput = ref(keyword.value)
 const showCreateForm = ref(false)
 
 const createForm = reactive({
@@ -54,20 +58,20 @@ const usersQuery = useQuery(
 
 const pageTotal = computed(() => Math.ceil((usersQuery.data.value?.total ?? 0) / pageSize))
 
-watch(sortOrder, () => {
-  page.value = 1
-})
-
 const updateKeyword = debounce(() => {
   const nextKeyword = keywordInput.value.trim()
   if (keyword.value === nextKeyword) return
   keyword.value = nextKeyword
-  page.value = 1
 }, 300)
 
+watch(keyword, (value) => {
+  if (keywordInput.value !== value) keywordInput.value = value
+})
 watch(keywordInput, updateKeyword)
 
 onUnmounted(() => updateKeyword.cancel())
+
+usePageTitle({ en: 'Users', zh: '用户' })
 
 const handleCreateUser = useMessageHandle(
   async () => {

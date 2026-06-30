@@ -6,6 +6,11 @@ export type PaginationParams = {
   pageIndex?: number
 }
 
+export enum SortOrder {
+  Asc = 'asc',
+  Desc = 'desc'
+}
+
 export type ByPage<T> = {
   total: number
   data: T[]

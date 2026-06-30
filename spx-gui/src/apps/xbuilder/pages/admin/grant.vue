@@ -6,6 +6,8 @@ import { RouterLink } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
+import { SortOrder } from '@/apis/common'
 import { useSignedInStateQuery } from '@/stores/user'
 import {
   UIButton,
@@ -51,6 +53,17 @@ const grantQuery = useQuery(
 const grant = computed(() => grantQuery.data.value)
 const app = computed(() => grant.value?.app ?? null)
 const appFallbackText = computed(() => app.value?.displayName.trim().charAt(0).toUpperCase() || '?')
+usePageTitle(() =>
+  app.value == null || user.value == null
+    ? { en: 'App grant', zh: '应用授权' }
+    : [
+        {
+          en: `${user.value.displayName} -> ${app.value.displayName}`,
+          zh: `${user.value.displayName} -> ${app.value.displayName}`
+        },
+        { en: 'App grant', zh: '应用授权' }
+      ]
+)
 
 const tokensPageSize = 20
 const tokensPage = ref(1)
@@ -62,7 +75,7 @@ const tokensQuery = useQuery(
       pageIndex: tokensPage.value,
       pageSize: tokensPageSize,
       orderBy: 'createdAt',
-      sortOrder: 'desc',
+      sortOrder: SortOrder.Desc,
       tokenType: tokenTypeFilter.value === 'all' ? undefined : tokenTypeFilter.value
     })
   },
