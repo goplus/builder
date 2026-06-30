@@ -35,8 +35,8 @@ export class CompletionController extends Emitter<{
     const word = textDocument.getWordAtPosition(position)
     const wordStart = word != null ? { line: position.line, column: word.startColumn } : position
     const ctx: CompletionContext = { textDocument, signal }
-    const items = await provider.provideCompletion(ctx, position)
-    return { textDocument, wordStart, items }
+    const completionList = await provider.provideCompletion(ctx, position)
+    return { textDocument, wordStart, ...completionList }
   })
 
   get completionError() {
@@ -102,9 +102,7 @@ export class CompletionController extends Emitter<{
       const word = textDocument.getWordAtPosition(position)
       const wordStart = word != null ? { line: position.line, column: word.startColumn } : position
       if (this.completion.textDocument === textDocument && positionEq(this.completion.wordStart, wordStart)) {
-        // Workaround until incomplete CompletionList support is added. See #3256.
-        // textEdit ranges are computed for the request position and become stale as typing continues.
-        if (this.completion.items.some((item) => item.textEdit != null)) {
+        if (this.completion.isIncomplete) {
           this.startCompletion()
           return
         }

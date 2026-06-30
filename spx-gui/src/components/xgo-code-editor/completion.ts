@@ -27,10 +27,15 @@ export type CompletionItem = {
   documentation: DefinitionDocumentationString | null
 }
 
+export type CompletionList = {
+  items: CompletionItem[]
+  isIncomplete: boolean
+}
+
 export type CompletionContext = BaseContext
 
 export interface ICompletionProvider {
-  provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionItem[]>
+  provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionList>
 }
 
 export class CompletionProvider implements ICompletionProvider {
@@ -78,8 +83,8 @@ export class CompletionProvider implements ICompletionProvider {
     }
   }
 
-  async provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionItem[]> {
-    const items = await this.lspClient.getCompletionItems(
+  async provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionList> {
+    const lspCompletionList = await this.lspClient.getCompletionList(
       { signal: ctx.signal },
       {
         textDocument: ctx.textDocument.id,
@@ -89,7 +94,7 @@ export class CompletionProvider implements ICompletionProvider {
     const lineContent = ctx.textDocument.getLineContent(position.line)
     const isLineEnd = lineContent.length === position.column - 1
     const maybeItems = await Promise.all(
-      items.map(async (item) => {
+      lspCompletionList.items.map(async (item) => {
         const result: CompletionItem = {
           label: item.label,
           kind: this.getCompletionItemKind(item.kind),
@@ -139,7 +144,10 @@ export class CompletionProvider implements ICompletionProvider {
         return result
       })
     )
-    return maybeItems.filter((item) => item != null) as CompletionItem[]
+    return {
+      items: maybeItems.filter((item) => item != null) as CompletionItem[],
+      isIncomplete: lspCompletionList.isIncomplete
+    }
   }
 }
 
