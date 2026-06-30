@@ -59,6 +59,10 @@ bob,Bob,
       { line: 2, message: { en: 'Username is required', zh: '用户名不能为空' } },
       { line: 3, message: { en: 'Password is required', zh: '密码不能为空' } }
     ])
+    expect(result.rows).toEqual([
+      { line: 2, username: '', displayName: '', password: 'pass123' },
+      { line: 3, username: 'bob', displayName: 'Bob', password: '' }
+    ])
   })
 
   it('validates duplicate usernames', () => {

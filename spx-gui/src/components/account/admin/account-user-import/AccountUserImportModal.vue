@@ -62,7 +62,7 @@ function chooseFile() {
 }
 
 function downloadExampleCsv() {
-  const csv = 'username,displayName,password\nsample-user,Sample User,ChangeMe123!\n'
+  const csv = 'username,displayName,password\nsample-user,Sample User,YOUR_PASSWORD_HERE\n'
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
   const link = document.createElement('a')
   link.href = url
@@ -70,7 +70,7 @@ function downloadExampleCsv() {
   document.body.append(link)
   link.click()
   link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url))
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function handleFileChange(event: Event) {
