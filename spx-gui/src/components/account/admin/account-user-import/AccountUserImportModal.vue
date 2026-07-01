@@ -92,7 +92,7 @@ async function createRows(targetRows: ImportRowState[]) {
         })
         row.status = 'created'
       } catch (e) {
-        if (isConflictError(e)) {
+        if (e instanceof ApiException && e.code === ApiExceptionCode.errorConflict) {
           row.status = 'skipped'
           row.error = t({ en: 'Already exists', zh: '已存在' })
           continue
@@ -128,10 +128,6 @@ function getErrorMessage(e: unknown) {
   if (e instanceof Exception && e.userMessage != null) return t(e.userMessage)
   if (e instanceof Error) return e.message
   return String(e)
-}
-
-function isConflictError(e: unknown) {
-  return e instanceof ApiException && e.code === ApiExceptionCode.errorConflict
 }
 
 function formatImportError(error: AccountUserImportError) {
