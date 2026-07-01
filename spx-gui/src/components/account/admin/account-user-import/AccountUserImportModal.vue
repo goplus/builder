@@ -6,10 +6,11 @@ import { Exception, capture } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { UIButton, UIError, UIIcon, UILoading, UIModal, UIModalClose } from '@/components/ui'
+import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import * as accountAdminApis from '@/apis/admin/account'
 import { parseAccountUserImportCsv, type AccountUserImportError, type AccountUserImportRow } from './csv'
 
-type ImportStatus = 'pending' | 'creating' | 'created' | 'failed'
+type ImportStatus = 'pending' | 'creating' | 'created' | 'skipped' | 'failed'
 
 type ImportRowState = AccountUserImportRow & {
   status: ImportStatus
@@ -46,6 +47,7 @@ const hasSelectedFile = computed(() => selectedFile.value != null)
 const parseErrors = computed(() => parseResultQuery.data.value?.errors ?? [])
 const validRows = computed(() => rows.value.length > 0 && parseErrors.value.length === 0)
 const createdCount = computed(() => rows.value.filter((row) => row.status === 'created').length)
+const skippedCount = computed(() => rows.value.filter((row) => row.status === 'skipped').length)
 const failedRows = computed(() => rows.value.filter((row) => row.status === 'failed'))
 const pendingRows = computed(() => rows.value.filter((row) => row.status === 'pending'))
 const canCreate = computed(() => validRows.value && !isCreating.value && pendingRows.value.length > 0)
@@ -90,6 +92,11 @@ async function createRows(targetRows: ImportRowState[]) {
         })
         row.status = 'created'
       } catch (e) {
+        if (isConflictError(e)) {
+          row.status = 'skipped'
+          row.error = t({ en: 'Already exists', zh: '已存在' })
+          continue
+        }
         row.status = 'failed'
         row.error = getErrorMessage(e)
         capture(e)
@@ -121,6 +128,10 @@ function getErrorMessage(e: unknown) {
   if (e instanceof Exception && e.userMessage != null) return t(e.userMessage)
   if (e instanceof Error) return e.message
   return String(e)
+}
+
+function isConflictError(e: unknown) {
+  return e instanceof ApiException && e.code === ApiExceptionCode.errorConflict
 }
 
 function formatImportError(error: AccountUserImportError) {
@@ -203,8 +214,8 @@ function formatImportError(error: AccountUserImportError) {
           <div class="text-sm text-grey-800">
             {{
               $t({
-                en: `${rows.length} users, ${createdCount} created, ${failedRows.length} failed`,
-                zh: `共 ${rows.length} 位用户，已创建 ${createdCount} 位，失败 ${failedRows.length} 位`
+                en: `${rows.length} users, ${createdCount} created, ${skippedCount} skipped, ${failedRows.length} failed`,
+                zh: `共 ${rows.length} 位用户，已创建 ${createdCount} 位，已跳过 ${skippedCount} 位，失败 ${failedRows.length} 位`
               })
             }}
           </div>
@@ -237,6 +248,11 @@ function formatImportError(error: AccountUserImportError) {
                       type="success"
                     />
                     <UIIcon
+                      v-else-if="row.status === 'skipped'"
+                      class="mt-0.5 h-4 w-4 shrink-0 text-yellow-main"
+                      type="warning"
+                    />
+                    <UIIcon
                       v-else-if="row.status === 'failed'"
                       class="mt-0.5 h-4 w-4 shrink-0 text-red-500"
                       type="error"
@@ -249,6 +265,9 @@ function formatImportError(error: AccountUserImportError) {
                       <template v-else-if="row.status === 'created'">{{
                         $t({ en: 'Created', zh: '已创建' })
                       }}</template>
+                      <template v-else-if="row.status === 'skipped'">
+                        {{ row.error ?? $t({ en: 'Skipped', zh: '已跳过' }) }}
+                      </template>
                       <template v-else>
                         {{ row.error ?? $t({ en: 'Failed', zh: '失败' }) }}
                       </template>
