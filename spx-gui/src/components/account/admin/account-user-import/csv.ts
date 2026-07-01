@@ -19,6 +19,7 @@ export type AccountUserImportParseResult = {
 }
 
 const requiredHeaders = ['username', 'password'] as const
+export const accountUserImportExampleCsv = 'username,displayName,password\nsample-user,Sample User,YOUR_PASSWORD_HERE\n'
 
 export function parseAccountUserImportCsv(csv: string): AccountUserImportParseResult {
   let records: string[][]

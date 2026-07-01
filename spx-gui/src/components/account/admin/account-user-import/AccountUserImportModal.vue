@@ -8,7 +8,12 @@ import { useQuery } from '@/utils/query'
 import { UIButton, UIError, UIIcon, UILoading, UIModal, UIModalClose } from '@/components/ui'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import * as accountAdminApis from '@/apis/admin/account'
-import { parseAccountUserImportCsv, type AccountUserImportError, type AccountUserImportRow } from './csv'
+import {
+  accountUserImportExampleCsv,
+  parseAccountUserImportCsv,
+  type AccountUserImportError,
+  type AccountUserImportRow
+} from './csv'
 
 type ImportStatus = 'pending' | 'creating' | 'created' | 'skipped' | 'failed'
 
@@ -42,8 +47,6 @@ const parseResultQuery = useQuery(
   { en: 'Failed to read CSV file', zh: '读取 CSV 文件失败' }
 )
 
-const fileName = computed(() => selectedFile.value?.name ?? '')
-const hasSelectedFile = computed(() => selectedFile.value != null)
 const parseErrors = computed(() => parseResultQuery.data.value?.errors ?? [])
 const validRows = computed(() => rows.value.length > 0 && parseErrors.value.length === 0)
 const createdCount = computed(() => rows.value.filter((row) => row.status === 'created').length)
@@ -65,8 +68,7 @@ function chooseFile() {
 }
 
 function downloadExampleCsv() {
-  const csv = 'username,displayName,password\nsample-user,Sample User,YOUR_PASSWORD_HERE\n'
-  saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'account-users-example.csv')
+  saveAs(new Blob([accountUserImportExampleCsv], { type: 'text/csv;charset=utf-8' }), 'account-users-example.csv')
 }
 
 function handleFileChange(event: Event) {
@@ -156,7 +158,9 @@ function formatImportError(error: AccountUserImportError) {
       <section class="rounded-lg border border-grey-400 bg-grey-100 p-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="min-w-0">
-            <div class="font-medium text-title">{{ fileName || $t({ en: 'CSV file', zh: 'CSV 文件' }) }}</div>
+            <div class="font-medium text-title">
+              {{ selectedFile?.name ?? $t({ en: 'CSV file', zh: 'CSV 文件' }) }}
+            </div>
             <div class="mt-1 text-sm text-grey-800">
               {{
                 $t({
@@ -165,7 +169,7 @@ function formatImportError(error: AccountUserImportError) {
                 })
               }}
               <button
-                v-if="!hasSelectedFile"
+                v-if="selectedFile == null"
                 type="button"
                 class="cursor-pointer border-none bg-transparent p-0 text-primary-main underline hover:text-primary-600"
                 @click="downloadExampleCsv"
