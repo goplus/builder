@@ -1,4 +1,4 @@
-import { parse } from 'csv-parse/browser/esm/sync'
+import { parse, type InfoRecord } from 'csv-parse/browser/esm/sync'
 import type { LocaleMessage } from '@/utils/i18n'
 
 export type AccountUserImportRow = {
@@ -18,13 +18,24 @@ export type AccountUserImportParseResult = {
   errors: AccountUserImportError[]
 }
 
+type ParsedRecord = {
+  record: string[]
+  info: InfoRecord
+}
+
 const requiredHeaders = ['username', 'password'] as const
 export const accountUserImportExampleCsv = 'username,displayName,password\nsample-user,Sample User,YOUR_PASSWORD_HERE\n'
 
 export function parseAccountUserImportCsv(csv: string): AccountUserImportParseResult {
-  let records: string[][]
+  let records: ParsedRecord[]
   try {
-    records = parse(csv, { bom: true, skip_empty_lines: true, ltrim: true, rtrim: true })
+    records = parse(csv, {
+      bom: true,
+      skip_empty_lines: true,
+      ltrim: true,
+      rtrim: true,
+      info: true
+    }) as unknown as ParsedRecord[]
   } catch (e) {
     return {
       rows: [],
@@ -38,7 +49,8 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
     return { rows: [], errors: [{ line: null, message: { en: 'CSV file is empty', zh: 'CSV 文件为空' } }] }
   }
 
-  const headers = records[0].map((header) => header.trim())
+  const headerRecord = records[0]
+  const headers = headerRecord.record.map((header) => header.trim())
   const headerIndex = Object.fromEntries(headers.map((header, index) => [header, index]))
   const missingHeaders = requiredHeaders.filter((header) => headerIndex[header] == null)
   if (missingHeaders.length > 0) {
@@ -46,7 +58,7 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
       rows: [],
       errors: [
         {
-          line: 1,
+          line: headerRecord.info.lines,
           message: {
             en: `Missing required column: ${missingHeaders.join(', ')}`,
             zh: `缺少必需列：${missingHeaders.join(', ')}`
@@ -60,8 +72,8 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
   const errors: AccountUserImportError[] = []
   const usernameLines = new Map<string, number>()
 
-  records.slice(1).forEach((record, index) => {
-    const line = index + 2
+  records.slice(1).forEach(({ record, info }) => {
+    const line = info.lines
     const username = readCell(record, headerIndex.username)
     const displayName = readCell(record, headerIndex.displayName) || username
     const password = readCell(record, headerIndex.password)

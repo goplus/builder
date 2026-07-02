@@ -75,4 +75,24 @@ alice,Alice 2,pass456
       { line: 3, message: { en: 'Duplicate username with line 2', zh: '用户名与第 2 行重复' } }
     ])
   })
+
+  it('keeps source line numbers when CSV contains empty lines', () => {
+    const result = parseAccountUserImportCsv(`username,displayName,password
+
+alice,Alice,pass123
+
+alice,Alice 2,pass456
+bob,Bob,
+`)
+
+    expect(result.rows).toEqual([
+      { line: 3, username: 'alice', displayName: 'Alice', password: 'pass123' },
+      { line: 5, username: 'alice', displayName: 'Alice 2', password: 'pass456' },
+      { line: 6, username: 'bob', displayName: 'Bob', password: '' }
+    ])
+    expect(result.errors).toEqual([
+      { line: 5, message: { en: 'Duplicate username with line 3', zh: '用户名与第 3 行重复' } },
+      { line: 6, message: { en: 'Password is required', zh: '密码不能为空' } }
+    ])
+  })
 })
