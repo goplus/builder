@@ -2,7 +2,6 @@ import type { App as VueApp } from 'vue'
 import * as Sentry from '@sentry/vue'
 import type { Router } from 'vue-router'
 
-import { sentryDsn, sentryLSPSampleRate, sentryTracesSampleRate } from '@/utils/env'
 import { isCodeEditorOperation, isLSPOperation } from '@/utils/tracing'
 
 const ignoreErrorTypes = [
@@ -14,11 +13,17 @@ function shouldIgnoreSentryException({ type = '', value: message = '' }: Sentry.
   return ignoreErrorTypes.some((errorType) => type === errorType || message.includes(errorType + ':'))
 }
 
-export function initSentry(app: VueApp<Element>, router?: Router) {
+export type SentryConfig = {
+  dsn: string
+  tracesSampleRate: number
+  lspSampleRate: number
+}
+
+export function initSentry(app: VueApp<Element>, router: Router | undefined, config: SentryConfig) {
   if (process.env.NODE_ENV === 'development') return
   Sentry.init({
     app,
-    dsn: sentryDsn,
+    dsn: config.dsn,
     integrations: [
       Sentry.browserTracingIntegration({
         router,
@@ -37,9 +42,9 @@ export function initSentry(app: VueApp<Element>, router?: Router) {
     tracesSampler: (samplingContext) => {
       const { name, inheritOrSampleWith } = samplingContext
       if (isLSPOperation(name) || isCodeEditorOperation(name)) {
-        return sentryLSPSampleRate
+        return config.lspSampleRate
       }
-      return inheritOrSampleWith(sentryTracesSampleRate)
+      return inheritOrSampleWith(config.tracesSampleRate)
     },
     beforeSend(event) {
       if (event.level === 'error' && event.exception?.values != null && event.exception.values.length >= 1) {

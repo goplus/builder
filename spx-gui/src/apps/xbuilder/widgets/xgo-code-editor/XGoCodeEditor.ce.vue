@@ -110,7 +110,7 @@ watch(codeFilePaths, (newPaths) => {
  */
 @layer theme, base, components, utilities;
 
-@import '../../app.css';
+@import '../../../../app.css';
 @import 'monaco-editor/min/vs/editor/editor.main.css';
 
 :host {

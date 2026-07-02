@@ -54,6 +54,22 @@ Keep import statements in order:
 * Use the remainder of the key to identify the owning feature and stored state, for example `builder-user` or `builder-account-pending-authorization`.
 * Migrate existing keys gradually when changing their owning storage logic. Do not rename unrelated existing keys solely for consistency.
 
+### App Env and Configuration
+
+* App env belongs to the app that owns it. Define app-specific env values under `src/apps/<app>/env.ts` and app-specific `.env*` files under `src/apps/<app>/`.
+
+* Code that does not clearly belong to a single app must not import a concrete app env module such as `@/apps/xbuilder/env` or `@/apps/account/env`.
+  Instead, the shared module should define the smallest configuration interface it needs, then expose an explicit configuration surface such as:
+	- a setter on an exported singleton, for example an API client `setBaseUrl(...)`;
+	- a `provide` / `inject` pair for Vue component trees;
+	- a function parameter when the dependency is local to one operation.
+
+* App entry and setup code under `src/apps/<app>/` is responsible for reading that app's env and passing only the required values into shared modules.
+
+* Code that is clearly app-owned, especially files under `src/apps/<app>/`, may import and consume that app's env directly when that is simpler.
+
+* Keep shared module configuration narrow. Avoid passing a whole app env object into shared business logic when the module only needs one or two values.
+
 ### Identifier Resolution
 
 When working with backend unique string identifiers such as `username`, project owner, and project name, distinguish unresolved identifiers from canonical identifiers.

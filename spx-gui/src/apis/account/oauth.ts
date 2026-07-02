@@ -1,5 +1,4 @@
 import { Client } from '@/apis/common/client'
-import { apiBaseUrl } from '@/utils/env'
 import type { OAuthAPIs } from '@/utils/oauth'
 import { accountClient } from './common'
 
@@ -85,11 +84,9 @@ class AccountOAuthApis implements OAuthAPIs {
 }
 
 /** Account OAuth APIs for use by app xbuilder. */
-export const accountOAuthApisForXBuilder = new AccountOAuthApis(
-  new Client({
-    baseUrl: apiBaseUrl + '/account'
-  })
-)
+export const accountOAuthClientForXBuilder = new Client()
+
+export const accountOAuthApisForXBuilder = new AccountOAuthApis(accountOAuthClientForXBuilder)
 
 /** Account OAuth APIs for use by app account. */
 export const accountOAuthApis = new AccountOAuthApis(accountClient)

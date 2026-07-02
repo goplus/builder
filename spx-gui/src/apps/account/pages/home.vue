@@ -51,9 +51,8 @@ import { computed } from 'vue'
 
 import { getSession } from '@/apis/account'
 import { UIError, UILoading } from '@/components/ui'
-import { useAvatarUrl } from '@/stores/user/avatar'
 import { useQuery } from '@/utils/query'
-import { usePageTitle } from '@/utils/utils'
+import { useExternalUrl, usePageTitle } from '@/utils/utils'
 
 const {
   isLoading,
@@ -65,7 +64,7 @@ const {
   zh: '无法加载登录状态'
 })
 
-const avatarUrl = useAvatarUrl(() => session.value?.user.avatar ?? null)
+const avatarUrl = useExternalUrl(() => session.value?.user.avatar ?? null)
 const initial = computed(() =>
   session.value == null ? '?' : session.value.user.displayName.trim().charAt(0).toUpperCase() || '?'
 )

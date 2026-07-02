@@ -12,7 +12,7 @@ import { usePageTitle } from '@/utils/utils'
 import { ProjectType, listProjects, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProjectReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
-import { useSignedInUser, useUser, isSignedIn, initiateSignIn } from '@/stores/user'
+import { useSignedInUser, useUser, isSignedIn, useSignIn } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getProjectPageRoute, getUserPageRoute } from '../../router'
 import {
   UIIcon,
@@ -161,13 +161,14 @@ const remixCount = computed(() => {
 })
 
 const ensureSignedIn = useEnsureSignedIn()
+const signIn = useSignIn()
 
 const needsSignInToRun = computed(
   () => !isSignedIn() && project.value != null && isSignInRequiredForProject(project.value)
 )
 
 function handleSignIn() {
-  initiateSignIn()
+  signIn()
 }
 
 const handleRun = useMessageHandle(

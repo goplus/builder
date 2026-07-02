@@ -11,7 +11,8 @@ export function createAppHtmlEntryPlugin(path: string): Plugin {
     name: 'app-html-entry',
     transformIndexHtml: {
       order: 'pre',
-      async handler() {
+      async handler(html, ctx) {
+        if (ctx.path !== '/' && ctx.path !== '/index.html') return html
         return await fs.promises.readFile(path, 'utf8')
       }
     }

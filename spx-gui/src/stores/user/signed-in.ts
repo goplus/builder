@@ -1,9 +1,8 @@
 import { reactive, watchEffect, computed } from 'vue'
-import { accountOAuthClientId as oauthClientId, defaultLang } from '@/utils/env'
 import { composeQuery, useQuery, useQueryCache, useQueryWithCache } from '@/utils/query'
 import { capture, useAction } from '@/utils/exception'
 import { OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
-import { normalizeLang } from '@/utils/i18n'
+import { normalizeLang, useI18n } from '@/utils/i18n'
 import * as userApis from '@/apis/user'
 import { accountOAuthApisForXBuilder as oauthApis } from '@/apis/account/oauth'
 import { getUserQueryKey } from './query-keys'
@@ -12,10 +11,7 @@ export type SignedInUser = userApis.SignedInUser
 
 const userStateStorageKey = 'builder-user'
 
-const oauthFlow = new OAuthFlow<{ returnTo: string }>(oauthApis, {
-  clientId: oauthClientId,
-  redirectUri: `${window.location.origin}/sign-in/callback`
-})
+let oauthFlow: OAuthFlow<{ returnTo: string }> | null = null
 
 const userState = reactive({
   accessToken: null as string | null,
@@ -24,7 +20,17 @@ const userState = reactive({
   username: null as string | null
 })
 
-export function initUserState() {
+function ensureOAuthFlow() {
+  if (oauthFlow == null) throw new Error('OAuth flow is not initialized')
+  return oauthFlow
+}
+
+export function initUserState(clientId: string) {
+  oauthFlow = new OAuthFlow<{ returnTo: string }>(oauthApis, {
+    clientId,
+    redirectUri: `${window.location.origin}/sign-in/callback`
+  })
+
   const stored = localStorage.getItem(userStateStorageKey)
   if (stored != null) {
     try {
@@ -49,20 +55,19 @@ async function handleTokenResponse(resp: OAuthTokenResponse) {
   userState.username = username
 }
 
-export async function initiateSignIn(
-  returnTo: string = window.location.pathname + window.location.search + window.location.hash
-) {
-  const { authorizeUrl } = await oauthFlow.createAuthorization({
-    data: { returnTo },
-    // TODO: Avoid reaching into the UI language persistence detail here. The sign-in
-    // flow should receive the current UI language from the app-level i18n state instead.
-    uiLocales: normalizeLang(localStorage.getItem('spx-gui-language') ?? defaultLang)
-  })
-  window.location.assign(authorizeUrl)
+export function useSignIn() {
+  const i18n = useI18n()
+  return async (returnTo: string = window.location.pathname + window.location.search + window.location.hash) => {
+    const { authorizeUrl } = await ensureOAuthFlow().createAuthorization({
+      data: { returnTo },
+      uiLocales: normalizeLang(i18n.lang.value)
+    })
+    window.location.assign(authorizeUrl)
+  }
 }
 
 export async function completeSignIn(search: string) {
-  const { token, extraData } = await oauthFlow.completeAuthorization(search)
+  const { token, extraData } = await ensureOAuthFlow().completeAuthorization(search)
   await handleTokenResponse(token)
   return extraData
 }
@@ -86,7 +91,7 @@ export async function signOut() {
   const { accessToken, refreshToken } = userState
   clearUserState()
   await Promise.all(
-    [accessToken, refreshToken].filter((token) => token != null).map((token) => oauthFlow.revokeToken(token))
+    [accessToken, refreshToken].filter((token) => token != null).map((token) => ensureOAuthFlow().revokeToken(token))
   ).catch((e) => capture(e, 'Failed to revoke tokens during sign out'))
 }
 
@@ -99,7 +104,7 @@ export async function ensureAccessToken(): Promise<string | null> {
     return null
   }
   if (tokenRefreshPromise == null) {
-    tokenRefreshPromise = oauthFlow
+    tokenRefreshPromise = ensureOAuthFlow()
       .refreshToken(userState.refreshToken)
       .then(handleTokenResponse)
       .catch((e) => {

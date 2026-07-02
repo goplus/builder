@@ -103,5 +103,5 @@ function handleExit() {
  */
 @layer theme, base, components, utilities;
 
-@import '../../app.css';
+@import '../../../../app.css';
 </style>

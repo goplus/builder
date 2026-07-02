@@ -65,14 +65,14 @@ export type JSONSSEEvent = {
 }
 
 export type ClientOptions = {
-  baseUrl: string
+  baseUrl?: string
   fetchFn?: typeof fetch
 }
 
 export class Client {
-  constructor(options: ClientOptions) {
-    this.baseUrl = options.baseUrl
-    this.fetchFn = options.fetchFn ?? globalThis.fetch.bind(globalThis)
+  constructor(options?: ClientOptions) {
+    this.baseUrl = options?.baseUrl ?? null
+    this.fetchFn = options?.fetchFn ?? globalThis.fetch.bind(globalThis)
   }
 
   private tokenProvider: TokenProvider = async () => null
@@ -80,13 +80,22 @@ export class Client {
     this.tokenProvider = provider
   }
 
-  private baseUrl: string
+  setBaseUrl(baseUrl: string) {
+    this.baseUrl = baseUrl
+  }
+
+  private baseUrl: string | null
   private fetchFn: typeof fetch
   private defaultTimeout = 10 * 1000 // 10 seconds
 
+  private ensureBaseUrl() {
+    if (this.baseUrl == null) throw new Error('API client base URL is not set')
+    return this.baseUrl
+  }
+
   /** Get full URL for a given API path */
   urlFor(path: string) {
-    const concated = this.baseUrl + path
+    const concated = this.ensureBaseUrl() + path
     return new URL(concated, window.location.origin)
   }
 
@@ -103,7 +112,7 @@ export class Client {
     const traceData = Sentry.getTraceData()
     const sentryTraceHeader = traceData['sentry-trace']
     const sentryBaggageHeader = traceData['baggage']
-    const url = this.baseUrl + path
+    const url = this.ensureBaseUrl() + path
     const method = options?.method ?? 'GET'
     const body = payload != null ? JSON.stringify(payload) : null
     const headers = options?.headers ?? new Headers()
@@ -119,7 +128,7 @@ export class Client {
     const traceData = Sentry.getTraceData()
     const sentryTraceHeader = traceData['sentry-trace']
     const sentryBaggageHeader = traceData['baggage']
-    const url = this.baseUrl + path
+    const url = this.ensureBaseUrl() + path
     const method = options?.method ?? 'POST'
     const body = new URLSearchParams()
     Object.entries(payload).forEach(([key, value]) => {
@@ -178,7 +187,7 @@ export class Client {
     const traceData = Sentry.getTraceData()
     const sentryTraceHeader = traceData['sentry-trace']
     const sentryBaggageHeader = traceData['baggage']
-    const url = this.baseUrl + path
+    const url = this.ensureBaseUrl() + path
     const method = options?.method ?? 'GET'
     const headers = options?.headers ?? new Headers()
     await this.injectAuthorization(headers, options?.signal)

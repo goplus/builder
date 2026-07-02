@@ -4,7 +4,7 @@ import { ApiReference } from '@scalar/api-reference'
 import type { AnyApiReferenceConfiguration } from '@scalar/types/api-reference'
 import '@scalar/api-reference/style.css'
 import apiDocument from '@docs/openapi.yaml?raw'
-import { apiBaseUrl } from '@/utils/env'
+import { apiBaseUrl } from '@/apps/xbuilder/env'
 import { usePageTitle } from '@/utils/utils'
 
 usePageTitle([

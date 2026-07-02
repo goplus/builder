@@ -32,7 +32,7 @@ jobs:
           context: .
           file: ${{ matrix.dockerfile }}
           build-args: |
-            NODE_ENV=staging
+            VITE_MODE=staging
           provenance: false
           sbom: false
           push: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
