@@ -53,10 +53,10 @@ import { useSlotText } from '@/utils/vnode'
 import CodeView from '@/components/common/CodeView.vue'
 import {
   CodeLink,
-  diffEdges,
   getTextDocumentId,
   isContiguousDiff,
   leadingIdentifier,
+  tokenDiffEdges,
   trimCommonLines,
   useCodeEditorRef,
   type CodeGuide,
@@ -152,12 +152,12 @@ const changeBase = computed<{ range: Range; oldText: string } | null>(() => {
 type ChangeTarget = { range: Range; code: string; lineInsertion: boolean }
 
 /**
- * Narrow a single-line range by trimming the common prefix/suffix characters (incl. leading whitespace).
- * This is always an in-place edit (`lineInsertion: false`), even when it collapses to an empty range —
- * e.g. prepending text at the start of a line is an inline edit, NOT a new line.
+ * Narrow a single-line range by trimming the common leading/trailing tokens (this token-level variant
+ * keeps whole changed tokens, e.g. `Rawish` → `Radish`, rather than single characters). Always an in-place
+ * edit (`lineInsertion: false`), even when it collapses to an empty range.
  */
 function charTrim(range: Range, oldText: string, newText: string): ChangeTarget {
-  const { prefix, suffix } = diffEdges(oldText, newText)
+  const { prefix, suffix } = tokenDiffEdges(oldText, newText)
   return {
     range: {
       start: { line: range.start.line, column: range.start.column + prefix },

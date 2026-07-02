@@ -7,7 +7,7 @@
 
 import { shallowRef } from 'vue'
 import { uniqueId } from 'lodash'
-import { diffChars } from 'diff'
+import { diffWordsWithSpace } from 'diff'
 import Emitter from '@/utils/emitter'
 import { type Range, type TextDocumentIdentifier } from '../../common'
 import type { CodeEditorUIController } from '../code-editor-ui'
@@ -75,6 +75,28 @@ export function diffEdges(oldText: string, newText: string): { prefix: number; s
 }
 
 /**
+ * Like `diffEdges`, but aligned to whole tokens: the char length of the common leading and (non-overlapping)
+ * trailing tokens shared by `oldText` and `newText`. Narrows a change to the tokens that differ (e.g.
+ * `Rawish` → `Radish` as a whole word), rather than to individual characters.
+ */
+export function tokenDiffEdges(oldText: string, newText: string): { prefix: number; suffix: number } {
+  const parts = diffWordsWithSpace(oldText, newText)
+  let prefix = 0
+  let i = 0
+  while (i < parts.length && parts[i].added !== true && parts[i].removed !== true) {
+    prefix += parts[i].value.length
+    i++
+  }
+  let suffix = 0
+  let j = parts.length - 1
+  while (j >= i && parts[j].added !== true && parts[j].removed !== true) {
+    suffix += parts[j].value.length
+    j--
+  }
+  return { prefix, suffix }
+}
+
+/**
  * Number of identical leading and (non-overlapping) trailing lines shared by `oldText` and `newText`.
  * Lets a multi-line change drop unchanged lines (including shared indentation lines) and narrow to the
  * lines that actually differ.
@@ -107,15 +129,16 @@ function escapeRegExp(s: string): string {
 }
 
 /**
- * Character-level diff of `current` against `target`: the spans of `current` that are NOT part of `target`
- * (old text still to be removed). Offsets are char indices into `current`. Recomputed on each edit, this
- * marks exactly the leftover-old characters — robust to any edit order, including inserting new code into
- * the middle of the old text, since every keystroke re-classifies old vs. new.
+ * Token-level diff of `current` against `target`: the spans of `current` that are NOT part of `target`
+ * (old tokens still to be removed). Offsets are char indices into `current`. Recomputed on each edit, this
+ * marks the leftover-old tokens — whole words the user has already typed are matched against the target and
+ * left un-marked, wherever they appear. Coarser than a per-character diff (a partly-typed token does not
+ * match yet), but avoids character-level noise on unrelated snippets.
  */
 export function diffRemovedSpans(current: string, target: string): Array<{ start: number; end: number }> {
   const spans: Array<{ start: number; end: number }> = []
   let offset = 0
-  for (const part of diffChars(current, target)) {
+  for (const part of diffWordsWithSpace(current, target)) {
     if (part.added) continue // present only in target → doesn't consume `current`
     if (part.removed) spans.push({ start: offset, end: offset + part.value.length })
     offset += part.value.length
@@ -127,12 +150,12 @@ export function diffRemovedSpans(current: string, target: string): Array<{ start
  * Whether changing `oldText` into `newText` is a single contiguous replacement — one changed region,
  * possibly with a shared prefix/suffix — rather than several scattered edits. Used to decide whether a
  * change is worth showing as a precise inline diff, or should be shown as a whole-line replacement (a
- * scattered char diff between unrelated snippets reads as noise, e.g. `setYpos y:0` → `stepTo Radish`).
+ * scattered diff between unrelated snippets reads as noise, e.g. `setYpos y:0` → `stepTo Radish`).
  */
 export function isContiguousDiff(oldText: string, newText: string): boolean {
   let changeGroups = 0
   let inChange = false
-  for (const part of diffChars(oldText, newText)) {
+  for (const part of diffWordsWithSpace(oldText, newText)) {
     const changed = part.added === true || part.removed === true
     if (changed && !inChange) changeGroups++
     inChange = changed

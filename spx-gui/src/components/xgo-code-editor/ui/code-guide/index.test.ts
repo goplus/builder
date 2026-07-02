@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import Emitter from '@/utils/emitter'
 import type { Range, TextDocumentIdentifier } from '../../common'
 import type { CodeEditorUIController } from '../code-editor-ui'
-import { CodeGuideController, diffEdges, diffRemovedSpans, isContiguousDiff, trimCommonLines } from '.'
+import { CodeGuideController, diffEdges, diffRemovedSpans, isContiguousDiff, tokenDiffEdges, trimCommonLines } from '.'
 
 const textDocumentId: TextDocumentIdentifier = { uri: 'file:///Test.spx' }
 
@@ -367,6 +367,20 @@ describe('diffEdges', () => {
   })
 })
 
+describe('tokenDiffEdges', () => {
+  it('trims to whole changed tokens, not individual characters', () => {
+    // a whole word is replaced → nothing shared (character-level would keep "Ra"/"ish")
+    expect(tokenDiffEdges('Rawish', 'Radish')).toEqual({ prefix: 0, suffix: 0 })
+    // common leading token(s) kept; the changed word is the middle
+    expect(tokenDiffEdges('stepTo Rawish', 'stepTo Radish')).toEqual({ prefix: 7, suffix: 0 })
+    expect(tokenDiffEdges('step 90', 'step 180')).toEqual({ prefix: 5, suffix: 0 })
+  })
+
+  it('keeps common leading and trailing tokens around a middle change', () => {
+    expect(tokenDiffEdges('a b c', 'a X c')).toEqual({ prefix: 2, suffix: 2 })
+  })
+})
+
 describe('trimCommonLines', () => {
   it('drops identical leading and trailing lines', () => {
     // shared first line "\tturn -60"; only the second line differs
@@ -390,37 +404,39 @@ describe('trimCommonLines', () => {
   })
 })
 
-describe('diffRemovedSpans', () => {
-  it('marks the old text still present, regardless of where the new code was typed', () => {
-    // new code typed to the right of the old → only the old "old" is removed
-    expect(diffRemovedSpans('oldnew', 'new')).toEqual([{ start: 0, end: 3 }])
-    // new code typed to the left of the old → only the trailing old is removed
-    expect(diffRemovedSpans('newold', 'new')).toEqual([{ start: 3, end: 6 }])
-  })
+describe('diffRemovedSpans (token level)', () => {
+  // The chars of `current` that survive (are NOT marked for removal).
+  const keptText = (current: string, target: string) => {
+    let out = ''
+    let last = 0
+    for (const span of diffRemovedSpans(current, target)) {
+      out += current.slice(last, span.start)
+      last = span.end
+    }
+    return out + current.slice(last)
+  }
 
-  it('handles old text on both sides of the new code (typed into the middle)', () => {
-    // "x" + kept "new" + "y": both leftover chunks are removed, the new code in the middle is kept
-    expect(diffRemovedSpans('xnewy', 'new')).toEqual([
-      { start: 0, end: 1 },
-      { start: 4, end: 5 }
-    ])
+  it('keeps a matching word wherever it appears and marks the surrounding old words for removal', () => {
+    expect(keptText('setYpos step', 'step')).toBe('step') // typed at the end
+    expect(keptText('step setYpos', 'step')).toBe('step') // typed at the start
+    expect(keptText('a step b', 'step')).toBe('step') // typed in the middle
   })
 
   it('returns no spans once the content matches the target, or for a pure insertion', () => {
-    expect(diffRemovedSpans('new', 'new')).toEqual([])
-    expect(diffRemovedSpans('', 'new')).toEqual([]) // nothing old to remove yet
+    expect(diffRemovedSpans('step', 'step')).toEqual([])
+    expect(diffRemovedSpans('', 'step')).toEqual([]) // nothing old to remove yet
   })
 })
 
-describe('isContiguousDiff', () => {
-  it('is true for a single contiguous replacement (with shared prefix/suffix)', () => {
-    expect(isContiguousDiff('AoldB', 'AnewB')).toBe(true)
+describe('isContiguousDiff (token level)', () => {
+  it('is true for a single contiguous replacement', () => {
     expect(isContiguousDiff('step 90', 'step 180')).toBe(true)
+    expect(isContiguousDiff('turnTo Radish', 'turnTo Stone3')).toBe(true)
     expect(isContiguousDiff('', 'say "hi"')).toBe(true) // pure insertion
   })
 
-  it('is false when the edits are scattered across unrelated text', () => {
-    expect(isContiguousDiff('xAxBx', 'AB')).toBe(false) // "x" removed in three separate places
+  it('is false when unrelated tokens change across the text', () => {
+    expect(isContiguousDiff('foo bar', 'baz qux')).toBe(false) // both words differ
     expect(isContiguousDiff('setYpos y:0', 'stepTo Radish')).toBe(false)
   })
 })
