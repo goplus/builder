@@ -49,6 +49,11 @@ export interface Message {
 }
 
 /**
+ * A JSON-RPC message identifier.
+ */
+export type MessageID = number | string
+
+/**
  * A request message to describe a request between the client and the server. Every processed request must send a
  * response back to the sender of the request.
  *
@@ -58,7 +63,7 @@ export interface RequestMessage extends Message {
   /**
    * The request id.
    */
-  id: number
+  id: MessageID
 
   /**
    * The method to be invoked.
@@ -82,7 +87,7 @@ export interface ResponseMessage extends Message {
   /**
    * The request id.
    */
-  id: number
+  id: MessageID
 
   /**
    * The result of a request. This member is REQUIRED on success.

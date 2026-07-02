@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/vue'
 import { Cancelled } from '@/utils/exception'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
+import type { Lang } from '@/utils/i18n'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
 import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
@@ -23,7 +24,7 @@ import {
   type PropertyRenamedEvent
 } from '@/components/xgo-code-editor'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
-import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
+import type { Files as SpxlsFiles, MessageID, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
 import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/commands'
 import { xgoPropertyRenamedNotification } from './spxls/notifications'
 import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } from './spxls/methods'
@@ -32,9 +33,21 @@ import type { WorkerHandler } from './worker'
 /** The LSP target name for stage (the "Game" type in spx). */
 const lspStageTarget = 'Game'
 
+const lspClientName = 'XBuilder'
+const lspWorkspaceRootURI = 'file:///'
+const lspWorkspaceRootName = 'workspace'
+
 interface IConnectionWithFiles extends IConnection {
   sendFiles(files: SpxlsFiles): void
   dispose(): void
+}
+
+type SpxLSPClientOptions = {
+  locale?: Lang
+}
+
+function isServerNotInitializedError(error: unknown): error is ResponseError {
+  return error instanceof ResponseError && error.code === lsp.ErrorCodes.ServerNotInitialized
 }
 
 /** Connection between LS client and server when the server runs in a Web Worker. */
@@ -115,7 +128,10 @@ type TelemetryEventParams = TelemetryEventParamsForCall | TelemetryEventParamsFo
 export class SpxLSPClient extends Disposable implements ILSPClient {
   private emitter = new Emitter<LSPClientEvents>()
 
-  constructor(private project: SpxProject) {
+  constructor(
+    private project: SpxProject,
+    private options: SpxLSPClientOptions = {}
+  ) {
     super()
     this.addDisposable(this.emitter)
   }
@@ -155,18 +171,20 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
   }
 
   private lcRef = shallowRef<XGoLanguageClient | null>(null)
-  private activeSpans = new Map<number, Sentry.Span>()
+  private initializePromise: Promise<void> | null = null
+  private activeSpans = new Map<MessageID, Sentry.Span>()
 
   private async prepareRequest() {
-    const [lc] = await Promise.all([
-      untilNotNull(this.lcRef),
-      // Typically requests are triggered earlier than file-loading:
-      // * file-loading: editor-event -> model-update -> file-loading
-      // * request: editor-event -> request
-      // Here we add `timeout(0)` to ensure that file-loading triggered before request really starts.
-      timeout(0).then(() => until(() => !this.isFilesStale.value))
-    ])
-    return lc
+    const lc = await untilNotNull(this.lcRef)
+    const initializePromise = this.initializePromise ?? this.startInitialize(lc)
+    // Typically requests are triggered earlier than file-loading:
+    // * file-loading: editor-event -> model-update -> file-loading
+    // * request: editor-event -> request
+    // Here we add `timeout(0)` to ensure that file-loading triggered before request really starts.
+    await timeout(0)
+    await until(() => !this.isFilesStale.value)
+    await initializePromise
+    return { lc, initializePromise }
   }
 
   init() {
@@ -178,6 +196,8 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     this.lcRef.value.onNotification(lsp.TelemetryEventNotification.method, (params) => {
       this.handleTelemetryEventNotification(params)
     })
+
+    this.startInitialize(this.lcRef.value)
 
     // Register handler for property renamed notifications
     this.lcRef.value.onNotification(
@@ -192,15 +212,85 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     )
   }
 
+  private createInitializeParams(): lsp.InitializeParams {
+    return {
+      processId: null,
+      clientInfo: {
+        name: lspClientName
+      },
+      locale: this.options.locale,
+      rootUri: lspWorkspaceRootURI,
+      workspaceFolders: [
+        {
+          uri: lspWorkspaceRootURI,
+          name: lspWorkspaceRootName
+        }
+      ],
+      capabilities: {
+        workspace: {
+          workspaceFolders: true
+        },
+        general: {
+          positionEncodings: [lsp.PositionEncodingKind.UTF16]
+        },
+        textDocument: {
+          completion: {
+            completionItem: {
+              snippetSupport: true,
+              documentationFormat: [lsp.MarkupKind.Markdown]
+            }
+          },
+          hover: {
+            contentFormat: [lsp.MarkupKind.Markdown]
+          },
+          rename: {
+            prepareSupport: true
+          },
+          signatureHelp: {
+            contextSupport: true
+          }
+        }
+      }
+    }
+  }
+
+  private async initialize(lc: XGoLanguageClient) {
+    await this.sendRequest<lsp.InitializeResult>(lc, {}, lsp.InitializeRequest.method, this.createInitializeParams())
+    lc.notify(lsp.InitializedNotification.method, {})
+  }
+
+  private startInitialize(lc: XGoLanguageClient) {
+    const initializePromise = this.initialize(lc)
+    this.initializePromise = initializePromise
+    initializePromise.catch(() => {
+      if (this.initializePromise === initializePromise) {
+        this.initializePromise = null
+      }
+    })
+    return initializePromise
+  }
+
+  private reinitialize(lc: XGoLanguageClient, staleInitializePromise: Promise<void>) {
+    const currentInitializePromise = this.initializePromise
+    if (currentInitializePromise != null && currentInitializePromise !== staleInitializePromise) {
+      return currentInitializePromise
+    }
+    return this.startInitialize(lc)
+  }
+
   dispose() {
     this.lcRef.value?.dispose()
     this.connection?.dispose()
     super.dispose()
   }
 
-  /** Do LSP request, with cancellation and tracing. */
-  private async request<T>({ signal, traceOptions }: RequestContext, method: string, params: any): Promise<T> {
-    const lc = await this.prepareRequest()
+  private async sendRequest<T>(
+    lc: XGoLanguageClient,
+    { signal, traceOptions }: RequestContext,
+    method: string,
+    params: any,
+    suppressErrorLog?: (error: unknown) => boolean
+  ): Promise<T> {
     return tracedRequest(
       method,
       async (span: Sentry.Span) => {
@@ -226,7 +316,7 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
             if (e instanceof ResponseError && e.code === lsp.LSPErrorCodes.RequestCancelled) {
               throw new Cancelled(e.message)
             }
-            console.warn(`[LSP] ${method} error:`, e, ', params:', params)
+            if (!suppressErrorLog?.(e)) console.warn(`[LSP] ${method} error:`, e, ', params:', params)
             throw e
           })
           .finally(unlisten)
@@ -235,7 +325,19 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     )
   }
 
-  private async cancelRequest(id: number) {
+  /** Do LSP request, with cancellation and tracing. */
+  private async request<T>(ctx: RequestContext, method: string, params: any): Promise<T> {
+    const { lc, initializePromise } = await this.prepareRequest()
+    try {
+      return await this.sendRequest<T>(lc, ctx, method, params, isServerNotInitializedError)
+    } catch (e) {
+      if (!isServerNotInitializedError(e)) throw e
+      await this.reinitialize(lc, initializePromise)
+      return this.sendRequest<T>(lc, ctx, method, params)
+    }
+  }
+
+  private async cancelRequest(id: MessageID) {
     const lc = await untilNotNull(this.lcRef)
     // The method `$/cancelRequest` is defined in https://github.com/microsoft/vscode-languageserver-node/blob/4c20197acf4c499345a18e79945e706345cbc50f/protocol/src/common/protocol.%24.ts#L46-L58 ,
     // while not exported by package `vscode-languageserver-protocol`.

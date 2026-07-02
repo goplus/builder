@@ -1,4 +1,6 @@
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/aofei/fork.goplus.xgolsw v0.0.0-20260701122425-18fd0bb225b8 h1:xvXKSHybkyjRga8bFKuRD4McZooDvskHSSH4rAZC+Oo=
+github.com/aofei/fork.goplus.xgolsw v0.0.0-20260701122425-18fd0bb225b8/go.mod h1:ANgB42yf5ul2VDNMxp6v2yxbcwyNu1wV9IWekAgGSG4=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/goccy/go-yaml v1.19.2 h1:PmFC1S6h8ljIz6gMRBopkjP1TVT7xuwrButHID66PoM=
@@ -15,8 +17,6 @@ github.com/goplus/spx/v2 v2.0.4 h1:4hyCM5XH3DMRjFeoTxCndrqcFZTeCWHkEicyp7wYTSs=
 github.com/goplus/spx/v2 v2.0.4/go.mod h1:mF2kCvUNw97ku2PYHMEwbCENv24b5EwnlXOLiVMRbHM=
 github.com/goplus/xgo v1.7.2 h1:leAinbUiz+oUukKfdYIXyYZlxm/gh6TkEg5/dzvevQk=
 github.com/goplus/xgo v1.7.2/go.mod h1:QR2TaWixDRCYQfv0F7xpZbUPvuclcgg0oUFmcq5nNn0=
-github.com/goplus/xgolsw v0.21.1-0.20260630012157-8eb11678c926 h1:LDYoxTq7UxoZppnHfCPQswH30MevNyoLTX8l0hrKFzo=
-github.com/goplus/xgolsw v0.21.1-0.20260630012157-8eb11678c926/go.mod h1:ANgB42yf5ul2VDNMxp6v2yxbcwyNu1wV9IWekAgGSG4=
 github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e h1:D0bJD+4O3G4izvrQUmzCL80zazlN7EwJ0PPDhpJWC/I=
 github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e/go.mod h1:pxMtw7cyUw6B2bRH0ZBANSPg+AoSud1I1iyJHI69jH4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

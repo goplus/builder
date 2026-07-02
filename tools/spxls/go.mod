@@ -26,3 +26,5 @@ require (
 )
 
 replace github.com/goplus/builder/tools/ai => ../ai
+
+replace github.com/goplus/xgolsw => github.com/aofei/fork.goplus.xgolsw v0.0.0-20260701122425-18fd0bb225b8
