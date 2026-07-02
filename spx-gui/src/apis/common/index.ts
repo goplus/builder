@@ -102,6 +102,8 @@ export const enum BackdropCategory {
 }
 
 export const enum SoundCategory {
+  /** Voice sounds are spoken or narrated audio assets, such as TTS lines, narration, or dialogue clips. */
+  Voice = 'voice',
   /** Sound effects are audio elements that enhance the gaming experience by providing auditory feedback for actions, events, or interactions within the game. */
   Effect = 'effect',
   /** Music tracks are composed pieces that set the tone, mood, and atmosphere of the game, often playing in the background during gameplay or specific scenes. */
