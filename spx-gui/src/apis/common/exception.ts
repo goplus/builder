@@ -27,6 +27,7 @@ export enum ApiExceptionCode {
   errorForbidden = 40300,
   errorQuotaExceeded = 40301,
   errorNotFound = 40400,
+  errorConflict = 40900,
   errorResourceMoved = 40901,
   errorTooManyRequests = 42900,
   errorRateLimitExceeded = 42901,
@@ -71,6 +72,10 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorNotFound]: {
     en: 'resource not exist',
     zh: '资源不存在'
+  },
+  [ApiExceptionCode.errorConflict]: {
+    en: 'resource conflict',
+    zh: '资源冲突'
   },
   [ApiExceptionCode.errorResourceMoved]: {
     en: 'resource moved',
