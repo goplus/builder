@@ -27,7 +27,13 @@ export type {
   CreatedAccountAppToken
 } from '@/apis/account/common'
 
-/** Maximum allowed length for an app token name. */
+export const accountUsersKeywordMaxLength = 100
+export const accountUserUsernameMaxLength = 100
+export const accountUserDisplayNameMaxLength = 100
+export const accountUserPasswordMinLength = 8
+export const accountUserPasswordMaxLength = 128
+export const accountAppDisplayNameMaxLength = 100
+export const accountAppSecretNameMaxLength = 100
 export const accountAppTokenNameMaxLength = 100
 
 export type ListAccountUsersParams = PaginationParams & {
@@ -149,7 +155,7 @@ export function listAccountAppGrantTokens(appGrantID: string, params?: ListAccou
 export type CreateAccountAppGrantTokenParams = {
   /** OAuth token type to create */
   tokenType: 'accessToken'
-  /** Human-readable token name. Maximum length: accountAppTokenNameMaxLength. */
+  /** Human-readable token name */
   name: string
   /** Expiration timestamp */
   expiresAt: string

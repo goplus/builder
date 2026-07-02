@@ -66,6 +66,7 @@ usePageTitle(() =>
 )
 
 const tokensPageSize = 20
+const maxTokenLifetimeDays = 365
 const tokensPage = ref(1)
 const tokenTypeFilter = ref<'all' | accountAdminApis.AccountAppTokenType>('accessToken')
 const tokensQuery = useQuery(
@@ -88,17 +89,12 @@ watch(tokenTypeFilter, () => {
 
 const showCreateForm = ref(false)
 const tokenName = ref('')
+const trimmedTokenName = computed(() => tokenName.value.trim())
 const createdToken = ref<accountAdminApis.CreatedAccountAppToken | null>(null)
 const minExpiresAtInput = ref(formatDateTimeLocal(dayjs()))
-const maxExpiresAtInput = ref(formatDateTimeLocal(dayjs().add(365, 'day')))
+const maxExpiresAtInput = ref(formatDateTimeLocal(dayjs().add(maxTokenLifetimeDays, 'day')))
 const expiresAtInput = ref(formatDateTimeLocal(defaultTokenExpiresAt()))
-const isCreateTokenValid = computed(
-  () =>
-    tokenName.value.trim() !== '' &&
-    tokenName.value.length <= accountAdminApis.accountAppTokenNameMaxLength &&
-    expiresAtInput.value !== ''
-)
-const maxTokenLifetimeDays = 365
+const isCreateTokenValid = computed(() => trimmedTokenName.value !== '' && expiresAtInput.value !== '')
 
 function formatDateTimeLocal(value: dayjs.Dayjs) {
   return value.format('YYYY-MM-DDTHH:mm')
@@ -147,7 +143,7 @@ const handleCreateToken = useMessageHandle(
   async () => {
     const token = await accountAdminApis.createAccountAppGrantToken(props.grantID, {
       tokenType: 'accessToken',
-      name: tokenName.value.trim(),
+      name: trimmedTokenName.value,
       expiresAt: dayjs(expiresAtInput.value).toISOString()
     })
     createdToken.value = token
@@ -176,7 +172,7 @@ const handleRevokeToken = useMessageHandle(
     tokensQuery.refetch()
   },
   { en: 'Failed to revoke token', zh: '撤销 token 失败' },
-  { en: 'Token revoked', zh: 'token 已撤销' }
+  { en: 'Token revoked', zh: '已撤销 token' }
 ).fn
 
 function dismissCreatedToken() {
@@ -266,7 +262,6 @@ function dismissCreatedToken() {
           icon="reload"
           shape="square"
           type="white"
-          :aria-label="$t({ en: 'Refresh grant details', zh: '刷新授权详情' })"
           @click="refetchAll"
         />
       </header>
@@ -337,7 +332,7 @@ function dismissCreatedToken() {
                   {{
                     $t({
                       en: 'Creates an Access token under this grant. The token value is shown only once.',
-                      zh: '基于此授权创建 Access token。token 值只会展示一次。'
+                      zh: '基于此授权创建 Access token。该 token 值只会展示一次。'
                     })
                   }}
                 </p>

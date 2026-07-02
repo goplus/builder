@@ -145,6 +145,7 @@ function handleInputEsc() {
           v-model:value="displayName"
           v-radar="{ name: 'Project display name input', desc: 'Input field for project display name' }"
           class="w-62 text-xl"
+          :maxlength="projectDisplayNameMaxLength"
           @keydown.esc.prevent="handleInputEsc"
           @blur="handleInputBlur"
         />

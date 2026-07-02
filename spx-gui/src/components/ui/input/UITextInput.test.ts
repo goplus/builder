@@ -38,4 +38,23 @@ describe('UITextInput', () => {
     expect(wrapper.emitted('focus')).toHaveLength(1)
     expect(wrapper.emitted('blur')).toHaveLength(1)
   })
+
+  it('passes maxlength to the native text control', () => {
+    const inputWrapper = mount(UITextInput, {
+      props: {
+        value: '',
+        maxlength: 100
+      }
+    })
+    expect(inputWrapper.get('input').attributes('maxlength')).toBe('100')
+
+    const textareaWrapper = mount(UITextInput, {
+      props: {
+        value: '',
+        type: 'textarea',
+        maxlength: 200
+      }
+    })
+    expect(textareaWrapper.get('textarea').attributes('maxlength')).toBe('200')
+  })
 })

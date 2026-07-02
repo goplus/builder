@@ -8,7 +8,7 @@
           v-radar="{ name: 'Token input', desc: 'Input field for authentication token' }"
           class="justify-self-stretch h-40"
           type="textarea"
-          :placeholder="$t({ en: 'Paste token here', zh: '在此粘贴 Token' })"
+          :placeholder="$t({ en: 'Paste token here', zh: '在此粘贴 token' })"
         />
       </UIFormItem>
       <footer class="mt-4 flex justify-center gap-4">
@@ -41,7 +41,7 @@ import { UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components
 
 const title = {
   en: 'Sign in with token',
-  zh: '使用 Token 登录'
+  zh: '使用 token 登录'
 }
 
 usePageTitle(title)
@@ -58,7 +58,7 @@ function validateToken(token: string) {
   if (token === '')
     return i18n.t({
       en: 'Token is required',
-      zh: '请提供 Token'
+      zh: '请提供 token'
     })
 }
 

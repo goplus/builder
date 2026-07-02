@@ -1,5 +1,8 @@
 import { parse, type InfoRecord } from 'csv-parse/browser/esm/sync'
+
 import type { LocaleMessage } from '@/utils/i18n'
+import { getStringLengthInCodePoints } from '@/utils/utils'
+import * as accountAdminApis from '@/apis/admin/account'
 
 export type AccountUserImportRow = {
   line: number
@@ -77,9 +80,47 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
     const username = readCell(record, headerIndex.username)
     const displayName = readCell(record, headerIndex.displayName) || username
     const password = readCell(record, headerIndex.password)
+    const usernameLength = getStringLengthInCodePoints(username)
+    const displayNameLength = getStringLengthInCodePoints(displayName)
+    const passwordLength = getStringLengthInCodePoints(password)
 
     if (username === '') errors.push({ line, message: { en: 'Username is required', zh: '用户名不能为空' } })
+    else if (usernameLength > accountAdminApis.accountUserUsernameMaxLength) {
+      errors.push({
+        line,
+        message: {
+          en: `The username is too long (maximum is ${accountAdminApis.accountUserUsernameMaxLength} characters)`,
+          zh: `用户名长度超出限制（最多 ${accountAdminApis.accountUserUsernameMaxLength} 个字符）`
+        }
+      })
+    }
+    if (displayNameLength > accountAdminApis.accountUserDisplayNameMaxLength) {
+      errors.push({
+        line,
+        message: {
+          en: `The display name is too long (maximum is ${accountAdminApis.accountUserDisplayNameMaxLength} characters)`,
+          zh: `显示名称长度超出限制（最多 ${accountAdminApis.accountUserDisplayNameMaxLength} 个字符）`
+        }
+      })
+    }
     if (password === '') errors.push({ line, message: { en: 'Password is required', zh: '密码不能为空' } })
+    else if (passwordLength < accountAdminApis.accountUserPasswordMinLength) {
+      errors.push({
+        line,
+        message: {
+          en: `The password must be at least ${accountAdminApis.accountUserPasswordMinLength} characters`,
+          zh: `密码长度不能少于 ${accountAdminApis.accountUserPasswordMinLength} 个字符`
+        }
+      })
+    } else if (passwordLength > accountAdminApis.accountUserPasswordMaxLength) {
+      errors.push({
+        line,
+        message: {
+          en: `The password is too long (maximum is ${accountAdminApis.accountUserPasswordMaxLength} characters)`,
+          zh: `密码长度超出限制（最多 ${accountAdminApis.accountUserPasswordMaxLength} 个字符）`
+        }
+      })
+    }
 
     const previousLine = usernameLines.get(username)
     if (username !== '' && previousLine != null) {

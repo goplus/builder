@@ -26,6 +26,15 @@ Keep import statements in order:
 2. Internal libraries: from base to specific, e.g., from `utils` to `models` to `components`
 3. Local files: relative paths starting with `./` or `../`
 
+### String Length Validation
+
+* Use native `string.length`, browser input constraints, and `z.string().max()` for ordinary frontend input validation,
+  following the app's existing validation and feedback patterns.
+* Use `getStringLengthInCodePoints` only when frontend logic must exactly match backend/OpenAPI Unicode code point
+  semantics, or when slicing, truncating, or constructing hard-budget strings such as LLM/API payloads.
+* Count after submission-time normalization such as `trim()`. Use byte or source-file-size checks for explicit byte or
+  payload-size limits.
+
 ### Asset URLs
 
 * For widget-safe full asset URLs, use `new URL('...', import.meta.url).href` instead of `import x from './file.ext?url'`.

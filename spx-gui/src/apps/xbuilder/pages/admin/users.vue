@@ -92,6 +92,12 @@ const handleCreateUser = useMessageHandle(
     const displayName = createForm.displayName.trim() || username
     const password = createForm.password.trim()
     if (password === '') throw new DefaultException({ en: 'Password is required', zh: '密码不能为空' })
+    if (password.length < accountAdminApis.accountUserPasswordMinLength) {
+      throw new DefaultException({
+        en: `The password must be at least ${accountAdminApis.accountUserPasswordMinLength} characters`,
+        zh: `密码长度不能少于 ${accountAdminApis.accountUserPasswordMinLength} 个字符`
+      })
+    }
 
     const user = await accountAdminApis.createAccountUser({ username, displayName, password })
     await router.push(`/admin/users/${encodeURIComponent(user.id)}`)
@@ -142,18 +148,30 @@ async function handleImportUsers() {
       <div class="grid grid-cols-1 gap-4 tablet:grid-cols-3">
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Username', zh: '用户名' }) }}
-          <UITextInput v-model:value="createForm.username" required />
+          <UITextInput
+            v-model:value="createForm.username"
+            required
+            :maxlength="accountAdminApis.accountUserUsernameMaxLength"
+          />
         </label>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Display name', zh: '显示名称' }) }}
-          <UITextInput v-model:value="createForm.displayName" />
+          <UITextInput
+            v-model:value="createForm.displayName"
+            :maxlength="accountAdminApis.accountUserDisplayNameMaxLength"
+          />
           <span class="text-xs text-grey-700">
             {{ $t({ en: 'Leave empty to use username.', zh: '留空则使用用户名。' }) }}
           </span>
         </label>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Initial password', zh: '初始密码' }) }}
-          <UITextInput v-model:value="createForm.password" type="password" required />
+          <UITextInput
+            v-model:value="createForm.password"
+            type="password"
+            required
+            :maxlength="accountAdminApis.accountUserPasswordMaxLength"
+          />
         </label>
       </div>
       <div class="mt-4 flex justify-end">
@@ -190,6 +208,7 @@ async function handleImportUsers() {
             v-model:value="keywordInput"
             clearable
             class="w-64 max-w-full"
+            :maxlength="accountAdminApis.accountUsersKeywordMaxLength"
             :placeholder="$t({ en: 'Username or display name', zh: '用户名或显示名称' })"
           />
           <UISelect v-model:value="sortOrder" class="w-32">

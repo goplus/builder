@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { copilotMessageContentMaxLength } from '@/apis/copilot'
+import { useI18n } from '@/utils/i18n'
+import { getStringLengthInCodePoints } from '@/utils/utils'
+import { useMessage } from '@/components/ui'
 import { RoundState, type Copilot } from './copilot'
 
 const props = defineProps<{
@@ -8,6 +12,8 @@ const props = defineProps<{
 
 const inputStr = ref('')
 const textareaRef = ref<HTMLTextAreaElement>()
+const i18n = useI18n()
+const message = useMessage()
 const round = computed(() => props.copilot.currentSession?.currentRound ?? null)
 const loading = computed(() => {
   return round.value != null && [RoundState.Loading, RoundState.InProgress].includes(round.value.state)
@@ -24,6 +30,15 @@ const placeholder = computed(() => {
 function handleSubmit() {
   const problem = inputStr.value.trim()
   if (problem === '') return
+  if (getStringLengthInCodePoints(problem) > copilotMessageContentMaxLength) {
+    message.error(
+      i18n.t({
+        en: `The input must be ${copilotMessageContentMaxLength} characters or fewer`,
+        zh: `输入不能超过 ${copilotMessageContentMaxLength} 字`
+      })
+    )
+    return
+  }
   inputStr.value = ''
   props.copilot.addUserTextMessage(problem)
 }
