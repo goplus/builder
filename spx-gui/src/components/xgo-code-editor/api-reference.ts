@@ -7,6 +7,13 @@ import type { BaseContext, DefinitionDocumentationItem } from './common'
 
 export type APIReferenceItem = DefinitionDocumentationItem
 
+/**
+ * Predicate to narrow which API reference items are shown in the panel.
+ * `null` (no filter) means show all items. The editor stays agnostic about how
+ * the predicate is built; consumers decide the rule.
+ */
+export type APIReferenceFilter = (item: APIReferenceItem) => boolean
+
 export type APIReferenceContext = BaseContext
 
 export type APICategoryViewInfo = {
