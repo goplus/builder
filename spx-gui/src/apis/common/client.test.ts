@@ -1,39 +1,89 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiException, ApiExceptionCode, isQuotaExceededMeta } from './exception'
+import { ApiException, ApiExceptionCode, OAuthException, isQuotaExceededMeta, isRetryAfterMeta } from './exception'
 import { Client } from './client'
 
+function makeJsonResponse(body: unknown, status: number, headers: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers
+    }
+  })
+}
+
 function makeMovedResponse(canonicalPath: string) {
-  return new Response(
-    JSON.stringify({
+  return makeJsonResponse(
+    {
       code: ApiExceptionCode.errorResourceMoved,
       msg: 'Resource moved',
       canonical: {
         path: canonicalPath
       }
-    }),
-    {
-      status: 409,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }
+    },
+    409
   )
 }
 
 function makeQuotaExceededResponse(retryAfter: string) {
-  return new Response(
-    JSON.stringify({
+  return makeJsonResponse(
+    {
       code: ApiExceptionCode.errorQuotaExceeded,
       msg: 'Quota exceeded'
-    }),
+    },
+    403,
     {
-      status: 403,
-      headers: {
-        'Content-Type': 'application/json',
-        'Retry-After': retryAfter
-      }
+      'Retry-After': retryAfter
     }
   )
+}
+
+function makeRateLimitExceededResponse(retryAfter: string) {
+  return makeJsonResponse(
+    {
+      code: ApiExceptionCode.errorRateLimitExceeded,
+      msg: 'Rate limit exceeded'
+    },
+    429,
+    {
+      'Retry-After': retryAfter
+    }
+  )
+}
+
+function makeOAuthErrorResponse() {
+  return makeJsonResponse(
+    {
+      error: 'invalid_request',
+      error_description: 'invalid form body'
+    },
+    400
+  )
+}
+
+async function expectRejected(promise: Promise<unknown>, message: string) {
+  try {
+    await promise
+  } catch (e) {
+    return e
+  }
+  throw new Error(message)
+}
+
+async function expectApiException(promise: Promise<unknown>, code: ApiExceptionCode) {
+  const e = await expectRejected(promise, `expected API error ${code}`)
+  expect(e).toBeInstanceOf(ApiException)
+  const exception = e as ApiException
+  expect(exception).toMatchObject({ code })
+  return exception
+}
+
+async function expectOAuthException(promise: Promise<unknown>, error: string) {
+  const e = await expectRejected(promise, `expected OAuth error ${error}`)
+  expect(e).toBeInstanceOf(OAuthException)
+  const exception = e as OAuthException
+  expect(exception).toMatchObject({ error })
+  return exception
 }
 
 describe('Client', () => {
@@ -56,18 +106,10 @@ describe('Client', () => {
     it('should surface the moved conflict without retrying', async () => {
       fetchMock.mockResolvedValueOnce(makeMovedResponse('/projects/john/demo/views'))
 
-      try {
-        await client.post('/projects/John/demo/views')
-        throw new Error('expected moved conflict')
-      } catch (e) {
-        expect(e).toBeInstanceOf(ApiException)
-        expect(e).toMatchObject({
-          code: ApiExceptionCode.errorResourceMoved,
-          meta: {
-            path: '/projects/john/demo/views'
-          }
-        })
-      }
+      const e = await expectApiException(client.post('/projects/John/demo/views'), ApiExceptionCode.errorResourceMoved)
+      expect(e.meta).toMatchObject({
+        path: '/projects/john/demo/views'
+      })
 
       expect(fetchMock).toHaveBeenCalledTimes(1)
       expect(new URL((fetchMock.mock.calls[0]![0] as Request).url).pathname).toBe('/projects/John/demo/views')
@@ -79,19 +121,48 @@ describe('Client', () => {
       const retryAfter = 'Wed, 09 Apr 2026 08:00:00 GMT'
       fetchMock.mockResolvedValueOnce(makeQuotaExceededResponse(retryAfter))
 
-      try {
-        await client.get('/quota')
-        throw new Error('expected quota exceeded error')
-      } catch (e) {
-        expect(e).toBeInstanceOf(ApiException)
-        expect(e).toMatchObject({
-          code: ApiExceptionCode.errorQuotaExceeded
-        })
-        expect(isQuotaExceededMeta((e as ApiException).code, (e as ApiException).meta)).toBe(true)
-        expect((e as ApiException).meta).toMatchObject({
-          retryAfter: new Date(retryAfter).valueOf()
-        })
-      }
+      const e = await expectApiException(client.get('/quota'), ApiExceptionCode.errorQuotaExceeded)
+      expect(isQuotaExceededMeta(e.code, e.meta)).toBe(true)
+      expect(e.meta).toMatchObject({
+        retryAfter: new Date(retryAfter).valueOf()
+      })
+    })
+  })
+
+  describe('retry-after metadata', () => {
+    it('should parse retry-after metadata for rate limits', async () => {
+      fetchMock.mockResolvedValueOnce(makeRateLimitExceededResponse('2'))
+
+      const e = await expectApiException(client.get('/rate-limited'), ApiExceptionCode.errorRateLimitExceeded)
+      expect(isRetryAfterMeta(e.code, e.meta)).toBe(true)
+      expect(e.meta).toMatchObject({
+        retryAfter: expect.any(Number)
+      })
+    })
+
+    it('should treat empty retry-after headers as no retry time', async () => {
+      fetchMock.mockResolvedValueOnce(makeRateLimitExceededResponse('   '))
+
+      const e = await expectApiException(client.get('/rate-limited'), ApiExceptionCode.errorRateLimitExceeded)
+      expect(isRetryAfterMeta(e.code, e.meta)).toBe(true)
+      expect(e.meta).toMatchObject({
+        retryAfter: null
+      })
+    })
+
+    it('should reject retry-after metadata without a retryAfter field', () => {
+      expect(isRetryAfterMeta(ApiExceptionCode.errorRateLimitExceeded, {})).toBe(false)
+    })
+  })
+
+  describe('OAuth errors', () => {
+    it('should parse OAuth error payloads', async () => {
+      fetchMock.mockResolvedValueOnce(makeOAuthErrorResponse())
+
+      const e = await expectOAuthException(client.postForm('/account/oauth/token', {}), 'invalid_request')
+      expect(e.errorDescription).toBe('invalid form body')
+      expect(e.errorUri).toBeNull()
+      expect(e.message).toContain('[invalid_request] invalid form body')
     })
   })
 
