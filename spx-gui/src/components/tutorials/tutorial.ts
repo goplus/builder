@@ -6,6 +6,7 @@ import { timeout, until } from '@/utils/utils'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
@@ -71,6 +72,10 @@ export class Tutorial {
       const { entrypoint } = course
 
       if (entrypoint) {
+        // A course entrypoint may point to a non-editor route. Navigating away from the
+        // editor would otherwise trigger its leave confirmation, but starting a course is
+        // an explicit, expected action, so skip the confirmation for this navigation.
+        editorLeaveConfirm.requestSkipOnce()
         await this.router.push(entrypoint)
         await until(this.isRouteLoaded)
         await timeout(100) // Wait for detailed UI rendering

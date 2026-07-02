@@ -8,6 +8,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 
 import { UIButton, UIImg, UIModal, UIModalClose } from '@/components/ui'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import successImg from './success.png'
 
@@ -37,10 +38,19 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function handleBrowseTutorials() {
-  emit('cancelled')
-  router.push('/tutorials')
-}
+const { fn: handleBackToCourseSeries } = useMessageHandle(
+  async () => {
+    // Request the skip before anything else so the time-bound window isn't shortened
+    // by work in the `cancelled` handler.
+    editorLeaveConfirm.requestSkipOnce()
+    emit('cancelled')
+    await router.push(`/course-series/${props.series.id}`)
+  },
+  {
+    en: 'Failed to go back to course series',
+    zh: '返回系列课程失败'
+  }
+)
 
 const hasNextCourse = computed(() => {
   const currentCourse = props.course
@@ -96,8 +106,8 @@ const { fn: handleStartNextCourse } = useMessageHandle(
         <div class="mt-2 text-base">{{ courseCompleteMessage }}</div>
 
         <div class="mt-10 w-full flex flex-col gap-5">
-          <UIButton type="neutral" size="large" @click="handleBrowseTutorials">
-            {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
+          <UIButton type="neutral" size="large" @click="handleBackToCourseSeries">
+            {{ $t({ zh: '返回系列课程', en: 'Back to series courses' }) }}
           </UIButton>
           <UIButton v-if="hasNextCourse" size="large" @click="handleStartNextCourse">
             {{ $t({ zh: '学习下一个课程', en: 'Learn next course' }) }}
