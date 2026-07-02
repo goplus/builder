@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown } from '@/components/ui'
@@ -21,6 +21,13 @@ const props = defineProps<{
 
 const codeEditor = useCodeEditor()
 const codeEditorUICtx = useCodeEditorUICtx()
+
+const itemEl = ref<HTMLElement | null>(null)
+// Highlighted while a copilot drag guide points the user at this API item.
+const isHighlighted = computed(() => codeEditorUICtx.ui.apiReferenceController.highlightedItem === props.item)
+watch(isHighlighted, (highlighted) => {
+  if (highlighted) itemEl.value?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+})
 
 const handleInsert = useMessageHandle(
   () =>
@@ -102,11 +109,13 @@ function handleMouseUp(e: MouseEvent) {
   <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
     <template #trigger>
       <li
+        ref="itemEl"
         v-radar="{
           name: parsed.overview,
           desc: ''
         }"
         class="api-reference-item"
+        :class="{ 'api-reference-item-highlighted': isHighlighted }"
         draggable="true"
         @dragstart="handleDragStart"
         @mousedown.passive="handleMouseDown"
@@ -150,6 +159,24 @@ function handleMouseUp(e: MouseEvent) {
 
 .api-reference-item:hover {
   background: var(--ui-color-grey-300);
+}
+
+/* Highlighted while a copilot drag guide points the user at this item. */
+.api-reference-item-highlighted {
+  outline: 2px solid rgba(249, 115, 22, 0.9);
+  outline-offset: 1px;
+  background: rgba(249, 115, 22, 0.12);
+  animation: api-reference-item-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes api-reference-item-pulse {
+  0%,
+  100% {
+    outline-color: rgba(249, 115, 22, 0.9);
+  }
+  50% {
+    outline-color: rgba(249, 115, 22, 0.35);
+  }
 }
 
 .api-reference-item.before-dragging {
