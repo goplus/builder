@@ -62,7 +62,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIImg, UIDivider, UICardHeader } from '@/components/ui'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import type { SelectedType } from '../../stage/StageEditor.vue'
 import widgetSvg from './widget.svg?raw'
@@ -83,7 +83,7 @@ function openTab(type: Extract<SelectedType, 'backdrops' | 'sounds' | 'widgets'>
 }
 
 const backdrop = computed(() => editorCtx.project.stage.defaultBackdrop)
-const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
+const [imgSrc, imgLoading] = useRenderableImageUrl(() => backdrop.value?.img)
 
 const quickEntryClass =
   'h-14 w-14 cursor-pointer flex flex-col items-center justify-center gap-0.5 \

@@ -20,7 +20,7 @@
   - Prefer Tailwind utilities for local structure, layout, and surface styling
   - Local authored style blocks in the UI package use plain CSS; do not reintroduce SCSS
   - Keep complex selectors, animations, third-party/global overrides, and other readability-sensitive rules in plain CSS
-  - The global CSS layer order is `theme, base, components, utilities` and is declared in `spx-gui/index.html`
+  - The global CSS layer order is `theme, base, components, utilities` and is declared in the app HTML entries under `spx-gui/src/apps/*/index.html`
 
 - Root class handling
 

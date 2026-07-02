@@ -1,5 +1,7 @@
 import { client, type ByPage, type FileCollection, type PaginationParams } from './common'
 
+export const projectReleaseDescriptionMaxLength = 400
+
 export type ProjectRelease = {
   /** Unique identifier */
   id: string
@@ -23,11 +25,15 @@ export type ProjectRelease = {
 
 export type CreateProjectReleaseParams = Pick<ProjectRelease, 'name' | 'description' | 'thumbnail'>
 
-export function createProjectRelease(owner: string, project: string, params: CreateProjectReleaseParams) {
-  return client.post(
-    `/projects/${encodeURIComponent(owner)}/${encodeURIComponent(project)}/releases`,
-    params
-  ) as Promise<ProjectRelease>
+export function createProjectRelease(
+  owner: string,
+  project: string,
+  params: CreateProjectReleaseParams,
+  signal?: AbortSignal
+) {
+  return client.post(`/projects/${encodeURIComponent(owner)}/${encodeURIComponent(project)}/releases`, params, {
+    signal
+  }) as Promise<ProjectRelease>
 }
 
 export type ListProjectReleasesParams = PaginationParams & {

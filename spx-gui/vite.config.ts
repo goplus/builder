@@ -7,27 +7,31 @@ import tailwindcss from '@tailwindcss/vite'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import browserslistToEsbuild from 'browserslist-to-esbuild'
 
-import { createVercelOutputPlugin } from './vercel-output-plugin.js'
+import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
+import { createVercelOutputPlugin } from './build/vite-plugins/vercel-output-plugin.js'
 
 const resolve = (dir: string) => path.join(__dirname, dir)
+const xbuilderEnvDir = resolve('src/apps/xbuilder')
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, xbuilderEnvDir, '')
   const vercelProxiedApiBaseURL =
     env.VITE_VERCEL_PROXIED_API_BASE_URL == null ? null : env.VITE_VERCEL_PROXIED_API_BASE_URL
 
   const input: Record<string, string> = {
     main: resolve('index.html'),
-    'spx-runner': resolve('src/widgets/spx-runner/index.ts'),
-    'xgo-code-editor': resolve('src/widgets/xgo-code-editor/index.ts')
+    'spx-runner': resolve('src/apps/xbuilder/widgets/spx-runner/index.ts'),
+    'xgo-code-editor': resolve('src/apps/xbuilder/widgets/xgo-code-editor/index.ts')
   }
   if (mode === 'development') {
-    // Open http://localhost:5173/src/widgets/dev.html to test widgets during development.
-    input['widget-dev'] = resolve('src/widgets/dev.html')
+    // Open http://localhost:5173/src/apps/xbuilder/widgets/dev.html to test widgets during development.
+    input['widget-dev'] = resolve('src/apps/xbuilder/widgets/dev.html')
   }
 
   return {
+    envDir: xbuilderEnvDir,
     plugins: [
+      createAppHtmlEntryPlugin(resolve('src/apps/xbuilder/index.html')),
       vue(),
       tailwindcss(),
       ViteEjsPlugin(),

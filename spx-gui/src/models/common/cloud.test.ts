@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { universalUrlToWebUrl } from './cloud'
+import { cloudHelpers } from './cloud'
 import { createFileURLSignatures } from '@/apis/file'
 
 vi.mock('@/apis/file', () => ({
@@ -12,17 +12,21 @@ describe('universalUrlToWebUrl', () => {
 
   beforeEach(() => {
     vi.useFakeTimers()
+    cloudHelpers.setConfig({
+      baseUrl: 'https://bucket.example.com',
+      bucket: 'bucket'
+    })
   })
 
   afterEach(() => {
     vi.useRealTimers()
     vi.resetAllMocks()
-    universalUrlToWebUrl.clearCache()
+    cloudHelpers.clearUniversalUrlCache()
   })
 
   it('should return original URL for non-kodo protocol', async () => {
     const httpUrl = 'https://example.com/image.jpg'
-    const result = await universalUrlToWebUrl(httpUrl)
+    const result = await cloudHelpers.universalUrlToWebUrl(httpUrl)
     expect(result).toBe(httpUrl)
     expect(createFileURLSignatures).not.toHaveBeenCalled()
   })
@@ -34,11 +38,14 @@ describe('universalUrlToWebUrl', () => {
     vi.mocked(createFileURLSignatures).mockResolvedValue(mockObjectUrls)
 
     const universalUrl = 'kodo://bucket/key1'
-    const promise = universalUrlToWebUrl(universalUrl)
+    const promise = cloudHelpers.universalUrlToWebUrl(universalUrl)
     vi.advanceTimersByTime(batchDelay)
     const webUrl = await promise
 
-    expect(createFileURLSignatures).toHaveBeenCalledWith([universalUrl])
+    expect(createFileURLSignatures).toHaveBeenCalledWith([universalUrl], {
+      baseUrl: 'https://bucket.example.com',
+      bucket: 'bucket'
+    })
     expect(webUrl).toBe(mockObjectUrls[universalUrl])
   })
 
@@ -50,11 +57,11 @@ describe('universalUrlToWebUrl', () => {
 
     const universalUrl = 'kodo://bucket/key1'
 
-    const promise1 = universalUrlToWebUrl(universalUrl)
+    const promise1 = cloudHelpers.universalUrlToWebUrl(universalUrl)
     vi.advanceTimersByTime(batchDelay)
     const webUrl1 = await promise1
 
-    const promise2 = universalUrlToWebUrl(universalUrl)
+    const promise2 = cloudHelpers.universalUrlToWebUrl(universalUrl)
     vi.advanceTimersByTime(batchDelay)
     const webUrl2 = await promise2
 
@@ -70,13 +77,13 @@ describe('universalUrlToWebUrl', () => {
 
     const universalUrl = 'kodo://bucket/key1'
 
-    const promise1 = universalUrlToWebUrl(universalUrl)
+    const promise1 = cloudHelpers.universalUrlToWebUrl(universalUrl)
     vi.advanceTimersByTime(batchDelay)
     await promise1
 
     vi.advanceTimersByTime(cacheTtl)
 
-    const promise2 = universalUrlToWebUrl(universalUrl)
+    const promise2 = cloudHelpers.universalUrlToWebUrl(universalUrl)
     vi.advanceTimersByTime(batchDelay)
     await promise2
 
@@ -92,14 +99,17 @@ describe('universalUrlToWebUrl', () => {
 
     const universalUrl1 = 'kodo://bucket/key1'
     const universalUrl2 = 'kodo://bucket/key2'
-    const promise1 = universalUrlToWebUrl(universalUrl1)
-    const promise2 = universalUrlToWebUrl(universalUrl2)
+    const promise1 = cloudHelpers.universalUrlToWebUrl(universalUrl1)
+    const promise2 = cloudHelpers.universalUrlToWebUrl(universalUrl2)
     vi.advanceTimersByTime(batchDelay)
     const webUrl1 = await promise1
     const webUrl2 = await promise2
 
     expect(createFileURLSignatures).toHaveBeenCalledTimes(1)
-    expect(createFileURLSignatures).toHaveBeenCalledWith([universalUrl1, universalUrl2])
+    expect(createFileURLSignatures).toHaveBeenCalledWith([universalUrl1, universalUrl2], {
+      baseUrl: 'https://bucket.example.com',
+      bucket: 'bucket'
+    })
     expect(webUrl1).toBe(mockObjectUrls[universalUrl1])
     expect(webUrl2).toBe(mockObjectUrls[universalUrl2])
   })
@@ -109,7 +119,7 @@ describe('universalUrlToWebUrl', () => {
     vi.mocked(createFileURLSignatures).mockRejectedValue(error)
 
     const universalUrl = 'kodo://bucket/key1'
-    const promise = universalUrlToWebUrl(universalUrl)
+    const promise = cloudHelpers.universalUrlToWebUrl(universalUrl)
     vi.advanceTimersByTime(batchDelay)
 
     await expect(promise).rejects.toThrow(error)

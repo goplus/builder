@@ -42,11 +42,9 @@
 
 **完整代码：**
 ```
-onStart => {
-    if 萝卜1.IsMature() {
-        turnTo 萝卜1
-        stepTo 萝卜1
-    }
+if 萝卜1.IsMature() {
+    turnTo 萝卜1
+    stepTo 萝卜1
 }
 ```
 
@@ -291,13 +289,11 @@ if isReady {           // 直接使用布尔变量
 
 **完整代码：**
 ```
-onStart => {
-    var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
-    for v in radishs {
-        if v.IsMature() {
-            turnTo v
-            stepTo v
-        }
+var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
+for v in radishs {
+    if v.IsMature() {
+        turnTo v
+        stepTo v
     }
 }
 ```
@@ -487,28 +483,26 @@ for v in radishs {           // 外层：循环
 
 **完整代码：**
 ```
-onStart => {
-    var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
-    
-    // 第一阶段：检查和照顾
-    for v in radishs {
-        if v.IsMature() {
-            turnTo v
-            stepTo v
-        } else {
-            turnTo v
-            step distanceTo(v)-20
-            v.Water()
-            animateAndWait "浇花"
-        }
-    }
+var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]
 
-    // 第二阶段：等待和收获
-    for v in radishs {
-        waitUntil v.IsMature()
+// 第一阶段：检查和照顾
+for v in radishs {
+    if v.IsMature() {
         turnTo v
         stepTo v
+    } else {
+        turnTo v
+        step distanceTo(v)-20
+        v.Water()
+        animateAndWait "浇花"
     }
+}
+
+// 第二阶段：等待和收获
+for v in radishs {
+    waitUntil v.IsMature()
+    turnTo v
+    stepTo v
 }
 ```
 

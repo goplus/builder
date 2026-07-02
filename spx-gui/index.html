@@ -1,39 +1,13 @@
 <!DOCTYPE html>
+<!--
+  This file is only a placeholder entry for Vite.
+  App-specific HTML is maintained under `src/apps/*/index.html` and selected by
+  `createAppHtmlEntryPlugin` in the corresponding Vite config.
+-->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <link rel="dns-prefetch" href="%VITE_USERCONTENT_UPLOAD_BASE_URL%" />
-    <link rel="dns-prefetch" href="%VITE_USERCONTENT_BASE_URL%" />
-    <link rel="preconnect" href="%VITE_USERCONTENT_BASE_URL%" crossorigin />
-
     <title>XBuilder</title>
-    <meta name="description" content="XBuilder is a tool for building games. We create it to help children to learn abilities to build." />
-    <meta name="keywords" content="XBuilder, game development for kids, educational coding tools, STEM education, creative game building, children's programming, learn to code for kids" />
-
-    <link rel="icon" href="/src/assets/logo.svg" />
-
-    <style>
-      /*
-       * Declare the layer order at the document entry instead of inside app.css.
-       * Vite may reorder extracted CSS in the final bundle, so the prelude needs
-       * to be parsed before any layered rules for the order to stay deterministic.
-       * See: https://github.com/vitejs/vite/issues/21903
-       */
-      @layer theme, base, components, utilities;
-
-      html,
-      body,
-      #app {
-        width: 100%;
-        height: 100%;
-      }
-    </style>
   </head>
-
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+  <body></body>
 </html>

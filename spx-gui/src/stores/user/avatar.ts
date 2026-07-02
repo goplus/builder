@@ -1,6 +1,6 @@
 import { shallowRef, watch, type WatchSource } from 'vue'
 import { useAsyncComputed, useExternalUrl } from '@/utils/utils'
-import { universalUrlToWebUrl } from '@/models/common/cloud'
+import { cloudHelpers } from '@/models/common/cloud'
 
 export function useAvatarUrl(urlSource: WatchSource<string | null | undefined>) {
   const latestRawRef = shallowRef<string | null>(null)
@@ -20,7 +20,7 @@ export function useAvatarUrl(urlSource: WatchSource<string | null | undefined>) 
     if (raw == null) return null
 
     try {
-      return await universalUrlToWebUrl(raw)
+      return await cloudHelpers.universalUrlToWebUrl(raw)
     } catch (err) {
       console.warn('Failed to resolve avatar url', raw, err)
       return null

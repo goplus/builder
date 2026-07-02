@@ -4,7 +4,6 @@
 
 import * as Sentry from '@sentry/vue'
 import dayjs from 'dayjs'
-import { apiBaseUrl } from '@/utils/env'
 import { getTimeoutSignal, mergeSignals } from '@/utils/disposable'
 import { ApiException, ApiExceptionCode, type MovedResourceCanonical, type QuotaExceededMeta } from './exception'
 import { parseSSE, type SSEEvent } from './sse'
@@ -71,9 +70,9 @@ export type ClientOptions = {
 }
 
 export class Client {
-  constructor(options: ClientOptions = {}) {
-    this.baseUrl = options.baseUrl ?? apiBaseUrl
-    this.fetchFn = options.fetchFn ?? globalThis.fetch.bind(globalThis)
+  constructor(options?: ClientOptions) {
+    this.baseUrl = options?.baseUrl ?? null
+    this.fetchFn = options?.fetchFn ?? globalThis.fetch.bind(globalThis)
   }
 
   private tokenProvider: TokenProvider = async () => null
@@ -81,26 +80,66 @@ export class Client {
     this.tokenProvider = provider
   }
 
-  private baseUrl: string
+  setBaseUrl(baseUrl: string) {
+    this.baseUrl = baseUrl
+  }
+
+  private baseUrl: string | null
   private fetchFn: typeof fetch
   private defaultTimeout = 10 * 1000 // 10 seconds
+
+  private ensureBaseUrl() {
+    if (this.baseUrl == null) throw new Error('API client base URL is not set')
+    return this.baseUrl
+  }
+
+  /** Get full URL for a given API path */
+  urlFor(path: string) {
+    const concated = this.ensureBaseUrl() + path
+    return new URL(concated, window.location.origin)
+  }
+
+  private async injectAuthorization(headers: Headers, signal?: AbortSignal) {
+    if (headers.has('Authorization')) return
+    const token = await this.tokenProvider()
+    signal?.throwIfAborted()
+    if (token == null) return
+    headers.set('Authorization', `Bearer ${token}`)
+  }
 
   /** Prepare request object, stringifying payload as JSON */
   private async prepareJSONRequest(path: string, payload: unknown, options?: RequestOptions): Promise<Request> {
     const traceData = Sentry.getTraceData()
     const sentryTraceHeader = traceData['sentry-trace']
     const sentryBaggageHeader = traceData['baggage']
-    const url = this.baseUrl + path
+    const url = this.ensureBaseUrl() + path
     const method = options?.method ?? 'GET'
     const body = payload != null ? JSON.stringify(payload) : null
-    const token = await this.tokenProvider()
-    options?.signal?.throwIfAborted()
     const headers = options?.headers ?? new Headers()
+    await this.injectAuthorization(headers, options?.signal)
     if (body != null) headers.set('Content-Type', 'application/json')
-    if (token != null) headers.set('Authorization', `Bearer ${token}`)
     if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
     if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
     return new Request(url, { method, headers, body })
+  }
+
+  /** Prepare request object, encoding payload as application/x-www-form-urlencoded */
+  private async prepareFormRequest(path: string, payload: QueryParams, options?: RequestOptions): Promise<Request> {
+    const traceData = Sentry.getTraceData()
+    const sentryTraceHeader = traceData['sentry-trace']
+    const sentryBaggageHeader = traceData['baggage']
+    const url = this.ensureBaseUrl() + path
+    const method = options?.method ?? 'POST'
+    const body = new URLSearchParams()
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value != null) body.append(key, value + '')
+    })
+    const headers = options?.headers ?? new Headers()
+    await this.injectAuthorization(headers, options?.signal)
+    headers.set('Content-Type', 'application/x-www-form-urlencoded')
+    if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
+    if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
+    return new Request(url, { method, headers, body: body.toString() })
   }
 
   /** Perform request object and handle errors */
@@ -134,16 +173,24 @@ export class Client {
     return resp.json()
   }
 
+  /** Do a form request, parsing response body as JSON when present */
+  private async requestForm(path: string, payload: QueryParams, options?: RequestOptions): Promise<unknown> {
+    const req = await this.prepareFormRequest(path, payload, options)
+    const resp = await this.doRequest(req, options)
+    if (resp.status === 204) return null
+    const contentType = resp.headers.get('Content-Type') ?? ''
+    if (contentType.includes('application/json')) return resp.json()
+    return resp.text()
+  }
+
   private async requestBinary(path: string, payload: FormData, options?: RequestOptions) {
     const traceData = Sentry.getTraceData()
     const sentryTraceHeader = traceData['sentry-trace']
     const sentryBaggageHeader = traceData['baggage']
-    const url = this.baseUrl + path
+    const url = this.ensureBaseUrl() + path
     const method = options?.method ?? 'GET'
-    const token = await this.tokenProvider()
-    options?.signal?.throwIfAborted()
     const headers = options?.headers ?? new Headers()
-    if (token != null) headers.set('Authorization', `Bearer ${token}`)
+    await this.injectAuthorization(headers, options?.signal)
     if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
     if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
     const req = new Request(url, { method, headers, body: payload })
@@ -197,8 +244,16 @@ export class Client {
     return this.requestJSON(path, payload, { ...options, method: 'POST' })
   }
 
+  postForm(path: string, payload: QueryParams, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestForm(path, payload, { ...options, method: 'POST' })
+  }
+
   postBinary(path: string, payload: FormData, options?: Omit<RequestOptions, 'method'>) {
     return this.requestBinary(path, payload, { ...options, method: 'POST' })
+  }
+
+  putBinary(path: string, payload: FormData, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestBinary(path, payload, { ...options, method: 'PUT' })
   }
 
   put(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {

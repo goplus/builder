@@ -6,7 +6,7 @@ import { untilLoaded, type QueryRet } from '@/utils/query'
 import { Cancelled, capture } from '@/utils/exception'
 import type { ProjectData } from '@/apis/project'
 import type { IProject, ProjectSerialized } from '@/models/project'
-import type { CloudHelpers } from '@/models/common/cloud'
+import type { CloudHelpers as RawCloudHelpers } from '@/models/common/cloud'
 import type { SignedInState } from '@/stores/user'
 
 export enum SavingState {
@@ -21,6 +21,8 @@ export interface ILocalCache {
   save(serialized: ProjectSerialized, signal?: AbortSignal): Promise<void>
   clear(): Promise<void>
 }
+
+export type CloudHelpers = Pick<RawCloudHelpers, 'load' | 'save'>
 
 export class Saving {
   private stateRef = ref(SavingState.Pending)

@@ -1,5 +1,6 @@
 import type { LocaleMessage } from '@/utils/i18n'
-import { lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
+import { assetDisplayNameMaxLength } from '@/apis/asset'
+import { getStringLengthInCodePoints, lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
 import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/xgo'
 import {
   resourceAnimationName,
@@ -10,29 +11,31 @@ import {
   resourceWidgetName
 } from './resource'
 
+const assetNameMaxLength = 100
+
 function validateAssetName(name: string) {
   if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
-  if (name.length > 100)
+  if (getStringLengthInCodePoints(name) > assetNameMaxLength)
     return {
-      en: 'The name is too long (maximum is 100 characters)',
-      zh: '名字长度超出限制（最多 100 个字符）'
+      en: `The name is too long (maximum is ${assetNameMaxLength} characters)`,
+      zh: `名字长度超出限制（最多 ${assetNameMaxLength} 个字符）`
     }
 }
 
 function getAssetNameTip(asset: LocaleMessage) {
   return {
-    en: `The ${asset.en} name should be non-empty string with length no longer than 100.`,
-    zh: `${asset.zh}名称不可为空，长度不超过 100`
+    en: `The ${asset.en} name should be non-empty string with length no longer than ${assetNameMaxLength}.`,
+    zh: `${asset.zh}名称不可为空，长度不超过 ${assetNameMaxLength}`
   }
 }
 
 export function validateAssetDisplayName(name: string) {
   name = name.trim()
   if (name === '') return { en: 'The asset name must not be blank', zh: '名称不可为空' }
-  if (name.length > 100)
+  if (getStringLengthInCodePoints(name) > assetDisplayNameMaxLength)
     return {
-      en: 'The name is too long (maximum is 100 characters)',
-      zh: '名字长度超出限制（最多 100 个字符）'
+      en: `The name is too long (maximum is ${assetDisplayNameMaxLength} characters)`,
+      zh: `名字长度超出限制（最多 ${assetDisplayNameMaxLength} 个字符）`
     }
 }
 

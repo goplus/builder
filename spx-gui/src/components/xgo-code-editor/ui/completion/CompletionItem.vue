@@ -14,7 +14,7 @@ type Part = {
 }
 
 const parts = computed(() => {
-  const matches = createMatches(props.item.score ?? undefined)
+  const matches = createMatches(props.item.labelScore ?? undefined)
   const parts: Part[] = []
   let lastEnd = 0
   for (const match of matches) {

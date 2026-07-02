@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { useMessageHandle } from '@/utils/exception'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useNetwork } from '@/utils/network'
 import { cloudHelpers } from '@/models/common/cloud'
 import { type SpxProject } from '@/models/spx/project'
 import { useSignedInUser, useUser } from '@/stores/user'
+import { projectDisplayNameMaxLength } from '@/apis/project'
 import { UIIcon, UITextInput } from '@/components/ui'
 
 const props = defineProps<{
@@ -73,6 +74,12 @@ const handleSubmit = useMessageHandle(
       reset()
       return
     }
+    if (newName.length > projectDisplayNameMaxLength) {
+      throw new DefaultException({
+        en: `The project display name must be ${projectDisplayNameMaxLength} characters or fewer`,
+        zh: `项目显示名不能超过 ${projectDisplayNameMaxLength} 字`
+      })
+    }
     try {
       editing.value = false // Optimistically update UI before the async operation
       const serialized = await project.export()
@@ -138,6 +145,7 @@ function handleInputEsc() {
           v-model:value="displayName"
           v-radar="{ name: 'Project display name input', desc: 'Input field for project display name' }"
           class="w-62 text-xl"
+          :maxlength="projectDisplayNameMaxLength"
           @keydown.esc.prevent="handleInputEsc"
           @blur="handleInputBlur"
         />

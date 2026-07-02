@@ -5,7 +5,7 @@
 
 import * as lsp from 'vscode-languageserver-protocol'
 import type { BaseContext, DefinitionDocumentationString, Position } from './common'
-import { DefinitionKind, makeAdvancedMarkdownString, toLSPPosition } from './common'
+import { DefinitionKind, fromLSPTextEdit, makeAdvancedMarkdownString, toLSPPosition, type TextEdit } from './common'
 import type { ILSPClient } from './lsp/types'
 import type { IDocumentBase } from './document-base'
 import type { ClassFramework } from './project'
@@ -20,15 +20,22 @@ export enum InsertTextFormat {
 export type CompletionItem = {
   label: string
   kind: DefinitionKind
+  filterSortText: string
   insertText: string
   insertTextFormat: InsertTextFormat
+  textEdit: TextEdit | null
   documentation: DefinitionDocumentationString | null
+}
+
+export type CompletionList = {
+  items: CompletionItem[]
+  isIncomplete: boolean
 }
 
 export type CompletionContext = BaseContext
 
 export interface ICompletionProvider {
-  provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionItem[]>
+  provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionList>
 }
 
 export class CompletionProvider implements ICompletionProvider {
@@ -76,8 +83,8 @@ export class CompletionProvider implements ICompletionProvider {
     }
   }
 
-  async provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionItem[]> {
-    const items = await this.lspClient.getCompletionItems(
+  async provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionList> {
+    const lspCompletionList = await this.lspClient.getCompletionList(
       { signal: ctx.signal },
       {
         textDocument: ctx.textDocument.id,
@@ -87,26 +94,29 @@ export class CompletionProvider implements ICompletionProvider {
     const lineContent = ctx.textDocument.getLineContent(position.line)
     const isLineEnd = lineContent.length === position.column - 1
     const maybeItems = await Promise.all(
-      items.map(async (item) => {
+      lspCompletionList.items.map(async (item) => {
         const result: CompletionItem = {
           label: item.label,
           kind: this.getCompletionItemKind(item.kind),
+          filterSortText: item.filterText || item.label,
           insertText: item.label,
-          insertTextFormat: InsertTextFormat.PlainText,
+          insertTextFormat: this.getInsertTextFormat(item.insertTextFormat),
+          textEdit: fromLSPCompletionItemTextEdit(item.textEdit),
           documentation: null
         }
 
         if (item.insertText != null) {
           result.insertText = item.insertText
-          result.insertTextFormat = this.getInsertTextFormat(item.insertTextFormat)
         }
 
         const defId = item.data?.definition
         const definition = defId != null ? await this.documentBase.getDocumentation(defId) : null
 
-        // Skip APIs from framework packages without documentation — assumed not recommended
+        // Skip undocumented framework APIs because they are treated as not recommended.
+        // Kwarg snippets are synthesized from call-site context and have no documentation entry by design.
         const classFrameworkPkg = this.classFramework.pkgPaths[0]
-        if (defId != null && defId.package === classFrameworkPkg && definition == null) return null
+        const isUndocumentedFrameworkItem = defId != null && defId.package === classFrameworkPkg && definition == null
+        if (isUndocumentedFrameworkItem && !isKwargCompletionItem(result)) return null
         if (definition != null && definition.hiddenFromList) return null
 
         if (definition != null) {
@@ -120,7 +130,7 @@ export class CompletionProvider implements ICompletionProvider {
           //   If in the middle of the line, snippet may mess up the code
           // 2. The insertSnippet starts with the insertText.
           //   If not, that may be senarios like `Camera.zoom` (insertSnippet) vs `zoom` (insertText)
-          if (isLineEnd && definition.insertSnippet.startsWith(result.insertText)) {
+          if (result.textEdit == null && isLineEnd && definition.insertSnippet.startsWith(result.insertText)) {
             result.insertText = definition.insertSnippet
             result.insertTextFormat = InsertTextFormat.Snippet
           }
@@ -134,6 +144,20 @@ export class CompletionProvider implements ICompletionProvider {
         return result
       })
     )
-    return maybeItems.filter((item) => item != null) as CompletionItem[]
+    return {
+      items: maybeItems.filter((item) => item != null) as CompletionItem[],
+      isIncomplete: lspCompletionList.isIncomplete
+    }
   }
+}
+
+function fromLSPCompletionItemTextEdit(textEdit: lsp.CompletionItem['textEdit']): TextEdit | null {
+  if (textEdit == null) return null
+  if ('range' in textEdit) return fromLSPTextEdit(textEdit)
+  return fromLSPTextEdit({ range: textEdit.insert, newText: textEdit.newText })
+}
+
+// XGo LSP kwarg completions are snippets with insertText of the form `<label> = ${1:}`.
+function isKwargCompletionItem(item: CompletionItem) {
+  return item.insertTextFormat === InsertTextFormat.Snippet && item.insertText.startsWith(`${item.label} = `)
 }

@@ -95,6 +95,23 @@ describe('Client', () => {
     })
   })
 
+  describe('form requests', () => {
+    it('should submit application/x-www-form-urlencoded payloads', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+
+      await client.postForm('/account/oauth/token', {
+        grant_type: 'refresh_token',
+        client_id: 'client-1',
+        refresh_token: 'refresh-1'
+      })
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      const request = fetchMock.mock.calls[0]![0] as Request
+      expect(request.headers.get('Content-Type')).toBe('application/x-www-form-urlencoded')
+      expect(await request.text()).toBe('grant_type=refresh_token&client_id=client-1&refresh_token=refresh-1')
+    })
+  })
+
   describe('default fetch binding', () => {
     it('should call the global fetch with the global receiver when fetchFn is not injected', async () => {
       const globalFetchMock = vi.fn(function (this: typeof globalThis, _req: RequestInfo | URL, _init?: RequestInit) {
@@ -110,6 +127,22 @@ describe('Client', () => {
       await defaultClient.get('/health')
 
       expect(globalFetchMock).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('explicit authorization headers', () => {
+    it('should preserve an explicit Authorization header instead of overwriting it with the token provider', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ username: 'alice' }), { status: 200 }))
+      const tokenProvider = vi.fn(async () => 'shared-token')
+      client.setTokenProvider(tokenProvider)
+
+      await client.get('/user', undefined, {
+        headers: new Headers({ Authorization: 'Bearer direct-token' })
+      })
+
+      const req = fetchMock.mock.calls[0]?.[0] as Request
+      expect(req.headers.get('Authorization')).toBe('Bearer direct-token')
+      expect(tokenProvider).toHaveBeenCalledTimes(0)
     })
   })
 })

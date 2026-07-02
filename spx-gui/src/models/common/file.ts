@@ -8,7 +8,7 @@ import { markRaw } from 'vue'
 import { getMimeFromExt, isSvgMimeType } from '@/utils/file'
 import { getSVGSize } from '@/utils/img'
 import { extname } from '@/utils/path'
-import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
+import { Disposable, getCleanupSignal, type OnCleanup } from '@/utils/disposable'
 import type { Size } from '.'
 
 export type Metadata = {
@@ -117,12 +117,12 @@ export class File {
     return this.loading.wait(signal)
   }
 
-  async url(onCleanup: (disposer: Disposer) => void) {
-    const signal = getCleanupSignal(onCleanup)
+  async url(cleanup: OnCleanup | AbortSignal) {
+    const signal = typeof cleanup === 'function' ? getCleanupSignal(cleanup) : cleanup
     const ab = await this.arrayBuffer(signal)
     signal.throwIfAborted()
     const url = URL.createObjectURL(new Blob([ab], { type: this.type }))
-    signal.addEventListener('abort', () => URL.revokeObjectURL(url))
+    signal.addEventListener('abort', () => URL.revokeObjectURL(url), { once: true })
     return url
   }
 }

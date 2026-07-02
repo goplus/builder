@@ -1,14 +1,25 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
+import saveAs from 'file-saver'
 import { useI18n } from '@/utils/i18n'
-import { useMessageHandle } from '@/utils/exception'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { selectFile } from '@/utils/file'
 import {
   addCourseSeries,
+  courseSeriesDescriptionMaxLength,
+  courseSeriesTitleMaxLength,
   updateCourseSeries,
   type CourseSeries,
   type AddUpdateCourseSeriesParams
 } from '@/apis/course-series'
 import { listSignedInUserCourses, type Course } from '@/apis/course'
+import { useSignedInUser } from '@/stores/user'
+import {
+  exportCourseSeriesFile,
+  inspectCourseSeriesFileImport,
+  importCourseSeriesFile,
+  importCourseSeriesFileAsNew
+} from './course-series-file'
 import {
   UIFormModal,
   UIForm,
@@ -17,7 +28,8 @@ import {
   UINumberInput,
   UIButton,
   useMessage,
-  useForm
+  useForm,
+  useConfirmDialog
 } from '@/components/ui'
 import CourseSelector from './CourseSelector.vue'
 import SelectedCoursesList from './SelectedCoursesList.vue'
@@ -35,6 +47,8 @@ const emit = defineEmits<{
 
 const i18n = useI18n()
 const m = useMessage()
+const confirm = useConfirmDialog()
+const signedInUser = useSignedInUser()
 
 const isEditMode = computed(() => props.courseSeries !== null)
 const modalTitle = computed(() =>
@@ -48,7 +62,11 @@ const form = useForm({
     '',
     (v: string) => {
       if (v === '') return i18n.t({ en: 'Please enter series title', zh: '请输入系列标题' })
-      if (v.length > 200) return i18n.t({ en: 'Title too long (max 200 chars)', zh: '标题过长（最多200字符）' })
+      if (v.length > courseSeriesTitleMaxLength)
+        return i18n.t({
+          en: `Title too long (max ${courseSeriesTitleMaxLength} chars)`,
+          zh: `标题过长（最多 ${courseSeriesTitleMaxLength} 字符）`
+        })
       return null
     }
   ],
@@ -59,7 +77,17 @@ const form = useForm({
       return null
     }
   ],
-  description: [''],
+  description: [
+    '',
+    (v: string) => {
+      if (v.length > courseSeriesDescriptionMaxLength)
+        return i18n.t({
+          en: `Description too long (max ${courseSeriesDescriptionMaxLength} chars)`,
+          zh: `描述过长（最多 ${courseSeriesDescriptionMaxLength} 字符）`
+        })
+      return null
+    }
+  ],
   order: [1],
   courseIDs: [
     [] as string[],
@@ -148,6 +176,88 @@ const handleSubmit = useMessageHandle(
     zh: isEditMode.value ? '更新课程系列失败' : '创建课程系列失败'
   }
 )
+
+const handleImport = useMessageHandle(
+  async () => {
+    const username = signedInUser.value?.username
+    if (username == null) {
+      throw new DefaultException({ en: 'Please sign in first', zh: '请先登录' })
+    }
+
+    const courseSeries = props.courseSeries
+    const file = await selectFile({ accept: ['xbcs.zip'] })
+    const inspection = await m.withLoading(
+      inspectCourseSeriesFileImport(courseSeries, file, username),
+      i18n.t({ en: 'Inspecting course series file', zh: '检查课程系列文件中' })
+    )
+
+    await confirm({
+      type: 'warning',
+      title: i18n.t({ en: 'Import course series file', zh: '导入课程系列文件' }),
+      content: getImportConfirmContent(courseSeries, inspection.deletedCourses, inspection.overwrittenProjects),
+      confirmText: i18n.t({ en: 'Import', zh: '导入' })
+    })
+
+    await m.withLoading(
+      courseSeries != null
+        ? importCourseSeriesFile(courseSeries, file, username)
+        : importCourseSeriesFileAsNew(file, username),
+      i18n.t({ en: 'Importing course series file', zh: '导入课程系列文件中' })
+    )
+    m.success(i18n.t({ en: 'Course series imported successfully', zh: '课程系列导入成功' }))
+    emit('resolved')
+  },
+  {
+    en: 'Failed to import course series file',
+    zh: '导入课程系列文件失败'
+  }
+)
+
+const handleExport = useMessageHandle(
+  async () => {
+    if (props.courseSeries == null) throw new Error('Course series expected')
+    const exported = await m.withLoading(
+      exportCourseSeriesFile(props.courseSeries),
+      i18n.t({ en: 'Exporting course series file', zh: '导出课程系列文件中' })
+    )
+    saveAs(exported, exported.name)
+  },
+  {
+    en: 'Failed to export course series file',
+    zh: '导出课程系列文件失败'
+  }
+)
+
+function getImportConfirmContent(
+  courseSeries: CourseSeries | null,
+  deletedCourses: string[],
+  overwrittenProjects: string[]
+) {
+  const deletedCourseText = formatNameList(deletedCourses)
+  const overwrittenProjectText = formatNameList(overwrittenProjects)
+  if (courseSeries != null) {
+    return i18n.t({
+      en: `Courses currently in "${courseSeries.title}" will be deleted and rebuilt from the imported file. Deleted courses: ${deletedCourseText}. Overwritten projects: ${overwrittenProjectText}. This operation cannot be undone. Continue?`,
+      zh: `当前课程系列“${courseSeries.title}”中的旧课程会被删除，并根据导入文件重建。会删除的课程：${deletedCourseText}。会覆盖并发布的项目：${overwrittenProjectText}。此操作不可撤销，确定继续吗？`
+    })
+  }
+  return i18n.t({
+    en: `A new course series will be created from the imported file. Overwritten projects: ${overwrittenProjectText}. Continue?`,
+    zh: `将根据导入文件创建一个新的课程系列。会覆盖并发布的项目：${overwrittenProjectText}。确定继续吗？`
+  })
+}
+
+function formatNameList(names: string[]) {
+  if (names.length === 0) return i18n.t({ en: 'None', zh: '无' })
+  const visibleNames = names.slice(0, 8).map((name) => `"${name}"`)
+  if (names.length <= visibleNames.length) {
+    return i18n.t({ en: visibleNames.join(', '), zh: visibleNames.join('、') })
+  }
+  return i18n.t({
+    en: `${visibleNames.join(', ')} and ${names.length - visibleNames.length} more`,
+    zh: `${visibleNames.join('、')} 等 ${names.length} 个`
+  })
+}
 </script>
 
 <template>
@@ -252,6 +362,12 @@ const handleSubmit = useMessageHandle(
       </div>
 
       <footer class="mt-5 flex justify-end gap-3 border-t border-dividing-line-2 pt-5">
+        <UIButton v-if="isEditMode" type="neutral" :loading="handleExport.isLoading.value" @click="handleExport.fn">
+          {{ $t({ en: 'Export to file', zh: '导出到文件' }) }}
+        </UIButton>
+        <UIButton type="neutral" :loading="handleImport.isLoading.value" @click="handleImport.fn">
+          {{ $t({ en: 'Import from file...', zh: '从文件导入...' }) }}
+        </UIButton>
         <UIButton type="neutral" @click="emit('cancelled')">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>

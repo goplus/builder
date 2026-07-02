@@ -19,7 +19,7 @@ import RemoveMenuItem from '@/components/editor/common/corner-menu-item/RemoveMe
 import GenItem from '../common/GenItem.vue'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useHovered } from '@/utils/dom'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import animationSVG from '../common/animation.svg?raw'
 
 const props = defineProps<{
@@ -35,7 +35,7 @@ const emit = defineEmits<{
 
 const wrapperRef = ref<InstanceType<typeof GenItem>>()
 
-const [imgSrc, imgLoading] = useFileUrl(() => props.gen.result?.costumes[0].img)
+const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.gen.result?.costumes[0].img)
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 
 const isLoading = computed(() => isAnimationLoading(props.gen) || imgLoading.value)

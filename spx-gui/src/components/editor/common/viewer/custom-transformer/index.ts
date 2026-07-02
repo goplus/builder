@@ -22,7 +22,7 @@ export type TransformOp = 'rotate' | 'scale' | 'move' | 'flip'
 
 export type CustomTransformerConfig = {
   rotationStyle?: 'none' | 'normal' | 'left-right'
-} & Pick<TransformerConfig, 'centeredScaling'>
+} & Pick<TransformerConfig, 'centeredScaling' | 'keepRatio'>
 
 class FlipButton extends Konva.Group {
   orientation: 'left' | 'right'
