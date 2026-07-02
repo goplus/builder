@@ -36,7 +36,7 @@ const props = defineProps<{
 
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
   // Ignore intermediate empty data to keep UI stable
-  return props.controller.filteredItems ?? oldValue ?? null
+  return props.controller.items ?? oldValue ?? null
 })
 
 const loaded = ref(false)

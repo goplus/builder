@@ -23,18 +23,19 @@ export class APIReferenceController extends Disposable {
     return provider.provideAPIReference({ textDocument, signal })
   }, true)
 
-  get items() {
+  /** Items as loaded from the provider, before applying the filter. */
+  private get loadedItems() {
     return this.itemsMgr.result.data
   }
 
   /**
-   * Items after applying `codeEditor.apiReferenceFilter`. This is a synchronous derivation
-   * over the already-loaded `items`, so filter changes update the UI reactively without
-   * re-running the async provider. Falls back to the full list when the filter matches
-   * nothing, to avoid leaving the panel empty.
+   * Items exposed to consumers, after applying `codeEditor.apiReferenceFilter`. Filtering is an
+   * internal concern of the controller: it is a synchronous derivation over the already-loaded items,
+   * so filter changes update the UI reactively without re-running the async provider. Falls back to
+   * the full list when the filter matches nothing, to avoid leaving the panel empty.
    */
-  get filteredItems() {
-    const items = this.items
+  get items() {
+    const items = this.loadedItems
     if (items == null) return null
     const filter = this.ui.codeEditor.apiReferenceFilter
     if (filter == null) return items
