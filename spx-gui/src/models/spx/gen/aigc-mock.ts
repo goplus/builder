@@ -471,6 +471,13 @@ export class MockAigcApis {
           imageUrls: this.range(p.n).map((i) => this.url(`backdrop-${name}-${i + 1}.png`))
         } as TaskResult<T>
       }
+      case TaskType.GenerateSound: {
+        const p = params as TaskParams<TaskType.GenerateSound>
+        const name = this.sanitize(p.settings.name)
+        return {
+          audioUrl: this.url(`sound-${name}.mp3`)
+        } as TaskResult<T>
+      }
       default:
         throw new Error(`unsupported task type: ${type as string}`)
     }

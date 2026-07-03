@@ -220,7 +220,8 @@ export const taskDurations: Record<TaskType, number> = {
   [TaskType.GenerateCostume]: 15,
   [TaskType.GenerateAnimationVideo]: 180,
   [TaskType.ExtractVideoFrames]: 12,
-  [TaskType.GenerateBackdrop]: 15
+  [TaskType.GenerateBackdrop]: 15,
+  [TaskType.GenerateSound]: 5
 }
 
 export type TaskApis = Pick<typeof aigcApis, 'createTask' | 'cancelTask' | 'subscribeTaskEvents'>

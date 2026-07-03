@@ -34,6 +34,7 @@ import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
+import SoundGenModal from './gen/sound/SoundGenModal.vue'
 import type { GenHelpers } from './gen/modal'
 
 export function useSpriteGenModal() {
@@ -47,6 +48,13 @@ export function useSpriteGenModal() {
 export function useBackdropGenModal() {
   const invokeModal = useModal(BackdropGenModal)
   return function invokeBackdropGenModal(project: SpxProject) {
+    return invokeModal({ project })
+  }
+}
+
+export function useSoundGenModal() {
+  const invokeModal = useModal(SoundGenModal)
+  return function invokeSoundGenModal(project: SpxProject) {
     return invokeModal({ project })
   }
 }
