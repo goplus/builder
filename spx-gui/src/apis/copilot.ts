@@ -5,6 +5,8 @@
 import type { JsonSchema7Type } from 'zod-to-json-schema'
 import { client } from './common'
 
+export const copilotMessageContentMaxLength = 40000
+
 export enum ToolType {
   Function = 'function'
 }
@@ -89,7 +91,7 @@ export type GenerateCopilotMessageOptions = {
   tools?: Tool[]
 }
 
-const timeout = 15 * 1000
+const timeout = 20 * 1000
 
 export async function* generateCopilotMessage(
   messages: Message[],
@@ -100,7 +102,7 @@ export async function* generateCopilotMessage(
       '/copilot/messages',
       { messages, tools: options?.tools },
       {
-        timeout: timeout,
+        timeout,
         signal: options?.signal
       }
     )

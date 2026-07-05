@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAsyncComputedLegacy } from '@/utils/utils'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import type { AssetData } from '@/apis/asset'
 import { asset2Backdrop } from '@/models/spx/common/asset'
 import { UIBackdropItem } from '@/components/ui'
@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const backdrop = useAsyncComputedLegacy(() => asset2Backdrop(props.asset))
-const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
+const [imgSrc, imgLoading] = useRenderableImageUrl(() => backdrop.value?.img)
 const name = computed(() => props.asset.displayName)
 </script>
 

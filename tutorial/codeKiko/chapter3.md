@@ -35,11 +35,9 @@ step 100
 
 **使用循环的代码：**
 ```
-onStart => {
-    repeat 5, => {
-        turn -60
-        step 100
-    }
+repeat 5, => {
+    turn -60
+    step 100
 }
 ```
 
@@ -70,12 +68,7 @@ repeat 次数, => {
 - `{}`：大括号，包含代码块
 - 完整意思：定义一段要执行的代码
 
-我们在 `onStart` 中已经见过它：
-```
-onStart => {  // 这也是 Lambda 表达式
-    // 代码
-}
-```
+在 `repeat` 中，`=> {}` 就定义了要重复执行的那段代码。
 
 **循环体**
 
@@ -132,18 +125,16 @@ repeat 5, => {
 
 **不用循环：**
 ```
-onStart => {
-    turn -60
-    step 100
-    turn -60
-    step 100
-    turn -60
-    step 100
-    turn -60
-    step 100
-    turn -60
-    step 100
-}
+turn -60
+step 100
+turn -60
+step 100
+turn -60
+step 100
+turn -60
+step 100
+turn -60
+step 100
 ```
 - 10 行代码
 - 重复写相同内容
@@ -152,11 +143,9 @@ onStart => {
 
 **使用循环：**
 ```
-onStart => {
-    repeat 5, => {
-        turn -60
-        step 100
-    }
+repeat 5, => {
+    turn -60
+    step 100
 }
 ```
 - 5 行代码
@@ -362,10 +351,8 @@ repeatUntil xpos > 80, => {  // 一直走，直到 x 坐标 > 80
 
 **完整代码：**
 ```
-onStart => {
-    repeatUntil xpos > 80, => {
-        step 10
-    }
+repeatUntil xpos > 80, => {
+    step 10
 }
 ```
 
@@ -658,11 +645,9 @@ XGo 提供了一个更简洁的命令：`waitUntil`（等待直到）。
 
 **完整代码：**
 ```
-onStart => {
-    waitUntil 萝卜.mature
-    turnTo 萝卜
-    stepTo 萝卜
-}
+waitUntil 萝卜.mature
+turnTo 萝卜
+stepTo 萝卜
 ```
 
 #### 代码详解
@@ -823,11 +808,9 @@ Kiko.mature    // ✗ Kiko 没有这个属性
 让我们详细看看代码是如何执行的：
 
 ```
-onStart => {
-    waitUntil 萝卜.mature  // 第1步：等待
-    turnTo 萝卜            // 第2步：转向
-    stepTo 萝卜            // 第3步：前进
-}
+waitUntil 萝卜.mature  // 第1步：等待
+turnTo 萝卜            // 第2步：转向
+stepTo 萝卜            // 第3步：前进
 ```
 
 **时间线**：
@@ -915,54 +898,44 @@ stepTo 萝卜            // 然后执行这行
 
 `waitUntil` 会持续监测这种变化。
 
-让我继续完成剩余部分：
-
-```
-
 **模式 3：等待后循环**
 
 ```
-onStart => {
-    // 等待门打开（自定义属性）
-    waitUntil 门.open
-    
-    // 门开了，通过走廊
-    repeat 5, => {
-        step 20
-    }
+// 等待门打开（自定义属性）
+waitUntil 门.open
+
+// 门开了，通过走廊
+repeat 5, => {
+    step 20
 }
 ```
 
 **模式 4：循环中等待**
 
 ```
-onStart => {
-    repeat 3, => {
-        // 等待萝卜成熟（自定义属性）
-        waitUntil 萝卜.mature
-        
-        // 收获萝卜
-        turnTo 萝卜
-        stepTo 萝卜
-        
-        // 萝卜会重新开始生长...
-    }
+repeat 3, => {
+    // 等待萝卜成熟（自定义属性）
+    waitUntil 萝卜.mature
+    
+    // 收获萝卜
+    turnTo 萝卜
+    stepTo 萝卜
+    
+    // 萝卜会重新开始生长...
 }
 ```
 
 **模式 5：混合使用系统属性和自定义属性**
 
 ```
-onStart => {
-    // 先等待到达某个位置（系统属性）
-    waitUntil xpos > 50
-    
-    // 再等待门打开（自定义属性）
-    waitUntil 门.open
-    
-    // 最后通过门
-    step 100
-}
+// 先等待到达某个位置（系统属性）
+waitUntil xpos > 50
+
+// 再等待门打开（自定义属性）
+waitUntil 门.open
+
+// 最后通过门
+step 100
 ```
 
 #### 三种循环的总结

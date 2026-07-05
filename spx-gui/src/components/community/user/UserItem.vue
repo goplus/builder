@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { User } from '@/apis/user'
-import { getUserPageRoute } from '@/router'
+import { getUserPageRoute } from '@/apps/xbuilder/router'
 import RouterUILink from '@/components/common/RouterUILink.vue'
 import TextView from '../TextView.vue'
 import UserAvatar from './UserAvatar.vue'

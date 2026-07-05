@@ -82,6 +82,9 @@ import camera from './camera.svg?raw'
 import zoomIn from './zoom-in.svg?raw'
 import zoomOut from './zoom-out.svg?raw'
 import zoomReset from './zoom-reset.svg?raw'
+import backdropTile from './backdrop-tile.svg?raw'
+import backdropScale from './backdrop-scale.svg?raw'
+import backdropOriginal from './backdrop-original.svg?raw'
 
 const typeIconMap = {
   file,
@@ -158,7 +161,10 @@ const typeIconMap = {
   camera,
   zoomIn,
   zoomOut,
-  zoomReset
+  zoomReset,
+  backdropTile,
+  backdropScale,
+  backdropOriginal
 }
 
 export type Type = keyof typeof typeIconMap

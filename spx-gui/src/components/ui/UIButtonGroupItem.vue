@@ -1,5 +1,13 @@
 <template>
-  <div :class="rootClass" @click="handleClick">
+  <div
+    role="button"
+    :aria-pressed="isActive"
+    tabindex="0"
+    :class="rootClass"
+    @click="handleClick"
+    @keydown.enter.prevent="handleClick"
+    @keydown.space.prevent="handleClick"
+  >
     <slot></slot>
   </div>
 </template>

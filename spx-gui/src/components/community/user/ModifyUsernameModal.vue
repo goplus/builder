@@ -9,7 +9,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { isUsernameTaken } from '@/apis/user'
+import { isUsernameTaken, usernameMaxLength } from '@/apis/user'
 import { useModifySignedInUsername } from '@/stores/user'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -40,10 +40,10 @@ async function validateUsername(val: string): Promise<FormValidationResult> {
       en: 'The username can only contain letters, digits, and the characters - and _.',
       zh: '用户名仅可包含字母、数字以及字符 - 和 _。'
     })
-  if (trimmed.length > 100)
+  if (trimmed.length > usernameMaxLength)
     return t({
-      en: 'The username is too long (maximum is 100 characters)',
-      zh: '用户名长度超出限制（最多 100 个字符）'
+      en: `The username is too long (maximum is ${usernameMaxLength} characters)`,
+      zh: `用户名长度超出限制（最多 ${usernameMaxLength} 个字符）`
     })
 
   if (await isUsernameTaken(trimmed))

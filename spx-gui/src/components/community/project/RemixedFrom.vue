@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { parseRemixSource } from '@/apis/project'
-import { getProjectPageRoute } from '@/router'
+import { getProjectPageRoute } from '@/apps/xbuilder/router'
 import { useUser } from '@/stores/user'
 import RouterUILink from '@/components/common/RouterUILink.vue'
 

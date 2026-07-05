@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { UILoading } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import type { Backdrop } from '@/models/spx/backdrop'
 import { useRenameBackdrop } from '@/components/asset'
 import EditorItemDetail from '../../common/EditorItemDetail.vue'
@@ -25,5 +25,5 @@ const handleRename = useMessageHandle(() => renameBackdrop(props.backdrop), {
   zh: '重命名背景失败'
 }).fn
 
-const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
+const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.backdrop.img)
 </script>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { showLicense } from '@/utils/env'
 import { UILink } from '@/components/ui'
+import { useCommunityConfig } from '../config'
+
+const { showLicense } = useCommunityConfig()
 </script>
 
 <template>

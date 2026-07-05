@@ -11,6 +11,7 @@ import { Disposable, getCleanupSignal, getTimeoutSignal, mergeSignals, promiseFo
 import Mutex from '@/utils/mutex'
 import { Cancelled, capture } from '@/utils/exception'
 import { getSpxProjectKnowledge } from '@/utils/spx'
+import { getStringLengthInCodePoints, unicodeSafeSlice } from '@/utils/utils'
 import { ProjectType, Visibility, type ProjectExtraSettings } from '@/apis/project'
 import { generateProjectDescription } from '@/apis/aigc'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
@@ -37,6 +38,7 @@ export const projectConfigFilePath = join(assetsDir, projectConfigFileName)
 
 const aiDescriptionMaxContentLength = 150_000 // Keep in sync with maxContentLength in spx-backend/internal/controller/aidescription.go
 const aiDescriptionTruncationNotice = '\n[TRUNCATED]\n'
+const aiDescriptionTruncationNoticeLength = getStringLengthInCodePoints(aiDescriptionTruncationNotice)
 const mainFileMaxLength = 60_000
 const spriteFileMaxLength = 20_000
 const projectConfigMaxLength = 15_000
@@ -572,29 +574,32 @@ export class SpxProject extends Disposable implements IProject {
     let result = ''
     const skippedSections: string[] = []
 
-    const append = (value: string) => {
-      if (value.length === 0 || remaining <= 0) return remaining > 0
-      const toWrite = Math.min(value.length, remaining)
-      result += value.slice(0, toWrite)
+    const appendKnownLength = (value: string, valueLength: number) => {
+      if (remaining <= 0) return false
+      if (valueLength === 0) return true
+      const toWrite = Math.min(valueLength, remaining)
+      result += unicodeSafeSlice(value, 0, toWrite)
       remaining -= toWrite
-      return toWrite === value.length
+      return toWrite === valueLength
     }
+    const append = (value: string) => appendKnownLength(value, getStringLengthInCodePoints(value))
     const appendLine = (line: string) => append(`${line}\n`)
     const appendBlankLine = () => append('\n')
 
     const appendBody = (body: string) => {
-      if (body.length === 0) return true
-      if (body.length <= remaining) {
-        return append(body)
+      const bodyLength = getStringLengthInCodePoints(body)
+      if (bodyLength === 0) return true
+      if (bodyLength <= remaining) {
+        return appendKnownLength(body, bodyLength)
       }
-      if (remaining < aiDescriptionTruncationNotice.length) {
+      if (remaining < aiDescriptionTruncationNoticeLength) {
         return false
       }
-      const allowedLength = remaining - aiDescriptionTruncationNotice.length
+      const allowedLength = remaining - aiDescriptionTruncationNoticeLength
       if (allowedLength > 0) {
-        append(body.slice(0, allowedLength))
+        appendKnownLength(unicodeSafeSlice(body, 0, allowedLength), allowedLength)
       }
-      append(aiDescriptionTruncationNotice)
+      appendKnownLength(aiDescriptionTruncationNotice, aiDescriptionTruncationNoticeLength)
       return false
     }
 
@@ -605,13 +610,15 @@ export class SpxProject extends Disposable implements IProject {
       }
 
       const header = `=== ${title} ===`
-      const headerLength = header.length + 1
+      const headerLine = `${header}\n`
+      const headerLength = getStringLengthInCodePoints(headerLine)
       if (remaining <= headerLength) {
         skippedSections.push(title)
         return
       }
 
       const body = await toText(file)
+      const bodyLength = getStringLengthInCodePoints(body)
       let sectionBudget = remaining - headerLength
       if (maxBodyLength != null) sectionBudget = Math.min(sectionBudget, maxBodyLength)
       if (sectionBudget <= 0) {
@@ -619,17 +626,19 @@ export class SpxProject extends Disposable implements IProject {
         return
       }
       let bodyToAppend = body
-      if (body.length > sectionBudget) {
-        const sliceLength = sectionBudget - aiDescriptionTruncationNotice.length
+      let bodyToAppendLength = bodyLength
+      if (bodyLength > sectionBudget) {
+        const sliceLength = sectionBudget - aiDescriptionTruncationNoticeLength
         if (sliceLength <= 0) {
           skippedSections.push(title)
           return
         }
-        bodyToAppend = body.slice(0, sliceLength) + aiDescriptionTruncationNotice
+        bodyToAppend = unicodeSafeSlice(body, 0, sliceLength) + aiDescriptionTruncationNotice
+        bodyToAppendLength = sliceLength + aiDescriptionTruncationNoticeLength
       }
 
-      appendLine(header)
-      append(bodyToAppend)
+      appendKnownLength(headerLine, headerLength)
+      appendKnownLength(bodyToAppend, bodyToAppendLength)
       if (remaining > 0) appendBlankLine()
     }
 
@@ -675,7 +684,7 @@ export class SpxProject extends Disposable implements IProject {
 
     if (skippedSections.length > 0 && remaining > 0) {
       const header = '=== Skipped Sections ==='
-      if (remaining > header.length + 1) {
+      if (remaining > getStringLengthInCodePoints(`${header}\n`)) {
         appendLine(header)
         for (const name of skippedSections) {
           if (remaining <= 0) break

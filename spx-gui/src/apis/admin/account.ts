@@ -1,0 +1,246 @@
+import { client, SortOrder, type ByPage, type PaginationParams } from '@/apis/common'
+import type {
+  AccountApp,
+  AccountAppClientType,
+  AccountAppGrant,
+  AccountAppSecret,
+  AccountAppStatus,
+  AccountAppToken,
+  AccountAppTokenType,
+  AccountSession,
+  AccountUser,
+  AccountUserIdentity,
+  CreatedAccountAppSecret,
+  CreatedAccountAppToken
+} from '@/apis/account/common'
+
+export type {
+  AccountApp,
+  AccountAppGrant,
+  AccountAppSecret,
+  AccountAppToken,
+  AccountAppTokenType,
+  AccountSession,
+  AccountUser,
+  AccountUserIdentity,
+  CreatedAccountAppSecret,
+  CreatedAccountAppToken
+} from '@/apis/account/common'
+
+export const accountUsersKeywordMaxLength = 100
+export const accountUserUsernameMaxLength = 100
+export const accountUserDisplayNameMaxLength = 100
+export const accountUserPasswordMinLength = 8
+export const accountUserPasswordMaxLength = 128
+export const accountAppDisplayNameMaxLength = 100
+export const accountAppSecretNameMaxLength = 100
+export const accountAppTokenNameMaxLength = 100
+
+export type ListAccountUsersParams = PaginationParams & {
+  /** Filter account users by username or display name pattern */
+  keyword?: string
+  /** Field by which to order the results */
+  orderBy?: 'createdAt' | 'updatedAt'
+  /** Order in which to sort the results */
+  sortOrder?: SortOrder
+}
+
+export function listAccountUsers(params?: ListAccountUsersParams) {
+  return client.get('/admin/account/users', params) as Promise<ByPage<AccountUser>>
+}
+
+export type CreateAccountUserParams = {
+  /** Unique username of the account user */
+  username: string
+  /** Display name of the account user */
+  displayName: string
+  /** Optional administrator-managed password for the new user */
+  password?: string
+}
+
+export function createAccountUser(params: CreateAccountUserParams) {
+  return client.post('/admin/account/users', params) as Promise<AccountUser>
+}
+
+export function getAccountUser(userID: string) {
+  return client.get(`/admin/account/users/${encodeURIComponent(userID)}`) as Promise<AccountUser>
+}
+
+export type UpdateAccountUserParams = {
+  /** Display name of the account user */
+  displayName?: string
+}
+
+export function updateAccountUser(userID: string, params: UpdateAccountUserParams) {
+  return client.patch(`/admin/account/users/${encodeURIComponent(userID)}`, params) as Promise<AccountUser>
+}
+
+export async function updateAccountUserAvatar(userID: string, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  await client.putBinary(`/admin/account/users/${encodeURIComponent(userID)}/avatar`, form)
+}
+
+export type SetAccountUserPasswordParams = {
+  /** New administrator-managed password */
+  password: string
+}
+
+export function setAccountUserPassword(userID: string, params: SetAccountUserPasswordParams) {
+  return client.put(`/admin/account/users/${encodeURIComponent(userID)}/password`, params) as Promise<void>
+}
+
+export function deleteAccountUserPassword(userID: string) {
+  return client.delete(`/admin/account/users/${encodeURIComponent(userID)}/password`) as Promise<void>
+}
+
+export function listAccountUserIdentities(userID: string, params?: PaginationParams) {
+  return client.get(`/admin/account/users/${encodeURIComponent(userID)}/identities`, params) as Promise<
+    ByPage<AccountUserIdentity>
+  >
+}
+
+export function deleteAccountUserIdentity(userID: string, identityID: string) {
+  return client.delete(
+    `/admin/account/users/${encodeURIComponent(userID)}/identities/${encodeURIComponent(identityID)}`
+  ) as Promise<void>
+}
+
+export function listAccountUserSessions(userID: string, params?: PaginationParams) {
+  return client.get(`/admin/account/users/${encodeURIComponent(userID)}/sessions`, params) as Promise<
+    ByPage<AccountSession>
+  >
+}
+
+export function deleteAccountUserSessions(userID: string) {
+  return client.delete(`/admin/account/users/${encodeURIComponent(userID)}/sessions`) as Promise<void>
+}
+
+export function deleteAccountSession(sessionID: string) {
+  return client.delete(`/admin/account/sessions/${encodeURIComponent(sessionID)}`) as Promise<void>
+}
+
+export type ListAccountUserAppGrantsParams = PaginationParams & {
+  /** Field by which to order the results */
+  orderBy?: 'createdAt' | 'updatedAt' | 'lastUsedAt'
+  /** Order in which to sort the results */
+  sortOrder?: SortOrder
+}
+
+export function listAccountUserAppGrants(userID: string, params?: ListAccountUserAppGrantsParams) {
+  return client.get(`/admin/account/users/${encodeURIComponent(userID)}/app-grants`, params) as Promise<
+    ByPage<AccountAppGrant>
+  >
+}
+
+export function getAccountAppGrant(appGrantID: string) {
+  return client.get(`/admin/account/app-grants/${encodeURIComponent(appGrantID)}`) as Promise<AccountAppGrant>
+}
+
+export type ListAccountAppGrantTokensParams = PaginationParams & {
+  /** Filter tokens by OAuth token type */
+  tokenType?: AccountAppTokenType
+  /** Field by which to order the results */
+  orderBy?: 'createdAt'
+  /** Order in which to sort the results */
+  sortOrder?: SortOrder
+}
+
+export function listAccountAppGrantTokens(appGrantID: string, params?: ListAccountAppGrantTokensParams) {
+  return client.get(`/admin/account/app-grants/${encodeURIComponent(appGrantID)}/tokens`, params) as Promise<
+    ByPage<AccountAppToken>
+  >
+}
+
+export type CreateAccountAppGrantTokenParams = {
+  /** OAuth token type to create */
+  tokenType: 'accessToken'
+  /** Human-readable token name */
+  name: string
+  /** Expiration timestamp */
+  expiresAt: string
+}
+
+export function createAccountAppGrantToken(appGrantID: string, params: CreateAccountAppGrantTokenParams) {
+  return client.post(
+    `/admin/account/app-grants/${encodeURIComponent(appGrantID)}/tokens`,
+    params
+  ) as Promise<CreatedAccountAppToken>
+}
+
+export function deleteAccountAppGrantToken(appGrantID: string, tokenID: string) {
+  return client.delete(
+    `/admin/account/app-grants/${encodeURIComponent(appGrantID)}/tokens/${encodeURIComponent(tokenID)}`
+  ) as Promise<void>
+}
+
+export type ListAccountAppsParams = PaginationParams & {
+  /** Field by which to order the results */
+  orderBy?: 'createdAt' | 'updatedAt'
+  /** Order in which to sort the results */
+  sortOrder?: SortOrder
+}
+
+export function listAccountApps(params?: ListAccountAppsParams) {
+  return client.get('/admin/account/apps', params) as Promise<ByPage<AccountApp>>
+}
+
+export type CreateAccountAppParams = {
+  /** Unique app name */
+  name: string
+  /** Display name of the app */
+  displayName: string
+  /** OAuth client type of the app */
+  clientType: AccountAppClientType
+  /** Allowed redirect URIs */
+  redirectURIs: string[]
+  /** Allowed web origins */
+  allowedOrigins?: string[]
+}
+
+export function createAccountApp(params: CreateAccountAppParams) {
+  return client.post('/admin/account/apps', params) as Promise<AccountApp>
+}
+
+export function getAccountApp(appID: string) {
+  return client.get(`/admin/account/apps/${encodeURIComponent(appID)}`) as Promise<AccountApp>
+}
+
+export type UpdateAccountAppParams = {
+  /** Display name of the app */
+  displayName?: string
+  /** App status */
+  status?: AccountAppStatus
+  /** Allowed redirect URIs */
+  redirectURIs?: string[]
+  /** Allowed web origins */
+  allowedOrigins?: string[]
+}
+
+export function updateAccountApp(appID: string, params: UpdateAccountAppParams) {
+  return client.patch(`/admin/account/apps/${encodeURIComponent(appID)}`, params) as Promise<AccountApp>
+}
+
+export function listAccountAppSecrets(appID: string, params?: PaginationParams) {
+  return client.get(`/admin/account/apps/${encodeURIComponent(appID)}/secrets`, params) as Promise<
+    ByPage<AccountAppSecret>
+  >
+}
+
+export type CreateAccountAppSecretParams = {
+  /** App secret name */
+  name: string
+}
+
+export function createAccountAppSecret(appID: string, params: CreateAccountAppSecretParams) {
+  return client.post(
+    `/admin/account/apps/${encodeURIComponent(appID)}/secrets`,
+    params
+  ) as Promise<CreatedAccountAppSecret>
+}
+
+export function deleteAccountAppSecret(appID: string, secretID: string) {
+  return client.delete(
+    `/admin/account/apps/${encodeURIComponent(appID)}/secrets/${encodeURIComponent(secretID)}`
+  ) as Promise<void>
+}

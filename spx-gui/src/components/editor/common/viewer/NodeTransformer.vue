@@ -4,13 +4,13 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watchEffect } from 'vue'
+import { debounce } from 'lodash'
 import type Konva from 'konva'
 import type { Node } from 'konva/lib/Node'
 import { Sprite } from '@/models/spx/sprite'
 import type { Widget } from '@/models/spx/widget'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
 import { getNodeId } from './common'
-import { debounce } from 'lodash'
 
 const props = defineProps<{
   target: Sprite | Widget | null
@@ -88,11 +88,13 @@ defineExpose({
   getNode() {
     return transformer.value?.getNode()
   },
-  withHidden<T>(callback: () => T): T {
+  async withHidden<T>(callback: () => T | Promise<T>): Promise<Awaited<T>> {
     transformer.value?.getNode().hide()
-    const ret = callback()
-    transformer.value?.getNode().show()
-    return ret
+    try {
+      return await callback()
+    } finally {
+      transformer.value?.getNode().show()
+    }
   }
 })
 </script>

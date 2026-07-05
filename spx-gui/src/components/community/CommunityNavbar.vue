@@ -41,13 +41,14 @@ import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '../navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
-import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
-import { getSearchRoute } from '@/router'
-import { showTutorialsEntry } from '@/utils/env'
+import { searchKeywordQueryParamName } from '@/apps/xbuilder/pages/community/search.vue'
+import { getSearchRoute } from '@/apps/xbuilder/router'
 import NavbarLang from '../navbar/NavbarLang.vue'
 import NavbarTutorials from '../navbar/NavbarTutorials.vue'
 import { isSignedIn } from '@/stores/user'
+import { useCommunityConfig } from './config'
 
+const { showTutorialsEntry } = useCommunityConfig()
 const router = useRouter()
 const searchInput = ref('')
 

@@ -4,11 +4,12 @@ import { computed, nextTick, onMounted, reactive, ref, shallowRef, watch, watchE
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
+import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { until, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import type { SpxProject } from '@/models/spx/project'
@@ -240,7 +241,7 @@ function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
 }
 
 const backdropImg = ref<HTMLImageElement | null>(null)
-const [backdropSrc, backdropSrcLoading] = useFileUrl(() => props.project.stage.defaultBackdrop?.img)
+const [backdropSrc, backdropSrcLoading] = useRenderableImageUrl(() => props.project.stage.defaultBackdrop?.img)
 watchEffect(() => {
   if (backdropSrc.value == null) return
   const img = new Image()
@@ -248,6 +249,15 @@ watchEffect(() => {
   img.addEventListener('load', () => {
     backdropImg.value = img
   })
+})
+
+const konvaStageBackgroundRectConfig = computed(() => {
+  return {
+    // Keep the stage white base aligned with SPX when there is no backdrop or the backdrop is transparent.
+    width: mapSize.value.width,
+    height: mapSize.value.height,
+    fill: '#fff'
+  } satisfies RectConfig
 })
 
 const konvaBackdropRectConfig = computed(() => {
@@ -547,6 +557,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
+        <v-rect :config="konvaStageBackgroundRectConfig"></v-rect>
         <v-rect v-if="konvaBackdropRectConfig" :config="konvaBackdropRectConfig"></v-rect>
         <DecoratorNode
           v-for="(decorator, idx) in props.project.tilemap?.decorators ?? []"
@@ -563,6 +574,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
             :selected="selectedSprite?.id === localConfig.id"
             :project="props.project"
             :map-size="mapSize"
+            :map-scale="mapScale"
             :node-ready-map="nodeReadyMap"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
@@ -582,7 +594,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     </v-stage>
     <div v-if="!loading && localConfigRef != null" class="absolute left-0 top-0">
       <QuickConfigWrapper ref="quickConfigRef">
-        <SpriteQuickConfig v-if="localConfigRef != null" :local-config="localConfigRef" :project="project" />
+        <SpriteQuickConfig :local-config="localConfigRef" :project="project" />
       </QuickConfigWrapper>
     </div>
 

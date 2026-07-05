@@ -1,5 +1,8 @@
 import { client, type ByPage, type PaginationParams } from './common'
 
+export const courseTitleMaxLength = 200
+export const coursePromptMaxLength = 4000
+
 export type ProjectReference = {
   type: 'project'
   /** Full name of the project, in the format `owner/project`. */

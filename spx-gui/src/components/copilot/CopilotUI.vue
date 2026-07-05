@@ -40,7 +40,7 @@ import { useCopilot } from './context'
 import { type QuickInput, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
 import type { LocaleMessage } from '@/utils/i18n'
-import { homePageName } from '@/router'
+import { homePageName } from '@/apps/xbuilder/router'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()

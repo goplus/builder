@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import { type User } from '@/apis/user'
+import { userDescriptionMaxLength, userDisplayNameMaxLength, type User } from '@/apis/user'
 import { selectFile } from '@/utils/file'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -48,14 +48,21 @@ const form = useForm({
 function validateDisplayName(val: string) {
   const trimmed = val.trim()
   if (trimmed === '') return t({ en: 'The name must not be blank', zh: '名字不可为空' })
-  if (trimmed.length > 100) return t({ en: 'The name must be 100 characters or fewer', zh: '名字不能超过 100 字' })
+  if (trimmed.length > userDisplayNameMaxLength)
+    return t({
+      en: `The name must be ${userDisplayNameMaxLength} characters or fewer`,
+      zh: `名字不能超过 ${userDisplayNameMaxLength} 字`
+    })
   return null
 }
 
 function validateDescription(val: string) {
   const trimmed = val.trim()
-  if (trimmed.length > 200)
-    return t({ en: 'The description must be 200 characters or fewer', zh: '个人简介不能超过 200 字' })
+  if (trimmed.length > userDescriptionMaxLength)
+    return t({
+      en: `The description must be ${userDescriptionMaxLength} characters or fewer`,
+      zh: `个人简介不能超过 ${userDescriptionMaxLength} 字`
+    })
   return null
 }
 
@@ -73,8 +80,8 @@ function validateAvatarInputFile(file: globalThis.File) {
 
   if (file.size > maxAvatarInputFileSize) {
     throw new DefaultException({
-      en: 'Avatar image must be 50 MiB or smaller',
-      zh: '头像图片不能超过 50 MiB'
+      en: 'Avatar image must be 50 MB or smaller',
+      zh: '头像图片不能超过 50 MB'
     })
   }
 }

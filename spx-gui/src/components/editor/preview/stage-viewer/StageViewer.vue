@@ -11,6 +11,7 @@
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
+        <v-rect :config="konvaStageBackgroundRectConfig"></v-rect>
         <v-rect v-if="konvaBackdropRectConfig" :config="konvaBackdropRectConfig"></v-rect>
         <DecoratorNode
           v-for="(decorator, idx) in editorCtx.project.tilemap?.decorators ?? []"
@@ -31,6 +32,7 @@
         <v-group>
           <SpriteNode
             v-for="localConfig in visibleSpriteLocalConfigs"
+            :ref="setSpriteNodeRef(localConfig.id)"
             :key="localConfig.id"
             :local-config="localConfig"
             :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
@@ -84,16 +86,26 @@
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
+import {
+  computed,
+  reactive,
+  ref,
+  shallowReactive,
+  shallowRef,
+  watch,
+  watchEffect,
+  type ComponentPublicInstance
+} from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { StageConfig } from 'konva/lib/Stage'
 import type { LayerConfig } from 'konva/lib/Layer'
+import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import { useFileUrl } from '@/utils/file'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
@@ -136,6 +148,15 @@ const mapRef = ref<{
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
+const spriteNodeRefs = shallowReactive(new Map<string, InstanceType<typeof SpriteNode>>())
+
+function setSpriteNodeRef(id: string) {
+  return (el: Element | ComponentPublicInstance | null) => {
+    if (el != null) spriteNodeRefs.set(id, el as InstanceType<typeof SpriteNode>)
+    else spriteNodeRefs.delete(id)
+  }
+}
+
 const nodeReadyMap = reactive(new Map<string, boolean>())
 const mousePos = ref<Pos | null>(null)
 
@@ -289,7 +310,7 @@ function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
 }
 
 const backdropImg = ref<HTMLImageElement | null>(null)
-const [backdropSrc, backdropSrcLoading] = useFileUrl(() => editorCtx.project.stage.defaultBackdrop?.img)
+const [backdropSrc, backdropSrcLoading] = useRenderableImageUrl(() => editorCtx.project.stage.defaultBackdrop?.img)
 watchEffect(() => {
   if (backdropSrc.value == null) return
   const img = new Image()
@@ -297,6 +318,15 @@ watchEffect(() => {
   img.addEventListener('load', () => {
     backdropImg.value = img
   })
+})
+
+const konvaStageBackgroundRectConfig = computed(() => {
+  return {
+    // Keep the stage white base aligned with SPX when there is no backdrop or the backdrop is transparent.
+    width: mapSize.value.width,
+    height: mapSize.value.height,
+    fill: '#fff'
+  } satisfies RectConfig
 })
 
 const konvaBackdropRectConfig = computed(() => {
@@ -498,20 +528,27 @@ function ensureCanTakeScreenshot() {
   if (!canTakeScreenshot.value) throw new Error('stage viewer is not renderable for screenshot')
 }
 
+const selectedSpriteNode = computed(() => {
+  const selectedSpriteId = editorCtx.state.selectedSprite?.id
+  if (selectedSpriteId == null) return null
+  return spriteNodeRefs.get(selectedSpriteId) ?? null
+})
+
 async function takeScreenshot(name: string, signal?: AbortSignal) {
   ensureCanTakeScreenshot()
   const stage = await untilNotNull(stageRef, signal)
   const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
   await until(() => !loading.value, signal)
   ensureCanTakeScreenshot()
-  // Omit transform control when taking screenshot
-  const blob = await nodeTransformer.withHidden(
-    () =>
-      stage.getStage().toBlob({
-        mimeType: 'image/jpeg',
-        // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
-        imageSmoothingEnabled: false
-      }) as Promise<Blob>
+  const takeBlob = () =>
+    stage.getStage().toBlob({
+      mimeType: 'image/jpeg',
+      // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
+      imageSmoothingEnabled: false
+    }) as Promise<Blob>
+  // Omit editor-only controls when taking screenshot.
+  const blob = await nodeTransformer.withHidden(() =>
+    selectedSpriteNode.value == null ? takeBlob() : selectedSpriteNode.value.withPivotMarkerHidden(takeBlob)
   )
   return fromBlob(`${name}.jpg`, blob)
 }

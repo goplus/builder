@@ -94,6 +94,7 @@
       <div v-if="project != null" class="flex items-center justify-center gap-2">
         <EditorProjectDisplayName :project="project" />
         <EditorAutoSaveStateIcon :editing="state?.editing ?? null" />
+        <EditorCheckoutReleaseButton v-if="isDeveloperMode && canManageProject" :project="project" :state="state" />
       </div>
     </template>
     <template #right>
@@ -163,10 +164,10 @@ import { convertScratchProject } from '@/apis/project-conversion'
 import { type SpxProject } from '@/models/spx/project'
 import { useSignedInUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
-import { getProjectPageRoute } from '@/router'
-import { showTutorialsEntry } from '@/utils/env'
+import { getProjectPageRoute } from '@/apps/xbuilder/router'
 import { useModifyProjectName, usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
+import { useCommunityConfig } from '@/components/community/config'
 import { xbpHelpers } from '@/models/common/xbp'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
@@ -175,7 +176,9 @@ import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue
 import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
 import EditorAutoSaveStateIcon from './EditorAutoSaveStateIcon.vue'
 import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
+import EditorCheckoutReleaseButton from './EditorCheckoutReleaseButton.vue'
 import { EditMode, type EditorState } from '../editor-state'
+import { isDeveloperMode } from '@/utils/developer-mode'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
@@ -187,6 +190,8 @@ import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
 import defaultModeSvg from './icons/default-mode.svg?raw'
 import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
+
+const { showTutorialsEntry } = useCommunityConfig()
 
 const props = defineProps<{
   project: SpxProject | null

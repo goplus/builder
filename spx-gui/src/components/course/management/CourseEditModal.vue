@@ -2,7 +2,14 @@
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { addCourse, updateCourse, type Course, type AddUpdateCourseParams } from '@/apis/course'
+import {
+  addCourse,
+  coursePromptMaxLength,
+  courseTitleMaxLength,
+  updateCourse,
+  type Course,
+  type AddUpdateCourseParams
+} from '@/apis/course'
 import { UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useMessage, useForm } from '@/components/ui'
 import ThumbnailUploader from './ThumbnailUploader.vue'
 import ProjectReferencesInput from './ProjectReferencesInput.vue'
@@ -30,6 +37,11 @@ const form = useForm({
     props.course?.title || '',
     (v: string) => {
       if (v === '') return i18n.t({ en: 'Please enter course title', zh: '请输入课程标题' })
+      if (v.length > courseTitleMaxLength)
+        return i18n.t({
+          en: `Title too long (max ${courseTitleMaxLength} chars)`,
+          zh: `标题过长（最多 ${courseTitleMaxLength} 字符）`
+        })
       return null
     }
   ],
@@ -53,6 +65,11 @@ const form = useForm({
     props.course?.prompt || '',
     (v: string) => {
       if (v === '') return i18n.t({ en: 'Please enter Copilot prompt', zh: '请输入 Copilot 提示词' })
+      if (v.length > coursePromptMaxLength)
+        return i18n.t({
+          en: `Copilot prompt too long (max ${coursePromptMaxLength} chars)`,
+          zh: `Copilot 提示词过长（最多 ${coursePromptMaxLength} 字符）`
+        })
       return null
     }
   ]

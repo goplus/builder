@@ -5,9 +5,10 @@ import { onBeforeUnmount, onUnmounted, toValue, watch, type WatchSource } from '
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
-import { escapeHTML, unicodeSafeSlice, until } from '@/utils/utils'
+import { escapeHTML, getStringLengthInCodePoints, unicodeSafeSlice, until } from '@/utils/utils'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 import * as projectApis from '@/apis/project'
+import { projectSearchKeywordMaxLength } from '@/apis/project'
 import { useMessageEvents, useModalEvents } from '@/components/ui'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as pageLink from './markdown-elements/PageLink'
@@ -27,7 +28,13 @@ const listProjectsParamsSchema = z.object({
     .boolean()
     .optional()
     .describe('List projects visible to the current session across all users. Do not use this with owner'),
-  keyword: z.string().optional().describe('Keyword in the project display name or project name'),
+  keyword: z
+    .string()
+    .refine((value) => getStringLengthInCodePoints(value) <= projectSearchKeywordMaxLength, {
+      message: `Must be ${projectSearchKeywordMaxLength} characters or fewer`
+    })
+    .optional()
+    .describe('Keyword in the project display name or project name'),
   pageSize: z.number().describe('Number of projects to return per page'),
   pageIndex: z.number().describe('Page index, starting from 1')
 })
@@ -68,7 +75,8 @@ class GetUINodeTextContentTool implements ToolDefinition {
     const nodeInfo = this.radar.getNodeById(targetId)
     if (nodeInfo == null) throw new Error(`Radar node with ID ${targetId} not found.`)
     const textContent = nodeInfo.getElement()?.textContent ?? ''
-    return textContent.length > 500 ? unicodeSafeSlice(textContent, 0, 500) + '...' : textContent
+    const textContentPreview = unicodeSafeSlice(textContent, 0, 500)
+    return textContentPreview === textContent ? textContent : textContentPreview + '...'
   }
 }
 

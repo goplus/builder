@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { initiateSignIn } from '@/stores/user'
+import { useSignIn } from '@/stores/user'
 import { UIButton, UICard } from '@/components/ui'
 import bgImg from './bg.png'
 
+const signIn = useSignIn()
+
 function handleJoin() {
-  initiateSignIn()
+  signIn()
 }
 </script>
 

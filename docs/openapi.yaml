@@ -12,6 +12,798 @@ security:
   - bearerAuth: []
 
 paths:
+  /account/identity-providers:
+    get:
+      operationId: listAccountIdentityProviders
+      tags:
+        - Account
+      summary: List identity providers
+      description: |
+        Retrieve identity providers available for hosted sign-in.
+
+        Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
+      security: []
+      parameters:
+        - name: clientID
+          description: OAuth client ID of the app requesting hosted sign-in.
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/OAuthClientID"
+        - name: requestURI
+          description: Pushed authorization request URI returned by `/account/oauth/par`.
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+            minLength: 1
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountIdentityProvider"
+
+  /account/identity-providers/{provider}/authorize:
+    get:
+      operationId: authorizeAccountIdentityProvider
+      tags:
+        - Account
+      summary: Start identity provider authorization
+      description: |
+        Redirect the user to the provider authorization endpoint for the current hosted sign-in flow.
+
+        Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
+      security: []
+      parameters:
+        - name: provider
+          description: Identity provider name.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
+        - name: clientID
+          description: OAuth client ID of the app requesting hosted sign-in.
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/OAuthClientID"
+        - name: requestURI
+          description: Pushed authorization request URI returned by `/account/oauth/par`.
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+            minLength: 1
+      responses:
+        "302":
+          description: Redirect to the identity provider authorization endpoint.
+          headers:
+            Location:
+              description: Provider authorization URL.
+              schema:
+                type: string
+                format: uri
+                minLength: 1
+        "400":
+          description: Invalid hosted sign-in request.
+
+  /account/identity-providers/{provider}/callback:
+    get:
+      operationId: handleAccountIdentityProviderCallback
+      tags:
+        - Account
+      summary: Handle identity provider callback
+      description: |
+        Handle the identity provider callback for hosted sign-in. Callback state is used to associate the provider
+        response with the hosted sign-in flow and provide CSRF protection. The provider callback includes either an
+        authorization code or an OAuth error.
+      security: []
+      parameters:
+        - name: provider
+          description: Identity provider name.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
+        - name: code
+          description: Provider authorization code.
+          in: query
+          schema:
+            type: string
+            minLength: 1
+        - name: state
+          description: Provider callback state.
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: error
+          description: Provider error code.
+          in: query
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "302":
+          description: Redirect back to hosted sign-in.
+          headers:
+            Location:
+              description: Hosted sign-in URL containing the original `clientID`, `requestURI`, and optional `uiLocales`.
+              schema:
+                type: string
+                format: uri
+                minLength: 1
+            Set-Cookie:
+              description: |
+                Sets the `__Host-xbuilder-account-session` cookie when the provider callback creates an account session.
+              schema:
+                type: string
+    post:
+      operationId: submitAccountIdentityProviderCallback
+      tags:
+        - Account
+      summary: Submit identity provider callback
+      description: |
+        Handle identity provider callbacks that use form post response mode. These external callbacks use the OAuth
+        state parameter for CSRF protection instead of a same-site web CSRF token. The provider callback includes either
+        an authorization code or an OAuth error.
+      security: []
+      parameters:
+        - name: provider
+          description: Identity provider name.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - title: Authorization code callback
+                  type: object
+                  required:
+                    - code
+                    - state
+                  properties:
+                    code:
+                      description: Provider authorization code.
+                      type: string
+                      minLength: 1
+                    state:
+                      description: Provider callback state.
+                      type: string
+                      minLength: 1
+                - title: OAuth error callback
+                  type: object
+                  required:
+                    - state
+                    - error
+                  properties:
+                    state:
+                      description: Provider callback state.
+                      type: string
+                      minLength: 1
+                    error:
+                      description: Provider error code.
+                      type: string
+                      minLength: 1
+      responses:
+        "302":
+          description: Redirect back to hosted sign-in.
+          headers:
+            Location:
+              description: Hosted sign-in URL containing the original `clientID`, `requestURI`, and optional `uiLocales`.
+              schema:
+                type: string
+                format: uri
+                minLength: 1
+            Set-Cookie:
+              description: |
+                Sets the `__Host-xbuilder-account-session` cookie when the provider callback creates an account session.
+              schema:
+                type: string
+
+  /account/oauth/par:
+    post:
+      operationId: createAccountOAuthPushedAuthorizationRequest
+      tags:
+        - Account OAuth
+      summary: Create a pushed authorization request
+      description: |
+        Create a pushed authorization request for an app using OAuth 2.0 PAR.
+
+        The requested redirect URI must exactly match the app allowlist.
+
+        Provider credential handoff codes, when supplied, must be valid, unexpired, unused, and match the requested
+        provider. Invalid provider codes must not produce usable `request_uri` values.
+
+        The returned `request_uri` is an opaque, short-lived, single-use reference and is not a dereferenceable URL.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              allOf:
+                - if:
+                    required:
+                      - xbuilder_provider_code
+                  then:
+                    required:
+                      - xbuilder_provider
+                - if:
+                    required:
+                      - xbuilder_provider
+                  then:
+                    required:
+                      - xbuilder_provider_code
+              required:
+                - response_type
+                - client_id
+                - redirect_uri
+                - state
+                - code_challenge
+                - code_challenge_method
+                - scope
+              properties:
+                response_type:
+                  description: OAuth response type.
+                  type: string
+                  enum:
+                    - code
+                client_id:
+                  description: OAuth client ID of the app.
+                  $ref: "#/components/schemas/OAuthClientID"
+                redirect_uri:
+                  description: Redirect URI requested by the app.
+                  type: string
+                  format: uri
+                state:
+                  description: OAuth state value.
+                  type: string
+                  minLength: 1
+                code_challenge:
+                  $ref: "#/components/schemas/OAuthPKCECodeChallenge"
+                code_challenge_method:
+                  description: PKCE code challenge method.
+                  type: string
+                  enum:
+                    - S256
+                scope:
+                  description: OAuth scope requested by the app.
+                  allOf:
+                    - $ref: "#/components/schemas/OAuthScope"
+                ui_locales:
+                  description: |
+                    Preferred UI locales for hosted sign-in, using space-separated BCP 47 language tags.
+
+                    The server uses a supported locale from this list when possible and may fall back to a default
+                    locale.
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                  pattern: "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*(?: [A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*)*$"
+                  examples:
+                    - zh-CN zh en
+                xbuilder_provider:
+                  description: Identity provider used for provider credential handoff.
+                  $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
+                xbuilder_provider_code:
+                  description: Short-lived provider code obtained by the app frontend.
+                  type: string
+                  minLength: 1
+      responses:
+        "201":
+          description: Pushed authorization request created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthPushedAuthorizationResponse"
+        "400":
+          $ref: "#/components/responses/OAuthError"
+        "401":
+          $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /account/oauth/authorize:
+    get:
+      operationId: authorizeAccountOAuthApp
+      tags:
+        - Account OAuth
+      summary: Handle an OAuth authorization request
+      description: |
+        Start or complete the OAuth authorization code flow for a registered app.
+
+        This endpoint accepts PAR authorization requests only. The app must push authorization request parameters to
+        `/account/oauth/par` first and then call this endpoint with `client_id` and `request_uri`.
+
+        The `request_uri` value must reference a valid pushed authorization request bound to the `client_id`.
+
+        The account can be resolved from an account session or from provider credential handoff stored in the pushed
+        authorization request.
+
+        If the account cannot be resolved or hosted interaction is required, this endpoint redirects to hosted sign-in.
+        The hosted sign-in URL carries `clientID`, `requestURI`, and optional `uiLocales` query parameters for Account
+        Web.
+
+        After the account is resolved and the OAuth authorization request can be completed, the authorization response
+        redirects to the app callback with an authorization code and the original `state`, or with OAuth error
+        parameters and the original `state`.
+      security: []
+      parameters:
+        - name: client_id
+          description: OAuth client ID of the app.
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/OAuthClientID"
+        - name: request_uri
+          description: Opaque pushed authorization request URI returned by `/account/oauth/par`.
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+            minLength: 1
+            examples:
+              - urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
+      responses:
+        "302":
+          description: |
+            Redirect to hosted sign-in, or to the app callback with an authorization code or OAuth error parameters.
+          headers:
+            Location:
+              description: |
+                Hosted sign-in URL or app callback URL.
+
+                Hosted sign-in URLs contain `clientID`, `requestURI`, and optional `uiLocales`.
+
+                App callback URLs contain `code` and `state`, or OAuth error parameters and `state`.
+              schema:
+                type: string
+                format: uri
+                minLength: 1
+        "400":
+          $ref: "#/components/responses/OAuthError"
+
+  /account/oauth/token:
+    post:
+      operationId: createAccountOAuthToken
+      tags:
+        - Account OAuth
+      summary: Create an OAuth token
+      description: |
+        Create or refresh Account-issued app-scoped OAuth tokens.
+
+        Authorization code exchange validates the redirect URI and PKCE verifier.
+
+        Refresh token exchange rotates the refresh token. Reuse of a rotated refresh token is treated as a replay signal
+        and revokes the corresponding token family or grant.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/CreateOAuthTokenRequest"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthToken"
+        "400":
+          $ref: "#/components/responses/OAuthError"
+        "401":
+          $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /account/oauth/introspect:
+    post:
+      operationId: introspectAccountOAuthToken
+      tags:
+        - Account OAuth
+      summary: Introspect an OAuth token
+      description: Introspect an Account-issued OAuth token using OAuth 2.0 Token Introspection.
+      security:
+        - oauthClientSecretBasic: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  description: OAuth token to introspect.
+                  type: string
+                  minLength: 1
+                token_type_hint:
+                  description: |
+                    Hint about the type of token submitted for introspection.
+
+                    Known values include `access_token` and `refresh_token`.
+                  type: string
+                  minLength: 1
+                  examples:
+                    - access_token
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthIntrospection"
+        "400":
+          $ref: "#/components/responses/OAuthError"
+        "401":
+          $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /account/oauth/revoke:
+    post:
+      operationId: revokeAccountOAuthToken
+      tags:
+        - Account OAuth
+      summary: Revoke an OAuth token
+      description: |
+        Revoke an Account-issued OAuth token using OAuth 2.0 Token Revocation.
+
+        Confidential clients authenticate with `client_secret_basic` and must not send `client_id` in the request body.
+        Public clients must send `client_id`.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/RevokeOAuthTokenRequest"
+      responses:
+        "200":
+          description: OAuth token revoked.
+        "400":
+          $ref: "#/components/responses/OAuthError"
+        "401":
+          $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /account/user:
+    get:
+      operationId: getAccountUser
+      tags:
+        - Account
+      summary: Get the current account user
+      description: |
+        Retrieve user fields exposed by XBuilder Account for the current user.
+
+        Account Web may authenticate with an account session cookie.
+
+        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:read`
+        Account API scope.
+      security:
+        - accountSessionCookie: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountUser"
+        "401":
+          $ref: "#/components/responses/AccountUnauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+    patch:
+      operationId: updateAccountUser
+      tags:
+        - Account
+      summary: Update the current account user
+      description: |
+        Update writable user fields managed by XBuilder Account for the current user.
+
+        Account Web may authenticate with an account session cookie.
+
+        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:write`
+        Account API scope.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
+      security:
+        - accountSessionCookie: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                displayName:
+                  $ref: "#/components/schemas/AccountUser/properties/displayName"
+      responses:
+        "200":
+          description: Account user updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountUser"
+        "401":
+          $ref: "#/components/responses/AccountUnauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+
+  /account/user/avatar:
+    put:
+      operationId: updateAccountUserAvatar
+      tags:
+        - Account
+      summary: Update the current account user avatar
+      description: |
+        Upload and replace the avatar image managed by XBuilder Account for the current user.
+
+        Account Web may authenticate with an account session cookie.
+
+        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:write`
+        Account API scope.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
+      security:
+        - accountSessionCookie: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: |
+                    Avatar image file.
+
+                    Maximum size is 5 MiB.
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: image/png, image/jpeg
+      responses:
+        "204":
+          description: Account user avatar updated.
+        "400":
+          description: Invalid request parameters.
+        "401":
+          $ref: "#/components/responses/AccountUnauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+        "413":
+          description: Avatar image file is too large.
+        "415":
+          description: Avatar image file type is not supported.
+
+  /account/user/identities:
+    get:
+      operationId: listAccountUserIdentities
+      tags:
+        - Account
+      summary: List current account user identities
+      description: Retrieve a list of third-party identities linked to the current user.
+      security:
+        - accountSessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountUserIdentity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/session:
+    post:
+      operationId: createAccountSession
+      tags:
+        - Account
+      summary: Create an account session
+      description: Create an account session for hosted sign-in.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountSessionRequest"
+            examples:
+              password:
+                summary: Password sign-in
+                value:
+                  username: john
+                  password: <your-password>
+      responses:
+        "201":
+          description: Account session created.
+          headers:
+            Set-Cookie:
+              description: |
+                Sets the `__Host-xbuilder-account-session` cookie with `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`,
+                and no `Domain`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentAccountSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    get:
+      operationId: getAccountSession
+      tags:
+        - Account
+      summary: Get the current account session
+      description: Retrieve the current account session.
+      security:
+        - accountSessionCookie: []
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentAccountSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: deleteAccountSession
+      tags:
+        - Account
+      summary: Delete the current account session
+      description: |
+        Revoke the current account session.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
+      security:
+        - accountSessionCookie: []
+      responses:
+        "204":
+          description: Account session deleted.
+          headers:
+            Set-Cookie:
+              description: Clears the `__Host-xbuilder-account-session` cookie.
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/sessions:
+    get:
+      operationId: listAccountSessions
+      tags:
+        - Account
+      summary: List current account sessions
+      description: Retrieve a list of account sessions of the current user.
+      security:
+        - accountSessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: deleteAccountSessions
+      tags:
+        - Account
+      summary: Delete current account sessions
+      description: |
+        Revoke all account sessions of the current user.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
+      security:
+        - accountSessionCookie: []
+      responses:
+        "204":
+          description: Account sessions deleted.
+          headers:
+            Set-Cookie:
+              description: Clears the `__Host-xbuilder-account-session` cookie.
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/sessions/{sessionID}:
+    delete:
+      operationId: deleteAccountSessionByID
+      tags:
+        - Account
+      summary: Delete an account session of the current user
+      description: |
+        Revoke an account session owned by the current user.
+
+        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
+      security:
+        - accountSessionCookie: []
+      parameters:
+        - name: sessionID
+          description: ID of the account session to delete.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account session deleted.
+          headers:
+            Set-Cookie:
+              description: Clears the `__Host-xbuilder-account-session` cookie when the deleted session is current.
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Account session not found.
+
   /user:
     get:
       operationId: getAuthenticatedUser
@@ -47,14 +839,6 @@ paths:
                   $ref: "#/components/schemas/User/properties/username"
                 displayName:
                   $ref: "#/components/schemas/User/properties/displayName"
-                avatar:
-                  description: New avatar Kodo universal URL of the authenticated user.
-                  allOf:
-                    - $ref: "#/components/schemas/User/properties/avatar"
-                    - minLength: 1
-                      pattern: "^kodo://[^/?#@:]+/[^?#]+$"
-                      examples:
-                        - kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
                 description:
                   $ref: "#/components/schemas/User/properties/description"
       responses:
@@ -66,6 +850,44 @@ paths:
                 $ref: "#/components/schemas/AuthenticatedUser"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /user/avatar:
+    put:
+      operationId: updateAuthenticatedUserAvatar
+      tags:
+        - Users
+      summary: Update the authenticated user avatar
+      description: Upload and replace the avatar image of the authenticated user.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: |
+                    Avatar image file.
+
+                    Maximum size is 5 MiB.
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: image/png, image/jpeg
+      responses:
+        "204":
+          description: Authenticated user avatar updated.
+        "400":
+          description: Invalid request parameters.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: Avatar image file is too large.
+        "415":
+          description: Avatar image file type is not supported.
 
   /user/followers:
     get:
@@ -223,7 +1045,7 @@ paths:
       tags:
         - Projects
       summary: List projects owned by the authenticated user
-      description: Retrieve a paginated list of projects owned by the authenticated user.
+      description: Retrieve a list of projects owned by the authenticated user.
       parameters:
         - name: remixedFrom
           description: |
@@ -240,6 +1062,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: visibility
@@ -348,7 +1171,7 @@ paths:
                   description: |
                     File paths and their corresponding universal URLs associated with the project.
 
-                    Required if `remixSource` is not provided.
+                    **Required when `remixSource` is not provided.**
                   $ref: "#/components/schemas/Project/properties/files"
                 visibility:
                   $ref: "#/components/schemas/Project/properties/visibility"
@@ -413,6 +1236,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: visibility
@@ -570,13 +1394,16 @@ paths:
       tags:
         - Assets
       summary: List assets owned by the authenticated user
-      description: Retrieve a paginated list of assets owned by the authenticated user.
+      description: Retrieve a list of assets owned by the authenticated user.
       parameters:
         - name: keyword
           description: Filter assets by display name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Asset/properties/displayName"
+            type: string
+            maxLength: 100
+            examples:
+              - NiuXiaoQi
         - name: type
           description: Filter assets by type.
           in: query
@@ -899,7 +1726,7 @@ paths:
       tags:
         - Users
       summary: List users
-      description: Retrieve a paginated list of users.
+      description: Retrieve a list of users.
       security: []
       parameters:
         - name: orderBy
@@ -1089,6 +1916,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: type
@@ -1182,6 +2010,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: type
@@ -1265,7 +2094,10 @@ paths:
           description: Filter assets by display name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Asset/properties/displayName"
+            type: string
+            maxLength: 100
+            examples:
+              - NiuXiaoQi
         - name: type
           description: Filter assets by type.
           in: query
@@ -1428,7 +2260,7 @@ paths:
         - Projects
       summary: List projects
       description: |
-        Retrieve a paginated list of projects visible to the request.
+        Retrieve a list of projects visible to the request.
 
         Anonymous requests return public projects. Authenticated requests return public projects and the authenticated
         user's own projects when no visibility filter is provided. A non-public visibility filter requires
@@ -1452,6 +2284,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 100
             examples:
               - Niu Xiao Qi
         - name: visibility
@@ -1679,7 +2512,7 @@ paths:
       tags:
         - Project Releases
       summary: List project releases
-      description: Retrieve a paginated list of releases for a project.
+      description: Retrieve a list of releases for a project.
       security:
         - {}
         - bearerAuth: []
@@ -1845,7 +2678,7 @@ paths:
         - Assets
       summary: List assets
       description: |
-        Retrieve a paginated list of assets visible to the request.
+        Retrieve a list of assets visible to the request.
 
         Anonymous requests return public assets. Authenticated requests return public assets and the authenticated
         user's own assets when no visibility filter is provided. A non-public visibility filter requires authentication
@@ -1858,7 +2691,10 @@ paths:
           description: Filter assets by display name pattern.
           in: query
           schema:
-            $ref: "#/components/schemas/Asset/properties/displayName"
+            type: string
+            maxLength: 100
+            examples:
+              - NiuXiaoQi
         - name: type
           description: Filter assets by type.
           in: query
@@ -2019,7 +2855,7 @@ paths:
       tags:
         - Courses
       summary: List courses
-      description: Retrieve a paginated list of courses visible to the request.
+      description: Retrieve a list of courses visible to the request.
       security:
         - {}
         - bearerAuth: []
@@ -2165,7 +3001,7 @@ paths:
       tags:
         - Course Series
       summary: List course series
-      description: Retrieve a paginated list of course series visible to the request.
+      description: Retrieve a list of course series visible to the request.
       security:
         - {}
         - bearerAuth: []
@@ -3149,7 +3985,7 @@ paths:
         Image requirements:
 
         - Format: PNG only (`image/png`)
-        - Maximum image size: 5 MB after decoding the base64 content
+        - Maximum image size: 5 MiB after decoding the base64 content
         - Images must be provided as base64-encoded data URLs
         - Other formats must be converted to PNG before sending
 
@@ -3593,10 +4429,12 @@ paths:
                 - file
               properties:
                 file:
-                  description: Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`. Maximum size is 64 MiB.
+                  description: |
+                    Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`.
+
+                    Maximum size is 64 MiB.
                   type: string
                   format: binary
-                  maxLength: 67108864
       responses:
         "200":
           description: Conversion successful. Returns a zip archive containing the XBP project file.
@@ -3609,13 +4447,1121 @@ paths:
                 xbpFile:
                   summary: Example XBP zip file
 
+  /admin/account/users:
+    get:
+      operationId: listAdminAccountUsers
+      tags:
+        - Account Admin
+      summary: List account users as admin
+      description: |
+        Retrieve a list of account users.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: keyword
+          description: Filter account users by username or display name pattern.
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+            examples:
+              - john
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+    post:
+      operationId: createAdminAccountUser
+      tags:
+        - Account Admin
+      summary: Create an account user as admin
+      description: |
+        Create an account user.
+
+        Requires the `accountAdmin` role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - displayName
+              properties:
+                username:
+                  $ref: "#/components/schemas/AccountUser/properties/username"
+                displayName:
+                  $ref: "#/components/schemas/AccountUser/properties/displayName"
+                password:
+                  description: Optional administrator-managed password for the new user.
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+      responses:
+        "201":
+          description: Account user created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+
+  /admin/account/users/{userID}:
+    get:
+      operationId: getAdminAccountUser
+      tags:
+        - Account Admin
+      summary: Get an account user as admin
+      description: |
+        Retrieve an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+    patch:
+      operationId: updateAdminAccountUser
+      tags:
+        - Account Admin
+      summary: Update an account user as admin
+      description: |
+        Update user fields managed by XBuilder Account.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user to update.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                displayName:
+                  $ref: "#/components/schemas/AccountUser/properties/displayName"
+      responses:
+        "200":
+          description: Account user updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+
+  /admin/account/users/{userID}/avatar:
+    put:
+      operationId: updateAdminAccountUserAvatar
+      tags:
+        - Account Admin
+      summary: Update an account user avatar as admin
+      description: |
+        Upload and replace an account user's avatar image.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose avatar is updated.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: |
+                    Avatar image file.
+
+                    Maximum size is 5 MiB.
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: image/png, image/jpeg
+      responses:
+        "204":
+          description: Account user avatar updated.
+        "400":
+          description: Invalid request parameters.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+        "413":
+          description: Avatar image file is too large.
+        "415":
+          description: Avatar image file type is not supported.
+
+  /admin/account/users/{userID}/password:
+    put:
+      operationId: setAdminAccountUserPassword
+      tags:
+        - Account Admin
+      summary: Set an account user password as admin
+      description: |
+        Set or replace the administrator-managed password credential for an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose password is set.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  description: New administrator-managed password.
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+      responses:
+        "204":
+          description: Password credential set.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+    delete:
+      operationId: deleteAdminAccountUserPassword
+      tags:
+        - Account Admin
+      summary: Delete an account user password as admin
+      description: |
+        Remove the administrator-managed password credential from an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose password is deleted.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Password credential deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+
+  /admin/account/users/{userID}/identities:
+    get:
+      operationId: listAdminAccountUserIdentities
+      tags:
+        - Account Admin
+      summary: List account user identities as admin
+      description: |
+        Retrieve a list of third-party identities linked to an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose identities are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountUserIdentity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+
+  /admin/account/users/{userID}/identities/{identityID}:
+    delete:
+      operationId: deleteAdminAccountUserIdentity
+      tags:
+        - Account Admin
+      summary: Delete an account user identity as admin
+      description: |
+        Remove a third-party identity linked to an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose identity is deleted.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: identityID
+          description: ID of the identity to delete.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account user identity deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user or identity not found.
+
+  /admin/account/users/{userID}/sessions:
+    get:
+      operationId: listAdminAccountUserSessions
+      tags:
+        - Account Admin
+      summary: List account user sessions as admin
+      description: |
+        Retrieve a list of account sessions of an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose account sessions are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+    delete:
+      operationId: deleteAdminAccountUserSessions
+      tags:
+        - Account Admin
+      summary: Delete account user sessions as admin
+      description: |
+        Revoke all account sessions of an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose account sessions are deleted.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account user sessions deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+
+  /admin/account/users/{userID}/app-grants:
+    get:
+      operationId: listAdminAccountUserAppGrants
+      tags:
+        - Account Admin
+      summary: List account user app grants as admin
+      description: |
+        Retrieve a list of active app grants of an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose app grants are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - lastUsedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountAppGrant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account user not found.
+
+  /admin/account/app-grants/{appGrantID}:
+    get:
+      operationId: getAdminAccountAppGrant
+      tags:
+        - Account Admin
+      summary: Get account app grant as admin
+      description: |
+        Retrieve an app grant.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAppGrant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app grant not found.
+
+  /admin/account/app-grants/{appGrantID}/tokens:
+    get:
+      operationId: listAdminAccountAppGrantTokens
+      tags:
+        - Account Admin
+      summary: List account app grant tokens as admin
+      description: |
+        Retrieve active Account-issued OAuth tokens associated with an account app grant.
+
+        Tokens are active only when they are not expired, not revoked, and, for refresh tokens, not consumed.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant whose tokens are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: tokenType
+          description: Filter tokens by OAuth token type.
+          in: query
+          schema:
+            $ref: "#/components/schemas/AccountAppToken/properties/tokenType"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountAppToken"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app grant not found.
+    post:
+      operationId: createAdminAccountAppGrantToken
+      tags:
+        - Account Admin
+      summary: Create account app grant token as admin
+      description: |
+        Create an Account-issued OAuth token associated with an account app grant.
+
+        Currently, this endpoint creates access tokens only. The created token is not issued with a refresh token and
+        cannot be refreshed. The token value is only returned once in the creation response.
+
+        The token scope is an Account OAuth scope inherited from the app grant.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant whose token is created.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountAppTokenRequest"
+      responses:
+        "201":
+          description: Account app grant token created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedAccountAppToken"
+        "400":
+          description: Invalid request parameters.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app grant not found.
+
+  /admin/account/app-grants/{appGrantID}/tokens/{tokenID}:
+    delete:
+      operationId: deleteAdminAccountAppGrantToken
+      tags:
+        - Account Admin
+      summary: Revoke account app grant token as admin
+      description: |
+        Revoke an Account-issued OAuth token associated with an account app grant.
+
+        Revocation follows the existing Account OAuth token semantics. Revoking a refresh token follows refresh-token
+        rotation semantics; revoking an access token revokes that access token.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant whose token is revoked.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: tokenID
+          description: ID of the app grant token to revoke.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account app grant token revoked.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app grant or token not found.
+
+  /admin/account/sessions/{sessionID}:
+    delete:
+      operationId: deleteAdminAccountSession
+      tags:
+        - Account Admin
+      summary: Delete an account session as admin
+      description: |
+        Revoke an account session.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: sessionID
+          description: ID of the account session to delete.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account session deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account session not found.
+
+  /admin/account/apps:
+    get:
+      operationId: listAdminAccountApps
+      tags:
+        - Account Admin
+      summary: List account apps as admin
+      description: |
+        Retrieve account apps registered for first-party app SSO.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountApp"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+    post:
+      operationId: createAdminAccountApp
+      tags:
+        - Account Admin
+      summary: Create an account app as admin
+      description: |
+        Register an account app for first-party app SSO.
+
+        Requires the `accountAdmin` role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - displayName
+                - clientType
+                - redirectURIs
+              properties:
+                name:
+                  $ref: "#/components/schemas/AccountApp/properties/name"
+                displayName:
+                  $ref: "#/components/schemas/AccountApp/properties/displayName"
+                clientType:
+                  $ref: "#/components/schemas/AccountApp/properties/clientType"
+                redirectURIs:
+                  $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
+                allowedOrigins:
+                  $ref: "#/components/schemas/AccountApp/properties/allowedOrigins"
+      responses:
+        "201":
+          description: Account app created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountApp"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+
+  /admin/account/apps/{appID}:
+    get:
+      operationId: getAdminAccountApp
+      tags:
+        - Account Admin
+      summary: Get an account app as admin
+      description: |
+        Retrieve an account app registered for first-party app SSO.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountApp"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app not found.
+    patch:
+      operationId: updateAdminAccountApp
+      tags:
+        - Account Admin
+      summary: Update an account app as admin
+      description: |
+        Update an account app registered for first-party app SSO.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app to update.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                displayName:
+                  $ref: "#/components/schemas/AccountApp/properties/displayName"
+                status:
+                  $ref: "#/components/schemas/AccountApp/properties/status"
+                redirectURIs:
+                  $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
+                allowedOrigins:
+                  $ref: "#/components/schemas/AccountApp/properties/allowedOrigins"
+      responses:
+        "200":
+          description: Account app updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountApp"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app not found.
+
+  /admin/account/apps/{appID}/secrets:
+    get:
+      operationId: listAdminAccountAppSecrets
+      tags:
+        - Account Admin
+      summary: List account app secrets as admin
+      description: |
+        Retrieve a list of secrets configured for a confidential account app.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app whose secrets are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountAppSecret"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app not found.
+    post:
+      operationId: createAdminAccountAppSecret
+      tags:
+        - Account Admin
+      summary: Create an account app secret as admin
+      description: |
+        Create a secret for a confidential account app. The secret value is only returned once.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app whose secret is created.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  $ref: "#/components/schemas/AccountAppSecret/properties/name"
+      responses:
+        "201":
+          description: Account app secret created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedAccountAppSecret"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app not found.
+
+  /admin/account/apps/{appID}/secrets/{secretID}:
+    delete:
+      operationId: deleteAdminAccountAppSecret
+      tags:
+        - Account Admin
+      summary: Delete an account app secret as admin
+      description: |
+        Delete a secret from a confidential account app.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app whose secret is deleted.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: secretID
+          description: ID of the secret to delete.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account app secret deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: Account app or secret not found.
+
+  /admin/authorization/users/{userID}:
+    get:
+      operationId: getAdminUserAuthorization
+      tags:
+        - Authorization Admin
+      summary: Get authorization for a user as admin
+      description: |
+        Retrieve authorization inputs and derived capabilities for a user.
+
+        Requires the `authorizationAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose authorization is retrieved.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAuthorization"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: User authorization not found.
+    patch:
+      operationId: updateAdminUserAuthorization
+      tags:
+        - Authorization Admin
+      summary: Update authorization for a user as admin
+      description: |
+        Update authorization inputs for a user.
+
+        Requires the `authorizationAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose authorization is updated.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                roles:
+                  $ref: "#/components/schemas/UserAuthorization/properties/roles"
+                plan:
+                  $ref: "#/components/schemas/UserAuthorization/properties/plan"
+      responses:
+        "200":
+          description: User authorization updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAuthorization"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+        "404":
+          description: User authorization not found.
+
+  /admin/audit-logs:
+    get:
+      operationId: listAdminAuditLogs
+      tags:
+        - Admin Audit
+      summary: List audit logs as admin
+      description: |
+        Retrieve admin audit logs.
+
+        Requires admin permissions. Backend RBAC determines which audit events are visible to the current admin user.
+      parameters:
+        - name: createdAfter
+          description: Filter audit logs created after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: createdBefore
+          description: Filter audit logs created before this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuditLog"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Insufficient permissions to perform this operation.
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
-      description: Access token, in the format `Bearer {token}`.
+      bearerFormat: Opaque
+      description: |
+        Opaque access token, in the format `Bearer {token}`.
+
+        For XBuilder Account OAuth flows, app-scoped access tokens are issued by `/account/oauth/token` and can be
+        validated with `/account/oauth/introspect`.
+    accountSessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-xbuilder-account-session
+      description: |
+        Account session cookie used by Account Web.
+
+        The cookie must be `HttpOnly`, `Secure`, `SameSite=Lax`, use `Path=/`, and omit `Domain`.
+
+        Cookie-authenticated mutation endpoints must validate Origin or use equivalent CSRF protection.
+    oauthClientSecretBasic:
+      type: http
+      scheme: basic
+      description: OAuth client authentication using client secret basic.
 
   responses:
     MovedPermanently:
@@ -3651,6 +5597,58 @@ components:
             $ref: "#/components/schemas/MovedResourceError"
     Unauthorized:
       description: Unauthorized. Authentication required.
+    OAuthError:
+      description: OAuth error response.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OAuthError"
+    OAuthInvalidClient:
+      description: OAuth client authentication failed.
+      headers:
+        WWW-Authenticate:
+          description: Client authentication challenge.
+          schema:
+            type: string
+            examples:
+              - Basic realm="XBuilder Account"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OAuthError"
+    OAuthInsufficientScope:
+      description: OAuth bearer token does not have the required scope.
+      headers:
+        WWW-Authenticate:
+          description: Bearer token insufficient scope challenge.
+          schema:
+            type: string
+            examples:
+              - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:read"
+              - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:write"
+    OAuthUnsupportedMediaType:
+      description: |
+        OAuth form request content type is not supported.
+
+        The server returns an OAuth `invalid_request` error before reading form-body OAuth parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OAuthError"
+    AccountUnauthorized:
+      description: |
+        Account authentication is required.
+
+        The request may authenticate with an account session cookie or an OAuth bearer token. When OAuth bearer token
+        authentication fails, the response includes `WWW-Authenticate`.
+      headers:
+        WWW-Authenticate:
+          description: Bearer token challenge returned for OAuth bearer token authentication failures.
+          schema:
+            type: string
+            examples:
+              - Bearer realm="XBuilder Account"
+              - Bearer realm="XBuilder Account", error="invalid_token"
 
   schemas:
     Model:
@@ -3662,11 +5660,11 @@ components:
         - updatedAt
       properties:
         id:
-          description: Unique positive identifier as a canonical decimal string.
+          description: Unique positive int64 identifier serialized as a canonical decimal string.
           type: string
           minLength: 1
           maxLength: 19
-          pattern: '^([1-9][0-9]{0,17}|[1-8][0-9]{18}|9[0-1][0-9]{17}|92[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|92233[0-6][0-9]{13}|922337[0-1][0-9]{12}|92233720[0-2][0-9]{10}|922337203[0-5][0-9]{9}|9223372036[0-7][0-9]{8}|92233720368[0-4][0-9]{7}|922337203685[0-3][0-9]{6}|9223372036854[0-6][0-9]{5}|92233720368547[0-6][0-9]{4}|922337203685477[0-4][0-9]{3}|9223372036854775[0-7][0-9]{2}|922337203685477580[0-7])$'
+          pattern: "^[1-9][0-9]{0,18}$"
           examples:
             - "1"
         createdAt:
@@ -3798,10 +5796,11 @@ components:
           type: string
           format: uri
           examples:
-            - https://avatars.githubusercontent.com/u/10137?v=4
+            - https://avatars.example.com/users/10137.png
         description:
           description: Brief bio or description of the user.
           type: string
+          maxLength: 200
           examples:
             - Two giants live in Britain's land...
         plan:
@@ -3866,10 +5865,22 @@ components:
       type: object
       description: User permission capabilities.
       required:
+        - canManageAccount
+        - canManageAuthorization
         - canManageAssets
         - canManageCourses
         - canUsePremiumLLM
       properties:
+        canManageAccount:
+          description: Whether the user can manage user accounts.
+          type: boolean
+          examples:
+            - true
+        canManageAuthorization:
+          description: Whether the user can manage user authorizations.
+          type: boolean
+          examples:
+            - true
         canManageAssets:
           description: Whether the user can manage asset library.
           type: boolean
@@ -3885,6 +5896,832 @@ components:
           type: boolean
           examples:
             - true
+
+    AccountUser:
+      description: User fields exposed by XBuilder Account.
+      type: object
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - username
+        - displayName
+        - avatar
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        username:
+          $ref: "#/components/schemas/User/properties/username"
+        displayName:
+          $ref: "#/components/schemas/User/properties/displayName"
+        avatar:
+          description: Public HTTP URL of the user's avatar image.
+          type: string
+          format: uri
+          pattern: "^https?://"
+          examples:
+            - https://avatars.example.com/users/10137.png
+
+    AccountIdentityProvider:
+      type: object
+      description: Identity provider available for hosted sign-in.
+      required:
+        - name
+        - displayName
+        - enabled
+      properties:
+        name:
+          description: Identity provider name.
+          type: string
+          enum:
+            - wechat
+            - qq
+            - github
+            - apple
+            - google
+            - x
+          examples:
+            - github
+        displayName:
+          description: Display name of the identity provider.
+          type: string
+          examples:
+            - GitHub
+        enabled:
+          description: Whether the identity provider is currently available for hosted sign-in.
+          type: boolean
+          examples:
+            - true
+
+    AccountUserIdentity:
+      type: object
+      description: Third-party identity linked to a user.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - provider
+        - subject
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        provider:
+          $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
+        subject:
+          description: Stable provider subject.
+          type: string
+          minLength: 1
+        subjectNamespace:
+          description: Provider subject namespace when needed for provider-scoped identifiers.
+          type:
+            - string
+            - "null"
+        displayName:
+          description: Provider display name retained for display and troubleshooting.
+          type:
+            - string
+            - "null"
+        avatar:
+          description: Provider avatar URL retained for display and troubleshooting.
+          type:
+            - string
+            - "null"
+          format: uri
+
+    AccountSession:
+      type: object
+      description: Account session used by hosted sign-in and SSO continuity.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - lastUsedAt
+        - expiresAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        lastUsedAt:
+          description: Timestamp when the account session was last used.
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        expiresAt:
+          description: Expiration timestamp.
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        userAgent:
+          description: User agent associated with the account session.
+          type:
+            - string
+            - "null"
+        ipAddress:
+          description: IP address associated with the account session.
+          type:
+            - string
+            - "null"
+
+    CreateAccountSessionRequest:
+      type: object
+      description: Request to create an account session with an administrator-managed password.
+      required:
+        - username
+        - password
+      properties:
+        username:
+          description: Username for password sign-in.
+          $ref: "#/components/schemas/AccountUser/properties/username"
+        password:
+          description: Administrator-managed password.
+          type: string
+          minLength: 1
+          maxLength: 128
+
+    CurrentAccountSession:
+      type: object
+      description: Current account session.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - lastUsedAt
+        - expiresAt
+        - user
+      properties:
+        id:
+          $ref: "#/components/schemas/AccountSession/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/AccountSession/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/AccountSession/properties/updatedAt"
+        lastUsedAt:
+          $ref: "#/components/schemas/AccountSession/properties/lastUsedAt"
+        expiresAt:
+          $ref: "#/components/schemas/AccountSession/properties/expiresAt"
+        user:
+          $ref: "#/components/schemas/AccountUser"
+        userAgent:
+          $ref: "#/components/schemas/AccountSession/properties/userAgent"
+        ipAddress:
+          $ref: "#/components/schemas/AccountSession/properties/ipAddress"
+
+    AccountApp:
+      type: object
+      description: Registered app for first-party app SSO.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - name
+        - displayName
+        - clientType
+        - status
+        - redirectURIs
+        - redirectURIPatterns
+        - allowedOrigins
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        name:
+          description: Unique app name.
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: "^[A-Za-z0-9_-]{1,100}$"
+          examples:
+            - xbuilder
+        displayName:
+          description: Display name of the app.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - XBuilder
+        clientType:
+          description: OAuth client type of the app.
+          type: string
+          enum:
+            - public
+            - confidential
+          examples:
+            - public
+        status:
+          description: App status.
+          type: string
+          enum:
+            - active
+            - disabled
+          examples:
+            - active
+        redirectURIs:
+          description: |
+            Allowed redirect URIs.
+
+            The server must require exact redirect URI matching. Production web redirect URIs must use `https`.
+
+            Native app and loopback exceptions must be explicitly registered and validated by client type.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uri
+        redirectURIPatterns:
+          description: |
+            Allowed redirect URI patterns.
+
+            **Exact redirect URIs remain the primary allowlist.**
+
+            Wildcard patterns should be reserved for controlled preview or non-production callback hosts because broad
+            redirect matching can increase open redirect risk.
+
+            Pattern rules:
+
+            - The pattern must be an absolute `http` or `https` URL.
+            - The pattern must contain at most one `*`.
+            - The wildcard must be located in a subdomain within the hostname.
+            - The wildcard must be located in the subdomain furthest from the root domain.
+            - The wildcard may be prefixed or suffixed with valid hostname characters.
+            - The wildcard matches only one hostname label and does not match `.`.
+            - All non-host components, including path and query, are matched exactly.
+            - Fragments are not allowed.
+          readOnly: true
+          type: array
+          items:
+            type: string
+          examples:
+            - - https://app-*.example.com/oauth/callback
+        allowedOrigins:
+          description: |
+            Allowed web origins.
+
+            Production web origins must use `https`, must not include path, query, or fragment, and must be matched
+            exactly by the server.
+          type: array
+          items:
+            type: string
+            format: uri
+
+    AccountAppSecret:
+      type: object
+      description: OAuth client secret metadata for a confidential app.
+      required:
+        - id
+        - createdAt
+        - name
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        name:
+          description: App secret name.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - production
+
+    AccountAppGrant:
+      type: object
+      description: Authorization grant from an account user to an account app.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - appID
+        - userID
+        - scope
+        - app
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        appID:
+          description: ID of the app authorized by the user.
+          $ref: "#/components/schemas/Model/properties/id"
+        userID:
+          description: ID of the user who authorized the app.
+          $ref: "#/components/schemas/Model/properties/id"
+        scope:
+          description: Account OAuth scope granted to the app.
+          $ref: "#/components/schemas/OAuthScope"
+        app:
+          description: App authorized by the user.
+          $ref: "#/components/schemas/AccountApp"
+        lastUsedAt:
+          description: Timestamp when the app grant was last used.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        revokedAt:
+          description: Timestamp when the app grant was revoked.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - null
+
+    AccountAppToken:
+      type: object
+      description: Account-issued app-scoped OAuth token metadata.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - grantID
+        - tokenType
+        - scope
+        - name
+        - expiresAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        grantID:
+          description: ID of the app grant associated with the token.
+          $ref: "#/components/schemas/Model/properties/id"
+        name:
+          description: Human-readable token name.
+          type: string
+          maxLength: 100
+          examples:
+            - SPX API testing
+        tokenType:
+          description: OAuth token type.
+          type: string
+          enum:
+            - accessToken
+            - refreshToken
+          examples:
+            - accessToken
+        scope:
+          description: Account OAuth scope associated with the token.
+          $ref: "#/components/schemas/OAuthScope"
+        expiresAt:
+          description: Expiration timestamp.
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        lastUsedAt:
+          description: Timestamp when the token was last used.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        consumedAt:
+          description: Timestamp when the refresh token was consumed during rotation. Always null for access tokens.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - null
+        revokedAt:
+          description: Timestamp when the token was revoked.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - null
+
+    CreateAccountAppTokenRequest:
+      type: object
+      description: |
+        Request to create an Account-issued OAuth token for an app grant.
+
+        The token scope is inherited from the associated app grant and cannot be overridden.
+      required:
+        - tokenType
+        - name
+        - expiresAt
+      properties:
+        name:
+          description: Human-readable token name.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - SPX API testing
+        tokenType:
+          description: |
+            OAuth token type to create.
+
+            Currently, only `accessToken` is supported.
+          type: string
+          enum:
+            - accessToken
+          examples:
+            - accessToken
+        expiresAt:
+          description: |
+            Expiration timestamp of the created token.
+
+            The server must reject expiration timestamps later than 365 days from creation.
+          type: string
+          format: date-time
+          examples:
+            - 2027-01-15T00:00:00Z
+
+    CreatedAccountAppToken:
+      description: Account app token created response including the one-time token value.
+      allOf:
+        - $ref: "#/components/schemas/AccountAppToken"
+        - type: object
+          required:
+            - value
+          properties:
+            value:
+              description: One-time token value. This value is not returned again after creation.
+              type: string
+              minLength: 1
+              examples:
+                - xb_at_2L5f8xQy...
+
+    CreatedAccountAppSecret:
+      description: OAuth client secret created response including the one-time secret value.
+      allOf:
+        - $ref: "#/components/schemas/AccountAppSecret"
+        - type: object
+          required:
+            - value
+          properties:
+            value:
+              description: One-time app secret value.
+              type: string
+              minLength: 1
+
+    OAuthClientID:
+      description: OAuth client ID of the app.
+      type: string
+      minLength: 1
+      maxLength: 19
+      pattern: "^[1-9][0-9]{0,18}$"
+      examples:
+        - "1"
+
+    OAuthPKCECodeChallenge:
+      description: PKCE code challenge.
+      type: string
+      minLength: 43
+      maxLength: 128
+      pattern: "^[A-Za-z0-9._~-]{43,128}$"
+
+    OAuthPKCECodeVerifier:
+      description: PKCE code verifier.
+      type: string
+      minLength: 43
+      maxLength: 128
+      pattern: "^[A-Za-z0-9._~-]{43,128}$"
+
+    OAuthScope:
+      description: Space-delimited Account API OAuth scopes supported by XBuilder Account.
+      type: string
+      minLength: 1
+      pattern: "^(account:user:read|account:user:write|account:user:read account:user:write|account:user:write account:user:read)$"
+      examples:
+        - account:user:read
+        - account:user:write
+        - account:user:read account:user:write
+
+    OAuthPushedAuthorizationResponse:
+      type: object
+      description: Pushed authorization request response.
+      required:
+        - request_uri
+        - expires_in
+      properties:
+        request_uri:
+          description: |
+            Opaque pushed authorization request URI.
+
+            The value is a short-lived, single-use reference and is not a dereferenceable URL.
+          type: string
+          format: uri
+          minLength: 1
+          examples:
+            - urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
+        expires_in:
+          description: Lifetime of the pushed authorization request in seconds.
+          type: integer
+          format: int64
+          minimum: 1
+          examples:
+            - 600
+
+    CreateOAuthTokenRequest:
+      description: Request to create or refresh Account-issued app-scoped OAuth tokens.
+      oneOf:
+        - $ref: "#/components/schemas/CreateAuthorizationCodeOAuthTokenRequest"
+        - $ref: "#/components/schemas/CreateRefreshTokenOAuthTokenRequest"
+      discriminator:
+        propertyName: grant_type
+        mapping:
+          authorization_code: "#/components/schemas/CreateAuthorizationCodeOAuthTokenRequest"
+          refresh_token: "#/components/schemas/CreateRefreshTokenOAuthTokenRequest"
+
+    CreateAuthorizationCodeOAuthTokenRequest:
+      type: object
+      description: Request to exchange an authorization code for Account-issued app-scoped OAuth tokens.
+      required:
+        - grant_type
+        - code
+        - redirect_uri
+        - code_verifier
+      properties:
+        grant_type:
+          description: OAuth grant type.
+          type: string
+          enum:
+            - authorization_code
+        code:
+          description: Authorization code.
+          type: string
+          minLength: 1
+        redirect_uri:
+          description: Redirect URI used in the authorization request.
+          type: string
+          format: uri
+        code_verifier:
+          $ref: "#/components/schemas/OAuthPKCECodeVerifier"
+        client_id:
+          description: |
+            OAuth client ID of the app.
+
+            **Required when the client does not authenticate with the OAuth client authentication method
+            `client_secret_basic`.**
+          allOf:
+            - $ref: "#/components/schemas/OAuthClientID"
+
+    CreateRefreshTokenOAuthTokenRequest:
+      type: object
+      description: Request to refresh Account-issued app-scoped OAuth tokens.
+      required:
+        - grant_type
+        - refresh_token
+      properties:
+        grant_type:
+          description: OAuth grant type.
+          type: string
+          enum:
+            - refresh_token
+        refresh_token:
+          description: Refresh token issued by XBuilder Account.
+          type: string
+          minLength: 1
+        scope:
+          description: OAuth scope requested for the refreshed access token.
+          allOf:
+            - $ref: "#/components/schemas/OAuthScope"
+        client_id:
+          description: |
+            OAuth client ID of the app.
+
+            **Required when the client does not authenticate with the OAuth client authentication method
+            `client_secret_basic`.**
+          allOf:
+            - $ref: "#/components/schemas/OAuthClientID"
+
+    OAuthToken:
+      type: object
+      description: OAuth token response.
+      required:
+        - access_token
+        - token_type
+        - expires_in
+        - scope
+      properties:
+        access_token:
+          description: Account-issued app-scoped OAuth access token.
+          type: string
+          minLength: 1
+        token_type:
+          description: OAuth token type.
+          type: string
+          enum:
+            - Bearer
+        expires_in:
+          description: Lifetime of the access token in seconds.
+          type: integer
+          format: int64
+          minimum: 1
+          examples:
+            - 300
+        refresh_token:
+          description: Refresh token issued by XBuilder Account.
+          type: string
+          minLength: 1
+        scope:
+          description: Granted OAuth scope.
+          allOf:
+            - $ref: "#/components/schemas/OAuthScope"
+
+    OAuthIntrospection:
+      type: object
+      description: OAuth token introspection response.
+      required:
+        - active
+      properties:
+        active:
+          description: Whether the token is active.
+          type: boolean
+          examples:
+            - true
+        sub:
+          description: Stable XBuilder user ID used as the OAuth subject.
+          $ref: "#/components/schemas/Model/properties/id"
+        client_id:
+          description: OAuth client ID of the app the token was issued to.
+          $ref: "#/components/schemas/OAuthClientID"
+        scope:
+          description: OAuth scope associated with the token.
+          allOf:
+            - $ref: "#/components/schemas/OAuthScope"
+        exp:
+          description: Expiration time as a Unix timestamp.
+          type: integer
+          format: int64
+          minimum: 0
+        iat:
+          description: Issued-at time as a Unix timestamp.
+          type: integer
+          format: int64
+          minimum: 0
+
+    RevokeOAuthTokenRequest:
+      description: Request to revoke an Account-issued OAuth token.
+      oneOf:
+        - $ref: "#/components/schemas/RevokeOAuthTokenWithClientAuthRequest"
+        - $ref: "#/components/schemas/RevokeOAuthTokenWithClientIDRequest"
+
+    RevokeOAuthTokenWithClientAuthRequest:
+      type: object
+      description: Token revocation request authenticated with OAuth client authentication.
+      required:
+        - token
+      not:
+        required:
+          - client_id
+      properties:
+        token:
+          description: OAuth token to revoke.
+          type: string
+          minLength: 1
+        token_type_hint:
+          description: |
+            Hint about the type of token submitted for revocation.
+
+            Known values include `access_token` and `refresh_token`.
+          type: string
+          minLength: 1
+          examples:
+            - access_token
+
+    RevokeOAuthTokenWithClientIDRequest:
+      type: object
+      description: Token revocation request from a public client.
+      required:
+        - token
+        - client_id
+      properties:
+        token:
+          description: OAuth token to revoke.
+          type: string
+          minLength: 1
+        token_type_hint:
+          description: |
+            Hint about the type of token submitted for revocation.
+
+            Known values include `access_token` and `refresh_token`.
+          type: string
+          minLength: 1
+          examples:
+            - access_token
+        client_id:
+          description: OAuth client ID of the app.
+          $ref: "#/components/schemas/OAuthClientID"
+
+    OAuthError:
+      type: object
+      description: OAuth error response body.
+      required:
+        - error
+      properties:
+        error:
+          description: OAuth error code.
+          type: string
+          minLength: 1
+        error_description:
+          description: Human-readable ASCII description of the error.
+          type: string
+          minLength: 1
+        error_uri:
+          description: URI identifying a human-readable web page with information about the error.
+          type: string
+          format: uri-reference
+
+    AuditLog:
+      type: object
+      description: Admin audit log entry.
+      required:
+        - id
+        - createdAt
+        - action
+        - resourceType
+        - resourceID
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        action:
+          description: Audit action name.
+          type: string
+          minLength: 1
+          examples:
+            - account.user.password.set
+        actor:
+          description: Username of the user who performed the action at the time of the audit event.
+          oneOf:
+            - $ref: "#/components/schemas/User/properties/username"
+            - type: "null"
+        resourceType:
+          description: Type of the audited resource.
+          type: string
+          minLength: 1
+          examples:
+            - account.user
+        resourceID:
+          description: ID of the audited resource.
+          $ref: "#/components/schemas/Model/properties/id"
+        metadata:
+          description: |
+            Additional audit metadata.
+
+            Metadata must not contain passwords, tokens, client secrets, or other secrets.
+          type: object
+          additionalProperties: true
+
+    UserAuthorization:
+      type: object
+      description: XBuilder Authorization inputs and derived capabilities for a user.
+      required:
+        - userID
+        - roles
+        - plan
+        - capabilities
+      properties:
+        userID:
+          description: ID of the user.
+          $ref: "#/components/schemas/Model/properties/id"
+        roles:
+          description: Roles assigned to the user.
+          type: array
+          items:
+            type: string
+            minLength: 1
+          examples:
+            - - assetAdmin
+              - courseAdmin
+        plan:
+          $ref: "#/components/schemas/User/properties/plan"
+        capabilities:
+          $ref: "#/components/schemas/UserCapabilities"
+        quotaPolicies:
+          description: Derived quota policies for XBuilder Authorization decisions.
+          type: object
+          additionalProperties: true
 
     Project:
       type: object
@@ -3968,11 +6805,13 @@ components:
         description:
           description: Brief description of the project.
           type: string
+          maxLength: 400
           examples:
             - NiuXiaoQi in your area.
         instructions:
           description: Instructions on how to interact with the project.
           type: string
+          maxLength: 400
           examples:
             - Just run it.
         extraSettings:
@@ -4052,6 +6891,7 @@ components:
         name:
           description: Unique name of the project release, adhering to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
           type: string
+          maxLength: 255
           pattern: '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
           examples:
             - v1.2.3
@@ -4059,6 +6899,7 @@ components:
           description: Brief description of the release.
           type: string
           minLength: 1
+          maxLength: 400
           examples:
             - First release.
         files:
@@ -4072,9 +6913,14 @@ components:
           $ref: "#/components/schemas/Project/properties/remixCount"
 
     ProjectReleaseFullName:
-      description: Full name of a project release in the format `owner/project/release`.
+      description: |
+        Full name of a project release in the format `owner/project/release`.
+
+        `maxLength` is derived from 100-character owner and project names, two `/` separators, and a 255-character
+        release name.
       type: string
       minLength: 10
+      maxLength: 457
       pattern: '^[A-Za-z0-9_-]{1,100}/[A-Za-z0-9_-]{1,100}/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
       examples:
         - john/NiuXiaoQi/v1.2.3
@@ -4208,6 +7054,7 @@ components:
         prompt:
           description: Prompt text for the course (used for copilot assistance).
           type: string
+          maxLength: 4000
           examples:
             - Learn the basics of XGo programming language
 
@@ -4270,6 +7117,7 @@ components:
         description:
           description: Description of the course series.
           type: string
+          maxLength: 400
           examples:
             - A series of courses on XBuilder programming.
         courseIDs:
@@ -4350,9 +7198,11 @@ components:
         - role
       additionalProperties: false
       anyOf:
-        - required:
+        - title: Text content message
+          required:
             - content
-        - required:
+        - title: Tool-call message
+          required:
             - toolCalls
           properties:
             toolCalls:
@@ -5026,7 +7876,7 @@ components:
             All images must be provided as PNG format. If you have images in other formats (SVG, JPEG, WebP),
             convert them to PNG before sending.
 
-            Maximum image size: 5 MB (after decoding the base64 content).
+            Maximum image size: 5 MiB after decoding the base64 content.
 
             Format: `data:image/png;base64,<base64_data>`
           type: string

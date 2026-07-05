@@ -1,6 +1,10 @@
 import { client, type ByPage, type PaginationParams } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
 
+export const usernameMaxLength = 100
+export const userDisplayNameMaxLength = 100
+export const userDescriptionMaxLength = 200
+
 export type User = {
   /** Unique identifier */
   id: string
@@ -26,6 +30,10 @@ export type SignedInUser = User & {
 }
 
 export type UserCapabilities = {
+  /** Whether user can manage XBuilder Account resources */
+  canManageAccount: boolean
+  /** Whether user can manage XBuilder Authorization resources */
+  canManageAuthorization: boolean
   /** Whether user can manage asset library */
   canManageAssets: boolean
   /** Whether user can manage courses and course series */
@@ -48,14 +56,31 @@ export async function isUsernameTaken(username: string) {
   }
 }
 
-export function getSignedInUser(): Promise<SignedInUser> {
-  return client.get(`/user`) as Promise<SignedInUser>
+export function getSignedInUser(
+  /** Optional access token for authentication */
+  token?: string
+): Promise<SignedInUser> {
+  const options =
+    token == null
+      ? undefined
+      : {
+          headers: new Headers({
+            Authorization: `Bearer ${token}`
+          })
+        }
+  return client.get(`/user`, undefined, options) as Promise<SignedInUser>
 }
 
-export type UpdateSignedInUserParams = Partial<Pick<User, 'username' | 'displayName' | 'avatar' | 'description'>>
+export type UpdateSignedInUserParams = Partial<Pick<User, 'username' | 'displayName' | 'description'>>
 
 export function updateSignedInUser(params: UpdateSignedInUserParams) {
   return client.patch(`/user`, params) as Promise<SignedInUser>
+}
+
+export async function updateSignedInUserAvatar(file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  await client.putBinary('/user/avatar', form)
 }
 
 type ListUserFollowRelationsParams = PaginationParams & {

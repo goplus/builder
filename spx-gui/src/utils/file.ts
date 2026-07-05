@@ -1,4 +1,4 @@
-import { computed, ref, watch, type WatchSource } from 'vue'
+import { ref, watch, type WatchSource } from 'vue'
 import type { File } from '@/models/common/file'
 import { Cancelled } from './exception'
 
@@ -116,7 +116,13 @@ export async function getSupportedAudioExts() {
   ).filter(Boolean) as string[]
 }
 
-/** Get url for File */
+/**
+ * Get the raw object URL for a File.
+ *
+ * NOTE: For URLs used as image resources, check whether `useRenderableImageUrl`
+ * is more appropriate. It applies rendering-specific handling such as Scratch
+ * font injection for SVG files.
+ */
 export function useFileUrl(fileSource: WatchSource<File | undefined | null>) {
   const urlRef = ref<string | null>(null)
   const loadingRef = ref(false)
@@ -158,42 +164,4 @@ export function useFileUrl(fileSource: WatchSource<File | undefined | null>) {
     { immediate: true }
   )
   return [urlRef, loadingRef] as const
-}
-
-/**
- * Get image element (HTMLImageElement) based on given (image) file.
- * The image element is guaranteed to be loaded when set to ref.
- */
-export function useFileImg(fileSource: WatchSource<File | undefined>) {
-  const [urlRef, urlLoadingRef] = useFileUrl(fileSource)
-  const imgRef = ref<HTMLImageElement | null>(null)
-  const imgLoadingRef = ref(false)
-  watch(urlRef, (url, _, onCleanup) => {
-    onCleanup(() => {
-      imgRef.value?.remove()
-      imgRef.value = null
-    })
-    if (url != null) {
-      imgLoadingRef.value = true
-      const img = new window.Image()
-      img.addEventListener(
-        'load',
-        () => {
-          imgRef.value = img
-          imgLoadingRef.value = false
-        },
-        { once: true }
-      )
-      img.addEventListener(
-        'error',
-        () => {
-          imgLoadingRef.value = false
-        },
-        { once: true }
-      )
-      img.src = url
-    }
-  })
-  const loading = computed(() => urlLoadingRef.value || imgLoadingRef.value)
-  return [imgRef, loading] as const
 }

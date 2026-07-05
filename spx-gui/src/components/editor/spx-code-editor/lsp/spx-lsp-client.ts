@@ -435,10 +435,10 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     return null
   }
 
-  async getCompletionItems(ctx: RequestContext, params: lsp.CompletionParams) {
+  async getCompletionList(ctx: RequestContext, params: lsp.CompletionParams): Promise<lsp.CompletionList> {
     const completionResult = await this.textDocumentCompletion(ctx, params)
-    if (completionResult == null) return []
-    if (!Array.isArray(completionResult)) return [] // For now, we support CompletionItem[] only
+    if (completionResult == null) return { items: [], isIncomplete: false }
+    if (Array.isArray(completionResult)) return { items: completionResult, isIncomplete: false }
     return completionResult
   }
 

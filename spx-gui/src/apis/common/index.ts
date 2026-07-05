@@ -5,6 +5,11 @@ export type PaginationParams = {
   pageIndex?: number
 }
 
+export enum SortOrder {
+  Asc = 'asc',
+  Desc = 'desc'
+}
+
 export type ByPage<T> = {
   total: number
   data: T[]
@@ -36,6 +41,10 @@ export function timeStringify(time: number) {
   return new Date(time).toISOString()
 }
 
+/**
+ * The default client instance for app XBuilder to make requests to spx-backend APIs.
+ * The base URL and token provider are expected to be configured on app initialization.
+ */
 export const client = new Client()
 
 /** Art style indicates the visual style or aesthetic approach used in the creation of graphics */

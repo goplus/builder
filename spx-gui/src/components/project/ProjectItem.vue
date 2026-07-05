@@ -127,7 +127,7 @@ import {
   humanizeExactTime,
   useAsyncComputedLegacy
 } from '@/utils/utils'
-import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
+import { getProjectEditorRoute, getProjectPageRoute } from '@/apps/xbuilder/router'
 import { Visibility, type ProjectData } from '@/apis/project'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { createFileWithUniversalUrl, getPublishedContent } from '@/models/common/cloud'

@@ -12,6 +12,7 @@
 
 See `package.json` or `go.mod` files in subdirectories for details.
 
-### Architecture Design
+### Frontend Development
 
-TODO.
+- [spx-gui Apps](./spx-gui-apps.md)
+- [Account Local Debugging](./account-local-debugging.md)

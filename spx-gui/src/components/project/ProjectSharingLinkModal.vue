@@ -37,7 +37,7 @@
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { computed } from 'vue'
-import { getProjectShareRoute } from '@/router'
+import { getProjectShareRoute } from '@/apps/xbuilder/router'
 
 const props = defineProps<{
   visible: boolean

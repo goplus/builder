@@ -15,6 +15,8 @@ function createSignedInUser(username: string): SignedInUser {
     description: '',
     plan: 'free',
     capabilities: {
+      canManageAccount: false,
+      canManageAuthorization: false,
       canManageAssets: false,
       canManageCourses: false,
       canUsePremiumLLM: false

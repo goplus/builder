@@ -6,7 +6,7 @@ import { useAvatarUrl } from '@/stores/user/avatar'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { timeout } from '@/utils/utils'
-import { initiateSignIn, useSignedInUser } from '@/stores/user'
+import { useSignIn, useSignedInUser } from '@/stores/user'
 import { UIButton, UICard, UIImg, useMessage, useModal } from '@/components/ui'
 import TextView from '../TextView.vue'
 import FollowButton from './FollowButton.vue'
@@ -30,6 +30,7 @@ const invokeEditProfileModal = useModal(EditProfileModal)
 
 const i18n = useI18n()
 const message = useMessage()
+const signIn = useSignIn()
 
 const handleUsernameUpdated = useMessageHandle(
   async (newUsername: string) => {
@@ -47,7 +48,7 @@ const handleUsernameUpdated = useMessageHandle(
       })
     )
     await timeout(2000)
-    initiateSignIn()
+    signIn()
   },
   {
     en: 'Failed to redirect after username update',

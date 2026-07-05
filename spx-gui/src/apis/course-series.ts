@@ -1,5 +1,8 @@
 import { client, type ByPage, type PaginationParams } from './common'
 
+export const courseSeriesTitleMaxLength = 200
+export const courseSeriesDescriptionMaxLength = 400
+
 export type CourseSeries = {
   /** Unique identifier */
   id: string

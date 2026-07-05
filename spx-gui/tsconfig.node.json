@@ -2,7 +2,7 @@
   "extends": "@tsconfig/node24/tsconfig.json",
   "include": [
     "vite.config.*",
-    "vercel-output-plugin.ts"
+    "build/vite-plugins/*.ts"
   ],
   "compilerOptions": {
     "composite": true,

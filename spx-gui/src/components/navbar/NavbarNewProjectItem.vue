@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { getOwnProjectEditorRoute } from '@/router'
+import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
 import { UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useCreateProject } from '@/components/project'

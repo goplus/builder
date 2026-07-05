@@ -12,8 +12,9 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watchEffect } from 'vue'
 import { registerPlayer as registerAudioPlayer } from '@/utils/player-registry'
-import { useActivated } from '@/utils/utils'
+import { timeout, useActivated } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
+import { AnimationSoundPlayback } from '@/models/spx/animation'
 import type { Costume } from '@/models/spx/costume'
 import type { Sound } from '@/models/spx/sound'
 import { UILoading } from '@/components/ui'
@@ -21,19 +22,27 @@ import CostumesPlayer from '@/components/common/CostumesPlayer.vue'
 import CheckerboardBackground from '../CheckerboardBackground.vue'
 import MuteSwitch from './MuteSwitch.vue'
 
-const props = defineProps<{
-  costumes: Costume[]
-  sound: Sound | null
-  duration: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    costumes: Costume[]
+    sound: Sound | null
+    soundPlayback?: AnimationSoundPlayback
+    duration: number
+  }>(),
+  {
+    soundPlayback: AnimationSoundPlayback.Once
+  }
+)
 
 const registered = registerAudioPlayer(() => setMuted(true))
-const audioRef = ref<HTMLAudioElement | null>(null)
+const audios = new Set<HTMLAudioElement>()
 const mutedRef = ref(true)
 function setMuted(muted: boolean) {
   mutedRef.value = muted
-  if (audioRef.value != null) {
-    audioRef.value.muted = muted
+  for (const audio of audios) {
+    audio.muted = muted
+  }
+  if (props.sound != null) {
     if (muted) registered.onStopped()
     else registered.onStart()
   }
@@ -50,25 +59,65 @@ async function loadAudio(sound: Sound, signal: AbortSignal) {
   return audio
 }
 
-function playAudio(audio: HTMLAudioElement, duration: number, signal: AbortSignal) {
-  audio.muted = mutedRef.value
-  audioRef.value = audio
-  const playFromStart = () => {
-    try {
-      audio.currentTime = 0
-      audio.play()
-    } catch {
-      // We can get an error from `play()` if the sound is not loaded yet
-      // or if the sound is not allowed to play
+// Limit the number of concurrently playing audio instances to prevent overwhelming the browser and causing performance issues or crashes.
+const concurrentAudioLimit = 10
+
+/**
+ * Play the audio with `playback: AnimationSoundPlayback.Once`.
+ * The sound is triggered once per animation cycle (duration).
+ * If the previous sound is still playing when the next cycle starts, it will keep playing.
+ * In that case, multiple sound instances can overlap.
+ */
+function playAudioWithPlaybackOnce(audio: HTMLAudioElement, duration: number, signal: AbortSignal) {
+  function playOnce() {
+    // Create a new audio element to play the sound so it plays independently
+    const newAudio = new Audio(audio.src)
+    newAudio.muted = mutedRef.value
+    audios.add(newAudio)
+
+    const ctrl = new AbortController()
+    function stopAndCleanup() {
+      if (ctrl.signal.aborted) return
+      ctrl.abort(new Cancelled('stop and cleanup'))
+      newAudio.pause()
+      audios.delete(newAudio)
     }
+    newAudio.addEventListener('ended', stopAndCleanup, { signal: ctrl.signal })
+    signal.addEventListener('abort', stopAndCleanup, { signal: ctrl.signal })
+    // Stop the newAudio after some time to prevent too many overlapping audios
+    timeout(duration * 1000 * concurrentAudioLimit, ctrl.signal).then(stopAndCleanup)
+    newAudio.play()
   }
+  playOnce()
+  const timer = setInterval(playOnce, duration * 1000)
+  signal.addEventListener('abort', () => clearInterval(timer), { once: true })
+}
+
+/**
+ * Play the audio with `playback: AnimationSoundPlayback.Loop`.
+ * The sound loops continuously within each animation cycle.
+ * When a new cycle starts, playback is reset to the beginning.
+ * This prevents overlapping between cycles.
+ */
+function playAudioWithPlaybackLoop(audio: HTMLAudioElement, duration: number, signal: AbortSignal) {
+  function playFromStart() {
+    audio.currentTime = 0
+    audio.play()
+  }
+  audio.loop = true
+  audio.muted = mutedRef.value
+  audios.add(audio)
+  signal.addEventListener(
+    'abort',
+    () => {
+      audio.pause()
+      audios.delete(audio)
+    },
+    { once: true }
+  )
   playFromStart()
   const timer = setInterval(playFromStart, duration * 1000)
-  signal.addEventListener('abort', async () => {
-    clearInterval(timer)
-    audio.pause()
-    audioRef.value = null
-  })
+  signal.addEventListener('abort', () => clearInterval(timer), { once: true })
 }
 
 const activatedRef = useActivated()
@@ -93,7 +142,7 @@ watchEffect(async () => {
   if (costumesPlayer == null) return
   try {
     const signal = ctrl.signal
-    const { costumes, sound, duration } = props
+    const { costumes, sound, soundPlayback, duration } = props
     const [, audio] = await Promise.all([
       costumesPlayer.load(costumes, duration, signal),
       sound != null ? loadAudio(sound, signal) : null
@@ -101,7 +150,13 @@ watchEffect(async () => {
     signal.throwIfAborted()
 
     costumesPlayer.play(signal)
-    if (audio != null) playAudio(audio, duration, signal)
+    if (audio != null) {
+      if (soundPlayback === AnimationSoundPlayback.Once) {
+        playAudioWithPlaybackOnce(audio, duration, signal)
+      } else if (soundPlayback === AnimationSoundPlayback.Loop) {
+        playAudioWithPlaybackLoop(audio, duration, signal)
+      }
+    }
   } catch (e) {
     ctrl.abort(e)
     capture(e, 'load and play animation failed')

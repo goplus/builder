@@ -19,8 +19,8 @@ const props = defineProps<{
 const slots = useSlots()
 const rootClass = computed(() =>
   cn(
-    'w-full flex items-center gap-2 px-1.5 text-center text-title',
-    props.size === 'large' ? 'h-5 text-sm' : 'h-5.5 text-2xs',
+    'w-full flex items-center text-center text-title',
+    props.size === 'large' ? 'h-5 gap-2 px-1.5 text-sm' : 'h-5.5 gap-0.5 px-1 text-2xs',
     props.class
   )
 )

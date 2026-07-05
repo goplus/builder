@@ -24,10 +24,8 @@
 
 **完整代码：**
 ```
-onStart => {
-    turnTo 萝卜
-    step 200
-}
+turnTo 萝卜
+step 200
 ```
 
 #### 代码详解
@@ -49,10 +47,8 @@ onStart => {
 **代码执行流程**
 
 ```
-onStart => {
-    turnTo 萝卜   // 第1步：自动转向萝卜
-    step 200      // 第2步：向前走200步
-}
+turnTo 萝卜   // 第1步：自动转向萝卜
+step 200      // 第2步：向前走200步
 ```
 
 就像给 Kiko 下达指令：
@@ -65,10 +61,8 @@ onStart => {
 
 **传统方式（麻烦）：**
 ```
-onStart => {
-    turn -37      // 需要自己计算角度
-    step 200
-}
+turn -37      // 需要自己计算角度
+step 200
 ```
 问题：
 - 需要手动计算角度
@@ -77,10 +71,8 @@ onStart => {
 
 **使用 turnTo（简单）：**
 ```
-onStart => {
-    turnTo 萝卜   // 自动转向，无需计算
-    step 200
-}
+turnTo 萝卜   // 自动转向，无需计算
+step 200
 ```
 优势：
 - 不需要计算角度
@@ -169,10 +161,8 @@ onStart => {
 看看这次的场景，我们要让 Kiko 走到萝卜那里。如果用之前学的方法：
 
 ```
-onStart => {
-    turnTo 萝卜    // 转向萝卜
-    step 200       // 走 200 步...够吗？不够？太多？
-}
+turnTo 萝卜    // 转向萝卜
+step 200       // 走 200 步...够吗？不够？太多？
 ```
 
 问题是：我们不知道萝卜离 Kiko 有多远！如果萝卜的位置改变了，`step` 的参数也要跟着改。
@@ -184,17 +174,13 @@ onStart => {
 
 **初始代码：**
 ```
-onStart => {
-    stepTo 萝卜
-}
+stepTo 萝卜
 ```
 
 **修改后的代码：**
 ```
-onStart => {
-    turnTo 萝卜
-    stepTo 萝卜
-}
+turnTo 萝卜
+stepTo 萝卜
 ```
 
 #### 代码详解
@@ -224,10 +210,8 @@ stepTo 萝卜   // 只会沿着当前朝向前进，直到到达萝卜的距离
 **正确的组合**
 
 ```
-onStart => {
-    turnTo 萝卜   // 第1步：先转向萝卜
-    stepTo 萝卜   // 第2步：再走向萝卜
-}
+turnTo 萝卜   // 第1步：先转向萝卜
+stepTo 萝卜   // 第2步：再走向萝卜
 ```
 
 这样的组合：
@@ -341,10 +325,8 @@ stepTo 萝卜   // 自动计算距离
 如果只收集第一个萝卜：
 
 ```
-onStart => {
-    turnTo 萝卜1
-    stepTo 萝卜1
-}
+turnTo 萝卜1
+stepTo 萝卜1
 ```
 
 但这样只能到达萝卜1，其他两个萝卜怎么办？
@@ -356,24 +338,20 @@ onStart => {
 
 **初始代码：**
 ```
-onStart => {
-    turnTo 萝卜1
-    stepTo 萝卜1
-}
+turnTo 萝卜1
+stepTo 萝卜1
 ```
 
 **修改后的代码：**
 ```
-onStart => {
-    turnTo 萝卜1
-    stepTo 萝卜1
+turnTo 萝卜1
+stepTo 萝卜1
 
-    turnTo 萝卜2
-    stepTo 萝卜2
+turnTo 萝卜2
+stepTo 萝卜2
 
-    turnTo 萝卜3
-    stepTo 萝卜3
-}
+turnTo 萝卜3
+stepTo 萝卜3
 ```
 
 #### 代码详解
@@ -397,19 +375,17 @@ stepTo 目标
 让我们逐步分析代码的执行过程：
 
 ```
-onStart => {
-    // 阶段1：收集萝卜1
-    turnTo 萝卜1   // 转向萝卜1
-    stepTo 萝卜1   // 走到萝卜1
+// 阶段1：收集萝卜1
+turnTo 萝卜1   // 转向萝卜1
+stepTo 萝卜1   // 走到萝卜1
 
-    // 阶段2：收集萝卜2
-    turnTo 萝卜2   // 转向萝卜2
-    stepTo 萝卜2   // 走到萝卜2
+// 阶段2：收集萝卜2
+turnTo 萝卜2   // 转向萝卜2
+stepTo 萝卜2   // 走到萝卜2
 
-    // 阶段3：收集萝卜3
-    turnTo 萝卜3   // 转向萝卜3
-    stepTo 萝卜3   // 走到萝卜3
-}
+// 阶段3：收集萝卜3
+turnTo 萝卜3   // 转向萝卜3
+stepTo 萝卜3   // 走到萝卜3
 ```
 
 **为什么每次都要 turnTo？**
@@ -475,20 +451,16 @@ onStart => {
 
 **初始代码：**
 ```
-onStart => {
-    Boat.step 80
-    stepTo Radish
-}
+Boat.step 80
+stepTo Radish
 ```
 
 **期望的完整代码：**
 ```
-onStart => {
-    Boat.turn Right
-    Boat.turn Right
-    Boat.step 120
-    stepTo Radish
-}
+Boat.turn Right
+Boat.turn Right
+Boat.step 120
+stepTo Radish
 ```
 
 #### 代码详解
@@ -546,10 +518,8 @@ Boat.turn Right   // 第二次右转：船再转 90 度
 让我们分析初始代码为什么不能完成任务：
 
 ```
-onStart => {
-    Boat.step 80      // 问题1：船没有先转向
-    stepTo Radish     // 问题2：距离不够，Kiko 到不了
-}
+Boat.step 80      // 问题1：船没有先转向
+stepTo Radish     // 问题2：距离不够，Kiko 到不了
 ```
 
 **问题 1：缺少转向**

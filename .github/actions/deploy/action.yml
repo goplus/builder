@@ -1,0 +1,68 @@
+name: Deploy
+description: Upload a package to the XGo deploy service and release it.
+
+inputs:
+  token:
+    description: Bearer token for the XGo deploy service.
+    required: true
+  app-id:
+    description: Target application ID in the deploy service.
+    required: true
+  package-name:
+    description: Package name used to construct the archive filename and identify the package in the deploy service.
+    required: true
+  package-dir:
+    description: Path to the directory whose contents should be packaged and uploaded.
+    required: true
+  endpoint:
+    description: Base URL of the XGo deploy service.
+    required: false
+    default: https://deploy.goplus.org
+  timeout-seconds:
+    description: Maximum number of seconds to wait for deployment completion.
+    required: false
+    default: "3600"
+  poll-interval-seconds:
+    description: Number of seconds between deployment status polls.
+    required: false
+    default: "60"
+  fail-on-deploy-failure:
+    description: Whether to fail the action when the deployment status is failure.
+    required: false
+    default: "true"
+
+outputs:
+  version:
+    description: Generated deploy package version.
+    value: ${{ steps.deploy.outputs.version }}
+  package-id:
+    description: Uploaded package ID.
+    value: ${{ steps.deploy.outputs['package-id'] }}
+  package-url:
+    description: Uploaded package URL.
+    value: ${{ steps.deploy.outputs['package-url'] }}
+  deploy-id:
+    description: Created deployment ID.
+    value: ${{ steps.deploy.outputs['deploy-id'] }}
+  build-id:
+    description: Created deployment build ID.
+    value: ${{ steps.deploy.outputs['build-id'] }}
+  status:
+    description: Final deployment status from the deploy service, or timeout.
+    value: ${{ steps.deploy.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - id: deploy
+      shell: bash
+      env:
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_APP_ID: ${{ inputs['app-id'] }}
+        INPUT_PACKAGE_NAME: ${{ inputs['package-name'] }}
+        INPUT_PACKAGE_DIR: ${{ inputs['package-dir'] }}
+        INPUT_ENDPOINT: ${{ inputs.endpoint }}
+        INPUT_TIMEOUT_SECONDS: ${{ inputs['timeout-seconds'] }}
+        INPUT_POLL_INTERVAL_SECONDS: ${{ inputs['poll-interval-seconds'] }}
+        INPUT_FAIL_ON_DEPLOY_FAILURE: ${{ inputs['fail-on-deploy-failure'] }}
+      run: ${{ github.action_path }}/deploy.sh

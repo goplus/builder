@@ -14,21 +14,26 @@
     <main class="flex-auto min-h-0 overflow-y-auto px-4 py-3">
       <slot></slot>
     </main>
-    <footer class="flex-none flex justify-end gap-3 p-4">
-      <UIButton
-        v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in dropdown' }"
-        type="neutral"
-        @click="emit('cancel')"
-      >
-        {{ $t({ en: 'Cancel', zh: '取消' }) }}
-      </UIButton>
-      <UIButton
-        v-radar="{ name: 'Confirm button', desc: 'Click to submit the dropdown' }"
-        type="primary"
-        html-type="submit"
-      >
-        {{ $t({ en: 'Confirm', zh: '确认' }) }}
-      </UIButton>
+    <footer class="flex-none flex items-center justify-between gap-3 p-4">
+      <div class="min-w-0 flex items-center">
+        <slot name="footer-left"></slot>
+      </div>
+      <div class="flex justify-end gap-3">
+        <UIButton
+          v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in dropdown' }"
+          type="neutral"
+          @click="emit('cancel')"
+        >
+          {{ $t({ en: 'Cancel', zh: '取消' }) }}
+        </UIButton>
+        <UIButton
+          v-radar="{ name: 'Confirm button', desc: 'Click to submit the dropdown' }"
+          type="primary"
+          html-type="submit"
+        >
+          {{ $t({ en: 'Confirm', zh: '确认' }) }}
+        </UIButton>
+      </div>
     </footer>
   </form>
 </template>

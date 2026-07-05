@@ -26,6 +26,15 @@ Keep import statements in order:
 2. Internal libraries: from base to specific, e.g., from `utils` to `models` to `components`
 3. Local files: relative paths starting with `./` or `../`
 
+### String Length Validation
+
+* Use native `string.length`, browser input constraints, and `z.string().max()` for ordinary frontend input validation,
+  following the app's existing validation and feedback patterns.
+* Use `getStringLengthInCodePoints` only when frontend logic must exactly match backend/OpenAPI Unicode code point
+  semantics, or when slicing, truncating, or constructing hard-budget strings such as LLM/API payloads.
+* Count after submission-time normalization such as `trim()`. Use byte or source-file-size checks for explicit byte or
+  payload-size limits.
+
 ### Asset URLs
 
 * For widget-safe full asset URLs, use `new URL('...', import.meta.url).href` instead of `import x from './file.ext?url'`.
@@ -38,6 +47,28 @@ Keep import statements in order:
 	- Type alias names
 	- Enum names and enum members
 	- Vue component names
+
+### Browser Storage Keys
+
+* Prefix new `localStorage` and `sessionStorage` keys with `builder-`.
+* Use the remainder of the key to identify the owning feature and stored state, for example `builder-user` or `builder-account-pending-authorization`.
+* Migrate existing keys gradually when changing their owning storage logic. Do not rename unrelated existing keys solely for consistency.
+
+### App Env and Configuration
+
+* App env belongs to the app that owns it. Define app-specific env values under `src/apps/<app>/env.ts` and app-specific `.env*` files under `src/apps/<app>/`.
+
+* Code that does not clearly belong to a single app must not import a concrete app env module such as `@/apps/xbuilder/env` or `@/apps/account/env`.
+  Instead, the shared module should define the smallest configuration interface it needs, then expose an explicit configuration surface such as:
+	- a setter on an exported singleton, for example an API client `setBaseUrl(...)`;
+	- a `provide` / `inject` pair for Vue component trees;
+	- a function parameter when the dependency is local to one operation.
+
+* App entry and setup code under `src/apps/<app>/` is responsible for reading that app's env and passing only the required values into shared modules.
+
+* Code that is clearly app-owned, especially files under `src/apps/<app>/`, may import and consume that app's env directly when that is simpler.
+
+* Keep shared module configuration narrow. Avoid passing a whole app env object into shared business logic when the module only needs one or two values.
 
 ### Identifier Resolution
 
@@ -83,6 +114,8 @@ When working with backend unique string identifiers such as `username`, project 
 ## Vue Component Development
 
 * Generate accessibility info for interactive elements using `v-radar` directive.
+* Keep Vue SFC sections in this logical order when applicable: optional `<script>`, `<script setup>`, `<template>`, then optional `<style>`.
+* Use the optional `<script>` section for definitions that belong to the same component but can be reused across multiple component instances, such as constants or helper functions.
 
 ## Styling Preferences
 

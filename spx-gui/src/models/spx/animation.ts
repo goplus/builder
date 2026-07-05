@@ -1,31 +1,35 @@
 import { reactive } from 'vue'
+import { nanoid } from 'nanoid'
 
 import { Disposable } from '@/utils/disposable'
 import { ensureValidCostumeName, getAnimationName, validateAnimationName } from './common/asset-name'
 import type { Files } from '../common/file'
 import type { Costume, RawCostumeConfig, Pivot as CostumePivot } from './costume'
 import type { Sprite } from './sprite'
-import { nanoid } from 'nanoid'
 import type { Sound } from './sound'
 
 type ActionConfig = {
   /** Sound name to play */
   play?: string
-  /** Whether to loop the sound; for onStart defaults to false, for onPlay defaults to true */
-  loop?: boolean
   // not supported by builder:
   costumes?: unknown
 }
 
 export const defaultFps = 10
 
+export enum AnimationSoundPlayback {
+  /** Play once and let the sound complete independently of the animation. */
+  Once = 'once',
+  /** Loop during each animation playback and stop when the animation stops. */
+  Loop = 'loop'
+}
+
 export type AnimationInits = {
   id?: string
   /** Duration (in seconds) for animation to be played once */
   duration?: number
   sound?: string
-  /** Whether to loop the sound; defaults to false */
-  soundLoop?: boolean
+  soundPlayback?: AnimationSoundPlayback
 }
 
 export type RawAnimationConfig = {
@@ -108,10 +112,9 @@ export class Animation extends Disposable {
     this.sound = soundId
   }
 
-  /** Whether to loop the sound when played; defaults to false */
-  soundLoop: boolean
-  setSoundLoop(loop: boolean) {
-    this.soundLoop = loop
+  soundPlayback: AnimationSoundPlayback
+  setSoundPlayback(playback: AnimationSoundPlayback) {
+    this.soundPlayback = playback
   }
 
   constructor(name: string, inits?: AnimationInits) {
@@ -120,7 +123,7 @@ export class Animation extends Disposable {
     this.costumes = []
     this.duration = inits?.duration ?? 0
     this.sound = inits?.sound ?? null
-    this.soundLoop = inits?.soundLoop ?? false
+    this.soundPlayback = inits?.soundPlayback ?? AnimationSoundPlayback.Once
     this.id = inits?.id ?? nanoid()
 
     return reactive(this) as this
@@ -131,7 +134,7 @@ export class Animation extends Disposable {
       id: preserveId ? this.id : undefined,
       duration: this.duration,
       sound: this.sound ?? undefined,
-      soundLoop: this.soundLoop
+      soundPlayback: this.soundPlayback
     })
     const costumes = this.costumes.map((c) => c.clone(preserveId))
     animation.setCostumes(costumes)
@@ -180,22 +183,27 @@ export class Animation extends Disposable {
     if (isLoop != null) console.warn(`unsupported field: isLoop for animation ${name}`)
     if (anitype != null) console.warn(`unsupported field: anitype for animation ${name}`)
     let soundId: string | undefined = undefined
-    let soundLoop = false
-    // onPlay is the current API; onStart is legacy for backward compatibility
-    const soundName = onPlay?.play ?? onStart?.play
+    let soundPlayback = AnimationSoundPlayback.Once
+    let soundName: string | undefined = undefined
+    if (onPlay?.play != null) {
+      soundName = onPlay.play
+      soundPlayback = AnimationSoundPlayback.Loop
+    } else if (onStart?.play != null) {
+      soundName = onStart.play
+      soundPlayback = AnimationSoundPlayback.Once
+    }
     if (soundName != null) {
       const sound = sounds.find((s) => s.name === soundName)
       if (sound == null) console.warn(`Sound ${soundName} not found when creating animation ${name}`)
       else {
         soundId = sound.id
-        soundLoop = onPlay?.loop ?? false
       }
     }
     const animation = new Animation(name, {
       id: includeId ? id : undefined,
       duration,
       sound: soundId,
-      soundLoop
+      soundPlayback
     })
     const animationCostumeNames = animationCostumes.map((c) => c.name)
     for (const costume of animationCostumes) {
@@ -230,9 +238,8 @@ export class Animation extends Disposable {
     }
     const soundName = sounds.find((s) => s.id === this.sound)?.name
     if (soundName != null) {
-      // Revert to legacy onStart temporarily. For details, see https://github.com/goplus/builder/issues/3172
-      // TODO: Use `onPlay` instead of `onStart` and pass loop after goplus/spx#1574 resolved and spx updated.
-      config.onStart = { play: soundName }
+      if (this.soundPlayback === AnimationSoundPlayback.Loop) config.onPlay = { play: soundName }
+      else config.onStart = { play: soundName }
     }
     if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]

@@ -55,7 +55,7 @@ function getSVGViewBoxRectFromElement(svgElement: SVGSVGElement) {
   }
 }
 
-function parseSVGText(svgText: string) {
+export function parseSVGText(svgText: string) {
   const parser = new DOMParser()
   const svg = parser.parseFromString(svgText, 'image/svg+xml').documentElement
   if (!(svg instanceof SVGSVGElement)) throw new Error('invalid svg')

@@ -2,11 +2,9 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import Cropper from 'cropperjs'
 import { type User } from '@/apis/user'
-import { fromBlob } from '@/models/common/file'
-import { saveFile } from '@/models/common/cloud'
 import { UIButton, UIFormModal } from '@/components/ui'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import { useUpdateSignedInUser } from '@/stores/user'
+import { useUpdateSignedInUserAvatar } from '@/stores/user'
 import AvatarZoomSlider from './AvatarZoomSlider.vue'
 
 const avatarSize = 512
@@ -326,7 +324,18 @@ function handleWheelZoom(event: WheelEvent) {
   setZoomValue(zoomValueRef.value + zoomDelta)
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement) {
+async function exportAvatarBlob() {
+  const selection = getSelection()
+  let canvas: HTMLCanvasElement
+  try {
+    canvas = await selection.$toCanvas({
+      width: avatarSize,
+      height: avatarSize
+    })
+  } catch {
+    throw new DefaultException({ en: 'Failed to export avatar image', zh: '导出头像图片失败' })
+  }
+
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob == null) {
@@ -338,28 +347,21 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
   })
 }
 
-const updateProfile = useUpdateSignedInUser()
+const updateAvatar = useUpdateSignedInUserAvatar()
 
-const handleConfirm = useMessageHandle(
-  async () => {
-    const canvas = await getSelection().$toCanvas({
-      width: avatarSize,
-      height: avatarSize
+const handleConfirm = useMessageHandle(async () => {
+  const blob = await exportAvatarBlob()
+  if (blob.size > maxAvatarFileSize) {
+    throw new DefaultException({
+      en: 'Avatar image must be 5 MB or smaller',
+      zh: '头像图片不能超过 5 MB'
     })
-    const blob = await canvasToBlob(canvas)
-    if (blob.size > maxAvatarFileSize) {
-      throw new DefaultException({
-        en: 'Avatar image must be 5 MiB or smaller',
-        zh: '头像图片不能超过 5 MiB'
-      })
-    }
-    const avatar = await saveFile(fromBlob('avatar.png', blob))
-    const updated = await updateProfile({ avatar })
-    if (!props.visible) return
-    emit('resolved', updated)
-  },
-  { en: 'Failed to update avatar', zh: '更新头像失败' }
-)
+  }
+  const file = new File([blob], 'avatar.png', { type: blob.type })
+  const updated = await updateAvatar(file)
+  if (!props.visible) return
+  emit('resolved', updated)
+})
 
 function handleCancel() {
   if (handleConfirm.isLoading.value) return

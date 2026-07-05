@@ -1,4 +1,4 @@
-import { initiateSignIn, isSignedIn } from '@/stores/user'
+import { isSignedIn, useSignIn } from '@/stores/user'
 import { useI18n } from './i18n'
 import { useConfirmDialog } from '@/components/ui'
 import { Cancelled } from './exception'
@@ -6,6 +6,7 @@ import { Cancelled } from './exception'
 export function useEnsureSignedIn() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
+  const signIn = useSignIn()
 
   return async () => {
     if (isSignedIn()) return
@@ -16,7 +17,7 @@ export function useEnsureSignedIn() {
         zh: '你需要先登录才能执行此操作。你想现在登录吗？'
       }),
       confirmText: t({ en: 'Sign in', zh: '登录' }),
-      confirmHandler: () => initiateSignIn()
+      confirmHandler: () => signIn()
     })
     throw new Cancelled('redirected to sign in')
   }

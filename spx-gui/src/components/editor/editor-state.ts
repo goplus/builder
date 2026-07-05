@@ -4,7 +4,6 @@ import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import type { QueryRet } from '@/utils/query'
-import { CloudHelpers } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import type { ResourceModel } from '@/models/spx/common/resource'
 import type { SpxProject } from '@/models/spx/project'
@@ -97,7 +96,7 @@ export class EditorState extends Disposable {
     readonly project: SpxProject,
     isOnline: WatchSource<boolean>,
     signedInStateQuery: QueryRet<SignedInState>,
-    cloudHelpers: CloudHelpers,
+    cloudHelpers: editing.CloudHelpers,
     localCache: editing.ILocalCache
   ) {
     super()

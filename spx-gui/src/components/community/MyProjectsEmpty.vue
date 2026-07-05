@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
-import { getOwnProjectEditorRoute } from '@/router'
+import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
 import { UIEmpty, UIButton } from '@/components/ui'
 import { useCreateProject } from '@/components/project'
 

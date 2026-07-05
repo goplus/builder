@@ -26,7 +26,7 @@ export default defineConfigWithVueTs(
   pluginVue.configs['flat/recommended'],
   vueTsConfigs.recommended,
   skipFormatting,
-  compat.configs["flat/recommended"],
+  compat.configs['flat/recommended'],
 
   {
     name: 'app/rules',
@@ -93,7 +93,7 @@ export default defineConfigWithVueTs(
 
   {
     name: 'app/pages-rules',
-    files: ['src/pages/**/*.vue'],
+    files: ['src/apps/xbuilder/pages/**/*.vue', 'src/apps/account/pages/**/*.vue'],
     rules: {
       // Page components will not be used by name in other components' template.
       // Disable this rule to simplify naming of page components.

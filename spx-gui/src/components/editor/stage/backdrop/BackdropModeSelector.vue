@@ -5,7 +5,7 @@
     </div>
     <UIButtonGroup
       v-radar="{ name: 'Backdrop mode selector', desc: 'Selector to choose backdrop mode for the stage' }"
-      type="text"
+      type="icon"
       :value="editorCtx.project.stage.mapMode"
       @update:value="(v) => handleUpdateMapMode(v as MapMode)"
     >
@@ -17,8 +17,8 @@
           })
         }}
         <template #trigger>
-          <UIButtonGroupItem value="repeat">
-            {{ $t({ en: 'Tile', zh: '平铺' }) }}
+          <UIButtonGroupItem :value="MapMode.repeat" :aria-label="$t({ en: 'Tile', zh: '平铺' })">
+            <UIIcon type="backdropTile" />
           </UIButtonGroupItem>
         </template>
       </UITooltip>
@@ -30,8 +30,8 @@
           })
         }}
         <template #trigger>
-          <UIButtonGroupItem value="fillRatio">
-            {{ $t({ en: 'Scale', zh: '缩放' }) }}
+          <UIButtonGroupItem :value="MapMode.fillRatio" :aria-label="$t({ en: 'Scale', zh: '缩放' })">
+            <UIIcon type="backdropScale" />
           </UIButtonGroupItem>
         </template>
       </UITooltip>
@@ -43,8 +43,8 @@
           })
         }}
         <template #trigger>
-          <UIButtonGroupItem value="actualSize">
-            {{ $t({ en: 'Original', zh: '原图' }) }}
+          <UIButtonGroupItem :value="MapMode.actualSize" :aria-label="$t({ en: 'Original', zh: '原图' })">
+            <UIIcon type="backdropOriginal" />
           </UIButtonGroupItem>
         </template>
       </UITooltip>
@@ -52,9 +52,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { UITooltip, UIButtonGroup, UIButtonGroupItem } from '@/components/ui'
+import { UITooltip, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import type { MapMode } from '@/models/spx/stage'
+import { MapMode } from '@/models/spx/stage'
 
 const handleUpdateMapMode = (mode: MapMode) => {
   editorCtx.state.history.doAction({ name: { en: 'Update backdrop mode', zh: '修改背景模式' } }, () => {

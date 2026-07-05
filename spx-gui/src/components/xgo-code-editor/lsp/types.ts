@@ -78,7 +78,7 @@ export interface ILSPClient {
     position: Position
   ): Promise<DefinitionIdentifier | null>
   getResourceReferences(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<ResourceReference[]>
-  getCompletionItems(ctx: RequestContext, params: lsp.CompletionParams): Promise<lsp.CompletionItem[]>
+  getCompletionList(ctx: RequestContext, params: lsp.CompletionParams): Promise<lsp.CompletionList>
   getInputSlots(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<InputSlot[]>
   getProperties(ctx: RequestContext, target: string): Promise<Property[]>
   onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void): Disposer

@@ -4,6 +4,7 @@ import type { Prettify } from '@/utils/types'
 import { extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
+import { getContentBoundingRect } from '@/utils/img'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import {
   enrichSpriteSettings,
@@ -18,14 +19,14 @@ import {
 } from '@/apis/aigc'
 import { SpxProject } from '../project'
 import { RotationStyle, Sprite, State } from '../sprite'
-import { Costume } from '../costume'
+import { Costume, type Pivot as CostumePivot } from '../costume'
 import type { Animation } from '../animation'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
 import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
 import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
 import { createFileWithUniversalUrl } from '../../common/cloud'
 import type { File, Files } from '../../common/file'
-import { fromConfig, toConfig, listDirs } from '../../common/file'
+import { fromConfig, toConfig, listDirs, toNativeFile } from '../../common/file'
 import {
   ensureValidSpriteName,
   getAnimationName,
@@ -129,9 +130,6 @@ export class SpriteGen extends Disposable {
     const { name, perspective } = this.settings
     return Sprite.create(name, '', {
       rotationStyle: rotationStyleForPerspective(perspective)
-      // TODO: provide more initial settings when generated
-      // e.g., place the pivot at the feet for character sprites in side-scrolling or angled-top-down perspectives.
-      // For more details, see: https://github.com/goplus/builder/issues/2785
     })
   }
 
@@ -422,7 +420,7 @@ export class SpriteGen extends Disposable {
     this.selectedItem = item
   }
 
-  finish() {
+  async finish() {
     const previewSprite = this.previewSprite
     const sprite = this.createSprite()
     for (const gen of this.costumes) {
@@ -437,6 +435,14 @@ export class SpriteGen extends Disposable {
       previewSprite.removeAnimation(animation.id)
       sprite.addAnimation(animation)
       sprite.setAnimationBoundStates(animation.id, boundStates)
+    }
+    if (shouldUseFeetPivot(this.settings.category, this.settings.perspective) && sprite.defaultCostume != null) {
+      const inferredPivotDelta = await getFeetPivotDelta(sprite.defaultCostume)
+      if (inferredPivotDelta != null) {
+        // Apply once on the final sprite so all generated costumes, including animation frames,
+        // receive the same inferred pivot adjustment.
+        sprite.applyCostumesPivotChange(inferredPivotDelta)
+      }
     }
     sprite.setAssetMetadata({
       description: this.settings.description,
@@ -618,5 +624,22 @@ function rotationStyleForPerspective(perspective: Perspective): RotationStyle {
     case Perspective.Unspecified:
     default:
       return RotationStyle.Normal
+  }
+}
+
+function shouldUseFeetPivot(category: SpriteCategory, perspective: Perspective) {
+  return (
+    category === SpriteCategory.Character &&
+    [Perspective.SideScrolling, Perspective.AngledTopDown].includes(perspective)
+  )
+}
+
+async function getFeetPivotDelta(costume: Costume): Promise<CostumePivot | null> {
+  if (costume.bitmapResolution <= 0) return null
+  const rect = await getContentBoundingRect(await toNativeFile(costume.img))
+  if (rect.width <= 0 || rect.height <= 0) return null
+  return {
+    x: (rect.x + rect.width / 2) / costume.bitmapResolution - costume.pivot.x,
+    y: (rect.y + rect.height) / costume.bitmapResolution - costume.pivot.y
   }
 }

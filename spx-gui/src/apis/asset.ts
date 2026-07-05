@@ -13,6 +13,8 @@ import { client, Visibility } from './common'
 
 export { Visibility }
 
+export const assetDisplayNameMaxLength = 100
+
 export enum AssetType {
   Sprite = 'sprite',
   Backdrop = 'backdrop',
@@ -61,13 +63,22 @@ export type AssetData = {
 }
 
 export type ListAssetsParams = PaginationParams & {
+  /** Filter assets by display name pattern */
   keyword?: string
+  /** Filter assets by type */
   type?: AssetType
-  /** @deprecated Not recommended for use as the field `category` is deprecated. */
+  /**
+   * Filter assets by category
+   * @deprecated Not recommended for use as the field `category` is deprecated.
+   */
   category?: string
+  /** Filter assets by files hash */
   filesHash?: string
+  /** Filter assets by visibility */
   visibility?: Visibility
+  /** Field by which to order the results */
   orderBy?: 'createdAt' | 'updatedAt' | 'displayName'
+  /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }
 

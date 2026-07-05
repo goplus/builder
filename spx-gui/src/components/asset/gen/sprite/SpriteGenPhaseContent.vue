@@ -175,7 +175,7 @@ async function beforeSubmit() {
 const handleSubmit = useMessageHandle(
   async () => {
     await beforeSubmit()
-    const sprite = props.gen.finish()
+    const sprite = await props.gen.finish()
     props.gen.recordAdoption().catch((err) => {
       capture(err, 'failed to record sprite asset adoption')
     })

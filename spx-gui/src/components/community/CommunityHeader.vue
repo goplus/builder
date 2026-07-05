@@ -14,5 +14,5 @@
 </template>
 
 <script setup lang="ts">
-import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 </script>

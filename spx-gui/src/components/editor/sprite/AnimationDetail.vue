@@ -3,6 +3,7 @@
     <AnimationPlayer
       :costumes="animation.costumes"
       :sound="sound"
+      :sound-playback="animation.soundPlayback"
       :duration="animation.duration"
       class="w-full flex-[1_1_0]"
     />

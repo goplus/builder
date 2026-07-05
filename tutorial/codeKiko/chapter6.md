@@ -56,15 +56,13 @@ var radish3 = "萝卜3"
 
 **完整代码：**
 ```
-onStart => {
-    var radishs = ["萝卜", "萝卜2", "萝卜3"]
-    
-    turnTo radishs[0]
-    stepTo radishs[0]
+var radishs = ["萝卜", "萝卜2", "萝卜3"]
 
-    turnTo radishs[2]
-    stepTo radishs[2]
-}
+turnTo radishs[0]
+stepTo radishs[0]
+
+turnTo radishs[2]
+stepTo radishs[2]
 ```
 
 #### 代码详解
@@ -325,11 +323,9 @@ stepTo radishs[2]
 
 **完整代码：**
 ```
-onStart => {
-    for v in ["萝卜1", "萝卜2", "萝卜3"] {
-        turnTo v
-        stepTo v
-    }
+for v in ["萝卜1", "萝卜2", "萝卜3"] {
+    turnTo v
+    stepTo v
 }
 ```
 

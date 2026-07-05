@@ -14,21 +14,12 @@
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-1/sprites/Kiko/code
 
 ```
-onStart => {
-    step 160
-}
+step 160
 ```
 
 **命令解释：**
 
 #### 代码详解
-
-**onStart 是什么？**
-
-`onStart` 是一个特殊的**事件处理器**（Event Handler）。你可以把它想象成游戏的"发令枪"：
-- 当你点击"运行"按钮时，游戏就开始了
-- `onStart` 后面大括号 `{}` 里的代码会**立即执行**
-- 这就像老师说"开始！"之后，你才开始答题一样
 
 **step 命令详解**
 
@@ -41,13 +32,11 @@ onStart => {
 
 - 在编程中，我们用 `//` 来写**注释**（Comment），注释是给人看的说明，程序运行时会忽略它
 - 每个命令后面都要有正确的参数，比如 `step` 后面要跟一个数字
-- 大括号 `{}` 必须成对出现，就像括号一样
 
 #### 本节重点
 
 | 概念 | 说明 | 示例 |
 |------|------|------|
-| `onStart` | 游戏开始时执行 | `onStart => { ... }` |
 | `step` | 让角色前进指定步数 | `step 160` |
 | 参数 | 命令后面的数字，控制命令的行为 | `160` 就是 step 的参数 |
 
@@ -72,16 +61,12 @@ onStart => {
 
 **原来的代码：**
 ```
-onStart => {
-    step 160
-}
+step 160
 ```
 
 **修改后的代码：**
 ```
-onStart => {
-    step 200
-}
+step 200
 ```
 
 #### 代码详解
@@ -143,9 +128,7 @@ onStart => {
 - 💡 可以在代码旁边用注释记录不同参数的效果：
 
 ```
-onStart => {
-    step 200  // 这个距离刚好能到达萝卜
-}
+step 200  // 这个距离刚好能到达萝卜
 ```
 
 #### 恭喜你！
@@ -174,18 +157,14 @@ onStart => {
 
 **初始代码：**
 ```
-onStart => {
-    turn Right
-    step 120
-}
+turn Right
+step 120
 ```
 
 **修改后的代码：**
 ```
-onStart => {
-    turn Right
-    step 160
-}
+turn Right
+step 160
 ```
 
 #### 代码详解
@@ -209,10 +188,8 @@ onStart => {
 程序会**从上到下**依次执行每一行代码：
 
 ```
-onStart => {
-    turn Right   // 第1步：先转向右边
-    step 160     // 第2步：再向前走160步
-}
+turn Right   // 第1步：先转向右边
+step 160     // 第2步：再向前走160步
 ```
 
 就像给 Kiko 下达两个连续的指令：
@@ -226,10 +203,8 @@ onStart => {
 计算机程序像读书一样，从上往下一行一行执行：
 
 ```
-onStart => {
-    turn Right   // 第1行：先执行这个
-    step 160     // 第2行：再执行这个
-}
+turn Right   // 第1行：先执行这个
+step 160     // 第2行：再执行这个
 ```
 
 想象你在玩"听指令做动作"的游戏：
@@ -328,20 +303,16 @@ step 160
 
 **初始代码：**
 ```
-onStart => {
-    turn Right
-    step 190
-}
+turn Right
+step 190
 ```
 
 **完整代码：**
 ```
-onStart => {
-    turn Right
-    step 190
-    turn Left
-    step 160
-}
+turn Right
+step 190
+turn Left
+step 160
 ```
 
 #### 代码详解
@@ -358,12 +329,10 @@ onStart => {
 让我们一步一步分析这段代码：
 
 ```
-onStart => {
-    turn Right   // 第1步：向右转90度
-    step 190     // 第2步：向前走190步
-    turn Left    // 第3步：向左转90度
-    step 160     // 第4步：向前走160步
-}
+turn Right   // 第1步：向右转90度
+step 190     // 第2步：向前走190步
+turn Left    // 第3步：向左转90度
+step 160     // 第4步：向前走160步
 ```
 
 就像给 Kiko 下达一系列连续指令：
@@ -482,18 +451,14 @@ step 160     // 在又一个新方向上前进
 
 **初始代码：**
 ```
-onStart => {
-    turn -30
-    step 300
-}
+turn -30
+step 300
 ```
 
 **修改后的代码：**
 ```
-onStart => {
-    turn -45
-    step 300
-}
+turn -45
+step 300
 ```
 
 #### 代码详解
@@ -689,14 +654,12 @@ step 200
 
 **完整代码：**
 ```
-onStart => {
-    turn Right
-    step 180
-    turn Left
-    step 200
-    turn Left
-    step 180
-}
+turn Right
+step 180
+turn Left
+step 200
+turn Left
+step 180
 ```
 
 #### 代码详解
@@ -706,14 +669,12 @@ onStart => {
 让我们逐步分析这段代码，看看 Kiko 是如何完成这条 n 形路径的：
 
 ```
-onStart => {
-    turn Right   // 第1步：向右转90度
-    step 180     // 第2步：向上走180步
-    turn Left    // 第3步：向左转90度
-    step 200     // 第4步：向左走200步
-    turn Left    // 第5步：再向左转90度
-    step 180     // 第6步：向下走180步
-}
+turn Right   // 第1步：向右转90度
+step 180     // 第2步：向上走180步
+turn Left    // 第3步：向左转90度
+step 200     // 第4步：向左走200步
+turn Left    // 第5步：再向左转90度
+step 180     // 第6步：向下走180步
 ```
 
 **为什么是这个顺序？**
@@ -743,19 +704,17 @@ onStart => {
 当代码变长时，添加注释会让代码更容易理解：
 
 ```
-onStart => {
-    // 第一段：向上走
-    turn Right
-    step 180
-    
-    // 第二段：向左走
-    turn Left
-    step 200
-    
-    // 第三段：向下走
-    turn Left
-    step 180
-}
+// 第一段：向上走
+turn Right
+step 180
+
+// 第二段：向左走
+turn Left
+step 200
+
+// 第三段：向下走
+turn Left
+step 180
 ```
 
 #### 方向变化追踪
