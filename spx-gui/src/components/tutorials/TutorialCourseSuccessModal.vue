@@ -74,6 +74,11 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     const tutorial = props.tutorial
     const nextCourse = await getCourse(currentSeries.courseIDs[findIndex + 1])
     emit('cancelled')
+    // Skip the leave confirmation for the navigation `startCourse` performs: continuing to
+    // the next course is an explicit, expected action, and the course entrypoint may be a
+    // non-editor route. Requested right before `startCourse` so the time-bound window is
+    // not spent on the preceding `getCourse` request.
+    editorLeaveConfirm.requestSkipOnce()
     await tutorial.startCourse(nextCourse, currentSeries)
   },
   {
