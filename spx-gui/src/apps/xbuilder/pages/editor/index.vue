@@ -3,7 +3,7 @@
     <header class="flex-none">
       <EditorNavbar :project="state?.project ?? null" :state="state" />
     </header>
-    <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
+    <main class="flex-[1_1_0] flex" :class="isTutorialCourse ? 'gap-0 p-0' : 'gap-xl p-4 pt-2'">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
         <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
       </UIDetailedLoading>
@@ -64,6 +64,7 @@ import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
 import type { ProjectSerialized } from '@/models/project'
 import { SpxProject } from '@/models/spx/project'
+import { useMaybeTutorial } from '@/components/tutorials/tutorial'
 
 const props = defineProps<{
   ownerNameInput: string
@@ -72,6 +73,8 @@ const props = defineProps<{
 const localCache = new LocalCache(localHelpers)
 
 const signedInStateQuery = useSignedInStateQuery()
+const tutorial = useMaybeTutorial()
+const isTutorialCourse = computed(() => tutorial?.currentCourse != null)
 
 const router = useRouter()
 const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({

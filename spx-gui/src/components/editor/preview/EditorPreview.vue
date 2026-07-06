@@ -1,11 +1,13 @@
 <template>
-  <UICard
+  <component
+    :is="tutorialMode ? 'section' : UICard"
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
+    :class="{ 'tutorial-preview': tutorialMode }"
   >
-    <UICardHeader class="gap-3">
+    <component :is="tutorialMode ? 'header' : UICardHeader" class="editor-preview-header gap-3">
       <div class="flex-1 text-title">
-        {{ $t(headerTitle) }}
+        {{ tutorialMode ? $t({ en: 'Game', zh: '游戏视窗' }) : $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
@@ -19,7 +21,7 @@
         </UIButton>
 
         <UIButton
-          v-show="canManageProject"
+          v-show="canManageProject && !tutorialMode"
           v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
           type="secondary"
           icon="publish"
@@ -49,7 +51,7 @@
         >
           {{ $t({ en: 'Stop', zh: '停止' }) }}
         </UIButton>
-        <UITooltip placement="top-end">
+        <UITooltip v-if="!tutorialMode" placement="top-end">
           <template #trigger>
             <UIButton
               v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
@@ -63,9 +65,12 @@
           {{ $t({ en: 'Enter full screen', zh: '进入全屏' }) }}
         </UITooltip>
       </template>
-    </UICardHeader>
+    </component>
 
-    <div class="flex grow justify-center overflow-hidden p-3">
+    <div
+      class="editor-preview-body flex grow justify-center overflow-hidden p-3"
+      :class="{ 'tutorial-preview-body': tutorialMode }"
+    >
       <div
         ref="stageContainerRef"
         class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
@@ -95,7 +100,7 @@
         </div>
       </div>
     </div>
-  </UICard>
+  </component>
 </template>
 
 <script lang="ts">
@@ -180,6 +185,15 @@ import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
+
+const props = withDefaults(
+  defineProps<{
+    tutorialMode?: boolean
+  }>(),
+  {
+    tutorialMode: false
+  }
+)
 
 const editorCtx = useEditorCtx()
 const codeEditor = useCodeEditor()
@@ -282,6 +296,11 @@ function handleExit(code: number) {
   }
   exitGuard.value = 'idle'
   lastPanicOutput.value = null
+  if (props.tutorialMode) {
+    runnerState.value = 'initial'
+    editorCtx.state.runtime.setRunning({ mode: 'none' })
+    return
+  }
   const shouldRestore = restoreDebugRuntime()
   runnerState.value = shouldRestore ? 'running' : 'loading'
 }
@@ -439,6 +458,42 @@ function getStageInlineAnchor() {
 </script>
 
 <style scoped>
+.editor-preview-header {
+  display: flex;
+  align-items: center;
+}
+
+.tutorial-preview {
+  height: 100%;
+  background: transparent;
+}
+
+.tutorial-preview .editor-preview-header {
+  height: 48px;
+  flex: none;
+  border-bottom: 1px solid var(--ui-color-grey-400);
+  background: #fff;
+  padding: 0 12px;
+}
+
+.tutorial-preview-body {
+  background: transparent;
+}
+
+.tutorial-preview .stage-viewer-container,
+.tutorial-preview .runner-host {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(93, 167, 74, 0.22) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 38%, rgba(69, 142, 62, 0.2) 0 1px, transparent 2px),
+    radial-gradient(circle at 44% 78%, rgba(108, 185, 80, 0.18) 0 1px, transparent 2px),
+    #78c966;
+  background-size:
+    120px 96px,
+    150px 118px,
+    180px 140px,
+    auto;
+}
+
 .stage-viewer-container-running .stage-viewer {
   filter: blur(4px);
   pointer-events: none;
@@ -462,5 +517,15 @@ function getStageInlineAnchor() {
   max-height: 100%;
   aspect-ratio: 4 / 3;
   height: auto;
+}
+
+.tutorial-preview .runner-host :deep(.runner-area .runner) {
+  border-radius: 0;
+  background: transparent;
+}
+
+.tutorial-preview .runner-host :deep(iframe) {
+  display: block;
+  background: transparent;
 }
 </style>

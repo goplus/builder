@@ -23,6 +23,10 @@ export function useTutorial() {
   return tutorial
 }
 
+export function useMaybeTutorial() {
+  return inject(tutorialKey, null)
+}
+
 export function provideTutorial(tutorial: Tutorial) {
   provide(tutorialKey, tutorial)
 }

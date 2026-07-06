@@ -69,7 +69,8 @@
         </UIMenu>
       </NavbarDropdown>
 
-      <NavbarTutorials v-if="showTutorialsEntry" />
+      <TutorialNavbarExit v-if="isTutorialCourse" />
+      <NavbarTutorials v-else-if="showTutorialsEntry" />
 
       <div class="flex">
         <UITooltip :disabled="undoAction == null">
@@ -99,6 +100,7 @@
     </template>
     <template #right>
       <UIButtonGroup
+        v-if="!isTutorialCourse"
         v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
         type="icon"
@@ -174,6 +176,7 @@ import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
+import TutorialNavbarExit from '@/components/tutorials/TutorialNavbarExit.vue'
 import EditorAutoSaveStateIcon from './EditorAutoSaveStateIcon.vue'
 import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
 import EditorCheckoutReleaseButton from './EditorCheckoutReleaseButton.vue'
@@ -190,8 +193,10 @@ import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
 import defaultModeSvg from './icons/default-mode.svg?raw'
 import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
+import { useMaybeTutorial } from '@/components/tutorials/tutorial'
 
 const { showTutorialsEntry } = useCommunityConfig()
+const tutorial = useMaybeTutorial()
 
 const props = defineProps<{
   project: SpxProject | null
@@ -210,6 +215,7 @@ const canManageProject = computed(() => {
 })
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
+const isTutorialCourse = computed(() => tutorial?.currentCourse != null)
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 

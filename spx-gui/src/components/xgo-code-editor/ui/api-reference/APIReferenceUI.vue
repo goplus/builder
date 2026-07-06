@@ -32,11 +32,54 @@ import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
 const props = defineProps<{
   controller: APIReferenceController
+  variant?: 'sidebar' | 'strip'
+  filterText?: string | null
+  allowedNames?: string[] | null
+  allowedOverviews?: string[] | null
 }>()
 
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
   // Ignore intermediate empty data to keep UI stable
   return props.controller.items ?? oldValue ?? null
+})
+
+const normalizedAllowedNames = computed(() => {
+  const names = props.allowedNames ?? []
+  return names.map((name) => normalizeAPIName(name)).filter((name) => name !== '')
+})
+
+const normalizedFilterText = computed(() => normalizeAPIName(props.filterText ?? ''))
+const normalizedAllowedOverviews = computed(() => {
+  const overviews = props.allowedOverviews ?? []
+  return overviews.map((overview) => normalizeAPIName(overview)).filter((overview) => overview !== '')
+})
+
+function normalizeAPIName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '')
+}
+
+function getAPINameCandidates(item: DefinitionDocumentationItem) {
+  const definitionName = item.definition.name ?? ''
+  const methodName = definitionName.split('.').at(-1) ?? definitionName
+  return [definitionName, methodName, item.overview].map(normalizeAPIName).filter((name) => name !== '')
+}
+
+function isAllowedInTutorial(item: DefinitionDocumentationItem) {
+  const names = normalizedAllowedNames.value
+  const overviews = normalizedAllowedOverviews.value
+  const filterText = normalizedFilterText.value
+  if (overviews.length > 0) return overviews.includes(normalizeAPIName(item.overview))
+  if (names.length === 0 && filterText === '') return true
+  return getAPINameCandidates(item).some((candidate) => {
+    return names.includes(candidate) || filterText.includes(candidate)
+  })
+}
+
+const filteredItemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
+  const items = itemsForDisplay.value
+  if (items == null) return oldValue ?? null
+  if (props.variant !== 'strip') return items
+  return items.filter(isAllowedInTutorial)
 })
 
 const loaded = ref(false)
@@ -52,7 +95,7 @@ const err = computed(() => {
 })
 
 const categoriesComputed = computed<MainCategory[] | null>((oldValue) => {
-  const items = itemsForDisplay.value
+  const items = filteredItemsForDisplay.value
   const categoryViewInfos = props.controller.categoryViewInfos
   // Ignore intermediate empty data to keep UI stable
   if (items == null || categoryViewInfos == null) return oldValue ?? null
@@ -151,12 +194,16 @@ function handleCategoryClick(id: string) {
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
     class="flex min-h-0"
+    :class="{ 'api-reference-strip': variant === 'strip' }"
   >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
+      <ul
+        v-if="variant !== 'strip'"
+        class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3"
+      >
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
@@ -169,16 +216,27 @@ function handleCategoryClick(id: string) {
           <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
         </li>
       </ul>
-      <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
+      <ul
+        ref="itemsWrapperRef"
+        class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
+        :class="{ 'api-reference-strip-items': variant === 'strip' }"
+      >
         <li
           v-for="c in categoriesForItems"
           :key="c.id"
           :data-category-id="c.id"
           class="[&:last-child>section:last-child]:border-b-0"
         >
-          <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
-            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
-            <ul class="flex flex-col gap-md pb-5">
+          <section
+            v-for="sc in c.subCategories"
+            :key="sc.id"
+            class="border-b border-dashed border-grey-500"
+            :class="{ 'api-reference-strip-section': variant === 'strip' }"
+          >
+            <h5 v-if="variant !== 'strip'" class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">
+              {{ $t(sc.label) }}
+            </h5>
+            <ul class="flex flex-col gap-md pb-5" :class="{ 'api-reference-strip-list': variant === 'strip' }">
               <APIReferenceItemComp
                 v-for="item in sc.items"
                 :key="stringifyDefinitionId(item.definition)"
@@ -192,3 +250,74 @@ function handleCategoryClick(id: string) {
     </template>
   </section>
 </template>
+
+<style scoped>
+.api-reference-strip {
+  border-top: 1px solid var(--ui-color-grey-400);
+  background: var(--ui-color-grey-100);
+}
+
+.api-reference-strip-items {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 24px 22px;
+}
+
+.api-reference-strip-section {
+  border-bottom: 0;
+  flex: none;
+}
+
+.api-reference-strip-list {
+  flex-wrap: wrap;
+  flex-direction: row;
+  column-gap: 18px;
+  row-gap: 12px;
+  padding-bottom: 0;
+}
+
+.api-reference-strip :deep(.api-reference-item) {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  margin-block: 6px;
+  padding: 8px 14px 8px 32px;
+  border: 1px solid var(--ui-color-grey-500);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  cursor: grab;
+}
+
+.api-reference-strip :deep(.api-reference-item)::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 8px;
+  height: 20px;
+  background-image: radial-gradient(circle, var(--ui-color-grey-700) 1.5px, transparent 1.5px);
+  background-size: 4px 5px;
+  transform: translateY(-50%);
+  opacity: 0.65;
+}
+
+.api-reference-strip :deep(.api-reference-item:hover) {
+  border-color: var(--ui-color-primary-main);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.api-reference-strip :deep(.api-reference-item.before-dragging) {
+  cursor: grabbing;
+  transform: translateY(1px);
+}
+
+.api-reference-strip :deep(.api-reference-item .overview) {
+  font-size: var(--tutorial-code-font-size, 24px);
+  line-height: 1.5;
+}
+</style>
