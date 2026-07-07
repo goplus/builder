@@ -331,7 +331,7 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <aside v-else class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
+    <aside v-if="!isTutorialCourse" class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
       <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
