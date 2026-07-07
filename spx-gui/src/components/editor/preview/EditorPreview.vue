@@ -5,9 +5,9 @@
     class="editor-preview relative flex flex-col overflow-hidden"
     :class="{ 'tutorial-preview': tutorialMode }"
   >
-    <component :is="tutorialMode ? 'header' : UICardHeader" class="editor-preview-header gap-3">
+    <UICardHeader v-if="!tutorialMode" class="editor-preview-header gap-3">
       <div class="flex-1 text-title">
-        {{ tutorialMode ? $t({ en: 'Game', zh: '游戏视窗' }) : $t(headerTitle) }}
+        {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
@@ -65,7 +65,7 @@
           {{ $t({ en: 'Enter full screen', zh: '进入全屏' }) }}
         </UITooltip>
       </template>
-    </component>
+    </UICardHeader>
 
     <div
       class="editor-preview-body flex grow justify-center overflow-hidden p-3"
@@ -99,6 +99,46 @@
           />
         </div>
       </div>
+    </div>
+
+    <div v-if="tutorialMode" class="tutorial-run-controls">
+      <UIButton
+        v-if="runnerState === 'initial'"
+        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+        class="tutorial-run-control"
+        type="primary"
+        shape="circle"
+        size="large"
+        icon="playHollow"
+        :aria-label="$t({ en: 'Run', zh: '运行' })"
+        :loading="handleRun.isLoading.value"
+        @click="handleRun.fn"
+      />
+      <template v-else>
+        <UIButton
+          v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
+          class="tutorial-run-control"
+          type="primary"
+          shape="circle"
+          size="large"
+          icon="rotate"
+          :aria-label="$t({ en: 'Rerun', zh: '重新运行' })"
+          :disabled="runnerState !== 'running' || handleStop.isLoading.value"
+          :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
+          @click="handleRerun.fn"
+        />
+        <UIButton
+          v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+          class="tutorial-run-control"
+          type="neutral"
+          shape="circle"
+          size="large"
+          icon="end"
+          :aria-label="$t({ en: 'Stop', zh: '停止' })"
+          :loading="handleStop.isLoading.value"
+          @click="handleStop.fn"
+        />
+      </template>
     </div>
   </component>
 </template>
@@ -474,6 +514,22 @@ function getStageInlineAnchor() {
   border-bottom: 1px solid var(--ui-color-grey-400);
   background: #fff;
   padding: 0 12px;
+}
+
+.tutorial-run-controls {
+  position: fixed;
+  right: 96px;
+  bottom: 28px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tutorial-run-control {
+  width: 48px;
+  height: 48px;
+  box-shadow: var(--ui-box-shadow-lg);
 }
 
 .tutorial-preview-body {

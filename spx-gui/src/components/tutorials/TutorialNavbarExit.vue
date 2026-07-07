@@ -39,7 +39,7 @@ const handleExitTutorial = useMessageHandle(
   justify-content: center;
   gap: 6px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0;
   background: #e7f8f7;
   color: #36bcc4;
   cursor: pointer;
