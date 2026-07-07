@@ -28,7 +28,7 @@ describe('local preview copilot generator', () => {
       {
         type: 'text_delta',
         data: {
-          text: expect.stringContaining('local preview mode')
+          text: expect.stringContaining('本地预览模式')
         }
       },
       {
@@ -38,5 +38,28 @@ describe('local preview copilot generator', () => {
         }
       }
     ])
+  })
+
+  it('streams tutorial guidance when the current session is a course', async () => {
+    const generator = createLocalPreviewCopilotGenerator()
+
+    const events = await collectEvents(
+      generator.generateCopilotMessage([
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: '<course><course-title>Coding-Course-3</course-title></course>'
+          }
+        }
+      ])
+    )
+
+    expect(events[0]).toEqual({
+      type: 'text_delta',
+      data: {
+        text: expect.stringContaining('教程 Copilot')
+      }
+    })
   })
 })

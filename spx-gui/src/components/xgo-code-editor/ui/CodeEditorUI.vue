@@ -304,6 +304,15 @@ providePopupContainer(codeEditorEl)
         :style="{ left: `${sidebarWidth}px` }"
       ></div>
     </template>
+    <APIReferenceUI
+      v-if="isTutorialCourse"
+      class="tutorial-api-reference"
+      variant="tutorial-side"
+      :controller="uiRef.apiReferenceController"
+      :filter-text="tutorialAPIReferenceFilterText"
+      :allowed-names="tutorialAPIReferenceNames"
+      :allowed-overviews="tutorialAPIReferenceOverviews"
+    />
     <MonacoEditorComp
       v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
       class="my-3 min-w-0 flex-[1_1_0]"
@@ -322,15 +331,6 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <APIReferenceUI
-      v-if="isTutorialCourse"
-      class="tutorial-api-reference"
-      variant="strip"
-      :controller="uiRef.apiReferenceController"
-      :filter-text="tutorialAPIReferenceFilterText"
-      :allowed-names="tutorialAPIReferenceNames"
-      :allowed-overviews="tutorialAPIReferenceOverviews"
-    />
     <aside v-else class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
       <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
@@ -340,7 +340,6 @@ providePopupContainer(codeEditorEl)
 
 <style scoped>
 .tutorial-code-editor {
-  flex-direction: column;
   background: var(--ui-color-grey-100);
 }
 
@@ -350,7 +349,9 @@ providePopupContainer(codeEditorEl)
 }
 
 .tutorial-api-reference {
-  flex: 0 0 184px;
-  min-height: 184px;
+  flex: 0 0 252px;
+  width: 252px;
+  border-right: 1px solid var(--ui-color-grey-400);
+  border-left: 0;
 }
 </style>

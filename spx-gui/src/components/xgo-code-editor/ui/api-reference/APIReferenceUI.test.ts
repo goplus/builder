@@ -27,7 +27,7 @@ function makeItem(overview: string): DefinitionDocumentationItem {
   }
 }
 
-function mountStripAPIReference() {
+function mountAPIReference(variant: 'strip' | 'tutorial-side' = 'strip') {
   return mount(APIReferenceUI, {
     global: {
       mocks: {
@@ -35,9 +35,9 @@ function mountStripAPIReference() {
       }
     },
     props: {
-      variant: 'strip',
+      variant,
       controller: {
-        items: [makeItem('onStart => {}')],
+        items: [makeItem('onStart => {}'), makeItem('step distance:100')],
         error: null,
         categoryViewInfos: [
           {
@@ -47,14 +47,15 @@ function mountStripAPIReference() {
             subCategories: [{ id: 'game', label: { en: 'Game', zh: '游戏' } }]
           }
         ]
-      } as any
+      } as any,
+      allowedOverviews: ['step distance']
     }
   })
 }
 
 describe('APIReferenceUI strip mode', () => {
   it('expands and collapses from the compact tutorial strip', async () => {
-    const wrapper = mountStripAPIReference()
+    const wrapper = mountAPIReference()
     const toggle = wrapper.get('[data-test-id="api-reference-strip-toggle"]')
 
     expect(wrapper.classes()).not.toContain('api-reference-strip-expanded')
@@ -64,5 +65,14 @@ describe('APIReferenceUI strip mode', () => {
 
     expect(wrapper.classes()).toContain('api-reference-strip-expanded')
     expect(toggle.text()).toBe('Collapse')
+  })
+
+  it('shows tutorial references as a fixed side panel without expand controls', () => {
+    const wrapper = mountAPIReference('tutorial-side')
+
+    expect(wrapper.classes()).toContain('api-reference-tutorial-side')
+    expect(wrapper.find('[data-test-id="api-reference-strip-toggle"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('step distance:100')
+    expect(wrapper.text()).not.toContain('onStart => {}')
   })
 })

@@ -518,12 +518,13 @@ function getStageInlineAnchor() {
 
 .tutorial-run-controls {
   position: fixed;
-  right: 96px;
+  left: 28px;
   bottom: 28px;
   z-index: 9999;
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 106px;
 }
 
 .tutorial-run-control {
@@ -540,7 +541,19 @@ function getStageInlineAnchor() {
 }
 
 .tutorial-preview-body {
+  min-height: 0;
+  padding: 0;
   background: transparent;
+}
+
+.tutorial-preview .stage-viewer-container {
+  height: 100%;
+  border-radius: 0;
+}
+
+.tutorial-preview :deep(.stage-viewer) {
+  height: 100%;
+  aspect-ratio: auto;
 }
 
 .tutorial-preview .stage-viewer-container,
@@ -583,6 +596,8 @@ function getStageInlineAnchor() {
 }
 
 .tutorial-preview .runner-host :deep(.runner-area .runner) {
+  height: 100%;
+  aspect-ratio: auto;
   border-radius: 0;
   background: transparent;
 }

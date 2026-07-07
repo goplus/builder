@@ -32,13 +32,14 @@ import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
 const props = defineProps<{
   controller: APIReferenceController
-  variant?: 'sidebar' | 'strip'
+  variant?: 'sidebar' | 'strip' | 'tutorial-side'
   filterText?: string | null
   allowedNames?: string[] | null
   allowedOverviews?: string[] | null
 }>()
 
 const stripExpanded = ref(false)
+const isTutorialVariant = computed(() => props.variant === 'strip' || props.variant === 'tutorial-side')
 
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
   // Ignore intermediate empty data to keep UI stable
@@ -70,7 +71,10 @@ function isAllowedInTutorial(item: DefinitionDocumentationItem) {
   const names = normalizedAllowedNames.value
   const overviews = normalizedAllowedOverviews.value
   const filterText = normalizedFilterText.value
-  if (overviews.length > 0) return overviews.includes(normalizeAPIName(item.overview))
+  if (overviews.length > 0) {
+    const normalizedOverview = normalizeAPIName(item.overview)
+    return overviews.some((overview) => normalizedOverview.includes(overview) || overview.includes(normalizedOverview))
+  }
   if (names.length === 0 && filterText === '') return true
   return getAPINameCandidates(item).some((candidate) => {
     return names.includes(candidate) || filterText.includes(candidate)
@@ -80,7 +84,7 @@ function isAllowedInTutorial(item: DefinitionDocumentationItem) {
 const filteredItemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
   const items = itemsForDisplay.value
   if (items == null) return oldValue ?? null
-  if (props.variant !== 'strip') return items
+  if (!isTutorialVariant.value) return items
   return items.filter(isAllowedInTutorial)
 })
 
@@ -196,7 +200,11 @@ function handleCategoryClick(id: string) {
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
     class="flex min-h-0"
-    :class="{ 'api-reference-strip': variant === 'strip', 'api-reference-strip-expanded': stripExpanded }"
+    :class="{
+      'api-reference-strip': variant === 'strip',
+      'api-reference-strip-expanded': stripExpanded,
+      'api-reference-tutorial-side': variant === 'tutorial-side'
+    }"
   >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
@@ -212,7 +220,7 @@ function handleCategoryClick(id: string) {
         {{ stripExpanded ? $t({ en: 'Collapse', zh: '收起' }) : $t({ en: 'Expand', zh: '展开' }) }}
       </button>
       <ul
-        v-if="variant !== 'strip'"
+        v-if="variant !== 'strip' && variant !== 'tutorial-side'"
         class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3"
       >
         <li
@@ -230,7 +238,7 @@ function handleCategoryClick(id: string) {
       <ul
         ref="itemsWrapperRef"
         class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
-        :class="{ 'api-reference-strip-items': variant === 'strip' }"
+        :class="{ 'api-reference-strip-items': isTutorialVariant }"
       >
         <li
           v-for="c in categoriesForItems"
@@ -242,12 +250,12 @@ function handleCategoryClick(id: string) {
             v-for="sc in c.subCategories"
             :key="sc.id"
             class="border-b border-dashed border-grey-500"
-            :class="{ 'api-reference-strip-section': variant === 'strip' }"
+            :class="{ 'api-reference-strip-section': isTutorialVariant }"
           >
-            <h5 v-if="variant !== 'strip'" class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">
+            <h5 v-if="!isTutorialVariant" class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">
               {{ $t(sc.label) }}
             </h5>
-            <ul class="flex flex-col gap-md pb-5" :class="{ 'api-reference-strip-list': variant === 'strip' }">
+            <ul class="flex flex-col gap-md pb-5" :class="{ 'api-reference-strip-list': isTutorialVariant }">
               <APIReferenceItemComp
                 v-for="item in sc.items"
                 :key="stringifyDefinitionId(item.definition)"
@@ -266,6 +274,12 @@ function handleCategoryClick(id: string) {
 .api-reference-strip {
   position: relative;
   border-top: 1px solid var(--ui-color-grey-400);
+  background: var(--ui-color-grey-100);
+}
+
+.api-reference-tutorial-side {
+  position: relative;
+  border-left: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-100);
 }
 
@@ -303,6 +317,14 @@ function handleCategoryClick(id: string) {
   padding: 24px 22px;
 }
 
+.api-reference-tutorial-side .api-reference-strip-items {
+  flex-direction: column;
+  gap: 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 16px 12px;
+}
+
 .api-reference-strip-expanded .api-reference-strip-items {
   overflow-x: hidden;
   overflow-y: auto;
@@ -314,12 +336,23 @@ function handleCategoryClick(id: string) {
   flex: none;
 }
 
+.api-reference-tutorial-side .api-reference-strip-section {
+  width: 100%;
+}
+
 .api-reference-strip-list {
   flex-wrap: wrap;
   flex-direction: row;
   column-gap: 18px;
   row-gap: 12px;
   padding-bottom: 0;
+}
+
+.api-reference-tutorial-side .api-reference-strip-list {
+  width: 100%;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 10px;
 }
 
 .api-reference-strip-expanded .api-reference-strip-section {
@@ -330,7 +363,8 @@ function handleCategoryClick(id: string) {
   align-content: flex-start;
 }
 
-.api-reference-strip :deep(.api-reference-item) {
+.api-reference-strip :deep(.api-reference-item),
+.api-reference-tutorial-side :deep(.api-reference-item) {
   position: relative;
   display: flex;
   align-items: center;
@@ -344,7 +378,8 @@ function handleCategoryClick(id: string) {
   cursor: grab;
 }
 
-.api-reference-strip :deep(.api-reference-item)::before {
+.api-reference-strip :deep(.api-reference-item)::before,
+.api-reference-tutorial-side :deep(.api-reference-item)::before {
   content: '';
   position: absolute;
   left: 12px;
@@ -357,17 +392,20 @@ function handleCategoryClick(id: string) {
   opacity: 0.65;
 }
 
-.api-reference-strip :deep(.api-reference-item:hover) {
+.api-reference-strip :deep(.api-reference-item:hover),
+.api-reference-tutorial-side :deep(.api-reference-item:hover) {
   border-color: var(--ui-color-primary-main);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
-.api-reference-strip :deep(.api-reference-item.before-dragging) {
+.api-reference-strip :deep(.api-reference-item.before-dragging),
+.api-reference-tutorial-side :deep(.api-reference-item.before-dragging) {
   cursor: grabbing;
   transform: translateY(1px);
 }
 
-.api-reference-strip :deep(.api-reference-item .overview) {
+.api-reference-strip :deep(.api-reference-item .overview),
+.api-reference-tutorial-side :deep(.api-reference-item .overview) {
   font-size: var(--tutorial-code-font-size, 24px);
   line-height: 1.5;
 }
