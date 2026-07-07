@@ -529,7 +529,14 @@ function getStageInlineAnchor() {
 .tutorial-run-control {
   width: 48px;
   height: 48px;
+  border-color: var(--ui-color-grey-100) !important;
+  background: var(--ui-color-grey-100) !important;
+  color: var(--ui-color-primary-600) !important;
   box-shadow: var(--ui-box-shadow-lg);
+}
+
+.tutorial-run-control:hover {
+  background: var(--ui-color-primary-100) !important;
 }
 
 .tutorial-preview-body {
@@ -582,6 +589,9 @@ function getStageInlineAnchor() {
 
 .tutorial-preview .runner-host :deep(iframe) {
   display: block;
+  border: 0;
   background: transparent;
+  transform: scale(1.004);
+  transform-origin: center;
 }
 </style>

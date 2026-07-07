@@ -38,6 +38,8 @@ const props = defineProps<{
   allowedOverviews?: string[] | null
 }>()
 
+const stripExpanded = ref(false)
+
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
   // Ignore intermediate empty data to keep UI stable
   return props.controller.items ?? oldValue ?? null
@@ -194,12 +196,21 @@ function handleCategoryClick(id: string) {
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
     class="flex min-h-0"
-    :class="{ 'api-reference-strip': variant === 'strip' }"
+    :class="{ 'api-reference-strip': variant === 'strip', 'api-reference-strip-expanded': stripExpanded }"
   >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
+      <button
+        v-if="variant === 'strip'"
+        data-test-id="api-reference-strip-toggle"
+        class="api-reference-strip-toggle"
+        type="button"
+        @click="stripExpanded = !stripExpanded"
+      >
+        {{ stripExpanded ? $t({ en: 'Collapse', zh: '收起' }) : $t({ en: 'Expand', zh: '展开' }) }}
+      </button>
       <ul
         v-if="variant !== 'strip'"
         class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3"
@@ -253,8 +264,34 @@ function handleCategoryClick(id: string) {
 
 <style scoped>
 .api-reference-strip {
+  position: relative;
   border-top: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-100);
+}
+
+.api-reference-strip-expanded {
+  flex-basis: 340px !important;
+  min-height: 320px !important;
+}
+
+.api-reference-strip-toggle {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  z-index: 1;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-color-grey-500);
+  border-radius: var(--ui-border-radius-sm);
+  background: var(--ui-color-grey-100);
+  color: var(--ui-color-title);
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: var(--ui-box-shadow-control);
+}
+
+.api-reference-strip-toggle:hover {
+  border-color: var(--ui-color-primary-main);
 }
 
 .api-reference-strip-items {
@@ -264,6 +301,12 @@ function handleCategoryClick(id: string) {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 24px 22px;
+}
+
+.api-reference-strip-expanded .api-reference-strip-items {
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: 44px;
 }
 
 .api-reference-strip-section {
@@ -277,6 +320,14 @@ function handleCategoryClick(id: string) {
   column-gap: 18px;
   row-gap: 12px;
   padding-bottom: 0;
+}
+
+.api-reference-strip-expanded .api-reference-strip-section {
+  width: 100%;
+}
+
+.api-reference-strip-expanded .api-reference-strip-list {
+  align-content: flex-start;
 }
 
 .api-reference-strip :deep(.api-reference-item) {

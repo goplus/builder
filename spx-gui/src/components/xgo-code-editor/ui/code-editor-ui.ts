@@ -451,6 +451,10 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   private _editor: MonacoEditor | null = null
+  private isEditorInitializedRef = ref(false)
+  get isEditorInitialized() {
+    return this.isEditorInitializedRef.value
+  }
   get editor() {
     if (this._editor == null) throw new Error('Editor not initialized')
     return this._editor
@@ -560,6 +564,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
 
   init(editor: MonacoEditor) {
     this._editor = editor
+    this.isEditorInitializedRef.value = true
 
     this.setActiveTextDocument(this.mainTextDocumentId)
 

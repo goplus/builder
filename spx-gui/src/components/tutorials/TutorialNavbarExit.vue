@@ -18,14 +18,17 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useTutorial } from './tutorial'
+import { exitCurrentTutorial } from './tutorial-exit'
 
 const tutorial = useTutorial()
+const router = useRouter()
 
 const handleExitTutorial = useMessageHandle(
-  () => tutorial.endCurrentCourse(),
+  () => exitCurrentTutorial(tutorial, router),
   { en: 'Failed to exit tutorial', zh: '退出教程失败' }
 ).fn
 </script>

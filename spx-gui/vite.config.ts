@@ -8,6 +8,7 @@ import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import browserslistToEsbuild from 'browserslist-to-esbuild'
 
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
+import { createBrowserHijackPlugin } from './build/vite-plugins/browser-hijack-plugin.js'
 import { createVercelOutputPlugin } from './build/vite-plugins/vercel-output-plugin.js'
 
 const resolve = (dir: string) => path.join(__dirname, dir)
@@ -17,6 +18,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, xbuilderEnvDir, '')
   const vercelProxiedApiBaseURL =
     env.VITE_VERCEL_PROXIED_API_BASE_URL == null ? null : env.VITE_VERCEL_PROXIED_API_BASE_URL
+  const accountOAuthRedirectUri = env.VITE_ACCOUNT_OAUTH_REDIRECT_URI ?? ''
 
   const input: Record<string, string> = {
     main: resolve('index.html'),
@@ -31,6 +33,15 @@ export default defineConfig(({ mode }) => {
   return {
     envDir: xbuilderEnvDir,
     plugins: [
+      ...(mode === 'development' && accountOAuthRedirectUri !== ''
+        ? [
+            createBrowserHijackPlugin({
+              origin: new URL(accountOAuthRedirectUri).origin,
+              routes: [new URL(accountOAuthRedirectUri).pathname],
+              chromeStartURL: 'http://127.0.0.1:5175'
+            })
+          ]
+        : []),
       createAppHtmlEntryPlugin(resolve('src/apps/xbuilder/index.html')),
       vue(),
       tailwindcss(),

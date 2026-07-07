@@ -4,12 +4,15 @@ export const name = 'tutorial-state-indicator'
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { useTutorial } from '@/components/tutorials/tutorial'
+import { exitCurrentTutorial } from '@/components/tutorials/tutorial-exit'
 import { UIDropdownWithTooltip, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 
 const tutorial = useTutorial()
+const router = useRouter()
 
 const course = computed(() => {
   return tutorial.currentCourse
@@ -17,7 +20,7 @@ const course = computed(() => {
 
 const { fn: handleExitTutorial } = useMessageHandle(
   () => {
-    tutorial.endCurrentCourse()
+    return exitCurrentTutorial(tutorial, router)
   },
   { zh: '退出课程时遇到问题', en: 'Encountered an issue when exiting the course' }
 )

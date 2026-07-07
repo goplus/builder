@@ -683,23 +683,32 @@ onMounted(async () => {
 
 .tutorial-copilot-trigger {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: 28px;
+  bottom: 28px;
   z-index: 9999;
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: var(--ui-color-grey-100);
+  background: linear-gradient(180deg, var(--ui-color-purple-500) 0%, var(--ui-color-purple-700) 100%);
   box-shadow: var(--ui-box-shadow-lg);
   cursor: pointer;
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease;
+}
+
+.tutorial-copilot-trigger svg {
+  width: 36px;
+  height: 36px;
+}
+
+.tutorial-copilot-trigger svg rect {
+  fill: transparent;
 }
 
 .tutorial-copilot-trigger:hover {
@@ -708,7 +717,7 @@ onMounted(async () => {
 }
 
 .tutorial-copilot-trigger.active {
-  background: #e7f8f7;
+  background: linear-gradient(180deg, var(--ui-color-purple-500) 0%, var(--ui-color-purple-700) 100%);
 }
 
 .tutorial-copilot-panel {

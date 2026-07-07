@@ -19,7 +19,7 @@ export function setupXBuilder() {
     baseUrl: env.usercontentBaseUrl,
     bucket: env.usercontentBucket
   })
-  initUserState(env.accountOAuthClientId)
+  initUserState(env.accountOAuthClientId, { redirectUri: env.accountOAuthRedirectUri })
   setup()
 }
 
