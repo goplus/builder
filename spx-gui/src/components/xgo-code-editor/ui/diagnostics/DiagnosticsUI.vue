@@ -5,7 +5,6 @@ import type { monaco } from '../../monaco'
 import { containsPosition } from '../../common'
 import { builtInCommandCopilotFixProblem } from '../code-editor-ui'
 import { fromMonacoPosition, toAbsolutePosition } from '../common'
-import CommandIcon from '../command/CommandIcon.vue'
 import type { DiagnosticsController } from '.'
 
 const props = defineProps<{
@@ -129,17 +128,24 @@ onUnmounted(() => {
 <template>
   <button
     v-if="hoveredDiagnostic != null && diagnosticCopilotStyle != null"
-    class="code-editor-diagnostic-copilot"
+    class="code-editor-diagnostic-fix-problem"
     :style="diagnosticCopilotStyle"
-    :aria-label="$t({ en: 'Ask Copilot to fix this problem', zh: '请 Copilot 修复这个问题' })"
+    :aria-label="$t({ en: 'Fix problem', zh: '修复问题' })"
     @click="handleFixProblem"
   >
-    <CommandIcon type="copilot" />
+    <svg class="lightbulb-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path
+        d="M5.875 11.15C5.875 10.375 5.525 9.7 5.025 9.125C4.425 8.425 4.125 7.55 4.125 6.625C4.125 3.95 6.3 1.875 9 1.875C11.7 1.875 13.875 3.95 13.875 6.625C13.875 7.55 13.575 8.425 12.975 9.125C12.475 9.7 12.125 10.375 12.125 11.15V11.625H5.875V11.15Z"
+        fill="currentColor"
+      />
+      <path d="M6.5 13H11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      <path d="M7.25 15H10.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+    </svg>
   </button>
 </template>
 
 <style>
-.code-editor-diagnostic-copilot {
+.code-editor-diagnostic-fix-problem {
   position: fixed;
   z-index: 20;
   width: 28px;
@@ -151,14 +157,19 @@ onUnmounted(() => {
   border: 1px solid var(--ui-color-grey-400);
   border-radius: 999px;
   background: var(--ui-color-grey-100);
-  color: var(--ui-color-primary-600);
+  color: var(--ui-color-yellow-600);
   box-shadow: var(--ui-box-shadow-md);
   cursor: pointer;
   transform: translateY(-50%);
 }
 
-.code-editor-diagnostic-copilot:hover {
-  background: var(--ui-color-primary-100);
+.code-editor-diagnostic-fix-problem:hover {
+  border-color: var(--ui-color-yellow-600);
+  background: var(--ui-color-yellow-100);
+}
+
+.code-editor-diagnostic-fix-problem .lightbulb-icon {
+  display: block;
 }
 
 .code-editor-diagnostic-error-line-header,

@@ -220,7 +220,7 @@ const triggerTooltipDisabled = computed(() => !triggerVisibility.value || panelS
 const panelStyle = computed(() => {
   if (isTutorialCourse.value && copilot.active) {
     return {
-      left: '28px',
+      right: '28px',
       bottom: `${tutorialPanelBottom}px`,
       '--tutorial-copilot-panel-height': `${getClampedTutorialPanelHeight(tutorialPanelHeight.value)}px`
     }
@@ -684,7 +684,7 @@ onMounted(async () => {
 
 .tutorial-copilot-trigger {
   position: fixed;
-  left: 144px;
+  right: 28px;
   bottom: 28px;
   z-index: 9999;
   width: 48px;
@@ -732,8 +732,8 @@ onMounted(async () => {
 }
 
 .tutorial-copilot-panel {
-  right: auto;
-  left: 28px;
+  right: 28px;
+  left: auto;
   bottom: 92px;
   width: 360px;
 }
@@ -752,7 +752,7 @@ onMounted(async () => {
 .tutorial-copilot-panel .body::after {
   content: '';
   position: absolute;
-  left: 132px;
+  right: 17px;
   bottom: -7px;
   width: 14px;
   height: 14px;

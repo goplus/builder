@@ -19,7 +19,6 @@ import type { Hover } from '../../hover'
 
 export type { Hover, HoverContext, IHoverProvider } from '../../hover'
 import {
-  builtInCommandCopilotFixProblem,
   builtInCommandGoToResource,
   type CodeEditorUIController,
   builtInCommandRenameResource,
@@ -57,7 +56,7 @@ export class HoverController extends Emitter<{
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return null
 
-    const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
+    const diagnosticsHover = this.getDiagnosticsHover(position)
     const providedHover = await provider.provideHover({ textDocument, signal }, position)
     let providedInternalHover: InternalHover | null = null
     if (providedHover != null) {
@@ -107,7 +106,7 @@ export class HoverController extends Emitter<{
     this.hoverMgr.stop()
   }
 
-  private getDiagnosticsHover(textDocument: ITextDocument, position: Position): InternalHover | null {
+  private getDiagnosticsHover(position: Position): InternalHover | null {
     const diagnosticsController = this.ui.diagnosticsController
     if (diagnosticsController.diagnostics == null) return null
     for (const diagnostic of diagnosticsController.diagnostics) {
@@ -119,17 +118,7 @@ export class HoverController extends Emitter<{
           )
         ],
         range: diagnostic.range,
-        actions: [
-          {
-            command: builtInCommandCopilotFixProblem,
-            arguments: [
-              {
-                textDocument: textDocument.id,
-                problem: diagnostic
-              }
-            ]
-          }
-        ]
+        actions: []
       }
     }
     return null

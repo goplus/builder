@@ -319,10 +319,10 @@ function handleCategoryClick(id: string) {
 
 .api-reference-tutorial-side .api-reference-strip-items {
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 16px 12px;
+  padding: 10px 8px;
 }
 
 .api-reference-strip-expanded .api-reference-strip-items {
@@ -352,7 +352,7 @@ function handleCategoryClick(id: string) {
   width: 100%;
   flex-direction: column;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: 6px;
 }
 
 .api-reference-strip-expanded .api-reference-strip-section {
@@ -378,6 +378,12 @@ function handleCategoryClick(id: string) {
   cursor: grab;
 }
 
+.api-reference-tutorial-side :deep(.api-reference-item) {
+  min-height: 32px;
+  margin-block: 2px;
+  padding: 4px 6px 4px 20px;
+}
+
 .api-reference-strip :deep(.api-reference-item)::before,
 .api-reference-tutorial-side :deep(.api-reference-item)::before {
   content: '';
@@ -390,6 +396,12 @@ function handleCategoryClick(id: string) {
   background-size: 4px 5px;
   transform: translateY(-50%);
   opacity: 0.65;
+}
+
+.api-reference-tutorial-side :deep(.api-reference-item)::before {
+  left: 8px;
+  height: 15px;
+  background-size: 4px 4px;
 }
 
 .api-reference-strip :deep(.api-reference-item:hover),
@@ -408,5 +420,15 @@ function handleCategoryClick(id: string) {
 .api-reference-tutorial-side :deep(.api-reference-item .overview) {
   font-size: var(--tutorial-code-font-size, 24px);
   line-height: 1.5;
+}
+
+.api-reference-tutorial-side :deep(.api-reference-item .overview) {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.api-reference-tutorial-side :deep(.api-reference-item .overview > code) {
+  overflow: visible;
+  text-overflow: clip;
 }
 </style>

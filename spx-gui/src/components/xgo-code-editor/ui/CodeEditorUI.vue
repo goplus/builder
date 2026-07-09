@@ -349,8 +349,7 @@ providePopupContainer(codeEditorEl)
 }
 
 .tutorial-api-reference {
-  flex: 0 0 252px;
-  width: 252px;
+  flex: 0 1 calc(230 / 998 * 100%);
   border-right: 1px solid var(--ui-color-grey-400);
   border-left: 0;
 }

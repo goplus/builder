@@ -87,7 +87,6 @@ function handleSpriteSelect(spriteId: string | null) {
 .tutorial-preview-pane {
   min-width: 0;
   min-height: 0;
-  flex: 1 1 50%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -95,11 +94,14 @@ function handleSpriteSelect(spriteId: string | null) {
 }
 
 .tutorial-editor-pane {
+  flex: 1 1 calc(998 / 1920 * 100%);
   border-right: 1px solid var(--ui-color-grey-400);
 }
 
 .tutorial-preview-pane {
   position: relative;
+  flex: 1 1 calc(922 / 1920 * 100%);
+  min-width: 660px;
   background:
     radial-gradient(circle at 18% 22%, rgba(93, 167, 74, 0.22) 0 1px, transparent 2px),
     radial-gradient(circle at 72% 38%, rgba(69, 142, 62, 0.2) 0 1px, transparent 2px),
