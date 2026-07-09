@@ -33,6 +33,8 @@
       visible: state.selected.type === 'code'
     }"
     :code-file-path="sprite.codeFilePath"
+    :font-size="codeFontSize"
+    :tools-visible="codeToolsVisible"
   />
   <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
@@ -141,7 +143,7 @@ export class SpriteEditorState extends Disposable {
 </script>
 
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Costume } from '@/models/spx/costume'
@@ -150,6 +152,7 @@ import { type Sprite } from '@/models/spx/sprite'
 import { UITabs, UITab } from '@/components/ui'
 import { CodeEditorUI, FormatButton } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
+import { editorWorkspaceLayout } from '../workspace-layout'
 import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
 
@@ -157,4 +160,7 @@ defineProps<{
   sprite: Sprite
   state: SpriteEditorState
 }>()
+
+const codeFontSize = computed(() => editorWorkspaceLayout.codeFontSize)
+const codeToolsVisible = computed(() => !editorWorkspaceLayout.isHidden('code-editor-tools'))
 </script>

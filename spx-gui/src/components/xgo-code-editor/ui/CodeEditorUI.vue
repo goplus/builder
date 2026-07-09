@@ -39,9 +39,22 @@ import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
 
-const props = defineProps<{
-  codeFilePath: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    codeFilePath: string
+    /**
+     * Fixed font size (px) for code. When set, it overrides the user-adjustable (zoomable,
+     * persisted) font size and the zoom control is hidden.
+     */
+    fontSize?: number | null
+    /** Whether to show the tools (document tabs & zoom control) beside the code editor. */
+    toolsVisible?: boolean
+  }>(),
+  {
+    fontSize: null,
+    toolsVisible: true
+  }
+)
 
 const i18n = useI18n()
 const codeEditor = useCodeEditor()
@@ -71,14 +84,14 @@ const uiRef = computed(() => {
 })
 
 const initialFontSize = 12
-const fontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
+const userFontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
   theme,
   tabSize,
   insertSpaces,
-  fontSize: fontSize.value,
+  fontSize: props.fontSize ?? userFontSize.value,
   contextmenu: false
 }))
 
@@ -87,6 +100,16 @@ const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor
 }
+
+// Monaco applies construction options only on creation, so the font-size override needs to be
+// (re)applied when it changes while the editor is already mounted.
+watch(
+  () => [monacoEditorRef.value, props.fontSize] as const,
+  ([editor, fontSizeOverride]) => {
+    if (editor == null) return
+    editor.updateOptions({ fontSize: fontSizeOverride ?? userFontSize.value })
+  }
+)
 
 const handleMonacoEditorDrag = throttle((clientPoint: { x: number; y: number } | null) => {
   const ui = uiRef.value
@@ -163,9 +186,10 @@ watch(
     ui.init(editor)
 
     ui.editor.onDidChangeConfiguration((e) => {
+      if (props.fontSize != null) return // Do not persist changes driven by the fixed override
       const fontSizeId = ui.monaco.editor.EditorOption.fontSize
       if (e.hasChanged(fontSizeId)) {
-        fontSize.value = ui.editor.getOptions().get(fontSizeId)
+        userFontSize.value = ui.editor.getOptions().get(fontSizeId)
       }
     })
 
@@ -281,9 +305,9 @@ providePopupContainer(codeEditorEl)
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
     <CodeGuideUI :controller="uiRef.codeGuideController" />
-    <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
+    <aside v-if="toolsVisible" class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+      <ZoomControl v-if="props.fontSize == null" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>
