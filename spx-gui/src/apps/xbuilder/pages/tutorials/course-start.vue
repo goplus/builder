@@ -1,8 +1,31 @@
+<script lang="ts">
+/**
+ * Resolve the story video URL from the `video` query param, falling back to `defaultUrl`.
+ * Only URLs on an allowed origin are accepted: the query param is attacker-controlled (anyone
+ * can craft a link to this page), so arbitrary origins must not be playable under our domain.
+ */
+export function resolveStoryVideoUrl(
+  queryValue: unknown,
+  defaultUrl: string | null,
+  extraAllowedOrigins: string[] = []
+): string | null {
+  if (typeof queryValue !== 'string' || queryValue === '') return defaultUrl
+  try {
+    const url = new URL(queryValue, window.location.origin)
+    const allowedOrigins = [window.location.origin, ...extraAllowedOrigins]
+    return allowedOrigins.includes(url.origin) ? url.href : defaultUrl
+  } catch {
+    return defaultUrl
+  }
+}
+</script>
+
 <script setup lang="ts">
-import { ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { getCourse } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
-import { tutorialStoryVideoUrl } from '@/apps/xbuilder/env'
+import { tutorialStoryVideoUrl, usercontentBaseUrl } from '@/apps/xbuilder/env'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import TutorialStoryVideoModal from '@/components/tutorials/TutorialStoryVideoModal.vue'
 import { UIDetailedLoading, UIError } from '@/components/ui'
@@ -15,6 +38,27 @@ const props = defineProps<{
 }>()
 
 const tutorial = useTutorial()
+const route = useRoute()
+
+function getUsercontentOrigin(): string | null {
+  if (usercontentBaseUrl == null || usercontentBaseUrl === '') return null
+  try {
+    return new URL(usercontentBaseUrl).origin
+  } catch {
+    return null
+  }
+}
+
+// TODO: Specify the story video with a per-course field on the `Course` API instead of the
+// query param, once the backend supports it.
+const storyVideoUrl = computed(() => {
+  const usercontentOrigin = getUsercontentOrigin()
+  return resolveStoryVideoUrl(
+    route.query.video,
+    tutorialStoryVideoUrl,
+    usercontentOrigin != null ? [usercontentOrigin] : []
+  )
+})
 
 const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesIdInput), {
   en: 'Failed to load course series',
@@ -69,7 +113,7 @@ async function handleStart() {
 watch(
   () => allQueryRet.data.value,
   (data) => {
-    if (data == null || tutorialStoryVideoUrl != null) return
+    if (data == null || storyVideoUrl.value != null) return
     handleStart()
   },
   { immediate: true }
@@ -91,9 +135,9 @@ watch(
       {{ $t(startError.userMessage) }}
     </UIError>
     <TutorialStoryVideoModal
-      v-else-if="allQueryRet.data.value != null && tutorialStoryVideoUrl != null"
+      v-else-if="allQueryRet.data.value != null && storyVideoUrl != null"
       visible
-      :src="tutorialStoryVideoUrl"
+      :src="storyVideoUrl"
       @continue="handleStart"
     />
   </section>

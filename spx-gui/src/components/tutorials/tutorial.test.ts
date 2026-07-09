@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import type { Router } from 'vue-router'
 import type { Copilot } from '@/components/copilot/copilot'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
+import { editorReload } from '@/components/editor/editor-reload'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { Tutorial } from './tutorial'
@@ -77,6 +78,34 @@ describe('Tutorial', () => {
       await tutorial.exitCurrentCourse()
       expect(tutorial.currentCourse).not.toBeNull()
       expect(tutorial.currentSeries).not.toBeNull()
+    })
+  })
+
+  describe('restartCurrentCourse', () => {
+    it('should request an editor reload and start the course over', async () => {
+      const copilot = makeCopilot()
+      const tutorial = new Tutorial(
+        copilot,
+        makeRouter(async () => undefined),
+        ref(true)
+      )
+      await tutorial.startCourse(makeCourse(), makeCourseSeries())
+
+      const reloadCounterBefore = editorReload.counter
+      await tutorial.restartCurrentCourse()
+      expect(editorReload.counter).toBe(reloadCounterBefore + 1)
+      expect(copilot.startSession).toHaveBeenCalledTimes(2)
+      expect(tutorial.currentCourse).not.toBeNull()
+      expect(tutorial.currentSeries).not.toBeNull()
+    })
+
+    it('should throw when no course is in progress', async () => {
+      const tutorial = new Tutorial(
+        makeCopilot(),
+        makeRouter(async () => undefined),
+        ref(true)
+      )
+      await expect(tutorial.restartCurrentCourse()).rejects.toThrow('No course in progress')
     })
   })
 })
