@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveStoryVideoUrl } from './course-start.vue'
+import { getOpeningSteps, resolveStoryVideoUrl } from './course-start.vue'
 
 describe('resolveStoryVideoUrl', () => {
   const origin = window.location.origin
@@ -29,5 +29,22 @@ describe('resolveStoryVideoUrl', () => {
     expect(
       resolveStoryVideoUrl('https://another.example.com/story.mp4', defaultUrl, ['https://usercontent.example.com'])
     ).toBe(defaultUrl)
+  })
+})
+
+describe('getOpeningSteps', () => {
+  const promptWithPrelude = 'Course goal.\n<course-prelude>先捡3个香蕉。</course-prelude>'
+
+  it('should order the story video before the prelude', () => {
+    expect(getOpeningSteps(promptWithPrelude, '/story.mp4')).toEqual([
+      { kind: 'story-video', src: '/story.mp4' },
+      { kind: 'prelude', text: '先捡3个香蕉。' }
+    ])
+  })
+
+  it('should omit unconfigured steps', () => {
+    expect(getOpeningSteps(promptWithPrelude, null)).toEqual([{ kind: 'prelude', text: '先捡3个香蕉。' }])
+    expect(getOpeningSteps('No prelude here', '/story.mp4')).toEqual([{ kind: 'story-video', src: '/story.mp4' }])
+    expect(getOpeningSteps('No prelude here', null)).toEqual([])
   })
 })

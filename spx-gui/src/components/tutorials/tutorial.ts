@@ -128,11 +128,13 @@ First do some preparation:
 
   If there's already defined steps in the course, divide them into smaller steps as needed.
 
-* Clearly define the course completion criteria.
+* Clearly define the course completion criteria. If the course prompt specifies its own completion criteria (e.g. an in-game goal like "collect all the carrots"), treat those as the source of truth — judge completion by whether the goal is achieved (observable from the game runtime output and project state), not by whether the user's code matches the reference project exactly. The reference project is a possible answer, not the only one.
 
 * If the course involves writing spx code, proactively narrow the "API References" panel (left of the code editor) at the start, before guiding the first coding step. Keep ALL the APIs the course uses anywhere — the union across every step, decided from the course goal and the reference project's code (the standard answer) — not just the current step's APIs, so the user can always find every API they will need throughout the course. Set this once and keep it stable for the whole course; only change it if the course genuinely needs a different set. This is expected for every coding course — do not wait for the user to ask.
 
-* Reduce workspace distraction at the start of the course: hide the editor workspace areas the course does not need using <${workspaceHiddenAreasTagName} areas="..." />. For a typical coding course hide all of them: <${workspaceHiddenAreasTagName} areas="editor-panels,edit-mode-switch,preview-header,code-editor-tools" />. Keep an area visible only when some step of the course needs it (e.g. keep \`editor-panels\` if the user must manage sprites, sounds or the stage). If a later step needs a hidden area, re-emit the element with an updated list; use areas="" to show everything again. Like the API narrowing, decide this once at the start — do not wait for the user to ask.
+* Reduce workspace distraction at the start of the course: hide the editor workspace areas the course does not need using <${workspaceHiddenAreasTagName} areas="..." />. For a typical coding course hide all of them: <${workspaceHiddenAreasTagName} areas="editor-panels,edit-mode-switch,preview-header,code-editor-tools" />. Keep an area visible only when some step of the course needs it (e.g. keep \`editor-panels\` if the user must manage sprites, sounds or the stage). If the course prompt itself specifies which areas to hide or keep, follow it. If a later step needs a hidden area, re-emit the element with an updated list; use areas="" to show everything again. Like the API narrowing, decide this once at the start — do not wait for the user to ask.
+
+* The course prompt may contain a <course-prelude> section: its content has already been shown to the user in a dialog before the course started. Do not repeat it; just act consistently with it.
 
 Then guide the user through each step. For each step:
 
@@ -158,6 +160,7 @@ When coding tasks are involved:
 
 * Before offering coding suggestions, ensure you understand the current code. If not, use appropriate tools to review it first.
 * Avoid giving complete solution code directly. Instead, guide the user step-by-step with hints and explanations.
+* Code you output in the chat (code blocks or code-hint elements) is NOT displayed to the user — only the in-editor guides they drive are. Never rely on the user reading code from the chat; guide them with drag / type hints and short instructions instead.
 * Prefer to insert code by dragging corresponding items (if available) from "API References" into the code editor over providing manual code snippets.
 * Keep the "API References" panel showing all the APIs the course uses (see preparation); do not narrow it further down to only the current step's APIs.
 
@@ -212,7 +215,8 @@ This is an example for messages between you and the user in a course:
 `,
       reactToEvents: true,
       endable: false,
-      stateIndicator: tutorialStateIndicatorName
+      stateIndicator: tutorialStateIndicatorName,
+      hideCodeInChat: true
     }
   }
 
@@ -225,19 +229,25 @@ This is an example for messages between you and the user in a course:
   }
 
   /**
-   * Restart the current course from its initial state: the editor (if any) reloads the course
-   * project — dropping in-memory edits of an effect-free editing session — and the copilot
-   * session starts over.
+   * (Re)start a course from its initial state: the editor (if any) reloads the course project —
+   * dropping in-memory edits of an effect-free editing session — and the copilot session starts
+   * over. Unlike `restartCurrentCourse`, this also works right after the course ended (e.g. from
+   * the course success dialog).
    */
-  async restartCurrentCourse(): Promise<void> {
-    const course = this.currentCourse
-    const series = this.currentSeries
-    if (course == null || series == null) throw new Error('No course in progress')
+  async restartCourse(course: Course, series: CourseSeries): Promise<void> {
     editorReload.request()
     // Let the editor page pick up the reload request before `startCourse` waits for the route
     // to finish loading, so the copilot session starts against the reloaded project.
     await nextTick()
     await this.startCourse(course, series)
+  }
+
+  /** Restart the current course from its initial state. */
+  async restartCurrentCourse(): Promise<void> {
+    const course = this.currentCourse
+    const series = this.currentSeries
+    if (course == null || series == null) throw new Error('No course in progress')
+    await this.restartCourse(course, series)
   }
 
   /**

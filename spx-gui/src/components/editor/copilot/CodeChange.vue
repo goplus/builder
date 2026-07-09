@@ -63,6 +63,7 @@ import {
   type Range
 } from '@/components/editor/spx-code-editor'
 import BlockWrapper from '@/components/copilot/markdown-elements/common/BlockWrapper.vue'
+import { useCodeHiddenInChat } from '@/components/copilot/context'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeGuide, useInsertionBlankLine } from './use-code-guide'
 
@@ -80,6 +81,7 @@ const props = defineProps<{
 const codeEditorRef = useCodeEditorRef()
 const editorCtxRef = useEditorCtxRef()
 const childrenText = useSlotText()
+const codeHidden = useCodeHiddenInChat()
 
 const textDocumentId = computed(() => getTextDocumentId(props.file))
 const startLine = computed(() => parseInt(props.line, 10))
@@ -291,7 +293,7 @@ const { activate } = useCodeGuide({
           {{ $t({ en: 'Make this change in the editor', zh: '在编辑器中完成这处修改' }) }}
         </CodeLink>
       </div>
-      <div class="min-w-0 overflow-x-auto pb-2 pl-2">
+      <div v-if="!codeHidden" class="min-w-0 overflow-x-auto pb-2 pl-2">
         <div class="min-w-fit">
           <CodeView v-if="changeBase != null && changeBase.oldText !== ''" class="pr-2" mode="block" deletion>{{
             changeBase.oldText

@@ -37,6 +37,7 @@ import { useSlotText } from '@/utils/vnode'
 import CodeView from '@/components/common/CodeView.vue'
 import { CodeLink, getTextDocumentId, useCodeEditorRef, type CodeGuide } from '@/components/editor/spx-code-editor'
 import BlockWrapper from '@/components/copilot/markdown-elements/common/BlockWrapper.vue'
+import { useCodeHiddenInChat } from '@/components/copilot/context'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeGuide, useInsertionBlankLine } from './use-code-guide'
 
@@ -50,6 +51,7 @@ const props = defineProps<{
 const codeEditorRef = useCodeEditorRef()
 const editorCtxRef = useEditorCtxRef()
 const childrenText = useSlotText()
+const codeHidden = useCodeHiddenInChat()
 
 const code = computed(() => childrenText.value.replace(/^\n/, '').replace(/\n+$/, ''))
 
@@ -97,7 +99,7 @@ const { activate } = useCodeGuide({
           {{ $t({ en: 'Drag the block to this location', zh: '把积木拖到这个位置' }) }}
         </CodeLink>
       </div>
-      <div v-if="code !== ''" class="min-w-0 overflow-x-auto pb-2 pl-2">
+      <div v-if="code !== '' && !codeHidden" class="min-w-0 overflow-x-auto pb-2 pl-2">
         <div class="min-w-fit">
           <CodeView class="pr-2" mode="block" addition>{{ code }}</CodeView>
         </div>
