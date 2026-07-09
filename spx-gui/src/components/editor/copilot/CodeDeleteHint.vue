@@ -38,6 +38,7 @@ import {
   type Range
 } from '@/components/editor/spx-code-editor'
 import BlockWrapper from '@/components/copilot/markdown-elements/common/BlockWrapper.vue'
+import { useCodeHiddenInChat } from '@/components/copilot/context'
 import { useCodeGuide } from './use-code-guide'
 
 const props = defineProps<{
@@ -51,6 +52,7 @@ const props = defineProps<{
 
 const codeEditorRef = useCodeEditorRef()
 const textDocumentId = computed(() => getTextDocumentId(props.file))
+const codeHidden = useCodeHiddenInChat()
 
 const range = computed<Range | null>(() => {
   const startLine = parseInt(props.line, 10)
@@ -98,7 +100,7 @@ const { activate } = useCodeGuide({
           {{ $t({ en: 'Delete the highlighted code', zh: '删除编辑器中标红的代码' }) }}
         </CodeLink>
       </div>
-      <div v-if="codeToDelete !== ''" class="min-w-0 overflow-x-auto pb-2 pl-2">
+      <div v-if="codeToDelete !== '' && !codeHidden" class="min-w-0 overflow-x-auto pb-2 pl-2">
         <div class="min-w-fit">
           <CodeView class="pr-2" mode="block" deletion>{{ codeToDelete }}</CodeView>
         </div>

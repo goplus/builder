@@ -55,6 +55,19 @@ describe('Tutorial', () => {
     editorLeaveConfirm.consumeSkipOnce()
   })
 
+  describe('startCourse', () => {
+    it('should start a session whose topic hides code in chat', async () => {
+      const copilot = makeCopilot()
+      const tutorial = new Tutorial(
+        copilot,
+        makeRouter(async () => undefined),
+        ref(true)
+      )
+      await tutorial.startCourse(makeCourse(), makeCourseSeries())
+      expect(copilot.startSession).toHaveBeenCalledWith(expect.objectContaining({ hideCodeInChat: true }))
+    })
+  })
+
   describe('exitCurrentCourse', () => {
     it('should navigate to the tutorials page and end the course', async () => {
       const push = vi.fn(async () => undefined)
