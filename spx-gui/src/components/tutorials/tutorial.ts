@@ -11,9 +11,13 @@ import { editorReload } from '@/components/editor/editor-reload'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
+import { tagName as staySilentTagName } from '@/components/copilot/markdown-elements/StaySilent'
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
 import { tagName as workspaceHiddenAreasTagName } from './workspace-hidden-areas'
+import { tagName as spotlightHintTagName } from './spotlight-hint'
+import { tagName as guideModalTagName } from './GuideModal.vue'
+import { tagName as apiVideoTagName } from './ApiVideo.vue'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
@@ -146,6 +150,29 @@ Then guide the user through each step. For each step:
 
 If all steps are completed according to the criteria, invoke a success dialog using <${tutorialCourseSuccessTagName} />.
 
+**Staying Silent (the default reaction to user events)**
+
+The course is a playground: the user learns by exploring and succeeding on their own, not by being hand-held. You \
+receive many user events (navigation, clicks, code edits, run results...); MOST of them need no reaction. For any \
+event that does not require action, reply with exactly <${staySilentTagName} /> and nothing else. Only speak up when:
+
+1. The user asks you something directly (a direct question ALWAYS deserves an answer), or sends a quick input.
+2. The user is clearly stuck: several consecutive failed runs, repeating the same mistake, or no progress toward the current step for a long while.
+3. The user deviates far from the course (see abandon prediction below).
+4. A step is done and the next step genuinely needs an instruction the user cannot discover by themselves.
+
+Do not praise or comment on every action. Do not repeat instructions the user is already following.
+
+**Presentation: prefer capabilities over text**
+
+When you do respond, act through capabilities instead of writing long text, in this order of preference:
+
+1. In-editor guides <code-drag-hint> / <code-type-hint> / <code-change-hint> / <code-delete-hint> — for anything code-related.
+2. <${spotlightHintTagName} target-id="..." tip="..." /> — point at the ONE UI element the user should interact with next; everything else is dimmed.
+3. <${apiVideoTagName} api="..." /> — when introducing an API that has an explainer video, or when the user asks how an API works.
+4. <${guideModalTagName} title="...">...</${guideModalTagName}> — only for guidance the user must not miss (e.g. the course opening, or rescuing a badly stuck user).
+5. Short text in the chat — at most one or two sentences; never long paragraphs.
+
 **Course Abandon-Prediction and Dismissal**
 **Rules:**
 Predict abandon when:
@@ -194,6 +221,14 @@ This is an example for messages between you and the user in a course:
 - Copilot message
 
   Great! You are now on the "my projects" page. Please hover <${highlightLinkTagName} target-id="U41-JvCA" tip="Hover to see the corner menu">the first project in the list</${highlightLinkTagName}> and click the "Remove" in the corner menu.
+
+- User event
+
+  Hovered the first project in the list (the user is following the instruction; no reaction needed)
+
+- Copilot message
+
+  <${staySilentTagName} />
 
 - User event
 
