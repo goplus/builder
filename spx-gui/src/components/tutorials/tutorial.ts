@@ -1,4 +1,4 @@
-import { inject, provide, ref } from 'vue'
+import { inject, nextTick, provide, ref } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
@@ -7,6 +7,7 @@ import { userSessionStorageRef } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
+import { editorReload } from '@/components/editor/editor-reload'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
@@ -225,6 +226,22 @@ This is an example for messages between you and the user in a course:
     this.course.value = null
     this.series.value = null
     this.abandonPredictionCountRef.value = 0
+  }
+
+  /**
+   * Restart the current course from its initial state: the editor (if any) reloads the course
+   * project — dropping in-memory edits of an effect-free editing session — and the copilot
+   * session starts over.
+   */
+  async restartCurrentCourse(): Promise<void> {
+    const course = this.currentCourse
+    const series = this.currentSeries
+    if (course == null || series == null) throw new Error('No course in progress')
+    editorReload.request()
+    // Let the editor page pick up the reload request before `startCourse` waits for the route
+    // to finish loading, so the copilot session starts against the reloaded project.
+    await nextTick()
+    await this.startCourse(course, series)
   }
 
   /**
