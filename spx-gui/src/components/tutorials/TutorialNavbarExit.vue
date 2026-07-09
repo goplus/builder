@@ -32,6 +32,14 @@ const { fn: handleExitCourse } = useMessageHandle(() => tutorial.exitCurrentCour
 
     <template #dropdown-content>
       <UIMenu>
+        <div class="max-w-60 truncate px-2 pb-2 pt-1 text-xs text-hint-2">
+          {{
+            $t({
+              zh: `${course?.title}课程中`,
+              en: `${course?.title} in progress`
+            })
+          }}
+        </div>
         <UIMenuItem
           v-radar="{ name: 'Exit course', desc: 'Click to exit the current course and return to the course list' }"
           @click="handleExitCourse"
