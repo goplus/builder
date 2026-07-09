@@ -2,6 +2,7 @@
 import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
+import { useCodeHiddenInChat } from '../context'
 import BlockWrapper from './common/BlockWrapper.vue'
 import BlockFooter from './common/BlockFooter.vue'
 import BlockActionBtn from './common/BlockActionBtn.vue'
@@ -11,6 +12,7 @@ defineProps<{
 }>()
 
 const code = useSlotText()
+const codeHidden = useCodeHiddenInChat()
 
 const handleCopy = useMessageHandle(
   () => navigator.clipboard.writeText(code.value),
@@ -20,7 +22,12 @@ const handleCopy = useMessageHandle(
 </script>
 
 <template>
-  <BlockWrapper>
+  <BlockWrapper v-if="codeHidden">
+    <div class="p-3 text-hint-2">
+      {{ $t({ en: 'Try writing the code yourself!', zh: '试着自己写写看吧！' }) }}
+    </div>
+  </BlockWrapper>
+  <BlockWrapper v-else>
     <div class="py-3 pl-3">
       <CodeView class="min-w-0 overflow-x-auto pr-3" :language="language" mode="block" line-numbers>
         {{ code }}

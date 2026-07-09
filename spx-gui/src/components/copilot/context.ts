@@ -1,4 +1,4 @@
-import { inject, provide, type InjectionKey } from 'vue'
+import { computed, inject, provide, type ComputedRef, type InjectionKey } from 'vue'
 import type { Copilot, Round } from './copilot'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
@@ -7,6 +7,12 @@ export function useCopilot(): Copilot {
   const copilot = inject(copilotInjectionKey)
   if (copilot == null) throw new Error('Copilot not provided')
   return copilot
+}
+
+/** Whether code content should be hidden from the user in the chat under the current topic. */
+export function useCodeHiddenInChat(): ComputedRef<boolean> {
+  const copilot = useCopilot()
+  return computed(() => copilot.currentSession?.topic.hideCodeInChat === true)
 }
 
 export function provideCopilot(copilot: Copilot) {

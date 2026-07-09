@@ -126,6 +126,12 @@ export type Topic = {
   endable?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
+  /**
+   * Whether code content should be hidden from the user in the chat, defaults to `false`.
+   * Used by teaching scenarios (e.g. tutorials) to avoid offering copyable answers: code-rendering
+   * elements keep driving their in-editor guides but do not display the code itself in the chat.
+   */
+  hideCodeInChat?: boolean
 }
 
 export enum RoundState {

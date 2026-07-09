@@ -17,6 +17,8 @@ const props = defineProps<{
   tutorial: Tutorial
   course: Course
   series: CourseSeries
+  /** Short evaluation of the user's solution, from the copilot */
+  comment?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -37,6 +39,19 @@ const courseCompleteMessage = computed(() => {
 function handleCancel() {
   emit('cancelled')
 }
+
+const { fn: handleRetryCourse } = useMessageHandle(
+  async () => {
+    emit('cancelled')
+    // The course has already been ended when this modal opened, so restart it explicitly
+    // with the course & series it was opened for.
+    await props.tutorial.restartCourse(props.course, props.series)
+  },
+  {
+    en: 'Failed to restart course',
+    zh: '重新开始课程失败'
+  }
+)
 
 const { fn: handleBackToCourseSeries } = useMessageHandle(
   async () => {
@@ -109,8 +124,14 @@ const { fn: handleStartNextCourse } = useMessageHandle(
 
         <div class="mt-5 text-2xl">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
         <div class="mt-2 text-base">{{ courseCompleteMessage }}</div>
+        <div v-if="comment != null && comment !== ''" class="mt-3 rounded-md bg-grey-300 px-4 py-3 text-sm text-text">
+          {{ comment }}
+        </div>
 
         <div class="mt-10 w-full flex flex-col gap-5">
+          <UIButton type="neutral" size="large" @click="handleRetryCourse">
+            {{ $t({ zh: '再试一次', en: 'Try again' }) }}
+          </UIButton>
           <UIButton type="neutral" size="large" @click="handleBackToCourseSeries">
             {{ $t({ zh: '返回系列课程', en: 'Back to series courses' }) }}
           </UIButton>

@@ -18,6 +18,20 @@ export function resolveStoryVideoUrl(
     return defaultUrl
   }
 }
+
+/**
+ * The opening sequence shown before the course starts: story video, then the course author's
+ * text guide (see `extractCoursePrelude`). Steps a course does not configure are omitted.
+ */
+export type OpeningStep = { kind: 'story-video'; src: string } | { kind: 'prelude'; text: string }
+
+export function getOpeningSteps(coursePrompt: string, storyVideoUrl: string | null): OpeningStep[] {
+  const steps: OpeningStep[] = []
+  if (storyVideoUrl != null) steps.push({ kind: 'story-video', src: storyVideoUrl })
+  const prelude = extractCoursePrelude(coursePrompt)
+  if (prelude != null) steps.push({ kind: 'prelude', text: prelude })
+  return steps
+}
 </script>
 
 <script setup lang="ts">
@@ -28,6 +42,7 @@ import { getCourseSeries } from '@/apis/course-series'
 import { tutorialStoryVideoUrl, usercontentBaseUrl } from '@/apps/xbuilder/env'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import TutorialStoryVideoModal from '@/components/tutorials/TutorialStoryVideoModal.vue'
+import TutorialPreludeModal, { extractCoursePrelude } from '@/components/tutorials/TutorialPreludeModal.vue'
 import { UIDetailedLoading, UIError } from '@/components/ui'
 import { ActionException, useAction } from '@/utils/exception'
 import { composeQuery, useQuery } from '@/utils/query'
@@ -109,11 +124,28 @@ async function handleStart() {
   }
 }
 
-// Without a story video configured, start the course right after loading, as before.
+const openingSteps = computed<OpeningStep[]>(() => {
+  const data = allQueryRet.data.value
+  if (data == null) return []
+  return getOpeningSteps(data.course.prompt, storyVideoUrl.value)
+})
+
+const openingStepIndex = ref(0)
+const currentOpeningStep = computed(() => openingSteps.value[openingStepIndex.value] ?? null)
+
+function handleOpeningStepContinue() {
+  if (openingStepIndex.value + 1 < openingSteps.value.length) {
+    openingStepIndex.value++
+    return
+  }
+  handleStart()
+}
+
+// Without any opening step configured, start the course right after loading, as before.
 watch(
   () => allQueryRet.data.value,
   (data) => {
-    if (data == null || storyVideoUrl.value != null) return
+    if (data == null || openingSteps.value.length > 0) return
     handleStart()
   },
   { immediate: true }
@@ -134,11 +166,19 @@ watch(
     <UIError v-else-if="startError != null" :retry="handleStart">
       {{ $t(startError.userMessage) }}
     </UIError>
-    <TutorialStoryVideoModal
-      v-else-if="allQueryRet.data.value != null && storyVideoUrl != null"
-      visible
-      :src="storyVideoUrl"
-      @continue="handleStart"
-    />
+    <template v-else-if="currentOpeningStep != null">
+      <TutorialStoryVideoModal
+        v-if="currentOpeningStep.kind === 'story-video'"
+        visible
+        :src="currentOpeningStep.src"
+        @continue="handleOpeningStepContinue"
+      />
+      <TutorialPreludeModal
+        v-else-if="currentOpeningStep.kind === 'prelude'"
+        visible
+        :text="currentOpeningStep.text"
+        @continue="handleOpeningStepContinue"
+      />
+    </template>
   </section>
 </template>

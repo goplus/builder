@@ -36,6 +36,7 @@ import { useSlotText } from '@/utils/vnode'
 import CodeView from '@/components/common/CodeView.vue'
 import { CodeLink, getTextDocumentId, useCodeEditorRef, type CodeGuide } from '@/components/editor/spx-code-editor'
 import BlockWrapper from '@/components/copilot/markdown-elements/common/BlockWrapper.vue'
+import { useCodeHiddenInChat } from '@/components/copilot/context'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeGuide, useInsertionBlankLine } from './use-code-guide'
 
@@ -49,6 +50,7 @@ const props = defineProps<{
 const codeEditorRef = useCodeEditorRef()
 const editorCtxRef = useEditorCtxRef()
 const childrenText = useSlotText()
+const codeHidden = useCodeHiddenInChat()
 
 const code = computed(() => {
   // strip leading line break to keep consistent with markdown code block
@@ -98,7 +100,7 @@ const { activate } = useCodeGuide({
           {{ $t({ en: 'Type this code in the editor', zh: '在编辑器中手动输入这段代码' }) }}
         </CodeLink>
       </div>
-      <div class="min-w-0 overflow-x-auto pb-2 pl-2">
+      <div v-if="!codeHidden" class="min-w-0 overflow-x-auto pb-2 pl-2">
         <div class="min-w-fit">
           <CodeView class="pr-2" mode="block" addition>{{ code }}</CodeView>
         </div>
