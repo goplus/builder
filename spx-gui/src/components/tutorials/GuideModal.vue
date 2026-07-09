@@ -3,39 +3,31 @@ import { z } from 'zod'
 
 export const tagName = 'guide-modal'
 
-export const isRaw = false
+// Raw content: the modal shows plain text only — no markdown and no nested custom elements.
+export const isRaw = true
 
-export const description = 'Show guidance content in a centered modal dialog.'
+export const description = 'Show one very short guidance sentence in a centered modal dialog.'
 
-export const detailedDescription = `Show guidance content in a centered modal dialog, which draws much more attention \
-than a chat message. Use it sparingly, for guidance the user must not miss (e.g. introducing the goal at the start, \
-or getting a stuck user back on track) — NOT for routine replies. The modal opens immediately when your message \
-arrives; the user closes it to continue, and can reopen it from the chat afterwards. The element content (markdown \
-supported) is the modal body. For example,
+export const detailedDescription = `Show one very short guidance sentence in a centered modal dialog, which draws \
+much more attention than a chat message. Use it sparingly, for the ONE thing the user must not miss right now (e.g. \
+what to do at the course opening, or rescuing a badly stuck user). The element content is PLAIN TEXT ONLY — no \
+markdown, no other elements — and MUST be at most 30 characters: a single short sentence. The modal opens \
+immediately when your message arrives; the user closes it to continue and can reopen it from the chat. For example,
 
-<${tagName} title="试试运行">
-点击右下角的运行按钮，看看 Kiko 会做什么！
-</${tagName}>
+<${tagName}>点击右下角的运行按钮试试！</${tagName}>`
 
-shows a modal titled "试试运行" with that text as its content.`
-
-export const attributes = z.object({
-  title: z.string().optional().describe('Short title of the modal, in user language')
-})
+export const attributes = z.object({})
 </script>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
+import { useSlotText } from '@/utils/vnode'
 import { useCopilotRound } from '@/components/copilot/context'
-import { UIButton, UIModal, UIModalClose } from '@/components/ui'
-
-const props = defineProps<{
-  /** Short title of the modal */
-  title?: string
-}>()
+import { UIButton, UIModal } from '@/components/ui'
 
 const round = useCopilotRound()
+const text = useSlotText()
 const visible = ref(false)
 
 onMounted(() => {
@@ -53,24 +45,18 @@ onMounted(() => {
     type="button"
     @click="visible = true"
   >
-    {{ props.title ?? $t({ en: 'View guidance', zh: '查看引导' }) }}
+    {{ $t({ en: 'View guidance', zh: '查看引导' }) }}
   </button>
   <UIModal
-    v-radar="{ name: 'Guide modal', desc: 'Modal showing guidance content from the copilot' }"
+    v-radar="{ name: 'Guide modal', desc: 'Modal showing a short guidance sentence from the copilot' }"
     :visible="visible"
-    size="medium"
+    size="small"
     mask-closable
     @update:visible="visible = false"
   >
-    <div class="flex flex-col px-6 pb-6 pt-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg text-title">{{ props.title ?? '' }}</h3>
-        <UIModalClose @click="visible = false" />
-      </div>
-      <div class="mt-3 text-base text-text">
-        <slot></slot>
-      </div>
-      <UIButton class="mt-6 self-center" type="primary" size="large" @click="visible = false">
+    <div class="flex flex-col items-center px-8 pb-8 pt-10">
+      <p class="text-center text-xl text-title">{{ text.trim() }}</p>
+      <UIButton class="mt-8" type="primary" size="large" @click="visible = false">
         {{ $t({ en: 'Got it', zh: '知道了' }) }}
       </UIButton>
     </div>

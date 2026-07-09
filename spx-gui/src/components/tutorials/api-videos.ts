@@ -15,10 +15,12 @@ export type ApiVideoInfo = {
  * Add entries here as videos are produced.
  */
 const apiVideoLibrary: Record<string, ApiVideoInfo> = {
-  // e.g. 'xgo:github.com/goplus/spx/v2?Sprite.step#0': {
-  //   title: { en: 'step', zh: 'step 前进' },
-  //   src: 'https://xxx.gopluscdn.com/tutorial-api-videos/step.mp4'
-  // }
+  // The video files are served from `public/tutorial-api-videos/` during development;
+  // switch to usercontent CDN URLs once the videos are formally hosted.
+  'xgo:github.com/goplus/spx/v2?Sprite.step#0': {
+    title: { en: 'step', zh: 'step 前进' },
+    src: '/tutorial-api-videos/step.mp4'
+  }
 }
 
 export function getApiVideo(apiId: string): ApiVideoInfo | null {
