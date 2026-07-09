@@ -65,6 +65,7 @@ import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-edi
 import { usePublishProject } from '@/components/project'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
+import { editorReload } from '@/components/editor/editor-reload'
 import { EditorState } from '@/components/editor/editor-state'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -192,6 +193,13 @@ const allQueryRet = useQuery(
 )
 
 useRegisterUpdateRouteLoaded(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
+
+// Reload the project state on request (e.g. when a tutorial course is restarted), which
+// rebuilds the `EditorState` and reloads the project from the cloud.
+watch(
+  () => editorReload.counter,
+  () => stateQueryRet.refetch()
+)
 
 const publishProject = usePublishProject()
 
