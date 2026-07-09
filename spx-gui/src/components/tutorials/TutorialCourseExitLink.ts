@@ -1,9 +1,11 @@
 import { z } from 'zod'
 import { defineComponent, h } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useChildrenWithDefault } from '@/utils/vnode'
 import { useTutorial } from './tutorial'
+import { exitCurrentTutorial } from './tutorial-exit'
 
 export const tagName = 'tutorial-course-exit-link'
 
@@ -23,12 +25,13 @@ export default defineComponent<Props>(
   () => {
     const i18n = useI18n()
     const tutorial = useTutorial()
+    const router = useRouter()
     const handleClick = useMessageHandle(
       () => {
         if (!tutorial.currentCourse || !tutorial.currentSeries) {
           throw new Error('No course or series in progress')
         }
-        tutorial.endCurrentCourse()
+        return exitCurrentTutorial(tutorial, router)
       },
       {
         en: 'Failed to exit course',

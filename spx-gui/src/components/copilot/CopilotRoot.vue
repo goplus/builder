@@ -17,6 +17,7 @@ import { useSignedInStateQuery, type SignedInState } from '@/stores/user'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import { provideCopilot } from './context'
 import { createBuiltInSkillRegistry } from './skills/built-in'
+import { createLocalPreviewCopilotGenerator, shouldUseLocalPreviewCopilot } from './local-preview-generator'
 
 const listProjectsParamsSchema = z.object({
   owner: z
@@ -167,7 +168,10 @@ const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
 const signedInStateQuery = useSignedInStateQuery()
 const skillRegistry = createBuiltInSkillRegistry()
-const copilot = new Copilot(skillRegistry)
+const copilot = new Copilot(
+  skillRegistry,
+  shouldUseLocalPreviewCopilot() ? createLocalPreviewCopilotGenerator() : undefined
+)
 const sessionStorageRef = userSessionStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
 
 copilot.syncSessionWith({

@@ -7,7 +7,7 @@ import type { CodeEditorUIController } from '../code-editor-ui'
 export type { IDiagnosticsProvider, DiagnosticsContext } from '../../diagnostics'
 
 export class DiagnosticsController extends Disposable {
-  constructor(private ui: CodeEditorUIController) {
+  constructor(readonly ui: CodeEditorUIController) {
     super()
   }
 

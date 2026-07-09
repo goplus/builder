@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { listCourses, type Course } from '@/apis/course'
-import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
+import { listCourses } from '@/apis/course'
+import { getCourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/community/TextView.vue'
 import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
-import { useTutorial } from '@/components/tutorials/tutorial'
 import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
-import { useMessageHandle } from '@/utils/exception'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 // TODO: Temporary background, replace with the latest assets
 import stageBg from '@/assets/images/stage-bg.svg'
@@ -26,8 +24,6 @@ const height = numInColumn * (courseItemHeight + coursePadding) - coursePadding
 const props = defineProps<{
   courseSeriesIdInput: string
 }>()
-
-const tutorial = useTutorial()
 
 const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesIdInput), {
   en: 'Failed to load course series',
@@ -78,20 +74,6 @@ const courseQuery = useQuery(
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
 )
 
-const { fn: handleCourseClick } = useMessageHandle(
-  (event: MouseEvent, course: Course, courseSeries: CourseSeries) => {
-    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
-      return
-    }
-
-    event.preventDefault()
-    tutorial.startCourse(course, courseSeries)
-  },
-  {
-    en: 'Failed to start course',
-    zh: '开始课程失败'
-  }
-)
 </script>
 
 <template>
@@ -154,7 +136,6 @@ const { fn: handleCourseClick } = useMessageHandle(
                   :key="course.id"
                   :href="`/course/${courseSeries.id}/${course.id}/start`"
                   class="no-underline"
-                  @click="handleCourseClick($event, course, courseSeries)"
                 >
                   <CourseItem :course="course" />
                 </a>

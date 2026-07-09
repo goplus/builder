@@ -37,6 +37,7 @@ import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
+import { useMaybeTutorial } from '@/components/tutorials/tutorial'
 
 const props = defineProps<{
   codeFilePath: string
@@ -44,6 +45,7 @@ const props = defineProps<{
 
 const i18n = useI18n()
 const codeEditor = useCodeEditor()
+const tutorial = useMaybeTutorial()
 const invokeRenameModal = useModal(RenameModal)
 
 async function rename(textDocumentId: TextDocumentIdentifier, position: Position, range: Range): Promise<void> {
@@ -70,14 +72,54 @@ const uiRef = computed(() => {
 })
 
 const initialFontSize = 12
+const tutorialFontSize = 20
 const fontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
+
+const currentCourse = computed(() => tutorial?.currentCourse)
+const isTutorialCourse = computed(() => currentCourse.value != null)
+const tutorialAPIReferenceFilterText = computed(() => {
+  const course = currentCourse.value
+  if (course == null) return null
+  return [course.id, course.title, course.entrypoint, course.prompt].join('\n')
+})
+const tutorialAPIReferenceNames = computed(() => {
+  const course = currentCourse.value
+  if (course == null) return null
+
+  const names = new Set<string>()
+  const rawCourse = course as Record<string, unknown>
+  for (const key of ['apis', 'apiReferences', 'apiReferenceIds', 'allowedApis', 'allowedAPIReferenceIds']) {
+    const value = rawCourse[key]
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'string') names.add(item)
+      }
+    }
+  }
+
+  if (course.entrypoint.includes('Coding-Course-3')) {
+    names.add('step')
+    names.add('turn')
+  }
+  return [...names]
+})
+
+const tutorialAPIReferenceOverviews = computed(() => {
+  const course = currentCourse.value
+  if (course == null) return null
+  if (course.entrypoint.includes('Coding-Course-3')) {
+    return ['step distance', 'turn direction']
+  }
+  return null
+})
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
   theme,
   tabSize,
   insertSpaces,
-  fontSize: fontSize.value,
+  fontSize: isTutorialCourse.value ? tutorialFontSize : fontSize.value,
+  padding: isTutorialCourse.value ? { top: 20 } : undefined,
   contextmenu: false
 }))
 
@@ -241,24 +283,40 @@ providePopupContainer(codeEditorEl)
   <div
     ref="codeEditorEl"
     class="relative flex min-h-0 flex-[1_1_0] justify-stretch"
-    :style="{ userSelect: isResizing ? 'none' : undefined }"
+    :class="{ 'tutorial-code-editor': isTutorialCourse }"
+    :style="{
+      userSelect: isResizing ? 'none' : undefined,
+      '--tutorial-code-font-size': isTutorialCourse ? `${tutorialFontSize}px` : undefined
+    }"
   >
-    <aside
-      class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
-      :style="{ flexBasis: `${sidebarWidth}px` }"
-    >
-      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
-    </aside>
-    <div
-      ref="resizeHandleEl"
-      v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
-      class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
-      :class="{ 'bg-black/10': isResizing }"
-      :style="{ left: `${sidebarWidth}px` }"
-    ></div>
+    <template v-if="!isTutorialCourse">
+      <aside
+        class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
+        :style="{ flexBasis: `${sidebarWidth}px` }"
+      >
+        <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
+      </aside>
+      <div
+        ref="resizeHandleEl"
+        v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
+        class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
+        :class="{ 'bg-black/10': isResizing }"
+        :style="{ left: `${sidebarWidth}px` }"
+      ></div>
+    </template>
+    <APIReferenceUI
+      v-if="isTutorialCourse"
+      class="tutorial-api-reference"
+      variant="tutorial-side"
+      :controller="uiRef.apiReferenceController"
+      :filter-text="tutorialAPIReferenceFilterText"
+      :allowed-names="tutorialAPIReferenceNames"
+      :allowed-overviews="tutorialAPIReferenceOverviews"
+    />
     <MonacoEditorComp
       v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
       class="my-3 min-w-0 flex-[1_1_0]"
+      :class="{ 'tutorial-monaco-editor': isTutorialCourse }"
       :monaco="codeEditor.monaco"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
@@ -273,9 +331,26 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
+    <aside v-if="!isTutorialCourse" class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
       <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>
+
+<style scoped>
+.tutorial-code-editor {
+  background: var(--ui-color-grey-100);
+}
+
+.tutorial-monaco-editor {
+  margin: 0;
+  min-height: 0;
+}
+
+.tutorial-api-reference {
+  flex: 0 1 calc(230 / 998 * 100%);
+  border-right: 1px solid var(--ui-color-grey-400);
+  border-left: 0;
+}
+</style>

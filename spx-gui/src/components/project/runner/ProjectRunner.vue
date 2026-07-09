@@ -385,7 +385,7 @@ defineExpose({
 
 <template>
   <div class="relative h-full w-full flex items-center justify-center">
-    <iframe ref="runnerIframeRef" class="h-full w-full" frameborder="0" :src="runnerUrl" />
+    <iframe ref="runnerIframeRef" class="h-full w-full border-0" frameborder="0" :src="runnerUrl" />
     <UIImg
       v-show="state.type !== 'running'"
       class="absolute inset-0"

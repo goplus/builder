@@ -25,10 +25,14 @@ function ensureOAuthFlow() {
   return oauthFlow
 }
 
-export function initUserState(clientId: string) {
+export type InitUserStateOptions = {
+  redirectUri?: string
+}
+
+export function initUserState(clientId: string, options: InitUserStateOptions = {}) {
   oauthFlow = new OAuthFlow<{ returnTo: string }>(oauthApis, {
     clientId,
-    redirectUri: `${window.location.origin}/sign-in/callback`
+    redirectUri: options.redirectUri ?? `${window.location.origin}/sign-in/callback`
   })
 
   const stored = localStorage.getItem(userStateStorageKey)
@@ -40,6 +44,10 @@ export function initUserState(clientId: string) {
     }
   }
   watchEffect(() => localStorage.setItem(userStateStorageKey, JSON.stringify(userState)))
+}
+
+export function navigateToSignIn(authorizeUrl: string) {
+  window.location.href = authorizeUrl
 }
 
 async function getSignedInUsernameByAccessToken(accessToken: string) {
@@ -62,7 +70,7 @@ export function useSignIn() {
       data: { returnTo },
       uiLocales: normalizeLang(i18n.lang.value)
     })
-    window.location.assign(authorizeUrl)
+    navigateToSignIn(authorizeUrl)
   }
 }
 

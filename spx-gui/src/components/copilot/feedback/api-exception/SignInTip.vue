@@ -5,21 +5,23 @@ import type { Round } from '@/components/copilot/copilot'
 
 import { isSignedIn, useSignIn } from '@/stores/user'
 import { UIButton } from '@/components/ui'
+import { shouldUseLocalPreviewCopilot } from '../../local-preview-generator'
 
 const props = defineProps<{
   round: Round
 }>()
 
 const signIn = useSignIn()
+const localPreview = shouldUseLocalPreviewCopilot()
 
 onMounted(() => {
-  if (!isSignedIn()) return
+  if (!localPreview && !isSignedIn()) return
   props.round.retry()
 })
 </script>
 
 <template>
-  <div class="text-sm/[1.7]">
+  <div v-if="!localPreview" class="text-sm/[1.7]">
     <div>{{ $t({ en: 'Please sign in to continue.', zh: '请先登录并继续' }) }}</div>
     <UIButton type="primary" class="mt-4" @click="signIn()">
       {{ $t({ en: 'Sign in', zh: '登录' }) }}
