@@ -5,6 +5,8 @@ export const disableAIGC = import.meta.env.VITE_DISABLE_AIGC === 'true'
 export const spxVersion = import.meta.env.VITE_SPX_VERSION as string
 export const showLicense = import.meta.env.VITE_SHOW_LICENSE === 'true'
 export const showTutorialsEntry = import.meta.env.VITE_SHOW_TUTORIALS_ENTRY === 'true'
+/** URL of the story video shown before a tutorial course starts, or `null` to start courses directly. */
+export const tutorialStoryVideoUrl = (import.meta.env.VITE_TUTORIAL_STORY_VIDEO_URL as string) || null
 export const defaultLang = (import.meta.env.VITE_DEFAULT_LANG as string) || 'en'
 export const accountOAuthClientId = import.meta.env.VITE_ACCOUNT_OAUTH_CLIENT_ID as string
 const sentryTracesSampleRate = parseFloat(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string)

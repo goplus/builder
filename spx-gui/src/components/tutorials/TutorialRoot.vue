@@ -8,10 +8,12 @@ import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
 import { useCodeEditorRef } from '@/components/xgo-code-editor'
+import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
 import * as apiReferenceFilter from './api-reference-filter'
+import * as workspaceHiddenAreas from './workspace-hidden-areas'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 
 const i18n = useI18n()
@@ -29,6 +31,8 @@ watch(
   () => tutorial.currentCourse,
   (currentCourse, _, onCleanup) => {
     if (currentCourse == null) return
+
+    editorWorkspaceLayout.setMode('focused')
 
     const disposers = [
       copilot.registerCustomElement({
@@ -53,6 +57,13 @@ watch(
         attributes: apiReferenceFilter.attributes,
         isRaw: apiReferenceFilter.isRaw,
         component: apiReferenceFilter.default
+      }),
+      copilot.registerCustomElement({
+        tagName: workspaceHiddenAreas.tagName,
+        description: workspaceHiddenAreas.detailedDescription,
+        attributes: workspaceHiddenAreas.attributes,
+        isRaw: workspaceHiddenAreas.isRaw,
+        component: workspaceHiddenAreas.default
       }),
       copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default),
       copilot.registerQuickInputProvider({
@@ -85,8 +96,10 @@ watch(
       for (const dispose of disposers) {
         dispose()
       }
-      // Reset the API references panel when leaving the course, so the filter never outlives it.
+      // Reset the API references panel and the workspace layout when leaving the course, so
+      // neither the filter nor the focused layout outlives it.
       codeEditorRef.value?.setAPIReferenceFilter(null)
+      editorWorkspaceLayout.reset()
     })
   },
   {

@@ -2,13 +2,15 @@
   <UICard
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
+    :class="{ 'flex-[1_1_0] min-h-0': isFocused }"
   >
-    <UICardHeader class="gap-3">
+    <UICardHeader v-if="!isPreviewHeaderHidden" class="gap-3">
       <div class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
+          v-if="!isFocused"
           v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
           type="primary"
           icon="playHollow"
@@ -31,6 +33,7 @@
       </template>
       <template v-else>
         <UIButton
+          v-if="!isFocused"
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
           type="primary"
           icon="rotate"
@@ -41,6 +44,7 @@
           {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
         </UIButton>
         <UIButton
+          v-if="!isFocused"
           v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
           type="neutral"
           icon="end"
@@ -65,11 +69,14 @@
       </template>
     </UICardHeader>
 
-    <div class="flex grow justify-center overflow-hidden p-3">
+    <div class="flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': isFocused }">
       <div
         ref="stageContainerRef"
         class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
-        :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
+        :class="{
+          'stage-viewer-container-running': runnerState !== 'initial',
+          'stage-viewer-container-focused': isFocused
+        }"
       >
         <StageViewer class="stage-viewer" />
         <div
@@ -94,6 +101,44 @@
           />
         </div>
       </div>
+    </div>
+
+    <!-- In the focused layout, run controls float at the bottom-right corner of the preview -->
+    <div v-if="isFocused" class="absolute bottom-6 right-6 z-10 flex items-center gap-3">
+      <UIButton
+        v-if="runnerState === 'initial'"
+        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+        type="primary"
+        shape="circle"
+        size="large"
+        icon="playHollow"
+        :aria-label="$t({ en: 'Run', zh: '运行' })"
+        :loading="handleRun.isLoading.value"
+        @click="handleRun.fn"
+      />
+      <template v-else>
+        <UIButton
+          v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
+          type="primary"
+          shape="circle"
+          size="large"
+          icon="rotate"
+          :aria-label="$t({ en: 'Rerun', zh: '重新运行' })"
+          :disabled="runnerState !== 'running' || handleStop.isLoading.value"
+          :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
+          @click="handleRerun.fn"
+        />
+        <UIButton
+          v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+          type="neutral"
+          shape="circle"
+          size="large"
+          icon="end"
+          :aria-label="$t({ en: 'Stop', zh: '停止' })"
+          :loading="handleStop.isLoading.value"
+          @click="handleStop.fn"
+        />
+      </template>
     </div>
   </UICard>
 </template>
@@ -177,11 +222,14 @@ import {
   getInvalidMonitors
 } from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
+import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
 
 const editorCtx = useEditorCtx()
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
+const isPreviewHeaderHidden = computed(() => editorWorkspaceLayout.isHidden('preview-header'))
 const codeEditor = useCodeEditor()
 const { isOnline } = useNetwork()
 const signedInUser = useSignedInUser()
@@ -439,6 +487,23 @@ function getStageInlineAnchor() {
 </script>
 
 <style scoped>
+/* In the focused layout the container fills the preview instead of following the stage's 4:3
+   aspect ratio; the stage viewer & runner scale their content to fit and letterbox the rest. */
+.stage-viewer-container-focused {
+  height: 100%;
+}
+
+.stage-viewer-container-focused :deep(.stage-viewer) {
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+.stage-viewer-container-focused .runner-host :deep(.project-runner-surface:not(.fullscreen) .runner-area) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .stage-viewer-container-running .stage-viewer {
   filter: blur(4px);
   pointer-events: none;
