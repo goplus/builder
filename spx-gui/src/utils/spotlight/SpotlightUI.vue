@@ -62,6 +62,9 @@ const spotlightRef = ref<HTMLElement | null>(null)
 const placementRef = ref<Placement>(Placement.BOTTOM_RIGHT)
 const positionRef = ref<Position>(getDefaultPosition())
 const spotlightAnimated = ref(false)
+// Viewport rect of the revealed element, tracked for the mask cutout (see `.mask-cutout`)
+const maskRectRef = ref<DOMRect | null>(null)
+const maskCutoutPadding = 6
 
 const spotlight = useSpotlight()
 
@@ -184,6 +187,7 @@ function syncPlacementAndPosition() {
   placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
 
   spotlightEl.style.transform = `translateX(${position.x}px) translateY(${position.y}px)`
+  maskRectRef.value = revealEl.getBoundingClientRect()
 }
 
 function revealElement(revealEl: HTMLElement) {
@@ -225,7 +229,14 @@ const resizeObserver = new ResizeObserver(throttledHandleRefresh)
 watch(
   () => spotlightItem.value,
   (value, _, onCleanUp) => {
-    if (!value) return
+    if (!value) {
+      maskRectRef.value = null
+      return
+    }
+
+    // Take the rect synchronously so the mask shows even if the async position sync below is
+    // delayed; later syncs (scroll / resize) keep it up to date.
+    maskRectRef.value = value.el.getBoundingClientRect()
 
     // After the spotlight is concealed, if it is revealed again,
     // the positions of `center` and `reveal` will be recalculated — this position represents a portion of the distance between them.
@@ -239,10 +250,20 @@ watch(
       // If the distance is too short, animate from center to reveal
       positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
     }
-    requestAnimationFrame(() => {
+    // The spotlight element may not be mounted yet on the frame right after the item is set
+    // (e.g. when revealing during another item's leave transition) — retry on later frames
+    // instead of failing silently.
+    let revealAttempts = 0
+    const tryReveal = () => {
+      if (spotlightItem.value !== value) return // superseded by a newer reveal / conceal
+      if (spotlightRef.value == null) {
+        if (++revealAttempts <= 10) requestAnimationFrame(tryReveal)
+        return
+      }
       revealElement(value.el)
       spotlight.emit('revealed', { rect: value.el.getBoundingClientRect() })
-    })
+    }
+    requestAnimationFrame(tryReveal)
 
     resizeObserver.observe(document.body)
     document.body.addEventListener('scroll', throttledHandleScroll, { capture: true, passive: true })
@@ -260,6 +281,18 @@ watch(
 
 <template>
   <div class="spotlight-ui">
+    <Transition>
+      <div
+        v-if="spotlightItem?.mask && maskRectRef != null"
+        class="mask-cutout"
+        :style="{
+          left: `${maskRectRef.left - maskCutoutPadding}px`,
+          top: `${maskRectRef.top - maskCutoutPadding}px`,
+          width: `${maskRectRef.width + 2 * maskCutoutPadding}px`,
+          height: `${maskRectRef.height + 2 * maskCutoutPadding}px`
+        }"
+      ></div>
+    </Transition>
     <Transition>
       <div
         v-if="spotlightItem"
@@ -313,6 +346,15 @@ watch(
 
 .spotlight-ui .spotlight-item {
   position: absolute;
+}
+
+/* Dims everything except the revealed element: the cutout sits over the element and the huge
+   blurred shadow covers the rest of the viewport, giving a soft (gradient) dark overlay. It
+   lives in the pointer-events-none spotlight layer, so it never blocks interactions. */
+.spotlight-ui .mask-cutout {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: 0 0 24px 100vmax rgba(15, 23, 42, 0.45);
 }
 
 .spotlight-ui .spotlight-item.animated {
