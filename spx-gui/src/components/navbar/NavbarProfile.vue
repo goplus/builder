@@ -18,6 +18,12 @@ const { isOnline } = useNetwork()
 const router = useRouter()
 const i18n = useI18n()
 const signIn = useSignIn()
+// Starting the sign-in flow involves a backend request (pushed authorization), which can fail
+// (e.g. unregistered redirect URI); surface the failure instead of silently doing nothing.
+const handleSignIn = useMessageHandle(() => signIn(), {
+  en: 'Failed to sign in',
+  zh: '登录失败'
+}).fn
 
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
@@ -68,7 +74,7 @@ async function handleSignOut() {
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
-      @click="signIn()"
+      @click="handleSignIn"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
