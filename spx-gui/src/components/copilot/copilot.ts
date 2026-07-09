@@ -2,7 +2,7 @@ import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
-import { localStorageRef } from '@/utils/utils'
+import { getStringLengthInCodePoints, localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { Disposable, type Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
@@ -688,7 +688,28 @@ ${topic.description}`
   }
 
   async getContextMessage(): Promise<UserTextMessage> {
-    const parts = [this.getCustomElementsPrompt(), await this.getContext(), this.getTopicPrompt()]
+    const customElementsPrompt = this.getCustomElementsPrompt()
+    const topicPrompt = this.getTopicPrompt()
+    let context = await this.getContext()
+
+    // The backend rejects a single message longer than `copilotMessageContentMaxLength`. When
+    // over budget, truncate the ambient context (UI info, project content, skill documents...):
+    // the custom-element definitions and the topic instructions drive the copilot's behavior
+    // and must stay intact.
+    const reserve = 200 // for the wrapper & joints below
+    const contextBudget =
+      apis.copilotMessageContentMaxLength -
+      reserve -
+      getStringLengthInCodePoints(customElementsPrompt) -
+      getStringLengthInCodePoints(topicPrompt)
+    const contextCodePoints = Array.from(context)
+    if (contextCodePoints.length > contextBudget) {
+      const truncationNotice = '\n[...truncated due to the message length limit...]'
+      context =
+        contextCodePoints.slice(0, Math.max(0, contextBudget - truncationNotice.length)).join('') + truncationNotice
+    }
+
+    const parts = [customElementsPrompt, context, topicPrompt]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`
