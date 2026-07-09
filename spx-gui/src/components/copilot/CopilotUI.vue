@@ -37,8 +37,10 @@ import { providePopupContainer, UIButton, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './context'
-import { type QuickInput, RoundState } from './copilot'
+import { type QuickInput, type Round, RoundState } from './copilot'
+import { isSilentContent } from './markdown-elements/StaySilent'
 import { useSpotlight } from '@/utils/spotlight'
+import { isDeveloperMode } from '@/utils/developer-mode'
 import type { LocaleMessage } from '@/utils/i18n'
 import { homePageName } from '@/apps/xbuilder/router'
 
@@ -57,13 +59,40 @@ const rounds = computed(() => {
   if (session.value == null || session.value.rounds.length === 0) return null
   return session.value.rounds
 })
+
+/**
+ * Whether the round is a "silent" one: the copilot completed it while choosing to say nothing
+ * (only a `stay-silent` element, or no displayable content at all).
+ */
+function isSilentRound(round: Round) {
+  if (round.state !== RoundState.Completed) return false
+  const content = round.resultMessages
+    .filter((m) => m.role === 'copilot')
+    .map((m) => m.content ?? '')
+    .join('')
+  return isSilentContent(content)
+}
+
 const activeRound = computed(() => {
-  const lastRound = rounds.value?.at(-1)
+  const list = rounds.value
+  const lastRound = list?.at(-1)
   if (lastRound == null || [RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) {
+    return null
+  }
+  // Skip silent rounds so the previous, meaningful guidance stays visible instead of being
+  // replaced by an empty reply. In developer mode silent rounds are shown for prompt debugging.
+  if (!isDeveloperMode.value && isSilentRound(lastRound)) {
+    for (let i = list!.length - 2; i >= 0; i--) {
+      const round = list![i]
+      if ([RoundState.Loading, RoundState.Initialized].includes(round.state)) continue
+      if (isSilentRound(round)) continue
+      return round
+    }
     return null
   }
   return lastRound
 })
+const isActiveRoundLast = computed(() => activeRound.value === rounds.value?.at(-1))
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
 
@@ -496,7 +525,7 @@ onMounted(async () => {
         </div>
         <div ref="outputRef" class="output">
           <template v-if="activeRound != null">
-            <CopilotRound :round="activeRound" is-last-round />
+            <CopilotRound :round="activeRound" :is-last-round="isActiveRoundLast" />
             <div v-if="quickInputs.length > 0" class="quick-inputs">
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}

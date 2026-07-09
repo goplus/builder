@@ -7,6 +7,7 @@ import { useIsRouteLoaded } from '@/utils/route-loading'
 import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
+import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
 import { useCodeEditorRef } from '@/components/xgo-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
@@ -14,6 +15,9 @@ import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
 import * as apiReferenceFilter from './api-reference-filter'
 import * as workspaceHiddenAreas from './workspace-hidden-areas'
+import * as spotlightHint from './spotlight-hint'
+import * as guideModal from './GuideModal.vue'
+import * as apiVideo from './ApiVideo.vue'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 
 const i18n = useI18n()
@@ -64,6 +68,34 @@ watch(
         attributes: workspaceHiddenAreas.attributes,
         isRaw: workspaceHiddenAreas.isRaw,
         component: workspaceHiddenAreas.default
+      }),
+      copilot.registerCustomElement({
+        tagName: staySilent.tagName,
+        description: staySilent.detailedDescription,
+        attributes: staySilent.attributes,
+        isRaw: staySilent.isRaw,
+        component: staySilent.default
+      }),
+      copilot.registerCustomElement({
+        tagName: spotlightHint.tagName,
+        description: spotlightHint.detailedDescription,
+        attributes: spotlightHint.attributes,
+        isRaw: spotlightHint.isRaw,
+        component: spotlightHint.default
+      }),
+      copilot.registerCustomElement({
+        tagName: guideModal.tagName,
+        description: guideModal.detailedDescription,
+        attributes: guideModal.attributes,
+        isRaw: guideModal.isRaw,
+        component: guideModal.default
+      }),
+      copilot.registerCustomElement({
+        tagName: apiVideo.tagName,
+        description: apiVideo.getDetailedDescription(),
+        attributes: apiVideo.attributes,
+        isRaw: apiVideo.isRaw,
+        component: apiVideo.default
       }),
       copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default),
       copilot.registerQuickInputProvider({
