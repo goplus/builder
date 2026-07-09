@@ -8,7 +8,17 @@ export type SpotlightItem = {
   el: HTMLElement
   timer: NodeJS.Timeout
   tips: string
+  /** Whether everything except the revealed element is dimmed with a mask overlay. */
+  mask: boolean
   dispose: () => void
+}
+
+export type RevealOptions = {
+  /**
+   * Dim everything except the revealed element with a mask overlay. The mask never blocks
+   * pointer events — it only draws attention. Defaults to `false`.
+   */
+  mask?: boolean
 }
 
 export type RevealEvent = {
@@ -33,7 +43,7 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
     return setTimeout(() => this.conceal(), timeout)
   }
 
-  reveal(el: HTMLElement, tips = '') {
+  reveal(el: HTMLElement, tips = '', options: RevealOptions = {}) {
     this.conceal() // Clear any previous spotlight
 
     const autoConcealTimer = this.createTimeoutConceal()
@@ -43,6 +53,7 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
       timer: autoConcealTimer,
       tips,
       el,
+      mask: options.mask ?? false,
       dispose: () => {
         clearTimeout(autoConcealTimer)
         clearTimeout(mouseEnterConcealTimer)
