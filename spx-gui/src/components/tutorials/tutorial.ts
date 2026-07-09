@@ -6,11 +6,13 @@ import { timeout, until } from '@/utils/utils'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
+import { tagName as workspaceHiddenAreasTagName } from './workspace-hidden-areas'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
@@ -129,6 +131,8 @@ First do some preparation:
 
 * If the course involves writing spx code, proactively narrow the "API References" panel (left of the code editor) at the start, before guiding the first coding step. Keep ALL the APIs the course uses anywhere — the union across every step, decided from the course goal and the reference project's code (the standard answer) — not just the current step's APIs, so the user can always find every API they will need throughout the course. Set this once and keep it stable for the whole course; only change it if the course genuinely needs a different set. This is expected for every coding course — do not wait for the user to ask.
 
+* Reduce workspace distraction at the start of the course: hide the editor workspace areas the course does not need using <${workspaceHiddenAreasTagName} areas="..." />. For a typical coding course hide all of them: <${workspaceHiddenAreasTagName} areas="editor-panels,edit-mode-switch,preview-header,code-editor-tools" />. Keep an area visible only when some step of the course needs it (e.g. keep \`editor-panels\` if the user must manage sprites, sounds or the stage). If a later step needs a hidden area, re-emit the element with an updated list; use areas="" to show everything again. Like the API narrowing, decide this once at the start — do not wait for the user to ask.
+
 Then guide the user through each step. For each step:
 
 1. If extra information required, use appropriate tool to gather it.
@@ -217,5 +221,17 @@ This is an example for messages between you and the user in a course:
     this.course.value = null
     this.series.value = null
     this.abandonPredictionCountRef.value = 0
+  }
+
+  /**
+   * Exit the current course and go back to the tutorials (course list) page.
+   * The course is kept if the navigation is aborted (e.g. by a route guard).
+   */
+  async exitCurrentCourse(): Promise<void> {
+    // Exiting is an explicit, expected action, so the editor's leave confirmation is skipped.
+    editorLeaveConfirm.requestSkipOnce()
+    const navigationFailure = await this.router.push('/tutorials')
+    if (navigationFailure != null) return
+    this.endCurrentCourse()
   }
 }
