@@ -38,6 +38,8 @@
       visible: state.selected.type === 'code'
     }"
     :code-file-path="stage.codeFilePath"
+    :font-size="codeFontSize"
+    :tools-visible="codeToolsVisible"
   />
   <BackdropsEditor v-if="state.selected.type === 'backdrops'" :state="state.backdropsState" />
   <SoundsEditor v-else-if="state.selected.type === 'sounds'" :state="state.soundsState" />
@@ -172,7 +174,7 @@ export class StageEditorState extends Disposable {
 </script>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Stage } from '@/models/spx/stage'
@@ -182,6 +184,7 @@ import type { Widget } from '@/models/spx/widget'
 import { UITabs, UITab } from '@/components/ui'
 import { CodeEditorUI, FormatButton } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
+import { editorWorkspaceLayout } from '../workspace-layout'
 import BackdropsEditor, { BackdropsEditorState } from './backdrop/BackdropsEditor.vue'
 import SoundsEditor from './sound/SoundsEditor.vue'
 import { SoundsEditorState } from './sound/sounds-editor-state'
@@ -192,4 +195,7 @@ defineProps<{
   stage: Stage
   state: StageEditorState
 }>()
+
+const codeFontSize = computed(() => editorWorkspaceLayout.codeFontSize)
+const codeToolsVisible = computed(() => !editorWorkspaceLayout.isHidden('code-editor-tools'))
 </script>

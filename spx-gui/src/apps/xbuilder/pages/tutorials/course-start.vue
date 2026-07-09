@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { ref, shallowRef, watch } from 'vue'
 import { getCourse } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
+import { tutorialStoryVideoUrl } from '@/apps/xbuilder/env'
 import { useTutorial } from '@/components/tutorials/tutorial'
+import TutorialStoryVideoModal from '@/components/tutorials/TutorialStoryVideoModal.vue'
 import { UIDetailedLoading, UIError } from '@/components/ui'
+import { ActionException, useAction } from '@/utils/exception'
 import { composeQuery, useQuery } from '@/utils/query'
 
 const props = defineProps<{
@@ -27,22 +31,70 @@ const allQueryRet = useQuery(
       composeQuery(ctx, courseSeriesQuery, [{ en: 'Loading course series...', zh: '加载课程系列...' }, 1]),
       composeQuery(ctx, courseQuery, [{ en: 'Loading course...', zh: '加载课程...' }, 1])
     ])
-    await tutorial.startCourse(course, courseSeries)
+    return { courseSeries, course }
   },
   {
-    en: 'Failed to start course',
-    zh: '启动课程失败'
+    en: 'Failed to load course',
+    zh: '加载课程失败'
   }
+)
+
+const isStarting = ref(false)
+const startError = shallowRef<ActionException | null>(null)
+
+const startCourse = useAction(
+  async () => {
+    const data = allQueryRet.data.value
+    if (data == null) throw new Error('Course data is not loaded')
+    await tutorial.startCourse(data.course, data.courseSeries)
+  },
+  { en: 'Failed to start course', zh: '启动课程失败' }
+)
+
+async function handleStart() {
+  if (isStarting.value) return
+  startError.value = null
+  isStarting.value = true
+  try {
+    await startCourse()
+  } catch (e) {
+    if (e instanceof ActionException) startError.value = e
+    else throw e
+  } finally {
+    isStarting.value = false
+  }
+}
+
+// Without a story video configured, start the course right after loading, as before.
+watch(
+  () => allQueryRet.data.value,
+  (data) => {
+    if (data == null || tutorialStoryVideoUrl != null) return
+    handleStart()
+  },
+  { immediate: true }
 )
 </script>
 
 <template>
   <section class="h-full w-full flex items-center justify-center">
-    <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
+    <UIDetailedLoading
+      v-if="allQueryRet.isLoading.value || isStarting"
+      :percentage="isStarting ? 100 : allQueryRet.progress.value.percentage"
+    >
       <span>{{ $t(allQueryRet.progress.value.desc ?? { zh: '跳转中...', en: 'Redirecting...' }) }}</span>
     </UIDetailedLoading>
     <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
       {{ $t(allQueryRet.error.value.userMessage) }}
     </UIError>
+    <UIError v-else-if="startError != null" :retry="handleStart">
+      {{ $t(startError.userMessage) }}
+    </UIError>
+    <TutorialStoryVideoModal
+      v-else-if="allQueryRet.data.value != null && tutorialStoryVideoUrl != null"
+      visible
+      :src="tutorialStoryVideoUrl"
+      @continue="handleStart"
+    />
   </section>
 </template>

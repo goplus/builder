@@ -28,7 +28,7 @@ export default defineComponent<Props>(
         if (!tutorial.currentCourse || !tutorial.currentSeries) {
           throw new Error('No course or series in progress')
         }
-        tutorial.endCurrentCourse()
+        return tutorial.exitCurrentCourse()
       },
       {
         en: 'Failed to exit course',
