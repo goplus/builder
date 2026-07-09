@@ -9,12 +9,14 @@ export const isRaw = true
 export const description = 'Show one very short guidance sentence in a centered modal dialog.'
 
 export const detailedDescription = `Show one very short guidance sentence in a centered modal dialog, which draws \
-much more attention than a chat message. Use it sparingly, for the ONE thing the user must not miss right now (e.g. \
-what to do at the course opening, or rescuing a badly stuck user). The element content is PLAIN TEXT ONLY — no \
-markdown, no other elements — and MUST be at most 30 characters: a single short sentence. The modal opens \
-immediately when your message arrives; the user closes it to continue and can reopen it from the chat. For example,
+much more attention than a chat message. This is your FIRST-level intervention for a user who is genuinely stuck: a \
+plain-text nudge that points the direction (what to check, where to look) — NEVER the answer or the code itself. Do \
+not use it at the course opening, for routine encouragement, or for anything the user is already handling fine. The \
+element content is PLAIN TEXT ONLY — no markdown, no other elements — and MUST be at most 30 characters: a single \
+short sentence. The modal opens immediately when your message arrives; the user closes it to continue and can \
+reopen it from the chat. For example,
 
-<${tagName}>点击右下角的运行按钮试试！</${tagName}>`
+<${tagName}>量一量：Kiko 离萝卜有多远？</${tagName}>`
 
 export const attributes = z.object({})
 </script>
