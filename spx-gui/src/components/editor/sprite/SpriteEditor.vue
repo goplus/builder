@@ -35,6 +35,7 @@
     :code-file-path="sprite.codeFilePath"
     :font-size="codeFontSize"
     :tools-visible="codeToolsVisible"
+    :api-reference-block-style="apiReferenceBlockStyle"
   />
   <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
@@ -163,4 +164,5 @@ defineProps<{
 
 const codeFontSize = computed(() => editorWorkspaceLayout.codeFontSize)
 const codeToolsVisible = computed(() => !editorWorkspaceLayout.isHidden('code-editor-tools'))
+const apiReferenceBlockStyle = computed(() => editorWorkspaceLayout.mode === 'focused')
 </script>

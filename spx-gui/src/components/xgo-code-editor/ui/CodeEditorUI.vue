@@ -49,10 +49,13 @@ const props = withDefaults(
     fontSize?: number | null
     /** Whether to show the tools (document tabs & zoom control) beside the code editor. */
     toolsVisible?: boolean
+    /** Render the API reference items as draggable blocks, see `APIReferenceUI`. */
+    apiReferenceBlockStyle?: boolean
   }>(),
   {
     fontSize: null,
-    toolsVisible: true
+    toolsVisible: true,
+    apiReferenceBlockStyle: false
   }
 )
 
@@ -278,7 +281,11 @@ providePopupContainer(codeEditorEl)
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
-      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
+      <APIReferenceUI
+        class="flex-[1_1_0]"
+        :controller="uiRef.apiReferenceController"
+        :block-style="apiReferenceBlockStyle"
+      />
     </aside>
     <div
       ref="resizeHandleEl"

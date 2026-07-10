@@ -30,9 +30,16 @@ import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
-const props = defineProps<{
-  controller: APIReferenceController
-}>()
+const props = withDefaults(
+  defineProps<{
+    controller: APIReferenceController
+    /** Render the items as draggable blocks (card look with a grip handle), e.g. for guided scenarios. */
+    blockStyle?: boolean
+  }>(),
+  {
+    blockStyle: false
+  }
+)
 
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
   // Ignore intermediate empty data to keep UI stable
@@ -151,6 +158,7 @@ function handleCategoryClick(id: string) {
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
     class="flex min-h-0"
+    :class="{ 'api-reference-block-style': blockStyle }"
   >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
@@ -192,3 +200,43 @@ function handleCategoryClick(id: string) {
     </template>
   </section>
 </template>
+
+<style scoped>
+/* Block style: each item reads as a draggable block — a card with a grip handle & grab cursor */
+.api-reference-block-style :deep(.api-reference-item) {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 10px 6px 26px;
+  border: 1px solid var(--ui-color-grey-500);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  cursor: grab;
+}
+
+.api-reference-block-style :deep(.api-reference-item::before) {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 8px;
+  height: 16px;
+  background-image: radial-gradient(circle, var(--ui-color-grey-700) 1.5px, transparent 1.5px);
+  background-size: 4px 5px;
+  transform: translateY(-50%);
+  opacity: 0.65;
+}
+
+.api-reference-block-style :deep(.api-reference-item:hover) {
+  border-color: var(--ui-color-primary-main);
+  background: var(--ui-color-grey-100);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.api-reference-block-style :deep(.api-reference-item.before-dragging) {
+  cursor: grabbing;
+}
+</style>
