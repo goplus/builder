@@ -21,6 +21,7 @@ import * as apiVideo from './ApiVideo.vue'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 import { TutorialAutoPerception } from './tutorial-auto-perception'
 import { createTutorialProgressElement, TutorialIntervention } from './tutorial-intervention'
+import { tutorialCourseReminder } from './tutorial-course-reminder'
 import { getApiVideo } from './api-videos'
 
 const i18n = useI18n()
@@ -48,6 +49,7 @@ watch(
     const disposers = [
       intervention.start(),
       copilot.registerContextProvider(intervention),
+      copilot.registerContextProvider(tutorialCourseReminder),
       copilot.registerCustomElement(createTutorialProgressElement(intervention)),
       copilot.registerCustomElement({
         tagName: tutorialCourseSuccess.tagName,
