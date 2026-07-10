@@ -10,8 +10,9 @@ export const description = 'Narrow the "API References" panel to only the listed
 
 export const detailedDescription = `Narrow the "API References" panel (left of the code editor) to only the listed \
 APIs, to focus the user during a guided step. \`ids\` is a comma-separated list of API definition IDs — get the exact \
-IDs from the \`list_api_reference_items\` tool. Use \`ids=""\` to show all APIs again. Re-emit this element with a new \
-list whenever the relevant APIs change or you previously made a mistake — the latest one wins. For example, \
+IDs from the \`list_api_reference_items\` tool. The filter stays effective on its own: do NOT re-emit this element \
+unless you intend to CHANGE the visible set (then the latest one wins). Use \`ids="*"\` to show all APIs again; an \
+empty \`ids\` does nothing. For example, \
 <${tagName} ids="xgo:github.com/goplus/spx/v2?Sprite.say#0,xgo:github.com/goplus/spx/v2?Game.onStart" /> keeps only \
 those two APIs visible.`
 
@@ -19,12 +20,12 @@ export const attributes = z.object({
   ids: z
     .string()
     .describe(
-      'Comma-separated API definition IDs to keep visible (from list_api_reference_items). Empty string shows all.'
+      'Comma-separated API definition IDs to keep visible (from list_api_reference_items). "*" shows all; empty does nothing.'
     )
 })
 
 export type Props = {
-  /** Comma-separated API definition IDs to keep visible. Empty string shows all. */
+  /** Comma-separated API definition IDs to keep visible. `*` shows all; empty string does nothing. */
   ids: string
 }
 
@@ -35,14 +36,18 @@ export default defineComponent<Props>(
     function apply() {
       const codeEditor = codeEditorRef.value
       if (codeEditor == null) return
+      // An empty `ids` is a no-op rather than a reset: the model tends to re-emit the element
+      // with an empty attribute on later rounds, which must not tear down the existing filter.
+      // Showing all APIs again requires the explicit `*`.
+      if (props.ids.trim() === '') return
+      if (props.ids.trim() === '*') {
+        codeEditor.setAPIReferenceFilter(null)
+        return
+      }
       const ids = props.ids
         .split(',')
         .map((id) => id.trim())
         .filter((id) => id !== '')
-      if (ids.length === 0) {
-        codeEditor.setAPIReferenceFilter(null)
-        return
-      }
       const allow = new Set(ids)
       codeEditor.setAPIReferenceFilter((item) => allow.has(stringifyDefinitionId(item.definition)))
     }

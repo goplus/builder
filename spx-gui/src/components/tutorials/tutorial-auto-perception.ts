@@ -104,6 +104,7 @@ export class TutorialAutoPerception {
     copilot.notifyUserEvent(
       autoPerceptionEventName,
       `Nothing of yours is on screen. Observe the current editor state. \
+The workspace hiding and API filter you set up earlier stay effective — do NOT re-emit them. \
 Consecutive auto perceptions without visible action so far: ${silentCount}.`,
       { autoOpen: false }
     )
