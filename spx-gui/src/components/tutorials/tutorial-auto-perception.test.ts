@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { timeout } from '@/utils/utils'
-import { Copilot, type IMessageEventGenerator } from '@/components/copilot/copilot'
+import { Copilot, RoundState, type IMessageEventGenerator } from '@/components/copilot/copilot'
 import { InMemorySkillRegistry } from '@/components/copilot/skills/registry'
 import type { TutorialTopic } from './tutorial'
-import { TutorialAutoPerception, autoPerceptionEventName } from './tutorial-auto-perception'
+import {
+  TutorialAutoPerception,
+  autoPerceptionEventName,
+  maxConsecutiveSilentAutoPerceptions
+} from './tutorial-auto-perception'
 
 function makeTutorialTopic(): TutorialTopic {
   return {
@@ -41,6 +45,19 @@ async function setupCourseSession(responses: string[] = ['<stay-silent />']) {
 
 function rounds(copilot: Copilot) {
   return copilot.currentSession!.rounds
+}
+
+/**
+ * Wait past the event-round start debounce and until no round is still running, so a tick that
+ * added a round is not mistaken for one the hard cap blocked.
+ */
+async function untilRoundsSettled(copilot: Copilot) {
+  await timeout(eventRoundCompletionTime)
+  for (let i = 0; i < 20; i++) {
+    const lastRound = rounds(copilot).at(-1)
+    if (lastRound == null || lastRound.state === RoundState.Completed) return
+    await timeout(100)
+  }
 }
 
 describe('TutorialAutoPerception', () => {
@@ -107,22 +124,37 @@ describe('TutorialAutoPerception', () => {
     expect(rounds(copilot).length).toBe(countBefore + 1)
   })
 
-  // The waits below cover the event-round start debounce several times, hence the long timeout
-  it('should stop after consecutive silent auto perceptions reach the hard cap', { timeout: 15000 }, async () => {
-    const { copilot, autoPerception } = await setupCourseSession()
-    for (let i = 0; i < 4; i++) {
+  // Each perception waits out the event-round start debounce, hence the long timeout
+  it(
+    'should stop after consecutive silent auto perceptions reach the hard cap',
+    { timeout: (maxConsecutiveSilentAutoPerceptions + 6) * eventRoundCompletionTime },
+    async () => {
+      const { copilot, autoPerception } = await setupCourseSession()
+
+      // Perceive until a tick adds no round, i.e. the cap kicked in. The session trims old
+      // rounds, so a new round shows as a new last round rather than a longer list.
+      let perceptions = 0
+      let lastRound = rounds(copilot).at(-1)
+      while (perceptions <= maxConsecutiveSilentAutoPerceptions) {
+        autoPerception.tick()
+        await untilRoundsSettled(copilot)
+        if (rounds(copilot).at(-1) === lastRound) break
+        lastRound = rounds(copilot).at(-1)
+        perceptions++
+      }
+      expect(perceptions).toBe(maxConsecutiveSilentAutoPerceptions)
+
       autoPerception.tick()
-      await timeout(eventRoundCompletionTime)
+      expect(rounds(copilot).at(-1)).toBe(lastRound)
+
+      // Any other user event resets the count and perception resumes
+      copilot.notifyUserEvent({ en: 'Project ran', zh: '项目运行' }, 'The user ran the project')
+      await untilRoundsSettled(copilot)
+      autoPerception.tick()
+      await untilRoundsSettled(copilot)
+      const resumedRound = rounds(copilot).at(-1)!
+      expect(resumedRound).not.toBe(lastRound)
+      expect(resumedRound.userMessage).toMatchObject({ type: 'event', name: autoPerceptionEventName })
     }
-    const countBefore = rounds(copilot).length
-
-    autoPerception.tick()
-    expect(rounds(copilot).length).toBe(countBefore)
-
-    // Any other user event resets the count and perception resumes
-    copilot.notifyUserEvent({ en: 'Project ran', zh: '项目运行' }, 'The user ran the project')
-    await timeout(eventRoundCompletionTime)
-    autoPerception.tick()
-    expect(rounds(copilot).length).toBe(countBefore + 2)
-  })
+  )
 })
