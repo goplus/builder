@@ -11,16 +11,22 @@ export const description = 'Respond without saying anything to the user.'
 
 export const detailedDescription = `Respond without saying anything to the user. When you decide no reaction is \
 needed (see the topic instructions for when staying silent is expected), reply with exactly <${tagName} /> and \
-nothing else — no other text, elements or tool calls. The user will not see the reply at all. Do NOT use this \
-element when the user asks you something directly — a direct question always deserves an answer.`
+nothing else — no other text (not even your reasoning for staying silent), elements or tool calls. Any reply \
+containing this element is hidden from the user entirely, INCLUDING whatever text surrounds it. Do NOT use this \
+element when the user sends you a message directly — anything they typed always deserves a response.`
 
 export const attributes = z.object({})
 
-const staySilentPattern = new RegExp(`<${tagName}\\b[^>]*/?>`, 'g')
+const staySilentPattern = new RegExp(`<${tagName}\\b[^>]*/?>`)
 
-/** Whether copilot message content displays nothing: empty, or only `stay-silent` elements. */
+/**
+ * Whether copilot message content should be treated as silence. The protocol requires
+ * `stay-silent` to be the entire reply; when the model emits it anyway alongside other text,
+ * that text is leaked reasoning (never meant for the user), so the presence of the element
+ * counts as silence regardless of what surrounds it.
+ */
 export function isSilentContent(content: string): boolean {
-  return content.replace(staySilentPattern, '').trim() === ''
+  return staySilentPattern.test(content) || content.trim() === ''
 }
 
 export type Props = {}

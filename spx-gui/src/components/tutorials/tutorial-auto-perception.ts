@@ -1,6 +1,6 @@
 import type { LocaleMessage } from '@/utils/i18n'
 import { RoundState, type Copilot, type Round } from '@/components/copilot/copilot'
-import { tagName as staySilentTagName } from '@/components/copilot/markdown-elements/StaySilent'
+import { isSilentContent, tagName as staySilentTagName } from '@/components/copilot/markdown-elements/StaySilent'
 import { isTutorialTopic } from './tutorial'
 import { tagName as workspaceHiddenAreasTagName } from './workspace-hidden-areas'
 import { tagName as apiReferenceFilterTagName } from './api-reference-filter'
@@ -45,7 +45,8 @@ function isSilentRound(round: Round): boolean {
     .filter((m) => m.role === 'copilot')
     .map((m) => m.content ?? '')
     .join('')
-  return content.replace(invisibleElementPattern, '').trim() === ''
+  // `isSilentContent` also covers a `stay-silent` decision accompanied by leaked reasoning text
+  return isSilentContent(content) || content.replace(invisibleElementPattern, '').trim() === ''
 }
 
 /**
