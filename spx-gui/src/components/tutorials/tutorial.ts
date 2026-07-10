@@ -148,8 +148,9 @@ First do some preparation:
 
 When you receive the "Course Started" event, your reply must contain ONLY the invisible setup elements (workspace \
 hiding, API narrowing) plus the declared knowledge-point videos (see below) — no greeting, no goal restatement, no \
-instructions, no <${highlightLinkTagName}>. The prelude dialog has already told the user what to do; let them \
-explore from there.
+instructions, no <${highlightLinkTagName}>, and no narration of the setup itself (not even a sentence like "Let me \
+set up the workspace..."): the reply is the elements and nothing else. The prelude dialog has already told the user \
+what to do; let them explore from there.
 
 Then let the user explore on their own. While they work:
 
