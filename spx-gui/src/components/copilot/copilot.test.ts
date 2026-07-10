@@ -1291,3 +1291,37 @@ describe('Copilot', () => {
     expect(copilot.executor.getExecution('call_legacy')).toBe(null)
   })
 })
+
+describe('Copilot collapse', () => {
+  it('should not auto-open on user events after the user collapsed the copilot', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    await copilot.startSession(createEventTopic())
+    expect(copilot.active).toBe(true)
+
+    copilot.collapse()
+    expect(copilot.active).toBe(false)
+
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail of the event')
+    // The panel stays collapsed, while the event still reaches the session
+    expect(copilot.active).toBe(false)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+
+    // Opening again restores event-driven auto-open
+    copilot.open()
+    copilot.collapse()
+    copilot.open()
+    copilot.notifyUserEvent({ en: 'Another event', zh: '另一事件' }, 'Detail')
+    expect(copilot.active).toBe(true)
+  })
+
+  it('should auto-open on user events again after a new session starts', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    await copilot.startSession(createEventTopic())
+    copilot.collapse()
+
+    await copilot.startSession(createEventTopic('Another Topic'))
+    expect(copilot.active).toBe(true)
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail of the event')
+    expect(copilot.active).toBe(true)
+  })
+})
