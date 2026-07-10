@@ -8,7 +8,7 @@ import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
 import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
-import { useCodeEditorRef } from '@/components/xgo-code-editor'
+import { stringifyDefinitionId, useCodeEditorRef } from '@/components/xgo-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
@@ -20,6 +20,7 @@ import * as guideModal from './GuideModal.vue'
 import * as apiVideo from './ApiVideo.vue'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 import { TutorialAutoPerception } from './tutorial-auto-perception'
+import { getApiVideo } from './api-videos'
 
 const i18n = useI18n()
 const copilot = useCopilot()
@@ -143,6 +144,19 @@ watch(
   {
     immediate: true
   }
+)
+
+// During a course, API reference items show their explainer video in the hover card. Watched
+// together with the editor ref since the editor may mount after the course starts.
+watch(
+  [() => tutorial.currentCourse, codeEditorRef],
+  ([currentCourse, codeEditor]) => {
+    if (codeEditor == null) return
+    codeEditor.setAPIReferenceVideoProvider(
+      currentCourse != null ? (item) => getApiVideo(stringifyDefinitionId(item.definition)) : null
+    )
+  },
+  { immediate: true }
 )
 
 provideTutorial(tutorial)

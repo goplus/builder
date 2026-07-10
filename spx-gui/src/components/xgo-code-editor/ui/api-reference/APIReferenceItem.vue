@@ -59,6 +59,8 @@ const parsed = computed(() => {
 
 const hoverDropdown = ref<InstanceType<typeof UIDropdown> | null>(null)
 
+const video = computed(() => codeEditor.apiReferenceVideoProvider?.(props.item) ?? null)
+
 const hoverCardActions = computed<Action[]>(() => {
   return [
     {
@@ -132,6 +134,15 @@ function handleMouseUp(e: MouseEvent) {
         <DefinitionOverviewWrapper :kind="item.kind" :inlay-hints="parsed.inlayHints">
           {{ parsed.overview }}
         </DefinitionOverviewWrapper>
+        <video
+          v-if="video != null"
+          class="mt-1 block w-72 max-w-full rounded-sm bg-grey-1000"
+          :src="video.src"
+          autoplay
+          muted
+          loop
+          playsinline
+        ></video>
         <DefinitionDetailWrapper>
           <MarkdownView v-bind="item.detail" />
         </DefinitionDetailWrapper>
