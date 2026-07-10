@@ -397,11 +397,17 @@ export type SessionExported = {
   rounds: RoundExported[]
 }
 
+/**
+ * How many recent rounds a session keeps; older ones are dropped to limit historical messages.
+ * Consumers reasoning over round history (e.g. counting trailing rounds) cannot see past this.
+ */
+export const maxSessionRounds = 10
+
 export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
 
-  private maxRounds = 10
+  private maxRounds = maxSessionRounds
 
   constructor(
     topic: Topic,
