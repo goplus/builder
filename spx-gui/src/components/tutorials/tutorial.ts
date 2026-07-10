@@ -152,6 +152,10 @@ instructions, no <${highlightLinkTagName}>, and no narration of the setup itself
 set up the workspace..."): the reply is the elements and nothing else. The prelude dialog has already told the user \
 what to do; let them explore from there.
 
+The setup happens ONCE, at the course start. Do not re-emit the setup elements on later events (page navigations, \
+reloads...) — the workspace hiding and API narrowing stay effective on their own. In particular, never re-emit \
+<${apiVideoTagName}> unprompted: it pops a video dialog over whatever the user is doing.
+
 Then let the user explore on their own. While they work:
 
 1. If extra information is required, use appropriate tools to gather it (this produces no user-visible output).
