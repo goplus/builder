@@ -37,6 +37,7 @@ watch(
     if (currentCourse == null) return
 
     editorWorkspaceLayout.setMode('focused')
+    copilot.setUIMode('docked')
 
     const disposers = [
       copilot.registerCustomElement({
@@ -128,10 +129,11 @@ watch(
       for (const dispose of disposers) {
         dispose()
       }
-      // Reset the API references panel and the workspace layout when leaving the course, so
-      // neither the filter nor the focused layout outlives it.
+      // Reset the API references panel, the workspace layout and the copilot presentation
+      // when leaving the course, so none of them outlives it.
       codeEditorRef.value?.setAPIReferenceFilter(null)
       editorWorkspaceLayout.reset()
+      copilot.setUIMode('floating')
     })
   },
   {
