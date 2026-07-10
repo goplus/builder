@@ -622,6 +622,29 @@ export class Copilot extends Disposable {
     this.uiModeRef.value = mode
   }
 
+  private visibleArtifactCountRef = shallowRef(0)
+  /**
+   * Whether any user-visible artifact produced by copilot output (a guidance modal, an
+   * in-editor code guide...) is currently on screen. Consumers (e.g. periodic perception)
+   * use this to tell "the copilot has something pending for the user" from "nothing shown".
+   */
+  get hasVisibleArtifacts() {
+    return this.visibleArtifactCountRef.value > 0
+  }
+  /**
+   * Mark a user-visible artifact as currently on screen. Returns a disposer to be called
+   * when the artifact is dismissed / completed.
+   */
+  addVisibleArtifact(): Disposer {
+    this.visibleArtifactCountRef.value++
+    let disposed = false
+    return () => {
+      if (disposed) return
+      disposed = true
+      this.visibleArtifactCountRef.value--
+    }
+  }
+
   private currentSessionRef = shallowRef<Session | null>(null)
   get currentSession() {
     return this.currentSessionRef.value
@@ -857,13 +880,13 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * Notify the copilot of a user event.
    * If no session is running, nothing will happen.
    */
-  notifyUserEvent(name: LocaleMessage, detail: string): void {
+  notifyUserEvent(name: LocaleMessage, detail: string, options?: { autoOpen?: boolean }): void {
     this.checkIdleTimeout()
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
     // Respect an explicit collapse by the user: keep feeding events to the session (so the
     // copilot keeps perceiving), but do not pop the panel open again.
-    if (!this.userCollapsedRef.value) this.open()
+    if ((options?.autoOpen ?? true) && !this.userCollapsedRef.value) this.open()
     const userEventMessage: UserEventMessage = {
       type: 'event',
       role: 'user',

@@ -22,12 +22,13 @@ export const attributes = z.object({})
 </script>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watchEffect } from 'vue'
 
 import { useSlotText } from '@/utils/vnode'
-import { useCopilotRound } from '@/components/copilot/context'
+import { useCopilot, useCopilotRound } from '@/components/copilot/context'
 import { UIButton, UIModal } from '@/components/ui'
 
+const copilot = useCopilot()
 const round = useCopilotRound()
 const text = useSlotText()
 const visible = ref(false)
@@ -37,6 +38,12 @@ onMounted(() => {
   // old guidance; the chip below still allows reopening them manually.
   if (round != null && !(round.round.isLive && round.isLastRound())) return
   visible.value = true
+})
+
+// While the modal is open it is a visible copilot artifact (pauses e.g. auto perception)
+watchEffect((onCleanup) => {
+  if (!visible.value) return
+  onCleanup(copilot.addVisibleArtifact())
 })
 </script>
 

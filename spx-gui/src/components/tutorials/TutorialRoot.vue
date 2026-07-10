@@ -19,6 +19,7 @@ import * as spotlightHint from './spotlight-hint'
 import * as guideModal from './GuideModal.vue'
 import * as apiVideo from './ApiVideo.vue'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
+import { TutorialAutoPerception } from './tutorial-auto-perception'
 
 const i18n = useI18n()
 const copilot = useCopilot()
@@ -38,6 +39,8 @@ watch(
 
     editorWorkspaceLayout.setMode('focused')
     copilot.setUIMode('docked')
+    const autoPerception = new TutorialAutoPerception(copilot)
+    autoPerception.start()
 
     const disposers = [
       copilot.registerCustomElement({
@@ -126,6 +129,7 @@ watch(
     ]
 
     onCleanup(() => {
+      autoPerception.stop()
       for (const dispose of disposers) {
         dispose()
       }
