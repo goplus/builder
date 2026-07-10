@@ -1,6 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
-import { getApiVideo, getAvailableApiVideoIds, markApiLearned } from './api-videos'
+import { apiVideoDemoFallback, getApiVideo, getAvailableApiVideoIds, markApiLearned } from './api-videos'
 
 export const tagName = 'api-video'
 
@@ -10,12 +10,15 @@ export const description = 'Play the explainer video of an API in a modal dialog
 
 export function getDetailedDescription() {
   const availableIds = getAvailableApiVideoIds()
+  const availability = apiVideoDemoFallback
+    ? 'A video is available for EVERY API.'
+    : `Videos are only available for these APIs (for others the element does nothing): \
+${availableIds.length > 0 ? availableIds.join(', ') : '(none yet)'}.`
   return `Play the explainer video of an API in a modal dialog. The dialog auto-opens only the FIRST time a video \
 is emitted within a session; emitting the same video again renders a small chip the user can click to (re)play — \
 it will not interrupt the user again. Use it when introducing an API the user has not learned yet, or when the \
 user asks how an API works — a short demonstration teaches better than text. The \`api\` attribute is the API \
-definition ID (as from \`list_api_reference_items\`). Videos are only available for these APIs (for others the \
-element does nothing): ${availableIds.length > 0 ? availableIds.join(', ') : '(none yet)'}. For example, \
+definition ID (as from \`list_api_reference_items\`). ${availability} For example, \
 <${tagName} api="${availableIds[0] ?? 'xgo:github.com/goplus/spx/v2?Sprite.step#0'}" />.`
 }
 

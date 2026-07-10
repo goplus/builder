@@ -14,6 +14,20 @@ export type APIReferenceItem = DefinitionDocumentationItem
  */
 export type APIReferenceFilter = (item: APIReferenceItem) => boolean
 
+export type APIReferenceVideo = {
+  /** Title of the video, typically the API name */
+  title: LocaleMessage
+  /** URL of the video */
+  src: string
+}
+
+/**
+ * Provides an explainer video for an API reference item, shown in its hover card.
+ * Returns `null` when the item has none. The editor stays agnostic about where the
+ * videos come from; features (e.g. tutorials) decide.
+ */
+export type APIReferenceVideoProvider = (item: APIReferenceItem) => APIReferenceVideo | null
+
 export type APIReferenceContext = BaseContext
 
 export type APICategoryViewInfo = {

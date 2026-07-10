@@ -5,7 +5,7 @@ import type { History } from '@/components/editor/history'
 import type { IXGoProject } from './project'
 import { type IDocumentBase, DocumentBase } from './document-base'
 import type { ILSPClient } from './lsp/types'
-import { EmptyAPIReferenceProvider, type APIReferenceFilter } from './api-reference'
+import { EmptyAPIReferenceProvider, type APIReferenceFilter, type APIReferenceVideoProvider } from './api-reference'
 import {
   type ICodeEditorUIController,
   type IDiagnosticsProvider,
@@ -81,6 +81,7 @@ export class CodeEditor extends Disposable {
     this.inputHelperProviderRef = shallowRef(new InputHelperProvider(params.lspClient, () => this.resourceAdapter))
     this.apiReferenceProviderRef = shallowRef(new EmptyAPIReferenceProvider())
     this.apiReferenceFilterRef = shallowRef<APIReferenceFilter | null>(null)
+    this.apiReferenceVideoProviderRef = shallowRef<APIReferenceVideoProvider | null>(null)
     this.completionProviderRef = shallowRef(
       new CompletionProvider(params.lspClient, documentBase, params.project.classFramework)
     )
@@ -142,6 +143,14 @@ export class CodeEditor extends Disposable {
   }
   setAPIReferenceFilter(filter: APIReferenceFilter | null) {
     this.apiReferenceFilterRef.value = filter
+  }
+
+  private apiReferenceVideoProviderRef: ShallowRef<APIReferenceVideoProvider | null>
+  get apiReferenceVideoProvider() {
+    return this.apiReferenceVideoProviderRef.value
+  }
+  setAPIReferenceVideoProvider(provider: APIReferenceVideoProvider | null) {
+    this.apiReferenceVideoProviderRef.value = provider
   }
 
   private completionProviderRef: ShallowRef<ICompletionProvider>
