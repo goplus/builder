@@ -40,6 +40,7 @@
     :code-file-path="stage.codeFilePath"
     :font-size="codeFontSize"
     :tools-visible="codeToolsVisible"
+    :api-reference-block-style="apiReferenceBlockStyle"
   />
   <BackdropsEditor v-if="state.selected.type === 'backdrops'" :state="state.backdropsState" />
   <SoundsEditor v-else-if="state.selected.type === 'sounds'" :state="state.soundsState" />
@@ -198,4 +199,5 @@ defineProps<{
 
 const codeFontSize = computed(() => editorWorkspaceLayout.codeFontSize)
 const codeToolsVisible = computed(() => !editorWorkspaceLayout.isHidden('code-editor-tools'))
+const apiReferenceBlockStyle = computed(() => editorWorkspaceLayout.mode === 'focused')
 </script>
