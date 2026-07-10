@@ -329,6 +329,8 @@ const onDragEnd = () => {
   if (!isPanelOutOfBounds.value) {
     openPanel()
   } else {
+    // Dragging the panel out of bounds is an explicit dismissal, like clicking the fold button
+    copilot.collapse()
     closePanel()
   }
 }
@@ -570,7 +572,7 @@ onMounted(async () => {
         </template>
         <UITooltip>
           <template #trigger>
-            <div class="fold" :class="[triggerState]" @click="copilot.close()">
+            <div class="fold" :class="[triggerState]" @click="copilot.collapse()">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
                 <path

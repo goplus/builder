@@ -599,6 +599,13 @@ export class Copilot extends Disposable {
     return this.activeRef.value
   }
 
+  /**
+   * Whether the user explicitly collapsed the copilot (see `collapse`). While set, user events
+   * no longer auto-open the panel; opening the copilot again (by the user, or a new session)
+   * clears it.
+   */
+  private userCollapsedRef = localStorageRef('builder-copilot-user-collapsed', false)
+
   private currentSessionRef = shallowRef<Session | null>(null)
   get currentSession() {
     return this.currentSessionRef.value
@@ -793,12 +800,23 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */
   open() {
     this.checkIdleTimeout()
+    this.userCollapsedRef.value = false
     this.activeRef.value = true
   }
 
   close() {
     this.currentSession?.abortCurrentRound()
     this.activeRef.value = false
+  }
+
+  /**
+   * Close the copilot on the user's behalf. Unlike a programmatic `close`, user events will not
+   * auto-open the panel afterwards (the session keeps receiving them silently), until the
+   * copilot is opened again.
+   */
+  collapse() {
+    this.userCollapsedRef.value = true
+    this.close()
   }
 
   /**
@@ -827,7 +845,9 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.checkIdleTimeout()
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
-    this.open()
+    // Respect an explicit collapse by the user: keep feeding events to the session (so the
+    // copilot keeps perceiving), but do not pop the panel open again.
+    if (!this.userCollapsedRef.value) this.open()
     const userEventMessage: UserEventMessage = {
       type: 'event',
       role: 'user',
