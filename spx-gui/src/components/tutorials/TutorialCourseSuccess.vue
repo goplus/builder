@@ -7,15 +7,20 @@ export const tagName = 'tutorial-course-success'
 
 export const isRaw = false
 
-export const detailedDescription = `
-Please add tags to the reply message according to the following rules:
-1. Only when the user completes the course, you must add the tag at the end of the reply message: <tutorial-course-success />
-2. Within the entire conversation context, the <tutorial-course-success /> tag can only appear once
-3. Do not add this tag if the user has not completed the course or is still studying
-4. If this tag has been added before, do not repeat it in subsequent replies
-5. The tag must be complete and accurate, with no spelling errors or formatting deviations
-6. You may add a short, friendly \`comment\` attribute (in the user's language) evaluating how the user solved the course, based on their actual code — praise first, then at most one improvement suggestion, and invite a retry when the suggestion is worth practicing. For example: <tutorial-course-success comment="很棒！如果用上这节课的 for 循环就更棒了，要再试一次吗？" />
-Please ensure strict compliance with the above rules, only adding this tag once when the user truly completes the course.`
+export const detailedDescription = `\
+Declare the course complete and show the user a success dialog. Add <${tagName} comment="..." /> to your reply as \
+soon as the course's completion criteria are met — the criteria in the course prompt are the only measure; do not \
+demand more than they ask for.
+
+1. Judge the criteria against everything that has happened, including the message you are reading right now. If the \
+criteria are "the user sends the copilot a message", then any message the user sends meets them immediately: \
+declare success in that same reply instead of asking them to do it again.
+2. \`comment\` is a short, friendly sentence in the user's language, shown in the dialog. It is your reply to the \
+user: greet them back, praise what they did, and — when the course involved code — add at most one improvement \
+suggestion, inviting a retry when it is worth practicing. For example:
+<${tagName} comment="你好呀！你成功给我发了第一条消息，我们是搭档啦！" />
+<${tagName} comment="很棒！如果用上这节课的 for 循环就更棒了，要再试一次吗？" />
+3. Use it once per course. If you already declared success, do not repeat it.`
 
 export const attributes = z.object({
   comment: z.string().optional().describe("Short friendly evaluation of the user's solution, in the user's language")
