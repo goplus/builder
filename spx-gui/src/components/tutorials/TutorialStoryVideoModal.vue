@@ -1,3 +1,18 @@
+<script lang="ts">
+/**
+ * Course authors can play a story video before the course starts by embedding a
+ * `<course-story-video>` section in the course prompt, e.g.
+ * `<course-story-video>/tutorial-intro/opening.webm</course-story-video>`.
+ * Typically only the first course of a series has one, introducing the series' world & goal.
+ * The URL is validated against the allowed origins by the caller.
+ */
+export function extractCourseStoryVideo(prompt: string): string | null {
+  const matched = prompt.match(/<course-story-video>([\s\S]*?)<\/course-story-video>/)
+  const src = matched?.[1].trim() ?? ''
+  return src === '' ? null : src
+}
+</script>
+
 <script lang="ts" setup>
 import { ref } from 'vue'
 
