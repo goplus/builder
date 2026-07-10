@@ -28,8 +28,16 @@ describe('WorkspaceHiddenAreas', () => {
     await wrapper.setProps({ areas: 'code-editor-tools' })
     expect(editorWorkspaceLayout.isHidden('editor-panels')).toBe(false)
     expect(editorWorkspaceLayout.isHidden('code-editor-tools')).toBe(true)
+  })
+
+  it('should keep the current hiding on an empty re-emission, and show all on "none"', async () => {
+    const wrapper = mount(WorkspaceHiddenAreas, { props: { areas: 'editor-panels' } })
+    expect(editorWorkspaceLayout.isHidden('editor-panels')).toBe(true)
 
     await wrapper.setProps({ areas: '' })
+    expect(editorWorkspaceLayout.isHidden('editor-panels')).toBe(true)
+
+    await wrapper.setProps({ areas: 'none' })
     expect(editorWorkspaceLayout.hiddenAreas.size).toBe(0)
   })
 })
