@@ -83,6 +83,17 @@ describe('TutorialAutoPerception', () => {
     expect(rounds(copilot).length).toBe(countBefore + 1)
   })
 
+  it('should treat replies of invisible elements only (e.g. course setup) as nothing on screen', async () => {
+    const { copilot, autoPerception } = await setupCourseSession([
+      '<workspace-hidden-areas areas="editor-panels" />\n<api-reference-filter ids="xgo:x?y#0" />\n<api-video api="xgo:x?y#0" />'
+    ])
+    copilot.open()
+    const countBefore = rounds(copilot).length
+
+    autoPerception.tick()
+    expect(rounds(copilot).length).toBe(countBefore + 1)
+  })
+
   it('should not send while the open panel shows a visible reply, and resume once it is collapsed', async () => {
     const { copilot, autoPerception } = await setupCourseSession(['这里是可见的回复内容'])
     copilot.open()
