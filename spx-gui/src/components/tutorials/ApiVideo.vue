@@ -24,9 +24,9 @@ export const attributes = z.object({
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 
-import { useCopilotRound } from '@/components/copilot/context'
+import { useCopilot, useCopilotRound } from '@/components/copilot/context'
 import { UIModal, UIModalClose } from '@/components/ui'
 
 const props = defineProps<{
@@ -34,6 +34,7 @@ const props = defineProps<{
   api: string
 }>()
 
+const copilot = useCopilot()
 const round = useCopilotRound()
 const video = computed(() => getApiVideo(props.api))
 const playing = ref(false)
@@ -45,6 +46,12 @@ onMounted(() => {
   if (round != null && !(round.round.isLive && round.isLastRound())) return
   playing.value = true
   markApiLearned(props.api)
+})
+
+// While the video dialog is open it is a visible copilot artifact (pauses e.g. auto perception)
+watchEffect((onCleanup) => {
+  if (!playing.value) return
+  onCleanup(copilot.addVisibleArtifact())
 })
 </script>
 
