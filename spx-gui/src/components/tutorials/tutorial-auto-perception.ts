@@ -1,7 +1,12 @@
 import type { LocaleMessage } from '@/utils/i18n'
 import { RoundState, type Copilot, type Round } from '@/components/copilot/copilot'
-import { isSilentContent } from '@/components/copilot/markdown-elements/StaySilent'
+import { tagName as staySilentTagName } from '@/components/copilot/markdown-elements/StaySilent'
 import { isTutorialTopic } from './tutorial'
+import { tagName as workspaceHiddenAreasTagName } from './workspace-hidden-areas'
+import { tagName as apiReferenceFilterTagName } from './api-reference-filter'
+import { tagName as apiVideoTagName } from './ApiVideo.vue'
+import { tagName as spotlightHintTagName } from './spotlight-hint'
+import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
 export const autoPerceptionEventName: LocaleMessage = { en: 'Auto perception', zh: '自动感知' }
 
@@ -20,6 +25,19 @@ function isAutoPerceptionRound(round: Round): boolean {
   return userMessage.type === 'event' && userMessage.name.en === autoPerceptionEventName.en
 }
 
+// Elements that render nothing in the chat: content consisting of them only is invisible to
+// the user. Visible elements (e.g. the guide-modal chip, code hints) are intentionally absent.
+const invisibleElementTagNames = [
+  staySilentTagName,
+  workspaceHiddenAreasTagName,
+  apiReferenceFilterTagName,
+  apiVideoTagName,
+  spotlightHintTagName,
+  tutorialCourseAbandonPrediction.tagName,
+  tutorialCourseAbandonDismissal.tagName
+]
+const invisibleElementPattern = new RegExp(`</?(?:${invisibleElementTagNames.join('|')})\\b[^>]*>`, 'g')
+
 /** Whether the round completed with no user-visible copilot output. */
 function isSilentRound(round: Round): boolean {
   if (round.state !== RoundState.Completed) return false
@@ -27,7 +45,7 @@ function isSilentRound(round: Round): boolean {
     .filter((m) => m.role === 'copilot')
     .map((m) => m.content ?? '')
     .join('')
-  return isSilentContent(content)
+  return content.replace(invisibleElementPattern, '').trim() === ''
 }
 
 /**
