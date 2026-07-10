@@ -139,7 +139,7 @@ First do some preparation:
 
 * Reduce workspace distraction at the start of the course: hide the editor workspace areas the course does not need using <${workspaceHiddenAreasTagName} areas="..." />. For a typical coding course hide all of them: <${workspaceHiddenAreasTagName} areas="editor-panels,edit-mode-switch,preview-header,code-editor-tools" />. Keep an area visible only when some step of the course needs it (e.g. keep \`editor-panels\` if the user must manage sprites, sounds or the stage). If the course prompt itself specifies which areas to hide or keep, follow it. If a later step needs a hidden area, re-emit the element with an updated list; use areas="none" to show everything again. Like the API narrowing, decide this once at the start — do not wait for the user to ask.
 
-* The course prompt may contain a <course-prelude> section: its content has already been shown to the user in a dialog before the course started. Do not repeat it; just act consistently with it.
+* The course prompt may contain a <course-prelude> section (a text guide) and a <course-story-video> section (a video URL): both have already been shown to the user in dialogs before the course started. Do not repeat them; just act consistently with them.
 
 **The course start is silent setup**
 
