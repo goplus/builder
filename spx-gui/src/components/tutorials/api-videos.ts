@@ -9,6 +9,14 @@ export type ApiVideoInfo = {
 }
 
 /**
+ * DEMO MODE: every API without its own library entry falls back to this shared demonstration
+ * video, so the whole video flow can be experienced before per-API videos are produced.
+ * TODO: remove the fallback (return `null` for unknown IDs) once real videos land.
+ */
+export const apiVideoDemoFallback = true
+const demoVideoSrc = '/tutorial-api-videos/api-demo.mov'
+
+/**
  * Global library of knowledge-point explainer videos for APIs, keyed by API definition ID —
  * the same IDs used by `list_api_reference_items` and the `api-reference-filter` element.
  * Each API has one globally reused explainer video (10–20s, pure demonstration).
@@ -19,12 +27,25 @@ const apiVideoLibrary: Record<string, ApiVideoInfo> = {
   // switch to usercontent CDN URLs once the videos are formally hosted.
   'xgo:github.com/goplus/spx/v2?Sprite.step#0': {
     title: { en: 'step', zh: 'step 前进' },
-    src: '/tutorial-api-videos/step.mp4'
+    src: demoVideoSrc
   }
 }
 
+/** Human-readable API name from a definition ID, e.g. `xgo:...?Sprite.step#0` -> `step`. */
+function getApiDisplayName(apiId: string): string {
+  const name = decodeURIComponent(apiId.split('?').at(-1) ?? apiId).split('#')[0]
+  return name.split('.').at(-1) || name
+}
+
 export function getApiVideo(apiId: string): ApiVideoInfo | null {
-  return apiVideoLibrary[apiId] ?? null
+  const entry = apiVideoLibrary[apiId]
+  if (entry != null) return entry
+  if (!apiVideoDemoFallback) return null
+  const name = getApiDisplayName(apiId)
+  return {
+    title: { en: name, zh: name },
+    src: demoVideoSrc
+  }
 }
 
 export function getAvailableApiVideoIds(): string[] {
