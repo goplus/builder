@@ -111,6 +111,8 @@ export function toApiMessage(m: Message): apis.Message {
   }
 }
 
+export type CopilotUIMode = 'floating' | 'docked'
+
 export type Topic = {
   /** Name of the topic, for display purpose. */
   title: LocaleMessage
@@ -605,6 +607,20 @@ export class Copilot extends Disposable {
    * clears it.
    */
   private userCollapsedRef = localStorageRef('builder-copilot-user-collapsed', false)
+
+  /**
+   * How the copilot UI is presented:
+   * - `floating`: the default draggable trigger & panel.
+   * - `docked`: a fixed trigger at the bottom-right corner with the panel anchored above it.
+   * Features (e.g. tutorials) may dock the copilot during guided scenarios.
+   */
+  private uiModeRef = shallowRef<CopilotUIMode>('floating')
+  get uiMode() {
+    return this.uiModeRef.value
+  }
+  setUIMode(mode: CopilotUIMode) {
+    this.uiModeRef.value = mode
+  }
 
   private currentSessionRef = shallowRef<Session | null>(null)
   get currentSession() {

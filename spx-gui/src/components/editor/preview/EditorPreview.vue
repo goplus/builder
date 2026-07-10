@@ -103,11 +103,12 @@
       </div>
     </div>
 
-    <!-- In the focused layout, run controls float at the bottom-right corner of the preview -->
-    <div v-if="isFocused" class="absolute bottom-6 right-6 z-10 flex items-center gap-3">
+    <!-- In the focused layout, run controls float at the bottom-right corner, beside the docked copilot trigger -->
+    <div v-if="isFocused" class="fixed bottom-7 right-[86px] z-[9999] flex items-center gap-2.5">
       <UIButton
         v-if="runnerState === 'initial'"
         v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+        class="h-12! w-12!"
         type="primary"
         shape="circle"
         size="large"
@@ -119,6 +120,7 @@
       <template v-else>
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
+          class="h-12! w-12!"
           type="primary"
           shape="circle"
           size="large"
@@ -130,6 +132,7 @@
         />
         <UIButton
           v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+          class="h-12! w-12!"
           type="neutral"
           shape="circle"
           size="large"
