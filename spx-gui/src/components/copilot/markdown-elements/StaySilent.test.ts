@@ -13,8 +13,12 @@ describe('isSilentContent', () => {
     expect(isSilentContent('  \n ')).toBe(true)
   })
 
-  it('should not treat content with other text as silent', () => {
-    expect(isSilentContent('Keep going! <stay-silent />')).toBe(false)
+  it('should treat a stay-silent decision with leaked reasoning text as silent', () => {
+    expect(isSilentContent('Let me check the current state... <stay-silent />')).toBe(true)
+    expect(isSilentContent('<stay-silent /> The user just started.')).toBe(true)
+  })
+
+  it('should not treat visible content without stay-silent as silent', () => {
     expect(isSilentContent('Hello')).toBe(false)
     expect(isSilentContent('<highlight-link target-id="x">See</highlight-link>')).toBe(false)
   })
