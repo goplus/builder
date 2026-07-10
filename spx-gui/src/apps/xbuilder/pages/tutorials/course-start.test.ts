@@ -1,34 +1,56 @@
 import { describe, expect, it } from 'vitest'
-import { getOpeningSteps, resolveStoryVideoUrl } from './course-start.vue'
+import { getOpeningSteps, resolveAllowedVideoUrl, resolveStoryVideoUrl } from './course-start.vue'
 
-describe('resolveStoryVideoUrl', () => {
+describe('resolveAllowedVideoUrl', () => {
   const origin = window.location.origin
-  const defaultUrl = '/default/story.mp4'
 
-  it('should fall back to the default when the query param is absent or empty', () => {
-    expect(resolveStoryVideoUrl(undefined, defaultUrl)).toBe(defaultUrl)
-    expect(resolveStoryVideoUrl('', defaultUrl)).toBe(defaultUrl)
-    expect(resolveStoryVideoUrl(['/a.mp4'], defaultUrl)).toBe(defaultUrl)
-    expect(resolveStoryVideoUrl(undefined, null)).toBeNull()
+  it('should return null for absent or non-string values', () => {
+    expect(resolveAllowedVideoUrl(undefined)).toBeNull()
+    expect(resolveAllowedVideoUrl('')).toBeNull()
+    expect(resolveAllowedVideoUrl(['/a.mp4'])).toBeNull()
   })
 
   it('should accept same-origin URLs', () => {
-    expect(resolveStoryVideoUrl('/videos/story.mp4', defaultUrl)).toBe(`${origin}/videos/story.mp4`)
-    expect(resolveStoryVideoUrl(`${origin}/videos/story.mp4`, defaultUrl)).toBe(`${origin}/videos/story.mp4`)
+    expect(resolveAllowedVideoUrl('/videos/story.mp4')).toBe(`${origin}/videos/story.mp4`)
+    expect(resolveAllowedVideoUrl(`${origin}/videos/story.mp4`)).toBe(`${origin}/videos/story.mp4`)
   })
 
   it('should reject URLs on other origins', () => {
-    expect(resolveStoryVideoUrl('https://evil.example.com/story.mp4', defaultUrl)).toBe(defaultUrl)
-    expect(resolveStoryVideoUrl('//evil.example.com/story.mp4', defaultUrl)).toBe(defaultUrl)
+    expect(resolveAllowedVideoUrl('https://evil.example.com/story.mp4')).toBeNull()
+    expect(resolveAllowedVideoUrl('//evil.example.com/story.mp4')).toBeNull()
   })
 
   it('should accept URLs on extra allowed origins', () => {
     expect(
-      resolveStoryVideoUrl('https://usercontent.example.com/story.mp4', defaultUrl, ['https://usercontent.example.com'])
+      resolveAllowedVideoUrl('https://usercontent.example.com/story.mp4', ['https://usercontent.example.com'])
     ).toBe('https://usercontent.example.com/story.mp4')
-    expect(
-      resolveStoryVideoUrl('https://another.example.com/story.mp4', defaultUrl, ['https://usercontent.example.com'])
-    ).toBe(defaultUrl)
+    expect(resolveAllowedVideoUrl('https://another.example.com/story.mp4', ['https://usercontent.example.com'])).toBe(
+      null
+    )
+  })
+})
+
+describe('resolveStoryVideoUrl', () => {
+  const origin = window.location.origin
+  const promptWithVideo = 'Goal.\n<course-story-video>/course/opening.webm</course-story-video>'
+  const defaultUrl = '/default/story.mp4'
+
+  it('should prefer the video from the course prompt', () => {
+    expect(resolveStoryVideoUrl(promptWithVideo, '/query.mp4', defaultUrl)).toBe(`${origin}/course/opening.webm`)
+  })
+
+  it('should fall back to the query param, then to the default', () => {
+    expect(resolveStoryVideoUrl('No video here', '/query.mp4', defaultUrl)).toBe(`${origin}/query.mp4`)
+    expect(resolveStoryVideoUrl('No video here', undefined, defaultUrl)).toBe(`${origin}${defaultUrl}`)
+    expect(resolveStoryVideoUrl('No video here', undefined, null)).toBeNull()
+  })
+
+  it('should skip disallowed candidates instead of playing them', () => {
+    expect(resolveStoryVideoUrl('No video here', 'https://evil.example.com/x.mp4', defaultUrl)).toBe(
+      `${origin}${defaultUrl}`
+    )
+    const promptWithEvilVideo = '<course-story-video>https://evil.example.com/x.mp4</course-story-video>'
+    expect(resolveStoryVideoUrl(promptWithEvilVideo, undefined, defaultUrl)).toBe(`${origin}${defaultUrl}`)
   })
 })
 

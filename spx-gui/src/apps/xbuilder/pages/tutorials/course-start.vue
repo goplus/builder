@@ -1,22 +1,37 @@
 <script lang="ts">
 /**
- * Resolve the story video URL from the `video` query param, falling back to `defaultUrl`.
- * Only URLs on an allowed origin are accepted: the query param is attacker-controlled (anyone
- * can craft a link to this page), so arbitrary origins must not be playable under our domain.
+ * Validate a candidate video URL, returning `null` when it is absent or hosted on a
+ * disallowed origin. The `video` query param is attacker-controlled (anyone can craft a link
+ * to this page), so arbitrary origins must never be playable under our domain; course prompts
+ * go through the same check for defense in depth.
+ */
+export function resolveAllowedVideoUrl(value: unknown, extraAllowedOrigins: string[] = []): string | null {
+  if (typeof value !== 'string' || value === '') return null
+  try {
+    const url = new URL(value, window.location.origin)
+    const allowedOrigins = [window.location.origin, ...extraAllowedOrigins]
+    return allowedOrigins.includes(url.origin) ? url.href : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Story video of a course, by descending precedence: the author's `<course-story-video>`
+ * section, the `?video=` override, then the globally configured default.
  */
 export function resolveStoryVideoUrl(
+  coursePrompt: string,
   queryValue: unknown,
   defaultUrl: string | null,
   extraAllowedOrigins: string[] = []
 ): string | null {
-  if (typeof queryValue !== 'string' || queryValue === '') return defaultUrl
-  try {
-    const url = new URL(queryValue, window.location.origin)
-    const allowedOrigins = [window.location.origin, ...extraAllowedOrigins]
-    return allowedOrigins.includes(url.origin) ? url.href : defaultUrl
-  } catch {
-    return defaultUrl
+  const candidates = [extractCourseStoryVideo(coursePrompt), queryValue, defaultUrl]
+  for (const candidate of candidates) {
+    const resolved = resolveAllowedVideoUrl(candidate, extraAllowedOrigins)
+    if (resolved != null) return resolved
   }
+  return null
 }
 
 /**
@@ -41,7 +56,7 @@ import { getCourse } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
 import { tutorialStoryVideoUrl, usercontentBaseUrl } from '@/apps/xbuilder/env'
 import { useTutorial } from '@/components/tutorials/tutorial'
-import TutorialStoryVideoModal from '@/components/tutorials/TutorialStoryVideoModal.vue'
+import TutorialStoryVideoModal, { extractCourseStoryVideo } from '@/components/tutorials/TutorialStoryVideoModal.vue'
 import TutorialPreludeModal, { extractCoursePrelude } from '@/components/tutorials/TutorialPreludeModal.vue'
 import { UIDetailedLoading, UIError } from '@/components/ui'
 import { ActionException, useAction } from '@/utils/exception'
@@ -64,15 +79,9 @@ function getUsercontentOrigin(): string | null {
   }
 }
 
-// TODO: Specify the story video with a per-course field on the `Course` API instead of the
-// query param, once the backend supports it.
-const storyVideoUrl = computed(() => {
+const allowedVideoOrigins = computed(() => {
   const usercontentOrigin = getUsercontentOrigin()
-  return resolveStoryVideoUrl(
-    route.query.video,
-    tutorialStoryVideoUrl,
-    usercontentOrigin != null ? [usercontentOrigin] : []
-  )
+  return usercontentOrigin != null ? [usercontentOrigin] : []
 })
 
 const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesIdInput), {
@@ -127,7 +136,13 @@ async function handleStart() {
 const openingSteps = computed<OpeningStep[]>(() => {
   const data = allQueryRet.data.value
   if (data == null) return []
-  return getOpeningSteps(data.course.prompt, storyVideoUrl.value)
+  const storyVideoUrl = resolveStoryVideoUrl(
+    data.course.prompt,
+    route.query.video,
+    tutorialStoryVideoUrl,
+    allowedVideoOrigins.value
+  )
+  return getOpeningSteps(data.course.prompt, storyVideoUrl)
 })
 
 const openingStepIndex = ref(0)
