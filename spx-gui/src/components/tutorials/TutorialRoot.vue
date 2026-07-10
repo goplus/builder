@@ -20,6 +20,7 @@ import * as guideModal from './GuideModal.vue'
 import * as apiVideo from './ApiVideo.vue'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 import { TutorialAutoPerception } from './tutorial-auto-perception'
+import { createTutorialProgressElement, TutorialIntervention } from './tutorial-intervention'
 import { getApiVideo } from './api-videos'
 
 const i18n = useI18n()
@@ -42,8 +43,12 @@ watch(
     copilot.setUIMode('docked')
     const autoPerception = new TutorialAutoPerception(copilot)
     autoPerception.start()
+    const intervention = new TutorialIntervention(copilot)
 
     const disposers = [
+      intervention.start(),
+      copilot.registerContextProvider(intervention),
+      copilot.registerCustomElement(createTutorialProgressElement(intervention)),
       copilot.registerCustomElement({
         tagName: tutorialCourseSuccess.tagName,
         description: tutorialCourseSuccess.detailedDescription,
