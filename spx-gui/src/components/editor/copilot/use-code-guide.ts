@@ -15,7 +15,7 @@
 
 import { computed, onUnmounted, watch, type ComputedRef } from 'vue'
 import { tabSize, insertSpaces } from '@/utils/xgo/highlighter'
-import { useCopilotRound } from '@/components/copilot/context'
+import { useCopilot, useCopilotRound } from '@/components/copilot/context'
 import type { CodeEditor, CodeGuide, TextDocument, TextDocumentIdentifier } from '@/components/editor/spx-code-editor'
 import type { EditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
@@ -34,7 +34,18 @@ export interface UseCodeGuideOptions {
 export function useCodeGuide(options: UseCodeGuideOptions): { activate: () => void } {
   let currentId: string | null = null
   let shownKey = ''
+  const copilot = useCopilot()
   const round = useCopilotRound()
+
+  // While a guide is shown in the editor it is a visible copilot artifact (pauses e.g. auto perception)
+  let releaseArtifact: (() => void) | null = null
+  function markArtifactShown() {
+    if (releaseArtifact == null) releaseArtifact = copilot.addVisibleArtifact()
+  }
+  function markArtifactHidden() {
+    releaseArtifact?.()
+    releaseArtifact = null
+  }
 
   function getUI() {
     return options.codeEditor.value?.getAttachedUI() ?? null
@@ -49,6 +60,7 @@ export function useCodeGuide(options: UseCodeGuideOptions): { activate: () => vo
     shownKey = key
     options.onBeforeShow?.()
     currentId = ui.showGuide(guide)
+    markArtifactShown()
   }
 
   // Auto-activation is gated to the current, live round so a restored/historical suggestion doesn't
@@ -64,6 +76,7 @@ export function useCodeGuide(options: UseCodeGuideOptions): { activate: () => vo
     if (ui != null && currentId != null) ui.clearGuide(currentId)
     currentId = null
     shownKey = ''
+    markArtifactHidden()
     options.onCleanup?.()
   }
 
@@ -79,6 +92,7 @@ export function useCodeGuide(options: UseCodeGuideOptions): { activate: () => vo
           if (id !== currentId) return
           currentId = null
           shownKey = ''
+          markArtifactHidden()
           options.onCleanup?.()
         })
       )
