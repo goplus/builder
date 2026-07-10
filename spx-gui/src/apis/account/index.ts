@@ -36,7 +36,6 @@ export type PasswordSignInPayload = {
 export async function createSessionWithPassword(payload: PasswordSignInPayload): Promise<CurrentAccountSession> {
   return (await accountClient
     .post('/session', {
-      method: 'password',
       username: payload.username,
       password: payload.password
     })

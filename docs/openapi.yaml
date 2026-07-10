@@ -4711,10 +4711,7 @@ paths:
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
                 password:
-                  description: Optional administrator-managed password for the new user.
-                  type: string
-                  minLength: 8
-                  maxLength: 128
+                  $ref: "#/components/schemas/AccountManagedPassword"
       responses:
         "201":
           description: Account user created.
@@ -4884,10 +4881,7 @@ paths:
                 - password
               properties:
                 password:
-                  description: New administrator-managed password.
-                  type: string
-                  minLength: 8
-                  maxLength: 128
+                  $ref: "#/components/schemas/AccountManagedPassword"
       responses:
         "204":
           description: Password credential set.
@@ -6503,6 +6497,15 @@ components:
           examples:
             - https://avatars.example.com/users/10137.png
 
+    AccountManagedPassword:
+      description: Administrator-managed password using printable ASCII characters with no leading or trailing spaces.
+      type: string
+      minLength: 8
+      maxLength: 128
+      pattern: "^[!-~][ -~]*[!-~]$"
+      examples:
+        - 1abc def2
+
     AccountIdentityProvider:
       type: object
       description: Identity provider available for hosted sign-in.
@@ -6623,10 +6626,10 @@ components:
           description: Username for password sign-in.
           $ref: "#/components/schemas/AccountUser/properties/username"
         password:
-          description: Administrator-managed password.
+          description: |
+            Administrator-managed password submitted verbatim for sign-in, up to 128 bytes when encoded as UTF-8.
           type: string
           minLength: 1
-          maxLength: 128
 
     CurrentAccountSession:
       type: object

@@ -27,7 +27,7 @@ const accountAdminRoleLabels: Record<AccountAdminRole, LocaleMessage> = {
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import { useMessageHandle } from '@/utils/exception'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
@@ -48,6 +48,7 @@ import CopyButton from '@/components/common/CopyButton.vue'
 import UIIcon from '@/components/ui/icons/UIIcon.vue'
 import * as accountAdminApis from '@/apis/admin/account'
 import * as authorizationAdminApis from '@/apis/admin/authorization'
+import { validateAccountUserPassword } from '@/components/account/admin/password'
 import { formatJSON, formatTime } from './common'
 
 const props = defineProps<{
@@ -269,6 +270,8 @@ const handleUpdateAvatar = useMessageHandle(
 
 const handleSetPassword = useMessageHandle(
   async () => {
+    const passwordError = validateAccountUserPassword(password.value)
+    if (passwordError != null) throw new DefaultException(passwordError)
     await accountAdminApis.setAccountUserPassword(props.userID, { password: password.value })
     password.value = ''
   },

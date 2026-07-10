@@ -17,13 +17,48 @@ bob,Bob,pass4567
     ])
   })
 
-  it('trims cells and supports quoted CSV values', () => {
+  it('trims user fields, preserves internal password spaces, and supports quoted CSV values', () => {
     const result = parseAccountUserImportCsv(` username , displayName , password
- "alice" ,"Alice, A."," pass1234 "
+ "alice" , "Alice, A." ,"pass 1234"
+bob, Bob ,pass 4567
 `)
 
     expect(result.errors).toEqual([])
-    expect(result.rows).toEqual([{ line: 2, username: 'alice', displayName: 'Alice, A.', password: 'pass1234' }])
+    expect(result.rows).toEqual([
+      { line: 2, username: 'alice', displayName: 'Alice, A.', password: 'pass 1234' },
+      { line: 3, username: 'bob', displayName: 'Bob', password: 'pass 4567' }
+    ])
+  })
+
+  it('preserves and rejects invalid password characters', () => {
+    const result = parseAccountUserImportCsv(`username,displayName,password
+alice,Alice," pass1234"
+bob,Bob,"pass1234 "
+carl,Carl,password\u00e9
+`)
+
+    expect(result.errors).toEqual([
+      {
+        line: 2,
+        message: { en: 'The password cannot start or end with a space', zh: '密码不能以空格开头或结尾' }
+      },
+      {
+        line: 3,
+        message: { en: 'The password cannot start or end with a space', zh: '密码不能以空格开头或结尾' }
+      },
+      {
+        line: 4,
+        message: {
+          en: 'The password must contain only printable ASCII characters',
+          zh: '密码只能包含可打印 ASCII 字符'
+        }
+      }
+    ])
+    expect(result.rows).toEqual([
+      { line: 2, username: 'alice', displayName: 'Alice', password: ' pass1234' },
+      { line: 3, username: 'bob', displayName: 'Bob', password: 'pass1234 ' },
+      { line: 4, username: 'carl', displayName: 'Carl', password: 'password\u00e9' }
+    ])
   })
 
   it('requires all required headers', () => {
@@ -104,16 +139,16 @@ dave,Dave,${longPassword}
       {
         line: 5,
         message: {
-          en: `The password is too long (maximum is ${accountAdminApis.accountUserPasswordMaxLength} characters)`,
-          zh: `密码长度超出限制（最多 ${accountAdminApis.accountUserPasswordMaxLength} 个字符）`
+          en: `The password must be at most ${accountAdminApis.accountUserPasswordMaxLength} characters`,
+          zh: `密码长度不能超过 ${accountAdminApis.accountUserPasswordMaxLength} 个字符`
         }
       }
     ])
   })
 
-  it('counts Unicode code points when validating field lengths', () => {
+  it('counts Unicode code points when validating non-password field lengths', () => {
     const displayName = '\u{1f600}'.repeat(accountAdminApis.accountUserDisplayNameMaxLength)
-    const password = '\u{1f600}'.repeat(accountAdminApis.accountUserPasswordMinLength)
+    const password = 'validpass'
 
     const result = parseAccountUserImportCsv(`username,displayName,password
 emoji,${displayName},${password}
@@ -135,8 +170,9 @@ alice,Alice 2,pass4567
   })
 
   it('keeps source line numbers when CSV contains empty lines', () => {
+    const whitespaceOnlyLine = '   '
     const result = parseAccountUserImportCsv(`username,displayName,password
-
+${whitespaceOnlyLine}
 alice,Alice,pass1234
 
 alice,Alice 2,pass4567

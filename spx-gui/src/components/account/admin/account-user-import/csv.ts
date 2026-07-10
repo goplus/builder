@@ -3,6 +3,7 @@ import { parse, type InfoRecord } from 'csv-parse/browser/esm/sync'
 import type { LocaleMessage } from '@/utils/i18n'
 import { getStringLengthInCodePoints } from '@/utils/utils'
 import * as accountAdminApis from '@/apis/admin/account'
+import { validateAccountUserPassword } from '@/components/account/admin/password'
 
 export type AccountUserImportRow = {
   line: number
@@ -77,12 +78,11 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
 
   records.slice(1).forEach(({ record, info }) => {
     const line = info.lines
-    const username = readCell(record, headerIndex.username)
-    const displayName = readCell(record, headerIndex.displayName) || username
+    const username = readCell(record, headerIndex.username).trim()
+    const displayName = readCell(record, headerIndex.displayName).trim() || username
     const password = readCell(record, headerIndex.password)
     const usernameLength = getStringLengthInCodePoints(username)
     const displayNameLength = getStringLengthInCodePoints(displayName)
-    const passwordLength = getStringLengthInCodePoints(password)
 
     if (username === '') errors.push({ line, message: { en: 'Username is required', zh: '用户名不能为空' } })
     else if (usernameLength > accountAdminApis.accountUserUsernameMaxLength) {
@@ -103,24 +103,8 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
         }
       })
     }
-    if (password === '') errors.push({ line, message: { en: 'Password is required', zh: '密码不能为空' } })
-    else if (passwordLength < accountAdminApis.accountUserPasswordMinLength) {
-      errors.push({
-        line,
-        message: {
-          en: `The password must be at least ${accountAdminApis.accountUserPasswordMinLength} characters`,
-          zh: `密码长度不能少于 ${accountAdminApis.accountUserPasswordMinLength} 个字符`
-        }
-      })
-    } else if (passwordLength > accountAdminApis.accountUserPasswordMaxLength) {
-      errors.push({
-        line,
-        message: {
-          en: `The password is too long (maximum is ${accountAdminApis.accountUserPasswordMaxLength} characters)`,
-          zh: `密码长度超出限制（最多 ${accountAdminApis.accountUserPasswordMaxLength} 个字符）`
-        }
-      })
-    }
+    const passwordError = validateAccountUserPassword(password)
+    if (passwordError != null) errors.push({ line, message: passwordError })
 
     const previousLine = usernameLines.get(username)
     if (username !== '' && previousLine != null) {
@@ -146,5 +130,5 @@ export function parseAccountUserImportCsv(csv: string): AccountUserImportParseRe
 
 function readCell(record: string[], index: number | undefined) {
   if (index == null) return ''
-  return (record[index] ?? '').trim()
+  return record[index] ?? ''
 }
