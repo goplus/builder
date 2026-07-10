@@ -608,7 +608,9 @@ onMounted(async () => {
         </template>
         <div>{{ $t({ en: 'Copilot', zh: 'Copilot' }) }}</div>
       </UITooltip>
-      <div class="body-wrapper" :class="{ 'out-of-bounds': isPanelOutOfBounds }">
+      <!-- `out-of-bounds` belongs to the floating positioning (set e.g. by the closing animation);
+           the docked panel never moves, so it must never be dimmed by it -->
+      <div class="body-wrapper" :class="{ 'out-of-bounds': isPanelOutOfBounds && !isDocked }">
         <div ref="draggerRef" class="dragger">
           <svg width="12" height="6" viewBox="0 0 12 6" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="1.5" cy="1" r="1" fill="#A7B1BB" />
