@@ -4,6 +4,7 @@ import { isSilentContent, tagName as staySilentTagName } from '@/components/copi
 import { isTutorialTopic } from './tutorial'
 import { tagName as apiVideoTagName } from './ApiVideo.vue'
 import { tagName as spotlightHintTagName } from './spotlight-hint'
+import { tagName as apiReferenceFilterTagName } from './api-reference-filter'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 import { guideThreshold, tutorialProgressTagName } from './tutorial-intervention'
 
@@ -34,6 +35,7 @@ const invisibleElementTagNames = [
   staySilentTagName,
   apiVideoTagName,
   spotlightHintTagName,
+  apiReferenceFilterTagName,
   tutorialProgressTagName,
   tutorialCourseAbandonPrediction.tagName,
   tutorialCourseAbandonDismissal.tagName
