@@ -18,6 +18,7 @@ import { guideThreshold, nudgeThreshold, tutorialProgressTagName } from './tutor
 import { tagName as spotlightHintTagName } from './spotlight-hint'
 import { tagName as guideModalTagName } from './GuideModal.vue'
 import { tagName as apiVideoTagName } from './ApiVideo.vue'
+import { tagName as apiReferenceFilterTagName } from './api-reference-filter'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
@@ -85,12 +86,16 @@ export class Tutorial {
 
       await this.copilot.startSession(this.generateTopic(course))
 
+      // Keep the copilot panel collapsed at the course start: the copilot processes this event
+      // silently (per the protocol) while the user follows the prelude, so popping the panel open
+      // would only distract. It opens on its own when the copilot later has something to show.
       this.copilot.notifyUserEvent(
         {
           en: 'Course Started',
           zh: '课程开始'
         },
-        'Now the course has just started.'
+        'Now the course has just started.',
+        { autoOpen: false }
       )
     } catch (error) {
       console.error('Failed to start course:', error)
@@ -134,17 +139,21 @@ First do some preparation:
 
 * Clearly define the course completion criteria. If the course prompt specifies its own completion criteria (e.g. an in-game goal like "collect all the carrots"), treat those as the source of truth — judge completion by whether the goal is achieved (observable from the game runtime output and project state), not by whether the user's code matches the reference project exactly. The reference project is a possible answer, not the only one. The goal may not involve coding at all (e.g. "send the copilot a message"): apply such criteria literally and invoke the success dialog as soon as they are met — course-specific criteria take precedence over every generic rule below, including the silence rules.
 
-* The workspace setup — which panels are hidden and which APIs the "API References" panel shows — is declared by the course author and applied automatically. You do NOT control it; do not try to change the visible panels or API list.
+* Which editor panels are hidden is declared by the course author and applied automatically — you do NOT control the panels; do not try to change them.
+
+* If the course involves writing spx code, narrow the "API References" panel (left of the code editor) at the course start, in your reply to the "Course Started" event, with <${apiReferenceFilterTagName} ids="..." />. Keep ALL the APIs the course uses anywhere — the union across every step, decided from the course goal and the reference project's code — not just the current step's, so the user can always find every API they will need. Get the exact ids from the \`list_api_reference_items\` tool. Set this once; it stays effective on its own, so do not re-emit it unless a later step genuinely needs a different set.
 
 * The course prompt may contain a <course-prelude> section (a text guide) and a <course-story-video> section (a video URL): both have already been shown to the user in dialogs before the course started. Do not repeat them; just act consistently with them.
 
 **The course start is silent**
 
-When you receive the "Course Started" event, the workspace is already set up for you and the prelude has already told \
-the user what to do. Your reply must be EMPTY of user-facing content: just <${staySilentTagName} /> (optionally plus \
-the declared knowledge-point videos, see below) — no greeting, no goal restatement, no instructions, no \
-<${highlightLinkTagName}>, no narration. Let the user explore from there. Never re-emit <${apiVideoTagName}> \
-unprompted on later events either: it pops a video dialog over whatever the user is doing.
+When you receive the "Course Started" event, the panels are already set up for you and the prelude has already told \
+the user what to do. Your reply must be EMPTY of user-facing content: the invisible setup elements only — \
+<${apiReferenceFilterTagName}> to narrow the APIs (for a coding course) and the declared knowledge-point videos \
+(see below) — otherwise just <${staySilentTagName} />. NO greeting, NO goal restatement, NO instructions, NO \
+<${highlightLinkTagName}>, NO narration (not even "Let me set up..."). Let the user explore from there. The API \
+narrowing is a one-time setup: after this reply, do not emit <${apiReferenceFilterTagName}> again unless a step \
+genuinely needs a different set, and never re-emit <${apiVideoTagName}> unprompted (it pops a dialog over the user).
 
 Then let the user explore on their own. While they work:
 
@@ -264,7 +273,7 @@ point "step" and the goal "let Kiko collect the carrot"):
 
 - Copilot message
 
-  <${staySilentTagName} />
+  <${apiReferenceFilterTagName} ids="xgo:github.com/goplus/spx/v2?Sprite.step#0" />
   <${apiVideoTagName} api="xgo:github.com/goplus/spx/v2?Sprite.step#0" />
 
 - User event
