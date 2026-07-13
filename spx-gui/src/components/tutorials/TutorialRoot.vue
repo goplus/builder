@@ -16,7 +16,6 @@ import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
 import * as apiReferenceFilter from './api-reference-filter'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
-import { TutorialAutoPerception } from './tutorial-auto-perception'
 import { createTutorialProgressElement, TutorialIntervention } from './tutorial-intervention'
 import { installTutorialGuidance } from './tutorial-guidance'
 import { tutorialCourseReminder } from './tutorial-course-reminder'
@@ -44,8 +43,6 @@ watch(
     editorWorkspaceLayout.setMode('focused')
     editorWorkspaceLayout.setHiddenAreas(courseConfig.hiddenAreas)
     copilot.setUIMode('docked')
-    const autoPerception = new TutorialAutoPerception(copilot)
-    autoPerception.start()
     const intervention = new TutorialIntervention(copilot)
 
     const disposers = [
@@ -117,7 +114,6 @@ watch(
     ]
 
     onCleanup(() => {
-      autoPerception.stop()
       for (const dispose of disposers) {
         dispose()
       }
