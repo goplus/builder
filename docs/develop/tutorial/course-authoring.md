@@ -13,10 +13,7 @@ workspace for the course. It is applied once when the course starts.
 ```jsonc
 {
   // Panels/areas to hide, to reduce distraction. Omit to hide nothing.
-  "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"],
-
-  // API-reference whitelist, by API name (see below).
-  "apis": ["step", "turn"]
+  "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"]
 }
 ```
 ````
@@ -32,21 +29,9 @@ An array of workspace area names to hide. Available areas:
 
 Unknown names are ignored. Omitting `hide` (or the whole block) hides nothing.
 
-### `apis`
-
-Controls which items the **API References** panel (left of the code editor) shows. Three states:
-
-- **Omitted** (no `apis` key) — show **all** APIs.
-- **Empty array** `[]` — show **no** APIs (hide the whole list).
-- **A list of names** — show only the matching APIs.
-
-Names are matched against each API's method name, case- and punctuation-insensitively. Use the
-plain name as it appears in the panel, e.g. `step`, `turn`, `say`, `glide`. The receiver is
-ignored, so `step` matches `Sprite.step`. Same-named overloads all match, which is usually what
-you want (the user sees every variant of the API).
-
-Tip: to find the exact names, open the course project in the editor and read the API References
-panel — each item's leading identifier is the name to use.
+Narrowing the **API References** panel is not configured here — the copilot does it at the course
+start, based on the course goal and the reference project. Just make sure the course prompt makes
+the intended APIs clear.
 
 ## Story video (`<course-story-video>`)
 
@@ -77,7 +62,8 @@ only for APIs that have one in the library.
 
 ## What the copilot still controls
 
-The copilot does **not** touch the workspace config, API list, or the opening dialogs. It guides
-the user during the course — with hints, spotlights, videos and in-editor code guides — and only
-as strongly as the intervention level allows (it stays silent until the user is genuinely stuck).
-Completion is judged against the criteria you write in the prompt.
+The copilot does **not** touch the hidden panels or the opening dialogs. It does narrow the API
+References panel at the course start (based on the course goal), and it guides the user during the
+course — with hints, spotlights, videos and in-editor code guides — only as strongly as the
+intervention level allows (it stays silent until the user is genuinely stuck). Completion is judged
+against the criteria you write in the prompt.
