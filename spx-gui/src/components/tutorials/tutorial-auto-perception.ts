@@ -2,8 +2,6 @@ import type { LocaleMessage } from '@/utils/i18n'
 import { maxSessionRounds, RoundState, type Copilot, type Round } from '@/components/copilot/copilot'
 import { isSilentContent, tagName as staySilentTagName } from '@/components/copilot/markdown-elements/StaySilent'
 import { isTutorialTopic } from './tutorial'
-import { tagName as workspaceHiddenAreasTagName } from './workspace-hidden-areas'
-import { tagName as apiReferenceFilterTagName } from './api-reference-filter'
 import { tagName as apiVideoTagName } from './ApiVideo.vue'
 import { tagName as spotlightHintTagName } from './spotlight-hint'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
@@ -34,8 +32,6 @@ function isAutoPerceptionRound(round: Round): boolean {
 // the user. Visible elements (e.g. the guide-modal chip, code hints) are intentionally absent.
 const invisibleElementTagNames = [
   staySilentTagName,
-  workspaceHiddenAreasTagName,
-  apiReferenceFilterTagName,
   apiVideoTagName,
   spotlightHintTagName,
   tutorialProgressTagName,

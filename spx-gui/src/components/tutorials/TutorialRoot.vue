@@ -10,11 +10,10 @@ import { useCopilot } from '@/components/copilot/context'
 import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
 import { stringifyDefinitionId, useCodeEditorRef } from '@/components/xgo-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
+import { buildApiReferenceFilter, extractCourseConfig } from './course-config'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
-import * as apiReferenceFilter from './api-reference-filter'
-import * as workspaceHiddenAreas from './workspace-hidden-areas'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 import { TutorialAutoPerception } from './tutorial-auto-perception'
 import { createTutorialProgressElement, TutorialIntervention } from './tutorial-intervention'
@@ -38,7 +37,11 @@ watch(
   (currentCourse, _, onCleanup) => {
     if (currentCourse == null) return
 
+    // The course author declares the workspace setup statically (see `extractCourseConfig`); it is
+    // applied once here, not driven by the copilot at runtime.
+    const courseConfig = extractCourseConfig(currentCourse.prompt)
     editorWorkspaceLayout.setMode('focused')
+    editorWorkspaceLayout.setHiddenAreas(courseConfig.hiddenAreas)
     copilot.setUIMode('docked')
     const autoPerception = new TutorialAutoPerception(copilot)
     autoPerception.start()
@@ -69,20 +72,6 @@ watch(
       }),
       copilot.registerCustomElement(tutorialCourseAbandonPrediction),
       copilot.registerCustomElement(tutorialCourseAbandonDismissal),
-      copilot.registerCustomElement({
-        tagName: apiReferenceFilter.tagName,
-        description: apiReferenceFilter.detailedDescription,
-        attributes: apiReferenceFilter.attributes,
-        isRaw: apiReferenceFilter.isRaw,
-        component: apiReferenceFilter.default
-      }),
-      copilot.registerCustomElement({
-        tagName: workspaceHiddenAreas.tagName,
-        description: workspaceHiddenAreas.detailedDescription,
-        attributes: workspaceHiddenAreas.attributes,
-        isRaw: workspaceHiddenAreas.isRaw,
-        component: workspaceHiddenAreas.default
-      }),
       copilot.registerCustomElement({
         tagName: staySilent.tagName,
         description: staySilent.detailedDescription,
@@ -134,15 +123,21 @@ watch(
   }
 )
 
-// During a course, API reference items show their explainer video in the hover card. Watched
-// together with the editor ref since the editor may mount after the course starts.
+// During a course, apply the author-declared API-reference whitelist and show explainer videos in
+// the hover card. Watched together with the editor ref since the editor may mount after the course
+// starts, and re-applied when either changes.
 watch(
   [() => tutorial.currentCourse, codeEditorRef],
   ([currentCourse, codeEditor]) => {
     if (codeEditor == null) return
-    codeEditor.setAPIReferenceVideoProvider(
-      currentCourse != null ? (item) => getApiVideo(stringifyDefinitionId(item.definition)) : null
-    )
+    if (currentCourse == null) {
+      codeEditor.setAPIReferenceFilter(null)
+      codeEditor.setAPIReferenceVideoProvider(null)
+      return
+    }
+    const config = extractCourseConfig(currentCourse.prompt)
+    codeEditor.setAPIReferenceFilter(buildApiReferenceFilter(config.apis))
+    codeEditor.setAPIReferenceVideoProvider((item) => getApiVideo(stringifyDefinitionId(item.definition)))
   },
   { immediate: true }
 )

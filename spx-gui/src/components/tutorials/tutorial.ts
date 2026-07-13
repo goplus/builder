@@ -14,8 +14,6 @@ import type { CourseSeries } from '@/apis/course-series'
 import { tagName as staySilentTagName } from '@/components/copilot/markdown-elements/StaySilent'
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
-import { tagName as workspaceHiddenAreasTagName } from './workspace-hidden-areas'
-import { tagName as apiReferenceFilterTagName } from './api-reference-filter'
 import { guideThreshold, nudgeThreshold, tutorialProgressTagName } from './tutorial-intervention'
 import { tagName as spotlightHintTagName } from './spotlight-hint'
 import { tagName as guideModalTagName } from './GuideModal.vue'
@@ -136,25 +134,17 @@ First do some preparation:
 
 * Clearly define the course completion criteria. If the course prompt specifies its own completion criteria (e.g. an in-game goal like "collect all the carrots"), treat those as the source of truth — judge completion by whether the goal is achieved (observable from the game runtime output and project state), not by whether the user's code matches the reference project exactly. The reference project is a possible answer, not the only one. The goal may not involve coding at all (e.g. "send the copilot a message"): apply such criteria literally and invoke the success dialog as soon as they are met — course-specific criteria take precedence over every generic rule below, including the silence rules.
 
-* If the course involves writing spx code, proactively narrow the "API References" panel (left of the code editor) at the start, before guiding the first coding step. Keep ALL the APIs the course uses anywhere — the union across every step, decided from the course goal and the reference project's code (the standard answer) — not just the current step's APIs, so the user can always find every API they will need throughout the course. Set this once and keep it stable for the whole course; only change it if the course genuinely needs a different set. This is expected for every coding course — do not wait for the user to ask.
-
-* Reduce workspace distraction at the start of the course: hide the editor workspace areas the course does not need using <${workspaceHiddenAreasTagName} areas="..." />. For a typical coding course hide all of them: <${workspaceHiddenAreasTagName} areas="editor-panels,edit-mode-switch,preview-header,code-editor-tools" />. Keep an area visible only when some step of the course needs it (e.g. keep \`editor-panels\` if the user must manage sprites, sounds or the stage). If the course prompt itself specifies which areas to hide or keep, follow it. If a later step needs a hidden area, re-emit the element with an updated list; use areas="none" to show everything again. Like the API narrowing, decide this once at the start — do not wait for the user to ask.
+* The workspace setup — which panels are hidden and which APIs the "API References" panel shows — is declared by the course author and applied automatically. You do NOT control it; do not try to change the visible panels or API list.
 
 * The course prompt may contain a <course-prelude> section (a text guide) and a <course-story-video> section (a video URL): both have already been shown to the user in dialogs before the course started. Do not repeat them; just act consistently with them.
 
-**The course start is silent setup**
+**The course start is silent**
 
-When you receive the "Course Started" event, your reply must contain ONLY the invisible setup elements (workspace \
-hiding, API narrowing) plus the declared knowledge-point videos (see below) — no greeting, no goal restatement, no \
-instructions, no <${highlightLinkTagName}>, and no narration of the setup itself (not even a sentence like "Let me \
-set up the workspace..."): the reply is the elements and nothing else. The prelude dialog has already told the user \
-what to do; let them explore from there.
-
-The setup happens ONCE, at the course start. The setup elements (<${workspaceHiddenAreasTagName}>, \
-<${apiReferenceFilterTagName}>) may appear ONLY in your reply to the "Course Started" event; emitting them in ANY \
-later reply is a mistake — the workspace hiding and API narrowing stay effective on their own. Never re-emit \
-<${apiVideoTagName}> unprompted either: it pops a video dialog over whatever the user is doing. Later replies are \
-for the user: answer them, guide them, or stay silent.
+When you receive the "Course Started" event, the workspace is already set up for you and the prelude has already told \
+the user what to do. Your reply must be EMPTY of user-facing content: just <${staySilentTagName} /> (optionally plus \
+the declared knowledge-point videos, see below) — no greeting, no goal restatement, no instructions, no \
+<${highlightLinkTagName}>, no narration. Let the user explore from there. Never re-emit <${apiVideoTagName}> \
+unprompted on later events either: it pops a video dialog over whatever the user is doing.
 
 Then let the user explore on their own. While they work:
 
@@ -274,8 +264,7 @@ point "step" and the goal "let Kiko collect the carrot"):
 
 - Copilot message
 
-  <${workspaceHiddenAreasTagName} areas="editor-panels,edit-mode-switch,preview-header,code-editor-tools" />
-  <${apiReferenceFilterTagName} ids="xgo:github.com/goplus/spx/v2?Sprite.step#0" />
+  <${staySilentTagName} />
   <${apiVideoTagName} api="xgo:github.com/goplus/spx/v2?Sprite.step#0" />
 
 - User event
