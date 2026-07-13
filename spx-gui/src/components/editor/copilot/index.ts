@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { z } from 'zod'
-import { onScopeDispose, watch } from 'vue'
+import { onScopeDispose, watch, watchEffect } from 'vue'
 import { useCopilot } from '@/components/copilot/context'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from '@/components/copilot/common'
 import { type ICopilotContextProvider, type ToolDefinition } from '@/components/copilot/copilot'
@@ -25,6 +25,7 @@ import * as codeDragHint from './CodeDragHint.vue'
 import * as codeTypeHint from './CodeTypeHint.vue'
 import * as codeDeleteHint from './CodeDeleteHint.vue'
 import CodeBlock from './CodeBlock.vue'
+import { editorCopilotCodeGuides } from './code-guides-gate'
 
 class Retriever {
   constructor(
@@ -324,40 +325,24 @@ export function useSpxEditorCopilot(): void {
       component: codeLink.default
     })
   )
+  // The in-editor code guides are gated (see `editorCopilotCodeGuides`): a driver (e.g. a
+  // tutorial course withholding code guidance until the user is stuck enough) may turn them off,
+  // in which case they are not registered at all, so the copilot never sees them as options.
+  // Ungated, they are always available.
+  const codeGuideElements = [codeChangeHint, codeDragHint, codeTypeHint, codeDeleteHint]
   d.addDisposer(
-    copilot.registerCustomElement({
-      tagName: codeChangeHint.tagName,
-      description: codeChangeHint.detailedDescription,
-      attributes: codeChangeHint.attributes,
-      isRaw: codeChangeHint.isRaw,
-      component: codeChangeHint.default
-    })
-  )
-  d.addDisposer(
-    copilot.registerCustomElement({
-      tagName: codeDragHint.tagName,
-      description: codeDragHint.detailedDescription,
-      attributes: codeDragHint.attributes,
-      isRaw: codeDragHint.isRaw,
-      component: codeDragHint.default
-    })
-  )
-  d.addDisposer(
-    copilot.registerCustomElement({
-      tagName: codeTypeHint.tagName,
-      description: codeTypeHint.detailedDescription,
-      attributes: codeTypeHint.attributes,
-      isRaw: codeTypeHint.isRaw,
-      component: codeTypeHint.default
-    })
-  )
-  d.addDisposer(
-    copilot.registerCustomElement({
-      tagName: codeDeleteHint.tagName,
-      description: codeDeleteHint.detailedDescription,
-      attributes: codeDeleteHint.attributes,
-      isRaw: codeDeleteHint.isRaw,
-      component: codeDeleteHint.default
+    watchEffect((onCleanup) => {
+      if (!editorCopilotCodeGuides.enabled) return
+      const disposers = codeGuideElements.map((el) =>
+        copilot.registerCustomElement({
+          tagName: el.tagName,
+          description: el.detailedDescription,
+          attributes: el.attributes,
+          isRaw: el.isRaw,
+          component: el.default
+        })
+      )
+      onCleanup(() => disposers.forEach((dispose) => dispose()))
     })
   )
   d.addDisposer(copilot.registerContextProvider(new ProjectContextProvider(editorCtx)))
