@@ -15,12 +15,10 @@ import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
 import * as apiReferenceFilter from './api-reference-filter'
 import * as workspaceHiddenAreas from './workspace-hidden-areas'
-import * as spotlightHint from './spotlight-hint'
-import * as guideModal from './GuideModal.vue'
-import * as apiVideo from './ApiVideo.vue'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 import { TutorialAutoPerception } from './tutorial-auto-perception'
 import { createTutorialProgressElement, TutorialIntervention } from './tutorial-intervention'
+import { installTutorialGuidance } from './tutorial-guidance'
 import { tutorialCourseReminder } from './tutorial-course-reminder'
 import { getApiVideo } from './api-videos'
 
@@ -48,6 +46,10 @@ watch(
 
     const disposers = [
       intervention.start(),
+      // Registers the guidance elements (guide modal, spotlight, video) and toggles the editor
+      // code guides according to the intervention level — a hard boundary on what the copilot
+      // may do at each level.
+      installTutorialGuidance(copilot, intervention),
       copilot.registerContextProvider(intervention),
       copilot.registerContextProvider(tutorialCourseReminder),
       copilot.registerCustomElement(createTutorialProgressElement(intervention)),
@@ -87,27 +89,6 @@ watch(
         attributes: staySilent.attributes,
         isRaw: staySilent.isRaw,
         component: staySilent.default
-      }),
-      copilot.registerCustomElement({
-        tagName: spotlightHint.tagName,
-        description: spotlightHint.detailedDescription,
-        attributes: spotlightHint.attributes,
-        isRaw: spotlightHint.isRaw,
-        component: spotlightHint.default
-      }),
-      copilot.registerCustomElement({
-        tagName: guideModal.tagName,
-        description: guideModal.detailedDescription,
-        attributes: guideModal.attributes,
-        isRaw: guideModal.isRaw,
-        component: guideModal.default
-      }),
-      copilot.registerCustomElement({
-        tagName: apiVideo.tagName,
-        description: apiVideo.getDetailedDescription(),
-        attributes: apiVideo.attributes,
-        isRaw: apiVideo.isRaw,
-        component: apiVideo.default
       }),
       copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default),
       copilot.registerQuickInputProvider({
