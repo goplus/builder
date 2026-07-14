@@ -734,6 +734,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
     get:
       operationId: getAccountSession
       tags:
@@ -5952,6 +5954,13 @@ components:
                 msg: Unsupported media type
     TooManyRequests:
       description: Too many requests.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
       content:
         application/json:
           schema:
