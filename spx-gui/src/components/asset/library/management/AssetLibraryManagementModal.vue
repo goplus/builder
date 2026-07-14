@@ -9,7 +9,6 @@ import { humanizeAssetType } from '@/models/spx/common/asset'
 import {
   UITextInput,
   UIIcon,
-  UIChip,
   UIPagination,
   UISearchableModal,
   useModal,
@@ -17,7 +16,6 @@ import {
   useMessage
 } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
-import { type Category, getAssetCategories, categoryAll } from '../category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
@@ -34,11 +32,6 @@ const emit = defineEmits<{
   cancelled: []
   resolved: []
 }>()
-
-const categories = computed(() => {
-  const categoriesWithoutAll = getAssetCategories(props.type)
-  return [categoryAll, ...categoriesWithoutAll]
-})
 
 const ItemComponent = computed(
   () =>
@@ -62,29 +55,21 @@ watch(
   }, 500)
 )
 
-const category = ref(categoryAll)
-
 const page = shallowRef(1)
 const pageSize = 28 // 7 * 4
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
-watch(
-  () => [keyword.value, category.value],
-  () => (page.value = 1)
-)
+watch(keyword, () => (page.value = 1))
 
 const queryRet = useQuery(
-  () => {
-    const c = category.value.value
-    return listSignedInUserAssets({
+  () =>
+    listSignedInUserAssets({
       pageSize,
       pageIndex: page.value,
       type: props.type,
       keyword: keyword.value,
-      orderBy: 'displayName',
-      category: c === categoryAll.value ? undefined : c
-    })
-  },
+      orderBy: 'displayName'
+    }),
   {
     en: 'Failed to list',
     zh: '获取列表失败'
@@ -95,10 +80,6 @@ function handleSearch() {
   keyword.value = searchInput.value
 }
 
-function handleSelectCategory(c: Category) {
-  category.value = c
-}
-
 const selectedId = ref<string | null>(null)
 
 const i18n = useI18n()
@@ -106,9 +87,9 @@ const m = useMessage()
 const confirm = useConfirmDialog()
 
 const handlePublish = useMessageHandle(
-  async ({ id, ...extra }: AssetData) => {
+  async ({ id }: AssetData) => {
     await m.withLoading(
-      updateAsset(id, { ...extra, visibility: Visibility.Public }),
+      updateAsset(id, { visibility: Visibility.Public }),
       i18n.t({ en: 'Making asset public', zh: '设置为公开中' })
     )
     queryRet.refetch()
@@ -120,9 +101,9 @@ const handlePublish = useMessageHandle(
 ).fn
 
 const handleUnpublish = useMessageHandle(
-  async ({ id, ...extra }: AssetData) => {
+  async ({ id }: AssetData) => {
     await m.withLoading(
-      updateAsset(id, { ...extra, visibility: Visibility.Private }),
+      updateAsset(id, { visibility: Visibility.Private }),
       i18n.t({ en: 'Making asset private', zh: '设置为私有中' })
     )
     queryRet.refetch()
@@ -172,7 +153,7 @@ const handleRemove = useMessageHandle(
 <template>
   <UISearchableModal
     :radar="{ name: 'Asset library management modal', desc: 'Modal for managing assets in the library' }"
-    style="width: 1244px"
+    style="width: 1076px"
     :visible="props.visible"
     :title="$t({ en: `Manage ${entityMessage.en}s`, zh: `管理${entityMessage.zh}` })"
     @update:visible="emit('cancelled')"
@@ -189,45 +170,30 @@ const handleRemove = useMessageHandle(
         <template #prefix><UIIcon class="text-grey-700" type="search" /></template>
       </UITextInput>
     </template>
-    <section class="flex">
-      <div class="flex-[0_0_168px] min-w-0 flex-col gap-3 border-r border-grey-400 p-4 flex">
-        <UIChip
-          v-for="c in categories"
-          :key="c.value"
-          :type="c.value === category.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(c)"
-        >
-          {{ $t(c.message) }}
-        </UIChip>
-      </div>
-      <main class="flex-[1_1_0] flex flex-col">
-        <h3 class="px-6 pt-5 text-grey-900">{{ $t(category.message) }}</h3>
-        <div class="px-6 pt-2 pb-5">
-          <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="584">
-            <!-- fixed asset-list height to keep the layout stable -->
-            <ul class="flex flex-wrap content-start gap-2" style="height: 584px">
-              <ItemComponent
-                v-for="asset in slotProps.data.data"
-                :key="asset.id"
-                :asset="asset"
-                :selected="selectedId === asset.id"
-                @click="selectedId = asset.id"
-              >
-                <VisibilityIcon :visibility="asset.visibility" />
-                <CornerMenu
-                  v-if="selectedId === asset.id"
-                  :asset="asset"
-                  @publish="handlePublish(asset)"
-                  @unpublish="handleUnpublish(asset)"
-                  @edit="handleEdit(asset)"
-                  @remove="handleRemove(asset)"
-                />
-              </ItemComponent>
-            </ul>
-          </ListResultWrapper>
-          <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 justify-center" :total="pageTotal" />
-        </div>
-      </main>
-    </section>
+    <main class="px-6 py-5">
+      <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="584">
+        <!-- fixed asset-list height to keep the layout stable -->
+        <ul class="flex flex-wrap content-start gap-2" style="height: 584px">
+          <ItemComponent
+            v-for="asset in slotProps.data.data"
+            :key="asset.id"
+            :asset="asset"
+            :selected="selectedId === asset.id"
+            @click="selectedId = asset.id"
+          >
+            <VisibilityIcon :visibility="asset.visibility" />
+            <CornerMenu
+              v-if="selectedId === asset.id"
+              :asset="asset"
+              @publish="handlePublish(asset)"
+              @unpublish="handleUnpublish(asset)"
+              @edit="handleEdit(asset)"
+              @remove="handleRemove(asset)"
+            />
+          </ItemComponent>
+        </ul>
+      </ListResultWrapper>
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 justify-center" :total="pageTotal" />
+    </main>
   </UISearchableModal>
 </template>

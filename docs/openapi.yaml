@@ -1503,11 +1503,6 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/type"
-        - name: category
-          description: Filter assets by category.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/category"
         - name: filesHash
           description: Filter assets by files hash.
           in: query
@@ -1575,7 +1570,6 @@ paths:
               required:
                 - displayName
                 - type
-                - category
                 - description
                 - extraSettings
                 - files
@@ -1586,8 +1580,6 @@ paths:
                   $ref: "#/components/schemas/Asset/properties/displayName"
                 type:
                   $ref: "#/components/schemas/Asset/properties/type"
-                category:
-                  $ref: "#/components/schemas/Asset/properties/category"
                 description:
                   $ref: "#/components/schemas/Asset/properties/description"
                 extraSettings:
@@ -2231,11 +2223,6 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/type"
-        - name: category
-          description: Filter assets by category.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/category"
         - name: filesHash
           description: Filter assets by files hash.
           in: query
@@ -2879,11 +2866,6 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/type"
-        - name: category
-          description: Filter assets by category.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/category"
         - name: filesHash
           description: Filter assets by files hash.
           in: query
@@ -2994,8 +2976,6 @@ paths:
                   $ref: "#/components/schemas/Asset/properties/displayName"
                 type:
                   $ref: "#/components/schemas/Asset/properties/type"
-                category:
-                  $ref: "#/components/schemas/Asset/properties/category"
                 description:
                   $ref: "#/components/schemas/Asset/properties/description"
                 extraSettings:
@@ -7530,7 +7510,6 @@ components:
         - owner
         - displayName
         - type
-        - category
         - description
         - extraSettings
         - files
@@ -7562,13 +7541,6 @@ components:
             - sound
           examples:
             - sprite
-        category:
-          deprecated: true
-          description: Category to which the asset belongs.
-          type: string
-          minLength: 1
-          examples:
-            - People
         description:
           description: Brief description of the asset.
           type: string
