@@ -8,11 +8,7 @@
 
 ## Install Dependencies
 
-If pnpm is not available, enable it with Corepack first:
-
-```bash
-corepack enable pnpm
-```
+If pnpm is not available, install it by following the [official pnpm installation guide](https://pnpm.io/installation).
 
 ```bash
 pnpm install
