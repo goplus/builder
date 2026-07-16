@@ -151,6 +151,17 @@ export class Editing extends Disposable {
     return this.dirtyRef.value
   }
 
+  /**
+   * Mark the current unsaved changes as no longer pending, clearing the dirty state.
+   *
+   * This only resets dirty tracking; it does not revert the project content. It is used when
+   * the user intentionally leaves without keeping the edits (e.g. finishing a tutorial course
+   * in effect-free mode), so leaving the editor does not prompt the "leave editor" confirmation.
+   */
+  resetChanges() {
+    this.dirtyRef.value = false
+  }
+
   private startDirtyMonitoring() {
     this.addDisposer(
       watch(

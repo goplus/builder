@@ -8,7 +8,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 
 import { UIButton, UIImg, UIModal, UIModalClose } from '@/components/ui'
-import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
+import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import successImg from './success.png'
 
@@ -26,6 +26,13 @@ const emit = defineEmits<{
 
 const i18n = useI18n()
 const router = useRouter()
+const editorCtxRef = useEditorCtxRef()
+
+// Leaving via the actions below intentionally discards the current (effect-free) tutorial
+// edits, so reset the dirty state to skip the editor's "leave editor" confirmation.
+function skipConfirmForLeavingEditor() {
+  editorCtxRef.value?.state.editing.resetChanges()
+}
 
 const courseCompleteMessage = computed(() => {
   return i18n.t({
@@ -40,9 +47,7 @@ function handleCancel() {
 
 const { fn: handleBackToCourseSeries } = useMessageHandle(
   async () => {
-    // Request the skip before anything else so the time-bound window isn't shortened
-    // by work in the `cancelled` handler.
-    editorLeaveConfirm.requestSkipOnce()
+    skipConfirmForLeavingEditor()
     emit('cancelled')
     await router.push(`/course-series/${props.series.id}`)
   },
@@ -74,11 +79,7 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     const tutorial = props.tutorial
     const nextCourse = await getCourse(currentSeries.courseIDs[findIndex + 1])
     emit('cancelled')
-    // Skip the leave confirmation for the navigation `startCourse` performs: continuing to
-    // the next course is an explicit, expected action, and the course entrypoint may be a
-    // non-editor route. Requested right before `startCourse` so the time-bound window is
-    // not spent on the preceding `getCourse` request.
-    editorLeaveConfirm.requestSkipOnce()
+    skipConfirmForLeavingEditor()
     await tutorial.startCourse(nextCourse, currentSeries)
   },
   {

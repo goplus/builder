@@ -59,7 +59,6 @@ import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
-import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { EditorState } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
@@ -214,7 +213,6 @@ onBeforeRouteLeave(async () => {
  * If it is OK to leave, return true, otherwise return false.
  */
 async function checkChangesNotToBeSaved(es: EditorState) {
-  if (editorLeaveConfirm.consumeSkipOnce()) return true
   const hasEdits = es.editing.mode === EditingMode.EffectFree && es.editing.dirty
   if (!hasEdits) return true
   return confirm({
