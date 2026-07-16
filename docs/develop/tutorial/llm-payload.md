@@ -108,6 +108,9 @@ window.fetch = function (input, init) {
 
 Then trigger a copilot round; the logged object is exactly the `{ messages, tools }` sent.
 
+To inspect what the copilot REPLIED (each round's emitted tags, including invisible ones), and to
+verify a tutorial course's opening, see [verifying-courses.md](./verifying-courses.md).
+
 ---
 
 # 中文版：前端发给 LLM 的全部内容
