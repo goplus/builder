@@ -9,7 +9,7 @@ export const isRaw = true
 export const description = 'Show one very short guidance sentence in a centered modal dialog.'
 
 export const detailedDescription = `Show one very short guidance sentence in a centered modal dialog, which draws \
-much more attention than a chat message. This is your FIRST-level intervention for a user who is genuinely stuck: a \
+much more attention than a chat message. This is your gentlest intervention for a user who is genuinely stuck: a \
 plain-text nudge that points the direction (what to check, where to look) — NEVER the answer or the code itself. Do \
 not use it at the course opening, for routine encouragement, or for anything the user is already handling fine. The \
 element content is PLAIN TEXT ONLY — no markdown, no other elements — and MUST be at most 30 characters (a Chinese \
