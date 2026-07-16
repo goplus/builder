@@ -14,6 +14,7 @@ type ElementModule = {
   default: CustomElementDefinition['component']
   detailedDescription?: string
   getDetailedDescription?: () => string
+  invisible?: boolean
 }
 
 function toDefinition(m: ElementModule): CustomElementDefinition {
@@ -22,7 +23,8 @@ function toDefinition(m: ElementModule): CustomElementDefinition {
     description: m.getDetailedDescription != null ? m.getDetailedDescription() : m.detailedDescription!,
     attributes: m.attributes,
     isRaw: m.isRaw,
-    component: m.default
+    component: m.default,
+    invisible: m.invisible
   }
 }
 
@@ -36,10 +38,12 @@ function toDefinition(m: ElementModule): CustomElementDefinition {
  * current level does not unlock is not merely discouraged — the copilot never sees it.
  */
 const guidanceByLevel: Record<InterventionLevel, { elements: ElementModule[]; codeGuides: boolean }> = {
-  // Observe only: the copilot may not guide at all, only stay silent / answer / declare success.
-  [InterventionLevel.Silent]: { elements: [], codeGuides: false },
-  // Nudge: short hint modal, spotlight, and explainer video.
-  [InterventionLevel.Nudge]: { elements: [guideModal, spotlightHint, apiVideo], codeGuides: false },
+  // Observe only: no guiding. api-video stays available — it is an opening-setup & answering tool
+  // (course-opening knowledge videos, "how does this API work?"), not an intervention; the
+  // protocol restricts its PROACTIVE use to nudge level and above.
+  [InterventionLevel.Silent]: { elements: [apiVideo], codeGuides: false },
+  // Nudge: short hint modal and spotlight.
+  [InterventionLevel.Nudge]: { elements: [guideModal, spotlightHint], codeGuides: false },
   // Guide: additionally, drive concrete edits with the in-editor code guides.
   [InterventionLevel.Guide]: { elements: [], codeGuides: true }
 }
