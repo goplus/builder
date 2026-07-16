@@ -2,15 +2,28 @@
 import { computed } from 'vue'
 
 import { useTutorial } from './tutorial'
+import { InterventionLevel } from './tutorial-intervention'
 import { UIDropdownWithTooltip, UIIcon, UIMenu, UIMenuItem, useConfirmDialog } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { useI18n } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 
 const tutorial = useTutorial()
 const i18n = useI18n()
 const confirm = useConfirmDialog()
 
 const course = computed(() => tutorial.currentCourse)
+
+const guidanceTextByLevel: Record<InterventionLevel, LocaleMessage> = {
+  [InterventionLevel.Silent]: { en: 'Copilot: watching quietly', zh: 'Copilot：安静看着你' },
+  [InterventionLevel.Nudge]: { en: 'Copilot: ready with a hint', zh: 'Copilot：准备给点小提示' },
+  [InterventionLevel.Guide]: { en: 'Copilot: guiding you step by step', zh: 'Copilot：手把手带你做' }
+}
+
+// How strongly the copilot is helping right now, in the user's terms rather than as a level number.
+const guidanceText = computed<LocaleMessage | null>(() => {
+  const level = tutorial.currentIntervention?.level
+  return level == null ? null : guidanceTextByLevel[level]
+})
 
 const { fn: handleExitCourse } = useMessageHandle(() => tutorial.exitCurrentCourse(), {
   en: 'Failed to exit course',
@@ -52,13 +65,16 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <template #dropdown-content>
       <UIMenu>
-        <div class="max-w-60 truncate px-2 pb-2 pt-1 text-xs text-hint-2">
-          {{
-            $t({
-              zh: `${course?.title}课程中`,
-              en: `${course?.title} in progress`
-            })
-          }}
+        <div class="max-w-60 px-2 pb-2 pt-1 text-xs text-hint-2">
+          <p class="truncate">
+            {{
+              $t({
+                zh: `${course?.title}课程中`,
+                en: `${course?.title} in progress`
+              })
+            }}
+          </p>
+          <p v-if="guidanceText != null" class="mt-0.5 truncate">{{ $t(guidanceText) }}</p>
         </div>
         <UIMenuItem
           v-radar="{ name: 'Restart course', desc: 'Click to restart the current course from its initial state' }"
