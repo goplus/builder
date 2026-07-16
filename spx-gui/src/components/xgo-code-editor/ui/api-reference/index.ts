@@ -81,6 +81,20 @@ export class APIReferenceController extends Disposable {
     return filtered.length > 0 ? filtered : items
   }
 
+  /**
+   * Whether a filter is actively narrowing the list (a proper, non-empty subset). The category
+   * sidebar is redundant in this case — a guided scenario left only a handful of items — so the
+   * UI hides it. False when there is no filter or it matched nothing (the panel shows everything).
+   */
+  get filtered() {
+    const items = this.loadedItems
+    if (items == null) return false
+    const filter = this.ui.codeEditor.apiReferenceFilter
+    if (filter == null) return false
+    const filteredCount = items.filter(filter).length
+    return filteredCount > 0 && filteredCount < items.length
+  }
+
   get error() {
     return this.itemsMgr.result.error
   }
