@@ -3,13 +3,7 @@ import { timeout } from '@/utils/utils'
 import { Copilot, type IMessageEventGenerator } from '@/components/copilot/copilot'
 import { InMemorySkillRegistry } from '@/components/copilot/skills/registry'
 import type { TutorialTopic } from './tutorial'
-import {
-  guideThreshold,
-  InterventionLevel,
-  getInterventionLevel,
-  nudgeThreshold,
-  TutorialIntervention
-} from './tutorial-intervention'
+import { backThreshold, InterventionLevel, neutralThreshold, TutorialIntervention } from './tutorial-intervention'
 
 function makeTutorialTopic(): TutorialTopic {
   return {
@@ -20,89 +14,154 @@ function makeTutorialTopic(): TutorialTopic {
   }
 }
 
-function makeGenerator(): IMessageEventGenerator {
-  return {
-    async *generateCopilotMessage() {
-      yield { type: 'text_delta', data: { text: '<stay-silent />' } }
-      yield { type: 'done', data: { finishReason: 'stop' } }
-    }
+/** A generator whose single text output can be changed between rounds. */
+class ConfigurableGenerator implements IMessageEventGenerator {
+  constructor(public text = '') {}
+  async *generateCopilotMessage() {
+    yield { type: 'text_delta', data: { text: this.text } } as const
+    yield { type: 'done', data: { finishReason: 'stop' } } as const
   }
 }
 
-// Event rounds added mid-session start with a ~1s debounce (batching)
+// Event rounds added mid-session start with a ~1s debounce (batching).
 const eventRoundCompletionTime = 1200
 
-async function setupCourseSession() {
-  const copilot = new Copilot(new InMemorySkillRegistry(), makeGenerator())
-  const intervention = new TutorialIntervention(copilot)
-  await copilot.startSession(makeTutorialTopic())
-  const dispose = intervention.start()
-  return { copilot, intervention, dispose }
-}
-
 async function sendEvent(copilot: Copilot) {
-  copilot.notifyUserEvent({ en: 'Auto perception', zh: '自动感知' }, 'detail')
+  copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'detail')
   await timeout(eventRoundCompletionTime)
 }
 
-describe('getInterventionLevel', () => {
-  it('should climb at the thresholds', () => {
-    expect(getInterventionLevel(0)).toBe(InterventionLevel.Silent)
-    expect(getInterventionLevel(nudgeThreshold - 1)).toBe(InterventionLevel.Silent)
-    expect(getInterventionLevel(nudgeThreshold)).toBe(InterventionLevel.Nudge)
-    expect(getInterventionLevel(guideThreshold - 1)).toBe(InterventionLevel.Nudge)
-    expect(getInterventionLevel(guideThreshold)).toBe(InterventionLevel.Guide)
-    expect(getInterventionLevel(guideThreshold + 10)).toBe(InterventionLevel.Guide)
+describe('TutorialIntervention state machine', () => {
+  function make() {
+    const copilot = new Copilot(new InMemorySkillRegistry(), new ConfigurableGenerator())
+    return new TutorialIntervention(copilot)
+  }
+
+  it('starts silent', () => {
+    expect(make().level).toBe(InterventionLevel.Silent)
+  })
+
+  it('escalates after enough neutral rounds', () => {
+    const i = make()
+    for (let n = 0; n < neutralThreshold - 1; n++) i.recordVerdict('neutral')
+    expect(i.level).toBe(InterventionLevel.Silent)
+    i.recordVerdict('neutral')
+    expect(i.level).toBe(InterventionLevel.Nudge)
+  })
+
+  it('escalates faster on back (a stronger signal) than on neutral', () => {
+    const i = make()
+    for (let n = 0; n < backThreshold - 1; n++) i.recordVerdict('back')
+    expect(i.level).toBe(InterventionLevel.Silent)
+    i.recordVerdict('back')
+    expect(i.level).toBe(InterventionLevel.Nudge)
+  })
+
+  it('resets the counters on escalation, so climbing again takes another full run', () => {
+    const i = make()
+    for (let n = 0; n < backThreshold; n++) i.recordVerdict('back') // -> Nudge, counters cleared
+    expect(i.level).toBe(InterventionLevel.Nudge)
+    for (let n = 0; n < backThreshold - 1; n++) i.recordVerdict('back')
+    expect(i.level).toBe(InterventionLevel.Nudge) // not yet
+    i.recordVerdict('back')
+    expect(i.level).toBe(InterventionLevel.Guide)
+  })
+
+  it('does not climb past guide', () => {
+    const i = make()
+    for (let n = 0; n < backThreshold * 5; n++) i.recordVerdict('back')
+    expect(i.level).toBe(InterventionLevel.Guide)
+  })
+
+  it('spends accumulated neutral evidence down with ahead (worth 2)', () => {
+    const i = make()
+    for (let n = 0; n < neutralThreshold - 1; n++) i.recordVerdict('neutral') // 5 (threshold 6)
+    i.recordVerdict('ahead') // -> 3
+    i.recordVerdict('neutral') // 4
+    i.recordVerdict('neutral') // 5
+    expect(i.level).toBe(InterventionLevel.Silent)
+    i.recordVerdict('neutral') // 6 -> Nudge
+    expect(i.level).toBe(InterventionLevel.Nudge)
+  })
+
+  it('de-escalates on an ahead once there is nothing left to forgive', () => {
+    const i = make()
+    for (let n = 0; n < backThreshold; n++) i.recordVerdict('back') // -> Nudge, counters at 0
+    expect(i.level).toBe(InterventionLevel.Nudge)
+    i.recordVerdict('ahead') // nothing to forgive -> de-escalate
+    expect(i.level).toBe(InterventionLevel.Silent)
+  })
+
+  it('does not de-escalate while there is still evidence to forgive first', () => {
+    const i = make()
+    for (let n = 0; n < backThreshold; n++) i.recordVerdict('back') // -> Nudge, counters 0
+    i.recordVerdict('back') // back = 1 at nudge
+    i.recordVerdict('ahead') // back was 1, not zero: spend it, do NOT de-escalate
+    expect(i.level).toBe(InterventionLevel.Nudge)
+    i.recordVerdict('ahead') // now at zero: de-escalate
+    expect(i.level).toBe(InterventionLevel.Silent)
+  })
+
+  it('never de-escalates below silent', () => {
+    const i = make()
+    i.recordVerdict('ahead')
+    expect(i.level).toBe(InterventionLevel.Silent)
   })
 })
 
-describe('TutorialIntervention', () => {
+describe('TutorialIntervention round scanning', () => {
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.clear()
   })
 
-  it('should start silent and count events', async () => {
-    const { copilot, intervention, dispose } = await setupCourseSession()
-    expect(intervention.level).toBe(InterventionLevel.Silent)
-
-    await sendEvent(copilot)
-    expect(intervention.eventsSinceProgress).toBe(1)
-    expect(intervention.level).toBe(InterventionLevel.Silent)
-    dispose()
-  })
-
-  it('should not count messages the user typed', async () => {
-    const { copilot, intervention, dispose } = await setupCourseSession()
-    copilot.currentSession!.addUserMessage({ role: 'user', type: 'text', content: 'hello' })
-    await timeout(eventRoundCompletionTime)
-
-    expect(intervention.eventsSinceProgress).toBe(0)
-    dispose()
-  })
+  async function setup(generatorText: string) {
+    const generator = new ConfigurableGenerator(generatorText)
+    const copilot = new Copilot(new InMemorySkillRegistry(), generator)
+    const intervention = new TutorialIntervention(copilot)
+    await copilot.startSession(makeTutorialTopic())
+    const dispose = intervention.start()
+    return { copilot, intervention, dispose, generator }
+  }
 
   it(
-    'should reset the level on reported progress',
+    'reads a reported back verdict from each event round',
     async () => {
-      const { copilot, intervention, dispose } = await setupCourseSession()
-      for (let i = 0; i < nudgeThreshold; i++) await sendEvent(copilot)
+      const { copilot, intervention, dispose } = await setup('<user-progress-back />')
+      for (let n = 0; n < backThreshold; n++) await sendEvent(copilot)
       expect(intervention.level).toBe(InterventionLevel.Nudge)
-
-      intervention.reset()
-      expect(intervention.eventsSinceProgress).toBe(0)
-      expect(intervention.level).toBe(InterventionLevel.Silent)
-
-      // Counting resumes from the events that follow, not from the whole session history
-      await sendEvent(copilot)
-      expect(intervention.eventsSinceProgress).toBe(1)
       dispose()
     },
-    // Each event round waits out the batching debounce
-    (nudgeThreshold + 2) * eventRoundCompletionTime
+    (backThreshold + 2) * eventRoundCompletionTime
   )
 
-  it('should report the level as context', async () => {
-    const { intervention, dispose } = await setupCourseSession()
+  it(
+    'defaults an event round with no verdict to neutral',
+    async () => {
+      const { copilot, intervention, dispose } = await setup('') // model forgot to report
+      for (let n = 0; n < neutralThreshold; n++) await sendEvent(copilot)
+      expect(intervention.level).toBe(InterventionLevel.Nudge)
+      dispose()
+    },
+    (neutralThreshold + 2) * eventRoundCompletionTime
+  )
+
+  it(
+    'does not count a typed message that carries no verdict',
+    async () => {
+      const { copilot, intervention, dispose } = await setup('')
+      for (let n = 0; n < neutralThreshold; n++) {
+        copilot.currentSession!.addUserMessage({ role: 'user', type: 'text', content: 'hello' })
+        await timeout(eventRoundCompletionTime)
+      }
+      expect(intervention.level).toBe(InterventionLevel.Silent)
+      dispose()
+    },
+    (neutralThreshold + 2) * eventRoundCompletionTime
+  )
+
+  it('reports the level as context', async () => {
+    const { intervention, dispose } = await setup('')
     expect(intervention.provideContext()).toContain('level is 1 (silent)')
     dispose()
   })
