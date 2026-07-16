@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { type Tutorial } from './tutorial'
-import { getCourse, type Course } from '@/apis/course'
+import { type Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 
@@ -86,15 +86,14 @@ const { fn: handleStartNextCourse } = useMessageHandle(
       })
     }
 
-    const tutorial = props.tutorial
-    const nextCourse = await getCourse(currentSeries.courseIDs[findIndex + 1])
+    const nextCourseId = currentSeries.courseIDs[findIndex + 1]
     emit('cancelled')
-    // Skip the leave confirmation for the navigation `startCourse` performs: continuing to
-    // the next course is an explicit, expected action, and the course entrypoint may be a
-    // non-editor route. Requested right before `startCourse` so the time-bound window is
-    // not spent on the preceding `getCourse` request.
+    // Go through the course's opening sequence (story video, prelude) like any other entry to a
+    // course, instead of calling `startCourse` directly — that would drop the user straight into
+    // the editor. Skip the leave confirmation: continuing to the next course is explicit and
+    // expected.
     editorLeaveConfirm.requestSkipOnce()
-    await tutorial.startCourse(nextCourse, currentSeries)
+    await router.push(`/course/${currentSeries.id}/${nextCourseId}/start`)
   },
   {
     en: 'Failed to learn next course',
