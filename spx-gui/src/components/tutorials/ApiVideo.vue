@@ -6,6 +6,10 @@ export const tagName = 'api-video'
 
 export const isRaw = false
 
+// The video plays in a modal dialog; a lone api-video reply shows nothing standing in the chat,
+// so a round consisting only of it (e.g. the silent course opening) counts as silent.
+export const invisible = true
+
 export const description = 'Play the explainer video of an API in a modal dialog.'
 
 export function getDetailedDescription() {
