@@ -227,10 +227,14 @@ window.fetch = function (input, init) {
 以下是发给模型的实际文本，插值（标签名、阈值等）已按当前代码渲染；`{...}` 表示运行时动态数据。
 审查时改哪段，就去对应源文件改。如附录与代码不一致，以代码为准。
 
-> **本轮审查修复变更记录**（详见对应源文件）：
+> **审查修复变更记录**（详见对应源文件）：
+> - **干预等级改为进展判定驱动**（大改）：模型不再计数，而是每个事件轮报一个 `<user-progress-ahead/>`/
+>   `<user-progress-neutral/>`/`<user-progress-back/>`；系统累计并升降级（neutral 6 或 back 3 升级、升级清零、
+>   ahead 减 2/1、ahead-归零后降级）。废弃 `<tutorial-progress/>`。见 `user-progress.ts` +
+>   `tutorial-intervention.ts`。事件轮漏报默认 neutral，提问轮漏报不计。
 > - `api-video` 改为 **Silent 级常驻**（开场知识点视频 + 应答用户提问在任何等级都可用；仅「主动推给卡住的用户」是 Nudge+）。
 > - 干预等级 provider 措辞改为「你的可用元素目录已按等级过滤，目录里没有的标签写了也无效」。
-> - 协议「等级阶梯」「示例对话」重写，使之与门控机制一致（示例逐个事件标注了事件计数与等级变化）。
+> - 协议「等级阶梯」「示例对话」重写，使之与门控机制一致（示例每个事件都带进展判断）。
 > - radar UI provider 删去无条件的「鼓励拖拽」句；该建议移入「当前代码」小节，且受 `editorCopilotCodeGuides` 闸门控制。
 > - 「When coding tasks」节改为服从等级；abandon 规则不再引用「每步的 highlight-link 目标」。
 > - 渲染为空的元素统一带 `invisible` 标记，只含此类元素的回复算作静默轮（不再产生空气泡）。
