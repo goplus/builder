@@ -13,6 +13,7 @@ import { useMessageEvents, useModalEvents } from '@/components/ui'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as pageLink from './markdown-elements/PageLink'
 import * as highlightLink from './markdown-elements/HighlightLink.vue'
+import * as thinking from './markdown-elements/Thinking'
 import { useSignedInStateQuery, type SignedInState } from '@/stores/user'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import { provideCopilot } from './context'
@@ -195,6 +196,14 @@ copilot.registerCustomElement({
   attributes: highlightLink.attributes,
   isRaw: highlightLink.isRaw,
   component: highlightLink.default
+})
+copilot.registerCustomElement({
+  tagName: thinking.tagName,
+  description: thinking.detailedDescription,
+  attributes: thinking.attributes,
+  isRaw: thinking.isRaw,
+  component: thinking.default,
+  invisible: true
 })
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))

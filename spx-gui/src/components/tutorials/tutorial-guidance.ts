@@ -73,7 +73,10 @@ export function installTutorialGuidance(copilot: Copilot, intervention: Tutorial
     editorCopilotCodeGuides.setEnabled(codeGuides)
   }
 
-  const stop = watch(() => intervention.level, apply, { immediate: true })
+  // Sync flush: the level can rise the instant a round is added (a typed message boosts it, see
+  // `TutorialIntervention.level`), and the unlocked elements must be registered before that very
+  // round's context message is assembled.
+  const stop = watch(() => intervention.level, apply, { immediate: true, flush: 'sync' })
 
   return () => {
     stop()

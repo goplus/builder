@@ -718,6 +718,13 @@ describe('Copilot', () => {
         role: 'user',
         content: {
           type: 'text',
+          text: contextMessage.content
+        }
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text',
           text: 'Find my projects'
         }
       },
@@ -744,13 +751,6 @@ describe('Copilot', () => {
         content: {
           type: 'text',
           text: '{"projects":["demo"]}'
-        }
-      },
-      {
-        role: 'user',
-        content: {
-          type: 'text',
-          text: contextMessage.content
         }
       }
     ])
@@ -908,6 +908,13 @@ describe('Copilot', () => {
         role: 'user',
         content: {
           type: 'text',
+          text: contextMessage.content
+        }
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text',
           text: 'Find my projects'
         }
       },
@@ -930,13 +937,6 @@ describe('Copilot', () => {
         content: {
           type: 'text',
           text: '{"projects":["demo"]}'
-        }
-      },
-      {
-        role: 'user',
-        content: {
-          type: 'text',
-          text: contextMessage.content
         }
       }
     ])
@@ -1004,7 +1004,8 @@ describe('Copilot', () => {
     await waitForCompletion()
 
     expect(generator.calls).toHaveLength(2)
-    expect(generator.calls[1]?.[2]).toEqual({
+    // Index 0 is the context message; the tool result follows the user message and the tool call.
+    expect(generator.calls[1]?.[3]).toEqual({
       role: 'tool',
       toolCallId: 'call_1',
       content: {
@@ -1094,11 +1095,20 @@ describe('Copilot', () => {
     ])
     const contextMessage = await copilot.getContextMessage()
 
-    expect(sampledMessages?.at(-1)).toEqual({
+    // The tail is [context, user message, copilot tool call, tool result]: the context sits
+    // right before the current round's user message.
+    expect(sampledMessages?.at(-4)).toEqual({
       role: 'user',
       content: {
         type: 'text',
         text: contextMessage.content
+      }
+    })
+    expect(sampledMessages?.at(-3)).toEqual({
+      role: 'user',
+      content: {
+        type: 'text',
+        text: 'Find my projects'
       }
     })
   })
@@ -1139,7 +1149,8 @@ describe('Copilot', () => {
     expect(generator.calls).toHaveLength(1)
     expect(generator.callOptions).toHaveLength(1)
 
-    const contextMessage = generator.calls[0].at(-1)
+    // The context message sits right before the user's message, which stays last.
+    const contextMessage = generator.calls[0].at(-2)
     const expectedContextMessage = await copilot.getContextMessage()
 
     expect(contextMessage).toEqual({

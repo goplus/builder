@@ -46,6 +46,7 @@ import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './context'
 import { type QuickInput, type Round, RoundState } from './copilot'
 import { isSilentContent } from './markdown-elements/StaySilent'
+import { stripThinking } from './content-visibility'
 import { useSpotlight } from '@/utils/spotlight'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import type { LocaleMessage } from '@/utils/i18n'
@@ -73,10 +74,13 @@ const rounds = computed(() => {
  */
 function isSilentRound(round: Round) {
   if (round.state !== RoundState.Completed) return false
-  const content = round.resultMessages
-    .filter((m) => m.role === 'copilot')
-    .map((m) => m.content ?? '')
-    .join('')
+  // Thinking blocks hide their inner text too, so reasoning never counts as visible content.
+  const content = stripThinking(
+    round.resultMessages
+      .filter((m) => m.role === 'copilot')
+      .map((m) => m.content ?? '')
+      .join('')
+  )
   if (isSilentContent(content)) return true
   // A reply of invisible elements only (e.g. a lone progress report) shows nothing either.
   const invisibleTags = copilot

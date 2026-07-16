@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RoundState, type Round } from './copilot'
 import { provideCopilotRound } from './context'
+import { sanitizeInProgressContent, stripThinking } from './content-visibility'
 import MarkdownView from './MarkdownView.vue'
 import BaseFailed from './feedback/BaseFailed.vue'
 import BaseCancelled from './feedback/BaseCancelled.vue'
@@ -25,14 +26,15 @@ const feedbackProps = computed(() => ({
 const resultContent = computed<string | null>(() => {
   const copilotMessages: string[] = []
   for (const message of props.round.resultMessages) {
-    if (message.role === 'copilot' && message.content != null) copilotMessages.push(message.content)
+    if (message.role === 'copilot' && message.content != null) copilotMessages.push(stripThinking(message.content))
   }
   // TODO: render in-progress message and other messages separately to improve performance & user experience
   if (props.round.inProgressCopilotMessageContent != null) {
-    copilotMessages.push(props.round.inProgressCopilotMessageContent)
+    copilotMessages.push(sanitizeInProgressContent(props.round.inProgressCopilotMessageContent))
   }
-  if (copilotMessages.length === 0) return null
-  return copilotMessages.join('\n\n')
+  const joined = copilotMessages.join('\n\n')
+  if (joined.trim() === '') return null
+  return joined
 })
 </script>
 
