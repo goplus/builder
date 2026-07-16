@@ -70,6 +70,12 @@ const props = defineProps<{
 const tutorial = useTutorial()
 const route = useRoute()
 
+// End whatever course was in progress as soon as we land here, not when `startCourse` eventually
+// runs: the opening sequence (story video, prelude) can take a while, and until then the previous
+// course's session would still be live — its dialogs lingering on screen and its copilot reacting
+// to the navigation that brought us here.
+tutorial.endCurrentCourse()
+
 function getUsercontentOrigin(): string | null {
   if (usercontentBaseUrl == null || usercontentBaseUrl === '') return null
   try {
