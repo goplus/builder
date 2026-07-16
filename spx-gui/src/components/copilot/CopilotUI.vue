@@ -103,19 +103,26 @@ function isSkippableRound(round: Round) {
 
 const lastRound = computed(() => rounds.value?.at(-1) ?? null)
 
-// The conversation history to render: every settled round that has something to show, oldest
-// first, so the user can scroll back through it. Rounds where the copilot chose to say nothing
-// (silent, or an ambient event cancelled by batching) are hidden. The in-progress round is kept
-// so its streaming reply shows. In developer mode nothing is hidden (for prompt debugging).
-const visibleRounds = computed(() => {
-  const list = rounds.value
-  if (list == null) return []
-  return list.filter((round) => {
-    if ([RoundState.Loading, RoundState.Initialized].includes(round.state)) return round === lastRound.value
-    if (isDeveloperMode.value) return true
-    return !isSkippableRound(round)
-  })
-})
+const allRounds = computed(() => rounds.value ?? [])
+
+/**
+ * Whether a round belongs in the chat history. Only rounds the user started by sending a message
+ * do — ambient event rounds are perception, not conversation, and whatever they produce (a
+ * spotlight, a guidance modal, a video) shows itself outside the chat. Rounds where the copilot
+ * said nothing are left out too. In developer mode everything shows, for prompt debugging.
+ *
+ * Note that rounds left out are still rendered, just hidden (see the template): the elements in a
+ * reply drive their effects — narrowing the API panel, opening a video or the success dialog — by
+ * being mounted, so skipping the render entirely would silently drop them.
+ */
+function isChatVisible(round: Round) {
+  if (isDeveloperMode.value) return true
+  if (round.userMessage.type !== 'text') return false
+  if ([RoundState.Loading, RoundState.Initialized].includes(round.state)) return round === lastRound.value
+  return !isSkippableRound(round)
+}
+
+const hasVisibleRounds = computed(() => allRounds.value.some((round) => isChatVisible(round)))
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
 
@@ -637,14 +644,17 @@ onMounted(async () => {
             <circle cx="10.5" cy="4.5" r="1" fill="#A7B1BB" />
           </svg>
         </div>
-        <div ref="outputRef" class="output">
-          <template v-if="visibleRounds.length > 0">
-            <CopilotRound
-              v-for="round in visibleRounds"
-              :key="round.id"
-              :round="round"
-              :is-last-round="round === lastRound"
-            />
+        <div ref="outputRef" class="output" :class="{ 'has-content': hasVisibleRounds || session == null }">
+          <!-- Every round is rendered so the elements in its reply can take effect on mount; the
+               ones that don't belong in the chat are hidden rather than skipped. -->
+          <CopilotRound
+            v-for="round in allRounds"
+            v-show="isChatVisible(round)"
+            :key="round.id"
+            :round="round"
+            :is-last-round="round === lastRound"
+          />
+          <template v-if="hasVisibleRounds">
             <div v-if="quickInputs.length > 0" class="quick-inputs">
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
@@ -681,7 +691,7 @@ onMounted(async () => {
         <CopilotInput
           ref="inputRef"
           class="input"
-          :class="{ 'only-input': visibleRounds.length === 0 }"
+          :class="{ 'only-input': !hasVisibleRounds && session != null }"
           :copilot="copilot"
         />
       </div>
@@ -949,7 +959,9 @@ onMounted(async () => {
   scrollbar-width: thin;
 }
 
-.body-wrapper .output:not(:empty) {
+/* Hidden rounds still occupy the DOM (they are rendered for their effects), so key the spacing on
+   whether anything is actually shown rather than on `:not(:empty)`. */
+.body-wrapper .output.has-content {
   margin-top: 14px;
   padding: 12px 16px 16px 16px;
 }

@@ -4,6 +4,7 @@ import { RoundState, type Round } from './copilot'
 import { provideCopilotRound } from './context'
 import { sanitizeInProgressContent, stripThinking } from './content-visibility'
 import MarkdownView from './MarkdownView.vue'
+import UserMessage from './UserMessage.vue'
 import BaseFailed from './feedback/BaseFailed.vue'
 import BaseCancelled from './feedback/BaseCancelled.vue'
 import { ApiExceptionCode } from '@/apis/common/exception'
@@ -40,6 +41,7 @@ const resultContent = computed<string | null>(() => {
 
 <template>
   <section>
+    <UserMessage :message="round.userMessage" />
     <MarkdownView v-if="resultContent != null" class="self-stretch" :value="resultContent" />
     <div v-if="round.state !== RoundState.Initialized">
       <template v-if="round.state === RoundState.Failed">
