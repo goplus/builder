@@ -22,10 +22,19 @@ const handleCopy = useMessageHandle(
 </script>
 
 <template>
+  <!-- In teaching scenarios the code is shown so the user can read it, but selection, copying and
+       one-click insertion are disabled: they must type it themselves to learn. -->
   <BlockWrapper v-if="codeHidden">
-    <div class="p-3 text-hint-2">
-      {{ $t({ en: 'Try writing the code yourself!', zh: '试着自己写写看吧！' }) }}
+    <div class="select-none py-3 pl-3" @copy.prevent @contextmenu.prevent>
+      <CodeView class="min-w-0 overflow-x-auto pr-3" :language="language" mode="block" line-numbers>
+        {{ code }}
+      </CodeView>
     </div>
+    <BlockFooter>
+      <span class="px-1 text-xs text-hint-2">
+        {{ $t({ en: 'Type it yourself — copying is off', zh: '照着自己敲一遍，不能复制哦～' }) }}
+      </span>
+    </BlockFooter>
   </BlockWrapper>
   <BlockWrapper v-else>
     <div class="py-3 pl-3">
