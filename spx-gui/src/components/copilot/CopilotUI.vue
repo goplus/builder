@@ -92,19 +92,29 @@ function isSilentRound(round: Round) {
   return content.replace(invisiblePattern, '').trim() === ''
 }
 
+// A round that carries nothing worth showing. Besides silent rounds, an ambient EVENT round that
+// was cancelled is skipped: events batch (a newer event aborts the in-flight one), and — now that
+// hiding the panel no longer aborts — a user who keeps editing while the panel is hidden would
+// otherwise reopen to a stray "Cancelled". A cancelled TYPED round stays visible (the user
+// explicitly stopped their own request and may want the retry affordance).
+function isSkippableRound(round: Round) {
+  if (round.state === RoundState.Cancelled && round.userMessage.type === 'event') return true
+  return isSilentRound(round)
+}
+
 const activeRound = computed(() => {
   const list = rounds.value
   const lastRound = list?.at(-1)
   if (lastRound == null || [RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) {
     return null
   }
-  // Skip silent rounds so the previous, meaningful guidance stays visible instead of being
-  // replaced by an empty reply. In developer mode silent rounds are shown for prompt debugging.
-  if (!isDeveloperMode.value && isSilentRound(lastRound)) {
+  // Skip skippable rounds so the previous, meaningful guidance stays visible instead of being
+  // replaced by an empty/cancelled reply. In developer mode they are shown for prompt debugging.
+  if (!isDeveloperMode.value && isSkippableRound(lastRound)) {
     for (let i = list!.length - 2; i >= 0; i--) {
       const round = list![i]
       if ([RoundState.Loading, RoundState.Initialized].includes(round.state)) continue
-      if (isSilentRound(round)) continue
+      if (isSkippableRound(round)) continue
       return round
     }
     return null
