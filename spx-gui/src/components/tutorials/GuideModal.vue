@@ -12,8 +12,8 @@ export const detailedDescription = `Show one very short guidance sentence in a c
 much more attention than a chat message. This is your FIRST-level intervention for a user who is genuinely stuck: a \
 plain-text nudge that points the direction (what to check, where to look) — NEVER the answer or the code itself. Do \
 not use it at the course opening, for routine encouragement, or for anything the user is already handling fine. The \
-element content is PLAIN TEXT ONLY — no markdown, no other elements — and MUST be at most 30 characters: a single \
-short sentence. The modal opens immediately when your message arrives; the user closes it to continue and can \
+element content is PLAIN TEXT ONLY — no markdown, no other elements — and MUST be at most 30 characters (a Chinese \
+character counts as one): a single short sentence. The modal opens immediately when your message arrives; the user closes it to continue and can \
 reopen it from the chat. For example,
 
 <${tagName}>量一量：Kiko 离萝卜有多远？</${tagName}>`

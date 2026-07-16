@@ -1,19 +1,24 @@
 import type { ICopilotContextProvider } from '@/components/copilot/copilot'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
+import { tagName as apiReferenceFilterTagName } from './api-reference-filter'
 
 /**
- * Repeats the rule the copilot most often forgets, in the context of every round rather than
- * once in the (long) course topic: the model reliably follows it at the point of decision, while
- * it drifts from the same rule stated far away. Without this, a course whose goal is already met
- * drags on, telling the user to do what they have just done.
+ * Repeats the two rules the copilot most often forgets, in the context of every round rather
+ * than once in the (long) course topic: the model reliably follows them at the point of
+ * decision, while it drifts from the same rules stated far away.
+ *
+ * - Completion is checked every round, or a course whose goal is already met drags on.
+ * - The API narrowing is re-emitted on later rounds, which crowds out the actual reply.
  */
 export const tutorialCourseReminder: ICopilotContextProvider = {
   provideContext() {
     return `# Before you reply
 
-Read the course completion criteria (in the course topic) and check them against everything that has happened, \
+1. Read the course completion criteria (in the course topic) and check them against everything that has happened, \
 INCLUDING the message you are reading right now. If they are met, emit \
 <${tutorialCourseSuccessTagName} comment="..." /> in THIS reply, with the comment as your reply to the user. Do not \
-ask for more than the criteria require, and never tell the user to do something they have already done.`
+ask for more than the criteria require, and never tell the user to do something they have already done.
+2. The API narrowing you set at the course start is still in effect. Do NOT emit <${apiReferenceFilterTagName}> \
+again unless a step genuinely needs a DIFFERENT set of APIs. This reply is for the user.`
   }
 }

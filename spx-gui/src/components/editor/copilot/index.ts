@@ -272,6 +272,12 @@ Selection: ${selectionStr}.`
     result += `
 Code content of \`${codeFilePath}\`:
 ${JSON.stringify(code)}`
+    // Gated together with the in-editor code guides: while a feature (e.g. a tutorial course)
+    // has code guidance locked, this generic "encourage dragging" advice must not leak either.
+    if (editorCopilotCodeGuides.enabled) {
+      result += `
+When suggesting code edits, prefer guiding the user to insert code by dragging the corresponding item from "API References" into the code editor over typing it manually, whenever such an item exists.`
+    }
     return result
   }
 }
