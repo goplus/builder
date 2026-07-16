@@ -14,6 +14,8 @@ import { progressAheadTagName, progressBackTagName, progressNeutralTagName } fro
  * - The API narrowing is re-emitted on later rounds, which crowds out the actual reply.
  */
 export const tutorialCourseReminder: ICopilotContextProvider = {
+  // Per-round rules must survive context truncation and sit near the generation position.
+  criticalContext: true,
   provideContext() {
     return `# Before you reply
 
