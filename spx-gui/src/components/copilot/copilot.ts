@@ -876,8 +876,12 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.activeRef.value = true
   }
 
+  /**
+   * Hide the copilot panel. The current round keeps running in the background (hiding is not
+   * cancelling) — its result is there when the panel is reopened. To also stop the round, end the
+   * session instead.
+   */
   close() {
-    this.currentSession?.abortCurrentRound()
     this.activeRef.value = false
   }
 

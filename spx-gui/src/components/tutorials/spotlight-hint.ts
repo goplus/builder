@@ -18,7 +18,7 @@ while everything else is dimmed with a translucent mask (which does not block in
 next to it. Unlike <highlight-link>, which renders a link the user must click first, this element triggers the \
 highlight immediately when your message arrives — use it to point the user at the ONE thing they should interact \
 with next (e.g. the run button, or an item in the API references panel). Use the node ID provided in the UI \
-information. The highlight dismisses automatically after a few seconds. Use at most one per message. For example, \
+information. The highlight stays until the user clicks somewhere. Use at most one per message. For example, \
 <${tagName} target-id="xxxyyy" tip="Click here!" /> highlights the node with ID "xxxyyy" and shows the tip \
 "Click here!" beside it.`
 
@@ -48,7 +48,7 @@ export default defineComponent<Props>(
     function reveal(): boolean {
       const nodeInfo = radar.getNodeById(props.targetId)
       if (nodeInfo == null || !nodeInfo.visible) return false
-      spotlight.reveal(nodeInfo.getElement(), props.tip ?? '', { mask: true })
+      spotlight.reveal(nodeInfo.getElement(), props.tip ?? '', { mask: true, persist: true })
       return true
     }
 
