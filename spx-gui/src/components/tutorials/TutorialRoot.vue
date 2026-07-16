@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 import { watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from '@/utils/i18n'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 
-import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
+import { provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
 import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
@@ -22,16 +21,12 @@ import { installTutorialGuidance } from './tutorial-guidance'
 import { tutorialCourseReminder } from './tutorial-course-reminder'
 import { getApiVideo } from './api-videos'
 
-const i18n = useI18n()
 const copilot = useCopilot()
 const router = useRouter()
 const isRouteLoaded = useIsRouteLoaded()
 const codeEditorRef = useCodeEditorRef()
 
 const tutorial = new Tutorial(copilot, router, isRouteLoaded)
-
-// TODO: ensure `RegExp.escape` available & use `RegExp.escape` instead
-const tutorialCourseSuccessPattern = new RegExp(`<${tutorialCourseSuccess.tagName.replace('-', '\\-')}\\b`)
 
 watch(
   () => tutorial.currentCourse,
@@ -90,31 +85,7 @@ watch(
         isRaw: staySilent.isRaw,
         component: staySilent.default
       }),
-      copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default),
-      copilot.registerQuickInputProvider({
-        provideQuickInput(lastCopilotMessage, topic) {
-          if (topic == null || !isTutorialTopic(topic)) return []
-          if (lastCopilotMessage?.content != null && tutorialCourseSuccessPattern.test(lastCopilotMessage.content)) {
-            return []
-          }
-          return [
-            {
-              text: {
-                en: 'Next step',
-                zh: '下一步'
-              },
-              message: {
-                role: 'user',
-                type: 'text',
-                content: i18n.t({
-                  en: 'I did what you asked. Tell me what to do next.',
-                  zh: '我按你说的操作了，接下来该做什么？'
-                })
-              }
-            }
-          ]
-        }
-      })
+      copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default)
     ]
 
     onCleanup(() => {
