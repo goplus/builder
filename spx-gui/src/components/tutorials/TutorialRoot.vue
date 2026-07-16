@@ -40,6 +40,8 @@ watch(
     editorWorkspaceLayout.setHiddenAreas(courseConfig.hiddenAreas)
     copilot.setUIMode('docked')
     const intervention = new TutorialIntervention(copilot)
+    // Surface it on the tutorial so the navbar course menu can show the current guidance level.
+    tutorial.setCurrentIntervention(intervention)
 
     const disposers = [
       intervention.start(),
@@ -94,6 +96,7 @@ watch(
       }
       // Reset the API references panel, the workspace layout and the copilot presentation
       // when leaving the course, so none of them outlives it.
+      tutorial.setCurrentIntervention(null)
       codeEditorRef.value?.setAPIReferenceFilter(null)
       editorWorkspaceLayout.reset()
       copilot.setUIMode('floating')

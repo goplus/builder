@@ -1,4 +1,4 @@
-import { inject, nextTick, provide, ref } from 'vue'
+import { inject, nextTick, provide, ref, shallowRef } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
@@ -14,7 +14,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import { tagName as staySilentTagName } from '@/components/copilot/markdown-elements/StaySilent'
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
-import { backThreshold, neutralThreshold } from './tutorial-intervention'
+import { backThreshold, neutralThreshold, type TutorialIntervention } from './tutorial-intervention'
 import { progressAheadTagName, progressBackTagName, progressNeutralTagName } from './user-progress'
 import { tagName as spotlightHintTagName } from './spotlight-hint'
 import { tagName as guideModalTagName } from './GuideModal.vue'
@@ -60,6 +60,19 @@ export class Tutorial {
 
   get currentSeries(): CourseSeries | null {
     return this.series.value
+  }
+
+  /**
+   * Intervention tracking of the running course. Owned by `TutorialRoot` (which creates it per
+   * course) and surfaced here so the tutorial's own UI — e.g. the navbar course menu — can show
+   * how strongly the copilot is currently helping.
+   */
+  private interventionRef = shallowRef<TutorialIntervention | null>(null)
+  get currentIntervention(): TutorialIntervention | null {
+    return this.interventionRef.value
+  }
+  setCurrentIntervention(intervention: TutorialIntervention | null) {
+    this.interventionRef.value = intervention
   }
 
   private abandonPredictionCountRef = ref(0)
@@ -378,6 +391,7 @@ system counts them and raises the level, and once it does you attach guidance to
     this.copilot.endCurrentSession()
     this.course.value = null
     this.series.value = null
+    this.interventionRef.value = null
     this.abandonPredictionCountRef.value = 0
   }
 
