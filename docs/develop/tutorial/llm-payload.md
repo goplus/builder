@@ -228,6 +228,10 @@ window.fetch = function (input, init) {
 审查时改哪段，就去对应源文件改。如附录与代码不一致，以代码为准。
 
 > **审查修复变更记录**（详见对应源文件）：
+> - **stay-silent 与 verdict 的关系统一**：stay-silent 不再是「唯一的沉默方式」，而是「隐藏罩」——事件的标准
+>   静默回复是 `verdict + <stay-silent/>`（隐藏整轮、包括泄漏文本，verdict 仍生效）；绝不与可见内容（提示/视频/
+>   成功对话框）同行，否则会把它们一起藏掉。开场也统一带 `<user-progress-neutral/>`。每轮 reminder 增加 verdict
+>   规则；guide-modal 去掉 "FIRST-level" 措辞；abandon 规则明确「乱逛是 neutral，back 只用于代码/运行偏离」。
 > - **干预等级改为进展判定驱动**（大改）：模型不再计数，而是每个事件轮报一个 `<user-progress-ahead/>`/
 >   `<user-progress-neutral/>`/`<user-progress-back/>`；系统累计并升降级（neutral 6 或 back 3 升级、升级清零、
 >   ahead 减 2/1、ahead-归零后降级）。废弃 `<tutorial-progress/>`。见 `user-progress.ts` +
