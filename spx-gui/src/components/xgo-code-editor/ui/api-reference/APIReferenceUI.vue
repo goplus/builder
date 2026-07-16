@@ -164,7 +164,10 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
+      <ul
+        v-if="!controller.filtered"
+        class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3"
+      >
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
