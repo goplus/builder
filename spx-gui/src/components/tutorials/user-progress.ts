@@ -14,7 +14,8 @@ export const progressNeutralTagName = 'user-progress-neutral'
 export const progressBackTagName = 'user-progress-back'
 
 const commonNote = `Judge by what actually CHANGED in the user's code / run relative to last time, not by \
-pass-vs-fail. It renders nothing to the user. Emit exactly one progress verdict per event.`
+pass-vs-fail. It renders nothing to the user. Emit exactly one progress verdict per event; when no visible \
+guidance is due, pair it with <stay-silent /> (never pair <stay-silent /> with anything the user should see).`
 
 function progressElement(tagName: string, description: string, name: string): CustomElementDefinition {
   return {
@@ -38,8 +39,8 @@ ${commonNote} Reporting progress eases off your guidance.`,
 export const progressNeutral = progressElement(
   progressNeutralTagName,
   `Report that the user is exploring with no clear change in distance to the goal, or has not done anything \
-meaningful yet. Ordinary code errors, stopping a run, or navigating around are all neutral. ${commonNote} A reply \
-that is only this element is your way of staying silent on an event.`,
+meaningful yet. Ordinary code errors, stopping a run, or navigating around are all neutral. ${commonNote} This \
+verdict paired with <stay-silent /> is the standard silent reply to an event.`,
   'UserProgressNeutral'
 )
 
