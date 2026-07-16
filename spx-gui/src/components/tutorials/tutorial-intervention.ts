@@ -37,12 +37,28 @@ export const backThreshold = 3
 export class TutorialIntervention implements ICopilotContextProvider {
   constructor(private copilot: Copilot) {}
 
+  // The level must survive context truncation and sit near the generation position.
+  criticalContext = true
+
   private neutral = 0
   private back = 0
   private levelRef = ref<InterventionLevel>(InterventionLevel.Silent)
 
+  /**
+   * Whether the round being handled is a message the user typed. A direct request for help
+   * deserves pointing tools (spotlight, hint modal) even while the trend-based level is still
+   * silent — the user asking is not an unsolicited intervention. The boost lasts only for that
+   * round; the trend-based level and its counters are untouched.
+   */
+  private get isAnsweringTypedMessage(): boolean {
+    const lastRound = this.copilot.currentSession?.rounds.at(-1)
+    return lastRound != null && lastRound.userMessage.type === 'text' && lastRound.state !== RoundState.Completed
+  }
+
   get level(): InterventionLevel {
-    return this.levelRef.value
+    const base = this.levelRef.value
+    if (this.isAnsweringTypedMessage) return Math.max(base, InterventionLevel.Nudge)
+    return base
   }
 
   private escalate() {
@@ -137,11 +153,15 @@ export class TutorialIntervention implements ICopilotContextProvider {
       [InterventionLevel.Nudge]: 'nudge',
       [InterventionLevel.Guide]: 'guide'
     }
+    const boostNote = this.isAnsweringTypedMessage
+      ? '\nThe user addressed you directly, which unlocks the pointing tools for THIS reply regardless of the trend \
+— answer their request, pointing at things if that serves it best.'
+      : ''
     return `# Intervention level
 
 Your current intervention level is ${this.level} (${levelNames[this.level]}). The system computes this from the \
 progress verdicts you report each round — you do NOT track it yourself, just report one verdict per event honestly. \
 Your "Available custom elements" list is already filtered to this level: a tag not in that list does nothing, so \
-never write one from memory. Do not stay silent when the level expects you to act.`
+never write one from memory. Do not stay silent when the level expects you to act.${boostNote}`
   }
 }

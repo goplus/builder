@@ -228,6 +228,13 @@ window.fetch = function (input, init) {
 审查时改哪段，就去对应源文件改。如附录与代码不一致，以代码为准。
 
 > **审查修复变更记录**（详见对应源文件）：
+> - **用户消息现在是最后一条**：context message 插到当前轮用户消息**之前**（`copilot.ts`），用户的话紧贴生成位置。
+> - **critical context**：provider 可声明 `criticalContext: true`（干预等级、每轮提醒已声明），排在可截断
+>   context 之后、topic 之前，永不被截断。
+> - **打字求助临时解锁指点**：用户打字的那一轮，等级临时提升到至少 Nudge（guide-modal/spotlight 可用），
+>   轮结束即恢复，不影响趋势计数（`TutorialIntervention.level`）。
+> - **`thinking` 元素启用**（全局注册）：包裹推理即对用户隐藏（含流式过程中未闭合的部分）；流式渲染统一净化——
+>   出现 stay-silent 即整轮不闪现、尾部半截标签暂扣（`content-visibility.ts`）。
 > - **stay-silent 与 verdict 的关系统一**：stay-silent 不再是「唯一的沉默方式」，而是「隐藏罩」——事件的标准
 >   静默回复是 `verdict + <stay-silent/>`（隐藏整轮、包括泄漏文本，verdict 仍生效）；绝不与可见内容（提示/视频/
 >   成功对话框）同行，否则会把它们一起藏掉。开场也统一带 `<user-progress-neutral/>`。每轮 reminder 增加 verdict
