@@ -9,11 +9,13 @@ export const isRaw = false
 
 export const description = 'Respond without saying anything to the user.'
 
-export const detailedDescription = `Respond without saying anything to the user. When you decide no reaction is \
-needed (see the topic instructions for when staying silent is expected), reply with exactly <${tagName} /> and \
-nothing else — no other text (not even your reasoning for staying silent), elements or tool calls. Any reply \
-containing this element is hidden from the user entirely, INCLUDING whatever text surrounds it. Do NOT use this \
-element when the user sends you a message directly — anything they typed always deserves a response.`
+export const detailedDescription = `Hide your whole reply from the user. Include <${tagName} /> when the reply \
+contains nothing the user should see — during a course, pair it with your progress verdict (other invisible \
+elements may accompany it and still take effect). Any reply containing this element is hidden from the user \
+ENTIRELY, including whatever text surrounds it — so NEVER include it in a reply that carries guidance or anything \
+else the user must see (a hint, a video, the success dialog): it would hide them all. Do not write any other text \
+alongside it (not even your reasoning), and do NOT use it to answer a message the user typed — anything they typed \
+always deserves a visible response.`
 
 export const attributes = z.object({})
 
