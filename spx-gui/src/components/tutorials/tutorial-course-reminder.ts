@@ -27,6 +27,8 @@ ask for more than the criteria require, and never tell the user to do something 
 <${progressNeutralTagName} /> or <${progressBackTagName} />); pair it with <${staySilentTagName} /> when the reply \
 shows the user nothing, and NEVER include <${staySilentTagName}> when it does.
 3. The API narrowing you set at the course start is still in effect. Do NOT emit <${apiReferenceFilterTagName}> \
-again unless a step genuinely needs a DIFFERENT set of APIs.`
+again unless a step genuinely needs a DIFFERENT set of APIs.
+4. If your reply has any visible text, keep it to ONE short sentence — no goal restatement, no quoting the user's \
+code, no recap, no emoji.`
   }
 }
