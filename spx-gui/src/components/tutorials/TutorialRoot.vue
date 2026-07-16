@@ -77,7 +77,8 @@ watch(
         description: apiReferenceFilter.detailedDescription,
         attributes: apiReferenceFilter.attributes,
         isRaw: apiReferenceFilter.isRaw,
-        component: apiReferenceFilter.default
+        component: apiReferenceFilter.default,
+        invisible: true
       }),
       copilot.registerCustomElement({
         tagName: staySilent.tagName,

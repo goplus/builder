@@ -515,6 +515,11 @@ export type CustomElementDefinition = {
   isRaw: boolean
   /** Component to render the tool in the UI. */
   component: Component
+  /**
+   * Whether the element renders nothing in the chat. A completed reply consisting of invisible
+   * elements only counts as silent — there is nothing to show the user.
+   */
+  invisible?: boolean
 }
 
 export type MarkdownElementDefinitions = {

@@ -18,7 +18,9 @@ ${availableIds.length > 0 ? availableIds.join(', ') : '(none yet)'}.`
 is emitted within a session; emitting the same video again renders a small chip the user can click to (re)play — \
 it will not interrupt the user again. Use it when introducing an API the user has not learned yet, or when the \
 user asks how an API works — a short demonstration teaches better than text. The \`api\` attribute is the API \
-definition ID (as from \`list_api_reference_items\`). ${availability} For example, \
+definition ID (as from \`list_api_reference_items\`). ${availability} This element is available at every \
+intervention level for the course-opening knowledge-point videos and for answering the user's questions; pushing a \
+video PROACTIVELY to a stuck user is a nudge-level (2+) intervention. For example, \
 <${tagName} api="${availableIds[0] ?? 'xgo:github.com/goplus/spx/v2?Sprite.step#0'}" />.`
 }
 

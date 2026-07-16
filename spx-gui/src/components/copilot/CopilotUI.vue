@@ -77,7 +77,15 @@ function isSilentRound(round: Round) {
     .filter((m) => m.role === 'copilot')
     .map((m) => m.content ?? '')
     .join('')
-  return isSilentContent(content)
+  if (isSilentContent(content)) return true
+  // A reply of invisible elements only (e.g. a lone progress report) shows nothing either.
+  const invisibleTags = copilot
+    .getCustomElements()
+    .filter((e) => e.invisible === true)
+    .map((e) => e.tagName)
+  if (invisibleTags.length === 0) return false
+  const invisiblePattern = new RegExp(`</?(?:${invisibleTags.join('|')})\\b[^>]*>`, 'g')
+  return content.replace(invisiblePattern, '').trim() === ''
 }
 
 const activeRound = computed(() => {
