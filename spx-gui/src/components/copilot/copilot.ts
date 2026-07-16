@@ -167,7 +167,11 @@ type RoundExported = {
   apiExceptionMeta?: unknown | null
 }
 
+let roundIdCounter = 0
+
 export class Round {
+  /** Stable per-instance id, for use as a list key when rendering rounds. Not persisted. */
+  readonly id = ++roundIdCounter
   resultMessages: Array<CopilotMessage | ToolMessage> = shallowReactive([])
   private inProgressCopilotMessageContentRef = ref<string | null>(null)
   get inProgressCopilotMessageContent() {
@@ -591,6 +595,15 @@ export class Copilot extends Disposable {
   private contextProviders: ICopilotContextProvider[] = shallowReactive([])
   private quickInputProviders: IQuickInputProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
+  /**
+   * Tag names of elements that render nothing in the chat, accumulated across every registration.
+   * Invisibility is a stable property of an element type, so we never remove entries: this lets
+   * "is this round silent?" recognize a tag even after a level-gated element has been unregistered.
+   */
+  private invisibleTagNamesSet = new Set<string>()
+  get invisibleTagNames(): ReadonlySet<string> {
+    return this.invisibleTagNamesSet
+  }
   private toolMap = new Map<string, ToolDefinition>()
   markdownElements = shallowReactive<MarkdownElementDefinitions>({})
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
@@ -952,6 +965,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   registerCustomElement(customElement: CustomElementDefinition): Disposer {
     this.customElementMap.set(customElement.tagName, customElement)
+    if (customElement.invisible === true) this.invisibleTagNamesSet.add(customElement.tagName)
     return () => {
       if (this.customElementMap.get(customElement.tagName) === customElement) {
         this.customElementMap.delete(customElement.tagName)
