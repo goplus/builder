@@ -1,18 +1,12 @@
-import { z } from 'zod'
-import { defineComponent, onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import type { Disposer } from '@/utils/disposable'
-import {
-  RoundState,
-  type Copilot,
-  type CustomElementDefinition,
-  type ICopilotContextProvider,
-  type Round
-} from '@/components/copilot/copilot'
+import { RoundState, type Copilot, type ICopilotContextProvider, type Round } from '@/components/copilot/copilot'
+import { parseProgressVerdict, type ProgressVerdict } from './user-progress'
 
 /**
- * How strongly the copilot may intervene, decided by how many events passed without the user
- * getting back on track. The copilot is restrained by default and earns stronger tools only
- * once the user is demonstrably stuck.
+ * How strongly the copilot may intervene, decided by how the user's progress has trended. The
+ * copilot is restrained by default and earns stronger tools only once the user is demonstrably
+ * stuck or drifting.
  */
 export enum InterventionLevel {
   /** Observe only: no guidance, let the user explore. */
@@ -23,63 +17,102 @@ export enum InterventionLevel {
   Guide = 3
 }
 
-/** Events without the user getting back on track before nudging is allowed. */
-export const nudgeThreshold = 5
-/** ...and before in-editor code guides are allowed. */
-export const guideThreshold = 8
+const minLevel = InterventionLevel.Silent
+const maxLevel = InterventionLevel.Guide
 
-export function getInterventionLevel(eventsSinceProgress: number): InterventionLevel {
-  if (eventsSinceProgress >= guideThreshold) return InterventionLevel.Guide
-  if (eventsSinceProgress >= nudgeThreshold) return InterventionLevel.Nudge
-  return InterventionLevel.Silent
-}
+/** Consecutive "no progress" rounds before nudging is allowed. */
+export const neutralThreshold = 6
+/** ...and consecutive "drifting away" rounds — a stronger signal, so a lower bar. */
+export const backThreshold = 3
 
 /**
- * Tracks how many events passed without the user getting back on track, and exposes the
- * resulting intervention level to the copilot as context.
+ * Tracks the user's progress trend and exposes the resulting intervention level to the copilot.
  *
- * Counting events (not the copilot's own replies) is what makes escalation possible: an
- * intervention that did not help must not reset the level, or the copilot would oscillate
- * between silence and the same ineffective hint. The count is reset when the copilot reports
- * progress (see the `tutorial-progress` element) or when a course (re)starts.
+ * The copilot reports one progress verdict per round (ahead / neutral / back); the counting and
+ * escalation live here, not in the model — asking the model to track history or do arithmetic is
+ * unreliable, while a single per-round judgment is easy for it. `neutral` and `back` accumulate
+ * evidence that the user is stuck or drifting; `ahead` spends that evidence down and, once it is
+ * gone, backs the guidance off again.
  */
 export class TutorialIntervention implements ICopilotContextProvider {
   constructor(private copilot: Copilot) {}
 
-  private eventsSinceProgressRef = ref(0)
-  get eventsSinceProgress() {
-    return this.eventsSinceProgressRef.value
-  }
+  private neutral = 0
+  private back = 0
+  private levelRef = ref<InterventionLevel>(InterventionLevel.Silent)
 
   get level(): InterventionLevel {
-    return getInterventionLevel(this.eventsSinceProgressRef.value)
+    return this.levelRef.value
+  }
+
+  private escalate() {
+    this.levelRef.value = Math.min(maxLevel, this.levelRef.value + 1)
+    // Give the newly unlocked level a fresh window to work before climbing again.
+    this.neutral = 0
+    this.back = 0
+  }
+
+  private deEscalate() {
+    this.levelRef.value = Math.max(minLevel, this.levelRef.value - 1)
+  }
+
+  /** Apply one progress verdict, updating the counters and the level. */
+  recordVerdict(verdict: ProgressVerdict) {
+    if (verdict === 'ahead') {
+      // An `ahead` while there is nothing left to forgive means the user is clearly on track:
+      // back the guidance off a step. Otherwise it just spends down accumulated evidence.
+      const nothingToForgive = this.neutral === 0 && this.back === 0
+      this.neutral = Math.max(0, this.neutral - 2)
+      this.back = Math.max(0, this.back - 1)
+      if (nothingToForgive) this.deEscalate()
+      return
+    }
+    if (verdict === 'neutral') this.neutral++
+    else this.back++
+    if (this.back >= backThreshold || this.neutral >= neutralThreshold) this.escalate()
   }
 
   reset() {
-    this.eventsSinceProgressRef.value = 0
-    // Skip the rounds so far rather than re-counting them: counting restarts from what the
-    // user does next.
+    this.neutral = 0
+    this.back = 0
+    this.levelRef.value = InterventionLevel.Silent
+    // Skip the rounds so far rather than re-counting them: tracking restarts from what the user
+    // does next.
     this.processedRoundCount = this.copilot.currentSession?.rounds.length ?? 0
   }
 
-  /** Rounds already counted, so a round is never counted twice as it settles. */
+  /** Rounds already processed, so a round is never counted twice as it settles. */
   private processedRoundCount = 0
 
-  private countSettledRounds(rounds: Round[]) {
+  private processSettledRounds(rounds: Round[]) {
     for (let i = this.processedRoundCount; i < rounds.length; i++) {
       const round = rounds[i]
-      // Rounds settle in order; wait for an in-progress one instead of skipping past it
+      // Rounds settle in order; wait for an in-progress one instead of skipping past it.
       if (round.state !== RoundState.Completed) return
       this.processedRoundCount = i + 1
-      // Only events count as evidence of being stuck. A message the user typed is a request,
-      // answered on its own terms, and says nothing about whether they are progressing.
-      if (round.userMessage.type === 'event') this.eventsSinceProgressRef.value++
+      const verdict = this.extractVerdict(round)
+      if (verdict != null) {
+        this.recordVerdict(verdict)
+      } else if (round.userMessage.type === 'event') {
+        // The copilot must report a verdict on every event; a missing one defaults to neutral so
+        // an inattentive model still lets the user escalate. A typed message with no verdict is a
+        // plain request, not evidence of the trajectory — it changes nothing.
+        this.recordVerdict('neutral')
+      }
     }
   }
 
+  private extractVerdict(round: Round): ProgressVerdict | null {
+    const content = round.resultMessages
+      .filter((m) => m.role === 'copilot')
+      .map((m) => (m.role === 'copilot' ? m.content ?? '' : ''))
+      .join('')
+    return parseProgressVerdict(content)
+  }
+
   /**
-   * Start tracking the current session's rounds. Returns a disposer. Only started while a
-   * course is running, so the current session is the course's own.
+   * Start tracking the current session's rounds. Returns a disposer. Only started while a course
+   * is running, so the current session is the course's own.
    */
   start(): Disposer {
     this.reset()
@@ -87,12 +120,12 @@ export class TutorialIntervention implements ICopilotContextProvider {
       () => {
         const session = this.copilot.currentSession
         if (session == null) return null
-        // Depend on both, so the callback runs as rounds are added and as they settle
+        // Depend on both, so the callback runs as rounds are added and as they settle.
         return [session.rounds, session.rounds.at(-1)?.state] as const
       },
       (value) => {
         if (value == null) return
-        this.countSettledRounds(value[0])
+        this.processSettledRounds(value[0])
       },
       { immediate: true }
     )
@@ -106,37 +139,9 @@ export class TutorialIntervention implements ICopilotContextProvider {
     }
     return `# Intervention level
 
-Events observed since the user last made progress: ${this.eventsSinceProgress}.
-Your current intervention level is ${this.level} (${levelNames[this.level]}). The course topic describes what each \
-level allows. Your "Available custom elements" list is already filtered to this level: a tag not in that list does \
-NOT work — never write one from memory. And do not stay silent when the level expects you to act.`
-  }
-}
-
-export const tutorialProgressTagName = 'tutorial-progress'
-
-/**
- * Element the copilot emits when the user makes real progress, resetting the intervention level
- * back to silent, so guidance restarts from the gentlest step for the next thing they get stuck on.
- */
-export function createTutorialProgressElement(intervention: TutorialIntervention): CustomElementDefinition {
-  return {
-    tagName: tutorialProgressTagName,
-    isRaw: false,
-    invisible: true,
-    description: `Report that the user just made real progress toward the course goal (e.g. they wrote the code \
-that was missing, or their run got closer to the goal). Add <${tutorialProgressTagName} /> to your reply — it shows \
-nothing to the user, and resets your intervention level back to silent so you leave them alone again. Do not use it \
-when nothing changed, or you will never be allowed to help a stuck user.`,
-    attributes: z.object({}),
-    component: defineComponent(
-      () => {
-        onMounted(() => intervention.reset())
-        return function render() {
-          return null
-        }
-      },
-      { name: 'TutorialProgress', props: {} }
-    )
+Your current intervention level is ${this.level} (${levelNames[this.level]}). The system computes this from the \
+progress verdicts you report each round — you do NOT track it yourself, just report one verdict per event honestly. \
+Your "Available custom elements" list is already filtered to this level: a tag not in that list does nothing, so \
+never write one from memory. Do not stay silent when the level expects you to act.`
   }
 }

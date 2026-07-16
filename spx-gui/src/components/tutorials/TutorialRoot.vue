@@ -16,7 +16,8 @@ import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
 import * as apiReferenceFilter from './api-reference-filter'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
-import { createTutorialProgressElement, TutorialIntervention } from './tutorial-intervention'
+import { TutorialIntervention } from './tutorial-intervention'
+import { progressElements } from './user-progress'
 import { installTutorialGuidance } from './tutorial-guidance'
 import { tutorialCourseReminder } from './tutorial-course-reminder'
 import { getApiVideo } from './api-videos'
@@ -53,7 +54,9 @@ watch(
       installTutorialGuidance(copilot, intervention),
       copilot.registerContextProvider(intervention),
       copilot.registerContextProvider(tutorialCourseReminder),
-      copilot.registerCustomElement(createTutorialProgressElement(intervention)),
+      // The per-round progress verdicts drive the intervention level; available at every level,
+      // since the copilot must report one on every event.
+      ...progressElements.map((el) => copilot.registerCustomElement(el)),
       copilot.registerCustomElement({
         tagName: tutorialCourseSuccess.tagName,
         description: tutorialCourseSuccess.detailedDescription,
