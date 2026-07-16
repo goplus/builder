@@ -4610,7 +4610,7 @@ paths:
                   description: |
                     Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`.
 
-                    Maximum size is 64 MiB.
+                    Maximum size is 128 MiB.
                   type: string
                   format: binary
       responses:
