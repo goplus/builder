@@ -41,11 +41,11 @@ describe('installTutorialGuidance', () => {
     editorCopilotCodeGuides.reset()
   })
 
-  it('unlocks no guidance tool at the silent level', () => {
+  it('keeps only api-video (opening videos & answering) at the silent level', () => {
     const tags = registeredTags(copilot)
+    expect(tags.has(apiVideoTagName)).toBe(true)
     expect(tags.has(guideModalTagName)).toBe(false)
     expect(tags.has(spotlightHintTagName)).toBe(false)
-    expect(tags.has(apiVideoTagName)).toBe(false)
     expect(editorCopilotCodeGuides.enabled).toBe(false)
   })
 

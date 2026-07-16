@@ -8,6 +8,9 @@ export const tagName = 'spotlight-hint'
 
 export const isRaw = false
 
+// Renders nothing in the chat: the highlight appears as an overlay on the page itself.
+export const invisible = true
+
 export const description = 'Proactively highlight a UI element, dimming everything else.'
 
 export const detailedDescription = `Proactively reveal & highlight a specific node in the UI: the node is spotlighted \
