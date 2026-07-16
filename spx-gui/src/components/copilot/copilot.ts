@@ -331,8 +331,14 @@ export class Round {
 
   private async generateCopilotMessage() {
     try {
-      const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      messages.push(await this.copilot.getContextMessage())
+      const messages: Message[] = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
+      // Insert the context right BEFORE this round's user message, keeping the user's message
+      // (or event) closest to the generation position: the model attends most to the end of the
+      // sequence, and burying the user's words under the (large) context dilutes them.
+      const contextMessage = await this.copilot.getContextMessage()
+      const userMessageIndex = messages.lastIndexOf(this.userMessage)
+      if (userMessageIndex >= 0) messages.splice(userMessageIndex, 0, contextMessage)
+      else messages.push(contextMessage)
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
@@ -477,6 +483,12 @@ export interface ICopilotContextProvider {
   provideContext?(): string
   /** List skill names that should be preloaded as part of current context. */
   providePreloadSkills?(): string[]
+  /**
+   * Whether this provider's context must survive truncation (see `getContextMessage`): critical
+   * context is placed after the truncatable ambient context, near the generation position, and
+   * is never cut. Reserve it for small, behavior-driving sections (e.g. per-round rules).
+   */
+  criticalContext?: boolean
 }
 
 /** A quick input represents a UI element (typically a button) which helps the user to quickly send some message */
@@ -711,11 +723,19 @@ ${skillContents.join('\n\n')}`
 
   private async getContext(): Promise<string> {
     const contextParts = await Promise.all([
-      ...this.contextProviders.map((p) => p.provideContext?.()),
+      ...this.contextProviders.filter((p) => p.criticalContext !== true).map((p) => p.provideContext?.()),
       this.getSkillCatalogContext(),
       this.getPreloadSkillsContext()
     ])
     return contextParts.filter((s) => s != null && s.trim() !== '').join('\n\n')
+  }
+
+  private getCriticalContext(): string {
+    return this.contextProviders
+      .filter((p) => p.criticalContext === true)
+      .map((p) => p.provideContext?.())
+      .filter((s) => s != null && s.trim() !== '')
+      .join('\n\n')
   }
 
   private getCustomElementPrompt(customElement: CustomElementDefinition) {
@@ -747,17 +767,19 @@ ${topic.description}`
   async getContextMessage(): Promise<UserTextMessage> {
     const customElementsPrompt = this.getCustomElementsPrompt()
     const topicPrompt = this.getTopicPrompt()
+    const criticalContext = this.getCriticalContext()
     let context = await this.getContext()
 
     // The backend rejects a single message longer than `copilotMessageContentMaxLength`. When
     // over budget, truncate the ambient context (UI info, project content, skill documents...):
-    // the custom-element definitions and the topic instructions drive the copilot's behavior
-    // and must stay intact.
+    // the custom-element definitions, the critical context (per-round rules) and the topic
+    // instructions drive the copilot's behavior and must stay intact.
     const reserve = 200 // for the wrapper & joints below
     const contextBudget =
       apis.copilotMessageContentMaxLength -
       reserve -
       getStringLengthInCodePoints(customElementsPrompt) -
+      getStringLengthInCodePoints(criticalContext) -
       getStringLengthInCodePoints(topicPrompt)
     const contextCodePoints = Array.from(context)
     if (contextCodePoints.length > contextBudget) {
@@ -766,7 +788,7 @@ ${topic.description}`
         contextCodePoints.slice(0, Math.max(0, contextBudget - truncationNotice.length)).join('') + truncationNotice
     }
 
-    const parts = [customElementsPrompt, context, topicPrompt]
+    const parts = [customElementsPrompt, context, criticalContext, topicPrompt]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`

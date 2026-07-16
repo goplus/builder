@@ -165,4 +165,19 @@ describe('TutorialIntervention round scanning', () => {
     expect(intervention.provideContext()).toContain('level is 1 (silent)')
     dispose()
   })
+
+  it('boosts the level to nudge while answering a typed message, then reverts', async () => {
+    const { copilot, intervention, dispose } = await setup('')
+    expect(intervention.level).toBe(InterventionLevel.Silent)
+
+    copilot.currentSession!.addUserMessage({ role: 'user', type: 'text', content: '我不知道在哪里点运行' })
+    // The round has just been added and is not completed yet: the boost is active.
+    expect(intervention.level).toBe(InterventionLevel.Nudge)
+    expect(intervention.provideContext()).toContain('unlocks the pointing tools')
+
+    await timeout(eventRoundCompletionTime)
+    // The round completed: back to the trend-based level.
+    expect(intervention.level).toBe(InterventionLevel.Silent)
+    dispose()
+  })
 })
