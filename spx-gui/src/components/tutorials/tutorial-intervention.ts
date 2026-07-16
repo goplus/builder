@@ -108,7 +108,8 @@ export class TutorialIntervention implements ICopilotContextProvider {
 
 Events observed since the user last made progress: ${this.eventsSinceProgress}.
 Your current intervention level is ${this.level} (${levelNames[this.level]}). The course topic describes what each \
-level allows. Never use tools above your current level, and do not stay silent when the level tells you to act.`
+level allows. Your "Available custom elements" list is already filtered to this level: a tag not in that list does \
+NOT work — never write one from memory. And do not stay silent when the level expects you to act.`
   }
 }
 
@@ -122,6 +123,7 @@ export function createTutorialProgressElement(intervention: TutorialIntervention
   return {
     tagName: tutorialProgressTagName,
     isRaw: false,
+    invisible: true,
     description: `Report that the user just made real progress toward the course goal (e.g. they wrote the code \
 that was missing, or their run got closer to the goal). Add <${tutorialProgressTagName} /> to your reply — it shows \
 nothing to the user, and resets your intervention level back to silent so you leave them alone again. Do not use it \
