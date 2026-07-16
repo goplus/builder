@@ -82,11 +82,10 @@ function isSilentRound(round: Round) {
       .join('')
   )
   if (isSilentContent(content)) return true
-  // A reply of invisible elements only (e.g. a lone progress report) shows nothing either.
-  const invisibleTags = copilot
-    .getCustomElements()
-    .filter((e) => e.invisible === true)
-    .map((e) => e.tagName)
+  // A reply of invisible elements only (e.g. a lone progress report, or the silent course setup)
+  // shows nothing either. Use the accumulated invisible tag names, not the currently-registered
+  // ones, so a level-gated element (spotlight, etc.) is still recognized after it is unregistered.
+  const invisibleTags = [...copilot.invisibleTagNames]
   if (invisibleTags.length === 0) return false
   const invisiblePattern = new RegExp(`</?(?:${invisibleTags.join('|')})\\b[^>]*>`, 'g')
   return content.replace(invisiblePattern, '').trim() === ''
@@ -102,26 +101,21 @@ function isSkippableRound(round: Round) {
   return isSilentRound(round)
 }
 
-const activeRound = computed(() => {
+const lastRound = computed(() => rounds.value?.at(-1) ?? null)
+
+// The conversation history to render: every settled round that has something to show, oldest
+// first, so the user can scroll back through it. Rounds where the copilot chose to say nothing
+// (silent, or an ambient event cancelled by batching) are hidden. The in-progress round is kept
+// so its streaming reply shows. In developer mode nothing is hidden (for prompt debugging).
+const visibleRounds = computed(() => {
   const list = rounds.value
-  const lastRound = list?.at(-1)
-  if (lastRound == null || [RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) {
-    return null
-  }
-  // Skip skippable rounds so the previous, meaningful guidance stays visible instead of being
-  // replaced by an empty/cancelled reply. In developer mode they are shown for prompt debugging.
-  if (!isDeveloperMode.value && isSkippableRound(lastRound)) {
-    for (let i = list!.length - 2; i >= 0; i--) {
-      const round = list![i]
-      if ([RoundState.Loading, RoundState.Initialized].includes(round.state)) continue
-      if (isSkippableRound(round)) continue
-      return round
-    }
-    return null
-  }
-  return lastRound
+  if (list == null) return []
+  return list.filter((round) => {
+    if ([RoundState.Loading, RoundState.Initialized].includes(round.state)) return round === lastRound.value
+    if (isDeveloperMode.value) return true
+    return !isSkippableRound(round)
+  })
 })
-const isActiveRoundLast = computed(() => activeRound.value === rounds.value?.at(-1))
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
 
@@ -644,8 +638,13 @@ onMounted(async () => {
           </svg>
         </div>
         <div ref="outputRef" class="output">
-          <template v-if="activeRound != null">
-            <CopilotRound :round="activeRound" :is-last-round="isActiveRoundLast" />
+          <template v-if="visibleRounds.length > 0">
+            <CopilotRound
+              v-for="round in visibleRounds"
+              :key="round.id"
+              :round="round"
+              :is-last-round="round === lastRound"
+            />
             <div v-if="quickInputs.length > 0" class="quick-inputs">
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
@@ -679,7 +678,12 @@ onMounted(async () => {
           </template>
         </div>
         <div class="divider"></div>
-        <CopilotInput ref="inputRef" class="input" :class="{ 'only-input': activeRound == null }" :copilot="copilot" />
+        <CopilotInput
+          ref="inputRef"
+          class="input"
+          :class="{ 'only-input': visibleRounds.length === 0 }"
+          :copilot="copilot"
+        />
       </div>
     </div>
     <div v-if="!isDocked" class="footer">
@@ -843,7 +847,10 @@ onMounted(async () => {
 }
 
 .docked-copilot-panel .body-wrapper {
-  height: var(--docked-copilot-panel-height, 320px);
+  /* Grow with the conversation up to the (draggable) ceiling, then the output scrolls. */
+  height: auto;
+  min-height: 120px;
+  max-height: var(--docked-copilot-panel-height, 320px);
   display: flex;
   flex-direction: column;
 }

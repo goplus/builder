@@ -30,11 +30,6 @@ const handleCopy = useMessageHandle(
         {{ code }}
       </CodeView>
     </div>
-    <BlockFooter>
-      <span class="px-1 text-xs text-hint-2">
-        {{ $t({ en: 'Type it yourself — copying is off', zh: '照着自己敲一遍，不能复制哦～' }) }}
-      </span>
-    </BlockFooter>
   </BlockWrapper>
   <BlockWrapper v-else>
     <div class="py-3 pl-3">
