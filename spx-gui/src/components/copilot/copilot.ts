@@ -124,6 +124,12 @@ export type Topic = {
   description: string
   /** Whether the copilot should react to user events under the topic */
   reactToEvents: boolean
+  /**
+   * Whether an incoming user event pops the panel open, defaults to `true`. Background-first
+   * topics (e.g. tutorial courses) set `false`: the session keeps perceiving events silently and
+   * the panel only shows when explicitly opened. A per-event `autoOpen` option still wins.
+   */
+  autoOpenOnEvents?: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
   endable?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
@@ -945,7 +951,8 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (this.currentSession.topic.reactToEvents === false) return
     // Respect an explicit collapse by the user: keep feeding events to the session (so the
     // copilot keeps perceiving), but do not pop the panel open again.
-    if ((options?.autoOpen ?? true) && !this.userCollapsedRef.value) this.open()
+    const autoOpen = options?.autoOpen ?? this.currentSession.topic.autoOpenOnEvents ?? true
+    if (autoOpen && !this.userCollapsedRef.value) this.open()
     const userEventMessage: UserEventMessage = {
       type: 'event',
       role: 'user',
