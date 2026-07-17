@@ -830,8 +830,17 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * Start a new session for the copilot.
    * If a session is already running, it will be ended first.
    */
-  async startSession(topic: Topic, userMessage?: Message): Promise<void> {
-    this.open()
+  async startSession(topic: Topic, userMessage?: Message, options?: { autoOpen?: boolean }): Promise<void> {
+    if (options?.autoOpen === false) {
+      // Start in the background — a feature (e.g. a tutorial course) is setting itself up silently.
+      // Closed, but with a clean slate: a collapse the user made against the PREVIOUS session must
+      // not keep this one from ever opening once it has something to show.
+      this.activeRef.value = false
+      this.userCollapsedRef.value = false
+    } else {
+      // A session usually starts because the user asked something, so show it.
+      this.open()
+    }
     this.endCurrentSession()
     const session = new Session(topic, this)
     this.currentSessionRef.value = session
