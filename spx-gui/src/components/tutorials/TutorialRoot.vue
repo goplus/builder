@@ -38,6 +38,9 @@ watch(
     const courseConfig = extractCourseConfig(currentCourse.prompt)
     editorWorkspaceLayout.setMode('focused')
     editorWorkspaceLayout.setHiddenAreas(courseConfig.hiddenAreas)
+    // The ruler is a course-only tool: measuring a distance is how the user answers "how far?"
+    // for themselves, instead of guessing or asking the copilot for the number.
+    editorWorkspaceLayout.setEnabledTools(['ruler'])
     copilot.setUIMode('docked')
     const intervention = new TutorialIntervention(copilot)
     // Surface it on the tutorial so the navbar course menu can show the current guidance level.

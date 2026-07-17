@@ -6,6 +6,7 @@
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
     class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"
+    :class="{ 'cursor-crosshair': rulerActive }"
     :style="{ backgroundImage: `url(${stageBgUrl})` }"
     @mousemove="updateMousePos"
   >
@@ -63,6 +64,13 @@
           :target="editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget"
         />
       </v-layer>
+      <StageRuler
+        v-if="rulerEnabled"
+        :active="rulerActive"
+        :map-pos="mapPos"
+        :map-size="mapSize"
+        :snap-targets="rulerSnapTargets"
+      />
     </v-stage>
     <div v-if="localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
       <QuickConfigWrapper ref="quickConfigRef">
@@ -78,6 +86,20 @@
         />
       </QuickConfigWrapper>
     </div>
+
+    <UITooltip v-if="rulerEnabled" placement="left">
+      <template #trigger>
+        <UIButton
+          v-radar="{ name: 'Ruler', desc: 'Toggle the ruler, which measures the distance between things on the stage' }"
+          class="absolute top-2 right-2"
+          :type="rulerActive ? 'primary' : 'neutral'"
+          shape="square"
+          icon="ruler"
+          @click="rulerActive = !rulerActive"
+        />
+      </template>
+      {{ $t(rulerTip) }}
+    </UITooltip>
 
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
@@ -103,7 +125,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
-import { UILoading } from '@/components/ui'
+import { UIButton, UILoading, UITooltip } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
@@ -111,6 +133,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/spx/stage'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
@@ -118,6 +141,7 @@ import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/Sp
 import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/WidgetQuickConfig.vue'
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
+import StageRuler from './StageRuler.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
 import QuickConfigWrapper, {
   type ConfigType
@@ -159,6 +183,26 @@ function setSpriteNodeRef(id: string) {
 
 const nodeReadyMap = reactive(new Map<string, boolean>())
 const mousePos = ref<Pos | null>(null)
+
+// The ruler is not part of the regular editor: guided scenarios (tutorial courses) turn it on
+// through the workspace layout, see `optionalWorkspaceTools`.
+const rulerEnabled = computed(() => editorWorkspaceLayout.isToolEnabled('ruler'))
+const rulerActive = ref(false)
+watch(rulerEnabled, (enabled) => {
+  if (!enabled) rulerActive.value = false
+})
+
+const rulerTip = computed(() =>
+  rulerActive.value ? { en: 'Put the ruler away', zh: '收起尺子' } : { en: 'Measure a distance', zh: '量一量' }
+)
+
+/** Sprite centers, in map coordinates, so that measuring between two sprites needs no steady hand. */
+const rulerSnapTargets = computed(() =>
+  editorCtx.project.sprites.map((sprite) => ({
+    x: sprite.x + mapSize.value.width / 2,
+    y: mapSize.value.height / 2 - sprite.y
+  }))
+)
 
 const updateMousePos = throttle(() => {
   // Event `mousemove` may be triggered when mouse is out of stage with negative mouse position, we ignore such case.
