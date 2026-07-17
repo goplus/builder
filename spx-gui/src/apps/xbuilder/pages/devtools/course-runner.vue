@@ -33,6 +33,11 @@ export type CourseRunnerApi = {
   /** Load a (public) cloud project. Returns the code files that can be overridden. */
   load(owner: string, name: string): Promise<{ codeFiles: string[] }>
   /**
+   * Load a project from an `.xbp` file served over HTTP (e.g. one placed under `public/`), so a
+   * course project can be verified before it is ever uploaded.
+   */
+  loadXbp(url: string): Promise<{ codeFiles: string[] }>
+  /**
    * Override code files (key: sprite name, or `main` for the stage; `.spx` suffix optional)
    * and run the project. Resolves when the game exits, or after `timeoutMs` (default 20s) —
    * games with event handlers never exit by themselves, so a timeout is not a failure.
@@ -64,9 +69,11 @@ const defaultRunTimeout = 20_000
 </script>
 
 <script setup lang="ts">
-import { onUnmounted, ref, shallowRef } from 'vue'
-import { timeout } from '@/utils/utils'
+import { nextTick, onUnmounted, ref, shallowRef } from 'vue'
+import { timeout, untilNotNull } from '@/utils/utils'
 import { cloudHelpers } from '@/models/common/cloud'
+import { xbpHelpers } from '@/models/common/xbp'
+import type { ProjectSerialized } from '@/models/project'
 import { SpxProject } from '@/models/spx/project'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 
@@ -111,15 +118,26 @@ function applyCode(project: SpxProject, code: Record<string, string>) {
   }
 }
 
+async function adopt(serialized: ProjectSerialized, label: string) {
+  const project = new SpxProject()
+  await project.load(serialized)
+  projectRef.value = project
+  statusRef.value = `Loaded ${label}`
+  return { codeFiles: getCodeFiles(project) }
+}
+
 const api: CourseRunnerApi = {
   async load(owner, name) {
     statusRef.value = `Loading ${owner}/${name}...`
-    const project = new SpxProject()
-    const serialized = await cloudHelpers.load(owner, name, true)
-    await project.load(serialized)
-    projectRef.value = project
-    statusRef.value = `Loaded ${owner}/${name}`
-    return { codeFiles: getCodeFiles(project) }
+    return adopt(await cloudHelpers.load(owner, name, true), `${owner}/${name}`)
+  },
+
+  async loadXbp(url) {
+    statusRef.value = `Loading ${url}...`
+    const resp = await fetch(url)
+    if (!resp.ok) throw new Error(`Failed to fetch ${url}: ${resp.status}`)
+    const file = new File([await resp.blob()], url.split('/').pop() ?? 'project.xbp')
+    return adopt(await xbpHelpers.load(file), url)
   },
 
   async run(options) {
@@ -127,15 +145,18 @@ const api: CourseRunnerApi = {
     if (project == null) throw new Error('No project loaded. Call `courseRunner.load(owner, name)` first.')
     if (options?.code != null) applyCode(project, options.code)
 
-    logs = []
     const exitPromise = new Promise<number>((resolve) => {
       resolveExit = resolve
     })
 
     statusRef.value = 'Running...'
+    // Loading a project swaps in a fresh runner (keyed below); wait for it to mount rather than
+    // assuming this call comes late enough, or the run silently does nothing on the old one.
+    await nextTick()
+    const runner = await untilNotNull(runnerRef)
+
+    logs = []
     runStartedAt = performance.now()
-    const runner = runnerRef.value
-    if (runner == null) throw new Error('Runner not mounted yet')
     await runner.run()
 
     const timeoutMs = options?.timeoutMs ?? defaultRunTimeout
@@ -161,6 +182,20 @@ window.courseRunner = api
 onUnmounted(() => {
   delete window.courseRunner
 })
+
+// `?autorun=<same-origin script url>` runs a driver script once the harness is ready. A page
+// session only survives a handful of engine instances before runs quietly stop doing anything,
+// so a batch driver has to reload the page to get a fresh budget — which means the page, not the
+// caller, has to be the one that starts it again.
+const autorun = new URLSearchParams(location.search).get('autorun')
+if (autorun != null && autorun.startsWith('/')) {
+  fetch(autorun)
+    .then((r) => r.text())
+    .then((src) => new Function(src)())
+    .catch((err) => {
+      statusRef.value = `autorun failed: ${err.message}`
+    })
+}
 </script>
 
 <template>
