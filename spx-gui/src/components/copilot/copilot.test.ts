@@ -1357,4 +1357,20 @@ describe('Copilot collapse', () => {
     copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail')
     expect(copilot.active).toBe(true)
   })
+
+  it('should keep the panel hidden on events under a background-first topic', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    const topic: Topic = { ...createEventTopic(), autoOpenOnEvents: false }
+    await copilot.startSession(topic, undefined, { autoOpen: false })
+
+    // Ambient events (page navigation, modals, ...) do not pass autoOpen explicitly; the topic
+    // decides they must not pop the panel.
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, 'User navigated somewhere')
+    expect(copilot.active).toBe(false)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+
+    // An explicit per-event choice still wins over the topic default.
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail', { autoOpen: true })
+    expect(copilot.active).toBe(true)
+  })
 })

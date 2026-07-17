@@ -13,7 +13,9 @@ workspace for the course. It is applied once when the course starts.
 ```jsonc
 {
   // Panels/areas to hide, to reduce distraction. Omit to hide nothing.
-  "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"]
+  "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"],
+  // "open" starts the course with the copilot panel showing. Omit for the default hidden start.
+  "copilot": "open"
 }
 ```
 ````
@@ -32,6 +34,13 @@ Unknown names are ignored. Omitting `hide` (or the whole block) hides nothing.
 Narrowing the **API References** panel is not configured here — the copilot does it at the course
 start, based on the course goal and the reference project. Just make sure the course prompt makes
 the intended APIs clear.
+
+### `copilot`
+
+By default the course starts with the copilot hidden, running in the background — it perceives
+events silently and only surfaces when it has something to show. A course whose subject IS the
+copilot (e.g. the very first lesson, "meet your copilot") declares `"copilot": "open"` to start
+with the panel showing. Any other value keeps the default.
 
 ## Story video (`<course-story-video>`)
 
