@@ -1335,4 +1335,26 @@ describe('Copilot collapse', () => {
     copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail of the event')
     expect(copilot.active).toBe(true)
   })
+
+  it('should start a session in the background when autoOpen is false', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    await copilot.startSession(createEventTopic(), undefined, { autoOpen: false })
+    expect(copilot.active).toBe(false)
+    // The session still runs: events reach it while the panel stays hidden.
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail', { autoOpen: false })
+    expect(copilot.active).toBe(false)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+  })
+
+  it('should let a backgrounded session open later despite an earlier collapse', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    await copilot.startSession(createEventTopic())
+    copilot.collapse() // the user collapsed the PREVIOUS session
+
+    await copilot.startSession(createEventTopic('Another Topic'), undefined, { autoOpen: false })
+    expect(copilot.active).toBe(false)
+    // The stale collapse must not stick: an event that may open the panel still does.
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail')
+    expect(copilot.active).toBe(true)
+  })
 })

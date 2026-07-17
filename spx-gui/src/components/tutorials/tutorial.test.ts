@@ -64,7 +64,11 @@ describe('Tutorial', () => {
         ref(true)
       )
       await tutorial.startCourse(makeCourse(), makeCourseSeries())
-      expect(copilot.startSession).toHaveBeenCalledWith(expect.objectContaining({ hideCodeInChat: true }))
+      // The course session starts in the background: the copilot sets itself up silently while
+      // the user follows the prelude.
+      expect(copilot.startSession).toHaveBeenCalledWith(expect.objectContaining({ hideCodeInChat: true }), undefined, {
+        autoOpen: false
+      })
     })
   })
 
