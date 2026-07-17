@@ -14,9 +14,9 @@ const confirm = useConfirmDialog()
 const course = computed(() => tutorial.currentCourse)
 
 const guidanceTextByLevel: Record<InterventionLevel, LocaleMessage> = {
-  [InterventionLevel.Silent]: { en: 'Copilot: watching quietly', zh: 'Copilot：安静看着你' },
-  [InterventionLevel.Nudge]: { en: 'Copilot: ready with a hint', zh: 'Copilot：准备给点小提示' },
-  [InterventionLevel.Guide]: { en: 'Copilot: guiding you step by step', zh: 'Copilot：手把手带你做' }
+  [InterventionLevel.Silent]: { en: 'Guidance: off', zh: '引导：关' },
+  [InterventionLevel.Nudge]: { en: 'Guidance: low', zh: '引导：低' },
+  [InterventionLevel.Guide]: { en: 'Guidance: high', zh: '引导：高' }
 }
 
 // How strongly the copilot is helping right now, in the user's terms rather than as a level number.
