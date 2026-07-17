@@ -98,11 +98,12 @@ export class Tutorial {
         await timeout(100) // Wait for detailed UI rendering
       }
 
-      await this.copilot.startSession(this.generateTopic(course))
+      // The course starts with the copilot collapsed, running in the background: it sets itself up
+      // and processes the start silently (per the protocol) while the user follows the prelude, so
+      // popping the panel open would only distract. It opens on its own once it has something to
+      // show, and the user can open it any time.
+      await this.copilot.startSession(this.generateTopic(course), undefined, { autoOpen: false })
 
-      // Keep the copilot panel collapsed at the course start: the copilot processes this event
-      // silently (per the protocol) while the user follows the prelude, so popping the panel open
-      // would only distract. It opens on its own when the copilot later has something to show.
       this.copilot.notifyUserEvent(
         {
           en: 'Course Started',
