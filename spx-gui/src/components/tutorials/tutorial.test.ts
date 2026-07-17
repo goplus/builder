@@ -65,10 +65,24 @@ describe('Tutorial', () => {
       )
       await tutorial.startCourse(makeCourse(), makeCourseSeries())
       // The course session starts in the background: the copilot sets itself up silently while
-      // the user follows the prelude.
-      expect(copilot.startSession).toHaveBeenCalledWith(expect.objectContaining({ hideCodeInChat: true }), undefined, {
-        autoOpen: false
-      })
+      // the user follows the prelude. Ambient events must not pop the panel either.
+      expect(copilot.startSession).toHaveBeenCalledWith(
+        expect.objectContaining({ hideCodeInChat: true, autoOpenOnEvents: false }),
+        undefined,
+        { autoOpen: false }
+      )
+    })
+
+    it('should start with the panel open when the course declares "copilot": "open"', async () => {
+      const copilot = makeCopilot()
+      const tutorial = new Tutorial(
+        copilot,
+        makeRouter(async () => undefined),
+        ref(true)
+      )
+      const course = { ...makeCourse(), prompt: 'Meet the copilot.\n```jsonc\n{ "copilot": "open" }\n```' }
+      await tutorial.startCourse(course, makeCourseSeries())
+      expect(copilot.startSession).toHaveBeenCalledWith(expect.anything(), undefined, { autoOpen: true })
     })
   })
 

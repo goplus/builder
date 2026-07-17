@@ -12,6 +12,7 @@ import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
 import { tagName as staySilentTagName } from '@/components/copilot/markdown-elements/StaySilent'
+import { extractCourseConfig } from './course-config'
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
 import { backThreshold, neutralThreshold, type TutorialIntervention } from './tutorial-intervention'
@@ -101,8 +102,10 @@ export class Tutorial {
       // The course starts with the copilot collapsed, running in the background: it sets itself up
       // and processes the start silently (per the protocol) while the user follows the prelude, so
       // popping the panel open would only distract. It opens on its own once it has something to
-      // show, and the user can open it any time.
-      await this.copilot.startSession(this.generateTopic(course), undefined, { autoOpen: false })
+      // show, and the user can open it any time. A course whose subject is the copilot itself
+      // (e.g. the very first lesson) opts out with `"copilot": "open"` in its config block.
+      const { copilotOpen } = extractCourseConfig(course.prompt)
+      await this.copilot.startSession(this.generateTopic(course), undefined, { autoOpen: copilotOpen })
 
       this.copilot.notifyUserEvent(
         {
@@ -377,6 +380,9 @@ system counts them and raises the level, and once it does you attach guidance to
   <${tutorialCourseSuccessTagName} comment="做得好！用 step 一步走到了萝卜的位置。" />
 `,
       reactToEvents: true,
+      // Course sessions are background-first: ambient events (navigation, modals, ...) must not
+      // pop the panel — the copilot surfaces only when it has something to show.
+      autoOpenOnEvents: false,
       endable: false,
       stateIndicator: tutorialStateIndicatorName,
       hideCodeInChat: true

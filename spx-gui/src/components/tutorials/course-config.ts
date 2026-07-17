@@ -11,14 +11,21 @@ export type CourseConfig = {
    * Unknown names are ignored.
    */
   hiddenAreas: WorkspaceArea[]
+  /**
+   * Whether the copilot panel is open when the course starts. Courses default to a hidden,
+   * background-running copilot; a course whose subject IS the copilot (e.g. the very first
+   * lesson) declares `"copilot": "open"` to start with the panel showing.
+   */
+  copilotOpen: boolean
 }
 
 /** The raw shape as authored in the jsonc block, before normalization. All fields optional. */
 type RawCourseConfig = {
   hide?: unknown
+  copilot?: unknown
 }
 
-const emptyConfig: CourseConfig = { hiddenAreas: [] }
+const emptyConfig: CourseConfig = { hiddenAreas: [], copilotOpen: false }
 
 /**
  * Extract the first ```jsonc (or ```json) code block from the course prompt and parse it as the
@@ -89,7 +96,8 @@ function stripJsoncExtras(text: string): string {
 
 function normalizeCourseConfig(raw: RawCourseConfig): CourseConfig {
   return {
-    hiddenAreas: normalizeHiddenAreas(raw.hide)
+    hiddenAreas: normalizeHiddenAreas(raw.hide),
+    copilotOpen: raw.copilot === 'open'
   }
 }
 
