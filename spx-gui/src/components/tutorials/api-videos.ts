@@ -23,11 +23,9 @@ const demoVideoSrc = '/tutorial-api-videos/api-demo.mov'
  * Add entries here as videos are produced.
  */
 const apiVideoLibrary: Record<string, ApiVideoInfo> = {
-  // The video files are served from `public/tutorial-api-videos/` during development;
-  // switch to usercontent CDN URLs once the videos are formally hosted.
   'xgo:github.com/goplus/spx/v2?Sprite.step#0': {
     title: { en: 'step', zh: 'step 前进' },
-    src: demoVideoSrc
+    src: 'https://qnyproj-api-assets-dev.s3.us-east-1.amazonaws.com/step.mp4'
   }
 }
 
