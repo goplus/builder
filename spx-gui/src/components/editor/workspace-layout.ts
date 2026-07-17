@@ -29,6 +29,14 @@ export function isWorkspaceArea(value: string): value is WorkspaceArea {
   return (hideableWorkspaceAreas as readonly string[]).includes(value)
 }
 
+/**
+ * Tools that are absent from the regular editor and can be surfaced for guided scenarios.
+ * - `ruler`: measure the distance between things on the stage.
+ */
+export const optionalWorkspaceTools = ['ruler'] as const
+
+export type WorkspaceTool = (typeof optionalWorkspaceTools)[number]
+
 /** Font size (px) for code in the `focused` layout. The default font size is kept user-adjustable instead. */
 const focusedCodeFontSize = 20
 
@@ -60,6 +68,17 @@ class EditorWorkspaceLayout {
     this.hiddenAreasRef.value = new Set(areas)
   }
 
+  private enabledToolsRef = shallowRef<ReadonlySet<WorkspaceTool>>(new Set())
+  get enabledTools() {
+    return this.enabledToolsRef.value
+  }
+  isToolEnabled(tool: WorkspaceTool) {
+    return this.enabledToolsRef.value.has(tool)
+  }
+  setEnabledTools(tools: WorkspaceTool[]) {
+    this.enabledToolsRef.value = new Set(tools)
+  }
+
   /** Fixed code font size (px) for the current mode, or `null` to keep the user-adjustable font size. */
   get codeFontSize(): number | null {
     return this.mode === 'focused' ? focusedCodeFontSize : null
@@ -68,6 +87,7 @@ class EditorWorkspaceLayout {
   reset() {
     this.modeRef.value = 'default'
     this.hiddenAreasRef.value = new Set()
+    this.enabledToolsRef.value = new Set()
   }
 }
 
