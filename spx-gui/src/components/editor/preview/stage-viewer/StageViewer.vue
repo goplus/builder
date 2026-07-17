@@ -196,11 +196,15 @@ const rulerTip = computed(() =>
   rulerActive.value ? { en: 'Put the ruler away', zh: '收起尺子' } : { en: 'Measure a distance', zh: '量一量' }
 )
 
-/** Sprite centers, in map coordinates, so that measuring between two sprites needs no steady hand. */
+/**
+ * Sprite centers, in map coordinates, so that measuring between two sprites needs no steady
+ * hand. The heading lets a measurement starting on a sprite also read the turn angle.
+ */
 const rulerSnapTargets = computed(() =>
   editorCtx.project.sprites.map((sprite) => ({
     x: sprite.x + mapSize.value.width / 2,
-    y: mapSize.value.height / 2 - sprite.y
+    y: mapSize.value.height / 2 - sprite.y,
+    heading: sprite.heading
   }))
 )
 
