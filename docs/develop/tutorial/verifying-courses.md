@@ -84,3 +84,31 @@ Check against the course prompt: the `ids` should match the course's API list, a
 - To inspect the exact request sent TO the model (not the reply), use the `fetch` hook in
   [llm-payload.md](./llm-payload.md#如何在运行时查看真实-payload).
 ```
+
+## Verifying course CODE without the UI (`/devtools/course-runner`)
+
+To check "does this reference answer actually complete this level?", you don't need the editor at
+all. The dev-only page `/devtools/course-runner` mounts the production `ProjectRunner` (same WASM
+engine users run) and exposes `window.courseRunner`:
+
+```js
+// 1. Load the course's (public) project:
+await courseRunner.load('curator', 'Coding-Course-1')
+// -> { codeFiles: ['main', 'Kiko', 'Radish', ...] }
+
+// 2. Override code and run. Key = sprite name, or `main` for the stage:
+const result = await courseRunner.run({ code: { Kiko: 'step 160' } })
+// -> { exited, exitCode, durationMs, logs }
+
+// 3. Assert on the structured game logs:
+result.logs.filter((l) => l.level != null).map((l) => l.msg)
+// -> ['捡到萝卜 Radish']
+```
+
+- `run()` resolves when the game exits, or after `timeoutMs` (default 20s). Games with event
+  handlers (onKey etc.) never exit by themselves — a timeout is not a failure; assert on `logs`.
+- Repeated `run()` calls work (each aborts the previous); pass different `code` to compare
+  attempts, e.g. prove a wrong answer does NOT produce the completion log.
+- Log entries with `level != null` are structured game logs (`println` output, runtime errors);
+  entries with `level == null` are engine noise — ignore them.
+- The page needs no login for public projects, and nothing is ever saved.
