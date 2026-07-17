@@ -22,7 +22,7 @@ export function setupUserEventNotifications(editorCtx: EditorCtx, codeEditor: Co
 
   disposers.push(watchRun(editorCtx, copilot))
   disposers.push(watchRuntimeExit(editorCtx, copilot))
-  disposers.push(watchRuntimeErrors(editorCtx, copilot))
+  disposers.push(watchRuntimeOutput(editorCtx, copilot))
   disposers.push(watchCodeChange(editorCtx, copilot))
   disposers.push(watchDiagnostics(editorCtx, codeEditor, copilot))
   disposers.push(watchSelection(editorCtx, copilot))
@@ -76,19 +76,34 @@ function watchRuntimeExit(editorCtx: EditorCtx, copilot: Copilot): Disposer {
   )
 }
 
-/** A: a new runtime error output appeared (the game ran but reported an error / panic). */
-function watchRuntimeErrors(editorCtx: EditorCtx, copilot: Copilot): Disposer {
-  let lastErrorId = -1
-  const emit = debounce((message: string) => {
-    notify(copilot, { en: 'Runtime error', zh: '运行时报错' }, `The running game reported an error: ${message}`)
+/**
+ * A: the running game produced new output. Logs matter as much as errors: a game reports the
+ * user's progress by printing (e.g. "捡到萝卜 Radish"), and a course's goal is usually judged from
+ * exactly that. Without this the copilot would never be woken to notice the goal was reached — a
+ * game that keeps running emits no other event once it is under way.
+ */
+function watchRuntimeOutput(editorCtx: EditorCtx, copilot: Copilot): Disposer {
+  let lastSeenId = -1
+  const emit = debounce((latest: string, hasError: boolean) => {
+    if (hasError) {
+      notify(copilot, { en: 'Runtime error', zh: '运行时报错' }, `The running game reported an error: ${latest}`)
+    } else {
+      notify(
+        copilot,
+        { en: 'Game output', zh: '游戏输出' },
+        `The running game printed new output, latest: ${latest}. See the full runtime output in your context.`
+      )
+    }
   }, codeChangeDebounce)
   const stop = watch(
     () => editorCtx.state.runtime.outputs,
     (outputs) => {
-      const errors = outputs.filter((o) => o.kind === RuntimeOutputKind.Error && o.id > lastErrorId)
-      if (errors.length === 0) return
-      lastErrorId = outputs[outputs.length - 1].id
-      emit(errors[errors.length - 1].message)
+      const fresh = outputs.filter((o) => o.id > lastSeenId)
+      if (fresh.length === 0) return
+      lastSeenId = outputs[outputs.length - 1].id
+      const hasError = fresh.some((o) => o.kind === RuntimeOutputKind.Error)
+      const latest = (hasError ? fresh.filter((o) => o.kind === RuntimeOutputKind.Error).at(-1) : fresh.at(-1))!
+      emit(latest.message.trim(), hasError)
     }
   )
   return () => {

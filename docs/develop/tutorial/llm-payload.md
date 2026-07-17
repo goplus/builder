@@ -699,6 +699,7 @@ This is an example for messages between you and the user in a course (the course
 | 游戏正常退出 | The game exited with code 0. |
 | 游戏异常退出 | The game exited with code {code} (an error or crash). |
 | 运行时报错 | The running game reported an error: {message} |
+| 游戏输出 | The running game printed new output, latest: {message}. See the full runtime output in your context. |
 | 代码变更 | The user edited the project code. |
 | 代码存在错误 | The project code now has error diagnostics. |
 | 代码错误已消除 | The project code no longer has error diagnostics. |
