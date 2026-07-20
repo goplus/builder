@@ -1,20 +1,18 @@
-# Authoring a tutorial course
+# 编写教程课程
 
-A course is driven by its **prompt**. Beyond the natural-language instructions for the copilot,
-the prompt may embed a few author-controlled sections that the frontend reads directly (the
-copilot does not control them). They are all optional.
+一门课程由它的**提示词（prompt）**驱动。除了写给 copilot 看的自然语言说明，提示词里还可以嵌入
+几段**由作者控制、前端直接读取**的配置（copilot 管不着这些）。它们都是可选的。
 
-## Workspace config (`jsonc` block)
+## 工作区配置（`jsonc` 块）
 
-Put a single fenced `jsonc` (or `json`) code block in the prompt to configure the editor
-workspace for the course. It is applied once when the course starts.
+在提示词里放一个 `jsonc`（或 `json`）代码块，用来配置这门课的编辑器工作区。它在课程开始时**只应用一次**。
 
 ````
 ```jsonc
 {
-  // Panels/areas to hide, to reduce distraction. Omit to hide nothing.
+  // 要隐藏的面板/区域，用来减少干扰。不写则什么都不隐藏。
   "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"],
-  // "open" starts the course with the copilot panel showing. Omit for the default hidden start.
+  // 填 "open" 表示课程一开始就展开 copilot 面板。不写则默认后台静默启动。
   "copilot": "open"
 }
 ```
@@ -22,57 +20,50 @@ workspace for the course. It is applied once when the course starts.
 
 ### `hide`
 
-An array of workspace area names to hide. Available areas:
+要隐藏的工作区区域名数组。可用的区域：
 
-- `editor-panels` — the sprites / sounds / stage panels below the game preview.
-- `edit-mode-switch` — the editor-mode (default / map) switcher in the navbar.
-- `preview-header` — the header bar of the game preview (title, publish entry, etc.).
-- `code-editor-tools` — the tools beside the code editor (document tabs & zoom control).
+- `editor-panels` —— 游戏预览下方的精灵 / 声音 / 舞台面板
+- `edit-mode-switch` —— 导航栏里的编辑模式（默认 / 地图）切换器
+- `preview-header` —— 游戏预览的标题栏（标题、发布入口等）
+- `code-editor-tools` —— 代码编辑器旁边的工具（文档标签页和缩放控件）
 
-Unknown names are ignored. Omitting `hide` (or the whole block) hides nothing.
+未知的名字会被忽略。不写 `hide`（或整个块都不写）就什么都不隐藏。
 
-Narrowing the **API References** panel is not configured here — the copilot does it at the course
-start, based on the course goal and the reference project. Just make sure the course prompt makes
-the intended APIs clear.
+**API References 面板的收窄不在这里配置**——那是 copilot 在课程开始时根据课程目标和参考项目自己做的。
+你只需要在提示词里把本课涉及的 API 写清楚。
 
 ### `copilot`
 
-By default the course starts with the copilot hidden, running in the background — it perceives
-events silently and only surfaces when it has something to show. A course whose subject IS the
-copilot (e.g. the very first lesson, "meet your copilot") declares `"copilot": "open"` to start
-with the panel showing. Any other value keeps the default.
+默认情况下，课程开始时 copilot 是**隐藏的**，在后台运行——它静默地感知事件，只有当它确实有东西要展示时
+才浮现出来。如果一门课的主题**就是 copilot 本身**（比如第一课「认识你的新伙伴」），就声明
+`"copilot": "open"`，让面板一开始就展开。填其他任何值都维持默认。
 
-## Story video (`<course-story-video>`)
+## 故事线视频（`<course-story-video>`）
 
-Plays a video before the course starts, typically to introduce a series' world & goal on its
-first course.
+在课程开始前播放一段视频，通常用在系列的第一课，用来介绍这个系列的世界观和目标。
 
 ```
 <course-story-video>/tutorial-intro/opening.webm</course-story-video>
 ```
 
-The URL must be same-origin or on the usercontent host (arbitrary origins are rejected). Omitting
-the section plays no story video.
+URL 必须是同源的，或者在 usercontent 域名下（任意来源会被拒绝）。不写这一段就不播故事视频。
 
-## Prelude (`<course-prelude>`)
+## 开场提示（`<course-prelude>`）
 
-Shows a short text guide in a dialog before the course starts (after the story video, if any).
+在课程开始前（如果有故事视频，则在其之后）用对话框展示一句简短的文字引导。
 
 ```
 <course-prelude>向前走，把萝卜都捡起来！</course-prelude>
 ```
 
-## Knowledge-point videos
+## 知识点视频
 
-If the prompt declares the course's new knowledge points, the copilot plays the matching
-explainer videos at the course start (and on request). This is natural-language, not a config
-block — e.g. a `## 新知识点` / `## Knowledge points` section listing the APIs. A video is shown
-only for APIs that have one in the library.
+如果提示词里声明了本课的新知识点，copilot 会在课程开始时播放对应的讲解视频（用户提问时也可以再调用）。
+这一项是**自然语言**而不是配置块——比如写一个 `## 新知识点` 段落，把涉及的 API 列出来。
+只有在视频库里确实有视频的 API 才会被播放。
 
-## What the copilot still controls
+## copilot 仍然掌控的部分
 
-The copilot does **not** touch the hidden panels or the opening dialogs. It does narrow the API
-References panel at the course start (based on the course goal), and it guides the user during the
-course — with hints, spotlights, videos and in-editor code guides — only as strongly as the
-intervention level allows (it stays silent until the user is genuinely stuck). Completion is judged
-against the criteria you write in the prompt.
+copilot **不会**去动被隐藏的面板，也不会动开场的那些对话框。它会做的是：在课程开始时根据课程目标
+收窄 API References 面板；在课程进行中引导用户——用提示、聚光、视频和编辑器内的代码引导——但**强度受
+干预层级的硬性限制**（在用户真正卡住之前，它保持沉默）。完成与否，以你在提示词里写的判定标准为准。

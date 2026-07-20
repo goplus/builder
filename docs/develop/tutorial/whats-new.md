@@ -1,71 +1,65 @@
-# What this branch adds
+# 这个分支加了什么
 
-The tutorial rebuild turns a course from *a script the copilot reads out* into *a playground the
-copilot watches over*. This document maps the change surface: what exists now that did not before,
-and why each piece is shaped the way it is.
+这次教程重构，把课程从**「copilot 照着念的剧本」**变成了**「copilot 在旁边看着的游乐场」**。
+本文梳理改动面：现在有什么以前没有的东西，以及每一块为什么长成这样。
 
-For how to author a course, see [course authoring](./course-authoring.md). For everything sent to
-the model, see [the LLM payload](./llm-payload.md). For verifying a course actually works, see
-[verifying courses](./verifying-courses.md).
+课程怎么写，见[课程编写](./course-authoring.md)。发给模型的全部内容，见 [LLM payload](./llm-payload.md)。
+怎么验证一门课真的能通关，见[课程验证](./verifying-courses.md)。
 
-## The design in one paragraph
+## 一段话讲清设计
 
-The copilot is **silent by default**. It perceives everything the user does through real editor
-events, but says nothing until the user is stuck, has drifted, or asks. How much it may do is not
-a matter of prompt etiquette — an **intervention level** decides which guidance tools are even
-*registered*, so a tool the copilot must not use at this level does not exist for it. The level
-itself is driven by the model's own per-round verdict on whether the user is getting closer.
+copilot **默认沉默**。它通过真实的编辑器事件感知用户的一举一动，但在用户卡住、明显跑偏、或主动提问之前
+一言不发。它**能做多少**不靠提示词里的礼貌用语约束——**干预层级**决定了哪些引导工具会被**注册**，
+所以当前层级不该用的工具，对它来说根本不存在。而层级本身，由模型每轮自己给出的「用户是否在靠近目标」
+的判定来驱动。
 
-## 1. Intervention levels — a hard boundary, not a suggestion
+## 1. 干预层级——硬边界，不是建议
 
-`tutorial-intervention.ts`, `tutorial-guidance.ts`, `user-progress.ts`
+`tutorial-intervention.ts`、`tutorial-guidance.ts`、`user-progress.ts`
 
-Three levels: **Silent(1) → Nudge(2) → Guide(3)**. Each level registers a different set of custom
-elements; unavailable tools are *unregistered*, so the copilot cannot reach for them.
+三个层级：**Silent(1) → Nudge(2) → Guide(3)**。每一级注册不同的自定义元素集合；
+不可用的工具会被**取消注册**，copilot 想用也够不着。
 
-| Level | What exists |
+| 层级 | 存在哪些工具 |
 |---|---|
-| Silent | `api-video` only |
-| Nudge | `+ guide-modal`, `spotlight-hint` |
-| Guide | `+ in-editor code guides` |
+| Silent | 只有 `api-video` |
+| Nudge | `+ guide-modal`、`spotlight-hint` |
+| Guide | `+ 编辑器内代码引导` |
 
-The level moves on **progress verdicts**: every event round, the model reports
-`<user-progress-ahead/>` / `<user-progress-neutral/>` / `<user-progress-back/>`. The system counts
-them (`neutralThreshold = 6`, `backThreshold = 3`); an *ahead* spends counters down and, when there
-is nothing to forgive, de-escalates. A typed user message temporarily raises the level to at least
-Nudge — someone who asks deserves an answer.
+层级靠**进展判定**移动：每个事件轮次，模型都要报告
+`<user-progress-ahead/>` / `<user-progress-neutral/>` / `<user-progress-back/>`。
+系统对其计数（`neutralThreshold = 6`、`backThreshold = 3`）；一次 *ahead* 会抵消计数，
+当没有什么需要抵消时则触发降级。用户打字提问会临时把层级抬到至少 Nudge——**开口问了的人，值得一个回答**。
 
-Prompt rules alone proved unreliable here. The working order is: **mechanism first** (unregister
-the tool), **per-round reminder second**, **protocol prose last**.
+在这里，光靠提示词规则被证明是不可靠的。有效的顺序是：
+**先机制**（取消注册工具）、**再每轮提醒**、**最后才是协议文字**。
 
-## 2. Perception: real editor events, no polling
+## 2. 感知：真实编辑器事件，不再轮询
 
 `editor/copilot/user-events.ts`
 
-The copilot used to wake on a timer. It now wakes on what actually happened: run start/stop, game
-exit (any code), **runtime output** (not just errors — the win condition is a log line, so waking
-only on errors meant coding courses could never complete), debounced code changes, diagnostics, and
-sprite/tab selection.
+copilot 以前靠定时器醒来。现在它靠真实发生的事情醒来：运行开始/停止、游戏退出（任意退出码）、
+**运行时输出**、防抖后的代码变更、诊断信息、精灵/标签页切换。
 
-## 3. Silence that actually stays silent
+其中「运行时输出」这一条是关键：过关的信号本身就是一行日志，**只在报错时醒来意味着编程类课程永远无法完成**。
 
-`copilot/markdown-elements/StaySilent.ts`, `copilot/content-visibility.ts`, `CopilotUI.vue`
+## 3. 真正闭嘴的沉默
 
-`<stay-silent />` hides the entire round, including any reasoning that leaked around it. The chat
-shows **only typed rounds** — event rounds drive the copilot invisibly. Cancelled event rounds are
-skipped too (continuing to edit aborts the in-flight round; that is not something to show).
+`copilot/markdown-elements/StaySilent.ts`、`copilot/content-visibility.ts`、`CopilotUI.vue`
 
-> **Pitfall worth knowing:** several elements apply their effect on mount (`api-reference-filter`,
-> `api-video`, `spotlight-hint`, success/abandon). *Not rendering a round means the element never
-> mounts and its effect never fires, silently.* Hidden rounds therefore use `v-show`, never `v-if`.
-> This cost a real debugging session; an A/B run proved it (`apiItemCount: 128` vs `1`).
+`<stay-silent />` 会隐藏**整轮**内容，包括漏在它周围的推理文字。聊天窗口里**只显示用户打字的轮次**——
+事件驱动的轮次在后台无形地跑。被取消的事件轮次也一并跳过（用户继续编辑会中止在途的轮次，那不是该展示的东西）。
 
-## 4. Course-authored workspace setup
+> **值得记住的坑：** 有好几个元素是在挂载时才生效的（`api-reference-filter`、`api-video`、
+> `spotlight-hint`、成功/放弃元素）。**不渲染某一轮 = 元素永远不挂载 = 效果静默失效。**
+> 所以隐藏轮次必须用 `v-show`，绝不能用 `v-if`。
+> 这个坑实打实耗掉了一轮排查，最后靠 A/B 实验才定案（`apiItemCount: 128` 对比 `1`）。
 
-`tutorials/course-config.ts`, `editor/workspace-layout.ts`
+## 4. 课程作者声明的工作区
 
-A course declares its own workspace in a ```jsonc block in the prompt — static author intent, not
-something the copilot decides at runtime:
+`tutorials/course-config.ts`、`editor/workspace-layout.ts`
+
+课程在提示词里用一个 ```jsonc 块声明自己的工作区——这是静态的作者意图，不是 copilot 运行时的决定：
 
 ```jsonc
 {
@@ -74,73 +68,68 @@ something the copilot decides at runtime:
 }
 ```
 
-`workspace-layout.ts` is the editor-owned extension point behind it: focused layout, hideable
-areas, and optional tools. Features drive the editor through it; **the editor never imports
-tutorial code**. `reset()` on course exit means nothing outlives the course.
+背后是 `workspace-layout.ts` 这个**编辑器自己拥有的扩展点**：专注布局、可隐藏区域、可选工具。
+功能模块通过它驱动编辑器，而**编辑器永远不 import 教程的代码**。
+退课时的 `reset()` 保证没有任何设置能活过这门课程。
 
-## 5. The ruler
+## 5. 尺子
 
-`editor/preview/stage-viewer/StageRuler.vue`, `ruler-math.ts`
+`editor/preview/stage-viewer/StageRuler.vue`、`ruler-math.ts`
 
-A course-only stage tool: drag to measure, endpoints snap to sprite centres. When a measurement
-starts on a sprite it also reads the **turn angle** — signed, so the number is exactly what `turn`
-expects (right positive, left negative, matching `Left = -90` / `Right = 90`).
+一个只在课程中出现的舞台工具：拖拽测距，端点会吸附到精灵中心。
+当测量的**起点落在精灵上**时，它还会读出**转向角度**——带符号，所以那个数字正是 `turn` 需要填的值
+（右转为正、左转为负，与 `Left = -90` / `Right = 90` 一致）。
 
-This is what makes "how far?" and "which way?" answerable by the learner instead of guessable.
-Courses 3, 8 and 9 are built on it.
+正是它让「有多远？」和「该往哪转？」变成**可以量出来**的，而不是靠猜。第 3、8、9 课都建立在它之上。
 
-## 6. Copilot presentation
+## 6. copilot 的呈现方式
 
-`CopilotUI.vue`, `copilot.ts`
+`CopilotUI.vue`、`copilot.ts`
 
-Docked panel with scrollable history and auto-growing height; no "Next step" button; the user's own
-messages are shown. Courses start **background-first**: `Topic.autoOpenOnEvents = false` means
-ambient events (navigation, modals) never pop the panel — including the navigation event fired on
-reload, which used to make the panel reappear mid-course. A course whose subject *is* the copilot
-opts out with `"copilot": "open"`.
+停靠式面板，历史可滚动、高度自动增长；去掉了「Next step」按钮；会显示用户自己发的消息。
+课程**后台优先启动**：`Topic.autoOpenOnEvents = false` 意味着环境类事件（页面跳转、模态框）
+永远不会弹开面板——**包括页面刷新时触发的跳转事件**，那个曾经让面板在课程中途自己冒出来。
+主题就是 copilot 本身的课程，用 `"copilot": "open"` 来豁免。
 
-Tutorial topics set `hideCodeInChat`, so code-bearing elements still drive their in-editor guides
-but render the code unselectable in chat — visible, not copyable.
+教程话题会设置 `hideCodeInChat`：带代码的元素照常驱动编辑器内的引导，但在聊天里把代码渲染成不可选中的
+——**看得见，抄不走**。
 
-## 7. Opening sequence
+## 7. 开场序列
 
-`TutorialStoryVideoModal.vue`, `TutorialPreludeModal.vue`, `ApiVideo.vue`, `api-videos.ts`
+`TutorialStoryVideoModal.vue`、`TutorialPreludeModal.vue`、`ApiVideo.vue`、`api-videos.ts`
 
-Story video (series world-building) → knowledge-point video (only genuinely new APIs) → one-line
-prelude → editor. API videos are keyed by definition id and remembered per user, so a concept is
-never explained twice. API-reference hover cards play the same video.
+故事视频（系列世界观）→ 知识点视频（只播真正新的 API）→ 一句话开场提示 → 进入编辑器。
+API 视频按 definition id 索引，并按用户记录已学过的，所以**同一个概念不会被讲第二遍**。
+API 参考面板的悬浮卡片播放的是同一个视频。
 
-## 8. Dev harness for course verification
+## 8. 课程验证用的开发工具
 
-`apps/xbuilder/pages/devtools/course-runner.vue` (dev-only route)
+`apps/xbuilder/pages/devtools/course-runner.vue`（仅开发环境的路由）
 
-Drives the **real** runtime programmatically — same WASM engine the user runs:
+用程序驱动**真实**运行时——和用户跑的是同一个 WASM 引擎：
 
 ```js
-await courseRunner.loadXbp('/path/to/course.xbp')   // or .load(owner, name) from cloud
+await courseRunner.loadXbp('/path/to/course.xbp')   // 或用 .load(owner, name) 从云端加载
 const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 })
 // r.logs -> [{ level: 'INFO', msg: '捡到萝卜 Radish', ... }]
 ```
 
-**A hard-won constraint is baked into its design:** each run spins up an engine, and after a handful
-of them in one page session, later runs silently do nothing — reporting *no-collect* for code that is
-actually correct. Only the first run of a page session is trustworthy. `?autorun=<same-origin script>`
-exists so a batch driver can reload the page between levels and resume.
+**一条来之不易的约束被固化进了它的设计：** 每次运行都会起一个引擎实例，在同一个页面会话里跑过几次之后，
+后续运行会**静默失效**——对完全正确的代码报告「没捡到」。**只有每个页面会话的第一次运行是可信的。**
+`?autorun=<同源脚本>` 这个参数就是为此而存在的：让批量驱动脚本能在关卡之间重新加载页面并续跑。
 
-That property caused a wrong conclusion mid-development ("`repeat` and `var` don't work in spx") that
-survived several rounds before being disproved. **A verification tool whose own reliability is
-unverified cannot settle a question.**
+这个特性曾在开发中途导致一个错误结论（「`repeat` 和 `var` 在 spx 里不能用」），并且撑过了好几轮排查才被推翻。
+**一个自身可靠性未经验证的验证工具，没有资格给任何问题下结论。**
 
-## Smaller things
+## 一些小东西
 
-- API-reference category sidebar hides when a filter narrows the list to a proper subset
-- Course restart action, and "learn next course" now goes through the opening sequence
-- Guidance level shown in the navbar course menu (`引导：关/低/高`)
-- Per-round reminder context provider (`criticalContext`) that survives context truncation
-- Editor leave-confirm and reload extension points
+- 筛选把 API 列表收窄成真子集时，分类侧边栏自动隐藏
+- 「重新开始本课」，以及「学习下一课」现在会走完整的开场序列
+- 导航栏课程菜单里显示当前引导等级（`引导：关/低/高`）
+- 每轮提醒用的 context provider（`criticalContext`），在上下文截断时不会被裁掉
+- 编辑器的离开确认、重新加载扩展点
 
-## Test coverage
+## 测试覆盖
 
-Unit tests accompany the mechanisms whose behaviour is easy to regress: intervention levels and
-verdict counting, guidance registration per level, course config parsing, content visibility,
-ruler angle math, workspace layout reset, code guides, and the prelude/course-start flow.
+那些容易回归的机制都配了单元测试：干预层级与判定计数、各层级的工具注册、课程配置解析、
+内容可见性、尺子的角度数学、工作区布局重置、代码引导，以及开场/课程启动流程。

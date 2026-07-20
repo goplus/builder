@@ -1,10 +1,10 @@
 # Tech design for [User Tutorial](../../product/tutorial.md)
 
-- [What this branch adds](./whats-new.md) — the silent-by-default copilot, intervention levels, the ruler, and the dev harness
-- [Code: Lita series](./code-lita-series.md) — what the 28 courses teach, and in what order
-- [Course authoring](./course-authoring.md) — how to write a course prompt
-- [LLM payload](./llm-payload.md) — everything the model receives
-- [Verifying courses](./verifying-courses.md) — running a course's code against the real runtime
+- [这个分支加了什么](./whats-new.md) —— 默认沉默的 copilot、干预层级、尺子，以及开发验证工具
+- [Code: Lita 课程系列](./code-lita-series.md) —— 28 课分别教了什么，为什么这样排
+- [课程编写](./course-authoring.md) —— 怎么写一份课程提示词
+- [LLM payload](./llm-payload.md) —— 发给模型的全部内容
+- [课程验证](./verifying-courses.md) —— 在真实运行时里跑课程代码
 
 ## Challenges
 
