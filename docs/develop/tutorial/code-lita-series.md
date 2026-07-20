@@ -1,113 +1,106 @@
-# Code: Lita — the 28-course series
+# Code: Lita —— 28 课的课程系列
 
-A single series that takes a beginner from "there is someone here to help me" to writing a whole
-program unaided. Every course is a radish-collecting level starring **Lita**; the game world never
-changes, so each new idea arrives against a familiar backdrop.
+一个系列，把初学者从「原来这里有人能帮我」一路带到独立写出一整个程序。
+每一课都是**小猫 Lita** 捡萝卜的关卡；游戏世界始终不变，所以每个新概念都出现在熟悉的背景之上。
 
-## Design rules
+## 设计规则
 
-**One new idea per course, at most.** Roughly a third of the courses introduce something new; the
-rest are variation, combination, and challenge. A concept is introduced, then practised in a
-mirrored form, then combined with what came before, and every few courses a **from-scratch
-challenge** asks the learner to put it together with no scaffold.
+**每课最多引入一个新东西。** 大约三分之一的课程引入新知识，其余都是变体、组合与挑战。
+一个概念先被引入，再用镜像关卡练一遍，然后和之前学的组合起来，每隔几课来一次**从零开始的大挑战**——
+没有任何脚手架，逼你把学过的东西自己拼起来。
 
-**The form rotates, not just the content.** A course opens in one of three shapes:
+**轮换的不只是内容，还有形式。** 一门课打开时是三种形态之一：
 
-| Shape | The editor opens with | Used by |
+| 形态 | 编辑器打开时 | 用在哪些课 |
 |---|---|---|
-| **From scratch** | empty | 1, 4, 6–10, 12, 16–18, 20, 22, 24–26, 28 |
-| **Scaffold** | a frame with `// 该做什么呢` comments | 14, 15, 21, 23, 27 |
-| **Starter code** | working (or deliberately not-quite-working) code | 2, 3, 5, 11, 13, 19 |
+| **从零写** | 空的 | 1、4、6–10、12、16–18、20、22、24–26、28 |
+| **补全脚手架** | 带 `// 该做什么呢` 注释的框架 | 14、15、21、23、27 |
+| **改写起手码** | 已有代码（可能是故意写得不太对的） | 2、3、5、11、13、19 |
 
-**World rules are taught where they first bite**, in one line, never repeated: radishes are
-collected on touch (2), trees block the way (5), fences block and paths don't (7), radishes are
-ripe or not and green ones refuse to be picked (15), watering speeds ripening (26).
+**世界规则在它第一次起作用的地方教**，一句话讲完，之后不再重复：
+碰到萝卜就捡起（第 2 课）、树挡路（第 5 课）、围栏挡路而石子路能走（第 7 课）、
+萝卜分生熟且生的收不了（第 15 课）、浇水能加快成熟（第 26 课）。
 
-**Completion is judged by the game, never by matching code.** Every prompt says so explicitly: if
-the radishes are collected, the course is passed, whatever the code looks like.
+**完成与否由游戏结果判定，绝不比对代码。** 每一份提示词都明确写了这一点：
+只要萝卜被收集了，这课就算过，不管代码写成什么样。
 
-**Motivation before mechanism.** The tedium comes first and the tool second: course 10 makes the
-learner write the same two lines four times, and course 19 hands them `repeat` for the *same
-level*. Course 12 lets Lita slide sideways like a crab; course 13 offers `turnTo` to fix what they
-already found silly.
+**先有动机，再给工具。** 先让人累，再给解药：第 10 课**故意**让学习者把同样两行写四遍，
+第 19 课就用**同一个关卡**把 `repeat` 递给他。第 12 课让 Lita 像螃蟹一样横着滑过去，
+第 13 课才给出 `turnTo` ——去修一件他自己已经觉得滑稽的事。
 
-## The seven blocks
+## 七个模块
 
-| # | Course | New idea | Level |
+| # | 课程 | 新知识点 | 关卡 |
 |---|---|---|---|
-| **1** | **认识环境** ||
-| 1 | 你好，Lita | asking the copilot for help | 1 radish, no code needed |
-| 2 | 第一次运行 | the run button; touch collects | `step 160` pre-written |
-| **2** | **走与转** ||
-| 3 | 量一量 | the number is a distance; **the ruler** | distance 233 — miserable to guess |
-| 4 | 自己写第一行 | the API references panel is a dictionary | distance 187, empty editor |
-| 5 | 转个弯 | `turn Right`; trees block | first leg given, append the turn |
-| 6 | 另一边 | — (mirror: `turn Left`) | mirrored level, from scratch |
-| 7 | 绕过去 | — (**thinking**: plan the route first) | a wall of 4 trees, U-shaped detour |
-| 8 | 其实是数字 | **`Right` was `90` all along**; ruler reads angles | diagonal radish: `turn 63` |
-| 9 | 负数的方向 | `Left` is `-90` — angles can be negative | other diagonal: `turn -45` |
-| 10 | 大挑战 I | — (combines step + turn) | 4 radishes in a square; **deliberately repetitive** |
-| **3** | **对象** ||
-| 11 | 叫它的名字 | `stepTo` — things have names | hand-computed angles miss by a hair |
-| 12 | 一个接一个 | — (practice) | 3 radishes; Lita slides sideways |
-| 13 | 转过身来 | `turnTo` | fixes the crab walk |
-| **4** | **条件** ||
-| 14 | 如果 | `if` and `==`; **random heading each run** | code must handle what the author can't know |
-| 15 | 要么这样，要么那样 | `if / else`; ripe vs green; `IsMature()` | one of two radishes is ripe, randomly |
-| 16 | 大挑战 II | — (both unknowns at once) | random heading **and** random ripeness |
-| **5** | **数据** ||
-| 17 | 给数字起名字 | `var` | three equal legs; change one place |
-| 18 | 改变它 | assignment (`=` vs course 14's `==`) | shrinking legs: 160/120/80/40 |
-| **6** | **循环** ||
-| 19 | 重复的味道 | `repeat` | **the same level as course 10**, refactored |
-| 20 | 螺旋 | — (loop × angle × variable) | inward spiral |
-| 21 | 一筐萝卜 | arrays + `for in` | a basket exists so a loop can walk it |
-| 22 | 等它熟 | `waitUntil` | the radish ripens on its own |
-| 23 | 收到齐为止 | — (`for in` + `waitUntil`) | three radishes, three different clocks |
-| 24 | 大挑战 III | — (arrays + `if` + `waitUntil`) | from scratch |
-| **7** | **函数调用** ||
-| 25 | 代码里的尺子 | `distanceTo` returns a value; **it was all functions** | Lita says the distance out loud |
-| 26 | 浇浇水 | `Water()`; watering speeds ripening | walk close, water, wait, collect |
-| 27 | 熟的收，生的浇 | — (everything together) | 4 radishes, mixed ripeness |
-| 28 | 毕业设计 | — (graduation) | 5 radishes, empty editor, no scaffold |
+| **一** | **认识环境** ||
+| 1 | 你好，Lita | 向 copilot 求助 | 1 个萝卜，不需要写代码 |
+| 2 | 第一次运行 | 运行按钮；碰到即捡 | `step 160` 已写好 |
+| **二** | **走与转** ||
+| 3 | 量一量 | 数字就是距离；**尺子** | 距离 233 —— 猜起来很痛苦 |
+| 4 | 自己写第一行 | API 参考面板是本词典 | 距离 187，空编辑器 |
+| 5 | 转个弯 | `turn Right`；树挡路 | 第一段给好，自己接上转弯 |
+| 6 | 另一边 | —（镜像：`turn Left`） | 镜像关卡，从零写 |
+| 7 | 绕过去 | —（**思维**：先规划路线） | 4 棵树组成的墙，U 形绕行 |
+| 8 | 其实是数字 | **`Right` 一直都是 `90`**；尺子能量角度 | 斜方向的萝卜：`turn 63` |
+| 9 | 负数的方向 | `Left` 就是 `-90` —— 角度可以是负的 | 另一侧斜方向：`turn -45` |
+| 10 | 大挑战 I | —（step + turn 综合） | 4 个萝卜围成正方形；**故意写得很啰嗦** |
+| **三** | **对象** ||
+| 11 | 叫它的名字 | `stepTo` —— 东西是有名字的 | 手算的角度差那么一点点 |
+| 12 | 一个接一个 | —（强化） | 3 个萝卜；Lita 横着滑 |
+| 13 | 转过身来 | `turnTo` | 治好螃蟹走路 |
+| **四** | **条件** ||
+| 14 | 如果 | `if` 和 `==`；**每次运行朝向随机** | 代码要能应付作者也不知道的情况 |
+| 15 | 要么这样，要么那样 | `if / else`；生熟规则；`IsMature()` | 两个萝卜随机一生一熟 |
+| 16 | 大挑战 II | —（两个未知同时出现） | 朝向随机**且**生熟随机 |
+| **五** | **数据** ||
+| 17 | 给数字起名字 | `var` | 三段等长的路；改一处全变 |
+| 18 | 改变它 | 赋值（`=` 对照第 14 课的 `==`） | 递减的台阶：160/120/80/40 |
+| **六** | **循环** ||
+| 19 | 重复的味道 | `repeat` | **和第 10 课同一个关卡**，重构 |
+| 20 | 螺旋 | —（循环 × 角度 × 变量） | 向内收的螺旋 |
+| 21 | 一筐萝卜 | 数组 + `for in` | 装进筐里，就是为了挨个处理 |
+| 22 | 等它熟 | `waitUntil` | 萝卜会自己慢慢成熟 |
+| 23 | 收到齐为止 | —（`for in` + `waitUntil`） | 三个萝卜，三个不同的时钟 |
+| 24 | 大挑战 III | —（数组 + `if` + `waitUntil`） | 从零写 |
+| **七** | **函数调用** ||
+| 25 | 代码里的尺子 | `distanceTo` 有返回值；**原来一直都是函数** | 让 Lita 自己把距离说出来 |
+| 26 | 浇浇水 | `Water()`；浇水加快成熟 | 走近、浇水、等熟、收 |
+| 27 | 熟的收，生的浇 | —（全部串起来） | 4 个萝卜，生熟混杂 |
+| 28 | 毕业设计 | —（毕业） | 5 个萝卜，空编辑器，没有脚手架 |
 
-## Two moments worth protecting
+## 两个值得保护的时刻
 
-**Course 8 is a reveal, not a lesson.** After four courses of `turn Right`, the learner is told:
-the `Right` you have been typing *is* `90`. Nothing new is added — something already used becomes
-visible. `Left = -90` in course 9 brings negative numbers in for free, with a concrete meaning.
+**第 8 课是一次揭幕，不是一节新课。** 在用了四课 `turn Right` 之后，才告诉学习者：
+你一直在打的那个 `Right`，**它就是 `90`**。没有增加任何新东西——只是让一直在用的东西**变得可见**。
+第 9 课的 `Left = -90` 顺手把负数带了进来，而且它的含义无比具体。
 
-**Course 25 is the same trick, one level up.** `Radish.IsMature()` has been used since course 15 as
-"a question you ask the radish", and `stepTo`/`step` since the very beginning. Course 25 names it:
-those were all functions, and `distanceTo` hands a number *back*. Deliberately, function definition
-is **not** taught here — only that calling is a thing they have been doing all along.
+**第 25 课是同一个手法，更高一层。** `Radish.IsMature()` 从第 15 课起就一直被当作
+「向萝卜提一个问题」在用，`stepTo` / `step` 更是从头用到尾。第 25 课给它们正名：
+那些**都是函数**，而 `distanceTo` 会**给你一个数**。
+这里刻意**不教**函数定义——只让学习者意识到，「调用」这件事他早就在做了。
 
-## Course 1's Hello World easter egg
+## 第 1 课的 Hello World 彩蛋
 
-Course 1 completes on **any** message. But if the message contains `Hello World` (any casing, or
-the Chinese equivalent), the copilot warmly explains the tradition — nearly every programmer's
-first program says exactly this — and tells them they just joined it.
+第 1 课发**任何**消息都算完成。但如果消息里出现了 `Hello World`（不分大小写，中文「你好世界」也算），
+copilot 会额外热情地讲讲这个传统——几乎每个程序员的第一个程序说的都是这句话——然后告诉他，
+他刚刚也加入了这个行列。
 
-The prompt explicitly forbids hinting at this when the message *isn't* Hello World. A surprise you
-are told to look for is not a surprise.
+提示词里**明确禁止**在用户没打这句话时去暗示它。**一个被提醒去找的惊喜，就不再是惊喜了。**
 
-## Verification status
+## 验证状态
 
-Every course's reference answer was executed against the real runtime (the same WASM engine users
-run) via the [course runner harness](./verifying-courses.md), checking that **every** radish in the
-level is collected — not just one.
+每一课的参考答案都通过[课程验证工具](./verifying-courses.md)在真实运行时（和用户跑的是同一个 WASM 引擎）
+里实际执行过，并检查了关卡里**每一个**萝卜都被收集——而不是只收到一个就算过。
 
-- **27 of 27** courses with code pass. Course 1 has no code to run.
-- The **prompts** (guidance behaviour, opening sequence, completion judgement) are not covered by
-  this: they need a signed-in session with a live copilot.
+- **27 / 27** 门有代码的课程通过。第 1 课没有代码可跑。
+- **提示词部分（引导行为、开场序列、完成判定）不在此列**——那需要登录后跑真实的 copilot 才能验。
 
-Three engine constraints were found this way and are baked into the courses:
+这个过程中发现了三条引擎约束，现已固化进课程设计：
 
-1. **Bare top-level code is spx's "Main" and has an execution timeout.** Anything that runs for a
-   few seconds is killed partway — and collisions along the way never register either, so the level
-   looks unsolvable rather than slow. Long-running courses put their work in `onStart`.
-2. **An inline array literal does not compile** at top level (`unreachable`). Declare, then assign.
-3. **Watering must happen outside the touch radius.** Lita (half-width 16) and a radish (12) overlap
-   at ~28 units, and `onTouchStart` only fires on the *transition* into contact — stand at 20 and
-   Lita is already touching while the radish is green, so it never fires again once it ripens.
-   Courses stand off by 60.
+1. **裸的顶层代码就是 spx 的 "Main"，它有执行时限。** 跑几秒的代码会被中途杀掉——
+   而且沿途的碰撞也一并不会注册，所以关卡看起来**不是慢，而是根本过不了**。
+   耗时长的课程都把逻辑放进 `onStart`。
+2. **数组字面量在顶层内联初始化不编译**（报 `unreachable`）。要先声明，再赋值。
+3. **浇水必须站在触碰半径之外。** Lita（半宽 16）和萝卜（12）在约 28 单位处就开始重叠，
+   而 `onTouchStart` 只在**进入接触的那一瞬间**触发——站在 20 处，萝卜还生的时候 Lita 就已经贴上去了，
+   等它熟了也不会再触发。所以课程里都站开 60。
