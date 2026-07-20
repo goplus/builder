@@ -1,5 +1,11 @@
 # Tech design for [User Tutorial](../../product/tutorial.md)
 
+- [What this branch adds](./whats-new.md) — the silent-by-default copilot, intervention levels, the ruler, and the dev harness
+- [Code: Lita series](./code-lita-series.md) — what the 28 courses teach, and in what order
+- [Course authoring](./course-authoring.md) — how to write a course prompt
+- [LLM payload](./llm-payload.md) — everything the model receives
+- [Verifying courses](./verifying-courses.md) — running a course's code against the real runtime
+
 ## Challenges
 
 * Provide simple Copilot APIs to meet the tutorial requirements
