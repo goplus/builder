@@ -1,6 +1,6 @@
 # Tech design for [User Tutorial](../../product/tutorial.md)
 
-- [这个分支加了什么](./whats-new.md) —— 默认沉默的 copilot、干预层级、尺子，以及开发验证工具
+- [What this branch adds](./whats-new.md) ([中文](./whats-new.zh.md)) —— 默认沉默的 copilot、干预层级、尺子，以及开发验证工具
 - [Code: Lita 课程系列](./code-lita-series.md) —— 28 课分别教了什么，为什么这样排
 - [课程编写](./course-authoring.md) —— 怎么写一份课程提示词
 - [LLM payload](./llm-payload.md) —— 发给模型的全部内容
