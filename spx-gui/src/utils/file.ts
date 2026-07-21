@@ -18,6 +18,8 @@ const ext2mime: Record<string, string | undefined> = {
   wav: 'audio/wav',
   ogg: 'audio/ogg',
   webm: 'audio/webm',
+  ttf: 'font/ttf',
+  otf: 'font/otf',
   json: 'application/json',
   spx: 'text/plain',
   gmx: 'text/plain',
@@ -120,8 +122,7 @@ export async function getSupportedAudioExts() {
  * Get the raw object URL for a File.
  *
  * NOTE: For URLs used as image resources, check whether `useRenderableImageUrl`
- * is more appropriate. It applies rendering-specific handling such as Scratch
- * font injection for SVG files.
+ * is more appropriate. It applies SVG-specific rendering fixes.
  */
 export function useFileUrl(fileSource: WatchSource<File | undefined | null>) {
   const urlRef = ref<string | null>(null)

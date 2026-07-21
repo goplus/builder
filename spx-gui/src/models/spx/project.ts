@@ -23,6 +23,7 @@ import { defaultMapSize, Stage, type RawStageConfig } from './stage'
 import { DumbTilemap as Tilemap } from './tilemap'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
+import { createBasicChineseFontFamily, FontFamily } from './font'
 import type { RawWidgetConfig } from './widget'
 import type { Metadata, IProject, PartialMetadata, ProjectSerialized } from '@/models/project'
 
@@ -84,6 +85,7 @@ export type RawProjectConfig = RawStageConfig &
      * Maximum FPS for the project.
      */
     maxFPS?: number
+    fontPreferences?: string[]
   }
 
 export type ScreenshotTaker = (
@@ -134,6 +136,21 @@ export class SpxProject extends Disposable implements IProject {
   // reference sounds by ID, and `removeSound` must clean up those cross-sprite references.
   sounds: Sound[]
   zorder: string[]
+  fonts: FontFamily[]
+  fontPreferences: string[]
+
+  setThumbnail(thumbnail: File | null) {
+    this.thumbnail = thumbnail
+  }
+
+  setFontPreferences(fontPreferences: string[]) {
+    this.fontPreferences = [...fontPreferences]
+  }
+
+  addFont(font: FontFamily) {
+    if (this.fonts.some((item) => item.name === font.name)) throw new Error(`font ${font.name} already exists`)
+    this.fonts.push(font)
+  }
 
   private aiDescription: string | null
   private aiDescriptionHash: string | null
@@ -368,6 +385,8 @@ export class SpxProject extends Disposable implements IProject {
       this.displayName = name
     }
     this.zorder = []
+    this.fonts = []
+    this.fontPreferences = ['default']
     this.stage = new Stage()
     this.sprites = []
     this.sounds = []
@@ -375,6 +394,7 @@ export class SpxProject extends Disposable implements IProject {
       this.sprites.splice(0).forEach((s) => s.dispose())
       this.sounds.splice(0).forEach((s) => s.dispose())
       this.zorder = []
+      this.fonts.splice(0)
       this.stage.dispose()
       this.tilemap?.dispose()
       this.tilemap = null
@@ -425,11 +445,22 @@ export class SpxProject extends Disposable implements IProject {
       builder_soundOrder: soundOrder,
       tilemapPath,
       maxFPS,
+      fontPreferences,
       ...rawStageConfig
     } = config
 
     const sounds = await Sound.loadAll(files)
     const sprites = await Sprite.loadAll(files, { sounds })
+    const fonts = await FontFamily.loadAll(files)
+    // Projects created before project-font support have no font config, but may rely on Builder's
+    // previous Chinese SVG fallback. Materialize the equivalent project font on their next save.
+    if (fontPreferences == null && fonts.length === 0) {
+      const font = createBasicChineseFontFamily()
+      fonts.push(font)
+      this.fontPreferences = [font.name, 'default']
+    } else {
+      this.fontPreferences = [...(fontPreferences ?? ['default'])]
+    }
 
     const widgets: RawWidgetConfig[] = []
     const zorder: string[] = []
@@ -460,6 +491,7 @@ export class SpxProject extends Disposable implements IProject {
     this.sounds.splice(0).forEach((s) => s.dispose())
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
+    this.fonts.splice(0, this.fonts.length, ...fonts)
 
     this.tilemap?.dispose()
     this.tilemap = tilemapPath != null ? await Tilemap.load(tilemapPath, assetsDir, files) : null
@@ -500,12 +532,14 @@ export class SpxProject extends Disposable implements IProject {
       zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
       builder_soundOrder: this.sounds.map((s) => s.id),
-      maxFPS: this.maxFPS ?? 60 // Default is 60 FPS
+      maxFPS: this.maxFPS ?? 60, // Default is 60 FPS
+      fontPreferences: this.fontPreferences
     }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
     Object.assign(files, ...this.sprites.map((s) => s.export({ sounds: this.sounds })))
     Object.assign(files, ...this.sounds.map((s) => s.export()))
+    Object.assign(files, ...this.fonts.map((fontFamily) => fontFamily.export()))
     return files
   }
 

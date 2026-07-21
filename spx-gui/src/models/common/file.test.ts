@@ -46,6 +46,11 @@ function makeLoader() {
 }
 
 describe('File', () => {
+  it('infers font MIME types from file names', () => {
+    expect(new File('handlee.ttf', async () => makeAB()).type).toBe('font/ttf')
+    expect(new File('NotoSans.otf', async () => makeAB()).type).toBe('font/otf')
+  })
+
   describe('arrayBuffer with concurrent calls and signal abortion', () => {
     it('should handle single call', async () => {
       const ab = makeAB()

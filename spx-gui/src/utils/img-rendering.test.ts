@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fromText } from '@/models/common/file'
 import { getRenderableImageUrl } from './img-rendering'
-import { injectScratchFontsToSvgText } from './scratch-svg-font'
+import { injectFontsToSvgText } from './svg-font'
 
-vi.mock('./scratch-svg-font', () => ({
-  injectScratchFontsToSvgText: vi.fn(async (svgText: string) =>
+vi.mock('./svg-font', () => ({
+  injectFontsToSvgText: vi.fn(async (svgText: string) =>
     svgText.includes('font-family="Scratch"') ? '<svg>injected</svg>' : null
   )
 }))
@@ -27,7 +27,7 @@ describe('getRenderableImageUrl', () => {
 
     await getRenderableImageUrl(file, ctrl1.signal)
     await getRenderableImageUrl(file, ctrl2.signal)
-    expect(injectScratchFontsToSvgText).toHaveBeenCalledTimes(1)
+    expect(injectFontsToSvgText).toHaveBeenCalledTimes(1)
   })
 
   it('does not let one consumer abort the shared derived SVG cache', async () => {
@@ -37,7 +37,7 @@ describe('getRenderableImageUrl', () => {
     const ctrl1 = new AbortController()
     const ctrl2 = new AbortController()
     let resolveInjectedSvg!: (svgText: string) => void
-    vi.mocked(injectScratchFontsToSvgText).mockImplementationOnce(
+    vi.mocked(injectFontsToSvgText).mockImplementationOnce(
       () =>
         new Promise<string>((resolve) => {
           resolveInjectedSvg = resolve
@@ -45,7 +45,7 @@ describe('getRenderableImageUrl', () => {
     )
 
     const url1 = getRenderableImageUrl(file, ctrl1.signal)
-    await vi.waitFor(() => expect(injectScratchFontsToSvgText).toHaveBeenCalledTimes(1))
+    await vi.waitFor(() => expect(injectFontsToSvgText).toHaveBeenCalledTimes(1))
     const url2 = getRenderableImageUrl(file, ctrl2.signal)
 
     ctrl1.abort()
@@ -53,7 +53,7 @@ describe('getRenderableImageUrl', () => {
 
     await expect(url1).rejects.toBeDefined()
     await expect(url2).resolves.toBe('blob:mock-0')
-    expect(injectScratchFontsToSvgText).toHaveBeenCalledTimes(1)
+    expect(injectFontsToSvgText).toHaveBeenCalledTimes(1)
   })
 
   it('revokes URLs on abort', async () => {
@@ -81,7 +81,7 @@ describe('getRenderableImageUrl', () => {
 
     const url = await getRenderableImageUrl(file, ctrl.signal)
 
-    expect(injectScratchFontsToSvgText).toHaveBeenCalled()
+    expect(injectFontsToSvgText).toHaveBeenCalled()
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1)
     ctrl.abort()
     expect(URL.revokeObjectURL).toHaveBeenCalledWith(url)
