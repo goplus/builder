@@ -21,7 +21,7 @@
       >
     </UITabs>
     <template #extra>
-      <FormatButton v-if="state.selected.type === 'code'" :code-file-path="sprite.codeFilePath" />
+      <FormatButton v-if="state.selected.type === 'code' && codeToolsVisible" :code-file-path="sprite.codeFilePath" />
     </template>
   </EditorHeader>
   <CodeEditorUI

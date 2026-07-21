@@ -101,6 +101,14 @@
       {{ $t(rulerTip) }}
     </UITooltip>
 
+    <div
+      v-if="selectedSpriteNameLabel != null"
+      class="pointer-events-none absolute rounded-[4px] bg-black/30 px-1.5 py-0.5 text-xs text-white -translate-x-1/2"
+      :style="{ left: `${selectedSpriteNameLabel.left}px`, top: `${selectedSpriteNameLabel.top}px` }"
+    >
+      {{ selectedSpriteNameLabel.name }}
+    </div>
+
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
@@ -207,6 +215,23 @@ const rulerSnapTargets = computed(() =>
     heading: sprite.heading
   }))
 )
+
+// In guided scenarios (tutorial focused mode) the selected sprite shows its name just below its
+// transform box, so a beginner can tell which sprite they are working on. The label is a DOM
+// overlay positioned from the sprite's map coordinates (same conversion as the ruler snap targets,
+// then scaled to container pixels).
+const selectedSpriteNameLabel = computed(() => {
+  if (editorWorkspaceLayout.mode !== 'focused') return null
+  const sprite = editorCtx.state.selectedSprite
+  const scale = stageScale.value
+  if (sprite == null || scale == null) return null
+  const centerX = (sprite.x + mapSize.value.width / 2 + mapPos.value.x) * scale
+  const centerY = (mapSize.value.height / 2 - sprite.y + mapPos.value.y) * scale
+  // Offset below the sprite center to sit under the transform box. Sprite sizes vary, so this is
+  // an approximate gap (in map units) rather than the exact box bottom.
+  const offsetMapUnits = 40
+  return { name: sprite.name, left: centerX, top: centerY + offsetMapUnits * scale }
+})
 
 const updateMousePos = throttle(() => {
   // Event `mousemove` may be triggered when mouse is out of stage with negative mouse position, we ignore such case.

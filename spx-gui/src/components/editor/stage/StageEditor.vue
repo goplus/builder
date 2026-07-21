@@ -25,7 +25,7 @@
       </UITab>
     </UITabs>
     <template #extra>
-      <FormatButton v-if="state.selected.type === 'code'" :code-file-path="stage.codeFilePath" />
+      <FormatButton v-if="state.selected.type === 'code' && codeToolsVisible" :code-file-path="stage.codeFilePath" />
       <BackdropModeSelector v-if="state.selected.type === 'backdrops'" />
     </template>
   </EditorHeader>
