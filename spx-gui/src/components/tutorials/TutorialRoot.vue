@@ -151,7 +151,12 @@ watch(
       .filter((m) => m.role === 'copilot')
       .map((m) => (m.role === 'copilot' ? m.content ?? '' : ''))
       .join('')
-    return stripThinking(reply).trim()
+    // The comment is meant to be plain prose. Strip thinking and any stray copilot elements (a
+    // progress verdict, a stay-silent, ...) so only the evaluation sentence reaches the dialog.
+    return stripThinking(reply)
+      .replace(/<\/?[a-zA-Z][\w-]*(?:\s[^>]*?)?\/?>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
   },
   (comment) => {
     if (comment != null && comment !== '') tutorial.setCompletionComment(comment)
