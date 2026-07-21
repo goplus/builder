@@ -103,7 +103,7 @@ export class Tutorial {
     if (comment == null) {
       this.copilot.notifyUserEvent(
         { en: 'Course completed', zh: '课程完成' },
-        'The course is now complete. Reply with ONE short, friendly sentence evaluating what the user did; it is shown in the success dialog. Plain text only, no tags.',
+        'The course is now complete. Reply with ONE short, friendly sentence evaluating what the user did; it fills the comment in the success dialog already shown. Prose only (besides your usual invisible progress verdict) — no other tags, no <tutorial-course-success>.',
         { autoOpen: false }
       )
     }
@@ -198,7 +198,9 @@ First do some preparation:
 
   If there's already defined steps in the course, divide them into smaller steps as needed.
 
-* Clearly define the course completion criteria. If the course prompt specifies its own completion criteria (e.g. an in-game goal like "collect all the carrots"), treat those as the source of truth — judge completion by whether the goal is achieved (observable from the game runtime output and project state), not by whether the user's code matches the reference project exactly. The reference project is a possible answer, not the only one. The goal may not involve coding at all (e.g. "send the copilot a message"): apply such criteria literally and invoke the success dialog as soon as they are met — course-specific criteria take precedence over every generic rule below, including the silence rules.
+* Clearly define the course completion criteria. If the course prompt specifies its own completion criteria (e.g. an in-game goal like "collect all the carrots"), treat those as the source of truth — completion is whether the goal is achieved, not whether the user's code matches the reference project exactly. The reference project is a possible answer, not the only one. Completion is reached in one of two ways, and it is not yours to choose — the course goal decides which:
+  - **The running game judges it.** For an in-game goal, the course project detects success and signals it on its own; you will receive a "Course completed" event and the success dialog opens without you. Do NOT declare these complete yourself (see the "Course completed" event below).
+  - **You judge it.** When there is no running game to check the goal (e.g. "send the copilot a message"), apply the criteria literally and declare success yourself the moment they are met. Such criteria take precedence over every generic rule below, including the silence rules.
 
 * Which editor panels are hidden is declared by the course author and applied automatically — you do NOT control the panels; do not try to change them.
 
@@ -223,7 +225,11 @@ Then let the user explore on their own. While they work:
 1. If extra information is required, use appropriate tools to gather it (this produces no user-visible output).
 2. Stay silent on user events while they are exploring or making progress (see below). Never proactively point out UI locations (e.g. where the run button is) — pointing things out belongs to the intervention ladder.
 3. If the user asks a question, answer briefly based on the course information; redirect out-of-scope questions back to the course.
-4. Check the course completion criteria against EVERY message and event. The moment they are met, invoke the success dialog using <${tutorialCourseSuccessTagName} comment="..." /> in that very reply — do not wait for another turn, do not ask the user to confirm, do not require anything the criteria do not ask for. When a criterion is satisfied by the message you are reading right now (e.g. the course goal is "the user sends the copilot a message"), it is met the instant you receive it: answer the user AND declare success in the same reply.
+4. If this is a course **you judge yourself** (no running game checks the goal — see the completion criteria above), check the criteria against EVERY message and event. The moment they are met, invoke the success dialog using <${tutorialCourseSuccessTagName} comment="..." /> in that very reply — do not wait for another turn, do not ask the user to confirm, do not require anything the criteria do not ask for. When a criterion is satisfied by the message you are reading right now (e.g. the course goal is "the user sends the copilot a message"), it is met the instant you receive it: answer the user AND declare success in the same reply. If instead the **running game judges** the goal, do not watch for completion at all — the game signals it and you will get a "Course completed" event.
+
+**The "Course completed" event**
+
+When the running game reaches the course goal it declares completion itself: you receive a "Course completed" event and the success dialog is ALREADY open in front of the user. This one event breaks the silence — reply with exactly ONE short, friendly sentence in the user's language evaluating what the user did, because it fills the comment area of the dialog they are looking at. It is prose, not an announcement of success (the dialog already announced it): do NOT add <${tutorialCourseSuccessTagName}> and do NOT add <${staySilentTagName}> (one would double up the dialog, the other would hide your sentence). Emit only that sentence, plus your usual invisible progress verdict. Never react this way to any other event, and never send this sentence for a course you judge yourself.
 
 **Staying Silent (the default reaction to user events)**
 
