@@ -10,7 +10,7 @@ export function isCostumesLoading(gens: CostumeGen[]) {
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { useFontAwareImageUrl } from '@/utils/img-rendering'
 import { UIBlockItemTitle, UIImg } from '@/components/ui'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import CornerMenu from '@/components/editor/common/CornerMenu.vue'
@@ -37,7 +37,7 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const [url, imageLoading] = useRenderableImageUrl(() => props.gen.image)
+const [url, imageLoading] = useFontAwareImageUrl(() => props.gen.image)
 
 const isLoading = computed(() => isCostumeLoading(props.gen) || imageLoading.value)
 const highlight = computed(() => props.gen.generateState.status === 'finished')

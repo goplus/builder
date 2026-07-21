@@ -36,6 +36,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { provideSvgFontContext } from '@/utils/img-rendering'
+import { createFileWithWebUrl } from '@/models/common/cloud'
+import type { File } from '@/models/common/file'
 import { UICard } from '@/components/ui'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
@@ -51,7 +54,21 @@ const editorCtx = useEditorCtx()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
+const defaultFont = {
+  name: 'default',
+  file: createFileWithWebUrl(
+    new URL('../../assets/fonts/default/NotoSans-Medium.ttf', import.meta.url).href,
+    'NotoSans-Medium.ttf'
+  )
+}
 
+provideSvgFontContext(() => ({
+  fontPreferences: editorCtx.project.fontPreferences.slice(),
+  fonts: new Map<string, File>([
+    ...editorCtx.project.fonts.map((font): [string, File] => [font.name, font.file]),
+    [defaultFont.name, defaultFont.file]
+  ])
+}))
 useSpxEditorCopilot()
 
 function handleSpriteSelect(spriteId: string | null) {

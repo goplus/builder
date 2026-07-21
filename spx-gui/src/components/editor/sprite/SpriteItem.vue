@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useHovered } from '@/utils/dom'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { useFontAwareImageUrl } from '@/utils/img-rendering'
 import { useMessageHandle } from '@/utils/exception'
 import { useDragDroppable } from '@/utils/drag-and-drop'
 import { Sprite } from '@/models/spx/sprite'
@@ -39,7 +39,7 @@ const props = withDefaults(
 
 const editorCtx = useEditorCtx()
 
-const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.sprite.defaultCostume?.img)
+const [imgSrc, imgLoading] = useFontAwareImageUrl(() => props.sprite.defaultCostume?.img)
 const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 const animation = computed(() => props.sprite.getDefaultAnimation())
