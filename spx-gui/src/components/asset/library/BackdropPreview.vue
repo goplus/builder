@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { useAsyncComputedLegacy } from '@/utils/utils'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { useFontAwareImageUrl } from '@/utils/img-rendering'
 import type { AssetData } from '@/apis/asset'
 import { asset2Backdrop } from '@/models/spx/common/asset'
 import { Backdrop } from '@/models/spx/backdrop'
@@ -18,5 +18,5 @@ const backdrop = useAsyncComputedLegacy(async () => {
   if (props.backdrop instanceof Backdrop) return props.backdrop
   return asset2Backdrop(props.backdrop)
 })
-const [imgSrc, imgLoading] = useRenderableImageUrl(() => backdrop.value?.img)
+const [imgSrc, imgLoading] = useFontAwareImageUrl(() => backdrop.value?.img)
 </script>
