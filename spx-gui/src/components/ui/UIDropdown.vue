@@ -39,6 +39,12 @@ export type Props = {
   offset?: Offset
   disabled?: boolean
   class?: ClassValue
+  /**
+   * For a `hover` dropdown, whether hovering the content keeps it open (so the pointer can move
+   * from trigger into content). Defaults to `true`. Set `false` when the content has nothing to
+   * interact with, so the dropdown closes as soon as the pointer leaves the trigger.
+   */
+  keepOnContentHover?: boolean
 }
 </script>
 
@@ -71,7 +77,8 @@ const props = withDefaults(defineProps<Props>(), {
   pos: undefined,
   offset: () => ({ x: 0, y: 8 }),
   disabled: false,
-  class: undefined
+  class: undefined,
+  keepOnContentHover: true
 })
 
 const emit = defineEmits<{
@@ -176,6 +183,9 @@ function handleTriggerMouseleave() {
 
 function handleContentMouseenter() {
   if (props.trigger !== 'hover' || props.disabled) return
+  // When the content has nothing to interact with, hovering it should not keep the dropdown open;
+  // it closes as the pointer leaves the trigger.
+  if (!props.keepOnContentHover) return
   clearTimer(hoverCloseTimerRef)
   setVisible(true)
 }
