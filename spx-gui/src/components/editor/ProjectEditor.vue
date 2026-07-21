@@ -5,7 +5,7 @@
     v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
     class="relative min-w-0 flex flex-col overflow-visible!"
-    :class="isFocused ? 'flex-[1_1_52%]' : 'flex-[1_1_0]'"
+    :class="isFocused ? 'flex-[3.5_1_0]' : 'flex-[1_1_0]'"
   >
     <!--
       TODO: optimize performance for switching between editors, which corresponds to selection change.
@@ -26,7 +26,7 @@
   <div
     v-show="isPreviewMode"
     class="min-w-0 flex flex-col gap-xl"
-    :class="isFocused ? 'flex-[1_1_48%] min-w-[660px]' : 'flex-[0_0_496px]'"
+    :class="isFocused ? 'flex-[3_1_0] min-w-[660px]' : 'flex-[0_0_496px]'"
   >
     <EditorPreview />
     <EditorPanels v-if="!isPanelsHidden" />
