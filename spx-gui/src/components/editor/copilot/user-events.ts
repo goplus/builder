@@ -5,6 +5,7 @@ import type { Disposer } from '@/utils/disposable'
 import type { Copilot } from '@/components/copilot/copilot'
 import { DiagnosticSeverity } from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
+import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
 import type { CodeEditor } from '@/components/editor/spx-code-editor'
 import type { EditorCtx } from '../EditorContextProvider.vue'
 
@@ -101,6 +102,9 @@ function watchRuntimeOutput(editorCtx: EditorCtx, copilot: Copilot): Disposer {
       const fresh = outputs.filter((o) => o.id > lastSeenId)
       if (fresh.length === 0) return
       lastSeenId = outputs[outputs.length - 1].id
+      // Bridge fresh lines immediately to App-level features (e.g. the tutorial completion
+      // sentinel); the copilot notification below stays debounced.
+      for (const o of fresh) editorRuntimeOutputBridge.push(o.message)
       const hasError = fresh.some((o) => o.kind === RuntimeOutputKind.Error)
       const latest = (hasError ? fresh.filter((o) => o.kind === RuntimeOutputKind.Error).at(-1) : fresh.at(-1))!
       emit(latest.message.trim(), hasError)
