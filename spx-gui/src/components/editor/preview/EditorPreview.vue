@@ -103,45 +103,33 @@
       </div>
     </div>
 
-    <!-- In the focused layout, run controls float at the bottom-right corner, beside the docked copilot trigger -->
-    <div v-if="isFocused" class="fixed bottom-7 right-[86px] z-[9999] flex items-center gap-2.5">
+    <!-- In the focused layout, one run/stop control floats at the bottom-right corner, beside the
+         docked copilot trigger. There is no rerun: a run is either stopped by the user or ends on
+         its own, and either way returns to edit mode (see handleExit) — so at any moment it is
+         exactly Run (edit mode) or Stop (running). -->
+    <div v-if="isFocused" class="fixed bottom-7 right-[86px] z-[9999]">
       <UIButton
         v-if="runnerState === 'initial'"
         v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-        class="h-12! w-12!"
         type="primary"
-        shape="circle"
         size="large"
         icon="playHollow"
-        :aria-label="$t({ en: 'Run', zh: '运行' })"
         :loading="handleRun.isLoading.value"
         @click="handleRun.fn"
-      />
-      <template v-else>
-        <UIButton
-          v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
-          class="h-12! w-12!"
-          type="primary"
-          shape="circle"
-          size="large"
-          icon="rotate"
-          :aria-label="$t({ en: 'Rerun', zh: '重新运行' })"
-          :disabled="runnerState !== 'running' || handleStop.isLoading.value"
-          :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
-          @click="handleRerun.fn"
-        />
-        <UIButton
-          v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
-          class="h-12! w-12!"
-          type="neutral"
-          shape="circle"
-          size="large"
-          icon="end"
-          :aria-label="$t({ en: 'Stop', zh: '停止' })"
-          :loading="handleStop.isLoading.value"
-          @click="handleStop.fn"
-        />
-      </template>
+      >
+        {{ $t({ en: 'Run', zh: '运行' }) }}
+      </UIButton>
+      <UIButton
+        v-else
+        v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+        type="red"
+        size="large"
+        icon="end"
+        :loading="handleStop.isLoading.value"
+        @click="handleStop.fn"
+      >
+        {{ $t({ en: 'Stop', zh: '停止' }) }}
+      </UIButton>
     </div>
   </UICard>
 </template>
@@ -333,6 +321,14 @@ function handleExit(code: number) {
   }
   exitGuard.value = 'idle'
   lastPanicOutput.value = null
+  if (isFocused.value) {
+    // In focused (tutorial) mode there is no rerun: a run that ends on its own returns to edit
+    // mode, mirroring handleStop's teardown so the runtime is fully reset.
+    runnerState.value = 'initial'
+    editorCtx.state.runtime.setRunning({ mode: 'none' })
+    projectRunnerSurfaceRef.value?.stop().catch(() => {})
+    return
+  }
   const shouldRestore = restoreDebugRuntime()
   runnerState.value = shouldRestore ? 'running' : 'loading'
 }
