@@ -62,6 +62,9 @@ const hoverDropdown = ref<InstanceType<typeof UIDropdown> | null>(null)
 const video = computed(() => codeEditor.apiReferenceVideoProvider?.(props.item) ?? null)
 
 const hoverCardActions = computed<Action[]>(() => {
+  // In block style (tutorial focused mode) the hover card carries no interactive controls, so the
+  // Explain action is dropped — the card is explanatory only (description + video).
+  if (codeEditorUICtx.blockStyle) return []
   return [
     {
       command: builtInCommandCopilotExplain,
@@ -108,7 +111,13 @@ function handleMouseUp(e: MouseEvent) {
 </script>
 
 <template>
-  <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
+  <UIDropdown
+    ref="hoverDropdown"
+    placement="bottom-start"
+    :offset="{ x: 0, y: 4 }"
+    :disabled="interactionDisabled"
+    :keep-on-content-hover="!codeEditorUICtx.blockStyle"
+  >
     <template #trigger>
       <li
         ref="itemEl"
@@ -131,12 +140,18 @@ function handleMouseUp(e: MouseEvent) {
     </template>
     <HoverCard :actions="hoverCardActions" @action="hideDropdown">
       <HoverCardContent>
-        <DefinitionOverviewWrapper :kind="item.kind" :inlay-hints="parsed.inlayHints">
+        <!-- The signature already shows on the list item; in block style the hover card omits it
+             and shows only the explainer video and description. -->
+        <DefinitionOverviewWrapper
+          v-if="!codeEditorUICtx.blockStyle"
+          :kind="item.kind"
+          :inlay-hints="parsed.inlayHints"
+        >
           {{ parsed.overview }}
         </DefinitionOverviewWrapper>
         <video
           v-if="video != null"
-          class="mt-1 block w-72 max-w-full rounded-sm bg-grey-1000"
+          class="mt-1 block aspect-4/3 w-72 max-w-full rounded-sm bg-grey-1000 object-cover"
           :src="video.src"
           autoplay
           muted
