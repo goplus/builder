@@ -6,10 +6,14 @@ import { useIsRouteLoaded } from '@/utils/route-loading'
 import { provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
+import { RoundState } from '@/components/copilot/copilot'
+import { stripThinking } from '@/components/copilot/content-visibility'
 import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
 import { stringifyDefinitionId, useCodeEditorRef } from '@/components/xgo-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
-import { extractCourseConfig } from './course-config'
+import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
+import { extractCourseConfig, courseCompleteSentinel } from './course-config'
+import TutorialCourseSuccessModal from './TutorialCourseSuccessModal.vue'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
@@ -93,6 +97,16 @@ watch(
       copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default)
     ]
 
+    if (courseConfig.judge === 'code') {
+      // Code-judged courses complete when the project prints the completion sentinel; the frontend
+      // decides, so the success dialog shows instantly instead of waiting for an LLM round.
+      disposers.push(
+        editorRuntimeOutputBridge.onLine((line) => {
+          if (line.includes(courseCompleteSentinel)) tutorial.markCourseComplete()
+        })
+      )
+    }
+
     onCleanup(() => {
       for (const dispose of disposers) {
         dispose()
@@ -123,9 +137,37 @@ watch(
   { immediate: true }
 )
 
+// The success dialog shows immediately on completion; the copilot's evaluation — its reply to the
+// "Course completed" event that markCourseComplete sends — fills the comment when it arrives.
+watch(
+  () => {
+    const session = copilot.currentSession
+    if (session == null || tutorial.completion == null) return null
+    const round = [...session.rounds]
+      .reverse()
+      .find((r) => r.userMessage.type === 'event' && r.userMessage.name.en === 'Course completed')
+    if (round == null || round.state !== RoundState.Completed) return null
+    const reply = round.resultMessages
+      .filter((m) => m.role === 'copilot')
+      .map((m) => (m.role === 'copilot' ? m.content ?? '' : ''))
+      .join('')
+    return stripThinking(reply).trim()
+  },
+  (comment) => {
+    if (comment != null && comment !== '') tutorial.setCompletionComment(comment)
+  }
+)
+
 provideTutorial(tutorial)
 </script>
 
 <template>
   <slot />
+  <TutorialCourseSuccessModal
+    v-if="tutorial.completion != null"
+    :completion="tutorial.completion"
+    :comment="tutorial.completionComment"
+    :tutorial="tutorial"
+    @close="tutorial.dismissCompletion()"
+  />
 </template>
