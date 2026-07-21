@@ -5,7 +5,10 @@ describe('extractCourseConfig', () => {
   it('should return empty config when there is no jsonc block', () => {
     expect(extractCourseConfig('Just a normal prompt, no config here.')).toEqual({
       hiddenAreas: [],
-      copilotOpen: false
+      copilotOpen: false,
+      judge: 'code',
+      apis: [],
+      videos: []
     })
   })
 
@@ -21,7 +24,10 @@ describe('extractCourseConfig', () => {
     ].join('\n')
     expect(extractCourseConfig(prompt)).toEqual({
       hiddenAreas: ['editor-panels', 'edit-mode-switch'],
-      copilotOpen: false
+      copilotOpen: false,
+      judge: 'code',
+      apis: [],
+      videos: []
     })
   })
 
@@ -39,9 +45,22 @@ describe('extractCourseConfig', () => {
     expect(extractCourseConfig(prompt).hiddenAreas).toEqual(['editor-panels'])
   })
 
+  it('should default judge to code and parse copilot judge', () => {
+    expect(extractCourseConfig('```jsonc\n{}\n```').judge).toBe('code')
+    expect(extractCourseConfig('```jsonc\n{ "judge": "copilot" }\n```').judge).toBe('copilot')
+    expect(extractCourseConfig('```jsonc\n{ "judge": "nonsense" }\n```').judge).toBe('code')
+  })
+
+  it('should parse apis and videos as deduped string arrays', () => {
+    const prompt = '```jsonc\n{ "apis": ["step", "turn", "step"], "videos": ["step", 42] }\n```'
+    const config = extractCourseConfig(prompt)
+    expect(config.apis).toEqual(['step', 'turn'])
+    expect(config.videos).toEqual(['step'])
+  })
+
   it('should tolerate a malformed block instead of throwing', () => {
     const prompt = '```jsonc\n{ this is not valid json \n```'
-    expect(extractCourseConfig(prompt)).toEqual({ hiddenAreas: [], copilotOpen: false })
+    expect(extractCourseConfig(prompt)).toEqual({ hiddenAreas: [], copilotOpen: false, judge: 'code', apis: [], videos: [] })
   })
 
   it('should accept a plain json block too', () => {

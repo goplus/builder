@@ -1,9 +1,18 @@
 import { hideableWorkspaceAreas, isWorkspaceArea, type WorkspaceArea } from '@/components/editor/workspace-layout'
 
 /**
- * Static, author-declared configuration of a tutorial course's workspace. Written by the course
- * author as a ```jsonc code block in the course prompt (see `extractCourseConfig`), it is applied
- * once when the course starts. The copilot does not control this.
+ * The runtime log a project prints (via a preset `completeCourse()` helper) to declare the course
+ * done, for `judge: "code"` courses. The frontend watches runtime output for it.
+ */
+export const courseCompleteSentinel = '@@builder:course-complete@@'
+
+/** How a course decides it is complete. */
+export type CourseCompletionJudge = 'code' | 'copilot'
+
+/**
+ * Static, author-declared configuration of a tutorial course. Written by the course author as a
+ * ```jsonc code block in the course prompt (see `extractCourseConfig`), it is applied once when
+ * the course starts. The copilot does not control this.
  */
 export type CourseConfig = {
   /**
@@ -17,15 +26,35 @@ export type CourseConfig = {
    * lesson) declares `"copilot": "open"` to start with the panel showing.
    */
   copilotOpen: boolean
+  /**
+   * How course completion is decided. `code` (default): the project prints the completion sentinel
+   * (see `courseCompleteSentinel`) from its own logic and the frontend judges — instant, no LLM
+   * round. `copilot`: the copilot declares completion, for courses that run no game (e.g. "talk to
+   * the copilot").
+   */
+  judge: CourseCompletionJudge
+  /**
+   * API names to narrow the API References panel to at course start (each matches all of its
+   * overloads). Empty means no narrowing. Applied by the frontend, not the copilot.
+   */
+  apis: string[]
+  /**
+   * API names whose explainer video plays at course start (the course's new knowledge points).
+   * Empty means none. The copilot can still play a video on request.
+   */
+  videos: string[]
 }
 
 /** The raw shape as authored in the jsonc block, before normalization. All fields optional. */
 type RawCourseConfig = {
   hide?: unknown
   copilot?: unknown
+  judge?: unknown
+  apis?: unknown
+  videos?: unknown
 }
 
-const emptyConfig: CourseConfig = { hiddenAreas: [], copilotOpen: false }
+const emptyConfig: CourseConfig = { hiddenAreas: [], copilotOpen: false, judge: 'code', apis: [], videos: [] }
 
 /**
  * Extract the first ```jsonc (or ```json) code block from the course prompt and parse it as the
@@ -97,8 +126,20 @@ function stripJsoncExtras(text: string): string {
 function normalizeCourseConfig(raw: RawCourseConfig): CourseConfig {
   return {
     hiddenAreas: normalizeHiddenAreas(raw.hide),
-    copilotOpen: raw.copilot === 'open'
+    copilotOpen: raw.copilot === 'open',
+    judge: raw.judge === 'copilot' ? 'copilot' : 'code',
+    apis: normalizeStringArray(raw.apis),
+    videos: normalizeStringArray(raw.videos)
   }
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  const normalized = value
+    .filter((v): v is string => typeof v === 'string')
+    .map((v) => v.trim())
+    .filter((v) => v !== '')
+  return [...new Set(normalized)]
 }
 
 function normalizeHiddenAreas(value: unknown): WorkspaceArea[] {

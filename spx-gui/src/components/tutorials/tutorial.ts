@@ -76,6 +76,49 @@ export class Tutorial {
     this.interventionRef.value = intervention
   }
 
+  /**
+   * Course completion. Driven by a completion signal — a runtime sentinel for `judge: "code"`
+   * courses, or the copilot for `judge: "copilot"` ones. Set once; the success dialog renders from
+   * it immediately (no LLM wait) and the copilot's evaluation fills `completionComment` afterwards.
+   */
+  private completionRef = shallowRef<{ course: Course; series: CourseSeries } | null>(null)
+  private commentRef = ref<string | null>(null)
+  get completion() {
+    return this.completionRef.value
+  }
+  get completionComment() {
+    return this.commentRef.value
+  }
+
+  /** Called when the completion signal arrives. Shows the dialog now; the comment fills in later. */
+  markCourseComplete(comment?: string) {
+    const course = this.currentCourse
+    const series = this.currentSeries
+    if (course == null || series == null || this.completionRef.value != null) return
+    this.completionRef.value = { course, series }
+    this.commentRef.value = comment ?? null
+    // Code-judged completion carries no comment, so ask the copilot to evaluate asynchronously —
+    // the comment is not on the critical path to celebrating, so the dialog does not wait for it.
+    // Copilot-judged completion already provides its comment with the signal.
+    if (comment == null) {
+      this.copilot.notifyUserEvent(
+        { en: 'Course completed', zh: '课程完成' },
+        'The course is now complete. Reply with ONE short, friendly sentence evaluating what the user did; it is shown in the success dialog. Plain text only, no tags.',
+        { autoOpen: false }
+      )
+    }
+  }
+
+  setCompletionComment(comment: string) {
+    if (this.completionRef.value == null) return
+    this.commentRef.value = comment
+  }
+
+  dismissCompletion() {
+    this.completionRef.value = null
+    this.commentRef.value = null
+  }
+
   private abandonPredictionCountRef = ref(0)
   predictAbandon() {
     return ++this.abandonPredictionCountRef.value
