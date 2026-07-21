@@ -284,8 +284,9 @@ providePopupContainer(codeEditorEl)
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
     <aside
-      class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
-      :style="{ flexBasis: `${sidebarWidth}px` }"
+      class="relative flex min-h-0 min-w-0 flex-col border-r border-r-dividing-line-2"
+      :class="apiReferenceBlockStyle ? 'flex-[1_1_0]' : 'flex-none'"
+      :style="apiReferenceBlockStyle ? undefined : { flexBasis: `${sidebarWidth}px` }"
     >
       <APIReferenceUI
         class="flex-[1_1_0]"
@@ -294,6 +295,7 @@ providePopupContainer(codeEditorEl)
       />
     </aside>
     <div
+      v-if="!apiReferenceBlockStyle"
       ref="resizeHandleEl"
       v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
@@ -302,7 +304,8 @@ providePopupContainer(codeEditorEl)
     ></div>
     <MonacoEditorComp
       v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
-      class="my-3 min-w-0 flex-[1_1_0]"
+      class="my-3 min-w-0"
+      :class="apiReferenceBlockStyle ? 'flex-[2.5_1_0]' : 'flex-[1_1_0]'"
       :monaco="codeEditor.monaco"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
