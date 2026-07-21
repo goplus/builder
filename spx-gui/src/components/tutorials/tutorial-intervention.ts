@@ -40,9 +40,18 @@ export class TutorialIntervention implements ICopilotContextProvider {
   // The level must survive context truncation and sit near the generation position.
   criticalContext = true
 
-  private neutral = 0
-  private back = 0
+  private neutralRef = ref(0)
+  private backRef = ref(0)
   private levelRef = ref<InterventionLevel>(InterventionLevel.Silent)
+
+  /** Accumulated neutral verdicts toward the next escalation (see `neutralThreshold`). */
+  get neutralCount() {
+    return this.neutralRef.value
+  }
+  /** Accumulated back verdicts toward the next escalation (see `backThreshold`). */
+  get backCount() {
+    return this.backRef.value
+  }
 
   /**
    * Whether the round being handled is a message the user typed. A direct request for help
@@ -64,8 +73,8 @@ export class TutorialIntervention implements ICopilotContextProvider {
   private escalate() {
     this.levelRef.value = Math.min(maxLevel, this.levelRef.value + 1)
     // Give the newly unlocked level a fresh window to work before climbing again.
-    this.neutral = 0
-    this.back = 0
+    this.neutralRef.value = 0
+    this.backRef.value = 0
   }
 
   private deEscalate() {
@@ -77,20 +86,20 @@ export class TutorialIntervention implements ICopilotContextProvider {
     if (verdict === 'ahead') {
       // An `ahead` while there is nothing left to forgive means the user is clearly on track:
       // back the guidance off a step. Otherwise it just spends down accumulated evidence.
-      const nothingToForgive = this.neutral === 0 && this.back === 0
-      this.neutral = Math.max(0, this.neutral - 2)
-      this.back = Math.max(0, this.back - 1)
+      const nothingToForgive = this.neutralRef.value === 0 && this.backRef.value === 0
+      this.neutralRef.value = Math.max(0, this.neutralRef.value - 2)
+      this.backRef.value = Math.max(0, this.backRef.value - 1)
       if (nothingToForgive) this.deEscalate()
       return
     }
-    if (verdict === 'neutral') this.neutral++
-    else this.back++
-    if (this.back >= backThreshold || this.neutral >= neutralThreshold) this.escalate()
+    if (verdict === 'neutral') this.neutralRef.value++
+    else this.backRef.value++
+    if (this.backRef.value >= backThreshold || this.neutralRef.value >= neutralThreshold) this.escalate()
   }
 
   reset() {
-    this.neutral = 0
-    this.back = 0
+    this.neutralRef.value = 0
+    this.backRef.value = 0
     this.levelRef.value = InterventionLevel.Silent
     // Skip the rounds so far rather than re-counting them: tracking restarts from what the user
     // does next.
