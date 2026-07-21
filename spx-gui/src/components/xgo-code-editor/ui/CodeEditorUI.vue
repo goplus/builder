@@ -1,6 +1,11 @@
 <script lang="ts">
 export type CodeEditorUICtx = {
   ui: CodeEditorUIController
+  /**
+   * Whether the editor is in the simplified block style (tutorial focused mode): API reference
+   * items render as draggable blocks, and the in-place value-editing helper (the pencil) is off.
+   */
+  blockStyle: boolean
 }
 const codeEditorUICtxInjectionKey: InjectionKey<CodeEditorUICtx> = Symbol('code-editor-ui-ctx')
 export function useCodeEditorUICtx() {
@@ -205,7 +210,8 @@ watch(
 )
 
 const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
-  ui: uiRef.value
+  ui: uiRef.value,
+  blockStyle: props.apiReferenceBlockStyle
 }))
 provide(codeEditorUICtxInjectionKey, codeEditorUICtx)
 
