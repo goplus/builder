@@ -36,6 +36,9 @@ const props = defineProps<{
 const codeEditorUICtx = useCodeEditorUICtx()
 
 useDecorations(() => {
+  // In block style (tutorial focused mode) the code is simplified: no in-place value editing,
+  // so the value-edit helper (grey chip + pencil) is not shown.
+  if (codeEditorUICtx.blockStyle) return []
   const { activeSlots, inputingSlot } = props.controller
   if (activeSlots == null) return []
 
