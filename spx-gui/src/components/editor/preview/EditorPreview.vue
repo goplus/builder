@@ -107,29 +107,37 @@
          docked copilot trigger. There is no rerun: a run is either stopped by the user or ends on
          its own, and either way returns to edit mode (see handleExit) — so at any moment it is
          exactly Run (edit mode) or Stop (running). -->
-    <div v-if="isFocused" class="fixed bottom-7 right-[86px] z-[9999]">
-      <UIButton
+    <div
+      v-if="isFocused"
+      class="fixed bottom-7 z-[9999]"
+      :style="{ right: 'calc(var(--tut-controls-right, 28px) + 58px)' }"
+    >
+      <button
         v-if="runnerState === 'initial'"
         v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-        type="primary"
-        size="large"
-        icon="playHollow"
-        :loading="handleRun.isLoading.value"
+        type="button"
+        class="run-control run-control-run"
+        :disabled="handleRun.isLoading.value"
         @click="handleRun.fn"
       >
-        {{ $t({ en: 'Run', zh: '运行' }) }}
-      </UIButton>
-      <UIButton
+        <span class="run-control-face">
+          <UIIcon :type="handleRun.isLoading.value ? 'loading' : 'playHollow'" />
+          {{ $t({ en: 'Run', zh: '运行' }) }}
+        </span>
+      </button>
+      <button
         v-else
         v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
-        type="red"
-        size="large"
-        icon="end"
-        :loading="handleStop.isLoading.value"
+        type="button"
+        class="run-control run-control-stop"
+        :disabled="handleStop.isLoading.value"
         @click="handleStop.fn"
       >
-        {{ $t({ en: 'Stop', zh: '停止' }) }}
-      </UIButton>
+        <span class="run-control-face">
+          <UIIcon :type="handleStop.isLoading.value ? 'loading' : 'end'" />
+          {{ $t({ en: 'Stop', zh: '停止' }) }}
+        </span>
+      </button>
     </div>
   </UICard>
 </template>
@@ -198,13 +206,13 @@ function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch, watchEffect } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useSignedInUser } from '@/stores/user'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
@@ -234,6 +242,36 @@ const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
+
+// In the focused layout, the Run/Stop control and the docked copilot trigger sit at the code
+// column's right edge — i.e. just left of this preview panel. Expose that boundary as a global
+// `--tut-controls-right` (distance from the viewport's right edge) that both controls anchor to,
+// and keep it in sync as the panel resizes. It is cleared whenever the layout is not focused.
+const controlsAnchorVar = '--tut-controls-right'
+watchEffect((onCleanup) => {
+  const root = document.documentElement
+  const clear = () => root.style.removeProperty(controlsAnchorVar)
+  if (!isFocused.value) {
+    clear()
+    return
+  }
+  const panel = stageContainerRef.value?.closest('.editor-preview')
+  if (panel == null) return
+  const update = () => {
+    const left = panel.getBoundingClientRect().left
+    root.style.setProperty(controlsAnchorVar, `${Math.round(window.innerWidth - left + 12)}px`)
+  }
+  update()
+  const observer = new ResizeObserver(update)
+  observer.observe(panel)
+  window.addEventListener('resize', update)
+  onCleanup(() => {
+    observer.disconnect()
+    window.removeEventListener('resize', update)
+    clear()
+  })
+})
+
 const fullscreen = ref(false)
 const exitGuard = ref<'idle' | 'manualStopPending'>('idle')
 const runnerHostSticky = ref(false)
@@ -538,5 +576,60 @@ function getStageInlineAnchor() {
   max-height: 100%;
   aspect-ratio: 4 / 3;
   height: auto;
+}
+
+/* Focused-mode Run/Stop: a white card framing a solid colored pill (teal Run / red Stop). */
+.run-control {
+  padding: 5px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: var(--ui-color-grey-100);
+  box-shadow: var(--ui-box-shadow-sm);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.run-control-run {
+  border-color: rgba(54, 194, 207, 0.2);
+}
+
+.run-control-stop {
+  border-color: rgba(239, 65, 73, 0.2);
+}
+
+.run-control-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 12px;
+  color: var(--ui-color-grey-100);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.run-control-run .run-control-face {
+  background: var(--ui-color-turquoise-500);
+}
+
+.run-control-stop .run-control-face {
+  background: var(--ui-color-red-500);
+}
+
+.run-control-face :deep(.ui-icon) {
+  width: 20px;
+  height: 20px;
+}
+
+.run-control:not(:disabled):hover {
+  filter: brightness(1.04);
+}
+
+.run-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
 }
 </style>
