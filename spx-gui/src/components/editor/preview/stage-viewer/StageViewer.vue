@@ -62,6 +62,7 @@
           ref="nodeTransformerRef"
           :node-ready-map="nodeReadyMap"
           :target="editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget"
+          @selected-node="refreshSelectedSpriteNameLabel"
         />
       </v-layer>
       <StageRuler
@@ -103,7 +104,7 @@
 
     <div
       v-if="selectedSpriteNameLabel != null"
-      class="pointer-events-none absolute rounded-[4px] bg-black/30 px-1.5 py-0.5 text-xs text-white -translate-x-1/2"
+      class="pointer-events-none absolute -translate-x-1/2 rounded-[4px] bg-black/30 px-1.5 py-0.5 text-xs text-white"
       :style="{ left: `${selectedSpriteNameLabel.left}px`, top: `${selectedSpriteNameLabel.top}px` }"
     >
       {{ selectedSpriteNameLabel.name }}
@@ -217,21 +218,11 @@ const rulerSnapTargets = computed(() =>
 )
 
 // In guided scenarios (tutorial focused mode) the selected sprite shows its name just below its
-// transform box, so a beginner can tell which sprite they are working on. The label is a DOM
-// overlay positioned from the sprite's map coordinates (same conversion as the ruler snap targets,
-// then scaled to container pixels).
-const selectedSpriteNameLabel = computed(() => {
-  if (editorWorkspaceLayout.mode !== 'focused') return null
-  const sprite = editorCtx.state.selectedSprite
-  const scale = stageScale.value
-  if (sprite == null || scale == null) return null
-  const centerX = (sprite.x + mapSize.value.width / 2 + mapPos.value.x) * scale
-  const centerY = (mapSize.value.height / 2 - sprite.y + mapPos.value.y) * scale
-  // Offset below the sprite center to sit under the transform box. Sprite sizes vary, so this is
-  // an approximate gap (in map units) rather than the exact box bottom.
-  const offsetMapUnits = 40
-  return { name: sprite.name, left: centerX, top: centerY + offsetMapUnits * scale }
-})
+// transform box, so a beginner can tell which sprite they are working on. It is a DOM overlay placed
+// under the box; the position is refreshed imperatively (see `refreshSelectedSpriteNameLabel`) from
+// the transformer's on-screen rect, which already accounts for the sprite's size/rotation and the
+// rotate handle — wherever it ends up — so the label always clears the box.
+const selectedSpriteNameLabel = shallowRef<{ name: string; left: number; top: number } | null>(null)
 
 const updateMousePos = throttle(() => {
   // Event `mousemove` may be triggered when mouse is out of stage with negative mouse position, we ignore such case.
@@ -606,6 +597,65 @@ const selectedSpriteNode = computed(() => {
   if (selectedSpriteId == null) return null
   return spriteNodeRefs.get(selectedSpriteId) ?? null
 })
+
+// Position the name label just below the selected sprite's transform box. We read the transformer's
+// on-screen rect (canvas pixels, already including the sprite's size/rotation, the anchors and the
+// rotate handle), so the label clears whatever the box's lowest point is. `null` when there is no
+// sprite selected or the transformer is not attached yet.
+function refreshSelectedSpriteNameLabel() {
+  const sprite = editorWorkspaceLayout.mode === 'focused' ? editorCtx.state.selectedSprite : null
+  const transformerNode = sprite != null ? nodeTransformerRef.value?.getNode() ?? null : null
+  const box = transformerNode?.getClientRect() ?? null
+  if (sprite == null || transformerNode == null || box == null || box.height === 0) {
+    selectedSpriteNameLabel.value = null
+    return
+  }
+  // `getClientRect` is in canvas pixels (origin = top-left of the Konva content), while the label is
+  // absolutely positioned within `.stage-viewer`. The canvas can sit offset inside that container
+  // (it is centered, and shorter than the container in some layouts), so add the offset — otherwise
+  // the label drifts by exactly that gap.
+  let offsetX = 0
+  let offsetY = 0
+  const containerEl = container.value
+  const contentEl = transformerNode.getStage()?.content
+  if (containerEl != null && contentEl != null) {
+    const cr = containerEl.getBoundingClientRect()
+    const kr = contentEl.getBoundingClientRect()
+    offsetX = kr.left - cr.left
+    offsetY = kr.top - cr.top
+  }
+  // Bottom-center of the box plus a small gap; the overlay is centered on `left` via -translate-x-1/2.
+  selectedSpriteNameLabel.value = {
+    name: sprite.name,
+    left: box.x + box.width / 2 + offsetX,
+    top: box.y + box.height + offsetY + 6
+  }
+}
+// flush: 'post' so the transformer already reflects the change before we read its rect. The
+// transformer attaches to a newly selected node a tick late, so `@selected-node` also refreshes.
+watch(
+  () => {
+    const sprite = editorCtx.state.selectedSprite
+    return [
+      editorWorkspaceLayout.mode,
+      sprite?.id,
+      sprite?.name,
+      sprite?.x,
+      sprite?.y,
+      sprite?.size,
+      sprite?.heading,
+      mapPos.value.x,
+      mapPos.value.y,
+      stageScale.value,
+      loading.value,
+      // The canvas offset within the container shifts the label; recompute when the container resizes.
+      containerSize.value?.width,
+      containerSize.value?.height
+    ]
+  },
+  refreshSelectedSpriteNameLabel,
+  { flush: 'post', immediate: true }
+)
 
 async function takeScreenshot(name: string, signal?: AbortSignal) {
   ensureCanTakeScreenshot()
