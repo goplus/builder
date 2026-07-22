@@ -8,6 +8,7 @@
  */
 class EditorRuntimeOutputBridge {
   private listeners = new Set<(line: string) => void>()
+  private runStartListeners = new Set<() => void>()
 
   /** Subscribe to fresh runtime output lines. Returns a disposer. */
   onLine(listener: (line: string) => void): () => void {
@@ -17,8 +18,20 @@ class EditorRuntimeOutputBridge {
     }
   }
 
+  /** Subscribe to run starts, so per-run bookkeeping (e.g. completion counting) can reset. */
+  onRunStart(listener: () => void): () => void {
+    this.runStartListeners.add(listener)
+    return () => {
+      this.runStartListeners.delete(listener)
+    }
+  }
+
   push(line: string) {
     for (const listener of this.listeners) listener(line)
+  }
+
+  pushRunStart() {
+    for (const listener of this.runStartListeners) listener()
   }
 }
 
