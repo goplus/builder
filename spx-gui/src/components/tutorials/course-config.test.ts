@@ -8,7 +8,8 @@ describe('extractCourseConfig', () => {
       copilotOpen: false,
       judge: 'code',
       apis: [],
-      videos: []
+      videos: [],
+      complete: null
     })
   })
 
@@ -27,7 +28,8 @@ describe('extractCourseConfig', () => {
       copilotOpen: false,
       judge: 'code',
       apis: [],
-      videos: []
+      videos: [],
+      complete: null
     })
   })
 
@@ -65,13 +67,34 @@ describe('extractCourseConfig', () => {
       copilotOpen: false,
       judge: 'code',
       apis: [],
-      videos: []
+      videos: [],
+      complete: null
     })
   })
 
   it('should accept a plain json block too', () => {
     const prompt = '```json\n{ "hide": ["preview-header"] }\n```'
     expect(extractCourseConfig(prompt).hiddenAreas).toEqual(['preview-header'])
+  })
+
+  it('should parse the complete signal, defaulting count to 1', () => {
+    expect(extractCourseConfig('```jsonc\n{}\n```').complete).toBeNull()
+    expect(extractCourseConfig('```jsonc\n{ "complete": { "log": "捡到萝卜" } }\n```').complete).toEqual({
+      log: '捡到萝卜',
+      count: 1
+    })
+    expect(extractCourseConfig('```jsonc\n{ "complete": { "log": "捡到萝卜", "count": 4 } }\n```').complete).toEqual({
+      log: '捡到萝卜',
+      count: 4
+    })
+    // A completion signal needs a log pattern; count alone (or a blank log) declares nothing.
+    expect(extractCourseConfig('```jsonc\n{ "complete": { "count": 4 } }\n```').complete).toBeNull()
+    expect(extractCourseConfig('```jsonc\n{ "complete": { "log": " " } }\n```').complete).toBeNull()
+    // A non-integer count falls back to 1 instead of poisoning the signal.
+    expect(extractCourseConfig('```jsonc\n{ "complete": { "log": "x", "count": 2.5 } }\n```').complete).toEqual({
+      log: 'x',
+      count: 1
+    })
   })
 
   it('should start with the copilot open only when the course declares it', () => {

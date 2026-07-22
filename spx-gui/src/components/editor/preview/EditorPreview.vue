@@ -219,6 +219,7 @@ import {
 } from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
+import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
 import { useFocusedControlsAnchor } from '@/components/editor/focused-controls'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
@@ -395,6 +396,8 @@ async function executeRun(action: 'run' | 'rerun') {
   await nextTick()
   const surface = await untilNotNull(projectRunnerSurfaceRef)
   runtime.value.clearOutputs()
+  // A fresh run starts: features counting output lines (e.g. course completion) reset with it.
+  editorRuntimeOutputBridge.pushRunStart()
   editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()

@@ -27,6 +27,25 @@ const apiVideoLibrary: Record<string, ApiVideoInfo> = {
   'xgo:github.com/goplus/spx/v2?Sprite.step#0': {
     title: { en: 'step', zh: 'step 前进' },
     src: 'https://qnyproj-api-assets-dev.s3.us-east-1.amazonaws.com/step.mp4'
+  },
+  // Language-construct knowledge points (ids from the code editor's document base). They carry
+  // the demo video until their real explainer videos are produced — listed here so the dialog
+  // titles read naturally instead of exposing the raw ids.
+  'xgo:?if_statement': {
+    title: { en: 'if', zh: 'if 条件判断' },
+    src: demoVideoSrc
+  },
+  'xgo:?if_else_statement': {
+    title: { en: 'if / else', zh: 'if / else 分支' },
+    src: demoVideoSrc
+  },
+  'xgo:?var_declaration': {
+    title: { en: 'var', zh: 'var 变量' },
+    src: demoVideoSrc
+  },
+  'xgo:?for_iterate': {
+    title: { en: 'for in', zh: 'for in 遍历' },
+    src: demoVideoSrc
   }
 }
 
