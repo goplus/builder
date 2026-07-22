@@ -180,7 +180,7 @@ function handleCategoryClick(id: string) {
       <ul
         ref="itemsWrapperRef"
         class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
-        :class="{ 'overflow-x-auto': blockStyle, 'pt-3': controller.filtered }"
+        :class="{ 'overflow-x-auto': blockStyle }"
       >
         <li
           v-for="c in categoriesForItems"
@@ -188,16 +188,8 @@ function handleCategoryClick(id: string) {
           :data-category-id="c.id"
           class="[&:last-child>section:last-child]:border-b-0"
         >
-          <!-- A narrowed list is a handful of hand-picked items: category headers and separators
-               would outweigh the content, so they hide along with the category sidebar. -->
-          <section
-            v-for="sc in c.subCategories"
-            :key="sc.id"
-            :class="controller.filtered ? '' : 'border-b border-dashed border-grey-500'"
-          >
-            <h5 v-if="!controller.filtered" class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">
-              {{ $t(sc.label) }}
-            </h5>
+          <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
+            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
             <ul class="flex flex-col gap-md pb-5">
               <APIReferenceItemComp
                 v-for="item in sc.items"
