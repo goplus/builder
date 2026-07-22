@@ -103,15 +103,11 @@
       </div>
     </div>
 
-    <!-- In the focused layout, one run/stop control floats at the bottom-right corner, beside the
-         docked copilot trigger. There is no rerun: a run is either stopped by the user or ends on
-         its own, and either way returns to edit mode (see handleExit) — so at any moment it is
-         exactly Run (edit mode) or Stop (running). -->
-    <div
-      v-if="isFocused"
-      class="fixed bottom-7 z-1000"
-      :style="{ right: 'calc(var(--tut-controls-right, 28px) + 66px)' }"
-    >
+    <!-- In the focused layout, one run/stop control sits in the code column's control row (owned
+         by ProjectEditor), teleported there since the runner lives here. There is no rerun: a run
+         is either stopped by the user or ends on its own, and either way returns to edit mode
+         (see handleExit) — so at any moment it is exactly Run (edit mode) or Stop (running). -->
+    <Teleport v-if="isFocused && controlsAnchor != null" :to="controlsAnchor">
       <button
         v-if="runnerState === 'initial'"
         v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
@@ -138,7 +134,7 @@
           {{ $t({ en: 'Stop', zh: '停止' }) }}
         </span>
       </button>
-    </div>
+    </Teleport>
   </UICard>
 </template>
 
@@ -206,7 +202,7 @@ function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { computed, nextTick, onBeforeUnmount, ref, watch, watchEffect } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -223,6 +219,7 @@ import {
 } from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
+import { useFocusedControlsAnchor } from '@/components/editor/focused-controls'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
@@ -243,34 +240,9 @@ const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
 
-// In the focused layout, the Run/Stop control and the docked copilot trigger sit at the code
-// column's right edge — i.e. just left of this preview panel. Expose that boundary as a global
-// `--tut-controls-right` (distance from the viewport's right edge) that both controls anchor to,
-// and keep it in sync as the panel resizes. It is cleared whenever the layout is not focused.
-const controlsAnchorVar = '--tut-controls-right'
-watchEffect((onCleanup) => {
-  const root = document.documentElement
-  const clear = () => root.style.removeProperty(controlsAnchorVar)
-  if (!isFocused.value) {
-    clear()
-    return
-  }
-  const panel = stageContainerRef.value?.closest('.editor-preview')
-  if (panel == null) return
-  const update = () => {
-    const left = panel.getBoundingClientRect().left
-    root.style.setProperty(controlsAnchorVar, `${Math.round(window.innerWidth - left + 12)}px`)
-  }
-  update()
-  const observer = new ResizeObserver(update)
-  observer.observe(panel)
-  window.addEventListener('resize', update)
-  onCleanup(() => {
-    observer.disconnect()
-    window.removeEventListener('resize', update)
-    clear()
-  })
-})
+// The focused layout's control row (owned by ProjectEditor) that the Run/Stop control below
+// teleports into.
+const controlsAnchor = useFocusedControlsAnchor()
 
 const fullscreen = ref(false)
 const exitGuard = ref<'idle' | 'manualStopPending'>('idle')
