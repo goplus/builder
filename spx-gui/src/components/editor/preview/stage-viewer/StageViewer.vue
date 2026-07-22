@@ -5,9 +5,9 @@
       name: 'Stage viewer',
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
-    class="stage-viewer relative w-full flex items-center justify-center bg-center aspect-4/3"
+    class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"
     :class="{ 'cursor-crosshair': rulerActive }"
-    :style="stageBackgroundStyle"
+    :style="{ backgroundImage: `url(${stageBgUrl})` }"
     @mousemove="updateMousePos"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
@@ -359,20 +359,6 @@ function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
 
 const backdropImg = ref<HTMLImageElement | null>(null)
 const [backdropSrc, backdropSrcLoading] = useRenderableImageUrl(() => editorCtx.project.stage.defaultBackdrop?.img)
-const stageBackgroundStyle = computed(() => {
-  if (backdropSrc.value == null) {
-    return {
-      backgroundImage: `url(${stageBgUrl})`,
-      backgroundRepeat: 'repeat',
-      backgroundSize: 'contain'
-    }
-  }
-  return {
-    backgroundImage: `url(${backdropSrc.value})`,
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: 'cover'
-  }
-})
 watchEffect(() => {
   if (backdropSrc.value == null) return
   const img = new Image()
