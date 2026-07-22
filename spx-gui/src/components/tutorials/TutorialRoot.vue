@@ -121,11 +121,21 @@ watch(
     ]
 
     if (courseConfig.judge === 'code') {
-      // Code-judged courses complete when the project prints the completion sentinel; the frontend
-      // decides, so the success dialog shows instantly instead of waiting for an LLM round.
+      // Code-judged courses complete from the runtime output; the frontend decides, so the
+      // success dialog shows instantly instead of waiting for an LLM round. The signal is either
+      // the course-declared log pattern (counting distinct matching lines within one run, e.g.
+      // one per collected carrot) or, by default, the completion sentinel the project prints.
+      const completeLog = courseConfig.complete?.log ?? courseCompleteSentinel
+      const completeCount = courseConfig.complete?.count ?? 1
+      let matchedLines = new Set<string>()
       disposers.push(
+        editorRuntimeOutputBridge.onRunStart(() => {
+          matchedLines = new Set()
+        }),
         editorRuntimeOutputBridge.onLine((line) => {
-          if (line.includes(courseCompleteSentinel)) tutorial.markCourseComplete()
+          if (!line.includes(completeLog)) return
+          matchedLines.add(line)
+          if (matchedLines.size >= completeCount) tutorial.markCourseComplete()
         })
       )
     }

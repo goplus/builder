@@ -43,6 +43,14 @@ export type CourseConfig = {
    * Empty means none. The copilot can still play a video on request.
    */
   videos: string[]
+  /**
+   * For `judge: "code"` courses, what in the runtime output marks completion. `log` is a substring
+   * to look for in output lines; `count` is how many DISTINCT matching lines (within one run)
+   * complete the course — e.g. `{ "log": "捡到萝卜", "count": 4 }` for a collect-all-4 goal.
+   * Absent means the default: one line carrying the completion sentinel (see
+   * `courseCompleteSentinel`, printed by the project itself).
+   */
+  complete: { log: string; count: number } | null
 }
 
 /** The raw shape as authored in the jsonc block, before normalization. All fields optional. */
@@ -52,9 +60,17 @@ type RawCourseConfig = {
   judge?: unknown
   apis?: unknown
   videos?: unknown
+  complete?: unknown
 }
 
-const emptyConfig: CourseConfig = { hiddenAreas: [], copilotOpen: false, judge: 'code', apis: [], videos: [] }
+const emptyConfig: CourseConfig = {
+  hiddenAreas: [],
+  copilotOpen: false,
+  judge: 'code',
+  apis: [],
+  videos: [],
+  complete: null
+}
 
 /**
  * Extract the first ```jsonc (or ```json) code block from the course prompt and parse it as the
@@ -129,8 +145,17 @@ function normalizeCourseConfig(raw: RawCourseConfig): CourseConfig {
     copilotOpen: raw.copilot === 'open',
     judge: raw.judge === 'copilot' ? 'copilot' : 'code',
     apis: normalizeStringArray(raw.apis),
-    videos: normalizeStringArray(raw.videos)
+    videos: normalizeStringArray(raw.videos),
+    complete: normalizeComplete(raw.complete)
   }
+}
+
+function normalizeComplete(value: unknown): CourseConfig['complete'] {
+  if (value == null || typeof value !== 'object') return null
+  const { log, count } = value as { log?: unknown; count?: unknown }
+  if (typeof log !== 'string' || log.trim() === '') return null
+  const normalizedCount = typeof count === 'number' && Number.isInteger(count) && count > 0 ? count : 1
+  return { log: log.trim(), count: normalizedCount }
 }
 
 function normalizeStringArray(value: unknown): string[] {
