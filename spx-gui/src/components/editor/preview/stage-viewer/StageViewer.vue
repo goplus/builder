@@ -88,12 +88,12 @@
       </QuickConfigWrapper>
     </div>
 
-    <UITooltip v-if="rulerEnabled" placement="left">
+    <UITooltip v-if="rulerEnabled" placement="right">
       <template #trigger>
         <button
           v-radar="{ name: 'Ruler', desc: 'Toggle the ruler, which measures the distance between things on the stage' }"
           type="button"
-          class="ruler-toggle absolute top-2 right-2"
+          class="ruler-toggle absolute top-4 left-4"
           :class="{ active: rulerActive }"
           @click="rulerActive = !rulerActive"
         >
