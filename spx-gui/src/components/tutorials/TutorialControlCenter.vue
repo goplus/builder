@@ -50,7 +50,9 @@ function selectCourse(courseId: string) {
 
 const { fn: handleReturnHome } = useMessageHandle(
   async () => {
-    await router.push('/tutorials')
+    // Back to the page of the series being learned; the tutorials index is only a fallback.
+    const seriesId = series.value?.id
+    await router.push(seriesId == null ? '/tutorials' : `/course-series/${seriesId}`)
     emit('navigated')
   },
   { en: 'Failed to open the tutorials page', zh: '打开教程页失败' }
