@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractCourseConfig } from './course-config'
+import { createCourseApiMatcher, extractCourseConfig } from './course-config'
 
 describe('extractCourseConfig', () => {
   it('should return empty config when there is no jsonc block', () => {
@@ -60,7 +60,13 @@ describe('extractCourseConfig', () => {
 
   it('should tolerate a malformed block instead of throwing', () => {
     const prompt = '```jsonc\n{ this is not valid json \n```'
-    expect(extractCourseConfig(prompt)).toEqual({ hiddenAreas: [], copilotOpen: false, judge: 'code', apis: [], videos: [] })
+    expect(extractCourseConfig(prompt)).toEqual({
+      hiddenAreas: [],
+      copilotOpen: false,
+      judge: 'code',
+      apis: [],
+      videos: []
+    })
   })
 
   it('should accept a plain json block too', () => {
@@ -74,5 +80,45 @@ describe('extractCourseConfig', () => {
     // Anything other than the exact "open" keeps the default hidden start.
     expect(extractCourseConfig('```jsonc\n{ "copilot": "visible" }\n```').copilotOpen).toBe(false)
     expect(extractCourseConfig('```jsonc\n{ "copilot": true }\n```').copilotOpen).toBe(false)
+  })
+})
+
+describe('createCourseApiMatcher', () => {
+  const stepId = 'xgo:github.com/goplus/spx/v2?Sprite.step#0'
+  const stepOverloadId = 'xgo:github.com/goplus/spx/v2?Sprite.step#1'
+  const gameOnStartId = 'xgo:github.com/goplus/spx/v2?Game.onStart'
+
+  it('should match a bare name against the last segment of the dotted name', () => {
+    const matches = createCourseApiMatcher(['step'])
+    expect(matches(stepId)).toBe(true)
+    expect(matches(stepOverloadId)).toBe(true)
+    expect(matches(gameOnStartId)).toBe(false)
+  })
+
+  it('should match a dotted name against all of its overloads', () => {
+    const matches = createCourseApiMatcher(['Sprite.step'])
+    expect(matches(stepId)).toBe(true)
+    expect(matches(stepOverloadId)).toBe(true)
+    expect(matches(gameOnStartId)).toBe(false)
+  })
+
+  it('should match a full definition ID, with and without the overload suffix', () => {
+    expect(createCourseApiMatcher(['xgo:github.com/goplus/spx/v2?Sprite.step#0'])(stepId)).toBe(true)
+    expect(createCourseApiMatcher(['xgo:github.com/goplus/spx/v2?Sprite.step#0'])(stepOverloadId)).toBe(false)
+    const withoutOverload = createCourseApiMatcher(['xgo:github.com/goplus/spx/v2?Sprite.step'])
+    expect(withoutOverload(stepId)).toBe(true)
+    expect(withoutOverload(stepOverloadId)).toBe(true)
+    expect(withoutOverload(gameOnStartId)).toBe(false)
+  })
+
+  it('should match when any entry of the set matches', () => {
+    const matches = createCourseApiMatcher(['onStart', 'Sprite.step'])
+    expect(matches(stepId)).toBe(true)
+    expect(matches(gameOnStartId)).toBe(true)
+    expect(matches('xgo:github.com/goplus/spx/v2?Sprite.turn#0')).toBe(false)
+  })
+
+  it('should match nothing for an empty set', () => {
+    expect(createCourseApiMatcher([])(stepId)).toBe(false)
   })
 })
