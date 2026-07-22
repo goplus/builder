@@ -21,39 +21,121 @@ enum TriggerVisibility {
 
 const panelBoundaryBuffer = [20, 20]
 const triggerSnapThreshold = 20
+
+// Layout of the docked mode (see `CopilotUIMode`): a fixed trigger at the bottom-right corner
+// with the panel anchored above it.
+const dockedPanelBottom = 96
+const dockedPanelTopBuffer = 20
+const dockedPanelDefaultHeight = 320
+const dockedPanelMinHeight = 240
 </script>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect, type WatchSource } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { isRectIntersecting, useContentSize } from '@/utils/dom'
-import { localStorageRef, timeout, untilNotNull } from '@/utils/utils'
+import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
+import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { untilLoaded } from '@/utils/query'
+import { useMessageHandle } from '@/utils/exception'
 import { isSignedIn, useSignedInStateQuery } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UITooltip } from '@/components/ui'
-import CopilotChat from './CopilotChat.vue'
+import { providePopupContainer, UIButton, UITooltip } from '@/components/ui'
+import CopilotInput from './CopilotInput.vue'
+import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './context'
+import { type QuickInput, type Round, RoundState } from './copilot'
+import { isSilentContent } from './markdown-elements/StaySilent'
+import { stripThinking } from './content-visibility'
 import { useSpotlight } from '@/utils/spotlight'
+import { isDeveloperMode } from '@/utils/developer-mode'
+import type { LocaleMessage } from '@/utils/i18n'
 import { homePageName } from '@/apps/xbuilder/router'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()
 const router = useRouter()
 
+const outputRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
+const inputRef = ref<InstanceType<typeof CopilotInput>>()
 const panelRef = ref<HTMLElement>()
-const chatRef = ref<InstanceType<typeof CopilotChat> | null>(null)
-const chatDraggerRef = computed(() => chatRef.value?.draggerEl ?? null)
 
 const session = computed(() => copilot.currentSession)
 
-// The docked presentation (tutorial courses) is owned by the editor (see `EditorCopilot`); this
-// component only renders the floating shell.
-const isFloating = computed(() => copilot.uiMode === 'floating')
+const rounds = computed(() => {
+  if (session.value == null || session.value.rounds.length === 0) return null
+  return session.value.rounds
+})
+
+/**
+ * Whether the round is a "silent" one: the copilot completed it while choosing to say nothing
+ * (only a `stay-silent` element, or no displayable content at all).
+ */
+function isSilentRound(round: Round) {
+  if (round.state !== RoundState.Completed) return false
+  // Thinking blocks hide their inner text too, so reasoning never counts as visible content.
+  const content = stripThinking(
+    round.resultMessages
+      .filter((m) => m.role === 'copilot')
+      .map((m) => m.content ?? '')
+      .join('')
+  )
+  if (isSilentContent(content)) return true
+  // A reply of invisible elements only (e.g. a lone progress report, or the silent course setup)
+  // shows nothing either. Use the accumulated invisible tag names, not the currently-registered
+  // ones, so a level-gated element (spotlight, etc.) is still recognized after it is unregistered.
+  const invisibleTags = [...copilot.invisibleTagNames]
+  if (invisibleTags.length === 0) return false
+  const invisiblePattern = new RegExp(`</?(?:${invisibleTags.join('|')})\\b[^>]*>`, 'g')
+  return content.replace(invisiblePattern, '').trim() === ''
+}
+
+// A round that carries nothing worth showing. Besides silent rounds, an ambient EVENT round that
+// was cancelled is skipped: events batch (a newer event aborts the in-flight one), and — now that
+// hiding the panel no longer aborts — a user who keeps editing while the panel is hidden would
+// otherwise reopen to a stray "Cancelled". A cancelled TYPED round stays visible (the user
+// explicitly stopped their own request and may want the retry affordance).
+function isSkippableRound(round: Round) {
+  if (round.state === RoundState.Cancelled && round.userMessage.type === 'event') return true
+  return isSilentRound(round)
+}
+
+const lastRound = computed(() => rounds.value?.at(-1) ?? null)
+
+const allRounds = computed(() => rounds.value ?? [])
+
+/**
+ * Whether the copilot is actively producing a reply (waiting for or streaming the response). Keyed
+ * off the round state rather than panel visibility, so the trigger animates even while docked/hidden.
+ */
+const isGenerating = computed(() => {
+  const state = lastRound.value?.state
+  return state === RoundState.Loading || state === RoundState.InProgress
+})
+
+/**
+ * Whether a round belongs in the chat history. Only rounds the user started by sending a message
+ * do — ambient event rounds are perception, not conversation, and whatever they produce (a
+ * spotlight, a guidance modal, a video) shows itself outside the chat. Rounds where the copilot
+ * said nothing are left out too. In developer mode everything shows, for prompt debugging.
+ *
+ * Note that rounds left out are still rendered, just hidden (see the template): the elements in a
+ * reply drive their effects — narrowing the API panel, opening a video or the success dialog — by
+ * being mounted, so skipping the render entirely would silently drop them.
+ */
+function isChatVisible(round: Round) {
+  if (isDeveloperMode.value) return true
+  if (round.userMessage.type !== 'text') return false
+  if ([RoundState.Loading, RoundState.Initialized].includes(round.state)) return round === lastRound.value
+  return !isSkippableRound(round)
+}
+
+const hasVisibleRounds = computed(() => allRounds.value.some((round) => isChatVisible(round)))
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
+
+useBottomSticky(outputRef)
 
 providePopupContainer(panelRef)
 
@@ -74,12 +156,56 @@ function getCurrentSizes() {
   }
 }
 
+const isDocked = computed(() => copilot.uiMode === 'docked')
+const dockedTriggerRef = ref<HTMLElement | null>(null)
+const dockedPanelHeight = localStorageRef('builder-copilot-docked-panel-height', dockedPanelDefaultHeight)
+
+function getMaxDockedPanelHeight() {
+  const windowH = windowSize.value?.height ?? window.innerHeight
+  return Math.max(dockedPanelMinHeight, windowH - dockedPanelBottom - dockedPanelTopBuffer)
+}
+
+function getClampedDockedPanelHeight(height: number) {
+  return Math.min(getMaxDockedPanelHeight(), Math.max(dockedPanelMinHeight, height))
+}
+
 const panelStyle = computed(() => {
+  if (isDocked.value) {
+    return {
+      // `--tut-controls-right` anchors the trigger (and this panel above it) to the code column's
+      // right edge in the focused tutorial layout; it falls back to the bottom-right corner.
+      right: 'var(--tut-controls-right, 28px)',
+      bottom: `${dockedPanelBottom}px`,
+      '--docked-copilot-panel-height': `${getClampedDockedPanelHeight(dockedPanelHeight.value)}px`
+    }
+  }
   return { right: `${panelStatePosition.value.right}px`, bottom: `${panelStatePosition.value.bottom}px` }
+})
+
+function handleDockedTriggerClick() {
+  if (copilot.active) {
+    copilot.collapse()
+  } else {
+    copilot.open()
+  }
+}
+
+// In docked mode, clicking outside the panel dismisses it, like clicking the trigger
+watchEffect((onCleanup) => {
+  if (!isDocked.value || !copilot.active) return
+  const handlePointerDown = (event: PointerEvent) => {
+    const target = event.target
+    if (!(target instanceof Node)) return
+    if (panelRef.value?.contains(target) || dockedTriggerRef.value?.contains(target)) return
+    copilot.collapse()
+  }
+  document.addEventListener('pointerdown', handlePointerDown)
+  onCleanup(() => document.removeEventListener('pointerdown', handlePointerDown))
 })
 
 // resize the panel to fit the window size
 watch(windowSize, () => {
+  dockedPanelHeight.value = getClampedDockedPanelHeight(dockedPanelHeight.value)
   updatePanelClampedPosition()
 })
 watch(panelSize, () => {
@@ -89,9 +215,9 @@ watch(panelSize, () => {
 watch(
   () => copilot.active,
   async (newActive, oldActive) => {
-    // The docked shell drives its visibility directly off `copilot.active`, without the floating
-    // open/close animations & positioning
-    if (!isFloating.value) return
+    // Docked visibility is driven directly by `copilot.active` (see the template), without the
+    // floating open/close animations & positioning
+    if (isDocked.value) return
 
     await untilNotNull(panelSize)
 
@@ -180,6 +306,7 @@ function createCSSAnimation(className: string, el?: HTMLElement) {
 }
 
 const position = { right: 0, bottom: 20 }
+const draggerRef = ref<HTMLElement>()
 const panelStatePosition = localStorageRef('spx-gui-copilot-panel-position', {
   right: 10,
   bottom: 20,
@@ -324,12 +451,62 @@ useDraggable(triggerRef, {
   },
   onDragEnd
 })
-// The dragger at the chat's top moves the whole floating panel
-useDraggable(chatDraggerRef, {
-  onDragStart,
-  onDragMove,
-  onDragEnd
+// In docked mode the dragger resizes the panel height instead of moving the panel
+useDraggable(draggerRef, {
+  onDragStart: () => {
+    if (isDocked.value) {
+      dockedPanelHeight.value = getClampedDockedPanelHeight(dockedPanelHeight.value)
+      return
+    }
+    onDragStart()
+  },
+  onDragMove: (offset: Offset) => {
+    if (isDocked.value) {
+      dockedPanelHeight.value = getClampedDockedPanelHeight(dockedPanelHeight.value - offset.y)
+      return
+    }
+    onDragMove(offset)
+  },
+  onDragEnd: () => {
+    if (isDocked.value) return
+    onDragEnd()
+  }
 })
+
+const suggestedQuestions: LocaleMessage[] = [
+  {
+    en: 'What can XBuilder do?',
+    zh: 'XBuilder 可以做什么？'
+  },
+  {
+    en: 'How to create a new project?',
+    zh: '如何创建一个新项目？'
+  },
+  {
+    en: 'Please describe the functions of this page.',
+    zh: '介绍下这个页面有哪些功能。'
+  }
+]
+const handleSuggestedPromptClick = useMessageHandle((message: string) => copilot.addUserTextMessage(message), {
+  en: 'Failed to send message',
+  zh: '发送消息失败'
+}).fn
+
+const quickInputs = computed(() => copilot.getQuickInputs())
+
+const handleQuickInputClick = useMessageHandle(
+  ({ message }: QuickInput) => {
+    switch (message.type) {
+      case 'text':
+        return copilot.addUserTextMessage(message.content)
+      case 'event':
+        return copilot.notifyUserEvent(message.name, message.detail)
+      default:
+        assertNever(message)
+    }
+  },
+  { en: 'Failed to send message', zh: '发送消息失败' }
+).fn
 
 onBeforeUnmount(
   spotlight.on('revealed', async ({ rect }) => {
@@ -411,9 +588,40 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="isFloating" ref="panelRef" class="copilot-panel" :style="panelStyle">
+  <button
+    v-if="isDocked"
+    ref="dockedTriggerRef"
+    v-radar="{ name: 'Copilot trigger', desc: 'Click to open or close the Copilot panel' }"
+    class="docked-copilot-trigger"
+    :class="{ active: copilot.active, running: isGenerating }"
+    type="button"
+    :aria-label="$t({ en: 'Copilot', zh: 'Copilot' })"
+    @click="handleDockedTriggerClick"
+  >
+    <svg
+      class="docked-copilot-logo"
+      width="40"
+      height="40"
+      viewBox="0 0 40 40"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M27.1326 16.4061C27.6217 17.2175 28.4776 17.7029 29.4224 17.7029C30.6229 17.714 31.7456 16.8507 32.005 15.6613C32.1791 14.9277 32.0383 14.1644 31.6381 13.5346C27.6773 6.67626 17.5584 5.32387 11.9784 10.9817C10.9521 11.9784 10.1369 13.0862 9.51075 14.2867H9.50704L9.43294 14.4386C9.4033 14.4979 9.36995 14.5572 9.34402 14.6165C9.34402 14.6165 9.34772 14.6165 9.35143 14.6128V14.6202C9.35143 14.6202 9.34772 14.6202 9.34402 14.6202C9.33661 14.635 9.3292 14.6535 9.32179 14.6721L9.26991 14.7795C8.6215 16.143 8.21023 17.5436 8.08055 19.1479C7.99162 20.215 8.0472 21.2784 8.23246 22.301C8.43254 23.3607 8.75119 24.3648 9.17358 25.2985L9.20322 25.3615C9.20692 25.3726 9.21433 25.3838 9.21804 25.3949C9.22916 25.4208 9.24398 25.4468 9.25509 25.469L9.32179 25.6098H9.3292C11.8858 30.7526 17.8585 33.6612 23.4867 32.3088C26.6324 31.727 32.3829 27.9589 31.916 24.4019C31.4121 22.038 28.0923 21.6378 26.9511 23.7609C26.173 24.9984 25.1022 25.8914 23.8721 26.5398C22.8939 27.014 21.812 27.2771 20.693 27.2771C20.2743 27.2771 19.8482 27.2364 19.437 27.1623C19.3517 27.1474 19.2628 27.1326 19.1887 27.1326C19.1183 27.1326 19.0664 27.1474 19.0071 27.1808C18.4588 27.492 18.355 27.5476 17.8104 27.8292L17.2138 28.1552C16.5951 28.5221 15.7318 28.9815 15.3538 28.1404V28.1293C15.2983 27.8996 15.3575 27.681 15.3872 27.5735C15.4316 27.4142 15.4761 27.2512 15.5243 27.0696C15.628 26.6806 15.7355 26.273 15.8837 25.8766C15.9541 25.695 15.9689 25.6394 15.7355 25.4208C13.831 23.6275 13.0788 21.397 13.5012 18.8071C13.7569 17.2361 14.4868 15.88 15.6725 14.7721C17.1212 13.4234 18.7885 12.7417 20.6152 12.7417C21.0932 12.7417 21.5934 12.7898 22.0973 12.8862C22.1825 12.901 22.2751 12.9195 22.3603 12.938H22.3826C24.4056 13.3827 26.0025 14.5461 27.1252 16.4024L27.1326 16.4061Z"
+        fill="currentColor"
+      />
+    </svg>
+  </button>
+  <div
+    v-show="!isDocked || copilot.active"
+    ref="panelRef"
+    class="copilot-panel"
+    :class="{ 'docked-copilot-panel': isDocked }"
+    :style="panelStyle"
+  >
     <div class="body" :class="[triggerState]">
-      <UITooltip placement="right" :disabled="triggerTooltipDisabled">
+      <UITooltip v-if="!isDocked" placement="right" :disabled="triggerTooltipDisabled">
         <template #trigger>
           <div ref="triggerRef" :class="['copilot-trigger', triggerState, triggerVisibility]" @click="openPanel()">
             <div class="copilot-trigger-content">
@@ -442,10 +650,72 @@ onMounted(async () => {
         </template>
         <div>{{ $t({ en: 'Copilot', zh: 'Copilot' }) }}</div>
       </UITooltip>
-      <!-- `out-of-bounds` belongs to the floating positioning (set e.g. by the closing animation) -->
-      <CopilotChat ref="chatRef" class="chat" :class="{ 'out-of-bounds': isPanelOutOfBounds }" />
+      <!-- `out-of-bounds` belongs to the floating positioning (set e.g. by the closing animation);
+           the docked panel never moves, so it must never be dimmed by it -->
+      <div class="body-wrapper" :class="{ 'out-of-bounds': isPanelOutOfBounds && !isDocked }">
+        <div ref="draggerRef" class="dragger">
+          <svg width="12" height="6" viewBox="0 0 12 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="1.5" cy="1" r="1" fill="#A7B1BB" />
+            <circle cx="6" cy="1" r="1" fill="#A7B1BB" />
+            <circle cx="10.5" cy="1" r="1" fill="#A7B1BB" />
+            <circle cx="1.5" cy="4.5" r="1" fill="#A7B1BB" />
+            <circle cx="6" cy="4.5" r="1" fill="#A7B1BB" />
+            <circle cx="10.5" cy="4.5" r="1" fill="#A7B1BB" />
+          </svg>
+        </div>
+        <div ref="outputRef" class="output" :class="{ 'has-content': hasVisibleRounds || session == null }">
+          <!-- Every round is rendered so the elements in its reply can take effect on mount; the
+               ones that don't belong in the chat are hidden rather than skipped. -->
+          <CopilotRound
+            v-for="round in allRounds"
+            v-show="isChatVisible(round)"
+            :key="round.id"
+            :round="round"
+            :is-last-round="round === lastRound"
+          />
+          <template v-if="hasVisibleRounds">
+            <div v-if="quickInputs.length > 0" class="quick-inputs">
+              <UITooltip v-for="(qi, i) in quickInputs" :key="i">
+                {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
+                <template #trigger>
+                  <UIButton type="neutral" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UIButton>
+                </template>
+              </UITooltip>
+            </div>
+          </template>
+          <template v-else-if="session == null">
+            <div class="px-2 pb-2">
+              <div class="hi">
+                {{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}
+              </div>
+              <div class="tips">
+                {{
+                  $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
+                }}
+              </div>
+              <div class="suggested-questions-wrapper">
+                <button
+                  v-for="(suggestedQuestion, index) in suggestedQuestions"
+                  :key="index"
+                  class="suggested-question"
+                  @click="handleSuggestedPromptClick($t(suggestedQuestion))"
+                >
+                  {{ $t(suggestedQuestion) }}
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="divider"></div>
+        <CopilotInput
+          ref="inputRef"
+          class="input"
+          :class="{ 'only-input': !hasVisibleRounds && session != null }"
+          :copilot="copilot"
+        />
+      </div>
     </div>
-    <div class="footer">
+    <div v-if="!isDocked" class="footer">
       <div class="footer-wrapper">
         <template v-if="StateIndicator != null">
           <StateIndicator />
@@ -556,10 +826,119 @@ onMounted(async () => {
   background: var(--ui-color-grey-100);
 }
 
+.docked-copilot-trigger {
+  position: fixed;
+  /* Anchored to the code column's right edge in focused mode (see `--tut-controls-right`),
+     otherwise resting at the bottom-right corner. */
+  right: var(--tut-controls-right, 28px);
+  bottom: 28px;
+  z-index: 9999;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  /* Rounded square with the brand purple gradient, matching the floating trigger & the design's bubble. */
+  border-radius: 14px;
+  background: linear-gradient(180deg, #9a77ff 0%, #735ffa 100%);
+  /* The C mark rides on the gradient in white. */
+  color: #fff;
+  box-shadow: var(--ui-box-shadow-lg);
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.docked-copilot-trigger:hover,
+.docked-copilot-trigger.active {
+  background: linear-gradient(180deg, #ae92ff 0%, #9181fb 100%);
+}
+
+.docked-copilot-trigger:hover {
+  transform: translateY(-2px);
+}
+
+.docked-copilot-logo {
+  /* Spun in place while the copilot is working — see `.running`. */
+  transform-origin: 50% 50%;
+}
+
+.docked-copilot-trigger.running .docked-copilot-logo {
+  animation: docked-copilot-spin 1.1s linear infinite;
+}
+
+@keyframes docked-copilot-spin {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Respect reduced-motion: fall back to a gentle breathing pulse instead of spinning. */
+@media (prefers-reduced-motion: reduce) {
+  .docked-copilot-trigger.running .docked-copilot-logo {
+    animation: docked-copilot-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes docked-copilot-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+}
+
+.copilot-panel.docked-copilot-panel {
+  width: 360px;
+}
+
+.docked-copilot-panel .body::after {
+  content: '';
+  position: absolute;
+  right: 17px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  background: var(--ui-color-grey-100);
+  box-shadow: var(--ui-box-shadow-sm);
+  transform: rotate(45deg);
+  z-index: 1;
+}
+
+.docked-copilot-panel .body-wrapper {
+  /* Grow with the conversation up to the (draggable) ceiling, then the output scrolls. */
+  height: auto;
+  min-height: 120px;
+  max-height: var(--docked-copilot-panel-height, 320px);
+  display: flex;
+  flex-direction: column;
+}
+
+.docked-copilot-panel .body-wrapper .dragger {
+  cursor: ns-resize;
+}
+
+.docked-copilot-panel .body-wrapper .output {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.docked-copilot-panel .body-wrapper .input {
+  flex: none;
+}
+
 .copilot-panel {
   position: fixed;
-  /* Above page content but below modals (backdrop is z-1100), which must cover the copilot. */
-  z-index: 1000;
+  z-index: 9999;
   right: 10px;
   bottom: 20px;
   width: 340px;
@@ -584,18 +963,25 @@ onMounted(async () => {
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
 }
 
-/* When only the input shows and the trigger sticks out of a screen edge, square the shared corner. */
-.body:has(.chat.only-input):has(.visible).left,
-.body:has(.chat.only-input):has(.visible).left .chat {
+.body:has(.only-input):has(.visible).left,
+.body:has(.only-input):has(.visible).left .body-wrapper {
   border-radius: var(--ui-border-radius-lg) 0 0 var(--ui-border-radius-lg);
 }
 
-.body:has(.chat.only-input):has(.visible).right,
-.body:has(.chat.only-input):has(.visible).right .chat {
+.body:has(.only-input):has(.visible).right,
+.body:has(.only-input):has(.visible).right .body-wrapper {
   border-radius: 0 var(--ui-border-radius-lg) var(--ui-border-radius-lg) 0;
 }
 
-.chat.out-of-bounds::after {
+.body-wrapper {
+  position: relative;
+  overflow: hidden;
+  transition: opacity ease 0.4s;
+  border-radius: var(--ui-border-radius-lg);
+  z-index: 2;
+}
+
+.body-wrapper.out-of-bounds::after {
   content: '';
   position: absolute;
   top: 14px;
@@ -603,6 +989,104 @@ onMounted(async () => {
   bottom: 0;
   left: 0;
   backdrop-filter: blur(1px);
+}
+
+.body-wrapper .dragger {
+  position: absolute;
+  height: 14px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: move;
+  background-color: var(--ui-color-grey-100);
+  transition: background-color ease-in-out 0.3s;
+  z-index: 1;
+}
+
+.body-wrapper .dragger:hover {
+  background-color: var(--ui-color-grey-300);
+}
+
+.body-wrapper .output {
+  background: var(--ui-color-grey-100);
+  max-height: 300px;
+  font-size: var(--ui-font-size-sm);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Hidden rounds still occupy the DOM (they are rendered for their effects), so key the spacing on
+   whether anything is actually shown rather than on `:not(:empty)`. */
+.body-wrapper .output.has-content {
+  margin-top: 14px;
+  padding: 12px 16px 16px 16px;
+}
+
+.body-wrapper .output .hi {
+  font-size: var(--ui-font-size-2xl);
+  line-height: 28px;
+  color: var(--ui-color-grey-1000);
+}
+
+.body-wrapper .output .tips {
+  margin-top: 4px;
+  color: var(--ui-color-grey-700);
+}
+
+.body-wrapper .output .suggested-questions-wrapper {
+  width: 100%;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.body-wrapper .output .quick-inputs {
+  padding-top: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  background: var(--ui-color-grey-100);
+}
+
+/**
+ * `.suggested-question` here is like UIButton with `size: large` & `type: white`, while with
+ * different padding, font style & alignment. So we don't use UIButton here to have better control on the style.
+ */
+
+.body-wrapper .output .suggested-question {
+  width: 100%;
+  padding: 10px 12px;
+
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  border: 1px solid var(--ui-color-grey-400);
+  color: var(--ui-color-grey-900);
+  font-size: var(--ui-font-size-sm);
+  line-height: 20px;
+  white-space: normal;
+  text-align: left;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.body-wrapper .output .suggested-question:hover {
+  background: var(--ui-color-grey-300);
+}
+
+.body-wrapper .output .suggested-question:active {
+  background: var(--ui-color-grey-400);
+}
+
+.body-wrapper .divider {
+  background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
+  height: 1px;
+}
+
+.body-wrapper .input {
+  height: 62px;
+  overflow: hidden;
 }
 
 .footer {

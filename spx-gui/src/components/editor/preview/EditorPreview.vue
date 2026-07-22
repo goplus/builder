@@ -83,47 +83,35 @@
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
           class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
         >
-          <!-- The runner is constrained to the largest viewport-aspect rect inscribed in the
-               container — the same letterbox the stage viewer applies in edit mode — so the game
-               renders exactly over the edit stage's visual area instead of stretching to the
-               (non-4:3) container, which subtly shifted the world on every run. -->
-          <div ref="stageAspectEl" class="relative" :style="stageAspectStyle">
-            <ProjectRunnerSurface
-              ref="projectRunnerSurfaceRef"
-              v-model:fullscreen="fullscreen"
-              :project="editorCtx.project"
-              :runner-state="runnerState"
-              :on-run="handleRun.fn"
-              :run-loading="handleRun.isLoading.value"
-              :on-rerun="handleRerun.fn"
-              :rerun-loading="handleRerun.isLoading.value"
-              :on-stop="handleStop.fn"
-              :stop-loading="handleStop.isLoading.value"
-              :inline-anchor="getStageInlineAnchor"
-              @console="handleConsole"
-              @update:fullscreen="handleFullscreenChange"
-              @exit="handleExit"
-            />
-          </div>
-          <UITooltip v-if="rulerDisabledVisible && !fullscreen" placement="right">
-            <template #trigger>
-              <RulerToggle
-                v-radar="{ name: 'Ruler (unavailable)', desc: 'The ruler cannot measure while the project is running' }"
-                class="absolute top-4 left-4"
-                disabled
-              />
-            </template>
-            {{ $t({ en: 'Stop the run to measure', zh: '停止运行后才能量' }) }}
-          </UITooltip>
+          <ProjectRunnerSurface
+            ref="projectRunnerSurfaceRef"
+            v-model:fullscreen="fullscreen"
+            :project="editorCtx.project"
+            :runner-state="runnerState"
+            :on-run="handleRun.fn"
+            :run-loading="handleRun.isLoading.value"
+            :on-rerun="handleRerun.fn"
+            :rerun-loading="handleRerun.isLoading.value"
+            :on-stop="handleStop.fn"
+            :stop-loading="handleStop.isLoading.value"
+            :inline-anchor="getStageInlineAnchor"
+            @console="handleConsole"
+            @update:fullscreen="handleFullscreenChange"
+            @exit="handleExit"
+          />
         </div>
       </div>
     </div>
 
-    <!-- In the focused layout, one run/stop control sits in the code column's control row (owned
-         by ProjectEditor), teleported there since the runner lives here. There is no rerun: a run
-         is either stopped by the user or ends on its own, and either way returns to edit mode
-         (see handleExit) — so at any moment it is exactly Run (edit mode) or Stop (running). -->
-    <Teleport v-if="isFocused && controlsAnchor != null" :to="controlsAnchor">
+    <!-- In the focused layout, one run/stop control floats at the bottom-right corner, beside the
+         docked copilot trigger. There is no rerun: a run is either stopped by the user or ends on
+         its own, and either way returns to edit mode (see handleExit) — so at any moment it is
+         exactly Run (edit mode) or Stop (running). -->
+    <div
+      v-if="isFocused"
+      class="fixed bottom-7 z-[9999]"
+      :style="{ right: 'calc(var(--tut-controls-right, 28px) + 58px)' }"
+    >
       <button
         v-if="runnerState === 'initial'"
         v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
@@ -150,7 +138,7 @@
           {{ $t({ en: 'Stop', zh: '停止' }) }}
         </span>
       </button>
-    </Teleport>
+    </div>
   </UICard>
 </template>
 
@@ -218,13 +206,13 @@ function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+<<<<<<< HEAD
+import { computed, nextTick, onBeforeUnmount, ref, watch, watchEffect } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useSignedInUser } from '@/stores/user'
-import { useContentSize } from '@/utils/dom'
 import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -236,9 +224,6 @@ import {
 } from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
-import RulerToggle from './stage-viewer/RulerToggle.vue'
-import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
-import { useFocusedControlsAnchor } from '@/components/editor/focused-controls'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
@@ -249,10 +234,6 @@ const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
 const editorCtx = useEditorCtx()
 const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
 const isPreviewHeaderHidden = computed(() => editorWorkspaceLayout.isHidden('preview-header'))
-// While the game runs the stage is the engine's canvas — live sprite positions are inside the
-// engine, so measuring is impossible. The ruler button stays in place as an unusable variant
-// instead of vanishing, so the tool doesn't appear to come and go.
-const rulerDisabledVisible = computed(() => editorWorkspaceLayout.isToolEnabled('ruler'))
 const codeEditor = useCodeEditor()
 const { isOnline } = useNetwork()
 const signedInUser = useSignedInUser()
@@ -262,26 +243,35 @@ const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
-const stageAspectEl = ref<HTMLDivElement | null>(null)
-const stageContainerSize = useContentSize(stageContainerRef)
-/**
- * The largest viewport-aspect rect inscribed in the stage container — the same letterbox the
- * stage viewer applies to the edit stage, computed with the same min-scale fit, so the running
- * game and the edit stage occupy the same pixels.
- */
-const stageAspectStyle = computed(() => {
-  const size = stageContainerSize.value
-  const viewport = editorCtx.project.viewportSize
-  if (size == null || size.width === 0 || size.height === 0 || viewport.width === 0 || viewport.height === 0) {
-    return { width: '100%', height: '100%' }
-  }
-  const scale = Math.min(size.width / viewport.width, size.height / viewport.height)
-  return { width: `${viewport.width * scale}px`, height: `${viewport.height * scale}px` }
-})
 
-// The focused layout's control row (owned by ProjectEditor) that the Run/Stop control below
-// teleports into.
-const controlsAnchor = useFocusedControlsAnchor()
+// In the focused layout, the Run/Stop control and the docked copilot trigger sit at the code
+// column's right edge — i.e. just left of this preview panel. Expose that boundary as a global
+// `--tut-controls-right` (distance from the viewport's right edge) that both controls anchor to,
+// and keep it in sync as the panel resizes. It is cleared whenever the layout is not focused.
+const controlsAnchorVar = '--tut-controls-right'
+watchEffect((onCleanup) => {
+  const root = document.documentElement
+  const clear = () => root.style.removeProperty(controlsAnchorVar)
+  if (!isFocused.value) {
+    clear()
+    return
+  }
+  const panel = stageContainerRef.value?.closest('.editor-preview')
+  if (panel == null) return
+  const update = () => {
+    const left = panel.getBoundingClientRect().left
+    root.style.setProperty(controlsAnchorVar, `${Math.round(window.innerWidth - left + 12)}px`)
+  }
+  update()
+  const observer = new ResizeObserver(update)
+  observer.observe(panel)
+  window.addEventListener('resize', update)
+  onCleanup(() => {
+    observer.disconnect()
+    window.removeEventListener('resize', update)
+    clear()
+  })
+})
 
 const fullscreen = ref(false)
 const exitGuard = ref<'idle' | 'manualStopPending'>('idle')
@@ -434,8 +424,6 @@ async function executeRun(action: 'run' | 'rerun') {
   await nextTick()
   const surface = await untilNotNull(projectRunnerSurfaceRef)
   runtime.value.clearOutputs()
-  // A fresh run starts: features counting output lines (e.g. course completion) reset with it.
-  editorRuntimeOutputBridge.pushRunStart()
   editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
@@ -544,9 +532,7 @@ onBeforeUnmount(() => {
 })
 
 function getStageInlineAnchor() {
-  // The letterboxed rect the runner actually occupies inline; the container is the fallback
-  // before the wrapper mounts.
-  return stageAspectEl.value ?? stageContainerRef.value
+  return stageContainerRef.value
 }
 </script>
 
