@@ -164,10 +164,7 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul
-        v-if="!controller.filtered"
-        class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3"
-      >
+      <ul v-if="!controller.filtered" class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
@@ -180,7 +177,11 @@ function handleCategoryClick(id: string) {
           <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
         </li>
       </ul>
-      <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
+      <ul
+        ref="itemsWrapperRef"
+        class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
+        :class="{ 'overflow-x-auto': blockStyle }"
+      >
         <li
           v-for="c in categoriesForItems"
           :key="c.id"
@@ -208,7 +209,10 @@ function handleCategoryClick(id: string) {
 /* Block style: each item reads as a draggable block — a card with a grip handle & grab cursor */
 .api-reference-block-style :deep(.api-reference-item) {
   position: relative;
-  align-self: stretch;
+  /* Hug the signature rather than stretching to the column; the list scrolls horizontally
+     when a block is wider than the (narrow) API column. */
+  align-self: flex-start;
+  max-width: none;
   display: flex;
   align-items: center;
   min-height: 36px;
@@ -241,5 +245,15 @@ function handleCategoryClick(id: string) {
 
 .api-reference-block-style :deep(.api-reference-item.before-dragging) {
   cursor: grabbing;
+}
+
+/* Show the full signature on one line — the horizontal scroll reveals the overflow instead of `…`. */
+.api-reference-block-style :deep(.api-reference-item .overview) {
+  word-break: normal;
+}
+
+.api-reference-block-style :deep(.api-reference-item .overview > code) {
+  overflow: visible;
+  text-overflow: clip;
 }
 </style>
