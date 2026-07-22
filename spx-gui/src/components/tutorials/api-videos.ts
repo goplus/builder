@@ -1,5 +1,6 @@
 import { userLocalStorageRef } from '@/utils/user-storage'
 import type { LocaleMessage } from '@/utils/i18n'
+import { createCourseApiMatcher } from './course-config'
 
 export type ApiVideoInfo = {
   /** Title shown on the video card, typically the API name */
@@ -61,4 +62,23 @@ export function isApiLearned(apiId: string): boolean {
 export function markApiLearned(apiId: string) {
   if (learnedApisRef.value.includes(apiId)) return
   learnedApisRef.value = [...learnedApisRef.value, apiId]
+}
+
+/**
+ * Resolve the course config's `videos` entries (API names or definition IDs, see
+ * `createCourseApiMatcher`) to playable videos. An entry matching a library video uses that
+ * video's ID; otherwise the entry itself is the key, which still plays in demo-fallback mode.
+ * Already-learned APIs are skipped so a knowledge point is not pushed twice.
+ */
+export function resolveCourseVideos(entries: string[]): Array<{ id: string; info: ApiVideoInfo }> {
+  const libraryIds = getAvailableApiVideoIds()
+  const resolved: Array<{ id: string; info: ApiVideoInfo }> = []
+  for (const entry of entries) {
+    const matches = createCourseApiMatcher([entry])
+    const id = libraryIds.find(matches) ?? entry
+    if (resolved.some((v) => v.id === id) || isApiLearned(id)) continue
+    const info = getApiVideo(id)
+    if (info != null) resolved.push({ id, info })
+  }
+  return resolved
 }

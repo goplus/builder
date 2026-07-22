@@ -153,3 +153,23 @@ function normalizeHiddenAreas(value: unknown): WorkspaceArea[] {
 
 /** All workspace areas, for documenting the config's `hide` option. */
 export const configurableHiddenAreas = hideableWorkspaceAreas
+
+/**
+ * Whether a definition ID (e.g. `xgo:github.com/goplus/spx/v2?Sprite.step#0`) matches an
+ * author-declared API entry. An entry with `?` is a definition ID — without an overload suffix it
+ * matches all overloads. A plain entry matches the dotted name (`Sprite.step`) or its last
+ * segment (`step`).
+ */
+function matchesApiEntry(entry: string, definitionId: string): boolean {
+  if (entry.includes('?')) {
+    return definitionId === entry || definitionId.startsWith(`${entry}#`)
+  }
+  const dotted = decodeURIComponent(definitionId.split('?').at(-1) ?? '').split('#')[0]
+  if (dotted === entry) return true
+  return dotted.split('.').at(-1) === entry
+}
+
+/** Build a matcher deciding whether a definition ID belongs to the author-declared API set. */
+export function createCourseApiMatcher(entries: string[]): (definitionId: string) => boolean {
+  return (definitionId) => entries.some((entry) => matchesApiEntry(entry, definitionId))
+}
