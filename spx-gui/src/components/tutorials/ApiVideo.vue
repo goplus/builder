@@ -54,7 +54,8 @@ function checkAndMarkAutoPlayed(session: object, api: string): boolean {
 import { computed, onMounted, ref, watchEffect } from 'vue'
 
 import { useCopilot, useCopilotRound } from '@/components/copilot/context'
-import { UIIcon, UIModal, UIModalClose } from '@/components/ui'
+import { UIIcon } from '@/components/ui'
+import ApiVideoModal from './ApiVideoModal.vue'
 
 const props = defineProps<{
   /** API definition ID */
@@ -106,22 +107,6 @@ watchEffect((onCleanup) => {
       <UIIcon class="h-3.5 w-3.5" type="playHollow" />
       {{ $t(video.title) }}
     </button>
-    <UIModal
-      v-radar="{ name: 'API video modal', desc: 'Modal playing the explainer video of an API' }"
-      :visible="playing"
-      size="large"
-      mask-closable
-      @update:visible="playing = false"
-    >
-      <div class="flex flex-col px-5 pb-5 pt-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg text-title">{{ $t(video.title) }}</h3>
-          <UIModalClose @click="playing = false" />
-        </div>
-        <div class="mt-3 overflow-hidden rounded-md bg-grey-1000">
-          <video class="block aspect-video w-full" :src="video.src" controls autoplay playsinline></video>
-        </div>
-      </div>
-    </UIModal>
+    <ApiVideoModal :video="video" :visible="playing" @close="playing = false" />
   </template>
 </template>

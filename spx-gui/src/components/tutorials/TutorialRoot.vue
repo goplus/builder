@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { watch } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 
@@ -12,8 +12,9 @@ import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
 import { stringifyDefinitionId, useCodeEditorRef } from '@/components/xgo-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
-import { extractCourseConfig, courseCompleteSentinel } from './course-config'
+import { extractCourseConfig, courseCompleteSentinel, createCourseApiMatcher } from './course-config'
 import TutorialCourseSuccessModal from './TutorialCourseSuccessModal.vue'
+import ApiVideoModal from './ApiVideoModal.vue'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
@@ -23,7 +24,7 @@ import { TutorialIntervention } from './tutorial-intervention'
 import { progressElements } from './user-progress'
 import { installTutorialGuidance } from './tutorial-guidance'
 import { tutorialCourseReminder } from './tutorial-course-reminder'
-import { getApiVideo } from './api-videos'
+import { getApiVideo, markApiLearned, resolveCourseVideos, type ApiVideoInfo } from './api-videos'
 
 const copilot = useCopilot()
 const router = useRouter()
@@ -31,6 +32,27 @@ const isRouteLoaded = useIsRouteLoaded()
 const codeEditorRef = useCodeEditorRef()
 
 const tutorial = new Tutorial(copilot, router, isRouteLoaded)
+
+/**
+ * The course's knowledge-point videos (declared in the course config), queued to play one by one
+ * right at the course start — applied locally so they open immediately and predictably instead of
+ * riding on the copilot's first reply.
+ */
+const startVideosRef = ref<Array<{ id: string; info: ApiVideoInfo }>>([])
+const currentStartVideo = computed(() => (isRouteLoaded.value ? startVideosRef.value[0] ?? null : null))
+
+function advanceStartVideos() {
+  const current = startVideosRef.value[0]
+  if (current == null) return
+  markApiLearned(current.id)
+  startVideosRef.value = startVideosRef.value.slice(1)
+}
+
+// While a course-opening video is up it is a visible copilot artifact (pauses e.g. auto perception)
+watchEffect((onCleanup) => {
+  if (currentStartVideo.value == null) return
+  onCleanup(copilot.addVisibleArtifact())
+})
 
 watch(
   () => tutorial.currentCourse,
@@ -42,6 +64,7 @@ watch(
     const courseConfig = extractCourseConfig(currentCourse.prompt)
     editorWorkspaceLayout.setMode('focused')
     editorWorkspaceLayout.setHiddenAreas(courseConfig.hiddenAreas)
+    startVideosRef.value = resolveCourseVideos(courseConfig.videos)
     // The ruler is a course-only tool: measuring a distance is how the user answers "how far?"
     // for themselves, instead of guessing or asking the copilot for the number.
     editorWorkspaceLayout.setEnabledTools(['ruler'])
@@ -114,6 +137,7 @@ watch(
       // Reset the API references panel, the workspace layout and the copilot presentation
       // when leaving the course, so none of them outlives it.
       tutorial.setCurrentIntervention(null)
+      startVideosRef.value = []
       codeEditorRef.value?.setAPIReferenceFilter(null)
       editorWorkspaceLayout.reset()
       copilot.setUIMode('floating')
@@ -124,7 +148,8 @@ watch(
   }
 )
 
-// During a course, API reference items show their explainer video in the hover card. Watched
+// During a course, API reference items show their explainer video in the hover card, and the
+// panel narrows to the author-declared API set right away (no copilot round involved). Watched
 // together with the editor ref since the editor may mount after the course starts.
 watch(
   [() => tutorial.currentCourse, codeEditorRef],
@@ -133,6 +158,13 @@ watch(
     codeEditor.setAPIReferenceVideoProvider(
       currentCourse != null ? (item) => getApiVideo(stringifyDefinitionId(item.definition)) : null
     )
+    if (currentCourse != null) {
+      const { apis } = extractCourseConfig(currentCourse.prompt)
+      if (apis.length > 0) {
+        const matches = createCourseApiMatcher(apis)
+        codeEditor.setAPIReferenceFilter((item) => matches(stringifyDefinitionId(item.definition)))
+      }
+    }
   },
   { immediate: true }
 )
@@ -168,6 +200,12 @@ provideTutorial(tutorial)
 
 <template>
   <slot />
+  <ApiVideoModal
+    v-if="currentStartVideo != null"
+    :video="currentStartVideo.info"
+    visible
+    @close="advanceStartVideos()"
+  />
   <TutorialCourseSuccessModal
     v-if="tutorial.completion != null"
     :completion="tutorial.completion"
