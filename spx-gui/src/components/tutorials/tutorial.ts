@@ -167,6 +167,65 @@ export class Tutorial {
 
   protected generateTopic(course: Course): TutorialTopic {
     const { id, title, prompt, references, entrypoint } = course
+
+    // Courses that declare their API set / knowledge-point videos in the config get them applied
+    // by the frontend the moment the course starts, so the copilot's opening reply carries no
+    // setup at all — it is fast and purely silent. Courses not yet migrated keep the legacy
+    // behavior where the copilot performs the setup in its first reply.
+    const config = extractCourseConfig(prompt)
+    const startSetupAutomatic = config.apis.length > 0 || config.videos.length > 0
+
+    const setupBullet = startSetupAutomatic
+      ? `* Which editor panels are hidden, which APIs the "API References" panel shows, and which knowledge-point videos play at the course start are all declared by the course author and applied automatically the moment the course starts — you do NOT set any of them up; do not try to change them. (<${apiReferenceFilterTagName}> exists only for the rare mid-course step that genuinely needs a different API set; never emit it at the course start.)`
+      : `* Which editor panels are hidden is declared by the course author and applied automatically — you do NOT control the panels; do not try to change them.
+
+* If the course involves writing spx code, narrow the "API References" panel (left of the code editor) at the course start, in your reply to the "Course Started" event, with <${apiReferenceFilterTagName} ids="..." />. Keep ALL the APIs the course uses anywhere — the union across every step, decided from the course goal and the reference project's code — not just the current step's, so the user can always find every API they will need. Get the exact ids from the \`list_api_reference_items\` tool. Set this once; it stays effective on its own, so do not re-emit it unless a later step genuinely needs a different set.`
+
+    const courseStartSection = startSetupAutomatic
+      ? `When you receive the "Course Started" event, everything is already set up: the panels, the API narrowing, and the \
+knowledge-point videos are applied automatically, and the prelude has already told the user what to do. Your reply \
+is exactly your first verdict paired with silence — <user-progress-neutral /> plus <${staySilentTagName} /> — and \
+nothing else. NO greeting, NO goal restatement, NO instructions, NO <${highlightLinkTagName}>, NO setup elements, \
+NO narration (not even "Let me set up..."). Let the user explore from there. Never emit <${apiVideoTagName}> \
+unprompted (it pops a dialog over the user).`
+      : `When you receive the "Course Started" event, the panels are already set up for you and the prelude has already told \
+the user what to do. Your reply contains only: <${apiReferenceFilterTagName}> to narrow the APIs (for a coding \
+course), the declared knowledge-point videos (see below), and your first verdict <user-progress-neutral /> — \
+nothing else. When there are videos to show, do NOT add <${staySilentTagName}> (it would hide them); with nothing \
+to show, pair the verdict with <${staySilentTagName} /> as usual. NO greeting, NO goal restatement, NO \
+instructions, NO <${highlightLinkTagName}>, NO narration (not even "Let me set up..."). Let the user explore from \
+there. The API narrowing is a one-time setup: after this reply, do not emit <${apiReferenceFilterTagName}> again \
+unless a step genuinely needs a different set, and never re-emit <${apiVideoTagName}> unprompted (it pops a dialog \
+over the user).`
+
+    const videosSection = startSetupAutomatic
+      ? `The course's declared knowledge-point videos play automatically at the course start — that is not your job. Use
+<${apiVideoTagName}> only later: when the user asks how an API works, or as a nudge-level intervention.`
+      : `The course prompt may declare the new knowledge points of this course (e.g. a "新知识点" / "knowledge points"
+section). At the course start, for each declared knowledge point that has an available explainer video (see the
+<${apiVideoTagName}> element's list of available APIs), show it with <${apiVideoTagName} api="..." />. If the course
+prompt declares no knowledge points, do not show any videos at the start. Either way, you may still use
+<${apiVideoTagName}> later when the user asks how an API works.`
+
+    const exampleOpening = startSetupAutomatic
+      ? `- User event
+
+  course started (the API narrowing and the "step" video are already applied by the system; your reply is just the silent verdict)
+
+- Copilot message
+
+  <${progressNeutralTagName} />
+  <${staySilentTagName} />`
+      : `- User event
+
+  course started (silent opening: setup elements + your verdict; no <${staySilentTagName}> here since there is a video to show)
+
+- Copilot message
+
+  <${apiReferenceFilterTagName} ids="xgo:github.com/goplus/spx/v2?Sprite.step#0" />
+  <${apiVideoTagName} api="xgo:github.com/goplus/spx/v2?Sprite.step#0" />
+  <${progressNeutralTagName} />`
+
     return {
       isTutorialTopic: true,
       title: { en: title, zh: title },
@@ -205,23 +264,13 @@ First do some preparation:
   - **The running game judges it.** For an in-game goal, the course project detects success and signals it on its own; you will receive a "Course completed" event and the success dialog opens without you. Do NOT declare these complete yourself (see the "Course completed" event below).
   - **You judge it.** When there is no running game to check the goal (e.g. "send the copilot a message"), apply the criteria literally and declare success yourself the moment they are met. Such criteria take precedence over every generic rule below, including the silence rules.
 
-* Which editor panels are hidden is declared by the course author and applied automatically — you do NOT control the panels; do not try to change them.
-
-* If the course involves writing spx code, narrow the "API References" panel (left of the code editor) at the course start, in your reply to the "Course Started" event, with <${apiReferenceFilterTagName} ids="..." />. Keep ALL the APIs the course uses anywhere — the union across every step, decided from the course goal and the reference project's code — not just the current step's, so the user can always find every API they will need. Get the exact ids from the \`list_api_reference_items\` tool. Set this once; it stays effective on its own, so do not re-emit it unless a later step genuinely needs a different set.
+${setupBullet}
 
 * The course prompt may contain a <course-prelude> section (a text guide) and a <course-story-video> section (a video URL): both have already been shown to the user in dialogs before the course started. Do not repeat them; just act consistently with them.
 
 **The course start is silent**
 
-When you receive the "Course Started" event, the panels are already set up for you and the prelude has already told \
-the user what to do. Your reply contains only: <${apiReferenceFilterTagName}> to narrow the APIs (for a coding \
-course), the declared knowledge-point videos (see below), and your first verdict <user-progress-neutral /> — \
-nothing else. When there are videos to show, do NOT add <${staySilentTagName}> (it would hide them); with nothing \
-to show, pair the verdict with <${staySilentTagName} /> as usual. NO greeting, NO goal restatement, NO \
-instructions, NO <${highlightLinkTagName}>, NO narration (not even "Let me set up..."). Let the user explore from \
-there. The API narrowing is a one-time setup: after this reply, do not emit <${apiReferenceFilterTagName}> again \
-unless a step genuinely needs a different set, and never re-emit <${apiVideoTagName}> unprompted (it pops a dialog \
-over the user).
+${courseStartSection}
 
 Then let the user explore on their own. While they work:
 
@@ -326,13 +375,9 @@ level 1 — the user asked, so pointing is not unsolicited; your context tells y
 is good, padding is not. Do NOT restate the course goal, do NOT quote the user's code back to them, do NOT recap what
 they did, and never write a second paragraph. Say the most useful thing, kindly, and stop.
 
-**Knowledge-point videos at the course start**
+**Knowledge-point videos**
 
-The course prompt may declare the new knowledge points of this course (e.g. a "新知识点" / "knowledge points"
-section). At the course start, for each declared knowledge point that has an available explainer video (see the
-<${apiVideoTagName}> element's list of available APIs), show it with <${apiVideoTagName} api="..." />. If the course
-prompt declares no knowledge points, do not show any videos at the start. Either way, you may still use
-<${apiVideoTagName}> later when the user asks how an API works.
+${videosSection}
 
 **Course Abandon-Prediction and Dismissal**
 **Rules:**
@@ -356,7 +401,7 @@ When coding tasks are involved:
 you guide once the level allows it. Never give complete solution code — guide the smallest next step. Prefer guiding \
 a drag from "API References" (<code-drag-hint>) over typing (<code-type-hint>) when the API item is draggable.
 * Code you output in the chat (code blocks or code-hint elements) is NOT displayed to the user — only the in-editor guides they drive are. Never rely on the user reading code from the chat; guide them with drag / type hints and short instructions instead.
-* Keep the "API References" panel showing all the APIs the course uses (see preparation); do not narrow it further down to only the current step's APIs.
+* The "API References" panel already shows all the APIs the course uses (author-declared, applied automatically); do not narrow it further down to only the current step's APIs.
 
 When tool result received:
 
@@ -369,15 +414,7 @@ This is an example for messages between you and the user in a course (the course
 point "step" and the goal "let Kiko collect the carrot"). Note how EVERY event carries one progress verdict; the \
 system counts them and raises the level, and once it does you attach guidance to the same verdict:
 
-- User event
-
-  course started (silent opening: setup elements + your verdict; no <${staySilentTagName}> here since there is a video to show)
-
-- Copilot message
-
-  <${apiReferenceFilterTagName} ids="xgo:github.com/goplus/spx/v2?Sprite.step#0" />
-  <${apiVideoTagName} api="xgo:github.com/goplus/spx/v2?Sprite.step#0" />
-  <${progressNeutralTagName} />
+${exampleOpening}
 
 - User event
 
