@@ -109,8 +109,8 @@
          exactly Run (edit mode) or Stop (running). -->
     <div
       v-if="isFocused"
-      class="fixed bottom-7 z-[9999]"
-      :style="{ right: 'calc(var(--tut-controls-right, 28px) + 58px)' }"
+      class="fixed bottom-7 z-1000"
+      :style="{ right: 'calc(var(--tut-controls-right, 28px) + 66px)' }"
     >
       <button
         v-if="runnerState === 'initial'"

@@ -2,7 +2,7 @@
 import { type Course } from '@/apis/course'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useAsyncComputed } from '@/utils/utils'
-import { UIImg, UIButton } from '@/components/ui'
+import { UIImg } from '@/components/ui'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 
 const props = defineProps<{
@@ -25,8 +25,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 <template>
   <li
     v-radar="{ name: `Course: ${props.course.title}`, desc: 'Click to open this course' }"
-    class="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-grey-200"
-    :class="{ 'bg-grey-200': current }"
+    class="flex h-11 flex-none cursor-pointer items-center gap-2 rounded-[6px] py-1 pl-1 pr-2 transition-colors hover:bg-grey-200"
     @click="emit('select')"
   >
     <UIImg
@@ -35,12 +34,16 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
       size="cover"
       :style="{ backgroundImage: `url(${stageBgUrl})` }"
     />
-    <span class="min-w-0 flex-1 truncate text-sm text-title">{{ course.title }}</span>
-    <span v-if="current" class="flex-none text-xs text-primary-main">{{
+    <span class="min-w-0 truncate text-base font-medium text-text">{{ course.title }}</span>
+    <span v-if="current" class="flex-none px-1 text-xs font-medium text-primary-main">{{
       $t({ en: 'in progress', zh: '进行中' })
     }}</span>
-    <UIButton v-if="current" class="flex-none" type="secondary" size="small" @click.stop="emit('restart')">
+    <button
+      v-if="current"
+      class="ml-auto h-5 flex-none cursor-pointer rounded-sm border border-dividing-line-2 bg-grey-300 px-2 text-xs font-medium text-text transition-colors hover:bg-grey-400"
+      @click.stop="emit('restart')"
+    >
       {{ $t({ en: 'Restart course', zh: '重新开始' }) }}
-    </UIButton>
+    </button>
   </li>
 </template>
