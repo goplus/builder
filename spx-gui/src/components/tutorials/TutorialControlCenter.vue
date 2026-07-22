@@ -77,9 +77,9 @@ const { fn: handleRestartCourse } = useMessageHandle(
 </script>
 
 <template>
-  <div class="flex max-h-[70vh] w-100 flex-col">
-    <header class="flex flex-none items-center justify-between px-3 py-2.5">
-      <span class="text-base font-medium text-title">{{ $t({ en: 'Tutorial', zh: '教程' }) }}</span>
+  <div class="flex max-h-[70vh] w-100 flex-col p-2">
+    <header class="flex flex-none items-center justify-between py-1 pl-2 pr-1">
+      <span class="text-base font-medium text-text">{{ $t({ en: 'Tutorial', zh: '教程' }) }}</span>
       <UIButton
         v-radar="{ name: 'Exit course', desc: 'Click to exit the current course and return to the course list' }"
         type="secondary"
@@ -90,7 +90,9 @@ const { fn: handleRestartCourse } = useMessageHandle(
       </UIButton>
     </header>
 
-    <ul class="min-h-0 flex-1 overflow-y-auto border-t border-dividing-line-2 px-2 py-1.5">
+    <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
+
+    <ul class="min-h-0 flex-1 flex flex-col gap-2 overflow-y-auto p-1">
       <TutorialCourseRow
         v-for="course in courses ?? []"
         :key="course.id"
@@ -101,10 +103,10 @@ const { fn: handleRestartCourse } = useMessageHandle(
       />
     </ul>
 
-    <footer class="flex-none border-t border-dividing-line-2 px-3 py-2">
+    <footer class="flex-none p-2">
       <button
         v-radar="{ name: 'Return to tutorial homepage', desc: 'Click to leave the course and open the tutorials page' }"
-        class="w-full cursor-pointer rounded-md border-none bg-grey-200 py-2 text-sm text-text transition-colors hover:bg-grey-300"
+        class="h-[34px] w-full cursor-pointer rounded-md border border-dividing-line-2 bg-grey-100 text-base text-text transition-colors hover:bg-grey-200"
         @click="handleReturnHome"
       >
         {{ $t({ en: 'Return to tutorial homepage', zh: '返回教程首页' }) }}
