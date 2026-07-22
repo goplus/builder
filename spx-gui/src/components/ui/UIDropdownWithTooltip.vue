@@ -3,7 +3,8 @@
     <template #trigger>
       <UITooltip :visible="tooltipVisible" @update:visible="handleTooltipVisibleChange">
         <template #trigger>
-          <slot name="trigger"></slot>
+          <!-- `dropdownVisible` lets the trigger render a pressed state while the dropdown is open -->
+          <slot name="trigger" :dropdown-visible="dropdownVisible"></slot>
         </template>
         <slot name="tooltip-content"></slot>
       </UITooltip>
