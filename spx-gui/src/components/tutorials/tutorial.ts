@@ -96,14 +96,17 @@ export class Tutorial {
     const series = this.currentSeries
     if (course == null || series == null || this.completionRef.value != null) return
     this.completionRef.value = { course, series }
-    this.commentRef.value = comment ?? null
-    // Code-judged completion carries no comment, so ask the copilot to evaluate asynchronously —
-    // the comment is not on the critical path to celebrating, so the dialog does not wait for it.
-    // Copilot-judged completion already provides its comment with the signal.
-    if (comment == null) {
+    // A blank comment counts as no comment: an empty attribute must not leave the dialog stuck
+    // showing nothing when the async request below could fill it.
+    const normalized = comment?.trim() ?? ''
+    this.commentRef.value = normalized !== '' ? normalized : null
+    // A completion signal without a comment (code-judged completion, or a copilot declaration
+    // that omitted it) asks the copilot to evaluate asynchronously — the comment is not on the
+    // critical path to celebrating, so the dialog does not wait for it.
+    if (this.commentRef.value == null) {
       this.copilot.notifyUserEvent(
         { en: 'Course completed', zh: '课程完成' },
-        'The course is now complete. Reply with ONE short, friendly sentence evaluating what the user did; it fills the comment in the success dialog already shown. Prose only (besides your usual invisible progress verdict) — no other tags, no <tutorial-course-success>.',
+        "The course is now complete: the success dialog is already on screen with an EMPTY comment area waiting. The plain prose of your reply IS that comment — it is displayed in the dialog and NOWHERE else (this round is hidden from chat). Reply with ONE short, friendly sentence in the user's language evaluating what the user did. No tags besides your usual invisible progress verdict — no <tutorial-course-success> (the dialog is already up), and NEVER <stay-silent> (it would leave the comment area blank).",
         { autoOpen: false }
       )
     }
@@ -278,7 +281,7 @@ Then let the user explore on their own. While they work:
 
 **The "Course completed" event**
 
-When the running game reaches the course goal it declares completion itself: you receive a "Course completed" event and the success dialog is ALREADY open in front of the user. This one event breaks the silence — reply with exactly ONE short, friendly sentence in the user's language evaluating what the user did, because it fills the comment area of the dialog they are looking at. It is prose, not an announcement of success (the dialog already announced it): do NOT add <${tutorialCourseSuccessTagName}> and do NOT add <${staySilentTagName}> (one would double up the dialog, the other would hide your sentence). Emit only that sentence, plus your usual invisible progress verdict. Never react this way to any other event, and never send this sentence for a course you judge yourself.
+When the success dialog opens without a comment — the running game reached the course goal on its own, or your own <${tutorialCourseSuccessTagName}> declaration omitted the comment — you receive a "Course completed" event. The dialog is ALREADY open in front of the user, its comment area empty and waiting. This one event breaks the silence — reply with exactly ONE short, friendly sentence in the user's language evaluating what the user did: the plain prose of that reply is displayed in the dialog's comment area and NOWHERE else (the round itself stays hidden from chat). It is prose, not an announcement of success (the dialog already announced it): do NOT add <${tutorialCourseSuccessTagName}> and do NOT add <${staySilentTagName}> (one would double up the dialog, the other would leave the comment area blank). Emit only that sentence, plus your usual invisible progress verdict. This applies regardless of who judged completion. Trailing ambient events (more game output, the game exiting) may supersede the round carrying this event — whenever a recent "Course completed" event has not yet been answered with its sentence, your current reply must carry it, no matter which event triggered the round. Outside of that, never send such a sentence.
 
 **Staying Silent (the default reaction to user events)**
 
