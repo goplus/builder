@@ -28,7 +28,16 @@ const emit = defineEmits<{
         <UIModalClose @click="emit('close')" />
       </div>
       <div class="mt-3 overflow-hidden rounded-md bg-grey-1000">
-        <video class="block aspect-video w-full" :src="video.src" controls autoplay playsinline></video>
+        <!-- `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
+             pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
+        <video
+          class="block aspect-video w-full"
+          :src="video.src"
+          crossorigin="anonymous"
+          controls
+          autoplay
+          playsinline
+        ></video>
       </div>
     </div>
   </UIModal>
