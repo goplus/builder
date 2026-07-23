@@ -44,18 +44,30 @@ copilot 现在会感知更多的事件：运行开始/停止、游戏退出（�
 `<stay-silent />` 会隐藏**整轮**内容，包括漏在它周围的推理文字。聊天窗口里**只显示用户打字的轮次**——
 事件驱动的轮次在后台无形地跑。被取消的事件轮次也一并跳过（用户继续编辑会中止在途的轮次，那不是该展示的东西）。
 
-## 4. 课程作者声明的工作区
+## 4. 课程作者声明的配置
 
-`tutorials/course-config.ts`、`editor/workspace-layout.ts`
+`tutorials/course-config.ts`、`editor/workspace-layout.ts`、`tutorials/TutorialRoot.vue`
 
-课程在提示词里用一个 ```jsonc 块声明自己的工作区（如何简化UI）：
+课程在提示词开头用一个 ```jsonc 块声明自己的配置，它由**前端在课程启动的瞬间读取并应用**——不经过 copilot、没有延迟：
 
 ```jsonc
 {
-  "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"],
-  "copilot": "open"
+  "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"], // 简化 UI
+  "copilot": "open",                              // 开场是否展开面板（默认收起、后台运行）
+  "judge": "code",                                // 完成判定：code（默认，看运行输出）/ copilot
+  "complete": { "log": "捡到萝卜", "count": 4 },   // code 判定的完成信号（见下）
+  "apis": ["step", "turn"],                       // 开场把 API 面板收窄到这些（全课并集）
+  "videos": ["step"]                              // 开场自动播放的知识点视频
 }
 ```
+
+`apis` / `videos` 从前只能靠 copilot 在开场回复里现做——一次工具往返加一次生成，面板要过好几秒才收窄、视频常砸在用户操作中途。现在它们是**静态数据、t=0 即生效**；声明了任一字段的课程，copilot 的开场协议随之变为**纯静默**（只回进度判定 + `<stay-silent/>`，零工具往返）。条目可写裸名（`step`）、点名（`Sprite.step`）或完整 definition id，语言结构用规范名（`if_statement`、`for_iterate` 等）。
+
+**完成判定（`judge` + `complete`）：**
+- `code`（首选）：完成能从运行输出看出来。前端直接判定，成功弹窗**即时**弹出（不等 LLM），copilot 随后收到「Course completed」事件补一句评语。信号是 `complete: { log, count }`——单次运行内包含 `log` 的**不同**输出行达到 `count` 条即完成（适合“收集 N 个”，项目每达成一步打一行日志）；不写则回落到项目自打的完成哨兵 `@@builder:course-complete@@`。
+- `copilot`：完成无法从输出判断时（如“给 copilot 发一条消息”、“必须改用了某种写法”）由 copilot 宣布，代价是一次 LLM 往返。
+
+作者手册见 `docs/product/course-authoring.zh.md`。
 
 ## 5. 尺子
 
@@ -69,9 +81,15 @@ copilot 现在会感知更多的事件：运行开始/停止、游戏退出（�
 
 ## 6. copilot 的呈现方式
 
-`CopilotUI.vue`、`copilot.ts`
+`CopilotUI.vue`、`CopilotChat.vue`、`editor/copilot/EditorCopilot.vue`、`copilot.ts`
 
-停靠式面板，历史可滚动、高度自动增长；去掉了「Next step」按钮；会显示用户自己发的消息。
+copilot 的**状态是全局单例**（`CopilotRoot` 里 `provide` 出去的），但**呈现拆成一个共享会话体 + 两个壳**：
+- `CopilotChat.vue` —— 共享的会话主体（轮次列表、快捷输入、欢迎屏、输入框、拖拽把手）；
+- `CopilotUI.vue` —— 全局悬浮壳（首页/社区/普通编辑器），可拖拽贴边；
+- `editor/copilot/EditorCopilot.vue` —— 教程聚焦模式下**编辑器自有**的停靠壳，活在代码列右下角的控件行里，面板用纯 CSS 布局浮在触发器上方——不再靠“量视口坐标喂给全局浮层”。
+
+两个壳 inject 同一个 copilot 实例，所以从悬浮切到停靠，**会话无缝延续**。Run/Stop 控件用编辑器内 `<Teleport>` 送进同一控件行（runner 逻辑仍在预览组件里）。停靠面板历史可滚动、高度可拖拽；生成中时触发器中央的 C 徽标旋转，**面板收起也照转**。
+
 课程**后台优先启动**：`Topic.autoOpenOnEvents = false` 意味着环境类事件（页面跳转、模态框）
 永远不会弹开面板——**包括页面刷新时触发的跳转事件**，那个曾经让面板在课程中途自己冒出来。
 主题就是 copilot 本身的课程，用 `"copilot": "open"` 来豁免。
@@ -81,11 +99,12 @@ copilot 现在会感知更多的事件：运行开始/停止、游戏退出（�
 
 ## 7. 开场序列
 
-`TutorialStoryVideoModal.vue`、`TutorialPreludeModal.vue`、`ApiVideo.vue`、`api-videos.ts`
+`course-start.vue`、`TutorialStoryVideoModal.vue`、`TutorialPreludeModal.vue`、`ApiVideoModal.vue`、`api-videos.ts`
 
 故事视频（系列世界观）→ 知识点视频（只播真正新的 API）→ 一句话开场提示 → 进入编辑器。
-API 视频按 definition id 索引，并按用户记录已学过的，所以**同一个概念不会被讲第二遍**。
-API 参考面板的悬浮卡片播放的是同一个视频。
+知识点视频与 API 面板收窄现在都由**前端读 config 在课程启动瞬间应用**（见第 4 节），时机确定、开场更快。
+
+API 视频按 definition id 索引，并按用户记录已学过的，所以**同一个概念不会被讲第二遍**；API 参考面板悬浮卡片播放的是同一个视频（弹窗抽成共享的 `ApiVideoModal`）。外部托管（如 S3）的视频用 `<video crossorigin>` 通过站点的 COEP；故事视频有 origin 白名单（同源 + usercontent CDN + 教程资源域名），`<course-story-video>` 可指向它。
 
 ## 8. 课程验证用的开发工具（这是为了方面Agent在本地开发课程的时候进行调试）
 
@@ -99,10 +118,21 @@ const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 
 // r.logs -> [{ level: 'INFO', msg: '捡到萝卜 Radish', ... }]
 ```
 
+## 聚焦编辑器（对齐设计稿）
+
+`EditorPreview.vue`、`stage-viewer/StageViewer.vue`、`ui/icons/ruler.svg`、`api-reference/*`、`input-helper/*`
+
+- **API 参考卡片**：贴合签名内容、超出时列表横向滚动，取代原来的定宽截断。
+- **尺子按钮**：白色卡片，hover/测量中变青色（`#eaf9fa` 底 + `#36c2cf` 图标），换成斜置尺子字形；tooltip 仅 hover 出现。
+- **Run/Stop**：白框内嵌实色胶囊（青色运行 `#36c2cf` / 红色停止 `#ef4149`），同一按钮切换。
+- **输入助手按类型开关**（块样式）：纯字面量（整数/小数/字符串/布尔/方向）不显示铅笔与 hover 的「修改」，选择器类（颜色/按键/特效/资源…）保留（`isInputHelperHidden`，由 `SpriteEditor`/`StageEditor` 在聚焦模式下传入隐藏类型集）。
+
 ## 一些小东西
 
 - 筛选把 API 列表收窄成真子集时，分类侧边栏自动隐藏
 - 「重新开始本课」，以及「学习下一课」现在会走完整的开场序列
-- 导航栏课程菜单里显示当前引导等级（`引导：关/低/高`）
+- 导航栏课程入口做成药丸样式（青色胶囊包图标，打开控制中心时按钮转灰）；导航栏课程菜单里显示当前引导等级（`引导：关/低/高`）
+- 控制中心的「返回」回到**本系列**页面（`/course-series/:id`），而不是教程首页
+- modal 打开时能正确盖住 copilot 与运行控件（把它们的 z-index 归入正常层级、低于 modal）
 - 每轮提醒用的 context provider（`criticalContext`），在上下文截断时不会被裁掉
 - 编辑器的离开确认、重新加载扩展点

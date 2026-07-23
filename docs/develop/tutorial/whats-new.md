@@ -51,18 +51,41 @@ shows **only rounds the user typed** — event-driven rounds run invisibly in th
 event rounds are skipped too (continuing to edit aborts the in-flight round; that is not something to
 show).
 
-## 4. Course-authored workspace setup
+## 4. Course-authored configuration
 
-`tutorials/course-config.ts`, `editor/workspace-layout.ts`
+`tutorials/course-config.ts`, `editor/workspace-layout.ts`, `tutorials/TutorialRoot.vue`
 
-A course declares its own workspace (i.e. how to simplify the UI) in a ```jsonc block in the prompt:
+A course declares its configuration in a ```jsonc block at the top of the prompt. The **frontend
+reads and applies it the moment the course starts** — no copilot round, no delay:
 
 ```jsonc
 {
-  "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"],
-  "copilot": "open"
+  "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"], // simplify UI
+  "copilot": "open",                              // open the panel at start (default: hidden, background)
+  "judge": "code",                                // completion: code (default, from output) / copilot
+  "complete": { "log": "捡到萝卜", "count": 4 },   // the code-judged completion signal (see below)
+  "apis": ["step", "turn"],                       // narrow the API panel at start (union over the course)
+  "videos": ["step"]                              // knowledge-point videos to auto-play at start
 }
 ```
+
+`apis` / `videos` used to be done by the copilot in its opening reply — a tool round plus a
+generation, so the panel narrowed seconds late and videos landed over whatever the user was doing.
+They are now **static data applied at t=0**; a course declaring either field flips the copilot's
+opening protocol to **purely silent** (verdict + `<stay-silent/>`, zero tool calls). Entries may be a
+bare name (`step`), a dotted name (`Sprite.step`), or a full definition id; language constructs use
+their canonical names (`if_statement`, `for_iterate`, ...).
+
+**Completion (`judge` + `complete`):**
+- `code` (preferred): completion is observable from runtime output. The frontend decides and the
+  success dialog opens **instantly** (no LLM wait); the copilot then gets a "Course completed" event
+  and fills in a comment. The signal is `complete: { log, count }` — `count` DISTINCT output lines
+  containing `log` within a single run (for collect-N goals whose project logs each step); absent, it
+  falls back to the sentinel `@@builder:course-complete@@` the project prints itself.
+- `copilot`: when output cannot judge it (e.g. "message the copilot", or "must have used `repeat`"),
+  the copilot declares completion, at the cost of one LLM round.
+
+Author's guide: `docs/product/course-authoring.md`.
 
 ## 5. The ruler
 
@@ -77,24 +100,46 @@ and 9 are built on it.
 
 ## 6. Copilot presentation
 
-`CopilotUI.vue`, `copilot.ts`
+`CopilotUI.vue`, `CopilotChat.vue`, `editor/copilot/EditorCopilot.vue`, `copilot.ts`
 
-A docked panel with scrollable history and auto-growing height; the "Next step" button is gone; the
-user's own messages are shown. Courses start **background-first**: `Topic.autoOpenOnEvents = false`
-means ambient events (navigation, modals) never pop the panel — **including the navigation event
-fired on page reload**, which used to make the panel reappear mid-course. A course whose subject *is*
-the copilot opts out with `"copilot": "open"`.
+The copilot's **state is a global singleton** (provided by `CopilotRoot`), but the **presentation is
+a shared chat body plus two shells**:
+- `CopilotChat.vue` — the shared conversation body (rounds, quick inputs, welcome screen, input,
+  drag handle);
+- `CopilotUI.vue` — the global floating shell (home / community / normal editor), draggable to an
+  edge;
+- `editor/copilot/EditorCopilot.vue` — the **editor-owned** docked shell for the focused tutorial
+  layout, living in the control row at the code column's bottom-right, its panel anchored above the
+  trigger by plain layout — no more measuring viewport coordinates into a global overlay.
+
+Both shells inject the same copilot instance, so the conversation **carries seamlessly** from
+floating to docked. The Run/Stop control teleports into that same row (the runner logic stays in the
+preview component). The docked panel has scrollable history and a drag-resizable height; while
+generating, the C mark in the trigger spins — **even when the panel is hidden**.
+
+Courses start **background-first**: `Topic.autoOpenOnEvents = false` means ambient events
+(navigation, modals) never pop the panel — **including the navigation event fired on page reload**,
+which used to make the panel reappear mid-course. A course whose subject *is* the copilot opts out
+with `"copilot": "open"`.
 
 Tutorial topics set `hideCodeInChat`, so code-bearing elements still drive their in-editor guides but
 render the code unselectable in chat — **visible, not copyable**.
 
 ## 7. Opening sequence
 
-`TutorialStoryVideoModal.vue`, `TutorialPreludeModal.vue`, `ApiVideo.vue`, `api-videos.ts`
+`course-start.vue`, `TutorialStoryVideoModal.vue`, `TutorialPreludeModal.vue`, `ApiVideoModal.vue`,
+`api-videos.ts`
 
 Story video (series world-building) → knowledge-point video (only genuinely new APIs) → a one-line
-prelude → the editor. API videos are keyed by definition id and remembered per user, so **a concept
-is never explained twice**. API-reference hover cards play the same video.
+prelude → the editor. The knowledge-point videos and the API-panel narrowing are now **applied by the
+frontend from the config the moment the course starts** (see §4) — predictable timing, a faster
+opening.
+
+API videos are keyed by definition id and remembered per user, so **a concept is never explained
+twice**; API-reference hover cards play the same video (the dialog is the shared `ApiVideoModal`).
+Externally hosted videos (e.g. S3) load in CORS mode via `<video crossorigin>` to pass the site's
+COEP; story videos are origin-allowlisted (same-origin + usercontent CDN + the tutorial asset host),
+which `<course-story-video>` may point at.
 
 ## 8. Dev harness for course verification (so an Agent can debug a course during local development)
 
@@ -108,10 +153,31 @@ const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 
 // r.logs -> [{ level: 'INFO', msg: '捡到萝卜 Radish', ... }]
 ```
 
+## The focused editor (aligned to the design)
+
+`EditorPreview.vue`, `stage-viewer/StageViewer.vue`, `ui/icons/ruler.svg`, `api-reference/*`,
+`input-helper/*`
+
+- **API reference cards** hug their signature and the list scrolls horizontally, instead of the old
+  fixed-width truncation.
+- **The ruler button** is a white card that turns turquoise on hover / while measuring (`#eaf9fa`
+  face + `#36c2cf` glyph), with a new tilted-ruler icon; its tooltip is hover-only.
+- **Run/Stop** is a white card framing a solid pill (teal Run `#36c2cf` / red Stop `#ef4149`), one
+  button that toggles.
+- **The input helper is gated by type in block style**: plain literals (integer / decimal / string /
+  boolean / direction) show neither the pencil nor the hover "Modify"; the pickers (color, key,
+  effect, resource, ...) keep both (`isInputHelperHidden`, fed the hidden-type set by
+  `SpriteEditor` / `StageEditor` in focused mode).
+
 ## Smaller things
 
 - The API-reference category sidebar hides when a filter narrows the list to a proper subset
 - A course-restart action, and "learn next course" now goes through the full opening sequence
-- The guidance level is shown in the navbar course menu (`引导：关/低/高`)
+- The navbar tutorial entry is a pill (a turquoise capsule around the icon; the button greys while
+  the control center is open); the guidance level shows in the navbar course menu (`引导：关/低/高`)
+- The control center's "return" goes back to the **series** page (`/course-series/:id`), not the
+  tutorials index
+- A modal now covers the copilot and run controls (their z-index sits in the normal range, below
+  modals)
 - A per-round reminder context provider (`criticalContext`) that survives context truncation
 - Editor leave-confirm and reload extension points
