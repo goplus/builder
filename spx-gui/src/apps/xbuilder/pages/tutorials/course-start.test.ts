@@ -69,15 +69,24 @@ describe('getOpeningSteps', () => {
   const promptWithPrelude = 'Course goal.\n<course-prelude>先捡3个香蕉。</course-prelude>'
 
   it('should order the story video before the prelude', () => {
-    expect(getOpeningSteps(promptWithPrelude, '/story.mp4')).toEqual([
+    expect(getOpeningSteps(promptWithPrelude, '/story.mp4', false)).toEqual([
       { kind: 'story-video', src: '/story.mp4' },
       { kind: 'prelude', text: '先捡3个香蕉。' }
     ])
   })
 
   it('should omit unconfigured steps', () => {
-    expect(getOpeningSteps(promptWithPrelude, null)).toEqual([{ kind: 'prelude', text: '先捡3个香蕉。' }])
-    expect(getOpeningSteps('No prelude here', '/story.mp4')).toEqual([{ kind: 'story-video', src: '/story.mp4' }])
-    expect(getOpeningSteps('No prelude here', null)).toEqual([])
+    expect(getOpeningSteps(promptWithPrelude, null, false)).toEqual([{ kind: 'prelude', text: '先捡3个香蕉。' }])
+    expect(getOpeningSteps('No prelude here', '/story.mp4', false)).toEqual([
+      { kind: 'story-video', src: '/story.mp4' }
+    ])
+    expect(getOpeningSteps('No prelude here', null, false)).toEqual([])
+  })
+
+  it('should drop the pre-editor prelude when the course runs its opening inside the editor', () => {
+    // A course declaring an ordered `opening` sequence shows its prelude in-editor (via TutorialRoot);
+    // the story video still plays before the editor exists.
+    expect(getOpeningSteps(promptWithPrelude, '/story.mp4', true)).toEqual([{ kind: 'story-video', src: '/story.mp4' }])
+    expect(getOpeningSteps(promptWithPrelude, null, true)).toEqual([])
   })
 })

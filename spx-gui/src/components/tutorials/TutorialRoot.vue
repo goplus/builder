@@ -2,6 +2,8 @@
 import { computed, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIsRouteLoaded } from '@/utils/route-loading'
+import { useSpotlight } from '@/utils/spotlight'
+import { useRadar } from '@/utils/radar'
 
 import { provideTutorial, Tutorial } from './tutorial'
 
@@ -12,8 +14,15 @@ import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
 import { stringifyDefinitionId, useCodeEditorRef } from '@/components/xgo-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
-import { extractCourseConfig, courseCompleteSentinel, createCourseApiMatcher } from './course-config'
+import {
+  extractCourseConfig,
+  courseCompleteSentinel,
+  createCourseApiMatcher,
+  type CourseConfig,
+  type CourseSpotlightTarget
+} from './course-config'
 import TutorialCourseSuccessModal from './TutorialCourseSuccessModal.vue'
+import TutorialPreludeModal from './TutorialPreludeModal.vue'
 import ApiVideoModal from './ApiVideoModal.vue'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
@@ -24,34 +33,124 @@ import { TutorialIntervention } from './tutorial-intervention'
 import { progressElements } from './user-progress'
 import { installTutorialGuidance } from './tutorial-guidance'
 import { tutorialCourseReminder } from './tutorial-course-reminder'
-import { getApiVideo, markApiLearned, resolveCourseVideos, type ApiVideoInfo } from './api-videos'
+import { getApiVideo, markApiLearned, resolveApiVideo, resolveCourseVideos, type ApiVideoInfo } from './api-videos'
 
 const copilot = useCopilot()
 const router = useRouter()
 const isRouteLoaded = useIsRouteLoaded()
 const codeEditorRef = useCodeEditorRef()
+const spotlight = useSpotlight()
+const radar = useRadar()
 
 const tutorial = new Tutorial(copilot, router, isRouteLoaded)
 
 /**
- * The course's knowledge-point videos (declared in the course config), queued to play one by one
- * right at the course start — applied locally so they open immediately and predictably instead of
- * riding on the copilot's first reply.
+ * The course's opening sequence, applied locally once the editor is up so it plays immediately and
+ * predictably instead of riding on the copilot's first reply. Steps play strictly in order: a
+ * prelude text modal, a knowledge-point video, or a spotlight highlighting a UI element. Built from
+ * the course config's ordered `opening`; a course still on the legacy `videos` field yields just
+ * its video steps (its prelude, if any, stays a pre-editor modal in `course-start.vue`).
  */
-const startVideosRef = ref<Array<{ id: string; info: ApiVideoInfo }>>([])
-const currentStartVideo = computed(() => (isRouteLoaded.value ? startVideosRef.value[0] ?? null : null))
+type ResolvedOpeningStep =
+  | { kind: 'prelude'; text: string }
+  | { kind: 'video'; id: string; info: ApiVideoInfo }
+  | { kind: 'spotlight'; target: CourseSpotlightTarget; tip: string }
 
-function advanceStartVideos() {
-  const current = startVideosRef.value[0]
-  if (current == null) return
-  markApiLearned(current.id)
-  startVideosRef.value = startVideosRef.value.slice(1)
+function buildOpeningQueue(config: CourseConfig): ResolvedOpeningStep[] {
+  if (config.opening.length === 0) {
+    return resolveCourseVideos(config.videos).map((v) => ({ kind: 'video', id: v.id, info: v.info }))
+  }
+  const steps: ResolvedOpeningStep[] = []
+  for (const step of config.opening) {
+    if (step.kind === 'prelude') {
+      steps.push({ kind: 'prelude', text: step.text })
+    } else if (step.kind === 'video') {
+      // A video for an already-learned API resolves to null and drops out of the sequence.
+      const video = resolveApiVideo(step.api)
+      if (video != null) steps.push({ kind: 'video', id: video.id, info: video.info })
+    } else {
+      steps.push({ kind: 'spotlight', target: step.target, tip: step.tip })
+    }
+  }
+  return steps
 }
 
-// While a course-opening video is up it is a visible copilot artifact (pauses e.g. auto perception)
+const openingStepsRef = ref<ResolvedOpeningStep[]>([])
+const openingIndexRef = ref(0)
+const currentOpeningStep = computed(() =>
+  isRouteLoaded.value ? openingStepsRef.value[openingIndexRef.value] ?? null : null
+)
+
+function advanceOpening() {
+  openingIndexRef.value++
+}
+
+function handleVideoClose(step: ResolvedOpeningStep) {
+  if (step.kind === 'video') markApiLearned(step.id)
+  advanceOpening()
+}
+
+/** Resolve a spotlight target to a rendered element: an API item by definition ID, or a UI
+ * landmark by Radar name. Returns null until the element exists (the caller retries). */
+function resolveSpotlightTarget(target: CourseSpotlightTarget): HTMLElement | null {
+  if (target.kind === 'ui') {
+    return radar.getNodeByName(target.name)?.getElement() ?? null
+  }
+  const matches = createCourseApiMatcher([target.name])
+  for (const el of document.querySelectorAll<HTMLElement>('[data-def-id]')) {
+    // Only the visible editor's panel counts; the inactive sprite/stage editor is display:none.
+    if (el.getClientRects().length === 0) continue
+    const id = el.getAttribute('data-def-id')
+    if (id != null && matches(id)) return el
+  }
+  return null
+}
+
+// A modal opening step (prelude / video) is a visible copilot artifact so it pauses e.g. auto
+// perception. A spotlight is not: it never blocks, and the user acting on the highlighted element
+// (clicking Run, dragging an API) is exactly the interaction the copilot should still perceive.
 watchEffect((onCleanup) => {
-  if (currentStartVideo.value == null) return
+  const step = currentOpeningStep.value
+  if (step == null || step.kind === 'spotlight') return
   onCleanup(copilot.addVisibleArtifact())
+})
+
+// Drive a spotlight opening step imperatively (it renders as an overlay, not a component): resolve
+// the target, reveal it, and advance to the next step when the user dismisses it (clicks anywhere).
+watch(currentOpeningStep, (step, _prev, onCleanup) => {
+  if (step == null || step.kind !== 'spotlight') return
+  const { target, tip } = step
+  let cancelled = false
+  let retryTimer: ReturnType<typeof setTimeout> | null = null
+  let offConcealed: (() => void) | null = null
+  let attempts = 0
+
+  function tryReveal() {
+    if (cancelled) return
+    const el = resolveSpotlightTarget(target)
+    if (el != null) {
+      offConcealed = spotlight.once('concealed', () => {
+        if (!cancelled) advanceOpening()
+      })
+      spotlight.reveal(el, tip, { mask: true, persist: true })
+      return
+    }
+    // The target may mount a little later (a panel still opening); retry, then give up so a
+    // mistyped or unavailable target cannot stall the whole sequence.
+    if (++attempts > 12) {
+      advanceOpening()
+      return
+    }
+    retryTimer = setTimeout(tryReveal, 400)
+  }
+
+  tryReveal()
+  onCleanup(() => {
+    cancelled = true
+    if (retryTimer != null) clearTimeout(retryTimer)
+    offConcealed?.()
+    spotlight.conceal()
+  })
 })
 
 watch(
@@ -64,7 +163,8 @@ watch(
     const courseConfig = extractCourseConfig(currentCourse.prompt)
     editorWorkspaceLayout.setMode('focused')
     editorWorkspaceLayout.setHiddenAreas(courseConfig.hiddenAreas)
-    startVideosRef.value = resolveCourseVideos(courseConfig.videos)
+    openingStepsRef.value = buildOpeningQueue(courseConfig)
+    openingIndexRef.value = 0
     // The ruler is a course-only tool: measuring a distance is how the user answers "how far?"
     // for themselves, instead of guessing or asking the copilot for the number.
     editorWorkspaceLayout.setEnabledTools(['ruler'])
@@ -147,7 +247,9 @@ watch(
       // Reset the API references panel, the workspace layout and the copilot presentation
       // when leaving the course, so none of them outlives it.
       tutorial.setCurrentIntervention(null)
-      startVideosRef.value = []
+      openingStepsRef.value = []
+      openingIndexRef.value = 0
+      spotlight.conceal()
       codeEditorRef.value?.setAPIReferenceFilter(null)
       editorWorkspaceLayout.reset()
       copilot.setUIMode('floating')
@@ -210,11 +312,17 @@ provideTutorial(tutorial)
 
 <template>
   <slot />
-  <ApiVideoModal
-    v-if="currentStartVideo != null"
-    :video="currentStartVideo.info"
+  <TutorialPreludeModal
+    v-if="currentOpeningStep?.kind === 'prelude'"
     visible
-    @close="advanceStartVideos()"
+    :text="currentOpeningStep.text"
+    @continue="advanceOpening()"
+  />
+  <ApiVideoModal
+    v-else-if="currentOpeningStep?.kind === 'video'"
+    :video="currentOpeningStep.info"
+    visible
+    @close="handleVideoClose(currentOpeningStep)"
   />
   <TutorialCourseSuccessModal
     v-if="tutorial.completion != null"

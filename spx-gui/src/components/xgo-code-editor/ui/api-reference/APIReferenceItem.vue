@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown } from '@/components/ui'
-import { type Action, setDdiDragData } from '../../common'
+import { type Action, setDdiDragData, stringifyDefinitionId } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -23,6 +23,9 @@ const codeEditor = useCodeEditor()
 const codeEditorUICtx = useCodeEditorUICtx()
 
 const itemEl = ref<HTMLElement | null>(null)
+// A stable, author-referenceable handle for the API item (its definition ID): a course opening
+// can spotlight "the `step` item" by finding the rendered node with the matching id.
+const defId = computed(() => stringifyDefinitionId(props.item.definition))
 // Highlighted while a copilot drag guide points the user at this API item.
 const isHighlighted = computed(() => codeEditorUICtx.ui.apiReferenceController.highlightedItem === props.item)
 watch(isHighlighted, (highlighted) => {
@@ -125,6 +128,7 @@ function handleMouseUp(e: MouseEvent) {
           name: parsed.overview,
           desc: ''
         }"
+        :data-def-id="defId"
         class="api-reference-item"
         :class="{ 'api-reference-item-highlighted': isHighlighted }"
         draggable="true"
