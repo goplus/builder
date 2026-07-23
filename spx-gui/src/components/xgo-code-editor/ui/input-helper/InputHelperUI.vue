@@ -36,15 +36,15 @@ const props = defineProps<{
 const codeEditorUICtx = useCodeEditorUICtx()
 
 useDecorations(() => {
-  // In block style (tutorial focused mode) the code is simplified: no in-place value editing,
-  // so the value-edit helper (grey chip + pencil) is not shown.
-  if (codeEditorUICtx.blockStyle) return []
   const { activeSlots, inputingSlot } = props.controller
   if (activeSlots == null) return []
 
   const decorations: monaco.editor.IModelDeltaDecoration[] = []
 
   for (const slot of activeSlots) {
+    // The host may hide the value-edit helper (grey chip + pencil) for some input types — e.g. the
+    // tutorial's block style hides it for plain literals while keeping the pickers.
+    if (props.controller.isHelperHidden(slot)) continue
     decorations.push(
       {
         range: toMonacoRange(slot.range),

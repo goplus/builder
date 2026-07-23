@@ -36,6 +36,7 @@
     :font-size="codeFontSize"
     :tools-visible="codeToolsVisible"
     :api-reference-block-style="apiReferenceBlockStyle"
+    :input-helper-hidden-types="inputHelperHiddenTypes"
   />
   <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
@@ -151,7 +152,7 @@ import type { Costume } from '@/models/spx/costume'
 import type { Animation } from '@/models/spx/animation'
 import { type Sprite } from '@/models/spx/sprite'
 import { UITabs, UITab } from '@/components/ui'
-import { CodeEditorUI, FormatButton } from '../spx-code-editor'
+import { CodeEditorUI, FormatButton, spxBlockStyleHiddenInputTypes } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
 import { editorWorkspaceLayout } from '../workspace-layout'
 import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
@@ -165,4 +166,6 @@ defineProps<{
 const codeFontSize = computed(() => editorWorkspaceLayout.codeFontSize)
 const codeToolsVisible = computed(() => !editorWorkspaceLayout.isHidden('code-editor-tools'))
 const apiReferenceBlockStyle = computed(() => editorWorkspaceLayout.mode === 'focused')
+// In block style (tutorial focused mode) the input helper is hidden for plain literals & direction.
+const inputHelperHiddenTypes = computed(() => (apiReferenceBlockStyle.value ? spxBlockStyleHiddenInputTypes : []))
 </script>
