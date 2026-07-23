@@ -56,10 +56,7 @@ const selected = computed(() => editorCtx.state.selected)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
 const defaultFont = {
   name: 'default',
-  file: createFileWithWebUrl(
-    new URL('../../assets/fonts/default/NotoSans-Medium.ttf', import.meta.url).href,
-    'NotoSans-Medium.ttf'
-  )
+  file: createFileWithWebUrl(new URL('../../assets/fonts/default/default.ttf', import.meta.url).href, 'default.ttf')
 }
 
 provideSvgFontContext(() => ({
