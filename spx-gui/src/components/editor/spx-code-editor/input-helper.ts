@@ -22,6 +22,7 @@ import {
   type InputSlotAccept,
   type IResourceAdapter,
   type ResourceInputSlotAccept,
+  BuiltInInputType,
   InputKind,
   InputHelperProvider,
   type InputTypeHandler,
@@ -41,6 +42,20 @@ import SpxPlayActionInput, * as spxPlayActionInput from './ui/input-helper/SpxPl
 import SpxSpecialObjInput, * as spxSpecialObjInput from './ui/input-helper/SpxSpecialObjInput.vue'
 import SpxRotationStyleInput, * as spxRotationStyleInput from './ui/input-helper/SpxRotationStyleInput.vue'
 import SpxPropertyNameInput, * as spxPropertyNameInput from './ui/input-helper/SpxPropertyNameInput.vue'
+
+/**
+ * Input types whose input helper (the value-edit pencil chip and the hover "Modify" button) is
+ * hidden in the block style (tutorial focused mode). These are the plain literals plus direction,
+ * which the tutorial wants the user to type/measure themselves; the pickers (color, key, effect,
+ * resource, ...) keep their helper so kids still get the friendly editors.
+ */
+export const spxBlockStyleHiddenInputTypes: string[] = [
+  BuiltInInputType.Integer,
+  BuiltInInputType.Decimal,
+  BuiltInInputType.String,
+  BuiltInInputType.Boolean,
+  SpxInputType.SpxDirection
+]
 
 export class SpxInputHelperProvider extends InputHelperProvider {
   constructor(
