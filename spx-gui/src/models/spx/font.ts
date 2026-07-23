@@ -51,11 +51,8 @@ export class FontFamily {
 
 export const basicChineseFontFamilyName = 'basic-chinese'
 
-const basicChineseFontUrl = new URL('../../assets/fonts/basic-chinese/NotoSansCJKsc-Regular.otf', import.meta.url).href
+const basicChineseFontUrl = new URL('../../assets/fonts/basic-chinese/basic-chinese.ttf', import.meta.url).href
 
 export function createBasicChineseFontFamily() {
-  return new FontFamily(
-    basicChineseFontFamilyName,
-    createFileWithWebUrl(basicChineseFontUrl, 'NotoSansCJKsc-Regular.otf')
-  )
+  return new FontFamily(basicChineseFontFamilyName, createFileWithWebUrl(basicChineseFontUrl, 'basic-chinese.ttf'))
 }
