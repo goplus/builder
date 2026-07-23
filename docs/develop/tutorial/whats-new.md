@@ -65,16 +65,18 @@ reads and applies it the moment the course starts** — no copilot round, no del
   "judge": "code",                                // completion: code (default, from output) / copilot
   "complete": { "log": "捡到萝卜", "count": 4 },   // the code-judged completion signal (see below)
   "apis": ["step", "turn"],                       // narrow the API panel at start (union over the course)
-  "videos": ["step"]                              // knowledge-point videos to auto-play at start
+  "opening": [                                    // ordered in-editor opening (see §7)
+    { "prelude": "..." }, { "video": "step" }, { "spotlight": { "ui": "Run button" }, "tip": "..." }
+  ]
 }
 ```
 
-`apis` / `videos` used to be done by the copilot in its opening reply — a tool round plus a
-generation, so the panel narrowed seconds late and videos landed over whatever the user was doing.
-They are now **static data applied at t=0**; a course declaring either field flips the copilot's
-opening protocol to **purely silent** (verdict + `<stay-silent/>`, zero tool calls). Entries may be a
-bare name (`step`), a dotted name (`Sprite.step`), or a full definition id; language constructs use
-their canonical names (`if_statement`, `for_iterate`, ...).
+This setup used to be done by the copilot in its opening reply — a tool round plus a generation, so
+the panel narrowed seconds late and videos landed over whatever the user was doing. It is now
+**static data applied at t=0**; a course declaring `apis` / `opening` (or the legacy `videos`) flips
+the copilot's opening protocol to **purely silent** (verdict + `<stay-silent/>`, zero tool calls).
+API entries may be a bare name (`step`), a dotted name (`Sprite.step`), or a full definition id;
+language constructs use their canonical names (`if_statement`, `for_iterate`, ...).
 
 **Completion (`judge` + `complete`):**
 - `code` (preferred): completion is observable from runtime output. The frontend decides and the
@@ -128,12 +130,20 @@ render the code unselectable in chat — **visible, not copyable**.
 ## 7. Opening sequence
 
 `course-start.vue`, `TutorialStoryVideoModal.vue`, `TutorialPreludeModal.vue`, `ApiVideoModal.vue`,
-`api-videos.ts`
+`api-videos.ts`, `course-config.ts`, `TutorialRoot.vue`, `utils/spotlight/*`, `utils/radar`
 
-Story video (series world-building) → knowledge-point video (only genuinely new APIs) → a one-line
-prelude → the editor. The knowledge-point videos and the API-panel narrowing are now **applied by the
-frontend from the config the moment the course starts** (see §4) — predictable timing, a faster
-opening.
+The story video (series world-building) still plays **before** the editor exists; everything after
+it is one **ordered, author-declared `opening` sequence** applied by the frontend once the editor is
+up (see §4) — prelude / knowledge-point video / spotlight steps, played strictly in the authored
+order, one cursor advancing on continue / close / dismiss. This replaces the old fixed "video →
+prelude" ordering and the pre-editor `<course-prelude>` modal (which is now inlined into `opening`;
+the story video stays a tag because it precedes the editor and carries its own origin check).
+
+A **spotlight** step highlights the one thing to act on next — a UI landmark by its Radar name
+(`Radar.getNodeByName`, e.g. `"Run button"`, `"Ruler"`) or an API-references item by its definition
+id (a new `data-def-id` on the item, matched with the same `createCourseApiMatcher` as `apis`) — and
+advances when the user clicks (a new `concealed` event on `Spotlight`). Targets that mount late are
+retried, then skipped, so a bad reference can't stall the opening.
 
 API videos are keyed by definition id and remembered per user, so **a concept is never explained
 twice**; API-reference hover cards play the same video (the dialog is the shared `ApiVideoModal`).

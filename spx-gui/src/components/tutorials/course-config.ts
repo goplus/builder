@@ -10,6 +10,25 @@ export const courseCompleteSentinel = '@@builder:course-complete@@'
 export type CourseCompletionJudge = 'code' | 'copilot'
 
 /**
+ * A target a course opening can spotlight. `api` addresses an item in the API references panel by
+ * its API name / definition ID (see `createCourseApiMatcher`); `ui` addresses a UI landmark by its
+ * Radar node name (see `Radar.getNodeByName`, e.g. `"Run button"`).
+ */
+export type CourseSpotlightTarget = { kind: 'api'; name: string } | { kind: 'ui'; name: string }
+
+/**
+ * One step of a course's opening sequence, applied by the frontend once the editor is up (see
+ * `TutorialRoot`). Steps play strictly in the authored order:
+ * - `prelude`: a one-off text guide shown in a modal;
+ * - `video`: the knowledge-point explainer video for an API (skipped if already learned);
+ * - `spotlight`: highlight a UI element until the user clicks, with an optional tip.
+ */
+export type CourseOpeningStep =
+  | { kind: 'prelude'; text: string }
+  | { kind: 'video'; api: string }
+  | { kind: 'spotlight'; target: CourseSpotlightTarget; tip: string }
+
+/**
  * Static, author-declared configuration of a tutorial course. Written by the course author as a
  * ```jsonc code block in the course prompt (see `extractCourseConfig`), it is applied once when
  * the course starts. The copilot does not control this.
@@ -51,6 +70,14 @@ export type CourseConfig = {
    * `courseCompleteSentinel`, printed by the project itself).
    */
   complete: { log: string; count: number } | null
+  /**
+   * The course's opening sequence — prelude / knowledge-point video / spotlight steps, played in
+   * the authored order once the editor is up. When non-empty it is the single source of ordering
+   * for the in-editor opening and supersedes `videos` (and the legacy pre-editor `<course-prelude>`
+   * modal). Empty means the legacy behavior: `videos` play at start and `<course-prelude>` shows
+   * before the editor.
+   */
+  opening: CourseOpeningStep[]
 }
 
 /** The raw shape as authored in the jsonc block, before normalization. All fields optional. */
@@ -61,6 +88,7 @@ type RawCourseConfig = {
   apis?: unknown
   videos?: unknown
   complete?: unknown
+  opening?: unknown
 }
 
 const emptyConfig: CourseConfig = {
@@ -69,7 +97,8 @@ const emptyConfig: CourseConfig = {
   judge: 'code',
   apis: [],
   videos: [],
-  complete: null
+  complete: null,
+  opening: []
 }
 
 /**
@@ -146,8 +175,49 @@ function normalizeCourseConfig(raw: RawCourseConfig): CourseConfig {
     judge: raw.judge === 'copilot' ? 'copilot' : 'code',
     apis: normalizeStringArray(raw.apis),
     videos: normalizeStringArray(raw.videos),
-    complete: normalizeComplete(raw.complete)
+    complete: normalizeComplete(raw.complete),
+    opening: normalizeOpening(raw.opening)
   }
+}
+
+function normalizeOpening(value: unknown): CourseOpeningStep[] {
+  if (!Array.isArray(value)) return []
+  const steps: CourseOpeningStep[] = []
+  for (const entry of value) {
+    const step = normalizeOpeningStep(entry)
+    if (step != null) steps.push(step)
+  }
+  return steps
+}
+
+/** Parse one opening entry. An entry carries exactly one of `prelude` / `video` / `spotlight`. */
+function normalizeOpeningStep(entry: unknown): CourseOpeningStep | null {
+  if (entry == null || typeof entry !== 'object') return null
+  const { prelude, video, spotlight, tip } = entry as {
+    prelude?: unknown
+    video?: unknown
+    spotlight?: unknown
+    tip?: unknown
+  }
+  if (typeof prelude === 'string' && prelude.trim() !== '') {
+    return { kind: 'prelude', text: prelude.trim() }
+  }
+  if (typeof video === 'string' && video.trim() !== '') {
+    return { kind: 'video', api: video.trim() }
+  }
+  const target = normalizeSpotlightTarget(spotlight)
+  if (target != null) {
+    return { kind: 'spotlight', target, tip: typeof tip === 'string' ? tip.trim() : '' }
+  }
+  return null
+}
+
+function normalizeSpotlightTarget(value: unknown): CourseSpotlightTarget | null {
+  if (value == null || typeof value !== 'object') return null
+  const { api, ui } = value as { api?: unknown; ui?: unknown }
+  if (typeof api === 'string' && api.trim() !== '') return { kind: 'api', name: api.trim() }
+  if (typeof ui === 'string' && ui.trim() !== '') return { kind: 'ui', name: ui.trim() }
+  return null
 }
 
 function normalizeComplete(value: unknown): CourseConfig['complete'] {

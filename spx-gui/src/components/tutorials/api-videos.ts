@@ -93,20 +93,30 @@ export function markApiLearned(apiId: string) {
 }
 
 /**
- * Resolve the course config's `videos` entries (API names or definition IDs, see
- * `createCourseApiMatcher`) to playable videos. An entry matching a library video uses that
- * video's ID; otherwise the entry itself is the key, which still plays in demo-fallback mode.
- * Already-learned APIs are skipped so a knowledge point is not pushed twice.
+ * Resolve a single course video entry (an API name or definition ID, see `createCourseApiMatcher`)
+ * to its playable video ID + info. An entry matching a library video uses that video's ID;
+ * otherwise the entry itself is the key, which still plays in demo-fallback mode. Returns null
+ * when the API is already learned (a knowledge point is not pushed twice) or has no video.
+ */
+export function resolveApiVideo(entry: string): { id: string; info: ApiVideoInfo } | null {
+  const matches = createCourseApiMatcher([entry])
+  const id = getAvailableApiVideoIds().find(matches) ?? entry
+  if (isApiLearned(id)) return null
+  const info = getApiVideo(id)
+  return info != null ? { id, info } : null
+}
+
+/**
+ * Resolve the course config's `videos` entries to playable videos, in order and de-duplicated.
+ * Used for the legacy `videos` field; the ordered `opening` sequence resolves each video step
+ * with `resolveApiVideo` instead.
  */
 export function resolveCourseVideos(entries: string[]): Array<{ id: string; info: ApiVideoInfo }> {
-  const libraryIds = getAvailableApiVideoIds()
   const resolved: Array<{ id: string; info: ApiVideoInfo }> = []
   for (const entry of entries) {
-    const matches = createCourseApiMatcher([entry])
-    const id = libraryIds.find(matches) ?? entry
-    if (resolved.some((v) => v.id === id) || isApiLearned(id)) continue
-    const info = getApiVideo(id)
-    if (info != null) resolved.push({ id, info })
+    const video = resolveApiVideo(entry)
+    if (video == null || resolved.some((v) => v.id === video.id)) continue
+    resolved.push(video)
   }
   return resolved
 }
