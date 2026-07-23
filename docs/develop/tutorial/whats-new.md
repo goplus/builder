@@ -84,6 +84,12 @@ language constructs use their canonical names (`if_statement`, `for_iterate`, ..
   and fills in a comment. The signal is `complete: { log, count }` — `count` DISTINCT output lines
   containing `log` within a single run (for collect-N goals whose project logs each step); absent, it
   falls back to the sentinel `@@builder:course-complete@@` the project prints itself.
+
+  The evaluation comment is told exactly where it lands (the dialog's comment area — prose in a
+  hidden event round reaches nowhere else), and it survives event supersession: the completing log
+  line is trailed by more ambient events (game output, exit) that abort the in-flight event round
+  and answer with the full history, so the dialog accepts the evaluation from whichever event round
+  ends up carrying it, instead of timing out into the fallback text.
 - `copilot`: when output cannot judge it (e.g. "message the copilot", or "must have used `repeat`"),
   the copilot declares completion, at the cost of one LLM round.
 
