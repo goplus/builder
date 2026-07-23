@@ -9,7 +9,8 @@ describe('extractCourseConfig', () => {
       judge: 'code',
       apis: [],
       videos: [],
-      complete: null
+      complete: null,
+      opening: []
     })
   })
 
@@ -29,7 +30,8 @@ describe('extractCourseConfig', () => {
       judge: 'code',
       apis: [],
       videos: [],
-      complete: null
+      complete: null,
+      opening: []
     })
   })
 
@@ -68,7 +70,8 @@ describe('extractCourseConfig', () => {
       judge: 'code',
       apis: [],
       videos: [],
-      complete: null
+      complete: null,
+      opening: []
     })
   })
 
@@ -95,6 +98,52 @@ describe('extractCourseConfig', () => {
       log: 'x',
       count: 1
     })
+  })
+
+  it('should default opening to an empty sequence', () => {
+    expect(extractCourseConfig('```jsonc\n{}\n```').opening).toEqual([])
+    expect(extractCourseConfig('```jsonc\n{ "opening": "nope" }\n```').opening).toEqual([])
+  })
+
+  it('should parse an ordered opening sequence of prelude / video / spotlight steps', () => {
+    const prompt = [
+      '```jsonc',
+      '{',
+      '  "opening": [',
+      '    { "prelude": "  欢迎  " },',
+      '    { "video": "step" },',
+      '    { "spotlight": { "api": "step" }, "tip": "拖它进代码" },',
+      '    { "spotlight": { "ui": "Run button" }, "tip": " 点这里运行 " },',
+      '    { "spotlight": { "ui": "Ruler" } }',
+      '  ]',
+      '}',
+      '```'
+    ].join('\n')
+    expect(extractCourseConfig(prompt).opening).toEqual([
+      { kind: 'prelude', text: '欢迎' },
+      { kind: 'video', api: 'step' },
+      { kind: 'spotlight', target: { kind: 'api', name: 'step' }, tip: '拖它进代码' },
+      { kind: 'spotlight', target: { kind: 'ui', name: 'Run button' }, tip: '点这里运行' },
+      { kind: 'spotlight', target: { kind: 'ui', name: 'Ruler' }, tip: '' }
+    ])
+  })
+
+  it('should drop malformed opening entries instead of throwing', () => {
+    const prompt = [
+      '```jsonc',
+      '{',
+      '  "opening": [',
+      '    { "prelude": "  " },', // blank prelude -> dropped
+      '    { "video": 42 },', // non-string video -> dropped
+      '    { "spotlight": {} },', // no api/ui target -> dropped
+      '    { "spotlight": { "api": "" } },', // blank target -> dropped
+      '    "not an object",', // -> dropped
+      '    { "video": "turn" }', // kept
+      '  ]',
+      '}',
+      '```'
+    ].join('\n')
+    expect(extractCourseConfig(prompt).opening).toEqual([{ kind: 'video', api: 'turn' }])
   })
 
   it('should start with the copilot open only when the course declares it', () => {

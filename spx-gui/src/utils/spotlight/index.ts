@@ -41,7 +41,7 @@ export function useSpotlight() {
   return spotlight
 }
 
-export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
+export class Spotlight extends Emitter<{ revealed: RevealEvent; concealed: void }> {
   spotlightItem = ref<SpotlightItem | null>(null)
 
   protected createTimeoutConceal(timeout = autoConcealDelay) {
@@ -91,6 +91,11 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
     const prevItem = this.spotlightItem.value
     if (prevItem) {
       prevItem.dispose()
+      this.spotlightItem.value = null
+      // Emitted only for a real conceal (a previously revealed item went away), so a sequenced
+      // opening can advance to its next step when the user dismisses the current spotlight.
+      this.emit('concealed')
+      return
     }
     this.spotlightItem.value = null
   }
