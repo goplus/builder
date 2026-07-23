@@ -53,9 +53,12 @@ function handleContinue() {
       </div>
 
       <div class="relative mt-3 overflow-hidden rounded-md bg-grey-1000">
+        <!-- `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
+             pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
           class="block aspect-video w-full"
           :src="src"
+          crossorigin="anonymous"
           controls
           playsinline
           preload="metadata"
