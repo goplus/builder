@@ -57,11 +57,13 @@ copilot 现在会感知更多的事件：运行开始/停止、游戏退出（�
   "judge": "code",                                // 完成判定：code（默认，看运行输出）/ copilot
   "complete": { "log": "捡到萝卜", "count": 4 },   // code 判定的完成信号（见下）
   "apis": ["step", "turn"],                       // 开场把 API 面板收窄到这些（全课并集）
-  "videos": ["step"]                              // 开场自动播放的知识点视频
+  "opening": [                                    // 有序的编辑器内开场（见第 7 节）
+    { "prelude": "..." }, { "video": "step" }, { "spotlight": { "ui": "Run button" }, "tip": "..." }
+  ]
 }
 ```
 
-`apis` / `videos` 从前只能靠 copilot 在开场回复里现做——一次工具往返加一次生成，面板要过好几秒才收窄、视频常砸在用户操作中途。现在它们是**静态数据、t=0 即生效**；声明了任一字段的课程，copilot 的开场协议随之变为**纯静默**（只回进度判定 + `<stay-silent/>`，零工具往返）。条目可写裸名（`step`）、点名（`Sprite.step`）或完整 definition id，语言结构用规范名（`if_statement`、`for_iterate` 等）。
+这套开场布置从前只能靠 copilot 在开场回复里现做——一次工具往返加一次生成，面板要过好几秒才收窄、视频常砸在用户操作中途。现在它是**静态数据、t=0 即生效**；声明了 `apis` / `opening`（或旧的 `videos`）的课程，copilot 的开场协议随之变为**纯静默**（只回进度判定 + `<stay-silent/>`，零工具往返）。API 条目可写裸名（`step`）、点名（`Sprite.step`）或完整 definition id，语言结构用规范名（`if_statement`、`for_iterate` 等）。
 
 **完成判定（`judge` + `complete`）：**
 - `code`（首选）：完成能从运行输出看出来。前端直接判定，成功弹窗**即时**弹出（不等 LLM），copilot 随后收到「Course completed」事件补一句评语。信号是 `complete: { log, count }`——单次运行内包含 `log` 的**不同**输出行达到 `count` 条即完成（适合“收集 N 个”，项目每达成一步打一行日志）；不写则回落到项目自打的完成哨兵 `@@builder:course-complete@@`。
@@ -99,10 +101,11 @@ copilot 的**状态是全局单例**（`CopilotRoot` 里 `provide` 出去的）�
 
 ## 7. 开场序列
 
-`course-start.vue`、`TutorialStoryVideoModal.vue`、`TutorialPreludeModal.vue`、`ApiVideoModal.vue`、`api-videos.ts`
+`course-start.vue`、`TutorialStoryVideoModal.vue`、`TutorialPreludeModal.vue`、`ApiVideoModal.vue`、`api-videos.ts`、`course-config.ts`、`TutorialRoot.vue`、`utils/spotlight/*`、`utils/radar`
 
-故事视频（系列世界观）→ 知识点视频（只播真正新的 API）→ 一句话开场提示 → 进入编辑器。
-知识点视频与 API 面板收窄现在都由**前端读 config 在课程启动瞬间应用**（见第 4 节），时机确定、开场更快。
+故事视频（系列世界观）仍在**进编辑器之前**播；其后的一切收进一个**有序、作者声明的 `opening` 序列**，由前端在编辑器就绪后逐步播放（见第 4 节）——引导语 / 知识点视频 / 高亮，严格按书写顺序，一个游标在「继续 / 关闭 / 点掉」时前进。这取代了旧的「视频 → prelude」固定顺序和进编辑器前的 `<course-prelude>` 弹窗（prelude 现内联进 `opening`；故事视频仍用标签，因为它先于编辑器、且自带来源校验）。
+
+**高亮**步骤指出「下一步该点的那一个东西」——按 Radar 名指界面地标（`Radar.getNodeByName`，如 `"Run button"`、`"Ruler"`），或按 definition id 指 API 参考项（给条目加了 `data-def-id`，用与 `apis` 同一个 `createCourseApiMatcher` 匹配）——用户点击任意处即前进（给 `Spotlight` 加了 `concealed` 事件）。目标晚挂载会重试、再跳过，写错的引用不会卡住开场。
 
 API 视频按 definition id 索引，并按用户记录已学过的，所以**同一个概念不会被讲第二遍**；API 参考面板悬浮卡片播放的是同一个视频（弹窗抽成共享的 `ApiVideoModal`）。外部托管（如 S3）的视频用 `<video crossorigin>` 通过站点的 COEP；故事视频有 origin 白名单（同源 + usercontent CDN + 教程资源域名），`<course-story-video>` 可指向它。
 

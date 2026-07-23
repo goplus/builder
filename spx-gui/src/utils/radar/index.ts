@@ -98,6 +98,23 @@ export class Radar {
     return this.idNodeMap.get(id) ?? null
   }
 
+  /**
+   * Get a node by its (descriptive) name. Node IDs are random per-mount, so a hand-authored
+   * reference (e.g. a course pointing a spotlight at the "Run button") addresses a node by its
+   * stable name instead. Prefers a node whose element is actually rendered, since the same name
+   * can be registered more than once (e.g. a normal and a full-screen Run button) with only one
+   * on screen; falls back to the first match otherwise. Returns null when no node matches.
+   */
+  getNodeByName(name: string): RadarNodeInfo | null {
+    let fallback: RadarNodeInfo | null = null
+    for (const node of this.idNodeMap.values()) {
+      if (node.name !== name) continue
+      if (node.getElement().getClientRects().length > 0) return node
+      fallback ??= node
+    }
+    return fallback
+  }
+
   /** Find the parent node of a given node in current tree */
   private findParentNode(node: RadarNodeInfo): RadarNodeInfo | null {
     const el = node.getElement()
