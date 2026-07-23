@@ -16,7 +16,8 @@ import {
 import { isSvgMimeType } from '@/utils/file'
 import { Cancelled } from '@/utils/exception'
 import type { File } from '@/models/common/file'
-import { injectFontsToSvgText } from './svg-font'
+import { createSvgRenderer, type SvgRenderer } from './resvg'
+import { applyFontPreferencesToSvgText } from './svg-font'
 
 export type SvgFontConfig = {
   fontPreferences: string[]
@@ -39,9 +40,20 @@ function configEq(c1: SvgFontConfig, c2: SvgFontConfig) {
 
 class SvgFontContext {
   private cache = new WeakMap<File, Promise<Blob>>()
+  private renderer: Promise<SvgRenderer> | null = null
   constructor(private config: SvgFontConfig) {}
 
-  getDerivedSvg(file: File): Promise<Blob> {
+  private getRenderer() {
+    if (this.renderer == null) {
+      this.renderer = createSvgRenderer(this.config.fonts).catch((error) => {
+        this.renderer = null
+        throw error
+      })
+    }
+    return this.renderer
+  }
+
+  getRenderedImage(file: File): Promise<Blob> {
     const cached = this.cache.get(file)
     if (cached != null) return cached
 
@@ -49,9 +61,9 @@ class SvgFontContext {
       .arrayBuffer()
       .then(async (ab) => {
         const svgText = new TextDecoder().decode(ab)
-        const { fontPreferences, fonts } = this.config
-        const injectedSvgText = await injectFontsToSvgText(svgText, fontPreferences, fonts)
-        return new Blob([injectedSvgText ?? ab], { type: 'image/svg+xml' })
+        const renderedSvgText = applyFontPreferencesToSvgText(svgText, this.config.fontPreferences)
+        const png = (await this.getRenderer()).render(renderedSvgText)
+        return new Blob([new Uint8Array(png)], { type: 'image/png' })
       })
       .catch((e) => {
         this.cache.delete(file)
@@ -88,16 +100,14 @@ function useSvgFontContext(): ShallowRef<SvgFontContext | null> {
 
 /**
  * Get an image-resource URL for a `File`.
- * SVG files are rendered through a derived blob URL with their referenced font files embedded.
+ * SVG files are rasterized with their project font faces.
  */
 export async function getFontAwareImageUrl(file: File, fontContext: SvgFontContext | null, signal: AbortSignal) {
   if (!isSvgMimeType(file.type) || fontContext == null) return file.url(signal)
 
-  // SVGs rendered as image resources cannot see page-level font faces, so fonts must be embedded
-  // in the derived rendering blob. The source `File` content stays unchanged.
-  const derivedSvg = await fontContext.getDerivedSvg(file)
+  const renderedImage = await fontContext.getRenderedImage(file)
   signal.throwIfAborted()
-  const url = URL.createObjectURL(derivedSvg)
+  const url = URL.createObjectURL(renderedImage)
   signal.addEventListener('abort', () => URL.revokeObjectURL(url), { once: true })
   return url
 }

@@ -3,6 +3,17 @@
 ARG GO_BASE_IMAGE=golang:1.25.8
 ARG NODE_BASE_IMAGE=node:24.11.1
 ARG NGINX_BASE_IMAGE=nginx:1.27
+ARG RUST_BASE_IMAGE=rust:1.87
+
+################################################################################
+
+FROM ${RUST_BASE_IMAGE} AS resvg-builder
+
+WORKDIR /app/tools/resvg-wasm
+COPY tools/resvg-wasm .
+RUN rustup target add wasm32-unknown-unknown \
+	&& cargo install wasm-bindgen-cli --version 0.2.126 --locked \
+	&& ./build.sh
 
 ################################################################################
 
@@ -13,10 +24,11 @@ ARG GOPROXY
 WORKDIR /app
 COPY tools ./tools
 COPY spx-gui ./spx-gui
+COPY --from=resvg-builder /app/tools/resvg-wasm/pkg ./tools/resvg-wasm/pkg
 
 # Build WASM
 WORKDIR /app/spx-gui
-RUN ./build-wasm.sh
+RUN RESVG_WASM_SKIP_BUILD=1 ./build-wasm.sh
 
 ################################################################################
 
