@@ -73,6 +73,28 @@ spx 函数（`step`、`turn`、`stepTo`、`turnTo`、`repeat`、`waitUntil`、`d
 
 只要配置声明了 `apis` 或 `videos` 中的任意一个，前端就接管全部开场布置，Copilot 的开场协议随之切换为**纯静默**（只回进度判定 + 保持沉默，无需任何工具调用）——开场又快又干净。两个字段都没有声明的旧课程维持旧行为（Copilot 在开场回复里收窄面板、播放视频），行为不变但慢。**新课程一律声明**。
 
+## 三种视频，别混淆
+
+一门课可能出现三种视频，机制各不相同：
+
+| 视频 | 是什么 | 怎么配 | 何时播 |
+|---|---|---|---|
+| **开场故事视频** | 介绍系列世界观/目标的片头，通常只有系列第一课有 | 提示词里 `<course-story-video>URL</course-story-video>` | 进入课程编辑器**之前**，片头 → prelude → 开课 |
+| **知识点视频**（config 的 `videos`） | 某个 API 的讲解片 | `videos` 字段 | 课程编辑器加载后立即弹窗，逐个播 |
+| **悬停卡内嵌视频** | 某个 API 的讲解片（同一个库） | 无需配置 | 课程进行中，悬停左侧该 API 条目即播，**常驻** |
+
+### 开场故事视频 `<course-story-video>`
+
+在提示词里（推荐放 jsonc 块之后、`<course-prelude>` 之前）写一行：
+
+```
+<course-story-video>https://<视频地址>/opening.webm</course-story-video>
+```
+
+它是系列片头（介绍世界观/目标），通常只有第一课有；与 `judge`/`apis`/`videos` 都正交（第一课没有 API，也照样能有故事视频）。
+
+**注意 origin 白名单**：由于页面的 `?video=` 参数可被伪造，故事视频的来源被限制在——同源、`usercontentBaseUrl`（用户内容 CDN）、以及教程视频资源域名（`api-videos.ts` 里的 `tutorialVideoAssetBaseUrl`，当前是那台 S3）。放在其它域名下的 URL 会被**静默丢弃**（不报错也不播）；要换新域名，先把它加进白名单。此外，因为整站开着 `Cross-Origin-Embedder-Policy: require-corp`，跨域视频靠 `<video crossorigin>` + 桶的 CORS 才能播（三处视频位都已加）。
+
 ## 提示词的散文部分（给 Copilot 的教案）
 
 配置块之后是给 Copilot 读的教案。推荐的节结构（参考 Code: Lita 系列）：
@@ -117,4 +139,5 @@ judge: "copilot" 的课：写清 Copilot 应依据什么判定、满足后立即
 * **25 门课** `judge: "code"` + `complete: { "log": "捡到萝卜", "count": N }`，N 为该课萝卜数（1／3／4／5），完成弹窗零延迟；
 * **3 门课** `judge: "copilot"`（无法从运行输出判定）：第 1 课（目标是给 Copilot 发消息）、第 13 课（要看到代码里配了 `turnTo`）、第 19 课（起始代码本就能通关，要看到改用 `repeat`）；
 * **27 门课**声明了 `apis`（第 1 课不涉及代码，无面板可收窄），**12 门课**声明了 `videos`（对应各课新知识点：step、turn、stepTo、turnTo、if、if/else、var、repeat、for in、waitUntil、distanceTo、Water）；
+* **第 1 课**带 `<course-story-video>`（系列片头 `opening.webm`），进课前播放；
 * 原提示词中的「新知识点（开场演示视频）」「本课涉及的 API」两节已删除（进入配置），「完成判定」节按判定方式重写；其余教案内容（目标、当前代码、引导要点、彩蛋）原样保留。

@@ -55,6 +55,7 @@ import { useRoute } from 'vue-router'
 import { getCourse } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
 import { tutorialStoryVideoUrl, usercontentBaseUrl } from '@/apps/xbuilder/env'
+import { tutorialVideoAssetBaseUrl } from '@/components/tutorials/api-videos'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import TutorialStoryVideoModal, { extractCourseStoryVideo } from '@/components/tutorials/TutorialStoryVideoModal.vue'
 import TutorialPreludeModal, { extractCoursePrelude } from '@/components/tutorials/TutorialPreludeModal.vue'
@@ -86,8 +87,16 @@ function getUsercontentOrigin(): string | null {
 }
 
 const allowedVideoOrigins = computed(() => {
+  const origins: string[] = []
   const usercontentOrigin = getUsercontentOrigin()
-  return usercontentOrigin != null ? [usercontentOrigin] : []
+  if (usercontentOrigin != null) origins.push(usercontentOrigin)
+  // The tutorial video host is trusted for story videos too (demo phase; see api-videos).
+  try {
+    origins.push(new URL(tutorialVideoAssetBaseUrl).origin)
+  } catch {
+    // ignore a malformed asset base URL
+  }
+  return origins
 })
 
 const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesIdInput), {

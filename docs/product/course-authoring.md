@@ -40,6 +40,14 @@ Each entry matches a panel item (and all of its overloads) as a bare name (`step
 
 Declaring `apis` or `videos` switches the Copilot's opening protocol to purely silent (verdict + stay-silent, no tool calls) — the frontend owns all course-start setup. Courses declaring neither keep the legacy Copilot-driven setup. New courses should always declare.
 
+## Three kinds of video, don't confuse them
+
+* **Opening story video** — the series intro (world & goal), usually only on the first course. Authored as `<course-story-video>URL</course-story-video>` in the prompt (put it after the jsonc block, before `<course-prelude>`); it plays before the editor loads, ahead of the prelude. Orthogonal to `judge` / `apis` / `videos`.
+* **Knowledge-point videos** (config `videos`) — an API's explainer, played in a dialog right after the editor loads.
+* **Hover-card video** — the same API explainer, always available on hover during the course; no config.
+
+Story-video sources are **origin-restricted** (the `?video=` query param is spoofable): allowed origins are same-origin, `usercontentBaseUrl`, and the tutorial video host (`tutorialVideoAssetBaseUrl` in `api-videos.ts`, an S3 bucket during the demo phase). A URL on any other origin is silently dropped. Because the site is cross-origin isolated (COEP), cross-origin videos need `<video crossorigin>` plus the bucket's CORS (all three video surfaces already set it).
+
 ## The prose (the Copilot's lesson plan)
 
 Recommended sections (see the Code: Lita series): `<course-prelude>`, `## 目标`, `## 当前代码` (with a reference answer marked as one-of-many), `## 完成判定`, optional `## 引导要点`. Do not write "narrow the APIs at start" / "play the video at start" prose — the config already does that, and such prose conflicts with the silent opening protocol. For `judge: "code"` courses, state explicitly that the system judges and the Copilot must not declare completion. Prompt limit: 4000 characters.
