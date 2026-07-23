@@ -6,7 +6,7 @@ import { debounce } from 'lodash'
 import { shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { TaskManager } from '@/utils/task'
-import { positionEq, type BaseContext, type InputSlot } from '../../common'
+import { BuiltInInputType, positionEq, type BaseContext, type InputSlot } from '../../common'
 import type { CodeEditorUIController } from '../code-editor-ui'
 import { checkInputHelperIcon } from './InputHelperUI.vue'
 import type { IInputHelperProvider } from '../../input-helper'
@@ -16,6 +16,21 @@ export type InputHelperContext = BaseContext
 
 export type InternalInputSlot = InputSlot & {
   id: string
+}
+
+/**
+ * Whether the input helper (the value-edit pencil chip & the hover "Modify" button) is hidden for
+ * a slot, given the set of hidden input types. The helper edits the accepted type; when the slot
+ * accepts `unknown` it falls back to the current value's type (see InputHelper.vue), so the gate
+ * uses that same effective type.
+ */
+export function isInputHelperHidden(
+  hiddenTypes: ReadonlySet<string>,
+  slot: Pick<InputSlot, 'accept' | 'input'>
+): boolean {
+  if (hiddenTypes.size === 0) return false
+  const type = slot.accept.type === BuiltInInputType.Unknown ? slot.input.type : slot.accept.type
+  return hiddenTypes.has(type)
 }
 
 export class InputHelperController extends Disposable {
@@ -37,6 +52,18 @@ export class InputHelperController extends Disposable {
 
   get slots() {
     return this.mgr.result.data
+  }
+
+  // Input types whose helper (the pencil chip & the hover "Modify" button) is suppressed, set by
+  // the host (e.g. the tutorial's block style hides it for plain literals). Empty means show all.
+  private hiddenTypesRef = shallowRef<ReadonlySet<string>>(new Set())
+  setHiddenTypes(types: Iterable<string>) {
+    this.hiddenTypesRef.value = new Set(types)
+  }
+
+  /** Whether the input helper is hidden for this slot, given its (accepted) input type. */
+  isHelperHidden(slot: InputSlot): boolean {
+    return isInputHelperHidden(this.hiddenTypesRef.value, slot)
   }
 
   get activeSlots() {
