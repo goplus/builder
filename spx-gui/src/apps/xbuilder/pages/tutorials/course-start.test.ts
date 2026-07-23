@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { tutorialVideoAssetBaseUrl } from '@/components/tutorials/api-videos'
 import { getOpeningSteps, resolveAllowedVideoUrl, resolveStoryVideoUrl } from './course-start.vue'
 
 describe('resolveAllowedVideoUrl', () => {
@@ -51,6 +52,16 @@ describe('resolveStoryVideoUrl', () => {
     )
     const promptWithEvilVideo = '<course-story-video>https://evil.example.com/x.mp4</course-story-video>'
     expect(resolveStoryVideoUrl(promptWithEvilVideo, undefined, defaultUrl)).toBe(`${origin}${defaultUrl}`)
+  })
+
+  it('should accept a story video hosted on the tutorial asset origin', () => {
+    const assetOrigin = new URL(tutorialVideoAssetBaseUrl).origin
+    const src = `${tutorialVideoAssetBaseUrl}/opening.webm`
+    const prompt = `<course-story-video>${src}</course-story-video>`
+    // Rejected when the asset origin is not allowlisted...
+    expect(resolveStoryVideoUrl(prompt, undefined, null)).toBeNull()
+    // ...and played once it is (as course-start wires it in).
+    expect(resolveStoryVideoUrl(prompt, undefined, null, [assetOrigin])).toBe(src)
   })
 })
 
