@@ -16,7 +16,15 @@ export type ApiVideoInfo = {
  * TODO: remove the fallback (return `null` for unknown IDs) once real videos land.
  */
 export const apiVideoDemoFallback = true
-const demoVideoSrc = 'https://qnyproj-api-assets-dev.s3.us-east-1.amazonaws.com/step.mp4'
+
+/**
+ * Base URL of the host serving tutorial videos (an S3 bucket during the demo phase). Exported as
+ * the single source of truth for the host, so the course story-video origin allowlist can trust
+ * the same host without re-declaring it (see `course-start.vue`).
+ */
+export const tutorialVideoAssetBaseUrl = 'https://qnyproj-api-assets-dev.s3.us-east-1.amazonaws.com'
+
+const demoVideoSrc = `${tutorialVideoAssetBaseUrl}/step.mp4`
 
 /**
  * Global library of knowledge-point explainer videos for APIs, keyed by API definition ID —
@@ -27,7 +35,7 @@ const demoVideoSrc = 'https://qnyproj-api-assets-dev.s3.us-east-1.amazonaws.com/
 const apiVideoLibrary: Record<string, ApiVideoInfo> = {
   'xgo:github.com/goplus/spx/v2?Sprite.step#0': {
     title: { en: 'step', zh: 'step 前进' },
-    src: 'https://qnyproj-api-assets-dev.s3.us-east-1.amazonaws.com/step.mp4'
+    src: `${tutorialVideoAssetBaseUrl}/step.mp4`
   },
   // Language-construct knowledge points (ids from the code editor's document base). They carry
   // the demo video until their real explainer videos are produced — listed here so the dialog
