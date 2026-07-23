@@ -56,11 +56,17 @@ const props = withDefaults(
     toolsVisible?: boolean
     /** Render the API reference items as draggable blocks, see `APIReferenceUI`. */
     apiReferenceBlockStyle?: boolean
+    /**
+     * Input types whose input helper (the value-edit pencil chip & the hover "Modify" button) is
+     * hidden — e.g. the tutorial hides it for plain literals. Empty means show it for all types.
+     */
+    inputHelperHiddenTypes?: string[]
   }>(),
   {
     fontSize: null,
     toolsVisible: true,
-    apiReferenceBlockStyle: false
+    apiReferenceBlockStyle: false,
+    inputHelperHiddenTypes: () => []
   }
 )
 
@@ -214,6 +220,12 @@ const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
   blockStyle: props.apiReferenceBlockStyle
 }))
 provide(codeEditorUICtxInjectionKey, codeEditorUICtx)
+
+// Keep the input helper controller in sync with which input types hide their helper. `uiRef`
+// recreates the controller per code file, so re-apply whenever it or the prop changes.
+watchEffect(() => {
+  uiRef.value.inputHelperController.setHiddenTypes(props.inputHelperHiddenTypes)
+})
 
 // TOOD: use percentage instead of px as default width
 const defaultSidebarWidth = 280 // px

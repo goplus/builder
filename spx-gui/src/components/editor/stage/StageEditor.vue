@@ -41,6 +41,7 @@
     :font-size="codeFontSize"
     :tools-visible="codeToolsVisible"
     :api-reference-block-style="apiReferenceBlockStyle"
+    :input-helper-hidden-types="inputHelperHiddenTypes"
   />
   <BackdropsEditor v-if="state.selected.type === 'backdrops'" :state="state.backdropsState" />
   <SoundsEditor v-else-if="state.selected.type === 'sounds'" :state="state.soundsState" />
@@ -183,7 +184,7 @@ import type { Backdrop } from '@/models/spx/backdrop'
 import type { Sound } from '@/models/spx/sound'
 import type { Widget } from '@/models/spx/widget'
 import { UITabs, UITab } from '@/components/ui'
-import { CodeEditorUI, FormatButton } from '../spx-code-editor'
+import { CodeEditorUI, FormatButton, spxBlockStyleHiddenInputTypes } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
 import { editorWorkspaceLayout } from '../workspace-layout'
 import BackdropsEditor, { BackdropsEditorState } from './backdrop/BackdropsEditor.vue'
@@ -200,4 +201,6 @@ defineProps<{
 const codeFontSize = computed(() => editorWorkspaceLayout.codeFontSize)
 const codeToolsVisible = computed(() => !editorWorkspaceLayout.isHidden('code-editor-tools'))
 const apiReferenceBlockStyle = computed(() => editorWorkspaceLayout.mode === 'focused')
+// In block style (tutorial focused mode) the input helper is hidden for plain literals & direction.
+const inputHelperHiddenTypes = computed(() => (apiReferenceBlockStyle.value ? spxBlockStyleHiddenInputTypes : []))
 </script>
