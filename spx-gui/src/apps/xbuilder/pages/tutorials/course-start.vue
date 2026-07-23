@@ -35,16 +35,27 @@ export function resolveStoryVideoUrl(
 }
 
 /**
- * The opening sequence shown before the course starts: story video, then the course author's
+ * The opening sequence shown before the course starts: the story video, then the course author's
  * text guide (see `extractCoursePrelude`). Steps a course does not configure are omitted.
+ *
+ * The prelude is included here only for legacy courses. A course that declares an ordered `opening`
+ * sequence in its config runs its prelude inside the editor (see `TutorialRoot`), interleaved with
+ * videos and spotlights, so `hasEditorOpening` suppresses the pre-editor prelude for it — the story
+ * video, which plays before the editor exists, stays here regardless.
  */
 export type OpeningStep = { kind: 'story-video'; src: string } | { kind: 'prelude'; text: string }
 
-export function getOpeningSteps(coursePrompt: string, storyVideoUrl: string | null): OpeningStep[] {
+export function getOpeningSteps(
+  coursePrompt: string,
+  storyVideoUrl: string | null,
+  hasEditorOpening: boolean
+): OpeningStep[] {
   const steps: OpeningStep[] = []
   if (storyVideoUrl != null) steps.push({ kind: 'story-video', src: storyVideoUrl })
-  const prelude = extractCoursePrelude(coursePrompt)
-  if (prelude != null) steps.push({ kind: 'prelude', text: prelude })
+  if (!hasEditorOpening) {
+    const prelude = extractCoursePrelude(coursePrompt)
+    if (prelude != null) steps.push({ kind: 'prelude', text: prelude })
+  }
   return steps
 }
 </script>
@@ -56,6 +67,7 @@ import { getCourse } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
 import { tutorialStoryVideoUrl, usercontentBaseUrl } from '@/apps/xbuilder/env'
 import { tutorialVideoAssetBaseUrl } from '@/components/tutorials/api-videos'
+import { extractCourseConfig } from '@/components/tutorials/course-config'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import TutorialStoryVideoModal, { extractCourseStoryVideo } from '@/components/tutorials/TutorialStoryVideoModal.vue'
 import TutorialPreludeModal, { extractCoursePrelude } from '@/components/tutorials/TutorialPreludeModal.vue'
@@ -157,7 +169,8 @@ const openingSteps = computed<OpeningStep[]>(() => {
     tutorialStoryVideoUrl,
     allowedVideoOrigins.value
   )
-  return getOpeningSteps(data.course.prompt, storyVideoUrl)
+  const hasEditorOpening = extractCourseConfig(data.course.prompt).opening.length > 0
+  return getOpeningSteps(data.course.prompt, storyVideoUrl, hasEditorOpening)
 })
 
 const openingStepIndex = ref(0)
