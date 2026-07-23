@@ -149,10 +149,13 @@ function handleMouseUp(e: MouseEvent) {
         >
           {{ parsed.overview }}
         </DefinitionOverviewWrapper>
+        <!-- `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
+             pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
           v-if="video != null"
           class="mt-1 block aspect-4/3 w-72 max-w-full rounded-sm bg-grey-1000 object-cover"
           :src="video.src"
+          crossorigin="anonymous"
           autoplay
           muted
           loop
