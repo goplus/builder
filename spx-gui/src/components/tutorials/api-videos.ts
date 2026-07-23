@@ -11,11 +11,12 @@ export type ApiVideoInfo = {
 
 /**
  * DEMO MODE: every API without its own library entry falls back to this shared demonstration
- * video, so the whole video flow can be experienced before per-API videos are produced.
+ * video (currently the `step` explainer — the only one produced so far), so the whole video flow
+ * can be experienced before per-API videos are produced.
  * TODO: remove the fallback (return `null` for unknown IDs) once real videos land.
  */
 export const apiVideoDemoFallback = true
-const demoVideoSrc = '/tutorial-api-videos/api-demo.mov'
+const demoVideoSrc = 'https://qnyproj-api-assets-dev.s3.us-east-1.amazonaws.com/step.mp4'
 
 /**
  * Global library of knowledge-point explainer videos for APIs, keyed by API definition ID —
