@@ -283,24 +283,40 @@ watch(
 
 // The success dialog shows immediately on completion; the copilot's evaluation — its reply to the
 // "Course completed" event that markCourseComplete sends — fills the comment when it arrives.
+// The round carrying that event is often superseded before it runs: the completing log line is
+// followed within moments by more ambient events (game output, the game exiting), each of which
+// aborts the in-flight event round and answers with the full history instead. So the evaluation
+// is accepted from the first event round that completes with prose at-or-after the completion
+// event, whatever event that round was triggered by.
 watch(
   () => {
     const session = copilot.currentSession
     if (session == null || tutorial.completion == null) return null
-    const round = [...session.rounds]
-      .reverse()
-      .find((r) => r.userMessage.type === 'event' && r.userMessage.name.en === 'Course completed')
-    if (round == null || round.state !== RoundState.Completed) return null
-    const reply = round.resultMessages
-      .filter((m) => m.role === 'copilot')
-      .map((m) => (m.role === 'copilot' ? m.content ?? '' : ''))
-      .join('')
-    // The comment is meant to be plain prose. Strip thinking and any stray copilot elements (a
-    // progress verdict, a stay-silent, ...) so only the evaluation sentence reaches the dialog.
-    return stripThinking(reply)
-      .replace(/<\/?[a-zA-Z][\w-]*(?:\s[^>]*?)?\/?>/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
+    const rounds = session.rounds
+    let eventIdx = -1
+    for (let i = rounds.length - 1; i >= 0; i--) {
+      const m = rounds[i].userMessage
+      if (m.type === 'event' && m.name.en === 'Course completed') {
+        eventIdx = i
+        break
+      }
+    }
+    if (eventIdx < 0) return null
+    for (const round of rounds.slice(eventIdx)) {
+      if (round.userMessage.type !== 'event' || round.state !== RoundState.Completed) continue
+      const reply = round.resultMessages
+        .filter((m) => m.role === 'copilot')
+        .map((m) => (m.role === 'copilot' ? m.content ?? '' : ''))
+        .join('')
+      // The comment is meant to be plain prose. Strip thinking and any stray copilot elements (a
+      // progress verdict, a stay-silent, ...) so only the evaluation sentence reaches the dialog.
+      const comment = stripThinking(reply)
+        .replace(/<\/?[a-zA-Z][\w-]*(?:\s[^>]*?)?\/?>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (comment !== '') return comment
+    }
+    return null
   },
   (comment) => {
     if (comment != null && comment !== '') tutorial.setCompletionComment(comment)
