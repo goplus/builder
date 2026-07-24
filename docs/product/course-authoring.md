@@ -45,7 +45,9 @@ Ordering is the experience: the typical arrangement is prelude → knowledge-poi
 
 `apis`, `opening` `video` steps, and `spotlight` `api` targets share one API-name matcher. Each entry matches a panel item (and all of its overloads) as a bare name (`step`), a dotted name (`Sprite.step`), or a definition ID (`xgo:...?Sprite.step#0`; without `#overload` it matches all overloads). Language constructs use their canonical names: `if_statement`, `if_else_statement`, `var_declaration`, `for_iterate`. spx functions and project-defined methods (e.g. `IsMature`, `Water`) work as bare names.
 
-Videos come from the global knowledge-point library (keyed by definition ID); in demo mode unknown entries play the shared demo video. Watched knowledge points are remembered and not pushed again.
+Videos come from the global knowledge-point library (keyed by definition ID); **every overload of an API resolves to the same video** (the video explains the API, not one overload), and a bare name works too. In demo mode unknown entries play the shared demo video. Watched knowledge points are remembered and not pushed again.
+
+**Non-API topic videos**: editor tools can have an explainer too. Currently the **ruler** (ID `xbuilder:?ruler`, or just `ruler`). It has no entry in the API reference panel, so the copilot learns the ID from the `<api-video>` element's description and plays it when the user asks how the ruler works. To play it at course start instead, put it in `opening` as usual: `{ "video": "ruler" }`.
 
 ### Choosing the completion judge
 
