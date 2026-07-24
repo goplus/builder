@@ -2,13 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { BuiltInInputType, InputKind, type InputSlot } from '../../common'
 import { isInputHelperHidden } from '.'
 
-// The tutorial's block style hides the helper for plain literals & direction, keeps it for pickers.
+// The tutorial's block style hides the helper for plain literals, keeps it for pickers.
 const hidden = new Set<string>([
   BuiltInInputType.Integer,
   BuiltInInputType.Decimal,
   BuiltInInputType.String,
-  BuiltInInputType.Boolean,
-  'spx-direction'
+  BuiltInInputType.Boolean
 ])
 
 function slot(acceptType: string, inputType = acceptType, value: unknown = null): Pick<InputSlot, 'accept' | 'input'> {
@@ -30,11 +29,17 @@ describe('isInputHelperHidden', () => {
     expect(isInputHelperHidden(hidden, slot(BuiltInInputType.Decimal))).toBe(true)
     expect(isInputHelperHidden(hidden, slot(BuiltInInputType.String))).toBe(true)
     expect(isInputHelperHidden(hidden, slot(BuiltInInputType.Boolean))).toBe(true)
-    expect(isInputHelperHidden(hidden, slot('spx-direction'))).toBe(true)
   })
 
   it('keeps the helper for the picker/resource types', () => {
-    for (const type of ['spx-color', 'spx-key', 'spx-effect-kind', 'spx-play-action', 'spx-sprite-instance']) {
+    for (const type of [
+      'spx-direction',
+      'spx-color',
+      'spx-key',
+      'spx-effect-kind',
+      'spx-play-action',
+      'spx-sprite-instance'
+    ]) {
       expect(isInputHelperHidden(hidden, slot(type))).toBe(false)
     }
   })
