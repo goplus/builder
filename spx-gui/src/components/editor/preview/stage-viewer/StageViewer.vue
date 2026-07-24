@@ -90,17 +90,12 @@
 
     <UITooltip v-if="rulerEnabled" placement="right">
       <template #trigger>
-        <button
+        <RulerToggle
           v-radar="{ name: 'Ruler', desc: 'Toggle the ruler, which measures the distance between things on the stage' }"
-          type="button"
-          class="ruler-toggle absolute top-4 left-4"
-          :class="{ active: rulerActive }"
+          class="absolute top-4 left-4"
+          :active="rulerActive"
           @click="rulerActive = !rulerActive"
-        >
-          <span class="ruler-toggle-face">
-            <UIIcon type="ruler" />
-          </span>
-        </button>
+        />
       </template>
       {{ $t(rulerTip) }}
     </UITooltip>
@@ -137,7 +132,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
-import { UIIcon, UILoading, UITooltip } from '@/components/ui'
+import { UILoading, UITooltip } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
@@ -154,6 +149,7 @@ import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/Wi
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import StageRuler from './StageRuler.vue'
+import RulerToggle from './RulerToggle.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
 import QuickConfigWrapper, {
   type ConfigType
@@ -688,35 +684,3 @@ watchEffect((onCleanup) => {
   onCleanup(unbind)
 })
 </script>
-
-<style scoped>
-/* Ruler toggle: a white card whose inner face turns turquoise on hover and while measuring. */
-.ruler-toggle {
-  display: flex;
-  padding: 2px;
-  border: none;
-  border-radius: 10px;
-  background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-sm);
-  cursor: pointer;
-}
-
-.ruler-toggle-face {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--ui-border-radius-md);
-  color: var(--ui-color-grey-1000);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.ruler-toggle:hover .ruler-toggle-face,
-.ruler-toggle.active .ruler-toggle-face {
-  background: var(--ui-color-turquoise-200);
-  color: var(--ui-color-turquoise-500);
-}
-</style>
