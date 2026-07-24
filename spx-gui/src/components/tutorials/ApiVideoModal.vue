@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { UIModal, UIModalClose } from '@/components/ui'
 import type { ApiVideoInfo } from './api-videos'
+import { useVideoAspect } from './video-aspect'
 
 defineProps<{
   video: ApiVideoInfo
@@ -12,6 +13,10 @@ defineProps<{
 const emit = defineEmits<{
   close: []
 }>()
+
+// The library mixes shapes (the newer explainers are 4:3, the older ones 16:9), so the box
+// follows each video; 4:3 is the shape videos are produced in now, used until metadata loads.
+const { aspectStyle, handleLoadedMetadata } = useVideoAspect(4 / 3)
 </script>
 
 <template>
@@ -31,12 +36,14 @@ const emit = defineEmits<{
         <!-- `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
-          class="block aspect-video w-full"
+          class="block w-full"
+          :style="aspectStyle"
           :src="video.src"
           crossorigin="anonymous"
           controls
           autoplay
           playsinline
+          @loadedmetadata="handleLoadedMetadata"
         ></video>
       </div>
     </div>
