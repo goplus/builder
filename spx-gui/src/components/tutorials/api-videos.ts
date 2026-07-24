@@ -27,15 +27,39 @@ export const tutorialVideoAssetBaseUrl = 'https://qnyproj-api-assets-dev.s3.us-e
 const demoVideoSrc = `${tutorialVideoAssetBaseUrl}/step.mp4`
 
 /**
- * Global library of knowledge-point explainer videos for APIs, keyed by API definition ID —
- * the same IDs used by `list_api_reference_items` and the `api-reference-filter` element.
- * Each API has one globally reused explainer video (10–20s, pure demonstration).
- * Add entries here as videos are produced.
+ * Explainer videos exist for things that are not APIs too — editor tools a course teaches. They
+ * live in the same library so `<api-video>` plays them identically, but the copilot cannot
+ * discover them from `list_api_reference_items`, so they are enumerated in that element's
+ * description (see `ApiVideo.vue`). IDs follow the pseudo-ID shape of the language constructs.
+ */
+export const rulerVideoId = 'xbuilder:?ruler'
+
+/** Non-API topics with a video, and when the copilot should play each. */
+export const topicVideos: Array<{ id: string; whenToUse: string }> = [
+  {
+    id: rulerVideoId,
+    whenToUse: 'the stage ruler — how to measure a distance or a turn angle on the stage'
+  }
+]
+
+/**
+ * Global library of knowledge-point explainer videos, keyed by API definition ID — the same IDs
+ * used by `list_api_reference_items` and the `api-reference-filter` element — plus the non-API
+ * topic IDs above. Each entry has one globally reused explainer video (10–20s, pure
+ * demonstration). Add entries here as videos are produced.
  */
 const apiVideoLibrary: Record<string, ApiVideoInfo> = {
   'xgo:github.com/goplus/spx/v2?Sprite.step#0': {
     title: { en: 'step', zh: 'step 前进' },
     src: `${tutorialVideoAssetBaseUrl}/step.mp4`
+  },
+  'xgo:github.com/goplus/spx/v2?Sprite.turn#0': {
+    title: { en: 'turn', zh: 'turn 转向' },
+    src: `${tutorialVideoAssetBaseUrl}/turn.mp4`
+  },
+  [rulerVideoId]: {
+    title: { en: 'The ruler', zh: '尺子怎么用' },
+    src: `${tutorialVideoAssetBaseUrl}/ruler.mp4`
   },
   // Language-construct knowledge points (ids from the code editor's document base). They carry
   // the demo video until their real explainer videos are produced — listed here so the dialog
@@ -67,8 +91,13 @@ function getApiDisplayName(apiId: string): string {
 export function getApiVideo(apiId: string): ApiVideoInfo | null {
   const entry = apiVideoLibrary[apiId]
   if (entry != null) return entry
-  if (!apiVideoDemoFallback) return null
+  // A video explains the API, not one specific overload — so an ID the library does not carry
+  // verbatim (another overload of `turn`, or a bare name) still finds it by name.
   const name = getApiDisplayName(apiId)
+  const matches = createCourseApiMatcher([name])
+  const matchedId = Object.keys(apiVideoLibrary).find(matches)
+  if (matchedId != null) return apiVideoLibrary[matchedId]
+  if (!apiVideoDemoFallback) return null
   return {
     title: { en: name, zh: name },
     src: demoVideoSrc
