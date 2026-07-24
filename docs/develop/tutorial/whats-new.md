@@ -86,10 +86,12 @@ language constructs use their canonical names (`if_statement`, `for_iterate`, ..
   falls back to the sentinel `@@builder:course-complete@@` the project prints itself.
 
   The evaluation comment is told exactly where it lands (the dialog's comment area — prose in a
-  hidden event round reaches nowhere else), and it survives event supersession: the completing log
-  line is trailed by more ambient events (game output, exit) that abort the in-flight event round
-  and answer with the full history, so the dialog accepts the evaluation from whichever event round
-  ends up carrying it, instead of timing out into the fallback text.
+  hidden event round reaches nowhere else), and it is protected from event supersession twice over:
+  ambient events (editor perception, page/modal noise — including the "Modal opened" the success
+  dialog itself fires) are **dropped while a copilot-produced artifact is on screen**, so nothing
+  aborts the round writing the comment; and should a round still be superseded, the dialog accepts
+  the evaluation from whichever event round ends up carrying it, instead of timing out into the
+  fallback text.
 - `copilot`: when output cannot judge it (e.g. "message the copilot", or "must have used `repeat`"),
   the copilot declares completion, at the cost of one LLM round.
 
@@ -174,14 +176,22 @@ const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 
 `EditorPreview.vue`, `stage-viewer/StageViewer.vue`, `ui/icons/ruler.svg`, `api-reference/*`,
 `input-helper/*`
 
-- **API reference cards** hug their signature and the list scrolls horizontally, instead of the old
-  fixed-width truncation.
+- **API reference cards** hug their signature; the **panel width follows the widest card**
+  (`max-content`, clamped) and is **drag-resizable** at its right edge — dragging takes over from
+  the auto fit, double-clicking the handle restores it. Beyond the clamp the list scrolls
+  horizontally. When a filter narrows the list, the category headers and separators hide along
+  with the category sidebar — a handful of hand-picked items needs no scaffolding.
 - **The ruler button** is a white card that turns turquoise on hover / while measuring (`#eaf9fa`
-  face + `#36c2cf` glyph), with a new tilted-ruler icon; its tooltip is hover-only.
+  face + `#36c2cf` glyph), with a new tilted-ruler icon; its tooltip is hover-only. **While the
+  game runs it stays in place as an unusable variant** (grey glyph under a red slash) instead of
+  vanishing — a working runtime ruler would need the engine to expose live sprite transforms.
+- **The running game sits exactly on the edit stage**: the runner is constrained to the largest
+  viewport-aspect rect inscribed in the (non-4:3) focused container — the same letterbox the edit
+  stage uses — so entering/leaving a run no longer shifts the world.
 - **Run/Stop** is a white card framing a solid pill (teal Run `#36c2cf` / red Stop `#ef4149`), one
   button that toggles.
 - **The input helper is gated by type in block style**: plain literals (integer / decimal / string /
-  boolean / direction) show neither the pencil nor the hover "Modify"; the pickers (color, key,
+  boolean) show neither the pencil nor the hover "Modify"; the pickers (direction, color, key,
   effect, resource, ...) keep both (`isInputHelperHidden`, fed the hidden-type set by
   `SpriteEditor` / `StageEditor` in focused mode).
 

@@ -45,16 +45,15 @@ import SpxPropertyNameInput, * as spxPropertyNameInput from './ui/input-helper/S
 
 /**
  * Input types whose input helper (the value-edit pencil chip and the hover "Modify" button) is
- * hidden in the block style (tutorial focused mode). These are the plain literals plus direction,
- * which the tutorial wants the user to type/measure themselves; the pickers (color, key, effect,
+ * hidden in the block style (tutorial focused mode). These are the plain literals, which the
+ * tutorial wants the user to type/measure themselves; the pickers (direction, color, key, effect,
  * resource, ...) keep their helper so kids still get the friendly editors.
  */
 export const spxBlockStyleHiddenInputTypes: string[] = [
   BuiltInInputType.Integer,
   BuiltInInputType.Decimal,
   BuiltInInputType.String,
-  BuiltInInputType.Boolean,
-  SpxInputType.SpxDirection
+  BuiltInInputType.Boolean
 ]
 
 export class SpxInputHelperProvider extends InputHelperProvider {
