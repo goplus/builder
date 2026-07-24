@@ -46,7 +46,7 @@ function handleContinue() {
     <div class="flex flex-col items-center px-8 pb-6 pt-8">
       <p class="whitespace-pre-wrap text-base text-text">{{ text }}</p>
       <UIButton class="mt-8" type="primary" size="large" @click="handleContinue">
-        {{ $t({ en: 'Got it, start!', zh: '知道了，开始！' }) }}
+        {{ $t({ en: 'Go', zh: '开始' }) }}
       </UIButton>
     </div>
   </UIModal>
