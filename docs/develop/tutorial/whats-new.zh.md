@@ -109,7 +109,11 @@ copilot 的**状态是全局单例**（`CopilotRoot` 里 `provide` 出去的）�
 
 **高亮**步骤指出「下一步该点的那一个东西」——按 Radar 名指界面地标（`Radar.getNodeByName`，如 `"Run button"`、`"Ruler"`），或按 definition id 指 API 参考项（给条目加了 `data-def-id`，用与 `apis` 同一个 `createCourseApiMatcher` 匹配）——用户点击任意处即前进（给 `Spotlight` 加了 `concealed` 事件）。目标晚挂载会重试、再跳过，写错的引用不会卡住开场。
 
-API 视频按 definition id 索引，并按用户记录已学过的，所以**同一个概念不会被讲第二遍**；API 参考面板悬浮卡片播放的是同一个视频（弹窗抽成共享的 `ApiVideoModal`）。外部托管（如 S3）的视频用 `<video crossorigin>` 通过站点的 COEP；故事视频有 origin 白名单（同源 + usercontent CDN + 教程资源域名），`<course-story-video>` 可指向它。
+API 视频按 definition id 索引，并按用户记录已学过的，所以**同一个概念不会被讲第二遍**；同一 API 的任意重载解析到同一个视频，非 API 的主题也可以有视频（尺子——用户问"怎么量"时 copilot 会播，它是从 `<api-video>` 的说明里知道这个 ID 的，别处都没有）。API 参考面板悬浮卡片播放的是同一个视频（弹窗抽成共享的 `ApiVideoModal`）。
+
+视频弹窗**按视频自身比例自适应**：视频库不是同一种形状（新做的讲解片是 4:3，早期的是 16:9），故事视频也各系列不同，所以弹窗从加载到的元数据里读取原始比例，而不是钉死一种、让其余全部黑边。每个视频不需要声明任何东西。
+
+外部托管（如 S3）的视频用 `<video crossorigin>` 通过站点的 COEP；故事视频有 origin 白名单（同源 + usercontent CDN + 教程资源域名），`<course-story-video>` 可指向它。
 
 ## 8. 课程验证用的开发工具（这是为了方面Agent在本地开发课程的时候进行调试）
 
