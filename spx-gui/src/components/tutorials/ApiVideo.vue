@@ -1,6 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
-import { apiVideoDemoFallback, getApiVideo, getAvailableApiVideoIds, markApiLearned } from './api-videos'
+import { apiVideoDemoFallback, getApiVideo, getAvailableApiVideoIds, markApiLearned, topicVideos } from './api-videos'
 
 export const tagName = 'api-video'
 
@@ -18,11 +18,18 @@ export function getDetailedDescription() {
     ? 'A video is available for EVERY API.'
     : `Videos are only available for these APIs (for others the element does nothing): \
 ${availableIds.length > 0 ? availableIds.join(', ') : '(none yet)'}.`
+  // The non-API topics have no entry in `list_api_reference_items`, so the copilot can only learn
+  // their IDs from here.
+  const topics =
+    topicVideos.length > 0
+      ? ` Videos also exist for these topics that are NOT APIs — pass the ID verbatim as \`api\`: \
+${topicVideos.map((t) => `"${t.id}" (${t.whenToUse})`).join('; ')}.`
+      : ''
   return `Play the explainer video of an API in a modal dialog. The dialog auto-opens only the FIRST time a video \
 is emitted within a session; emitting the same video again renders a small chip the user can click to (re)play — \
 it will not interrupt the user again. Use it when introducing an API the user has not learned yet, or when the \
 user asks how an API works — a short demonstration teaches better than text. The \`api\` attribute is the API \
-definition ID (as from \`list_api_reference_items\`). ${availability} This element is available at every \
+definition ID (as from \`list_api_reference_items\`). ${availability}${topics} This element is available at every \
 intervention level for the course-opening knowledge-point videos and for answering the user's questions; pushing a \
 video PROACTIVELY to a stuck user is a nudge-level (2+) intervention. For example, \
 <${tagName} api="${availableIds[0] ?? 'xgo:github.com/goplus/spx/v2?Sprite.step#0'}" />.`
