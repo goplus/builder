@@ -115,6 +115,16 @@ watchEffect((onCleanup) => {
   onCleanup(copilot.addVisibleArtifact())
 })
 
+// So is the success dialog: while it is up, ambient events (the game's trailing output, its exit,
+// the dialog's own "Modal opened") are noise — dropping them keeps them from superseding the round
+// that is writing the dialog's completion comment. This runs pre-flush, so the artifact is in
+// place before the dialog mounts; the "Course completed" event itself is sent synchronously at
+// completion, before this effect runs.
+watchEffect((onCleanup) => {
+  if (tutorial.completion == null) return
+  onCleanup(copilot.addVisibleArtifact())
+})
+
 // Drive a spotlight opening step imperatively (it renders as an overlay, not a component): resolve
 // the target, reveal it, and advance to the next step when the user dismisses it (clicks anywhere).
 watch(currentOpeningStep, (step, _prev, onCleanup) => {
