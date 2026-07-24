@@ -154,7 +154,16 @@ advances when the user clicks (a new `concealed` event on `Spotlight`). Targets 
 retried, then skipped, so a bad reference can't stall the opening.
 
 API videos are keyed by definition id and remembered per user, so **a concept is never explained
-twice**; API-reference hover cards play the same video (the dialog is the shared `ApiVideoModal`).
+twice**; every overload of an API resolves to the same video, and non-API topics can have one too
+(the ruler, which the copilot plays when asked how measuring works — it learns the id from the
+`<api-video>` description, the only place it appears). API-reference hover cards play the same video
+(the dialog is the shared `ApiVideoModal`).
+
+Video dialogs **size themselves to the video**: the library is not one shape (the newer explainers
+are 4:3, the older ones 16:9) and story videos vary per series, so the box reads the intrinsic ratio
+from the loaded metadata rather than pinning one and letterboxing everything else. Nothing to
+declare per video.
+
 Externally hosted videos (e.g. S3) load in CORS mode via `<video crossorigin>` to pass the site's
 COEP; story videos are origin-allowlisted (same-origin + usercontent CDN + the tutorial asset host),
 which `<course-story-video>` may point at.

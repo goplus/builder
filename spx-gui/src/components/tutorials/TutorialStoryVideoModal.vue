@@ -4,7 +4,8 @@
  * `<course-story-video>` section in the course prompt, e.g.
  * `<course-story-video>/tutorial-intro/opening.webm</course-story-video>`.
  * Typically only the first course of a series has one, introducing the series' world & goal.
- * The URL is validated against the allowed origins by the caller.
+ * The URL is validated against the allowed origins by the caller. The player sizes itself to the
+ * video, so the section carries the URL only — no shape to declare or keep in sync.
  */
 export function extractCourseStoryVideo(prompt: string): string | null {
   const matched = prompt.match(/<course-story-video>([\s\S]*?)<\/course-story-video>/)
@@ -17,6 +18,7 @@ export function extractCourseStoryVideo(prompt: string): string | null {
 import { ref } from 'vue'
 
 import { UIButton, UIModal, UIModalClose } from '@/components/ui'
+import { useVideoAspect } from './video-aspect'
 
 defineProps<{
   visible: boolean
@@ -30,6 +32,9 @@ const emit = defineEmits<{
 }>()
 
 const hasPlaybackError = ref(false)
+
+// Series intros differ in shape, so the box follows the video; 16:9 is what they have been so far.
+const { aspectStyle, handleLoadedMetadata } = useVideoAspect(16 / 9)
 
 function handleContinue() {
   emit('continue')
@@ -56,12 +61,14 @@ function handleContinue() {
         <!-- `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
-          class="block aspect-video w-full"
+          class="block w-full"
+          :style="aspectStyle"
           :src="src"
           crossorigin="anonymous"
           controls
           playsinline
           preload="metadata"
+          @loadedmetadata="handleLoadedMetadata"
           @ended="handleContinue"
           @error="hasPlaybackError = true"
         ></video>
