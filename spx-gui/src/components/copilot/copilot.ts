@@ -944,11 +944,17 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /**
    * Notify the copilot of a user event.
    * If no session is running, nothing will happen.
+   *
+   * `ambient` marks background perception (editor activity, page/modal noise) as opposed to a
+   * meaningful lifecycle signal: ambient events are dropped while a copilot-produced artifact is
+   * on screen — the artifact is what the user is looking at, and a new event round would abort
+   * the in-flight round serving it (e.g. the course-completion comment).
    */
-  notifyUserEvent(name: LocaleMessage, detail: string, options?: { autoOpen?: boolean }): void {
+  notifyUserEvent(name: LocaleMessage, detail: string, options?: { autoOpen?: boolean; ambient?: boolean }): void {
     this.checkIdleTimeout()
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
+    if (options?.ambient === true && this.hasVisibleArtifacts) return
     // Respect an explicit collapse by the user: keep feeding events to the session (so the
     // copilot keeps perceiving), but do not pop the panel open again.
     const autoOpen = options?.autoOpen ?? this.currentSession.topic.autoOpenOnEvents ?? true
