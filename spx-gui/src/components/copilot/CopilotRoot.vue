@@ -212,24 +212,30 @@ copilot.registerContextProvider(new LocationContextProvider(router))
 
 const isRouteLoaded = useIsRouteLoaded()
 
+// Page / modal / notification signals are ambient perception: they must not supersede a round
+// serving an on-screen artifact (e.g. the "Modal opened" fired by the course success dialog
+// itself would otherwise abort the round writing that dialog's comment).
 watch(
   router.currentRoute,
   debounce(async (route) => {
     await until(isRouteLoaded)
-    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`, {
+      ambient: true
+    })
   }, 100)
 )
 
 onBeforeUnmount(
   modalEvents.on('open', () => {
-    copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal dialog')
+    copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal dialog', { ambient: true })
   })
 )
 onBeforeUnmount(
   modalEvents.on('resolved', () => {
     copilot.notifyUserEvent(
       { en: 'Operation completed in modal', zh: '模态框中操作完成' },
-      'User completed operation in modal'
+      'User completed operation in modal',
+      { ambient: true }
     )
   })
 )
@@ -237,7 +243,8 @@ onBeforeUnmount(
   modalEvents.on('cancelled', () => {
     copilot.notifyUserEvent(
       { en: 'Operation cancelled in modal', zh: '模态框中操作取消' },
-      'User cancelled operation in modal'
+      'User cancelled operation in modal',
+      { ambient: true }
     )
   })
 )
@@ -246,7 +253,8 @@ onBeforeUnmount(
   messageEvents.on('message', ({ type, content }) => {
     copilot.notifyUserEvent(
       { en: 'UI Notification', zh: '消息提示' },
-      `A ${type} notification showed with content: ${content}`
+      `A ${type} notification showed with content: ${content}`,
+      { ambient: true }
     )
   })
 )

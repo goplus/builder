@@ -13,8 +13,9 @@ import type { EditorCtx } from '../EditorContextProvider.vue'
 const codeChangeDebounce = 1500
 
 function notify(copilot: Copilot, name: LocaleMessage, detail: string) {
-  // These are ambient signals, not user requests, so never pop the panel open for them.
-  copilot.notifyUserEvent(name, detail, { autoOpen: false })
+  // These are ambient signals, not user requests: never pop the panel open for them, and let
+  // them be dropped while a copilot-produced artifact (e.g. the course success dialog) is up.
+  copilot.notifyUserEvent(name, detail, { autoOpen: false, ambient: true })
 }
 
 /** Notify the copilot of the user's editor actions, so it can perceive their progress. */
