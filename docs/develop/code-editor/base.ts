@@ -68,7 +68,7 @@ interface DefinitionIdentifier {
    * If `main`, it's the current user package.
    * Exmples:
    * - `fmt`
-   * - `github.com/goplus/spx/v2`
+   * - `github.com/goplus/spx/v3`
    * - `main`
    */
   package?: string

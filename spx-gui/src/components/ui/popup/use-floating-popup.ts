@@ -8,7 +8,7 @@ import {
   type Placement as FloatingPlacement,
   type VirtualElement
 } from '@floating-ui/dom'
-import { ref, toValue, watch, type CSSProperties, type WatchSource } from 'vue'
+import { ref, toValue, watch, type CSSProperties, type Ref, type WatchSource } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
 
 type ResolvedPopupState = {
@@ -54,7 +54,15 @@ export type UseFloatingPopupOptions = {
   shiftPadding?: number
 }
 
-export function useFloatingPopup(options: UseFloatingPopupOptions) {
+export type UseFloatingPopupReturn = {
+  referenceRef: Ref<Element | null>
+  floatingRef: Ref<HTMLElement | null>
+  arrowRef: Ref<HTMLElement | null>
+  floatingStyle: Ref<CSSProperties | null>
+  arrowStyle: Ref<CSSProperties | null>
+}
+
+export function useFloatingPopup(options: UseFloatingPopupOptions): UseFloatingPopupReturn {
   const referenceRef = ref<Element | null>(null)
   const floatingRef = ref<HTMLElement | null>(null)
   const arrowRef = ref<HTMLElement | null>(null)

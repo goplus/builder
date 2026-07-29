@@ -99,17 +99,17 @@ When working with backend unique string identifiers such as `username`, project 
 * Check `src/models/project/index.test.ts` for examples of constructing mock `Project` instances.
 * If test cases fail due to minor issues, fix them in the source code.
 * If test cases fail due to complex reasons, leave the test case unchanged and add a comment explaining the issue.
-* When running test cases, use the `--run` option to disable watch mode and get notified when tests finish. For example: `npm run test -- --run src/components/editor/editing.test.ts` or `npx vitest --run src/components/editor/editing.test.ts` runs tests in `editing.test.ts` in non-watch mode.
+* When running test cases, use the `--run` option to disable watch mode and get notified when tests finish. For example: `pnpm run test -- --run src/components/editor/editing.test.ts` or `pnpm exec vitest --run src/components/editor/editing.test.ts` runs tests in `editing.test.ts` in non-watch mode.
 * It's OK to use type assertions like `as any` or `as unknown` to bypass type errors if you are sure of the types, but try to avoid them if possible.
 * Avoid data sharing among test cases. Each test case should be independent and not rely on the state set by another test case.
 
 ## Static Checks and Formatting
 
-* `npm run type-check` runs TypeScript type checking.
-* `npm run lint` runs ESLint.
-* `npm run test` runs unit tests.
+* `pnpm run type-check` runs TypeScript type checking.
+* `pnpm run lint` runs ESLint.
+* `pnpm run test` runs unit tests.
 * Run the appropriate checks when making large changes and there are no pending TODOs that would cause static checks to fail.
-* Use Prettier (`npx prettier --write <file>`) for code formatting after making changes.
+* Use Prettier (`pnpm exec prettier --write <file>`) for code formatting after making changes.
 
 ## Vue Component Development
 
@@ -193,7 +193,7 @@ This section describes how we handle browser compatibility in the spx-gui projec
 
 ### Target Browsers
 
-We specify target browsers via the `browserslist` field in `package.json`. This configuration is used by various tools to determine which browser features need transpilation or polyfilling. You can list the final set of supported browsers by running `npx browserslist` in the project root.
+We specify target browsers via the `browserslist` field in `package.json`. This configuration is used by various tools to determine which browser features need transpilation or polyfilling. You can list the final set of supported browsers by running `pnpm exec browserslist` in the project root.
 
 ### Build-time Transpilation
 

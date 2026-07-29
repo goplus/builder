@@ -2,7 +2,6 @@ export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string
 export const usercontentBaseUrl = import.meta.env.VITE_USERCONTENT_BASE_URL as string
 export const usercontentBucket = import.meta.env.VITE_USERCONTENT_BUCKET as string
 export const disableAIGC = import.meta.env.VITE_DISABLE_AIGC === 'true'
-export const spxVersion = import.meta.env.VITE_SPX_VERSION as string
 export const showLicense = import.meta.env.VITE_SHOW_LICENSE === 'true'
 export const showTutorialsEntry = import.meta.env.VITE_SHOW_TUTORIALS_ENTRY === 'true'
 /** URL of the story video shown before a tutorial course starts, or `null` to start courses directly. */

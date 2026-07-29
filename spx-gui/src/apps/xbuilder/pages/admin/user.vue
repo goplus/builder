@@ -27,7 +27,7 @@ const accountAdminRoleLabels: Record<AccountAdminRole, LocaleMessage> = {
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import { useMessageHandle } from '@/utils/exception'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
@@ -48,7 +48,12 @@ import CopyButton from '@/components/common/CopyButton.vue'
 import UIIcon from '@/components/ui/icons/UIIcon.vue'
 import * as accountAdminApis from '@/apis/admin/account'
 import * as authorizationAdminApis from '@/apis/admin/authorization'
+import { validateAccountUserPassword } from '@/components/account/admin/password'
 import { formatJSON, formatTime } from './common'
+
+const avatarSize = 512
+const maxAvatarFileSize = 5 * 1024 * 1024
+const acceptedAvatarContentTypes = new Set(['image/png', 'image/jpeg'])
 
 const props = defineProps<{
   userID: string
@@ -254,12 +259,29 @@ async function handleAvatarFile(event: Event) {
   ;(event.target as HTMLInputElement).value = ''
 }
 
+function validateAvatarFile(file: File) {
+  if (file.type !== '' && !acceptedAvatarContentTypes.has(file.type)) {
+    throw new DefaultException({
+      en: 'Avatar image must be PNG or JPEG',
+      zh: '头像图片必须是 PNG 或 JPEG'
+    })
+  }
+
+  if (file.size > maxAvatarFileSize) {
+    throw new DefaultException({
+      en: 'Avatar image must be 5 MB or smaller',
+      zh: '头像图片不能超过 5 MB'
+    })
+  }
+}
+
 function hideBrokenImage(event: Event) {
   ;(event.currentTarget as HTMLImageElement).style.display = 'none'
 }
 
 const handleUpdateAvatar = useMessageHandle(
   async (file: File) => {
+    validateAvatarFile(file)
     await accountAdminApis.updateAccountUserAvatar(props.userID, file)
     userQuery.refetch()
   },
@@ -269,6 +291,8 @@ const handleUpdateAvatar = useMessageHandle(
 
 const handleSetPassword = useMessageHandle(
   async () => {
+    const passwordError = validateAccountUserPassword(password.value)
+    if (passwordError != null) throw new DefaultException(passwordError)
     await accountAdminApis.setAccountUserPassword(props.userID, { password: password.value })
     password.value = ''
   },
@@ -441,7 +465,14 @@ function deleteAllSessions() {
                   }}
                   <input class="hidden" type="file" accept="image/png,image/jpeg" @change="handleAvatarFile" />
                 </label>
-                <div class="text-center text-xs text-grey-700">PNG / JPG, ≤ 5 MB</div>
+                <div class="text-center text-xs text-grey-700">
+                  {{
+                    $t({
+                      en: `PNG or JPG, up to 5 MB. Saved as ${avatarSize}x${avatarSize} PNG.`,
+                      zh: `支持 PNG 或 JPG，最大 5 MB。保存为 ${avatarSize}x${avatarSize} PNG。`
+                    })
+                  }}
+                </div>
               </div>
               <form class="flex min-w-0 flex-col gap-5" @submit.prevent="handleUpdateUser.fn">
                 <div class="grid grid-cols-1 gap-4 tablet:grid-cols-2">

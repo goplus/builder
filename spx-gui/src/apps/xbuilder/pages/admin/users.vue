@@ -21,6 +21,7 @@ import {
 } from '@/components/ui'
 import * as accountAdminApis from '@/apis/admin/account'
 import AccountUserImportModal from '@/components/account/admin/account-user-import/AccountUserImportModal.vue'
+import { validateAccountUserPassword } from '@/components/account/admin/password'
 import { formatTime } from './common'
 
 const signedInStateQuery = useSignedInStateQuery()
@@ -90,14 +91,9 @@ const handleCreateUser = useMessageHandle(
     if (username === '') throw new DefaultException({ en: 'Username is required', zh: '用户名不能为空' })
 
     const displayName = createForm.displayName.trim() || username
-    const password = createForm.password.trim()
-    if (password === '') throw new DefaultException({ en: 'Password is required', zh: '密码不能为空' })
-    if (password.length < accountAdminApis.accountUserPasswordMinLength) {
-      throw new DefaultException({
-        en: `The password must be at least ${accountAdminApis.accountUserPasswordMinLength} characters`,
-        zh: `密码长度不能少于 ${accountAdminApis.accountUserPasswordMinLength} 个字符`
-      })
-    }
+    const password = createForm.password
+    const passwordError = validateAccountUserPassword(password)
+    if (passwordError != null) throw new DefaultException(passwordError)
 
     const user = await accountAdminApis.createAccountUser({ username, displayName, password })
     await router.push(`/admin/users/${encodeURIComponent(user.id)}`)
@@ -166,12 +162,7 @@ async function handleImportUsers() {
         </label>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Initial password', zh: '初始密码' }) }}
-          <UITextInput
-            v-model:value="createForm.password"
-            type="password"
-            required
-            :maxlength="accountAdminApis.accountUserPasswordMaxLength"
-          />
+          <UITextInput v-model:value="createForm.password" type="password" required />
         </label>
       </div>
       <div class="mt-4 flex justify-end">

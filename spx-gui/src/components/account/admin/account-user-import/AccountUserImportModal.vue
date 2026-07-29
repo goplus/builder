@@ -177,6 +177,14 @@ function formatImportError(error: AccountUserImportError) {
                 {{ $t({ en: 'Download example CSV', zh: '下载示例 CSV' }) }}
               </button>
             </div>
+            <div class="mt-1 text-xs text-grey-700">
+              {{
+                $t({
+                  en: 'Passwords must contain 8 to 128 printable ASCII characters and cannot begin or end with a space.',
+                  zh: '密码必须包含 8 到 128 个可打印 ASCII 字符，且不能以空格开头或结尾。'
+                })
+              }}
+            </div>
           </div>
           <input
             ref="fileInputRef"

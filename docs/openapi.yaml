@@ -635,7 +635,12 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB.
+                    Avatar requirements:
+
+                    - The image format must be PNG (`image/png`) or JPEG (`image/jpeg`).
+                    - The maximum file size is 5 MiB.
+
+                    Uploaded avatars are normalized to a 512x512 PNG. Upload a square image for best visual quality.
                   type: string
                   format: binary
             encoding:
@@ -934,7 +939,12 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB.
+                    Avatar requirements:
+
+                    - The image format must be PNG (`image/png`) or JPEG (`image/jpeg`).
+                    - The maximum file size is 5 MiB.
+
+                    Uploaded avatars are normalized to a 512x512 PNG. Upload a square image for best visual quality.
                   type: string
                   format: binary
             encoding:
@@ -1493,11 +1503,6 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/type"
-        - name: category
-          description: Filter assets by category.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/category"
         - name: filesHash
           description: Filter assets by files hash.
           in: query
@@ -1565,7 +1570,6 @@ paths:
               required:
                 - displayName
                 - type
-                - category
                 - description
                 - extraSettings
                 - files
@@ -1576,8 +1580,6 @@ paths:
                   $ref: "#/components/schemas/Asset/properties/displayName"
                 type:
                   $ref: "#/components/schemas/Asset/properties/type"
-                category:
-                  $ref: "#/components/schemas/Asset/properties/category"
                 description:
                   $ref: "#/components/schemas/Asset/properties/description"
                 extraSettings:
@@ -2221,11 +2223,6 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/type"
-        - name: category
-          description: Filter assets by category.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/category"
         - name: filesHash
           description: Filter assets by files hash.
           in: query
@@ -2869,11 +2866,6 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/type"
-        - name: category
-          description: Filter assets by category.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/category"
         - name: filesHash
           description: Filter assets by files hash.
           in: query
@@ -2984,8 +2976,6 @@ paths:
                   $ref: "#/components/schemas/Asset/properties/displayName"
                 type:
                   $ref: "#/components/schemas/Asset/properties/type"
-                category:
-                  $ref: "#/components/schemas/Asset/properties/category"
                 description:
                   $ref: "#/components/schemas/Asset/properties/description"
                 extraSettings:
@@ -4610,7 +4600,7 @@ paths:
                   description: |
                     Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`.
 
-                    Maximum size is 64 MiB.
+                    Maximum size is 128 MiB.
                   type: string
                   format: binary
       responses:
@@ -4711,10 +4701,7 @@ paths:
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
                 password:
-                  description: Optional administrator-managed password for the new user.
-                  type: string
-                  minLength: 8
-                  maxLength: 128
+                  $ref: "#/components/schemas/AccountManagedPassword"
       responses:
         "201":
           description: Account user created.
@@ -4835,7 +4822,12 @@ paths:
                   description: |
                     Avatar image file.
 
-                    Maximum size is 5 MiB.
+                    Avatar requirements:
+
+                    - The image format must be PNG (`image/png`) or JPEG (`image/jpeg`).
+                    - The maximum file size is 5 MiB.
+
+                    Uploaded avatars are normalized to a 512x512 PNG. Upload a square image for best visual quality.
                   type: string
                   format: binary
             encoding:
@@ -4884,10 +4876,7 @@ paths:
                 - password
               properties:
                 password:
-                  description: New administrator-managed password.
-                  type: string
-                  minLength: 8
-                  maxLength: 128
+                  $ref: "#/components/schemas/AccountManagedPassword"
       responses:
         "204":
           description: Password credential set.
@@ -6368,12 +6357,12 @@ components:
           examples:
             - John Doe
         avatar:
-          description: Public HTTP URL or Kodo universal URL of the user's avatar image.
+          description: Public HTTP URL of the user's avatar image.
           type: string
           format: uri
+          pattern: "^https?://"
           examples:
             - https://avatars.example.com/users/10137.png
-            - kodo://xbuilder-usercontent-test/files/avatar.png
         description:
           description: Brief bio or description of the user.
           type: string
@@ -6503,6 +6492,15 @@ components:
           examples:
             - https://avatars.example.com/users/10137.png
 
+    AccountManagedPassword:
+      description: Administrator-managed password using printable ASCII characters with no leading or trailing spaces.
+      type: string
+      minLength: 8
+      maxLength: 128
+      pattern: "^[!-~][ -~]*[!-~]$"
+      examples:
+        - 1abc def2
+
     AccountIdentityProvider:
       type: object
       description: Identity provider available for hosted sign-in.
@@ -6623,10 +6621,10 @@ components:
           description: Username for password sign-in.
           $ref: "#/components/schemas/AccountUser/properties/username"
         password:
-          description: Administrator-managed password.
+          description: |
+            Administrator-managed password submitted verbatim for sign-in, up to 128 bytes when encoded as UTF-8.
           type: string
           minLength: 1
-          maxLength: 128
 
     CurrentAccountSession:
       type: object
@@ -7512,7 +7510,6 @@ components:
         - owner
         - displayName
         - type
-        - category
         - description
         - extraSettings
         - files
@@ -7544,13 +7541,6 @@ components:
             - sound
           examples:
             - sprite
-        category:
-          deprecated: true
-          description: Category to which the asset belongs.
-          type: string
-          minLength: 1
-          examples:
-            - People
         description:
           description: Brief description of the asset.
           type: string

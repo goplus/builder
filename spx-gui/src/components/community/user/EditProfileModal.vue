@@ -4,6 +4,7 @@ import { userDescriptionMaxLength, userDisplayNameMaxLength, type User } from '@
 import { selectFile } from '@/utils/file'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
+import { useExternalUrl } from '@/utils/utils'
 import {
   UIButton,
   UIForm,
@@ -17,7 +18,6 @@ import {
 } from '@/components/ui'
 import { getCoverImgUrl } from './cover'
 import { useUpdateSignedInUser } from '@/stores/user'
-import { useAvatarUrl } from '@/stores/user/avatar'
 import EditAvatarModal from './EditAvatarModal.vue'
 import UserUsernameInline from './UserUsernameInline.vue'
 
@@ -38,7 +38,7 @@ const acceptedAvatarFileExts = ['png', 'jpg', 'jpeg', 'webp']
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 const pendingAvatarRef = ref<string | null>(null)
 const currentAvatar = computed(() => pendingAvatarRef.value ?? props.user.avatar)
-const avatarUrl = useAvatarUrl(() => currentAvatar.value)
+const avatarUrl = useExternalUrl(() => currentAvatar.value)
 
 const form = useForm({
   displayName: [props.user.displayName, validateDisplayName],

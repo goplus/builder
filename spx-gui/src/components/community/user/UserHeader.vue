@@ -2,10 +2,9 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { type User } from '@/apis/user'
-import { useAvatarUrl } from '@/stores/user/avatar'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import { timeout } from '@/utils/utils'
+import { timeout, useExternalUrl } from '@/utils/utils'
 import { useSignIn, useSignedInUser } from '@/stores/user'
 import { UIButton, UICard, UIImg, useMessage, useModal } from '@/components/ui'
 import TextView from '../TextView.vue'
@@ -23,7 +22,7 @@ const router = useRouter()
 const route = useRoute()
 const signedInUser = useSignedInUser()
 const isSignedInUser = computed(() => props.user.username === signedInUser.value?.username)
-const avatarUrl = useAvatarUrl(() => props.user.avatar)
+const avatarUrl = useExternalUrl(() => props.user.avatar)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)

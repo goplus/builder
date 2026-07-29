@@ -2,19 +2,22 @@
 
 ## Environment Requirements
 
-- **Node.js**: >= 20.11.1
+- **Node.js**: ^24.11.1
+- **pnpm**: ^11.9.0
 - **Go**: >= 1.25.0
 
 ## Install Dependencies
 
+If pnpm is not available, install it by following the [official pnpm installation guide](https://pnpm.io/installation).
+
 ```bash
-npm install
+pnpm install
 ```
 
 ## Run the Project in Development Mode
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ## Development Standards
@@ -45,7 +48,7 @@ npm run dev
 Use the NPM script `format` to format your code with Prettier:
 
 ```shell
-npm run format
+pnpm run format
 ```
 
 Format on PR for changed files is required. You can also turn on the feature Format on Save in VSCode.

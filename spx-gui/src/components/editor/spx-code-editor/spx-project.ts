@@ -4,6 +4,7 @@
  * consumed by the generic CodeEditor core.
  */
 
+import { packageSpx } from '@/utils/spx'
 import type { Files } from '@/models/common/file'
 import type { SpxProject } from '@/models/spx/project'
 import type { History } from '@/components/editor/history'
@@ -25,8 +26,8 @@ export const spxClassFramework: ClassFramework = {
       className: 'Sprite'
     }
   ],
-  pkgPaths: ['github.com/goplus/spx/v2'],
-  autoImports: [{ path: 'github.com/goplus/spx/v2' }]
+  pkgPaths: [packageSpx],
+  autoImports: [{ path: packageSpx }]
 }
 
 /**
