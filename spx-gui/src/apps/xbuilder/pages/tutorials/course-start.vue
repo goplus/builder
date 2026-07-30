@@ -199,7 +199,7 @@ watch(
   <section class="h-full w-full flex items-center justify-center">
     <UIDetailedLoading
       v-if="allQueryRet.isLoading.value || isStarting"
-      :percentage="isStarting ? 100 : allQueryRet.progress.value.percentage"
+      :percentage="isStarting ? 1 : allQueryRet.progress.value.percentage"
     >
       <span>{{ $t(allQueryRet.progress.value.desc ?? { zh: '跳转中...', en: 'Redirecting...' }) }}</span>
     </UIDetailedLoading>
