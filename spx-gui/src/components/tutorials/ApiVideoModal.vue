@@ -33,15 +33,20 @@ const { aspectStyle, handleLoadedMetadata } = useVideoAspect(4 / 3)
         <UIModalClose @click="emit('close')" />
       </div>
       <div class="mt-3 overflow-hidden rounded-md bg-grey-1000">
-        <!-- `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
+        <!-- Same player style as the API-reference hover card: autoplaying, looping, no browser
+             controls (they would appear on hover otherwise). The explainers are short silent
+             demos — looping replaces seeking, and closing the modal is the only control needed.
+             `muted` also keeps autoplay allowed regardless of user-gesture heuristics.
+             `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
           class="block w-full"
           :style="aspectStyle"
           :src="video.src"
           crossorigin="anonymous"
-          controls
           autoplay
+          muted
+          loop
           playsinline
           @loadedmetadata="handleLoadedMetadata"
         ></video>
