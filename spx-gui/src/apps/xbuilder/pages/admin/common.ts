@@ -28,11 +28,6 @@ export const accountAppRedirectURIPatternsTip: LocaleMessage = {
   zh: '用于受控预览或非生产回调域名的只读通配模式。精确回调 URI 仍是主要 allowlist；这组模式不通过公开 Admin API 管理，也不能在这里修改。'
 }
 
-export const accountAppAllowedOriginsTip: LocaleMessage = {
-  en: 'Origins allowed to host Account Web and receive identity provider callbacks for this app. Enter one origin per line, such as https://account.example.com. Do not include a path, query, or fragment.',
-  zh: '允许承载 Account Web 并接收本应用第三方身份提供商回调的 Origin。每行一个，例如 https://account.example.com；不要包含路径、查询参数或 fragment。'
-}
-
 export function formatTime(value: string) {
   return dayjs(value).format('YYYY-MM-DD HH:mm')
 }

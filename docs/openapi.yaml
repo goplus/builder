@@ -5409,8 +5409,6 @@ paths:
                   $ref: "#/components/schemas/AccountApp/properties/clientType"
                 redirectURIs:
                   $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
-                allowedOrigins:
-                  $ref: "#/components/schemas/AccountApp/properties/allowedOrigins"
       responses:
         "201":
           description: Account app created.
@@ -5489,8 +5487,6 @@ paths:
                   $ref: "#/components/schemas/AccountApp/properties/status"
                 redirectURIs:
                   $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
-                allowedOrigins:
-                  $ref: "#/components/schemas/AccountApp/properties/allowedOrigins"
       responses:
         "200":
           description: Account app updated.
@@ -6667,7 +6663,6 @@ components:
         - status
         - redirectURIs
         - redirectURIPatterns
-        - allowedOrigins
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -6743,16 +6738,6 @@ components:
             type: string
           examples:
             - - https://app-*.example.com/oauth/callback
-        allowedOrigins:
-          description: |
-            Allowed web origins.
-
-            Production web origins must use `https`, must not include path, query, or fragment, and must be matched
-            exactly by the server.
-          type: array
-          items:
-            type: string
-            format: uri
 
     AccountAppSecret:
       type: object

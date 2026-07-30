@@ -70,8 +70,6 @@ export type AccountApp = AccountModel & {
   redirectURIs: string[]
   /** Read-only allowed redirect URI patterns */
   redirectURIPatterns: string[]
-  /** Allowed web origins */
-  allowedOrigins: string[]
 }
 
 export type AccountAppSecret = {
