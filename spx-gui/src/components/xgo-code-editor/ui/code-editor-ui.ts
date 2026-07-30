@@ -79,6 +79,8 @@ export interface ICodeEditorUIController {
   open(textDocument: TextDocumentIdentifier, range: Range): void
 
   insertBlockText(text: string, range?: Range): Promise<void>
+  /** Insert inline content (e.g. an identifier) at the given range (defaults to current selection). */
+  insertInlineText(text: string, range?: Range): Promise<void>
 
   /** Show an in-editor copilot guide (drag target / type-along ghost / deletion highlight). Returns the guide ID. */
   showGuide(guide: CodeGuide): string
