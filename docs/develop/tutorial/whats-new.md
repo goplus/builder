@@ -143,7 +143,10 @@ render the code unselectable in chat — **visible, not copyable**.
 The story video (series world-building) still plays **before** the editor exists; everything after
 it is one **ordered, author-declared `opening` sequence** applied by the frontend once the editor is
 up (see §4) — prelude / knowledge-point video / spotlight steps, played strictly in the authored
-order, one cursor advancing on continue / close / dismiss. This replaces the old fixed "video →
+order, one cursor advancing on continue / close / dismiss. The queue is assembled on `/start` (the
+course must be set before navigation so the workspace layout is ready when the editor mounts), but
+steps render **only on the editor route** — otherwise the first prelude flashes over `/start`,
+hides during the redirect, and pops up again in the editor. This replaces the old fixed "video →
 prelude" ordering and the pre-editor `<course-prelude>` modal (which is now inlined into `opening`;
 the story video stays a tag because it precedes the editor and carries its own origin check).
 
@@ -162,7 +165,10 @@ twice**; every overload of an API resolves to the same video, and non-API topics
 Video dialogs **size themselves to the video**: the library is not one shape (the newer explainers
 are 4:3, the older ones 16:9) and story videos vary per series, so the box reads the intrinsic ratio
 from the loaded metadata rather than pinning one and letterboxing everything else. Nothing to
-declare per video.
+declare per video. The explainer modal also **plays like the API-reference hover card** —
+autoplaying, muted, looping, no browser controls popping up on every mouse move; for these short
+silent demos looping replaces seeking, and closing the dialog is the only control. The story video
+keeps its normal controls (it has a plot and a soundtrack).
 
 Externally hosted videos (e.g. S3) load in CORS mode via `<video crossorigin>` to pass the site's
 COEP; story videos are origin-allowlisted (same-origin + usercontent CDN + the tutorial asset host),
@@ -179,6 +185,13 @@ await courseRunner.loadXbp('/path/to/course.xbp')   // or .load(owner, name) fro
 const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 })
 // r.logs -> [{ level: 'INFO', msg: '捡到萝卜 Radish', ... }]
 ```
+
+The offline half of course work is a skill: `.claude/skills/xbcs-package/` bundles a script that
+unpacks / inspects / validates / repacks the `.xbcs.zip` course-series archive, plus the format
+knowledge that keeps hand-edited packages importable — the importer trusts an archive almost
+completely, and the classic failure is repacking a `.xbp` with a GUI zip tool, whose directory
+entries each become a bogus zero-byte project file. Symlinked into `.codex/skills/` and
+`.github/skills/` so Codex and Copilot read the same copy.
 
 ## The focused editor (aligned to the design)
 
@@ -203,6 +216,11 @@ const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 
   boolean) show neither the pencil nor the hover "Modify"; the pickers (direction, color, key,
   effect, resource, ...) keep both (`isInputHelperHidden`, fed the hidden-type set by
   `SpriteEditor` / `StageEditor` in focused mode).
+- **The selected sprite wears its name**, a small label under its transform box, and **clicking the
+  label inserts the name at the code cursor** (one undoable action, inline insertion — a cursor
+  mid-word moves to the word's end first). The name is how code addresses the sprite
+  (`stepTo Radish2`), and reading it off the stage then retyping it is exactly the step beginners
+  fumble; it is also a radar landmark, so a course can spotlight it.
 
 ## Smaller things
 
@@ -216,3 +234,4 @@ const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 
   modals)
 - A per-round reminder context provider (`criticalContext`) that survives context truncation
 - Editor leave-confirm and reload extension points
+- The course-start page's loading bar takes fractions; the starting phase briefly read "10000%"

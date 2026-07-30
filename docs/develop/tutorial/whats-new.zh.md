@@ -105,13 +105,13 @@ copilot 的**状态是全局单例**（`CopilotRoot` 里 `provide` 出去的）�
 
 `course-start.vue`、`TutorialStoryVideoModal.vue`、`TutorialPreludeModal.vue`、`ApiVideoModal.vue`、`api-videos.ts`、`course-config.ts`、`TutorialRoot.vue`、`utils/spotlight/*`、`utils/radar`
 
-故事视频（系列世界观）仍在**进编辑器之前**播；其后的一切收进一个**有序、作者声明的 `opening` 序列**，由前端在编辑器就绪后逐步播放（见第 4 节）——引导语 / 知识点视频 / 高亮，严格按书写顺序，一个游标在「继续 / 关闭 / 点掉」时前进。这取代了旧的「视频 → prelude」固定顺序和进编辑器前的 `<course-prelude>` 弹窗（prelude 现内联进 `opening`；故事视频仍用标签，因为它先于编辑器、且自带来源校验）。
+故事视频（系列世界观）仍在**进编辑器之前**播；其后的一切收进一个**有序、作者声明的 `opening` 序列**，由前端在编辑器就绪后逐步播放（见第 4 节）——引导语 / 知识点视频 / 高亮，严格按书写顺序，一个游标在「继续 / 关闭 / 点掉」时前进。这取代了旧的「视频 → prelude」固定顺序和进编辑器前的 `<course-prelude>` 弹窗（prelude 现内联进 `opening`；故事视频仍用标签，因为它先于编辑器、且自带来源校验）。队列在 `/start` 上装配（课程必须在跳转前就位，编辑器挂载时工作区布局才是对的），但步骤**只在编辑器路由上渲染**——否则第一个 prelude 会先在 `/start` 上闪现、跳转时隐藏、进编辑器后再弹一次。
 
 **高亮**步骤指出「下一步该点的那一个东西」——按 Radar 名指界面地标（`Radar.getNodeByName`，如 `"Run button"`、`"Ruler"`），或按 definition id 指 API 参考项（给条目加了 `data-def-id`，用与 `apis` 同一个 `createCourseApiMatcher` 匹配）——用户点击任意处即前进（给 `Spotlight` 加了 `concealed` 事件）。目标晚挂载会重试、再跳过，写错的引用不会卡住开场。
 
 API 视频按 definition id 索引，并按用户记录已学过的，所以**同一个概念不会被讲第二遍**；同一 API 的任意重载解析到同一个视频，非 API 的主题也可以有视频（尺子——用户问"怎么量"时 copilot 会播，它是从 `<api-video>` 的说明里知道这个 ID 的，别处都没有）。API 参考面板悬浮卡片播放的是同一个视频（弹窗抽成共享的 `ApiVideoModal`）。
 
-视频弹窗**按视频自身比例自适应**：视频库不是同一种形状（新做的讲解片是 4:3，早期的是 16:9），故事视频也各系列不同，所以弹窗从加载到的元数据里读取原始比例，而不是钉死一种、让其余全部黑边。每个视频不需要声明任何东西。
+视频弹窗**按视频自身比例自适应**：视频库不是同一种形状（新做的讲解片是 4:3，早期的是 16:9），故事视频也各系列不同，所以弹窗从加载到的元数据里读取原始比例，而不是钉死一种、让其余全部黑边。每个视频不需要声明任何东西。讲解视频弹窗的播放器也**与 API 参考悬浮卡片同款**——自动播放、静音、循环、没有随鼠标浮现的浏览器控制栏；这些短小的无声演示用循环代替拖进度条，关掉弹窗就是唯一的控制。故事视频保留原生控制栏（它有剧情和配音）。
 
 外部托管（如 S3）的视频用 `<video crossorigin>` 通过站点的 COEP；故事视频有 origin 白名单（同源 + usercontent CDN + 教程资源域名），`<course-story-video>` 可指向它。
 
@@ -127,6 +127,8 @@ const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 
 // r.logs -> [{ level: 'INFO', msg: '捡到萝卜 Radish', ... }]
 ```
 
+线下那半的课程工作做成了 skill：`.claude/skills/xbcs-package/` 内置一个脚本，对 `.xbcs.zip` 课程系列包做解包 / 概览 / 校验 / 重打包，并沉淀了让手改的包能安全导入的格式知识——导入器几乎完全信任包内容，经典翻车是用图形压缩工具重打 `.xbp`，其中的目录条目会逐个变成空文件名的假项目文件。通过符号链接同步到 `.codex/skills/` 和 `.github/skills/`，Codex 和 Copilot 读的是同一份。
+
 ## 聚焦编辑器（对齐设计稿）
 
 `EditorPreview.vue`、`stage-viewer/StageViewer.vue`、`ui/icons/ruler.svg`、`api-reference/*`、`input-helper/*`
@@ -136,6 +138,7 @@ const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 
 - **运行画面与编辑舞台精确重合**：runner 被约束在（非 4:3 的）聚焦容器内"最大视口比例内接矩形"里——与编辑舞台同一套信箱数学——进出运行不再发生偏移。
 - **Run/Stop**：白框内嵌实色胶囊（青色运行 `#36c2cf` / 红色停止 `#ef4149`），同一按钮切换。
 - **输入助手按类型开关**（块样式）：纯字面量（整数/小数/字符串/布尔）不显示铅笔与 hover 的「修改」，选择器类（方向/颜色/按键/特效/资源…）保留（`isInputHelperHidden`，由 `SpriteEditor`/`StageEditor` 在聚焦模式下传入隐藏类型集）。
+- **选中的精灵带着自己的名字**：变换框下方一个小标签，**点击即把名字插到代码光标处**（一步可撤销的行内插入，光标在单词中间会先挪到词尾）。名字就是代码称呼精灵的方式（`stepTo Radish2`），从舞台上看到名字再照着敲，正是初学者最容易敲错的一步；它同时是 radar 地标，课程可以 spotlight 它。
 
 ## 一些小东西
 
@@ -146,3 +149,4 @@ const r = await courseRunner.run({ code: { Lita: 'step 160' }, timeoutMs: 15000 
 - modal 打开时能正确盖住 copilot 与运行控件（把它们的 z-index 归入正常层级、低于 modal）
 - 每轮提醒用的 context provider（`criticalContext`），在上下文截断时不会被裁掉
 - 编辑器的离开确认、重新加载扩展点
+- 课程启动页的加载条按小数取值；启动跳转阶段一度显示过「10000%」
