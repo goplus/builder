@@ -77,8 +77,13 @@ function buildOpeningQueue(config: CourseConfig): ResolvedOpeningStep[] {
 
 const openingStepsRef = ref<ResolvedOpeningStep[]>([])
 const openingIndexRef = ref(0)
+// The queue is built on /start (the course is set before navigation so the workspace layout is in
+// place when the editor mounts), but the opening itself belongs to the editor — without the route
+// check its first modal step flashes over /start, hides while the editor loads, and pops up a
+// second time once it finishes.
+const isEditorRouteActive = computed(() => router.currentRoute.value.path.startsWith('/editor/'))
 const currentOpeningStep = computed(() =>
-  isRouteLoaded.value ? openingStepsRef.value[openingIndexRef.value] ?? null : null
+  isRouteLoaded.value && isEditorRouteActive.value ? openingStepsRef.value[openingIndexRef.value] ?? null : null
 )
 
 function advanceOpening() {
