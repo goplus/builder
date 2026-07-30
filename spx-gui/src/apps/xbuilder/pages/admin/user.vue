@@ -335,32 +335,32 @@ function deleteIdentity(identityID: string) {
   handleDeleteIdentity.fn(identityID)
 }
 
-const handleDeleteSession = useMessageHandle(
+const handleRevokeSession = useMessageHandle(
   async (sessionID: string) => {
-    await accountAdminApis.deleteAccountSession(sessionID)
+    await accountAdminApis.revokeAccountSession(sessionID)
     sessionsQuery.refetch()
   },
-  { en: 'Failed to delete session', zh: '删除会话失败' },
-  { en: 'Session deleted', zh: '会话已删除' }
+  { en: 'Failed to revoke session', zh: '撤销会话失败' },
+  { en: 'Session revoked', zh: '会话已撤销' }
 )
 
-function deleteSession(sessionID: string) {
-  if (!window.confirm(i18n.t({ en: 'Delete this session?', zh: '删除此会话？' }))) return
-  handleDeleteSession.fn(sessionID)
+function revokeSession(sessionID: string) {
+  if (!window.confirm(i18n.t({ en: 'Revoke this session?', zh: '撤销此会话？' }))) return
+  handleRevokeSession.fn(sessionID)
 }
 
-const handleDeleteAllSessions = useMessageHandle(
+const handleRevokeAllSessions = useMessageHandle(
   async () => {
-    await accountAdminApis.deleteAccountUserSessions(props.userID)
+    await accountAdminApis.revokeAccountUserSessions(props.userID)
     sessionsQuery.refetch()
   },
-  { en: 'Failed to delete sessions', zh: '删除会话失败' },
-  { en: 'Sessions deleted', zh: '会话已删除' }
+  { en: 'Failed to revoke sessions', zh: '撤销会话失败' },
+  { en: 'Sessions revoked', zh: '会话已撤销' }
 )
 
-function deleteAllSessions() {
-  if (!window.confirm(i18n.t({ en: 'Delete all sessions for this user?', zh: '删除此用户的全部会话？' }))) return
-  handleDeleteAllSessions.fn()
+function revokeAllSessions() {
+  if (!window.confirm(i18n.t({ en: 'Revoke all sessions for this user?', zh: '撤销此用户的全部会话？' }))) return
+  handleRevokeAllSessions.fn()
 }
 </script>
 
@@ -859,9 +859,9 @@ function deleteAllSessions() {
               type="red"
               size="small"
               :disabled="(sessionsQuery.data.value?.data.length ?? 0) === 0"
-              @click="deleteAllSessions"
+              @click="revokeAllSessions"
             >
-              {{ $t({ en: 'Delete all sessions', zh: '删除全部会话' }) }}
+              {{ $t({ en: 'Revoke all sessions', zh: '撤销全部会话' }) }}
             </UIButton>
           </div>
         </div>
@@ -916,8 +916,8 @@ function deleteAllSessions() {
                 <td class="whitespace-nowrap px-4 py-3 text-grey-900">{{ formatTime(session.lastUsedAt) }}</td>
                 <td class="whitespace-nowrap px-4 py-3 text-grey-900">{{ formatTime(session.expiresAt) }}</td>
                 <td class="px-4 py-3 text-right">
-                  <UIButton type="red" size="small" @click="deleteSession(session.id)">
-                    {{ $t({ en: 'Delete', zh: '删除' }) }}
+                  <UIButton type="red" size="small" @click="revokeSession(session.id)">
+                    {{ $t({ en: 'Revoke', zh: '撤销' }) }}
                   </UIButton>
                 </td>
               </tr>

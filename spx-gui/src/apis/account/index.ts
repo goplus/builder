@@ -24,7 +24,7 @@ export async function getSession(): Promise<CurrentAccountSession | null> {
   }
 }
 
-export async function deleteSession(): Promise<void> {
+export async function revokeSession(): Promise<void> {
   await accountClient.delete('/session')
 }
 

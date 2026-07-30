@@ -158,19 +158,25 @@ const handleCopySecret = useMessageHandle(
   { en: 'App secret copied', zh: '应用密钥已复制' }
 )
 
-const handleDeleteSecret = useMessageHandle(
+const handleRevokeSecret = useMessageHandle(
   async (secretID: string) => {
-    await accountAdminApis.deleteAccountAppSecret(props.appID, secretID)
+    await accountAdminApis.revokeAccountAppSecret(props.appID, secretID)
     if (createdSecret.value?.id === secretID) createdSecret.value = null
     secretsQuery.refetch()
   },
-  { en: 'Failed to delete Account app secret', zh: '删除账号应用密钥失败' },
-  { en: 'Account app secret deleted', zh: '账号应用密钥已删除' }
+  { en: 'Failed to revoke Account app secret', zh: '撤销账号应用密钥失败' },
+  { en: 'Account app secret revoked', zh: '账号应用密钥已撤销' }
 )
 
-function deleteSecret(secretID: string) {
-  if (!window.confirm(i18n.t({ en: 'Delete this secret?', zh: '删除此密钥？' }))) return
-  handleDeleteSecret.fn(secretID)
+function revokeSecret(secretID: string) {
+  const confirmed = window.confirm(
+    i18n.t({
+      en: 'Revoke this secret permanently? It will no longer authenticate the app. Existing grants and tokens will remain valid unless revoked separately or the app is disabled.',
+      zh: '确定永久撤销此密钥吗？撤销后它将无法再用于应用认证。现有授权和令牌仍然有效，除非另行撤销或停用该应用。'
+    })
+  )
+  if (!confirmed) return
+  handleRevokeSecret.fn(secretID)
 }
 </script>
 
@@ -524,8 +530,8 @@ function deleteSecret(secretID: string) {
                       {{ $t({ en: 'Created', zh: '创建时间' }) }}: {{ formatTime(secret.createdAt) }}
                     </div>
                   </div>
-                  <UIButton type="red" size="small" @click="deleteSecret(secret.id)">
-                    {{ $t({ en: 'Delete', zh: '删除' }) }}
+                  <UIButton type="red" size="small" @click="revokeSecret(secret.id)">
+                    {{ $t({ en: 'Revoke', zh: '撤销' }) }}
                   </UIButton>
                 </div>
                 <div v-if="(secretsQuery.data.value?.data.length ?? 0) === 0" class="py-8 text-center text-grey-800">
