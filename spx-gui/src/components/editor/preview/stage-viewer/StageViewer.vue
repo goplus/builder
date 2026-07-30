@@ -100,13 +100,22 @@
       {{ $t(rulerTip) }}
     </UITooltip>
 
-    <div
-      v-if="selectedSpriteNameLabel != null"
-      class="pointer-events-none absolute -translate-x-1/2 rounded-[4px] bg-black/30 px-1.5 py-0.5 text-xs text-white"
-      :style="{ left: `${selectedSpriteNameLabel.left}px`, top: `${selectedSpriteNameLabel.top}px` }"
-    >
-      {{ selectedSpriteNameLabel.name }}
-    </div>
+    <UITooltip v-if="selectedSpriteNameLabel != null" placement="bottom">
+      <template #trigger>
+        <button
+          v-radar="{
+            name: 'Selected sprite name',
+            desc: 'Name label below the selected sprite; clicking it inserts the name at the code editor cursor'
+          }"
+          class="absolute -translate-x-1/2 cursor-pointer rounded-[4px] bg-black/30 px-1.5 py-0.5 text-xs text-white transition-colors hover:bg-black/50"
+          :style="{ left: `${selectedSpriteNameLabel.left}px`, top: `${selectedSpriteNameLabel.top}px` }"
+          @click.stop="handleSpriteNameLabelClick(selectedSpriteNameLabel.name)"
+        >
+          {{ selectedSpriteNameLabel.name }}
+        </button>
+      </template>
+      {{ $t({ en: 'Click to insert the name into your code', zh: '点击把名字插入代码' }) }}
+    </UITooltip>
 
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
@@ -133,6 +142,7 @@ import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading, UITooltip } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
@@ -140,6 +150,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/spx/stage'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { useCodeEditorRef } from '@/components/editor/spx-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
@@ -599,6 +610,23 @@ const selectedSpriteNode = computed(() => {
   if (selectedSpriteId == null) return null
   return spriteNodeRefs.get(selectedSpriteId) ?? null
 })
+
+const codeEditorRef = useCodeEditorRef()
+
+// Clicking the label drops the sprite's name at the code cursor: the name is how code addresses the
+// sprite (`stepTo Radish2`), and reading it off the stage then retyping it is exactly the step
+// beginners fumble — a typo'd name is a confusing error, and this makes "which carrot is which"
+// clickable instead.
+const handleSpriteNameLabelClick = useMessageHandle(
+  (name: string) => {
+    const codeEditorUI = codeEditorRef.value?.getAttachedUI()
+    if (codeEditorUI == null) return
+    return editorCtx.state.history.doAction({ name: { en: 'Insert sprite name', zh: '插入精灵名字' } }, () =>
+      codeEditorUI.insertInlineText(name)
+    )
+  },
+  { en: 'Failed to insert sprite name', zh: '插入精灵名字失败' }
+).fn
 
 // Position the name label just below the selected sprite's transform box. We read the transformer's
 // on-screen rect (canvas pixels, already including the sprite's size/rotation, the anchors and the
