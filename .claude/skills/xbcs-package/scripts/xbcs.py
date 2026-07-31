@@ -519,6 +519,27 @@ def check_asset_refs(r, rel, files):
                 r.error(f"{rel}: {path} references {ref!r}, which is not in the package",
                         kind="asset-ref", where=f"{rel}!{path}")
 
+        # Sprite configs only: the editor removes animation-referenced costumes from the wearable
+        # list (animation frames are not costumes there), so a sprite whose animations consume
+        # every costume renders NOTHING in edit mode — while the engine, which does no such
+        # extraction, renders it fine. The rabbit survived on a standalone `kiko.png`; hand-built
+        # sprites tend to forget the standalone costume.
+        if "/sprites/" in path and isinstance(config.get("costumes"), list):
+            names = [c.get("name") for c in config["costumes"] if isinstance(c, dict)]
+            consumed = set()
+            for anim in (config.get("fAnimations") or {}).values():
+                if not isinstance(anim, dict):
+                    continue
+                f, t = anim.get("frameFrom"), anim.get("frameTo")
+                if f in names and t in names:
+                    consumed.update(names[names.index(f):names.index(t) + 1])
+            if names and not [n for n in names if n not in consumed]:
+                r.error(f"{rel}: {path} has every costume consumed by fAnimations — the sprite "
+                        f"will be INVISIBLE in the editor (the engine still renders it, so runtime "
+                        f"tests pass). Add one costume no animation references, like the original "
+                        f"sprites' standalone default costume",
+                        kind="all-costumes-animated", where=f"{rel}!{path}")
+
 
 def check_courses(manifest, data, project_names, r):
     for i, course in enumerate(manifest.get("courses") or []):
