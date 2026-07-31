@@ -120,8 +120,16 @@ the code too.
 }
 ```
 
-`frameFrom`/`frameTo` name a **contigurange** of costumes in `costumes[]` order — the frames between
-them are played in array order, so inserting a costume in the middle silently changes an animation.
+`frameFrom`/`frameTo` name a **contiguous range** of costumes in `costumes[]` order — the frames
+between them are played in array order, so inserting a costume in the middle silently changes an
+animation.
+
+**Every sprite needs at least one costume no animation references.** The editor's sprite model
+pulls animation-referenced costumes out of the wearable-costume list (frames are not costumes
+there); a sprite whose animations consume every costume loads with an empty costume list and
+renders **nothing in edit mode** — while the engine does no such extraction, so the game and the
+course-runner harness look perfectly fine. That split (runtime OK, editor invisible) is the
+signature. `validate` checks this.
 
 `rotationStyle: "normal"` rotates the artwork with the heading, which is what top-down art drawn
 **facing right** wants. Art drawn facing down looks wrong under any rotation style; the fix is the
