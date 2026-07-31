@@ -23,21 +23,34 @@ export type Course = {
   prompt: string
 }
 
+/**
+ * The backend omits `references` from course payloads when it is empty, while the `Course` type
+ * (and consumers like the tutorial's topic builder) promise an array. Normalize at this boundary
+ * so no consumer has to know about the omission.
+ */
+function normalizeCourse(course: Course): Course {
+  course.references ??= []
+  return course
+}
+
 /** Get a course by ID */
-export function getCourse(id: string, signal?: AbortSignal) {
-  return client.get(`/courses/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<Course>
+export async function getCourse(id: string, signal?: AbortSignal) {
+  const course = (await client.get(`/courses/${encodeURIComponent(id)}`, undefined, { signal })) as Course
+  return normalizeCourse(course)
 }
 
 export type AddUpdateCourseParams = Pick<Course, 'title' | 'thumbnail' | 'entrypoint' | 'prompt'>
 
 /** Add a new course */
-export function addCourse(params: AddUpdateCourseParams, signal?: AbortSignal) {
-  return client.post('/user/courses', params, { signal }) as Promise<Course>
+export async function addCourse(params: AddUpdateCourseParams, signal?: AbortSignal) {
+  const course = (await client.post('/user/courses', params, { signal })) as Course
+  return normalizeCourse(course)
 }
 
 /** Update an existing course */
-export function updateCourse(id: string, params: AddUpdateCourseParams, signal?: AbortSignal) {
-  return client.patch(`/courses/${encodeURIComponent(id)}`, params, { signal }) as Promise<Course>
+export async function updateCourse(id: string, params: AddUpdateCourseParams, signal?: AbortSignal) {
+  const course = (await client.patch(`/courses/${encodeURIComponent(id)}`, params, { signal })) as Course
+  return normalizeCourse(course)
 }
 
 /** Delete a course */
@@ -54,10 +67,14 @@ export type ListCoursesParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listCourses(params?: ListCoursesParams, signal?: AbortSignal) {
-  return client.get('/courses', params, { signal }) as Promise<ByPage<Course>>
+export async function listCourses(params?: ListCoursesParams, signal?: AbortSignal) {
+  const ret = (await client.get('/courses', params, { signal })) as ByPage<Course>
+  ret.data.forEach(normalizeCourse)
+  return ret
 }
 
-export function listSignedInUserCourses(params?: ListCoursesParams, signal?: AbortSignal) {
-  return client.get('/user/courses', params, { signal }) as Promise<ByPage<Course>>
+export async function listSignedInUserCourses(params?: ListCoursesParams, signal?: AbortSignal) {
+  const ret = (await client.get('/user/courses', params, { signal })) as ByPage<Course>
+  ret.data.forEach(normalizeCourse)
+  return ret
 }
