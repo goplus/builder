@@ -29,7 +29,6 @@ function makeCourse(): Course {
     thumbnail: '',
     // Empty entrypoint so `startCourse` does not need to navigate
     entrypoint: '',
-    references: [],
     prompt: 'prompt'
   }
 }

@@ -138,6 +138,15 @@ It also answers a question the author will ask: whether this round contained any
 A package whose only differences are three broken hand-edits and a bad repack has no content to
 preserve, and saying so plainly is more useful than handing back a fixed archive.
 
+Know which failures are NOT the package's, and say so early instead of digging deeper into the
+archive. The tells: the import succeeded but **every course misbehaves identically** (a bad package
+breaks specifically — one course, one asset, one config), or the console shows a TypeError deep in
+app code rather than an import error. That shape means the app↔backend contract changed underneath
+the data — the backend serving fields the frontend doesn't expect, or omitting ones it requires —
+and a `.xbcs` diff cannot explain it. Check the network response for one course against the
+frontend's `Course` type before touching the package again; a package that `validate` passes and
+that imported cleanly has done its job.
+
 Deeper structure (manifest schema field by field, `.xbp` anatomy, sprite `index.json` layout, the
 full list of import failure paths) lives in [references/format.md](references/format.md). Read it
 when an edit goes beyond swapping text or images.
