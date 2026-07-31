@@ -1683,7 +1683,6 @@ paths:
                 - title
                 - thumbnail
                 - entrypoint
-                - references
                 - prompt
               properties:
                 title:
@@ -1692,8 +1691,6 @@ paths:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
                 entrypoint:
                   $ref: "#/components/schemas/Course/properties/entrypoint"
-                references:
-                  $ref: "#/components/schemas/Course/properties/references"
                 prompt:
                   $ref: "#/components/schemas/Course/properties/prompt"
       responses:
@@ -3137,8 +3134,6 @@ paths:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
                 entrypoint:
                   $ref: "#/components/schemas/Course/properties/entrypoint"
-                references:
-                  $ref: "#/components/schemas/Course/properties/references"
                 prompt:
                   $ref: "#/components/schemas/Course/properties/prompt"
       responses:
@@ -7565,7 +7560,6 @@ components:
         - title
         - thumbnail
         - entrypoint
-        - references
         - prompt
       properties:
         id:
@@ -7598,37 +7592,12 @@ components:
           minLength: 1
           examples:
             - /editor/john/loop
-        references:
-          description: References associated with the course.
-          type: array
-          items:
-            $ref: "#/components/schemas/CourseReference"
         prompt:
           description: Prompt text for the course (used for copilot assistance).
           type: string
           maxLength: 4000
           examples:
             - Learn the basics of XGo programming language
-
-    CourseReference:
-      description: Reference to a resource associated with a course.
-      type: object
-      required:
-        - type
-        - fullName
-      properties:
-        type:
-          description: Type of the reference.
-          type: string
-          enum:
-            - project
-          examples:
-            - project
-        fullName:
-          description: Full name of the reference, in the format `owner/project`.
-          $ref: "#/components/schemas/ProjectFullName"
-          examples:
-            - john/NiuXiaoQi
 
     CourseSeries:
       description: Collection of related courses.

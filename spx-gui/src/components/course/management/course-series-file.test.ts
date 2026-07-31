@@ -71,7 +71,6 @@ const existingCourse: Course = {
   title: 'Course 1',
   thumbnail: 'kodo://bucket/course-thumbnail.png',
   entrypoint: '/editor/curator/EntryProject/lesson?tab=code',
-  references: [{ type: 'project', fullName: 'curator/RefProject' }],
   prompt: 'Prompt'
 }
 
@@ -171,7 +170,7 @@ beforeEach(() => {
 })
 
 describe('exportCourseSeriesFile', () => {
-  it('exports a self-contained package with related projects', async () => {
+  it('exports a self-contained package with entrypoint projects', async () => {
     const file = await exportCourseSeriesFile(existingSeries)
     const unzipped = await unzip(new Uint8Array(await file.arrayBuffer()))
     const manifest = JSON.parse(new TextDecoder().decode(unzipped['course-series.json']!)) as Record<string, any>
@@ -183,18 +182,20 @@ describe('exportCourseSeriesFile', () => {
       thumbnail: { path: 'thumbnails/course-series.png' }
     })
     expect(manifest.courseSeries).not.toHaveProperty('order')
-    expect(manifest.courses[0].thumbnail).toEqual({ path: 'thumbnails/courses/0.png' })
-    expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual([
-      'curator/RefProject',
-      'curator/EntryProject'
-    ])
+    expect(manifest.courses[0]).toEqual({
+      title: existingCourse.title,
+      entrypoint: existingCourse.entrypoint,
+      prompt: existingCourse.prompt,
+      thumbnail: { path: 'thumbnails/courses/0.png' }
+    })
+    expect(manifest.version).toBe(2)
+    expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual(['curator/EntryProject'])
     expect(Object.keys(unzipped)).toEqual(
       expect.arrayContaining([
         'course-series.json',
         'thumbnails/course-series.png',
         'thumbnails/courses/0.png',
-        'projects/0.xbp',
-        'projects/1.xbp'
+        'projects/0.xbp'
       ])
     )
   })
@@ -216,7 +217,6 @@ describe('importCourseSeriesFile', () => {
         title: 'Imported course',
         thumbnail: 'kodo://imported/thumbnails/courses/0.png',
         entrypoint: '/editor/alice/EntryProject/lesson?tab=code',
-        references: [{ type: 'project', fullName: 'alice/RefProject' }],
         prompt: 'Imported prompt'
       },
       ctrl.signal
@@ -284,7 +284,7 @@ async function makeCourseSeriesFile(entrypoint: string) {
     'course-series.json': new TextEncoder().encode(
       JSON.stringify({
         format: 'xbuilder-course-series',
-        version: 1,
+        version: 2,
         courseSeries: {
           title: 'Imported series',
           description: 'Imported description',
@@ -295,20 +295,15 @@ async function makeCourseSeriesFile(entrypoint: string) {
             title: 'Imported course',
             thumbnail: { path: 'thumbnails/courses/0.png' },
             entrypoint,
-            references: [{ type: 'project', fullName: 'curator/RefProject' }],
             prompt: 'Imported prompt'
           }
         ],
-        projects: [
-          { fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' },
-          { fullName: 'curator/RefProject', name: 'RefProject', path: 'projects/1.xbp' }
-        ]
+        projects: [{ fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' }]
       })
     ),
     'thumbnails/course-series.png': new TextEncoder().encode('series thumbnail'),
     'thumbnails/courses/0.png': new TextEncoder().encode('course thumbnail'),
-    'projects/0.xbp': new TextEncoder().encode('entry project'),
-    'projects/1.xbp': new TextEncoder().encode('ref project')
+    'projects/0.xbp': new TextEncoder().encode('entry project')
   }
   return new File([await zip(zippable)], 'Imported series.xbcs.zip', { type: 'application/zip' })
 }
