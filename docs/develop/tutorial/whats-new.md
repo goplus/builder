@@ -165,10 +165,11 @@ twice**; every overload of an API resolves to the same video, and non-API topics
 Video dialogs **size themselves to the video**: the library is not one shape (the newer explainers
 are 4:3, the older ones 16:9) and story videos vary per series, so the box reads the intrinsic ratio
 from the loaded metadata rather than pinning one and letterboxing everything else. Nothing to
-declare per video. The explainer modal also **plays like the API-reference hover card** —
-autoplaying, muted, looping, no browser controls popping up on every mouse move; for these short
-silent demos looping replaces seeking, and closing the dialog is the only control. The story video
-keeps its normal controls (it has a plot and a soundtrack).
+declare per video. Both video dialogs also **play like the API-reference hover card** —
+autoplaying, muted, looping, no browser controls popping up on every mouse move. Looping replaces
+seeking, and leaving is the only control: closing the explainer modal, or the story dialog's
+"Start the course" button (with the video looping, `ended` never fires, so the button is the one
+way in).
 
 Externally hosted videos (e.g. S3) load in CORS mode via `<video crossorigin>` to pass the site's
 COEP; story videos are origin-allowlisted (same-origin + usercontent CDN + the tutorial asset host),

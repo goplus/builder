@@ -58,18 +58,21 @@ function handleContinue() {
       </div>
 
       <div class="relative mt-3 overflow-hidden rounded-md bg-grey-1000">
-        <!-- `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
+        <!-- Same player style as the API-reference hover card: autoplaying, muted, looping, no
+             browser controls popping up on mouse move. Looping means `ended` never fires, so the
+             button below is the one way into the course.
+             `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
           class="block w-full"
           :style="aspectStyle"
           :src="src"
           crossorigin="anonymous"
-          controls
+          autoplay
+          muted
+          loop
           playsinline
-          preload="metadata"
           @loadedmetadata="handleLoadedMetadata"
-          @ended="handleContinue"
           @error="hasPlaybackError = true"
         ></video>
         <div
@@ -81,7 +84,7 @@ function handleContinue() {
       </div>
 
       <UIButton class="mt-5 self-center" type="neutral" size="large" @click="handleContinue">
-        {{ $t({ en: 'Skip and start the course', zh: '跳过并开始课程' }) }}
+        {{ $t({ en: 'Start the course', zh: '开始课程' }) }}
       </UIButton>
     </div>
   </UIModal>
