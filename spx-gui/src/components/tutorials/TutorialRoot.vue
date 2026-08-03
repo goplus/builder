@@ -54,7 +54,7 @@ const tutorial = new Tutorial(copilot, router, isRouteLoaded)
 type ResolvedOpeningStep =
   | { kind: 'prelude'; text: string }
   | { kind: 'video'; id: string; info: ApiVideoInfo }
-  | { kind: 'spotlight'; target: CourseSpotlightTarget; tip: string }
+  | { kind: 'spotlight'; target: CourseSpotlightTarget; tip: string; patient: boolean }
 
 function buildOpeningQueue(config: CourseConfig): ResolvedOpeningStep[] {
   if (config.opening.length === 0) {
@@ -69,7 +69,7 @@ function buildOpeningQueue(config: CourseConfig): ResolvedOpeningStep[] {
       const video = resolveApiVideo(step.api)
       if (video != null) steps.push({ kind: 'video', id: video.id, info: video.info })
     } else {
-      steps.push({ kind: 'spotlight', target: step.target, tip: step.tip })
+      steps.push({ kind: 'spotlight', target: step.target, tip: step.tip, patient: step.patient })
     }
   }
   return steps
@@ -95,11 +95,15 @@ function handleVideoClose(step: ResolvedOpeningStep) {
   advanceOpening()
 }
 
-/** Resolve a spotlight target to a rendered element: an API item by definition ID, or a UI
- * landmark by Radar name. Returns null until the element exists (the caller retries). */
+/** Resolve a spotlight target to a rendered element: an API item by definition ID, a UI landmark
+ * by Radar name, or a sprite on the edit stage via the stage viewer's per-sprite anchors.
+ * Returns null until the element exists (the caller retries). */
 function resolveSpotlightTarget(target: CourseSpotlightTarget): HTMLElement | null {
   if (target.kind === 'ui') {
     return radar.getNodeByName(target.name)?.getElement() ?? null
+  }
+  if (target.kind === 'sprite') {
+    return radar.getNodeByName(`Stage sprite: ${target.name}`)?.getElement() ?? null
   }
   const matches = createCourseApiMatcher([target.name])
   for (const el of document.querySelectorAll<HTMLElement>('[data-def-id]')) {
@@ -134,7 +138,7 @@ watchEffect((onCleanup) => {
 // the target, reveal it, and advance to the next step when the user dismisses it (clicks anywhere).
 watch(currentOpeningStep, (step, _prev, onCleanup) => {
   if (step == null || step.kind !== 'spotlight') return
-  const { target, tip } = step
+  const { target, tip, patient } = step
   let cancelled = false
   let retryTimer: ReturnType<typeof setTimeout> | null = null
   let offConcealed: (() => void) | null = null
@@ -151,8 +155,10 @@ watch(currentOpeningStep, (step, _prev, onCleanup) => {
       return
     }
     // The target may mount a little later (a panel still opening); retry, then give up so a
-    // mistyped or unavailable target cannot stall the whole sequence.
-    if (++attempts > 12) {
+    // mistyped or unavailable target cannot stall the whole sequence. A `patient` step keeps
+    // retrying instead: its target only appears after the user acts on the previous step (e.g. a
+    // sprite's name label exists once the sprite is selected), and the author vouches for it.
+    if (++attempts > 12 && !patient) {
       advanceOpening()
       return
     }

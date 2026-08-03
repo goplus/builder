@@ -589,6 +589,25 @@ def check_course_config(r, label, prompt):
                 f"back to an empty config, so hide/apis/opening/judge are all lost")
         return
 
+    def warn_pinned(entry, field):
+        r.warn(f"{label}: {field} entry {entry!r} pins the engine module version — the spx v2→v3 "
+               f"bump silently broke exactly this (the entry matches nothing, so the API panel "
+               f"stops narrowing). Use a bare or dotted name; add '#N' to pin an overload "
+               f"(e.g. 'step#0')", kind="api-id-pinned", where=label)
+
+    for e in config.get("apis") or []:
+        if isinstance(e, str) and "?" in e:
+            warn_pinned(e, "apis")
+    for step in config.get("opening") or []:
+        if not isinstance(step, dict):
+            continue
+        video = step.get("video")
+        if isinstance(video, str) and "?" in video:
+            warn_pinned(video, "opening video")
+        spotlight = step.get("spotlight")
+        if isinstance(spotlight, dict) and isinstance(spotlight.get("api"), str) and "?" in spotlight["api"]:
+            warn_pinned(spotlight["api"], "opening spotlight")
+
     judge = config.get("judge", "code")
     if judge not in ("code", "copilot"):
         r.warn(f"{label}: judge {judge!r} is neither 'code' nor 'copilot'")
