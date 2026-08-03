@@ -258,284 +258,6 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
-  /account/oauth/par:
-    post:
-      operationId: createAccountOAuthPushedAuthorizationRequest
-      tags:
-        - Account OAuth
-      summary: Create a pushed authorization request
-      description: |
-        Create a pushed authorization request for an app using OAuth 2.0 PAR.
-
-        The requested redirect URI must exactly match the app allowlist.
-
-        Provider credential handoff codes, when supplied, must be valid, unexpired, unused, and match the requested
-        provider. Invalid provider codes must not produce usable `request_uri` values.
-
-        The returned `request_uri` is an opaque, short-lived, single-use reference and is not a dereferenceable URL.
-      security:
-        - oauthClientSecretBasic: []
-        - {}
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              allOf:
-                - if:
-                    required:
-                      - xbuilder_provider_code
-                  then:
-                    required:
-                      - xbuilder_provider
-                - if:
-                    required:
-                      - xbuilder_provider
-                  then:
-                    required:
-                      - xbuilder_provider_code
-              required:
-                - response_type
-                - client_id
-                - redirect_uri
-                - state
-                - code_challenge
-                - code_challenge_method
-                - scope
-              properties:
-                response_type:
-                  description: OAuth response type.
-                  type: string
-                  enum:
-                    - code
-                client_id:
-                  description: OAuth client ID of the app.
-                  $ref: "#/components/schemas/OAuthClientID"
-                redirect_uri:
-                  description: Redirect URI requested by the app.
-                  type: string
-                  format: uri
-                state:
-                  description: OAuth state value.
-                  type: string
-                  minLength: 1
-                code_challenge:
-                  $ref: "#/components/schemas/OAuthPKCECodeChallenge"
-                code_challenge_method:
-                  description: PKCE code challenge method.
-                  type: string
-                  enum:
-                    - S256
-                scope:
-                  description: OAuth scope requested by the app.
-                  allOf:
-                    - $ref: "#/components/schemas/OAuthScope"
-                ui_locales:
-                  description: |
-                    Preferred UI locales for hosted sign-in, using space-separated BCP 47 language tags.
-
-                    The server uses a supported locale from this list when possible and may fall back to a default
-                    locale.
-                  type: string
-                  minLength: 1
-                  maxLength: 256
-                  pattern: "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*(?: [A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*)*$"
-                  examples:
-                    - zh-CN zh en
-                xbuilder_provider:
-                  description: Identity provider used for provider credential handoff.
-                  $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
-                xbuilder_provider_code:
-                  description: Short-lived provider code obtained by the app frontend.
-                  type: string
-                  minLength: 1
-      responses:
-        "201":
-          description: Pushed authorization request created.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OAuthPushedAuthorizationResponse"
-        "400":
-          $ref: "#/components/responses/OAuthError"
-        "401":
-          $ref: "#/components/responses/OAuthInvalidClient"
-        "415":
-          $ref: "#/components/responses/OAuthUnsupportedMediaType"
-
-  /account/oauth/authorize:
-    get:
-      operationId: authorizeAccountOAuthApp
-      tags:
-        - Account OAuth
-      summary: Handle an OAuth authorization request
-      description: |
-        Start or complete the OAuth authorization code flow for a registered app.
-
-        This endpoint accepts PAR authorization requests only. The app must push authorization request parameters to
-        `/account/oauth/par` first and then call this endpoint with `client_id` and `request_uri`.
-
-        The `request_uri` value must reference a valid pushed authorization request bound to the `client_id`.
-
-        The account can be resolved from an account session or from provider credential handoff stored in the pushed
-        authorization request.
-
-        If the account cannot be resolved or hosted interaction is required, this endpoint redirects to hosted sign-in.
-        The hosted sign-in URL carries `clientID`, `requestURI`, and optional `uiLocales` query parameters for Account
-        Web.
-
-        After the account is resolved and the OAuth authorization request can be completed, the authorization response
-        redirects to the app callback with an authorization code and the original `state`, or with OAuth error
-        parameters and the original `state`.
-      security: []
-      parameters:
-        - name: client_id
-          description: OAuth client ID of the app.
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/OAuthClientID"
-        - name: request_uri
-          description: Opaque pushed authorization request URI returned by `/account/oauth/par`.
-          in: query
-          required: true
-          schema:
-            type: string
-            format: uri
-            minLength: 1
-            examples:
-              - urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
-      responses:
-        "302":
-          description: |
-            Redirect to hosted sign-in, or to the app callback with an authorization code or OAuth error parameters.
-          headers:
-            Location:
-              description: |
-                Hosted sign-in URL or app callback URL.
-
-                Hosted sign-in URLs contain `clientID`, `requestURI`, and optional `uiLocales`.
-
-                App callback URLs contain `code` and `state`, or OAuth error parameters and `state`.
-              schema:
-                type: string
-                format: uri
-                minLength: 1
-        "400":
-          $ref: "#/components/responses/OAuthError"
-
-  /account/oauth/token:
-    post:
-      operationId: createAccountOAuthToken
-      tags:
-        - Account OAuth
-      summary: Create an OAuth token
-      description: |
-        Create or refresh Account-issued app-scoped OAuth tokens.
-
-        Authorization code exchange validates the redirect URI and PKCE verifier.
-
-        Refresh token exchange rotates the refresh token. Reuse of a rotated refresh token is treated as a replay signal
-        and revokes the corresponding token family or grant.
-      security:
-        - oauthClientSecretBasic: []
-        - {}
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: "#/components/schemas/CreateOAuthTokenRequest"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OAuthToken"
-        "400":
-          $ref: "#/components/responses/OAuthError"
-        "401":
-          $ref: "#/components/responses/OAuthInvalidClient"
-        "415":
-          $ref: "#/components/responses/OAuthUnsupportedMediaType"
-
-  /account/oauth/introspect:
-    post:
-      operationId: introspectAccountOAuthToken
-      tags:
-        - Account OAuth
-      summary: Introspect an OAuth token
-      description: Introspect an Account-issued OAuth token using OAuth 2.0 Token Introspection.
-      security:
-        - oauthClientSecretBasic: []
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              required:
-                - token
-              properties:
-                token:
-                  description: OAuth token to introspect.
-                  type: string
-                  minLength: 1
-                token_type_hint:
-                  description: |
-                    Hint about the type of token submitted for introspection.
-
-                    Known values include `access_token` and `refresh_token`.
-                  type: string
-                  minLength: 1
-                  examples:
-                    - access_token
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OAuthIntrospection"
-        "400":
-          $ref: "#/components/responses/OAuthError"
-        "401":
-          $ref: "#/components/responses/OAuthInvalidClient"
-        "415":
-          $ref: "#/components/responses/OAuthUnsupportedMediaType"
-
-  /account/oauth/revoke:
-    post:
-      operationId: revokeAccountOAuthToken
-      tags:
-        - Account OAuth
-      summary: Revoke an OAuth token
-      description: |
-        Revoke an Account-issued OAuth token using OAuth 2.0 Token Revocation.
-
-        Confidential clients authenticate with `client_secret_basic` and must not send `client_id` in the request body.
-        Public clients must send `client_id`.
-      security:
-        - oauthClientSecretBasic: []
-        - {}
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: "#/components/schemas/RevokeOAuthTokenRequest"
-      responses:
-        "200":
-          description: OAuth token revoked.
-        "400":
-          $ref: "#/components/responses/OAuthError"
-        "401":
-          $ref: "#/components/responses/OAuthInvalidClient"
-        "415":
-          $ref: "#/components/responses/OAuthUnsupportedMediaType"
-
   /account/user:
     get:
       operationId: getAccountUser
@@ -868,6 +590,356 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /account/oauth/par:
+    post:
+      operationId: createAccountOAuthPushedAuthorizationRequest
+      tags:
+        - Account OAuth
+      summary: Create a pushed authorization request
+      description: |
+        Create a pushed authorization request for an app using OAuth 2.0 PAR.
+
+        The requested redirect URI must exactly match the app allowlist.
+
+        Provider credential handoff codes, when supplied, must be valid, unexpired, unused, and match the requested
+        provider. Invalid provider codes must not produce usable `request_uri` values.
+
+        The returned `request_uri` is an opaque, short-lived, single-use reference and is not a dereferenceable URL.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              allOf:
+                - if:
+                    required:
+                      - xbuilder_provider_code
+                  then:
+                    required:
+                      - xbuilder_provider
+                - if:
+                    required:
+                      - xbuilder_provider
+                  then:
+                    required:
+                      - xbuilder_provider_code
+              required:
+                - response_type
+                - client_id
+                - redirect_uri
+                - state
+                - code_challenge
+                - code_challenge_method
+                - scope
+              properties:
+                response_type:
+                  description: OAuth response type.
+                  type: string
+                  enum:
+                    - code
+                client_id:
+                  description: OAuth client ID of the app.
+                  $ref: "#/components/schemas/OAuthClientID"
+                redirect_uri:
+                  description: Redirect URI requested by the app.
+                  type: string
+                  format: uri
+                state:
+                  description: OAuth state value.
+                  type: string
+                  minLength: 1
+                code_challenge:
+                  $ref: "#/components/schemas/OAuthPKCECodeChallenge"
+                code_challenge_method:
+                  description: PKCE code challenge method.
+                  type: string
+                  enum:
+                    - S256
+                scope:
+                  description: OAuth scope requested by the app.
+                  allOf:
+                    - $ref: "#/components/schemas/OAuthScope"
+                ui_locales:
+                  description: |
+                    Preferred UI locales for hosted sign-in, using space-separated BCP 47 language tags.
+
+                    The server uses a supported locale from this list when possible and may fall back to a default
+                    locale.
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                  pattern: "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*(?: [A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*)*$"
+                  examples:
+                    - zh-CN zh en
+                xbuilder_provider:
+                  description: Identity provider used for provider credential handoff.
+                  $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
+                xbuilder_provider_code:
+                  description: Short-lived provider code obtained by the app frontend.
+                  type: string
+                  minLength: 1
+      responses:
+        "201":
+          description: Pushed authorization request created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthPushedAuthorizationResponse"
+        "400":
+          $ref: "#/components/responses/OAuthError"
+        "401":
+          $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /account/oauth/authorize:
+    get:
+      operationId: authorizeAccountOAuthApp
+      tags:
+        - Account OAuth
+      summary: Handle an OAuth authorization request
+      description: |
+        Start or complete the OAuth authorization code flow for a registered app.
+
+        This endpoint accepts PAR authorization requests only. The app must push authorization request parameters to
+        `/account/oauth/par` first and then call this endpoint with `client_id` and `request_uri`.
+
+        The `request_uri` value must reference a valid pushed authorization request bound to the `client_id`.
+
+        The account can be resolved from an account session or from provider credential handoff stored in the pushed
+        authorization request.
+
+        If the account cannot be resolved or hosted interaction is required, this endpoint redirects to hosted sign-in.
+        The hosted sign-in URL carries `clientID`, `requestURI`, and optional `uiLocales` query parameters for Account
+        Web.
+
+        After the account is resolved and the OAuth authorization request can be completed, the authorization response
+        redirects to the app callback with an authorization code and the original `state`, or with OAuth error
+        parameters and the original `state`.
+      security: []
+      parameters:
+        - name: client_id
+          description: OAuth client ID of the app.
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/OAuthClientID"
+        - name: request_uri
+          description: Opaque pushed authorization request URI returned by `/account/oauth/par`.
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+            minLength: 1
+            examples:
+              - urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
+      responses:
+        "302":
+          description: |
+            Redirect to hosted sign-in, or to the app callback with an authorization code or OAuth error parameters.
+          headers:
+            Location:
+              description: |
+                Hosted sign-in URL or app callback URL.
+
+                Hosted sign-in URLs contain `clientID`, `requestURI`, and optional `uiLocales`.
+
+                App callback URLs contain `code` and `state`, or OAuth error parameters and `state`.
+              schema:
+                type: string
+                format: uri
+                minLength: 1
+        "400":
+          $ref: "#/components/responses/OAuthError"
+
+  /account/oauth/token:
+    post:
+      operationId: createAccountOAuthToken
+      tags:
+        - Account OAuth
+      summary: Create an OAuth token
+      description: |
+        Create or refresh Account-issued app-scoped OAuth tokens.
+
+        Authorization code exchange validates the redirect URI and PKCE verifier.
+
+        Refresh token exchange rotates the refresh token. Reuse of a rotated refresh token is treated as a replay signal
+        and revokes the corresponding token family or grant.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/CreateOAuthTokenRequest"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthToken"
+        "400":
+          $ref: "#/components/responses/OAuthError"
+        "401":
+          $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /account/oauth/introspect:
+    post:
+      operationId: introspectAccountOAuthToken
+      tags:
+        - Account OAuth
+      summary: Introspect an OAuth token
+      description: Introspect an Account-issued OAuth token using OAuth 2.0 Token Introspection.
+      security:
+        - oauthClientSecretBasic: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  description: OAuth token to introspect.
+                  type: string
+                  minLength: 1
+                token_type_hint:
+                  description: |
+                    Hint about the type of token submitted for introspection.
+
+                    Known values include `access_token` and `refresh_token`.
+                  type: string
+                  minLength: 1
+                  examples:
+                    - access_token
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthIntrospection"
+        "400":
+          $ref: "#/components/responses/OAuthError"
+        "401":
+          $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /account/oauth/revoke:
+    post:
+      operationId: revokeAccountOAuthToken
+      tags:
+        - Account OAuth
+      summary: Revoke an OAuth token
+      description: |
+        Revoke an Account-issued OAuth token using OAuth 2.0 Token Revocation.
+
+        Confidential clients authenticate with `client_secret_basic` and must not send `client_id` in the request body.
+        Public clients must send `client_id`.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/RevokeOAuthTokenRequest"
+      responses:
+        "200":
+          description: OAuth token revoked.
+        "400":
+          $ref: "#/components/responses/OAuthError"
+        "401":
+          $ref: "#/components/responses/OAuthInvalidClient"
+        "415":
+          $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags:
+        - Users
+      summary: List users
+      description: Retrieve a list of users.
+      security: []
+      parameters:
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /users/{username}:
+    get:
+      operationId: getUser
+      tags:
+        - Users
+      summary: Get a user
+      description: Retrieve details of a specific user.
+      security: []
+      parameters:
+        - name: username
+          description: Username of the user to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /user:
     get:
       operationId: getAuthenticatedUser
@@ -1126,6 +1198,228 @@ paths:
         "409":
           $ref: "#/components/responses/ResourceMoved"
 
+  /users/{username}/followers:
+    get:
+      operationId: listUserFollowers
+      tags:
+        - Users
+      summary: List followers of a user
+      description: Retrieve a list of users who follow the specified user.
+      security: []
+      parameters:
+        - name: username
+          description: Username of the user whose followers are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - followedAt
+            default: followedAt
+            examples:
+              - followedAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{username}/following:
+    get:
+      operationId: listUserFollowing
+      tags:
+        - Users
+      summary: List users followed by a user
+      description: Retrieve a list of users followed by the specified user.
+      security: []
+      parameters:
+        - name: username
+          description: Username of the user whose following collection is listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - followedAt
+            default: followedAt
+            examples:
+              - followedAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags:
+        - Projects
+      summary: List projects
+      description: |
+        Retrieve a list of projects visible to the request.
+
+        Visibility rules:
+
+        - Anonymous requests return public projects.
+        - Authenticated requests return public projects and the authenticated user's own projects when no visibility
+          filter is provided.
+        - A non-public visibility filter requires authentication and is scoped to the authenticated user's own projects.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: remixedFrom
+          description: |
+            Filter remixed projects by the full name of the source project or project release.
+
+            Moved project or project release names are transparently normalized to canonical values.
+          in: query
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/ProjectFullName"
+              - $ref: "#/components/schemas/ProjectReleaseFullName"
+        - name: keyword
+          description: Filter projects by display name or name pattern.
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+            examples:
+              - Niu Xiao Qi
+        - name: visibility
+          description: Filter projects by visibility.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Project/properties/visibility"
+        - name: type
+          description: Filter projects by project type.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Project/properties/type"
+        - name: createdAfter
+          description: Filter projects created after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: likesReceivedAfter
+          description: Filter projects that gained new likes after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: remixesReceivedAfter
+          description: Filter projects that were remixed after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: fromFollowees
+          description: |
+            When true, filter to projects created by the authenticated user's followees.
+
+            Supplying `true` without authentication returns `401 Unauthorized`.
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - likeCount
+              - remixCount
+              - recentLikeCount
+              - recentRemixCount
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /user/projects:
     get:
       operationId: listAuthenticatedUserProjects
@@ -1294,6 +1588,270 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/ResourceMoved"
+
+  /projects/{owner}/{project}:
+    get:
+      operationId: getProject
+      tags:
+        - Projects
+      summary: Get a project
+      description: Retrieve details of a specific project.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: owner
+          description: Username of the project's owner.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+        - name: project
+          description: Name of the project to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateProject
+      tags:
+        - Projects
+      summary: Update a project
+      description: Update the details of a specific project.
+      parameters:
+        - name: owner
+          description: Username of the project's owner.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+        - name: project
+          description: Name of the project to update.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name:
+                  description: New name of the project. If provided, the project will be renamed.
+                  $ref: "#/components/schemas/Project/properties/name"
+                files:
+                  $ref: "#/components/schemas/Project/properties/files"
+                visibility:
+                  $ref: "#/components/schemas/Project/properties/visibility"
+                displayName:
+                  $ref: "#/components/schemas/Project/properties/displayName"
+                description:
+                  $ref: "#/components/schemas/Project/properties/description"
+                instructions:
+                  $ref: "#/components/schemas/Project/properties/instructions"
+                extraSettings:
+                  $ref: "#/components/schemas/Project/properties/extraSettings"
+                thumbnail:
+                  $ref: "#/components/schemas/Project/properties/thumbnail"
+      responses:
+        "200":
+          description: Successfully updated the project.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
+    delete:
+      operationId: deleteProject
+      tags:
+        - Projects
+      summary: Delete a project
+      description: Permanently delete a specific project.
+      parameters:
+        - name: owner
+          description: Username of the project's owner.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+        - name: project
+          description: Name of the project to delete.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+      responses:
+        "204":
+          description: Successfully deleted the project.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
+
+  /projects/{owner}/{project}/views:
+    post:
+      operationId: recordProjectView
+      tags:
+        - Projects
+      summary: Record a project view
+      description: Record a view for the specified project as the authenticated user.
+      parameters:
+        - name: owner
+          description: Username of the project's owner.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+        - name: project
+          description: Name of the project to record a view for.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+      responses:
+        "204":
+          description: Successfully recorded the project view.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ResourceMoved"
+
+  /users/{username}/projects:
+    get:
+      operationId: listUserProjects
+      tags:
+        - Projects
+      summary: List public projects owned by a user
+      description: Retrieve a list of public projects owned by the specified user.
+      security: []
+      parameters:
+        - name: username
+          description: Username of the project owner.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+        - name: remixedFrom
+          description: |
+            Filter remixed projects by the full name of the source project or project release.
+
+            Moved project or project release names are transparently normalized to canonical values.
+          in: query
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/ProjectFullName"
+              - $ref: "#/components/schemas/ProjectReleaseFullName"
+        - name: keyword
+          description: Filter projects by display name or name pattern.
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+            examples:
+              - Niu Xiao Qi
+        - name: type
+          description: Filter projects by project type.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Project/properties/type"
+        - name: createdAfter
+          description: Filter projects created after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: likesReceivedAfter
+          description: Filter projects that gained new likes after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: remixesReceivedAfter
+          description: Filter projects that were remixed after this timestamp.
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - likeCount
+              - remixCount
+              - recentLikeCount
+              - recentRemixCount
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /user/liked-projects:
     get:
@@ -1482,617 +2040,6 @@ paths:
         "409":
           $ref: "#/components/responses/ResourceMoved"
 
-  /user/assets:
-    get:
-      operationId: listAuthenticatedUserAssets
-      tags:
-        - Assets
-      summary: List assets owned by the authenticated user
-      description: Retrieve a list of assets owned by the authenticated user.
-      parameters:
-        - name: keyword
-          description: Filter assets by display name pattern.
-          in: query
-          schema:
-            type: string
-            maxLength: 100
-            examples:
-              - NiuXiaoQi
-        - name: type
-          description: Filter assets by type.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/type"
-        - name: filesHash
-          description: Filter assets by files hash.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/filesHash"
-        - name: visibility
-          description: Filter assets by visibility.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/visibility"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - displayName
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Asset"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    post:
-      operationId: createAsset
-      tags:
-        - Assets
-      summary: Create an asset
-      description: |
-        Create a new asset owned by the authenticated user.
-
-        Permission requirements:
-
-        - Only users with the `assetAdmin` role can create public assets.
-        - Regular users can only create private assets.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - displayName
-                - type
-                - description
-                - extraSettings
-                - files
-                - filesHash
-                - visibility
-              properties:
-                displayName:
-                  $ref: "#/components/schemas/Asset/properties/displayName"
-                type:
-                  $ref: "#/components/schemas/Asset/properties/type"
-                description:
-                  $ref: "#/components/schemas/Asset/properties/description"
-                extraSettings:
-                  $ref: "#/components/schemas/Asset/properties/extraSettings"
-                files:
-                  $ref: "#/components/schemas/Asset/properties/files"
-                filesHash:
-                  $ref: "#/components/schemas/Asset/properties/filesHash"
-                visibility:
-                  $ref: "#/components/schemas/Asset/properties/visibility"
-      responses:
-        "201":
-          description: Successfully created the asset.
-          headers:
-            Location:
-              description: Canonical route of the created asset.
-              schema:
-                type: string
-                format: uri-reference
-                minLength: 1
-                examples:
-                  - /assets/1
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Asset"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /user/courses:
-    get:
-      operationId: listAuthenticatedUserCourses
-      tags:
-        - Courses
-      summary: List courses owned by the authenticated user
-      description: Retrieve a list of courses owned by the authenticated user.
-      parameters:
-        - name: courseSeriesID
-          description: Filter courses by the course series ID.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - sequenceInCourseSeries
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Course"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    post:
-      operationId: createCourse
-      tags:
-        - Courses
-      summary: Create a course
-      description: |
-        Create a new course owned by the authenticated user.
-
-        Permission requirements:
-
-        - Only users with the `courseAdmin` role can create courses.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-                - thumbnail
-                - entrypoint
-                - prompt
-              properties:
-                title:
-                  $ref: "#/components/schemas/Course/properties/title"
-                thumbnail:
-                  $ref: "#/components/schemas/Course/properties/thumbnail"
-                entrypoint:
-                  $ref: "#/components/schemas/Course/properties/entrypoint"
-                prompt:
-                  $ref: "#/components/schemas/Course/properties/prompt"
-      responses:
-        "201":
-          description: Successfully created the course.
-          headers:
-            Location:
-              description: Canonical route of the created course.
-              schema:
-                type: string
-                format: uri-reference
-                minLength: 1
-                examples:
-                  - /courses/1
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Course"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /user/course-series:
-    get:
-      operationId: listAuthenticatedUserCourseSeries
-      tags:
-        - Course Series
-      summary: List course series owned by the authenticated user
-      description: Retrieve a list of course series owned by the authenticated user.
-      parameters:
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - order
-            default: order
-            examples:
-              - order
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/CourseSeries"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    post:
-      operationId: createCourseSeries
-      tags:
-        - Course Series
-      summary: Create a course series
-      description: |
-        Create a new course series owned by the authenticated user.
-
-        Permission requirements:
-
-        - Only users with the `courseAdmin` role can create course series.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-                - courseIDs
-                - order
-              properties:
-                title:
-                  $ref: "#/components/schemas/CourseSeries/properties/title"
-                thumbnail:
-                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
-                description:
-                  $ref: "#/components/schemas/CourseSeries/properties/description"
-                courseIDs:
-                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
-                order:
-                  $ref: "#/components/schemas/CourseSeries/properties/order"
-      responses:
-        "201":
-          description: Successfully created the course series.
-          headers:
-            Location:
-              description: Canonical route of the created course series.
-              schema:
-                type: string
-                format: uri-reference
-                minLength: 1
-                examples:
-                  - /course-series/1
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CourseSeries"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /users:
-    get:
-      operationId: listUsers
-      tags:
-        - Users
-      summary: List users
-      description: Retrieve a list of users.
-      security: []
-      parameters:
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/User"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
-  /users/{username}:
-    get:
-      operationId: getUser
-      tags:
-        - Users
-      summary: Get a user
-      description: Retrieve details of a specific user.
-      security: []
-      parameters:
-        - name: username
-          description: Username of the user to get.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "301":
-          $ref: "#/components/responses/MovedPermanently"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /users/{username}/followers:
-    get:
-      operationId: listUserFollowers
-      tags:
-        - Users
-      summary: List followers of a user
-      description: Retrieve a list of users who follow the specified user.
-      security: []
-      parameters:
-        - name: username
-          description: Username of the user whose followers are listed.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - followedAt
-            default: followedAt
-            examples:
-              - followedAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/User"
-        "301":
-          $ref: "#/components/responses/MovedPermanently"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /users/{username}/following:
-    get:
-      operationId: listUserFollowing
-      tags:
-        - Users
-      summary: List users followed by a user
-      description: Retrieve a list of users followed by the specified user.
-      security: []
-      parameters:
-        - name: username
-          description: Username of the user whose following collection is listed.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - followedAt
-            default: followedAt
-            examples:
-              - followedAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/User"
-        "301":
-          $ref: "#/components/responses/MovedPermanently"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /users/{username}/projects:
-    get:
-      operationId: listUserProjects
-      tags:
-        - Projects
-      summary: List public projects owned by a user
-      description: Retrieve a list of public projects owned by the specified user.
-      security: []
-      parameters:
-        - name: username
-          description: Username of the project owner.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-        - name: remixedFrom
-          description: |
-            Filter remixed projects by the full name of the source project or project release.
-
-            Moved project or project release names are transparently normalized to canonical values.
-          in: query
-          schema:
-            oneOf:
-              - $ref: "#/components/schemas/ProjectFullName"
-              - $ref: "#/components/schemas/ProjectReleaseFullName"
-        - name: keyword
-          description: Filter projects by display name or name pattern.
-          in: query
-          schema:
-            type: string
-            maxLength: 100
-            examples:
-              - Niu Xiao Qi
-        - name: type
-          description: Filter projects by project type.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Project/properties/type"
-        - name: createdAfter
-          description: Filter projects created after this timestamp.
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: likesReceivedAfter
-          description: Filter projects that gained new likes after this timestamp.
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: remixesReceivedAfter
-          description: Filter projects that were remixed after this timestamp.
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - likeCount
-              - remixCount
-              - recentLikeCount
-              - recentRemixCount
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Project"
-        "301":
-          $ref: "#/components/responses/MovedPermanently"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
   /users/{username}/liked-projects:
     get:
       operationId: listUserLikedProjects
@@ -2191,471 +2138,6 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
-
-  /users/{username}/assets:
-    get:
-      operationId: listUserAssets
-      tags:
-        - Assets
-      summary: List public assets owned by a user
-      description: Retrieve a list of public assets owned by the specified user.
-      security: []
-      parameters:
-        - name: username
-          description: Username of the asset owner.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-        - name: keyword
-          description: Filter assets by display name pattern.
-          in: query
-          schema:
-            type: string
-            maxLength: 100
-            examples:
-              - NiuXiaoQi
-        - name: type
-          description: Filter assets by type.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/type"
-        - name: filesHash
-          description: Filter assets by files hash.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/filesHash"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - displayName
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Asset"
-        "301":
-          $ref: "#/components/responses/MovedPermanently"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /users/{username}/courses:
-    get:
-      operationId: listUserCourses
-      tags:
-        - Courses
-      summary: List courses owned by a user
-      description: Retrieve a list of courses owned by the specified user.
-      security: []
-      parameters:
-        - name: username
-          description: Username of the course owner.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-        - name: courseSeriesID
-          description: Filter courses by the course series ID.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - sequenceInCourseSeries
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Course"
-        "301":
-          $ref: "#/components/responses/MovedPermanently"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /users/{username}/course-series:
-    get:
-      operationId: listUserCourseSeries
-      tags:
-        - Course Series
-      summary: List course series owned by a user
-      description: Retrieve a list of course series owned by the specified user.
-      security: []
-      parameters:
-        - name: username
-          description: Username of the course series owner.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/User/properties/username"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - order
-            default: order
-            examples:
-              - order
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/CourseSeries"
-        "301":
-          $ref: "#/components/responses/MovedPermanently"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /projects:
-    get:
-      operationId: listProjects
-      tags:
-        - Projects
-      summary: List projects
-      description: |
-        Retrieve a list of projects visible to the request.
-
-        Visibility rules:
-
-        - Anonymous requests return public projects.
-        - Authenticated requests return public projects and the authenticated user's own projects when no visibility
-          filter is provided.
-        - A non-public visibility filter requires authentication and is scoped to the authenticated user's own projects.
-      security:
-        - {}
-        - bearerAuth: []
-      parameters:
-        - name: remixedFrom
-          description: |
-            Filter remixed projects by the full name of the source project or project release.
-
-            Moved project or project release names are transparently normalized to canonical values.
-          in: query
-          schema:
-            oneOf:
-              - $ref: "#/components/schemas/ProjectFullName"
-              - $ref: "#/components/schemas/ProjectReleaseFullName"
-        - name: keyword
-          description: Filter projects by display name or name pattern.
-          in: query
-          schema:
-            type: string
-            maxLength: 100
-            examples:
-              - Niu Xiao Qi
-        - name: visibility
-          description: Filter projects by visibility.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Project/properties/visibility"
-        - name: type
-          description: Filter projects by project type.
-          in: query
-          schema:
-            $ref: "#/components/schemas/Project/properties/type"
-        - name: createdAfter
-          description: Filter projects created after this timestamp.
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: likesReceivedAfter
-          description: Filter projects that gained new likes after this timestamp.
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: remixesReceivedAfter
-          description: Filter projects that were remixed after this timestamp.
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: fromFollowees
-          description: |
-            When true, filter to projects created by the authenticated user's followees.
-
-            Supplying `true` without authentication returns `401 Unauthorized`.
-          in: query
-          schema:
-            type: boolean
-            default: false
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - likeCount
-              - remixCount
-              - recentLikeCount
-              - recentRemixCount
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Project"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /projects/{owner}/{project}:
-    get:
-      operationId: getProject
-      tags:
-        - Projects
-      summary: Get a project
-      description: Retrieve details of a specific project.
-      security:
-        - {}
-        - bearerAuth: []
-      parameters:
-        - name: owner
-          description: Username of the project's owner.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Project/properties/owner"
-        - name: project
-          description: Name of the project to get.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Project/properties/name"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Project"
-        "301":
-          $ref: "#/components/responses/MovedPermanently"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-    patch:
-      operationId: updateProject
-      tags:
-        - Projects
-      summary: Update a project
-      description: Update the details of a specific project.
-      parameters:
-        - name: owner
-          description: Username of the project's owner.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Project/properties/owner"
-        - name: project
-          description: Name of the project to update.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Project/properties/name"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              minProperties: 1
-              properties:
-                name:
-                  description: New name of the project. If provided, the project will be renamed.
-                  $ref: "#/components/schemas/Project/properties/name"
-                files:
-                  $ref: "#/components/schemas/Project/properties/files"
-                visibility:
-                  $ref: "#/components/schemas/Project/properties/visibility"
-                displayName:
-                  $ref: "#/components/schemas/Project/properties/displayName"
-                description:
-                  $ref: "#/components/schemas/Project/properties/description"
-                instructions:
-                  $ref: "#/components/schemas/Project/properties/instructions"
-                extraSettings:
-                  $ref: "#/components/schemas/Project/properties/extraSettings"
-                thumbnail:
-                  $ref: "#/components/schemas/Project/properties/thumbnail"
-      responses:
-        "200":
-          description: Successfully updated the project.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Project"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/ResourceMoved"
-    delete:
-      operationId: deleteProject
-      tags:
-        - Projects
-      summary: Delete a project
-      description: Permanently delete a specific project.
-      parameters:
-        - name: owner
-          description: Username of the project's owner.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Project/properties/owner"
-        - name: project
-          description: Name of the project to delete.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Project/properties/name"
-      responses:
-        "204":
-          description: Successfully deleted the project.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/ResourceMoved"
-
-  /projects/{owner}/{project}/views:
-    post:
-      operationId: recordProjectView
-      tags:
-        - Projects
-      summary: Record a project view
-      description: Record a view for the specified project as the authenticated user.
-      parameters:
-        - name: owner
-          description: Username of the project's owner.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Project/properties/owner"
-        - name: project
-          description: Name of the project to record a view for.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Project/properties/name"
-      responses:
-        "204":
-          description: Successfully recorded the project view.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/ResourceMoved"
 
   /projects/{owner}/{project}/releases:
     get:
@@ -2910,6 +2392,137 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /user/assets:
+    get:
+      operationId: listAuthenticatedUserAssets
+      tags:
+        - Assets
+      summary: List assets owned by the authenticated user
+      description: Retrieve a list of assets owned by the authenticated user.
+      parameters:
+        - name: keyword
+          description: Filter assets by display name pattern.
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+            examples:
+              - NiuXiaoQi
+        - name: type
+          description: Filter assets by type.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/type"
+        - name: filesHash
+          description: Filter assets by files hash.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/filesHash"
+        - name: visibility
+          description: Filter assets by visibility.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/visibility"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - displayName
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Asset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createAsset
+      tags:
+        - Assets
+      summary: Create an asset
+      description: |
+        Create a new asset owned by the authenticated user.
+
+        Permission requirements:
+
+        - Only users with the `assetAdmin` role can create public assets.
+        - Regular users can only create private assets.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - displayName
+                - type
+                - description
+                - extraSettings
+                - files
+                - filesHash
+                - visibility
+              properties:
+                displayName:
+                  $ref: "#/components/schemas/Asset/properties/displayName"
+                type:
+                  $ref: "#/components/schemas/Asset/properties/type"
+                description:
+                  $ref: "#/components/schemas/Asset/properties/description"
+                extraSettings:
+                  $ref: "#/components/schemas/Asset/properties/extraSettings"
+                files:
+                  $ref: "#/components/schemas/Asset/properties/files"
+                filesHash:
+                  $ref: "#/components/schemas/Asset/properties/filesHash"
+                visibility:
+                  $ref: "#/components/schemas/Asset/properties/visibility"
+      responses:
+        "201":
+          description: Successfully created the asset.
+          headers:
+            Location:
+              description: Canonical route of the created asset.
+              schema:
+                type: string
+                format: uri-reference
+                minLength: 1
+                examples:
+                  - /assets/1
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /assets/{assetID}:
     get:
       operationId: getAsset
@@ -3023,6 +2636,78 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /users/{username}/assets:
+    get:
+      operationId: listUserAssets
+      tags:
+        - Assets
+      summary: List public assets owned by a user
+      description: Retrieve a list of public assets owned by the specified user.
+      security: []
+      parameters:
+        - name: username
+          description: Username of the asset owner.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+        - name: keyword
+          description: Filter assets by display name pattern.
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+            examples:
+              - NiuXiaoQi
+        - name: type
+          description: Filter assets by type.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/type"
+        - name: filesHash
+          description: Filter assets by files hash.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/filesHash"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - displayName
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Asset"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /courses:
     get:
       operationId: listCourses
@@ -3073,6 +2758,109 @@ paths:
                       $ref: "#/components/schemas/Course"
         "400":
           $ref: "#/components/responses/BadRequest"
+
+  /user/courses:
+    get:
+      operationId: listAuthenticatedUserCourses
+      tags:
+        - Courses
+      summary: List courses owned by the authenticated user
+      description: Retrieve a list of courses owned by the authenticated user.
+      parameters:
+        - name: courseSeriesID
+          description: Filter courses by the course series ID.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - sequenceInCourseSeries
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createCourse
+      tags:
+        - Courses
+      summary: Create a course
+      description: |
+        Create a new course owned by the authenticated user.
+
+        Permission requirements:
+
+        - Only users with the `courseAdmin` role can create courses.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - thumbnail
+                - entrypoint
+                - prompt
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                entrypoint:
+                  $ref: "#/components/schemas/Course/properties/entrypoint"
+                prompt:
+                  $ref: "#/components/schemas/Course/properties/prompt"
+      responses:
+        "201":
+          description: Successfully created the course.
+          headers:
+            Location:
+              description: Canonical route of the created course.
+              schema:
+                type: string
+                format: uri-reference
+                minLength: 1
+                examples:
+                  - /courses/1
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /courses/{courseID}:
     get:
@@ -3181,6 +2969,65 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /users/{username}/courses:
+    get:
+      operationId: listUserCourses
+      tags:
+        - Courses
+      summary: List courses owned by a user
+      description: Retrieve a list of courses owned by the specified user.
+      security: []
+      parameters:
+        - name: username
+          description: Username of the course owner.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+        - name: courseSeriesID
+          description: Filter courses by the course series ID.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - sequenceInCourseSeries
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Course"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /course-series:
     get:
       operationId: listCourseSeries
@@ -3226,6 +3073,105 @@ paths:
                       $ref: "#/components/schemas/CourseSeries"
         "400":
           $ref: "#/components/responses/BadRequest"
+
+  /user/course-series:
+    get:
+      operationId: listAuthenticatedUserCourseSeries
+      tags:
+        - Course Series
+      summary: List course series owned by the authenticated user
+      description: Retrieve a list of course series owned by the authenticated user.
+      parameters:
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - order
+            default: order
+            examples:
+              - order
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseSeries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createCourseSeries
+      tags:
+        - Course Series
+      summary: Create a course series
+      description: |
+        Create a new course series owned by the authenticated user.
+
+        Permission requirements:
+
+        - Only users with the `courseAdmin` role can create course series.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - courseIDs
+                - order
+              properties:
+                title:
+                  $ref: "#/components/schemas/CourseSeries/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
+                description:
+                  $ref: "#/components/schemas/CourseSeries/properties/description"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
+      responses:
+        "201":
+          description: Successfully created the course series.
+          headers:
+            Location:
+              description: Canonical route of the created course series.
+              schema:
+                type: string
+                format: uri-reference
+                minLength: 1
+                examples:
+                  - /course-series/1
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /course-series/{courseSeriesID}:
     get:
@@ -3335,6 +3281,177 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /users/{username}/course-series:
+    get:
+      operationId: listUserCourseSeries
+      tags:
+        - Course Series
+      summary: List course series owned by a user
+      description: Retrieve a list of course series owned by the specified user.
+      security: []
+      parameters:
+        - name: username
+          description: Username of the course series owner.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - order
+            default: order
+            examples:
+              - order
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseSeries"
+        "301":
+          $ref: "#/components/responses/MovedPermanently"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /upload-sessions:
+    post:
+      operationId: createUploadSession
+      tags:
+        - Files
+      summary: Create an upload session
+      description: Create short-lived upload credentials and configuration for file uploads.
+      responses:
+        "201":
+          description: Upload session created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /file-url-signatures:
+    post:
+      operationId: createFileURLSignatures
+      tags:
+        - Files
+      summary: Generate signed URLs for files
+      description: Create signed web URLs for the specified files to allow secure access.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - objects
+              properties:
+                objects:
+                  description: List of universal URLs of the objects.
+                  type: array
+                  items:
+                    type: string
+                    minLength: 1
+                    format: uri
+                    pattern: "^kodo://[^/?#@:]+/[^?#]+$"
+                  examples:
+                    - - kodo://xbuilder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195
+      responses:
+        "200":
+          description: Successfully generated signed URLs for the files.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - objectUrls
+                properties:
+                  objectUrls:
+                    description: Map from universal URLs to signed web URLs for the objects.
+                    type: object
+                    propertyNames:
+                      type: string
+                      format: uri
+                      pattern: "^kodo://[^/?#@:]+/[^?#]+$"
+                    additionalProperties:
+                      type: string
+                      format: uri
+                    examples:
+                      - kodo://xbuilder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://xbuilder-usercontent-test.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /project-conversions:
+    post:
+      operationId: convertProject
+      tags:
+        - Files
+      summary: Convert a project file
+      description: |
+        Convert a Scratch format file to XBP (XBuilder Project) format.
+
+        This endpoint accepts a Scratch project file, version 2 or 3, and converts it to the XBP format used by the
+        XBuilder platform.
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: |
+                    Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`.
+
+                    Maximum size is 128 MiB.
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Conversion successful. Returns a zip archive containing the XBP project file.
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+              examples:
+                xbpFile:
+                  summary: Example XBP zip file
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+        "501":
+          $ref: "#/components/responses/UnsupportedScratchFeature"
 
   /copilot/messages:
     post:
@@ -4229,73 +4346,6 @@ paths:
         "429":
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /aigc/asset-adoptions:
-    post:
-      operationId: createAIGCAssetAdoption
-      tags:
-        - AIGC
-      summary: Adopt an AIGC-generated asset
-      description: |
-        Record that an AIGC-generated asset has been adopted.
-
-        The backend verifies task ownership and file provenance and may publish the adopted asset to the public library.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - taskIds
-                - asset
-              properties:
-                taskIds:
-                  description: IDs of relevant AIGC tasks that produced the asset.
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Model/properties/id"
-                  examples:
-                    - - "1"
-                      - "2"
-                  minItems: 1
-                  maxItems: 100
-                asset:
-                  description: Asset data.
-                  type: object
-                  required:
-                    - displayName
-                    - type
-                    - description
-                    - extraSettings
-                    - filesHash
-                    - files
-                  properties:
-                    displayName:
-                      $ref: "#/components/schemas/Asset/properties/displayName"
-                    type:
-                      $ref: "#/components/schemas/Asset/properties/type"
-                    description:
-                      allOf:
-                        - $ref: "#/components/schemas/Asset/properties/description"
-                      minLength: 1
-                    extraSettings:
-                      $ref: "#/components/schemas/Asset/properties/extraSettings"
-                    filesHash:
-                      $ref: "#/components/schemas/Asset/properties/filesHash"
-                    files:
-                      allOf:
-                        - $ref: "#/components/schemas/Asset/properties/files"
-                      minProperties: 1
-      responses:
-        "204":
-          description: Asset adoption recorded.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
   /aigc/asset-settings-enrichments:
     post:
       operationId: enrichAssetSettings
@@ -4499,31 +4549,16 @@ paths:
         "429":
           $ref: "#/components/responses/RateLimitExceeded"
 
-  /upload-sessions:
+  /aigc/asset-adoptions:
     post:
-      operationId: createUploadSession
+      operationId: createAIGCAssetAdoption
       tags:
-        - Files
-      summary: Create an upload session
-      description: Create short-lived upload credentials and configuration for file uploads.
-      responses:
-        "201":
-          description: Upload session created.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UpInfo"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+        - AIGC
+      summary: Adopt an AIGC-generated asset
+      description: |
+        Record that an AIGC-generated asset has been adopted.
 
-  /file-url-signatures:
-    post:
-      operationId: createFileURLSignatures
-      tags:
-        - Files
-      summary: Generate signed URLs for files
-      description: Create signed web URLs for the specified files to allow secure access.
-      security: []
+        The backend verifies task ownership and file provenance and may publish the adopted asset to the public library.
       requestBody:
         required: true
         content:
@@ -4531,90 +4566,55 @@ paths:
             schema:
               type: object
               required:
-                - objects
+                - taskIds
+                - asset
               properties:
-                objects:
-                  description: List of universal URLs of the objects.
+                taskIds:
+                  description: IDs of relevant AIGC tasks that produced the asset.
                   type: array
                   items:
-                    type: string
-                    minLength: 1
-                    format: uri
-                    pattern: "^kodo://[^/?#@:]+/[^?#]+$"
+                    $ref: "#/components/schemas/Model/properties/id"
                   examples:
-                    - - kodo://xbuilder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195
+                    - - "1"
+                      - "2"
+                  minItems: 1
+                  maxItems: 100
+                asset:
+                  description: Asset data.
+                  type: object
+                  required:
+                    - displayName
+                    - type
+                    - description
+                    - extraSettings
+                    - filesHash
+                    - files
+                  properties:
+                    displayName:
+                      $ref: "#/components/schemas/Asset/properties/displayName"
+                    type:
+                      $ref: "#/components/schemas/Asset/properties/type"
+                    description:
+                      allOf:
+                        - $ref: "#/components/schemas/Asset/properties/description"
+                      minLength: 1
+                    extraSettings:
+                      $ref: "#/components/schemas/Asset/properties/extraSettings"
+                    filesHash:
+                      $ref: "#/components/schemas/Asset/properties/filesHash"
+                    files:
+                      allOf:
+                        - $ref: "#/components/schemas/Asset/properties/files"
+                      minProperties: 1
       responses:
-        "200":
-          description: Successfully generated signed URLs for the files.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - objectUrls
-                properties:
-                  objectUrls:
-                    description: Map from universal URLs to signed web URLs for the objects.
-                    type: object
-                    propertyNames:
-                      type: string
-                      format: uri
-                      pattern: "^kodo://[^/?#@:]+/[^?#]+$"
-                    additionalProperties:
-                      type: string
-                      format: uri
-                    examples:
-                      - kodo://xbuilder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://xbuilder-usercontent-test.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
+        "204":
+          description: Asset adoption recorded.
         "400":
           $ref: "#/components/responses/BadRequest"
-
-  /project-conversions:
-    post:
-      operationId: convertProject
-      tags:
-        - Files
-      summary: Convert a project file
-      description: |
-        Convert a Scratch format file to XBP (XBuilder Project) format.
-
-        This endpoint accepts a Scratch project file, version 2 or 3, and converts it to the XBP format used by the
-        XBuilder platform.
-      security:
-        - {}
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - file
-              properties:
-                file:
-                  description: |
-                    Scratch project file, such as .sb2, .sb3, or project zip. Form field name must be `file`.
-
-                    Maximum size is 128 MiB.
-                  type: string
-                  format: binary
-      responses:
-        "200":
-          description: Conversion successful. Returns a zip archive containing the XBP project file.
-          content:
-            application/zip:
-              schema:
-                type: string
-                format: binary
-              examples:
-                xbpFile:
-                  summary: Example XBP zip file
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "413":
-          $ref: "#/components/responses/ContentTooLarge"
-        "501":
-          $ref: "#/components/responses/UnsupportedScratchFeature"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /admin/account/users:
     get:
@@ -5063,241 +5063,6 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /admin/account/users/{userID}/app-grants:
-    get:
-      operationId: listAdminAccountUserAppGrants
-      tags:
-        - Account Admin
-      summary: List account user app grants as admin
-      description: |
-        Retrieve a list of active app grants of an account user.
-
-        Requires the `accountAdmin` role.
-      parameters:
-        - name: userID
-          description: ID of the user whose app grants are listed.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-              - updatedAt
-              - lastUsedAt
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/AccountAppGrant"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /admin/account/app-grants/{appGrantID}:
-    get:
-      operationId: getAdminAccountAppGrant
-      tags:
-        - Account Admin
-      summary: Get an account app grant as admin
-      description: |
-        Retrieve an account app grant.
-
-        Requires the `accountAdmin` role.
-      parameters:
-        - name: appGrantID
-          description: ID of the app grant to get.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AccountAppGrant"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /admin/account/app-grants/{appGrantID}/tokens:
-    get:
-      operationId: listAdminAccountAppGrantTokens
-      tags:
-        - Account Admin
-      summary: List account app grant tokens as admin
-      description: |
-        Retrieve a list of active Account-issued OAuth tokens for an account app grant.
-
-        Tokens are active only when they are not expired, not revoked, and, for refresh tokens, not consumed.
-
-        Requires the `accountAdmin` role.
-      parameters:
-        - name: appGrantID
-          description: ID of the app grant whose tokens are listed.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: tokenType
-          description: Filter tokens by OAuth token type.
-          in: query
-          schema:
-            $ref: "#/components/schemas/AccountAppToken/properties/tokenType"
-        - name: orderBy
-          description: Field by which to order the results.
-          in: query
-          schema:
-            type: string
-            enum:
-              - createdAt
-            default: createdAt
-            examples:
-              - createdAt
-        - $ref: "#/components/parameters/SortOrder"
-        - $ref: "#/components/parameters/PageIndex"
-        - $ref: "#/components/parameters/PageSize"
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - total
-                  - data
-                properties:
-                  total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/AccountAppToken"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-    post:
-      operationId: createAdminAccountAppGrantToken
-      tags:
-        - Account Admin
-      summary: Create an account app grant token as admin
-      description: |
-        Create an Account-issued OAuth token for an account app grant.
-
-        The token inherits its Account OAuth scope from the app grant.
-
-        Currently, this endpoint creates access tokens only. The created token is not issued with a refresh token and
-        cannot be refreshed.
-
-        The token value is only returned once in the creation response.
-
-        Requires the `accountAdmin` role.
-      parameters:
-        - name: appGrantID
-          description: ID of the app grant whose token is created.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateAccountAppTokenRequest"
-      responses:
-        "201":
-          description: Account app token created.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CreatedAccountAppToken"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /admin/account/app-grants/{appGrantID}/tokens/{tokenID}:
-    delete:
-      operationId: deleteAdminAccountAppGrantToken
-      tags:
-        - Account Admin
-      summary: Delete an account app grant token as admin
-      description: |
-        Revoke an Account-issued OAuth token for an account app grant.
-
-        Revoking a refresh token revokes its token family. Revoking an access token revokes only that access token.
-
-        Requires the `accountAdmin` role.
-      parameters:
-        - name: appGrantID
-          description: ID of the app grant whose token is revoked.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-        - name: tokenID
-          description: ID of the app token to revoke.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-      responses:
-        "204":
-          description: Account app token revoked.
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
   /admin/account/sessions/{sessionID}:
     delete:
       operationId: deleteAdminAccountSession
@@ -5613,6 +5378,241 @@ paths:
       responses:
         "204":
           description: Account app secret deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/account/users/{userID}/app-grants:
+    get:
+      operationId: listAdminAccountUserAppGrants
+      tags:
+        - Account Admin
+      summary: List account user app grants as admin
+      description: |
+        Retrieve a list of active app grants of an account user.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: userID
+          description: ID of the user whose app grants are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - lastUsedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountAppGrant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/account/app-grants/{appGrantID}:
+    get:
+      operationId: getAdminAccountAppGrant
+      tags:
+        - Account Admin
+      summary: Get an account app grant as admin
+      description: |
+        Retrieve an account app grant.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAppGrant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/account/app-grants/{appGrantID}/tokens:
+    get:
+      operationId: listAdminAccountAppGrantTokens
+      tags:
+        - Account Admin
+      summary: List account app grant tokens as admin
+      description: |
+        Retrieve a list of active Account-issued OAuth tokens for an account app grant.
+
+        Tokens are active only when they are not expired, not revoked, and, for refresh tokens, not consumed.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant whose tokens are listed.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: tokenType
+          description: Filter tokens by OAuth token type.
+          in: query
+          schema:
+            $ref: "#/components/schemas/AccountAppToken/properties/tokenType"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountAppToken"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createAdminAccountAppGrantToken
+      tags:
+        - Account Admin
+      summary: Create an account app grant token as admin
+      description: |
+        Create an Account-issued OAuth token for an account app grant.
+
+        The token inherits its Account OAuth scope from the app grant.
+
+        Currently, this endpoint creates access tokens only. The created token is not issued with a refresh token and
+        cannot be refreshed.
+
+        The token value is only returned once in the creation response.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant whose token is created.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountAppTokenRequest"
+      responses:
+        "201":
+          description: Account app token created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedAccountAppToken"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/account/app-grants/{appGrantID}/tokens/{tokenID}:
+    delete:
+      operationId: deleteAdminAccountAppGrantToken
+      tags:
+        - Account Admin
+      summary: Delete an account app grant token as admin
+      description: |
+        Revoke an Account-issued OAuth token for an account app grant.
+
+        Revoking a refresh token revokes its token family. Revoking an access token revokes only that access token.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant whose token is revoked.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: tokenID
+          description: ID of the app token to revoke.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account app token revoked.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6124,52 +6124,92 @@ components:
                 msg: Unauthorized
 
   schemas:
-    Model:
+    APIError:
+      description: |
+        Shared error payload for most non-OAuth JSON endpoints.
+
+        `msg` is a safe, developer-facing diagnostic string. It is not localized and is not stable enough for
+        programmatic handling.
+
+        User-facing clients should map `code` to their own localized copy.
       type: object
-      description: Base model with common fields for all entities.
       required:
-        - id
-        - createdAt
-        - updatedAt
+        - code
+        - msg
       properties:
-        id:
-          description: Unique positive int64 identifier serialized as a canonical decimal string.
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        msg:
+          description: Safe developer-facing diagnostic message.
           type: string
           minLength: 1
-          maxLength: 19
-          pattern: "^[1-9][0-9]{0,18}$"
           examples:
-            - "1"
-        createdAt:
-          description: Creation timestamp.
-          type: string
-          format: date-time
-          examples:
-            - 2006-01-02T15:04:05+07:00
-        updatedAt:
-          description: Last update timestamp.
-          type: string
-          format: date-time
-          examples:
-            - 2006-01-02T15:04:05+07:00
+            - Invalid args
 
-    ByPage:
-      description: Paginated response wrapper.
+    ErrorCode:
+      description: |
+        Stable machine-readable error code for the shared `APIError` envelope.
+
+        The first three digits match the HTTP status code. Clients should branch on this field instead of parsing `msg`.
+
+        | Code | HTTP status | Default msg | Meaning |
+        |------|-------------|-------------|---------|
+        | 40001 | 400 | Invalid args | Invalid request syntax, parameters, or body. |
+        | 40100 | 401 | Unauthorized | Authentication is required or invalid. |
+        | 40300 | 403 | Forbidden | The authenticated principal lacks permission. |
+        | 40301 | 403 | Quota exceeded | A long-window quota was exceeded. |
+        | 40400 | 404 | Not found | The requested resource was not found. |
+        | 40900 | 409 | Conflict | The request conflicts with current resource state. |
+        | 40901 | 409 | Resource moved | The request used a historical resource route. |
+        | 41300 | 413 | Content too large | Request or uploaded content exceeds the allowed size. |
+        | 41500 | 415 | Unsupported media type | Request or uploaded content type is not supported. |
+        | 42900 | 429 | Too many requests | Generic request throttling. |
+        | 42901 | 429 | Rate limit exceeded | A short-window rate limit was exceeded. |
+        | 50000 | 500 | Internal server error | An unexpected server-side failure occurred. |
+        | 50101 | 501 | Unsupported scratch feature | Scratch conversion hit an unsupported feature. |
+      type: integer
+      format: int32
+      enum:
+        - 40001
+        - 40100
+        - 40300
+        - 40301
+        - 40400
+        - 40900
+        - 40901
+        - 41300
+        - 41500
+        - 42900
+        - 42901
+        - 50000
+        - 50101
+      examples:
+        - 40001
+
+    MovedResourceError:
+      description: |
+        Error payload for a moved resource route.
+
+        This follows the `APIError` envelope and adds `canonical` route metadata.
       type: object
       required:
-        - total
-        - data
+        - code
+        - msg
+        - canonical
       properties:
-        total:
-          description: Total number of result items in the result set.
+        code:
+          description: Stable error code for moved resources.
           type: integer
-          format: int64
-          minimum: 0
-        data:
-          description: Array of result items.
-          type: array
-          items:
-            type: object
+          format: int32
+          enum:
+            - 40901
+        msg:
+          description: Human-readable moved resource error message.
+          type: string
+          enum:
+            - Resource moved
+        canonical:
+          $ref: "#/components/schemas/MovedResourceCanonical"
 
     MovedResourceCanonical:
       description: |
@@ -6212,92 +6252,52 @@ components:
           examples:
             - v1.2.3
 
-    ErrorCode:
-      description: |
-        Stable machine-readable error code for the shared `APIError` envelope.
-
-        The first three digits match the HTTP status code. Clients should branch on this field instead of parsing `msg`.
-
-        | Code | HTTP status | Default msg | Meaning |
-        |------|-------------|-------------|---------|
-        | 40001 | 400 | Invalid args | Invalid request syntax, parameters, or body. |
-        | 40100 | 401 | Unauthorized | Authentication is required or invalid. |
-        | 40300 | 403 | Forbidden | The authenticated principal lacks permission. |
-        | 40301 | 403 | Quota exceeded | A long-window quota was exceeded. |
-        | 40400 | 404 | Not found | The requested resource was not found. |
-        | 40900 | 409 | Conflict | The request conflicts with current resource state. |
-        | 40901 | 409 | Resource moved | The request used a historical resource route. |
-        | 41300 | 413 | Content too large | Request or uploaded content exceeds the allowed size. |
-        | 41500 | 415 | Unsupported media type | Request or uploaded content type is not supported. |
-        | 42900 | 429 | Too many requests | Generic request throttling. |
-        | 42901 | 429 | Rate limit exceeded | A short-window rate limit was exceeded. |
-        | 50000 | 500 | Internal server error | An unexpected server-side failure occurred. |
-        | 50101 | 501 | Unsupported scratch feature | Scratch conversion hit an unsupported feature. |
-      type: integer
-      format: int32
-      enum:
-        - 40001
-        - 40100
-        - 40300
-        - 40301
-        - 40400
-        - 40900
-        - 40901
-        - 41300
-        - 41500
-        - 42900
-        - 42901
-        - 50000
-        - 50101
-      examples:
-        - 40001
-
-    APIError:
-      description: |
-        Shared error payload for most non-OAuth JSON endpoints.
-
-        `msg` is a safe, developer-facing diagnostic string. It is not localized and is not stable enough for
-        programmatic handling.
-
-        User-facing clients should map `code` to their own localized copy.
+    ByPage:
+      description: Paginated response wrapper.
       type: object
       required:
-        - code
-        - msg
+        - total
+        - data
       properties:
-        code:
-          $ref: "#/components/schemas/ErrorCode"
-        msg:
-          description: Safe developer-facing diagnostic message.
+        total:
+          description: Total number of result items in the result set.
+          type: integer
+          format: int64
+          minimum: 0
+        data:
+          description: Array of result items.
+          type: array
+          items:
+            type: object
+
+    Model:
+      type: object
+      description: Base model with common fields for all entities.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          description: Unique positive int64 identifier serialized as a canonical decimal string.
           type: string
           minLength: 1
+          maxLength: 19
+          pattern: "^[1-9][0-9]{0,18}$"
           examples:
-            - Invalid args
-
-    MovedResourceError:
-      description: |
-        Error payload for a moved resource route.
-
-        This follows the `APIError` envelope and adds `canonical` route metadata.
-      type: object
-      required:
-        - code
-        - msg
-        - canonical
-      properties:
-        code:
-          description: Stable error code for moved resources.
-          type: integer
-          format: int32
-          enum:
-            - 40901
-        msg:
-          description: Human-readable moved resource error message.
+            - "1"
+        createdAt:
+          description: Creation timestamp.
           type: string
-          enum:
-            - Resource moved
-        canonical:
-          $ref: "#/components/schemas/MovedResourceCanonical"
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        updatedAt:
+          description: Last update timestamp.
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
 
     Visibility:
       description: Visibility setting for resources.
@@ -6307,152 +6307,6 @@ components:
         - public
       examples:
         - private
-
-    User:
-      description: User account information.
-      type: object
-      required:
-        - id
-        - createdAt
-        - updatedAt
-        - username
-        - displayName
-        - avatar
-        - description
-        - plan
-        - followerCount
-        - followingCount
-        - projectCount
-        - publicProjectCount
-        - likedProjectCount
-      properties:
-        id:
-          $ref: "#/components/schemas/Model/properties/id"
-        createdAt:
-          $ref: "#/components/schemas/Model/properties/createdAt"
-        updatedAt:
-          $ref: "#/components/schemas/Model/properties/updatedAt"
-        username:
-          description: Unique username of the user.
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: "^[A-Za-z0-9_-]{1,100}$"
-          examples:
-            - john
-        displayName:
-          description: Display name of the user.
-          type: string
-          minLength: 1
-          maxLength: 100
-          examples:
-            - John Doe
-        avatar:
-          description: Public HTTP URL of the user's avatar image.
-          type: string
-          format: uri
-          pattern: "^https?://"
-          examples:
-            - https://avatars.example.com/users/10137.png
-        description:
-          description: Brief bio or description of the user.
-          type: string
-          maxLength: 200
-          examples:
-            - Two giants live in Britain's land...
-        plan:
-          description: Subscription plan of the user.
-          type: string
-          enum:
-            - free
-            - plus
-          examples:
-            - free
-        followerCount:
-          description: Number of followers the user has.
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
-        followingCount:
-          description: Number of users the user is following.
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
-        projectCount:
-          description: Total number of projects created by the user.
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
-        publicProjectCount:
-          description: Number of public projects created by the user.
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
-        likedProjectCount:
-          description: Number of projects liked by the user.
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
-        capabilities:
-          description: |
-            Capabilities of the user.
-
-            **This field is only present for the authenticated user's own profile.**
-          $ref: "#/components/schemas/UserCapabilities"
-
-    UserCapabilities:
-      type: object
-      description: User permission capabilities.
-      required:
-        - canManageAccount
-        - canManageAuthorization
-        - canManageAssets
-        - canManageCourses
-        - canUsePremiumLLM
-      properties:
-        canManageAccount:
-          description: Whether the user can manage user accounts.
-          type: boolean
-          examples:
-            - true
-        canManageAuthorization:
-          description: Whether the user can manage user authorizations.
-          type: boolean
-          examples:
-            - true
-        canManageAssets:
-          description: Whether the user can manage asset library.
-          type: boolean
-          examples:
-            - true
-        canManageCourses:
-          description: Whether the user can manage courses and course series.
-          type: boolean
-          examples:
-            - true
-        canUsePremiumLLM:
-          description: Whether the user can access premium LLM models.
-          type: boolean
-          examples:
-            - true
-
-    AuthenticatedUser:
-      description: Authenticated user account information.
-      allOf:
-        - $ref: "#/components/schemas/User"
-        - type: object
-          required:
-            - capabilities
 
     AccountUser:
       description: User fields exposed by XBuilder Account.
@@ -6946,6 +6800,16 @@ components:
       examples:
         - "1"
 
+    OAuthScope:
+      description: Space-delimited Account API OAuth scopes supported by XBuilder Account.
+      type: string
+      minLength: 1
+      pattern: "^(account:user:read|account:user:write|account:user:read account:user:write|account:user:write account:user:read)$"
+      examples:
+        - account:user:read
+        - account:user:write
+        - account:user:read account:user:write
+
     OAuthPKCECodeChallenge:
       description: PKCE code challenge.
       type: string
@@ -6959,16 +6823,6 @@ components:
       minLength: 43
       maxLength: 128
       pattern: "^[A-Za-z0-9._~-]{43,128}$"
-
-    OAuthScope:
-      description: Space-delimited Account API OAuth scopes supported by XBuilder Account.
-      type: string
-      minLength: 1
-      pattern: "^(account:user:read|account:user:write|account:user:read account:user:write|account:user:write account:user:read)$"
-      examples:
-        - account:user:read
-        - account:user:write
-        - account:user:read account:user:write
 
     OAuthPushedAuthorizationResponse:
       type: object
@@ -7206,77 +7060,152 @@ components:
           type: string
           format: uri-reference
 
-    AuditLog:
+    User:
+      description: User account information.
       type: object
-      description: Admin audit log entry.
       required:
         - id
         - createdAt
-        - action
-        - resourceType
-        - resourceID
+        - updatedAt
+        - username
+        - displayName
+        - avatar
+        - description
+        - plan
+        - followerCount
+        - followingCount
+        - projectCount
+        - publicProjectCount
+        - likedProjectCount
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
         createdAt:
           $ref: "#/components/schemas/Model/properties/createdAt"
-        action:
-          description: Audit action name.
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        username:
+          description: Unique username of the user.
           type: string
           minLength: 1
+          maxLength: 100
+          pattern: "^[A-Za-z0-9_-]{1,100}$"
           examples:
-            - account.user.password.set
-        actor:
-          description: Username of the user who performed the action at the time of the audit event.
-          oneOf:
-            - $ref: "#/components/schemas/User/properties/username"
-            - type: "null"
-        resourceType:
-          description: Type of the audited resource.
+            - john
+        displayName:
+          description: Display name of the user.
           type: string
           minLength: 1
+          maxLength: 100
           examples:
-            - account.user
-        resourceID:
-          description: ID of the audited resource.
-          $ref: "#/components/schemas/Model/properties/id"
-        metadata:
-          description: |
-            Additional audit metadata.
-
-            Metadata must not contain passwords, tokens, client secrets, or other secrets.
-          type: object
-          additionalProperties: true
-
-    UserAuthorization:
-      type: object
-      description: XBuilder Authorization inputs and derived capabilities for a user.
-      required:
-        - userID
-        - roles
-        - plan
-        - capabilities
-      properties:
-        userID:
-          description: ID of the user.
-          $ref: "#/components/schemas/Model/properties/id"
-        roles:
-          description: Roles assigned to the user.
-          type: array
-          items:
-            type: string
-            minLength: 1
+            - John Doe
+        avatar:
+          description: Public HTTP URL of the user's avatar image.
+          type: string
+          format: uri
+          pattern: "^https?://"
           examples:
-            - - assetAdmin
-              - courseAdmin
+            - https://avatars.example.com/users/10137.png
+        description:
+          description: Brief bio or description of the user.
+          type: string
+          maxLength: 200
+          examples:
+            - Two giants live in Britain's land...
         plan:
-          $ref: "#/components/schemas/User/properties/plan"
+          description: Subscription plan of the user.
+          type: string
+          enum:
+            - free
+            - plus
+          examples:
+            - free
+        followerCount:
+          description: Number of followers the user has.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+        followingCount:
+          description: Number of users the user is following.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+        projectCount:
+          description: Total number of projects created by the user.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+        publicProjectCount:
+          description: Number of public projects created by the user.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+        likedProjectCount:
+          description: Number of projects liked by the user.
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
         capabilities:
+          description: |
+            Capabilities of the user.
+
+            **This field is only present for the authenticated user's own profile.**
           $ref: "#/components/schemas/UserCapabilities"
-        quotaPolicies:
-          description: Derived quota policies for XBuilder Authorization decisions.
-          type: object
-          additionalProperties: true
+
+    AuthenticatedUser:
+      description: Authenticated user account information.
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          required:
+            - capabilities
+
+    UserCapabilities:
+      type: object
+      description: User permission capabilities.
+      required:
+        - canManageAccount
+        - canManageAuthorization
+        - canManageAssets
+        - canManageCourses
+        - canUsePremiumLLM
+      properties:
+        canManageAccount:
+          description: Whether the user can manage user accounts.
+          type: boolean
+          examples:
+            - true
+        canManageAuthorization:
+          description: Whether the user can manage user authorizations.
+          type: boolean
+          examples:
+            - true
+        canManageAssets:
+          description: Whether the user can manage asset library.
+          type: boolean
+          examples:
+            - true
+        canManageCourses:
+          description: Whether the user can manage courses and course series.
+          type: boolean
+          examples:
+            - true
+        canUsePremiumLLM:
+          description: Whether the user can access premium LLM models.
+          type: boolean
+          examples:
+            - true
+
 
     Project:
       type: object
@@ -7655,6 +7584,95 @@ components:
           examples:
             - 1
 
+    UpInfo:
+      description: Upload credentials and configuration.
+      type: object
+      required:
+        - token
+        - expiresAt
+        - maxSize
+        - bucket
+        - region
+      properties:
+        token:
+          description: Upload token used for authenticating upload requests.
+          type: string
+          examples:
+            - MY_ACCESS_KEY:wQ4ofysef1R7IKnrziqtomqyDvI=:eyJzY29wZSI6Im15LWJ1Y2tldDpzdW5mbG93ZXIuanBnIiwiZGVhZGxpbmUiOjE0NTE0OTEyMDAsInJldHVybkJvZHkiOiJ7XCJuYW1lXCI6JChmbmFtZSksXCJzaXplXCI6JChmc2l6ZSksXCJ3XCI6JChpbWFnZUluZm8ud2lkdGgpLFwiaFwiOiQoaW1hZ2VJbmZvLmhlaWdodCksXCJoYXNoXCI6JChldGFnKX0ifQ==
+        expiresAt:
+          description: Expiration timestamp of the upload token.
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
+        maxSize:
+          description: Maximum allowed file size in bytes.
+          type: integer
+          format: int64
+          examples:
+            - 26214400
+        bucket:
+          description: Name of the Qiniu Kodo bucket where files will be uploaded.
+          type: string
+          examples:
+            - xbuilder-usercontent-test
+        region:
+          description: Region of the Qiniu Kodo bucket.
+          type: string
+          examples:
+            - z0
+
+    CopilotMessageRequest:
+      description: Request payload for copilot message generation endpoints.
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          description: |
+            Input messages.
+
+            This request shape supports prior assistant `toolCalls` and tool result messages with `toolCallId`.
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/CopilotMessage"
+          examples:
+            - - role: user
+                content:
+                  type: text
+                  text: Hello, world!
+              - role: copilot
+                toolCalls:
+                  - id: call_1
+                    type: function
+                    function:
+                      name: create_project
+                      arguments: '{"name":"My Project"}'
+              - role: tool
+                toolCallId: call_1
+                content:
+                  type: text
+                  text: '{"id":"project_123"}'
+        tools:
+          description: Tools available for the copilot to use.
+          type: array
+          items:
+            $ref: "#/components/schemas/CopilotTool"
+          examples:
+            - - type: function
+                function:
+                  name: create_project
+                  description: Create a new project.
+                  parameters:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                    required:
+                      - name
+                    additionalProperties: false
+
     CopilotMessage:
       description: Message in a copilot conversation.
       oneOf:
@@ -7811,57 +7829,6 @@ components:
                   required:
                     - name
                   additionalProperties: false
-
-    CopilotMessageRequest:
-      description: Request payload for copilot message generation endpoints.
-      type: object
-      required:
-        - messages
-      properties:
-        messages:
-          description: |
-            Input messages.
-
-            This request shape supports prior assistant `toolCalls` and tool result messages with `toolCallId`.
-          type: array
-          maxItems: 50
-          items:
-            $ref: "#/components/schemas/CopilotMessage"
-          examples:
-            - - role: user
-                content:
-                  type: text
-                  text: Hello, world!
-              - role: copilot
-                toolCalls:
-                  - id: call_1
-                    type: function
-                    function:
-                      name: create_project
-                      arguments: '{"name":"My Project"}'
-              - role: tool
-                toolCallId: call_1
-                content:
-                  type: text
-                  text: '{"id":"project_123"}'
-        tools:
-          description: Tools available for the copilot to use.
-          type: array
-          items:
-            $ref: "#/components/schemas/CopilotTool"
-          examples:
-            - - type: function
-                function:
-                  name: create_project
-                  description: Create a new project.
-                  parameters:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                    required:
-                      - name
-                    additionalProperties: false
 
     CopilotRequestToolCall:
       description: Structured tool call supplied on a prior copilot message.
@@ -8172,6 +8139,60 @@ components:
               examples:
                 - Generation failed due to content policy violation
 
+    InputText:
+      description: Text input for multimodal content.
+      type: object
+      required:
+        - type
+        - text
+      additionalProperties: false
+      properties:
+        type:
+          description: Content type identifier.
+          type: string
+          enum:
+            - inputText
+          examples:
+            - inputText
+        text:
+          description: The text content.
+          type: string
+          minLength: 1
+          maxLength: 2000
+          examples:
+            - "Generate a description for a sprite named 'Tornado'."
+
+    InputImage:
+      description: Image input for multimodal content.
+      type: object
+      required:
+        - type
+        - imageUrl
+      additionalProperties: false
+      properties:
+        type:
+          description: Content type identifier.
+          type: string
+          enum:
+            - inputImage
+          examples:
+            - inputImage
+        imageUrl:
+          description: |
+            Base64-encoded PNG image data URL.
+
+            Data URL requirements:
+
+            - The format must be `data:image/png;base64,<base64_data>`.
+            - The maximum image size is 5 MiB after decoding the base64 content.
+            - Other formats such as SVG, JPEG, or WebP must be converted to PNG before sending.
+          type: string
+          format: uri
+          minLength: 1
+          maxLength: 7000000
+          examples:
+            - "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
     AIGCArtStyle:
       description: Art style of projects or assets.
       type: string
@@ -8314,97 +8335,77 @@ components:
                 - ui
                 - unspecified
 
-    InputText:
-      description: Text input for multimodal content.
+    UserAuthorization:
       type: object
+      description: XBuilder Authorization inputs and derived capabilities for a user.
       required:
-        - type
-        - text
-      additionalProperties: false
+        - userID
+        - roles
+        - plan
+        - capabilities
       properties:
-        type:
-          description: Content type identifier.
-          type: string
-          enum:
-            - inputText
+        userID:
+          description: ID of the user.
+          $ref: "#/components/schemas/Model/properties/id"
+        roles:
+          description: Roles assigned to the user.
+          type: array
+          items:
+            type: string
+            minLength: 1
           examples:
-            - inputText
-        text:
-          description: The text content.
+            - - assetAdmin
+              - courseAdmin
+        plan:
+          $ref: "#/components/schemas/User/properties/plan"
+        capabilities:
+          $ref: "#/components/schemas/UserCapabilities"
+        quotaPolicies:
+          description: Derived quota policies for XBuilder Authorization decisions.
+          type: object
+          additionalProperties: true
+
+    AuditLog:
+      type: object
+      description: Admin audit log entry.
+      required:
+        - id
+        - createdAt
+        - action
+        - resourceType
+        - resourceID
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        action:
+          description: Audit action name.
           type: string
           minLength: 1
-          maxLength: 2000
           examples:
-            - "Generate a description for a sprite named 'Tornado'."
-
-    InputImage:
-      description: Image input for multimodal content.
-      type: object
-      required:
-        - type
-        - imageUrl
-      additionalProperties: false
-      properties:
-        type:
-          description: Content type identifier.
+            - account.user.password.set
+        actor:
+          description: Username of the user who performed the action at the time of the audit event.
+          oneOf:
+            - $ref: "#/components/schemas/User/properties/username"
+            - type: "null"
+        resourceType:
+          description: Type of the audited resource.
           type: string
-          enum:
-            - inputImage
+          minLength: 1
           examples:
-            - inputImage
-        imageUrl:
+            - account.user
+        resourceID:
+          description: ID of the audited resource.
+          $ref: "#/components/schemas/Model/properties/id"
+        metadata:
           description: |
-            Base64-encoded PNG image data URL.
+            Additional audit metadata.
 
-            Data URL requirements:
-
-            - The format must be `data:image/png;base64,<base64_data>`.
-            - The maximum image size is 5 MiB after decoding the base64 content.
-            - Other formats such as SVG, JPEG, or WebP must be converted to PNG before sending.
-          type: string
-          format: uri
-          minLength: 1
-          maxLength: 7000000
-          examples:
-            - "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-
-    UpInfo:
-      description: Upload credentials and configuration.
-      type: object
-      required:
-        - token
-        - expiresAt
-        - maxSize
-        - bucket
-        - region
-      properties:
-        token:
-          description: Upload token used for authenticating upload requests.
-          type: string
-          examples:
-            - MY_ACCESS_KEY:wQ4ofysef1R7IKnrziqtomqyDvI=:eyJzY29wZSI6Im15LWJ1Y2tldDpzdW5mbG93ZXIuanBnIiwiZGVhZGxpbmUiOjE0NTE0OTEyMDAsInJldHVybkJvZHkiOiJ7XCJuYW1lXCI6JChmbmFtZSksXCJzaXplXCI6JChmc2l6ZSksXCJ3XCI6JChpbWFnZUluZm8ud2lkdGgpLFwiaFwiOiQoaW1hZ2VJbmZvLmhlaWdodCksXCJoYXNoXCI6JChldGFnKX0ifQ==
-        expiresAt:
-          description: Expiration timestamp of the upload token.
-          type: string
-          format: date-time
-          examples:
-            - 2006-01-02T15:04:05+07:00
-        maxSize:
-          description: Maximum allowed file size in bytes.
-          type: integer
-          format: int64
-          examples:
-            - 26214400
-        bucket:
-          description: Name of the Qiniu Kodo bucket where files will be uploaded.
-          type: string
-          examples:
-            - xbuilder-usercontent-test
-        region:
-          description: Region of the Qiniu Kodo bucket.
-          type: string
-          examples:
-            - z0
+            Metadata must not contain passwords, tokens, client secrets, or other secrets.
+          type: object
+          additionalProperties: true
 
   parameters:
     SortOrder:
