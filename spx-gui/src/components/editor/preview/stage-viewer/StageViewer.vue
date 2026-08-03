@@ -117,6 +117,26 @@
       {{ $t({ en: 'Click to insert the name into your code', zh: '点击把名字插入代码' }) }}
     </UITooltip>
 
+    <!-- Invisible per-sprite anchors (focused mode): course-opening spotlights address a sprite on
+         the stage through these radar landmarks (`Stage sprite: <name>`). `pointer-events-none`
+         keeps them out of the way — a click inside the spotlighted box falls through to the canvas
+         and actually selects the sprite, which is exactly the action being taught. -->
+    <div
+      v-for="anchor in stageSpriteAnchors"
+      :key="anchor.name"
+      v-radar="{
+        name: `Stage sprite: ${anchor.name}`,
+        desc: `On-stage area of the sprite named ${anchor.name}; clicking it selects the sprite`
+      }"
+      class="pointer-events-none absolute"
+      :style="{
+        left: `${anchor.left}px`,
+        top: `${anchor.top}px`,
+        width: `${anchor.width}px`,
+        height: `${anchor.height}px`
+      }"
+    ></div>
+
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
@@ -135,7 +155,7 @@ import {
   type ComponentPublicInstance
 } from 'vue'
 import Konva from 'konva'
-import type { KonvaEventObject } from 'konva/lib/Node'
+import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { StageConfig } from 'konva/lib/Stage'
 import type { LayerConfig } from 'konva/lib/Layer'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
@@ -684,6 +704,72 @@ watch(
     ]
   },
   refreshSelectedSpriteNameLabel,
+  { flush: 'post', immediate: true }
+)
+
+/**
+ * Screen-space boxes of the sprites on the stage (focused mode only), in `.stage-viewer`
+ * coordinates. They back the invisible per-sprite radar anchors in the template, which exist so a
+ * course-opening spotlight can point at a sprite ("click the boat") even though the stage itself is
+ * one canvas with no per-sprite DOM.
+ */
+const stageSpriteAnchors = shallowRef<
+  Array<{ name: string; left: number; top: number; width: number; height: number }>
+>([])
+
+function refreshStageSpriteAnchors() {
+  if (editorWorkspaceLayout.mode !== 'focused') {
+    stageSpriteAnchors.value = []
+    return
+  }
+  const stage = stageRef.value?.getStage() ?? null
+  const containerEl = container.value
+  if (stage == null || containerEl == null) {
+    stageSpriteAnchors.value = []
+    return
+  }
+  // Same coordinate correction as the name label: konva rects are canvas-relative while the
+  // anchors are positioned within `.stage-viewer`, and the canvas can sit offset inside it.
+  let offsetX = 0
+  let offsetY = 0
+  const contentEl = stage.content
+  if (contentEl != null) {
+    const cr = containerEl.getBoundingClientRect()
+    const kr = contentEl.getBoundingClientRect()
+    offsetX = kr.left - cr.left
+    offsetY = kr.top - cr.top
+  }
+  const anchors: Array<{ name: string; left: number; top: number; width: number; height: number }> = []
+  for (const sprite of editorCtx.project.sprites) {
+    const nodeId = getNodeId(sprite)
+    const node = stage.findOne((n: Node) => n.getAttr('nodeId') === nodeId)
+    if (node == null) continue
+    const box = node.getClientRect()
+    if (box.width === 0 || box.height === 0) continue
+    anchors.push({
+      name: sprite.name,
+      left: box.x + offsetX,
+      top: box.y + offsetY,
+      width: box.width,
+      height: box.height
+    })
+  }
+  stageSpriteAnchors.value = anchors
+}
+
+watch(
+  () => [
+    editorWorkspaceLayout.mode,
+    // Any sprite moving, scaling, turning, renaming, appearing or leaving shifts its anchor.
+    editorCtx.project.sprites.map((s) => `${s.id}:${s.name}:${s.x}:${s.y}:${s.size}:${s.heading}:${s.visible}`).join(),
+    mapPos.value.x,
+    mapPos.value.y,
+    stageScale.value,
+    loading.value,
+    containerSize.value?.width,
+    containerSize.value?.height
+  ],
+  refreshStageSpriteAnchors,
   { flush: 'post', immediate: true }
 )
 

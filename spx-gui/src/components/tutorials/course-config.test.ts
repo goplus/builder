@@ -122,9 +122,28 @@ describe('extractCourseConfig', () => {
     expect(extractCourseConfig(prompt).opening).toEqual([
       { kind: 'prelude', text: '欢迎' },
       { kind: 'video', api: 'step' },
-      { kind: 'spotlight', target: { kind: 'api', name: 'step' }, tip: '拖它进代码' },
-      { kind: 'spotlight', target: { kind: 'ui', name: 'Run button' }, tip: '点这里运行' },
-      { kind: 'spotlight', target: { kind: 'ui', name: 'Ruler' }, tip: '' }
+      { kind: 'spotlight', target: { kind: 'api', name: 'step' }, tip: '拖它进代码', patient: false },
+      { kind: 'spotlight', target: { kind: 'ui', name: 'Run button' }, tip: '点这里运行', patient: false },
+      { kind: 'spotlight', target: { kind: 'ui', name: 'Ruler' }, tip: '', patient: false }
+    ])
+  })
+
+  it('should parse sprite spotlight targets and the patient flag', () => {
+    const prompt = [
+      '```jsonc',
+      '{',
+      '  "opening": [',
+      '    { "spotlight": { "sprite": " Boat " }, "tip": "点击小船" },',
+      '    { "spotlight": { "ui": "Selected sprite name" }, "tip": "点击名字", "patient": true },',
+      '    { "spotlight": { "ui": "Ruler" }, "patient": "yes" }', // non-boolean -> false
+      '  ]',
+      '}',
+      '```'
+    ].join('\n')
+    expect(extractCourseConfig(prompt).opening).toEqual([
+      { kind: 'spotlight', target: { kind: 'sprite', name: 'Boat' }, tip: '点击小船', patient: false },
+      { kind: 'spotlight', target: { kind: 'ui', name: 'Selected sprite name' }, tip: '点击名字', patient: true },
+      { kind: 'spotlight', target: { kind: 'ui', name: 'Ruler' }, tip: '', patient: false }
     ])
   })
 
@@ -181,6 +200,18 @@ describe('createCourseApiMatcher', () => {
     expect(withoutOverload(stepId)).toBe(true)
     expect(withoutOverload(stepOverloadId)).toBe(true)
     expect(withoutOverload(gameOnStartId)).toBe(false)
+  })
+
+  it('should pin an overload without pinning the module version', () => {
+    // A full ID embeds the engine module version (`.../spx/v2?...`) and broke when spx bumped to
+    // v3; `name#N` expresses the same overload restriction version-free.
+    const bare = createCourseApiMatcher(['step#0'])
+    expect(bare(stepId)).toBe(true)
+    expect(bare(stepOverloadId)).toBe(false)
+    const dotted = createCourseApiMatcher(['Sprite.step#0'])
+    expect(dotted(stepId)).toBe(true)
+    expect(dotted(stepOverloadId)).toBe(false)
+    expect(dotted(gameOnStartId)).toBe(false)
   })
 
   it('should match when any entry of the set matches', () => {

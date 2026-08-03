@@ -3,7 +3,7 @@
 <script setup lang="ts">
 import { UIModal, UIModalClose } from '@/components/ui'
 import type { ApiVideoInfo } from './api-videos'
-import { useVideoAspect } from './video-aspect'
+import { handlePlayWithSound, useVideoAspect } from './video-aspect'
 
 defineProps<{
   video: ApiVideoInfo
@@ -33,10 +33,11 @@ const { aspectStyle, handleLoadedMetadata } = useVideoAspect(4 / 3)
         <UIModalClose @click="emit('close')" />
       </div>
       <div class="mt-3 overflow-hidden rounded-md bg-grey-1000">
-        <!-- Same player style as the API-reference hover card: autoplaying, looping, no browser
-             controls (they would appear on hover otherwise). The explainers are short silent
-             demos — looping replaces seeking, and closing the modal is the only control needed.
-             `muted` also keeps autoplay allowed regardless of user-gesture heuristics.
+        <!-- Hover-card style minus the muting: autoplaying, looping, no browser controls (they
+             would appear on hover otherwise). Unlike the hover card's silent preview, the dialog
+             is deliberate viewing, so the soundtrack plays; if the browser blocks unmuted
+             autoplay, `handlePlayWithSound` falls back to muted rather than freezing (no controls
+             means no way to unstick a paused video).
              `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
@@ -45,10 +46,10 @@ const { aspectStyle, handleLoadedMetadata } = useVideoAspect(4 / 3)
           :src="video.src"
           crossorigin="anonymous"
           autoplay
-          muted
           loop
           playsinline
           @loadedmetadata="handleLoadedMetadata"
+          @loadeddata="handlePlayWithSound"
         ></video>
       </div>
     </div>
