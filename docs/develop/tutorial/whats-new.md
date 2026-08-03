@@ -151,10 +151,16 @@ prelude" ordering and the pre-editor `<course-prelude>` modal (which is now inli
 the story video stays a tag because it precedes the editor and carries its own origin check).
 
 A **spotlight** step highlights the one thing to act on next — a UI landmark by its Radar name
-(`Radar.getNodeByName`, e.g. `"Run button"`, `"Ruler"`) or an API-references item by its definition
-id (a new `data-def-id` on the item, matched with the same `createCourseApiMatcher` as `apis`) — and
-advances when the user clicks (a new `concealed` event on `Spotlight`). Targets that mount late are
-retried, then skipped, so a bad reference can't stall the opening.
+(`Radar.getNodeByName`, e.g. `"Run button"`, `"Ruler"`), an API-references item by its definition
+id (a new `data-def-id` on the item, matched with the same `createCourseApiMatcher` as `apis`), or
+**a sprite on the edit stage** by its name (the stage viewer keeps invisible, click-through radar
+anchors over each sprite, so "click the boat" is spotlightable even though the stage is one canvas)
+— and advances when the user clicks (a new `concealed` event on `Spotlight`). Targets that mount
+late are retried, then skipped, so a bad reference can't stall the opening; a step whose target
+appears only after the user acts on the previous one (the selected sprite's name label, say) opts
+into waiting with `patient`. Chained, these teach name insertion: spotlight the sprite, the click
+that dismisses it also selects it, and the next spotlight lands on the name label whose click drops
+the name at the code cursor.
 
 API videos are keyed by definition id and remembered per user, so **a concept is never explained
 twice**; every overload of an API resolves to the same video, and non-API topics can have one too
@@ -166,10 +172,12 @@ Video dialogs **size themselves to the video**: the library is not one shape (th
 are 4:3, the older ones 16:9) and story videos vary per series, so the box reads the intrinsic ratio
 from the loaded metadata rather than pinning one and letterboxing everything else. Nothing to
 declare per video. Both video dialogs also **play like the API-reference hover card** —
-autoplaying, muted, looping, no browser controls popping up on every mouse move. Looping replaces
-seeking, and leaving is the only control: closing the explainer modal, or the story dialog's
-"Start the course" button (with the video looping, `ended` never fires, so the button is the one
-way in).
+autoplaying, looping, no browser controls popping up on every mouse move — but with sound: unlike
+the hover card's ambient preview, a dialog is deliberate viewing, so the soundtrack plays (muted is
+only the fallback when the browser blocks unmuted autoplay — without controls, a video that never
+started could never be unstuck). Looping replaces seeking, and leaving is the only control: closing
+the explainer modal, or the story dialog's "Start the course" button (with the video looping,
+`ended` never fires, so the button is the one way in).
 
 Externally hosted videos (e.g. S3) load in CORS mode via `<video crossorigin>` to pass the site's
 COEP; story videos are origin-allowlisted (same-origin + usercontent CDN + the tutorial asset host),

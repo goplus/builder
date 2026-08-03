@@ -37,13 +37,13 @@ The first ` ```jsonc ` block in the prompt is parsed as the course config and ap
 | Video | `{ "video": "step" }` | Plays the API's explainer (skipped if already learned); entry format same as `apis` |
 | Spotlight | `{ "spotlight": { "api": "step" }, "tip": "Drag it in" }` | Highlights a UI element, dims the rest, shows `tip` (optional); continues on the next click |
 
-A spotlight target is either `{ "api": "step" }` — an API item in the panel, addressed like an `apis` entry — or `{ "ui": "Run button" }` — a UI landmark addressed by its **Radar name**. Common landmarks: `Run button`, `Ruler`, `API References`, `Copilot trigger` (more are the `name` in `v-radar={{ name: ... }}` in the source). If a target never appears, the spotlight retries a few times and then skips, so it can't stall the sequence.
+A spotlight target is `{ "api": "step" }` — an API item in the panel, addressed like an `apis` entry — or `{ "ui": "Run button" }` — a UI landmark addressed by its **Radar name** — or `{ "sprite": "Boat" }` — a sprite on the edit stage, addressed by its name (the stage anchors an overlay on it; clicking inside selects the sprite). Common UI landmarks: `Run button`, `Ruler`, `API References`, `Copilot trigger`, `Selected sprite name` (more are the `name` in `v-radar={{ name: ... }}` in the source). If a target never appears, the spotlight retries a few times and then skips, so it can't stall the sequence. A step whose target only appears **after the user acts on the previous step** opts out of the skip with `"patient": true` — e.g. teaching name insertion: spotlight the sprite (`{ "sprite": "Mushroom" }`), then spotlight `Selected sprite name` with `patient` (the label exists only once the sprite is selected; clicking it inserts the name at the code cursor).
 
 Ordering is the experience: the typical arrangement is prelude → knowledge-point video → spotlight the control to act on. An empty (absent) `opening` falls back to the legacy behavior: `videos` play at start and `<course-prelude>` shows before the editor.
 
 ### `apis` / video / spotlight entries
 
-`apis`, `opening` `video` steps, and `spotlight` `api` targets share one API-name matcher. Each entry matches a panel item (and all of its overloads) as a bare name (`step`), a dotted name (`Sprite.step`), or a definition ID (`xgo:...?Sprite.step#0`; without `#overload` it matches all overloads). Language constructs use their canonical names: `if_statement`, `if_else_statement`, `var_declaration`, `for_iterate`. spx functions and project-defined methods (e.g. `IsMature`, `Water`) work as bare names.
+`apis`, `opening` `video` steps, and `spotlight` `api` targets share one API-name matcher. Each entry matches a panel item (and all of its overloads) as a bare name (`step`) or a dotted name (`Sprite.step`); append `#N` to pin one overload (`step#0` — the basic form only). **Do not use full definition IDs** (`xgo:github.com/goplus/spx/v2?...`): they embed the engine module version and silently stop matching when the engine major-bumps — the spx v2→v3 upgrade broke a course exactly this way. Language constructs use their canonical names: `if_statement`, `if_else_statement`, `var_declaration`, `for_iterate`. spx functions and project-defined methods (e.g. `IsMature`, `Water`) work as bare names.
 
 Videos come from the global knowledge-point library (keyed by definition ID); **every overload of an API resolves to the same video** (the video explains the API, not one overload), and a bare name works too. In demo mode unknown entries play the shared demo video. Watched knowledge points are remembered and not pushed again.
 
@@ -71,6 +71,23 @@ Story-video sources are **origin-restricted** (the `?video=` query param is spoo
 ## The prose (the Copilot's lesson plan)
 
 The opening guide line now lives in the config's `opening.prelude`, not a `<course-prelude>` tag. Recommended prose sections (see the Code: Lita series): `## 目标`, `## 当前代码` (with a reference answer marked as one-of-many), `## 完成判定`, optional `## 引导要点`. Do not write "narrow the APIs at start" / "play the video at start" / "spotlight the button first" prose — the config's `apis` / `opening` already do that, and such prose conflicts with the silent opening protocol. For `judge: "code"` courses, state explicitly that the system judges and the Copilot must not declare completion. Prompt limit: 4000 characters.
+
+## Pick the target UI before laying out the stage
+
+A course targets **one** editor UI, decided up front, because the two present very differently
+shaped stages and a map can only fill one of them:
+
+* **The focused (simplified) UI** — what a course with a `hide` list gets — gives the stage a tall,
+  roughly **0.9 : 1** pane on common 16:9/16:10 screens (measured ≈636×710 on 1280×800 through
+  1440×810; the ratio holds on larger 16:9 windows because both layout columns scale linearly).
+  A classic 480×360 (4:3) map covers only about two thirds of it, with grid-textured bands above
+  and below. Author focused courses with **map and run size at ≈0.9 : 1 — recommended 480×528** —
+  so the world fills the stage.
+* **The standard UI** keeps the traditional 4:3 stage; 480×360 fills it exactly.
+
+The runner letterboxes to the project's `run` size with the same math, so keep `map` and `run` the
+same shape. (The Code: Lita series predates this rule and is still 480×360; resizing its scenes is
+a per-course relayout — distances taught in the prose change too — so it migrates course by course.)
 
 ## Workflow for a new course
 
