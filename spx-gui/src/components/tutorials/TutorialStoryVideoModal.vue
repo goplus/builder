@@ -18,7 +18,7 @@ export function extractCourseStoryVideo(prompt: string): string | null {
 import { ref } from 'vue'
 
 import { UIButton, UIModal, UIModalClose } from '@/components/ui'
-import { useVideoAspect } from './video-aspect'
+import { handlePlayWithSound, useVideoAspect } from './video-aspect'
 
 defineProps<{
   visible: boolean
@@ -58,9 +58,11 @@ function handleContinue() {
       </div>
 
       <div class="relative mt-3 overflow-hidden rounded-md bg-grey-1000">
-        <!-- Same player style as the API-reference hover card: autoplaying, muted, looping, no
-             browser controls popping up on mouse move. Looping means `ended` never fires, so the
-             button below is the one way into the course.
+        <!-- Hover-card style minus the muting: autoplaying, looping, no browser controls popping
+             up on mouse move. The story has a plot and a soundtrack, so it plays with sound;
+             `handlePlayWithSound` falls back to muted playback if the browser blocks unmuted
+             autoplay (no controls means a paused video could never be unstuck). Looping means
+             `ended` never fires, so the button below is the one way into the course.
              `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
@@ -69,10 +71,10 @@ function handleContinue() {
           :src="src"
           crossorigin="anonymous"
           autoplay
-          muted
           loop
           playsinline
           @loadedmetadata="handleLoadedMetadata"
+          @loadeddata="handlePlayWithSound"
           @error="hasPlaybackError = true"
         ></video>
         <div
