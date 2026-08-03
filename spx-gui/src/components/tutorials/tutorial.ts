@@ -25,6 +25,9 @@ import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from 
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 
+/** How long the success dialog waits after the completion signal (see `revealedCompletion`). */
+const completionRevealDelay = 1000
+
 export function useTutorial() {
   const tutorial = inject(tutorialKey)
   if (tutorial == null) {
@@ -79,12 +82,24 @@ export class Tutorial {
   /**
    * Course completion. Driven by a completion signal — a runtime sentinel for `judge: "code"`
    * courses, or the copilot for `judge: "copilot"` ones. Set once; the success dialog renders from
-   * it immediately (no LLM wait) and the copilot's evaluation fills `completionComment` afterwards.
+   * it (no LLM wait) and the copilot's evaluation fills `completionComment` afterwards.
    */
   private completionRef = shallowRef<{ course: Course; series: CourseSeries } | null>(null)
   private commentRef = ref<string | null>(null)
+  private completionRevealedRef = ref(false)
+  private completionRevealTimer: ReturnType<typeof setTimeout> | null = null
   get completion() {
     return this.completionRef.value
+  }
+  /**
+   * The completion the success dialog renders from: `completion`, one beat later. The completion
+   * signal fires the frame the sprite touches its goal, and popping the dialog that instant robs
+   * the user of watching the pickup actually happen — so the dialog waits, while everything that
+   * protects the evaluation round (the ambient-event gate, the copilot's "Course completed"
+   * event) keys on the undelayed `completion`.
+   */
+  get revealedCompletion() {
+    return this.completionRevealedRef.value ? this.completionRef.value : null
   }
   get completionComment() {
     return this.commentRef.value
@@ -96,6 +111,11 @@ export class Tutorial {
     const series = this.currentSeries
     if (course == null || series == null || this.completionRef.value != null) return
     this.completionRef.value = { course, series }
+    this.completionRevealedRef.value = false
+    this.completionRevealTimer = setTimeout(() => {
+      this.completionRevealTimer = null
+      if (this.completionRef.value != null) this.completionRevealedRef.value = true
+    }, completionRevealDelay)
     // A blank comment counts as no comment: an empty attribute must not leave the dialog stuck
     // showing nothing when the async request below could fill it.
     const normalized = comment?.trim() ?? ''
@@ -106,7 +126,7 @@ export class Tutorial {
     if (this.commentRef.value == null) {
       this.copilot.notifyUserEvent(
         { en: 'Course completed', zh: '课程完成' },
-        "The course is now complete: the success dialog is already on screen with an EMPTY comment area waiting. The plain prose of your reply IS that comment — it is displayed in the dialog and NOWHERE else (this round is hidden from chat). Reply with ONE short, friendly sentence in the user's language evaluating what the user did. No tags besides your usual invisible progress verdict — no <tutorial-course-success> (the dialog is already up), and NEVER <stay-silent> (it would leave the comment area blank).",
+        "The course is now complete: the success dialog is opening with an EMPTY comment area waiting. The plain prose of your reply IS that comment — it is displayed in the dialog and NOWHERE else (this round is hidden from chat). Reply with ONE short, friendly sentence in the user's language evaluating what the user did. No tags besides your usual invisible progress verdict — no <tutorial-course-success> (the dialog is already up), and NEVER <stay-silent> (it would leave the comment area blank).",
         { autoOpen: false }
       )
     }
@@ -118,8 +138,13 @@ export class Tutorial {
   }
 
   dismissCompletion() {
+    if (this.completionRevealTimer != null) {
+      clearTimeout(this.completionRevealTimer)
+      this.completionRevealTimer = null
+    }
     this.completionRef.value = null
     this.commentRef.value = null
+    this.completionRevealedRef.value = false
   }
 
   private abandonPredictionCountRef = ref(0)

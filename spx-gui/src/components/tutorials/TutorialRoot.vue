@@ -362,8 +362,8 @@ provideTutorial(tutorial)
     @close="handleVideoClose(currentOpeningStep)"
   />
   <TutorialCourseSuccessModal
-    v-if="tutorial.completion != null"
-    :completion="tutorial.completion"
+    v-if="tutorial.revealedCompletion != null"
+    :completion="tutorial.revealedCompletion"
     :comment="tutorial.completionComment"
     :tutorial="tutorial"
     @close="tutorial.dismissCompletion()"
