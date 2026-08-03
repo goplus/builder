@@ -72,23 +72,6 @@ Story-video sources are **origin-restricted** (the `?video=` query param is spoo
 
 The opening guide line now lives in the config's `opening.prelude`, not a `<course-prelude>` tag. Recommended prose sections (see the Code: Lita series): `## 目标`, `## 当前代码` (with a reference answer marked as one-of-many), `## 完成判定`, optional `## 引导要点`. Do not write "narrow the APIs at start" / "play the video at start" / "spotlight the button first" prose — the config's `apis` / `opening` already do that, and such prose conflicts with the silent opening protocol. For `judge: "code"` courses, state explicitly that the system judges and the Copilot must not declare completion. Prompt limit: 4000 characters.
 
-## Pick the target UI before laying out the stage
-
-A course targets **one** editor UI, decided up front, because the two present very differently
-shaped stages and a map can only fill one of them:
-
-* **The focused (simplified) UI** — what a course with a `hide` list gets — gives the stage a tall,
-  roughly **0.9 : 1** pane on common 16:9/16:10 screens (measured ≈636×710 on 1280×800 through
-  1440×810; the ratio holds on larger 16:9 windows because both layout columns scale linearly).
-  A classic 480×360 (4:3) map covers only about two thirds of it, with grid-textured bands above
-  and below. Author focused courses with **map and run size at ≈0.9 : 1 — recommended 480×528** —
-  so the world fills the stage.
-* **The standard UI** keeps the traditional 4:3 stage; 480×360 fills it exactly.
-
-The runner letterboxes to the project's `run` size with the same math, so keep `map` and `run` the
-same shape. (The Code: Lita series predates this rule and is still 480×360; resizing its scenes is
-a per-course relayout — distances taught in the prose change too — so it migrates course by course.)
-
 ## Workflow for a new course
 
 1. Build the course project; make the game print a judgeable output line per key progress step (or print the sentinel when the goal is reached).
