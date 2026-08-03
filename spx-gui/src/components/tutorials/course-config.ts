@@ -12,9 +12,13 @@ export type CourseCompletionJudge = 'code' | 'copilot'
 /**
  * A target a course opening can spotlight. `api` addresses an item in the API references panel by
  * its API name / definition ID (see `createCourseApiMatcher`); `ui` addresses a UI landmark by its
- * Radar node name (see `Radar.getNodeByName`, e.g. `"Run button"`).
+ * Radar node name (see `Radar.getNodeByName`, e.g. `"Run button"`); `sprite` addresses a sprite on
+ * the edit-mode stage by its name (e.g. `"Boat"` — the stage viewer anchors an overlay on it).
  */
-export type CourseSpotlightTarget = { kind: 'api'; name: string } | { kind: 'ui'; name: string }
+export type CourseSpotlightTarget =
+  | { kind: 'api'; name: string }
+  | { kind: 'ui'; name: string }
+  | { kind: 'sprite'; name: string }
 
 /**
  * One step of a course's opening sequence, applied by the frontend once the editor is up (see
@@ -26,7 +30,7 @@ export type CourseSpotlightTarget = { kind: 'api'; name: string } | { kind: 'ui'
 export type CourseOpeningStep =
   | { kind: 'prelude'; text: string }
   | { kind: 'video'; api: string }
-  | { kind: 'spotlight'; target: CourseSpotlightTarget; tip: string }
+  | { kind: 'spotlight'; target: CourseSpotlightTarget; tip: string; patient: boolean }
 
 /**
  * Static, author-declared configuration of a tutorial course. Written by the course author as a
@@ -193,11 +197,12 @@ function normalizeOpening(value: unknown): CourseOpeningStep[] {
 /** Parse one opening entry. An entry carries exactly one of `prelude` / `video` / `spotlight`. */
 function normalizeOpeningStep(entry: unknown): CourseOpeningStep | null {
   if (entry == null || typeof entry !== 'object') return null
-  const { prelude, video, spotlight, tip } = entry as {
+  const { prelude, video, spotlight, tip, patient } = entry as {
     prelude?: unknown
     video?: unknown
     spotlight?: unknown
     tip?: unknown
+    patient?: unknown
   }
   if (typeof prelude === 'string' && prelude.trim() !== '') {
     return { kind: 'prelude', text: prelude.trim() }
@@ -207,16 +212,20 @@ function normalizeOpeningStep(entry: unknown): CourseOpeningStep | null {
   }
   const target = normalizeSpotlightTarget(spotlight)
   if (target != null) {
-    return { kind: 'spotlight', target, tip: typeof tip === 'string' ? tip.trim() : '' }
+    // `patient` opts out of the retry-then-skip default for targets that only appear after the
+    // user acts on the previous step (e.g. a sprite's name label, which exists once the sprite is
+    // selected). The author asserts the target WILL appear, so the step waits instead of skipping.
+    return { kind: 'spotlight', target, tip: typeof tip === 'string' ? tip.trim() : '', patient: patient === true }
   }
   return null
 }
 
 function normalizeSpotlightTarget(value: unknown): CourseSpotlightTarget | null {
   if (value == null || typeof value !== 'object') return null
-  const { api, ui } = value as { api?: unknown; ui?: unknown }
+  const { api, ui, sprite } = value as { api?: unknown; ui?: unknown; sprite?: unknown }
   if (typeof api === 'string' && api.trim() !== '') return { kind: 'api', name: api.trim() }
   if (typeof ui === 'string' && ui.trim() !== '') return { kind: 'ui', name: ui.trim() }
+  if (typeof sprite === 'string' && sprite.trim() !== '') return { kind: 'sprite', name: sprite.trim() }
   return null
 }
 
@@ -257,11 +266,23 @@ export const configurableHiddenAreas = hideableWorkspaceAreas
  */
 function matchesApiEntry(entry: string, definitionId: string): boolean {
   if (entry.includes('?')) {
+    // A full definition ID. Note that it pins the engine module version (`.../spx/v2?...`) and
+    // rots when the engine major-bumps — course data should prefer the version-free forms below,
+    // which can still pin an overload with `#N`.
     return definitionId === entry || definitionId.startsWith(`${entry}#`)
   }
-  const dotted = decodeURIComponent(definitionId.split('?').at(-1) ?? '').split('#')[0]
-  if (dotted === entry) return true
-  return dotted.split('.').at(-1) === entry
+  const [entryName, entryOverload] = splitEntryOverload(entry)
+  const decoded = decodeURIComponent(definitionId.split('?').at(-1) ?? '')
+  const [dotted, idOverload] = splitEntryOverload(decoded)
+  if (entryOverload != null && entryOverload !== idOverload) return false
+  if (dotted === entryName) return true
+  return dotted.split('.').at(-1) === entryName
+}
+
+function splitEntryOverload(value: string): [name: string, overload: string | null] {
+  const hashIdx = value.indexOf('#')
+  if (hashIdx < 0) return [value, null]
+  return [value.slice(0, hashIdx), value.slice(hashIdx + 1)]
 }
 
 /** Build a matcher deciding whether a definition ID belongs to the author-declared API set. */
