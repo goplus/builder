@@ -18,10 +18,12 @@ import {
   extractCourseConfig,
   courseCompleteSentinel,
   createCourseApiMatcher,
+  meetsCodeRequirement,
   type CourseConfig,
   type CourseSpotlightTarget
 } from './course-config'
 import TutorialCourseSuccessModal from './TutorialCourseSuccessModal.vue'
+import TutorialCourseRetryModal from './TutorialCourseRetryModal.vue'
 import TutorialPreludeModal from './TutorialPreludeModal.vue'
 import ApiVideoModal from './ApiVideoModal.vue'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
@@ -85,6 +87,20 @@ const isEditorRouteActive = computed(() => router.currentRoute.value.path.starts
 const currentOpeningStep = computed(() =>
   isRouteLoaded.value && isEditorRouteActive.value ? openingStepsRef.value[openingIndexRef.value] ?? null : null
 )
+
+/**
+ * The hint shown when a run reached the goal without meeting the course's secondary goal. Null
+ * whenever there is nothing to say — including at the start of every run.
+ */
+const retryHint = ref<string | null>(null)
+
+/** Whether the code the learner currently has open satisfies the course's `complete.require`. */
+function usesRequiredCode(tokens: string[]): boolean {
+  const code = codeEditorRef.value?.getAttachedUI()?.activeTextDocument?.getValue() ?? null
+  // No readable document means no evidence to reject on — completing is the kinder failure.
+  if (code == null) return true
+  return meetsCodeRequirement(code, tokens)
+}
 
 function advanceOpening() {
   openingIndexRef.value++
@@ -248,15 +264,28 @@ watch(
       // one per collected carrot) or, by default, the completion sentinel the project prints.
       const completeLog = courseConfig.complete?.log ?? courseCompleteSentinel
       const completeCount = courseConfig.complete?.count ?? 1
+      const requirement = courseConfig.complete?.require ?? null
       let matchedLines = new Set<string>()
+      let signalled = false
       disposers.push(
         editorRuntimeOutputBridge.onRunStart(() => {
           matchedLines = new Set()
+          signalled = false
+          retryHint.value = null
         }),
         editorRuntimeOutputBridge.onLine((line) => {
           if (!line.includes(completeLog)) return
           matchedLines.add(line)
-          if (matchedLines.size >= completeCount) tutorial.markCourseComplete()
+          if (matchedLines.size < completeCount || signalled) return
+          // Fire once per run: the goal can keep producing output after it is reached.
+          signalled = true
+          // The secondary goal, if the course declares one — the course is complete only when the
+          // learner reached the goal AND did it the way the course is teaching.
+          if (requirement != null && !usesRequiredCode(requirement.code)) {
+            retryHint.value = requirement.hint
+            return
+          }
+          tutorial.markCourseComplete()
         })
       )
     }
@@ -361,6 +390,8 @@ provideTutorial(tutorial)
     visible
     @close="handleVideoClose(currentOpeningStep)"
   />
+  <TutorialCourseRetryModal :visible="retryHint != null" :hint="retryHint ?? ''" @close="retryHint = null" />
+
   <TutorialCourseSuccessModal
     v-if="tutorial.revealedCompletion != null"
     :completion="tutorial.revealedCompletion"

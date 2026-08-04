@@ -73,7 +73,18 @@ export type CourseConfig = {
    * Absent means the default: one line carrying the completion sentinel (see
    * `courseCompleteSentinel`, printed by the project itself).
    */
-  complete: { log: string; count: number } | null
+  complete: {
+    log: string
+    count: number
+    /**
+     * The secondary goal, checked only once the primary one (the runtime signal above) is met.
+     * `code` names tokens that must appear in the learner's code — `repeat`, `turn`, … — which is
+     * what lets a course insist on *how* the goal was reached without an LLM round. When the
+     * primary goal lands and this does not, the course is not complete: `hint` is shown instead,
+     * crediting what worked and naming what is still missing.
+     */
+    require: { code: string[]; hint: string } | null
+  } | null
   /**
    * The course's opening sequence — prelude / knowledge-point video / spotlight steps, played in
    * the authored order once the editor is up. When non-empty it is the single source of ordering
@@ -231,10 +242,35 @@ function normalizeSpotlightTarget(value: unknown): CourseSpotlightTarget | null 
 
 function normalizeComplete(value: unknown): CourseConfig['complete'] {
   if (value == null || typeof value !== 'object') return null
-  const { log, count } = value as { log?: unknown; count?: unknown }
+  const { log, count, require } = value as { log?: unknown; count?: unknown; require?: unknown }
   if (typeof log !== 'string' || log.trim() === '') return null
   const normalizedCount = typeof count === 'number' && Number.isInteger(count) && count > 0 ? count : 1
-  return { log: log.trim(), count: normalizedCount }
+  return { log: log.trim(), count: normalizedCount, require: normalizeRequire(require) }
+}
+
+function normalizeRequire(value: unknown): NonNullable<CourseConfig['complete']>['require'] {
+  if (value == null || typeof value !== 'object') return null
+  const { code, hint } = value as { code?: unknown; hint?: unknown }
+  const tokens = normalizeStringArray(code)
+  // A requirement with nothing to look for would gate the course on a condition that can never
+  // fail; drop it rather than pretend it is enforcing something.
+  if (tokens.length === 0) return null
+  return { code: tokens, hint: typeof hint === 'string' ? hint.trim() : '' }
+}
+
+/**
+ * Whether the learner's code uses every required token.
+ *
+ * Comments and string literals are removed first: a course that asks for `repeat` must not be
+ * satisfied by the word sitting in the starter code's own explanatory comment, which is exactly
+ * where it tends to appear.
+ */
+export function meetsCodeRequirement(code: string, tokens: string[]): boolean {
+  const stripped = code
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
+  return tokens.every((token) => new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(stripped))
 }
 
 function normalizeStringArray(value: unknown): string[] {

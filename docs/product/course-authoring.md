@@ -17,7 +17,10 @@ The first ` ```jsonc ` block in the prompt is parsed as the course config and ap
   "hide": ["editor-panels", "edit-mode-switch", "preview-header", "code-editor-tools"],
   "copilot": "open",                              // start with the panel open (default: hidden)
   "judge": "code",                                // "code" (default) or "copilot"
-  "complete": { "log": "捡到萝卜", "count": 4 },   // judge:"code" signal, see below
+  "complete": {                                   // judge:"code" signal, see below
+    "log": "捡到萝卜", "count": 4,                  // the primary goal
+    "require": { "code": ["repeat"], "hint": "…" } // the secondary goal (optional)
+  },
   "apis": ["step", "turn"],                       // narrow the API References panel
   "opening": [                                    // the in-editor opening sequence, see below
     { "prelude": "The code is ready. Find the Run button and run it." },
@@ -54,7 +57,30 @@ Videos come from the global knowledge-point library (keyed by definition ID); **
 * **`judge: "code"` (preferred)** — when completion is observable from the game's runtime output. The frontend decides and the success dialog opens instantly; the Copilot then receives a "Course completed" event and fills in a one-sentence comment. Two signals:
   * **`complete.log` + `count`**: for collect-N goals — completion is `count` DISTINCT output lines containing `log`, within a single run (re-running resets the count).
   * **The sentinel (default)**: the project prints `@@builder:course-complete@@` from its own goal logic.
-* **`judge: "copilot"`** — only when completion cannot be judged from output (e.g. "message the Copilot", or "must have used `repeat`" when the starting code already wins). State the criteria in the prose; the Copilot declares success (this mode inherently costs one LLM round).
+* **`judge: "copilot"`** — only when completion cannot be judged from output (e.g. "message the Copilot" — a course that judges what the user *says* rather than what their program *does*). State the criteria in the prose; the Copilot declares success (this mode inherently costs one LLM round).
+
+### Primary and secondary goals
+
+The runtime signal above is the **primary goal**: it says the learner reached the goal. Some courses also
+care *how* — "collect all four, using `repeat`" — and manual code reaches the same goal, so the primary
+goal alone would pass a solution that skips the lesson. `complete.require` adds a **secondary goal**,
+checked only once the primary one lands:
+
+```jsonc
+"complete": {
+  "log": "捡到", "count": 4,
+  "require": { "code": ["repeat"], "hint": "这次是一步步走完的，试着用 repeat 让它重复吧。" }
+}
+```
+
+`code` lists tokens that must appear in the learner's code as whole words — comments and string
+literals are stripped first, so the course's own "试试 repeat" hint in the starter code cannot satisfy
+it. Both goals met → the course completes as usual. Primary met, secondary missed → no completion;
+a modal credits the run ("你的程序已经达成目标了。") and shows `hint`. Written this way, a course that
+would otherwise need `judge: "copilot"` — "must have used `repeat`" — stays on the instant code path.
+
+Keep `hint` specific about what is still missing, and keep the token list short: it is a check on the
+approach, not a code-style grader.
 
 ### The fast path
 
@@ -75,11 +101,29 @@ The opening guide line now lives in the config's `opening.prelude`, not a `<cour
 ## Workflow for a new course
 
 1. Build the course project; make the game print a judgeable output line per key progress step (or print the sentinel when the goal is reached).
-2. Pick the judge: output-observable → `judge: "code"` + `complete`; otherwise → `judge: "copilot"` + written criteria.
+2. Pick the judge: output-observable → `judge: "code"` + `complete` (add `complete.require` when the goal can be reached without the technique the course teaches); otherwise → `judge: "copilot"` + written criteria.
 3. Write the config block: `hide` / `apis` (the union across the whole course) / `opening` (the prelude line + this course's new knowledge-point videos + the spotlight for the control to act on, in order).
 4. Write the prose sections.
 5. Add to the series and export the `.xbcs.zip` archive.
 
-## State of the Code: Lita series (after the 2026-07 restructuring)
+## State of the Code: Lita series (after the 2026-08 rebuild)
 
-Series 32 "Code: Lita", 28 courses (IDs 211–238, projects `curator/Lita-Course-01`…`-28`), fully structured: 25 courses are `judge: "code"` with `complete: { "log": "捡到萝卜", "count": N }` (N = that course's carrot count — instant success dialog); 3 are `judge: "copilot"` because output cannot judge them (course 1: message the Copilot; course 13: `turnTo` must appear; course 19: starting code already wins, `repeat` must be adopted). 27 courses declare `apis`. All 28 have an `opening` sequence: a one-line `prelude` each (inlined from the old `<course-prelude>`); 12 include a knowledge-point video step; 4 include an opening spotlight — course 2 (first run) highlights the Run button, courses 3 and 8 highlight the Ruler, course 4 highlights the API References panel. Course 1 keeps its `<course-story-video>` (the series intro `opening.webm`). The former "knowledge-point videos" / "APIs of this course" prose sections were removed (moved into config), `<course-prelude>` was inlined into `opening`, and the completion sections were rewritten per judge mode; all other lesson-plan prose is preserved verbatim.
+Series "Code: Lita", **50 courses** (projects `curator/Lita-Course-01`…`-50`), fully structured. The
+world is squirrel-and-mushroom: goals are collecting mushrooms (four colors) and pinecones, and the
+projects log one line per pickup (`捡到蘑菇 <name>` / `捡到松果 <name>`), so a course collecting both
+kinds counts them with the shared prefix `complete: { "log": "捡到", "count": N }`.
+
+* **48 courses** are `judge: "code"`; **2** are `judge: "copilot"` — course 1 (the goal is to message
+  the Copilot) and course 26 (the learner is asked to say whether the code is reliable). Both judge
+  what the learner *says*; no course judges code through the Copilot any more.
+* **4 courses** add a secondary goal via `complete.require`: course 27 (`turn` — the run can be won by
+  starting position alone), and courses 36 / 39 / 41 (`repeat` — walking the route by hand collects
+  everything too). These were `judge: "copilot"` until the secondary goal existed.
+* **48 courses** declare `apis` (courses 1 and 2 have no panel to narrow).
+* Every course has an `opening` with a one-line `prelude`. **12** include a knowledge-point video
+  (`step`, `turn`, `stepTo`, `turnTo`, `distanceTo`, `if_statement`, `if_else_statement`, `waitUntil`,
+  `Water`, `var_declaration`, `repeat`, `for_iterate`); **10** include a spotlight — the Copilot
+  trigger (1), the Run button (2), the Ruler (3, 7, 9, 10, 11), and the sprite → name-label chain that
+  teaches name insertion (14 on a mushroom, 21 on the boat).
+* **Course 1** carries the `<course-story-video>` series intro.
+* Course covers are placeholders except for the few the designer has delivered.
