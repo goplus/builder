@@ -108,22 +108,31 @@ The opening guide line now lives in the config's `opening.prelude`, not a `<cour
 
 ## State of the Code: Lita series (after the 2026-08 rebuild)
 
-Series "Code: Lita", **50 courses** (projects `curator/Lita-Course-01`…`-50`), fully structured. The
+Series "Code: Lita", **53 courses** (projects `curator/Lita-Course-01`…`-53`), fully structured. The
 world is squirrel-and-mushroom: goals are collecting mushrooms (four colors) and pinecones, and the
 projects log one line per pickup (`捡到蘑菇 <name>` / `捡到松果 <name>`), so a course collecting both
 kinds counts them with the shared prefix `complete: { "log": "捡到", "count": N }`.
 
-* **48 courses** are `judge: "code"`; **2** are `judge: "copilot"` — course 1 (the goal is to message
-  the Copilot) and course 26 (the learner is asked to say whether the code is reliable). Both judge
-  what the learner *says*; no course judges code through the Copilot any more.
-* **4 courses** add a secondary goal via `complete.require`: course 27 (`turn` — the run can be won by
-  starting position alone), and courses 36 / 39 / 41 (`repeat` — walking the route by hand collects
-  everything too). These were `judge: "copilot"` until the secondary goal existed.
-* **48 courses** declare `apis` (courses 1 and 2 have no panel to narrow).
-* Every course has an `opening` with a one-line `prelude`. **12** include a knowledge-point video
-  (`step`, `turn`, `stepTo`, `turnTo`, `distanceTo`, `if_statement`, `if_else_statement`, `waitUntil`,
-  `Water`, `var_declaration`, `repeat`, `for_iterate`); **10** include a spotlight — the Copilot
-  trigger (1), the Run button (2), the Ruler (3, 7, 9, 10, 11), and the sprite → name-label chain that
-  teaches name insertion (14 on a mushroom, 21 on the boat).
+Unit order: movement basics (1–13) → targets (14–18) → `distanceTo` observe/hands-on pair (19–20) →
+objects & the boat (21–25) → **loops (26–32)** → `onStart` (33) → **conditions (34–40)**, staged as
+observe-the-problem (34 看运气的采摘) → meet the query (35 问一问蘑菇, `IsMature` alone) → `if` (36)
+→ `if/else` (37) → transfer to a new scene (38 大挑战 II) → `waitUntil` / `Water` (39–40) →
+variables (41–43) → loops×variables (44–46) → `==` in the counting context (47 刚好数到四) → `for`
+unit (48–51) → events (52 谁在指挥, `onKey` + `turnTo`) → capstone (53). Loops deliberately precede
+conditions — repetition is easier to observe than branching — and every syntax point enters through
+the designer's arc: the child observes a problem, the course suggests the capability, the child
+writes it, then transfers it to a fresh scene.
+
+* **51 courses** are `judge: "code"`; **2** are `judge: "copilot"` — course 1 (message the Copilot)
+  and course 34 (say what you observed). Both judge what the learner *says*; no course judges code
+  through the Copilot.
+* **6 courses** add a secondary goal via `complete.require`: 20 (`distanceTo` — `stepTo` reaches the
+  same mushroom), 27 / 30 / 32 (`repeat` — walking by hand collects everything too), 38
+  (`if` + `IsMature` — going straight for the pinecone also scores), 47 (`if`).
+* **51 courses** declare `apis` (courses 1 and 2 have no panel to narrow). **13** include a
+  knowledge-point video; **11** include an opening spotlight — the Copilot trigger (1), the Run
+  button (2), the Ruler (3, 7, 9, 10, 11, and 19, where it bridges into `distanceTo`), the API
+  References panel (4), and the sprite → name-label chain that teaches name insertion (14 on a
+  mushroom, 22 on the boat).
 * **Course 1** carries the `<course-story-video>` series intro.
 * Course covers are placeholders except for the few the designer has delivered.
