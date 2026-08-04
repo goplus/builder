@@ -23,7 +23,12 @@ from urllib.parse import urlparse
 
 MANIFEST = "course-series.json"
 FORMAT = "xbuilder-course-series"
-VERSION = 1
+# The importer accepts exactly one version and rejects every other with the same opaque
+# "Unsupported course series file format". v2 (upstream #3381) is v1 minus `courses[].references`.
+# Which one a package must declare is decided by the DEPLOYMENT it is imported into, not by this
+# checkout — exporting from the target and reading its version is the reliable way to know.
+VERSIONS = {1, 2}
+CURRENT_VERSION = 2
 
 # Mirrors ext2mime in spx-gui/src/utils/file.ts — anything else uploads with no MIME type.
 KNOWN_EXTS = {
@@ -364,9 +369,20 @@ def cmd_validate(target):
         r.error(f"{MANIFEST} is not valid JSON: {e}")
         return r.finish(target)
 
-    if manifest.get("format") != FORMAT or manifest.get("version") != VERSION:
-        r.error(f"format/version must be {FORMAT!r}/{VERSION}, got "
-                f"{manifest.get('format')!r}/{manifest.get('version')!r}")
+    version = manifest.get("version")
+    if manifest.get("format") != FORMAT or version not in VERSIONS:
+        r.error(f"format/version must be {FORMAT!r} with version in {sorted(VERSIONS)}, got "
+                f"{manifest.get('format')!r}/{version!r} — the importer rejects anything else with "
+                f"'Unsupported course series file format'")
+    elif version != CURRENT_VERSION:
+        r.warn(f"manifest declares format version {version}; the newest known is {CURRENT_VERSION}. "
+               f"A deployment on the newer version rejects this file outright — export from the "
+               f"target series and match whatever version it writes")
+    if version == 2:
+        with_refs = [i + 1 for i, c in enumerate(manifest.get("courses") or []) if "references" in c]
+        if with_refs:
+            r.warn(f"version 2 dropped courses[].references, but {len(with_refs)} course(s) still "
+                   f"carry it (e.g. course {with_refs[0]}); harmless, but the field is dead weight")
     for key in ("courseSeries", "courses", "projects"):
         if key not in manifest:
             r.error(f"{MANIFEST} has no {key!r} — the importer dereferences it unguarded and dies "
