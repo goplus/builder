@@ -114,6 +114,13 @@ within one run, so it is a claim about the project: setting it to 6 in a course 
 four carrots means the success dialog can never open, and the prose that says 「收集四个萝卜」 now
 contradicts it. Nothing about that is detectable from the manifest.
 
+`complete.require` — the secondary goal, tokens the learner's code must contain once the primary
+signal lands — is a claim about the *starting* code instead. Its whole purpose is to reject the
+shortcut the runtime signal alone would accept, so a token the starting code already contains makes
+it inert: the course looks stricter and judges nothing. `validate` catches that one case
+(`require-preheld`); it cannot tell you whether the token is the right one, or whether a legitimate
+alternative solution avoids it.
+
 The same shape recurs elsewhere: narrowing `apis` hides a panel entry the reference answer still
 uses; an `opening` spotlight targets a landmark the course's `hide` list just removed; renaming a
 sprite orphans an `entrypoint` that names it in its path.
@@ -178,7 +185,10 @@ Say which of these you've ruled out rather than just reporting "the file is fine
 
 `validate` proves the package will import. It says nothing about whether a course *works* — whether
 the stage lays out right, whether the code the learner is meant to write actually finishes, whether
-`complete.log` / `complete.count` match what the project prints.
+`complete.log` / `complete.count` match what the project prints. It is also how you check a
+`complete.require`: run the shortcut solution the requirement exists to reject and confirm it still
+collects everything (otherwise the scene already enforces the lesson and the requirement is noise),
+then run the intended one and confirm it does too.
 
 For that, drive the real engine through the dev-only harness at `/devtools/course-runner` (registered
 only under `import.meta.env.DEV`, so local dev server only):

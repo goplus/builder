@@ -245,6 +245,9 @@ def cmd_inspect(target):
         cfg = course_config(course.get("prompt", "")) or {}
         complete = cfg.get("complete") or {}
         complete_s = f"{complete.get('log')}×{complete.get('count')}" if complete else ""
+        require = (complete.get("require") or {}).get("code") if complete else None
+        if require:
+            complete_s += " +" + "+".join(require)
         opening = "+".join("/".join(sorted(s)) for s in (cfg.get("opening") or []) if isinstance(s, dict))
         print(f"{i + 1:>3}  {pad(course.get('title', ''), 26)} {pad(cfg.get('judge') or '', 8)} "
               f"{pad(complete_s, 16)} {pad(opening, 26)} {','.join(cfg.get('apis') or [])}")
@@ -402,8 +405,8 @@ def cmd_validate(target):
                    f"(harmless — only declared paths are read — but a sign of a filesystem re-zip)")
 
     check_series(manifest, data, r)
-    project_names = check_projects(manifest, data, r)
-    check_courses(manifest, data, project_names, r)
+    project_names, project_code = check_projects(manifest, data, r)
+    check_courses(manifest, data, project_names, project_code, r)
     return r.finish(target)
 
 
@@ -419,10 +422,16 @@ def check_series(manifest, data, r):
 
 
 def check_projects(manifest, data, r):
-    """Validate every project payload. Returns {fullName: name} for entrypoint cross-checking."""
+    """Validate every project payload.
+
+    Returns ({fullName: name}, {fullName: {spx path: source}}) — the first for entrypoint
+    cross-checking, the second so a course's `complete.require` can be read against the code the
+    learner actually starts with.
+    """
     import io
 
     full_names = {}
+    project_code = {}
     seen_names = {}
     for project in manifest.get("projects") or []:
         rel, name, full = project.get("path"), project.get("name"), project.get("fullName")
@@ -456,6 +465,10 @@ def check_projects(manifest, data, r):
             r.error(f"{rel}: not a readable zip ({e})")
             continue
 
+        if isinstance(full, str):
+            project_code[full] = {n: b.decode("utf-8", "replace")
+                                  for n, b in files.items() if n.endswith(".spx")}
+
         dirs = [i.filename for i in infos if i.filename.endswith("/")]
         if dirs:
             r.error(f"{rel}: {len(dirs)} directory entries (e.g. {dirs[:2]}) — the .xbp loader turns "
@@ -474,7 +487,7 @@ def check_projects(manifest, data, r):
     for name in data:
         if name.endswith(".xbp") and name not in {p.get("path") for p in manifest.get("projects") or []}:
             r.warn(f"{name} is in the archive but not declared in projects[] — it will be ignored")
-    return full_names
+    return full_names, project_code
 
 
 def check_project_files(r, rel, project_name, files):
@@ -557,7 +570,7 @@ def check_asset_refs(r, rel, files):
                         kind="all-costumes-animated", where=f"{rel}!{path}")
 
 
-def check_courses(manifest, data, project_names, r):
+def check_courses(manifest, data, project_names, project_code, r):
     for i, course in enumerate(manifest.get("courses") or []):
         label = f"course {i + 1} ({course.get('title')!r})"
         check_len(r, f"{label} title", course.get("title", ""), LIMITS["course_title"], label="")
@@ -589,10 +602,11 @@ def check_courses(manifest, data, project_names, r):
                 r.warn(f"{label}: reference {full!r} is not in projects[]; it will keep pointing at "
                        f"the original owner")
 
-        check_course_config(r, label, course.get("prompt", ""))
+        check_course_config(r, label, course.get("prompt", ""),
+                            project_code.get(parsed) or {}, entry if isinstance(entry, str) else "")
 
 
-def check_course_config(r, label, prompt):
+def check_course_config(r, label, prompt, code_files, entrypoint):
     block = re.search(r"```jsonc\s*\n([\s\S]*?)\n```", prompt)
     if block is None:
         r.warn(f"{label}: no ```jsonc config block — the course falls back to legacy "
@@ -634,12 +648,57 @@ def check_course_config(r, label, prompt):
         count = complete.get("count", 1)
         if not isinstance(count, int) or count < 1:
             r.error(f"{label}: complete.count {count!r} must be an integer >= 1")
+        check_require(r, label, complete.get("require"), code_files, entrypoint)
+    elif judge == "copilot" and isinstance(complete, dict) and complete.get("require"):
+        r.warn(f"{label}: complete.require is only checked under judge 'code'; here it does nothing")
     for step in config.get("opening") or []:
         if not isinstance(step, dict):
             r.warn(f"{label}: opening step {step!r} is not an object and will be dropped")
         elif not ({"prelude", "video", "spotlight"} & set(step)):
             r.warn(f"{label}: opening step {list(step)} has no prelude/video/spotlight key and will "
                    f"be dropped")
+
+
+def check_require(r, label, require, code_files, entrypoint):
+    """A course's secondary goal: tokens the learner's code must contain once the runtime signal
+    lands. Its whole point is to reject the shortcut the primary goal alone would accept, so the
+    failure worth catching is a requirement that is already satisfied before the learner types
+    anything."""
+    if require is None:
+        return
+    if not isinstance(require, dict):
+        r.error(f"{label}: complete.require must be an object, not {require!r}")
+        return
+    tokens = require.get("code")
+    if not isinstance(tokens, list) or not tokens or not all(isinstance(t, str) and t for t in tokens):
+        r.error(f"{label}: complete.require.code must be a non-empty list of strings; the frontend "
+                f"drops a requirement that names no token, so the course silently loses it")
+        return
+    if not (require.get("hint") or "").strip():
+        r.warn(f"{label}: complete.require has no hint — the retry dialog then only says the goal "
+               f"was reached, without telling the learner what is still missing")
+
+    # The starting code is the file the entrypoint opens; fall back to every .spx if it can't be
+    # identified, since matching anywhere is still enough to make the requirement free.
+    sprite = None
+    segments = [s for s in urlparse(entrypoint).path.split("/") if s]
+    if "sprites" in segments:
+        sprite = segments[segments.index("sprites") + 1] if len(segments) > segments.index("sprites") + 1 else None
+    sources = ([code_files[f"{sprite}.spx"]] if sprite and f"{sprite}.spx" in code_files
+               else list(code_files.values()))
+    for src in sources:
+        if all(re.search(rf"\b{re.escape(t)}\b", strip_code_noise(src)) for t in tokens):
+            r.warn(f"{label}: complete.require.code {tokens} already appears in the starting code, "
+                   f"so the secondary goal is met before the learner changes anything and adds "
+                   f"nothing to the primary goal", kind="require-preheld", where=label)
+            return
+
+
+def strip_code_noise(src):
+    """Mirror the frontend's check: comments and string literals do not count as using the code."""
+    src = re.sub(r"/\*[\s\S]*?\*/", " ", src)
+    src = re.sub(r"//[^\n]*", " ", src)
+    return re.sub(r'"(?:[^"\\\n]|\\.)*"', '""', src)
 
 
 def strip_jsonc(text):
