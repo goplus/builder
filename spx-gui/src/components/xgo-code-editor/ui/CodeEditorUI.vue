@@ -41,6 +41,7 @@ import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import CodeGuideUI from './code-guide/CodeGuideUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
+import EditingDocumentThumbnail from './EditingDocumentThumbnail.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
 
@@ -352,16 +353,23 @@ providePopupContainer(codeEditorEl)
       :class="{ 'bg-black/10': isResizing }"
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
-    <MonacoEditorComp
-      v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
-      class="my-3 min-w-0 flex-[1_1_0]"
-      :monaco="codeEditor.monaco"
-      :options="monacoEditorOptions"
-      @init="handleMonacoEditorInit"
-      @dragover="handleMonacoEditorDragOver"
-      @dragleave="handleMonacoEditorDragLeave"
-      @drop="handleMonacoEditorDrop"
-    />
+    <!-- The thumbnail gets its own strip of padding rather than floating over the code: a long line
+         would otherwise run underneath it, and the character it hides is the one being read. -->
+    <div class="relative my-3 min-w-0 flex flex-[1_1_0] justify-stretch" :class="{ 'pr-9': !toolsVisible }">
+      <MonacoEditorComp
+        v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
+        class="min-w-0 flex-[1_1_0]"
+        :monaco="codeEditor.monaco"
+        :options="monacoEditorOptions"
+        @init="handleMonacoEditorInit"
+        @dragover="handleMonacoEditorDragOver"
+        @dragleave="handleMonacoEditorDragLeave"
+        @drop="handleMonacoEditorDrop"
+      />
+      <!-- Only without the tools: the document tabs carry the same image, larger and clickable, so
+           showing both would just be the same thumbnail twice. -->
+      <EditingDocumentThumbnail v-if="!toolsVisible" class="absolute right-1 top-1 z-1" />
+    </div>
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />

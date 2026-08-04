@@ -9,7 +9,6 @@ import { provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
 import { RoundState } from '@/components/copilot/copilot'
-import { stripThinking } from '@/components/copilot/content-visibility'
 import * as staySilent from '@/components/copilot/markdown-elements/StaySilent'
 import { stringifyDefinitionId, useCodeEditorRef } from '@/components/xgo-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
@@ -34,6 +33,7 @@ import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from 
 import { TutorialIntervention } from './tutorial-intervention'
 import { progressElements } from './user-progress'
 import { installTutorialGuidance } from './tutorial-guidance'
+import { sanitizeCompletionComment } from './completion-comment'
 import { tutorialCourseReminder } from './tutorial-course-reminder'
 import { getApiVideo, markApiLearned, resolveApiVideo, resolveCourseVideos, type ApiVideoInfo } from './api-videos'
 
@@ -358,12 +358,7 @@ watch(
         .filter((m) => m.role === 'copilot')
         .map((m) => (m.role === 'copilot' ? m.content ?? '' : ''))
         .join('')
-      // The comment is meant to be plain prose. Strip thinking and any stray copilot elements (a
-      // progress verdict, a stay-silent, ...) so only the evaluation sentence reaches the dialog.
-      const comment = stripThinking(reply)
-        .replace(/<\/?[a-zA-Z][\w-]*(?:\s[^>]*?)?\/?>/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
+      const comment = sanitizeCompletionComment(reply)
       if (comment !== '') return comment
     }
     return null

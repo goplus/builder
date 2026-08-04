@@ -4,10 +4,12 @@
      as a rejection. -->
 <script lang="ts" setup>
 import { UIButton, UIModal, UIModalClose } from '@/components/ui'
+import MarkdownView from '@/components/copilot/MarkdownView.vue'
 
 defineProps<{
   visible: boolean
-  /** The course-authored line naming what is still missing. */
+  /** The course-authored line naming what is still missing. Rendered as Markdown, so a hint can
+   * name the code it is asking for the way the rest of the app writes code. */
   hint: string
 }>()
 
@@ -36,7 +38,7 @@ const emit = defineEmits<{
       <p class="mt-3 text-text">
         {{ $t({ en: 'Your program reached the goal.', zh: '你的程序已经达成目标了。' }) }}
       </p>
-      <p v-if="hint !== ''" class="mt-2 text-text">{{ hint }}</p>
+      <MarkdownView v-if="hint !== ''" class="mt-2 text-text" :value="hint" />
 
       <UIButton class="mt-5 self-center" type="primary" size="large" @click="emit('close')">
         {{ $t({ en: 'Try it that way', zh: '再试一次' }) }}

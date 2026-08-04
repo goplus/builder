@@ -76,7 +76,8 @@ checked only once the primary one lands:
 `code` lists tokens that must appear in the learner's code as whole words — comments and string
 literals are stripped first, so the course's own "试试 repeat" hint in the starter code cannot satisfy
 it. Both goals met → the course completes as usual. Primary met, secondary missed → no completion;
-a modal credits the run ("你的程序已经达成目标了。") and shows `hint`. Written this way, a course that
+a modal credits the run ("你的程序已经达成目标了。") and shows `hint`, which is **Markdown** — name the
+code it asks for in backticks, the way the rest of the app writes code. Written this way, a course that
 would otherwise need `judge: "copilot"` — "must have used `repeat`" — stays on the instant code path.
 
 Keep `hint` specific about what is still missing, and keep the token list short: it is a check on the
