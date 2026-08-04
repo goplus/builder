@@ -194,7 +194,7 @@ export class Tutorial {
   }
 
   protected generateTopic(course: Course): TutorialTopic {
-    const { id, title, prompt, references, entrypoint } = course
+    const { id, title, prompt, entrypoint } = course
 
     // Courses that declare their API set / knowledge-point videos in the config get them applied
     // by the frontend the moment the course starts, so the copilot's opening reply carries no
@@ -269,9 +269,6 @@ You are assisting the user in learning the course: ${course.title}.
   <course-prompt>
   ${prompt}
   </course-prompt>
-  <course-references>
-  ${references.map((ref) => `<project-reference>${ref.fullName}</project-reference>`).join('\n')}
-  </course-references>
 </course>
 
 ### Guidance
@@ -423,7 +420,6 @@ that verdict.
 
 When coding tasks are involved:
 
-* If a project reference is available for the course, treat it as the standard answer.
 * Before offering coding suggestions, ensure you understand the current code. If not, use appropriate tools to review it first.
 * WHETHER you may guide at all is decided by the intervention level alone (see above); the rules here only shape HOW \
 you guide once the level allows it. Never give complete solution code — guide the smallest next step. Prefer guiding \

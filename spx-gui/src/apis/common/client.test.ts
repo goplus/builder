@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiException, ApiExceptionCode, OAuthException, isQuotaExceededMeta } from './exception'
+import { ApiException, ApiExceptionCode, OAuthException, isQuotaExceededMeta, isTooManyRequestsMeta } from './exception'
 import { Client } from './client'
 
 function makeJsonResponse(body: unknown, status: number, headers: Record<string, string> = {}) {
@@ -43,6 +43,19 @@ function makeRateLimitExceededResponse(retryAfter: string) {
     {
       code: ApiExceptionCode.errorRateLimitExceeded,
       msg: 'Rate limit exceeded'
+    },
+    429,
+    {
+      'Retry-After': retryAfter
+    }
+  )
+}
+
+function makeTooManyRequestsResponse(retryAfter: string) {
+  return makeJsonResponse(
+    {
+      code: ApiExceptionCode.errorTooManyRequests,
+      msg: 'Too many requests'
     },
     429,
     {
@@ -130,6 +143,16 @@ describe('Client', () => {
   })
 
   describe('retry-after metadata', () => {
+    it('should parse retry-after metadata for generic request throttling', async () => {
+      fetchMock.mockResolvedValueOnce(makeTooManyRequestsResponse('5'))
+
+      const e = await expectApiException(client.post('/account/session'), ApiExceptionCode.errorTooManyRequests)
+      expect(isTooManyRequestsMeta(e.code, e.meta)).toBe(true)
+      expect(e.meta).toMatchObject({
+        retryAfter: expect.any(Number)
+      })
+    })
+
     it('should parse retry-after metadata for rate limits', async () => {
       fetchMock.mockResolvedValueOnce(makeRateLimitExceededResponse('2'))
 

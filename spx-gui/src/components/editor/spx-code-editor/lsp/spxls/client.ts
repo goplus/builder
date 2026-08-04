@@ -1,4 +1,10 @@
-import type { NotificationMessage, RequestMessage, ResponseMessage, ResponseError as ResponseErrorObj } from './index'
+import type {
+  MessageID,
+  NotificationMessage,
+  RequestMessage,
+  ResponseMessage,
+  ResponseError as ResponseErrorObj
+} from './index'
 
 /** Connection between the client and the language server. */
 export interface IConnection {
@@ -8,7 +14,7 @@ export interface IConnection {
 
 export interface OngoingRequest<T> {
   /** Unique ID of the request. */
-  id: number
+  id: MessageID
   /** Returns a promise that resolves with the response of the request. */
   response(): Promise<T>
 }
@@ -19,7 +25,7 @@ export interface OngoingRequest<T> {
 export class XGoLanguageClient {
   private nextRequestId: number = 1
   private pendingRequests = new Map<
-    number,
+    MessageID,
     {
       resolve: (response: any) => void
       reject: (error: any) => void

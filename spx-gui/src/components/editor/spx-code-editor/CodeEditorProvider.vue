@@ -1,12 +1,8 @@
-<template>
-  <CodeEditorInitializer v-if="codeEditorRef != null" :code-editor="codeEditorRef" />
-  <slot></slot>
-</template>
-
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
 import { useCopilot } from '@/components/copilot/context'
 import { type Monaco, CodeEditor, DocumentBase, useProvideCodeEditor } from '@/components/xgo-code-editor'
+import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import * as spxDefinitionsByName from './document-base'
 import './document-base/helpers'
@@ -21,6 +17,7 @@ const props = defineProps<{
 
 const copilot = useCopilot()
 const editorCtx = useEditorCtx()
+const i18n = useI18n()
 const codeEditorRef = shallowRef<CodeEditor | null>(null)
 
 watch(
@@ -29,7 +26,7 @@ watch(
     const { project: spxProject, history } = editorState
 
     const project = new SpxCodeEditorProject(spxProject, history)
-    const lspClient = new SpxLSPClient(spxProject)
+    const lspClient = new SpxLSPClient(spxProject, { locale: i18n.lang.value })
     lspClient.onPropertyRenamed(({ target, oldName, newName }) => {
       for (const widget of spxProject.stage.widgets) {
         if (widget.type === 'monitor' && widget.target === target && widget.variableName === oldName) {
@@ -60,3 +57,8 @@ watch(
 
 useProvideCodeEditor(codeEditorRef)
 </script>
+
+<template>
+  <CodeEditorInitializer v-if="codeEditorRef != null" :code-editor="codeEditorRef" />
+  <slot></slot>
+</template>

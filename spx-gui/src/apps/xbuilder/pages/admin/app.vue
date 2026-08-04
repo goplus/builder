@@ -12,7 +12,6 @@ import CopyButton from '@/components/common/CopyButton.vue'
 import UIIcon from '@/components/ui/icons/UIIcon.vue'
 import * as accountAdminApis from '@/apis/admin/account'
 import {
-  accountAppAllowedOriginsTip,
   accountAppClientTypeLabels,
   accountAppRedirectURIPatternsTip,
   accountAppRedirectURIsTip,
@@ -52,11 +51,9 @@ usePageTitle(() =>
 const displayName = ref('')
 const status = ref<accountAdminApis.AccountApp['status']>('active')
 const redirectURIs = ref('')
-const allowedOrigins = ref('')
 const savedDisplayName = ref('')
 const savedStatus = ref<accountAdminApis.AccountApp['status']>('active')
 const savedRedirectURIs = ref<string[]>([])
-const savedAllowedOrigins = ref<string[]>([])
 const appUpdatedAt = ref('')
 const appFallbackText = computed(() => displayName.value.trim().charAt(0).toUpperCase() || '?')
 const trimmedDisplayName = computed(() => displayName.value.trim())
@@ -68,28 +65,22 @@ watch(
     displayName.value = value.displayName
     status.value = value.status
     redirectURIs.value = value.redirectURIs.join('\n')
-    allowedOrigins.value = value.allowedOrigins.join('\n')
     savedDisplayName.value = value.displayName
     savedStatus.value = value.status
     savedRedirectURIs.value = value.redirectURIs
-    savedAllowedOrigins.value = value.allowedOrigins
     appUpdatedAt.value = value.updatedAt
   },
   { immediate: true }
 )
 
 const parsedRedirectURIs = computed(() => parseLines(redirectURIs.value))
-const parsedAllowedOrigins = computed(() => parseLines(allowedOrigins.value))
 const isActive = computed(() => status.value === 'active')
 const isIdentityChanged = computed(
   () => trimmedDisplayName.value !== '' && trimmedDisplayName.value !== savedDisplayName.value
 )
 const isStatusChanged = computed(() => status.value !== savedStatus.value)
-const areEndpointsChanged = computed(
-  () =>
-    parsedRedirectURIs.value.length > 0 &&
-    (!areStringListsEqual(parsedRedirectURIs.value, savedRedirectURIs.value) ||
-      !areStringListsEqual(parsedAllowedOrigins.value, savedAllowedOrigins.value))
+const areRedirectURIsChanged = computed(
+  () => parsedRedirectURIs.value.length > 0 && !areStringListsEqual(parsedRedirectURIs.value, savedRedirectURIs.value)
 )
 
 function areStringListsEqual(a: string[], b: string[]) {
@@ -123,14 +114,12 @@ const handleUpdateIdentity = useMessageHandle(
   { en: 'App identity updated', zh: '应用信息已更新' }
 )
 
-const handleUpdateEndpoints = useMessageHandle(
+const handleUpdateRedirectURIs = useMessageHandle(
   async () => {
     const updated = await accountAdminApis.updateAccountApp(props.appID, {
-      redirectURIs: parsedRedirectURIs.value,
-      allowedOrigins: parsedAllowedOrigins.value
+      redirectURIs: parsedRedirectURIs.value
     })
     savedRedirectURIs.value = updated.redirectURIs
-    savedAllowedOrigins.value = updated.allowedOrigins
     appUpdatedAt.value = updated.updatedAt
   },
   { en: 'Failed to update OAuth endpoints', zh: '更新 OAuth 地址配置失败' },
@@ -339,13 +328,13 @@ function deleteSecret(secretID: string) {
               <p class="m-0 mt-1 text-sm text-grey-800">
                 {{
                   $t({
-                    en: 'Exact destinations and browser origins trusted by this app.',
-                    zh: '此应用信任的精确回调地址和浏览器来源。'
+                    en: 'Exact callback destinations trusted by this app.',
+                    zh: '此应用信任的精确回调地址。'
                   })
                 }}
               </p>
             </div>
-            <form class="flex flex-col gap-5" @submit.prevent="handleUpdateEndpoints.fn">
+            <form class="flex flex-col gap-5" @submit.prevent="handleUpdateRedirectURIs.fn">
               <label class="flex flex-col gap-1 text-sm text-grey-900">
                 {{ $t({ en: 'Redirect URIs', zh: '回调 URI' }) }}
                 <UITextInput v-model:value="redirectURIs" type="textarea" :rows="5" />
@@ -364,17 +353,12 @@ function deleteSecret(secretID: string) {
                 </div>
                 <span class="text-xs text-grey-700">{{ $t(accountAppRedirectURIPatternsTip) }}</span>
               </div>
-              <label class="flex flex-col gap-1 text-sm text-grey-900">
-                {{ $t({ en: 'Allowed origins', zh: '允许的 Origin' }) }}
-                <UITextInput v-model:value="allowedOrigins" type="textarea" :rows="4" />
-                <span class="text-xs text-grey-700">{{ $t(accountAppAllowedOriginsTip) }}</span>
-              </label>
               <div class="flex justify-end">
                 <UIButton
                   html-type="submit"
                   type="primary"
-                  :disabled="!areEndpointsChanged"
-                  :loading="handleUpdateEndpoints.isLoading.value"
+                  :disabled="!areRedirectURIsChanged"
+                  :loading="handleUpdateRedirectURIs.isLoading.value"
                 >
                   {{ $t({ en: 'Save endpoint settings', zh: '保存地址配置' }) }}
                 </UIButton>

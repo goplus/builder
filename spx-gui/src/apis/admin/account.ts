@@ -194,8 +194,6 @@ export type CreateAccountAppParams = {
   clientType: AccountAppClientType
   /** Allowed redirect URIs */
   redirectURIs: string[]
-  /** Allowed web origins */
-  allowedOrigins?: string[]
 }
 
 export function createAccountApp(params: CreateAccountAppParams) {
@@ -213,8 +211,6 @@ export type UpdateAccountAppParams = {
   status?: AccountAppStatus
   /** Allowed redirect URIs */
   redirectURIs?: string[]
-  /** Allowed web origins */
-  allowedOrigins?: string[]
 }
 
 export function updateAccountApp(appID: string, params: UpdateAccountAppParams) {

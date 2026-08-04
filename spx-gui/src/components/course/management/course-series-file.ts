@@ -4,7 +4,7 @@ import { extname } from '@/utils/path'
 import { DefaultException } from '@/utils/exception'
 import { getExtFromMime } from '@/utils/file'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getCourse, addCourse, deleteCourse, type Course, type Reference } from '@/apis/course'
+import { getCourse, addCourse, deleteCourse, type Course } from '@/apis/course'
 import { addCourseSeries, updateCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { getProject, ProjectType, updateProject, Visibility, type UpdateProjectParams } from '@/apis/project'
 import { createProjectRelease } from '@/apis/project-release'
@@ -15,13 +15,13 @@ import type { PartialMetadata } from '@/models/project'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
-const version = 1
+const version = 2
 
 type CourseSeriesFileThumbnail = {
   path: string
 }
 
-type CourseSeriesFileCourse = Pick<Course, 'title' | 'entrypoint' | 'references' | 'prompt'> & {
+type CourseSeriesFileCourse = Pick<Course, 'title' | 'entrypoint' | 'prompt'> & {
   thumbnail: CourseSeriesFileThumbnail
 }
 
@@ -53,7 +53,7 @@ export type CourseSeriesFileImportInspection = {
 
 export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?: AbortSignal) {
   const courses = await Promise.all(courseSeries.courseIDs.map((id) => getCourse(id, signal)))
-  const projects = collectRelatedProjects(courses)
+  const projects = collectEntrypointProjects(courses)
   const zippable: Zippable = {}
 
   const courseSeriesThumbnail = await exportThumbnail(
@@ -67,7 +67,6 @@ export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?
       async (course, index): Promise<CourseSeriesFileCourse> => ({
         title: course.title,
         entrypoint: course.entrypoint,
-        references: course.references,
         prompt: course.prompt,
         thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, zippable, signal)
       })
@@ -185,7 +184,6 @@ async function importCourseSeriesFileData(
           title: course.title,
           thumbnail: await importThumbnail(course.thumbnail, unzipped, signal),
           entrypoint: rewriteProjectFullNames(course.entrypoint, projectFullNameMap),
-          references: rewriteReferences(course.references, projectFullNameMap),
           prompt: course.prompt
         },
         signal
@@ -239,14 +237,9 @@ async function importThumbnail(
   return saveFile(createLazyFile(thumbnail.path, data), signal)
 }
 
-function collectRelatedProjects(courses: Course[]) {
+function collectEntrypointProjects(courses: Course[]) {
   const projects = new Map<string, ParsedProjectFullName & { fullName: string }>()
   for (const course of courses) {
-    for (const reference of course.references) {
-      if (reference.type !== 'project') continue
-      const parsed = parseProjectFullName(reference.fullName)
-      projects.set(reference.fullName, { ...parsed, fullName: reference.fullName })
-    }
     const entrypointProject = parseEditorProjectFullName(course.entrypoint)
     if (entrypointProject != null) projects.set(entrypointProject.fullName, entrypointProject)
   }
@@ -264,8 +257,8 @@ function parseProjectFullName(fullName: string): ParsedProjectFullName {
   const parts = fullName.split('/')
   if (parts.length !== 2 || parts[0] === '' || parts[1] === '') {
     throw new DefaultException({
-      en: `Invalid project reference: ${fullName}`,
-      zh: `无效的项目引用：${fullName}`
+      en: `Invalid project full name: ${fullName}`,
+      zh: `无效的项目完整名称：${fullName}`
     })
   }
   return { owner: decodeURIComponent(parts[0]), name: decodeURIComponent(parts[1]) }
@@ -318,13 +311,6 @@ async function getSignedInUserProject(owner: string, name: string, signal?: Abor
     if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
     throw e
   }
-}
-
-function rewriteReferences(references: Reference[], projectFullNameMap: Map<string, string>): Reference[] {
-  return references.map((reference) => {
-    if (reference.type !== 'project') return reference
-    return { ...reference, fullName: projectFullNameMap.get(reference.fullName) ?? reference.fullName }
-  })
 }
 
 function rewriteProjectFullNames(value: string, projectFullNameMap: Map<string, string>) {

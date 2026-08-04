@@ -12,7 +12,6 @@ import {
 } from '@/apis/course'
 import { UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useMessage, useForm } from '@/components/ui'
 import ThumbnailUploader from './ThumbnailUploader.vue'
-import ProjectReferencesInput from './ProjectReferencesInput.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -60,7 +59,6 @@ const form = useForm({
       return null
     }
   ],
-  references: [props.course?.references || []],
   prompt: [
     props.course?.prompt || '',
     (v: string) => {
@@ -81,7 +79,6 @@ const handleSubmit = useMessageHandle(
       title: form.value.title,
       thumbnail: form.value.thumbnail,
       entrypoint: form.value.entrypoint,
-      references: form.value.references,
       prompt: form.value.prompt
     }
 
@@ -142,24 +139,20 @@ const handleSubmit = useMessageHandle(
           <ThumbnailUploader v-model:thumbnail="form.value.thumbnail" class="h-50 w-full" />
         </UIFormItem>
 
-        <UIFormItem class="mt-0" path="references" :label="$t({ en: 'Reference projects', zh: '参考项目' })">
-          <ProjectReferencesInput v-model:references="form.value.references" class="h-50 w-full" />
+        <UIFormItem class="mt-0" path="prompt" :label="$t({ en: 'Prompt for Copilot', zh: 'Copilot 提示词' })">
+          <UITextInput
+            v-model:value="form.value.prompt"
+            type="textarea"
+            :rows="5"
+            :placeholder="
+              $t({
+                en: 'Enter instructions for Copilot to guide users through this course',
+                zh: '请输入 Copilot 引导用户完成课程的指令'
+              })
+            "
+          />
         </UIFormItem>
       </div>
-
-      <UIFormItem class="mb-6" path="prompt" :label="$t({ en: 'Prompt for Copilot', zh: 'Copilot 提示词' })">
-        <UITextInput
-          v-model:value="form.value.prompt"
-          type="textarea"
-          :rows="5"
-          :placeholder="
-            $t({
-              en: 'Enter instructions for Copilot to guide users through this course',
-              zh: '请输入 Copilot 引导用户完成课程的指令'
-            })
-          "
-        />
-      </UIFormItem>
 
       <footer class="mt-5 flex justify-end gap-3 border-t border-dividing-line-2 pt-5">
         <UIButton type="neutral" @click="emit('cancelled')">

@@ -70,6 +70,12 @@ export function isQuotaExceededMeta(code: number, _meta: unknown): _meta is Quot
   return code === ApiExceptionCode.errorQuotaExceeded
 }
 
+export type TooManyRequestsMeta = RetryAfterMeta
+
+export function isTooManyRequestsMeta(code: number, _meta: unknown): _meta is TooManyRequestsMeta {
+  return code === ApiExceptionCode.errorTooManyRequests
+}
+
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorInvalidArgs]: {
     en: 'invalid args',
