@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createCourseApiMatcher, extractCourseConfig } from './course-config'
+import { createCourseApiMatcher, extractCourseConfig, meetsCodeRequirement } from './course-config'
 
 describe('extractCourseConfig', () => {
   it('should return empty config when there is no jsonc block', () => {
@@ -84,11 +84,13 @@ describe('extractCourseConfig', () => {
     expect(extractCourseConfig('```jsonc\n{}\n```').complete).toBeNull()
     expect(extractCourseConfig('```jsonc\n{ "complete": { "log": "捡到萝卜" } }\n```').complete).toEqual({
       log: '捡到萝卜',
-      count: 1
+      count: 1,
+      require: null
     })
     expect(extractCourseConfig('```jsonc\n{ "complete": { "log": "捡到萝卜", "count": 4 } }\n```').complete).toEqual({
       log: '捡到萝卜',
-      count: 4
+      count: 4,
+      require: null
     })
     // A completion signal needs a log pattern; count alone (or a blank log) declares nothing.
     expect(extractCourseConfig('```jsonc\n{ "complete": { "count": 4 } }\n```').complete).toBeNull()
@@ -96,7 +98,8 @@ describe('extractCourseConfig', () => {
     // A non-integer count falls back to 1 instead of poisoning the signal.
     expect(extractCourseConfig('```jsonc\n{ "complete": { "log": "x", "count": 2.5 } }\n```').complete).toEqual({
       log: 'x',
-      count: 1
+      count: 1,
+      require: null
     })
   })
 
@@ -223,5 +226,61 @@ describe('createCourseApiMatcher', () => {
 
   it('should match nothing for an empty set', () => {
     expect(createCourseApiMatcher([])(stepId)).toBe(false)
+  })
+})
+
+describe('complete.require', () => {
+  function parseRequire(json: string) {
+    return extractCourseConfig(['```jsonc', json, '```'].join('\n')).complete?.require ?? null
+  }
+
+  it('should read the code tokens and the hint', () => {
+    expect(
+      parseRequire(
+        '{ "complete": { "log": "捡到", "count": 4, "require": { "code": ["repeat"], "hint": "试试 repeat" } } }'
+      )
+    ).toEqual({
+      code: ['repeat'],
+      hint: '试试 repeat'
+    })
+  })
+
+  it('should default the hint to an empty string', () => {
+    expect(parseRequire('{ "complete": { "log": "捡到", "require": { "code": ["repeat"] } } }')).toEqual({
+      code: ['repeat'],
+      hint: ''
+    })
+  })
+
+  it('should drop a requirement that names no token', () => {
+    expect(
+      parseRequire('{ "complete": { "log": "捡到", "require": { "code": [], "hint": "试试 repeat" } } }')
+    ).toBeNull()
+    expect(parseRequire('{ "complete": { "log": "捡到", "require": "repeat" } }')).toBeNull()
+    expect(parseRequire('{ "complete": { "log": "捡到" } }')).toBeNull()
+  })
+})
+
+describe('meetsCodeRequirement', () => {
+  it('should require every token', () => {
+    expect(meetsCodeRequirement('repeat 4 {\n\tstep 100\n}', ['repeat'])).toBe(true)
+    expect(meetsCodeRequirement('repeat 4 {\n\tstep 100\n}', ['repeat', 'turn'])).toBe(false)
+  })
+
+  it('should match whole words only', () => {
+    expect(meetsCodeRequirement('repeatedly 4', ['repeat'])).toBe(false)
+    expect(meetsCodeRequirement('myRepeat 4', ['repeat'])).toBe(false)
+  })
+
+  it('should ignore comments and strings, so the starter code cannot satisfy the requirement', () => {
+    // Courses that ask for `repeat` usually say so in a comment right above the cursor.
+    expect(meetsCodeRequirement('// 试试用 repeat 吧\nstep 100', ['repeat'])).toBe(false)
+    expect(meetsCodeRequirement('/* repeat */\nstep 100', ['repeat'])).toBe(false)
+    expect(meetsCodeRequirement('say "repeat"', ['repeat'])).toBe(false)
+    expect(meetsCodeRequirement('say "试试"\nrepeat 4 {}', ['repeat'])).toBe(true)
+  })
+
+  it('should be met by an empty token list', () => {
+    expect(meetsCodeRequirement('step 100', [])).toBe(true)
   })
 })

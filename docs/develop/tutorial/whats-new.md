@@ -92,8 +92,28 @@ language constructs use their canonical names (`if_statement`, `for_iterate`, ..
   aborts the round writing the comment; and should a round still be superseded, the dialog accepts
   the evaluation from whichever event round ends up carrying it, instead of timing out into the
   fallback text.
-- `copilot`: when output cannot judge it (e.g. "message the copilot", or "must have used `repeat`"),
-  the copilot declares completion, at the cost of one LLM round.
+- `copilot`: when output cannot judge it (e.g. "message the copilot" — the course judges what the
+  user *says*, not what their program *does*), the copilot declares completion, at the cost of one
+  LLM round.
+
+**Primary and secondary goals.** The runtime signal says the learner reached the goal, not how. A
+loop course whose learner walks four steps by hand collects everything and would pass without ever
+writing `repeat` — which is exactly why those courses used to need `judge: "copilot"`. `complete`
+takes an optional second tier, checked only once the first one lands:
+
+```jsonc
+"complete": {
+  "log": "捡到", "count": 4,                                    // primary goal: the runtime signal
+  "require": { "code": ["repeat"], "hint": "试着用 repeat …" }   // secondary goal: how they got there
+}
+```
+
+`require.code` names tokens that must appear in the learner's code as whole words, matched after
+comments and string literals are stripped — otherwise the course's own "试试 repeat" hint in the
+starter code would satisfy it. Both met -> the course completes. Primary met, secondary missed -> no
+completion; `TutorialCourseRetryModal` credits the run ("你的程序已经达成目标了。") and names what is
+still missing. So "must have used `repeat`" moves off the LLM path onto the instant one, and the
+learner's feedback is a specific hint rather than a judgment.
 
 Author's guide: `docs/product/course-authoring.md`.
 
