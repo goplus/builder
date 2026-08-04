@@ -33,7 +33,7 @@ entries are inert (and a wrapping top-level folder is fatal: the manifest is no 
 ```jsonc
 {
   "format": "xbuilder-course-series",   // both checked; the only friendly error the importer gives
-  "version": 1,
+  "version": 2,
   "courseSeries": {
     "title": "Code: Lita",              // <=200
     "description": "…",                 // <=400
@@ -42,7 +42,6 @@ entries are inert (and a wrapping top-level folder is fatal: the manifest is no 
   "courses": [{
     "title": "1. 你好，Lita",            // <=200
     "entrypoint": "/editor/curator/Lita-Course-01/sprites/Lita/code",
-    "references": [],                   // [{ type: "project", fullName: "owner/name" }, …]
     "prompt": "```jsonc\n…\n```\n\n## 目标\n…",   // <=4000; see docs/product/course-authoring.md
     "thumbnail": { "path": "thumbnails/courses/0.jpg" }
   }],
@@ -53,6 +52,14 @@ entries are inert (and a wrapping top-level folder is fatal: the manifest is no 
   }]
 }
 ```
+
+**The version is decided by the deployment, not by your checkout.** The importer compares it for
+exact equality and rejects every mismatch with the same opaque *"Unsupported course series file
+format"* — the message names no version and does not say which side is newer. v1 → v2 (upstream
+#3381) only removed `courses[].references`, so a package can otherwise be converted by editing two
+things. Before building a package for someone else to upload, **export the target series once and
+read the `version` it writes**; a local branch can easily sit on the older number while the site
+they import into has moved on.
 
 `courseSeries.order` is deliberately not exported — sort order depends on the other series in the
 target environment, so import keeps the local value.
