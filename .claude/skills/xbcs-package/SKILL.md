@@ -199,5 +199,16 @@ const r = await courseRunner.run({ code: { Lita: 'step 100\nturn Right' }, timeo
 r.logs  // [{ level: 'INFO', msg: '捡到萝卜 Radish', … }]
 ```
 
+Two failure modes look exactly like broken content and are neither:
+
+- **One `loadXbp` per page load.** A second load on the same page silently breaks the runner
+  (teardown dies in `deleteDirFS`); every run after it returns empty logs with no error. Reload the
+  page between projects.
+- **A hidden browser tab throttles the engine ~20×.** Godot's loop runs on background-tab timer
+  budget, so a `step 80` that takes under a second in a visible tab takes ~15 seconds hidden. A
+  four-pickup course then "collects only one" — the timeout truncated it, nothing more. Before
+  concluding a scene is broken, rerun with a much longer timeout and look at the log timestamps:
+  slow monotonic progress means throttling; a run that truly stopped means content.
+
 A page session only survives a handful of engine instances — reload between runs rather than
 concluding the course broke.
