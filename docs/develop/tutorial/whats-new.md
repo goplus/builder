@@ -115,6 +115,12 @@ completion; `TutorialCourseRetryModal` credits the run ("你的程序已经达�
 still missing. So "must have used `repeat`" moves off the LLM path onto the instant one, and the
 learner's feedback is a specific hint rather than a judgment.
 
+Both dialogs render **Markdown** through the copilot's own `MarkdownView`, so an evaluation or a
+hint naming `repeat` reads the same in the dialog as it does in the chat — same code chips, same
+code blocks (including the teaching rule that hides copying). The evaluation's sanitizer keeps line
+breaks for it; it used to collapse all whitespace, which flattened any block structure into one
+line of literal Markdown syntax.
+
 Author's guide: `docs/product/course-authoring.md`.
 
 ## 5. The ruler
@@ -203,7 +209,21 @@ Externally hosted videos (e.g. S3) load in CORS mode via `<video crossorigin>` t
 COEP; story videos are origin-allowlisted (same-origin + usercontent CDN + the tutorial asset host),
 which `<course-story-video>` may point at.
 
-## 8. Dev harness for course verification (so an Agent can debug a course during local development)
+## 8. Knowing whose code this is
+
+`xgo-code-editor/ui/EditingDocumentThumbnail.vue`
+
+The code area carries the thumbnail of whatever it is editing — a sprite's default costume, the
+stage's backdrop — in its top-right corner. The document tabs already showed it, but the simplified
+layout hides them, and that is exactly where it matters: a child writing `Boat.step` needs to know
+that the code in front of them is Lita's, not the boat's. So the badge appears only when the tabs
+are gone, and it gets a strip of padding rather than floating over the code — a long line would
+otherwise run underneath it, and the character it hides is the one being read.
+
+It reads `TextDocument.thumbnailFile`, which the editor already had, so the generic editor learns
+nothing about sprites to show it.
+
+## 9. Dev harness for course verification (so an Agent can debug a course during local development)
 
 `apps/xbuilder/pages/devtools/course-runner.vue` (dev-only route)
 

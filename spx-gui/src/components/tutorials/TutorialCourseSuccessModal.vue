@@ -8,6 +8,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 import { timeout } from '@/utils/utils'
 import { UIButton, UIImg, UIModal, UIModalClose } from '@/components/ui'
+import MarkdownView from '@/components/copilot/MarkdownView.vue'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import successImg from './success.png'
@@ -108,10 +109,12 @@ function handleClose() {
         <div class="mt-5 text-2xl">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
 
         <!-- The copilot's evaluation sits where the plain "course completed" line used to be. While
-             it is still being written, a typing placeholder holds the space. -->
+             it is still being written, a typing placeholder holds the space. It renders as Markdown
+             through the copilot's own view, so an evaluation naming `repeat` reads the same here as
+             it does in the chat — and left-aligned, because centering a code block looks broken. -->
         <div class="mt-3 min-h-12 w-full">
-          <div v-if="shownComment != null" class="rounded-md bg-grey-300 px-4 py-3 text-sm text-text">
-            {{ shownComment }}
+          <div v-if="shownComment != null" class="rounded-md bg-grey-300 px-4 py-3 text-left text-text">
+            <MarkdownView :value="shownComment" />
           </div>
           <div v-else class="flex items-center justify-center gap-1.5 rounded-md bg-grey-200 px-4 py-5">
             <span class="typing-dot" />
