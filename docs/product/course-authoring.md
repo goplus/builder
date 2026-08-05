@@ -87,13 +87,16 @@ approach, not a code-style grader.
 
 Declaring `apis` or `opening` (or the legacy `videos`) switches the Copilot's opening protocol to purely silent (verdict + stay-silent, no tool calls) — the frontend owns all course-start setup. Courses declaring none keep the legacy Copilot-driven setup. New courses should always declare.
 
-## Three kinds of video, don't confuse them
+## Two kinds of video, don't confuse them
 
 * **Opening story video** — the series intro (world & goal), usually only on the first course. It is the one opening piece still authored as a tag rather than an `opening` entry, because it plays *before* the editor exists (before the course even starts) and carries its own source check. Authored as `<course-story-video>URL</course-story-video>` in the prompt (put it after the jsonc block). Orthogonal to `judge` / `apis` / `opening`.
 * **Knowledge-point videos** (the `opening` `video` steps) — an API's explainer, played in a dialog in `opening` order after the editor loads.
-* **Hover-card video** — the same API explainer, always available on hover during the course; no config.
 
-Story-video sources are **origin-restricted** (the `?video=` query param is spoofable): allowed origins are same-origin, `usercontentBaseUrl`, and the tutorial video host (`tutorialVideoAssetBaseUrl` in `api-videos.ts`, an S3 bucket during the demo phase). A URL on any other origin is silently dropped. Because the site is cross-origin isolated (COEP), cross-origin videos need `<video crossorigin>` plus the bucket's CORS (all three video surfaces already set it).
+The API reference hover card carries the API's signature and description only. It once embedded the
+explainer video too; that was withdrawn, so the knowledge-point dialog is the single place a video
+plays inside a course.
+
+Story-video sources are **origin-restricted** (the `?video=` query param is spoofable): allowed origins are same-origin, `usercontentBaseUrl`, and the tutorial video host (`tutorialVideoAssetBaseUrl` in `api-videos.ts`, an S3 bucket during the demo phase). A URL on any other origin is silently dropped. Because the site is cross-origin isolated (COEP), cross-origin videos need `<video crossorigin>` plus the bucket's CORS (both video surfaces already set it).
 
 ## The prose (the Copilot's lesson plan)
 
