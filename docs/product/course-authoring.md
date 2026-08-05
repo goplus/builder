@@ -46,6 +46,14 @@ Ordering is the experience: the typical arrangement is prelude → knowledge-poi
 
 ### `apis` / video / spotlight entries
 
+A knowledge point is not always an API. The ruler is one (`{ "video": "ruler" }`), and so is the
+degree notation of `turn`: `turn 90` and `turn Right` are the *same* function — spx's `Direction` is
+a float64 and `Right` is the constant 90 — so no definition ID or overload can separate them, and
+the API reference lists only the word form. Course 5 teaches `turn Right` with `{ "video": "turn" }`;
+course 9 teaches the angle with `{ "video": "turn-degrees" }`. Reach for an ID of this shape when a
+course teaches a *notation* rather than a capability; add it to `topicVideos` so the copilot can
+play it when asked, since it cannot discover it from the API reference.
+
 `apis`, `opening` `video` steps, and `spotlight` `api` targets share one API-name matcher. Each entry matches a panel item (and all of its overloads) as a bare name (`step`) or a dotted name (`Sprite.step`); append `#N` to pin one overload (`step#0` — the basic form only). **Do not use full definition IDs** (`xgo:github.com/goplus/spx/v2?...`): they embed the engine module version and silently stop matching when the engine major-bumps — the spx v2→v3 upgrade broke a course exactly this way. Language constructs use their canonical names: `if_statement`, `if_else_statement`, `var_declaration`, `for_iterate`. spx functions and project-defined methods (e.g. `IsMature`, `Water`) work as bare names.
 
 Videos come from the global knowledge-point library (keyed by definition ID); **every overload of an API resolves to the same video** (the video explains the API, not one overload), and a bare name works too. In demo mode unknown entries play the shared demo video. Watched knowledge points are remembered and not pushed again.
@@ -158,8 +166,8 @@ the capability, the child writes it, then transfers it to a fresh scene.
 * **6 courses** add a secondary goal via `complete.require`: 42 (`distanceTo` — `stepTo` reaches the
   same mushroom), 25 / 28 / 30 (`repeat` — walking by hand collects everything too), 36
   (`if` + `IsMature` — going straight for the pinecone also scores), 47 (`if`).
-* **51 courses** declare `apis` (courses 1 and 2 have no panel to narrow). **13** include a
-  knowledge-point video; **11** include an opening spotlight — the Copilot trigger (1), the Run
+* **51 courses** declare `apis` (courses 1 and 2 have no panel to narrow). **14** include a
+  knowledge-point video (`turn` and its degree notation count separately — see below); **11** include an opening spotlight — the Copilot trigger (1), the Run
   button (2), the Ruler (3, 7, 9, 10, 11, and 41, where it bridges into `distanceTo`), the API
   References panel (4), and the sprite → name-label chain that teaches name insertion (14 on a
   mushroom, 20 on the boat).

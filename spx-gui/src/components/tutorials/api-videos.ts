@@ -34,11 +34,23 @@ const demoVideoSrc = `${tutorialVideoAssetBaseUrl}/step+200.mp4`
  */
 export const rulerVideoId = 'xbuilder:?ruler'
 
+/**
+ * `turn 90` and `turn Right` are the *same* function — spx's `Direction` is a float64 and `Right`
+ * is the constant 90 — so the two notations cannot be told apart by definition ID or overload, and
+ * the API reference lists only the word form. The degree notation is a teaching point rather than
+ * an API, so it gets an ID of its own, the way the ruler does.
+ */
+export const turnDegreesVideoId = 'xbuilder:?turn-degrees'
+
 /** Non-API topics with a video, and when the copilot should play each. */
 export const topicVideos: Array<{ id: string; whenToUse: string }> = [
   {
     id: rulerVideoId,
     whenToUse: 'the stage ruler — how to measure a distance or a turn angle on the stage'
+  },
+  {
+    id: turnDegreesVideoId,
+    whenToUse: 'writing a turn as an angle (`turn 90`) instead of a direction (`turn Right`)'
   }
 ]
 
@@ -55,7 +67,11 @@ const apiVideoLibrary: Record<string, ApiVideoInfo> = {
   },
   'xgo:github.com/goplus/spx/v2?Sprite.turn#0': {
     title: { en: 'turn', zh: 'turn 转向' },
-    src: `${tutorialVideoAssetBaseUrl}/turn+90.mp4`
+    src: `${tutorialVideoAssetBaseUrl}/turn+Left.mp4`
+  },
+  [turnDegreesVideoId]: {
+    title: { en: 'turn <degrees>', zh: 'turn 的数字写法' },
+    src: `${tutorialVideoAssetBaseUrl}/turn.mp4`
   },
   'xgo:github.com/goplus/spx/v2?Sprite.turnTo#0': {
     title: { en: 'turnTo', zh: 'turnTo 面向目标' },
