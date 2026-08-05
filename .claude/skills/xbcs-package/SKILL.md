@@ -102,6 +102,40 @@ For the course `prompt` itself — the ```jsonc config block, `opening`, `judge`
 `<course-story-video>` — follow [docs/product/course-authoring.md](../../../docs/product/course-authoring.md).
 That document is the authority; don't restate its rules here.
 
+## Asking for a goal *and* how it was reached
+
+The runtime signal says the learner reached the goal; it cannot say they reached it the way the
+course teaches. When both matter, the config carries two tiers:
+
+```jsonc
+"complete": {
+  "log": "捡到蘑菇", "count": 1,                                    // primary: the runtime signal
+  "require": {                                                     // secondary: how they got there
+    "code": ["stepTo"],
+    "hint": "不过这次是自己量着走过去的。试试用 `stepTo Mushroom` 指定目标。"
+  }
+}
+```
+
+`code` lists tokens that must appear in the learner's code as whole words; comments and string
+literals are stripped before matching, so the course's own hint in the starter code cannot satisfy
+its own requirement. Both met completes the course. Primary met and secondary missed opens a retry
+dialog instead: it credits the run, then shows `hint` — which is Markdown, so name the code in
+backticks.
+
+Reach for the secondary goal when the scene alone cannot enforce the lesson — a course teaching
+`stepTo` whose mushroom can also be reached by measuring, a loop course whose route can be walked by
+hand. Do **not** add one where the scene already enforces it (put the turn inside the loop and the
+route collects one of four), and keep the token list to the construct being taught: it is a check on
+the approach, not a style grader.
+
+Two ways to get it wrong, one of which `validate` catches:
+
+- **Inert requirement** — a token the starting code already contains. The course then looks stricter
+  while judging nothing. `validate` reports this as `require-preheld`.
+- **Wrong construct** — a token that a legitimate alternative solution avoids, which turns a valid
+  answer into a rejection. Nothing can catch this for you; run the alternative through the harness.
+
 ## The edits that pass validation and still break the course
 
 `validate` reasons about the file. It cannot know whether a course still *works*, and the most
