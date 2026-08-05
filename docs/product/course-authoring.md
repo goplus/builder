@@ -99,6 +99,29 @@ Story-video sources are **origin-restricted** (the `?video=` query param is spoo
 
 The opening guide line now lives in the config's `opening.prelude`, not a `<course-prelude>` tag. Recommended prose sections (see the Code: Lita series): `## 目标`, `## 当前代码` (with a reference answer marked as one-of-many), `## 完成判定`, optional `## 引导要点`. Do not write "narrow the APIs at start" / "play the video at start" / "spotlight the button first" prose — the config's `apis` / `opening` already do that, and such prose conflicts with the silent opening protocol. For `judge: "code"` courses, state explicitly that the system judges and the Copilot must not declare completion. Prompt limit: 4000 characters.
 
+## Scene rules the courses depend on
+
+A course's scene is part of its judging, so a scene that can reach a state the goal can never be
+met from is a course the learner cannot finish — and nothing in the config can catch that.
+
+The one we hit: a mushroom that ripens over time is picked up on `onTouchStart`, which fires when
+contact *begins*. A learner who walks onto the sprout and then waits for it has already spent that
+event, so ripening handed them nothing and the run was a dead end. Ripening is the other moment a
+pickup can happen, so the mushrooms check for it:
+
+```
+func harvest() { play "获得蘑菇"; println "捡到蘑菇 "+name; collected = true; die }
+
+onTouchStart "Lita", sprite => { if mature { harvest } else { sprite.say "还没熟呢", 1 } }
+// ... and where it ripens:
+mature = true
+if touching("Lita") { harvest }
+```
+
+Write scenes so that every state a learner can reach still leads somewhere. Prefer fixing the scene
+over writing prose that steers around the sharp edge: the prose only reaches learners who read it,
+and a course should not need the reference answer's exact shape to be completable.
+
 ## Workflow for a new course
 
 1. Build the course project; make the game print a judgeable output line per key progress step (or print the sentinel when the goal is reached).
@@ -114,26 +137,28 @@ world is squirrel-and-mushroom: goals are collecting mushrooms (four colors) and
 projects log one line per pickup (`捡到蘑菇 <name>` / `捡到松果 <name>`), so a course collecting both
 kinds counts them with the shared prefix `complete: { "log": "捡到", "count": N }`.
 
-Unit order: movement basics (1–13) → targets (14–18) → `distanceTo` observe/hands-on pair (19–20) →
-objects & the boat (21–25) → **loops (26–32)** → `onStart` (33) → **conditions (34–40)**, staged as
-observe-the-problem (34 看运气的采摘) → meet the query (35 问一问蘑菇, `IsMature` alone) → `if` (36)
-→ `if/else` (37) → transfer to a new scene (38 大挑战 II) → `waitUntil` / `Water` (39–40) →
-variables (41–43) → loops×variables (44–46) → `==` in the counting context (47 刚好数到四) → `for`
-unit (48–51) → events (52 谁在指挥, `onKey` + `turnTo`) → capstone (53). Loops deliberately precede
-conditions — repetition is easier to observe than branching — and every syntax point enters through
-the designer's arc: the child observes a problem, the course suggests the capability, the child
-writes it, then transfers it to a fresh scene.
+Unit order: movement basics (1–13) → targets (14–18) → objects & the boat (19–23) → **loops
+(24–30)** → `onStart` (31) → **conditions (32–38)**, staged as observe-the-problem (32 看运气的采摘)
+→ meet the query (33 问一问蘑菇, `IsMature` alone) → `if` (34) → `if/else` (35) → transfer to a new
+scene (36 大挑战 II) → `waitUntil` / `Water` (37–38) → **values (39–43)**: name a number (39), change
+it (40), get one from `distanceTo` (41), feed it to `step` (42), store it in a variable (43) → 螺旋
+(44) → counting (45–47, `==` lands in 47 刚好数到四) → `for` unit (48–51) → events (52 谁在指挥,
+`onKey` + `turnTo`) → capstone (53). Loops deliberately precede conditions — repetition is easier to
+observe than branching — and `distanceTo` sits inside the value thread rather than next to the ruler
+courses, because what makes it worth learning is that it *returns something you can use*. Every
+syntax point enters through the designer's arc: the child observes a problem, the course suggests
+the capability, the child writes it, then transfers it to a fresh scene.
 
 * **51 courses** are `judge: "code"`; **2** are `judge: "copilot"` — course 1 (message the Copilot)
-  and course 34 (say what you observed). Both judge what the learner *says*; no course judges code
+  and course 32 (say what you observed). Both judge what the learner *says*; no course judges code
   through the Copilot.
-* **6 courses** add a secondary goal via `complete.require`: 20 (`distanceTo` — `stepTo` reaches the
-  same mushroom), 27 / 30 / 32 (`repeat` — walking by hand collects everything too), 38
+* **6 courses** add a secondary goal via `complete.require`: 42 (`distanceTo` — `stepTo` reaches the
+  same mushroom), 25 / 28 / 30 (`repeat` — walking by hand collects everything too), 36
   (`if` + `IsMature` — going straight for the pinecone also scores), 47 (`if`).
 * **51 courses** declare `apis` (courses 1 and 2 have no panel to narrow). **13** include a
   knowledge-point video; **11** include an opening spotlight — the Copilot trigger (1), the Run
-  button (2), the Ruler (3, 7, 9, 10, 11, and 19, where it bridges into `distanceTo`), the API
+  button (2), the Ruler (3, 7, 9, 10, 11, and 41, where it bridges into `distanceTo`), the API
   References panel (4), and the sprite → name-label chain that teaches name insertion (14 on a
-  mushroom, 22 on the boat).
+  mushroom, 20 on the boat).
 * **Course 1** carries the `<course-story-video>` series intro.
 * Course covers are placeholders except for the few the designer has delivered.

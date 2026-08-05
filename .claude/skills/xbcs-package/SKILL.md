@@ -121,6 +121,12 @@ it inert: the course looks stricter and judges nothing. `validate` catches that 
 (`require-preheld`); it cannot tell you whether the token is the right one, or whether a legitimate
 alternative solution avoids it.
 
+Reordering a series is the same trap wearing a different hat. Moving a course is a manifest edit
+that always validates, but a course's prose and reference answer name APIs, and those names are
+claims about what came earlier. Audit an order change against the course that *teaches* each API —
+the one whose `opening` plays its video — not merely against the first `apis` declaration, which a
+later course can quietly hold too.
+
 The same shape recurs elsewhere: narrowing `apis` hides a panel entry the reference answer still
 uses; an `opening` spotlight targets a landmark the course's `hide` list just removed; renaming a
 sprite orphans an `entrypoint` that names it in its path.
