@@ -36,7 +36,7 @@ The first ` ```jsonc ` block in the prompt is parsed as the course config and ap
 
 | Step | Shape | Behavior |
 |---|---|---|
-| Prelude | `{ "prelude": "one-line guide" }` | Shows a text guide modal; the user clicks to continue |
+| Prelude | `{ "prelude": "one-line guide" }` | Shows a text guide modal (Markdown); the user clicks to continue |
 | Video | `{ "video": "step" }` | Plays the API's explainer (skipped if already learned); entry format same as `apis` |
 | Spotlight | `{ "spotlight": { "api": "step" }, "tip": "Drag it in" }` | Highlights a UI element, dims the rest, shows `tip` (optional); continues on the next click |
 
