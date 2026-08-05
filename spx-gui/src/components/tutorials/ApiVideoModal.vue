@@ -28,8 +28,9 @@ const { aspectStyle, handleLoadedMetadata } = useVideoAspect(4 / 3)
     @update:visible="emit('close')"
   >
     <div class="flex flex-col px-5 pb-5 pt-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg text-title">{{ $t(video.title) }}</h3>
+      <!-- No title: the video names the API on its own first line, and the dialog opens as part of
+           a course opening where repeating it just adds a line to read. -->
+      <div class="flex items-center justify-end">
         <UIModalClose @click="emit('close')" />
       </div>
       <div class="mt-3 overflow-hidden rounded-md bg-grey-1000">
