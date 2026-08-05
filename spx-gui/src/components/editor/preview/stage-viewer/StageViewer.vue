@@ -107,7 +107,7 @@
             name: 'Selected sprite name',
             desc: 'Name label below the selected sprite; clicking it inserts the name at the code editor cursor'
           }"
-          class="absolute -translate-x-1/2 cursor-pointer rounded-[4px] bg-black/30 px-1.5 py-0.5 text-xs text-white transition-colors hover:bg-black/50"
+          class="absolute -translate-x-1/2 cursor-pointer rounded-[4px] border-none bg-black/30 px-1.5 py-0.5 text-xs text-white transition-colors hover:bg-black/50"
           :style="{ left: `${selectedSpriteNameLabel.left}px`, top: `${selectedSpriteNameLabel.top}px` }"
           @click.stop="handleSpriteNameLabelClick(selectedSpriteNameLabel.name)"
         >
