@@ -94,9 +94,14 @@ const currentOpeningStep = computed(() =>
  */
 const retryHint = ref<string | null>(null)
 
+/** The code the learner currently has open, or null when no document is readable. */
+function readLearnerCode(): string | null {
+  return codeEditorRef.value?.getAttachedUI()?.activeTextDocument?.getValue() ?? null
+}
+
 /** Whether the code the learner currently has open satisfies the course's `complete.require`. */
 function usesRequiredCode(tokens: string[]): boolean {
-  const code = codeEditorRef.value?.getAttachedUI()?.activeTextDocument?.getValue() ?? null
+  const code = readLearnerCode()
   // No readable document means no evidence to reject on — completing is the kinder failure.
   if (code == null) return true
   return meetsCodeRequirement(code, tokens)
@@ -285,7 +290,7 @@ watch(
             retryHint.value = requirement.hint
             return
           }
-          tutorial.markCourseComplete()
+          tutorial.markCourseComplete(undefined, readLearnerCode())
         })
       )
     }
