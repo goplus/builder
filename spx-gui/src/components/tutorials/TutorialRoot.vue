@@ -35,7 +35,7 @@ import { progressElements } from './user-progress'
 import { installTutorialGuidance } from './tutorial-guidance'
 import { sanitizeCompletionComment } from './completion-comment'
 import { tutorialCourseReminder } from './tutorial-course-reminder'
-import { getApiVideo, markApiLearned, resolveApiVideo, resolveCourseVideos, type ApiVideoInfo } from './api-videos'
+import { markApiLearned, resolveApiVideo, resolveCourseVideos, type ApiVideoInfo } from './api-videos'
 
 const copilot = useCopilot()
 const router = useRouter()
@@ -310,16 +310,13 @@ watch(
   }
 )
 
-// During a course, API reference items show their explainer video in the hover card, and the
-// panel narrows to the author-declared API set right away (no copilot round involved). Watched
-// together with the editor ref since the editor may mount after the course starts.
+// During a course the API reference panel narrows to the author-declared API set right away (no
+// copilot round involved). Watched together with the editor ref since the editor may mount after
+// the course starts.
 watch(
   [() => tutorial.currentCourse, codeEditorRef],
   ([currentCourse, codeEditor]) => {
     if (codeEditor == null) return
-    codeEditor.setAPIReferenceVideoProvider(
-      currentCourse != null ? (item) => getApiVideo(stringifyDefinitionId(item.definition)) : null
-    )
     if (currentCourse != null) {
       const { apis } = extractCourseConfig(currentCourse.prompt)
       if (apis.length > 0) {
