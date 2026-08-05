@@ -24,7 +24,7 @@ const [thumbnailUrl] = useRenderableImageUrl(() => activeTextDocument.value?.thu
       <template #trigger>
         <div
           v-radar="{ name: 'Editing document thumbnail', desc: 'Thumbnail of what the code being edited belongs to' }"
-          class="h-10 w-10 flex items-center rounded-md bg-grey-300 p-0.5"
+          class="h-10 w-10 flex items-center rounded-md border-2 border-primary-500 bg-primary-200"
         >
           <UIImg class="h-full w-full rounded-[6px]" :src="thumbnailUrl" />
         </div>
