@@ -101,7 +101,7 @@ beforeEach(() => {
         instructions: '',
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-01-01T00:00:00Z',
-        version: 1,
+        revision: 1,
         files: {},
         thumbnail: '',
         remixedFrom: null,
@@ -122,7 +122,11 @@ beforeEach(() => {
     } as unknown as Awaited<ReturnType<typeof cloudHelpers.load>>
   })
   vi.mocked(cloudHelpers.save).mockImplementation(
-    async (serialized) => serialized as Awaited<ReturnType<typeof cloudHelpers.save>>
+    async (serialized) =>
+      ({
+        ...serialized,
+        metadata: { ...serialized.metadata, revision: 7 }
+      }) as Awaited<ReturnType<typeof cloudHelpers.save>>
   )
   vi.mocked(xbpHelpers.save).mockImplementation(
     async (serialized) => new File([JSON.stringify(serialized.metadata)], `${serialized.metadata.name}.xbp`)
@@ -165,9 +169,31 @@ beforeEach(() => {
     updatedAt: '2026-01-01T00:00:00Z'
   }))
   vi.mocked(deleteCourse).mockResolvedValue(undefined)
-  vi.mocked(updateProject).mockResolvedValue({} as Awaited<ReturnType<typeof updateProject>>)
+  vi.mocked(updateProject).mockImplementation(
+    async (owner, name) =>
+      ({
+        owner,
+        name,
+        revision: 8
+      }) as Awaited<ReturnType<typeof updateProject>>
+  )
   vi.mocked(createProjectRelease).mockResolvedValue({} as Awaited<ReturnType<typeof createProjectRelease>>)
 })
+
+function mockCloudProjectSave(owner: string, name: string, revision: number) {
+  vi.mocked(cloudHelpers.save).mockImplementationOnce(
+    async (serialized) =>
+      ({
+        ...serialized,
+        metadata: {
+          ...serialized.metadata,
+          owner,
+          name,
+          revision
+        }
+      }) as Awaited<ReturnType<typeof cloudHelpers.save>>
+  )
+}
 
 describe('exportCourseSeriesFile', () => {
   it('exports a self-contained package with entrypoint projects', async () => {
@@ -233,9 +259,81 @@ describe('importCourseSeriesFile', () => {
       'alice',
       'EntryProject',
       expect.objectContaining({
-        description: 'Imported from course series "Imported series"'
+        description: 'Imported from course series "Imported series"',
+        thumbnail: '',
+        projectRevision: 8
       }),
       ctrl.signal
+    )
+  })
+
+  it('uses the canonical project identity returned by the project save', async () => {
+    vi.mocked(xbpHelpers.load).mockResolvedValueOnce({
+      metadata: {
+        displayName: 'Display EntryProject',
+        type: ProjectType.Game,
+        visibility: Visibility.Public
+      },
+      files: {}
+    })
+    mockCloudProjectSave('saved-owner', 'SavedProject', 7)
+
+    await importCourseSeriesFile(
+      existingSeries,
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+      'alice'
+    )
+
+    expect(updateProject).not.toHaveBeenCalled()
+    expect(createProjectRelease).toHaveBeenCalledWith(
+      'saved-owner',
+      'SavedProject',
+      expect.objectContaining({ projectRevision: 7 }),
+      undefined
+    )
+    expect(addCourse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entrypoint: '/editor/saved-owner/SavedProject/lesson?tab=code'
+      }),
+      undefined
+    )
+  })
+
+  it('uses the canonical project identity returned by the metadata update', async () => {
+    mockCloudProjectSave('saved-owner', 'SavedProject', 7)
+    vi.mocked(updateProject).mockResolvedValueOnce({
+      owner: 'final-owner',
+      name: 'FinalProject',
+      revision: 8
+    } as Awaited<ReturnType<typeof updateProject>>)
+
+    await importCourseSeriesFile(
+      existingSeries,
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+      'alice'
+    )
+
+    expect(updateProject).toHaveBeenCalledWith(
+      'saved-owner',
+      'SavedProject',
+      {
+        description: 'Description EntryProject',
+        instructions: 'Instructions EntryProject',
+        extraSettings: {}
+      },
+      undefined
+    )
+    expect(createProjectRelease).toHaveBeenCalledWith(
+      'final-owner',
+      'FinalProject',
+      expect.objectContaining({ projectRevision: 8 }),
+      undefined
+    )
+    expect(addCourse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entrypoint: '/editor/final-owner/FinalProject/lesson?tab=code'
+      }),
+      undefined
     )
   })
 

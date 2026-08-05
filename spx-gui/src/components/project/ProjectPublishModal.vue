@@ -81,12 +81,14 @@ const handleSubmit = useMessageHandle(
     if (isProjectUsingAIInteraction(project)) await project.ensureAIDescription(true) // Ensure AI description is available if needed
     const serialized = await project.export()
     const saved = await cloudHelpers.save(serialized)
+    const { owner, name, revision } = saved.metadata
     project.setMetadata(saved.metadata)
-    const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
-    await createProjectRelease(project.owner!, project.name!, {
+    const thumbnailUniversalUrl = await saveFile(project.thumbnail!)
+    await createProjectRelease(owner, name, {
       name: generateReleaseName(),
       description: form.value.releaseDescription,
-      thumbnail: thumbnailUniversalUrl
+      thumbnail: thumbnailUniversalUrl,
+      projectRevision: revision
     })
     emit('resolved')
   },

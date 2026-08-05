@@ -148,8 +148,11 @@ async function save(metadata: PartialMetadata, files: Files, signal?: AbortSigna
       ))
   signal?.throwIfAborted()
 
-  metadata = { ...savedMetadata, thumbnail: metadata.thumbnail }
-  return { metadata, files }
+  const savedProjectMetadata = {
+    ...savedMetadata,
+    thumbnail: metadata.thumbnail
+  }
+  return { metadata: savedProjectMetadata, files }
 }
 
 async function parseProjectData({ files: fileCollection, thumbnail: thumbnailUniversalUrl, ...extra }: ProjectData) {

@@ -2211,7 +2211,10 @@ paths:
       tags:
         - Project Releases
       summary: Create a project release
-      description: Create a new release for a specific project.
+      description: |
+        Create a new release for a specific project.
+
+        The request fails with a conflict if the current project revision does not match `projectRevision`.
       parameters:
         - name: owner
           description: Username of the project's owner.
@@ -2234,6 +2237,7 @@ paths:
               required:
                 - name
                 - description
+                - projectRevision
               properties:
                 name:
                   $ref: "#/components/schemas/ProjectRelease/properties/name"
@@ -2241,6 +2245,15 @@ paths:
                   $ref: "#/components/schemas/ProjectRelease/properties/description"
                 thumbnail:
                   $ref: "#/components/schemas/ProjectRelease/properties/thumbnail"
+                projectRevision:
+                  description: |
+                    Expected revision of the project state from which to create the release. The request fails with a
+                    conflict if the current project revision does not match this value.
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  examples:
+                    - 1
       responses:
         "201":
           description: Successfully created the project release.
@@ -2266,7 +2279,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          $ref: "#/components/responses/ResourceMoved"
+          $ref: "#/components/responses/ProjectReleaseCreateConflict"
 
   /projects/{owner}/{project}/releases/{release}:
     get:
@@ -5830,6 +5843,16 @@ components:
             oneOf:
               - $ref: "#/components/schemas/ConflictError"
               - $ref: "#/components/schemas/MovedResourceError"
+    ProjectReleaseCreateConflict:
+      description: |
+        The release creation conflicts with current project state because `projectRevision` does not match the current
+        project revision or the requested project route moved.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/ConflictError"
+              - $ref: "#/components/schemas/MovedResourceError"
     BadRequest:
       description: Invalid request syntax, parameters, or body.
       content:
@@ -7258,7 +7281,7 @@ components:
         - name
         - type
         - displayName
-        - version
+        - revision
         - files
         - visibility
         - description
@@ -7306,10 +7329,16 @@ components:
           maxLength: 100
           examples:
             - Niu Xiao Qi
-        version:
-          description: Version number of the project.
+        revision:
+          description: |
+            Monotonically increasing identifier of the project's editable state.
+
+            Changes to editable project content or metadata advance this revision. Creating releases and updating
+            activity counters such as views, likes, and remixes do not.
           type: integer
-          format: int32
+          format: int64
+          minimum: 1
+          readOnly: true
           examples:
             - 1
         files:

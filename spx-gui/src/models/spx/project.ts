@@ -111,7 +111,7 @@ export class SpxProject extends Disposable implements IProject {
   name?: string
   type = ProjectType.Game
   displayName = ''
-  version = 0
+  revision = 0
   visibility?: Visibility
   description?: string
   instructions?: string
@@ -399,7 +399,7 @@ export class SpxProject extends Disposable implements IProject {
       name: this.name,
       type: this.type,
       displayName: this.displayName,
-      version: this.version,
+      revision: this.revision,
       visibility: this.visibility,
       description: this.description,
       instructions: this.instructions,

@@ -273,31 +273,36 @@ async function importProject(
 ) {
   const serialized = await xbpHelpers.load(new File([getRequiredEntry(unzipped, project.path)], `${project.name}.xbp`))
   const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
-  const owner = existingProject?.owner ?? signedInUsername
-  const name = existingProject?.name ?? project.name
   const metadata: PartialMetadata = {
     ...serialized.metadata,
     id: existingProject?.id,
-    owner,
-    name,
+    owner: existingProject?.owner ?? signedInUsername,
+    name: existingProject?.name ?? project.name,
     displayName: serialized.metadata.displayName ?? project.name,
     type: serialized.metadata.type ?? ProjectType.Game,
     visibility: Visibility.Public
   }
 
-  await cloudHelpers.save({ metadata, files: serialized.files }, signal)
+  const saved = await cloudHelpers.save({ metadata, files: serialized.files }, signal)
+  let { owner, name, revision } = saved.metadata
   const metadataUpdates: UpdateProjectParams = {}
   if (serialized.metadata.description != null) metadataUpdates.description = serialized.metadata.description
   if (serialized.metadata.instructions != null) metadataUpdates.instructions = serialized.metadata.instructions
   if (serialized.metadata.extraSettings != null) metadataUpdates.extraSettings = serialized.metadata.extraSettings
-  if (Object.keys(metadataUpdates).length > 0) await updateProject(owner, name, metadataUpdates, signal)
+  if (Object.keys(metadataUpdates).length > 0) {
+    const updated = await updateProject(owner, name, metadataUpdates, signal)
+    owner = updated.owner
+    name = updated.name
+    revision = updated.revision
+  }
   await createProjectRelease(
     owner,
     name,
     {
       name: generateReleaseName(),
       description: `Imported from course series "${manifest.courseSeries.title}"`,
-      thumbnail: ''
+      thumbnail: '',
+      projectRevision: revision
     },
     signal
   )

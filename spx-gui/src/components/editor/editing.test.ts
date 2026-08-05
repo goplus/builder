@@ -41,7 +41,7 @@ function makeProject({
   return new MockProject(owner, name, files)
 }
 
-function makeCloudSerialized(owner: string, name: string, version: number = 1): ProjectSerialized<Metadata> {
+function makeCloudSerialized(owner: string, name: string, revision: number = 1): ProjectSerialized<Metadata> {
   return {
     metadata: {
       id: 'project-id',
@@ -52,7 +52,7 @@ function makeCloudSerialized(owner: string, name: string, version: number = 1): 
       name,
       type: ProjectType.Game,
       displayName: name,
-      version,
+      revision,
       visibility: Visibility.Private,
       description: '',
       instructions: '',
@@ -69,17 +69,31 @@ function makeCloudSerialized(owner: string, name: string, version: number = 1): 
   }
 }
 
-function makeLocalSerialized(owner: string, name: string, version?: number): ProjectSerialized {
+function makeLocalSerialized(owner: string, name: string, revision?: number): ProjectSerialized {
   return {
-    metadata: { owner, name, version },
+    metadata: { owner, name, revision },
     files: { 'main.spx': mockFile('main.spx') }
+  }
+}
+
+function makeSavedSerialized({ metadata, files }: ProjectSerialized) {
+  return {
+    metadata: {
+      ...makeCloudSerialized('owner', 'project').metadata,
+      ...metadata,
+      latestRelease: null,
+      owner: metadata.owner ?? 'owner',
+      name: metadata.name ?? 'project',
+      revision: metadata.revision ?? 1
+    },
+    files
   }
 }
 
 function makeCloudHelpers(): CloudHelpers {
   return {
     load: vi.fn().mockResolvedValue(makeCloudSerialized('owner', 'project')),
-    save: vi.fn().mockResolvedValue({ metadata: {}, files: {} })
+    save: vi.fn().mockImplementation(async (serialized) => makeSavedSerialized(serialized))
   }
 }
 
@@ -138,7 +152,7 @@ describe('Editing', () => {
   it('should do auto-save correctly', async () => {
     const cloudHelpers = makeCloudHelpers()
     vi.mocked(cloudHelpers.save).mockImplementation(({ metadata, files }: ProjectSerialized, signal?: AbortSignal) =>
-      timeout(500, signal).then(() => ({ metadata, files }))
+      timeout(500, signal).then(() => makeSavedSerialized({ metadata, files }))
     )
     const localCacheHelper = makeLocalCache()
     vi.mocked(localCacheHelper.save).mockImplementation((_serialized: ProjectSerialized, signal?: AbortSignal) =>
@@ -180,7 +194,7 @@ describe('Editing', () => {
     vi.mocked(cloudHelpers.save)
       .mockRejectedValueOnce(new Error('Cloud save failed'))
       .mockRejectedValueOnce(new Error('Cloud save failed again'))
-      .mockResolvedValue({ metadata: {}, files: {} })
+      .mockResolvedValue(makeSavedSerialized({ metadata: {}, files: {} }))
     const editing = makeEditing({ project, cloudHelpers })
     editing.startEditing()
 
@@ -343,7 +357,7 @@ describe('Editing', () => {
     const project = makeProject()
     const cloudHelpers = makeCloudHelpers()
     vi.mocked(cloudHelpers.save).mockImplementation(({ metadata, files }: ProjectSerialized, signal?: AbortSignal) =>
-      timeout(500, signal).then(() => ({ metadata, files }))
+      timeout(500, signal).then(() => makeSavedSerialized({ metadata, files }))
     )
     const isOnline = ref(false) // Start offline
     const localCacheHelper = makeLocalCache()
@@ -436,7 +450,7 @@ describe('Editing.loadProject', () => {
     expect(localCacheHelper.clear).toHaveBeenCalled()
   })
 
-  it('should prefer local cache when local version is newer than cloud version', async () => {
+  it('should prefer local cache when local revision is newer than cloud revision', async () => {
     const cloudData = makeCloudSerialized('alice', 'my-project', 1)
     const localData = makeLocalSerialized('alice', 'my-project', 2)
     const cloudHelpers = makeCloudHelpers()
@@ -451,7 +465,7 @@ describe('Editing.loadProject', () => {
     expect(project.load).toHaveBeenCalledWith(localData, expect.anything())
   })
 
-  it('should prefer cloud data and clear cache when cloud version is newer', async () => {
+  it('should prefer cloud data and clear cache when cloud revision is newer', async () => {
     const cloudData = makeCloudSerialized('alice', 'my-project', 3)
     const localData = makeLocalSerialized('alice', 'my-project', 1)
     const cloudHelpers = makeCloudHelpers()
@@ -661,7 +675,7 @@ describe('Editing.loadProject', () => {
     expect(editing.mode).toBe(EditingMode.AutoSave)
   })
 
-  it('should prefer local cache when cloud and local versions are equal', async () => {
+  it('should prefer local cache when cloud and local revisions are equal', async () => {
     const cloudData = makeCloudSerialized('alice', 'my-project', 1)
     const localData = makeLocalSerialized('alice', 'my-project', 1)
     const cloudHelpers = makeCloudHelpers()
@@ -673,7 +687,7 @@ describe('Editing.loadProject', () => {
 
     await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), new AbortController().signal)
 
-    // Equal versions keep the local cache to preserve unsaved local work.
+    // Equal revisions keep the local cache to preserve unsaved local work.
     expect(project.load).toHaveBeenCalledWith(localData, expect.anything())
   })
 })

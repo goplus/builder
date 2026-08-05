@@ -23,7 +23,10 @@ export type ProjectRelease = {
   remixCount: number
 }
 
-export type CreateProjectReleaseParams = Pick<ProjectRelease, 'name' | 'description' | 'thumbnail'>
+export type CreateProjectReleaseParams = Pick<ProjectRelease, 'name' | 'description' | 'thumbnail'> & {
+  /** Expected revision of the project state from which to create the release. */
+  projectRevision: number
+}
 
 export function createProjectRelease(
   owner: string,

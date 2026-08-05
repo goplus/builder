@@ -19,7 +19,10 @@ import { EditorState, type IRouter, type Selected } from './editor-state'
 function makeCloudHelpers(): editing.CloudHelpers {
   return {
     load: vi.fn().mockResolvedValue({ metadata: { owner: 'test-owner', name: 'test-project' }, files: {} }),
-    save: vi.fn().mockResolvedValue({ metadata: {}, files: {} })
+    save: vi.fn().mockResolvedValue({
+      metadata: { owner: 'test-owner', name: 'test-project', revision: 1 },
+      files: {}
+    })
   }
 }
 
