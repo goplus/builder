@@ -11,7 +11,7 @@ tar -C /usr/local -xzf ./go1.25.8.linux-amd64.tar.gz
 /usr/local/go/bin/go version
 
 # Install Rust for the Resvg WebAssembly renderer.
-wget -qO- https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.87.0
+wget -qO- https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.88.0
 source "$HOME/.cargo/env"
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli --version 0.2.126 --locked

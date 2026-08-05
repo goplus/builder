@@ -3,7 +3,7 @@
 ARG GO_BASE_IMAGE=golang:1.25.8
 ARG NODE_BASE_IMAGE=node:24.11.1
 ARG NGINX_BASE_IMAGE=nginx:1.27
-ARG RUST_BASE_IMAGE=rust:1.87
+ARG RUST_BASE_IMAGE=rust:1.88
 
 ################################################################################
 

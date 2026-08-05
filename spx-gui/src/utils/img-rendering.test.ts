@@ -40,7 +40,11 @@ describe('font-aware image rendering', () => {
       defineComponent({
         setup() {
           provideSvgFontContext(fontConfig)
-          return () => h('div', Array.from({ length: count }, () => h(ImageConsumer)))
+          return () =>
+            h(
+              'div',
+              Array.from({ length: count }, () => h(ImageConsumer))
+            )
         }
       })
     )
@@ -79,10 +83,10 @@ describe('font-aware image rendering', () => {
 
     await vi.waitFor(() => expect(urls[0].value).toBe('blob:mock-0'))
 
-    expect(applyFontPreferencesToSvgText).toHaveBeenCalledWith(
-      '<svg><text>你好</text></svg>',
-      ['basic-chinese', 'default']
-    )
+    expect(applyFontPreferencesToSvgText).toHaveBeenCalledWith('<svg><text>你好</text></svg>', [
+      'basic-chinese',
+      'default'
+    ])
   })
 
   it('rerenders the current File when its immutable font config changes', async () => {
