@@ -77,6 +77,10 @@ const apiVideoLibrary: Record<string, ApiVideoInfo> = {
     // cannot, so the URL changes here.
     src: `${tutorialVideoAssetBaseUrl}/turn.mp4?v=2`
   },
+  'xgo:github.com/goplus/spx/v2?Sprite.stepTo#0': {
+    title: { en: 'stepTo', zh: 'stepTo 走向目标' },
+    src: `${tutorialVideoAssetBaseUrl}/stepTo.mp4`
+  },
   'xgo:github.com/goplus/spx/v2?Sprite.turnTo#0': {
     title: { en: 'turnTo', zh: 'turnTo 面向目标' },
     src: `${tutorialVideoAssetBaseUrl}/turnTo.mp4`
