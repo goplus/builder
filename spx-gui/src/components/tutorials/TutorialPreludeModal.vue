@@ -15,10 +15,11 @@ export function extractCoursePrelude(prompt: string): string | null {
 
 <script setup lang="ts">
 import { UIButton, UIModal } from '@/components/ui'
+import MarkdownView from '@/components/copilot/MarkdownView.vue'
 
 defineProps<{
   visible: boolean
-  /** The guide text to show. */
+  /** The guide text to show. Markdown — course authors name code in backticks. */
   text: string
 }>()
 
@@ -44,7 +45,9 @@ function handleContinue() {
     @update:visible="handleContinue"
   >
     <div class="flex flex-col items-center px-8 pb-6 pt-8">
-      <p class="whitespace-pre-wrap text-base text-text">{{ text }}</p>
+      <!-- `text-base!` because the shared Markdown view sets its own (smaller) chat font size, and
+           a prelude is the sentence a child reads before starting. -->
+      <MarkdownView class="self-stretch text-base! text-text" :value="text" />
       <UIButton class="mt-8" type="primary" size="large" @click="handleContinue">
         {{ $t({ en: 'Go', zh: '开始' }) }}
       </UIButton>
