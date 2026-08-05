@@ -355,7 +355,7 @@ providePopupContainer(codeEditorEl)
     ></div>
     <!-- The thumbnail gets its own strip of padding rather than floating over the code: a long line
          would otherwise run underneath it, and the character it hides is the one being read. -->
-    <div class="relative my-3 min-w-0 flex flex-[1_1_0] justify-stretch" :class="{ 'pr-9': !toolsVisible }">
+    <div class="relative my-3 min-w-0 flex flex-[1_1_0] justify-stretch" :class="{ 'pr-12': !toolsVisible }">
       <MonacoEditorComp
         v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
         class="min-w-0 flex-[1_1_0]"
