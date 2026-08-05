@@ -105,8 +105,15 @@ export class Tutorial {
     return this.commentRef.value
   }
 
-  /** Called when the completion signal arrives. Shows the dialog now; the comment fills in later. */
-  markCourseComplete(comment?: string) {
+  /**
+   * Called when the completion signal arrives. Shows the dialog now; the comment fills in later.
+   *
+   * `learnerCode` is the code the user actually has when the goal is reached. It is passed along
+   * to the copilot rather than left for it to recall: asked to comment without it, the copilot
+   * describes the course's reference answer instead — crediting the learner with a construct they
+   * never wrote, which is the one thing this sentence must not do.
+   */
+  markCourseComplete(comment?: string, learnerCode?: string | null) {
     const course = this.currentCourse
     const series = this.currentSeries
     if (course == null || series == null || this.completionRef.value != null) return
@@ -124,9 +131,15 @@ export class Tutorial {
     // that omitted it) asks the copilot to evaluate asynchronously — the comment is not on the
     // critical path to celebrating, so the dialog does not wait for it.
     if (this.commentRef.value == null) {
+      const code = learnerCode?.trim() ?? ''
+      const codeSection =
+        code === ''
+          ? ''
+          : `\n\nThis is the code the user finished with — the ONLY evidence of what they did, and often not the course's reference answer:\n\n\`\`\`\n${code}\n\`\`\``
       this.copilot.notifyUserEvent(
         { en: 'Course completed', zh: '课程完成' },
-        "The course is now complete: the success dialog is opening with an EMPTY comment area waiting. The plain prose of your reply IS that comment — it is displayed in the dialog and NOWHERE else (this round is hidden from chat). Reply with ONE short, friendly sentence in the user's language evaluating what the user did. No tags besides your usual invisible progress verdict — no <tutorial-course-success> (the dialog is already up), and NEVER <stay-silent> (it would leave the comment area blank).",
+        "The course is now complete: the success dialog is opening with an EMPTY comment area waiting. The plain prose of your reply IS that comment — it is displayed in the dialog and NOWHERE else (this round is hidden from chat). Reply with ONE short, friendly sentence in the user's language about what the user did — never naming a construct their code does not contain. No analysis, no second sentence. No tags besides your usual invisible progress verdict — no <tutorial-course-success> (the dialog is already up), and NEVER <stay-silent> (it would leave the comment area blank)." +
+          codeSection,
         { autoOpen: false }
       )
     }
@@ -306,7 +319,12 @@ Then let the user explore on their own. While they work:
 
 **The "Course completed" event**
 
-When the success dialog opens without a comment — the running game reached the course goal on its own, or your own <${tutorialCourseSuccessTagName}> declaration omitted the comment — you receive a "Course completed" event. The dialog is ALREADY open in front of the user, its comment area empty and waiting. This one event breaks the silence — reply with exactly ONE short, friendly sentence in the user's language evaluating what the user did: the plain prose of that reply is displayed in the dialog's comment area and NOWHERE else (the round itself stays hidden from chat). It is prose, not an announcement of success (the dialog already announced it): do NOT add <${tutorialCourseSuccessTagName}> and do NOT add <${staySilentTagName}> (one would double up the dialog, the other would leave the comment area blank). Emit only that sentence, plus your usual invisible progress verdict. This applies regardless of who judged completion. Trailing ambient events (more game output, the game exiting) may supersede the round carrying this event — whenever a recent "Course completed" event has not yet been answered with its sentence, your current reply must carry it, no matter which event triggered the round. Outside of that, never send such a sentence.
+When the success dialog opens without a comment — the running game reached the course goal on its own, or your own <${tutorialCourseSuccessTagName}> declaration omitted the comment — you receive a "Course completed" event. The dialog is ALREADY open in front of the user, its comment area empty and waiting. This one event breaks the silence — the plain prose of your reply is displayed in the dialog's comment area and NOWHERE else (the round itself stays hidden from chat). Write it yourself, to these rules:
+
+1. **One sentence**, in the user's language. No analysis, no second sentence, no preamble.
+2. **Only what their code contains.** The event carries the code they finished with — that is the evidence. Never name a construct that is not in it. If the course taught \`stepTo\` and they arrived with \`step\` and a measured number, the sentence is about measuring and stepping.
+3. **Say what it accomplished**, tying it to the course's point when their solution used it — the reward is being seen, not being praised. No exclamation marks, no gushing; the dialog already celebrates.
+4. Never invite more work ("now try…"): the course is over. It is prose, not an announcement of success (the dialog already announced it): do NOT add <${tutorialCourseSuccessTagName}> and do NOT add <${staySilentTagName}> (one would double up the dialog, the other would leave the comment area blank). Emit only that sentence, plus your usual invisible progress verdict. This applies regardless of who judged completion. Trailing ambient events (more game output, the game exiting) may supersede the round carrying this event — whenever a recent "Course completed" event has not yet been answered with its sentence, your current reply must carry it, no matter which event triggered the round. Outside of that, never send such a sentence.
 
 **Staying Silent (the default reaction to user events)**
 
