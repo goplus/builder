@@ -104,6 +104,12 @@ The API reference hover card carries the API's signature and description only. I
 explainer video too; that was withdrawn, so the knowledge-point dialog is the single place a video
 plays inside a course.
 
+**Never replace a video in place.** The bucket sends no `Cache-Control` and no `ETag`, so a browser
+that already fetched a name holds those bytes on heuristic freshness and never revalidates — a
+re-shot take uploaded under the old name keeps playing the old one, for exactly the people who saw
+it before. Upload each take under its own name (`step+200.mp4`, `turn+Left.mp4`); if a name really
+must be reused, the library entry has to change the URL (`?v=2`) to break the cache.
+
 Story-video sources are **origin-restricted** (the `?video=` query param is spoofable): allowed origins are same-origin, `usercontentBaseUrl`, and the tutorial video host (`tutorialVideoAssetBaseUrl` in `api-videos.ts`, an S3 bucket during the demo phase). A URL on any other origin is silently dropped. Because the site is cross-origin isolated (COEP), cross-origin videos need `<video crossorigin>` plus the bucket's CORS (both video surfaces already set it).
 
 ## The prose (the Copilot's lesson plan)

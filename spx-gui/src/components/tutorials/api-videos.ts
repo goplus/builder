@@ -71,7 +71,11 @@ const apiVideoLibrary: Record<string, ApiVideoInfo> = {
   },
   [turnDegreesVideoId]: {
     title: { en: 'turn <degrees>', zh: 'turn 的数字写法' },
-    src: `${tutorialVideoAssetBaseUrl}/turn.mp4`
+    // `?v=2` because this take replaced an earlier video *under the same name*, and the bucket
+    // sends neither `Cache-Control` nor `ETag` — browsers hold the old bytes on heuristic
+    // freshness and never revalidate. New takes should get new filenames instead; this one
+    // cannot, so the URL changes here.
+    src: `${tutorialVideoAssetBaseUrl}/turn.mp4?v=2`
   },
   'xgo:github.com/goplus/spx/v2?Sprite.turnTo#0': {
     title: { en: 'turnTo', zh: 'turnTo 面向目标' },
