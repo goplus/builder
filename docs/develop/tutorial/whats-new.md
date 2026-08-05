@@ -191,15 +191,17 @@ the name at the code cursor.
 API videos are keyed by definition id and remembered per user, so **a concept is never explained
 twice**; every overload of an API resolves to the same video, and non-API topics can have one too
 (the ruler, which the copilot plays when asked how measuring works — it learns the id from the
-`<api-video>` description, the only place it appears). API-reference hover cards play the same video
-(the dialog is the shared `ApiVideoModal`).
+`<api-video>` description, the only place it appears). The dialog is the shared `ApiVideoModal`.
+
+The API-reference hover card used to embed the same video. It was withdrawn: the card's job is the
+signature and the description, and a video autoplaying under the cursor on every hover competed with
+the code the learner was reading. A knowledge point is now explained in exactly one place.
 
 Video dialogs **size themselves to the video**: the library is not one shape (the newer explainers
 are 4:3, the older ones 16:9) and story videos vary per series, so the box reads the intrinsic ratio
 from the loaded metadata rather than pinning one and letterboxing everything else. Nothing to
-declare per video. Both video dialogs also **play like the API-reference hover card** —
-autoplaying, looping, no browser controls popping up on every mouse move — but with sound: unlike
-the hover card's ambient preview, a dialog is deliberate viewing, so the soundtrack plays (muted is
+declare per video. Both video dialogs **autoplay and loop with no browser controls** popping up on
+every mouse move, and with sound: a dialog is deliberate viewing, so the soundtrack plays (muted is
 only the fallback when the browser blocks unmuted autoplay — without controls, a video that never
 started could never be unstuck). Looping replaces seeking, and leaving is the only control: closing
 the explainer modal, or the story dialog's "Start the course" button (with the video looping,
