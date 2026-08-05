@@ -2,17 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { getApiVideo, rulerVideoId, topicVideos, tutorialVideoAssetBaseUrl } from './api-videos'
 
 describe('getApiVideo', () => {
+  // These assert routing, not which file a knowledge point currently points at: re-shooting a
+  // video (new artwork, a clearer take) should not fail the suite.
+  const turnVideoSrc = getApiVideo('xgo:github.com/goplus/spx/v2?Sprite.turn#0')?.src
+  const stepVideoSrc = getApiVideo('xgo:github.com/goplus/spx/v2?Sprite.step#0')?.src
+
   it('resolves a library API by its exact definition ID', () => {
-    const video = getApiVideo('xgo:github.com/goplus/spx/v2?Sprite.turn#0')
-    expect(video?.src).toBe(`${tutorialVideoAssetBaseUrl}/turn.mp4`)
+    expect(turnVideoSrc).toMatch(new RegExp(`^${tutorialVideoAssetBaseUrl}/.+\\.mp4$`))
+    expect(turnVideoSrc).not.toBe(stepVideoSrc)
   })
 
   it('resolves any overload (or a bare name) of a library API to the same video', () => {
     // The video explains the API, not one overload — #1 and the bare name must find it too.
-    const bySecondOverload = getApiVideo('xgo:github.com/goplus/spx/v2?Sprite.turn#1')
-    const byBareName = getApiVideo('turn')
-    expect(bySecondOverload?.src).toBe(`${tutorialVideoAssetBaseUrl}/turn.mp4`)
-    expect(byBareName?.src).toBe(`${tutorialVideoAssetBaseUrl}/turn.mp4`)
+    expect(getApiVideo('xgo:github.com/goplus/spx/v2?Sprite.turn#1')?.src).toBe(turnVideoSrc)
+    expect(getApiVideo('turn')?.src).toBe(turnVideoSrc)
   })
 
   it('resolves the non-API topic videos, including by bare name', () => {
@@ -20,9 +23,16 @@ describe('getApiVideo', () => {
     expect(getApiVideo('ruler')?.src).toBe(`${tutorialVideoAssetBaseUrl}/ruler.mp4`)
   })
 
+  it('resolves turnTo, which courses play before its first use', () => {
+    const video = getApiVideo('turnTo')
+    expect(video?.src).toBe(`${tutorialVideoAssetBaseUrl}/turnTo.mp4`)
+    // Its own explainer, not the shared demo one.
+    expect(video?.src).not.toBe(stepVideoSrc)
+  })
+
   it('falls back to the demo video for an API with no library entry', () => {
     const video = getApiVideo('xgo:github.com/goplus/spx/v2?Sprite.glide#0')
-    expect(video?.src).toBe(`${tutorialVideoAssetBaseUrl}/step.mp4`)
+    expect(video?.src).toBe(stepVideoSrc)
     expect(video?.title).toEqual({ en: 'glide', zh: 'glide' })
   })
 })

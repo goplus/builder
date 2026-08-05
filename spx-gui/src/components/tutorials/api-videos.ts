@@ -11,8 +11,8 @@ export type ApiVideoInfo = {
 
 /**
  * DEMO MODE: every API without its own library entry falls back to this shared demonstration
- * video (currently the `step` explainer — the only one produced so far), so the whole video flow
- * can be experienced before per-API videos are produced.
+ * video (the `step` explainer), so the whole video flow can be experienced before per-API videos
+ * are produced.
  * TODO: remove the fallback (return `null` for unknown IDs) once real videos land.
  */
 export const apiVideoDemoFallback = true
@@ -24,7 +24,7 @@ export const apiVideoDemoFallback = true
  */
 export const tutorialVideoAssetBaseUrl = 'https://qnyproj-api-assets-dev.s3.us-east-1.amazonaws.com'
 
-const demoVideoSrc = `${tutorialVideoAssetBaseUrl}/step.mp4`
+const demoVideoSrc = `${tutorialVideoAssetBaseUrl}/step+200.mp4`
 
 /**
  * Explainer videos exist for things that are not APIs too — editor tools a course teaches. They
@@ -51,11 +51,15 @@ export const topicVideos: Array<{ id: string; whenToUse: string }> = [
 const apiVideoLibrary: Record<string, ApiVideoInfo> = {
   'xgo:github.com/goplus/spx/v2?Sprite.step#0': {
     title: { en: 'step', zh: 'step 前进' },
-    src: `${tutorialVideoAssetBaseUrl}/step.mp4`
+    src: `${tutorialVideoAssetBaseUrl}/step+200.mp4`
   },
   'xgo:github.com/goplus/spx/v2?Sprite.turn#0': {
     title: { en: 'turn', zh: 'turn 转向' },
-    src: `${tutorialVideoAssetBaseUrl}/turn.mp4`
+    src: `${tutorialVideoAssetBaseUrl}/turn+90.mp4`
+  },
+  'xgo:github.com/goplus/spx/v2?Sprite.turnTo#0': {
+    title: { en: 'turnTo', zh: 'turnTo 面向目标' },
+    src: `${tutorialVideoAssetBaseUrl}/turnTo.mp4`
   },
   [rulerVideoId]: {
     title: { en: 'The ruler', zh: '尺子怎么用' },
