@@ -4,11 +4,12 @@ import { getApiVideo, rulerVideoId, topicVideos, turnDegreesVideoId, tutorialVid
 describe('getApiVideo', () => {
   // These assert routing, not which file a knowledge point currently points at: re-shooting a
   // video (new artwork, a clearer take) should not fail the suite.
+  const videoUrl = new RegExp(`^${tutorialVideoAssetBaseUrl}/.+\\.mp4(\\?.*)?$`)
   const turnVideoSrc = getApiVideo('xgo:github.com/goplus/spx/v2?Sprite.turn#0')?.src
   const stepVideoSrc = getApiVideo('xgo:github.com/goplus/spx/v2?Sprite.step#0')?.src
 
   it('resolves a library API by its exact definition ID', () => {
-    expect(turnVideoSrc).toMatch(new RegExp(`^${tutorialVideoAssetBaseUrl}/.+\\.mp4$`))
+    expect(turnVideoSrc).toMatch(videoUrl)
     expect(turnVideoSrc).not.toBe(stepVideoSrc)
   })
 
@@ -34,7 +35,7 @@ describe('getApiVideo', () => {
     // `turn 90` and `turn Right` are one function (Direction is a float64, Right is 90), so only a
     // knowledge point of its own can separate them — name matching must not collapse the two.
     const byDegrees = getApiVideo(turnDegreesVideoId)?.src
-    expect(byDegrees).toMatch(new RegExp(`^${tutorialVideoAssetBaseUrl}/.+\\.mp4$`))
+    expect(byDegrees).toMatch(videoUrl)
     expect(byDegrees).not.toBe(turnVideoSrc)
     expect(getApiVideo('turn-degrees')?.src).toBe(byDegrees)
     // The API itself keeps the direction-word take, whichever way it is addressed.
