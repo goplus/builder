@@ -188,8 +188,10 @@ into waiting with `patient`. Chained, these teach name insertion: spotlight the 
 that dismisses it also selects it, and the next spotlight lands on the name label whose click drops
 the name at the code cursor.
 
-API videos are keyed by definition id and remembered per user, so **a concept is never explained
-twice**; every overload of an API resolves to the same video, and non-API topics can have one too
+API videos are keyed by definition id and remembered per user, so a concept *can* be shown only
+once — though that suppression is currently off (`suppressWatchedApiVideos`), because the marker is
+per knowledge point rather than per file: a reshot take would never reach anyone who saw the old
+one, and a course under review would play its opening only the first time; every overload of an API resolves to the same video, and non-API topics can have one too
 (the ruler, which the copilot plays when asked how measuring works — it learns the id from the
 `<api-video>` description, the only place it appears). The dialog is the shared `ApiVideoModal`.
 

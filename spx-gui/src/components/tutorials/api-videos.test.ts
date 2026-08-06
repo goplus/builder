@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { getApiVideo, rulerVideoId, topicVideos, turnDegreesVideoId, tutorialVideoAssetBaseUrl } from './api-videos'
+import {
+  getApiVideo,
+  markApiLearned,
+  resolveApiVideo,
+  rulerVideoId,
+  topicVideos,
+  turnDegreesVideoId,
+  tutorialVideoAssetBaseUrl
+} from './api-videos'
 
 describe('getApiVideo', () => {
   // These assert routing, not which file a knowledge point currently points at: re-shooting a
@@ -54,5 +62,17 @@ describe('topicVideos', () => {
   it('lists the ruler so the copilot can discover an ID that is not in the API reference', () => {
     expect(topicVideos.map((t) => t.id)).toContain(rulerVideoId)
     expect(topicVideos.every((t) => t.whenToUse.trim() !== '')).toBe(true)
+  })
+})
+
+describe('resolveApiVideo', () => {
+  it('still plays a knowledge point the user already watched', () => {
+    // Suppressing a second showing is off while the library is being reshot: the marker is per
+    // knowledge point, not per file, so it would hide a new take from everyone who saw the old one.
+    // Flipping `suppressWatchedApiVideos` back on is what should make this test fail.
+    const before = resolveApiVideo('turnTo')
+    expect(before).not.toBeNull()
+    markApiLearned(before!.id)
+    expect(resolveApiVideo('turnTo')?.src).toBe(before!.src)
   })
 })
