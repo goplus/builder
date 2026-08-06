@@ -71,8 +71,8 @@ describe('resolveApiVideo', () => {
     // knowledge point, not per file, so it would hide a new take from everyone who saw the old one.
     // Flipping `suppressWatchedApiVideos` back on is what should make this test fail.
     const before = resolveApiVideo('turnTo')
-    expect(before).not.toBeNull()
+    expect(before?.info.src).toMatch(/turnTo\.mp4$/)
     markApiLearned(before!.id)
-    expect(resolveApiVideo('turnTo')?.src).toBe(before!.src)
+    expect(resolveApiVideo('turnTo')?.info.src).toBe(before!.info.src)
   })
 })

@@ -8,7 +8,8 @@
     class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"
     :class="{ 'cursor-crosshair': rulerActive }"
     :style="{ backgroundImage: `url(${stageBgUrl})` }"
-    @mousemove="updateMousePos"
+    @mousemove="updateMousePos(), updateHoveredSprite()"
+    @mouseleave="setHoveredSprite(null)"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
@@ -100,18 +101,26 @@
       {{ $t(rulerTip) }}
     </UITooltip>
 
-    <UITooltip v-if="selectedSpriteNameLabel != null" placement="bottom">
+    <!-- One for the selected sprite, one for whatever the pointer is over. The hovered one is what
+         makes another sprite's name reachable at all: selecting it would switch the code editor
+         away from the file the name is meant to go into. -->
+    <UITooltip
+      v-for="label in [selectedSpriteNameLabel, hoveredSpriteNameLabel].filter((l) => l != null)"
+      :key="label.name"
+      placement="bottom"
+    >
       <template #trigger>
         <button
           v-radar="{
-            name: 'Selected sprite name',
-            desc: 'Name label below the selected sprite; clicking it inserts the name at the code editor cursor'
+            name: label.name === selectedSpriteNameLabel?.name ? 'Selected sprite name' : 'Hovered sprite name',
+            desc: 'Name label below the sprite; clicking it inserts the name at the code editor cursor'
           }"
           class="absolute -translate-x-1/2 cursor-pointer rounded-[4px] border-none bg-black/30 px-1.5 py-0.5 text-xs text-white transition-colors hover:bg-black/50"
-          :style="{ left: `${selectedSpriteNameLabel.left}px`, top: `${selectedSpriteNameLabel.top}px` }"
-          @click.stop="handleSpriteNameLabelClick(selectedSpriteNameLabel.name)"
+          :style="{ left: `${label.left}px`, top: `${label.top}px` }"
+          @mouseenter="setHoveredSprite(label.name)"
+          @click.stop="handleSpriteNameLabelClick(label.name)"
         >
-          {{ selectedSpriteNameLabel.name }}
+          {{ label.name }}
         </button>
       </template>
       {{ $t({ en: 'Click to insert the name into your code', zh: '点击把名字插入代码' }) }}
@@ -146,6 +155,7 @@
 import { throttle } from 'lodash'
 import {
   computed,
+  onUnmounted,
   reactive,
   ref,
   shallowReactive,
@@ -716,6 +726,60 @@ watch(
 const stageSpriteAnchors = shallowRef<
   Array<{ name: string; left: number; top: number; width: number; height: number }>
 >([])
+
+/**
+ * The sprite the pointer is over, which gets a name label of its own.
+ *
+ * Selecting a sprite switches the code editor to that sprite's code, so the selected sprite's label
+ * can only ever insert its own name into its own file. Inserting `Mushroom` while writing Lita's
+ * code needs a label that appears without selecting, which is what hovering gives.
+ */
+const hoveredSpriteName = shallowRef<string | null>(null)
+// Leaving the sprite does not hide the label immediately: the pointer has to cross the gap between
+// the sprite and the label to click it, and a label that vanished on the way would be unclickable.
+let hoverClearTimer: ReturnType<typeof setTimeout> | null = null
+
+function setHoveredSprite(name: string | null) {
+  if (hoverClearTimer != null) {
+    clearTimeout(hoverClearTimer)
+    hoverClearTimer = null
+  }
+  if (name != null) {
+    hoveredSpriteName.value = name
+    return
+  }
+  hoverClearTimer = setTimeout(() => {
+    hoverClearTimer = null
+    hoveredSpriteName.value = null
+  }, 200)
+}
+
+const updateHoveredSprite = throttle(() => {
+  if (editorWorkspaceLayout.mode !== 'focused') return
+  const stage = stageRef.value?.getStage() ?? null
+  const pos = stage?.getPointerPosition() ?? null
+  if (stage == null || pos == null) return setHoveredSprite(null)
+  // Konva's hit graph respects z-order and the artwork's transparency, so overlapping sprites and
+  // the empty corners of a bounding box behave the way the stage looks.
+  let node: Node | null = stage.getIntersection(pos)
+  while (node != null && node.getAttr('nodeId') == null) node = node.getParent() as Node | null
+  const nodeId = node?.getAttr('nodeId') ?? null
+  const sprite = nodeId == null ? null : editorCtx.project.sprites.find((s) => getNodeId(s) === nodeId)
+  setHoveredSprite(sprite?.name ?? null)
+}, 50)
+
+/** The hovered sprite's label, when it is not the selected one (which already has its own). */
+const hoveredSpriteNameLabel = computed(() => {
+  const name = hoveredSpriteName.value
+  if (name == null || name === editorCtx.state.selectedSprite?.name) return null
+  const anchor = stageSpriteAnchors.value.find((a) => a.name === name)
+  if (anchor == null) return null
+  return { name, left: anchor.left + anchor.width / 2, top: anchor.top + anchor.height + 6 }
+})
+
+onUnmounted(() => {
+  if (hoverClearTimer != null) clearTimeout(hoverClearTimer)
+})
 
 function refreshStageSpriteAnchors() {
   if (editorWorkspaceLayout.mode !== 'focused') {
