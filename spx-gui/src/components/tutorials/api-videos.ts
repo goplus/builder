@@ -136,8 +136,17 @@ export function getAvailableApiVideoIds(): string[] {
   return Object.keys(apiVideoLibrary)
 }
 
-// Which APIs the user has watched the explainer video for, so already-learned knowledge
-// points are not pushed again.
+/**
+ * Whether a knowledge point already watched is skipped when a later course asks for it.
+ *
+ * Off for now. The library is still being shot and reshot, and the marker is per knowledge point,
+ * not per file — so anyone who saw the earlier `step` or `turn` take would never be shown the one
+ * that replaced it. It also makes the courses hard to review: opening a course twice shows its
+ * opening only once. Watching is still recorded, so turning this back on picks up where it left off.
+ */
+const suppressWatchedApiVideos = false
+
+// Which APIs the user has watched the explainer video for.
 const learnedApisRef = userLocalStorageRef<string[]>('builder-tutorial-learned-apis', [])
 
 export function isApiLearned(apiId: string): boolean {
@@ -152,13 +161,14 @@ export function markApiLearned(apiId: string) {
 /**
  * Resolve a single course video entry (an API name or definition ID, see `createCourseApiMatcher`)
  * to its playable video ID + info. An entry matching a library video uses that video's ID;
- * otherwise the entry itself is the key, which still plays in demo-fallback mode. Returns null
- * when the API is already learned (a knowledge point is not pushed twice) or has no video.
+ * otherwise the entry itself is the key, which still plays in demo-fallback mode. Returns null when
+ * the entry has no video, and — while `suppressWatchedApiVideos` is on — when it was already
+ * watched.
  */
 export function resolveApiVideo(entry: string): { id: string; info: ApiVideoInfo } | null {
   const matches = createCourseApiMatcher([entry])
   const id = getAvailableApiVideoIds().find(matches) ?? entry
-  if (isApiLearned(id)) return null
+  if (suppressWatchedApiVideos && isApiLearned(id)) return null
   const info = getApiVideo(id)
   return info != null ? { id, info } : null
 }
