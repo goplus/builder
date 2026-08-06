@@ -103,7 +103,11 @@
 
     <!-- One for the selected sprite, one for whatever the pointer is over. The hovered one is what
          makes another sprite's name reachable at all: selecting it would switch the code editor
-         away from the file the name is meant to go into. -->
+         away from the file the name is meant to go into.
+
+         The label swallows `mousemove`: it sits inside the stage container, so its own moves would
+         otherwise bubble up and be hit-tested against the stage — finding no sprite under the
+         label, and hiding the very thing the pointer is resting on. -->
     <UITooltip
       v-for="label in [selectedSpriteNameLabel, hoveredSpriteNameLabel].filter((l) => l != null)"
       :key="label.name"
@@ -118,6 +122,8 @@
           class="absolute -translate-x-1/2 cursor-pointer rounded-[4px] border-none bg-black/30 px-1.5 py-0.5 text-xs text-white transition-colors hover:bg-black/50"
           :style="{ left: `${label.left}px`, top: `${label.top}px` }"
           @mouseenter="setHoveredSprite(label.name)"
+          @mouseleave="setHoveredSprite(null)"
+          @mousemove.stop
           @click.stop="handleSpriteNameLabelClick(label.name)"
         >
           {{ label.name }}
