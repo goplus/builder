@@ -9,7 +9,7 @@
     :class="{ 'cursor-crosshair': rulerActive }"
     :style="{ backgroundImage: `url(${stageBgUrl})` }"
     @mousemove="updateMousePos(), updateHoveredSprite()"
-    @mouseleave="setHoveredSprite(null)"
+    @mouseleave="handleLabelLeave()"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
@@ -121,8 +121,8 @@
           }"
           class="absolute -translate-x-1/2 cursor-pointer rounded-[4px] border-none bg-black/30 px-1.5 py-0.5 text-xs text-white transition-colors hover:bg-black/50"
           :style="{ left: `${label.left}px`, top: `${label.top}px` }"
-          @mouseenter="setHoveredSprite(label.name)"
-          @mouseleave="setHoveredSprite(null)"
+          @mouseenter="handleLabelEnter(label.name)"
+          @mouseleave="handleLabelLeave()"
           @mousemove.stop
           @click.stop="handleSpriteNameLabelClick(label.name)"
         >
@@ -744,8 +744,28 @@ const hoveredSpriteName = shallowRef<string | null>(null)
 // Leaving the sprite does not hide the label immediately: the pointer has to cross the gap between
 // the sprite and the label to click it, and a label that vanished on the way would be unclickable.
 let hoverClearTimer: ReturnType<typeof setTimeout> | null = null
+/**
+ * Whether the pointer is resting on a label, in which case nothing may hide it.
+ *
+ * Swallowing the label's own `mousemove` is not enough on its own: the stage's hover tracking is
+ * throttled, so a call scheduled while the pointer was still crossing the gap can run *after* it
+ * has arrived, hit-test that stale point, find nothing, and start hiding the label the pointer is
+ * now sitting on — with no further events coming to cancel it. Hence a flag rather than a race.
+ */
+let pointerOnLabel = false
+
+function handleLabelEnter(name: string) {
+  pointerOnLabel = true
+  setHoveredSprite(name)
+}
+
+function handleLabelLeave() {
+  pointerOnLabel = false
+  setHoveredSprite(null)
+}
 
 function setHoveredSprite(name: string | null) {
+  if (name == null && pointerOnLabel) return
   if (hoverClearTimer != null) {
     clearTimeout(hoverClearTimer)
     hoverClearTimer = null
