@@ -116,17 +116,7 @@ export async function importCourseSeriesFileAsNew(
   signal?: AbortSignal
 ) {
   const data = await loadCourseSeriesFile(file, signal)
-  const courseSeries = await addCourseSeries(
-    {
-      title: data.manifest.courseSeries.title,
-      thumbnail: '',
-      description: data.manifest.courseSeries.description,
-      order: 1,
-      courseIDs: []
-    },
-    signal
-  )
-  return importCourseSeriesFileData(courseSeries, data, signedInUsername, signal)
+  return importCourseSeriesFileData(null, data, signedInUsername, signal)
 }
 
 export async function inspectCourseSeriesFileImport(
@@ -165,7 +155,7 @@ async function loadCourseSeriesFile(file: globalThis.File, signal?: AbortSignal)
 }
 
 async function importCourseSeriesFileData(
-  courseSeries: CourseSeries,
+  courseSeries: CourseSeries | null,
   { manifest, unzipped }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
   signedInUsername: string,
   signal?: AbortSignal
@@ -191,20 +181,20 @@ async function importCourseSeriesFileData(
     )
   }
 
-  const importedCourseSeries = await updateCourseSeries(
-    courseSeries.id,
-    {
-      title: manifest.courseSeries.title,
-      thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
-      description: manifest.courseSeries.description,
-      // Keep the local sort order because it depends on other course series in the current environment.
-      order: courseSeries.order,
-      courseIDs: importedCourses.map((course) => course.id)
-    },
-    signal
-  )
+  const params = {
+    title: manifest.courseSeries.title,
+    thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
+    description: manifest.courseSeries.description,
+    // Keep the local sort order because it depends on other course series in the current environment.
+    order: courseSeries?.order ?? 1,
+    courseIDs: importedCourses.map((course) => course.id)
+  }
+  const importedCourseSeries =
+    courseSeries == null
+      ? await addCourseSeries(params, signal)
+      : await updateCourseSeries(courseSeries.id, params, signal)
 
-  await Promise.all(courseSeries.courseIDs.map((courseID) => deleteCourse(courseID)))
+  if (courseSeries != null) await Promise.all(courseSeries.courseIDs.map((courseID) => deleteCourse(courseID)))
   return importedCourseSeries
 }
 
@@ -301,7 +291,6 @@ async function importProject(
     {
       name: generateReleaseName(),
       description: `Imported from course series "${manifest.courseSeries.title}"`,
-      thumbnail: '',
       projectRevision: revision
     },
     signal

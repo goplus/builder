@@ -11,7 +11,12 @@ import { createProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, createFileWithUniversalUrl, saveFile } from '@/models/common/cloud'
 import { File as LazyFile } from '@/models/common/file'
 import { xbpHelpers } from '@/models/common/xbp'
-import { exportCourseSeriesFile, importCourseSeriesFile, inspectCourseSeriesFileImport } from './course-series-file'
+import {
+  exportCourseSeriesFile,
+  importCourseSeriesFile,
+  importCourseSeriesFileAsNew,
+  inspectCourseSeriesFileImport
+} from './course-series-file'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -228,6 +233,29 @@ describe('exportCourseSeriesFile', () => {
 })
 
 describe('importCourseSeriesFile', () => {
+  it('creates a new course series with complete imported content', async () => {
+    const ctrl = new AbortController()
+
+    await importCourseSeriesFileAsNew(
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+      'alice',
+      ctrl.signal
+    )
+
+    expect(addCourseSeries).toHaveBeenCalledWith(
+      {
+        title: 'Imported series',
+        thumbnail: 'kodo://imported/thumbnails/course-series.png',
+        description: 'Imported description',
+        order: 1,
+        courseIDs: ['imported-course']
+      },
+      ctrl.signal
+    )
+    expect(updateCourseSeries).not.toHaveBeenCalled()
+    expect(deleteCourse).not.toHaveBeenCalled()
+  })
+
   it('rewrites exact editor project segment and preserves local order', async () => {
     const ctrl = new AbortController()
 
@@ -258,11 +286,11 @@ describe('importCourseSeriesFile', () => {
     expect(createProjectRelease).toHaveBeenCalledWith(
       'alice',
       'EntryProject',
-      expect.objectContaining({
+      {
+        name: expect.stringMatching(/^v0\.0\.0\+/),
         description: 'Imported from course series "Imported series"',
-        thumbnail: '',
         projectRevision: 8
-      }),
+      },
       ctrl.signal
     )
   })

@@ -1524,6 +1524,9 @@ paths:
         Create a new project owned by the authenticated user.
 
         If `remixSource` is provided, the new project will be a remix of an existing project.
+
+        For remixes, omitted `files` and `thumbnail` inherit from the source release, while omitted `description` and
+        `instructions` inherit from the source project. Explicitly provided values are used as-is.
       requestBody:
         required: true
         content:
@@ -2244,7 +2247,10 @@ paths:
                 description:
                   $ref: "#/components/schemas/ProjectRelease/properties/description"
                 thumbnail:
-                  $ref: "#/components/schemas/ProjectRelease/properties/thumbnail"
+                  description: Defaults to the project's thumbnail if not provided.
+                  allOf:
+                    - $ref: "#/components/schemas/ProjectRelease/properties/thumbnail"
+                  minLength: 1
                 projectRevision:
                   description: |
                     Expected revision of the project state from which to create the release. The request fails with a
@@ -3152,6 +3158,7 @@ paths:
               type: object
               required:
                 - title
+                - thumbnail
                 - courseIDs
                 - order
               properties:
@@ -7631,6 +7638,7 @@ components:
           description: Thumbnail reference of the course series.
           type: string
           format: uri-reference
+          minLength: 1
           examples:
             - kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
         description:

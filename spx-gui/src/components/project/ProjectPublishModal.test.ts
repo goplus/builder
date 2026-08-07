@@ -8,7 +8,6 @@ import ProjectPublishModal from './ProjectPublishModal.vue'
 const mocks = vi.hoisted(() => ({
   createProjectRelease: vi.fn(),
   save: vi.fn(),
-  saveFile: vi.fn(),
   handledError: null as unknown
 }))
 
@@ -56,8 +55,7 @@ vi.mock('@/apis/project-release', async (importOriginal) => ({
 vi.mock('@/models/common/cloud', () => ({
   cloudHelpers: {
     save: mocks.save
-  },
-  saveFile: mocks.saveFile
+  }
 }))
 
 vi.mock('@/components/ui', () => {
@@ -95,7 +93,7 @@ function makeProject() {
     displayName: 'Project',
     description: 'Old description',
     instructions: 'Old instructions',
-    thumbnail: {},
+    thumbnail: null,
     visibility: Visibility.Private,
     revision: 6,
     releaseCount: 2,
@@ -147,7 +145,6 @@ describe('ProjectPublishModal', () => {
       },
       files: {}
     })
-    mocks.saveFile.mockResolvedValue('kodo://builder/thumbnails/project.png')
     mocks.createProjectRelease.mockResolvedValue({ name: 'v1.0.0' })
   })
 
@@ -167,7 +164,6 @@ describe('ProjectPublishModal', () => {
     expect(mocks.createProjectRelease).toHaveBeenCalledWith('alice', 'project', {
       name: expect.stringMatching(/^v0\.0\.0\+/),
       description: 'Release notes',
-      thumbnail: 'kodo://builder/thumbnails/project.png',
       projectRevision: 7
     })
     expect(wrapper.emitted('resolved')).toHaveLength(1)
