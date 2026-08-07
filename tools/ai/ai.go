@@ -126,7 +126,13 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 	)
 
 	p.beginInteraction()
-	defer p.endInteraction()
+	defer func() {
+		p.endInteraction()
+		if ctx.Err() != nil {
+			return
+		}
+		p.scheduleHistoryManagement(owner)
+	}()
 
 	var (
 		currentMsg     = msg
@@ -260,8 +266,7 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 		currentContext = nil
 	}
 
-	// Manage history asynchronously.
-	go p.manageHistory(ctx)
+	p.handleError(owner, fmt.Errorf("ai interaction did not complete within %d turns", maxTurns))
 }
 
 // beginInteraction acquires exclusive access for the upcoming interaction sequence.
@@ -323,6 +328,17 @@ func (p *Player) appendHistory(turn Turn) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.history = append(p.history, turn)
+}
+
+// scheduleHistoryManagement starts history management in an owner-scoped
+// coroutine so it can outlive the caller without outliving its owner. The
+// blocking archive work runs natively to avoid blocking the game engine.
+func (p *Player) scheduleHistoryManagement(owner any) {
+	spx.Go(owner, func(ctx stdContext.Context, _ any) {
+		spx.ExecuteNative(func(_ stdContext.Context, _ any) {
+			p.manageHistory(ctx)
+		})
+	})
 }
 
 // manageHistory checks if archiving is needed and performs it if necessary.
