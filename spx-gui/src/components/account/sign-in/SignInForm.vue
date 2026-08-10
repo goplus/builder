@@ -22,8 +22,9 @@ import { ref, watch } from 'vue'
 import {
   buildIdentityProviderAuthorizeUrl,
   createSessionWithPassword,
-  deleteSession,
+  revokeSession,
   getIdentityProviders,
+  getPasswordSignInRetryAfter,
   getSession
 } from '@/apis/account'
 import type { IdentityProvider, OAuthRequest, PasswordSignInPayload } from '@/apis/account'
@@ -81,7 +82,7 @@ watch(sessionQuery.data, (session) => {
 
 const { fn: handleSwitchAccount, isLoading: isSwitchingAccount } = useMessageHandle(
   async () => {
-    await deleteSession()
+    await revokeSession()
     showPasswordForm.value = false
     sessionQuery.refetch()
   },
@@ -89,6 +90,7 @@ const { fn: handleSwitchAccount, isLoading: isSwitchingAccount } = useMessageHan
 )
 
 const isRedirectingToProvider = ref(false)
+const passwordSignInRetryAfter = ref<number | null>(null)
 
 function handleSignInWithProvider(provider: IdentityProvider) {
   markPendingAuthorization(props.request)
@@ -98,7 +100,14 @@ function handleSignInWithProvider(provider: IdentityProvider) {
 
 const { fn: handleSignInWithPasswordSubmit, isLoading: isSubmittingSignInWithPassword } = useMessageHandle(
   async (payload: PasswordSignInPayload) => {
-    await createSessionWithPassword(payload)
+    try {
+      await createSessionWithPassword(payload)
+    } catch (error) {
+      const retryAfter = getPasswordSignInRetryAfter(error)
+      if (retryAfter == null) throw error
+      passwordSignInRetryAfter.value = retryAfter
+      return
+    }
     completeSignInWithCurrentAccount()
   },
   { en: 'Failed to sign in', zh: '登录失败' }
@@ -167,6 +176,7 @@ const { fn: handleSignInWithPasswordSubmit, isLoading: isSubmittingSignInWithPas
       <PasswordSection
         v-else
         :is-submitting="isSubmittingSignInWithPassword"
+        :retry-after="passwordSignInRetryAfter"
         @submit="handleSignInWithPasswordSubmit"
       />
     </template>

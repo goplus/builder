@@ -12,7 +12,6 @@ import CopyButton from '@/components/common/CopyButton.vue'
 import UIIcon from '@/components/ui/icons/UIIcon.vue'
 import * as accountAdminApis from '@/apis/admin/account'
 import {
-  accountAppAllowedOriginsTip,
   accountAppClientTypeLabels,
   accountAppRedirectURIPatternsTip,
   accountAppRedirectURIsTip,
@@ -52,11 +51,9 @@ usePageTitle(() =>
 const displayName = ref('')
 const status = ref<accountAdminApis.AccountApp['status']>('active')
 const redirectURIs = ref('')
-const allowedOrigins = ref('')
 const savedDisplayName = ref('')
 const savedStatus = ref<accountAdminApis.AccountApp['status']>('active')
 const savedRedirectURIs = ref<string[]>([])
-const savedAllowedOrigins = ref<string[]>([])
 const appUpdatedAt = ref('')
 const appFallbackText = computed(() => displayName.value.trim().charAt(0).toUpperCase() || '?')
 const trimmedDisplayName = computed(() => displayName.value.trim())
@@ -68,28 +65,22 @@ watch(
     displayName.value = value.displayName
     status.value = value.status
     redirectURIs.value = value.redirectURIs.join('\n')
-    allowedOrigins.value = value.allowedOrigins.join('\n')
     savedDisplayName.value = value.displayName
     savedStatus.value = value.status
     savedRedirectURIs.value = value.redirectURIs
-    savedAllowedOrigins.value = value.allowedOrigins
     appUpdatedAt.value = value.updatedAt
   },
   { immediate: true }
 )
 
 const parsedRedirectURIs = computed(() => parseLines(redirectURIs.value))
-const parsedAllowedOrigins = computed(() => parseLines(allowedOrigins.value))
 const isActive = computed(() => status.value === 'active')
 const isIdentityChanged = computed(
   () => trimmedDisplayName.value !== '' && trimmedDisplayName.value !== savedDisplayName.value
 )
 const isStatusChanged = computed(() => status.value !== savedStatus.value)
-const areEndpointsChanged = computed(
-  () =>
-    parsedRedirectURIs.value.length > 0 &&
-    (!areStringListsEqual(parsedRedirectURIs.value, savedRedirectURIs.value) ||
-      !areStringListsEqual(parsedAllowedOrigins.value, savedAllowedOrigins.value))
+const areRedirectURIsChanged = computed(
+  () => parsedRedirectURIs.value.length > 0 && !areStringListsEqual(parsedRedirectURIs.value, savedRedirectURIs.value)
 )
 
 function areStringListsEqual(a: string[], b: string[]) {
@@ -123,14 +114,12 @@ const handleUpdateIdentity = useMessageHandle(
   { en: 'App identity updated', zh: '应用信息已更新' }
 )
 
-const handleUpdateEndpoints = useMessageHandle(
+const handleUpdateRedirectURIs = useMessageHandle(
   async () => {
     const updated = await accountAdminApis.updateAccountApp(props.appID, {
-      redirectURIs: parsedRedirectURIs.value,
-      allowedOrigins: parsedAllowedOrigins.value
+      redirectURIs: parsedRedirectURIs.value
     })
     savedRedirectURIs.value = updated.redirectURIs
-    savedAllowedOrigins.value = updated.allowedOrigins
     appUpdatedAt.value = updated.updatedAt
   },
   { en: 'Failed to update OAuth endpoints', zh: '更新 OAuth 地址配置失败' },
@@ -169,19 +158,25 @@ const handleCopySecret = useMessageHandle(
   { en: 'App secret copied', zh: '应用密钥已复制' }
 )
 
-const handleDeleteSecret = useMessageHandle(
+const handleRevokeSecret = useMessageHandle(
   async (secretID: string) => {
-    await accountAdminApis.deleteAccountAppSecret(props.appID, secretID)
+    await accountAdminApis.revokeAccountAppSecret(props.appID, secretID)
     if (createdSecret.value?.id === secretID) createdSecret.value = null
     secretsQuery.refetch()
   },
-  { en: 'Failed to delete Account app secret', zh: '删除账号应用密钥失败' },
-  { en: 'Account app secret deleted', zh: '账号应用密钥已删除' }
+  { en: 'Failed to revoke Account app secret', zh: '撤销账号应用密钥失败' },
+  { en: 'Account app secret revoked', zh: '账号应用密钥已撤销' }
 )
 
-function deleteSecret(secretID: string) {
-  if (!window.confirm(i18n.t({ en: 'Delete this secret?', zh: '删除此密钥？' }))) return
-  handleDeleteSecret.fn(secretID)
+function revokeSecret(secretID: string) {
+  const confirmed = window.confirm(
+    i18n.t({
+      en: 'Revoke this secret permanently? It will no longer authenticate the app. Existing grants and tokens will remain valid unless revoked separately or the app is disabled.',
+      zh: '确定永久撤销此密钥吗？撤销后它将无法再用于应用认证。现有授权和令牌仍然有效，除非另行撤销或停用该应用。'
+    })
+  )
+  if (!confirmed) return
+  handleRevokeSecret.fn(secretID)
 }
 </script>
 
@@ -339,13 +334,13 @@ function deleteSecret(secretID: string) {
               <p class="m-0 mt-1 text-sm text-grey-800">
                 {{
                   $t({
-                    en: 'Exact destinations and browser origins trusted by this app.',
-                    zh: '此应用信任的精确回调地址和浏览器来源。'
+                    en: 'Exact callback destinations trusted by this app.',
+                    zh: '此应用信任的精确回调地址。'
                   })
                 }}
               </p>
             </div>
-            <form class="flex flex-col gap-5" @submit.prevent="handleUpdateEndpoints.fn">
+            <form class="flex flex-col gap-5" @submit.prevent="handleUpdateRedirectURIs.fn">
               <label class="flex flex-col gap-1 text-sm text-grey-900">
                 {{ $t({ en: 'Redirect URIs', zh: '回调 URI' }) }}
                 <UITextInput v-model:value="redirectURIs" type="textarea" :rows="5" />
@@ -364,17 +359,12 @@ function deleteSecret(secretID: string) {
                 </div>
                 <span class="text-xs text-grey-700">{{ $t(accountAppRedirectURIPatternsTip) }}</span>
               </div>
-              <label class="flex flex-col gap-1 text-sm text-grey-900">
-                {{ $t({ en: 'Allowed origins', zh: '允许的 Origin' }) }}
-                <UITextInput v-model:value="allowedOrigins" type="textarea" :rows="4" />
-                <span class="text-xs text-grey-700">{{ $t(accountAppAllowedOriginsTip) }}</span>
-              </label>
               <div class="flex justify-end">
                 <UIButton
                   html-type="submit"
                   type="primary"
-                  :disabled="!areEndpointsChanged"
-                  :loading="handleUpdateEndpoints.isLoading.value"
+                  :disabled="!areRedirectURIsChanged"
+                  :loading="handleUpdateRedirectURIs.isLoading.value"
                 >
                   {{ $t({ en: 'Save endpoint settings', zh: '保存地址配置' }) }}
                 </UIButton>
@@ -540,8 +530,8 @@ function deleteSecret(secretID: string) {
                       {{ $t({ en: 'Created', zh: '创建时间' }) }}: {{ formatTime(secret.createdAt) }}
                     </div>
                   </div>
-                  <UIButton type="red" size="small" @click="deleteSecret(secret.id)">
-                    {{ $t({ en: 'Delete', zh: '删除' }) }}
+                  <UIButton type="red" size="small" @click="revokeSecret(secret.id)">
+                    {{ $t({ en: 'Revoke', zh: '撤销' }) }}
                   </UIButton>
                 </div>
                 <div v-if="(secretsQuery.data.value?.data.length ?? 0) === 0" class="py-8 text-center text-grey-800">

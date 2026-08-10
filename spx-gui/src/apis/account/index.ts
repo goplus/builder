@@ -1,6 +1,6 @@
 // Account APIs for app account.
 
-import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
+import { ApiException, ApiExceptionCode, isTooManyRequestsMeta } from '@/apis/common/exception'
 import { accountClient, type AccountIdentityProvider, type AccountSession, type AccountUser } from './common'
 import { DefaultException } from '@/utils/exception/base'
 
@@ -24,7 +24,7 @@ export async function getSession(): Promise<CurrentAccountSession | null> {
   }
 }
 
-export async function deleteSession(): Promise<void> {
+export async function revokeSession(): Promise<void> {
   await accountClient.delete('/session')
 }
 
@@ -33,10 +33,17 @@ export type PasswordSignInPayload = {
   password: string
 }
 
+export function getPasswordSignInRetryAfter(error: unknown): number | null {
+  if (!(error instanceof ApiException) || !isTooManyRequestsMeta(error.code, error.meta)) return null
+  const { retryAfter } = error.meta
+  if (retryAfter == null) return null
+  if (!Number.isFinite(retryAfter) || retryAfter <= Date.now()) return null
+  return retryAfter
+}
+
 export async function createSessionWithPassword(payload: PasswordSignInPayload): Promise<CurrentAccountSession> {
   return (await accountClient
     .post('/session', {
-      method: 'password',
       username: payload.username,
       password: payload.password
     })

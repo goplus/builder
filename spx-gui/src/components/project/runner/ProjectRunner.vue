@@ -1,12 +1,19 @@
 <script lang="ts">
-const ispxWasmUrl = new URL('@/assets/wasm/ispx.wasm', import.meta.url).href
+import spxPackage from '@xgo-pkgs/spx/package.json'
 
-function getProjectRunnerBaseUrl(spxVersion: string) {
+const ispxWasmUrl = new URL('@/assets/wasm/ispx.wasm', import.meta.url).href
+// TODO: Importing runner.html as a Vite asset would give us a hashed immutable
+// URL and remove the need for this versioned public path. It cannot replace the
+// link step yet because runner.html expects sibling files like engine.js and
+// game.js to stay available through relative paths.
+const spxVersion = spxPackage.version
+
+function getProjectRunnerBaseUrl() {
   return `/spx_${spxVersion}`
 }
 
-function getProjectRunnerAssetURLs(spxVersion: string) {
-  const runnerBaseUrl = getProjectRunnerBaseUrl(spxVersion)
+function getProjectRunnerAssetURLs() {
+  const runnerBaseUrl = getProjectRunnerBaseUrl()
   return {
     // TODO: include these assets as "static asset" to generate immutable URLs
     'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
@@ -49,6 +56,8 @@ interface RunnerIframeWindow extends Window {
   xbuilder_set_ai_interaction_api_endpoint: (endpoint: string) => void
   xbuilder_set_ai_interaction_api_token_provider: (provider: () => Promise<string>) => void
   xbuilder_set_ai_description: (description: string) => void
+  /** Set the current logged-in username, injected into the spx runtime before running. */
+  xbuilder_set_username: (username: string) => void
   /** Init the engine. Can be called early; project-agnostic. */
   initEngine(assetURLs: Record<string, string>, config?: EngineConfig): Promise<void>
   /** Init the game with project files. Should be called after `initEngine`, before `startGame` or earlier (when files change, etc.). */
@@ -101,8 +110,8 @@ function uiUpdated(signal?: AbortSignal) {
 }
 
 // TODO: consider to call prefetch in some global place
-export function prefetchProjectRunnerAssets(spxVersion: string) {
-  Object.values(getProjectRunnerAssetURLs(spxVersion)).forEach((url) => {
+export function prefetchProjectRunnerAssets() {
+  Object.values(getProjectRunnerAssetURLs()).forEach((url) => {
     // Use `<link rel=prefetch>` instead of `<link rel=preload>`:
     // * `preload` indicates higher priority than `prefetch`. Preloaded content are expected to be used soon. For example, chrome will warn if the preloaded content is not used within 3 or 5 seconds. While project here will not be run until the user clicks some "run" button.
     // * `preload` results are not shared across different documents, while the iframe content is a different document. The "preloading" is meaningful only when the HTTP cache is shared, which is more like the case of `prefetch`.
@@ -146,18 +155,16 @@ import type { Files } from '@/models/common/file'
 import { hashFiles } from '@/models/common/hash'
 import type { SpxProject } from '@/models/spx/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
-import { ensureAccessToken } from '@/stores/user'
+import { ensureAccessToken, useSignedInStateQuery } from '@/stores/user'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
 import { client } from '@/apis/common'
 import errorBgUrl from './error-bg.svg'
-import { useSpxVersion } from './config'
 
-const spxVersion = useSpxVersion()
-const runnerBaseUrl = getProjectRunnerBaseUrl(spxVersion)
+const runnerBaseUrl = getProjectRunnerBaseUrl()
 const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
 const aiInteractionEndpoint = client.urlFor('/ai-interaction').toString()
-const assetURLs = getProjectRunnerAssetURLs(spxVersion)
+const assetURLs = getProjectRunnerAssetURLs()
 
 const props = defineProps<{ project: SpxProject }>()
 
@@ -167,6 +174,7 @@ const emit = defineEmits<{
 }>()
 
 const [thumbnailUrl, thumbnailUrlLoading] = useRenderableImageUrl(() => props.project.thumbnail)
+const signedInStateQuery = useSignedInStateQuery()
 const state = shallowRef<State>({ type: 'initial' })
 const runnerIframeRef = ref<HTMLIFrameElement>()
 const runnerIframeWindowRef = ref<RunnerIframeWindow | null>(null)
@@ -336,6 +344,13 @@ async function runInternal(ctrl: AbortController) {
     ])
 
     await uiUpdated(ctrl.signal)
+
+    // Inject the current logged-in username into the spx runtime before running.
+    // Some projects (e.g. Scratch-converted ones) rely on Scratch's `username` capability.
+    // For signed-out users we set an empty string, which spx treats as an anonymous user.
+    // See https://github.com/goplus/builder/issues/3364.
+    const signedInState = await untilNotNull(signedInStateQuery.data, ctrl.signal)
+    iframeWindow.xbuilder_set_username(signedInState.isSignedIn ? signedInState.user.username : '')
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
     startGameReporter.startAutoReport(10_000)

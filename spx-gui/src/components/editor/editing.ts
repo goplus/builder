@@ -255,10 +255,10 @@ export class Editing extends Disposable {
 
     let finalData: ProjectSerialized = cloudData
     if (localData != null) {
-      const cloudVersion = cloudData?.metadata.version ?? -1
-      const localVersion = localData.metadata.version ?? -1
-      if (cloudVersion > localVersion) {
-        // If cloud version is newer, ignore & clear the cached data to avoid potential conflict
+      const cloudRevision = cloudData?.metadata.revision ?? -1
+      const localRevision = localData.metadata.revision ?? -1
+      if (cloudRevision > localRevision) {
+        // If the cloud revision is newer, ignore and clear the cached data to avoid potential conflict.
         this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
       } else {
         finalData = localData

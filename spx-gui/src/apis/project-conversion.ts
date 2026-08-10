@@ -2,7 +2,7 @@ import { DefaultException } from '@/utils/exception'
 import { client } from './common'
 import { humanizeFileSize } from '@/utils/utils'
 
-const maxFileSize = 64 * 1024 * 1024 // 64MB
+const maxFileSize = 128 * 1024 * 1024 // 128MB
 const convertTimeout = 60 * 1000 // 60s
 
 /**

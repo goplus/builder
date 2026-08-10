@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/goplus/spx/v2/pkg/spx"
+	"github.com/goplus/spx/v3/pkg/spx"
 )
 
 // GopPackage indicates that this package is a XGo package.

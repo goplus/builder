@@ -1,2 +1,2 @@
-# spx2 assets, which will be added by `install-spx.sh`
+# spx2 assets, which will be linked by `link-spx.sh`
 spx_*

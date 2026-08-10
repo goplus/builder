@@ -23,19 +23,19 @@ jobs:
         run: corepack enable
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24.11.1
-          cache: npm
-          cache-dependency-path: spx-gui/package-lock.json
+          cache: pnpm
+          cache-dependency-path: spx-gui/pnpm-lock.yaml
 
       - name: Install Node modules
         working-directory: spx-gui
-        run: npm ci --prefer-offline
+        run: pnpm install --frozen-lockfile
 
       - name: Build account frontend
         working-directory: spx-gui
-        run: npm run build:account
+        run: pnpm run build:account
 
       - name: Deploy builder_account
         uses: ./.github/actions/deploy
@@ -47,7 +47,7 @@ jobs:
 
       - name: Build account frontend for mainland China deployment
         working-directory: spx-gui
-        run: VITE_MODE=production-cn npm run build:account
+        run: VITE_MODE=production-cn pnpm run build:account
 
       - name: Deploy builder_account_cn
         uses: ./.github/actions/deploy

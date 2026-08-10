@@ -2,6 +2,7 @@
   "name": "tutorial-books",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@11.9.0",
   "description": "Tutorial books for spx-gui",
   "devDependencies": {
     "honkit": "^6.1.6"

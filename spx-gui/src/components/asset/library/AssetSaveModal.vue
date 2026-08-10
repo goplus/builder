@@ -13,15 +13,7 @@ import {
   useForm,
   useConfirmDialog
 } from '@/components/ui'
-import {
-  type AssetData,
-  addAsset,
-  listSignedInUserAssets,
-  Visibility,
-  AssetType,
-  getAsset,
-  updateAsset
-} from '@/apis/asset'
+import { type AssetData, addAsset, listSignedInUserAssets, Visibility, getAsset, updateAsset } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { Backdrop } from '@/models/spx/backdrop'
 import { Sound } from '@/models/spx/sound'
@@ -32,7 +24,6 @@ import { backdrop2Asset, humanizeAssetType, sound2Asset, sprite2Asset } from '@/
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { useSignedInUser } from '@/stores/user'
-import { categoryAll, getAssetCategories } from './category'
 import BackdropPreview from './BackdropPreview.vue'
 import SpritePreview from './SpritePreview.vue'
 import SoundPreview from './SoundPreview.vue'
@@ -80,15 +71,6 @@ const {
   }
 )
 
-const assetType = computed(() => {
-  if (props.model instanceof Backdrop) return AssetType.Backdrop
-  if (props.model instanceof Sound) return AssetType.Sound
-  if (props.model instanceof Sprite) return AssetType.Sprite
-  throw new Error(`unknown asset type ${props.model}`)
-})
-
-const categories = computed(() => getAssetCategories(assetType.value))
-
 enum Action {
   /** Save by updating existed asset */
   Update = 'update',
@@ -98,14 +80,12 @@ enum Action {
 
 const form = useForm({
   name: [props.model.name, (n) => t(validateAssetDisplayName(n) ?? null)],
-  category: [categoryAll.value],
   action: [Action.Create]
 })
 
 watch(existedAsset, (ea) => {
   if (ea == null) return
   form.value.name = ea.displayName
-  form.value.category = ea.category
   form.value.action = Action.Update
 })
 
@@ -130,7 +110,6 @@ const handleSubmit = useMessageHandle(
       saved = await updateAsset(id, {
         displayName: form.value.name,
         type: params.type,
-        category: form.value.category,
         description: params.description ?? description,
         extraSettings: params.extraSettings ?? extraSettings,
         files: params.files,
@@ -182,7 +161,6 @@ async function addAssetWithPartialData({
   return addAsset({
     displayName: form.value.name,
     type,
-    category: form.value.category,
     description,
     extraSettings,
     files,
@@ -221,11 +199,6 @@ async function addAssetWithPartialData({
               v-radar="{ name: 'Asset name input', desc: 'Input field for asset display name' }"
             />
             <template #tip>{{ $t(getAssetDisplayNameTip()) }}</template>
-          </UIFormItem>
-          <UIFormItem v-if="advancedLibraryEnabled" :label="$t({ en: 'Category', zh: '类别' })" path="category">
-            <UIRadioGroup v-model:value="form.value.category">
-              <UIRadio v-for="c in categories" :key="c.value" :value="c.value" :label="$t(c.message)" />
-            </UIRadioGroup>
           </UIFormItem>
           <UIFormItem
             v-if="advancedLibraryEnabled && existedAsset != null"

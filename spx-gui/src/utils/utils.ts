@@ -5,6 +5,7 @@ import {
   shallowRef,
   watch,
   watchEffect,
+  type Ref,
   type ShallowRef,
   type WatchSource,
   computed,
@@ -35,7 +36,7 @@ export const isSound = (url: string): boolean => {
  * @deprecated Use `useAsyncComputed` instead if possible.
  * Like `useAsyncComputed`, but keep the previous value when re-evaluating.
  */
-export function useAsyncComputedLegacy<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
+export function useAsyncComputedLegacy<T>(getter: (onCleanup: OnCleanup) => Promise<T>): ShallowRef<T | null> {
   const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {
     let cancelled = false
@@ -52,7 +53,7 @@ export function useAsyncComputedLegacy<T>(getter: (onCleanup: OnCleanup) => Prom
  * Like `useAsyncComputedLegacy`, but reset value to `null` when re-evaluating.
  * TODO: Migrate usages of `useAsyncComputedLegacy` to this if possible.
  */
-export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
+export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>): ShallowRef<T | null> {
   const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {
     let cancelled = false
@@ -413,8 +414,12 @@ export function escapeHTML(str: string) {
  * Changes to the new value reference will be reflected in the source with debounce.
  * The new value reference can be used as model (`v-model`) for input components.
  */
-export function useDebouncedModel<T>(source: WatchSource<T>, onChange: (value: T) => void, wait = 300) {
-  const valueRef = ref<T>(toValue(source))
+export function useDebouncedModel<T>(
+  source: WatchSource<T>,
+  onChange: (value: T) => void,
+  wait = 300
+): readonly [valueRef: Ref<T>, flush: () => void] {
+  const valueRef = ref(toValue(source)) as Ref<T>
   const debouncedOnChange = debounce(() => {
     if (valueRef.value === toValue(source)) return
     onChange(valueRef.value)

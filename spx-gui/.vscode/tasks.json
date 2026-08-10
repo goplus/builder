@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "npm run dev",
+      "label": "pnpm run dev",
       "detail": "Run dev server for spx-gui",
-      "type": "npm",
-      "script": "dev",
+      "type": "shell",
+      "command": "pnpm run dev",
       "presentation": {
         "panel": "dedicated"
       },
@@ -21,17 +21,6 @@
           "GOTOOLCHAIN": "go1.25.8"
         }
       },
-      "presentation": {
-        "reveal": "silent",
-        "panel": "dedicated"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "install spx",
-      "detail": "Install spx component for spx-gui",
-      "type": "shell",
-      "command": "bash install-spx.sh",
       "presentation": {
         "reveal": "silent",
         "panel": "dedicated"

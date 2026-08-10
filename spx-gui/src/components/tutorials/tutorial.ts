@@ -93,7 +93,7 @@ export class Tutorial {
   }
 
   protected generateTopic(course: Course): TutorialTopic {
-    const { id, title, prompt, references, entrypoint } = course
+    const { id, title, prompt, entrypoint } = course
     return {
       isTutorialTopic: true,
       title: { en: title, zh: title },
@@ -109,9 +109,6 @@ You are assisting the user in learning the course: ${course.title}.
   <course-prompt>
   ${prompt}
   </course-prompt>
-  <course-references>
-  ${references.map((ref) => `<project-reference>${ref.fullName}</project-reference>`).join('\n')}
-  </course-references>
 </course>
 
 ### Guidance
@@ -152,7 +149,6 @@ When the user returns to the course (by clicking "return to course" or showing c
 
 When coding tasks are involved:
 
-* If a project reference is available for the course, treat it as the standard answer.
 * Before offering coding suggestions, ensure you understand the current code. If not, use appropriate tools to review it first.
 * Avoid giving complete solution code directly. Instead, guide the user step-by-step with hints and explanations.
 * Prefer to insert code by dragging corresponding items (if available) from "API References" into the code editor over providing manual code snippets.

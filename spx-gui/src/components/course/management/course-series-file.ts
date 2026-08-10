@@ -4,7 +4,7 @@ import { extname } from '@/utils/path'
 import { DefaultException } from '@/utils/exception'
 import { getExtFromMime } from '@/utils/file'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getCourse, addCourse, deleteCourse, type Course, type Reference } from '@/apis/course'
+import { getCourse, addCourse, deleteCourse, type Course } from '@/apis/course'
 import { addCourseSeries, updateCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { getProject, ProjectType, updateProject, Visibility, type UpdateProjectParams } from '@/apis/project'
 import { createProjectRelease } from '@/apis/project-release'
@@ -15,13 +15,13 @@ import type { PartialMetadata } from '@/models/project'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
-const version = 1
+const version = 2
 
 type CourseSeriesFileThumbnail = {
   path: string
 }
 
-type CourseSeriesFileCourse = Pick<Course, 'title' | 'entrypoint' | 'references' | 'prompt'> & {
+type CourseSeriesFileCourse = Pick<Course, 'title' | 'entrypoint' | 'prompt'> & {
   thumbnail: CourseSeriesFileThumbnail
 }
 
@@ -53,7 +53,7 @@ export type CourseSeriesFileImportInspection = {
 
 export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?: AbortSignal) {
   const courses = await Promise.all(courseSeries.courseIDs.map((id) => getCourse(id, signal)))
-  const projects = collectRelatedProjects(courses)
+  const projects = collectEntrypointProjects(courses)
   const zippable: Zippable = {}
 
   const courseSeriesThumbnail = await exportThumbnail(
@@ -67,7 +67,6 @@ export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?
       async (course, index): Promise<CourseSeriesFileCourse> => ({
         title: course.title,
         entrypoint: course.entrypoint,
-        references: course.references,
         prompt: course.prompt,
         thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, zippable, signal)
       })
@@ -117,17 +116,7 @@ export async function importCourseSeriesFileAsNew(
   signal?: AbortSignal
 ) {
   const data = await loadCourseSeriesFile(file, signal)
-  const courseSeries = await addCourseSeries(
-    {
-      title: data.manifest.courseSeries.title,
-      thumbnail: '',
-      description: data.manifest.courseSeries.description,
-      order: 1,
-      courseIDs: []
-    },
-    signal
-  )
-  return importCourseSeriesFileData(courseSeries, data, signedInUsername, signal)
+  return importCourseSeriesFileData(null, data, signedInUsername, signal)
 }
 
 export async function inspectCourseSeriesFileImport(
@@ -166,7 +155,7 @@ async function loadCourseSeriesFile(file: globalThis.File, signal?: AbortSignal)
 }
 
 async function importCourseSeriesFileData(
-  courseSeries: CourseSeries,
+  courseSeries: CourseSeries | null,
   { manifest, unzipped }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
   signedInUsername: string,
   signal?: AbortSignal
@@ -185,7 +174,6 @@ async function importCourseSeriesFileData(
           title: course.title,
           thumbnail: await importThumbnail(course.thumbnail, unzipped, signal),
           entrypoint: rewriteProjectFullNames(course.entrypoint, projectFullNameMap),
-          references: rewriteReferences(course.references, projectFullNameMap),
           prompt: course.prompt
         },
         signal
@@ -193,20 +181,20 @@ async function importCourseSeriesFileData(
     )
   }
 
-  const importedCourseSeries = await updateCourseSeries(
-    courseSeries.id,
-    {
-      title: manifest.courseSeries.title,
-      thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
-      description: manifest.courseSeries.description,
-      // Keep the local sort order because it depends on other course series in the current environment.
-      order: courseSeries.order,
-      courseIDs: importedCourses.map((course) => course.id)
-    },
-    signal
-  )
+  const params = {
+    title: manifest.courseSeries.title,
+    thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
+    description: manifest.courseSeries.description,
+    // Keep the local sort order because it depends on other course series in the current environment.
+    order: courseSeries?.order ?? 1,
+    courseIDs: importedCourses.map((course) => course.id)
+  }
+  const importedCourseSeries =
+    courseSeries == null
+      ? await addCourseSeries(params, signal)
+      : await updateCourseSeries(courseSeries.id, params, signal)
 
-  await Promise.all(courseSeries.courseIDs.map((courseID) => deleteCourse(courseID)))
+  if (courseSeries != null) await Promise.all(courseSeries.courseIDs.map((courseID) => deleteCourse(courseID)))
   return importedCourseSeries
 }
 
@@ -239,14 +227,9 @@ async function importThumbnail(
   return saveFile(createLazyFile(thumbnail.path, data), signal)
 }
 
-function collectRelatedProjects(courses: Course[]) {
+function collectEntrypointProjects(courses: Course[]) {
   const projects = new Map<string, ParsedProjectFullName & { fullName: string }>()
   for (const course of courses) {
-    for (const reference of course.references) {
-      if (reference.type !== 'project') continue
-      const parsed = parseProjectFullName(reference.fullName)
-      projects.set(reference.fullName, { ...parsed, fullName: reference.fullName })
-    }
     const entrypointProject = parseEditorProjectFullName(course.entrypoint)
     if (entrypointProject != null) projects.set(entrypointProject.fullName, entrypointProject)
   }
@@ -264,8 +247,8 @@ function parseProjectFullName(fullName: string): ParsedProjectFullName {
   const parts = fullName.split('/')
   if (parts.length !== 2 || parts[0] === '' || parts[1] === '') {
     throw new DefaultException({
-      en: `Invalid project reference: ${fullName}`,
-      zh: `无效的项目引用：${fullName}`
+      en: `Invalid project full name: ${fullName}`,
+      zh: `无效的项目完整名称：${fullName}`
     })
   }
   return { owner: decodeURIComponent(parts[0]), name: decodeURIComponent(parts[1]) }
@@ -280,31 +263,35 @@ async function importProject(
 ) {
   const serialized = await xbpHelpers.load(new File([getRequiredEntry(unzipped, project.path)], `${project.name}.xbp`))
   const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
-  const owner = existingProject?.owner ?? signedInUsername
-  const name = existingProject?.name ?? project.name
   const metadata: PartialMetadata = {
     ...serialized.metadata,
     id: existingProject?.id,
-    owner,
-    name,
+    owner: existingProject?.owner ?? signedInUsername,
+    name: existingProject?.name ?? project.name,
     displayName: serialized.metadata.displayName ?? project.name,
     type: serialized.metadata.type ?? ProjectType.Game,
     visibility: Visibility.Public
   }
 
-  await cloudHelpers.save({ metadata, files: serialized.files }, signal)
+  const saved = await cloudHelpers.save({ metadata, files: serialized.files }, signal)
+  let { owner, name, revision } = saved.metadata
   const metadataUpdates: UpdateProjectParams = {}
   if (serialized.metadata.description != null) metadataUpdates.description = serialized.metadata.description
   if (serialized.metadata.instructions != null) metadataUpdates.instructions = serialized.metadata.instructions
   if (serialized.metadata.extraSettings != null) metadataUpdates.extraSettings = serialized.metadata.extraSettings
-  if (Object.keys(metadataUpdates).length > 0) await updateProject(owner, name, metadataUpdates, signal)
+  if (Object.keys(metadataUpdates).length > 0) {
+    const updated = await updateProject(owner, name, metadataUpdates, signal)
+    owner = updated.owner
+    name = updated.name
+    revision = updated.revision
+  }
   await createProjectRelease(
     owner,
     name,
     {
       name: generateReleaseName(),
       description: `Imported from course series "${manifest.courseSeries.title}"`,
-      thumbnail: ''
+      projectRevision: revision
     },
     signal
   )
@@ -318,13 +305,6 @@ async function getSignedInUserProject(owner: string, name: string, signal?: Abor
     if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
     throw e
   }
-}
-
-function rewriteReferences(references: Reference[], projectFullNameMap: Map<string, string>): Reference[] {
-  return references.map((reference) => {
-    if (reference.type !== 'project') return reference
-    return { ...reference, fullName: projectFullNameMap.get(reference.fullName) ?? reference.fullName }
-  })
 }
 
 function rewriteProjectFullNames(value: string, projectFullNameMap: Map<string, string>) {

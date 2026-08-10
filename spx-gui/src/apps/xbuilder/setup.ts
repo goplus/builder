@@ -8,7 +8,7 @@ import { initUserState } from '@/stores/user'
 import { configureApp, setup } from '@/setup'
 import { provideDisableAIGC } from '@/components/asset/preprocessing/config'
 import { provideCommunityConfig } from '@/components/community/config'
-import { provideSpxVersion } from '@/components/project/runner/config'
+import { provideProjectConfig } from '@/components/project/config'
 
 import * as env from './env'
 
@@ -29,6 +29,6 @@ export function configureXBuilderApp(app: VueApp, router?: Router) {
     showTutorialsEntry: env.showTutorialsEntry
   })
   provideDisableAIGC(app, env.disableAIGC)
-  provideSpxVersion(app, env.spxVersion)
+  provideProjectConfig(app, { defaultFontPreferences: env.defaultFontPreferences })
   configureApp(app, router, env)
 }

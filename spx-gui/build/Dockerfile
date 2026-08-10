@@ -24,12 +24,14 @@ FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
 WORKDIR /app/spx-gui
 
-COPY spx-gui/package.json spx-gui/package-lock.json .
+COPY spx-gui/package.json spx-gui/pnpm-lock.yaml spx-gui/pnpm-workspace.yaml .
 COPY spx-gui/public ./public
-COPY spx-gui/install-spx.sh .
+COPY spx-gui/link-spx.sh .
 COPY spx-gui/build-tutorial-books.sh .
 ARG NPM_CONFIG_REGISTRY
-RUN npm install
+# pnpm reads npm config from lowercase npm_config_* environment variables.
+ENV npm_config_registry=${NPM_CONFIG_REGISTRY}
+RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY spx-gui .
 COPY docs ../docs
@@ -41,7 +43,7 @@ COPY --from=go-builder /app/spx-gui/src/assets /app/spx-gui/src/assets
 ARG VITE_MODE
 
 ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npm run build
+RUN pnpm run build
 
 ################################################################################
 

@@ -11,7 +11,12 @@ import { createProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, createFileWithUniversalUrl, saveFile } from '@/models/common/cloud'
 import { File as LazyFile } from '@/models/common/file'
 import { xbpHelpers } from '@/models/common/xbp'
-import { exportCourseSeriesFile, importCourseSeriesFile, inspectCourseSeriesFileImport } from './course-series-file'
+import {
+  exportCourseSeriesFile,
+  importCourseSeriesFile,
+  importCourseSeriesFileAsNew,
+  inspectCourseSeriesFileImport
+} from './course-series-file'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -71,7 +76,6 @@ const existingCourse: Course = {
   title: 'Course 1',
   thumbnail: 'kodo://bucket/course-thumbnail.png',
   entrypoint: '/editor/curator/EntryProject/lesson?tab=code',
-  references: [{ type: 'project', fullName: 'curator/RefProject' }],
   prompt: 'Prompt'
 }
 
@@ -102,7 +106,7 @@ beforeEach(() => {
         instructions: '',
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-01-01T00:00:00Z',
-        version: 1,
+        revision: 1,
         files: {},
         thumbnail: '',
         remixedFrom: null,
@@ -123,7 +127,11 @@ beforeEach(() => {
     } as unknown as Awaited<ReturnType<typeof cloudHelpers.load>>
   })
   vi.mocked(cloudHelpers.save).mockImplementation(
-    async (serialized) => serialized as Awaited<ReturnType<typeof cloudHelpers.save>>
+    async (serialized) =>
+      ({
+        ...serialized,
+        metadata: { ...serialized.metadata, revision: 7 }
+      }) as Awaited<ReturnType<typeof cloudHelpers.save>>
   )
   vi.mocked(xbpHelpers.save).mockImplementation(
     async (serialized) => new File([JSON.stringify(serialized.metadata)], `${serialized.metadata.name}.xbp`)
@@ -166,12 +174,34 @@ beforeEach(() => {
     updatedAt: '2026-01-01T00:00:00Z'
   }))
   vi.mocked(deleteCourse).mockResolvedValue(undefined)
-  vi.mocked(updateProject).mockResolvedValue({} as Awaited<ReturnType<typeof updateProject>>)
+  vi.mocked(updateProject).mockImplementation(
+    async (owner, name) =>
+      ({
+        owner,
+        name,
+        revision: 8
+      }) as Awaited<ReturnType<typeof updateProject>>
+  )
   vi.mocked(createProjectRelease).mockResolvedValue({} as Awaited<ReturnType<typeof createProjectRelease>>)
 })
 
+function mockCloudProjectSave(owner: string, name: string, revision: number) {
+  vi.mocked(cloudHelpers.save).mockImplementationOnce(
+    async (serialized) =>
+      ({
+        ...serialized,
+        metadata: {
+          ...serialized.metadata,
+          owner,
+          name,
+          revision
+        }
+      }) as Awaited<ReturnType<typeof cloudHelpers.save>>
+  )
+}
+
 describe('exportCourseSeriesFile', () => {
-  it('exports a self-contained package with related projects', async () => {
+  it('exports a self-contained package with entrypoint projects', async () => {
     const file = await exportCourseSeriesFile(existingSeries)
     const unzipped = await unzip(new Uint8Array(await file.arrayBuffer()))
     const manifest = JSON.parse(new TextDecoder().decode(unzipped['course-series.json']!)) as Record<string, any>
@@ -183,24 +213,49 @@ describe('exportCourseSeriesFile', () => {
       thumbnail: { path: 'thumbnails/course-series.png' }
     })
     expect(manifest.courseSeries).not.toHaveProperty('order')
-    expect(manifest.courses[0].thumbnail).toEqual({ path: 'thumbnails/courses/0.png' })
-    expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual([
-      'curator/RefProject',
-      'curator/EntryProject'
-    ])
+    expect(manifest.courses[0]).toEqual({
+      title: existingCourse.title,
+      entrypoint: existingCourse.entrypoint,
+      prompt: existingCourse.prompt,
+      thumbnail: { path: 'thumbnails/courses/0.png' }
+    })
+    expect(manifest.version).toBe(2)
+    expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual(['curator/EntryProject'])
     expect(Object.keys(unzipped)).toEqual(
       expect.arrayContaining([
         'course-series.json',
         'thumbnails/course-series.png',
         'thumbnails/courses/0.png',
-        'projects/0.xbp',
-        'projects/1.xbp'
+        'projects/0.xbp'
       ])
     )
   })
 })
 
 describe('importCourseSeriesFile', () => {
+  it('creates a new course series with complete imported content', async () => {
+    const ctrl = new AbortController()
+
+    await importCourseSeriesFileAsNew(
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+      'alice',
+      ctrl.signal
+    )
+
+    expect(addCourseSeries).toHaveBeenCalledWith(
+      {
+        title: 'Imported series',
+        thumbnail: 'kodo://imported/thumbnails/course-series.png',
+        description: 'Imported description',
+        order: 1,
+        courseIDs: ['imported-course']
+      },
+      ctrl.signal
+    )
+    expect(updateCourseSeries).not.toHaveBeenCalled()
+    expect(deleteCourse).not.toHaveBeenCalled()
+  })
+
   it('rewrites exact editor project segment and preserves local order', async () => {
     const ctrl = new AbortController()
 
@@ -216,7 +271,6 @@ describe('importCourseSeriesFile', () => {
         title: 'Imported course',
         thumbnail: 'kodo://imported/thumbnails/courses/0.png',
         entrypoint: '/editor/alice/EntryProject/lesson?tab=code',
-        references: [{ type: 'project', fullName: 'alice/RefProject' }],
         prompt: 'Imported prompt'
       },
       ctrl.signal
@@ -232,10 +286,82 @@ describe('importCourseSeriesFile', () => {
     expect(createProjectRelease).toHaveBeenCalledWith(
       'alice',
       'EntryProject',
-      expect.objectContaining({
-        description: 'Imported from course series "Imported series"'
-      }),
+      {
+        name: expect.stringMatching(/^v0\.0\.0\+/),
+        description: 'Imported from course series "Imported series"',
+        projectRevision: 8
+      },
       ctrl.signal
+    )
+  })
+
+  it('uses the canonical project identity returned by the project save', async () => {
+    vi.mocked(xbpHelpers.load).mockResolvedValueOnce({
+      metadata: {
+        displayName: 'Display EntryProject',
+        type: ProjectType.Game,
+        visibility: Visibility.Public
+      },
+      files: {}
+    })
+    mockCloudProjectSave('saved-owner', 'SavedProject', 7)
+
+    await importCourseSeriesFile(
+      existingSeries,
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+      'alice'
+    )
+
+    expect(updateProject).not.toHaveBeenCalled()
+    expect(createProjectRelease).toHaveBeenCalledWith(
+      'saved-owner',
+      'SavedProject',
+      expect.objectContaining({ projectRevision: 7 }),
+      undefined
+    )
+    expect(addCourse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entrypoint: '/editor/saved-owner/SavedProject/lesson?tab=code'
+      }),
+      undefined
+    )
+  })
+
+  it('uses the canonical project identity returned by the metadata update', async () => {
+    mockCloudProjectSave('saved-owner', 'SavedProject', 7)
+    vi.mocked(updateProject).mockResolvedValueOnce({
+      owner: 'final-owner',
+      name: 'FinalProject',
+      revision: 8
+    } as Awaited<ReturnType<typeof updateProject>>)
+
+    await importCourseSeriesFile(
+      existingSeries,
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+      'alice'
+    )
+
+    expect(updateProject).toHaveBeenCalledWith(
+      'saved-owner',
+      'SavedProject',
+      {
+        description: 'Description EntryProject',
+        instructions: 'Instructions EntryProject',
+        extraSettings: {}
+      },
+      undefined
+    )
+    expect(createProjectRelease).toHaveBeenCalledWith(
+      'final-owner',
+      'FinalProject',
+      expect.objectContaining({ projectRevision: 8 }),
+      undefined
+    )
+    expect(addCourse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entrypoint: '/editor/final-owner/FinalProject/lesson?tab=code'
+      }),
+      undefined
     )
   })
 
@@ -284,7 +410,7 @@ async function makeCourseSeriesFile(entrypoint: string) {
     'course-series.json': new TextEncoder().encode(
       JSON.stringify({
         format: 'xbuilder-course-series',
-        version: 1,
+        version: 2,
         courseSeries: {
           title: 'Imported series',
           description: 'Imported description',
@@ -295,20 +421,15 @@ async function makeCourseSeriesFile(entrypoint: string) {
             title: 'Imported course',
             thumbnail: { path: 'thumbnails/courses/0.png' },
             entrypoint,
-            references: [{ type: 'project', fullName: 'curator/RefProject' }],
             prompt: 'Imported prompt'
           }
         ],
-        projects: [
-          { fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' },
-          { fullName: 'curator/RefProject', name: 'RefProject', path: 'projects/1.xbp' }
-        ]
+        projects: [{ fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' }]
       })
     ),
     'thumbnails/course-series.png': new TextEncoder().encode('series thumbnail'),
     'thumbnails/courses/0.png': new TextEncoder().encode('course thumbnail'),
-    'projects/0.xbp': new TextEncoder().encode('entry project'),
-    'projects/1.xbp': new TextEncoder().encode('ref project')
+    'projects/0.xbp': new TextEncoder().encode('entry project')
   }
   return new File([await zip(zippable)], 'Imported series.xbcs.zip', { type: 'application/zip' })
 }

@@ -128,11 +128,13 @@ async function handleMainMessage(message: MainMessage) {
           break
         }
         case 'stopped': {
-          const now = Date.now()
-          if (now - lsState.startAt < LS_RESTART_COOLDOWN) return
+          const restartDelay = lsState.startAt + LS_RESTART_COOLDOWN - Date.now()
+          if (restartDelay > 0) {
+            await new Promise((resolve) => setTimeout(resolve, restartDelay))
+            return handleMainMessage(message)
+          }
           startLS()
-          handleMainMessage(message)
-          break
+          return handleMainMessage(message)
         }
       }
       break

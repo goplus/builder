@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIForm, UIFormItem, UITextInput, UIButton, UIFormModal, UIRadio, UIRadioGroup, useForm } from '@/components/ui'
+import { UIForm, UIFormItem, UITextInput, UIButton, UIFormModal, useForm } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { type AssetData, AssetType, updateAsset } from '@/apis/asset'
 import { validateAssetDisplayName } from '@/models/spx/common/asset-name'
-import { getAssetCategories } from '../category'
 import BackdropPreview from '../BackdropPreview.vue'
 import SpritePreview from '../SpritePreview.vue'
 import SoundPreview from '../SoundPreview.vue'
@@ -24,21 +23,13 @@ const { t } = useI18n()
 
 const assetType = computed(() => props.asset.type)
 
-const categories = computed(() => getAssetCategories(assetType.value))
-
 const form = useForm({
-  name: [props.asset.displayName, (n) => t(validateAssetDisplayName(n) ?? null)],
-  category: [props.asset.category]
+  name: [props.asset.displayName, (n) => t(validateAssetDisplayName(n) ?? null)]
 })
 
 const handleSubmit = useMessageHandle(
   async () => {
-    const asset = props.asset
-    await updateAsset(asset.id, {
-      ...asset,
-      displayName: form.value.name,
-      category: form.value.category
-    })
+    await updateAsset(props.asset.id, { displayName: form.value.name })
     emit('resolved')
   },
   { en: 'Failed to save asset', zh: '保存失败' }
@@ -73,11 +64,6 @@ const handleSubmit = useMessageHandle(
               v-model:value="form.value.name"
               v-radar="{ name: 'Asset name input', desc: 'Input field for asset display name' }"
             />
-          </UIFormItem>
-          <UIFormItem :label="$t({ en: 'Category', zh: '类别' })" path="category">
-            <UIRadioGroup v-model:value="form.value.category">
-              <UIRadio v-for="c in categories" :key="c.value" :value="c.value" :label="$t(c.message)" />
-            </UIRadioGroup>
           </UIFormItem>
         </div>
       </main>

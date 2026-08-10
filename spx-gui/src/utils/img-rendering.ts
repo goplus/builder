@@ -6,19 +6,19 @@ import { computed, ref, watch, type WatchSource } from 'vue'
 import { isSvgMimeType } from '@/utils/file'
 import { Cancelled } from '@/utils/exception'
 import type { File } from '@/models/common/file'
-import { injectScratchFontsToSvgText } from './scratch-svg-font'
+import { injectFontsToSvgText } from './svg-font'
 
-/** Cache for derived rendering SVG blobs with Scratch fonts injected (if needed), keyed by source `File`. */
+/** Cache for derived rendering SVG blobs with fonts injected (if needed), keyed by source `File`. */
 const derivedSvgCache = new WeakMap<File, Promise<Blob>>()
 
 /**
  * Get an image-resource URL for a `File`.
- * SVG files that use Scratch fonts are rendered through a derived blob URL with embedded font faces.
+ * SVG files are rendered through a derived blob URL with embedded font faces.
  */
 export async function getRenderableImageUrl(file: File, signal: AbortSignal) {
   if (!isSvgMimeType(file.type)) return file.url(signal)
 
-  // SVGs rendered as image resources cannot see page-level font faces, so Scratch fonts must be embedded
+  // SVGs rendered as image resources cannot see page-level font faces, so fonts must be embedded
   // in the derived rendering blob. The source `File` content stays unchanged.
   let derivedSvgPromise = derivedSvgCache.get(file)
   if (derivedSvgPromise == null) {
@@ -26,7 +26,9 @@ export async function getRenderableImageUrl(file: File, signal: AbortSignal) {
       .arrayBuffer()
       .then(async (ab) => {
         const svgText = new TextDecoder().decode(ab)
-        const injectedSvgText = await injectScratchFontsToSvgText(svgText)
+        // Project font rendering is deferred to https://github.com/goplus/builder/issues/3366,
+        // so this shared path must not embed project fonts yet.
+        const injectedSvgText = await injectFontsToSvgText(svgText, [], new Map())
         return new Blob([injectedSvgText ?? ab], { type: 'image/svg+xml' })
       })
       .catch((e) => {

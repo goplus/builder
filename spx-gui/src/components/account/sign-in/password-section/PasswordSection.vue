@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import type { PasswordSignInPayload } from '@/apis/account'
 import { UIForm, UIFormItem, UIFullWidthButton, UIIconTextInput, useForm } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { useInterval } from '@/utils/utils'
 
 import eyeIconUrl from './eye.svg'
 import eyeOffIconUrl from './eye-off.svg'
 import lockIconUrl from './lock.svg'
 import userIconUrl from './user.svg'
 
-defineProps<{
+const props = defineProps<{
   isSubmitting: boolean
+  retryAfter: number | null
 }>()
 
 const emit = defineEmits<{
@@ -20,6 +22,31 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const showPassword = ref(false)
+const retrySecondsRemaining = ref(0)
+
+function updateRetrySecondsRemaining() {
+  retrySecondsRemaining.value =
+    props.retryAfter == null ? 0 : Math.max(0, Math.ceil((props.retryAfter - Date.now()) / 1000))
+}
+
+watch(() => props.retryAfter, updateRetrySecondsRemaining, { immediate: true })
+
+useInterval(updateRetrySecondsRemaining, () => (retrySecondsRemaining.value > 0 ? 1000 : null))
+
+const isSubmitDisabled = computed(() => props.isSubmitting || retrySecondsRemaining.value > 0)
+const submitText = computed(() => {
+  if (retrySecondsRemaining.value > 0) {
+    const minutes = Math.floor(retrySecondsRemaining.value / 60)
+    const seconds = retrySecondsRemaining.value % 60
+    const countdown = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    return t({
+      en: `Try again in ${countdown}`,
+      zh: `${countdown} 后重试`
+    })
+  }
+  if (props.isSubmitting) return t({ en: 'Signing in…', zh: '登录中…' })
+  return t({ en: 'Sign In', zh: '立即登录' })
+})
 
 const form = useForm({
   username: ['', validateUsername],
@@ -54,7 +81,8 @@ function toggleShowPassword() {
   showPassword.value = !showPassword.value
 }
 
-async function handleSubmit() {
+function handleSubmit() {
+  if (isSubmitDisabled.value) return
   emit('submit', { username: form.value.username.trim(), password: form.value.password })
 }
 </script>
@@ -80,8 +108,8 @@ async function handleSubmit() {
       />
     </UIFormItem>
 
-    <UIFullWidthButton primary html-type="submit" class="mt-6" :disabled="isSubmitting">
-      {{ isSubmitting ? $t({ en: 'Signing in…', zh: '登录中…' }) : $t({ en: 'Sign In', zh: '立即登录' }) }}
+    <UIFullWidthButton primary html-type="submit" class="mt-6" :disabled="isSubmitDisabled">
+      {{ submitText }}
     </UIFullWidthButton>
   </UIForm>
 </template>

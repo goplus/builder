@@ -343,6 +343,9 @@ const konvaBackdropRectConfig = computed(() => {
   const stageHeight = mapSize.value.height
   const imageWidth = backdropImg.value.width
   const imageHeight = backdropImg.value.height
+  if (imageWidth <= 0 || imageHeight <= 0) {
+    return null
+  }
 
   if (editorCtx.project.stage.mapMode === MapMode.fillRatio) {
     const scaleX = stageWidth / imageWidth

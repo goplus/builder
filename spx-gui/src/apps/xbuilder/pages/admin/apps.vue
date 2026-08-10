@@ -11,7 +11,6 @@ import { useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption, UITextInput } from '@/components/ui'
 import * as accountAdminApis from '@/apis/admin/account'
 import {
-  accountAppAllowedOriginsTip,
   accountAppClientTypeLabels,
   accountAppRedirectURIsTip,
   accountAppStatusLabels,
@@ -33,8 +32,7 @@ const createForm = reactive({
   name: '',
   displayName: '',
   clientType: 'public' as accountAdminApis.AccountApp['clientType'],
-  redirectURIs: '',
-  allowedOrigins: ''
+  redirectURIs: ''
 })
 
 const appsQuery = useQuery(
@@ -60,8 +58,7 @@ const handleCreateApp = useMessageHandle(
       name: createForm.name.trim(),
       displayName: createForm.displayName.trim(),
       clientType: createForm.clientType,
-      redirectURIs: parseLines(createForm.redirectURIs),
-      allowedOrigins: parseLines(createForm.allowedOrigins)
+      redirectURIs: parseLines(createForm.redirectURIs)
     })
     await router.push(`/admin/apps/${encodeURIComponent(app.id)}`)
   },
@@ -110,16 +107,10 @@ const handleCreateApp = useMessageHandle(
             <UISelectOption value="confidential">{{ $t(accountAppClientTypeLabels.confidential) }}</UISelectOption>
           </UISelect>
         </label>
-        <div class="hidden tablet:block"></div>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Redirect URIs', zh: '回调 URI' }) }}
           <UITextInput v-model:value="createForm.redirectURIs" type="textarea" :rows="4" />
           <span class="text-xs text-grey-700">{{ $t(accountAppRedirectURIsTip) }}</span>
-        </label>
-        <label class="flex flex-col gap-1 text-sm text-grey-900">
-          {{ $t({ en: 'Allowed origins', zh: '允许的 Origin' }) }}
-          <UITextInput v-model:value="createForm.allowedOrigins" type="textarea" :rows="4" />
-          <span class="text-xs text-grey-700">{{ $t(accountAppAllowedOriginsTip) }}</span>
         </label>
       </div>
       <div class="mt-4 flex justify-end">

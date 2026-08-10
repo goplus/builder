@@ -26,7 +26,7 @@ import {
 import spxApisDoc from './skills/spx-project/references/apis.md?raw'
 import spxProjectSkillMainDoc from './skills/spx-project/SKILL.md?raw'
 
-export const packageSpx = 'github.com/goplus/spx/v2'
+export const packageSpx = 'github.com/goplus/spx/v3'
 
 /**
  * Audio file formats supported by spx.

@@ -22,7 +22,7 @@ export enum AssetType {
 }
 
 export type AssetExtraSettings = {
-  /** Category to which the asset belongs */
+  /** Generation category for the asset */
   category?: SpriteCategory | BackdropCategory | SoundCategory
   /**
    * Art style indicates the visual style or aesthetic approach used in the creation of graphics.
@@ -45,11 +45,6 @@ export type AssetData = {
   displayName: string
   /** Type of the asset */
   type: AssetType
-  /**
-   * Category to which the asset belongs
-   * @deprecated Use `category` in `extraSettings` instead.
-   */
-  category: string
   /** Brief description of the asset */
   description: string
   /** Extra settings specific to the asset */
@@ -67,11 +62,6 @@ export type ListAssetsParams = PaginationParams & {
   keyword?: string
   /** Filter assets by type */
   type?: AssetType
-  /**
-   * Filter assets by category
-   * @deprecated Not recommended for use as the field `category` is deprecated.
-   */
-  category?: string
   /** Filter assets by files hash */
   filesHash?: string
   /** Filter assets by visibility */
@@ -91,10 +81,7 @@ export function listSignedInUserAssets(params?: ListAssetsParams, signal?: Abort
 }
 
 export type AddAssetParams = Prettify<
-  Pick<
-    AssetData,
-    'displayName' | 'type' | 'category' | 'description' | 'extraSettings' | 'files' | 'filesHash' | 'visibility'
-  >
+  Pick<AssetData, 'displayName' | 'type' | 'description' | 'extraSettings' | 'files' | 'filesHash' | 'visibility'>
 >
 
 export function addAsset(params: AddAssetParams) {
@@ -105,7 +92,7 @@ export function getAsset(id: string) {
   return client.get(`/assets/${encodeURIComponent(id)}`) as Promise<AssetData>
 }
 
-export type UpdateAssetParams = AddAssetParams
+export type UpdateAssetParams = Partial<AddAssetParams>
 
 export function updateAsset(id: string, params: UpdateAssetParams) {
   return client.patch(`/assets/${encodeURIComponent(id)}`, params) as Promise<AssetData>

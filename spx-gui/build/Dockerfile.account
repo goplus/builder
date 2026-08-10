@@ -5,17 +5,19 @@ FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
 WORKDIR /app/spx-gui
 
-COPY spx-gui/package.json spx-gui/package-lock.json .
+COPY spx-gui/package.json spx-gui/pnpm-lock.yaml spx-gui/pnpm-workspace.yaml .
 
 ARG NPM_CONFIG_REGISTRY
-RUN npm install --ignore-scripts
+# pnpm reads npm config from lowercase npm_config_* environment variables.
+ENV npm_config_registry=${NPM_CONFIG_REGISTRY}
+RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts
 
 COPY spx-gui .
 
 ARG VITE_MODE
 
 ENV NODE_OPTIONS=--max-old-space-size=4096
-RUN npm run build:account
+RUN pnpm run build:account
 
 FROM ${NGINX_BASE_IMAGE}
 

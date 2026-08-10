@@ -3,10 +3,10 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
+import { useExternalUrl } from '@/utils/utils'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
-import { useAvatarUrl } from '@/stores/user/avatar'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
@@ -27,7 +27,7 @@ const canUseAccountAdmin = computed(
     signedInUser.value?.capabilities.canManageAccount === true ||
     signedInUser.value?.capabilities.canManageAuthorization === true
 )
-const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
+const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 function toggleLang() {

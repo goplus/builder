@@ -17,7 +17,7 @@ OUTPUT_BASE="$(cd "$(dirname "$OUTPUT_BASE")" && pwd)/$(basename "$OUTPUT_BASE")
 # Install dependencies if needed
 if [ -f "package.json" ] && [ ! -d "node_modules" ]; then
     echo "Installing tutorial dependencies..."
-    npm install
+    pnpm install --frozen-lockfile
 fi
 
 # Iterate through all subdirectories
@@ -44,7 +44,7 @@ for dir in */; do
 
             if [ "$needs_rebuild" = true ]; then
                 # Build GitBook
-                npx honkit build "$DIR_NAME" "$OUTPUT_DIR"
+                pnpm exec honkit build "$DIR_NAME" "$OUTPUT_DIR"
             fi
         fi
     fi
