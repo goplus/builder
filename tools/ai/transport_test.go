@@ -17,7 +17,7 @@ func (m *mockTransport) Interact(ctx context.Context, req Request) (Response, er
 	if m.InteractFunc != nil {
 		return m.InteractFunc(ctx, req)
 	}
-	return Response{Text: "mock response"}, nil
+	return Response{}, nil
 }
 
 func (m *mockTransport) Archive(ctx context.Context, turns []Turn, existingArchive string) (ArchivedHistory, error) {
@@ -94,6 +94,33 @@ func TestTooManyRequestsError(t *testing.T) {
 	}
 	if got, want := errors.Is(tmrErr, baseErr), true; got != want {
 		t.Errorf("got %t, want %t", got, want)
+	}
+}
+
+func TestRetryableError(t *testing.T) {
+	baseErr := errors.New("server error")
+	err := &RetryableError{Err: baseErr}
+
+	if !errors.Is(err, baseErr) {
+		t.Errorf("got error %v, want error wrapping %v", err, baseErr)
+	}
+	if !isRetryableTransportError(err) {
+		t.Error("retryable error was not recognized")
+	}
+	if isRetryableTransportError(baseErr) {
+		t.Error("ordinary error was recognized as retryable")
+	}
+}
+
+func TestClientError(t *testing.T) {
+	baseErr := errors.New("forbidden")
+	err := &ClientError{StatusCode: 403, RetryAfter: time.Minute, Err: baseErr}
+
+	if !errors.Is(err, baseErr) {
+		t.Errorf("got error %v, want error wrapping %v", err, baseErr)
+	}
+	if isRetryableTransportError(err) {
+		t.Error("client error was recognized as retryable")
 	}
 }
 

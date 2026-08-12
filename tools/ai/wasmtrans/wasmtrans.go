@@ -8,6 +8,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
 	"syscall/js"
 	"time"
 
@@ -125,7 +127,7 @@ func (t *wasmTransport) fetchAndParse(ctx context.Context, path string, body []b
 	if !jsResp.Get("ok").Bool() {
 		status := jsResp.Get("status").Int()
 		statusText := jsResp.Get("statusText").String()
-		retryAfter := time.Duration(0)
+		var retryAfter time.Duration
 		if headers := jsResp.Get("headers"); headers.Truthy() {
 			headerValue := headers.Call("get", "Retry-After")
 			if headerValue.Truthy() {
@@ -133,37 +135,43 @@ func (t *wasmTransport) fetchAndParse(ctx context.Context, path string, body []b
 			}
 		}
 
-		bodyPromise := jsResp.Call("text")
-		bodyTextVal, bodyErr := awaitPromise(ctx, bodyPromise)
+		bodyTextVal, bodyErr := awaitPromise(ctx, jsResp.Call("text"))
 		if bodyErr != nil {
-			err := fmt.Errorf("failed to fetch with status %d %s (and failed to read error body: %w)", status, statusText, bodyErr)
-			if status == 429 {
-				return &ai.TooManyRequestsError{
-					RetryAfter: retryAfter,
-					Err:        err,
-				}
-			}
-			return err
+			return classifyResponseError(status, retryAfter, fmt.Errorf("failed to fetch with status %d %s (and failed to read error body: %w)", status, statusText, bodyErr))
 		}
 
-		bodyText := bodyTextVal.String()
-		if status == 429 {
-			return &ai.TooManyRequestsError{
-				RetryAfter: retryAfter,
-				Err:        fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText),
-			}
-		}
-		return fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText)
+		return classifyResponseError(status, retryAfter, fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyTextVal.String()))
 	}
 
-	jsJSON, err := awaitPromise(ctx, jsResp.Call("json"))
+	bodyTextValue, err := awaitPromise(ctx, jsResp.Call("text"))
 	if err != nil {
-		return fmt.Errorf("failed to process json response: %w", err)
+		return fmt.Errorf("failed to read response body: %w", err)
 	}
-	jsonString := js.Global().Get("JSON").Call("stringify", jsJSON).String()
 
-	if err := json.Unmarshal([]byte(jsonString), result); err != nil {
+	decoder := json.NewDecoder(strings.NewReader(bodyTextValue.String()))
+	decoder.UseNumber()
+	if err := decoder.Decode(result); err != nil {
+		return fmt.Errorf("failed to unmarshal response json: %w", err)
+	}
+	if err := decoder.Decode(new(any)); err != io.EOF {
+		if err == nil {
+			return fmt.Errorf("failed to unmarshal response json: unexpected trailing data at byte %d", decoder.InputOffset())
+		}
 		return fmt.Errorf("failed to unmarshal response json: %w", err)
 	}
 	return nil
+}
+
+// classifyResponseError classifies a failed fetch response for retry handling.
+func classifyResponseError(status int, retryAfter time.Duration, err error) error {
+	switch {
+	case status == 429:
+		return &ai.TooManyRequestsError{RetryAfter: retryAfter, Err: err}
+	case status >= 400 && status < 500:
+		return &ai.ClientError{StatusCode: status, RetryAfter: retryAfter, Err: err}
+	case status >= 500:
+		return &ai.RetryableError{Err: err}
+	default:
+		return err
+	}
 }
