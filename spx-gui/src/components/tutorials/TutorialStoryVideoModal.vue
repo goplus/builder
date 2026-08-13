@@ -15,12 +15,12 @@ export function extractCourseStoryVideo(prompt: string): string | null {
 </script>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
-import { UIButton, UIModal, UIModalClose } from '@/components/ui'
+import { UIButton, UIIcon, UIModal, UIModalClose } from '@/components/ui'
 import { handlePlayWithSound, useVideoAspect } from './video-aspect'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   /** URL of the story video. */
   src: string
@@ -32,6 +32,30 @@ const emit = defineEmits<{
 }>()
 
 const hasPlaybackError = ref(false)
+const videoRef = ref<HTMLVideoElement | null>(null)
+const hasEnded = ref(false)
+
+watch(
+  () => props.visible,
+  (isVisible) => {
+    if (!isVisible) return
+    hasEnded.value = false
+    hasPlaybackError.value = false
+    videoRef.value?.load()
+  }
+)
+
+function handleEnded() {
+  hasEnded.value = true
+}
+
+async function replay() {
+  const video = videoRef.value
+  if (video == null) return
+  hasEnded.value = false
+  video.currentTime = 0
+  await handlePlayWithSound({ target: video } as unknown as Event)
+}
 
 // Series intros differ in shape, so the box follows the video; 16:9 is what they have been so far.
 const { aspectStyle, handleLoadedMetadata } = useVideoAspect(16 / 9)
@@ -52,42 +76,57 @@ function handleContinue() {
     mask-closable
     @update:visible="handleContinue"
   >
-    <div class="flex flex-col px-5 pt-4 pb-5">
-      <div class="flex justify-end">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-between border-b border-grey-400 px-6 py-3.5">
+        <div class="text-base/[26px] font-medium text-grey-1000">
+          {{ $t({ en: 'Tutorial guide', zh: '教程引导' }) }}
+        </div>
         <UIModalClose @click="handleContinue" />
       </div>
 
-      <div class="relative mt-3 overflow-hidden rounded-md bg-grey-1000">
-        <!-- Hover-card style minus the muting: autoplaying, looping, no browser controls popping
+      <div class="flex flex-col items-center px-6 py-5">
+        <div class="relative overflow-hidden rounded-md bg-grey-1000">
+          <!-- Hover-card style minus the muting: autoplaying once, with no browser controls popping
              up on mouse move. The story has a plot and a soundtrack, so it plays with sound;
              `handlePlayWithSound` falls back to muted playback if the browser blocks unmuted
-             autoplay (no controls means a paused video could never be unstuck). Looping means
-             `ended` never fires, so the button below is the one way into the course.
+             autoplay (no controls means a paused video could never be unstuck). Once it ends, the
+             overlay play button lets the learner replay it once.
              `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
-        <video
-          class="block w-full"
-          :style="aspectStyle"
-          :src="src"
-          crossorigin="anonymous"
-          autoplay
-          loop
-          playsinline
-          @loadedmetadata="handleLoadedMetadata"
-          @loadeddata="handlePlayWithSound"
-          @error="hasPlaybackError = true"
-        ></video>
-        <div
-          v-if="hasPlaybackError"
-          class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-grey-100 text-text"
-        >
-          {{ $t({ en: 'The video cannot be played right now.', zh: '视频暂时无法播放。' }) }}
+          <video
+            ref="videoRef"
+            class="block w-full"
+            :style="aspectStyle"
+            :src="src"
+            crossorigin="anonymous"
+            autoplay
+            playsinline
+            @loadedmetadata="handleLoadedMetadata"
+            @loadeddata="handlePlayWithSound"
+            @ended="handleEnded"
+            @error="hasPlaybackError = true"
+          ></video>
+          <button
+            v-if="hasEnded && !hasPlaybackError"
+            type="button"
+            class="absolute left-1/2 top-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 appearance-none items-center justify-center rounded-full border-0 bg-[rgba(36,41,47,0.25)] p-3.5 text-white outline-none transition-colors hover:bg-[rgba(36,41,47,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            :aria-label="$t({ en: 'Play video', zh: '播放视频' })"
+            @click="replay"
+          >
+            <UIIcon type="play" class="size-7" />
+          </button>
+          <div
+            v-if="hasPlaybackError"
+            class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-grey-100 text-text"
+          >
+            {{ $t({ en: 'The video cannot be played right now.', zh: '视频暂时无法播放。' }) }}
+          </div>
         </div>
-      </div>
 
-      <UIButton class="mt-5 self-center" type="neutral" size="large" @click="handleContinue">
-        {{ $t({ en: 'Start the course', zh: '开始课程' }) }}
-      </UIButton>
+        <UIButton class="mt-5" type="neutral" size="large" @click="handleContinue">
+          {{ $t({ en: 'Start the course', zh: '开始课程' }) }}
+        </UIButton>
+      </div>
     </div>
   </UIModal>
 </template>
