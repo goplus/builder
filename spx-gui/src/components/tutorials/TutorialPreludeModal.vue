@@ -16,6 +16,7 @@ export function extractCoursePrelude(prompt: string): string | null {
 <script setup lang="ts">
 import { UIButton, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
+import tutorialIllustration from '@/assets/images/tutorial-guide-illustration.svg'
 
 defineProps<{
   visible: boolean
@@ -41,15 +42,23 @@ function handleContinue() {
     }"
     :visible="visible"
     size="small"
+    class="w-[444px]! rounded-xl! shadow-[0_4px_12px_rgba(36,41,47,0.08)]"
     mask-closable
     @update:visible="handleContinue"
   >
-    <div class="flex flex-col items-center px-8 pb-6 pt-8">
-      <!-- `text-base!` because the shared Markdown view sets its own (smaller) chat font size, and
-           a prelude is the sentence a child reads before starting. -->
-      <MarkdownView class="self-stretch text-base! text-text" :value="text" />
-      <UIButton class="mt-8" type="primary" size="large" @click="handleContinue">
-        {{ $t({ en: 'Go', zh: '开始' }) }}
+    <div class="flex flex-col items-center gap-6 p-6">
+      <img :src="tutorialIllustration" alt="" class="block h-[190px] w-[396px]" />
+      <div class="w-full rounded-lg bg-grey-300 px-6 py-8">
+        <!-- The course prompt supplies this text for each opening; Markdown keeps inline code
+             snippets styled consistently with the rest of the tutorial UI. -->
+        <MarkdownView class="text-sm/[22px]! font-medium text-grey-900" :value="text" />
+      </div>
+      <UIButton
+        class="w-full! rounded-lg! bg-(--ui-color-turquoise-500)! text-[15px]/[24px]!"
+        size="large"
+        @click="handleContinue"
+      >
+        {{ $t({ en: 'Start', zh: '开始' }) }}
       </UIButton>
     </div>
   </UIModal>
