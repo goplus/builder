@@ -7,7 +7,7 @@ import { type Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 import { timeout } from '@/utils/utils'
-import { UIButton, UIImg, UIModal, UIModalClose } from '@/components/ui'
+import { UIButton, UIImg, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
@@ -98,11 +98,7 @@ function handleClose() {
     mask-closable
     @update:visible="handleClose"
   >
-    <div class="px-5 pt-4 pb-6">
-      <div class="flex justify-end">
-        <UIModalClose class="close" @click="handleClose" />
-      </div>
-
+    <div class="px-5 pt-6 pb-6">
       <div class="flex flex-col items-center text-center">
         <UIImg :src="successImg" class="h-47.5 w-67.5" />
 
@@ -124,7 +120,7 @@ function handleClose() {
         </div>
 
         <!-- Buttons appear only once the comment is ready, so the user reads it first. -->
-        <div v-if="commentReady" class="mt-8 w-full flex flex-col gap-5">
+        <div v-if="commentReady" class="mt-8 w-full flex flex-col gap-3">
           <UIButton type="neutral" size="large" @click="handleRetryCourse">
             {{ $t({ zh: '再试一次', en: 'Try again' }) }}
           </UIButton>
